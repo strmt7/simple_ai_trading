@@ -196,7 +196,7 @@ DEFAULT = ObjectiveSpec(
         walk_forward_test=120,
         walk_forward_step=40,
         polynomial_degree=2,
-        polynomial_top_features=7,
+        polynomial_top_features=13,
         extra_lookback_windows=(5, 20, 60),
     ),
 )

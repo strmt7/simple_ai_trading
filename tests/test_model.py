@@ -8,11 +8,13 @@ from pathlib import Path
 
 from simple_ai_bitcoin_trading_binance.model import (
     TrainedModel,
+    EnsembleMember,
     ClassificationReport,
     calibrate_probability_temperature,
     confidence_adjusted_probability,
     feature_dimension,
     ModelFeatureMismatchError,
+    ModelLoadError,
     load_model,
     model_decision_threshold,
     evaluate_classification,
@@ -245,6 +247,26 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
             "signal_threshold": 0.63,
             "take_profit_pct": 0.04,
         },
+        ensemble_members=[
+            EnsembleMember(
+                weights=[0.0],
+                bias=2.0,
+                feature_means=[0.0],
+                feature_stds=[1.0],
+                seed=7,
+                epochs=3,
+                training_loss=0.4,
+                validation_loss=0.5,
+            ),
+            EnsembleMember(
+                weights=[0.0],
+                bias=-2.0,
+                feature_means=[0.0],
+                feature_stds=[1.0],
+                seed=11,
+                epochs=3,
+            ),
+        ],
     )
     from simple_ai_bitcoin_trading_binance.model import serialize_model
 
@@ -267,6 +289,12 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         "signal_threshold": 0.63,
         "take_profit_pct": 0.04,
     }
+    assert len(loaded.ensemble_members) == 2
+    assert loaded.ensemble_members[0].seed == 7
+    assert loaded.ensemble_members[0].training_loss == 0.4
+    assert loaded.predict_proba((0.0,)) == pytest.approx(0.5)
+    with pytest.raises(ValueError, match="Feature dimension"):
+        loaded.predict_proba(())
     assert confidence_adjusted_probability(0.9, 0.5) == 0.7
     assert confidence_adjusted_probability(0.1, 0.5) == 0.3
     assert confidence_adjusted_probability("bad", 0.5) == 0.5
@@ -309,6 +337,54 @@ def test_load_model_sanitizes_strategy_overrides(tmp_path: Path) -> None:
         "cooldown_minutes": 3,
     }
     assert clean_strategy_overrides(["not", "a", "dict"]) == {}
+
+
+def test_load_model_rejects_invalid_ensemble_members(tmp_path: Path) -> None:
+    model_path = tmp_path / "bad_ensemble.json"
+    payload: dict[str, object] = {
+        "weights": [0.1],
+        "feature_version": "v1",
+        "bias": 0.01,
+        "feature_dim": 1,
+        "epochs": 3,
+        "feature_means": [1.0],
+        "feature_stds": [1.0],
+        "ensemble_members": [
+            {
+                "weights": [0.1, 0.2],
+                "bias": 0.0,
+                "feature_means": [0.0],
+                "feature_stds": [1.0],
+            }
+        ],
+    }
+    model_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ModelFeatureMismatchError):
+        load_model(model_path, expected_feature_dim=2)
+    with pytest.raises(ModelLoadError, match="ensemble member"):
+        load_model(model_path, expected_feature_dim=1)
+
+    for ensemble_members, match in [
+        ({}, "must be an array"),
+        ([1], "is not an object"),
+        (
+            [
+                {
+                    "weights": [0.1],
+                    "bias": 0.0,
+                    "feature_means": [0.0],
+                    "feature_stds": [1.0],
+                    "training_loss": "nan",
+                }
+            ],
+            "is invalid",
+        ),
+    ]:
+        payload["ensemble_members"] = ensemble_members
+        model_path.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(ModelLoadError, match=match):
+            load_model(model_path, expected_feature_dim=1)
 
 
 def test_temperature_calibration_softens_overconfident_probabilities() -> None:

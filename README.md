@@ -147,7 +147,7 @@ number of fresh providers; negative signals can reduce score and risk sizing.
 | Objective | Intent | Notable defaults |
 |---|---|---|
 | `conservative` | Capital preservation, rejects > 15% drawdown, fewer trades. | 1x leverage, signal ≥ 0.66, stop 1.0%, take 2.2%, 400 epochs, poly deg 2 |
-| `default` | Balanced risk-adjusted return — the middle preset. | 1.5x, signal ≥ 0.58, stop 1.8%, take 3.0%, 600 epochs, poly deg 2 |
+| `default` | Balanced risk-adjusted return — the middle preset. | 1.5x, signal ≥ 0.58, stop 1.8%, take 3.0%, 600 epochs, poly deg 2 across all 13 base features |
 | `risky` | Chase return, tolerate bigger drawdowns + more trades. | 2.5x, signal ≥ 0.53, stop 2.8%, take 4.5%, 900 epochs, poly deg 3 |
 
 Training is parallelized across a `ProcessPoolExecutor` (defaults to
@@ -156,9 +156,16 @@ shared across every candidate in the hyperparameter grid.  Each objective now
 searches 1,944 candidates across epochs, learning rate, L2 strength, threshold,
 stop/take profile, risk sizing, confidence shrinkage, and SGD seed, then keeps
 a full-fit fallback when held-out calibration would reduce the objective score.
+The default objective expands pairwise interactions across all enabled base
+features, which improved the verified BTCUSDC benchmark objective from
+`0.0795225461` to `0.0848076422` on the 619-candle testnet sample used during
+this pass.
 The chosen model artifact also persists the selected execution overlay
 (threshold, risk size, stops/takes, fees, cooldown, and confidence shrinkage) so
 `backtest-panel`, readiness checks, and live startup reproduce the suite result.
+After the best candidate is found, the suite also tests a small seed ensemble
+for that candidate and only promotes it when the same validation/full-sample
+objective score improves.
 
 ### Backtest panel (independent)
 

@@ -30,7 +30,7 @@ from .features import (
     normalize_enabled_features,
 )
 from .market_data import clean_candles
-from .model import TrainedModel, train as train_logistic
+from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
 ADVANCED_FEATURE_VERSION = "v2-advanced"
 
@@ -349,6 +349,7 @@ def train_advanced(
     seed: int = 7,
     validation_rows: Sequence[ModelRow] | None = None,
     early_stopping_rounds: int | None = None,
+    ensemble_seeds: Sequence[int] | None = None,
 ) -> tuple[TrainedModel, AdvancedTrainingReport]:
     """Train a logistic regression on an expanded feature set.
 
@@ -359,26 +360,36 @@ def train_advanced(
     if not rows:
         raise ValueError("No training rows available")
     signature = advanced_feature_signature(cfg)
-    model = train_logistic(
-        list(rows),
-        epochs=epochs,
-        learning_rate=learning_rate,
-        seed=seed,
-        l2_penalty=l2_penalty,
-        feature_signature=signature,
-        validation_rows=list(validation_rows or []),
-        early_stopping_rounds=early_stopping_rounds,
-    )
-    positives = sum(1 for row in rows if row.label == 1)
+    train_rows = list(rows)
+    holdout_rows = list(validation_rows or [])
+    seeds = tuple(dict.fromkeys(int(value) for value in (ensemble_seeds or (seed,))))
+    models = [
+        train_logistic(
+            train_rows,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            seed=member_seed,
+            l2_penalty=l2_penalty,
+            feature_signature=signature,
+            validation_rows=holdout_rows,
+            early_stopping_rounds=early_stopping_rounds,
+        )
+        for member_seed in seeds
+    ]
+    model = models[0]
+    if len(models) > 1:
+        model.ensemble_members = [ensemble_member_from_model(member) for member in models]
+        model.seed = int(seeds[0])
+    positives = sum(1 for row in train_rows if row.label == 1)
     report = AdvancedTrainingReport(
         feature_dim=model.feature_dim,
         feature_signature=signature,
         epochs=epochs,
         learning_rate=learning_rate,
         l2_penalty=l2_penalty,
-        seed=seed,
-        row_count=len(rows),
-        positive_rate=(positives / len(rows)) if rows else 0.0,
+        seed=int(seeds[0]),
+        row_count=len(train_rows),
+        positive_rate=(positives / len(train_rows)) if train_rows else 0.0,
     )
     return model, report
 
@@ -408,6 +419,6 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
     return AdvancedFeatureConfig(
         base_features=names,
         polynomial_degree=2,
-        polynomial_top_features=7,
+        polynomial_top_features=len(names),
         extra_lookback_windows=(5, 20, 60),
     )

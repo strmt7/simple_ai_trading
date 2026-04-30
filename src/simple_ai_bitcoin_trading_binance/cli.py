@@ -4369,6 +4369,7 @@ def command_train_suite(args: argparse.Namespace) -> int:
             f"source={outcome.threshold_source or 'n/a'} "
             f"validation={outcome.validation_score if outcome.validation_score is not None else 'n/a'} "
             f"full={outcome.full_sample_score if outcome.full_sample_score is not None else 'n/a'} "
+            f"ensemble={'yes' if getattr(outcome, 'ensemble_refined', False) else 'no'} "
             f"candidates={outcome.explored_candidates} model={outcome.model_path}"
         )
     print(f"summary -> {report.summary_path}")
