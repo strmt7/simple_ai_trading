@@ -138,6 +138,7 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
             self.threshold_source = "strategy"
             self.validation_score = 0.13
             self.full_sample_score = 0.11
+            self.ensemble_refined = True
             self.explored_candidates = 1944
 
     class _Report:
@@ -163,6 +164,7 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
     assert cli.command_train_suite(args) == 0
     out = capsys.readouterr().out
     assert "default" in out
+    assert "ensemble=yes" in out
 
 
 # --------------------------------------------------------------------------- #

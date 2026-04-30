@@ -33,6 +33,19 @@ class ModelFeatureMismatchError(ModelLoadError):
 
 
 @dataclass
+class EnsembleMember:
+    weights: List[float]
+    bias: float
+    feature_means: List[float]
+    feature_stds: List[float]
+    seed: int = 7
+    epochs: int = 0
+    best_epoch: int | None = None
+    training_loss: float | None = None
+    validation_loss: float | None = None
+
+
+@dataclass
 class TrainedModel:
     weights: List[float]
     bias: float
@@ -69,6 +82,7 @@ class TrainedModel:
     threshold_calibration_pnl: float | None = None
     threshold_calibration_trades: int = 0
     strategy_overrides: dict[str, StrategyOverrideValue] = field(default_factory=dict)
+    ensemble_members: List[EnsembleMember] = field(default_factory=list)
 
     def _normalize(self, features: Tuple[float, ...]) -> Tuple[float, ...]:
         if len(features) != self.feature_dim:
@@ -82,19 +96,49 @@ class TrainedModel:
 
     def _linear_score(self, features: Tuple[float, ...]) -> float:
         score = self.bias
-        normed = self._normalize(features)
-        for w, x in zip(self.weights, normed, strict=True):
-            score += w * x
-        score = max(-50.0, min(50.0, score))
-        return score
+        for weight, value in zip(self.weights, self._normalize(features), strict=True):
+            score += weight * value
+        return max(-50.0, min(50.0, score))
+
+    def _member_probability(self, member: EnsembleMember, features: Tuple[float, ...]) -> float:
+        score = _linear_score_with_stats(
+            weights=member.weights,
+            bias=member.bias,
+            means=member.feature_means,
+            stds=member.feature_stds,
+            features=features,
+            feature_dim=self.feature_dim,
+        )
+        return _sigmoid(_temperature_scaled_score(score, self.probability_temperature))
 
     def predict_proba(self, features: Tuple[float, ...]) -> float:
+        if self.ensemble_members:
+            probabilities = [self._member_probability(member, features) for member in self.ensemble_members]
+            return sum(probabilities) / len(probabilities)
         score = _temperature_scaled_score(self._linear_score(features), self.probability_temperature)
         return _sigmoid(score)
 
     def predict(self, features: Tuple[float, ...], threshold: float) -> int:
         threshold = _clamp(threshold, 0.0, 1.0)
         return int(self.predict_proba(features) >= threshold)
+
+
+def _linear_score_with_stats(
+    *,
+    weights: Sequence[float],
+    bias: float,
+    means: Sequence[float],
+    stds: Sequence[float],
+    features: Tuple[float, ...],
+    feature_dim: int,
+) -> float:
+    if len(features) != feature_dim:
+        raise ValueError("Feature dimension does not match this model")
+    score = float(bias)
+    for weight, value, mean_, std_ in zip(weights, features, means, stds, strict=True):
+        normalized = (value - mean_) / std_ if std_ != 0 else (value - mean_)
+        score += weight * normalized
+    return max(-50.0, min(50.0, score))
 
 
 def _collect_feature_stats(rows: Iterable[ModelRow]) -> tuple[List[float], List[float]]:
@@ -987,6 +1031,70 @@ def serialize_model(model: TrainedModel, path) -> None:
     write_json_atomic(path, asdict(model), indent=2)
 
 
+def ensemble_member_from_model(model: TrainedModel) -> EnsembleMember:
+    return EnsembleMember(
+        weights=list(model.weights),
+        bias=float(model.bias),
+        feature_means=list(model.feature_means),
+        feature_stds=list(model.feature_stds),
+        seed=int(model.seed),
+        epochs=int(model.epochs),
+        best_epoch=model.best_epoch,
+        training_loss=model.training_loss,
+        validation_loss=model.validation_loss,
+    )
+
+
+def _optional_float(raw: Any) -> float | None:
+    if raw is None:
+        return None
+    value = float(raw)
+    if not math.isfinite(value):
+        raise ValueError("not finite")
+    return value
+
+
+def _load_ensemble_members(raw: Any, feature_dim: int) -> list[EnsembleMember]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ModelLoadError("Model payload ensemble_members must be an array")
+    members: list[EnsembleMember] = []
+    for index, entry in enumerate(raw):
+        if not isinstance(entry, dict):
+            raise ModelLoadError(f"Model payload ensemble member {index} is not an object")
+        try:
+            weights = [float(value) for value in entry["weights"]]
+            means = [float(value) for value in entry["feature_means"]]
+            stds = [float(value) for value in entry["feature_stds"]]
+            bias = float(entry["bias"])
+            seed = int(entry.get("seed", 7))
+            epochs = int(entry.get("epochs", 0))
+            best_epoch = (
+                int(entry["best_epoch"])
+                if entry.get("best_epoch") is not None
+                else None
+            )
+            training_loss = _optional_float(entry.get("training_loss"))
+            validation_loss = _optional_float(entry.get("validation_loss"))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ModelLoadError(f"Model payload ensemble member {index} is invalid") from exc
+        if len(weights) != feature_dim or len(means) != feature_dim or len(stds) != feature_dim:
+            raise ModelLoadError(f"Model payload ensemble member {index} dimension mismatch")
+        members.append(EnsembleMember(
+            weights=weights,
+            bias=bias,
+            feature_means=means,
+            feature_stds=stds,
+            seed=seed,
+            epochs=epochs,
+            best_epoch=best_epoch,
+            training_loss=training_loss,
+            validation_loss=validation_loss,
+        ))
+    return members
+
+
 def load_model(
     path,
     *,
@@ -1138,4 +1246,5 @@ def load_model(
         ),
         threshold_calibration_trades=int(payload.get("threshold_calibration_trades", 0) or 0),
         strategy_overrides=clean_strategy_overrides(payload.get("strategy_overrides", {})),
+        ensemble_members=_load_ensemble_members(payload.get("ensemble_members"), dim),
     )

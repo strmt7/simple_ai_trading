@@ -105,6 +105,7 @@ class ObjectiveOutcome:
     validation_rows: int = 0
     validation_score: float | None = None
     full_sample_score: float | None = None
+    ensemble_refined: bool = False
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -298,6 +299,11 @@ def _walk_forward_split(rows: Sequence[ModelRow], *, eval_ratio: float = 0.25) -
     return list(rows[:split]), list(rows[split:])
 
 
+def _ensemble_seed_pack(seed: int) -> tuple[int, int, int]:
+    base = int(seed)
+    return base, base + 17, base + 37
+
+
 def _default_training(objective: ObjectiveSpec) -> ObjectiveTraining:
     if objective.training is not None:
         return objective.training
@@ -341,6 +347,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     objective_name: str = payload["objective"]
     market_type: str = payload["market_type"]
     starting_cash: float = payload["starting_cash"]
+    ensemble_seeds: tuple[int, ...] | None = payload.get("ensemble_seeds")
 
     objective = get_objective(objective_name)
     training = _default_training(objective)
@@ -354,6 +361,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         seed=candidate.seed,
         validation_rows=calibration_rows,
         early_stopping_rounds=max(10, min(40, int(candidate.epochs) // 8)) if calibration_rows else None,
+        ensemble_seeds=ensemble_seeds,
     )
     strategy = _strategy_for_candidate(base_strategy, candidate, training)
     threshold_score = None
@@ -407,6 +415,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             learning_rate=candidate.learning_rate,
             l2_penalty=candidate.l2_penalty,
             seed=candidate.seed,
+            ensemble_seeds=ensemble_seeds,
         )
         fallback_model.decision_threshold = float(strategy.signal_threshold)
         fallback_model.threshold_source = "strategy_full_fit"
@@ -460,6 +469,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         "validation_rows": len(rows_eval),
         "validation_score": float(validation_score),
         "full_sample_score": float(full_sample_score),
+        "ensemble_refined": bool(ensemble_seeds),
     }
 
 
@@ -554,6 +564,20 @@ def train_for_objective(
 
     results.sort(key=lambda entry: entry["score"], reverse=True)
     best = results[0]
+    if runner is None:
+        ensemble_best = _evaluate_candidate({
+            "candidate": best["candidate"],
+            "rows_train": train_rows,
+            "rows_eval": eval_rows,
+            "feature_cfg": feature_cfg,
+            "base_strategy": base_strategy,
+            "objective": objective.name,
+            "market_type": market_type,
+            "starting_cash": starting_cash,
+            "ensemble_seeds": _ensemble_seed_pack(int(best["candidate"].seed)),
+        })
+        if ensemble_best["score"] > best["score"] + 1e-12:
+            best = ensemble_best
 
     rejected = sum(1 for entry in results if entry["score"] == float("-inf"))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -601,6 +625,7 @@ def train_for_objective(
             if best.get("full_sample_score") is not None
             else None
         ),
+        ensemble_refined=bool(best.get("ensemble_refined", False)),
     )
 
 

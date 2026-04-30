@@ -146,8 +146,8 @@ def test_default_config_for_branches():
     d = am.default_config_for("nothing", ())
     assert a.polynomial_top_features == 5
     assert b.polynomial_degree == 3
-    assert c.polynomial_top_features == 7
-    assert d.polynomial_top_features == 7
+    assert c.polynomial_top_features == len(FEATURE_NAMES)
+    assert d.polynomial_top_features == len(FEATURE_NAMES)
 
 
 def test_make_advanced_rows_happy_path():
@@ -204,3 +204,23 @@ def test_train_advanced_produces_matching_dim():
     assert report.row_count == len(rows)
     assert 0.0 <= report.positive_rate <= 1.0
     assert report.feature_signature == am.advanced_feature_signature(cfg)
+
+
+def test_train_advanced_can_build_seed_ensemble():
+    cfg = am.default_config_for("default", FEATURE_NAMES)
+    rows = am.make_advanced_rows(_candles(260), cfg)
+    model, report = am.train_advanced(
+        rows,
+        cfg,
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-3,
+        seed=5,
+        ensemble_seeds=(5, 7, 5),
+    )
+
+    assert report.seed == 5
+    assert model.seed == 5
+    assert len(model.ensemble_members) == 2
+    assert {member.seed for member in model.ensemble_members} == {5, 7}
+    assert 0.0 <= model.predict_proba(rows[-1].features) <= 1.0

@@ -27,6 +27,7 @@ from simple_ai_bitcoin_trading_binance.training_suite import (
     _calibration_split,
     _candidate_grid,
     _default_training,
+    _ensemble_seed_pack,
     _calibrate_candidate_threshold,
     _evaluate_candidate,
     _strategy_for_candidate,
@@ -608,6 +609,111 @@ def test_train_for_objective_empty_candidate_grid(
             starting_cash=1000.0,
             runner=runner,
         )
+
+
+def test_train_for_objective_promotes_better_seed_ensemble(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=11,
+    )
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+
+    def fake_evaluate(payload):
+        refined = bool(payload.get("ensemble_seeds"))
+        return {
+            "score": 2.0 if refined else 1.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(),
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "validation_score": 2.0 if refined else 1.0,
+            "full_sample_score": 2.0 if refined else 1.0,
+            "ensemble_refined": refined,
+        }
+
+    monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
+
+    outcome = train_for_objective(
+        _synthetic_candles(n=220),
+        StrategyConfig(),
+        objective,
+        output_dir=tmp_path,
+        market_type="spot",
+        starting_cash=1000.0,
+        max_workers=1,
+    )
+
+    assert _ensemble_seed_pack(11) == (11, 28, 48)
+    assert outcome.best_score == 2.0
+    assert outcome.ensemble_refined is True
+
+
+def test_train_for_objective_rejects_weaker_seed_ensemble(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+
+    def fake_evaluate(payload):
+        refined = bool(payload.get("ensemble_seeds"))
+        return {
+            "score": 0.5 if refined else 1.5,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(),
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "validation_score": 0.5 if refined else 1.5,
+            "full_sample_score": 0.5 if refined else 1.5,
+            "ensemble_refined": refined,
+        }
+
+    monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
+
+    outcome = train_for_objective(
+        _synthetic_candles(n=220),
+        StrategyConfig(),
+        objective,
+        output_dir=tmp_path,
+        market_type="spot",
+        starting_cash=1000.0,
+        max_workers=1,
+    )
+
+    assert outcome.best_score == 1.5
+    assert outcome.ensemble_refined is False
 
 
 # ----- run_training_suite --------------------------------------------------
