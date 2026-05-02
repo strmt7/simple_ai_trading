@@ -357,6 +357,7 @@ class TradingTelemetryStore:
         max_age_ms: int | None = None,
         now_ms: int | None = None,
     ) -> dict[tuple[str, str], SourceGrade]:
+        """Return the newest grade per source/horizon, optionally age-limited."""
         params: list[object] = []
         query = """
             SELECT id, created_at_ms, source, horizon, window_start_ms, window_end_ms,

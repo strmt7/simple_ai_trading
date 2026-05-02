@@ -6,6 +6,7 @@ import json
 import math
 import random
 import re
+import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
@@ -1421,7 +1422,7 @@ def collect_external_signals(
                     components,
                     store.latest_source_grades(max_age_ms=max_age_ms, now_ms=now),
                 )
-        except Exception as exc:  # pragma: no cover - telemetry must never block trading signals
+        except (ImportError, OSError, RuntimeError, TypeError, ValueError, sqlite3.Error) as exc:  # pragma: no cover - telemetry must never block trading signals
             source_grade_warnings.append(f"source grade weighting unavailable: {exc.__class__.__name__}")
 
     report = _combine_components(
