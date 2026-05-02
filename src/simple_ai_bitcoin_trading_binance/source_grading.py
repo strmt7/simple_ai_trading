@@ -10,11 +10,21 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Mapping
 
+from requests import RequestException
+
 from .external_signals import DEFAULT_OLLAMA_NEWS_MODEL, DEFAULT_OLLAMA_URL, PostJson, _post_json
 from .telemetry_store import SourceGrade, TradingTelemetryStore
 
 _GRADE_PAIR_RE = re.compile(r'"?([A-Za-z0-9_.:-]+)\|(short|medium|long)"?\s*:\s*(10|[0-9])')
 _INTEGER_GRADE_RE = re.compile(r"\b(10|[0-9])\b")
+_AI_GRADING_RECOVERABLE_ERRORS = (
+    KeyError,
+    OSError,
+    RequestException,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
 
 
 @dataclass(frozen=True)
@@ -147,10 +157,11 @@ def _ai_grade_batch(
         recovered = _recover_grade_mapping(response_text)
         if not recovered:
             raise
-        return {
-            tuple(key.split("|", 1)): (_clamp_int(value, 0, 10, 5), "AI grade (recovered JSON)")
-            for key, value in recovered.items()
-        }, latency_ms
+        output: dict[tuple[str, str], tuple[int, str]] = {}
+        for key, value in recovered.items():
+            source, horizon = key.split("|", 1)
+            output[(source, horizon)] = (_clamp_int(value, 0, 10, 5), "AI grade (recovered JSON)")
+        return output, latency_ms
     output: dict[tuple[str, str], tuple[int, str]] = {}
     if isinstance(raw_grades, Mapping):
         for key, grade_value in raw_grades.items():
@@ -255,7 +266,7 @@ def _ai_grades(
                     timeout_seconds=timeout_seconds,
                     post_json=post_json,
                 )
-            except Exception:
+            except _AI_GRADING_RECOVERABLE_ERRORS:
                 continue
             output[single_key] = single_output
             total_latency_ms += single_latency_ms
@@ -305,7 +316,7 @@ def grade_sources(
                     post_json=post_json,
                 )
                 ai_status = "ok"
-            except Exception as exc:
+            except _AI_GRADING_RECOVERABLE_ERRORS as exc:
                 ai_status = "error"
                 warnings.append(f"ollama grading unavailable: {exc}")
         grades: list[SourceGrade] = []
