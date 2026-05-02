@@ -12,7 +12,7 @@ from typing import Mapping
 
 from requests import RequestException
 
-from .external_signals import DEFAULT_OLLAMA_NEWS_MODEL, DEFAULT_OLLAMA_URL, PostJson, _post_json
+from .external_signals import DEFAULT_OLLAMA_NEWS_MODEL, DEFAULT_OLLAMA_URL, PostJson, _ollama_response_text, _post_json
 from .telemetry_store import SourceGrade, TradingTelemetryStore
 
 _GRADE_PAIR_RE = re.compile(r'"?([A-Za-z0-9_.:-]+)\|(short|medium|long)"?\s*:\s*(10|[0-9])')
@@ -124,6 +124,24 @@ def _json_mapping_from_text(text: str) -> Mapping[str, object]:
     return parsed
 
 
+def _ollama_chat_request(model: str, prompt: str, *, num_ctx: int, num_predict: int) -> dict[str, object]:
+    return {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You grade BTCUSDC data sources. Return compact JSON only.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "stream": False,
+        "format": "json",
+        "think": False,
+        "keep_alive": "30m",
+        "options": {"temperature": 0, "num_ctx": num_ctx, "num_predict": num_predict},
+    }
+
+
 def _ai_grade_batch(
     rollups: list[dict[str, object]],
     *,
@@ -133,23 +151,16 @@ def _ai_grade_batch(
     post_json: PostJson,
 ) -> tuple[dict[tuple[str, str], tuple[int, str]], int]:
     started = time.perf_counter()
-    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/generate"
+    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/chat"
     payload = post_json(
         endpoint,
-        {
-            "model": model,
-            "prompt": _grade_prompt(rollups),
-            "stream": False,
-            "format": "json",
-            "keep_alive": "30m",
-            "options": {"temperature": 0, "num_ctx": 4096, "num_predict": 1536},
-        },
+        _ollama_chat_request(model, _grade_prompt(rollups), num_ctx=4096, num_predict=1536),
         timeout_seconds,
     )
     latency_ms = int((time.perf_counter() - started) * 1000)
     if not isinstance(payload, Mapping):
         raise ValueError("unexpected Ollama grading payload")
-    response_text = str(payload.get("response") or "")
+    response_text = _ollama_response_text(payload)
     try:
         parsed = _json_mapping_from_text(response_text)
         raw_grades = parsed.get("grades")
@@ -204,23 +215,16 @@ def _ai_grade_single(
     post_json: PostJson,
 ) -> tuple[tuple[str, str], tuple[int, str], int]:
     started = time.perf_counter()
-    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/generate"
+    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/chat"
     payload = post_json(
         endpoint,
-        {
-            "model": model,
-            "prompt": _single_grade_prompt(rollup),
-            "stream": False,
-            "format": "json",
-            "keep_alive": "30m",
-            "options": {"temperature": 0, "num_ctx": 1024, "num_predict": 128},
-        },
+        _ollama_chat_request(model, _single_grade_prompt(rollup), num_ctx=1024, num_predict=128),
         timeout_seconds,
     )
     latency_ms = int((time.perf_counter() - started) * 1000)
     if not isinstance(payload, Mapping):
         raise ValueError("unexpected Ollama grading payload")
-    response_text = str(payload.get("response") or "")
+    response_text = _ollama_response_text(payload)
     reason = "AI single-source grade"
     try:
         parsed = _json_mapping_from_text(response_text)

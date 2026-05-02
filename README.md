@@ -175,6 +175,22 @@ simple-ai-trading signals --refresh --ollama-news --ollama-model gemma4:e4b \
     --news-provider-limit 40 --provider-parallelism 12 --provider-jitter 0.25
 ```
 
+On Windows with AMD RX 9000 GPUs, Ollama's ROCm backend may need the HIP SDK
+7.x rocBLAS kernels exposed explicitly. The helper below only sets environment
+variables and starts Ollama; it does not install or modify drivers:
+
+```powershell
+.\tools\start_ollama_rocm_windows.ps1
+ollama ps
+```
+
+For an RX 9070 XT, `ollama ps` should report `100% GPU` for `gemma4:e4b`.
+The critical setting is `ROCBLAS_TENSILE_LIBPATH` pointing at the HIP SDK
+`bin\rocblas\library` directory that contains `gfx1201` kernels. Gemma4-style
+thinking models are called through Ollama's chat API with `think:false` so the
+news classifier gets JSON content immediately instead of spending the token
+budget on hidden reasoning.
+
 Polling supports jitter at two levels: `--provider-jitter` spreads individual
 provider requests inside a collection, and `signals --loop --sleep N --jitter M`
 spreads repeated collections so the host and providers are not hit on exact
