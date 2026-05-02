@@ -60,20 +60,23 @@ def test_telemetry_store_roundtrip_and_grading_with_ai(tmp_path) -> None:
     def post_json(_url: str, payload: dict[str, object], _timeout: float):
         assert payload["model"] == "gemma4:e4b"
         assert payload["keep_alive"] == "30m"
+        assert payload["think"] is False
         assert payload["options"]["num_ctx"] == 4096
         assert payload["options"]["num_predict"] == 1536
-        assert "cointelegraph|short" in str(payload["prompt"])
+        assert "cointelegraph|short" in str(payload["messages"])
         return {
-            "response": json.dumps(
-                {
-                    "grades": {
-                        "cointelegraph|short": 9,
-                        "dict_component|medium": 5,
-                        "raw_0|medium": 5,
-                        "raw_1|medium": 5,
+            "message": {
+                "content": json.dumps(
+                    {
+                        "grades": {
+                            "cointelegraph|short": 9,
+                            "dict_component|medium": 5,
+                            "raw_0|medium": 5,
+                            "raw_1|medium": 5,
+                        }
                     }
-                }
-            )
+                )
+            }
         }
 
     run = grade_sources(

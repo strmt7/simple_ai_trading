@@ -126,22 +126,25 @@ def test_collect_external_signals_rss_ollama_and_telemetry(tmp_path) -> None:
         return _feed_xml()
 
     def post_json(url: str, payload: dict[str, object], timeout: float):
-        assert url.endswith("/api/generate")
+        assert url.endswith("/api/chat")
         assert payload["model"] == "gemma4:e4b"
         assert payload["keep_alive"] == "30m"
+        assert payload["think"] is False
         assert payload["options"]["num_ctx"] == 1024
         assert payload["options"]["num_predict"] == 64
-        assert str(payload["prompt"]).count("- ") <= 12
+        assert str(payload["messages"]).count("- ") <= 12
         assert timeout == 2.0
         return {
-            "response": json.dumps(
-                {
-                    "score": -0.7,
-                    "horizon": "short-term",
-                    "reaction_required": "true",
-                    "reason": "Hack risk outweighs inflows",
-                }
-            )
+            "message": {
+                "content": json.dumps(
+                    {
+                        "score": -0.7,
+                        "horizon": "short-term",
+                        "reaction_required": "true",
+                        "reason": "Hack risk outweighs inflows",
+                    }
+                )
+            }
         }
 
     telemetry = tmp_path / "telemetry.sqlite"
@@ -311,6 +314,8 @@ def test_news_feed_helpers_and_ollama_validation(monkeypatch) -> None:
     assert signals._coerce_ai_reaction("monitor", 0.9, "short") is False
     assert signals._coerce_ai_reaction("maybe", -0.7, "short") is True
     assert signals._json_mapping_from_text("prefix {\"score\": 1} suffix")["score"] == 1
+    assert signals._ollama_response_text({"message": {"content": "{\"score\":1}"}}) == "{\"score\":1}"
+    assert signals._ollama_response_text({"message": {"content": None}, "response": "{\"score\":0}"}) == "{\"score\":0}"
     with pytest.raises(json.JSONDecodeError):
         signals._json_mapping_from_text("no json here")
     with pytest.raises(ValueError, match="JSON object"):

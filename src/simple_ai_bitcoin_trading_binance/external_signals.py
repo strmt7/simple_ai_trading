@@ -1132,6 +1132,15 @@ def _json_mapping_from_text(text: str) -> Mapping[str, object]:
     return payload
 
 
+def _ollama_response_text(payload: Mapping[str, object]) -> str:
+    message = payload.get("message")
+    if isinstance(message, Mapping):
+        content = message.get("content")
+        if content is not None:
+            return str(content)
+    return str(payload.get("response") or "")
+
+
 def _ollama_priority(text: str) -> float:
     normalized = f" {text.lower()} "
     positive, negative = _keyword_counts(text)
@@ -1156,7 +1165,7 @@ def _ollama_prompt(news_texts: list[str]) -> str:
     bounded = _bounded_ollama_news_texts(news_texts)
     joined = "\n".join(f"- {text}" for text in bounded)
     return (
-        "BTCUSDC news impact. Return only JSON: "
+        "Classify BTCUSDC news impact. Return only this JSON shape: "
         '{"score":-1..1,"horizon":"short|medium|long","reaction_required":true|false,"reason":"<=12 words"}.\n'
         f"{joined}"
     )
@@ -1178,12 +1187,22 @@ def _evaluate_news_with_ollama(
     if not selected_news_texts:
         raise ValueError("no usable news texts available for Ollama evaluation")
     started = time.perf_counter()
-    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/generate"
+    endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/chat"
     request = {
         "model": str(model or DEFAULT_OLLAMA_NEWS_MODEL),
-        "prompt": _ollama_prompt(selected_news_texts),
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a strict low-latency crypto news classifier. "
+                    "Return compact JSON only."
+                ),
+            },
+            {"role": "user", "content": _ollama_prompt(selected_news_texts)},
+        ],
         "stream": False,
         "format": "json",
+        "think": False,
         "keep_alive": "30m",
         "options": {
             "temperature": 0,
@@ -1195,7 +1214,7 @@ def _evaluate_news_with_ollama(
     latency_ms = int((time.perf_counter() - started) * 1000)
     if not isinstance(payload, Mapping):
         raise ValueError("unexpected Ollama payload")
-    response_text = str(payload.get("response") or "")
+    response_text = _ollama_response_text(payload)
     parsed = _json_mapping_from_text(response_text)
     score = _clamp(_safe_float(parsed.get("score"), 0.0), -1.0, 1.0)
     horizon = _normalize_horizon(parsed.get("horizon"))
@@ -1222,6 +1241,7 @@ def _evaluate_news_with_ollama(
             "request": {
                 "model": request["model"],
                 "format": request["format"],
+                "think": request["think"],
                 "options": request["options"],
                 "news_count": len(news_texts),
                 "prompt_news_count": len(selected_news_texts),
