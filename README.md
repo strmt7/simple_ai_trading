@@ -94,10 +94,15 @@ simple-ai-trading doctor --online
 simple-ai-trading audit
 simple-ai-trading data-sync --rows 1000 --db data/market_data.sqlite
 simple-ai-trading data-sync --background --rows 1000 --sleep 300
-simple-ai-trading signals --refresh
+simple-ai-trading signals --refresh --news-provider-limit 40 --provider-parallelism 12
+simple-ai-trading signals --loop --sleep 15 --jitter 3 --news-provider-limit 40
+simple-ai-trading signals-benchmark --provider-limit 30 --parallelism 12 --iterations 2
+simple-ai-trading source-grades --window-hours 24
 python tools/quality_metrics.py --compare-ref HEAD
 simple-ai-trading spot-roundtrip --mode auto --quantity 0.00008 --yes
-simple-ai-trading train --source auto --preset balanced --download-missing
+simple-ai-trading compute --backend auto
+simple-ai-trading train --source auto --preset balanced --download-missing --compute-backend auto
+simple-ai-trading backtest --compute-backend auto --score-batch-size 8192
 simple-ai-trading strategy --profile conservative --external-signals
 simple-ai-trading live --paper --model data/model.json --steps 20 --sleep 0 --external-signals
 ```
@@ -134,10 +139,44 @@ terminal prompts to download the missing data; non-interactive runs can pass
 `--download-missing`.
 
 `signals` fetches the live external confirmation layer used by `live
---external-signals`. It currently blends Alternative.me Fear and Greed,
-CoinGecko BTC 24h change, Binance futures positioning, and mempool.space fee
-pressure behind a cached report. Positive boosts require the configured minimum
-number of fresh providers; negative signals can reduce score and risk sizing.
+--external-signals`. It blends Alternative.me Fear and Greed, CoinGecko BTC 24h
+change, Binance futures positioning, mempool.space fee pressure, GDELT, Hacker
+News attention, and a bounded parallel RSS/news tier with 30+ free crypto,
+macro, regulatory, technology, and geopolitical feeds. Positive boosts require
+the configured minimum number of fresh providers; negative signals can reduce
+score and risk sizing.
+
+The external layer is replayable. When telemetry is enabled, every normalized
+component plus raw provider/model payload is appended to
+`data/trading_telemetry.sqlite` with SQLite WAL mode. This is intentionally raw:
+RSS XML, JSON API responses, Ollama parsed responses, and internal live model
+decision inputs are stored so future criteria can rescore or retrain from the
+same observations. Runtime credentials and signed request material are not
+journaled.
+
+Short-horizon news can be evaluated by a local Ollama model:
+
+```bash
+simple-ai-trading signals --refresh --ollama-news --ollama-model gemma4:e4b \
+    --news-provider-limit 40 --provider-parallelism 12 --provider-jitter 0.25
+```
+
+Polling supports jitter at two levels: `--provider-jitter` spreads individual
+provider requests inside a collection, and `signals --loop --sleep N --jitter M`
+spreads repeated collections so the host and providers are not hit on exact
+wall-clock intervals. `signals-benchmark` measures provider count, parallelism,
+success count, and latency on the current host before choosing an interval.
+`source-grades` reviews stored telemetry over a time window and writes integer
+0-10 grades per source/horizon; it uses Ollama when available and falls back to
+deterministic evidence scoring when unavailable.
+
+GPU training and backtest scoring backends are selected with `compute`, `train
+--compute-backend`, `train-suite --compute-backend`, and `backtest
+--compute-backend`. `auto` probes CUDA, ROCm, DirectML, MPS, then CPU. On
+Windows, DirectML requires Python < 3.12 and the `gpu` extra or a Python 3.11
+environment with `torch-directml`; GPU candidate searches run sequentially to
+avoid VRAM contention. Backtests keep the trade simulator deterministic and
+stateful, while batching model probability scoring on the selected accelerator.
 
 ### Objectives (risk-adjusted scorers)
 
@@ -367,7 +406,7 @@ runtime.
 ### Push with a PAT
 
 ```bash
-GITHUB_TOKEN=ghp_… python3 tools/push_with_pat.py origin feat/my-branch
+GITHUB_TOKEN=<github_pat> python3 tools/push_with_pat.py origin feat/my-branch
 ```
 
 The helper serves the token to `git push` over a short-lived UNIX socket so it

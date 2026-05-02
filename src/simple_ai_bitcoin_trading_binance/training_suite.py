@@ -109,6 +109,9 @@ class ObjectiveOutcome:
     ensemble_refined: bool = False
     ensemble_refinement_candidates: int = 0
     local_refinement_candidates: int = 0
+    training_backend_requested: str = "cpu"
+    training_backend_kind: str = "cpu"
+    training_backend_device: str = "cpu"
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -388,6 +391,8 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     market_type: str = payload["market_type"]
     starting_cash: float = payload["starting_cash"]
     ensemble_seeds: tuple[int, ...] | None = payload.get("ensemble_seeds")
+    compute_backend = str(payload.get("compute_backend") or "cpu")
+    batch_size = int(payload.get("batch_size") or 512)
 
     objective = get_objective(objective_name)
     training = _default_training(objective)
@@ -402,6 +407,8 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         validation_rows=calibration_rows,
         early_stopping_rounds=max(10, min(40, int(candidate.epochs) // 8)) if calibration_rows else None,
         ensemble_seeds=ensemble_seeds,
+        compute_backend=compute_backend,
+        batch_size=batch_size,
     )
     strategy = _strategy_for_candidate(base_strategy, candidate, training)
     threshold_score = None
@@ -456,6 +463,8 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             l2_penalty=candidate.l2_penalty,
             seed=candidate.seed,
             ensemble_seeds=ensemble_seeds,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
         )
         fallback_model.decision_threshold = float(strategy.signal_threshold)
         fallback_model.threshold_source = "strategy_full_fit"
@@ -539,6 +548,8 @@ def train_for_objective(
                      AdvancedFeatureConfig, str, float],
                     tuple[float, StrategyConfig, TrainedModel, int, float]] | None = None,
     max_workers: int | None = None,
+    compute_backend: str | None = None,
+    batch_size: int = 512,
 ) -> ObjectiveOutcome:
     """Run the training suite for one objective, returning the outcome.
 
@@ -592,10 +603,14 @@ def train_for_objective(
                 "objective": objective.name,
                 "market_type": market_type,
                 "starting_cash": starting_cash,
+                "compute_backend": compute_backend or "cpu",
+                "batch_size": batch_size,
             }
             for candidate in candidates
         ]
         workers = _resolve_workers(max_workers, len(payloads))
+        if str(compute_backend or "cpu").strip().lower() not in {"", "cpu"}:
+            workers = 1
         if workers <= 1:
             results = [_evaluate_candidate(p) for p in payloads]
         else:
@@ -619,6 +634,8 @@ def train_for_objective(
                 "objective": objective.name,
                 "market_type": market_type,
                 "starting_cash": starting_cash,
+                "compute_backend": compute_backend or "cpu",
+                "batch_size": batch_size,
             })
             local_results.append(local_result)
         ranked_pool = sorted([*results, *local_results], key=lambda entry: entry["score"], reverse=True)
@@ -635,6 +652,8 @@ def train_for_objective(
                 "market_type": market_type,
                 "starting_cash": starting_cash,
                 "ensemble_seeds": _ensemble_seed_pack(int(base_result["candidate"].seed)),
+                "compute_backend": compute_backend or "cpu",
+                "batch_size": batch_size,
             })
             if ensemble_result["score"] > best["score"] + 1e-12:
                 best = ensemble_result
@@ -688,6 +707,9 @@ def train_for_objective(
         ensemble_refined=bool(best.get("ensemble_refined", False)),
         ensemble_refinement_candidates=ensemble_refinement_candidates,
         local_refinement_candidates=local_refinement_candidates,
+        training_backend_requested=str(getattr(best["model"], "training_backend_requested", "cpu")),
+        training_backend_kind=str(getattr(best["model"], "training_backend_kind", "cpu")),
+        training_backend_device=str(getattr(best["model"], "training_backend_device", "cpu")),
     )
 
 
@@ -701,6 +723,8 @@ def run_training_suite(
     output_dir: Path = _DEFAULT_OUTPUT_DIR,
     summary_path: Path | None = None,
     max_workers: int | None = None,
+    compute_backend: str | None = None,
+    batch_size: int = 512,
 ) -> SuiteReport:
     """Train one model per objective and persist a suite summary."""
 
@@ -709,24 +733,23 @@ def run_training_suite(
     outcomes: list[ObjectiveOutcome] = []
     total_rows = 0
     for spec in specs:
-        # Pass ``max_workers`` only when the caller asked for it so legacy test
+        # Pass optional args only when the caller asked for them so legacy test
         # doubles that monkey-patch ``train_for_objective`` keep working without
         # having to extend their signature.
-        if max_workers is None:
-            outcome = train_for_objective(
-                candles, base_strategy, spec,
-                output_dir=output_dir,
-                market_type=market_type,
-                starting_cash=starting_cash,
-            )
-        else:
-            outcome = train_for_objective(
-                candles, base_strategy, spec,
-                output_dir=output_dir,
-                market_type=market_type,
-                starting_cash=starting_cash,
-                max_workers=max_workers,
-            )
+        extra: dict[str, object] = {}
+        if max_workers is not None:
+            extra["max_workers"] = max_workers
+        if compute_backend is not None:
+            extra["compute_backend"] = compute_backend
+        if int(batch_size) != 512:
+            extra["batch_size"] = int(batch_size)
+        outcome = train_for_objective(
+            candles, base_strategy, spec,
+            output_dir=output_dir,
+            market_type=market_type,
+            starting_cash=starting_cash,
+            **extra,
+        )
         outcomes.append(outcome)
         total_rows = max(total_rows, outcome.row_count)
 

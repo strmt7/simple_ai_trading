@@ -7,6 +7,7 @@ data/
 .coverage
 .coverage.*
 .venv/
+.venv*/
 coverage*.json
 coverage.xml
 htmlcov/

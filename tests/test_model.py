@@ -23,6 +23,7 @@ from simple_ai_bitcoin_trading_binance.model import (
     train,
     walk_forward_report,
 )
+from simple_ai_bitcoin_trading_binance.compute import BackendInfo
 from simple_ai_bitcoin_trading_binance.strategy_overrides import clean_strategy_overrides
 
 
@@ -39,8 +40,36 @@ def test_train_and_evaluate() -> None:
     model = train(_rows(), epochs=5)
     assert isinstance(model, TrainedModel)
     assert model.feature_dim == 13
+    assert model.training_backend_kind == "cpu"
+    assert model.training_backend_vendor == "Python stdlib"
     score = evaluate(_rows(), model, threshold=0.5)
     assert 0.0 <= score <= 1.0
+
+
+def test_train_records_requested_backend_fallback_when_unavailable() -> None:
+    model = train(_rows(), epochs=2, compute_backend="directml")
+    if model.training_backend_kind == "cpu":
+        assert model.training_backend_requested == "directml"
+        assert "DirectML" in model.training_backend_reason
+
+
+def test_train_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import model as model_mod
+
+    monkeypatch.setattr(
+        model_mod,
+        "resolve_backend",
+        lambda _backend: BackendInfo("cuda", "cuda", "cuda:0", "Fake GPU", ""),
+    )
+
+    def fail_gpu(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(model_mod, "_train_torch", fail_gpu)
+    trained = model_mod.train(_rows(), epochs=2, compute_backend="cuda")
+    assert trained.training_backend_kind == "cpu"
+    assert trained.training_backend_requested == "cuda"
+    assert "training failed" in trained.training_backend_reason
 
 
 def test_load_model_backwards_compatibility(tmp_path: Path) -> None:
@@ -242,6 +271,11 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         threshold_calibration_score=12.3,
         threshold_calibration_pnl=4.5,
         threshold_calibration_trades=6,
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+        training_backend_vendor="DirectML",
+        training_backend_reason="",
         strategy_overrides={
             "risk_per_trade": 0.005,
             "signal_threshold": 0.63,
@@ -284,6 +318,10 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     assert loaded.threshold_calibration_score == 12.3
     assert loaded.threshold_calibration_pnl == 4.5
     assert loaded.threshold_calibration_trades == 6
+    assert loaded.training_backend_requested == "directml"
+    assert loaded.training_backend_kind == "directml"
+    assert loaded.training_backend_device == "privateuseone:0"
+    assert loaded.training_backend_vendor == "DirectML"
     assert loaded.strategy_overrides == {
         "risk_per_trade": 0.005,
         "signal_threshold": 0.63,

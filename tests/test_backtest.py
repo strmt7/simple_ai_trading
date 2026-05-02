@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import simple_ai_bitcoin_trading_binance.backtest as backtest_module
 from simple_ai_bitcoin_trading_binance.backtest import (
     calibrate_threshold_for_backtest,
     risk_adjusted_backtest_score,
     run_backtest,
 )
+from simple_ai_bitcoin_trading_binance.compute import BackendInfo
 from simple_ai_bitcoin_trading_binance.features import ModelRow
 from simple_ai_bitcoin_trading_binance.model import TrainedModel
 from simple_ai_bitcoin_trading_binance.types import StrategyConfig
@@ -36,6 +38,75 @@ def test_backtest_runs() -> None:
     assert result.starting_cash == 1000.0
     assert result.buy_hold_pnl > 0.0
     assert result.edge_vs_buy_hold == result.realized_pnl - result.buy_hold_pnl
+    assert result.scoring_backend_kind == "cpu"
+    assert result.scoring_backend_device == "cpu"
+
+
+def test_backtest_empty_rows_preserves_requested_scoring_backend() -> None:
+    model = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    result = run_backtest([], model, StrategyConfig(), compute_backend="cpu")
+    assert result.scoring_backend_requested == "cpu"
+    assert result.scoring_backend_kind == "cpu"
+
+
+def test_backtest_gpu_batch_scoring_path(monkeypatch) -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=110.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    backend = BackendInfo("directml", "directml", "privateuseone:0", "DirectML", "")
+    monkeypatch.setattr(backtest_module, "resolve_backend", lambda _requested: backend)
+    monkeypatch.setattr(backtest_module, "_batch_probabilities_torch", lambda *_a, **_k: [0.99, 0.99])
+
+    result = run_backtest(rows, model, StrategyConfig(risk_per_trade=0.1), compute_backend="directml")
+
+    assert result.closed_trades == 1
+    assert result.scoring_backend_kind == "directml"
+    assert result.scoring_backend_device == "privateuseone:0"
+
+
+def test_backtest_gpu_batch_scoring_falls_back_to_cpu(monkeypatch) -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=110.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=4.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    backend = BackendInfo("cuda", "cuda", "cuda:0", "NVIDIA CUDA", "")
+    monkeypatch.setattr(backtest_module, "resolve_backend", lambda _requested: backend)
+
+    def fail_gpu_score(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(backtest_module, "_batch_probabilities_torch", fail_gpu_score)
+
+    result = run_backtest(rows, model, StrategyConfig(risk_per_trade=0.1), compute_backend="cuda")
+
+    assert result.closed_trades == 1
+    assert result.scoring_backend_requested == "cuda"
+    assert result.scoring_backend_kind == "cpu"
+    assert "fell back to CPU" in result.scoring_backend_reason
 
 
 def test_backtest_tracks_fees_and_cap_hits() -> None:

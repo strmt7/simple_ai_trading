@@ -667,6 +667,61 @@ def test_train_for_objective_promotes_better_seed_ensemble(
     assert outcome.ensemble_refinement_candidates == 1
 
 
+def test_train_for_objective_gpu_backend_forces_sequential_workers(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    observed: list[tuple[str, int]] = []
+
+    def fake_evaluate(payload):
+        observed.append((payload["compute_backend"], payload["batch_size"]))
+        return {
+            "score": 1.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(),
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "validation_score": 1.0,
+            "full_sample_score": 1.0,
+            "ensemble_refined": False,
+        }
+
+    monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
+    outcome = train_for_objective(
+        _synthetic_candles(n=220),
+        StrategyConfig(),
+        objective,
+        output_dir=tmp_path,
+        market_type="spot",
+        starting_cash=1000.0,
+        max_workers=4,
+        compute_backend="directml",
+        batch_size=64,
+    )
+    assert outcome.training_backend_kind == "cpu"
+    assert observed
+    assert all(item == ("directml", 64) for item in observed)
+
+
 def test_train_for_objective_rejects_weaker_seed_ensemble(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -939,6 +994,43 @@ def test_run_training_suite_default_objectives_and_summary_path(
     assert len(report.outcomes) >= 3
     payload = json.loads(summary.read_text(encoding="utf-8"))
     assert payload["summary_path"] == str(summary)
+
+
+def test_run_training_suite_forwards_optional_gpu_args(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[dict[str, object]] = []
+
+    def fake_train_for_objective(candles, base_strategy, objective, **kwargs):
+        observed.append(kwargs)
+        return ObjectiveOutcome(
+            objective=objective.name,
+            model_path=tmp_path / f"{objective.name}.json",
+            feature_dim=1,
+            feature_signature="sig",
+            best_score=1.0,
+            best_params={"epochs": 1},
+            explored_candidates=1,
+            rejected_candidates=0,
+            epochs=1,
+            learning_rate=0.01,
+            l2_penalty=0.0,
+            row_count=1,
+            positive_rate=0.5,
+        )
+
+    monkeypatch.setattr(training_suite, "train_for_objective", fake_train_for_objective)
+    run_training_suite(
+        _synthetic_candles(n=20),
+        StrategyConfig(),
+        objectives=["default"],
+        output_dir=tmp_path,
+        compute_backend="directml",
+        batch_size=64,
+    )
+    assert observed[0]["compute_backend"] == "directml"
+    assert observed[0]["batch_size"] == 64
 
 
 # ----- describe_candidate_grid + preview_candidates ------------------------

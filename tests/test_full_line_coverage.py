@@ -99,6 +99,15 @@ def _strategy_form(**overrides: str) -> dict[str, str]:
         "external_signal_min_providers": str(cfg.external_signal_min_providers),
         "external_signal_ttl": str(cfg.external_signal_ttl_seconds),
         "external_signal_timeout": str(cfg.external_signal_timeout_seconds),
+        "external_news_ai": str(cfg.external_news_ai_enabled),
+        "external_news_ai_model": str(cfg.external_news_ai_model),
+        "external_news_provider_limit": str(cfg.external_signal_news_provider_limit),
+        "external_provider_parallelism": str(cfg.external_signal_provider_parallelism),
+        "external_provider_jitter": str(cfg.external_signal_provider_jitter_seconds),
+        "external_poll_jitter": str(cfg.external_signal_poll_jitter_seconds),
+        "telemetry_db": str(cfg.telemetry_db_path),
+        "source_grading": str(cfg.source_grading_enabled),
+        "source_grading_interval": str(cfg.source_grading_interval_seconds),
     }
     payload.update(overrides)
     return payload

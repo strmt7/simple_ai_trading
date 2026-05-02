@@ -207,10 +207,10 @@ def _load_model_or_baseline(
         return _zero_model(dim), False, None
     resolved = Path(path)
     try:
-        return loader(resolved), True, str(resolved)
+        return loader(resolved), True, resolved.as_posix()
     except (FileNotFoundError, ModelLoadError):
         dim = len(rows[0].features) if rows else 1
-        return _zero_model(dim), False, str(resolved)
+        return _zero_model(dim), False, resolved.as_posix()
 
 
 def run_panel(

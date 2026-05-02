@@ -9,9 +9,13 @@ from simple_ai_bitcoin_trading_binance import cli
 from simple_ai_bitcoin_trading_binance.api import Candle
 from simple_ai_bitcoin_trading_binance.config import save_runtime, save_strategy
 from simple_ai_bitcoin_trading_binance.external_signals import ExternalSignalComponent, ExternalSignalReport
+from simple_ai_bitcoin_trading_binance.features import ModelRow
 from simple_ai_bitcoin_trading_binance.market_store import MarketDataStore
 from simple_ai_bitcoin_trading_binance.data_downloader import MarketDataSyncResult
 from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+
+
+NOW_MS = 1_700_000_000_000
 
 
 def _candle(index: int, close: float = 100.0) -> Candle:
@@ -270,14 +274,38 @@ def test_command_signals_and_external_score_helpers(tmp_path, monkeypatch, capsy
         external_signal_min_providers=9,
         external_signal_ttl=-1,
         external_signal_timeout=99.0,
+        external_news_ai=True,
+        external_news_ai_model="gemma4:e4b",
+        external_news_ai_url="http://ollama.test:11434",
+        external_news_ai_timeout=4.0,
+        external_news_provider_limit=99,
+        external_provider_parallelism=99,
+        external_provider_jitter=0.7,
+        external_poll_jitter=1.5,
+        telemetry_db=str(tmp_path / "telemetry.sqlite"),
+        no_telemetry=True,
+        source_grading=False,
+        source_grading_interval=30,
+        source_grading_window_hours=48,
     )
     assert cli.command_strategy(strategy_args) == 0
     saved = cli.load_strategy()
     assert saved.external_signals_enabled is True
     assert saved.external_signal_max_adjustment == 0.2
-    assert saved.external_signal_min_providers == 4
+    assert saved.external_signal_min_providers == 9
     assert saved.external_signal_ttl_seconds == 0
     assert saved.external_signal_timeout_seconds == 30.0
+    assert saved.external_news_ai_enabled is True
+    assert saved.external_news_ai_url == "http://ollama.test:11434"
+    assert saved.external_news_ai_timeout_seconds == 4.0
+    assert saved.external_signal_news_provider_limit == 99
+    assert saved.external_signal_provider_parallelism == 64
+    assert saved.external_signal_provider_jitter_seconds == 0.7
+    assert saved.external_signal_poll_jitter_seconds == 1.5
+    assert saved.telemetry_enabled is False
+    assert saved.source_grading_enabled is False
+    assert saved.source_grading_interval_seconds == 60
+    assert saved.source_grading_window_hours == 48
     report = _report("ok", adjustment=-0.03, fresh=2, risk=0.5)
     monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: report)
     args = argparse.Namespace(
@@ -306,6 +334,167 @@ def test_command_signals_and_external_score_helpers(tmp_path, monkeypatch, capsy
     assert adjusted == 0.57
     assert applied == -0.03
     assert effective.risk_per_trade == 0.005
+
+
+def test_source_grades_and_signal_benchmark_commands(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig())
+    save_strategy(StrategyConfig(telemetry_db_path=str(tmp_path / "telemetry.sqlite")))
+
+    class _GradeRun:
+        status = "ok"
+        graded_sources = 1
+        ai_status = "ok"
+        model = "gemma4:e4b"
+        ai_latency_ms = 12
+        warnings: list[str] = []
+        grades: list[object] = []
+
+        def asdict(self):
+            return {"status": self.status, "graded_sources": self.graded_sources, "grades": []}
+
+    monkeypatch.setattr(cli, "grade_sources", lambda **_kwargs: _GradeRun())
+    monkeypatch.setattr(cli, "render_source_grade_run", lambda run: f"graded={run.graded_sources}")
+    assert cli.command_source_grades(
+        argparse.Namespace(
+            db=None,
+            window_hours=None,
+            ollama=None,
+            ollama_model=None,
+            ollama_url=None,
+            ollama_timeout=None,
+            json=False,
+        )
+    ) == 0
+    assert "graded=1" in capsys.readouterr().out
+
+    args = argparse.Namespace(
+        provider_limit=[30],
+        parallelism=[4],
+        iterations=2,
+        timeout=1.0,
+        provider_jitter=0.0,
+        ollama_news=False,
+        ollama_model=None,
+        ollama_url=None,
+        ollama_timeout=None,
+        cache=str(tmp_path / "signals.json"),
+        no_telemetry=True,
+        json=True,
+    )
+    monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: _report("ok", fresh=30))
+    assert cli.command_signals_benchmark(args) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["trials"][0]["provider_limit"] == 30
+    assert payload["trials"][0]["parallelism"] == 4
+
+    args.json = False
+    monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: _report("fail", fresh=0))
+    assert cli.command_signals_benchmark(args) == 2
+    assert "Signal benchmark" in capsys.readouterr().out
+
+    def fail_collect(**_kwargs):
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(cli, "collect_external_signals", fail_collect)
+    assert cli.command_signals_benchmark(args) == 2
+    assert "benchmark trial failed" in capsys.readouterr().err
+
+    monkeypatch.setattr(cli, "grade_sources", lambda **_kwargs: _GradeRun())
+    grade_json = argparse.Namespace(
+        db=None,
+        window_hours=None,
+        ollama=True,
+        ollama_model=None,
+        ollama_url=None,
+        ollama_timeout=None,
+        json=True,
+    )
+    assert cli.command_source_grades(grade_json) == 0
+    assert json.loads(capsys.readouterr().out)["status"] == "ok"
+    monkeypatch.setattr(cli, "grade_sources", lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("bad db")))
+    assert cli.command_source_grades(grade_json) == 2
+    assert "Source grading failed" in capsys.readouterr().err
+
+
+def test_command_signals_loop_and_errors(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig())
+    save_strategy(StrategyConfig(telemetry_enabled=False))
+    calls = {"count": 0, "sleep": []}
+
+    def fake_collect(**_kwargs):
+        calls["count"] += 1
+        return _report("ok", fresh=3)
+
+    monkeypatch.setattr(cli, "collect_external_signals", fake_collect)
+    monkeypatch.setattr(cli.time, "sleep", lambda seconds: calls["sleep"].append(seconds))
+    monkeypatch.setattr(cli.random, "uniform", lambda _low, high: high)
+    args = argparse.Namespace(
+        model=str(tmp_path / "model.json"),
+        cache=None,
+        ttl=10,
+        timeout=1.0,
+        max_adjustment=0.1,
+        min_providers=2,
+        refresh=True,
+        json=False,
+        compute_backend=None,
+        short_reaction_refresh=5,
+        news_provider_limit=30,
+        news_items_per_provider=2,
+        provider_parallelism=4,
+        provider_jitter=0.0,
+        ollama_news=None,
+        ollama_model=None,
+        ollama_url=None,
+        ollama_timeout=None,
+        telemetry_db=None,
+        no_telemetry=False,
+        loop=True,
+        iterations=2,
+        sleep=1.0,
+        jitter=0.5,
+    )
+    assert cli.command_signals(args) == 0
+    assert calls["count"] == 2
+    assert calls["sleep"] == [1.5]
+    assert "External signal report" in capsys.readouterr().out
+
+    monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
+    args.loop = False
+    assert cli.command_signals(args) == 2
+    assert "External signal collection failed" in capsys.readouterr().err
+
+
+def test_record_model_telemetry_disabled_and_success(tmp_path) -> None:
+    row = ModelRow(timestamp=NOW_MS, label=1.0, features=(1.0, 2.0), close=100.0)
+    runtime = RuntimeConfig()
+    model = type("M", (), {"feature_signature": "sig", "training_backend_kind": "directml"})()
+    cli._record_model_telemetry(
+        StrategyConfig(telemetry_enabled=False),
+        step=1,
+        row=row,
+        raw_score=0.6,
+        adjusted_score=0.7,
+        threshold=0.5,
+        model=model,
+        runtime=runtime,
+    )
+    db = tmp_path / "telemetry.sqlite"
+    cfg = StrategyConfig(telemetry_db_path=str(db))
+    cli._record_model_telemetry(
+        cfg,
+        step=1,
+        row=row,
+        raw_score=0.6,
+        adjusted_score=0.7,
+        threshold=0.5,
+        model=model,
+        runtime=runtime,
+    )
+    from simple_ai_bitcoin_trading_binance.telemetry_store import TradingTelemetryStore
+
+    with TradingTelemetryStore(db) as store:
+        assert store.recent_observations(since_ms=NOW_MS - 1, kind="model_decision")[0].source == "internal_model"
 
 
 class _LiveClient:

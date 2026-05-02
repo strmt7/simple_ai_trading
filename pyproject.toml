@@ -13,6 +13,12 @@ dependencies = [
     "textual==8.1.1",
 ]
 
+[project.optional-dependencies]
+gpu = [
+    "torch>=2.4,<3",
+    "torch-directml==0.2.5.dev240914; platform_system == 'Windows' and python_version < '3.12'",
+]
+
 [project.scripts]
 simple-ai-trading = "simple_ai_bitcoin_trading_binance.cli:main"
 

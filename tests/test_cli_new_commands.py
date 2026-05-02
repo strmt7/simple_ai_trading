@@ -171,6 +171,37 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
     assert "ensemble_checks=3" in out
 
 
+def test_command_train_suite_passes_gpu_options(tmp_path, monkeypatch):
+    input_path = tmp_path / "candles.json"
+    _write_candles(input_path, count=4)
+    observed: dict[str, object] = {}
+
+    class _Report:
+        outcomes = []
+        summary_path = tmp_path / "summary.json"
+
+    def fake_run(*args, **kwargs):
+        observed.update(kwargs)
+        return _Report()
+
+    monkeypatch.setattr(
+        "simple_ai_bitcoin_trading_binance.training_suite.run_training_suite",
+        fake_run,
+    )
+    args = argparse.Namespace(
+        input=str(input_path),
+        output_dir=str(tmp_path / "out"),
+        starting_cash=1000.0,
+        objective=None,
+        max_workers=None,
+        compute_backend="directml",
+        batch_size=64,
+    )
+    assert cli.command_train_suite(args) == 0
+    assert observed["compute_backend"] == "directml"
+    assert observed["batch_size"] == 64
+
+
 # --------------------------------------------------------------------------- #
 # backtest-panel
 # --------------------------------------------------------------------------- #

@@ -1,13 +1,15 @@
 """Opt-in compute backend selection for training and inference.
 
-The default backend is pure NumPy on CPU so no heavy dependency is required. A
+The default backend is pure Python on CPU so no heavy dependency is required. A
 user may opt into GPU acceleration by setting ``RuntimeConfig.compute_backend``
 to one of:
 
-    * ``"cpu"``   — NumPy only (default, always available).
-    * ``"cuda"``  — NVIDIA GPU via PyTorch (requires ``torch`` with a CUDA build).
-    * ``"rocm"``  — AMD GPU via PyTorch (requires ``torch`` with a ROCm build).
-    * ``"auto"``  — probe CUDA, then ROCm, then MPS (Apple), else fall back to CPU.
+    * ``"cpu"``      - stdlib Python math (default, always available).
+    * ``"cuda"``     - NVIDIA GPU via PyTorch (requires a CUDA PyTorch build).
+    * ``"rocm"``     - AMD GPU via PyTorch (requires a ROCm PyTorch build).
+    * ``"directml"`` - Windows GPU via ``torch-directml``.
+    * ``"mps"``      - Apple Silicon via PyTorch MPS.
+    * ``"auto"``     - probe CUDA, ROCm, DirectML, then MPS, else CPU.
 
 The selection never silently installs anything; if the requested backend is not
 usable on the current host, :func:`resolve_backend` returns a ``BackendInfo``
@@ -18,9 +20,10 @@ surface that to the operator.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import importlib
 from typing import Any, Literal
 
-BackendKind = Literal["cpu", "cuda", "rocm", "mps"]
+BackendKind = Literal["cpu", "cuda", "rocm", "directml", "mps"]
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,13 @@ def _probe_torch() -> tuple[Any | None, str]:
     except Exception as exc:  # pragma: no cover - environmental
         return None, f"torch not importable ({exc.__class__.__name__})"
     return torch, ""
+
+
+def _probe_torch_directml() -> tuple[Any | None, str]:
+    try:
+        return importlib.import_module("torch_directml"), ""
+    except Exception as exc:  # pragma: no cover - environmental
+        return None, f"torch-directml not importable ({exc.__class__.__name__})"
 
 
 def _try_cuda() -> BackendInfo | None:
@@ -116,12 +126,33 @@ def _try_mps() -> BackendInfo | None:
     )
 
 
+def _try_directml() -> BackendInfo | None:
+    torch, _torch_err = _probe_torch()
+    directml, _directml_err = _probe_torch_directml()
+    if torch is None or directml is None:
+        return None
+    try:
+        is_available = getattr(directml, "is_available", None)
+        if callable(is_available) and not bool(is_available()):
+            return None
+        device = directml.device()
+    except Exception:  # pragma: no cover - driver corner case
+        return None
+    return BackendInfo(
+        requested="directml",
+        kind="directml",
+        device=str(device),
+        vendor="DirectML",
+        reason="",
+    )
+
+
 def _cpu(requested: str, reason: str = "") -> BackendInfo:
     return BackendInfo(
         requested=requested,
         kind="cpu",
         device="cpu",
-        vendor="NumPy",
+        vendor="Python stdlib",
         reason=reason,
     )
 
@@ -149,6 +180,12 @@ def resolve_backend(requested: str | None) -> BackendInfo:
             return info
         return _cpu("rocm", reason="ROCm unavailable (torch missing or not a ROCm build)")
 
+    if name == "directml":
+        info = _try_directml()
+        if info is not None:
+            return info
+        return _cpu("directml", reason="DirectML unavailable (torch-directml missing or no device)")
+
     if name == "mps":
         info = _try_mps()
         if info is not None:
@@ -156,7 +193,7 @@ def resolve_backend(requested: str | None) -> BackendInfo:
         return _cpu("mps", reason="MPS unavailable (torch missing or not Apple Silicon)")
 
     if name == "auto":
-        for probe in (_try_cuda, _try_rocm, _try_mps):
+        for probe in (_try_cuda, _try_rocm, _try_directml, _try_mps):
             info = probe()
             if info is not None:
                 return info

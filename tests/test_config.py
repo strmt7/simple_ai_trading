@@ -246,6 +246,15 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
         confidence_beta=float("nan"),
         external_signals_enabled="yes",
         external_signal_timeout_seconds=float("inf"),
+        external_signal_news_provider_limit=-5,
+        external_signal_provider_parallelism=999,
+        external_signal_provider_jitter_seconds=float("inf"),
+        external_news_ai_enabled="yes",
+        external_news_ai_model="",
+        external_news_ai_timeout_seconds=float("nan"),
+        telemetry_enabled="no",
+        telemetry_db_path="",
+        source_grading_interval_seconds=1,
     )
     assert strategy.leverage == 1.0
     assert strategy.risk_per_trade == 0.01
@@ -257,6 +266,15 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
     assert strategy.confidence_beta == 0.85
     assert strategy.external_signals_enabled is True
     assert strategy.external_signal_timeout_seconds == 3.0
+    assert strategy.external_signal_news_provider_limit == 0
+    assert strategy.external_signal_provider_parallelism == 64
+    assert strategy.external_signal_provider_jitter_seconds == 0.25
+    assert strategy.external_news_ai_enabled is True
+    assert strategy.external_news_ai_model == "gemma4:e4b"
+    assert strategy.external_news_ai_timeout_seconds == 3.0
+    assert strategy.telemetry_enabled is False
+    assert strategy.telemetry_db_path == "data/trading_telemetry.sqlite"
+    assert strategy.source_grading_interval_seconds == 60
 
     monkeypatch.setenv("HOME", str(tmp_path))
     cfg_file = config_paths()["strategy"]
