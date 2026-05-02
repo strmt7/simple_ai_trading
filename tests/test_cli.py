@@ -255,7 +255,7 @@ def test_build_live_model_respects_existing_model_and_retrain_cadence(monkeypatc
         cfg=cfg,
         retrain_window=5,
         retrain_min_rows=4,
-        feature_signature="custom-live-signature",
+        model_feature_signature="custom-live-signature",
     )
     assert rebuilt == {"trained": True}
     assert calls == [(rows[-5:], 40, "custom-live-signature")]
@@ -300,7 +300,12 @@ def test_command_menu_routes_to_tui_when_tty(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: True)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: True)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.supports_color", lambda _stream: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.launch_tui", lambda **_kwargs: 0)
+
+    def fake_launch_tui(**kwargs):
+        assert "Session" in kwargs["snapshot_provider"](width=72)
+        return 0
+
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.launch_tui", fake_launch_tui)
     from simple_ai_bitcoin_trading_binance.cli import command_menu
 
     assert command_menu(argparse.Namespace()) == 0

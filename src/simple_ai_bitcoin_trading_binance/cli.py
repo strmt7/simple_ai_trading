@@ -1087,7 +1087,7 @@ def _render_operator_report(
     return "\n\n".join(sections)
 
 
-def _account_overview_lines(runtime) -> list[str]:
+def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
     if not runtime.api_key or not runtime.api_secret:
         return ["No API credentials configured."]
     client = _build_client(runtime)
@@ -1187,7 +1187,7 @@ def _connection_status_line() -> str:
         return f"Connection {checked_at}: offline {market} ({exc})"
 
 
-def _readiness_report(*, input_path: str, model_path: str, online: bool = False) -> tuple[bool, list[str]]:
+def _readiness_report(*, input_path: str, model_path: str, online: bool = False) -> tuple[bool, list[str]]:  # skipcq: PY-R1000
     runtime = load_runtime()
     strategy = load_strategy()
     checks: list[tuple[bool, str, str]] = []
@@ -1226,7 +1226,7 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
     if model_file.exists():
         try:
             model, model_kind = _load_readiness_model(model_file, strategy)
-        except (OSError, ModelFeatureMismatchError, ModelLoadError, ValueError) as exc:
+        except (OSError, ValueError) as exc:
             add(False, "model artifact", f"{model_file} is not usable with current strategy ({exc})")
         else:
             add(True, "model artifact", f"{model_file} dim={model.feature_dim} kind={model_kind}")
@@ -1523,7 +1523,7 @@ async def _ui_settings_menu(ui) -> int:
             continue
 
 
-def _tui_actions():
+def _tui_actions():  # skipcq: PY-R1000
     from .tui import FormField, TUIAction
     async def _overview(ui):
         ui.append_log(await ui.run_blocking(lambda: render_dashboard(_dashboard_snapshot(with_account=True))))
@@ -1921,7 +1921,7 @@ def _tui_actions():
             walk_forward_test = _parse_optional_form_int(payload.get("walk_forward_test", ""), label="Walk-forward test window", minimum=1)
             walk_forward_step = _parse_optional_form_int(payload.get("walk_forward_step", ""), label="Walk-forward step", minimum=1)
             walk_forward = _parse_optional_form_bool(payload.get("walk_forward", ""))
-            calibrate_threshold = _parse_optional_form_bool(payload.get("calibrate_threshold", ""))
+            calibrate_threshold_opt = _parse_optional_form_bool(payload.get("calibrate_threshold", ""))
             start_cash = _parse_form_float(payload["start_cash"], label="Backtest starting cash", default=1000.0, minimum=1.0)
         except ValueError as exc:
             print(f"Prepare settings invalid: {exc}", file=sys.stderr)
@@ -1942,7 +1942,7 @@ def _tui_actions():
                 walk_forward_train=walk_forward_train,
                 walk_forward_test=walk_forward_test,
                 walk_forward_step=walk_forward_step,
-                calibrate_threshold=calibrate_threshold,
+                calibrate_threshold=calibrate_threshold_opt,
                 start_cash=start_cash,
                 online_doctor=_parse_form_bool(payload["online_doctor"], False),
             ),
@@ -2138,9 +2138,13 @@ def command_menu(_: argparse.Namespace) -> int:
     return launch_tui(
         title="simple-ai-trading interactive console",
         actions=_tui_actions(),
-        snapshot_provider=lambda width=72: render_dashboard(_dashboard_snapshot(with_account=False), width=width),
+        snapshot_provider=_menu_dashboard_snapshot,
         connection_provider=_connection_status_line,
     )
+
+
+def _menu_dashboard_snapshot(width: int = 72) -> str:
+    return render_dashboard(_dashboard_snapshot(with_account=False), width=width)
 
 
 def _load_json_candles(path: str) -> list[Any]:
@@ -2168,7 +2172,6 @@ def _jittered_seconds(base_seconds: float, jitter_seconds: float) -> float:
 
 def _rows_from_json(path: str):
     candles_raw = _load_json_candles(path)
-    from .api import Candle
 
     rows: list[Candle] = []
     for item in candles_raw:
@@ -2194,7 +2197,7 @@ def _rows_from_json(path: str):
 def _load_rows_for_command(path: str, *, label: str) -> list | None:
     try:
         return _rows_from_json(path)
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError) as exc:
         print(f"{label}: {exc}", file=sys.stderr)
         return None
 
@@ -2206,7 +2209,7 @@ def _parse_date_boundary(raw: str, *, end_of_day: bool) -> int:
     return int(dt.timestamp() * 1000)
 
 
-def _filter_candles_for_time_window(
+def _filter_candles_for_time_window(  # skipcq: PY-R1000
     candles: Sequence[Candle],
     *,
     lookback_days: int | None = None,
@@ -2386,7 +2389,7 @@ def _load_live_start_model(
     if model_path.exists():
         try:
             return _load_readiness_model(model_path, strategy)[0], None, None
-        except (ModelLoadError, ModelFeatureMismatchError) as exc:
+        except ModelLoadError as exc:
             if not effective_dry_run:
                 return None, f"Live mode requires a compatible model: {exc}", None
             return None, None, f"Model load failed; regenerating: {exc}"
@@ -2494,7 +2497,7 @@ def _build_live_model(
     cfg: StrategyConfig,
     retrain_window: int,
     retrain_min_rows: int,
-    feature_signature: str | None = None,
+    model_feature_signature: str | None = None,
 ) -> TrainedModel | None:
     if model is not None:
         if retrain_every <= 0:
@@ -2507,7 +2510,7 @@ def _build_live_model(
         return model
 
     epochs = max(20, int(cfg.training_epochs * 0.4))
-    signature = feature_signature or _strategy_feature_signature(cfg)
+    signature = model_feature_signature or _strategy_feature_signature(cfg)
     return train(train_rows, epochs=epochs, feature_signature=signature)
 
 
@@ -2929,7 +2932,7 @@ def command_prepare(args: argparse.Namespace) -> int:
             if getattr(args, "walk_forward_step", None) is not None
             else preset_args.walk_forward_step
         )
-        calibrate_threshold = (
+        should_calibrate_threshold = (
             bool(args.calibrate_threshold)
             if getattr(args, "calibrate_threshold", None) is not None
             else bool(preset_args.calibrate_threshold)
@@ -2983,13 +2986,13 @@ def command_prepare(args: argparse.Namespace) -> int:
                 walk_forward_train=walk_forward_train,
                 walk_forward_test=walk_forward_test,
                 walk_forward_step=walk_forward_step,
-                calibrate_threshold=calibrate_threshold,
+                calibrate_threshold=should_calibrate_threshold,
             ),
         ),
         (
             "Evaluate",
             command_evaluate,
-            argparse.Namespace(input=historical, model=model, threshold=None, calibrate_threshold=calibrate_threshold),
+            argparse.Namespace(input=historical, model=model, threshold=None, calibrate_threshold=should_calibrate_threshold),
         ),
         (
             "Backtest",
@@ -3719,7 +3722,7 @@ def command_backtest(args: argparse.Namespace) -> int:
         return 2
     try:
         model = _load_readiness_model(model_path, cfg)[0]
-    except (OSError, json.JSONDecodeError, ModelLoadError, ModelFeatureMismatchError) as exc:
+    except (OSError, json.JSONDecodeError, ModelLoadError) as exc:
         print(f"Model load failed: {exc}", file=sys.stderr)
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
@@ -3814,7 +3817,7 @@ def command_evaluate(args: argparse.Namespace) -> int:
 
     try:
         model = _load_readiness_model(model_path, cfg)[0]
-    except (OSError, json.JSONDecodeError, ModelLoadError, ModelFeatureMismatchError) as exc:
+    except (OSError, json.JSONDecodeError, ModelLoadError) as exc:
         print(f"Model load failed: {exc}", file=sys.stderr)
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
@@ -4464,7 +4467,7 @@ def command_live(args: argparse.Namespace) -> int:
             cfg=cfg,
             retrain_window=retrain_window,
             retrain_min_rows=retrain_min_rows,
-            feature_signature=_live_model_feature_signature(model, cfg),
+            model_feature_signature=_live_model_feature_signature(model, cfg),
         )
         if previous_model is None and model is not None:
             model_loads += 1
@@ -4925,8 +4928,7 @@ def command_objectives(_: argparse.Namespace) -> int:
 
 
 def command_train_suite(args: argparse.Namespace) -> int:
-    from .api import Candle
-    from .objective import available_objectives, get_objective
+    from .objective import get_objective
     from .training_suite import run_training_suite
 
     runtime = load_runtime()
