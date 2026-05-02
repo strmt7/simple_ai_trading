@@ -409,6 +409,15 @@ def test_tui_strategy_action_builds_full_strategy_args(monkeypatch) -> None:
                 "external_signal_min_providers": "3",
                 "external_signal_ttl": "120",
                 "external_signal_timeout": "2.5",
+                "external_news_ai": "yes",
+                "external_news_ai_model": "gemma4:e4b",
+                "external_news_provider_limit": "40",
+                "external_provider_parallelism": "12",
+                "external_provider_jitter": "0.1",
+                "external_poll_jitter": "1.0",
+                "telemetry_db": "data/trading_telemetry.sqlite",
+                "source_grading": "yes",
+                "source_grading_interval": "3600",
             }
         ],
     )
@@ -423,6 +432,8 @@ def test_tui_strategy_action_builds_full_strategy_args(monkeypatch) -> None:
     assert captured["args"].confidence_beta == 0.9
     assert captured["args"].external_signals is True
     assert captured["args"].external_signal_min_providers == 3
+    assert captured["args"].external_news_ai is True
+    assert captured["args"].external_news_provider_limit == 40
     assert captured["args"].set_features == "momentum_1,rsi"
 
 

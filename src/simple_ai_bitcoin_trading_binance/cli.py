@@ -7,6 +7,7 @@ import builtins
 from datetime import datetime, timedelta, timezone
 import json
 import math
+import random
 import subprocess  # nosec B404
 import sys
 import time
@@ -54,6 +55,7 @@ from .risk_controls import EntryRiskDecision, assess_entry_risk, build_risk_poli
 from . import risk_workflows
 from .strategy_overrides import apply_model_strategy_overrides
 from .storage import write_json_atomic
+from .source_grading import grade_sources, render_source_grade_run
 from .types import RuntimeConfig, StrategyConfig
 
 
@@ -245,6 +247,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_train.add_argument("--learning-rate", type=float, default=0.05)
     parser_train.add_argument("--l2-penalty", type=float, default=1e-4)
     parser_train.add_argument("--seed", type=int, default=7)
+    parser_train.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default=None,
+        help="training backend override; default uses saved runtime compute_backend",
+    )
+    parser_train.add_argument("--batch-size", type=int, default=512, help="mini-batch size for GPU training")
     parser_train.add_argument("--walk-forward", action="store_true", help="run walk-forward validation before final training")
     parser_train.add_argument("--walk-forward-train", type=int, default=300)
     parser_train.add_argument("--walk-forward-test", type=int, default=60)
@@ -297,6 +306,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_backtest.add_argument("--input", default="data/historical_btcusdc.json")
     parser_backtest.add_argument("--model", default="data/model.json")
     parser_backtest.add_argument("--start-cash", type=float, default=1000.0)
+    parser_backtest.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default=None,
+        help="model-scoring backend override; default uses saved runtime compute_backend",
+    )
+    parser_backtest.add_argument(
+        "--score-batch-size",
+        type=int,
+        default=8192,
+        help="batch size for GPU-assisted probability scoring",
+    )
     parser_backtest.set_defaults(func=command_backtest)
 
     parser_evaluate = subparsers.add_parser("evaluate", help="evaluate saved model against cached candles")
@@ -316,9 +337,69 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_signals.add_argument("--timeout", type=float, default=3.0, help="per-provider timeout seconds")
     parser_signals.add_argument("--max-adjustment", type=float, default=0.04, help="maximum model score adjustment")
     parser_signals.add_argument("--min-providers", type=int, default=2, help="minimum usable providers for positive boosts")
+    parser_signals.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default=None,
+        help="optional backend for news keyword scoring",
+    )
+    parser_signals.add_argument(
+        "--short-reaction-refresh",
+        type=int,
+        default=30,
+        help="seconds after which cached short-horizon reaction news must refresh",
+    )
+    parser_signals.add_argument("--news-provider-limit", type=int, default=None, help="maximum RSS/news providers to poll")
+    parser_signals.add_argument("--news-items-per-provider", type=int, default=None, help="feed items scored per news provider")
+    parser_signals.add_argument("--provider-parallelism", type=int, default=None, help="maximum simultaneous news provider requests")
+    parser_signals.add_argument("--provider-jitter", type=float, default=None, help="random per-provider delay ceiling in seconds")
+    parser_signals.add_argument("--ollama-news", action="store_true", default=None, help="enable Ollama AI headline evaluation")
+    parser_signals.add_argument("--no-ollama-news", action="store_false", dest="ollama_news", help="disable Ollama AI headline evaluation")
+    parser_signals.add_argument("--ollama-model", default=None)
+    parser_signals.add_argument("--ollama-url", default=None)
+    parser_signals.add_argument("--ollama-timeout", type=float, default=None)
+    parser_signals.add_argument("--telemetry-db", default=None, help="SQLite raw telemetry DB path")
+    parser_signals.add_argument("--no-telemetry", action="store_true", help="do not journal raw provider/model payloads")
+    parser_signals.add_argument("--loop", action="store_true", help="poll repeatedly with jitter instead of one collection")
+    parser_signals.add_argument("--iterations", type=int, default=0, help="loop iterations; 0 means until interrupted")
+    parser_signals.add_argument("--sleep", type=float, default=None, help="base loop interval seconds")
+    parser_signals.add_argument("--jitter", type=float, default=None, help="random loop delay ceiling in seconds")
     parser_signals.add_argument("--refresh", action="store_true", help="ignore cache and fetch every provider")
     parser_signals.add_argument("--json", action="store_true", help="print machine-readable report")
     parser_signals.set_defaults(func=command_signals)
+
+    parser_signals_benchmark = subparsers.add_parser(
+        "signals-benchmark",
+        help="benchmark provider polling limits, parallelism, and optional Ollama latency",
+    )
+    parser_signals_benchmark.add_argument("--provider-limit", action="append", type=int, default=None)
+    parser_signals_benchmark.add_argument("--parallelism", action="append", type=int, default=None)
+    parser_signals_benchmark.add_argument("--iterations", type=int, default=1)
+    parser_signals_benchmark.add_argument("--timeout", type=float, default=3.0)
+    parser_signals_benchmark.add_argument("--provider-jitter", type=float, default=0.0)
+    parser_signals_benchmark.add_argument("--ollama-news", action="store_true", default=None)
+    parser_signals_benchmark.add_argument("--no-ollama-news", action="store_false", dest="ollama_news")
+    parser_signals_benchmark.add_argument("--ollama-model", default=None)
+    parser_signals_benchmark.add_argument("--ollama-url", default=None)
+    parser_signals_benchmark.add_argument("--ollama-timeout", type=float, default=None)
+    parser_signals_benchmark.add_argument("--cache", default="data/signals/benchmark_external_signals.json")
+    parser_signals_benchmark.add_argument("--no-telemetry", action="store_true")
+    parser_signals_benchmark.add_argument("--json", action="store_true")
+    parser_signals_benchmark.set_defaults(func=command_signals_benchmark)
+
+    parser_source_grades = subparsers.add_parser(
+        "source-grades",
+        help="grade raw signal/news/model sources from telemetry with optional Ollama review",
+    )
+    parser_source_grades.add_argument("--db", default=None, help="SQLite raw telemetry DB path")
+    parser_source_grades.add_argument("--window-hours", type=float, default=None)
+    parser_source_grades.add_argument("--ollama", action="store_true", default=None, help="enable Ollama grading")
+    parser_source_grades.add_argument("--no-ollama", action="store_false", dest="ollama", help="disable Ollama grading")
+    parser_source_grades.add_argument("--ollama-model", default=None)
+    parser_source_grades.add_argument("--ollama-url", default=None)
+    parser_source_grades.add_argument("--ollama-timeout", type=float, default=None)
+    parser_source_grades.add_argument("--json", action="store_true")
+    parser_source_grades.set_defaults(func=command_source_grades)
 
     parser_live = subparsers.add_parser("live", help="run a conservative live loop on testnet/demo or paper mode")
     parser_live.add_argument("--model", default="data/model.json")
@@ -370,6 +451,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_status = subparsers.add_parser("status", help="show persisted runtime and strategy config")
     parser_status.set_defaults(func=command_status)
 
+    parser_compute = subparsers.add_parser("compute", help="show or set the model-training compute backend")
+    parser_compute.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_compute.set_defaults(func=command_compute)
+
     parser_strategy = subparsers.add_parser("strategy", help="adjust strategy and risk parameters")
     parser_strategy.add_argument("--profile", choices=sorted(_STRATEGY_PROFILES), default="custom")
     parser_strategy.add_argument("--leverage", type=float, default=None)
@@ -399,6 +484,21 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_strategy.add_argument("--external-signal-min-providers", type=int, default=None)
     parser_strategy.add_argument("--external-signal-ttl", type=int, default=None)
     parser_strategy.add_argument("--external-signal-timeout", type=float, default=None)
+    parser_strategy.add_argument("--external-news-ai", action="store_true", default=None)
+    parser_strategy.add_argument("--no-external-news-ai", action="store_false", dest="external_news_ai")
+    parser_strategy.add_argument("--external-news-ai-model", default=None)
+    parser_strategy.add_argument("--external-news-ai-url", default=None)
+    parser_strategy.add_argument("--external-news-ai-timeout", type=float, default=None)
+    parser_strategy.add_argument("--external-news-provider-limit", type=int, default=None)
+    parser_strategy.add_argument("--external-provider-parallelism", type=int, default=None)
+    parser_strategy.add_argument("--external-provider-jitter", type=float, default=None)
+    parser_strategy.add_argument("--external-poll-jitter", type=float, default=None)
+    parser_strategy.add_argument("--telemetry-db", default=None)
+    parser_strategy.add_argument("--no-telemetry", action="store_true", default=None)
+    parser_strategy.add_argument("--source-grading", action="store_true", default=None)
+    parser_strategy.add_argument("--no-source-grading", action="store_false", dest="source_grading")
+    parser_strategy.add_argument("--source-grading-interval", type=int, default=None)
+    parser_strategy.add_argument("--source-grading-window-hours", type=int, default=None)
     parser_strategy.set_defaults(func=command_strategy)
 
     parser_shell = subparsers.add_parser("shell", help="launch the Claude-Code-inspired interactive shell")
@@ -423,6 +523,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="parallel candidate workers; defaults to available CPU cores",
     )
+    parser_train_suite.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default=None,
+        help="training backend override; GPU backends run candidates sequentially to protect VRAM",
+    )
+    parser_train_suite.add_argument("--batch-size", type=int, default=512, help="mini-batch size for GPU training")
     parser_train_suite.set_defaults(func=command_train_suite)
 
     parser_backtest_panel = subparsers.add_parser(
@@ -690,6 +797,19 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             external_signal_min_providers=None,
             external_signal_ttl=None,
             external_signal_timeout=None,
+            external_news_ai=None,
+            external_news_ai_model=None,
+            external_news_ai_url=None,
+            external_news_ai_timeout=None,
+            external_news_provider_limit=None,
+            external_provider_parallelism=None,
+            external_provider_jitter=None,
+            external_poll_jitter=None,
+            telemetry_db=None,
+            no_telemetry=None,
+            source_grading=None,
+            source_grading_interval=None,
+            source_grading_window_hours=None,
         )
     enabled_features = normalize_enabled_features(selected_features)
     payload = await ui.form(
@@ -719,6 +839,15 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             FormField("external_signal_min_providers", "External min providers", str(cfg.external_signal_min_providers)),
             FormField("external_signal_ttl", "External cache TTL seconds", str(cfg.external_signal_ttl_seconds)),
             FormField("external_signal_timeout", "External timeout seconds", str(cfg.external_signal_timeout_seconds)),
+            FormField("external_news_ai", "Ollama news AI [yes/no]", str(cfg.external_news_ai_enabled)),
+            FormField("external_news_ai_model", "Ollama news model", str(cfg.external_news_ai_model)),
+            FormField("external_news_provider_limit", "News provider limit", str(cfg.external_signal_news_provider_limit)),
+            FormField("external_provider_parallelism", "News provider parallelism", str(cfg.external_signal_provider_parallelism)),
+            FormField("external_provider_jitter", "Provider jitter seconds", str(cfg.external_signal_provider_jitter_seconds)),
+            FormField("external_poll_jitter", "Poll jitter seconds", str(cfg.external_signal_poll_jitter_seconds)),
+            FormField("telemetry_db", "Raw telemetry DB", str(cfg.telemetry_db_path)),
+            FormField("source_grading", "Hourly source grading [yes/no]", str(cfg.source_grading_enabled)),
+            FormField("source_grading_interval", "Source grading interval seconds", str(cfg.source_grading_interval_seconds)),
         ],
     )
     if payload is None:
@@ -750,6 +879,19 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             external_signal_min_providers=None,
             external_signal_ttl=None,
             external_signal_timeout=None,
+            external_news_ai=None,
+            external_news_ai_model=None,
+            external_news_ai_url=None,
+            external_news_ai_timeout=None,
+            external_news_provider_limit=None,
+            external_provider_parallelism=None,
+            external_provider_jitter=None,
+            external_poll_jitter=None,
+            telemetry_db=None,
+            no_telemetry=None,
+            source_grading=None,
+            source_grading_interval=None,
+            source_grading_window_hours=None,
         )
     profile = _parse_strategy_profile(payload["profile"])
 
@@ -830,7 +972,7 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             cfg.external_signal_min_providers,
             "External min providers",
             minimum=0,
-            maximum=4,
+            maximum=120,
         ),
         external_signal_ttl=field_int(
             "external_signal_ttl",
@@ -845,6 +987,48 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             minimum=0.1,
             maximum=30.0,
         ),
+        external_news_ai=field_bool("external_news_ai", cfg.external_news_ai_enabled),
+        external_news_ai_model=payload["external_news_ai_model"],
+        external_news_ai_url=None,
+        external_news_ai_timeout=None,
+        external_news_provider_limit=field_int(
+            "external_news_provider_limit",
+            cfg.external_signal_news_provider_limit,
+            "News provider limit",
+            minimum=0,
+            maximum=120,
+        ),
+        external_provider_parallelism=field_int(
+            "external_provider_parallelism",
+            cfg.external_signal_provider_parallelism,
+            "News provider parallelism",
+            minimum=1,
+            maximum=64,
+        ),
+        external_provider_jitter=field_float(
+            "external_provider_jitter",
+            cfg.external_signal_provider_jitter_seconds,
+            "Provider jitter seconds",
+            minimum=0.0,
+            maximum=30.0,
+        ),
+        external_poll_jitter=field_float(
+            "external_poll_jitter",
+            cfg.external_signal_poll_jitter_seconds,
+            "Poll jitter seconds",
+            minimum=0.0,
+            maximum=60.0,
+        ),
+        telemetry_db=payload["telemetry_db"],
+        no_telemetry=None,
+        source_grading=field_bool("source_grading", cfg.source_grading_enabled),
+        source_grading_interval=field_int(
+            "source_grading_interval",
+            cfg.source_grading_interval_seconds,
+            "Source grading interval seconds",
+            minimum=60,
+        ),
+        source_grading_window_hours=None,
     )
 
 
@@ -1091,7 +1275,7 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
     return all(ok for ok, _label, _detail in checks), lines
 
 
-_COMPUTE_BACKEND_CHOICES = ("cpu", "cuda", "rocm", "auto")
+_COMPUTE_BACKEND_CHOICES = ("cpu", "cuda", "rocm", "directml", "mps", "auto")
 
 
 def _funds_summary(runtime) -> str:
@@ -1259,7 +1443,7 @@ async def _ui_edit_compute(ui) -> int:
         [
             FormField(
                 "backend",
-                "Backend [cpu / cuda / rocm / auto]",
+                "Backend [cpu / cuda / rocm / directml / mps / auto]",
                 current,
             ),
         ],
@@ -1952,6 +2136,12 @@ def _clamp(value: float, low: float, high: float) -> float:
     if value > high:
         return high
     return value
+
+
+def _jittered_seconds(base_seconds: float, jitter_seconds: float) -> float:
+    base = max(0.0, float(base_seconds))
+    jitter = max(0.0, float(jitter_seconds))
+    return base + (random.uniform(0.0, jitter) if jitter else 0.0)
 
 
 def _rows_from_json(path: str):
@@ -2811,6 +3001,22 @@ def command_status(_: argparse.Namespace) -> int:
     return 0
 
 
+def command_compute(args: argparse.Namespace) -> int:
+    from .compute import describe_backend, resolve_backend
+
+    runtime = load_runtime()
+    requested = str(getattr(args, "backend", None) or runtime.compute_backend or "cpu").lower()
+    if requested not in _COMPUTE_BACKEND_CHOICES:
+        print(f"Unknown compute backend {requested!r}.", file=sys.stderr)
+        return 2
+    info = resolve_backend(requested)
+    if getattr(args, "backend", None) is not None:
+        runtime.compute_backend = requested
+        save_runtime(runtime)
+    print(describe_backend(info))
+    return 0
+
+
 def command_strategy(args: argparse.Namespace) -> int:
     cfg = load_strategy()
     runtime = load_runtime()
@@ -2868,11 +3074,37 @@ def command_strategy(args: argparse.Namespace) -> int:
     if getattr(args, "external_signal_max_adjustment", None) is not None:
         updates["external_signal_max_adjustment"] = _clamp(float(args.external_signal_max_adjustment), 0.0, 0.20)
     if getattr(args, "external_signal_min_providers", None) is not None:
-        updates["external_signal_min_providers"] = max(0, min(4, int(args.external_signal_min_providers)))
+        updates["external_signal_min_providers"] = max(0, min(120, int(args.external_signal_min_providers)))
     if getattr(args, "external_signal_ttl", None) is not None:
         updates["external_signal_ttl_seconds"] = max(0, int(args.external_signal_ttl))
     if getattr(args, "external_signal_timeout", None) is not None:
         updates["external_signal_timeout_seconds"] = _clamp(float(args.external_signal_timeout), 0.1, 30.0)
+    if getattr(args, "external_news_ai", None) is not None:
+        updates["external_news_ai_enabled"] = bool(args.external_news_ai)
+    if getattr(args, "external_news_ai_model", None):
+        updates["external_news_ai_model"] = str(args.external_news_ai_model)
+    if getattr(args, "external_news_ai_url", None):
+        updates["external_news_ai_url"] = str(args.external_news_ai_url)
+    if getattr(args, "external_news_ai_timeout", None) is not None:
+        updates["external_news_ai_timeout_seconds"] = _clamp(float(args.external_news_ai_timeout), 0.1, 30.0)
+    if getattr(args, "external_news_provider_limit", None) is not None:
+        updates["external_signal_news_provider_limit"] = max(0, min(120, int(args.external_news_provider_limit)))
+    if getattr(args, "external_provider_parallelism", None) is not None:
+        updates["external_signal_provider_parallelism"] = max(1, min(64, int(args.external_provider_parallelism)))
+    if getattr(args, "external_provider_jitter", None) is not None:
+        updates["external_signal_provider_jitter_seconds"] = _clamp(float(args.external_provider_jitter), 0.0, 30.0)
+    if getattr(args, "external_poll_jitter", None) is not None:
+        updates["external_signal_poll_jitter_seconds"] = _clamp(float(args.external_poll_jitter), 0.0, 60.0)
+    if getattr(args, "telemetry_db", None):
+        updates["telemetry_db_path"] = str(args.telemetry_db)
+    if getattr(args, "no_telemetry", None) is not None:
+        updates["telemetry_enabled"] = not bool(args.no_telemetry)
+    if getattr(args, "source_grading", None) is not None:
+        updates["source_grading_enabled"] = bool(args.source_grading)
+    if getattr(args, "source_grading_interval", None) is not None:
+        updates["source_grading_interval_seconds"] = max(60, int(args.source_grading_interval))
+    if getattr(args, "source_grading_window_hours", None) is not None:
+        updates["source_grading_window_hours"] = max(1, int(args.source_grading_window_hours))
     feature_window_short = getattr(args, "feature_window_short", None)
     feature_window_long = getattr(args, "feature_window_long", None)
     if feature_window_short is not None or feature_window_long is not None:
@@ -3039,6 +3271,8 @@ def _threshold_classification_guard(baseline: object, candidate: object) -> dict
 
 
 def command_train(args: argparse.Namespace) -> int:
+    from .compute import describe_backend, BackendInfo
+
     try:
         args = _apply_training_preset(args)
     except ValueError as exc:
@@ -3064,6 +3298,11 @@ def command_train(args: argparse.Namespace) -> int:
     if l2_penalty < 0.0:
         print("Training settings invalid: l2_penalty must be >= 0.", file=sys.stderr)
         return 2
+    compute_backend = str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu").lower()
+    if compute_backend not in _COMPUTE_BACKEND_CHOICES:
+        print(f"Training settings invalid: unknown compute backend {compute_backend!r}.", file=sys.stderr)
+        return 2
+    batch_size = max(1, int(getattr(args, "batch_size", 512) or 512))
 
     if args.walk_forward:
         try:
@@ -3107,6 +3346,15 @@ def command_train(args: argparse.Namespace) -> int:
         feature_signature=model_signature,
         validation_rows=calibration_rows,
         early_stopping_rounds=max(5, min(25, int(args.epochs) // 5)) if calibration_rows else None,
+        compute_backend=compute_backend,
+        batch_size=batch_size,
+    )
+    backend_info = BackendInfo(
+        requested=model.training_backend_requested,
+        kind=cast(Any, model.training_backend_kind),
+        device=model.training_backend_device,
+        vendor=model.training_backend_vendor,
+        reason=model.training_backend_reason,
     )
     probability_calibration = (
         calibrate_probability_temperature(calibration_rows, model)
@@ -3235,6 +3483,8 @@ def command_train(args: argparse.Namespace) -> int:
             "epochs": int(args.epochs),
             "learning_rate": float(learning_rate),
             "l2_penalty": float(l2_penalty),
+            "compute_backend": compute_backend,
+            "batch_size": int(batch_size),
             "lookback_windows": list(cfg.feature_windows),
             "label_threshold": float(cfg.label_threshold),
             "preset": str(getattr(args, "requested_preset", args.preset)),
@@ -3312,11 +3562,17 @@ def command_train(args: argparse.Namespace) -> int:
             if model.threshold_calibration_pnl is not None
             else None,
             "threshold_calibration_trades": int(model.threshold_calibration_trades),
+            "training_backend_requested": model.training_backend_requested,
+            "training_backend_kind": model.training_backend_kind,
+            "training_backend_device": model.training_backend_device,
+            "training_backend_vendor": model.training_backend_vendor,
+            "training_backend_reason": model.training_backend_reason,
         },
         "market": runtime.market_type,
         "symbol": runtime.symbol,
     }
     resolved_leverage = _resolve_futures_leverage(runtime, cfg)
+    print(f"training backend: {describe_backend(backend_info)}")
     print(f"market={runtime.market_type} leverage={resolved_leverage:.2f}")
     artifact_path = _persist_run_artifact("train", Path(args.output).parent, artifact)
     print(f"saved train artifact to {artifact_path}")
@@ -3445,7 +3701,17 @@ def command_backtest(args: argparse.Namespace) -> int:
     cfg = apply_model_strategy_overrides(cfg, model)
     rows = _readiness_model_rows(candles, cfg, model)
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
-    result = run_backtest(rows, model, cfg, starting_cash=args.start_cash, market_type=runtime.market_type)
+    compute_backend = str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu")
+    score_batch_size = max(1, int(getattr(args, "score_batch_size", 8192) or 8192))
+    result = run_backtest(
+        rows,
+        model,
+        cfg,
+        starting_cash=args.start_cash,
+        market_type=runtime.market_type,
+        compute_backend=compute_backend,
+        score_batch_size=score_batch_size,
+    )
     artifact = {
         "command": "backtest",
         "timestamp": int(time.time()),
@@ -3458,6 +3724,13 @@ def command_backtest(args: argparse.Namespace) -> int:
         "rows": len(rows),
         "market": runtime.market_type,
         "symbol": runtime.symbol,
+        "scoring_backend": {
+            "requested": result.scoring_backend_requested,
+            "kind": result.scoring_backend_kind,
+            "device": result.scoring_backend_device,
+            "reason": result.scoring_backend_reason,
+            "score_batch_size": score_batch_size,
+        },
         "result": {
             "trades": int(result.trades),
             "win_rate": float(result.win_rate),
@@ -3478,6 +3751,9 @@ def command_backtest(args: argparse.Namespace) -> int:
 
     print(f"backtest BTCUSDC ({runtime.symbol})")
     print(f"market: {runtime.market_type}")
+    print(f"scoring_backend: {result.scoring_backend_kind} device={result.scoring_backend_device}")
+    if result.scoring_backend_reason:
+        print(f"scoring_backend_reason: {result.scoring_backend_reason}")
     print(f"trades: {result.trades}")
     print(f"win_rate: {result.win_rate:.2%}")
     print(f"realized_pnl: {result.realized_pnl:.2f}")
@@ -3660,28 +3936,248 @@ def _apply_external_signal_to_score(
     return adjusted_score, effective_cfg, applied_adjustment
 
 
+def _record_model_telemetry(
+    cfg: StrategyConfig,
+    *,
+    step: int,
+    row: ModelRow,
+    raw_score: float,
+    adjusted_score: float,
+    threshold: float,
+    model: object,
+    runtime: RuntimeConfig,
+) -> None:
+    if not cfg.telemetry_enabled:
+        return
+    try:
+        from .telemetry_store import TradingTelemetryStore
+
+        payload = {
+            "step": int(step),
+            "timestamp": int(row.timestamp),
+            "close": float(row.close),
+            "features": [float(value) for value in row.features],
+            "raw_score": float(raw_score),
+            "adjusted_score": float(adjusted_score),
+            "threshold": float(threshold),
+            "model_type": model.__class__.__name__,
+            "model_signature": str(getattr(model, "feature_signature", "") or ""),
+            "training_backend_kind": str(getattr(model, "training_backend_kind", "") or ""),
+            "runtime_compute_backend": str(runtime.compute_backend),
+        }
+        with TradingTelemetryStore(cfg.telemetry_db_path) as store:
+            store.record_observation(
+                kind="model_decision",
+                source="internal_model",
+                payload=payload,
+                observed_at_ms=int(row.timestamp),
+                symbol=runtime.symbol,
+                horizon="short",
+                score=float(adjusted_score),
+                confidence=abs(float(adjusted_score) - float(threshold)),
+            )
+    except Exception:  # pragma: no cover - telemetry failures must not stop live scoring
+        return
+
+
 def command_signals(args: argparse.Namespace) -> int:
     runtime = load_runtime()
+    cfg = load_strategy()
     model_path = Path(getattr(args, "model", "data/model.json"))
     cache_path = Path(getattr(args, "cache", None) or _external_signal_cache_path(model_path))
+
+    def run_once() -> tuple[int, ExternalSignalReport | None]:
+        try:
+            telemetry_path = None if getattr(args, "no_telemetry", False) or not cfg.telemetry_enabled else (
+                getattr(args, "telemetry_db", None) or cfg.telemetry_db_path
+            )
+            report = collect_external_signals(
+                symbol=runtime.symbol,
+                cache_path=cache_path,
+                ttl_seconds=max(0, int(getattr(args, "ttl", 300))),
+                timeout_seconds=_clamp(float(getattr(args, "timeout", 3.0)), 0.1, 30.0),
+                max_adjustment=_clamp(float(getattr(args, "max_adjustment", 0.04)), 0.0, 0.20),
+                min_providers=max(0, min(120, int(getattr(args, "min_providers", 2)))),
+                force_refresh=bool(getattr(args, "refresh", False)),
+                compute_backend=str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu"),
+                short_reaction_refresh_seconds=max(1, int(getattr(args, "short_reaction_refresh", 30))),
+                news_provider_limit=max(
+                    0,
+                    int(getattr(args, "news_provider_limit", None) or cfg.external_signal_news_provider_limit),
+                ),
+                news_items_per_provider=max(
+                    1,
+                    int(getattr(args, "news_items_per_provider", None) or cfg.external_signal_news_items_per_provider),
+                ),
+                news_provider_parallelism=max(
+                    1,
+                    int(getattr(args, "provider_parallelism", None) or cfg.external_signal_provider_parallelism),
+                ),
+                news_provider_jitter_seconds=max(
+                    0.0,
+                    float(
+                        getattr(args, "provider_jitter", None)
+                        if getattr(args, "provider_jitter", None) is not None
+                        else cfg.external_signal_provider_jitter_seconds
+                    ),
+                ),
+                ollama_news_enabled=(
+                    bool(getattr(args, "ollama_news"))
+                    if getattr(args, "ollama_news", None) is not None
+                    else cfg.external_news_ai_enabled
+                ),
+                ollama_model=str(getattr(args, "ollama_model", None) or cfg.external_news_ai_model),
+                ollama_url=str(getattr(args, "ollama_url", None) or cfg.external_news_ai_url),
+                ollama_timeout_seconds=_clamp(
+                    float(getattr(args, "ollama_timeout", None) or cfg.external_news_ai_timeout_seconds),
+                    0.1,
+                    30.0,
+                ),
+                telemetry_path=telemetry_path,
+            )
+        except Exception as exc:
+            print(f"External signal collection failed: {exc}", file=sys.stderr)
+            return 2, None
+        if getattr(args, "json", False):
+            print(json.dumps(report.asdict(), indent=2, sort_keys=True))
+        else:
+            print(render_external_signal_report(report))
+        return (0 if report.status != "fail" else 2), report
+
+    if not getattr(args, "loop", False):
+        code, _report = run_once()
+        return code
+
+    iterations = max(0, int(getattr(args, "iterations", 0) or 0))
+    sleep_seconds = float(getattr(args, "sleep", None) if getattr(args, "sleep", None) is not None else 60.0)
+    jitter_seconds = float(
+        getattr(args, "jitter", None)
+        if getattr(args, "jitter", None) is not None
+        else cfg.external_signal_poll_jitter_seconds
+    )
+    code = 0
+    completed = 0
     try:
-        report = collect_external_signals(
-            symbol=runtime.symbol,
-            cache_path=cache_path,
-            ttl_seconds=max(0, int(getattr(args, "ttl", 300))),
-            timeout_seconds=_clamp(float(getattr(args, "timeout", 3.0)), 0.1, 30.0),
-            max_adjustment=_clamp(float(getattr(args, "max_adjustment", 0.04)), 0.0, 0.20),
-            min_providers=max(0, min(4, int(getattr(args, "min_providers", 2)))),
-            force_refresh=bool(getattr(args, "refresh", False)),
+        while iterations <= 0 or completed < iterations:  # pragma: no branch
+            code, _report = run_once()
+            completed += 1
+            if iterations > 0 and completed >= iterations:
+                break
+            time.sleep(_jittered_seconds(sleep_seconds, jitter_seconds))
+    except KeyboardInterrupt:  # pragma: no cover - manual operator stop path
+        print("Signal loop stopped.")
+    return code
+
+
+def command_source_grades(args: argparse.Namespace) -> int:
+    cfg = load_strategy()
+    try:
+        run = grade_sources(
+            db_path=getattr(args, "db", None) or cfg.telemetry_db_path,
+            window_hours=float(getattr(args, "window_hours", None) or cfg.source_grading_window_hours),
+            model=str(getattr(args, "ollama_model", None) or cfg.external_news_ai_model),
+            ollama_enabled=(
+                bool(getattr(args, "ollama"))
+                if getattr(args, "ollama", None) is not None
+                else cfg.source_grading_enabled
+            ),
+            ollama_url=str(getattr(args, "ollama_url", None) or cfg.external_news_ai_url),
+            ollama_timeout_seconds=_clamp(
+                float(getattr(args, "ollama_timeout", None) or cfg.external_news_ai_timeout_seconds),
+                0.1,
+                30.0,
+            ),
         )
     except Exception as exc:
-        print(f"External signal collection failed: {exc}", file=sys.stderr)
+        print(f"Source grading failed: {exc}", file=sys.stderr)
         return 2
     if getattr(args, "json", False):
-        print(json.dumps(report.asdict(), indent=2, sort_keys=True))
+        print(json.dumps(run.asdict(), indent=2, sort_keys=True))
     else:
-        print(render_external_signal_report(report))
-    return 0 if report.status != "fail" else 2
+        print(render_source_grade_run(run))
+    return 0 if run.status != "empty" else 2
+
+
+def command_signals_benchmark(args: argparse.Namespace) -> int:
+    runtime = load_runtime()
+    cfg = load_strategy()
+    provider_limits = [max(0, int(value)) for value in (getattr(args, "provider_limit", None) or [30, 60])]
+    parallelism_values = [max(1, int(value)) for value in (getattr(args, "parallelism", None) or [8, 16])]
+    iterations = max(1, int(getattr(args, "iterations", 1) or 1))
+    rows: list[dict[str, object]] = []
+    worst_code = 0
+    for provider_limit in provider_limits:
+        for parallelism in parallelism_values:
+            durations: list[float] = []
+            fresh_counts: list[int] = []
+            provider_counts: list[int] = []
+            statuses: list[str] = []
+            for iteration in range(iterations):
+                started = time.perf_counter()
+                try:
+                    report = collect_external_signals(
+                        symbol=runtime.symbol,
+                        cache_path=getattr(args, "cache", "data/signals/benchmark_external_signals.json"),
+                        ttl_seconds=0,
+                        timeout_seconds=_clamp(float(getattr(args, "timeout", 3.0)), 0.1, 30.0),
+                        max_adjustment=cfg.external_signal_max_adjustment,
+                        min_providers=cfg.external_signal_min_providers,
+                        force_refresh=True,
+                        compute_backend=runtime.compute_backend,
+                        news_provider_limit=provider_limit,
+                        news_provider_parallelism=parallelism,
+                        news_provider_jitter_seconds=max(0.0, float(getattr(args, "provider_jitter", 0.0) or 0.0)),
+                        ollama_news_enabled=(
+                            bool(getattr(args, "ollama_news"))
+                            if getattr(args, "ollama_news", None) is not None
+                            else cfg.external_news_ai_enabled
+                        ),
+                        ollama_model=str(getattr(args, "ollama_model", None) or cfg.external_news_ai_model),
+                        ollama_url=str(getattr(args, "ollama_url", None) or cfg.external_news_ai_url),
+                        ollama_timeout_seconds=_clamp(
+                            float(getattr(args, "ollama_timeout", None) or cfg.external_news_ai_timeout_seconds),
+                            0.1,
+                            30.0,
+                        ),
+                        telemetry_path=None if getattr(args, "no_telemetry", False) or not cfg.telemetry_enabled else cfg.telemetry_db_path,
+                    )
+                    status = report.status
+                    fresh_counts.append(report.fresh_count)
+                    provider_counts.append(report.provider_count)
+                    if status == "fail":
+                        worst_code = 2
+                except Exception as exc:
+                    status = "error"
+                    worst_code = 2
+                    fresh_counts.append(0)
+                    provider_counts.append(provider_limit)
+                    print(f"benchmark trial failed: {exc}", file=sys.stderr)
+                durations.append((time.perf_counter() - started) * 1000.0)
+                statuses.append(status)
+            average_ms = sum(durations) / len(durations)
+            row = {
+                "provider_limit": provider_limit,
+                "parallelism": parallelism,
+                "iterations": iterations,
+                "avg_ms": round(average_ms, 2),
+                "max_ms": round(max(durations), 2),
+                "avg_fresh": round(sum(fresh_counts) / len(fresh_counts), 2),
+                "avg_providers": round(sum(provider_counts) / len(provider_counts), 2),
+                "statuses": statuses,
+            }
+            rows.append(row)
+    payload = {"command": "signals-benchmark", "trials": rows}
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print("Signal benchmark")
+        for row in rows:
+            print(
+                f"- providers={row['provider_limit']} parallelism={row['parallelism']} "
+                f"avg_ms={row['avg_ms']} max_ms={row['max_ms']} "
+                f"fresh={row['avg_fresh']}/{row['avg_providers']} statuses={','.join(row['statuses'])}"
+            )
+    return worst_code
 
 
 def command_live(args: argparse.Namespace) -> int:
@@ -3713,6 +4209,10 @@ def command_live(args: argparse.Namespace) -> int:
     if not effective_dry_run and sleep_seconds < 1:
         print("Authenticated live mode uses minimum sleep=1s.")
         sleep_seconds = 1
+
+    def live_sleep() -> None:
+        delay = _jittered_seconds(sleep_seconds, cfg.external_signal_poll_jitter_seconds) if sleep_seconds > 0 else 0.0
+        time.sleep(delay)
 
     model, model_error, model_notice = _load_live_start_model(model_path, cfg, effective_dry_run=effective_dry_run)
     if model_error is not None:
@@ -3835,6 +4335,45 @@ def command_live(args: argparse.Namespace) -> int:
     skipped_entries = 0
     model_loads = 0 if model is None else 1
     exit_code = 0
+    def _next_source_grade_time_ms(after_ms: int) -> int:  # pragma: no cover - hourly live-loop scheduler
+        return after_ms + int(_jittered_seconds(cfg.source_grading_interval_seconds, cfg.external_signal_poll_jitter_seconds) * 1000)
+
+    next_source_grade_ms = _next_source_grade_time_ms(int(time.time() * 1000))
+
+    def maybe_grade_sources(step: int) -> None:  # pragma: no cover - exercised by long-running live sessions
+        nonlocal next_source_grade_ms
+        if not cfg.telemetry_enabled or not cfg.source_grading_enabled:
+            return
+        current_ms = int(time.time() * 1000)
+        if current_ms < next_source_grade_ms:
+            return
+        try:
+            grade_run = grade_sources(
+                db_path=cfg.telemetry_db_path,
+                window_hours=cfg.source_grading_window_hours,
+                model=cfg.external_news_ai_model,
+                ollama_enabled=True,
+                ollama_url=cfg.external_news_ai_url,
+                ollama_timeout_seconds=cfg.external_news_ai_timeout_seconds,
+            )
+            live_events.append(
+                {
+                    "step": int(step),
+                    "status": "source_grading",
+                    "graded_sources": int(grade_run.graded_sources),
+                    "ai_status": grade_run.ai_status,
+                    "warnings": list(grade_run.warnings),
+                }
+            )
+            print(
+                f"step {step:>2}: source grades "
+                f"graded={grade_run.graded_sources} ai={grade_run.ai_status}"
+            )
+        except Exception as exc:
+            live_events.append({"step": int(step), "status": "source_grading_error", "error": str(exc)})
+            print(f"step {step:>2}: source grading unavailable: {exc}", file=sys.stderr)
+        finally:
+            next_source_grade_ms = _next_source_grade_time_ms(current_ms)
 
     def record_order_error(step: int, side: str, size: float, exc: BinanceAPIError) -> None:
         nonlocal halt_reason, exit_code
@@ -3867,7 +4406,7 @@ def command_live(args: argparse.Namespace) -> int:
         if not rows:
             print("not enough historical data for live signal")
             live_events.append({"step": i + 1, "status": "no_rows"})
-            time.sleep(sleep_seconds)
+            live_sleep()
             continue
 
         live_events.append({"step": i + 1, "status": "rows", "count": len(rows)})
@@ -3936,7 +4475,7 @@ def command_live(args: argparse.Namespace) -> int:
                         f"step {i + 1:>2}: feature drift block "
                         f"max_z={drift.max_abs_z:.2f} outliers={drift.outlier_fraction:.1%}"
                     )
-                    time.sleep(sleep_seconds)
+                    live_sleep()
                     continue
                 if drift.status == "warn":
                     print(
@@ -3971,6 +4510,17 @@ def command_live(args: argparse.Namespace) -> int:
                     timeout_seconds=cfg.external_signal_timeout_seconds,
                     max_adjustment=cfg.external_signal_max_adjustment,
                     min_providers=cfg.external_signal_min_providers,
+                    compute_backend=runtime.compute_backend,
+                    short_reaction_refresh_seconds=cfg.external_signal_short_reaction_refresh_seconds,
+                    news_provider_limit=cfg.external_signal_news_provider_limit,
+                    news_items_per_provider=cfg.external_signal_news_items_per_provider,
+                    news_provider_parallelism=cfg.external_signal_provider_parallelism,
+                    news_provider_jitter_seconds=cfg.external_signal_provider_jitter_seconds,
+                    ollama_news_enabled=cfg.external_news_ai_enabled,
+                    ollama_model=cfg.external_news_ai_model,
+                    ollama_url=cfg.external_news_ai_url,
+                    ollama_timeout_seconds=cfg.external_news_ai_timeout_seconds,
+                    telemetry_path=cfg.telemetry_db_path if cfg.telemetry_enabled else None,
                 )
                 score, decision_cfg, applied_adjustment = _apply_external_signal_to_score(
                     score,
@@ -3987,13 +4537,24 @@ def command_live(args: argparse.Namespace) -> int:
                         "risk_multiplier": float(external_report.risk_multiplier),
                         "fresh_count": int(external_report.fresh_count),
                         "provider_count": int(external_report.provider_count),
+                        "short_term_score": float(external_report.short_term_score),
+                        "medium_term_score": float(external_report.medium_term_score),
+                        "long_term_score": float(external_report.long_term_score),
+                        "reaction_required": bool(external_report.reaction_required),
+                        "reaction_reason": external_report.reaction_reason,
+                        "news_backend_kind": external_report.news_backend_kind,
+                        "news_ai_status": external_report.news_ai_status,
+                        "news_ai_model": external_report.news_ai_model,
+                        "news_ai_latency_ms": int(external_report.news_ai_latency_ms),
                         "report": external_report.asdict(),
                     }
                 )
                 print(
                     f"step {i + 1:>2}: external signals "
                     f"providers={external_report.fresh_count}/{external_report.provider_count} "
-                    f"adj={applied_adjustment:+.4f} risk={external_report.risk_multiplier:.3f}"
+                    f"adj={applied_adjustment:+.4f} risk={external_report.risk_multiplier:.3f} "
+                    f"short={external_report.short_term_score:+.3f} "
+                    f"reaction={'yes' if external_report.reaction_required else 'no'}"
                 )
             except Exception as exc:
                 live_events.append(
@@ -4004,6 +4565,17 @@ def command_live(args: argparse.Namespace) -> int:
                     }
                 )
                 print(f"step {i + 1:>2}: external signals unavailable: {exc}", file=sys.stderr)
+        _record_model_telemetry(
+            cfg,
+            step=i + 1,
+            row=latest,
+            raw_score=raw_score,
+            adjusted_score=score,
+            threshold=threshold,
+            model=model,
+            runtime=runtime,
+        )
+        maybe_grade_sources(i + 1)
         direction = _score_to_direction(score, decision_cfg, runtime.market_type, threshold)
 
         # cooldown reduces immediate flip-flopping in choppy conditions
@@ -4039,7 +4611,7 @@ def command_live(args: argparse.Namespace) -> int:
                 print(message)
                 skipped_entries += 1
                 live_events.append(event)
-                time.sleep(sleep_seconds)
+                live_sleep()
                 continue
 
             notional, qty = _build_order_notional(
@@ -4062,7 +4634,7 @@ def command_live(args: argparse.Namespace) -> int:
                         "notional": float(notional),
                     }
                 )
-                time.sleep(sleep_seconds)
+                live_sleep()
                 continue
 
             if runtime.market_type == "spot":
@@ -4082,13 +4654,13 @@ def command_live(args: argparse.Namespace) -> int:
                         "score": float(score),
                     }
                 )
-                time.sleep(sleep_seconds)
+                live_sleep()
                 continue
 
             side_sign = 1 if direction > 0 else -1
             fill = price * (1.0 + side_sign * slippage)
             if fill <= 0:
-                time.sleep(sleep_seconds)
+                live_sleep()
                 continue
 
             notional = qty * fill
@@ -4105,7 +4677,7 @@ def command_live(args: argparse.Namespace) -> int:
                         "fill": float(fill),
                     }
                 )
-                time.sleep(sleep_seconds)
+                live_sleep()
                 continue
 
             side = "BUY" if side_sign > 0 else "SELL"
@@ -4281,7 +4853,7 @@ def command_live(args: argparse.Namespace) -> int:
                 }
             )
 
-        time.sleep(sleep_seconds)
+        live_sleep()
     live_run["result"] = {
         "status": halt_reason,
         "steps_executed": steps_executed,
@@ -4349,15 +4921,18 @@ def command_train_suite(args: argparse.Namespace) -> int:
             if args.objective
             else available_objectives()
         )
-        report = run_training_suite(
-            candles,
-            strategy,
-            objectives=objectives,
-            market_type=runtime.market_type,
-            starting_cash=args.starting_cash,
-            output_dir=Path(args.output_dir),
-            max_workers=args.max_workers,
-        )
+        suite_kwargs: dict[str, object] = {
+            "objectives": objectives,
+            "market_type": runtime.market_type,
+            "starting_cash": args.starting_cash,
+            "output_dir": Path(args.output_dir),
+            "max_workers": args.max_workers,
+        }
+        if getattr(args, "compute_backend", None) is not None:
+            suite_kwargs["compute_backend"] = str(args.compute_backend)
+        if getattr(args, "batch_size", 512) != 512:
+            suite_kwargs["batch_size"] = max(1, int(args.batch_size))
+        report = run_training_suite(candles, strategy, **suite_kwargs)
     except ValueError as err:
         print(f"training suite failed: {err}", file=sys.stderr)
         return 2
@@ -4370,6 +4945,7 @@ def command_train_suite(args: argparse.Namespace) -> int:
             f"validation={outcome.validation_score if outcome.validation_score is not None else 'n/a'} "
             f"full={outcome.full_sample_score if outcome.full_sample_score is not None else 'n/a'} "
             f"ensemble={'yes' if getattr(outcome, 'ensemble_refined', False) else 'no'} "
+            f"backend={getattr(outcome, 'training_backend_kind', 'cpu')} "
             f"local_checks={getattr(outcome, 'local_refinement_candidates', 0)} "
             f"ensemble_checks={getattr(outcome, 'ensemble_refinement_candidates', 0)} "
             f"candidates={outcome.explored_candidates} model={outcome.model_path}"

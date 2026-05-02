@@ -350,6 +350,8 @@ def train_advanced(
     validation_rows: Sequence[ModelRow] | None = None,
     early_stopping_rounds: int | None = None,
     ensemble_seeds: Sequence[int] | None = None,
+    compute_backend: str | None = None,
+    batch_size: int = 512,
 ) -> tuple[TrainedModel, AdvancedTrainingReport]:
     """Train a logistic regression on an expanded feature set.
 
@@ -373,6 +375,8 @@ def train_advanced(
             feature_signature=signature,
             validation_rows=holdout_rows,
             early_stopping_rounds=early_stopping_rounds,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
         )
         for member_seed in seeds
     ]

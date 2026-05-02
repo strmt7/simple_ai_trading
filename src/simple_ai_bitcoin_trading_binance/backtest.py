@@ -5,6 +5,7 @@ import math
 from dataclasses import asdict, dataclass, replace
 from typing import Dict, List
 
+from .compute import BackendInfo, resolve_backend
 from .features import ModelRow
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
 from .types import StrategyConfig
@@ -26,6 +27,10 @@ class BacktestResult:
     trades_per_day_cap_hit: int
     buy_hold_pnl: float = 0.0
     edge_vs_buy_hold: float = 0.0
+    scoring_backend_requested: str = "cpu"
+    scoring_backend_kind: str = "cpu"
+    scoring_backend_device: str = "cpu"
+    scoring_backend_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -146,6 +151,97 @@ def _clamp_threshold(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
+def _score_backend_payload(backend: BackendInfo) -> dict[str, str]:
+    return {
+        "scoring_backend_requested": backend.requested,
+        "scoring_backend_kind": backend.kind,
+        "scoring_backend_device": backend.device,
+        "scoring_backend_reason": backend.reason,
+    }
+
+
+def _fallback_score_backend(requested: BackendInfo, reason: str) -> BackendInfo:
+    return BackendInfo(
+        requested=requested.requested,
+        kind="cpu",
+        device="cpu",
+        vendor="Python stdlib",
+        reason=reason[:240],
+    )
+
+
+def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
+    if backend.kind == "directml":
+        import torch_directml  # type: ignore
+
+        return torch_directml.device()
+    return backend.device
+
+
+def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smoke verification
+    rows: List[ModelRow],
+    model: TrainedModel,
+    *,
+    backend: BackendInfo,
+    batch_size: int,
+) -> list[float]:
+    import torch  # type: ignore
+
+    device = _torch_device_for_backend(backend)
+    batch = max(1, int(batch_size or 8192))
+    probabilities: list[float] = []
+    temperature = max(1e-6, float(getattr(model, "probability_temperature", 1.0) or 1.0))
+
+    members = list(model.ensemble_members)
+    model_specs = []
+    if members:
+        for member in members:
+            model_specs.append((member.weights, member.bias, member.feature_means, member.feature_stds))
+    else:
+        model_specs.append((model.weights, model.bias, model.feature_means, model.feature_stds))
+
+    for start in range(0, len(rows), batch):
+        chunk = rows[start:start + batch]
+        features = torch.tensor([row.features for row in chunk], dtype=torch.float32, device=device)
+        chunk_probs = None
+        for weights, bias, means, stds in model_specs:
+            w = torch.tensor(list(weights), dtype=torch.float32, device=device)
+            b = torch.tensor(float(bias), dtype=torch.float32, device=device)
+            mean_t = torch.tensor(list(means), dtype=torch.float32, device=device)
+            std_t = torch.tensor(list(stds), dtype=torch.float32, device=device)
+            std_t = torch.where(torch.abs(std_t) > 0.0, std_t, torch.ones_like(std_t))
+            normalized = (features - mean_t) / std_t
+            logits = normalized.matmul(w.reshape(-1, 1)).reshape(-1) + b
+            logits = torch.clamp(logits / temperature, min=-50.0, max=50.0)
+            probs = torch.sigmoid(logits)
+            chunk_probs = probs if chunk_probs is None else chunk_probs + probs
+        assert chunk_probs is not None
+        if len(model_specs) > 1:
+            chunk_probs = chunk_probs / float(len(model_specs))
+        probabilities.extend(float(value) for value in chunk_probs.detach().cpu().tolist())
+    return probabilities
+
+
+def _backtest_probabilities(
+    rows: List[ModelRow],
+    model: TrainedModel,
+    *,
+    compute_backend: str | None,
+    batch_size: int,
+) -> tuple[list[float], BackendInfo]:
+    backend = resolve_backend(compute_backend or "cpu")
+    if backend.kind == "cpu":
+        return [model.predict_proba(row.features) for row in rows], backend
+    try:
+        return _batch_probabilities_torch(rows, model, backend=backend, batch_size=batch_size), backend
+    except Exception as exc:
+        fallback = _fallback_score_backend(
+            backend,
+            f"{backend.kind} backtest scoring failed ({exc.__class__.__name__}); fell back to CPU",
+        )
+        return [model.predict_proba(row.features) for row in rows], fallback
+
+
 def _threshold_grid(start: float, end: float, steps: int, baseline: float) -> list[float]:
     if steps <= 1:
         return [_clamp_threshold(baseline)]
@@ -249,7 +345,10 @@ def run_backtest(
     *,
     starting_cash: float = 1000.0,
     market_type: str = "spot",
+    compute_backend: str | None = None,
+    score_batch_size: int = 8192,
 ) -> BacktestResult:
+    score_backend = resolve_backend(compute_backend or "cpu")
     if not rows:
         return BacktestResult(
             starting_cash=starting_cash,
@@ -266,6 +365,7 @@ def run_backtest(
             trades_per_day_cap_hit=0,
             buy_hold_pnl=0.0,
             edge_vs_buy_hold=0.0,
+            **_score_backend_payload(score_backend),
         )
 
     cash = float(starting_cash)
@@ -298,9 +398,14 @@ def run_backtest(
         max_daily = None
 
     max_open_positions = int(cfg.max_open_positions)
+    probabilities, score_backend = _backtest_probabilities(
+        rows,
+        model,
+        compute_backend=compute_backend,
+        batch_size=score_batch_size,
+    )
 
-    for row in rows:
-        raw_score = model.predict_proba(row.features)
+    for row, raw_score in zip(rows, probabilities, strict=True):
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
         signal = _normalize_market_direction(score, decision_threshold, market_type)
         price = row.close
@@ -447,4 +552,5 @@ def run_backtest(
         trades_per_day_cap_hit=cap_hits,
         buy_hold_pnl=buy_hold_pnl,
         edge_vs_buy_hold=realized_pnl - buy_hold_pnl,
+        **_score_backend_payload(score_backend),
     )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -122,6 +123,21 @@ class StrategyConfig:
     external_signal_min_providers: int = 2
     external_signal_ttl_seconds: int = 300
     external_signal_timeout_seconds: float = 3.0
+    external_signal_news_provider_limit: int = 40
+    external_signal_news_items_per_provider: int = 4
+    external_signal_provider_parallelism: int = 12
+    external_signal_provider_jitter_seconds: float = 0.25
+    external_signal_poll_jitter_seconds: float = 2.0
+    external_signal_short_reaction_refresh_seconds: int = 30
+    external_news_ai_enabled: bool = False
+    external_news_ai_model: str = "gemma4:e4b"
+    external_news_ai_url: str = "http://127.0.0.1:11434"
+    external_news_ai_timeout_seconds: float = 3.0
+    telemetry_enabled: bool = True
+    telemetry_db_path: str = "data/trading_telemetry.sqlite"
+    source_grading_enabled: bool = True
+    source_grading_interval_seconds: int = 3600
+    source_grading_window_hours: int = 24
 
     def __post_init__(self) -> None:
         windows = tuple(self.feature_windows) if isinstance(self.feature_windows, (list, tuple)) else (10, 40)
@@ -162,6 +178,33 @@ class StrategyConfig:
             30.0,
             max(0.1, _finite_float(self.external_signal_timeout_seconds, 3.0)),
         )
+        self.external_signal_news_provider_limit = max(0, _coerce_int(self.external_signal_news_provider_limit, 40))
+        self.external_signal_news_items_per_provider = max(1, min(10, _coerce_int(self.external_signal_news_items_per_provider, 4)))
+        self.external_signal_provider_parallelism = max(1, min(64, _coerce_int(self.external_signal_provider_parallelism, 12)))
+        self.external_signal_provider_jitter_seconds = min(
+            30.0,
+            max(0.0, _finite_float(self.external_signal_provider_jitter_seconds, 0.25)),
+        )
+        self.external_signal_poll_jitter_seconds = min(
+            60.0,
+            max(0.0, _finite_float(self.external_signal_poll_jitter_seconds, 2.0)),
+        )
+        self.external_signal_short_reaction_refresh_seconds = max(
+            1,
+            _coerce_int(self.external_signal_short_reaction_refresh_seconds, 30),
+        )
+        self.external_news_ai_enabled = _coerce_bool(self.external_news_ai_enabled, False)
+        self.external_news_ai_model = str(self.external_news_ai_model or "gemma4:e4b")
+        self.external_news_ai_url = str(self.external_news_ai_url or "http://127.0.0.1:11434")
+        self.external_news_ai_timeout_seconds = min(
+            30.0,
+            max(0.1, _finite_float(self.external_news_ai_timeout_seconds, 3.0)),
+        )
+        self.telemetry_enabled = _coerce_bool(self.telemetry_enabled, True)
+        self.telemetry_db_path = str(self.telemetry_db_path or "data/trading_telemetry.sqlite")
+        self.source_grading_enabled = _coerce_bool(self.source_grading_enabled, True)
+        self.source_grading_interval_seconds = max(60, _coerce_int(self.source_grading_interval_seconds, 3600))
+        self.source_grading_window_hours = max(1, _coerce_int(self.source_grading_window_hours, 24))
         self.enabled_features = normalize_enabled_features(self.enabled_features)
 
     def asdict(self) -> Dict[str, Any]:
@@ -184,7 +227,8 @@ class RiskProfile:
 def config_paths() -> Dict[str, Path]:
     """Return the default config directories used by the CLI."""
 
-    base = Path.home() / ".config" / "simple_ai_bitcoin_trading_binance"
+    base_home = Path(os.environ.get("HOME") or Path.home())
+    base = base_home / ".config" / "simple_ai_bitcoin_trading_binance"
     return {
         "base": base,
         "runtime": base / "runtime.json",

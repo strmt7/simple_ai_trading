@@ -16,7 +16,7 @@ from simple_ai_bitcoin_trading_binance.advanced_model import (
     make_advanced_rows,
 )
 from simple_ai_bitcoin_trading_binance.api import BinanceAPIError, Candle, SymbolConstraints
-from simple_ai_bitcoin_trading_binance.config import RuntimeConfig, load_strategy, save_runtime, save_strategy
+from simple_ai_bitcoin_trading_binance.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
 from simple_ai_bitcoin_trading_binance.model import (
     ModelFeatureMismatchError,
     ModelLoadError,
@@ -111,10 +111,45 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert roundtrip_args.quantity == 0.0002
     assert roundtrip_args.mode == "sell-buy"
     assert roundtrip_args.yes is True
-    train_args = cli._parse_args(["train", "--preset", "quick"])
+    train_args = cli._parse_args(["train", "--preset", "quick", "--compute-backend", "directml", "--batch-size", "128"])
     assert train_args.preset == "quick"
-    suite_args = cli._parse_args(["train-suite", "--max-workers", "2"])
+    assert train_args.compute_backend == "directml"
+    assert train_args.batch_size == 128
+    compute_args = cli._parse_args(["compute", "--backend", "auto"])
+    assert compute_args.backend == "auto"
+    signals_args = cli._parse_args([
+        "signals",
+        "--compute-backend",
+        "directml",
+        "--short-reaction-refresh",
+        "5",
+        "--min-providers",
+        "7",
+        "--news-provider-limit",
+        "30",
+        "--provider-parallelism",
+        "6",
+        "--provider-jitter",
+        "0.2",
+        "--ollama-news",
+    ])
+    assert signals_args.compute_backend == "directml"
+    assert signals_args.short_reaction_refresh == 5
+    assert signals_args.min_providers == 7
+    assert signals_args.news_provider_limit == 30
+    assert signals_args.provider_parallelism == 6
+    assert signals_args.provider_jitter == 0.2
+    assert signals_args.ollama_news is True
+    grade_args = cli._parse_args(["source-grades", "--window-hours", "12", "--no-ollama"])
+    assert grade_args.window_hours == 12
+    assert grade_args.ollama is False
+    benchmark_args = cli._parse_args(["signals-benchmark", "--provider-limit", "30", "--parallelism", "8"])
+    assert benchmark_args.provider_limit == [30]
+    assert benchmark_args.parallelism == [8]
+    suite_args = cli._parse_args(["train-suite", "--max-workers", "2", "--compute-backend", "auto", "--batch-size", "64"])
     assert suite_args.max_workers == 2
+    assert suite_args.compute_backend == "auto"
+    assert suite_args.batch_size == 64
     report_default = cli._parse_args(["report"])
     assert report_default.doctor is True
     report_no_doctor = cli._parse_args(["report", "--no-doctor"])
@@ -982,6 +1017,20 @@ def test_command_status_prints_masked_secret(tmp_path, monkeypatch, capsys) -> N
     assert "visible-key" not in output
 
 
+def test_command_compute_shows_and_saves_backend(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(compute_backend="cpu"))
+    assert cli.command_compute(argparse.Namespace(backend=None)) == 0
+    assert "compute=cpu" in capsys.readouterr().out
+
+    assert cli.command_compute(argparse.Namespace(backend="directml")) == 0
+    assert load_runtime().compute_backend == "directml"
+    assert "compute=" in capsys.readouterr().out
+
+    assert cli.command_compute(argparse.Namespace(backend="bad")) == 2
+    assert "Unknown compute backend" in capsys.readouterr().err
+
+
 def test_command_configure_validation_failure_returns_nonzero(tmp_path, monkeypatch, capsys) -> None:
     class _BadClient(_FakeClient):
         def ensure_btcusdc(self):
@@ -1310,6 +1359,9 @@ def test_command_train_rejects_invalid_optimizer_parameters(tmp_path, monkeypatc
     assert "learning_rate must be > 0" in capsys.readouterr().err
     assert cli.command_train(argparse.Namespace(**base, learning_rate=0.1, l2_penalty=-0.1)) == 2
     assert "l2_penalty must be >= 0" in capsys.readouterr().err
+    save_runtime(RuntimeConfig(compute_backend="not-real"))
+    assert cli.command_train(argparse.Namespace(**base, learning_rate=0.1, l2_penalty=0.0)) == 2
+    assert "unknown compute backend" in capsys.readouterr().err
 
 
 def test_command_train_handles_no_calibration_split(tmp_path, monkeypatch, capsys) -> None:
@@ -1837,7 +1889,7 @@ def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, 
     assert "Leverage override is spot-inactive" in capsys.readouterr().out
 
 
-def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch) -> None:
+def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> None:
     from simple_ai_bitcoin_trading_binance.model import serialize_model
 
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -1880,7 +1932,15 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch) -> None:
     )
 
     assert (
-        cli.command_backtest(argparse.Namespace(input=str(input_file), model=str(model_file), start_cash=1000.0))
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file),
+                model=str(model_file),
+                start_cash=1000.0,
+                compute_backend="cpu",
+                score_batch_size=4,
+            )
+        )
         == 0
     )
 
@@ -1890,6 +1950,47 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch) -> None:
     assert payload["command"] == "backtest"
     assert payload["runtime"]["api_key"] == "<redacted>"
     assert payload["runtime"]["api_secret"] == "<redacted>"
+    assert payload["scoring_backend"]["kind"] == "cpu"
+    assert payload["scoring_backend"]["score_batch_size"] == 4
+
+    def fake_run_backtest(*_args, **kwargs):
+        assert kwargs["compute_backend"] == "directml"
+        assert kwargs["score_batch_size"] == 16
+        return SimpleNamespace(
+            trades=0,
+            win_rate=0.0,
+            realized_pnl=0.0,
+            total_fees=0.0,
+            max_exposure=0.0,
+            starting_cash=1000.0,
+            ending_cash=1000.0,
+            buy_hold_pnl=0.0,
+            edge_vs_buy_hold=0.0,
+            max_drawdown=0.0,
+            stopped_by_drawdown=False,
+            trades_per_day_cap_hit=0,
+            closed_trades=0,
+            gross_exposure=0.0,
+            scoring_backend_requested="directml",
+            scoring_backend_kind="cpu",
+            scoring_backend_device="cpu",
+            scoring_backend_reason="DirectML unavailable in test",
+        )
+
+    monkeypatch.setattr(cli, "run_backtest", fake_run_backtest)
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file),
+                model=str(model_file),
+                start_cash=1000.0,
+                compute_backend="directml",
+                score_batch_size=16,
+            )
+        )
+        == 0
+    )
+    assert "scoring_backend_reason: DirectML unavailable in test" in capsys.readouterr().out
 
 
 def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
@@ -2899,6 +3000,15 @@ def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(tmp_path
         "external_signal_min_providers": "2",
         "external_signal_ttl": "300",
         "external_signal_timeout": "3.0",
+        "external_news_ai": "False",
+        "external_news_ai_model": "gemma4:e4b",
+        "external_news_provider_limit": "40",
+        "external_provider_parallelism": "12",
+        "external_provider_jitter": "0.25",
+        "external_poll_jitter": "2.0",
+        "telemetry_db": "data/trading_telemetry.sqlite",
+        "source_grading": "True",
+        "source_grading_interval": "3600",
     }
 
     class _UI:

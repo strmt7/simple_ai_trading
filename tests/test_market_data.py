@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import pytest
 
@@ -56,7 +57,8 @@ def test_write_json_atomic_replaces_payload_and_applies_mode(tmp_path) -> None:
     write_json_atomic(target, {"a": 1}, sort_keys=True, mode=0o600)
 
     assert json.loads(target.read_text(encoding="utf-8")) == {"a": 1}
-    assert target.stat().st_mode & 0o777 == 0o600
+    if os.name != "nt":
+        assert target.stat().st_mode & 0o777 == 0o600
 
 
 def test_write_json_atomic_removes_temp_file_on_failed_write(tmp_path, monkeypatch) -> None:

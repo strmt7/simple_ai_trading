@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass, field
 from statistics import mean, pstdev
 from typing import Any, Iterable, List, Sequence, Tuple
 
+from .compute import BackendInfo, resolve_backend
 from .features import FEATURE_VERSION, ModelRow, feature_dimension as _feature_dimension
 from .storage import write_json_atomic
 from .strategy_overrides import StrategyOverrideValue, clean_strategy_overrides
@@ -83,6 +84,11 @@ class TrainedModel:
     threshold_calibration_trades: int = 0
     strategy_overrides: dict[str, StrategyOverrideValue] = field(default_factory=dict)
     ensemble_members: List[EnsembleMember] = field(default_factory=list)
+    training_backend_requested: str = "cpu"
+    training_backend_kind: str = "cpu"
+    training_backend_device: str = "cpu"
+    training_backend_vendor: str = "Python stdlib"
+    training_backend_reason: str = ""
 
     def _normalize(self, features: Tuple[float, ...]) -> Tuple[float, ...]:
         if len(features) != self.feature_dim:
@@ -836,12 +842,144 @@ def calibrate_threshold(rows: List[ModelRow], model: TrainedModel, *, start: flo
     return best_threshold
 
 
+def _with_backend_metadata(model: TrainedModel, backend: BackendInfo) -> TrainedModel:
+    model.training_backend_requested = backend.requested
+    model.training_backend_kind = backend.kind
+    model.training_backend_device = backend.device
+    model.training_backend_vendor = backend.vendor
+    model.training_backend_reason = backend.reason
+    return model
+
+
+def _fallback_backend(requested: BackendInfo, reason: str) -> BackendInfo:
+    return BackendInfo(
+        requested=requested.requested,
+        kind="cpu",
+        device="cpu",
+        vendor="Python stdlib",
+        reason=reason[:240],
+    )
+
+
+def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
+    if backend.kind == "directml":
+        import torch_directml  # type: ignore
+
+        return torch_directml.device()
+    return backend.device
+
+
+def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not CI
+    rows: List[ModelRow],
+    *,
+    epochs: int,
+    learning_rate: float,
+    seed: int,
+    l2_penalty: float,
+    feature_signature: str | None,
+    validation_rows: List[ModelRow],
+    early_stopping_rounds: int | None,
+    min_delta: float,
+    batch_size: int,
+    backend: BackendInfo,
+) -> TrainedModel:
+    import torch  # type: ignore
+
+    feature_dim = len(rows[0].features)
+    means, stds = _collect_feature_stats(rows)
+    normalized = _normalize_rows(rows, means, stds)
+    device = _torch_device_for_backend(backend)
+    x_train = torch.tensor(normalized, dtype=torch.float32, device=device)
+    y_train = torch.tensor([float(row.label) for row in rows], dtype=torch.float32, device=device)
+
+    rng = random.Random(seed)  # nosec B311
+    initial_weights = [rng.uniform(-0.05, 0.05) for _ in range(feature_dim)]
+    weights = torch.tensor(initial_weights, dtype=torch.float32, device=device, requires_grad=True)
+    bias = torch.tensor(0.0, dtype=torch.float32, device=device, requires_grad=True)
+    optimizer = torch.optim.SGD([weights, bias], lr=float(learning_rate))
+    class_weight_pos, class_weight_neg = _class_weights(rows)
+    if class_weight_pos <= 0.0 or class_weight_neg <= 0.0:
+        class_weight_pos = 1.0
+        class_weight_neg = 1.0
+
+    best_weights = list(initial_weights)
+    best_bias = 0.0
+    best_epoch: int | None = None
+    best_validation_loss = float("inf")
+    rounds_without_improvement = 0
+    patience = int(early_stopping_rounds or 0)
+    batch = max(1, min(int(batch_size or len(rows)), len(rows)))
+    pos_weight = torch.tensor(float(class_weight_pos), dtype=torch.float32, device=device)
+    neg_weight = torch.tensor(float(class_weight_neg), dtype=torch.float32, device=device)
+
+    for epoch_index in range(1, int(epochs) + 1):
+        for start in range(0, len(rows), batch):
+            end = min(start + batch, len(rows))
+            xb = x_train[start:end]
+            yb = y_train[start:end]
+            optimizer.zero_grad()
+            logits = xb.matmul(weights.reshape(-1, 1)).reshape(-1) + bias
+            # Stable BCE-with-logits written from tensor primitives supported by
+            # CUDA, ROCm, DirectML, and MPS.
+            per_row_loss = torch.clamp(logits, min=0.0) - logits * yb + torch.log1p(torch.exp(-torch.abs(logits)))
+            sample_weights = torch.where(yb > 0.5, pos_weight, neg_weight)
+            loss = (per_row_loss * sample_weights).mean() + 0.5 * float(l2_penalty) * torch.sum(weights * weights)
+            loss.backward()
+            optimizer.step()
+        current_weights = [float(value) for value in weights.detach().cpu().tolist()]
+        current_bias = float(bias.detach().cpu().item())
+        if validation_rows:
+            current_loss = _log_loss(validation_rows, current_weights, current_bias, means, stds)
+            if current_loss < best_validation_loss - float(min_delta):
+                best_validation_loss = current_loss
+                best_weights = list(current_weights)
+                best_bias = current_bias
+                best_epoch = epoch_index
+                rounds_without_improvement = 0
+            else:
+                rounds_without_improvement += 1
+                if patience > 0 and rounds_without_improvement >= patience:
+                    break
+        else:
+            best_weights = current_weights
+            best_bias = current_bias
+
+    if validation_rows and best_epoch is not None:
+        final_weights = best_weights
+        final_bias = best_bias
+    else:
+        final_weights = [float(value) for value in weights.detach().cpu().tolist()]
+        final_bias = float(bias.detach().cpu().item())
+
+    training_loss = _log_loss(rows, final_weights, final_bias, means, stds)
+    validation_loss = _log_loss(validation_rows, final_weights, final_bias, means, stds) if validation_rows else None
+    return TrainedModel(
+        weights=final_weights,
+        bias=final_bias,
+        feature_dim=feature_dim,
+        epochs=epochs,
+        feature_means=means,
+        feature_stds=stds,
+        feature_signature=feature_signature,
+        learning_rate=float(learning_rate),
+        l2_penalty=float(l2_penalty),
+        seed=int(seed),
+        class_weight_pos=float(class_weight_pos),
+        class_weight_neg=float(class_weight_neg),
+        best_epoch=best_epoch,
+        training_loss=float(training_loss),
+        validation_loss=float(validation_loss) if validation_loss is not None else None,
+    )
+
+
 def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.05,
           seed: int = 7, l2_penalty: float = 1e-4,
           feature_signature: str | None = None,
           validation_rows: List[ModelRow] | None = None,
           early_stopping_rounds: int | None = None,
-          min_delta: float = 1e-6) -> TrainedModel:
+          min_delta: float = 1e-6,
+          compute_backend: str | None = None,
+          batch_size: int = 512) -> TrainedModel:
     feature_dim = validate_model_rows(rows)
     validation_rows = list(validation_rows or [])
     if validation_rows:
@@ -850,6 +988,31 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
             label="validation rows",
             expected_feature_dim=feature_dim,
         )
+
+    backend = resolve_backend(compute_backend or "cpu")
+    if backend.kind != "cpu":
+        try:
+            return _with_backend_metadata(
+                _train_torch(
+                    rows,
+                    epochs=epochs,
+                    learning_rate=learning_rate,
+                    seed=seed,
+                    l2_penalty=l2_penalty,
+                    feature_signature=feature_signature,
+                    validation_rows=validation_rows,
+                    early_stopping_rounds=early_stopping_rounds,
+                    min_delta=min_delta,
+                    batch_size=batch_size,
+                    backend=backend,
+                ),
+                backend,
+            )
+        except Exception as exc:
+            backend = _fallback_backend(
+                backend,
+                f"{backend.kind} training failed ({exc.__class__.__name__}); fell back to CPU",
+            )
 
     means, stds = _collect_feature_stats(rows)
     normalized = _normalize_rows(rows, means, stds)
@@ -905,7 +1068,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
     training_loss = _log_loss(rows, weights, bias, means, stds)
     validation_loss = _log_loss(validation_rows, weights, bias, means, stds) if validation_rows else None
 
-    return TrainedModel(
+    return _with_backend_metadata(TrainedModel(
         weights=weights,
         bias=bias,
         feature_dim=feature_dim,
@@ -921,7 +1084,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
         best_epoch=best_epoch,
         training_loss=float(training_loss),
         validation_loss=float(validation_loss) if validation_loss is not None else None,
-    )
+    ), backend)
 
 
 def evaluate(rows: List[ModelRow], model: TrainedModel, threshold: float = 0.5) -> float:
@@ -1247,4 +1410,9 @@ def load_model(
         threshold_calibration_trades=int(payload.get("threshold_calibration_trades", 0) or 0),
         strategy_overrides=clean_strategy_overrides(payload.get("strategy_overrides", {})),
         ensemble_members=_load_ensemble_members(payload.get("ensemble_members"), dim),
+        training_backend_requested=str(payload.get("training_backend_requested", "cpu") or "cpu"),
+        training_backend_kind=str(payload.get("training_backend_kind", "cpu") or "cpu"),
+        training_backend_device=str(payload.get("training_backend_device", "cpu") or "cpu"),
+        training_backend_vendor=str(payload.get("training_backend_vendor", "Python stdlib") or "Python stdlib"),
+        training_backend_reason=str(payload.get("training_backend_reason", "") or ""),
     )
