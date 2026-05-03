@@ -67,7 +67,7 @@ class _AsyncUI:
 
 def _action(title: str):
     for action in _tui_actions():
-        if action.title == title:
+        if action.title == title or title in action.aliases:
             return action
     raise AssertionError(f"missing action: {title}")
 
@@ -307,9 +307,61 @@ def test_command_menu_routes_to_tui_when_tty(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: True)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: True)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.supports_color", lambda _stream: True)
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: _runtime_config())
 
     def fake_launch_tui(**kwargs):
         assert "Session" in kwargs["snapshot_provider"](width=72)
+        assert kwargs["actions"][0].title == "Connect"
+        assert kwargs["actions"][1].title == "Dashboard"
+        assert kwargs["actions"][0].is_enabled() is False
+        assert kwargs["actions"][1].is_enabled() is True
+        return 0
+
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.launch_tui", fake_launch_tui)
+    from simple_ai_bitcoin_trading_binance.cli import command_menu
+
+    assert command_menu(argparse.Namespace()) == 0
+
+
+def test_command_menu_connection_provider_updates_credential_gate(monkeypatch) -> None:
+    current = {"runtime": _runtime_config(api_key="key-a", api_secret="secret-a")}
+    connection = {"line": "Connection: authenticated"}
+
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.supports_color", lambda _stream: True)
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: current["runtime"])
+    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._connection_status_line", lambda: connection["line"])
+
+    def fake_launch_tui(**kwargs):
+        actions = kwargs["actions"]
+        caps = next(action for action in actions if action.title == "Trading caps")
+        connect = actions[0]
+        assert connect.is_enabled() is True
+        assert caps.is_enabled() is False
+
+        assert kwargs["connection_provider"]() == "Connection: authenticated"
+        assert caps.is_enabled() is True
+
+        connection["line"] = "Connection: authentication failed"
+        assert kwargs["connection_provider"]() == "Connection: authentication failed"
+        assert connect.is_enabled() is False
+        assert "failed validation" in connect.lock_reason()
+
+        connection["line"] = "Connection: public online"
+        assert kwargs["connection_provider"]() == "Connection: public online"
+        assert connect.is_enabled() is True
+        assert caps.is_enabled() is False
+        blocked_ui = _AsyncUI()
+        assert asyncio.run(caps.run(blocked_ui)) == 2
+        assert "locked until Binance credentials validate" in blocked_ui.logs[-1]
+
+        current["runtime"] = _runtime_config(api_key="key-b", api_secret="secret-b")
+        assert "Run Connect" in caps.lock_reason()
+
+        current["runtime"] = _runtime_config()
+        assert kwargs["connection_provider"]() == "Connection: public online"
+        assert "Connection settings first" in connect.lock_reason()
         return 0
 
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.launch_tui", fake_launch_tui)
@@ -700,7 +752,7 @@ def test_tui_all_numbered_menu_choices_are_reachable_in_textual_runtime(monkeypa
 
 
 def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) -> None:
-    runtime = _runtime_config(managed_usdc=1000.0, managed_btc=0.0)
+    runtime = _runtime_config(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=1000.0, managed_btc=0.0)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
 
     async def runner() -> None:
@@ -717,7 +769,8 @@ def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) ->
                 if len(app.screen_stack) > 1 and app.focused is not None:
                     break
             assert type(app.screen_stack[-1]).__name__ == "MenuScreen"
-            await pilot.press("down")
+            for _ in range(5):
+                await pilot.press("down")
             await pilot.press("enter")
             await pilot.pause()
             assert len(app.screen_stack) == 1
@@ -872,7 +925,7 @@ def test_tui_local_audit_action_builds_expected_args(monkeypatch) -> None:
 def test_tui_local_audit_action_cancelled(capsys) -> None:
     result = asyncio.run(_action("Local audit").run(_AsyncUI(forms=[None])))
     assert result == 0
-    assert "Audit cancelled." in capsys.readouterr().out
+    assert "Data/model audit cancelled." in capsys.readouterr().out
 
 
 def test_tui_evaluate_and_pipeline_actions(monkeypatch) -> None:
@@ -1024,7 +1077,7 @@ def test_show_recent_artifacts_handles_empty_and_populated(tmp_path, monkeypatch
 def test_show_account_overview_handles_missing_credentials(monkeypatch, capsys) -> None:
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: type("R", (), {"api_key": "", "api_secret": ""})())
     assert _show_account_overview() == 2
-    assert "Account overview requires Binance API key" in capsys.readouterr().err
+    assert "Account balances requires Binance API key" in capsys.readouterr().err
 
 
 def test_show_account_overview_prints_balances(monkeypatch, capsys) -> None:
@@ -1043,7 +1096,7 @@ def test_show_account_overview_prints_balances(monkeypatch, capsys) -> None:
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._build_client", lambda _runtime: _Client())
     assert _show_account_overview() == 0
     output = capsys.readouterr().out
-    assert "Account overview" in output
+    assert "Account balances" in output
     assert "BTC" in output
     assert "USDC" in output
 

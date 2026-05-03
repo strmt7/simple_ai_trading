@@ -50,6 +50,9 @@ class _FakeOptionList:
         self.id = identifier
         self.highlighted = 0
         self.focused = False
+        self.prompts: dict[int, str] = {}
+        self.disabled: dict[int, bool] = {}
+        self.raise_on_replace = False
 
     def action_cursor_down(self) -> None:
         self.highlighted = 1
@@ -71,6 +74,17 @@ class _FakeOptionList:
 
     def focus(self) -> None:
         self.focused = True
+
+    def replace_option_prompt_at_index(self, index: int, prompt: str) -> None:
+        if self.raise_on_replace:
+            raise RuntimeError("replace failed")
+        self.prompts[index] = str(prompt)
+
+    def enable_option_at_index(self, index: int) -> None:
+        self.disabled[index] = False
+
+    def disable_option_at_index(self, index: int) -> None:
+        self.disabled[index] = True
 
 
 class _FakeOptionEvent:
@@ -356,10 +370,11 @@ def test_operator_app_methods(monkeypatch) -> None:
 
     app.on_option_list_option_highlighted(_FakeOptionEvent(widgets["#actions"], 0))
     assert widgets["#status"].value == "Sync"
+    widgets["#actions"].highlighted = 1
     app.on_option_list_option_highlighted(_FakeOptionEvent(widgets["#actions"], 1))
     assert widgets["#actions"].highlighted == 1
     assert widgets["#details"].value.startswith("async description")
-    assert widgets["#status"].value == "Async"
+    assert widgets["#status"].value == "Sync"
 
     asyncio.run(app.on_option_list_option_selected(_FakeOptionEvent(widgets["#actions"], 0)))
     assert widgets["#actions"].highlighted == 0
@@ -422,6 +437,7 @@ def test_operator_app_first_nonzero_highlight_updates_action_details(monkeypatch
     _disable_app_timers(app, monkeypatch)
 
     app.on_mount()
+    widgets["#actions"].highlighted = 1
     app.on_option_list_option_highlighted(_FakeOptionEvent(widgets["#actions"], 1))
 
     assert app._ignored_initial_highlight is True
@@ -516,7 +532,7 @@ def test_operator_app_runs_in_textual_runtime() -> None:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app.query_one("#actions").has_focus
-            assert str(app.query_one("#actions-title").content) == "Operator commands"
+            assert str(app.query_one("#actions-title").content) == "Main menu"
             assert str(app.query_one("#details-title").content) == "Sync"
             assert str(app.query_one("#preview-title").content) == "Dashboard snapshot"
             assert str(app.query_one("#log-title").content) == "Activity log"
@@ -529,6 +545,102 @@ def test_operator_app_runs_in_textual_runtime() -> None:
         assert calls == ["run"]
 
     asyncio.run(runner())
+
+
+def test_operator_app_disabled_actions_are_locked_and_skipped() -> None:
+    calls: list[str] = []
+
+    async def runner() -> None:
+        app = OperatorApp(
+            title_text="console",
+            actions=[
+                TUIAction("1", "Locked", "needs credentials", lambda _ui: calls.append("locked"), enabled=lambda: False, disabled_reason="Add credentials."),
+                TUIAction("2", "Open", "can run", lambda _ui: calls.append("open") or 0),
+            ],
+            snapshot_provider=lambda _width=70: "snapshot",
+        )
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            actions = app.query_one("#actions")
+            assert actions.highlighted == 1
+            assert actions.options[0].disabled is True
+            assert str(actions.options[0].prompt) == "Locked  (locked)"
+            assert str(app.query_one("#actions-title").content) == "Main menu"
+
+            app._select_action(0)
+            assert actions.highlighted == 1
+            await app._execute_action(app.actions_data[0])
+            assert calls == []
+            assert str(app.query_one("#status").content) == "Add credentials."
+
+            await pilot.press("enter")
+            await pilot.pause()
+            assert calls == ["open"]
+
+    asyncio.run(runner())
+
+
+def test_operator_app_disabled_action_edges_and_event_guards(monkeypatch) -> None:
+    widgets = {
+        "#actions": _FakeOptionList(),
+        "#details-title": _FakeStatic(),
+        "#details": _FakeStatic(),
+        "#status": _FakeStatic(),
+        "#log": _FakeRichLog(),
+    }
+    app = OperatorApp(
+        title_text="console",
+        actions=[
+            TUIAction("1", "Locked A", "disabled first", lambda _ui: 0, enabled=lambda: False, disabled_reason="locked-a"),
+            TUIAction("2", "Locked B", "disabled second", lambda _ui: 0, enabled=lambda: False, disabled_reason="locked-b"),
+            TUIAction("3", "Open", "enabled third", lambda _ui: 0),
+        ],
+        snapshot_provider=lambda _width=70: "snapshot",
+    )
+    monkeypatch.setattr(app, "query_one", lambda selector, _cls=None: widgets[selector])
+
+    app._update_action_details()
+    assert "Locked: locked-a" in widgets["#details"].value
+    assert app._first_enabled_action_index() == 2
+    assert app._nearest_enabled_index(1) == 2
+    assert app._nearest_enabled_index(0, direction=-1) == 2
+
+    widgets["#actions"].raise_on_replace = True
+    app.refresh_action_availability()
+    widgets["#actions"].raise_on_replace = False
+
+    empty = OperatorApp(title_text="empty", actions=[], snapshot_provider=lambda _width=70: "snapshot")
+    assert empty._nearest_enabled_index(0) == 0
+
+    all_locked = OperatorApp(
+        title_text="locked",
+        actions=[
+            TUIAction("1", "Locked A", "disabled first", lambda _ui: 0, enabled=lambda: False, disabled_reason="locked-a"),
+            TUIAction("2", "Locked B", "disabled second", lambda _ui: 0, enabled=lambda: False, disabled_reason="locked-b"),
+        ],
+        snapshot_provider=lambda _width=70: "snapshot",
+    )
+    monkeypatch.setattr(all_locked, "query_one", lambda selector, _cls=None: widgets[selector])
+    widgets["#actions"].highlighted = 0
+    assert all_locked._first_enabled_action_index() == 0
+    all_locked.action_last_action()
+    assert widgets["#actions"].highlighted == 1
+
+    widgets["#actions"].highlighted = 0
+    asyncio.run(all_locked.action_run_selected())
+    assert widgets["#log"].lines[-1] == "locked-a"
+    assert widgets["#status"].value == "locked-a"
+
+    asyncio.run(all_locked.on_option_list_option_selected(_FakeOptionEvent(widgets["#actions"], 0)))
+    assert widgets["#log"].lines[-1] == "locked-a"
+
+    monkeypatch.setattr(all_locked, "_select_action", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    asyncio.run(all_locked.on_option_list_option_selected(_FakeOptionEvent(widgets["#actions"], 0)))
+
+    all_locked._ignored_initial_highlight = True
+    widgets["#actions"].highlighted = 0
+    monkeypatch.setattr(all_locked, "_update_action_details", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    all_locked.on_option_list_option_highlighted(_FakeOptionEvent(widgets["#actions"], 0))
 
 
 def test_modal_screens_compose_in_textual_runtime() -> None:
@@ -961,7 +1073,10 @@ def test_operator_app_live_keyboard_navigation_keeps_context_visible() -> None:
             await pilot.press("tab")
             await pilot.press("tab")
             await pilot.press("down")
-            await pilot.pause()
+            for _ in range(5):
+                await pilot.pause()
+                if app.query_one("#actions").highlighted == 1:
+                    break
             assert app.query_one("#actions").highlighted == 1
             assert app.query_one("#actions").has_focus
             assert str(app.query_one("#details-title").content) == "Two"

@@ -209,28 +209,29 @@ DEFAULT = ObjectiveSpec(
 RISKY = ObjectiveSpec(
     name="risky",
     label="Risky",
-    summary="Chase higher absolute returns; tolerates larger drawdowns and more trades.",
+    summary="Seek higher returns with strict capital-preservation gates.",
     long_description=(
         "Uses a longer training budget with a softer L2 and a lower signal threshold so "
-        "the model takes more shots. Strategy defaults include a bigger max-position and "
-        "shorter cooldown. Keep this preset on testnet."
+        "the model takes more shots. Strategy defaults remain capped so this preset is "
+        "aggressive relative to Default without allowing all-in exposure. Keep this preset "
+        "on testnet until its live behavior is understood."
     ),
     scorer=_risky_scorer,
     min_closed_trades=2,
     min_realized_pnl=0.0,
-    max_drawdown_rejection=0.45,
+    max_drawdown_rejection=0.30,
     training=ObjectiveTraining(
-        epochs=900,
+        epochs=720,
         learning_rate=0.04,
-        l2_penalty=3e-4,
-        signal_threshold=0.53,
-        stop_loss_pct=0.028,
-        take_profit_pct=0.045,
-        risk_per_trade=0.018,
-        max_position_pct=0.30,
-        max_trades_per_day=32,
-        leverage=2.5,
-        cooldown_minutes=3,
+        l2_penalty=5e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.024,
+        take_profit_pct=0.040,
+        risk_per_trade=0.012,
+        max_position_pct=0.25,
+        max_trades_per_day=24,
+        leverage=2.0,
+        cooldown_minutes=4,
         calibrate_threshold=True,
         walk_forward_train=600,
         walk_forward_test=150,

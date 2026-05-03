@@ -28,9 +28,9 @@ cd /opt/trader/simple_ai_bitcoin_trading_binance
 PYTHONPATH=src python3 -m simple_ai_bitcoin_trading_binance.cli
 ```
 
-## Required runtime settings
+## Required Connection Settings
 
-From the console, open `Runtime settings` and verify:
+From the console, open `Connection settings` and verify:
 
 - `runtime.symbol == BTCUSDC`
 - `runtime.testnet == true`
@@ -43,9 +43,9 @@ From the console, open `Runtime settings` and verify:
 UI notes:
 
 - use the left action list for navigation
-- `Action` shows the selected operation and when to use it
-- `Overview` shows current runtime, strategy, and account context
-- `Activity` shows command output and failures
+- the detail panel shows the selected operation and when to use it
+- `Dashboard` shows current runtime, strategy, and account context
+- `Activity log` shows command output and failures
 
 Optional host override checks:
 
@@ -60,26 +60,26 @@ Optional host override checks:
    - Confirm BTCUSDC availability
 
 2. Market data sanity
-   - Run `Fetch candles`
+   - Run `Download market data`
    - Confirm the dataset is updated and non-empty
 
 3. Model sanity
-   - Run `Train model`
-   - Run `Evaluate`
+   - Run `Train AI model`
+   - Run `Evaluate model`
    - If model load fails, regenerate before continuing
 
 4. Backtest sanity
-   - Run `Backtest`
+   - Run `Backtest strategy`
    - Confirm no obvious instability or immediate drawdown-limit termination
    - Compare strategy P&L with `buy_hold_pnl` and `edge_vs_buy_hold`
 
-5. Local audit
-   - Run `Local audit`
+5. Data/model audit
+   - Run `Data/model audit`
    - Resolve every `[fix]` item before moving to paper or testnet execution
    - Investigate `[warn]` items before increasing risk or loop length
 
 6. Dry-run live session
-   - Run `Paper loop`
+   - Run `Paper trading`
    - Verify:
      - no runtime exceptions
      - expected event logging
@@ -89,8 +89,8 @@ Optional host override checks:
 7. Controlled testnet order session
    - Only after dry-run behavior is understood
    - Use the smallest reasonable exposure
-   - Prefer a short `Testnet loop`
-   - For spot, use `Spot roundtrip` first
+   - Prefer a short `Testnet trading` run
+   - For spot, use `Test order` first
    - For futures, confirm effective leverage printed by the console log
 
 ## Abort conditions
@@ -125,12 +125,12 @@ Stop immediately if any of the following occur:
 ## First console actions for next iteration
 
 - `Connect`
-- `Fetch candles`
-- `Train model`
-- `Evaluate`
-- `Backtest`
-- `Local audit`
-- `Paper loop`
+- `Download market data`
+- `Train AI model`
+- `Evaluate model`
+- `Backtest strategy`
+- `Data/model audit`
+- `Paper trading`
 
 ## Decision gate before any non-paper testnet order
 

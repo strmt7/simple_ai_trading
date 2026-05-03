@@ -75,25 +75,25 @@ The layout is intentionally simple:
 - a selected-action detail panel
 - a live runtime/strategy/artifact snapshot
 - an activity log
-- modal forms for editing runtime, strategy, tuning, and execution parameters
-- password-masked API key and secret fields inside `Runtime settings`
+- modal forms for editing connection, strategy, optimization, and order parameters
+- password-masked API key and secret fields inside `Connection settings`
 - a bottom bar that separates public endpoint reachability from authenticated account readiness
 
 Use the left action list to:
 
 - read `Help` for the recommended operator sequence
-- update `Runtime settings`, then run `Connect`
-- open `Funds` to read exchange balances and set trading caps after credentials are configured
-- run `Readiness check` before paper or authenticated testnet execution
-- edit runtime settings
+- update `Connection settings`, then run `Connect`
+- open `Trading caps` to read exchange balances and set exchange-backed limits after credentials are configured
+- run `Safety check` before paper or authenticated testnet execution
+- edit connection settings
 - edit strategy and feature selection
-- run `Prepare system` for the fetch, train, evaluate, backtest, readiness sequence
-- fetch candles
+- run `Build full setup` for the download, train, evaluate, backtest, safety-check sequence
+- download market data
 - train or retrain the model with `custom`, `quick`, `balanced`, or `thorough` presets
 - tune over all data, a lookback window, or an explicit date range
 - run backtests and evaluation
 - run paper or authenticated testnet live loops
-- inspect recent artifacts, account state, and `Operator report`
+- inspect recent artifacts, account state, and `Full report`
 
 By default data is written to `data/historical_btcusdc.json` and `data/model.json`.
 
@@ -328,7 +328,7 @@ BINANCE_FUTURES_BASE_URL=https://futures-proxy.local simple-ai-trading connect
 
 ## Interactive console capabilities
 
-### Runtime settings
+### Connection Settings
 
 The console edits:
 
@@ -383,7 +383,7 @@ The console supports:
   market/interval and can prompt or `--download-missing` when history is absent
 - `signals` and `live --external-signals` add cached free-provider confirmation
   without blocking the exchange loop on slow non-Binance APIs
-- `prepare` runs the normal offline sequence: fetch candles, train, evaluate, backtest, local audit, then readiness checks; it stops at the first failed step
+- `prepare` runs the normal offline sequence: download market data, train, evaluate, backtest, data/model audit, then safety checks; it stops at the first failed step
 - `risk --paper` or `risk --live` prints the local risk policy before an
   operator loop: endpoint safety, credentials, managed cash, leverage,
   position sizing, stop-loss exposure, daily caps, drawdown stops,

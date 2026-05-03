@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import builtins
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import math
 import random
@@ -606,11 +607,19 @@ def _has_api_credentials(runtime) -> bool:
 
 
 def _credential_required_message(action: str) -> str:
-    return f"{action} requires Binance API key and secret in Runtime settings."
+    return f"{action} requires Binance API key and secret in Connection settings."
 
 
 def _credential_failure_message(action: str, exc: Exception) -> str:
     return f"{action} requires valid Binance API credentials: {exc}"
+
+
+def _credential_fingerprint(runtime) -> str:
+    if not _has_api_credentials(runtime):
+        return "missing"
+    key = str(getattr(runtime, "api_key", "") or "")
+    secret = str(getattr(runtime, "api_secret", "") or "")
+    return hashlib.sha256(f"{key}\0{secret}".encode("utf-8")).hexdigest()
 
 
 def _validate_runtime_connection(runtime, client) -> None:
@@ -717,7 +726,7 @@ async def _ui_edit_runtime(ui, current: RuntimeConfig) -> RuntimeConfig:
     from .tui import FormField
 
     payload = await ui.form(
-        "Runtime settings",
+        "Connection settings",
         [
             FormField("market_type", "Market type [spot/futures]", current.market_type),
             FormField("interval", "Kline interval", current.interval),
@@ -1103,12 +1112,12 @@ def _render_operator_report(
 
 def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
     if not _has_api_credentials(runtime):
-        return [_credential_required_message("Account overview")]
+        return [_credential_required_message("Account balances")]
     client = _build_client(runtime)
     try:
         account = client.get_account()
     except BinanceAPIError as exc:
-        return [f"Account overview failed: {exc}"]
+        return [f"Account balances failed: {exc}"]
     balances_payload = account.get("balances", []) if isinstance(account, dict) else []
     assets_payload = account.get("assets", []) if isinstance(account, dict) else []
     positions_payload = account.get("positions", []) if isinstance(account, dict) else []
@@ -1156,13 +1165,13 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
 def _show_account_overview() -> int:
     runtime = load_runtime()
     if not _has_api_credentials(runtime):
-        print(_credential_required_message("Account overview"), file=sys.stderr)
+        print(_credential_required_message("Account balances"), file=sys.stderr)
         return 2
     lines = _account_overview_lines(runtime)
-    print("Account overview")
+    print("Account balances")
     for line in lines:
         print(f"- {line}" if ":" in line and not line.startswith("market=") else line)
-    if lines and lines[0].startswith("Account overview failed:"):
+    if lines and lines[0].startswith("Account balances failed:"):
         return 2
     return 0
 
@@ -1178,7 +1187,7 @@ def _dashboard_snapshot(*, with_account: bool) -> DashboardSnapshot:
         runtime=runtime.public_dict(),
         strategy=strategy.asdict(),
         artifacts=[_artifact_summary(path) for path in _recent_artifacts()],
-        account_lines=_account_overview_lines(runtime) if with_account else ["Load Account or Connect to fetch balances."],
+        account_lines=_account_overview_lines(runtime) if with_account else ["Run Account balances after Connect to fetch balances."],
         notes=notes,
     )
 
@@ -1421,10 +1430,10 @@ async def _ui_funds_menu(ui) -> int:
             ]
         )
         choice = await ui.menu(
-            "Funds - exchange-backed BTCUSDC caps",
+            "Trading caps - exchange-backed BTCUSDC limits",
             options,
             help_text=(
-                f"{_funds_summary(runtime)}. Funds reads Binance balances and stores maximum "
+                f"{_funds_summary(runtime)}. Trading caps reads Binance balances and stores maximum "
                 "strategy allocation caps; it never deposits, withdraws, or simulates money."
             ),
         )
@@ -1483,7 +1492,7 @@ async def _ui_edit_execution(ui) -> int:
 
     cfg = load_strategy()
     payload = await ui.form(
-        "Execution settings",
+        "Order settings",
         [
             FormField(
                 "order_type",
@@ -1508,7 +1517,7 @@ async def _ui_edit_execution(ui) -> int:
         ],
     )
     if payload is None:
-        ui.append_log("Execution settings cancelled.")
+        ui.append_log("Order settings cancelled.")
         return 0
     order_type = payload["order_type"].strip().upper() or "MARKET"
     if order_type not in {"MARKET", "LIMIT", "LIMIT_MAKER"}:
@@ -1570,15 +1579,15 @@ async def _ui_edit_compute(ui) -> int:
 async def _ui_settings_menu(ui) -> int:
     while True:
         choice = await ui.menu(
-            "Settings",
+            "All settings",
             [
-                ("runtime", "Runtime - credentials and connection"),
-                ("strategy", "Strategy - risk, thresholds, features"),
-                ("execution", "Execution - order type and routing"),
-                ("compute", "Compute backend - CPU / GPU / auto"),
+                ("runtime", "Connection - API, market, safety mode"),
+                ("strategy", "Strategy - risk, signals, model behavior"),
+                ("execution", "Orders - type and close behavior"),
+                ("compute", "Compute - CPU / GPU / auto"),
                 ("close", "Close"),
             ],
-            help_text="Centralized configuration. Up/Down to choose, Enter to open, Escape to close.",
+            help_text="Choose what to configure. Up/Down to choose, Enter to open, Escape to close.",
         )
         if choice in (None, "close"):
             return 0
@@ -1587,10 +1596,10 @@ async def _ui_settings_menu(ui) -> int:
             try:
                 next_runtime = await _ui_edit_runtime(ui, current)
             except ValueError as exc:
-                ui.append_log(f"Runtime settings invalid: {exc}")
+                ui.append_log(f"Connection settings invalid: {exc}")
                 continue
             save_runtime(next_runtime)
-            ui.append_log("Runtime settings saved.")
+            ui.append_log("Connection settings saved.")
             continue
         if choice == "strategy":
             try:
@@ -1611,14 +1620,74 @@ async def _ui_settings_menu(ui) -> int:
             continue
 
 
-def _tui_actions():  # skipcq: PY-R1000
+def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-R1000
     from .tui import FormField, TUIAction
 
+    def _credential_status() -> str:
+        runtime = load_runtime()
+        if not _has_api_credentials(runtime):
+            return "missing"
+        if credential_state is None:
+            return "valid"
+        fingerprint = _credential_fingerprint(runtime)
+        if credential_state.get("fingerprint") != fingerprint:
+            return "unchecked"
+        return credential_state.get("status", "unchecked")
+
+    def _mark_credentials(status: str) -> None:
+        if credential_state is None:
+            return
+        runtime = load_runtime()
+        credential_state["fingerprint"] = _credential_fingerprint(runtime)
+        credential_state["status"] = "missing" if not _has_api_credentials(runtime) else status
+
+    def _credential_lock_reason(action: str) -> str:
+        status = _credential_status()
+        if status == "missing":
+            return f"{action} is locked. Add Binance API key and secret in Connection settings first."
+        if status == "invalid":
+            return f"{action} is locked. The saved Binance credentials failed validation; replace them in Connection settings."
+        if status == "unchecked":
+            return f"{action} is locked. Run Connect after saving credentials, then try again."
+        return f"{action} is locked until Binance credentials validate."
+
+    def _connect_enabled() -> bool:
+        status = _credential_status()
+        return status in {"unchecked", "valid", "unavailable"}
+
+    def _signed_action_enabled() -> bool:
+        return _credential_status() == "valid"
+
+    def _make_action(
+        key: str,
+        title: str,
+        description: str,
+        run,
+        *,
+        aliases: tuple[str, ...] = (),
+        credentials: bool = False,
+    ):
+        if not credentials:
+            return TUIAction(key, title, description, run, aliases=aliases)
+        enabled = _connect_enabled if title == "Connect" else _signed_action_enabled
+        return TUIAction(
+            key,
+            title,
+            description,
+            run,
+            enabled=enabled,
+            disabled_reason=lambda action=title: _credential_lock_reason(action),
+            aliases=aliases,
+        )
+
     def _credentials_ready(ui, action: str) -> bool:
-        if _has_api_credentials(load_runtime()):
-            return True
-        ui.append_log(_credential_required_message(action))
-        return False
+        if not _has_api_credentials(load_runtime()):
+            ui.append_log(_credential_required_message(action))
+            return False
+        if credential_state is not None and action != "Connect" and _credential_status() != "valid":
+            ui.append_log(_credential_lock_reason(action))
+            return False
+        return True
 
     async def _overview(ui):
         ui.append_log(await ui.run_blocking(lambda: render_dashboard(_dashboard_snapshot(with_account=True))))
@@ -1635,27 +1704,27 @@ def _tui_actions():  # skipcq: PY-R1000
                     "",
                     "First-time setup",
                     "----------------",
-                    "  1. Settings -> Runtime: paste your Binance testnet API key and secret.",
-                    "  2. Connect: ping the exchange and validate credentials.",
-                    "  3. Funds: read exchange balances and set the strategy's trading caps.",
-                    "  4. Readiness check: confirm safety flags, data, model, and connectivity.",
+                    "  1. Connection settings: paste your Binance testnet API key and secret.",
+                    "  2. Connect: validate those credentials.",
+                    "  3. Trading caps: choose how much BTC / USDC the strategy may use.",
+                    "  4. Safety check: confirm safety flags, data, model, and connectivity.",
                     "",
                     "End-to-end paper run",
                     "--------------------",
-                    "  1. Prepare system: fetch candles, train, evaluate, and backtest.",
-                    "  2. Paper loop: run the strategy without placing real orders.",
-                    "  3. Operator report: print dashboard, artifacts, and readiness summary.",
+                    "  1. Build full setup: download data, train, evaluate, and backtest.",
+                    "  2. Paper trading: run the strategy without placing real orders.",
+                    "  3. Full report: print dashboard, artifacts, and safety summary.",
                     "",
                     "Manual pipeline (full control)",
                     "------------------------------",
-                    "  Fetch candles -> Settings -> Strategy -> Train model -> Evaluate -> Backtest -> Tune strategy",
+                    "  Download market data -> Strategy settings -> Train AI model -> Evaluate model -> Backtest strategy -> Optimize strategy",
                     "",
                     "Authenticated testnet execution",
                     "-------------------------------",
-                    "  * Always run Readiness check first.",
-                    "  * Spot roundtrip is the smallest signed test (BUY then SELL).",
-                    "  * Testnet loop runs the strategy with signed orders against the testnet.",
-                    "  * The strategy is capped by Funds; Funds can never exceed exchange free balances.",
+                    "  * Always run Safety check first.",
+                    "  * Test order is the smallest signed BUY/SELL check.",
+                    "  * Testnet trading runs the strategy with signed orders against testnet/demo.",
+                    "  * Trading caps can never exceed exchange free balances.",
                     "",
                     "Keyboard",
                     "--------",
@@ -1670,9 +1739,9 @@ def _tui_actions():  # skipcq: PY-R1000
                     "",
                     "Centralized configuration",
                     "-------------------------",
-                    "  Settings opens a hub with: Runtime, Strategy, Execution, Compute backend.",
-                    "  Funds is exchange-backed: it reads balances and sets caps, never deposits or withdraws.",
-                    "  Compute backend selects CPU (default), CUDA, ROCm, or auto-detect.",
+                    "  All settings opens: Connection, Strategy, Orders, Compute backend.",
+                    "  Trading caps is exchange-backed: it reads balances and sets caps, never deposits or withdraws.",
+                    "  Compute backend selects CPU (default), CUDA, ROCm, DirectML, MPS, or auto-detect.",
                     "",
                     "Safety",
                     "------",
@@ -1689,16 +1758,19 @@ def _tui_actions():  # skipcq: PY-R1000
         try:
             next_runtime = await _ui_edit_runtime(ui, current)
         except ValueError as exc:
-            print(f"Runtime settings invalid: {exc}", file=sys.stderr)
+            print(f"Connection settings invalid: {exc}", file=sys.stderr)
             return 2
         save_runtime(next_runtime)
+        _mark_credentials("unchecked")
         if next_runtime.validate_account and _has_api_credentials(next_runtime):
             client = _build_client(next_runtime)
             try:
                 await ui.run_blocking(_validate_runtime_connection, next_runtime, client)
             except BinanceAPIError as exc:
+                _mark_credentials("invalid")
                 print(f"Configuration saved, but validation failed: {exc}", file=sys.stderr)
                 return 2
+            _mark_credentials("valid")
         print("Runtime config saved to", config_paths()["runtime"])
         print(
             f"market={next_runtime.market_type} environment={_runtime_environment(next_runtime)} "
@@ -1720,7 +1792,9 @@ def _tui_actions():  # skipcq: PY-R1000
     async def _connect(_ui):
         if not _credentials_ready(_ui, "Connect"):
             return 2
-        return await _ui.run_blocking(command_connect, argparse.Namespace())
+        result = await _ui.run_blocking(command_connect, argparse.Namespace())
+        _mark_credentials("valid" if result == 0 else "invalid")
+        return result
 
     async def _doctor(ui):
         payload = await ui.form(
@@ -1744,20 +1818,20 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _account(ui):
-        if not _credentials_ready(ui, "Account overview"):
+        if not _credentials_ready(ui, "Account balances"):
             return 2
         return await ui.run_blocking(_show_account_overview)
 
     async def _audit(ui):
         payload = await ui.form(
-            "Local audit",
+            "Data/model audit",
             [
                 FormField("input", "Training input path", "data/historical_btcusdc.json"),
                 FormField("model", "Model path", "data/model.json"),
             ],
         )
         if payload is None:
-            print("Audit cancelled.")
+            print("Data/model audit cancelled.")
             return 0
         return await ui.run_blocking(
             command_audit,
@@ -1771,7 +1845,7 @@ def _tui_actions():  # skipcq: PY-R1000
         runtime = load_runtime()
         max_batch_size = 1500 if runtime.market_type == "futures" else 1000
         payload = await ui.form(
-            "Fetch candles",
+            "Download market data",
             [
                 FormField("limit", "Fetch limit", "500"),
                 FormField("batch_size", f"Klines per request [max {max_batch_size}]", "1000"),
@@ -1779,7 +1853,7 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Fetch cancelled.")
+            print("Market data download cancelled.")
             return 0
         try:
             limit = _parse_form_int(payload["limit"], label="Fetch limit", default=500, minimum=1)
@@ -1800,7 +1874,7 @@ def _tui_actions():  # skipcq: PY-R1000
 
     async def _train(ui):
         payload = await ui.form(
-            "Train model",
+            "Train AI model",
             [
                 FormField("input", "Training input path", "data/historical_btcusdc.json"),
                 FormField("output", "Model output path", "data/model.json"),
@@ -1817,7 +1891,7 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Training cancelled.")
+            print("AI model training cancelled.")
             return 0
         try:
             preset = _parse_training_preset(payload["preset"])
@@ -1851,7 +1925,7 @@ def _tui_actions():  # skipcq: PY-R1000
 
     async def _tune(ui):
         payload = await ui.form(
-            "Tune strategy",
+            "Optimize strategy",
             [
                 FormField("input", "Tune input path", "data/historical_btcusdc.json"),
                 FormField("window_mode", "Window mode [all/lookback/range]", "all"),
@@ -1873,7 +1947,7 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Tune cancelled.")
+            print("Strategy optimization cancelled.")
             return 0
         mode = payload["window_mode"].strip().lower()
         lookback_days = None
@@ -1899,7 +1973,7 @@ def _tui_actions():  # skipcq: PY-R1000
             min_stop = _parse_form_float(payload["min_stop"], label="Minimum stop loss", default=0.008, minimum=0.0, maximum=0.99)
             max_stop = _parse_form_float(payload["max_stop"], label="Maximum stop loss", default=0.04, minimum=0.0, maximum=0.99)
         except ValueError as exc:
-            print(f"Tune settings invalid: {exc}", file=sys.stderr)
+            print(f"Optimization settings invalid: {exc}", file=sys.stderr)
             return 2
         return await ui.run_blocking(
             command_tune,
@@ -1925,7 +1999,7 @@ def _tui_actions():  # skipcq: PY-R1000
 
     async def _backtest(ui):
         payload = await ui.form(
-            "Backtest",
+            "Backtest strategy",
             [
                 FormField("input", "Backtest input path", "data/historical_btcusdc.json"),
                 FormField("model", "Model path", "data/model.json"),
@@ -1933,7 +2007,7 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Backtest cancelled.")
+            print("Strategy backtest cancelled.")
             return 0
         try:
             start_cash = _parse_form_float(payload["start_cash"], label="Starting cash", default=1000.0, minimum=1.0)
@@ -1982,7 +2056,7 @@ def _tui_actions():  # skipcq: PY-R1000
         runtime = load_runtime()
         max_batch_size = 1500 if runtime.market_type == "futures" else 1000
         payload = await ui.form(
-            "Prepare system",
+            "Build full setup",
             [
                 FormField("historical", "Historical candle path", "data/historical_btcusdc.json"),
                 FormField("model", "Model artifact path", "data/model.json"),
@@ -2003,7 +2077,7 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Prepare cancelled.")
+            print("Build full setup cancelled.")
             return 0
         historical = payload["historical"].strip() or "data/historical_btcusdc.json"
         model = payload["model"].strip() or "data/model.json"
@@ -2022,7 +2096,7 @@ def _tui_actions():  # skipcq: PY-R1000
             calibrate_threshold_opt = _parse_optional_form_bool(payload.get("calibrate_threshold", ""))
             start_cash = _parse_form_float(payload["start_cash"], label="Backtest starting cash", default=1000.0, minimum=1.0)
         except ValueError as exc:
-            print(f"Prepare settings invalid: {exc}", file=sys.stderr)
+            print(f"Setup settings invalid: {exc}", file=sys.stderr)
             return 2
         return await ui.run_blocking(
             command_prepare,
@@ -2048,10 +2122,10 @@ def _tui_actions():  # skipcq: PY-R1000
 
     async def _paper(ui):
         payload = await ui.form(
-            "Paper loop",
+            "Paper trading",
             [
                 FormField("model", "Model path", "data/model.json"),
-                FormField("steps", "Paper loop steps", "20"),
+                FormField("steps", "Paper trading steps", "20"),
                 FormField("sleep", "Sleep seconds", "5"),
                 FormField("retrain_interval", "Retrain interval", "0"),
                 FormField("retrain_window", "Retrain window", "300"),
@@ -2059,16 +2133,16 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Paper loop cancelled.")
+            print("Paper trading cancelled.")
             return 0
         try:
-            steps = _parse_form_int(payload["steps"], label="Paper loop steps", default=20, minimum=1)
+            steps = _parse_form_int(payload["steps"], label="Paper trading steps", default=20, minimum=1)
             sleep = _parse_form_int(payload["sleep"], label="Sleep seconds", default=5, minimum=0)
             retrain_interval = _parse_form_int(payload["retrain_interval"], label="Retrain interval", default=0, minimum=0)
             retrain_window = _parse_form_int(payload["retrain_window"], label="Retrain window", default=300, minimum=1)
             retrain_min_rows = _parse_form_int(payload["retrain_min_rows"], label="Retrain minimum rows", default=240, minimum=1)
         except ValueError as exc:
-            print(f"Paper loop settings invalid: {exc}", file=sys.stderr)
+            print(f"Paper trading settings invalid: {exc}", file=sys.stderr)
             return 2
         return await ui.run_blocking(
             command_live,
@@ -2086,10 +2160,10 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _live(ui):
-        if not _credentials_ready(ui, "Testnet loop"):
+        if not _credentials_ready(ui, "Testnet trading"):
             return 2
         payload = await ui.form(
-            "Testnet loop",
+            "Testnet trading",
             [
                 FormField("model", "Model path", "data/model.json"),
                 FormField("steps", "Live steps", "1"),
@@ -2100,7 +2174,7 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Testnet loop cancelled.")
+            print("Testnet trading cancelled.")
             return 0
         try:
             steps = _parse_form_int(payload["steps"], label="Live steps", default=1, minimum=1)
@@ -2109,7 +2183,7 @@ def _tui_actions():  # skipcq: PY-R1000
             retrain_window = _parse_form_int(payload["retrain_window"], label="Retrain window", default=300, minimum=1)
             retrain_min_rows = _parse_form_int(payload["retrain_min_rows"], label="Retrain minimum rows", default=240, minimum=1)
         except ValueError as exc:
-            print(f"Live loop settings invalid: {exc}", file=sys.stderr)
+            print(f"Testnet trading settings invalid: {exc}", file=sys.stderr)
             return 2
         model = payload["model"].strip() or "data/model.json"
         runtime = load_runtime()
@@ -2135,32 +2209,32 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _roundtrip(ui):
-        if not _credentials_ready(ui, "Spot roundtrip"):
+        if not _credentials_ready(ui, "Test order"):
             return 2
         payload = await ui.form(
-            "Spot roundtrip",
+            "Test order",
             [
                 FormField("quantity", "Order quantity", "0.00008"),
                 FormField("mode", "Mode [auto/buy-sell/sell-buy]", "auto"),
             ],
         )
         if payload is None:
-            print("Spot test order cancelled.")
+            print("Test order cancelled.")
             return 0
         try:
             quantity = _parse_form_float(payload["quantity"], label="Order quantity", default=0.00008, minimum=0.00001)
         except ValueError as exc:
-            print(f"Spot roundtrip settings invalid: {exc}", file=sys.stderr)
+            print(f"Test order settings invalid: {exc}", file=sys.stderr)
             return 2
         mode = payload["mode"].strip().lower() or "auto"
         if mode not in {"auto", "buy-sell", "sell-buy"}:
-            print("Spot roundtrip mode must be auto, buy-sell, or sell-buy.", file=sys.stderr)
+            print("Test order mode must be auto, buy-sell, or sell-buy.", file=sys.stderr)
             return 2
         runtime = load_runtime()
         if not await ui.confirm(
             f"Place {mode} spot {_runtime_environment(runtime)} roundtrip for quantity={quantity:.8f}?"
         ):
-            print("Spot test order cancelled.")
+            print("Test order cancelled.")
             return 0
         return await ui.run_blocking(
             command_spot_roundtrip,
@@ -2169,7 +2243,7 @@ def _tui_actions():  # skipcq: PY-R1000
 
     async def _report(ui):
         payload = await ui.form(
-            "Operator report",
+            "Full report",
             [
                 FormField("input", "Training input path", "data/historical_btcusdc.json"),
                 FormField("model", "Model path", "data/model.json"),
@@ -2179,10 +2253,10 @@ def _tui_actions():  # skipcq: PY-R1000
             ],
         )
         if payload is None:
-            print("Operator report cancelled.")
+            print("Full report cancelled.")
             return 0
         include_account = _parse_form_bool(payload["account"], False)
-        if include_account and not _credentials_ready(ui, "Operator report account section"):
+        if include_account and not _credentials_ready(ui, "Full report account section"):
             return 2
         return await ui.run_blocking(
             command_report,
@@ -2196,33 +2270,40 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _funds(ui):
+        if not _credentials_ready(ui, "Trading caps"):
+            return 2
         return await _ui_funds_menu(ui)
 
     async def _settings(ui):
-        return await _ui_settings_menu(ui)
+        result = await _ui_settings_menu(ui)
+        if _has_api_credentials(load_runtime()):
+            _mark_credentials("unchecked")
+        else:
+            _mark_credentials("missing")
+        return result
 
     return [
-        TUIAction("1", "Overview", "Print the latest runtime, strategy, funds, model, and recent artifacts into the activity log.", _overview),
-        TUIAction("2", "Connect", "Ping the configured exchange and validate that the configured credentials work.", _connect),
-        TUIAction("3", "Account", "Read authenticated balances and open positions from the exchange.", _account),
-        TUIAction("4", "Readiness check", "Verify safety flags, training data, model compatibility, and optionally exchange connectivity.", _doctor),
-        TUIAction("5", "Local audit", "Check candle quality, feature stability, model metadata, and risk posture without network calls.", _audit),
-        TUIAction("6", "Funds", "Read exchange balances and set USDC / BTC trading caps. No deposits, withdrawals, or simulated funds.", _funds),
-        TUIAction("7", "Fetch candles", "Download fresh BTCUSDC klines from the testnet into a local dataset.", _fetch),
-        TUIAction("8", "Train model", "Train or retrain the model on cached candles using the current strategy features.", _train),
-        TUIAction("9", "Evaluate", "Score the saved model against cached candles (classification metrics + thresholds).", _evaluate),
-        TUIAction("10", "Backtest", "Simulate trading on cached candles using the saved model; estimates PnL, fees, and drawdown.", _backtest),
-        TUIAction("11", "Tune strategy", "Grid search execution parameters across all data, a recent lookback, or a date range.", _tune),
-        TUIAction("12", "Prepare system", "One-shot pipeline: fetch candles, train, evaluate, backtest, audit, then readiness checks.", _prepare),
-        TUIAction("13", "Paper loop", "Run the live loop in paper mode; no real orders; supports retraining controls.", _paper),
-        TUIAction("14", "Testnet loop", "Run authenticated non-mainnet execution with real signed orders.", _live),
-        TUIAction("15", "Spot roundtrip", "Place a minimal BUY then SELL on spot testnet/demo; smallest signed execution check.", _roundtrip),
-        TUIAction("16", "Operator report", "Print the dashboard, recent artifacts, readiness report, and optional account state.", _report),
+        _make_action("1", "Connect", "Validate the saved Binance testnet credentials and unlock account-only actions.", _connect, credentials=True),
+        _make_action("2", "Dashboard", "Show the current setup, strategy, model, and recent run artifacts in the activity log.", _overview, aliases=("Overview",)),
+        _make_action("3", "Account balances", "Read authenticated BTC and USDC balances from Binance.", _account, credentials=True, aliases=("Account",)),
+        _make_action("4", "Safety check", "Verify safety flags, training data, model compatibility, and optional exchange reachability.", _doctor, aliases=("Readiness check",)),
+        _make_action("5", "Data/model audit", "Check candle quality, feature stability, model metadata, and risk posture without network calls.", _audit, aliases=("Local audit",)),
+        _make_action("6", "Trading caps", "Read exchange balances and set the maximum BTC / USDC the strategy may use.", _funds, credentials=True, aliases=("Funds",)),
+        _make_action("7", "Download market data", "Download fresh BTCUSDC candles into the local dataset.", _fetch, aliases=("Fetch candles",)),
+        _make_action("8", "Train AI model", "Train or retrain the prediction model on cached market data.", _train, aliases=("Train model",)),
+        _make_action("9", "Evaluate model", "Score the saved model on cached candles and inspect threshold quality.", _evaluate, aliases=("Evaluate",)),
+        _make_action("10", "Backtest strategy", "Simulate trades on cached candles and report PnL, fees, and drawdown.", _backtest, aliases=("Backtest",)),
+        _make_action("11", "Optimize strategy", "Search risk, threshold, take-profit, and stop-loss settings over a chosen history window.", _tune, aliases=("Tune strategy",)),
+        _make_action("12", "Build full setup", "Download data, train, evaluate, backtest, audit, then run safety checks.", _prepare, aliases=("Prepare system",)),
+        _make_action("13", "Paper trading", "Run the live loop without placing orders; useful before signed testnet trading.", _paper, aliases=("Paper loop",)),
+        _make_action("14", "Testnet trading", "Run authenticated non-mainnet execution with signed testnet or demo orders.", _live, credentials=True, aliases=("Testnet loop",)),
+        _make_action("15", "Test order", "Place a minimal BUY/SELL roundtrip on spot testnet or demo.", _roundtrip, credentials=True, aliases=("Spot roundtrip",)),
+        _make_action("16", "Full report", "Print dashboard, recent artifacts, safety checks, and optional account state.", _report, aliases=("Operator report",)),
         # Backwards-compatible aliases for direct configuration shortcuts.
-        TUIAction("17", "Runtime settings", "Shortcut to the Runtime panel inside Settings (API keys, market, testnet, recvWindow).", _runtime),
-        TUIAction("18", "Strategy settings", "Shortcut to the Strategy panel inside Settings (risk, thresholds, model windows, features).", _strategy),
-        TUIAction("19", "Settings", "Centralized configuration: Runtime, Strategy, Execution, Compute backend.", _settings),
-        TUIAction("20", "Help", "Detailed help: workflow, keyboard shortcuts, safety notes, configuration tour.", _help),
+        _make_action("17", "Connection settings", "Edit API keys, market type, testnet/demo mode, paper mode, and request limits.", _runtime, aliases=("Runtime settings",)),
+        _make_action("18", "Strategy settings", "Edit risk, thresholds, model windows, enabled features, and external signal behavior.", _strategy),
+        _make_action("19", "All settings", "Open one settings hub for connection, strategy, order execution, and CPU/GPU backend.", _settings, aliases=("Settings",)),
+        _make_action("20", "Help", "Show the plain-language workflow, keyboard shortcuts, safety notes, and setup guide.", _help),
     ]
 
 
@@ -2240,11 +2321,31 @@ def command_menu(_: argparse.Namespace) -> int:
 
     from .tui import launch_tui
 
+    initial_runtime = load_runtime()
+    credential_state = {
+        "fingerprint": _credential_fingerprint(initial_runtime),
+        "status": "missing" if not _has_api_credentials(initial_runtime) else "unchecked",
+    }
+
+    def menu_connection_status_line() -> str:
+        line = _connection_status_line()
+        runtime = load_runtime()
+        credential_state["fingerprint"] = _credential_fingerprint(runtime)
+        if not _has_api_credentials(runtime):
+            credential_state["status"] = "missing"
+        elif "authenticated" in line or "auth response ok" in line:
+            credential_state["status"] = "valid"
+        elif "authentication failed" in line:
+            credential_state["status"] = "invalid"
+        else:
+            credential_state["status"] = "unavailable"
+        return line
+
     return launch_tui(
         title="simple-ai-trading interactive console",
-        actions=_tui_actions(),
+        actions=_tui_actions(credential_state),
         snapshot_provider=_menu_dashboard_snapshot,
-        connection_provider=_connection_status_line,
+        connection_provider=menu_connection_status_line,
     )
 
 
@@ -2802,13 +2903,13 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:
         print("Pass --yes to confirm signed spot testnet/demo order placement.", file=sys.stderr)
         return 2
     if runtime.market_type != "spot":
-        print("Spot roundtrip requires runtime.market_type=spot.", file=sys.stderr)
+        print("Test order requires market_type=spot in Connection settings.", file=sys.stderr)
         return 2
     if not _allows_signed_execution(runtime):
-        print("Spot roundtrip requires testnet=true or demo=true.", file=sys.stderr)
+        print("Test order requires testnet=true or demo=true in Connection settings.", file=sys.stderr)
         return 2
     if not _has_api_credentials(runtime):
-        print(_credential_required_message("Spot roundtrip"), file=sys.stderr)
+        print(_credential_required_message("Test order"), file=sys.stderr)
         return 2
 
     mode = str(getattr(args, "mode", "auto"))
@@ -2848,7 +2949,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:
         second = client.place_order(runtime.symbol, second_side, second_quantity, dry_run=False)
         after = client.get_account()
     except (BinanceAPIError, ValueError) as exc:
-        print(_credential_failure_message("Spot roundtrip", exc), file=sys.stderr)
+        print(_credential_failure_message("Test order", exc), file=sys.stderr)
         return 2
 
     payload = {
@@ -2987,7 +3088,7 @@ def command_risk(args: argparse.Namespace) -> int:
 
 def command_report(args: argparse.Namespace) -> int:
     if bool(args.account) and not _has_api_credentials(load_runtime()):
-        print(_credential_required_message("Operator report account section"), file=sys.stderr)
+        print(_credential_required_message("Full report account section"), file=sys.stderr)
         return 2
     print(
         _render_operator_report(
@@ -3078,12 +3179,12 @@ def command_prepare(args: argparse.Namespace) -> int:
     model = str(args.model)
     sequence = [
         (
-            "Fetch candles",
+            "Download market data",
             command_fetch,
             argparse.Namespace(symbol=runtime.symbol, interval=runtime.interval, limit=limit, batch_size=batch_size, output=historical),
         ),
         (
-            "Train model",
+            "Train AI model",
             command_train,
             argparse.Namespace(
                 input=historical,
@@ -3102,17 +3203,17 @@ def command_prepare(args: argparse.Namespace) -> int:
             ),
         ),
         (
-            "Evaluate",
+            "Evaluate model",
             command_evaluate,
             argparse.Namespace(input=historical, model=model, threshold=None, calibrate_threshold=should_calibrate_threshold),
         ),
         (
-            "Backtest",
+            "Backtest strategy",
             command_backtest,
             argparse.Namespace(input=historical, model=model, start_cash=start_cash),
         ),
         (
-            "Local audit",
+            "Data/model audit",
             command_audit,
             argparse.Namespace(input=historical, model=model),
         ),
@@ -5088,7 +5189,7 @@ def command_objectives(_: argparse.Namespace) -> int:
 
 def command_train_suite(args: argparse.Namespace) -> int:
     from .objective import get_objective
-    from .training_suite import run_training_suite
+    from .training_suite import describe_candidate_grid, run_training_suite
 
     runtime = load_runtime()
     strategy = load_strategy()
@@ -5116,6 +5217,15 @@ def command_train_suite(args: argparse.Namespace) -> int:
             tuple(get_objective(name).name for name in args.objective)
             if args.objective
             else available_objectives()
+        )
+        grid_counts = {name: len(describe_candidate_grid(get_objective(name))) for name in objectives}
+        total_candidates = sum(grid_counts.values())
+        backend_label = str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu")
+        print(
+            "training suite starting: "
+            f"objectives={','.join(objectives)} candidates={total_candidates} "
+            f"backend={backend_label} batch_size={getattr(args, 'batch_size', 8192)}",
+            flush=True,
         )
         suite_kwargs: dict[str, object] = {
             "objectives": objectives,

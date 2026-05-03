@@ -7,7 +7,7 @@ import inspect
 import io
 import textwrap
 from contextlib import redirect_stderr, redirect_stdout
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from typing import Awaitable, Callable
 
 from textual.app import App, ComposeResult
@@ -15,6 +15,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, OptionList, RichLog, Static
+from textual.widgets.option_list import Option
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,19 @@ class TUIAction:
     title: str
     description: str
     run: Callable[["TerminalUI"], Awaitable[int | None] | int | None]
+    enabled: Callable[[], bool] | None = None
+    disabled_reason: Callable[[], str] | str = "Locked until Binance credentials validate."
+    aliases: tuple[str, ...] = dataclass_field(default_factory=tuple)
+
+    def is_enabled(self) -> bool:
+        if self.enabled is None:
+            return True
+        return bool(self.enabled())
+
+    def lock_reason(self) -> str:
+        if callable(self.disabled_reason):
+            return str(self.disabled_reason())
+        return str(self.disabled_reason)
 
 
 @dataclass(frozen=True)
@@ -599,6 +613,10 @@ class OperatorApp(App[int]):
         color: #f4fbff;
         text-style: none;
     }
+    #actions > .option-list--option-disabled {
+        color: #617181;
+        text-style: italic;
+    }
     #actions:focus > .option-list--option-highlighted {
         background: #0f766e;
         color: #faffff;
@@ -889,8 +907,14 @@ class OperatorApp(App[int]):
             yield Static("", id="status", markup=False)
         with Horizontal(id="body"):
             with Vertical(id="nav"):
-                yield Static("Operator commands", id="actions-title", classes="panel-title")
-                yield OptionList(*[action.title for action in self.actions_data], id="actions")
+                yield Static("Main menu", id="actions-title", classes="panel-title")
+                yield OptionList(
+                    *[
+                        Option(self._action_option_label(action), id=action.key, disabled=not action.is_enabled())
+                        for action in self.actions_data
+                    ],
+                    id="actions",
+                )
             with Vertical(id="context"):
                 with Vertical(id="action-panel"):
                     yield Static(self.actions_data[0].title if self.actions_data else "Command", id="details-title", classes="panel-title")
@@ -914,13 +938,21 @@ class OperatorApp(App[int]):
 
     def on_mount(self) -> None:
         actions = self.query_one("#actions", OptionList)
-        actions.highlighted = 0
+        actions.highlighted = self._first_enabled_action_index()
         actions.focus()
+        self.refresh_action_availability()
         self.refresh_preview()
         self._update_action_details()
         self.set_status("Ready. Up/Down selects a command; Enter runs it.")
         self.set_timer(0.1, self.refresh_connection_status, name="connection-status-initial")
         self.set_interval(self.connection_interval, self.refresh_connection_status, name="connection-status")
+
+    def on_key(self, event) -> None:
+        if self._modal_open() or event.key not in {"tab", "shift+tab"}:
+            return
+        self.query_one("#actions", OptionList).focus()
+        event.prevent_default()
+        event.stop()
 
     def set_status(self, text: str) -> None:
         if text == self._last_status:
@@ -981,7 +1013,10 @@ class OperatorApp(App[int]):
             break_long_words=False,
             break_on_hyphens=False,
         ) or [action.description]
-        rendered = "\n".join(wrapped)
+        if action.is_enabled():
+            rendered = "\n".join(wrapped)
+        else:
+            rendered = "\n".join([*wrapped, "", f"Locked: {action.lock_reason()}"])
         if rendered == self._last_details and width == self._last_details_width:
             return
         self._last_details = rendered
@@ -1009,20 +1044,76 @@ class OperatorApp(App[int]):
         except Exception as exc:
             line = f"Connection: check failed ({exc})"
         self.set_connection_status(line)
+        self.refresh_action_availability()
 
     def _current_action(self) -> TUIAction:
         option_list = self.query_one("#actions", OptionList)
         index = _bounded_index(option_list.highlighted, len(self.actions_data))
         return self.actions_data[index]
 
-    def _select_action(self, index: int) -> TUIAction:
+    def _action_option_label(self, action: TUIAction) -> str:
+        return action.title if action.is_enabled() else f"{action.title}  (locked)"
+
+    def _first_enabled_action_index(self) -> int:
+        for index, action in enumerate(self.actions_data):
+            if action.is_enabled():
+                return index
+        return 0
+
+    def _nearest_enabled_index(self, index: int, *, direction: int = 1) -> int:
+        if not self.actions_data:
+            return 0
+        bounded = max(0, min(index, len(self.actions_data) - 1))
+        if self.actions_data[bounded].is_enabled():
+            return bounded
+        step = 1 if direction >= 0 else -1
+        cursor = bounded + step
+        while 0 <= cursor < len(self.actions_data):
+            if self.actions_data[cursor].is_enabled():
+                return cursor
+            cursor += step
+        cursor = bounded - step
+        while 0 <= cursor < len(self.actions_data):
+            if self.actions_data[cursor].is_enabled():
+                return cursor
+            cursor -= step
+        return bounded
+
+    def refresh_action_availability(self) -> None:
+        try:
+            option_list = self.query_one("#actions", OptionList)
+        except Exception:
+            return
+        previous_index = _bounded_index(option_list.highlighted, len(self.actions_data))
+        for index, action in enumerate(self.actions_data):
+            enabled = action.is_enabled()
+            try:
+                option_list.replace_option_prompt_at_index(index, self._action_option_label(action))
+                if enabled:
+                    option_list.enable_option_at_index(index)
+                else:
+                    option_list.disable_option_at_index(index)
+            except Exception:
+                return
+        safe_index = self._nearest_enabled_index(previous_index)
+        if option_list.highlighted != safe_index:
+            option_list.highlighted = safe_index
+        self._update_action_details()
+
+    def _select_action(self, index: int, *, direction: int = 1) -> TUIAction:
         option_list = self.query_one("#actions", OptionList)
-        safe_index = max(0, min(index, len(self.actions_data) - 1))
-        option_list.highlighted = safe_index
+        safe_index = self._nearest_enabled_index(index, direction=direction)
+        if option_list.highlighted != safe_index:
+            option_list.highlighted = safe_index
         option_list.focus()
         return self.actions_data[safe_index]
 
     async def _execute_action(self, action: TUIAction) -> None:
+        if not action.is_enabled():
+            reason = action.lock_reason()
+            self.append_log(reason)
+            self.set_status(reason)
+            return
         self.set_status(f"Running: {action.title}")
         stream = io.StringIO()
         result: int | None = None
@@ -1041,6 +1132,7 @@ class OperatorApp(App[int]):
         output = stream.getvalue().strip()
         if output:
             self.append_log(output)
+        self.refresh_action_availability()
         self.refresh_preview()
         self.set_status(f"{action.title} complete ({result})")
 
@@ -1064,6 +1156,11 @@ class OperatorApp(App[int]):
             self._call_modal_action("select_highlighted")
             return
         action = self._current_action()
+        if not action.is_enabled():
+            reason = action.lock_reason()
+            self.append_log(reason)
+            self.set_status(reason)
+            return
         if self.is_running:
             self._execute_action_in_background(action)
         else:
@@ -1077,7 +1174,9 @@ class OperatorApp(App[int]):
         self.set_timer(0.1, self.refresh_connection_status, name="connection-status-manual")
 
     def _set_current_action_index(self, index: int) -> None:
-        action = self._select_action(index)
+        current = _bounded_index(self.query_one("#actions", OptionList).highlighted, len(self.actions_data))
+        direction = 1 if index >= current else -1
+        action = self._select_action(index, direction=direction)
         self._update_action_details()
         self.set_status(action.title)
 
@@ -1118,13 +1217,17 @@ class OperatorApp(App[int]):
             return
         if self._modal_open():
             return
-        self._set_current_action_index(0)
+        self._set_current_action_index(self._first_enabled_action_index())
 
     def action_last_action(self) -> None:
         if self._call_modal_action("last"):
             return
         if self._modal_open():
             return
+        for index in range(len(self.actions_data) - 1, -1, -1):
+            if self.actions_data[index].is_enabled():
+                self._set_current_action_index(index)
+                return
         self._set_current_action_index(len(self.actions_data) - 1)
 
     def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
@@ -1134,14 +1237,25 @@ class OperatorApp(App[int]):
             self._ignored_initial_highlight = True
             if event.option_index == 0:
                 return
-        self._select_action(event.option_index)
-        self._update_action_details()
-        self.set_status(self._current_action().title)
+        try:
+            if event.option_list.highlighted != event.option_index:
+                return
+            self._update_action_details()
+        except Exception:
+            return
 
     async def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         if event.option_list.id != "actions" or self._modal_open():
             return
-        action = self._select_action(event.option_index)
+        try:
+            action = self._select_action(event.option_index)
+        except Exception:
+            return
+        if not action.is_enabled():
+            reason = action.lock_reason()
+            self.append_log(reason)
+            self.set_status(reason)
+            return
         if self.is_running:
             self._execute_action_in_background(action)
         else:

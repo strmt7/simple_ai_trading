@@ -36,6 +36,10 @@ def test_available_and_describe():
     described = obj.describe_objectives()
     assert {entry["name"] for entry in described} == {"conservative", "default", "risky"}
     assert all("summary" in entry for entry in described)
+    assert obj.RISKY.max_drawdown_rejection <= 0.30
+    assert obj.RISKY.training is not None
+    assert obj.RISKY.training.max_position_pct <= 0.25
+    assert obj.RISKY.training.leverage <= 2.0
 
 
 def test_get_objective_lookups():
