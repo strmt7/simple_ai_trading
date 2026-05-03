@@ -19,6 +19,11 @@ gpu = [
     "torch>=2.4,<3",
     "torch-directml==0.2.5.dev240914; platform_system == 'Windows' and python_version < '3.12'",
 ]
+terminal-test = [
+    "pyte>=0.8.2,<1",
+    "pywinpty>=3.0.3,<4; platform_system == 'Windows'",
+    "pexpect>=4.9.0,<5; platform_system != 'Windows'",
+]
 
 [project.scripts]
 simple-ai-trading = "simple_ai_bitcoin_trading_binance.cli:main"

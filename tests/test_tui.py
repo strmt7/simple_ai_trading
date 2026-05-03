@@ -208,6 +208,8 @@ def test_multi_select_screen_behaviors(monkeypatch) -> None:
 
     monkeypatch.setattr(screen, "query_one", fake_query_one)
     monkeypatch.setattr(screen, "dismiss", lambda value: dismissed.append(value))
+    monkeypatch.setattr(screen, "set_focus", lambda _widget, **_kwargs: None)
+    monkeypatch.setattr(screen, "call_later", lambda _callback, *args, **kwargs: None)
 
     screen.on_mount()
     assert feature_list.focused is True
@@ -463,6 +465,21 @@ def test_operator_app_execute_action_handles_silent_result(monkeypatch) -> None:
     assert widgets["#status"].value == "Silent complete (None)"
 
 
+def test_operator_app_refuses_second_background_action(monkeypatch) -> None:
+    widgets = {"#status": _FakeStatic()}
+    app = OperatorApp(
+        title_text="console",
+        actions=[TUIAction("1", "Sync", "sync description", lambda _ui: 0)],
+        snapshot_provider=lambda _width=70: "snapshot",
+    )
+    monkeypatch.setattr(app, "query_one", lambda selector, _cls=None: widgets[selector])
+    app._action_task = type("Task", (), {"done": lambda _self: False})()
+
+    app._execute_action_in_background(app.actions_data[0])
+
+    assert widgets["#status"].value == "Another action is already running."
+
+
 def test_operator_app_select_action_clamps_index(monkeypatch) -> None:
     widgets = {
         "#actions": _FakeOptionList(),
@@ -697,6 +714,63 @@ def test_modal_keyboard_fallbacks_in_textual_runtime() -> None:
             await pilot.pause()
             assert len(confirm_accept_app.screen_stack) == 1
             assert confirm_accept_app.focused.id == "actions"
+
+    asyncio.run(runner())
+
+
+def test_enter_launched_actions_leave_modal_arrow_navigation_live_in_textual_runtime() -> None:
+    async def runner() -> None:
+        app = OperatorApp(
+            title_text="console",
+            actions=[
+                TUIAction(
+                    "1",
+                    "Settings",
+                    "Open a settings-style menu and wait for a choice.",
+                    lambda ui: ui.menu(
+                        "Settings",
+                        [
+                            ("runtime", "Runtime"),
+                            ("strategy", "Strategy"),
+                            ("execution", "Execution"),
+                        ],
+                    ),
+                )
+            ],
+            snapshot_provider=lambda _width=70: "snapshot",
+        )
+        async with app.run_test(size=(100, 32)) as pilot:
+            await pilot.pause()
+            await pilot.press("enter")
+            for _ in range(10):
+                await pilot.pause()
+                if isinstance(app.screen_stack[-1], MenuScreen):
+                    break
+            assert isinstance(app.screen_stack[-1], MenuScreen)
+            assert app._action_task is not None
+            assert not app._action_task.done()
+
+            menu = app.screen.query_one("#menu-list")
+            assert menu.highlighted == 0
+            await pilot.press("down")
+            await pilot.pause()
+            assert menu.highlighted == 1
+            await pilot.press("down")
+            await pilot.pause()
+            assert menu.highlighted == 2
+            await pilot.press("up")
+            await pilot.pause()
+            assert menu.highlighted == 1
+            await pilot.press("enter")
+            await pilot.pause()
+
+            for _ in range(10):
+                await pilot.pause()
+                if app._action_task is None:
+                    break
+            assert app._action_task is None
+            assert len(app.screen_stack) == 1
+            assert str(app.query_one("#status").content) == "Settings complete (strategy)"
 
     asyncio.run(runner())
 
@@ -1003,6 +1077,8 @@ def test_menu_screen_dismisses_on_selection_and_buttons(monkeypatch) -> None:
         return rows[selector]
 
     monkeypatch.setattr(screen, "query_one", fake_query_one)
+    monkeypatch.setattr(screen, "set_focus", lambda _widget, **_kwargs: None)
+    monkeypatch.setattr(screen, "call_later", lambda _callback, *args, **kwargs: None)
 
     screen.on_mount()
     assert fake_list.highlighted == 0

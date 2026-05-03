@@ -156,6 +156,8 @@ class FormScreen(ModalScreen[dict[str, str] | None]):
 class MenuScreen(ModalScreen[str | None]):
     """Modal list-picker used for settings hubs and similar routers."""
 
+    AUTO_FOCUS = "#menu-list"
+
     BINDINGS = [
         Binding("escape", "dismiss_none", "Cancel", show=False, priority=True),
         Binding("up", "cursor_up", "Up", show=False, priority=True),
@@ -216,13 +218,19 @@ class MenuScreen(ModalScreen[str | None]):
     def on_mount(self) -> None:
         self._highlighted = 0
         self._sync_rows()
-        self.query_one("#menu-list").focus()
+        self._focus_menu_list()
+        self.call_later(self._focus_menu_list)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(None)
 
     def _menu_list(self):
         return self.query_one("#menu-list")
+
+    def _focus_menu_list(self) -> None:
+        menu_list = self._menu_list()
+        self.set_focus(menu_list)
+        menu_list.focus()
 
     def _menu_row_text(self, index: int) -> str:
         marker = ">" if index == self._highlighted else " "
@@ -245,7 +253,7 @@ class MenuScreen(ModalScreen[str | None]):
             return
         self._highlighted = max(0, min(index, len(self.options) - 1))
         self._sync_rows()
-        self._menu_list().focus()
+        self._focus_menu_list()
 
     def action_cursor_down(self) -> None:
         self._set_highlighted_index(self._highlighted_index() + 1)
@@ -285,6 +293,8 @@ class MenuScreen(ModalScreen[str | None]):
 
 
 class MultiSelectScreen(ModalScreen[list[str] | None]):
+    AUTO_FOCUS = "#feature-list"
+
     BINDINGS = [
         Binding("escape", "dismiss_none", "Cancel", show=False, priority=True),
         Binding("up", "cursor_up", "Up", show=False, priority=True),
@@ -356,7 +366,8 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
     def on_mount(self) -> None:
         self._highlighted = 0
         self._sync_rows()
-        self._feature_list().focus()
+        self._focus_feature_list()
+        self.call_later(self._focus_feature_list)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "all":
@@ -374,6 +385,11 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
 
     def _feature_list(self):
         return self.query_one("#feature-list")
+
+    def _focus_feature_list(self) -> None:
+        feature_list = self._feature_list()
+        self.set_focus(feature_list)
+        feature_list.focus()
 
     def _feature_row_text(self, index: int) -> str:
         marker = ">" if index == self._highlighted else " "
@@ -403,7 +419,7 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
             return
         self._highlighted = max(0, min(index, len(self.options) - 1))
         self._sync_rows()
-        self._feature_list().focus()
+        self._focus_feature_list()
 
     def action_cursor_down(self) -> None:
         self._set_highlighted_index(self._highlighted_index() + 1)
@@ -438,7 +454,7 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
         else:
             self.selected.add(option)
         self._sync_rows()
-        self._feature_list().focus()
+        self._focus_feature_list()
 
     def action_activate_focused(self) -> None:
         focused_id = getattr(self.focused, "id", "")
@@ -477,7 +493,9 @@ class TerminalUI:
             if not future.done():
                 future.set_result(result)
 
-        self.app.push_screen(screen, callback=_settle)
+        maybe_mount = self.app.push_screen(screen, callback=_settle)
+        if inspect.isawaitable(maybe_mount):
+            await maybe_mount
         return await future
 
     async def confirm(self, message: str) -> bool:
@@ -862,6 +880,7 @@ class OperatorApp(App[int]):
         self._last_details: str | None = None
         self._last_preview: str | None = None
         self._last_details_width: int = 0
+        self._action_task: asyncio.Task[None] | None = None
 
     def compose(self) -> ComposeResult:
         with Vertical(id="topbar"):
@@ -1014,13 +1033,30 @@ class OperatorApp(App[int]):
         self.refresh_preview()
         self.set_status(f"{action.title} complete ({result})")
 
+    def _execute_action_in_background(self, action: TUIAction) -> None:
+        if self._action_task is not None and not self._action_task.done():
+            self.set_status("Another action is already running.")
+            return
+
+        async def runner() -> None:
+            try:
+                await self._execute_action(action)
+            finally:
+                self._action_task = None
+
+        self._action_task = asyncio.create_task(runner())
+
     async def action_run_selected(self) -> None:
         if self._modal_open():
             if self._call_modal_action("activate_focused"):
                 return
             self._call_modal_action("select_highlighted")
             return
-        await self._execute_action(self._current_action())
+        action = self._current_action()
+        if self.is_running:
+            self._execute_action_in_background(action)
+        else:
+            await self._execute_action(action)
 
     def action_refresh_preview(self) -> None:
         if self._modal_open():
@@ -1094,7 +1130,11 @@ class OperatorApp(App[int]):
     async def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         if event.option_list.id != "actions" or self._modal_open():
             return
-        await self._execute_action(self._select_action(event.option_index))
+        action = self._select_action(event.option_index)
+        if self.is_running:
+            self._execute_action_in_background(action)
+        else:
+            await self._execute_action(action)
 
     def _set_nav_width(self, width: int) -> None:
         bounded = max(self._NAV_WIDTH_MIN, min(self._NAV_WIDTH_MAX, width))
