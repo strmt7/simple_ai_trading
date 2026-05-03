@@ -30,9 +30,13 @@ class _FakeStatic:
     def __init__(self) -> None:
         self.value = ""
         self.size = type("Size", (), {"width": 70})()
+        self.classes: dict[str, bool] = {}
 
     def update(self, value: str) -> None:
         self.value = value
+
+    def set_class(self, active: bool, name: str) -> None:
+        self.classes[name] = active
 
 
 class _FakeFormInput(_FakeInput):
@@ -183,63 +187,39 @@ def test_form_screen_handles_empty_and_unknown_submission(monkeypatch) -> None:
 
 
 def test_multi_select_screen_behaviors(monkeypatch) -> None:
-    class _FakeSelectionList:
+    class _FakeFeatureList:
         def __init__(self) -> None:
-            self.selected = ["momentum_1"]
+            self.selected: list[str] = []
             self.focused = False
-            self.selected_all = False
-            self.cleared = False
-            self.highlighted = 0
-            self.selected_calls = 0
+            self.highlighted = None
 
         def focus(self) -> None:
             self.focused = True
 
-        def select_all(self) -> None:
-            self.selected_all = True
-            self.selected = ["momentum_1", "rsi"]
-
-        def deselect_all(self) -> None:
-            self.cleared = True
-            self.selected = []
-
-        def action_cursor_down(self) -> None:
-            self.highlighted = 1
-
-        def action_cursor_up(self) -> None:
-            self.highlighted = 0
-
-        def action_page_down(self) -> None:
-            self.highlighted = 2
-
-        def action_page_up(self) -> None:
-            self.highlighted = 0
-
-        def action_first(self) -> None:
-            self.highlighted = 0
-
-        def action_last(self) -> None:
-            self.highlighted = 99
-
-        def action_select(self) -> None:
-            self.selected_calls += 1
-            if "rsi" in self.selected:
-                self.selected = [value for value in self.selected if value != "rsi"]
-            else:
-                self.selected.append("rsi")
-
     screen = MultiSelectScreen("Features", ["momentum_1", "rsi"], ["momentum_1"], help_text="help")
-    selection_list = _FakeSelectionList()
+    feature_list = _FakeFeatureList()
+    rows = {f"#feature-row-{index}": _FakeStatic() for index in range(2)}
     dismissed: list[object] = []
 
-    monkeypatch.setattr(screen, "query_one", lambda _selector, _cls=None: selection_list)
+    def fake_query_one(selector: str, _cls=None):
+        if selector == "#feature-list":
+            return feature_list
+        return rows[selector]
+
+    monkeypatch.setattr(screen, "query_one", fake_query_one)
     monkeypatch.setattr(screen, "dismiss", lambda value: dismissed.append(value))
 
     screen.on_mount()
-    assert selection_list.focused is True
+    assert feature_list.focused is True
+    assert feature_list.highlighted == 0
+    assert feature_list.selected == ["momentum_1"]
+    assert rows["#feature-row-0"].classes["feature-row-highlighted"] is True
+    assert rows["#feature-row-0"].classes["feature-row-selected"] is True
 
     screen.on_button_pressed(type("Evt", (), {"button": type("Btn", (), {"id": "all"})()})())
+    assert feature_list.selected == ["momentum_1", "rsi"]
     screen.on_button_pressed(type("Evt", (), {"button": type("Btn", (), {"id": "none"})()})())
+    assert feature_list.selected == []
     screen.on_button_pressed(type("Evt", (), {"button": type("Btn", (), {"id": "save"})()})())
     screen.on_button_pressed(type("Evt", (), {"button": type("Btn", (), {"id": "cancel"})()})())
     screen.action_dismiss_none()
@@ -264,18 +244,18 @@ def test_multi_select_screen_behaviors(monkeypatch) -> None:
     screen.action_activate_focused()
     screen.action_save()
 
-    assert selection_list.selected_all is True
-    assert selection_list.cleared is True
-    assert selection_list.selected_calls == 3
-    assert dismissed == [[], None, None, ["rsi"], None, ["rsi"]]
+    assert screen._highlighted == 0
+    assert rows["#feature-row-0"].value == "> 1. [x] momentum_1"
+    assert rows["#feature-row-0"].classes["feature-row-selected"] is True
+    assert dismissed == [[], None, None, ["momentum_1"], None, ["momentum_1"]]
 
     empty_screen = MultiSelectScreen("Empty", [], [])
-    empty_list = _FakeSelectionList()
+    empty_list = _FakeFeatureList()
     monkeypatch.setattr(empty_screen, "query_one", lambda _selector, _cls=None: empty_list)
     empty_screen.action_cursor_down()
     empty_screen.action_toggle_highlighted()
     empty_screen.action_toggle_index(0)
-    assert empty_list.selected_calls == 0
+    assert empty_list.selected == []
 
 
 def test_terminal_ui_methods() -> None:
@@ -1008,39 +988,27 @@ def test_menu_screen_dismisses_on_selection_and_buttons(monkeypatch) -> None:
     class _FakeMenuList:
         def __init__(self) -> None:
             self.id = "menu-list"
-            self.highlighted = 0
+            self.highlighted = None
             self.focused = False
 
         def focus(self) -> None:
             self.focused = True
 
-        def action_cursor_down(self) -> None:
-            self.highlighted = 1
-
-        def action_cursor_up(self) -> None:
-            self.highlighted = 0
-
-        def action_page_down(self) -> None:
-            self.highlighted = 2
-
-        def action_page_up(self) -> None:
-            self.highlighted = 0
-
-        def action_first(self) -> None:
-            self.highlighted = 0
-
-        def action_last(self) -> None:
-            self.highlighted = 99
-
     fake_list = _FakeMenuList()
-    monkeypatch.setattr(screen, "query_one", lambda _selector, _cls=None: fake_list)
+    rows = {f"#menu-row-{index}": _FakeStatic() for index in range(3)}
+
+    def fake_query_one(selector: str, _cls=None):
+        if selector == "#menu-list":
+            return fake_list
+        return rows[selector]
+
+    monkeypatch.setattr(screen, "query_one", fake_query_one)
 
     screen.on_mount()
     assert fake_list.highlighted == 0
     assert fake_list.focused is True
+    assert rows["#menu-row-0"].classes["menu-row-highlighted"] is True
 
-    screen.on_option_list_option_selected(_FakeOptionEvent(fake_list, 1))
-    screen.on_option_list_option_selected(_FakeOptionEvent(_FakeOptionList("not-menu"), 0))
     screen.action_cursor_down()
     screen.action_cursor_up()
     screen.action_page_down()
@@ -1048,18 +1016,19 @@ def test_menu_screen_dismisses_on_selection_and_buttons(monkeypatch) -> None:
     screen.action_first()
     screen.action_last()
     assert fake_list.highlighted == 2
+    assert rows["#menu-row-2"].value == "> 3. Label three"
     screen.action_select_index(1)
     screen.action_select_index(99)
-    fake_list.highlighted = None
+    screen._highlighted = 0
     screen.action_select_highlighted()
-    fake_list.highlighted = 100
+    screen._highlighted = 100
     screen.action_select_highlighted()
     screen.focused = type("Focused", (), {"id": "close"})()
     screen.action_select_highlighted()
     screen.on_button_pressed(type("Evt", (), {"button": type("Btn", (), {"id": "close"})()})())
     screen.action_dismiss_none()
 
-    assert dismissed == ["k2", "k2", "k1", "k3", None, None, None]
+    assert dismissed == ["k2", "k1", "k3", None, None, None]
 
     empty_screen = MenuScreen("Empty", [])
     empty_dismissed: list[object] = []
