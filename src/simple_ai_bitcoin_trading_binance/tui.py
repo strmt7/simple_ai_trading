@@ -14,7 +14,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, OptionList, RichLog, SelectionList, Static
+from textual.widgets import Button, Input, Label, OptionList, RichLog, Static
 
 
 @dataclass(frozen=True)
@@ -187,6 +187,7 @@ class MenuScreen(ModalScreen[str | None]):
         self.title_text = title
         self.options = options
         self.help_text = help_text
+        self._highlighted = 0
 
     def compose(self) -> ComposeResult:
         help_text = self.help_text or "Select an item with Up/Down and press Enter."
@@ -198,7 +199,13 @@ class MenuScreen(ModalScreen[str | None]):
                 id="menu-help",
                 markup=False,
             ),
-            OptionList(*[label for _, label in self.options], id="menu-list"),
+            VerticalScroll(
+                *[
+                    Static(self._menu_row_text(index), id=f"menu-row-{index}", classes="menu-row", markup=False)
+                    for index in range(len(self.options))
+                ],
+                id="menu-list",
+            ),
             Horizontal(
                 Button("Close", id="close"),
                 id="menu-buttons",
@@ -207,31 +214,38 @@ class MenuScreen(ModalScreen[str | None]):
         )
 
     def on_mount(self) -> None:
-        option_list = self.query_one("#menu-list", OptionList)
-        option_list.highlighted = 0
-        option_list.focus()
-
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-        if event.option_list.id != "menu-list":
-            return
-        key, _label = self.options[event.option_index]
-        self.dismiss(key)
+        self._highlighted = 0
+        self._sync_rows()
+        self.query_one("#menu-list").focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(None)
 
-    def _menu_list(self) -> OptionList:
-        return self.query_one("#menu-list", OptionList)
+    def _menu_list(self):
+        return self.query_one("#menu-list")
+
+    def _menu_row_text(self, index: int) -> str:
+        marker = ">" if index == self._highlighted else " "
+        _key, label = self.options[index]
+        return f"{marker} {index + 1}. {label}"
+
+    def _sync_rows(self) -> None:
+        menu_list = self._menu_list()
+        setattr(menu_list, "highlighted", self._highlighted if self.options else None)
+        for index in range(len(self.options)):
+            row = self.query_one(f"#menu-row-{index}", Static)
+            row.update(self._menu_row_text(index))
+            row.set_class(index == self._highlighted, "menu-row-highlighted")
 
     def _highlighted_index(self) -> int:
-        return _bounded_index(self._menu_list().highlighted, len(self.options))
+        return _bounded_index(self._highlighted, len(self.options))
 
     def _set_highlighted_index(self, index: int) -> None:
         if not self.options:
             return
-        option_list = self._menu_list()
-        option_list.highlighted = max(0, min(index, len(self.options) - 1))
-        option_list.focus()
+        self._highlighted = max(0, min(index, len(self.options) - 1))
+        self._sync_rows()
+        self._menu_list().focus()
 
     def action_cursor_down(self) -> None:
         self._set_highlighted_index(self._highlighted_index() + 1)
@@ -305,6 +319,7 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
         self.options = options
         self.selected = set(selected)
         self.help_text = help_text
+        self._highlighted = 0
 
     def compose(self) -> ComposeResult:
         help_text = self.help_text or "Use space to toggle an item. Save applies the current selection."
@@ -316,8 +331,16 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
                 id="feature-help",
                 markup=False,
             ),
-            SelectionList(
-                *[(option, option, option in self.selected) for option in self.options],
+            VerticalScroll(
+                *[
+                    Static(
+                        self._feature_row_text(index),
+                        id=f"feature-row-{index}",
+                        classes="feature-row",
+                        markup=False,
+                    )
+                    for index in range(len(self.options))
+                ],
                 id="feature-list",
             ),
             Horizontal(
@@ -331,33 +354,56 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
         )
 
     def on_mount(self) -> None:
-        self.query_one("#feature-list", SelectionList).focus()
+        self._highlighted = 0
+        self._sync_rows()
+        self._feature_list().focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        selection_list = self.query_one("#feature-list", SelectionList)
         if event.button.id == "all":
-            selection_list.select_all()
+            self.selected = set(self.options)
+            self._sync_rows()
             return
         if event.button.id == "none":
-            selection_list.deselect_all()
+            self.selected.clear()
+            self._sync_rows()
             return
         if event.button.id == "save":
-            self.dismiss([str(value) for value in selection_list.selected])
+            self.action_save()
             return
         self.dismiss(None)
 
-    def _selection_list(self) -> SelectionList:
-        return self.query_one("#feature-list", SelectionList)
+    def _feature_list(self):
+        return self.query_one("#feature-list")
+
+    def _feature_row_text(self, index: int) -> str:
+        marker = ">" if index == self._highlighted else " "
+        option = self.options[index]
+        checked = "x" if option in self.selected else " "
+        return f"{marker} {index + 1}. [{checked}] {option}"
+
+    def _selected_values(self) -> list[str]:
+        return [option for option in self.options if option in self.selected]
+
+    def _sync_rows(self) -> None:
+        feature_list = self._feature_list()
+        setattr(feature_list, "highlighted", self._highlighted if self.options else None)
+        setattr(feature_list, "selected", self._selected_values())
+        for index in range(len(self.options)):
+            option = self.options[index]
+            row = self.query_one(f"#feature-row-{index}", Static)
+            row.update(self._feature_row_text(index))
+            row.set_class(index == self._highlighted, "feature-row-highlighted")
+            row.set_class(option in self.selected, "feature-row-selected")
 
     def _highlighted_index(self) -> int:
-        return _bounded_index(self._selection_list().highlighted, len(self.options))
+        return _bounded_index(self._highlighted, len(self.options))
 
     def _set_highlighted_index(self, index: int) -> None:
         if not self.options:
             return
-        selection_list = self._selection_list()
-        selection_list.highlighted = max(0, min(index, len(self.options) - 1))
-        selection_list.focus()
+        self._highlighted = max(0, min(index, len(self.options) - 1))
+        self._sync_rows()
+        self._feature_list().focus()
 
     def action_cursor_down(self) -> None:
         self._set_highlighted_index(self._highlighted_index() + 1)
@@ -380,24 +426,29 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
     def action_toggle_highlighted(self) -> None:
         if not self.options:
             return
-        self._selection_list().action_select()
+        self.action_toggle_index(self._highlighted_index())
 
     def action_toggle_index(self, index: int) -> None:
         if index < 0 or index >= len(self.options):
             return
-        selection_list = self._selection_list()
-        selection_list.highlighted = index
-        selection_list.focus()
-        selection_list.action_select()
+        self._highlighted = index
+        option = self.options[index]
+        if option in self.selected:
+            self.selected.remove(option)
+        else:
+            self.selected.add(option)
+        self._sync_rows()
+        self._feature_list().focus()
 
     def action_activate_focused(self) -> None:
         focused_id = getattr(self.focused, "id", "")
-        selection_list = self._selection_list()
         if focused_id == "all":
-            selection_list.select_all()
+            self.selected = set(self.options)
+            self._sync_rows()
             return
         if focused_id == "none":
-            selection_list.deselect_all()
+            self.selected.clear()
+            self._sync_rows()
             return
         if focused_id == "save":
             self.action_save()
@@ -405,11 +456,10 @@ class MultiSelectScreen(ModalScreen[list[str] | None]):
         if focused_id == "cancel":
             self.dismiss(None)
             return
-        selection_list.action_select()
+        self.action_toggle_highlighted()
 
     def action_save(self) -> None:
-        selection_list = self._selection_list()
-        self.dismiss([str(value) for value in selection_list.selected])
+        self.dismiss(self._selected_values())
 
     def action_dismiss_none(self) -> None:
         self.dismiss(None)
@@ -624,15 +674,16 @@ class OperatorApp(App[int]):
     #menu-list:focus {
         border: solid #2ea7a0;
     }
-    #menu-list > .option-list--option {
+    .menu-row {
         color: #c2d4e2;
         padding: 0 1;
+        height: 1;
     }
-    #menu-list > .option-list--option-highlighted {
+    .menu-row-highlighted {
         background: #173549;
         color: #f4fbff;
     }
-    #menu-list:focus > .option-list--option-highlighted {
+    #menu-list:focus .menu-row-highlighted {
         background: #0f766e;
         color: #faffff;
     }
@@ -723,19 +774,20 @@ class OperatorApp(App[int]):
     #feature-list:focus {
         border: solid #2ea7a0;
     }
-    #feature-list > .selection-list--button {
+    .feature-row {
         color: #c2d4e2;
         background: #05101a;
+        height: 1;
     }
-    #feature-list > .selection-list--button-highlighted {
+    .feature-row-highlighted {
         color: #f4fbff;
         background: #173549;
     }
-    #feature-list > .selection-list--button-selected {
+    .feature-row-selected {
         color: #7ce0c9;
         background: #05101a;
     }
-    #feature-list > .selection-list--button-selected-highlighted {
+    .feature-row-selected.feature-row-highlighted {
         color: #f8fffe;
         background: #0f766e;
     }
