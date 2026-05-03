@@ -289,7 +289,7 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
             model="data/model.json",
         )
     ) == 2
-    assert "Operator report account section requires Binance API key" in capsys.readouterr().err
+    assert "Full report account section requires Binance API key" in capsys.readouterr().err
 
     plain = cli._render_operator_report(
         with_account=False,
@@ -378,7 +378,7 @@ def test_command_prepare_success_failure_and_validation(tmp_path, monkeypatch, c
     monkeypatch.setattr(cli, "command_train", step("train", 2))
     assert cli.command_prepare(args) == 2
     assert [name for name, _args in calls] == ["fetch", "train"]
-    assert "Prepare stopped at Train model" in capsys.readouterr().err
+    assert "Prepare stopped at Train AI model" in capsys.readouterr().err
 
     bad = argparse.Namespace(**{**vars(args), "limit": 0})
     assert cli.command_prepare(bad) == 2

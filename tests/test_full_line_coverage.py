@@ -52,8 +52,10 @@ class _ScriptedUI:
 
 
 def _action(title: str):
-    actions = {action.title: action for action in cli._tui_actions()}
-    return actions[title]
+    for action in cli._tui_actions():
+        if action.title == title or title in action.aliases:
+            return action
+    raise KeyError(title)
 
 
 def _runtime_form(**overrides: str) -> dict[str, str]:
@@ -432,7 +434,7 @@ def test_cli_dashboard_account_and_artifact_helpers(tmp_path, monkeypatch, capsy
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: BadClient())
     assert cli._show_account_overview() == 2
-    assert "Account overview failed" in capsys.readouterr().out
+    assert "Account balances failed" in capsys.readouterr().out
 
     save_runtime(RuntimeConfig(api_key="k", api_secret="s", market_type="spot"))
 
@@ -442,7 +444,7 @@ def test_cli_dashboard_account_and_artifact_helpers(tmp_path, monkeypatch, capsy
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: EmptyClient())
     assert cli._account_overview_lines(RuntimeConfig(api_key="k", api_secret="s"))[-1] == "No non-zero balances found."
-    assert cli._dashboard_snapshot(with_account=False).account_lines == ["Load Account or Connect to fetch balances."]
+    assert cli._dashboard_snapshot(with_account=False).account_lines == ["Run Account balances after Connect to fetch balances."]
 
     class MixedClient:
         def get_account(self):
@@ -597,7 +599,7 @@ def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkey
 
     monkeypatch.setattr(cli, "_ui_edit_runtime", bad_runtime)
     assert asyncio.run(_action("Runtime settings").run(_ScriptedUI())) == 2
-    assert "Runtime settings invalid" in capsys.readouterr().err
+    assert "Connection settings invalid" in capsys.readouterr().err
 
     class BadValidationClient:
         def ping(self):

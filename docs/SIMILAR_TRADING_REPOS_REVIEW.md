@@ -55,12 +55,12 @@ Implemented in this repo during the second refinement pass:
 
 Implemented in the current operator pass:
 
-1. `prepare` command and `Prepare system` TUI action run fetch, train, evaluate, backtest, then readiness checks.
-2. `report` command and `Operator report` TUI action show dashboard state, recent artifacts, and optional readiness/account checks.
+1. `prepare` command and `Build full setup` TUI action run download, train, evaluate, backtest, then safety checks.
+2. `report` command and `Full report` TUI action show dashboard state, recent artifacts, and optional safety/account checks.
 3. Strategy profiles: `custom`, `conservative`, `balanced`, and `active`.
 4. Authenticated `live` runs now require a configured testnet target, credentials, and a readable compatible model; paper runs may regenerate from current rows.
 5. Authenticated live mode rejects legacy model artifacts that lack a current feature signature, and live artifacts record the model signature actually used.
-6. `live --sleep 0` remains a valid no-delay paper loop; authenticated live mode clamps to at least one second between iterations.
+6. `live --sleep 0` remains a valid no-delay paper trading loop; authenticated testnet mode clamps to at least one second between iterations.
 7. `fetch --batch-size` and `prepare --batch-size` page historical kline downloads instead of pretending one request is enough for larger datasets.
 8. `prepare` now exposes learning rate, L2 penalty, walk-forward windows, and threshold-calibration flags in addition to preset, epoch, seed, fetch, and backtest settings.
 9. Signed Binance request telemetry redacts timestamp, receive-window, and signature query values before storing request metadata.

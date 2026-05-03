@@ -42,7 +42,11 @@ def _assert_not_contains(text: str, needle: str, label: str) -> None:
 def _assert_ordered_highlight(text: str, expected: str, label: str) -> None:
     marker = f"> {expected}"
     if marker not in text:
-        lines = "\n".join(line for line in _visible_lines(text) if "Runtime" in line or "Strategy" in line or "Execution" in line)
+        lines = "\n".join(
+            line
+            for line in _visible_lines(text)
+            if "Connection" in line or "Strategy" in line or "Orders" in line or "Compute" in line
+        )
         raise AssertionError(f"{label}: expected highlighted row {marker!r}\n{lines}")
 
 
@@ -190,27 +194,28 @@ def _open_modal_choice(
 
 
 def _probe_settings(pty, rows: int, cols: int) -> None:
-    # Root action index 19 from Overview, reached only with Down arrows.
+    # Missing credentials start on Dashboard because Connect is locked. All Settings is
+    # reached only with Down arrows, skipping credential-locked actions.
     _open_root_action(
         pty,
         rows,
         cols,
-        down_count=18,
-        details_needle="Centralized configuration: Runtime",
+        down_count=13,
+        details_needle="Open one settings hub",
         label="settings",
     )
-    _wait_for(pty, rows, cols, "> 1. Runtime", timeout=5.0, label="settings-open")
+    _wait_for(pty, rows, cols, "> 1. Connection", timeout=5.0, label="settings-open")
 
     _open_modal_choice(
         pty,
         rows,
         cols,
         down_count=0,
-        highlighted="> 1. Runtime",
-        opened="Runtime settings",
+        highlighted="> 1. Connection",
+        opened="Connection settings",
         close_key=ESCAPE,
-        label="settings-runtime",
-        parent_marker="> 1. Runtime",
+        label="settings-connection",
+        parent_marker="> 1. Connection",
     )
     _open_modal_choice(
         pty,
@@ -221,18 +226,18 @@ def _probe_settings(pty, rows: int, cols: int) -> None:
         opened="Model feature selection",
         close_key=ESCAPE,
         label="settings-strategy",
-        parent_marker="> 1. Runtime",
+        parent_marker="> 1. Connection",
     )
     _open_modal_choice(
         pty,
         rows,
         cols,
         down_count=2,
-        highlighted="> 3. Execution",
-        opened="Execution settings",
+        highlighted="> 3. Orders",
+        opened="Order settings",
         close_key=ESCAPE,
-        label="settings-execution",
-        parent_marker="> 1. Runtime",
+        label="settings-orders",
+        parent_marker="> 1. Connection",
     )
     _open_modal_choice(
         pty,
@@ -243,36 +248,50 @@ def _probe_settings(pty, rows: int, cols: int) -> None:
         opened="Compute backend",
         close_key=ESCAPE,
         label="settings-compute",
-        parent_marker="> 1. Runtime",
+        parent_marker="> 1. Connection",
     )
 
-    _wait_for(pty, rows, cols, "> 1. Runtime", timeout=5.0, label="settings-close-parent")
+    _wait_for(pty, rows, cols, "> 1. Connection", timeout=5.0, label="settings-close-parent")
     _press(pty, DOWN, 4)
     _wait_for(pty, rows, cols, "> 5. Close", timeout=5.0, label="settings-close-highlight")
     _press(pty, ENTER)
-    _wait_for(pty, rows, cols, "Settings complete (0)", timeout=6.0, label="settings-close")
+    _wait_for(pty, rows, cols, "All settings complete (0)", timeout=6.0, label="settings-close")
 
 
-def _probe_funds(pty, rows: int, cols: int) -> None:
-    # Root action index 6 from Overview, reached only with Down arrows.
-    _open_root_action(
-        pty,
-        rows,
-        cols,
-        down_count=5,
-        details_needle="Read exchange balances and set",
-        label="funds",
-    )
-    text = _wait_for(pty, rows, cols, "> 1. Show credential requirement", timeout=5.0, label="funds-open")
-    _assert_not_contains(text, "Deposit USDC", "funds-no-deposit")
-    _assert_not_contains(text, "Withdraw USDC", "funds-no-withdraw")
-    _press(pty, ENTER)
-    _wait_for(pty, rows, cols, "> 1. Show credential requirement", timeout=6.0, label="funds-show-return")
+def _probe_locked_credentials(pty, rows: int, cols: int) -> None:
+    text = _current_text(pty, rows, cols)
+    _assert_contains(text, "Connect  (locked)", "locked-credentials-connect")
+    _assert_contains(text, "Account balances  (locked)", "locked-credentials-account")
+    _assert_contains(text, "Trading caps  (locked)", "locked-credentials-caps")
+    _assert_contains(text, "Testnet trading  (locked)", "locked-credentials-live")
+    _assert_contains(text, "Test order  (locked)", "locked-credentials-roundtrip")
+    _assert_not_contains(text, "Deposit USDC", "locked-credentials-no-deposit")
+    _assert_not_contains(text, "Withdraw USDC", "locked-credentials-no-withdraw")
 
-    _press(pty, DOWN)
-    _wait_for(pty, rows, cols, "> 2. Close", timeout=5.0, label="funds-close-highlight")
-    _press(pty, ENTER)
-    _wait_for(pty, rows, cols, "Funds complete (0)", timeout=6.0, label="funds-close")
+
+def _probe_root_navigation(pty, rows: int, cols: int) -> None:
+    _wait_for(pty, rows, cols, "Show the current setup", timeout=5.0, label="root-dashboard-details")
+    details_by_down = [
+        "Verify safety flags",
+        "Check candle quality",
+        "Download fresh BTCUSDC",
+        "Train or retrain",
+        "Score the saved model",
+        "Simulate trades",
+        "Search risk",
+        "Download data, train",
+        "Run the live loop without placing",
+        "Print dashboard",
+        "Edit API keys",
+        "Edit risk, thresholds",
+        "Open one settings hub",
+        "Show the plain-language workflow",
+    ]
+    for index, detail in enumerate(details_by_down, start=1):
+        _press(pty, DOWN)
+        _wait_for(pty, rows, cols, detail, timeout=5.0, label=f"root-down-{index}")
+    _press(pty, UP)
+    _wait_for(pty, rows, cols, "Open one settings hub", timeout=5.0, label="root-up-from-help")
 
 
 def _probe_once(
@@ -286,13 +305,16 @@ def _probe_once(
 ) -> str:
     pty = _open_pty(argv, cwd, rows, cols, env_overrides)
     try:
-        text = _wait_for(pty, rows, cols, "Overview", timeout=8.0, label=f"{probe_name}-startup")
+        text = _wait_for(pty, rows, cols, "Dashboard", timeout=8.0, label=f"{probe_name}-startup")
+        _assert_contains(text, "Main menu", f"{probe_name}-startup")
         _assert_contains(text, "Connect", f"{probe_name}-startup")
         pty.pump(1.0)
-        if probe_name == "settings":
+        if probe_name == "root_navigation":
+            _probe_root_navigation(pty, rows, cols)
+        elif probe_name == "settings":
             _probe_settings(pty, rows, cols)
-        elif probe_name == "funds":
-            _probe_funds(pty, rows, cols)
+        elif probe_name == "locked_credentials":
+            _probe_locked_credentials(pty, rows, cols)
         else:
             raise ValueError(f"unknown probe: {probe_name}")
         return _current_text(pty, rows, cols)
@@ -306,8 +328,9 @@ def _probe_once(
 def probe(argv: list[str], cwd: Path, *, rows: int = 36, cols: int = 120) -> None:
     with tempfile.TemporaryDirectory(prefix="simple-ai-probe-home-") as home:
         env = {"HOME": home, "USERPROFILE": home}
+        _probe_once(argv, cwd, "root_navigation", rows=rows, cols=cols, env_overrides=env)
         _probe_once(argv, cwd, "settings", rows=rows, cols=cols, env_overrides=env)
-        _probe_once(argv, cwd, "funds", rows=rows, cols=cols, env_overrides=env)
+        _probe_once(argv, cwd, "locked_credentials", rows=rows, cols=cols, env_overrides=env)
 
 
 def _default_command(repo: Path) -> list[str]:
@@ -319,7 +342,7 @@ def _default_command(repo: Path) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Probe real terminal arrow-key navigation through the TUI Settings menu.")
+    parser = argparse.ArgumentParser(description="Probe real terminal arrow-key navigation through the TUI root and Settings menus.")
     parser.add_argument("--cwd", default=".", help="Repository checkout to run from.")
     parser.add_argument("--command", nargs=argparse.REMAINDER, help="Command to run; defaults to the local CLI menu.")
     args = parser.parse_args(argv)

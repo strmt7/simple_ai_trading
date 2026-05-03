@@ -11,6 +11,7 @@ from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
 from simple_ai_bitcoin_trading_binance.cli import (
     _account_free_balances,
     _apply_funds_change,
+    _credential_fingerprint,
     _funds_summary,
     _load_exchange_funds,
     _tui_actions,
@@ -70,7 +71,7 @@ class _ScriptedUI:
 
 def _action(title: str):
     for action in _tui_actions():
-        if action.title == title:
+        if action.title == title or title in action.aliases:
             return action
     raise AssertionError(f"missing action: {title}")
 
@@ -186,7 +187,7 @@ def test_funds_menu_close_returns_zero(isolated_home) -> None:
     ui = _ScriptedUI(menu_choices=["close"])
     result = asyncio.run(_ui_funds_menu(ui))
     assert result == 0
-    assert ui.menu_calls[0][0].startswith("Funds")
+    assert ui.menu_calls[0][0].startswith("Trading caps")
     assert [key for key, _label in ui.menu_calls[0][1]] == ["show", "close"]
 
 
@@ -286,7 +287,7 @@ def test_settings_menu_close_returns_zero(isolated_home) -> None:
     ui = _ScriptedUI(menu_choices=["close"])
     result = asyncio.run(_ui_settings_menu(ui))
     assert result == 0
-    assert ui.menu_calls[0][0] == "Settings"
+    assert ui.menu_calls[0][0] == "All settings"
 
 
 def test_settings_menu_compute_persists_backend(isolated_home) -> None:
@@ -360,21 +361,68 @@ def test_funds_action_is_registered() -> None:
 def test_help_action_is_last_in_action_list() -> None:
     actions = _tui_actions()
     assert actions[-1].title == "Help"
-    assert actions[-2].title == "Settings"
+    assert actions[-2].title == "All settings"
 
 
-def test_funds_action_invokes_funds_menu(isolated_home) -> None:
+def test_tui_credential_gated_actions_reflect_credential_state(isolated_home) -> None:
+    save_runtime(RuntimeConfig())
+    missing = _tui_actions({"fingerprint": "missing", "status": "missing"})
+    assert missing[0].title == "Connect"
+    assert missing[1].title == "Dashboard"
+    assert missing[0].is_enabled() is False
+    assert missing[1].is_enabled() is True
+    assert _action("Trading caps").is_enabled() is False
+
+    runtime = RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret")
+    save_runtime(runtime)
+    fingerprint = _credential_fingerprint(runtime)
+    unchecked = _tui_actions({"fingerprint": fingerprint, "status": "unchecked"})
+    assert unchecked[0].is_enabled() is True
+    assert next(action for action in unchecked if action.title == "Trading caps").is_enabled() is False
+
+    invalid = _tui_actions({"fingerprint": fingerprint, "status": "invalid"})
+    assert invalid[0].is_enabled() is False
+    assert "failed validation" in invalid[0].lock_reason()
+
+    valid = _tui_actions({"fingerprint": fingerprint, "status": "valid"})
+    assert next(action for action in valid if action.title == "Trading caps").is_enabled() is True
+
+
+def test_tui_settings_action_marks_credentials_after_settings_close(isolated_home) -> None:
+    runtime = RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret")
+    save_runtime(runtime)
+    state = {"fingerprint": "stale", "status": "valid"}
+    settings = next(action for action in _tui_actions(state) if action.title == "All settings")
+
+    assert asyncio.run(settings.run(_ScriptedUI(menu_choices=["close"]))) == 0
+    assert state["fingerprint"] == _credential_fingerprint(runtime)
+    assert state["status"] == "unchecked"
+
+    save_runtime(RuntimeConfig())
+    assert asyncio.run(settings.run(_ScriptedUI(menu_choices=["close"]))) == 0
+    assert state["fingerprint"] == "missing"
+    assert state["status"] == "missing"
+
+
+def test_funds_action_requires_credentials_before_menu(isolated_home) -> None:
+    ui = _ScriptedUI(menu_choices=["close"])
+    result = asyncio.run(_action("Funds").run(ui))
+    assert result == 2
+    assert ui.logs and "Trading caps requires Binance API key" in ui.logs[0]
+    assert ui.menu_calls == []
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     ui = _ScriptedUI(menu_choices=["close"])
     result = asyncio.run(_action("Funds").run(ui))
     assert result == 0
-    assert ui.menu_calls and ui.menu_calls[0][0].startswith("Funds")
+    assert ui.menu_calls and ui.menu_calls[0][0].startswith("Trading caps")
 
 
 def test_settings_action_invokes_settings_menu(isolated_home) -> None:
     ui = _ScriptedUI(menu_choices=["close"])
     result = asyncio.run(_action("Settings").run(ui))
     assert result == 0
-    assert ui.menu_calls and ui.menu_calls[0][0] == "Settings"
+    assert ui.menu_calls and ui.menu_calls[0][0] == "All settings"
 
 
 def test_signed_tui_actions_stop_before_forms_without_credentials(isolated_home) -> None:
@@ -395,13 +443,13 @@ def test_signed_tui_actions_stop_before_forms_without_credentials(isolated_home)
         ]
     )
     assert asyncio.run(_action("Operator report").run(ui)) == 2
-    assert "Operator report account section requires Binance API key" in ui.logs[0]
+    assert "Full report account section requires Binance API key" in ui.logs[0]
 
 
 def test_settings_menu_execution_form_cancellation(isolated_home) -> None:
     ui = _ScriptedUI(menu_choices=["execution", "close"], forms=[None])
     asyncio.run(_ui_settings_menu(ui))
-    assert any("Execution settings cancelled" in line for line in ui.logs)
+    assert any("Order settings cancelled" in line for line in ui.logs)
 
 
 def test_settings_menu_compute_form_cancellation(isolated_home) -> None:
@@ -435,7 +483,7 @@ def test_settings_menu_runtime_saves_when_form_valid(isolated_home) -> None:
     assert runtime.compute_backend == "auto"
     assert runtime.managed_usdc == 42.0
     assert runtime.managed_btc == 0.5
-    assert any("Runtime settings saved" in line for line in ui.logs)
+    assert any("Connection settings saved" in line for line in ui.logs)
 
 
 def test_settings_menu_runtime_invalid_value_logs_error(isolated_home, monkeypatch) -> None:
@@ -448,7 +496,7 @@ def test_settings_menu_runtime_invalid_value_logs_error(isolated_home, monkeypat
     monkeypatch.setattr(cli_mod, "_ui_edit_runtime", _exploder)
     ui = _ScriptedUI(menu_choices=["runtime", "close"])
     asyncio.run(_ui_settings_menu(ui))
-    assert any("Runtime settings invalid" in line for line in ui.logs)
+    assert any("Connection settings invalid" in line for line in ui.logs)
 
 
 def test_settings_menu_strategy_invalid_value_logs_error(isolated_home, monkeypatch) -> None:
