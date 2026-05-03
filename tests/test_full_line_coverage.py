@@ -552,8 +552,8 @@ def test_cli_remaining_helper_edges(tmp_path, monkeypatch, capsys) -> None:
 
     save_runtime(RuntimeConfig(market_type="spot"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: ConnectClient())
-    assert cli.command_connect(argparse.Namespace()) == 0
-    assert "server_time: 123" in capsys.readouterr().out
+    assert cli.command_connect(argparse.Namespace()) == 2
+    assert "Connect requires Binance API key" in capsys.readouterr().err
 
     save_runtime(RuntimeConfig(market_type="spot", api_key="k", api_secret="s"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: ConnectClient(account="raw-account"))
@@ -645,6 +645,7 @@ def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkey
     monkeypatch.setattr(cli, "_ui_edit_strategy_args", valid_strategy)
     assert asyncio.run(_action("Strategy settings").run(_ScriptedUI())) == 0
 
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     monkeypatch.setattr(cli, "command_connect", lambda _args: 0)
     assert asyncio.run(_action("Connect").run(_ScriptedUI())) == 0
     monkeypatch.setattr(cli, "command_doctor", capture("doctor"))
@@ -747,11 +748,13 @@ def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkey
     assert asyncio.run(_action("Paper loop").run(_ScriptedUI(forms=[{**paper, "steps": "1"}]))) == 0
 
     live_form = {"model": "", "steps": "0", "sleep": "0", "retrain_interval": "0", "retrain_window": "300", "retrain_min_rows": "240"}
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     assert asyncio.run(_action("Testnet loop").run(_ScriptedUI(forms=[None]))) == 0
     assert asyncio.run(_action("Testnet loop").run(_ScriptedUI(confirms=[False], forms=[{**live_form, "steps": "1"}]))) == 0
     assert asyncio.run(_action("Testnet loop").run(_ScriptedUI(confirms=[True], forms=[live_form]))) == 2
     assert asyncio.run(_action("Testnet loop").run(_ScriptedUI(confirms=[True], forms=[{**live_form, "steps": "1"}]))) == 0
 
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     assert asyncio.run(_action("Spot roundtrip").run(_ScriptedUI(forms=[None]))) == 0
     assert asyncio.run(_action("Spot roundtrip").run(_ScriptedUI(confirms=[False], forms=[{"quantity": "0.1", "mode": "auto"}]))) == 0
     assert asyncio.run(_action("Spot roundtrip").run(_ScriptedUI(confirms=[True], forms=[{"quantity": "0", "mode": "auto"}]))) == 2
@@ -1006,13 +1009,13 @@ def test_cli_live_guards_leverage_clamps_and_no_rows(tmp_path, monkeypatch, caps
     monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
 
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True))
+    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     assert cli.command_live(_live_args(paper=False, live=True)) == 2
-    assert "Live mode needs API key" in capsys.readouterr().out
+    assert "Authenticated live mode requires Binance API key" in capsys.readouterr().err
 
     client = _LiveClient(set_response={"leverage": "200"})
-    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=False, api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=False, api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig(max_trades_per_day=0))
     (tmp_path / "data").mkdir(exist_ok=True)
     (tmp_path / "data" / "model.json").write_text("{}", encoding="utf-8")
@@ -1042,7 +1045,7 @@ def test_cli_live_spot_close_cooldown_trade_cap_and_signal_artifact(tmp_path, mo
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True))
+    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.1,
@@ -1085,13 +1088,13 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.99]))
 
-    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True))
+    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(StrategyConfig(slippage_bps=20_000, enabled_features=("momentum_1",)))
     monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(1, 100.0, (0.0,), 0)])
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.01]))
     assert cli.command_live(_live_args(steps=1)) == 0
 
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True))
+    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,
@@ -1106,7 +1109,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
     assert cli.command_live(_live_args(steps=1)) == 0
     assert "insufficient cash after fill adjustment" in capsys.readouterr().out
 
-    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True))
+    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(
         StrategyConfig(
             leverage=1.0,
@@ -1155,7 +1158,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
     assert cli.command_live(_live_args(steps=2)) == 0
     assert "drawdown limit reached" in capsys.readouterr().out
 
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True))
+    save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,

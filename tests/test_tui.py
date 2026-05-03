@@ -322,11 +322,11 @@ def test_operator_app_methods(monkeypatch) -> None:
     assert timers == [("timer", "connection-status-initial"), ("interval", "connection-status")]
     assert widgets["#actions"].focused is True
     assert widgets["#preview"].value == "snapshot"
-    assert widgets["#status"].value == "Ready. Enter runs the selected action."
-    assert widgets["#details"].value.startswith("Sync")
+    assert widgets["#status"].value == "Ready. Up/Down selects a command; Enter runs it."
+    assert widgets["#details"].value.startswith("sync description")
 
     app.on_option_list_option_highlighted(_FakeOptionEvent(widgets["#actions"], 0))
-    assert widgets["#status"].value == "Ready. Enter runs the selected action."
+    assert widgets["#status"].value == "Ready. Up/Down selects a command; Enter runs it."
     assert app._ignored_initial_highlight is True
 
     asyncio.run(app._execute_action(app.actions_data[0]))
@@ -338,7 +338,7 @@ def test_operator_app_methods(monkeypatch) -> None:
     assert "async output" in widgets["#log"].lines
 
     app.action_refresh_preview()
-    assert widgets["#status"].value == "Snapshot refreshed"
+    assert widgets["#status"].value == "Dashboard snapshot refreshed"
     assert timers[-1] == ("timer", "connection-status-manual")
 
     app.action_cursor_down()
@@ -358,7 +358,7 @@ def test_operator_app_methods(monkeypatch) -> None:
     assert widgets["#status"].value == "Sync"
     app.on_option_list_option_highlighted(_FakeOptionEvent(widgets["#actions"], 1))
     assert widgets["#actions"].highlighted == 1
-    assert widgets["#details"].value.startswith("Async")
+    assert widgets["#details"].value.startswith("async description")
     assert widgets["#status"].value == "Async"
 
     asyncio.run(app.on_option_list_option_selected(_FakeOptionEvent(widgets["#actions"], 0)))
@@ -426,7 +426,7 @@ def test_operator_app_first_nonzero_highlight_updates_action_details(monkeypatch
 
     assert app._ignored_initial_highlight is True
     assert widgets["#actions"].highlighted == 1
-    assert widgets["#details"].value.startswith("Async")
+    assert widgets["#details"].value.startswith("async description")
 
 
 def test_operator_app_refresh_preview_supports_zero_arg_provider(monkeypatch) -> None:
@@ -516,12 +516,12 @@ def test_operator_app_runs_in_textual_runtime() -> None:
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app.query_one("#actions").has_focus
-            assert str(app.query_one("#actions-title").content) == "Commands"
-            assert str(app.query_one("#details-title").content) == "Selected"
-            assert str(app.query_one("#preview-title").content) == "Snapshot"
-            assert str(app.query_one("#log-title").content) == "Activity"
+            assert str(app.query_one("#actions-title").content) == "Operator commands"
+            assert str(app.query_one("#details-title").content) == "Sync"
+            assert str(app.query_one("#preview-title").content) == "Dashboard snapshot"
+            assert str(app.query_one("#log-title").content) == "Activity log"
             assert str(app.query_one("#preview").content) == "snapshot"
-            assert "Sync" in str(app.query_one("#details").content)
+            assert "sync description" in str(app.query_one("#details").content)
             assert app.query_one("#log") is not None
             await pilot.press("enter")
             await pilot.pause()
@@ -775,6 +775,23 @@ def test_enter_launched_actions_leave_modal_arrow_navigation_live_in_textual_run
     asyncio.run(runner())
 
 
+def test_option_selection_uses_background_runner_in_textual_runtime() -> None:
+    async def runner() -> None:
+        app = OperatorApp(
+            title_text="console",
+            actions=[TUIAction("1", "Sync", "sync description", lambda _ui: 0)],
+            snapshot_provider=lambda _width=70: "snapshot",
+        )
+        calls: list[str] = []
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            app._execute_action_in_background = lambda action: calls.append(action.title)
+            await app.on_option_list_option_selected(_FakeOptionEvent(app.query_one("#actions"), 0))
+            assert calls == ["Sync"]
+
+    asyncio.run(runner())
+
+
 def test_app_level_bindings_forward_to_open_modals_in_textual_runtime() -> None:
     async def runner() -> None:
         app = OperatorApp(
@@ -937,12 +954,18 @@ def test_operator_app_live_keyboard_navigation_keeps_context_visible() -> None:
             await pilot.pause()
             assert app.query_one("#actions").has_focus
             assert str(app.query_one("#preview").content) == "snapshot"
+            assert app.query_one("#preview-scroll").can_focus is False
+            assert app.query_one("#log").can_focus is False
             assert app.query_one("#log") is not None
 
-            await pilot.press("j")
+            await pilot.press("tab")
+            await pilot.press("tab")
+            await pilot.press("down")
             await pilot.pause()
             assert app.query_one("#actions").highlighted == 1
-            assert "Two" in str(app.query_one("#details").content)
+            assert app.query_one("#actions").has_focus
+            assert str(app.query_one("#details-title").content) == "Two"
+            assert "second description" in str(app.query_one("#details").content)
 
             await pilot.press("enter")
             await pilot.pause()
@@ -952,19 +975,22 @@ def test_operator_app_live_keyboard_navigation_keeps_context_visible() -> None:
             await pilot.press("k")
             await pilot.pause()
             assert app.query_one("#actions").highlighted == 0
-            assert "One" in str(app.query_one("#details").content)
+            assert str(app.query_one("#details-title").content) == "One"
+            assert "first description" in str(app.query_one("#details").content)
             await pilot.press("end")
             await pilot.pause()
             assert app.query_one("#actions").highlighted == 2
-            assert "Three" in str(app.query_one("#details").content)
+            assert str(app.query_one("#details-title").content) == "Three"
+            assert "third description" in str(app.query_one("#details").content)
             await pilot.press("home")
             await pilot.pause()
             assert app.query_one("#actions").highlighted == 0
-            assert "One" in str(app.query_one("#details").content)
+            assert str(app.query_one("#details-title").content) == "One"
+            assert "first description" in str(app.query_one("#details").content)
 
             await pilot.press("r")
             await pilot.pause()
-            assert str(app.query_one("#status").content) == "Snapshot refreshed"
+            assert str(app.query_one("#status").content) == "Dashboard snapshot refreshed"
             assert str(app.query_one("#preview").content) == "snapshot"
 
         assert calls[-1:] == ["two"]
@@ -1215,7 +1241,7 @@ def test_operator_app_resize_and_clear_actions(monkeypatch) -> None:
 
     app.action_clear_log()
     assert log.lines == []
-    assert widgets["#status"].value == "Activity cleared"
+    assert widgets["#status"].value == "Activity log cleared"
 
 
 def test_operator_app_resize_swallows_query_failure(monkeypatch) -> None:

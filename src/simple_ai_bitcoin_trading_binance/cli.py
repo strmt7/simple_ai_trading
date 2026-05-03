@@ -12,7 +12,7 @@ import subprocess  # nosec B404
 import sys
 import time
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence, TypeVar, cast
+from typing import Any, Callable, Iterable, Mapping, Sequence, TypeVar, cast
 
 from .api import BinanceAPIError, BinanceClient, Candle
 from .advanced_model import (
@@ -599,10 +599,24 @@ def _allows_signed_execution(runtime) -> bool:
     return bool(runtime.testnet or getattr(runtime, "demo", False))
 
 
+def _has_api_credentials(runtime) -> bool:
+    api_key = str(getattr(runtime, "api_key", "") or "").strip()
+    api_secret = str(getattr(runtime, "api_secret", "") or "").strip()
+    return bool(api_key and api_secret)
+
+
+def _credential_required_message(action: str) -> str:
+    return f"{action} requires Binance API key and secret in Runtime settings."
+
+
+def _credential_failure_message(action: str, exc: Exception) -> str:
+    return f"{action} requires valid Binance API credentials: {exc}"
+
+
 def _validate_runtime_connection(runtime, client) -> None:
     client.ping()
     client.ensure_btcusdc()
-    if runtime.api_key and runtime.api_secret:
+    if _has_api_credentials(runtime):
         client.get_account()
 
 
@@ -759,7 +773,7 @@ async def _ui_edit_runtime(ui, current: RuntimeConfig) -> RuntimeConfig:
         max_rate_calls_per_minute=max_rate,
         recv_window_ms=recv_window_ms,
         compute_backend=getattr(current, "compute_backend", "cpu"),
-        managed_usdc=getattr(current, "managed_usdc", 1000.0),
+        managed_usdc=getattr(current, "managed_usdc", 0.0),
         managed_btc=getattr(current, "managed_btc", 0.0),
     )
 
@@ -1088,8 +1102,8 @@ def _render_operator_report(
 
 
 def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
-    if not runtime.api_key or not runtime.api_secret:
-        return ["No API credentials configured."]
+    if not _has_api_credentials(runtime):
+        return [_credential_required_message("Account overview")]
     client = _build_client(runtime)
     try:
         account = client.get_account()
@@ -1141,12 +1155,13 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
 
 def _show_account_overview() -> int:
     runtime = load_runtime()
+    if not _has_api_credentials(runtime):
+        print(_credential_required_message("Account overview"), file=sys.stderr)
+        return 2
     lines = _account_overview_lines(runtime)
     print("Account overview")
     for line in lines:
         print(f"- {line}" if ":" in line and not line.startswith("market=") else line)
-    if lines == ["No API credentials configured."]:
-        return 2
     if lines and lines[0].startswith("Account overview failed:"):
         return 2
     return 0
@@ -1177,14 +1192,18 @@ def _connection_status_line() -> str:
     client = _build_client(runtime)
     try:
         client.ping()
-        client.get_exchange_time()
-        auth_label = "auth missing"
-        if runtime.api_key and runtime.api_secret:
-            account = client.get_account()
-            auth_label = "auth ok" if isinstance(account, dict) else "auth response ok"
-        return f"Connection {checked_at}: online {market} {mode} server-time ok {auth_label}"
+        server_time = client.get_exchange_time()
     except BinanceAPIError as exc:
-        return f"Connection {checked_at}: offline {market} ({exc})"
+        return f"Connection {checked_at}: public endpoint unreachable {market}; {exc}"
+    server_label = "server-time ok" if server_time is not None else "server-time response ok"
+    if not _has_api_credentials(runtime):
+        return f"Connection {checked_at}: public endpoint reachable {market} {mode}; credentials missing"
+    try:
+        account = client.get_account()
+    except BinanceAPIError as exc:
+        return f"Connection {checked_at}: authentication failed {market} {mode}; {exc}"
+    auth_label = "authenticated" if isinstance(account, dict) else "auth response ok"
+    return f"Connection {checked_at}: {auth_label} {market} {mode}; {server_label}"
 
 
 def _readiness_report(*, input_path: str, model_path: str, online: bool = False) -> tuple[bool, list[str]]:  # skipcq: PY-R1000
@@ -1284,7 +1303,12 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
 
     if online:
         line = _connection_status_line()
-        add("online" in line and "offline" not in line and "failed" not in line, "exchange connectivity", line)
+        reachable = (
+            "public endpoint reachable" in line
+            or "authenticated" in line
+            or "auth response ok" in line
+        )
+        add(reachable and "failed" not in line and "unreachable" not in line, "exchange connectivity", line)
 
     lines = [f"[{'ok' if ok else 'fix'}] {label}: {detail}" for ok, label, detail in checks]
     return all(ok for ok, _label, _detail in checks), lines
@@ -1293,38 +1317,84 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
 _COMPUTE_BACKEND_CHOICES = ("cpu", "cuda", "rocm", "directml", "mps", "auto")
 
 
-def _funds_summary(runtime) -> str:
-    return (
-        f"USDC available: {runtime.managed_usdc:.4f}  "
-        f"BTC available: {runtime.managed_btc:.8f}"
-    )
+def _account_free_balances(account: object) -> dict[str, float]:
+    balances = {"USDC": 0.0, "BTC": 0.0}
+    if not isinstance(account, dict):
+        return balances
+    spot_balances = account.get("balances", [])
+    if isinstance(spot_balances, list):
+        for item in spot_balances:
+            if not isinstance(item, dict):
+                continue
+            asset = str(item.get("asset", "")).upper()
+            if asset in balances:
+                balances[asset] += max(0.0, _safe_float(item.get("free")))
+    futures_assets = account.get("assets", [])
+    if isinstance(futures_assets, list):
+        for item in futures_assets:
+            if not isinstance(item, dict):
+                continue
+            asset = str(item.get("asset", "")).upper()
+            if asset in balances:
+                value = item.get("availableBalance", item.get("walletBalance", 0.0))
+                balances[asset] = max(balances[asset], max(0.0, _safe_float(value)))
+    return balances
 
 
-def _apply_funds_change(action: str, amount: float) -> tuple[object, str]:
-    """Apply a Funds-menu mutation. Returns (new runtime, log message)."""
+def _load_exchange_funds(runtime) -> dict[str, float]:
+    if not _has_api_credentials(runtime):
+        raise BinanceAPIError(_credential_required_message("Funds"))
+    account = _build_client(runtime).get_account()
+    return _account_free_balances(account)
+
+
+def _funds_summary(runtime, balances: Mapping[str, float] | None = None) -> str:
+    caps = f"Trading caps: USDC={runtime.managed_usdc:.4f} BTC={runtime.managed_btc:.8f}"
+    if not _has_api_credentials(runtime):
+        return f"API credentials missing. Exchange-backed Funds disabled. {caps}"
+    if balances is None:
+        return f"Exchange balance not loaded. {caps}"
+    usdc = max(0.0, _safe_float(balances.get("USDC", 0.0)))
+    btc = max(0.0, _safe_float(balances.get("BTC", 0.0)))
+    return f"Exchange free: USDC={usdc:.4f} BTC={btc:.8f}. {caps}"
+
+
+def _apply_funds_change(
+    action: str,
+    amount: float,
+    *,
+    balances: Mapping[str, float] | None = None,
+) -> tuple[object, str]:
+    """Apply an exchange-backed Funds-menu allocation cap mutation."""
     runtime = load_runtime()
-    if action == "deposit_usdc":
-        runtime.managed_usdc = max(0.0, float(runtime.managed_usdc) + abs(amount))
-        msg = f"Deposited {amount:.4f} USDC."
-    elif action == "withdraw_usdc":
-        avail = float(runtime.managed_usdc)
-        take = min(avail, abs(amount))
-        runtime.managed_usdc = max(0.0, avail - take)
-        msg = f"Withdrew {take:.4f} USDC (capped to available {avail:.4f})."
-    elif action == "deposit_btc":
-        runtime.managed_btc = max(0.0, float(runtime.managed_btc) + abs(amount))
-        msg = f"Deposited {amount:.8f} BTC."
-    elif action == "withdraw_btc":
-        avail = float(runtime.managed_btc)
-        take = min(avail, abs(amount))
-        runtime.managed_btc = max(0.0, avail - take)
-        msg = f"Withdrew {take:.8f} BTC (capped to available {avail:.8f})."
-    elif action == "reset":
-        runtime.managed_usdc = 1000.0
+    if action == "clear":
+        runtime.managed_usdc = 0.0
         runtime.managed_btc = 0.0
-        msg = "Reset funds to 1000.000 USDC and 0.000 BTC."
-    else:  # pragma: no cover - guarded by menu options
+        save_runtime(runtime)
+        return runtime, "Cleared trading caps. No exchange balances were changed."
+    if action in {"deposit_usdc", "withdraw_usdc", "deposit_btc", "withdraw_btc", "reset"}:
+        return runtime, "Funds no longer supports local deposit, withdraw, or reset. Configure credentials and set exchange-backed caps."
+    if action not in {"sync", "set_usdc", "set_btc"}:
         return runtime, f"Unknown funds action {action!r}."
+    if balances is None:
+        return runtime, _credential_required_message("Funds")
+    if action == "sync":
+        runtime.managed_usdc = max(0.0, _safe_float(balances.get("USDC", 0.0)))
+        runtime.managed_btc = max(0.0, _safe_float(balances.get("BTC", 0.0)))
+        msg = "Synced trading caps from exchange free balances."
+    else:
+        asset = "USDC" if action == "set_usdc" else "BTC"
+        available = max(0.0, _safe_float(balances.get(asset, 0.0)))
+        requested = max(0.0, float(amount))
+        cap = min(requested, available)
+        if asset == "USDC":
+            runtime.managed_usdc = cap
+            msg = f"Set USDC trading cap to {cap:.4f}."
+        else:
+            runtime.managed_btc = cap
+            msg = f"Set BTC trading cap to {cap:.8f}."
+        if requested > available:
+            msg += f" Requested amount was capped to exchange free balance {available:.8f} {asset}."
     save_runtime(runtime)
     return runtime, msg
 
@@ -1334,41 +1404,62 @@ async def _ui_funds_menu(ui) -> int:
 
     while True:
         runtime = load_runtime()
-        choice = await ui.menu(
-            "Funds — virtual BTCUSDC allocation",
+        has_credentials = _has_api_credentials(runtime)
+        options = (
             [
-                ("deposit_usdc", "Deposit USDC"),
-                ("withdraw_usdc", "Withdraw USDC"),
-                ("deposit_btc", "Deposit BTC"),
-                ("withdraw_btc", "Withdraw BTC"),
-                ("reset", "Reset to 1000 USDC / 0 BTC"),
-                ("show", "Show current allocation"),
+                ("sync", "Use exchange free balances as caps"),
+                ("set_usdc", "Set USDC trading cap"),
+                ("set_btc", "Set BTC trading cap"),
+                ("clear", "Clear trading caps"),
+                ("show", "Refresh exchange-backed allocation"),
                 ("close", "Close"),
-            ],
+            ]
+            if has_credentials
+            else [
+                ("show", "Show credential requirement"),
+                ("close", "Close"),
+            ]
+        )
+        choice = await ui.menu(
+            "Funds - exchange-backed BTCUSDC caps",
+            options,
             help_text=(
-                f"Spot BTCUSDC only. {_funds_summary(runtime)}. "
-                "Trading consumes from this allocation; the testnet wallet is a hard ceiling."
+                f"{_funds_summary(runtime)}. Funds reads Binance balances and stores maximum "
+                "strategy allocation caps; it never deposits, withdraws, or simulates money."
             ),
         )
         if choice in (None, "close"):
             return 0
-        if choice == "show":
-            ui.append_log(_funds_summary(runtime))
+        if not has_credentials:
+            ui.append_log(_credential_required_message("Funds"))
             continue
-        if choice == "reset":
-            confirmed = await ui.confirm("Reset allocation to 1000.0 USDC and 0.0 BTC?")
-            if not confirmed:
-                continue
-            _, msg = _apply_funds_change("reset", 0.0)
+        if choice == "clear":
+            _, msg = _apply_funds_change("clear", 0.0)
             ui.append_log(msg)
             continue
-        is_btc = choice.endswith("btc")
+        try:
+            balances = await ui.run_blocking(_load_exchange_funds, runtime)
+        except BinanceAPIError as exc:
+            ui.append_log(_credential_failure_message("Funds", exc))
+            continue
+        if choice == "show":
+            ui.append_log(_funds_summary(runtime, balances))
+            continue
+        if choice == "sync":
+            _, msg = _apply_funds_change("sync", 0.0, balances=balances)
+            ui.append_log(msg)
+            continue
+        is_btc = choice == "set_btc"
         unit = "BTC" if is_btc else "USDC"
-        default_amount = "0.0001" if is_btc else "100"
+        current_cap = runtime.managed_btc if is_btc else runtime.managed_usdc
         payload = await ui.form(
-            f"{choice.replace('_', ' ').title()}",
+            f"Set {unit} trading cap",
             [
-                FormField("amount", f"Amount in {unit}", default_amount),
+                FormField(
+                    "amount",
+                    f"Maximum {unit} the strategy may use",
+                    f"{current_cap:.8f}" if is_btc else f"{current_cap:.4f}",
+                ),
             ],
         )
         if payload is None:
@@ -1383,10 +1474,7 @@ async def _ui_funds_menu(ui) -> int:
         except ValueError as exc:
             ui.append_log(f"Funds change rejected: {exc}")
             continue
-        if amount <= 0:
-            ui.append_log("Amount must be > 0.")
-            continue
-        _, msg = _apply_funds_change(choice, amount)
+        _, msg = _apply_funds_change(choice, amount, balances=balances)
         ui.append_log(msg)
 
 
@@ -1484,10 +1572,10 @@ async def _ui_settings_menu(ui) -> int:
         choice = await ui.menu(
             "Settings",
             [
-                ("runtime", "Runtime — credentials and connection"),
-                ("strategy", "Strategy — risk, thresholds, features"),
-                ("execution", "Execution — order type and routing"),
-                ("compute", "Compute backend — CPU / GPU / auto"),
+                ("runtime", "Runtime - credentials and connection"),
+                ("strategy", "Strategy - risk, thresholds, features"),
+                ("execution", "Execution - order type and routing"),
+                ("compute", "Compute backend - CPU / GPU / auto"),
                 ("close", "Close"),
             ],
             help_text="Centralized configuration. Up/Down to choose, Enter to open, Escape to close.",
@@ -1525,6 +1613,13 @@ async def _ui_settings_menu(ui) -> int:
 
 def _tui_actions():  # skipcq: PY-R1000
     from .tui import FormField, TUIAction
+
+    def _credentials_ready(ui, action: str) -> bool:
+        if _has_api_credentials(load_runtime()):
+            return True
+        ui.append_log(_credential_required_message(action))
+        return False
+
     async def _overview(ui):
         ui.append_log(await ui.run_blocking(lambda: render_dashboard(_dashboard_snapshot(with_account=True))))
         return 0
@@ -1533,23 +1628,23 @@ def _tui_actions():  # skipcq: PY-R1000
         ui.append_log(
             "\n".join(
                 [
-                    "Operator help — simple-ai-trading",
+                    "Operator help - simple-ai-trading",
                     "==================================",
                     "",
                     "Scope: BTCUSDC spot trading on Binance testnet or Demo Trading only.",
                     "",
                     "First-time setup",
                     "----------------",
-                    "  1. Settings -> Runtime — paste your Binance testnet API key and secret.",
-                    "  2. Connect — pings the exchange and validates credentials.",
-                    "  3. Funds — set how much virtual USDC and BTC the strategy is allowed to use.",
-                    "  4. Readiness check — confirms safety flags, data, model, and connectivity.",
+                    "  1. Settings -> Runtime: paste your Binance testnet API key and secret.",
+                    "  2. Connect: ping the exchange and validate credentials.",
+                    "  3. Funds: read exchange balances and set the strategy's trading caps.",
+                    "  4. Readiness check: confirm safety flags, data, model, and connectivity.",
                     "",
                     "End-to-end paper run",
                     "--------------------",
-                    "  1. Prepare system — fetches candles, trains, evaluates, backtests.",
-                    "  2. Paper loop — runs the strategy without placing real orders.",
-                    "  3. Operator report — prints dashboard, artifacts, and readiness summary.",
+                    "  1. Prepare system: fetch candles, train, evaluate, and backtest.",
+                    "  2. Paper loop: run the strategy without placing real orders.",
+                    "  3. Operator report: print dashboard, artifacts, and readiness summary.",
                     "",
                     "Manual pipeline (full control)",
                     "------------------------------",
@@ -1560,24 +1655,23 @@ def _tui_actions():  # skipcq: PY-R1000
                     "  * Always run Readiness check first.",
                     "  * Spot roundtrip is the smallest signed test (BUY then SELL).",
                     "  * Testnet loop runs the strategy with signed orders against the testnet.",
-                    "  * The strategy is capped by the Funds allocation, never the raw testnet wallet.",
+                    "  * The strategy is capped by Funds; Funds can never exceed exchange free balances.",
                     "",
                     "Keyboard",
                     "--------",
-                    "  Tab / Shift-Tab     change active panel (the active panel has a green border)",
-                    "  Up / Down           move within the active panel",
+                    "  Up / Down           always move the command or modal menu selection",
                     "  Enter               run the selected command",
-                    "  r                   refresh the snapshot panel",
+                    "  r                   refresh the dashboard snapshot",
                     "  <  >                shrink / grow the command list",
                     "  -  +                shrink / grow the activity log",
                     "  Ctrl-L              clear the activity log",
                     "  q                   quit",
-                    "  Inside any modal: Tab cycles fields, Enter saves, Escape cancels.",
+                    "  Inside forms: Tab cycles fields, Enter advances or saves, Escape cancels.",
                     "",
                     "Centralized configuration",
                     "-------------------------",
                     "  Settings opens a hub with: Runtime, Strategy, Execution, Compute backend.",
-                    "  Funds is independent of trading — deposit / withdraw virtual USDC / BTC there.",
+                    "  Funds is exchange-backed: it reads balances and sets caps, never deposits or withdraws.",
                     "  Compute backend selects CPU (default), CUDA, ROCm, or auto-detect.",
                     "",
                     "Safety",
@@ -1598,7 +1692,7 @@ def _tui_actions():  # skipcq: PY-R1000
             print(f"Runtime settings invalid: {exc}", file=sys.stderr)
             return 2
         save_runtime(next_runtime)
-        if next_runtime.validate_account and next_runtime.api_key and next_runtime.api_secret:
+        if next_runtime.validate_account and _has_api_credentials(next_runtime):
             client = _build_client(next_runtime)
             try:
                 await ui.run_blocking(_validate_runtime_connection, next_runtime, client)
@@ -1624,6 +1718,8 @@ def _tui_actions():  # skipcq: PY-R1000
         return await ui.run_blocking(command_strategy, args)
 
     async def _connect(_ui):
+        if not _credentials_ready(_ui, "Connect"):
+            return 2
         return await _ui.run_blocking(command_connect, argparse.Namespace())
 
     async def _doctor(ui):
@@ -1648,6 +1744,8 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _account(ui):
+        if not _credentials_ready(ui, "Account overview"):
+            return 2
         return await ui.run_blocking(_show_account_overview)
 
     async def _audit(ui):
@@ -1988,6 +2086,8 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _live(ui):
+        if not _credentials_ready(ui, "Testnet loop"):
+            return 2
         payload = await ui.form(
             "Testnet loop",
             [
@@ -2035,6 +2135,8 @@ def _tui_actions():  # skipcq: PY-R1000
         )
 
     async def _roundtrip(ui):
+        if not _credentials_ready(ui, "Spot roundtrip"):
+            return 2
         payload = await ui.form(
             "Spot roundtrip",
             [
@@ -2079,6 +2181,9 @@ def _tui_actions():  # skipcq: PY-R1000
         if payload is None:
             print("Operator report cancelled.")
             return 0
+        include_account = _parse_form_bool(payload["account"], False)
+        if include_account and not _credentials_ready(ui, "Operator report account section"):
+            return 2
         return await ui.run_blocking(
             command_report,
             argparse.Namespace(
@@ -2086,7 +2191,7 @@ def _tui_actions():  # skipcq: PY-R1000
                 model=payload["model"].strip() or "data/model.json",
                 doctor=_parse_form_bool(payload["readiness"], True),
                 online=_parse_form_bool(payload["online"], False),
-                account=_parse_form_bool(payload["account"], False),
+                account=include_account,
             ),
         )
 
@@ -2102,14 +2207,14 @@ def _tui_actions():  # skipcq: PY-R1000
         TUIAction("3", "Account", "Read authenticated balances and open positions from the exchange.", _account),
         TUIAction("4", "Readiness check", "Verify safety flags, training data, model compatibility, and optionally exchange connectivity.", _doctor),
         TUIAction("5", "Local audit", "Check candle quality, feature stability, model metadata, and risk posture without network calls.", _audit),
-        TUIAction("6", "Funds", "Manage the virtual USDC / BTC allocation that caps live trading. Independent of trading itself.", _funds),
+        TUIAction("6", "Funds", "Read exchange balances and set USDC / BTC trading caps. No deposits, withdrawals, or simulated funds.", _funds),
         TUIAction("7", "Fetch candles", "Download fresh BTCUSDC klines from the testnet into a local dataset.", _fetch),
         TUIAction("8", "Train model", "Train or retrain the model on cached candles using the current strategy features.", _train),
         TUIAction("9", "Evaluate", "Score the saved model against cached candles (classification metrics + thresholds).", _evaluate),
         TUIAction("10", "Backtest", "Simulate trading on cached candles using the saved model; estimates PnL, fees, and drawdown.", _backtest),
         TUIAction("11", "Tune strategy", "Grid search execution parameters across all data, a recent lookback, or a date range.", _tune),
         TUIAction("12", "Prepare system", "One-shot pipeline: fetch candles, train, evaluate, backtest, audit, then readiness checks.", _prepare),
-        TUIAction("13", "Paper loop", "Run the live loop in paper mode — no real orders; supports retraining controls.", _paper),
+        TUIAction("13", "Paper loop", "Run the live loop in paper mode; no real orders; supports retraining controls.", _paper),
         TUIAction("14", "Testnet loop", "Run authenticated non-mainnet execution with real signed orders.", _live),
         TUIAction("15", "Spot roundtrip", "Place a minimal BUY then SELL on spot testnet/demo; smallest signed execution check.", _roundtrip),
         TUIAction("16", "Operator report", "Print the dashboard, recent artifacts, readiness report, and optional account state.", _report),
@@ -2702,8 +2807,8 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:
     if not _allows_signed_execution(runtime):
         print("Spot roundtrip requires testnet=true or demo=true.", file=sys.stderr)
         return 2
-    if not runtime.api_key or not runtime.api_secret:
-        print("Spot roundtrip requires configured API credentials.", file=sys.stderr)
+    if not _has_api_credentials(runtime):
+        print(_credential_required_message("Spot roundtrip"), file=sys.stderr)
         return 2
 
     mode = str(getattr(args, "mode", "auto"))
@@ -2743,7 +2848,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:
         second = client.place_order(runtime.symbol, second_side, second_quantity, dry_run=False)
         after = client.get_account()
     except (BinanceAPIError, ValueError) as exc:
-        print(f"Spot roundtrip failed: {exc}", file=sys.stderr)
+        print(_credential_failure_message("Spot roundtrip", exc), file=sys.stderr)
         return 2
 
     payload = {
@@ -2789,7 +2894,7 @@ def command_configure(_: argparse.Namespace) -> int:
     next_runtime = prompt_runtime(current)
     save_runtime(next_runtime)
 
-    if next_runtime.validate_account and next_runtime.api_key and next_runtime.api_secret:
+    if next_runtime.validate_account and _has_api_credentials(next_runtime):
         client = _build_client(next_runtime)
         try:
             _validate_runtime_connection(next_runtime, client)
@@ -2809,42 +2914,46 @@ def command_configure(_: argparse.Namespace) -> int:
 
 def command_connect(_: argparse.Namespace) -> int:
     runtime = load_runtime()
+    if not _has_api_credentials(runtime):
+        print(_credential_required_message("Connect"), file=sys.stderr)
+        return 2
     client = _build_client(runtime)
     try:
         server_time = client.get_exchange_time()
         client.ensure_btcusdc()
-        account = None
-        if runtime.api_key and runtime.api_secret:
-            account = client.get_account()
-            if isinstance(account, dict):
-                account = {
-                    "updateTime": account.get("updateTime"),
-                    "canTrade": account.get("canTrade"),
-                    "accountType": account.get("accountType"),
-                    "positions": account.get("positions"),
-                    "assets": account.get("assets"),
-                }
-        if runtime.market_type == "futures" and runtime.api_key and runtime.api_secret:
-            try:
-                max_leverage = client.get_max_leverage(runtime.symbol)
-            except BinanceAPIError as exc:
-                print(f"unable to fetch leverage bracket: {exc}", file=sys.stderr)
-            else:
-                print(f"max leverage on {runtime.symbol}: {max_leverage}x")
-
-        print("exchange: connected")
-        print("market:", runtime.market_type)
-        print("environment:", _runtime_environment(runtime))
-        print("testnet:", runtime.testnet)
-        print("demo:", getattr(runtime, "demo", False))
-        print("endpoint:", client.base_url)
-        print("server_time:", server_time.get("serverTime") if isinstance(server_time, dict) else server_time)
-        if account is not None:
-            print("account:", json.dumps(account, indent=2))
-        return 0
     except BinanceAPIError as exc:
         print(f"Connection failed: {exc}", file=sys.stderr)
         return 2
+    try:
+        account = client.get_account()
+    except BinanceAPIError as exc:
+        print(_credential_failure_message("Connect", exc), file=sys.stderr)
+        return 2
+    if isinstance(account, dict):
+        account = {
+            "updateTime": account.get("updateTime"),
+            "canTrade": account.get("canTrade"),
+            "accountType": account.get("accountType"),
+            "positions": account.get("positions"),
+            "assets": account.get("assets"),
+        }
+    if runtime.market_type == "futures":
+        try:
+            max_leverage = client.get_max_leverage(runtime.symbol)
+        except BinanceAPIError as exc:
+            print(f"unable to fetch leverage bracket: {exc}", file=sys.stderr)
+        else:
+            print(f"max leverage on {runtime.symbol}: {max_leverage}x")
+
+    print("exchange: connected")
+    print("market:", runtime.market_type)
+    print("environment:", _runtime_environment(runtime))
+    print("testnet:", runtime.testnet)
+    print("demo:", getattr(runtime, "demo", False))
+    print("endpoint:", client.base_url)
+    print("server_time:", server_time.get("serverTime") if isinstance(server_time, dict) else server_time)
+    print("account:", json.dumps(account, indent=2))
+    return 0
 
 
 def command_doctor(args: argparse.Namespace) -> int:
@@ -2877,6 +2986,9 @@ def command_risk(args: argparse.Namespace) -> int:
 
 
 def command_report(args: argparse.Namespace) -> int:
+    if bool(args.account) and not _has_api_credentials(load_runtime()):
+        print(_credential_required_message("Operator report account section"), file=sys.stderr)
+        return 2
     print(
         _render_operator_report(
             with_account=bool(args.account),
@@ -4276,7 +4388,6 @@ def command_live(args: argparse.Namespace) -> int:
     external_override = getattr(args, "external_signals", None)
     if external_override is not None:
         cfg = StrategyConfig(**{**cfg.asdict(), "external_signals_enabled": bool(external_override)})
-    client = _build_client(runtime)
     model_path = Path(getattr(args, "model", "data/model.json"))
 
     if getattr(args, "live", False):
@@ -4286,9 +4397,10 @@ def command_live(args: argparse.Namespace) -> int:
     if not _allows_signed_execution(runtime):
         print("Real-money execution is disabled in this phase. Set testnet=true or demo=true to run.")
         return 2
-    if not effective_dry_run and (not runtime.api_key or not runtime.api_secret):
-        print("Live mode needs API key and secret. Run configure first or run with --paper.")
+    if not effective_dry_run and not _has_api_credentials(runtime):
+        print(_credential_required_message("Authenticated live mode"), file=sys.stderr)
         return 2
+    client = _build_client(runtime)
     sleep_seconds = max(0, int(getattr(args, "sleep", 0)))
     if not effective_dry_run and sleep_seconds < 1:
         print("Authenticated live mode uses minimum sleep=1s.")
@@ -4323,7 +4435,7 @@ def command_live(args: argparse.Namespace) -> int:
             print(f"Failed to set leverage: {exc}", file=sys.stderr)
             return 2
 
-    cash = max(0.0, _safe_float(getattr(runtime, "managed_usdc", 1000.0)))
+    cash = max(0.0, _safe_float(getattr(runtime, "managed_usdc", 0.0)))
     position_notional = 0.0
     position_side = 0
     entry_price = 0.0

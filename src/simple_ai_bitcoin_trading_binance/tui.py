@@ -832,8 +832,8 @@ class OperatorApp(App[int]):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("r", "refresh_preview", "Refresh"),
-        Binding("up", "cursor_up", "Up", show=False),
-        Binding("down", "cursor_down", "Down", show=False),
+        Binding("up", "cursor_up", "Up", show=False, priority=True),
+        Binding("down", "cursor_down", "Down", show=False, priority=True),
         Binding("k", "cursor_up", "Up", show=False),
         Binding("j", "cursor_down", "Down", show=False),
         Binding("ctrl+p", "cursor_up", "Up", show=False),
@@ -842,7 +842,7 @@ class OperatorApp(App[int]):
         Binding("pagedown", "page_down", "Page down", show=False),
         Binding("home", "first_action", "First", show=False),
         Binding("end", "last_action", "Last", show=False),
-        Binding("enter", "run_selected", "Run"),
+        Binding("enter", "run_selected", "Run", priority=True),
         Binding("greater_than_sign", "grow_nav", "Wider nav", show=False),
         Binding("less_than_sign", "shrink_nav", "Narrower nav", show=False),
         Binding("plus", "grow_activity", "Taller log", show=False),
@@ -877,6 +877,7 @@ class OperatorApp(App[int]):
         self._activity_height = 12
         self._last_status: str | None = None
         self._last_connection: str | None = None
+        self._last_details_title: str | None = None
         self._last_details: str | None = None
         self._last_preview: str | None = None
         self._last_details_width: int = 0
@@ -888,23 +889,25 @@ class OperatorApp(App[int]):
             yield Static("", id="status", markup=False)
         with Horizontal(id="body"):
             with Vertical(id="nav"):
-                yield Static("Commands", id="actions-title", classes="panel-title")
+                yield Static("Operator commands", id="actions-title", classes="panel-title")
                 yield OptionList(*[action.title for action in self.actions_data], id="actions")
             with Vertical(id="context"):
                 with Vertical(id="action-panel"):
-                    yield Static("Selected", id="details-title", classes="panel-title")
+                    yield Static(self.actions_data[0].title if self.actions_data else "Command", id="details-title", classes="panel-title")
                     yield Static("", id="details", markup=False)
                 with Vertical(id="snapshot-panel"):
-                    yield Static("Snapshot", id="preview-title", classes="panel-title")
-                    with VerticalScroll(id="preview-scroll"):
+                    yield Static("Dashboard snapshot", id="preview-title", classes="panel-title")
+                    with VerticalScroll(id="preview-scroll", can_focus=False):
                         yield Static("", id="preview", markup=False)
                 with Vertical(id="activity-panel"):
-                    yield Static("Activity", id="log-title", classes="panel-title")
-                    yield RichLog(id="log", wrap=True, highlight=True, markup=False)
+                    yield Static("Activity log", id="log-title", classes="panel-title")
+                    log = RichLog(id="log", wrap=True, highlight=True, markup=False)
+                    log.can_focus = False
+                    yield log
         with Horizontal(id="bottombar"):
             yield Static("Connection: not checked", id="connectionbar", markup=False)
             yield Static(
-                "Tab panels  Up/Down or j/k move  Enter run  r refresh  < > nav  - + log  Ctrl-L clear  q quit",
+                "Up/Down select  Enter run  r refresh snapshot  < > command width  - + log height  Ctrl-L clear  q quit",
                 id="keybar",
                 markup=False,
             )
@@ -915,7 +918,7 @@ class OperatorApp(App[int]):
         actions.focus()
         self.refresh_preview()
         self._update_action_details()
-        self.set_status("Ready. Enter runs the selected action.")
+        self.set_status("Ready. Up/Down selects a command; Enter runs it.")
         self.set_timer(0.1, self.refresh_connection_status, name="connection-status-initial")
         self.set_interval(self.connection_interval, self.refresh_connection_status, name="connection-status")
 
@@ -963,6 +966,13 @@ class OperatorApp(App[int]):
 
     def _update_action_details(self) -> None:
         action = self._current_action()
+        try:
+            title = self.query_one("#details-title", Static)
+        except Exception:
+            title = None
+        if title is not None and action.title != self._last_details_title:
+            self._last_details_title = action.title
+            title.update(action.title)
         details = self.query_one("#details", Static)
         width = max(24, details.size.width - 4 if details.size.width else 52)
         wrapped = textwrap.wrap(
@@ -971,7 +981,7 @@ class OperatorApp(App[int]):
             break_long_words=False,
             break_on_hyphens=False,
         ) or [action.description]
-        rendered = "\n".join([action.title, "", *wrapped])
+        rendered = "\n".join(wrapped)
         if rendered == self._last_details and width == self._last_details_width:
             return
         self._last_details = rendered
@@ -1009,6 +1019,7 @@ class OperatorApp(App[int]):
         option_list = self.query_one("#actions", OptionList)
         safe_index = max(0, min(index, len(self.actions_data) - 1))
         option_list.highlighted = safe_index
+        option_list.focus()
         return self.actions_data[safe_index]
 
     async def _execute_action(self, action: TUIAction) -> None:
@@ -1062,7 +1073,7 @@ class OperatorApp(App[int]):
         if self._modal_open():
             return
         self.refresh_preview()
-        self.set_status("Snapshot refreshed")
+        self.set_status("Dashboard snapshot refreshed")
         self.set_timer(0.1, self.refresh_connection_status, name="connection-status-manual")
 
     def _set_current_action_index(self, index: int) -> None:
@@ -1145,7 +1156,7 @@ class OperatorApp(App[int]):
             self.query_one("#nav").styles.width = bounded
         except Exception:
             return
-        self.set_status(f"Nav width {bounded}")
+        self.set_status(f"Command list width {bounded}")
 
     def _set_activity_height(self, height: int) -> None:
         bounded = max(self._ACTIVITY_HEIGHT_MIN, min(self._ACTIVITY_HEIGHT_MAX, height))
@@ -1156,7 +1167,7 @@ class OperatorApp(App[int]):
             self.query_one("#activity-panel").styles.height = bounded
         except Exception:
             return
-        self.set_status(f"Activity height {bounded}")
+        self.set_status(f"Activity log height {bounded}")
 
     def action_grow_nav(self) -> None:
         if self._modal_open():
@@ -1185,7 +1196,7 @@ class OperatorApp(App[int]):
             self.query_one("#log", RichLog).clear()
         except Exception:
             return
-        self.set_status("Activity cleared")
+        self.set_status("Activity log cleared")
 
 
 def launch_tui(

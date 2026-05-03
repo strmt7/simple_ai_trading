@@ -52,7 +52,7 @@ def test_risk_policy_warns_on_aggressive_but_possible_settings(tmp_path) -> None
     model_path = tmp_path / "model.json"
     model_path.write_text("{}", encoding="utf-8")
     report = build_risk_policy_report(
-        RuntimeConfig(market_type="futures", api_key="k", api_secret="s", dry_run=False),
+        RuntimeConfig(market_type="futures", api_key="k", api_secret="s", dry_run=False, managed_usdc=1000.0),
         StrategyConfig(
             leverage=80.0,
             risk_per_trade=0.04,

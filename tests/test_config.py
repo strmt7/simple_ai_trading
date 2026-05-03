@@ -227,7 +227,7 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
     assert runtime.validate_account is False
     assert runtime.max_rate_calls_per_minute == 1100
     assert runtime.recv_window_ms == 60000
-    assert runtime.managed_usdc == 1000.0
+    assert runtime.managed_usdc == 0.0
     assert runtime.managed_btc == 0.0
 
     fallback_bool_runtime = RuntimeConfig(testnet=object())

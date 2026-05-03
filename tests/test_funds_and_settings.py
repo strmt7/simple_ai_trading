@@ -7,9 +7,12 @@ from typing import Any
 
 import pytest
 
+from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
 from simple_ai_bitcoin_trading_binance.cli import (
+    _account_free_balances,
     _apply_funds_change,
     _funds_summary,
+    _load_exchange_funds,
     _tui_actions,
     _ui_funds_menu,
     _ui_settings_menu,
@@ -72,6 +75,16 @@ def _action(title: str):
     raise AssertionError(f"missing action: {title}")
 
 
+class _FundsClient:
+    def __init__(self, account: dict[str, object] | Exception) -> None:
+        self.account = account
+
+    def get_account(self):
+        if isinstance(self.account, Exception):
+            raise self.account
+        return self.account
+
+
 @pytest.fixture()
 def isolated_home(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -80,36 +93,86 @@ def isolated_home(tmp_path, monkeypatch):
     return tmp_path
 
 
-def test_funds_summary_describes_current_allocation() -> None:
+def test_account_free_balances_reads_spot_and_futures_payloads() -> None:
+    balances = _account_free_balances(
+        {
+            "balances": [
+                object(),
+                {"asset": "USDC", "free": "12.5", "locked": "1"},
+                {"asset": "BTC", "free": "0.01", "locked": "0"},
+                {"asset": "ETH", "free": "99", "locked": "0"},
+            ],
+            "assets": [
+                object(),
+                {"asset": "USDC", "availableBalance": "20.0", "walletBalance": "25.0"},
+                {"asset": "BTC", "walletBalance": "0.005"},
+                {"asset": "ETH", "availableBalance": "99"},
+            ],
+        }
+    )
+    assert balances == {"USDC": 20.0, "BTC": 0.01}
+    assert _account_free_balances("bad") == {"USDC": 0.0, "BTC": 0.0}
+    assert _account_free_balances({"balances": "bad", "assets": "bad"}) == {"USDC": 0.0, "BTC": 0.0}
+
+
+def test_funds_summary_describes_exchange_backed_caps() -> None:
     cfg = RuntimeConfig(managed_usdc=1234.5, managed_btc=0.001)
     summary = _funds_summary(cfg)
-    assert "USDC available: 1234.5000" in summary
-    assert "BTC available: 0.00100000" in summary
+    assert "API credentials missing" in summary
+    assert "Trading caps: USDC=1234.5000 BTC=0.00100000" in summary
+
+    cfg = RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=5.0, managed_btc=0.2)
+    assert "Exchange balance not loaded" in _funds_summary(cfg)
+    summary = _funds_summary(cfg, {"USDC": 50.0, "BTC": 0.25})
+    assert "Exchange free: USDC=50.0000 BTC=0.25000000" in summary
+    assert "Trading caps: USDC=5.0000 BTC=0.20000000" in summary
 
 
-def test_apply_funds_change_deposits_and_withdraws(isolated_home) -> None:
-    save_runtime(RuntimeConfig(managed_usdc=100.0, managed_btc=0.0))
-    after, msg = _apply_funds_change("deposit_usdc", 250.0)
-    assert after.managed_usdc == 350.0
-    assert "Deposited" in msg
+def test_load_exchange_funds_requires_credentials(isolated_home) -> None:
+    with pytest.raises(BinanceAPIError, match="Funds requires Binance API key"):
+        _load_exchange_funds(load_runtime())
 
-    after, msg = _apply_funds_change("withdraw_usdc", 1000.0)
-    assert after.managed_usdc == 0.0  # capped to available
+
+def test_load_exchange_funds_reads_authenticated_balances(isolated_home, monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDC", "free": "15"}, {"asset": "BTC", "free": "0.02"}]}),
+    )
+    assert _load_exchange_funds(load_runtime()) == {"USDC": 15.0, "BTC": 0.02}
+
+
+def test_apply_funds_change_uses_exchange_balances(isolated_home) -> None:
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=10.0, managed_btc=0.1))
+
+    unchanged, msg = _apply_funds_change("sync", 0.0)
+    assert unchanged.managed_usdc == 10.0
+    assert "Funds requires Binance API key" in msg
+
+    after, msg = _apply_funds_change("sync", 0.0, balances={"USDC": 250.0, "BTC": 0.5})
+    assert after.managed_usdc == 250.0
+    assert after.managed_btc == 0.5
+    assert "Synced" in msg
+
+    after, msg = _apply_funds_change("set_usdc", 500.0, balances={"USDC": 300.0, "BTC": 0.5})
+    assert after.managed_usdc == 300.0
     assert "capped" in msg
 
-    after, msg = _apply_funds_change("deposit_btc", 0.01)
-    assert after.managed_btc == 0.01
+    after, msg = _apply_funds_change("set_btc", 0.25, balances={"USDC": 300.0, "BTC": 0.5})
+    assert after.managed_btc == 0.25
+    assert "Set BTC" in msg
 
-    after, msg = _apply_funds_change("withdraw_btc", 0.005)
-    assert pytest.approx(after.managed_btc, abs=1e-12) == 0.005
-
-
-def test_apply_funds_change_reset_restores_defaults(isolated_home) -> None:
-    save_runtime(RuntimeConfig(managed_usdc=42.0, managed_btc=0.5))
-    after, msg = _apply_funds_change("reset", 0.0)
-    assert after.managed_usdc == 1000.0
+    after, msg = _apply_funds_change("clear", 0.0)
+    assert after.managed_usdc == 0.0
     assert after.managed_btc == 0.0
-    assert "Reset" in msg
+    assert "No exchange balances were changed" in msg
+
+    after, msg = _apply_funds_change("deposit_usdc", 100.0, balances={"USDC": 999.0})
+    assert after.managed_usdc == 0.0
+    assert "no longer supports" in msg
 
 
 def test_apply_funds_change_unknown_action_no_op(isolated_home) -> None:
@@ -124,60 +187,99 @@ def test_funds_menu_close_returns_zero(isolated_home) -> None:
     result = asyncio.run(_ui_funds_menu(ui))
     assert result == 0
     assert ui.menu_calls[0][0].startswith("Funds")
+    assert [key for key, _label in ui.menu_calls[0][1]] == ["show", "close"]
 
 
-def test_funds_menu_show_logs_summary_then_closes(isolated_home) -> None:
+def test_funds_menu_show_without_credentials_logs_requirement(isolated_home) -> None:
     ui = _ScriptedUI(menu_choices=["show", "close"])
     result = asyncio.run(_ui_funds_menu(ui))
     assert result == 0
-    assert any("USDC available" in line for line in ui.logs)
+    assert any("Funds requires Binance API key" in line for line in ui.logs)
 
 
-def test_funds_menu_deposit_usdc_persists_change(isolated_home) -> None:
+def test_funds_menu_sync_persists_exchange_balances(isolated_home, monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDC", "free": "250"}, {"asset": "BTC", "free": "0.125"}]}),
+    )
+    ui = _ScriptedUI(menu_choices=["sync", "close"])
+    asyncio.run(_ui_funds_menu(ui))
+    runtime = load_runtime()
+    assert runtime.managed_usdc == 250.0
+    assert runtime.managed_btc == 0.125
+
+
+def test_funds_menu_set_usdc_cap_is_capped_to_exchange_free(isolated_home, monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDC", "free": "100"}, {"asset": "BTC", "free": "0.5"}]}),
+    )
     ui = _ScriptedUI(
-        menu_choices=["deposit_usdc", "close"],
-        forms=[{"amount": "250"}],
+        menu_choices=["set_usdc", "close"],
+        forms=[{"amount": "999"}],
     )
     asyncio.run(_ui_funds_menu(ui))
-    assert load_runtime().managed_usdc == pytest.approx(1250.0)
+    assert load_runtime().managed_usdc == 100.0
+    assert any("capped" in line for line in ui.logs)
 
 
-def test_funds_menu_zero_amount_rejected(isolated_home) -> None:
-    ui = _ScriptedUI(
-        menu_choices=["deposit_usdc", "close"],
-        forms=[{"amount": "0"}],
+def test_funds_menu_invalid_amount_rejected(isolated_home, monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDC", "free": "100"}, {"asset": "BTC", "free": "0.5"}]}),
     )
-    asyncio.run(_ui_funds_menu(ui))
-    assert any("Amount must be" in line for line in ui.logs)
-
-
-def test_funds_menu_invalid_amount_rejected(isolated_home) -> None:
     ui = _ScriptedUI(
-        menu_choices=["deposit_btc", "close"],
+        menu_choices=["set_btc", "close"],
         forms=[{"amount": "not-a-number"}],
     )
     asyncio.run(_ui_funds_menu(ui))
     assert any("rejected" in line.lower() for line in ui.logs)
 
 
-def test_funds_menu_reset_requires_confirmation(isolated_home) -> None:
-    save_runtime(RuntimeConfig(managed_usdc=42.0, managed_btc=0.5))
-    ui_decline = _ScriptedUI(menu_choices=["reset", "close"], confirms=[False])
-    asyncio.run(_ui_funds_menu(ui_decline))
-    assert load_runtime().managed_usdc == 42.0  # unchanged on decline
-
-    ui_accept = _ScriptedUI(menu_choices=["reset", "close"], confirms=[True])
-    asyncio.run(_ui_funds_menu(ui_accept))
-    assert load_runtime().managed_usdc == 1000.0
+def test_funds_menu_clear_caps(isolated_home) -> None:
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=42.0, managed_btc=0.5))
+    ui = _ScriptedUI(menu_choices=["clear", "close"])
+    asyncio.run(_ui_funds_menu(ui))
+    assert load_runtime().managed_usdc == 0.0
 
 
-def test_funds_menu_deposit_form_cancel_keeps_balance(isolated_home) -> None:
+def test_funds_menu_form_cancel_keeps_cap(isolated_home, monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=42.0))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDC", "free": "100"}]}),
+    )
     ui = _ScriptedUI(
-        menu_choices=["deposit_usdc", "close"],
+        menu_choices=["set_usdc", "close"],
         forms=[None],
     )
     asyncio.run(_ui_funds_menu(ui))
-    assert load_runtime().managed_usdc == 1000.0
+    assert load_runtime().managed_usdc == 42.0
+
+
+def test_funds_menu_exchange_failure_logs_short_credential_message(isolated_home, monkeypatch) -> None:
+    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(cli_mod, "_build_client", lambda _runtime: _FundsClient(BinanceAPIError("bad key")))
+    ui = _ScriptedUI(menu_choices=["show", "close"])
+    asyncio.run(_ui_funds_menu(ui))
+    assert ui.logs == ["Funds requires valid Binance API credentials: bad key"]
 
 
 def test_settings_menu_close_returns_zero(isolated_home) -> None:
@@ -273,6 +375,27 @@ def test_settings_action_invokes_settings_menu(isolated_home) -> None:
     result = asyncio.run(_action("Settings").run(ui))
     assert result == 0
     assert ui.menu_calls and ui.menu_calls[0][0] == "Settings"
+
+
+def test_signed_tui_actions_stop_before_forms_without_credentials(isolated_home) -> None:
+    for title in ("Connect", "Account", "Testnet loop", "Spot roundtrip"):
+        ui = _ScriptedUI()
+        assert asyncio.run(_action(title).run(ui)) == 2
+        assert ui.logs and "requires Binance API key" in ui.logs[0]
+
+    ui = _ScriptedUI(
+        forms=[
+            {
+                "input": "",
+                "model": "",
+                "readiness": "no",
+                "online": "no",
+                "account": "yes",
+            }
+        ]
+    )
+    assert asyncio.run(_action("Operator report").run(ui)) == 2
+    assert "Operator report account section requires Binance API key" in ui.logs[0]
 
 
 def test_settings_menu_execution_form_cancellation(isolated_home) -> None:
