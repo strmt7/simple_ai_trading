@@ -121,6 +121,7 @@ simple-ai-trading signals --loop --sleep 15 --jitter 3 --news-provider-limit 93
 simple-ai-trading signals-benchmark --provider-limit 60 --provider-limit 90 --provider-limit 93 --parallelism 16 --parallelism 24 --iterations 2
 simple-ai-trading source-grades --window-hours 24
 python tools/run_real_data_soak.py --duration-seconds 3660 --python .venv311/Scripts/python.exe
+python tools/terminal_navigation_probe.py --cwd .
 python tools/quality_metrics.py --compare-ref HEAD
 simple-ai-trading spot-roundtrip --mode auto --quantity 0.00008 --yes
 simple-ai-trading compute --backend auto
