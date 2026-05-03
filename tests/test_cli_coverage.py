@@ -279,6 +279,18 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
     assert "secret-key" not in output
     assert "secret-value" not in output
 
+    save_runtime(RuntimeConfig())
+    assert cli.command_report(
+        argparse.Namespace(
+            account=True,
+            doctor=False,
+            online=False,
+            input="data/historical_btcusdc.json",
+            model="data/model.json",
+        )
+    ) == 2
+    assert "Operator report account section requires Binance API key" in capsys.readouterr().err
+
     plain = cli._render_operator_report(
         with_account=False,
         doctor=False,
@@ -496,19 +508,17 @@ def test_connection_status_line_branches(tmp_path, monkeypatch) -> None:
     save_runtime(RuntimeConfig(api_key="", api_secret="", dry_run=True, testnet=True, market_type="spot"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: NoAuthClient())
     line = cli._connection_status_line()
-    assert "online spot/testnet paper-default" in line
-    assert "auth missing" in line
+    assert "public endpoint reachable spot/testnet paper-default" in line
+    assert "credentials missing" in line
 
     save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="futures"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     line = cli._connection_status_line()
-    assert "online futures/testnet testnet-live-default" in line
-    assert "auth ok" in line
+    assert "authenticated futures/testnet testnet-live-default" in line
 
     save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=False, demo=True, market_type="spot"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
-    line = cli._connection_status_line()
-    assert "online spot/demo demo-live-default" in line
+    assert "authenticated spot/demo demo-live-default" in cli._connection_status_line()
 
     class OddAuthClient(_FakeClient):
         def get_account(self):
@@ -523,7 +533,14 @@ def test_connection_status_line_branches(tmp_path, monkeypatch) -> None:
 
     save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="futures"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: OfflineClient())
-    assert "offline futures/testnet" in cli._connection_status_line()
+    assert "public endpoint unreachable futures/testnet" in cli._connection_status_line()
+
+    class AuthFailClient(_FakeClient):
+        def get_account(self):
+            raise BinanceAPIError("bad key")
+
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: AuthFailClient())
+    assert "authentication failed futures/testnet" in cli._connection_status_line()
 
 
 def test_readiness_report_and_command_doctor(tmp_path, monkeypatch, capsys) -> None:
@@ -542,7 +559,7 @@ def test_readiness_report_and_command_doctor(tmp_path, monkeypatch, capsys) -> N
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, api_key="", api_secret=""))
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()] * 80)
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: SimpleNamespace(feature_dim=3))
-    monkeypatch.setattr(cli, "_connection_status_line", lambda: "Connection 00: online spot/testnet paper-default server-time ok auth missing")
+    monkeypatch.setattr(cli, "_connection_status_line", lambda: "Connection 00: public endpoint reachable spot/testnet paper-default; credentials missing")
     assert cli.command_doctor(argparse.Namespace(input=str(data_file), model=str(model_file), online=True)) == 0
     output = capsys.readouterr().out
     assert "Readiness report" in output
@@ -721,7 +738,7 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
 def test_evaluate_and_backtest_accept_train_suite_advanced_model(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     strategy = StrategyConfig()
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(strategy)
     candles = _simple_candles(320)
     feature_cfg = default_config_for("default", strategy.enabled_features)
@@ -812,7 +829,7 @@ def test_command_live_applies_model_strategy_overrides_before_risk_policy(
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.02, signal_threshold=0.58, take_profit_pct=0.03))
     model = TrainedModel(
         weights=[0.0] * 13,
@@ -1120,11 +1137,23 @@ def test_command_connect_failure_returns_nonzero(tmp_path, monkeypatch, capsys) 
         def get_exchange_time(self):
             raise BinanceAPIError("offline")
 
+    class _BadAccountClient(_FakeClient):
+        def get_account(self):
+            raise BinanceAPIError("bad key")
+
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _BadClient())
     assert cli.command_connect(argparse.Namespace()) == 2
-    assert "Connection failed" in capsys.readouterr().err
+    assert "Connect requires Binance API key" in capsys.readouterr().err
+
+    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
+    assert cli.command_connect(argparse.Namespace()) == 2
+    assert "Connection failed: offline" in capsys.readouterr().err
+
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _BadAccountClient())
+    assert cli.command_connect(argparse.Namespace()) == 2
+    assert "Connect requires valid Binance API credentials" in capsys.readouterr().err
 
 
 def test_command_risk_reports_json_text_and_conflicting_modes(tmp_path, monkeypatch, capsys) -> None:
@@ -1152,15 +1181,25 @@ def test_command_risk_reports_json_text_and_conflicting_modes(tmp_path, monkeypa
 def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
-    save_runtime(RuntimeConfig(managed_usdc=0.0, dry_run=True))
+    save_runtime(RuntimeConfig(managed_usdc=0.0, dry_run=False, api_key="k", api_secret="s"))
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
+    model_file = tmp_path / "model.json"
+    model_file.write_text("{}", encoding="utf-8")
+
+    class _LoadedModel:
+        feature_signature = "sig"
+
+        def predict_proba(self, _features) -> float:
+            return 0.5
+
+    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: _LoadedModel())
     args = argparse.Namespace(
         steps=1,
         sleep=0,
-        paper=True,
+        paper=False,
         live=False,
-        model=str(tmp_path / "missing.json"),
+        model=str(model_file),
         leverage=None,
         retrain_interval=0,
         retrain_window=1,
@@ -1178,6 +1217,7 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
 
     save_runtime(RuntimeConfig(managed_usdc=1000.0, dry_run=True))
     save_strategy(StrategyConfig(enabled_features=("momentum_1",)))
+    args.paper = True
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [SimpleNamespace(timestamp=1, close=0.0, features=(0.0,))])
     monkeypatch.setattr(cli, "_build_live_model", lambda *_args, **_kwargs: _RiskModel())
     monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
@@ -1933,7 +1973,7 @@ def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, 
             return int(0.95 >= threshold)
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
@@ -2080,7 +2120,7 @@ def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
             return normalized, constraints
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
 
     class _AlwaysLongModel:
@@ -2253,7 +2293,7 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, max_trades_per_day=1, cooldown_minutes=0))
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _StepModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _CappedClient())
@@ -2278,7 +2318,7 @@ def test_command_live_rejects_missing_credentials_for_live_mode(tmp_path, monkey
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 2
-    assert "Live mode needs API key and secret" in capsys.readouterr().out
+    assert "Authenticated live mode requires Binance API key" in capsys.readouterr().err
 
 
 def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeypatch, capsys) -> None:
@@ -2287,7 +2327,7 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
             raise BinanceAPIError("bad leverage")
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
     strategy = StrategyConfig(leverage=5.0)
     save_strategy(strategy)
     model_file = tmp_path / "model.json"
@@ -2341,7 +2381,7 @@ def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, c
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0))
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
     model_dir = tmp_path / "data"
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -2365,7 +2405,7 @@ def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, c
 
 def test_command_live_strictly_requires_valid_model_for_authenticated_live(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
 
@@ -2410,7 +2450,7 @@ def test_command_live_loaded_model_signature_and_authenticated_sleep_floor(tmp_p
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -2567,7 +2607,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -2704,7 +2744,7 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _PositionClient())
@@ -3553,7 +3593,7 @@ def test_command_tune_falls_back_to_drawdown_fallback(tmp_path, monkeypatch, cap
 
 def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0))
     save_strategy(StrategyConfig(risk_per_trade=0.002, max_position_pct=0.2))
 
     model_file = tmp_path / "data" / "model.json"
@@ -3676,7 +3716,7 @@ def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_p
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -3803,7 +3843,7 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -3878,7 +3918,7 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -3964,7 +4004,7 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,
@@ -4030,7 +4070,7 @@ def test_command_live_skips_entry_when_cash_is_insufficient_before_fill(tmp_path
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0))
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
@@ -4165,7 +4205,7 @@ def test_command_live_allows_demo_environment(tmp_path, monkeypatch) -> None:
 
 def test_command_live_futures_set_leverage_failure_exits(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig(leverage=5.0))
 
     class _FailLeverageClient:
@@ -4366,7 +4406,7 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
             return 0.99
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.005, max_position_pct=0.5))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -4389,7 +4429,7 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
 
 def test_command_live_spot_leverage_override_is_logged(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -4437,7 +4477,7 @@ def test_command_live_spot_leverage_override_is_logged(tmp_path, monkeypatch, ca
 
 def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,

@@ -77,12 +77,13 @@ The layout is intentionally simple:
 - an activity log
 - modal forms for editing runtime, strategy, tuning, and execution parameters
 - password-masked API key and secret fields inside `Runtime settings`
-- a bottom bar with real exchange connection status and keyboard hints
+- a bottom bar that separates public endpoint reachability from authenticated account readiness
 
 Use the left action list to:
 
 - read `Help` for the recommended operator sequence
 - update `Runtime settings`, then run `Connect`
+- open `Funds` to read exchange balances and set trading caps after credentials are configured
 - run `Readiness check` before paper or authenticated testnet execution
 - edit runtime settings
 - edit strategy and feature selection

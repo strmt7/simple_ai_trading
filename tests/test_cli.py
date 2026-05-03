@@ -623,7 +623,7 @@ def test_tui_settings_menu_accepts_fallback_shortcuts_in_textual_runtime(monkeyp
 
 
 def test_tui_all_numbered_menu_choices_are_reachable_in_textual_runtime(monkeypatch) -> None:
-    runtime = _runtime_config(managed_usdc=1000.0, managed_btc=0.0)
+    runtime = _runtime_config(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=1000.0, managed_btc=0.0)
     strategy = StrategyConfig()
 
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
@@ -631,6 +631,14 @@ def test_tui_all_numbered_menu_choices_are_reachable_in_textual_runtime(monkeypa
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", lambda: strategy)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_strategy", lambda cfg: cfg)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_strategy", lambda _args: 0)
+    monkeypatch.setattr(
+        "simple_ai_bitcoin_trading_binance.cli._build_client",
+        lambda _runtime: type(
+            "FundsClient",
+            (),
+            {"get_account": lambda self: {"balances": [{"asset": "USDC", "free": "250"}, {"asset": "BTC", "free": "0.5"}]}},
+        )(),
+    )
 
     async def wait_for_modal(app: OperatorApp, expected: str) -> None:
         for _ in range(10):
@@ -681,15 +689,14 @@ def test_tui_all_numbered_menu_choices_are_reachable_in_textual_runtime(monkeypa
         asyncio.run(drive_menu("Settings", key, expected, "5"))
 
     for key, expected in (
-        ("1", "FormScreen"),
+        ("1", "MenuScreen"),
         ("2", "FormScreen"),
         ("3", "FormScreen"),
-        ("4", "FormScreen"),
-        ("5", "ConfirmScreen"),
-        ("6", "MenuScreen"),
-        ("7", "Root"),
+        ("4", "MenuScreen"),
+        ("5", "MenuScreen"),
+        ("6", "Root"),
     ):
-        asyncio.run(drive_menu("Funds", key, expected, "7"))
+        asyncio.run(drive_menu("Funds", key, expected, "6"))
 
 
 def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) -> None:
@@ -710,16 +717,8 @@ def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) ->
                 if len(app.screen_stack) > 1 and app.focused is not None:
                     break
             assert type(app.screen_stack[-1]).__name__ == "MenuScreen"
-            for _ in range(4):
-                await pilot.press("down")
+            await pilot.press("down")
             await pilot.press("enter")
-            await pilot.pause()
-            assert type(app.screen_stack[-1]).__name__ == "ConfirmScreen"
-            assert app.focused.id == "cancel"
-            await pilot.press("enter")
-            await pilot.pause()
-            assert type(app.screen_stack[-1]).__name__ == "MenuScreen"
-            await pilot.press("escape")
             await pilot.pause()
             assert len(app.screen_stack) == 1
             assert "complete" in str(app.query_one("#status").content)
@@ -731,7 +730,7 @@ def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) ->
 def test_tui_signed_actions_default_confirmation_to_cancel_in_textual_runtime(monkeypatch) -> None:
     monkeypatch.setattr(
         "simple_ai_bitcoin_trading_binance.cli.load_runtime",
-        lambda: _runtime_config(testnet=True, dry_run=False),
+        lambda: _runtime_config(testnet=True, dry_run=False, api_key="fake-api-key", api_secret="fake-secret"),
     )
     live_calls = []
     roundtrip_calls = []
@@ -923,6 +922,10 @@ def test_tui_evaluate_and_pipeline_actions(monkeypatch) -> None:
 def test_tui_live_and_roundtrip_actions(monkeypatch, capsys) -> None:
     calls = []
     roundtrip_calls = []
+    monkeypatch.setattr(
+        "simple_ai_bitcoin_trading_binance.cli.load_runtime",
+        lambda: _runtime_config(testnet=True, dry_run=False, api_key="fake-api-key", api_secret="fake-secret"),
+    )
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_live", lambda args: calls.append(args) or 0)
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_spot_roundtrip", lambda args: roundtrip_calls.append(args) or 0)
 
@@ -1021,7 +1024,7 @@ def test_show_recent_artifacts_handles_empty_and_populated(tmp_path, monkeypatch
 def test_show_account_overview_handles_missing_credentials(monkeypatch, capsys) -> None:
     monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: type("R", (), {"api_key": "", "api_secret": ""})())
     assert _show_account_overview() == 2
-    assert "No API credentials configured." in capsys.readouterr().out
+    assert "Account overview requires Binance API key" in capsys.readouterr().err
 
 
 def test_show_account_overview_prints_balances(monkeypatch, capsys) -> None:

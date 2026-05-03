@@ -152,7 +152,8 @@ def build_risk_policy_report(
         )
 
     cash = _finite(getattr(runtime, "managed_usdc", 0.0))
-    checks.append(_check("ok" if cash > 0.0 else "block", "managed USDC", f"{cash:.2f}", metric=cash, limit=">0"))
+    cash_status = "ok" if cash > 0.0 else ("warn" if dry_run else "block")
+    checks.append(_check(cash_status, "managed USDC", f"{cash:.2f}", metric=cash, limit=">0"))
     checks.append(
         _check(
             "ok" if effective_leverage <= 25.0 else "warn",

@@ -61,7 +61,7 @@ class RuntimeConfig:
     max_rate_calls_per_minute: int = 1100
     recv_window_ms: int = 5000
     compute_backend: str = "cpu"
-    managed_usdc: float = 1000.0
+    managed_usdc: float = 0.0
     managed_btc: float = 0.0
 
     def __post_init__(self) -> None:
@@ -77,7 +77,7 @@ class RuntimeConfig:
         self.max_rate_calls_per_minute = max(1, min(2000, _coerce_int(self.max_rate_calls_per_minute, 1100)))
         self.recv_window_ms = max(1, min(60000, _coerce_int(self.recv_window_ms, 5000)))
         self.compute_backend = str(self.compute_backend or "cpu")
-        self.managed_usdc = max(0.0, _finite_float(self.managed_usdc, 1000.0))
+        self.managed_usdc = max(0.0, _finite_float(self.managed_usdc, 0.0))
         self.managed_btc = max(0.0, _finite_float(self.managed_btc, 0.0))
 
     def asdict(self) -> Dict[str, Any]:

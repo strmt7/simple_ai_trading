@@ -522,7 +522,7 @@ class _ScoreModel:
 
 
 def test_live_external_signals_gate_positive_boost_and_continue_on_error(tmp_path, monkeypatch, capsys) -> None:
-    save_runtime(RuntimeConfig(market_type="spot", dry_run=True))
+    save_runtime(RuntimeConfig(market_type="spot", dry_run=True, managed_usdc=1000.0))
     save_strategy(StrategyConfig(external_signals_enabled=True, external_signal_min_providers=2, confidence_beta=1.0))
     model_path = tmp_path / "model.json"
     model_path.write_text("{}", encoding="utf-8")

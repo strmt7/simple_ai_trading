@@ -4,6 +4,7 @@ import argparse
 import os
 import queue
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -33,6 +34,11 @@ def _assert_contains(text: str, needle: str, label: str) -> None:
         raise AssertionError(f"{label}: expected screen to contain {needle!r}\n{text}")
 
 
+def _assert_not_contains(text: str, needle: str, label: str) -> None:
+    if needle in text:
+        raise AssertionError(f"{label}: expected screen not to contain {needle!r}\n{text}")
+
+
 def _assert_ordered_highlight(text: str, expected: str, label: str) -> None:
     marker = f"> {expected}"
     if marker not in text:
@@ -41,10 +47,12 @@ def _assert_ordered_highlight(text: str, expected: str, label: str) -> None:
 
 
 class _WindowsPty:
-    def __init__(self, argv: list[str], cwd: Path, rows: int, cols: int) -> None:
+    def __init__(self, argv: list[str], cwd: Path, rows: int, cols: int, env_overrides: dict[str, str] | None = None) -> None:
         import winpty
 
         env = os.environ.copy()
+        if env_overrides:
+            env.update(env_overrides)
         env.setdefault("TERM", "xterm-256color")
         env.setdefault("COLORTERM", "truecolor")
         env.setdefault("PYTHONIOENCODING", "utf-8")
@@ -89,10 +97,12 @@ class _WindowsPty:
 
 
 class _PosixPty:
-    def __init__(self, argv: list[str], cwd: Path, rows: int, cols: int) -> None:
+    def __init__(self, argv: list[str], cwd: Path, rows: int, cols: int, env_overrides: dict[str, str] | None = None) -> None:
         import pexpect
 
         env = os.environ.copy()
+        if env_overrides:
+            env.update(env_overrides)
         env.setdefault("TERM", "xterm-256color")
         env.setdefault("COLORTERM", "truecolor")
         env.setdefault("PYTHONIOENCODING", "utf-8")
@@ -114,7 +124,7 @@ class _PosixPty:
             try:
                 data = self.process.read_nonblocking(size=4096, timeout=0.05)
             except Exception:
-                continue
+                data = ""
             if data:
                 self.chunks.append(data)
                 if "\x1b[c" in data:
@@ -123,10 +133,10 @@ class _PosixPty:
                     self.write("\x1b[>0;115;0c")
 
 
-def _open_pty(argv: list[str], cwd: Path, rows: int, cols: int):
+def _open_pty(argv: list[str], cwd: Path, rows: int, cols: int, env_overrides: dict[str, str] | None = None):
     if os.name == "nt":
-        return _WindowsPty(argv, cwd, rows, cols)
-    return _PosixPty(argv, cwd, rows, cols)
+        return _WindowsPty(argv, cwd, rows, cols, env_overrides)
+    return _PosixPty(argv, cwd, rows, cols, env_overrides)
 
 
 def _wait_for(pty, rows: int, cols: int, needle: str, *, timeout: float, label: str) -> str:
@@ -250,58 +260,34 @@ def _probe_funds(pty, rows: int, cols: int) -> None:
         rows,
         cols,
         down_count=5,
-        details_needle="Manage the virtual USDC",
+        details_needle="Read exchange balances and set",
         label="funds",
     )
-    _wait_for(pty, rows, cols, "> 1. Deposit USDC", timeout=5.0, label="funds-open")
-
-    for index, label, opened in (
-        (0, "Deposit USDC", "Deposit Usdc"),
-        (1, "Withdraw USDC", "Withdraw Usdc"),
-        (2, "Deposit BTC", "Deposit Btc"),
-        (3, "Withdraw BTC", "Withdraw Btc"),
-    ):
-        _open_modal_choice(
-            pty,
-            rows,
-            cols,
-            down_count=index,
-            highlighted=f"> {index + 1}. {label}",
-            opened=opened,
-            close_key=ESCAPE,
-            label=f"funds-{label.lower().replace(' ', '-')}",
-            parent_marker="> 1. Deposit USDC",
-        )
-
-    _open_modal_choice(
-        pty,
-        rows,
-        cols,
-        down_count=4,
-        highlighted="> 5. Reset",
-        opened="Reset allocation",
-        close_key=ENTER,
-        label="funds-reset",
-        parent_marker="> 1. Deposit USDC",
-    )
-
-    _wait_for(pty, rows, cols, "> 1. Deposit USDC", timeout=5.0, label="funds-show-parent")
-    _press(pty, DOWN, 5)
-    _wait_for(pty, rows, cols, "> 6. Show current allocation", timeout=5.0, label="funds-show-highlight")
+    text = _wait_for(pty, rows, cols, "> 1. Show credential requirement", timeout=5.0, label="funds-open")
+    _assert_not_contains(text, "Deposit USDC", "funds-no-deposit")
+    _assert_not_contains(text, "Withdraw USDC", "funds-no-withdraw")
     _press(pty, ENTER)
-    _wait_for(pty, rows, cols, "> 1. Deposit USDC", timeout=6.0, label="funds-show-return")
+    _wait_for(pty, rows, cols, "> 1. Show credential requirement", timeout=6.0, label="funds-show-return")
 
-    _press(pty, DOWN, 6)
-    _wait_for(pty, rows, cols, "> 7. Close", timeout=5.0, label="funds-close-highlight")
+    _press(pty, DOWN)
+    _wait_for(pty, rows, cols, "> 2. Close", timeout=5.0, label="funds-close-highlight")
     _press(pty, ENTER)
     _wait_for(pty, rows, cols, "Funds complete (0)", timeout=6.0, label="funds-close")
 
 
-def _probe_once(argv: list[str], cwd: Path, probe_name: str, *, rows: int, cols: int) -> str:
-    pty = _open_pty(argv, cwd, rows, cols)
+def _probe_once(
+    argv: list[str],
+    cwd: Path,
+    probe_name: str,
+    *,
+    rows: int,
+    cols: int,
+    env_overrides: dict[str, str] | None = None,
+) -> str:
+    pty = _open_pty(argv, cwd, rows, cols, env_overrides)
     try:
         text = _wait_for(pty, rows, cols, "Overview", timeout=8.0, label=f"{probe_name}-startup")
-        _assert_contains(text, "Runtime settings", f"{probe_name}-startup")
+        _assert_contains(text, "Connect", f"{probe_name}-startup")
         pty.pump(1.0)
         if probe_name == "settings":
             _probe_settings(pty, rows, cols)
@@ -318,8 +304,10 @@ def _probe_once(argv: list[str], cwd: Path, probe_name: str, *, rows: int, cols:
 
 
 def probe(argv: list[str], cwd: Path, *, rows: int = 36, cols: int = 120) -> None:
-    _probe_once(argv, cwd, "settings", rows=rows, cols=cols)
-    _probe_once(argv, cwd, "funds", rows=rows, cols=cols)
+    with tempfile.TemporaryDirectory(prefix="simple-ai-probe-home-") as home:
+        env = {"HOME": home, "USERPROFILE": home}
+        _probe_once(argv, cwd, "settings", rows=rows, cols=cols, env_overrides=env)
+        _probe_once(argv, cwd, "funds", rows=rows, cols=cols, env_overrides=env)
 
 
 def _default_command(repo: Path) -> list[str]:
