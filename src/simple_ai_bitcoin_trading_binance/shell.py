@@ -79,7 +79,7 @@ def _split_command_line(line: str) -> list[str]:
             return [argv[index] for index in range(argc.value)]
         finally:
             local_free(argv)
-    except AttributeError:
+    except (AttributeError, ImportError):
         return shlex.split(line, posix=False)
 
 
