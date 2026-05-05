@@ -4704,21 +4704,6 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         delay = _jittered_seconds(sleep_seconds, cfg.external_signal_poll_jitter_seconds) if sleep_seconds > 0 else 0.0
         time.sleep(delay)
 
-    model, model_error, model_notice = _load_live_start_model(model_path, cfg, effective_dry_run=effective_dry_run)
-    if model_error is not None:
-        print(model_error, file=sys.stderr)
-        return 2
-    if model is not None:
-        protected = ("leverage",) if leverage_override is not None else ()
-        cfg = apply_model_strategy_overrides(cfg, model, protected_keys=protected)
-    if leverage_override is not None and runtime.market_type == "futures":
-        cfg = StrategyConfig(**{**cfg.asdict(), "leverage": max(1.0, float(leverage_override))})
-    if external_override is not None:
-        cfg = StrategyConfig(**{**cfg.asdict(), "external_signals_enabled": bool(external_override)})
-    if model_notice is not None:
-        print(model_notice, file=sys.stderr)
-
-    leverage = _resolve_futures_leverage(runtime, cfg)
     cash = max(0.0, _safe_float(getattr(runtime, "managed_usdc", 0.0)))
     exchange_account_snapshot: object | None = None
     if not effective_dry_run:
@@ -4738,6 +4723,22 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         if cash > available_usdc:
             cash = available_usdc
             print(f"Authenticated live cash capped to exchange free USDC={cash:.2f}.")
+
+    model, model_error, model_notice = _load_live_start_model(model_path, cfg, effective_dry_run=effective_dry_run)
+    if model_error is not None:
+        print(model_error, file=sys.stderr)
+        return 2
+    if model is not None:
+        protected = ("leverage",) if leverage_override is not None else ()
+        cfg = apply_model_strategy_overrides(cfg, model, protected_keys=protected)
+    if leverage_override is not None and runtime.market_type == "futures":
+        cfg = StrategyConfig(**{**cfg.asdict(), "leverage": max(1.0, float(leverage_override))})
+    if external_override is not None:
+        cfg = StrategyConfig(**{**cfg.asdict(), "external_signals_enabled": bool(external_override)})
+    if model_notice is not None:
+        print(model_notice, file=sys.stderr)
+
+    leverage = _resolve_futures_leverage(runtime, cfg)
     position_notional = 0.0
     position_side = 0
     entry_price = 0.0
