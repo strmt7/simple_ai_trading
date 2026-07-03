@@ -132,7 +132,10 @@ def build_audit_report(
     max_delta = _max_latest_feature_delta(cleaned, strategy)
 
     checks: list[AuditCheck] = []
-    checks.append(_check("ok" if runtime.symbol == "BTCUSDC" else "fix", "symbol", runtime.symbol))
+    symbols = tuple(str(symbol).upper() for symbol in getattr(runtime, "symbols", ()) if str(symbol).strip())
+    symbol_ok = bool(runtime.symbol) and runtime.symbol in symbols
+    checks.append(_check("ok" if symbol_ok else "fix", "primary symbol", runtime.symbol))
+    checks.append(_check("ok" if len(symbols) >= strategy.min_diversified_assets else "fix", "diversified symbols", f"{len(symbols)} configured >= {strategy.min_diversified_assets} required"))
     safe_env = runtime.testnet or getattr(runtime, "demo", False)
     environment = "demo" if getattr(runtime, "demo", False) else ("testnet" if runtime.testnet else "mainnet")
     checks.append(

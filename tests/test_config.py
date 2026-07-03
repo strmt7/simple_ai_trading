@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import math
 from pathlib import Path
 
-from simple_ai_bitcoin_trading_binance.config import (
+from simple_ai_trading.config import (
     _read_config_json,
     load_runtime,
     load_strategy,
@@ -12,10 +12,10 @@ from simple_ai_bitcoin_trading_binance.config import (
     save_runtime,
     save_strategy,
 )
-from simple_ai_bitcoin_trading_binance.config import (
+from simple_ai_trading.config import (
     config_paths,
 )
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 def test_save_and_load_runtime(tmp_path: Path, monkeypatch) -> None:
@@ -46,7 +46,7 @@ def test_prompt_runtime_updates(tmp_path: Path, monkeypatch) -> None:
     assert not out.dry_run
 
 
-def test_prompt_runtime_rejects_invalid_market_and_non_btc_symbol(tmp_path: Path, monkeypatch) -> None:
+def test_prompt_runtime_rejects_invalid_market_and_accepts_supported_symbol(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     current = RuntimeConfig(symbol="BTCUSDC", market_type="futures")
 
@@ -58,7 +58,7 @@ def test_prompt_runtime_rejects_invalid_market_and_non_btc_symbol(tmp_path: Path
     responses = iter(["", ""])
     out = prompt_runtime(current, key_getter=fake_input, secret_getter=lambda _: next(responses))
     assert out.market_type == "futures"
-    assert out.symbol == "BTCUSDC"
+    assert out.symbol == "ETHUSDC"
     assert out.interval == "1h"
     assert out.testnet is True
     assert out.demo is False
@@ -132,10 +132,10 @@ def test_runtime_public_dict_redacts_credentials() -> None:
     assert payload["api_secret"] == "<redacted>"
 
 
-def test_load_runtime_forces_supported_symbol(tmp_path: Path, monkeypatch) -> None:
+def test_load_runtime_accepts_normalized_trading_symbol(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     loaded = load_runtime({"symbol": "ETHUSDC"})
-    assert loaded.symbol == "BTCUSDC"
+    assert loaded.symbol == "ETHUSDC"
 
 
 def test_load_runtime_ignores_method_name_payload_keys(tmp_path: Path, monkeypatch) -> None:
@@ -230,7 +230,7 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
         managed_btc=-1.0,
     )
 
-    assert runtime.symbol == "BTCUSDC"
+    assert runtime.symbol == "ETHUSDC"
     assert runtime.interval == "15m"
     assert runtime.market_type == "margin"
     assert runtime.testnet is False
@@ -270,13 +270,13 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
         source_grade_max_age_hours=float("inf"),
     )
     assert strategy.leverage == 1.0
-    assert strategy.risk_per_trade == 0.01
-    assert strategy.max_position_pct == 0.20
+    assert strategy.risk_per_trade == 0.003
+    assert strategy.max_position_pct == 0.08
     assert strategy.feature_windows == (10, 40)
-    assert strategy.signal_threshold == 0.58
-    assert strategy.max_open_positions == 1
+    assert strategy.signal_threshold == 0.66
+    assert strategy.max_open_positions == 3
     assert strategy.cooldown_minutes == 0
-    assert strategy.confidence_beta == 0.85
+    assert strategy.confidence_beta == 0.90
     assert strategy.external_signals_enabled is True
     assert strategy.external_signal_timeout_seconds == 3.0
     assert strategy.external_signal_news_provider_limit == 0
@@ -295,5 +295,5 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
     cfg_file.parent.mkdir(parents=True, exist_ok=True)
     cfg_file.write_text(json.dumps({"risk_per_trade": math.nan, "signal_threshold": math.inf}), encoding="utf-8")
     loaded = load_strategy()
-    assert loaded.risk_per_trade == 0.01
-    assert loaded.signal_threshold == 0.58
+    assert loaded.risk_per_trade == 0.003
+    assert loaded.signal_threshold == 0.66

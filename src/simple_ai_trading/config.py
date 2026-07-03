@@ -8,11 +8,12 @@ from getpass import getpass
 from pathlib import Path
 from typing import Any, Callable
 
+from .assets import DEFAULT_SYMBOL, DEFAULT_SYMBOLS, normalize_symbol, normalize_symbols
 from .features import normalize_enabled_features
 from .storage import write_json_atomic
 from .types import RuntimeConfig, StrategyConfig, config_paths
 
-SUPPORTED_SYMBOL = "BTCUSDC"
+SUPPORTED_SYMBOL = DEFAULT_SYMBOL
 _RUNTIME_FIELD_NAMES = frozenset(field.name for field in fields(RuntimeConfig))
 _STRATEGY_FIELD_NAMES = frozenset(field.name for field in fields(StrategyConfig))
 
@@ -37,8 +38,12 @@ def _known_payload(payload: dict[str, Any], allowed_fields: frozenset[str]) -> d
 
 def _normalize_runtime_payload(payload: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(payload)
-    symbol = str(normalized.get("symbol") or SUPPORTED_SYMBOL).upper()
-    normalized["symbol"] = SUPPORTED_SYMBOL if symbol != SUPPORTED_SYMBOL else symbol
+    symbol = normalize_symbol(normalized.get("symbol") or SUPPORTED_SYMBOL)
+    symbols = normalize_symbols(normalized.get("symbols") or DEFAULT_SYMBOLS)
+    if symbol not in symbols:
+        symbols = (symbol, *symbols)
+    normalized["symbol"] = symbol
+    normalized["symbols"] = symbols
     return normalized
 
 
@@ -116,12 +121,16 @@ def prompt_runtime(current: RuntimeConfig, key_getter: Callable[[str], str] = in
     symbol = _coalesce_prompt(
         key_getter(f"Trading symbol [{current.symbol}]: "),
         current.symbol,
-    ).upper()
-    if symbol != SUPPORTED_SYMBOL:
-        symbol = SUPPORTED_SYMBOL
+    )
+    symbol = normalize_symbol(symbol, default=current.symbol)
+    symbols = normalize_symbols(current.symbols)
+    if symbol not in symbols:
+        symbols = (symbol, *symbols)
 
     return RuntimeConfig(
         symbol=symbol,
+        symbols=symbols,
+        quote_asset=current.quote_asset,
         interval=_coalesce_prompt(
             key_getter(f"Kline interval [{current.interval}]: "),
             current.interval,
@@ -154,6 +163,13 @@ def prompt_runtime(current: RuntimeConfig, key_getter: Callable[[str], str] = in
         max_rate_calls_per_minute=current.max_rate_calls_per_minute,
         recv_window_ms=current.recv_window_ms,
         compute_backend=current.compute_backend,
+        ai_enabled=current.ai_enabled,
+        ai_provider=current.ai_provider,
+        ai_model=current.ai_model,
+        ai_require_gpu=current.ai_require_gpu,
+        ai_min_free_vram_gb=current.ai_min_free_vram_gb,
+        ai_min_free_ram_gb=current.ai_min_free_ram_gb,
+        ai_allow_paper_fallback=current.ai_allow_paper_fallback,
         managed_usdc=current.managed_usdc,
         managed_btc=current.managed_btc,
     )

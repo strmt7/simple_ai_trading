@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal
 set "APP_DIR=%~dp0"
 set "TRADER_SUBCOMMAND=shell"
@@ -25,24 +25,24 @@ if not errorlevel 1 goto run_path_exe
 
 set "TRADER_PY=%APP_DIR%.venv311\Scripts\python.exe"
 if exist "%TRADER_PY%" (
-    "%TRADER_PY%" -c "import requests, textual; import simple_ai_bitcoin_trading_binance" >nul 2>nul
+    "%TRADER_PY%" -c "import requests, textual; import simple_ai_trading" >nul 2>nul
     if not errorlevel 1 goto run_local_module
     set "LOCAL_PY_DIAG=%TRADER_PY% exists but cannot import the project dependencies."
 )
 
 set "TRADER_PY=%APP_DIR%.venv\Scripts\python.exe"
 if exist "%TRADER_PY%" (
-    "%TRADER_PY%" -c "import requests, textual; import simple_ai_bitcoin_trading_binance" >nul 2>nul
+    "%TRADER_PY%" -c "import requests, textual; import simple_ai_trading" >nul 2>nul
     if not errorlevel 1 goto run_local_module
     set "LOCAL_PY_DIAG=%TRADER_PY% exists but cannot import the project dependencies."
 )
 
-py -3.11 -c "import requests, textual; import simple_ai_bitcoin_trading_binance" >nul 2>nul
+py -3.11 -c "import requests, textual; import simple_ai_trading" >nul 2>nul
 if not errorlevel 1 goto run_py311_module
 py -3.11 -c "import sys" >nul 2>nul
 if not errorlevel 1 set "PY311_DIAG=py -3.11 is available but cannot import the project dependencies."
 
-python -c "import sys; sys.exit(1) if sys.version_info < (3, 11) else None; import requests, textual; import simple_ai_bitcoin_trading_binance" >nul 2>nul
+python -c "import sys; sys.exit(1) if sys.version_info < (3, 11) else None; import requests, textual; import simple_ai_trading" >nul 2>nul
 if not errorlevel 1 goto run_python_module
 python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>nul
 if not errorlevel 1 set "PATH_PY_DIAG=python is 3.11+ but cannot import the project dependencies."
@@ -52,10 +52,10 @@ echo Checked:
 echo   "%APP_DIR%.venv311\Scripts\simple-ai-trading.exe"
 echo   "%APP_DIR%.venv\Scripts\simple-ai-trading.exe"
 echo   simple-ai-trading on PATH
-echo   "%APP_DIR%.venv311\Scripts\python.exe" -m simple_ai_bitcoin_trading_binance
-echo   "%APP_DIR%.venv\Scripts\python.exe" -m simple_ai_bitcoin_trading_binance
-echo   py -3.11 -m simple_ai_bitcoin_trading_binance
-echo   python -m simple_ai_bitcoin_trading_binance with Python 3.11+
+echo   "%APP_DIR%.venv311\Scripts\python.exe" -m simple_ai_trading
+echo   "%APP_DIR%.venv\Scripts\python.exe" -m simple_ai_trading
+echo   py -3.11 -m simple_ai_trading
+echo   python -m simple_ai_trading with Python 3.11+
 if defined LOCAL_PY_DIAG echo Note: %LOCAL_PY_DIAG%
 if defined PY311_DIAG echo Note: %PY311_DIAG%
 if defined PATH_PY_DIAG echo Note: %PATH_PY_DIAG%
@@ -83,16 +83,16 @@ simple-ai-trading %TRADER_SUBCOMMAND% %*
 exit /b %ERRORLEVEL%
 
 :run_local_module
-echo [simple-ai-trading] using Python module: "%TRADER_PY%" -m simple_ai_bitcoin_trading_binance
-"%TRADER_PY%" -m simple_ai_bitcoin_trading_binance %TRADER_SUBCOMMAND% %*
+echo [simple-ai-trading] using Python module: "%TRADER_PY%" -m simple_ai_trading
+"%TRADER_PY%" -m simple_ai_trading %TRADER_SUBCOMMAND% %*
 exit /b %ERRORLEVEL%
 
 :run_py311_module
-echo [simple-ai-trading] using Python launcher: py -3.11 -m simple_ai_bitcoin_trading_binance
-py -3.11 -m simple_ai_bitcoin_trading_binance %TRADER_SUBCOMMAND% %*
+echo [simple-ai-trading] using Python launcher: py -3.11 -m simple_ai_trading
+py -3.11 -m simple_ai_trading %TRADER_SUBCOMMAND% %*
 exit /b %ERRORLEVEL%
 
 :run_python_module
-echo [simple-ai-trading] using PATH Python: python -m simple_ai_bitcoin_trading_binance
-python -m simple_ai_bitcoin_trading_binance %TRADER_SUBCOMMAND% %*
+echo [simple-ai-trading] using PATH Python: python -m simple_ai_trading
+python -m simple_ai_trading %TRADER_SUBCOMMAND% %*
 exit /b %ERRORLEVEL%

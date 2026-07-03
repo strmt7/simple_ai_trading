@@ -1,4 +1,4 @@
-"""Branch-coverage tests for the positions module."""
+﻿"""Branch-coverage tests for the positions module."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.positions import (
+from simple_ai_trading.positions import (
     ClosedTrade,
     LedgerStats,
     OpenPosition,

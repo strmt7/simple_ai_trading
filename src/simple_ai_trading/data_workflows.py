@@ -1,4 +1,4 @@
-"""CLI-facing data download and training-data loading workflows."""
+﻿"""CLI-facing data download and training-data loading workflows."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .api import BinanceAPIError, BinanceClient
+from .assets import normalize_symbol
 from .data_downloader import MarketDataSyncConfig, MarketDataSyncResult, render_sync_result, sync_market_data
 from .intervals import interval_milliseconds
 from .market_data import clean_candles
@@ -54,7 +55,7 @@ def start_background_data_sync(
     command = [
         python_executable,
         "-m",
-        "simple_ai_bitcoin_trading_binance",
+        "simple_ai_trading",
         "data-sync",
         "--db",
         str(getattr(args, "db", "data/market_data.sqlite")),
@@ -136,19 +137,20 @@ def command_fetch(
     build_client_fn: Callable[[RuntimeConfig], BinanceClient],
 ) -> int:
     runtime = load_runtime_fn()
-    symbol = (args.symbol or runtime.symbol).upper()
+    symbol = normalize_symbol(args.symbol or runtime.symbol)
     interval = args.interval or runtime.interval
     output = Path(args.output)
-    if symbol != "BTCUSDC":
-        print("Error: this CLI supports BTCUSDC only", file=sys.stderr)
-        return 2
     limit = max(1, int(args.limit))
     max_batch_size = 1500 if runtime.market_type == "futures" else 1000
     batch_size = max(1, min(max_batch_size, int(getattr(args, "batch_size", 1000))))
 
     client = build_client_fn(runtime)
     try:
-        client.ensure_btcusdc()
+        ensure_symbol = getattr(client, "ensure_symbol", None)
+        if callable(ensure_symbol):
+            ensure_symbol(symbol)
+        else:
+            client.ensure_btcusdc()
         candles_by_open_time = {}
         end_time = None
         while len(candles_by_open_time) < limit:

@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.api import BinanceAPIError, BinanceClient
-from simple_ai_bitcoin_trading_binance.api import SymbolConstraints
+from simple_ai_trading.api import BinanceAPIError, BinanceClient
+from simple_ai_trading.api import SymbolConstraints
 
 
 def test_futures_leverage_bracket_parsing(monkeypatch) -> None:
@@ -21,9 +21,9 @@ def test_futures_leverage_bracket_parsing(monkeypatch) -> None:
         raise AssertionError(f"unexpected endpoint: {path}")
 
     monkeypatch.setattr(client, "_request", fake_request)
-    assert client.get_max_leverage("BTCUSDC") == 75
+    assert client.get_max_leverage("BTCUSDC") == 10
     response = client.set_leverage("BTCUSDC", 100)
-    assert response["leverage"] == 75
+    assert response["leverage"] == 10
     assert calls == [
         ("GET", "/fapi/v1/leverageBracket"),
         ("GET", "/fapi/v1/leverageBracket"),
@@ -189,8 +189,8 @@ def test_get_symbol_constraints_falls_back_to_market_lot_notional(monkeypatch) -
 
 def test_get_klines_rejects_bad_symbol_and_payload_shape(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s")
-    with pytest.raises(BinanceAPIError, match="BTCUSDC only"):
-        client.get_klines("ETHUSDC", "15m")
+    with pytest.raises(BinanceAPIError, match="Symbol is required"):
+        client.get_klines("", "15m")
 
     def bad_payload(method, path, params=None, signed=False):
         return {"symbol": "BTCUSDC"}

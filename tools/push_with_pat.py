@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Push to GitHub over HTTPS using a one-shot, socket-backed PAT helper.
 
 The token is read from the ``GITHUB_TOKEN`` environment variable (or prompted
@@ -37,7 +37,7 @@ from urllib.parse import urlparse
 RunCommand = Callable[..., "subprocess.CompletedProcess[str]"]
 TokenReader = Callable[[str], str]
 _ALLOWED_GITHUB_OWNER = "strmt7"
-_ALLOWED_GITHUB_REPO = "simple_ai_bitcoin_trading_binance"
+_ALLOWED_GITHUB_REPO = "simple_ai_trading"
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

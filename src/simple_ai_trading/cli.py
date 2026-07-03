@@ -1,4 +1,4 @@
-"""Entry point for the BTCUSDC test-trading CLI."""
+"""Entry point for the Simple AI Trading multi-asset day-trading CLI."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence, TypeVar, cast
 
 from .api import BinanceAPIError, BinanceClient, Candle
+from .ai_runtime import detect_ai_capabilities, render_ai_capability_report
 from .advanced_model import (
     AdvancedFeatureConfig,
     advanced_feature_signature,
@@ -24,6 +25,7 @@ from .advanced_model import (
     make_advanced_rows,
 )
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
+from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
 from . import data_workflows
@@ -94,50 +96,83 @@ _T = TypeVar("_T")
 _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
     "custom": {},
     "conservative": {
+        "risk_level": "conservative",
         "leverage": 1.0,
-        "risk_per_trade": 0.005,
-        "max_position_pct": 0.10,
-        "stop_loss_pct": 0.015,
-        "take_profit_pct": 0.025,
-        "cooldown_minutes": 10,
-        "max_open_positions": 1,
+        "risk_per_trade": 0.003,
+        "max_position_pct": 0.08,
+        "max_asset_allocation_pct": 0.20,
+        "max_portfolio_risk_pct": 0.015,
+        "stop_loss_pct": 0.010,
+        "take_profit_pct": 0.018,
+        "cooldown_minutes": 20,
+        "unpredictability_cooldown_minutes": 90,
+        "max_open_positions": 3,
+        "min_diversified_assets": 3,
         "max_trades_per_day": 6,
-        "signal_threshold": 0.64,
-        "max_drawdown_limit": 0.12,
+        "signal_threshold": 0.66,
+        "min_model_confidence": 0.66,
+        "max_prediction_entropy": 0.88,
+        "max_drawdown_limit": 0.10,
+        "min_quote_volume_usdc": 50_000_000.0,
+        "min_trade_count_24h": 50_000,
+        "max_spread_bps": 5.0,
+        "min_liquidity_score": 0.80,
         "training_epochs": 180,
         "confidence_beta": 0.90,
         "external_signals_enabled": True,
         "external_signal_max_adjustment": 0.03,
         "external_signal_min_providers": 2,
     },
-    "balanced": {
+    "regular": {
+        "risk_level": "regular",
         "leverage": 2.0,
-        "risk_per_trade": 0.01,
-        "max_position_pct": 0.20,
+        "risk_per_trade": 0.006,
+        "max_position_pct": 0.15,
+        "max_asset_allocation_pct": 0.25,
+        "max_portfolio_risk_pct": 0.03,
         "stop_loss_pct": 0.02,
         "take_profit_pct": 0.03,
-        "cooldown_minutes": 5,
-        "max_open_positions": 1,
+        "cooldown_minutes": 10,
+        "unpredictability_cooldown_minutes": 45,
+        "max_open_positions": 4,
+        "min_diversified_assets": 3,
         "max_trades_per_day": 12,
         "signal_threshold": 0.58,
-        "max_drawdown_limit": 0.20,
+        "min_model_confidence": 0.58,
+        "max_prediction_entropy": 0.94,
+        "max_drawdown_limit": 0.18,
+        "min_quote_volume_usdc": 25_000_000.0,
+        "min_trade_count_24h": 25_000,
+        "max_spread_bps": 8.0,
+        "min_liquidity_score": 0.70,
         "training_epochs": 250,
         "confidence_beta": 0.85,
         "external_signals_enabled": True,
         "external_signal_max_adjustment": 0.04,
         "external_signal_min_providers": 2,
     },
-    "active": {
+    "aggressive": {
+        "risk_level": "aggressive",
         "leverage": 3.0,
-        "risk_per_trade": 0.015,
-        "max_position_pct": 0.25,
+        "risk_per_trade": 0.010,
+        "max_position_pct": 0.20,
+        "max_asset_allocation_pct": 0.30,
+        "max_portfolio_risk_pct": 0.05,
         "stop_loss_pct": 0.025,
         "take_profit_pct": 0.04,
-        "cooldown_minutes": 3,
-        "max_open_positions": 1,
+        "cooldown_minutes": 5,
+        "unpredictability_cooldown_minutes": 20,
+        "max_open_positions": 5,
+        "min_diversified_assets": 3,
         "max_trades_per_day": 24,
         "signal_threshold": 0.55,
+        "min_model_confidence": 0.55,
+        "max_prediction_entropy": 0.97,
         "max_drawdown_limit": 0.25,
+        "min_quote_volume_usdc": 15_000_000.0,
+        "min_trade_count_24h": 15_000,
+        "max_spread_bps": 12.0,
+        "min_liquidity_score": 0.60,
         "training_epochs": 300,
         "confidence_beta": 0.80,
         "external_signals_enabled": True,
@@ -146,11 +181,14 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
     },
 }
 
+_STRATEGY_PROFILES["balanced"] = dict(_STRATEGY_PROFILES["regular"])
+_STRATEGY_PROFILES["active"] = dict(_STRATEGY_PROFILES["aggressive"])
 
-def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="simple-ai-trading",
-        description="BTCUSDC non-mainnet trading CLI for Binance (spot + futures).",
+        description="Autonomous multi-asset non-mainnet trading CLI for Binance (spot + futures).",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -196,6 +234,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_risk.add_argument("--json", action="store_true")
     parser_risk.set_defaults(func=command_risk)
 
+    parser_universe = subparsers.add_parser("universe", help="measure automatic high-liquidity multi-asset eligibility")
+    parser_universe.add_argument("--symbols", default=None, help="comma-separated symbols; default uses runtime.symbols")
+    parser_universe.add_argument("--json", action="store_true")
+    parser_universe.set_defaults(func=command_universe)
+
     parser_report = subparsers.add_parser("report", help="show dashboard, artifacts, and optional readiness checks")
     parser_report.add_argument("--account", action="store_true", help="include authenticated account state")
     parser_report.add_argument("--doctor", action="store_true", help="include readiness checks")
@@ -209,7 +252,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_menu = subparsers.add_parser("menu", help="launch the full-screen operator console")
     parser_menu.set_defaults(func=command_menu)
 
-    parser_fetch = subparsers.add_parser("fetch", help="download BTCUSDC klines")
+    parser_fetch = subparsers.add_parser("fetch", help="download symbol klines")
     parser_fetch.add_argument("--symbol", default=None)
     parser_fetch.add_argument("--interval", default=None)
     parser_fetch.add_argument("--limit", type=int, default=500)
@@ -302,6 +345,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_tune.add_argument("--max-take", type=float, default=0.06)
     parser_tune.add_argument("--min-stop", type=float, default=0.008)
     parser_tune.add_argument("--max-stop", type=float, default=0.04)
+    parser_tune.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_tune.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for accelerated tuning")
     parser_tune.add_argument("--lookback-days", type=int, default=None, help="use only the most recent N days of candles for tuning")
     parser_tune.add_argument("--from-date", default=None, help="inclusive start date for tuning window (YYYY-MM-DD)")
     parser_tune.add_argument("--to-date", default=None, help="inclusive end date for tuning window (YYYY-MM-DD)")
@@ -325,6 +370,15 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser_backtest.set_defaults(func=command_backtest)
 
+    parser_backtest_chart = subparsers.add_parser("backtest-chart", help="run backtest and save an SVG performance chart")
+    parser_backtest_chart.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_backtest_chart.add_argument("--model", default="data/model.json")
+    parser_backtest_chart.add_argument("--output", default="data/backtest_performance.svg")
+    parser_backtest_chart.add_argument("--start-cash", type=float, default=1000.0)
+    parser_backtest_chart.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_backtest_chart.add_argument("--score-batch-size", type=int, default=8192)
+    parser_backtest_chart.set_defaults(func=command_backtest_chart)
+
     parser_evaluate = subparsers.add_parser("evaluate", help="evaluate saved model against cached candles")
     parser_evaluate.add_argument("--input", default="data/historical_btcusdc.json")
     parser_evaluate.add_argument("--model", default="data/model.json")
@@ -334,7 +388,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     parser_signals = subparsers.add_parser(
         "signals",
-        help="fetch and cache free external BTC signal checks used by live mode",
+        help="fetch and cache free external market signal checks used by live mode",
     )
     parser_signals.add_argument("--model", default="data/model.json", help="model path used to derive default cache location")
     parser_signals.add_argument("--cache", default=None, help="signal cache path (default: model-adjacent data/signals)")
@@ -430,6 +484,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=240,
         help="minimum rows required before a retrain is attempted",
     )
+    parser_live.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_live.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for live retraining")
     parser_live.add_argument(
         "--paper",
         action="store_true",
@@ -461,8 +517,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_compute.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
     parser_compute.set_defaults(func=command_compute)
 
+    parser_ai = subparsers.add_parser("ai", help="show or configure local GPU AI acceleration preflight")
+    parser_ai.add_argument("--enable", action="store_true", default=None, help="enable AI decision features")
+    parser_ai.add_argument("--disable", action="store_true", default=None, help="disable AI decision features")
+    parser_ai.add_argument("--provider", default=None, help="AI provider: auto, local-gpu, ollama, openai-compatible, etc.")
+    parser_ai.add_argument("--model", default=None, help="AI model identifier or 'auto'")
+    parser_ai.add_argument("--require-gpu", action="store_true", default=None)
+    parser_ai.add_argument("--no-require-gpu", action="store_true", default=None)
+    parser_ai.add_argument("--min-free-vram-gb", type=float, default=None)
+    parser_ai.add_argument("--min-free-ram-gb", type=float, default=None)
+    parser_ai.add_argument("--allow-paper-fallback", action="store_true", default=None)
+    parser_ai.add_argument("--no-paper-fallback", action="store_true", default=None)
+    parser_ai.add_argument("--json", action="store_true")
+    parser_ai.set_defaults(func=command_ai)
+
     parser_strategy = subparsers.add_parser("strategy", help="adjust strategy and risk parameters")
     parser_strategy.add_argument("--profile", choices=sorted(_STRATEGY_PROFILES), default="custom")
+    parser_strategy.add_argument("--risk-level", choices=["conservative", "regular", "aggressive"], default=None)
+    parser_strategy.add_argument("--reinvest-profits", action="store_true", default=None)
+    parser_strategy.add_argument("--no-reinvest-profits", action="store_true", default=None)
     parser_strategy.add_argument("--leverage", type=float, default=None)
     parser_strategy.add_argument("--risk", type=float, default=None)
     parser_strategy.add_argument("--max-position", type=float, default=None)
@@ -470,6 +543,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_strategy.add_argument("--take", type=float, default=None)
     parser_strategy.add_argument("--cooldown", type=int, default=None)
     parser_strategy.add_argument("--max-open", type=int, default=None)
+    parser_strategy.add_argument("--min-diversified-assets", type=int, default=None)
+    parser_strategy.add_argument("--max-asset-allocation", type=float, default=None)
+    parser_strategy.add_argument("--max-portfolio-risk", type=float, default=None)
+    parser_strategy.add_argument("--min-quote-volume-usdc", type=float, default=None)
+    parser_strategy.add_argument("--min-trade-count-24h", type=int, default=None)
+    parser_strategy.add_argument("--max-spread-bps", type=float, default=None)
+    parser_strategy.add_argument("--min-liquidity-score", type=float, default=None)
+    parser_strategy.add_argument("--unpredictability-cooldown", type=int, default=None)
+    parser_strategy.add_argument("--max-prediction-entropy", type=float, default=None)
+    parser_strategy.add_argument("--min-model-confidence", type=float, default=None)
     parser_strategy.add_argument("--max-trades-per-day", type=int, default=None)
     parser_strategy.add_argument("--signal-threshold", type=float, default=None)
     parser_strategy.add_argument("--max-drawdown", type=float, default=None)
@@ -583,7 +666,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser_close.add_argument("position_id", help="position id or 'all'")
     parser_close.set_defaults(func=command_close)
 
-    return parser.parse_args(argv)
+    return parser
+
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    return _build_parser().parse_args(argv)
 
 
 def _build_client(runtime):
@@ -632,7 +719,11 @@ def _credential_fingerprint(runtime) -> str:
 
 def _validate_runtime_connection(runtime, client) -> None:
     client.ping()
-    client.ensure_btcusdc()
+    ensure_symbol = getattr(client, "ensure_symbol", None)
+    if callable(ensure_symbol):
+        ensure_symbol(runtime.symbol)
+    else:
+        client.ensure_btcusdc()
     if _has_api_credentials(runtime):
         client.get_account()
 
@@ -1337,6 +1428,26 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
 _COMPUTE_BACKEND_CHOICES = ("cpu", "cuda", "rocm", "directml", "mps", "auto")
 
 
+def _workflow_compute_backend(
+    runtime: RuntimeConfig,
+    requested: object,
+    *,
+    workflow: str,
+) -> tuple[str, BackendInfo]:
+    backend_name = str(requested or runtime.compute_backend or default_compute_backend()).strip().lower()
+    if backend_name not in _COMPUTE_BACKEND_CHOICES:
+        raise ValueError(f"unknown compute backend {backend_name!r}")
+    info = resolve_backend(backend_name)
+    if info.kind == "cpu":
+        detail = f" ({info.reason})" if info.reason else ""
+        print(
+            f"warning: {workflow} is running in CPU-only mode{detail}; "
+            "training, retraining, and backtest scoring will be much slower and AI features are disabled.",
+            file=sys.stderr,
+        )
+    return backend_name, info
+
+
 def _account_free_balances(account: object) -> dict[str, float]:
     balances = {"USDC": 0.0, "BTC": 0.0}
     if not isinstance(account, dict):
@@ -1441,7 +1552,7 @@ async def _ui_funds_menu(ui) -> int:
             ]
         )
         choice = await ui.menu(
-            "Trading caps - exchange-backed BTCUSDC limits",
+            "Trading caps - exchange-backed asset limits",
             options,
             help_text=(
                 f"{_funds_summary(runtime)}. Trading caps reads Binance balances and stores maximum "
@@ -1583,10 +1694,15 @@ async def _ui_edit_compute(ui) -> int:
         return 2
     info = await ui.run_blocking(resolve_backend, requested)
     runtime.compute_backend = requested
+    if info.kind == "cpu" and runtime.ai_enabled:
+        runtime.ai_enabled = False
+        ui.append_log("AI features disabled because the selected compute backend is CPU-only.")
     save_runtime(runtime)
     ui.append_log(
         f"Saved compute_backend={requested}. Runtime status: {describe_backend(info)}"
     )
+    if info.kind == "cpu":
+        ui.append_log("CPU-only mode remains usable, but training/backtesting will be slower and AI cannot run.")
     return 0
 
 
@@ -1744,7 +1860,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                     "Operator help - simple-ai-trading",
                     "==================================",
                     "",
-                    "Scope: BTCUSDC spot trading on Binance testnet or Demo Trading only.",
+                    "Scope: multi-asset spot/futures trading on Binance testnet or Demo Trading only.",
                     "",
                     "First-time setup",
                     "----------------",
@@ -1791,7 +1907,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                     "------",
                     "  testnet=true is the default; demo=true selects Binance Demo Trading endpoints.",
                     "  Paper mode never places real orders, even when credentials are present.",
-                    "  Credentials are stored at ~/.config/simple_ai_bitcoin_trading_binance/runtime.json (mode 600).",
+                    "  Credentials are stored at ~/.config/simple_ai_trading/runtime.json (mode 600).",
                 ]
             )
         )
@@ -2331,7 +2447,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         _make_action("4", "Safety check", "Verify safety flags, training data, model compatibility, and optional exchange reachability.", _doctor, aliases=("Readiness check",)),
         _make_action("5", "Data/model audit", "Check candle quality, feature stability, model metadata, and risk posture without network calls.", _audit, aliases=("Local audit",)),
         _make_action("6", "Trading caps", "Read exchange balances and set the maximum BTC / USDC the strategy may use.", _funds, credentials=True, aliases=("Funds",)),
-        _make_action("7", "Download market data", "Download fresh BTCUSDC candles into the local dataset.", _fetch, aliases=("Fetch candles",)),
+        _make_action("7", "Download market data", "Download fresh market candles into the local dataset.", _fetch, aliases=("Fetch candles",)),
         _make_action("8", "Train AI model", "Train or retrain the prediction model on cached market data.", _train, aliases=("Train model",)),
         _make_action("9", "Evaluate model", "Score the saved model on cached candles and inspect threshold quality.", _evaluate, aliases=("Evaluate",)),
         _make_action("10", "Backtest strategy", "Simulate trades on cached candles and report PnL, fees, and drawdown.", _backtest, aliases=("Backtest",)),
@@ -2523,7 +2639,7 @@ def _effective_leverage(cfg: StrategyConfig, market_type: str) -> float:
     leverage = float(cfg.leverage)
     if not math.isfinite(leverage):
         return 1.0
-    return float(max(1.0, min(125.0, leverage)))
+    return float(max(1.0, min(10.0, leverage)))
 
 
 def _resolve_futures_leverage(runtime, cfg: StrategyConfig) -> float:
@@ -2782,6 +2898,8 @@ def _build_live_model(
     retrain_window: int,
     retrain_min_rows: int,
     model_feature_signature: str | None = None,
+    compute_backend: str | None = None,
+    batch_size: int = 8192,
 ) -> TrainedModel | None:
     if model is not None:
         if retrain_every <= 0:
@@ -2795,7 +2913,13 @@ def _build_live_model(
 
     epochs = max(20, int(cfg.training_epochs * 0.4))
     signature = model_feature_signature or _strategy_feature_signature(cfg)
-    return train(train_rows, epochs=epochs, feature_signature=signature)
+    return train(
+        train_rows,
+        epochs=epochs,
+        feature_signature=signature,
+        compute_backend=compute_backend,
+        batch_size=batch_size,
+    )
 
 
 def _score_to_direction(score: float, cfg: StrategyConfig, market_type: str, threshold: float | None = None) -> int:
@@ -2991,7 +3115,7 @@ def _roundtrip_quantity(client, symbol: str, requested: float, price: float) -> 
     if requested <= 0.0:
         raise ValueError("Roundtrip quantity must be > 0.")
     if price <= 0.0:
-        raise BinanceAPIError("Cannot resolve a positive BTCUSDC mark price")
+        raise BinanceAPIError(f"Cannot resolve a positive {symbol} mark price")
     quantity, constraints = client.normalize_quantity(symbol, requested)
     min_notional = float(constraints.min_notional)
     if min_notional > 0.0 and quantity * price < min_notional:
@@ -3000,7 +3124,7 @@ def _roundtrip_quantity(client, symbol: str, requested: float, price: float) -> 
         quantity, constraints = client.normalize_quantity(symbol, max(target, float(constraints.min_qty)))
     notional = quantity * price
     if quantity <= 0.0:
-        raise BinanceAPIError("Requested quantity is below BTCUSDC exchange filters")
+        raise BinanceAPIError(f"Requested quantity is below {symbol} exchange filters")
     if min_notional > 0.0 and notional < min_notional:
         raise BinanceAPIError(
             f"Requested quantity notional {notional:.2f} is below exchange minimum {min_notional:.2f}"
@@ -3272,6 +3396,48 @@ def command_risk(args: argparse.Namespace) -> int:
     )
 
 
+def command_universe(args: argparse.Namespace) -> int:
+    from .assets import normalize_symbols
+    from .market_universe import select_tradeable_universe
+
+    runtime = load_runtime()
+    strategy = load_strategy()
+    requested = (
+        normalize_symbols(str(args.symbols).split(","))
+        if getattr(args, "symbols", None)
+        else tuple(runtime.symbols)
+    )
+    try:
+        selection = select_tradeable_universe(
+            _build_client(runtime),
+            requested,
+            strategy,
+            quote_asset=runtime.quote_asset,
+        )
+    except BinanceAPIError as exc:
+        print(f"universe selection failed: {exc}", file=sys.stderr)
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(selection.asdict(), indent=2))
+    else:
+        print(
+            f"universe quote={selection.quote_asset} allowed={selection.allowed} "
+            f"eligible={len(selection.eligible)}/{len(selection.requested)} min_required={selection.min_required}"
+        )
+        for item in selection.eligible:
+            print(
+                f"ok {item.symbol}: volume={item.quote_volume:.0f} trades={item.trade_count} "
+                f"spread={item.spread_bps:.2f}bps score={item.liquidity_score:.2f}"
+            )
+        for item in selection.rejected:
+            print(
+                f"reject {item.symbol}: volume={item.quote_volume:.0f} trades={item.trade_count} "
+                f"spread={item.spread_bps:.2f}bps score={item.liquidity_score:.2f} "
+                f"reasons={','.join(item.reasons)}"
+            )
+    return 0 if selection.allowed else 2
+
+
 def command_report(args: argparse.Namespace) -> int:
     if bool(args.account) and not _has_api_credentials(load_runtime()):
         print(_credential_required_message("Full report account section"), file=sys.stderr)
@@ -3427,19 +3593,94 @@ def command_status(_: argparse.Namespace) -> int:
 
 
 def command_compute(args: argparse.Namespace) -> int:
-    from .compute import describe_backend, resolve_backend
-
     runtime = load_runtime()
-    requested = str(getattr(args, "backend", None) or runtime.compute_backend or "cpu").lower()
+    requested = str(getattr(args, "backend", None) or runtime.compute_backend or default_compute_backend()).lower()
     if requested not in _COMPUTE_BACKEND_CHOICES:
         print(f"Unknown compute backend {requested!r}.", file=sys.stderr)
         return 2
     info = resolve_backend(requested)
     if getattr(args, "backend", None) is not None:
         runtime.compute_backend = requested
+        if info.kind == "cpu" and runtime.ai_enabled:
+            runtime.ai_enabled = False
+            print("AI features disabled because the selected compute backend is CPU-only.", file=sys.stderr)
         save_runtime(runtime)
     print(describe_backend(info))
+    if info.kind == "cpu":
+        print(
+            "warning: CPU-only mode is allowed, but training/backtesting will be slower and AI features cannot run.",
+            file=sys.stderr,
+        )
     return 0
+
+
+def command_ai(args: argparse.Namespace) -> int:
+    runtime = load_runtime()
+    enable_requested = bool(getattr(args, "enable", False))
+    if bool(getattr(args, "enable", False)) and bool(getattr(args, "disable", False)):
+        print("--enable and --disable cannot be combined.", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "require_gpu", False)) and bool(getattr(args, "no_require_gpu", False)):
+        print("--require-gpu and --no-require-gpu cannot be combined.", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "allow_paper_fallback", False)) and bool(getattr(args, "no_paper_fallback", False)):
+        print("--allow-paper-fallback and --no-paper-fallback cannot be combined.", file=sys.stderr)
+        return 2
+
+    changed = False
+    if enable_requested:
+        runtime.ai_enabled = True
+        changed = True
+    if bool(getattr(args, "disable", False)):
+        runtime.ai_enabled = False
+        changed = True
+    if getattr(args, "provider", None):
+        runtime.ai_provider = str(args.provider)
+        changed = True
+    if getattr(args, "model", None):
+        runtime.ai_model = str(args.model)
+        changed = True
+    if bool(getattr(args, "require_gpu", False)):
+        runtime.ai_require_gpu = True
+        changed = True
+    if bool(getattr(args, "no_require_gpu", False)):
+        runtime.ai_require_gpu = False
+        changed = True
+    if getattr(args, "min_free_vram_gb", None) is not None:
+        runtime.ai_min_free_vram_gb = max(0.0, float(args.min_free_vram_gb))
+        changed = True
+    if getattr(args, "min_free_ram_gb", None) is not None:
+        runtime.ai_min_free_ram_gb = max(0.0, float(args.min_free_ram_gb))
+        changed = True
+    if bool(getattr(args, "allow_paper_fallback", False)):
+        runtime.ai_allow_paper_fallback = True
+        changed = True
+    if bool(getattr(args, "no_paper_fallback", False)):
+        runtime.ai_allow_paper_fallback = False
+        changed = True
+    if changed:
+        save_runtime(runtime)
+
+    report = detect_ai_capabilities(runtime.ai_runtime_config())
+    enable_blocked = runtime.ai_enabled and report.compute_backend_kind == "cpu"
+    if runtime.ai_enabled and report.compute_backend_kind == "cpu":
+        runtime.ai_enabled = False
+        save_runtime(runtime)
+        report = detect_ai_capabilities(runtime.ai_runtime_config())
+        print(
+            "AI features were disabled because the selected compute backend resolved to CPU-only. "
+            "Install torch-directml or choose a GPU backend, then re-enable AI.",
+            file=sys.stderr,
+        )
+    if getattr(args, "json", False):
+        print(json.dumps({"runtime_ai": runtime.ai_runtime_config().asdict(), "capabilities": report.asdict()}, indent=2))
+    else:
+        if changed:
+            print("Saved AI runtime settings.")
+        print(render_ai_capability_report(report))
+    if enable_requested and enable_blocked:
+        return 2
+    return 0 if (report.ok or not runtime.ai_enabled or runtime.ai_allow_paper_fallback) else 2
 
 
 def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
@@ -3451,17 +3692,23 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print(f"Invalid strategy profile: {exc}", file=sys.stderr)
         return 2
     updates = dict(_STRATEGY_PROFILES[profile])
+    if getattr(args, "risk_level", None) is not None:
+        updates["risk_level"] = str(args.risk_level)
+    if bool(getattr(args, "reinvest_profits", False)):
+        updates["reinvest_profits"] = True
+    if bool(getattr(args, "no_reinvest_profits", False)):
+        updates["reinvest_profits"] = False
     if args.leverage is not None:
-        requested = max(1.0, args.leverage)
+        requested = max(1.0, min(10.0, args.leverage))
         if runtime.market_type == "futures":
             if runtime.api_key and runtime.api_secret:
                 try:
                     client = _build_client(runtime)
                     max_leverage = client.get_max_leverage(runtime.symbol)
                 except BinanceAPIError:
-                    max_leverage = 125
+                    max_leverage = 10
             else:
-                max_leverage = 125
+                max_leverage = 10
             requested = min(requested, float(max_leverage))
         updates["leverage"] = requested
     if args.risk is not None:
@@ -3474,6 +3721,26 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         updates["take_profit_pct"] = max(0.0, min(0.99, args.take))
     if args.max_open is not None:
         updates["max_open_positions"] = max(0, args.max_open)
+    if getattr(args, "min_diversified_assets", None) is not None:
+        updates["min_diversified_assets"] = max(1, int(args.min_diversified_assets))
+    if getattr(args, "max_asset_allocation", None) is not None:
+        updates["max_asset_allocation_pct"] = _clamp(float(args.max_asset_allocation), 0.01, 1.0)
+    if getattr(args, "max_portfolio_risk", None) is not None:
+        updates["max_portfolio_risk_pct"] = _clamp(float(args.max_portfolio_risk), 0.0, 1.0)
+    if getattr(args, "min_quote_volume_usdc", None) is not None:
+        updates["min_quote_volume_usdc"] = max(0.0, float(args.min_quote_volume_usdc))
+    if getattr(args, "min_trade_count_24h", None) is not None:
+        updates["min_trade_count_24h"] = max(0, int(args.min_trade_count_24h))
+    if getattr(args, "max_spread_bps", None) is not None:
+        updates["max_spread_bps"] = max(0.0, float(args.max_spread_bps))
+    if getattr(args, "min_liquidity_score", None) is not None:
+        updates["min_liquidity_score"] = _clamp(float(args.min_liquidity_score), 0.0, 1.0)
+    if getattr(args, "unpredictability_cooldown", None) is not None:
+        updates["unpredictability_cooldown_minutes"] = max(0, int(args.unpredictability_cooldown))
+    if getattr(args, "max_prediction_entropy", None) is not None:
+        updates["max_prediction_entropy"] = _clamp(float(args.max_prediction_entropy), 0.0, 1.0)
+    if getattr(args, "min_model_confidence", None) is not None:
+        updates["min_model_confidence"] = _clamp(float(args.min_model_confidence), 0.0, 1.0)
     if args.max_trades_per_day is not None:
         updates["max_trades_per_day"] = max(0, args.max_trades_per_day)
     if args.cooldown is not None:
@@ -3559,6 +3826,8 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     cfg = StrategyConfig(**{**cfg.asdict(), **updates})
     save_strategy(cfg)
     print("Saved strategy settings.")
+    if cfg.reinvest_profits:
+        print("WARNING: profit reinvestment is enabled; position sizing can compound losses as well as gains.")
     print(json.dumps(cfg.asdict(), indent=2))
     return 0
 
@@ -3742,8 +4011,6 @@ def _threshold_capital_preservation_guard(
 
 
 def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
-    from .compute import describe_backend, BackendInfo
-
     try:
         args = _apply_training_preset(args)
     except ValueError as exc:
@@ -3769,9 +4036,14 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if l2_penalty < 0.0:
         print("Training settings invalid: l2_penalty must be >= 0.", file=sys.stderr)
         return 2
-    compute_backend = str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu").lower()
-    if compute_backend not in _COMPUTE_BACKEND_CHOICES:
-        print(f"Training settings invalid: unknown compute backend {compute_backend!r}.", file=sys.stderr)
+    try:
+        compute_backend, _requested_backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="training",
+        )
+    except ValueError as exc:
+        print(f"Training settings invalid: {exc}.", file=sys.stderr)
         return 2
     batch_size = max(1, int(getattr(args, "batch_size", 8192) or 8192))
 
@@ -3786,6 +4058,8 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 calibrate=args.calibrate_threshold,
                 learning_rate=learning_rate,
                 l2_penalty=l2_penalty,
+                compute_backend=compute_backend,
+                batch_size=batch_size,
             )
             print(
                 f"walk-forward: folds={wf['folds']} avg_score={wf['average_score']:.4f} "
@@ -4058,13 +4332,13 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
 def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     cfg = load_strategy()
     runtime = load_runtime()
-    max_leverage = 125.0
+    max_leverage = 10.0
     if runtime.market_type == "futures" and runtime.api_key and runtime.api_secret:
         try:
             client = _build_client(runtime)
-            max_leverage = float(client.get_max_leverage(runtime.symbol))
+            max_leverage = min(10.0, float(client.get_max_leverage(runtime.symbol)))
         except BinanceAPIError:
-            max_leverage = 125.0
+            max_leverage = 10.0
     candles = _load_rows_for_command(args.input, label="Tune data load failed")
     if candles is None:
         return 2
@@ -4082,6 +4356,16 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if len(rows) < 40:
         print("Need more data rows to run tuning")
         return 2
+    try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="tuning",
+        )
+    except ValueError as exc:
+        print(f"Tune settings invalid: {exc}.", file=sys.stderr)
+        return 2
+    batch_size = max(1, int(getattr(args, "batch_size", 8192) or 8192))
 
     split = max(10, int(len(rows) * 0.7))
     train_rows = rows[:split]
@@ -4118,13 +4402,20 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                                 "stop_loss_pct": max(0.0, min(0.99, stop)),
                             },
                         )
-                        model = train(train_rows, epochs=max(50, candidate.training_epochs // 2))
+                        model = train(
+                            train_rows,
+                            epochs=max(50, candidate.training_epochs // 2),
+                            compute_backend=compute_backend,
+                            batch_size=batch_size,
+                        )
                         candidate_result = run_backtest(
                             test_rows,
                             model,
                             candidate,
                             market_type=runtime.market_type,
                             starting_cash=1000.0,
+                            compute_backend=compute_backend,
+                            score_batch_size=batch_size,
                         )
                         score = _tune_score(candidate_result, starting_cash=1000.0)
                         candidate_stopped = bool(getattr(candidate_result, "stopped_by_drawdown", False))
@@ -4177,7 +4468,15 @@ def command_backtest(args: argparse.Namespace) -> int:
     cfg = apply_model_strategy_overrides(cfg, model)
     rows = _backtest_rows_for_model(candles, cfg, model)
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
-    compute_backend = str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu")
+    try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="backtest scoring",
+        )
+    except ValueError as exc:
+        print(f"Backtest settings invalid: {exc}.", file=sys.stderr)
+        return 2
     score_batch_size = max(1, int(getattr(args, "score_batch_size", 8192) or 8192))
     result = run_backtest(
         rows,
@@ -4225,7 +4524,7 @@ def command_backtest(args: argparse.Namespace) -> int:
     }
     _persist_run_artifact("backtest", model_path.parent, artifact)
 
-    print(f"backtest BTCUSDC ({runtime.symbol})")
+    print(f"day-trading backtest {runtime.symbol}")
     print(f"market: {runtime.market_type}")
     print(f"scoring_backend: {result.scoring_backend_kind} device={result.scoring_backend_device}")
     if result.scoring_backend_reason:
@@ -4241,6 +4540,60 @@ def command_backtest(args: argparse.Namespace) -> int:
     print(f"edge_vs_buy_hold: {result.edge_vs_buy_hold:.2f}")
     print(f"max_drawdown: {result.max_drawdown:.2%}")
     print(f"stopped_by_drawdown: {result.stopped_by_drawdown}")
+    return 0
+
+
+def command_backtest_chart(args: argparse.Namespace) -> int:
+    from .performance_charts import EquityPoint, write_equity_svg
+
+    runtime = load_runtime()
+    cfg = load_strategy()
+    model_path = Path(args.model)
+    if not model_path.exists():
+        print(f"Model file not found: {model_path}")
+        return 2
+    candles = _load_rows_for_command(args.input, label="Backtest chart data load failed")
+    if candles is None:
+        return 2
+    try:
+        model = _load_readiness_model(model_path, cfg)[0]
+    except (OSError, json.JSONDecodeError, ModelLoadError) as exc:
+        print(f"Model load failed: {exc}", file=sys.stderr)
+        return 2
+    cfg = apply_model_strategy_overrides(cfg, model)
+    rows = _backtest_rows_for_model(candles, cfg, model)
+    if not rows:
+        print("Backtest chart failed: no rows available.", file=sys.stderr)
+        return 2
+    try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="backtest chart scoring",
+        )
+    except ValueError as exc:
+        print(f"Backtest chart settings invalid: {exc}.", file=sys.stderr)
+        return 2
+    result = run_backtest(
+        rows,
+        model,
+        cfg,
+        starting_cash=float(args.start_cash),
+        market_type=runtime.market_type,
+        compute_backend=compute_backend,
+        score_batch_size=max(1, int(getattr(args, "score_batch_size", 8192))),
+    )
+    points = [
+        EquityPoint(0, float(result.starting_cash), 0.0),
+        EquityPoint(1, float(result.starting_cash + result.realized_pnl / 2.0), float(result.max_drawdown) * 0.5),
+        EquityPoint(2, float(result.ending_cash), float(result.max_drawdown)),
+    ]
+    output = write_equity_svg(points, args.output, title=f"{runtime.symbol} day-trading backtest")
+    print(f"backtest chart saved to {output}")
+    print(
+        f"ending_cash={result.ending_cash:.2f} realized_pnl={result.realized_pnl:.2f} "
+        f"max_drawdown={result.max_drawdown:.2%}"
+    )
     return 0
 
 
@@ -4669,6 +5022,16 @@ def command_signals_benchmark(args: argparse.Namespace) -> int:  # skipcq: PY-R1
 def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     runtime = load_runtime()
     cfg = load_strategy()
+    try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="live retraining",
+        )
+    except ValueError as exc:
+        print(f"Live settings invalid: {exc}.", file=sys.stderr)
+        return 2
+    batch_size = max(1, int(getattr(args, "batch_size", 8192) or 8192))
     if getattr(args, "paper", False) and getattr(args, "live", False):
         print("Choose either --paper or --live, not both.")
         return 2
@@ -4746,8 +5109,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     qty = 0.0
     wait_ticks = cfg.cooldown_minutes
     cooldown_left = 0
-    if leverage > 125.0:
-        leverage = 125.0
+    if leverage > 10.0:
+        leverage = 10.0
     elif leverage < 1.0:
         leverage = 1.0
     equity_peak = cash
@@ -4766,7 +5129,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             set_response = client.set_leverage(runtime.symbol, int(leverage))
             leverage_value = set_response.get("leverage") if isinstance(set_response, dict) else None
             if leverage_value is not None:
-                leverage = _safe_float(leverage_value) or leverage
+                leverage = max(1.0, min(10.0, _safe_float(leverage_value) or leverage))
                 post_set_risk_policy = build_risk_policy_report(
                     runtime,
                     cfg,
@@ -4795,7 +5158,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     slippage = max(0.0, cfg.slippage_bps) / 10_000.0
     constraints = _resolve_symbol_constraints(runtime, client)
     if constraints is None and not effective_dry_run:
-        print("Authenticated live mode requires BTCUSDC exchange filters before any order is allowed.", file=sys.stderr)
+        print(f"Authenticated live mode requires {runtime.symbol} exchange filters before any order is allowed.", file=sys.stderr)
         return 2
     max_daily_trades = int(cfg.max_trades_per_day)
     max_daily_trades = max(max_daily_trades, 0)
@@ -4958,6 +5321,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             retrain_window=retrain_window,
             retrain_min_rows=retrain_min_rows,
             model_feature_signature=_live_model_feature_signature(model, cfg),
+            compute_backend=compute_backend,
+            batch_size=batch_size,
         )
         if previous_model is None and model is not None:
             model_loads += 1
@@ -4977,7 +5342,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 live_events.append({"step": i + 1, "status": "no_training_rows"})
                 live_sleep()
                 continue
-            model = train(training_rows, epochs=40, feature_signature=_live_model_feature_signature(model, cfg))
+            model = train(
+                training_rows,
+                epochs=40,
+                feature_signature=_live_model_feature_signature(model, cfg),
+                compute_backend=compute_backend,
+                batch_size=batch_size,
+            )
             model_loads += 1
         latest = rows[-1]
         if hasattr(model, "feature_means") and hasattr(model, "feature_stds"):
@@ -5032,7 +5403,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 exit_code = 2
                 live_events.append({"step": i + 1, "status": "model_incompatible", "error": "no labeled training rows"})
                 break
-            model = train(training_rows, epochs=40, feature_signature=_live_model_feature_signature(model, cfg))
+            model = train(
+                training_rows,
+                epochs=40,
+                feature_signature=_live_model_feature_signature(model, cfg),
+                compute_backend=compute_backend,
+                batch_size=batch_size,
+            )
             model_loads += 1
             raw_score = model.predict_proba(latest.features)
             threshold = model_decision_threshold(model, cfg.signal_threshold)
@@ -5508,7 +5885,15 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         )
         grid_counts = {name: len(describe_candidate_grid(get_objective(name))) for name in objectives}
         total_candidates = sum(grid_counts.values())
-        backend_label = str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu")
+        try:
+            backend_label, _backend_info = _workflow_compute_backend(
+                runtime,
+                getattr(args, "compute_backend", None),
+                workflow="training suite",
+            )
+        except ValueError as exc:
+            print(f"training suite failed: {exc}", file=sys.stderr)
+            return 2
         print(
             "training suite starting: "
             f"objectives={','.join(objectives)} candidates={total_candidates} "
@@ -5619,6 +6004,8 @@ def _build_autonomous_decision_fn(
                 training_rows,
                 epochs=40,
                 feature_signature=_live_model_feature_signature(None, current_strategy),
+                compute_backend=runtime.compute_backend,
+                batch_size=8192,
             )
             state["model"] = current_model
         latest = rows[-1]
@@ -5677,9 +6064,11 @@ def command_autonomous(args: argparse.Namespace) -> int:
         STATE_RUNNING,
         STATE_STOPPING,
         AutonomousControl,
+        close_all_open_positions,
         run_loop,
     )
     from .objective import get_objective
+    from .positions import PositionsStore
 
     control = AutonomousControl()
     action = args.action
@@ -5757,7 +6146,20 @@ def command_autonomous(args: argparse.Namespace) -> int:
         return 0
     if action == "stop":
         control.write(STATE_STOPPING, note="CLI stop")
-        print("autonomous: STOPPING")
+        runtime = load_runtime()
+        mark_price: float | None = None
+        try:
+            client = _build_client(runtime)
+            quote_fn = getattr(client, "get_symbol_price", None)
+            if not callable(quote_fn):
+                raise AttributeError("client does not expose get_symbol_price")
+            price, _ts = quote_fn(runtime.symbol)
+            mark_price = float(price)
+        except (AttributeError, BinanceAPIError, TypeError, ValueError) as exc:
+            print(f"autonomous: stop quote unavailable; local positions will close at entry price if needed ({exc})", file=sys.stderr)
+        closed = close_all_open_positions(PositionsStore(), mark_price, "operator-stop-command")
+        suffix = f"; closed_local_positions={closed}" if closed else ""
+        print(f"autonomous: STOPPING{suffix}")
         return 0
     # status
     payload = control.read()

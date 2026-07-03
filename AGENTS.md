@@ -1,4 +1,4 @@
-# AGENTS
+﻿# AGENTS
 
 ## Pinned Karpathy agent baseline
 
@@ -61,7 +61,7 @@ later prompt requests:
 - the previous commit's identity, a global `git config` identity, the CI
   runner's identity, or any host / local-placeholder email;
 - any named AI-tool, model-family, or vendor identity;
-- a hyphenated `AI-agent` — it is `AI agent` with a single space and
+- a hyphenated `AI-agent` â€” it is `AI agent` with a single space and
   lowercase `a`.
 
 If the tool or environment cannot emit the empty-email form shown above, the
@@ -73,8 +73,8 @@ Identity audits must check authors, committers, `Co-authored-by` trailers,
 and GitHub anonymous contributors
 (`GET /repos/{owner}/{repo}/contributors?anon=1`) from fresh branch-head
 fetches. PR-head refs must be reported separately. Any AI commit not
-matching `AI agent <>` — and any non-AI commit pointing at a fake / host /
-local placeholder or an email that is not a real human GitHub identity — is
+matching `AI agent <>` â€” and any non-AI commit pointing at a fake / host /
+local placeholder or an email that is not a real human GitHub identity â€” is
 a policy violation and must be rewritten locally with `git filter-repo`
 before push.
 
@@ -87,14 +87,14 @@ before push.
 
 ## Objective
 
-Build and maintain a testnet-first BTCUSDC trading CLI that is conservative by default, fully test-covered, and safe for iterative development. Keep edits minimal, correct, and reproducible.
+Build and maintain a testnet-first multi-asset day-trading CLI and Windows app that is conservative by default, fully test-covered, and safe for iterative development. Keep edits minimal, correct, and reproducible.
 
 ## Context-loading rules
 
 Use this order before broad reads:
 
 1. `README.md`
-2. one nearest implementation file in `src/simple_ai_bitcoin_trading_binance/`
+2. one nearest implementation file in `src/simple_ai_trading/`
 3. the matching test file in `tests/`
 4. the closest repo-local skill in `.agents/skills/`
 5. `docs/SIMILAR_TRADING_REPOS_REVIEW.md` before broad product, architecture, CLI, or workflow redesigns
@@ -105,7 +105,7 @@ Do not expand to broad directory scans on first pass. Open more files only when 
 
 - Never assume behavior from memory. Confirm by running tests or inspection of source.
 - No network calls in tests unless explicitly stubbed.
-- Preserve conservative defaults (`testnet`, `dry_run` behavior, BTCUSDC-only execution).
+- Preserve conservative defaults (`testnet`, `dry_run` behavior, mandatory diversification, automatic liquidity gating, and app-level `10x` leverage cap).
 - Do not claim production readiness or profitability without reproducible evidence from test artifacts.
 - Keep secrets out of prompts, logs, and history.
 - Avoid unnecessary hardcoded host assumptions; prefer configuration or environment overrides when host selection can be made safely dynamic.
@@ -119,7 +119,7 @@ Do not expand to broad directory scans on first pass. Open more files only when 
 
 - run `python3 -m pytest -q` after any behavior change.
 - run focused regression tests matching the touched file(s) first.
-- run `python3 -m coverage run --source=src/simple_ai_bitcoin_trading_binance -m pytest -q` before closing significant feature work, then inspect misses.
+- run `python3 -m coverage run --source=src/simple_ai_trading -m pytest -q` before closing significant feature work, then inspect misses.
 - run `python3 tools/update_readme_badges.py --check` after README badge edits.
 - for CLI behavior changes, run `python3 -m pytest -q tests/test_cli.py tests/test_cli_coverage.py`.
 - for model or backtest changes, include both unit and coverage tests for that domain.
@@ -132,7 +132,7 @@ Do not expand to broad directory scans on first pass. Open more files only when 
 
 ## File map
 
-- core: `src/simple_ai_bitcoin_trading_binance/`
+- core: `src/simple_ai_trading/`
 - tests: `tests/`
 - verified trading-repo review: `docs/SIMILAR_TRADING_REPOS_REVIEW.md`
 - workflows: `.github/workflows/`

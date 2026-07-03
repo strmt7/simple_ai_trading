@@ -1,8 +1,8 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import intervals
+from simple_ai_trading import intervals
 
 
 def test_supported_intervals_spot_includes_one_second():

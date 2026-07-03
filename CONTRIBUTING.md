@@ -1,4 +1,4 @@
-# Contributing
+﻿# Contributing
 
 Small, correct, test-covered changes are preferred over sweeping rewrites.
 
@@ -12,7 +12,7 @@ Small, correct, test-covered changes are preferred over sweeping rewrites.
   `testnet=True` or `dry_run=True` as a default is a contract break and must be
   flagged explicitly in the PR.
 - Never commit secrets. `.gitignore` excludes `.env` and the project configs
-  are stored under `~/.config/simple_ai_bitcoin_trading_binance/` (mode 0600)
+  are stored under `~/.config/simple_ai_trading/` (mode 0600)
   at runtime.
 - The local CLI reads environment variables from the process environment; it
   does not auto-load `.env`. Docker Compose may read `.env` and pass listed
@@ -26,7 +26,7 @@ python3 -m venv .venv
 .venv/bin/pip install pytest coverage ruff mypy
 
 # Tests + coverage gate
-.venv/bin/python -m coverage run --source=src/simple_ai_bitcoin_trading_binance --branch -m pytest -q
+.venv/bin/python -m coverage run --source=src/simple_ai_trading --branch -m pytest -q
 .venv/bin/python -m coverage report --fail-under=100
 
 # Static checks on touched files

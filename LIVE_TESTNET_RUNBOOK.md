@@ -1,144 +1,62 @@
-# Live Testnet Runbook
+# Non-Mainnet Day-Trading Runbook
 
-This runbook is for the next iteration, when the interactive console will be exercised on Binance testnet.
+This runbook is for Binance testnet or Demo Trading only.
 
-## Scope
+## Preflight
 
-- `BTCUSDC` only
-- `testnet=true` only
-- Prefer `dry_run=true` first, then controlled testnet order placement
-- No real-money execution
-
-## Preconditions
-
-1. Local branch is green:
-   - `python3 -m pytest -q`
-   - `python3 -m coverage run --source=src/simple_ai_bitcoin_trading_binance -m pytest -q`
-2. GitHub PR workflow is green on the exact commit under test.
-3. Binance testnet credentials exist and are valid.
-4. Interactive console starts cleanly in a real terminal.
-5. Runtime config is explicitly checked before any live step.
-6. Cached historical data and a model artifact can be regenerated locally if needed.
-7. No command output or artifact should contain raw API keys or secrets.
-
-## Launch
-
-```bash
-cd /opt/trader/simple_ai_bitcoin_trading_binance
-PYTHONPATH=src python3 -m simple_ai_bitcoin_trading_binance.cli
+```powershell
+simple-ai-trading compute
+simple-ai-trading ai
+simple-ai-trading status
+simple-ai-trading universe
+simple-ai-trading risk --paper
+simple-ai-trading audit
 ```
 
-## Required Connection Settings
+Required state:
 
-From the console, open `Connection settings` and verify:
+- `testnet=true` or `demo=true`
+- `dry_run=true` for paper mode
+- DirectML/GPU active if AI is enabled
+- CPU-only mode accepted only with AI disabled
+- at least `min_diversified_assets` eligible symbols from `universe`
+- leverage <= `10x`
+- reinvest profits disabled unless operator explicitly accepted the warning
 
-- `runtime.symbol == BTCUSDC`
-- `runtime.testnet == true`
-- `runtime.market_type` matches the intended session (`spot` or `futures`)
-- `runtime.dry_run == true` for the first live validation pass
-- `strategy.max_drawdown_limit` is conservative
-- `strategy.max_trades_per_day` is not unintentionally disabled
-- `strategy.max_open_positions >= 1`
+## Prepare
 
-UI notes:
+```powershell
+simple-ai-trading fetch --symbol BTCUSDC --limit 1000
+simple-ai-trading train --preset balanced --compute-backend directml
+simple-ai-trading evaluate
+simple-ai-trading backtest --compute-backend directml
+simple-ai-trading backtest-chart
+```
 
-- use the left action list for navigation
-- the detail panel shows the selected operation and when to use it
-- `Dashboard` shows current runtime, strategy, and account context
-- `Activity log` shows command output and failures
+Repeat data/training/backtest workflows for each eligible symbol or use the panel workflow as it expands.
 
-Optional host override checks:
+## Autonomous Paper Run
 
-- if a proxy or alternate host is required, set `BINANCE_BASE_URL`, `BINANCE_SPOT_BASE_URL`, or `BINANCE_FUTURES_BASE_URL` explicitly
-- confirm the chosen host is still a testnet-compatible environment before any run
+```powershell
+simple-ai-trading autonomous start --paper
+simple-ai-trading autonomous status
+simple-ai-trading autonomous stop
+```
 
-## Session order inside the interactive console
+`autonomous stop` writes `STOPPING` and closes locally tracked open autonomous positions. If no current quote is available, it uses entry price to prevent stale local ledger exposure.
 
-1. Connectivity check
-   - Run `Connect`
-   - Confirm endpoint is testnet
-   - Confirm BTCUSDC availability
+## Blockers
 
-2. Market data sanity
-   - Run `Download market data`
-   - Confirm the dataset is updated and non-empty
+Do not proceed when any of these are true:
 
-3. Model sanity
-   - Run `Train AI model`
-   - Run `Evaluate model`
-   - If model load fails, regenerate before continuing
+- `universe` cannot prove enough liquid symbols.
+- `risk` reports a block.
+- model/audit checks fail.
+- DirectML/GPU is unavailable while AI is enabled.
+- leverage request exceeds `10x`.
+- signed execution is pointed at mainnet.
+- local open positions do not reconcile with the exchange account.
 
-4. Backtest sanity
-   - Run `Backtest strategy`
-   - Confirm no obvious instability or immediate drawdown-limit termination
-   - Compare strategy P&L with `buy_hold_pnl` and `edge_vs_buy_hold`
+## Notes
 
-5. Data/model audit
-   - Run `Data/model audit`
-   - Resolve every `[fix]` item before moving to paper or testnet execution
-   - Investigate `[warn]` items before increasing risk or loop length
-
-6. Dry-run live session
-   - Run `Paper trading`
-   - Verify:
-     - no runtime exceptions
-     - expected event logging
-     - generated live artifact under `data/`
-     - entries/closes/skips are plausible
-
-7. Controlled testnet order session
-   - Only after dry-run behavior is understood
-   - Use the smallest reasonable exposure
-   - Prefer a short `Testnet trading` run
-   - For spot, use `Test order` first
-   - For futures, confirm effective leverage printed by the console log
-
-## Abort conditions
-
-Stop immediately if any of the following occur:
-
-- endpoint is not testnet
-- symbol is not `BTCUSDC`
-- credentials appear to target a live environment
-- leverage or notional is higher than expected
-- repeated market/API errors occur
-- model artifact mismatch appears unexpectedly
-- drawdown emergency-close triggers unexpectedly on the first controlled run
-- order responses differ materially from expected testnet behavior
-
-## Expected artifacts to inspect
-
-- `data/model.json`
-- `data/*train*_run_*.json`
-- `data/*evaluate*_run_*.json`
-- `data/*backtest*_run_*.json`
-- `data/*live*_run_*.json`
-
-## During the supervised session
-
-- change one variable at a time
-- keep `steps` low
-- prefer deterministic re-runs over long sessions
-- inspect printed leverage, side, quantity, cash, and drawdown after each run
-- if futures are used, verify bracket-clamped leverage before trusting execution size
-
-## First console actions for next iteration
-
-- `Connect`
-- `Download market data`
-- `Train AI model`
-- `Evaluate model`
-- `Backtest strategy`
-- `Data/model audit`
-- `Paper trading`
-
-## Decision gate before any non-paper testnet order
-
-Proceed only if:
-
-- local tests are green
-- PR workflow is green
-- `connect` confirms testnet
-- `audit` has no `[fix]` findings
-- dry-run live loop behaves as expected
-- generated artifacts are internally consistent
+Authenticated autonomous exchange-order execution is intentionally disabled until exchange reconciliation and order-close recovery are fully implemented and tested. Use paper mode and signed testnet/demo smoke tests only.

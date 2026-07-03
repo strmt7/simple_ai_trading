@@ -1,4 +1,4 @@
-"""Comprehensive unit tests for the backtest panel module."""
+﻿"""Comprehensive unit tests for the backtest panel module."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ from typing import Sequence
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.backtest import BacktestResult
-from simple_ai_bitcoin_trading_binance.backtest_panel import (
+from simple_ai_trading.api import Candle
+from simple_ai_trading.backtest import BacktestResult
+from simple_ai_trading.backtest_panel import (
     BacktestRequest,
     PanelListing,
     _load_model_or_baseline,
@@ -25,9 +25,9 @@ from simple_ai_bitcoin_trading_binance.backtest_panel import (
     parse_date_ms,
     run_panel,
 )
-from simple_ai_bitcoin_trading_binance.features import ModelRow
-from simple_ai_bitcoin_trading_binance.model import ModelLoadError, TrainedModel
-from simple_ai_bitcoin_trading_binance.types import StrategyConfig
+from simple_ai_trading.features import ModelRow
+from simple_ai_trading.model import ModelLoadError, TrainedModel
+from simple_ai_trading.types import StrategyConfig
 
 
 # ----- BacktestRequest.validated_interval ----------------------------------
@@ -410,7 +410,7 @@ def test_run_panel_applies_loaded_model_strategy_overrides(
             trades_per_day_cap_hit=0,
         )
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.backtest_panel.run_backtest", fake_run_backtest)
+    monkeypatch.setattr("simple_ai_trading.backtest_panel.run_backtest", fake_run_backtest)
 
     run_panel(
         req,

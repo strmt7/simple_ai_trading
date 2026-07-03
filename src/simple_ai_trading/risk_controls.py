@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .types import RuntimeConfig, StrategyConfig
+from .assets import MAX_AUTONOMOUS_LEVERAGE
 
 
 @dataclass(frozen=True)
@@ -84,7 +85,7 @@ def _effective_leverage(strategy: StrategyConfig, market_type: str, requested: f
     raw = float(strategy.leverage if requested is None else requested)
     if not math.isfinite(raw):
         return 1.0
-    return max(1.0, min(125.0, raw))
+    return max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, raw))
 
 
 def _finite(value: Any, default: float = 0.0) -> float:
@@ -122,7 +123,17 @@ def build_risk_policy_report(
     max_loss_per_trade_pct = notional_cap_pct * max(0.0, _finite(strategy.stop_loss_pct))
     checks: list[RiskCheck] = []
 
-    checks.append(_check("ok" if runtime.symbol == "BTCUSDC" else "block", "symbol", runtime.symbol))
+    symbols = tuple(getattr(runtime, "symbols", ()) or (runtime.symbol,))
+    checks.append(_check("ok", "primary symbol", runtime.symbol))
+    checks.append(
+        _check(
+            "ok" if len(set(symbols)) >= max(1, strategy.min_diversified_assets) else "block",
+            "mandatory diversification",
+            f"{len(set(symbols))} configured symbols",
+            metric=len(set(symbols)),
+            limit=f">={strategy.min_diversified_assets}",
+        )
+    )
     checks.append(
         _check(
             "ok" if runtime.market_type in {"spot", "futures"} else "block",
@@ -156,11 +167,11 @@ def build_risk_policy_report(
     checks.append(_check(cash_status, "managed USDC", f"{cash:.2f}", metric=cash, limit=">0"))
     checks.append(
         _check(
-            "ok" if effective_leverage <= 25.0 else ("warn" if dry_run or effective_leverage <= 50.0 else "block"),
+            "ok" if effective_leverage <= MAX_AUTONOMOUS_LEVERAGE else "block",
             "effective leverage",
             f"{effective_leverage:.1f}x",
             metric=effective_leverage,
-            limit="<=50 hard",
+            limit=f"<={MAX_AUTONOMOUS_LEVERAGE:.0f} hard",
         )
     )
     risk_per_trade = _finite(strategy.risk_per_trade)
@@ -219,6 +230,40 @@ def build_risk_policy_report(
             f"{max_loss_per_trade_pct:.2%} of equity",
             metric=max_loss_per_trade_pct,
             limit=0.02,
+        )
+    )
+    checks.append(
+        _check(
+            "ok" if strategy.max_portfolio_risk_pct <= 0.05 else ("warn" if dry_run else "block"),
+            "portfolio risk budget",
+            f"{strategy.max_portfolio_risk_pct:.2%}",
+            metric=strategy.max_portfolio_risk_pct,
+            limit="<=5%",
+        )
+    )
+    checks.append(
+        _check(
+            "ok" if strategy.max_asset_allocation_pct <= 0.35 else ("warn" if dry_run else "block"),
+            "single asset allocation cap",
+            f"{strategy.max_asset_allocation_pct:.2%}",
+            metric=strategy.max_asset_allocation_pct,
+            limit="<=35%",
+        )
+    )
+    checks.append(
+        _check(
+            "warn" if strategy.reinvest_profits else "ok",
+            "profit reinvestment",
+            "enabled - compounds both gains and losses" if strategy.reinvest_profits else "disabled",
+        )
+    )
+    checks.append(
+        _check(
+            "ok" if strategy.min_liquidity_score >= 0.60 else "warn",
+            "minimum liquidity score",
+            f"{strategy.min_liquidity_score:.2f}",
+            metric=strategy.min_liquidity_score,
+            limit=">=0.60",
         )
     )
 

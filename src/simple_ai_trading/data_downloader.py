@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable
 
 from .api import BinanceAPIError, BinanceClient, Candle
+from .assets import DEFAULT_SYMBOL, normalize_symbol
 from .intervals import interval_milliseconds, max_limit, validate_interval
 from .market_data import clean_candles
 from .market_store import MarketDataStore
@@ -14,7 +15,7 @@ from .market_store import MarketDataStore
 
 @dataclass(frozen=True)
 class MarketDataSyncConfig:
-    symbol: str = "BTCUSDC"
+    symbol: str = DEFAULT_SYMBOL
     interval: str = "15m"
     market_type: str = "spot"
     db_path: str | Path = "data/market_data.sqlite"
@@ -190,9 +191,7 @@ def sync_market_data(
     *,
     futures_client: BinanceClient | None = None,
 ) -> MarketDataSyncResult:
-    symbol = config.symbol.upper()
-    if symbol != "BTCUSDC":
-        raise BinanceAPIError("This downloader supports BTCUSDC only")
+    symbol = normalize_symbol(config.symbol)
     interval = validate_interval(config.interval, config.market_type)
     step_ms = interval_milliseconds(interval)
     batch_size = max(1, min(max_limit(config.market_type), int(config.batch_size)))
@@ -205,6 +204,9 @@ def sync_market_data(
     sync_mode = "backfill"
 
     with MarketDataStore(config.db_path) as store:
+        ensure_symbol = getattr(client, "ensure_symbol", None)
+        if callable(ensure_symbol):
+            ensure_symbol(symbol)
         coverage_before = store.coverage(symbol, config.market_type, interval)
         latest_open_time = coverage_before.last_open_time
         incremental_start_time = (

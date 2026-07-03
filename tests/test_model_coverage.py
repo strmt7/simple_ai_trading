@@ -1,13 +1,13 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from types import SimpleNamespace
 import math
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.features import _safe_div, _sma
-from simple_ai_bitcoin_trading_binance.features import _rsi as rsi_fn, _true_range
-from simple_ai_bitcoin_trading_binance.model import (
+from simple_ai_trading.features import _safe_div, _sma
+from simple_ai_trading.features import _rsi as rsi_fn, _true_range
+from simple_ai_trading.model import (
     TrainedModel,
     assess_probability_calibration,
     build_model_quality_report,
@@ -38,7 +38,7 @@ from simple_ai_bitcoin_trading_binance.model import (
     validate_model_rows,
     walk_forward_report,
 )
-from simple_ai_bitcoin_trading_binance.api import Candle
+from simple_ai_trading.api import Candle
 
 
 def test_feature_helpers_cover_edge_cases() -> None:
@@ -528,7 +528,7 @@ def test_walk_forward_report_validates_inputs() -> None:
         walk_forward_report(rows, train_window=5, test_window=5, step=1, epochs=10)
 
     with pytest.raises(ValueError, match="train_window, test_window, and step must be positive"):
-        from simple_ai_bitcoin_trading_binance.features import ModelRow
+        from simple_ai_trading.features import ModelRow
         rows = [
             ModelRow(timestamp=0, close=1.0, features=(0.0, 0.0), label=0),
             ModelRow(timestamp=1, close=2.0, features=(0.0, 0.0), label=0),

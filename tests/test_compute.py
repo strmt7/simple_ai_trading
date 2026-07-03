@@ -1,21 +1,23 @@
-"""Tests for the opt-in compute backend resolver."""
+﻿"""Tests for the opt-in compute backend resolver."""
 
 from __future__ import annotations
 
-from simple_ai_bitcoin_trading_binance.compute import (
+from simple_ai_trading.compute import (
     BackendInfo,
+    default_compute_backend,
     describe_backend,
     resolve_backend,
 )
 
 
-def test_resolve_backend_defaults_to_cpu_when_unspecified() -> None:
+def test_resolve_backend_defaults_to_platform_preferred_backend() -> None:
     info = resolve_backend(None)
     assert isinstance(info, BackendInfo)
-    assert info.kind == "cpu"
-    assert info.device == "cpu"
-    assert info.vendor == "Python stdlib"
-    assert info.reason == ""
+    assert info.requested == default_compute_backend()
+    if default_compute_backend() == "directml":
+        assert info.kind in {"directml", "cpu"}
+    else:
+        assert info.kind in {"cuda", "rocm", "directml", "mps", "cpu"}
 
 
 def test_resolve_backend_cpu_is_always_available() -> None:
@@ -38,7 +40,7 @@ def test_resolve_backend_cuda_falls_back_with_reason_when_unavailable() -> None:
 
 def test_resolve_backend_cuda_returns_cpu_when_torch_missing(monkeypatch) -> None:
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (None, "torch missing in test"),
     )
 
@@ -59,7 +61,7 @@ def test_resolve_backend_rocm_falls_back_with_reason_when_unavailable() -> None:
 
 def test_resolve_backend_rocm_returns_cpu_when_torch_missing(monkeypatch) -> None:
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (None, "torch missing in test"),
     )
 
@@ -87,18 +89,18 @@ def test_resolve_backend_auto_falls_back_to_cpu_without_torch() -> None:
 
 def test_resolve_backend_auto_returns_cpu_when_every_probe_is_missing(monkeypatch) -> None:
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (None, "torch missing in test"),
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch_directml",
+        "simple_ai_trading.compute._probe_torch_directml",
         lambda: (None, "directml missing in test"),
     )
 
     info = resolve_backend("auto")
 
     assert info.kind == "cpu"
-    assert info.reason == "No GPU backend available; running on CPU"
+    assert info.reason == "No GPU backend available; running on CPU-only mode"
 
 
 def test_resolve_backend_unknown_value_is_cpu_with_explanation() -> None:
@@ -182,7 +184,7 @@ def _make_fake_torch(
 def test_resolve_backend_cuda_success_uses_torch(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(name="NVIDIA Test"))
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("cuda")
@@ -195,7 +197,7 @@ def test_resolve_backend_cuda_success_uses_torch(monkeypatch) -> None:
 def test_resolve_backend_cuda_returns_cpu_when_not_available(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(available=False))
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("cuda")
@@ -205,7 +207,7 @@ def test_resolve_backend_cuda_returns_cpu_when_not_available(monkeypatch) -> Non
 def test_resolve_backend_cuda_returns_cpu_when_zero_devices(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(count=0))
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("cuda")
@@ -215,7 +217,7 @@ def test_resolve_backend_cuda_returns_cpu_when_zero_devices(monkeypatch) -> None
 def test_resolve_backend_cuda_returns_cpu_for_rocm_torch_build(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(name="AMD Via CUDA Namespace"), hip="6.0")
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("cuda")
@@ -229,7 +231,7 @@ def test_resolve_backend_cuda_swallows_torch_exceptions(monkeypatch) -> None:
 
     fake = _make_fake_torch(cuda=_ExplodingCuda())
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("cuda")
@@ -242,7 +244,7 @@ def test_resolve_backend_rocm_success_via_torch_hip(monkeypatch) -> None:
         hip="6.0",
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("rocm")
@@ -253,7 +255,7 @@ def test_resolve_backend_rocm_success_via_torch_hip(monkeypatch) -> None:
 def test_resolve_backend_rocm_returns_cpu_when_no_hip(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda())
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("rocm")
@@ -263,7 +265,7 @@ def test_resolve_backend_rocm_returns_cpu_when_no_hip(monkeypatch) -> None:
 def test_resolve_backend_rocm_returns_cpu_when_cuda_namespace_missing(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(available=False), hip="6.0")
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("rocm")
@@ -275,7 +277,7 @@ def test_resolve_backend_rocm_returns_cpu_when_no_devices(monkeypatch) -> None:
     cuda._count = 0  # is_available=True, but no device count
     fake = _make_fake_torch(cuda=cuda, hip="6.0")
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("rocm")
@@ -299,11 +301,11 @@ class _FakeDirectML:
 def test_resolve_backend_directml_success(monkeypatch) -> None:
     fake_torch = _make_fake_torch()
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake_torch, ""),
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch_directml",
+        "simple_ai_trading.compute._probe_torch_directml",
         lambda: (_FakeDirectML(), ""),
     )
     info = resolve_backend("directml")
@@ -315,11 +317,11 @@ def test_resolve_backend_directml_success(monkeypatch) -> None:
 def test_resolve_backend_directml_returns_cpu_when_unavailable(monkeypatch) -> None:
     fake_torch = _make_fake_torch()
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake_torch, ""),
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch_directml",
+        "simple_ai_trading.compute._probe_torch_directml",
         lambda: (_FakeDirectML(available=False), ""),
     )
     assert resolve_backend("directml").kind == "cpu"
@@ -328,11 +330,11 @@ def test_resolve_backend_directml_returns_cpu_when_unavailable(monkeypatch) -> N
 def test_resolve_backend_directml_swallows_exceptions(monkeypatch) -> None:
     fake_torch = _make_fake_torch()
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake_torch, ""),
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch_directml",
+        "simple_ai_trading.compute._probe_torch_directml",
         lambda: (_FakeDirectML(explode=True), ""),
     )
     assert resolve_backend("directml").kind == "cpu"
@@ -341,7 +343,7 @@ def test_resolve_backend_directml_swallows_exceptions(monkeypatch) -> None:
 def test_resolve_backend_mps_success(monkeypatch) -> None:
     fake = _make_fake_torch(mps=_FakeMpsBackend())
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("mps")
@@ -351,7 +353,7 @@ def test_resolve_backend_mps_success(monkeypatch) -> None:
 
 def test_resolve_backend_mps_returns_cpu_when_torch_missing(monkeypatch) -> None:
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (None, "torch missing in test"),
     )
 
@@ -364,7 +366,7 @@ def test_resolve_backend_mps_returns_cpu_when_torch_missing(monkeypatch) -> None
 def test_resolve_backend_mps_returns_cpu_when_unavailable(monkeypatch) -> None:
     fake = _make_fake_torch(mps=_FakeMpsBackend(available=False))
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("mps")
@@ -375,7 +377,7 @@ def test_resolve_backend_mps_returns_cpu_when_attribute_missing(monkeypatch) -> 
     fake = _make_fake_torch()
     fake.backends = _FakeBackends(mps=None)
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("mps")
@@ -389,7 +391,7 @@ def test_resolve_backend_mps_swallows_exceptions(monkeypatch) -> None:
 
     fake = _make_fake_torch(mps=_ExplodingMps())
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("mps")
@@ -399,8 +401,12 @@ def test_resolve_backend_mps_swallows_exceptions(monkeypatch) -> None:
 def test_resolve_backend_auto_picks_first_available(monkeypatch) -> None:
     fake = _make_fake_torch(cuda=_FakeCuda(name="NVIDIA Auto"))
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.compute._probe_torch_directml",
+        lambda: (None, "torch-directml unavailable in this test"),
     )
     info = resolve_backend("auto")
     assert info.kind == "cuda"
@@ -410,11 +416,11 @@ def test_resolve_backend_auto_picks_first_available(monkeypatch) -> None:
 def test_resolve_backend_auto_picks_mps_when_cuda_and_rocm_missing(monkeypatch) -> None:
     fake = _make_fake_torch(mps=_FakeMpsBackend())
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch_directml",
+        "simple_ai_trading.compute._probe_torch_directml",
         lambda: (None, "torch-directml unavailable in this test"),
     )
     info = resolve_backend("auto")
@@ -425,11 +431,11 @@ def test_resolve_backend_auto_picks_mps_when_cuda_and_rocm_missing(monkeypatch) 
 def test_resolve_backend_auto_picks_directml_before_mps(monkeypatch) -> None:
     fake = _make_fake_torch(mps=_FakeMpsBackend())
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch_directml",
+        "simple_ai_trading.compute._probe_torch_directml",
         lambda: (_FakeDirectML(), ""),
     )
     info = resolve_backend("auto")
@@ -451,7 +457,7 @@ def test_probe_torch_returns_tuple_when_torch_missing(monkeypatch) -> None:
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
     # Reload the function reference
-    from simple_ai_bitcoin_trading_binance import compute as compute_mod
+    from simple_ai_trading import compute as compute_mod
 
     importlib.reload(compute_mod)
     torch_obj, reason = compute_mod._probe_torch()
@@ -468,7 +474,7 @@ def test_probe_torch_returns_torch_when_importable(monkeypatch) -> None:
     fake_torch = types.SimpleNamespace()
     monkeypatch.setitem(sys.modules, "torch", fake_torch)
 
-    from simple_ai_bitcoin_trading_binance import compute as compute_mod
+    from simple_ai_trading import compute as compute_mod
 
     obj, reason = compute_mod._probe_torch()
     assert obj is fake_torch
@@ -487,7 +493,7 @@ def test_probe_torch_directml_success_and_missing(monkeypatch) -> None:
             return fake_directml
         return original(name)
 
-    from simple_ai_bitcoin_trading_binance import compute as compute_mod
+    from simple_ai_trading import compute as compute_mod
 
     monkeypatch.setattr(compute_mod.importlib, "import_module", fake_import)
     obj, reason = compute_mod._probe_torch_directml()
@@ -504,10 +510,10 @@ def test_probe_torch_directml_success_and_missing(monkeypatch) -> None:
 
 
 def test_resolve_backend_rocm_hip_attribute_falsy_returns_cpu(monkeypatch) -> None:
-    """torch.version exists but torch.version.hip is missing/None — must fall back without raising."""
+    """torch.version exists but torch.version.hip is missing/None â€” must fall back without raising."""
     fake = _make_fake_torch(cuda=_FakeCuda(), include_version=True, hip=None)
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.compute._probe_torch",
+        "simple_ai_trading.compute._probe_torch",
         lambda: (fake, ""),
     )
     info = resolve_backend("rocm")

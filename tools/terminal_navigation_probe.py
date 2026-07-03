@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import os
@@ -338,7 +338,7 @@ def _default_command(repo: Path) -> list[str]:
         exe = repo / ".venv311" / "Scripts" / "simple-ai-trading.exe"
         if exe.exists():
             return [str(exe), "menu"]
-    return [sys.executable, "-m", "simple_ai_bitcoin_trading_binance.cli", "menu"]
+    return [sys.executable, "-m", "simple_ai_trading.cli", "menu"]
 
 
 def main(argv: list[str] | None = None) -> int:

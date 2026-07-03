@@ -1,18 +1,18 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.audit import (
+from simple_ai_trading.api import Candle
+from simple_ai_trading.audit import (
     _dominant_interval_ms,
     _gap_count,
     _max_latest_feature_delta,
     build_audit_report,
     render_audit_report,
 )
-from simple_ai_bitcoin_trading_binance.features import feature_signature, make_rows
-from simple_ai_bitcoin_trading_binance.model import serialize_model, train
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading.features import feature_signature, make_rows
+from simple_ai_trading.model import serialize_model, train
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 def _candles(count: int = 140, *, gap: bool = False, duplicate: bool = False) -> list[Candle]:
@@ -95,7 +95,7 @@ def test_audit_report_good_path_and_render(tmp_path) -> None:
 
 
 def test_audit_report_warns_and_fixes_for_bad_local_state(tmp_path, monkeypatch) -> None:
-    import simple_ai_bitcoin_trading_binance.audit as audit_mod
+    import simple_ai_trading.audit as audit_mod
 
     monkeypatch.setattr(audit_mod, "_max_latest_feature_delta", lambda *_args, **_kwargs: 0.25)
     strategy = StrategyConfig(

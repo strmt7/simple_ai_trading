@@ -42,7 +42,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python3 -m coverage run --source=src/simple_ai_bitcoin_trading_binance -m pytest -q
+          python3 -m coverage run --source=src/simple_ai_trading -m pytest -q
           python3 -m coverage xml
           python3 -m coverage report --fail-under=100
           python3 -m coverage html
@@ -91,12 +91,12 @@ jobs:
       - name: Smoke CLI and Windows launchers
         shell: pwsh
         run: |
-          python -m simple_ai_bitcoin_trading_binance --help
-          python -m simple_ai_bitcoin_trading_binance objectives
+          python -m simple_ai_trading --help
+          python -m simple_ai_trading objectives
           .\run-shell.cmd --help
           .\run-gui.cmd --help
           if (Get-Command py -ErrorAction SilentlyContinue) {
-            py -3.11 -m simple_ai_bitcoin_trading_binance --help
+            py -3.11 -m simple_ai_trading --help
           }
 
       - name: Run Windows terminal regression tests

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import logging
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import logging_ext
+from simple_ai_trading import logging_ext
 
 
 @pytest.fixture(autouse=True)

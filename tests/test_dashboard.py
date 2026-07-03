@@ -1,6 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-from simple_ai_bitcoin_trading_binance.dashboard import (
+from simple_ai_trading.dashboard import (
     DashboardSnapshot,
     load_artifact_preview,
     render_dashboard,

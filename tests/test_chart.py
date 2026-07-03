@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 
 
-from simple_ai_bitcoin_trading_binance import chart
+from simple_ai_trading import chart
 
 
-_SPARK_RAMP = "▁▂▃▄▅▆▇█"
+_SPARK_RAMP = chart._SPARK_RAMP
 
 
 def test_sparkline_empty_returns_empty():

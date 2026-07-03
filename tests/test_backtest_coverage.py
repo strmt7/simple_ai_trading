@@ -1,12 +1,14 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from types import SimpleNamespace
 
-from simple_ai_bitcoin_trading_binance import backtest as backtest_mod
-from simple_ai_bitcoin_trading_binance.backtest import calibrate_threshold_for_backtest, run_backtest
-from simple_ai_bitcoin_trading_binance.features import ModelRow
-from simple_ai_bitcoin_trading_binance.model import TrainedModel
-from simple_ai_bitcoin_trading_binance.types import StrategyConfig
+import pytest
+
+from simple_ai_trading import backtest as backtest_mod
+from simple_ai_trading.backtest import calibrate_threshold_for_backtest, run_backtest
+from simple_ai_trading.features import ModelRow
+from simple_ai_trading.model import TrainedModel
+from simple_ai_trading.types import StrategyConfig
 
 
 def _flat_row(timestamp: int, close: float, score: float, label: int) -> ModelRow:
@@ -82,8 +84,8 @@ def test_backtest_drawdown_stop_closes_at_trigger_row_not_future_final_price() -
     result = run_backtest(rows, _simple_model(10.0), cfg, starting_cash=1000.0, market_type="spot")
 
     assert result.stopped_by_drawdown is True
-    assert result.ending_cash == 750.0
-    assert result.realized_pnl == -250.0
+    assert result.ending_cash == pytest.approx(748.8590355722405)
+    assert result.realized_pnl == pytest.approx(-251.1409644277595)
 
 
 def test_backtest_skips_entry_when_fee_makes_total_cost_too_large() -> None:
@@ -228,7 +230,7 @@ def test_backtest_can_experience_negative_mark_to_market_equity_and_cap_floor() 
     cfg = StrategyConfig(
         risk_per_trade=0.5,
         max_position_pct=1.0,
-        leverage=125.0,
+        leverage=10.0,
         signal_threshold=0.55,
         take_profit_pct=10.0,
         stop_loss_pct=2.0,
@@ -315,8 +317,8 @@ def test_backtest_records_drawdown_after_same_day_capped_close() -> None:
     result = run_backtest(rows, _simple_model(10.0), cfg, starting_cash=1000.0, market_type="spot")
 
     assert result.closed_trades == 1
-    assert result.realized_pnl == -250.0
-    assert result.max_drawdown == 0.25
+    assert result.realized_pnl == pytest.approx(-251.1409644277595)
+    assert result.max_drawdown == pytest.approx(0.2511409644277595)
 
 
 def test_threshold_calibration_passes_gpu_scoring_options(monkeypatch) -> None:

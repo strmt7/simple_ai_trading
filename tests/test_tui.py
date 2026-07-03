@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 
 from textual.widgets import Button
 
-from simple_ai_bitcoin_trading_binance.tui import (
+from simple_ai_trading.tui import (
     ConfirmScreen,
     FormField,
     FormScreen,
@@ -1175,7 +1175,7 @@ def test_launch_tui_constructs_operator_app(monkeypatch) -> None:
         def run(self):
             return 7
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.OperatorApp", _FakeOperatorApp)
+    monkeypatch.setattr("simple_ai_trading.tui.OperatorApp", _FakeOperatorApp)
     result = launch_tui(title="title", actions=[TUIAction("1", "One", "desc", lambda _ui: 0)], snapshot_provider=lambda: "snap")
 
     assert result == 7

@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1.7
+﻿# syntax=docker/dockerfile:1.7
 # ----------------------------------------------------------------------------
-# Stage 1: builder — installs the package into a throwaway venv.
+# Stage 1: builder â€” installs the package into a throwaway venv.
 # ----------------------------------------------------------------------------
 FROM python:3.12-slim-bookworm AS builder
 
@@ -17,7 +17,7 @@ RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install -q .
 
 # ----------------------------------------------------------------------------
-# Stage 2: runtime — minimal, non-root, read-only friendly.
+# Stage 2: runtime â€” minimal, non-root, read-only friendly.
 # ----------------------------------------------------------------------------
 FROM python:3.12-slim-bookworm AS runtime
 
@@ -37,7 +37,7 @@ WORKDIR /home/trader/work
 
 # Config + data are mounted by the operator (or docker-compose). The package
 # itself ships no runtime state; it persists runtime + strategy JSON under
-# ``~/.config/simple_ai_bitcoin_trading_binance`` and relative data files under
+# ``~/.config/simple_ai_trading`` and relative data files under
 # ``/home/trader/work/data`` inside the container.
 VOLUME ["/home/trader/.config", "/home/trader/work/data"]
 

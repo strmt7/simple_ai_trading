@@ -2,7 +2,7 @@
 
 Last checked: 2026-04-29.
 
-This inventory is for future enrichment of the testnet-first BTCUSDC trader. It
+This inventory is historical input for the current multi-asset testnet-first day-trading app. It
 intentionally separates exchange execution from external signal ingestion. A
 source appearing here is not a trading recommendation and does not mean it
 should be added to live order flow without caching, validation, and tests.
@@ -11,7 +11,7 @@ should be added to live order flow without caching, validation, and tests.
 
 1. Keep Binance execution isolated. External sources may enrich features,
    backtests, reports, and veto/risk flags, but they should not bypass the
-   BTCUSDC-only and testnet-first contracts.
+   multi-asset, high-liquidity, testnet-first contracts.
 2. Prefer no-key or generous official APIs first. Keyed free tiers are allowed
    for offline enrichment, but runtime must keep missing keys non-fatal.
 3. Cache every external source. Recommended minimum TTLs are listed below; do
@@ -50,7 +50,7 @@ they are high-signal, cheap, and fit the current repo shape.
 
 | Source | Auth / limits checked | Relevant endpoints or feeds | Signal value | Suggested use |
 |---|---|---|---|---|
-| Binance Spot REST | No key for market data. Official docs expose `X-MBX-USED-WEIGHT-*` headers and require backoff on 429/418. | `/api/v3/klines`, `/ticker/24hr`, `/ticker/bookTicker`, `/exchangeInfo` | Native BTCUSDC candles, L1 spread, volume, symbol filters. | Already core. Add spread/volume features and persist request weight. |
+| Binance Spot REST | No key for market data. Official docs expose `X-MBX-USED-WEIGHT-*` headers and require backoff on 429/418. | `/api/v3/klines`, `/ticker/24hr`, `/ticker/bookTicker`, `/exchangeInfo` | Native symbol candles, L1 spread, volume, symbol filters. | Already core. Add spread/volume features and persist request weight. |
 | Binance Spot WebSocket | No key for market streams. 5 incoming messages/sec, 1024 streams/connection, 24h reconnect. | `btcusdc@kline_15m`, `btcusdc@trade`, `btcusdc@bookTicker` | Lower latency closed-kline and trade-flow features. | Later streaming module; still drop unclosed klines before feature rows. |
 | Binance USD-M Futures | No key for many public endpoints. | `openInterest`, `premiumIndex`, funding, mark price | Futures basis, funding, OI trend. | Add as external confirmation, not execution expansion. |
 | Binance announcements | Public web JSON, undocumented. | CMS article list by catalog | Listing, maintenance, BTC-related event risk. | Best-effort veto only; cache and tolerate breakage. |

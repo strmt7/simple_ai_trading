@@ -1,4 +1,4 @@
-"""Comprehensive unit tests for the multi-objective training suite."""
+﻿"""Comprehensive unit tests for the multi-objective training suite."""
 
 from __future__ import annotations
 
@@ -9,18 +9,18 @@ from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import training_suite
-from simple_ai_bitcoin_trading_binance.advanced_model import default_config_for
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.backtest import BacktestResult
-from simple_ai_bitcoin_trading_binance.features import ModelRow
-from simple_ai_bitcoin_trading_binance.model import TrainedModel
-from simple_ai_bitcoin_trading_binance.objective import (
+from simple_ai_trading import training_suite
+from simple_ai_trading.advanced_model import default_config_for
+from simple_ai_trading.api import Candle
+from simple_ai_trading.backtest import BacktestResult
+from simple_ai_trading.features import ModelRow
+from simple_ai_trading.model import TrainedModel
+from simple_ai_trading.objective import (
     ObjectiveSpec,
     ObjectiveTraining,
     get_objective,
 )
-from simple_ai_bitcoin_trading_binance.training_suite import (
+from simple_ai_trading.training_suite import (
     CandidateParams,
     ObjectiveOutcome,
     SuiteReport,
@@ -42,7 +42,7 @@ from simple_ai_bitcoin_trading_binance.training_suite import (
     run_training_suite,
     train_for_objective,
 )
-from simple_ai_bitcoin_trading_binance.types import StrategyConfig
+from simple_ai_trading.types import StrategyConfig
 
 
 # ----- helpers --------------------------------------------------------------
