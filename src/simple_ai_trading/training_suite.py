@@ -23,7 +23,7 @@ import copy
 import math
 import os
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from itertools import product
 from pathlib import Path
 from typing import Any, Callable, Sequence
@@ -88,6 +88,8 @@ class CandidateParams:
     take_profit_pct: float
     risk_per_trade: float
     confidence_beta: float = 0.85
+    label_threshold_multiplier: float = 1.0
+    label_lookahead_multiplier: float = 1.0
     seed: int = 7
 
     def asdict(self) -> dict[str, float | int]:
@@ -198,12 +200,41 @@ def _attach_strategy_overrides(model: TrainedModel, strategy: StrategyConfig) ->
     return model
 
 
+def _feature_config_for_candidate(
+    base: AdvancedFeatureConfig,
+    candidate: CandidateParams,
+) -> AdvancedFeatureConfig:
+    """Apply candidate label target/horizon multipliers to a feature config."""
+
+    threshold_multiplier = max(0.10, min(5.0, float(candidate.label_threshold_multiplier)))
+    lookahead_multiplier = max(0.25, min(4.0, float(candidate.label_lookahead_multiplier)))
+    return replace(
+        base,
+        label_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
+        label_lookahead=max(1, int(round(float(base.label_lookahead) * lookahead_multiplier))),
+    )
+
+
+def _rows_for_candidate(
+    candles: Sequence[Candle] | None,
+    base_rows: Sequence[ModelRow],
+    base_feature_cfg: AdvancedFeatureConfig,
+    candidate: CandidateParams,
+) -> tuple[list[ModelRow], AdvancedFeatureConfig]:
+    """Return candidate-specific rows while preserving the legacy row payload path."""
+
+    feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
+    if candles is None:
+        return list(base_rows), feature_cfg
+    return make_advanced_rows(candles, feature_cfg), feature_cfg
+
+
 def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     """Curated first-pass grid without exploding runtime.
 
     Three epoch budgets, two learning rates, two L2 penalties, four thresholds,
     one stop/take profile, two risk levels, three confidence shrinkage levels,
-    and one seed.
+    three label horizon/target profiles, and one seed.
     The suite then searches locally around the winner and checks seed ensembles
     for the best candidates, keeping GPU runs finishable while still deduping
     arithmetic collisions.
@@ -225,14 +256,20 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     stop_take_options = ((training.stop_loss_pct, training.take_profit_pct),)
     risk_options = (training.risk_per_trade * 0.50, training.risk_per_trade)
     confidence_options = (0.70, 0.85, 1.0)
+    label_profile_options = (
+        (1.0, 1.0),
+        (0.60, 0.50),
+        (1.40, 1.75),
+    )
     seed_options = (7,)
 
     candidates: list[CandidateParams] = []
-    for epochs, lr, l2, thr, stop_take, risk, confidence, seed in product(
+    for epochs, lr, l2, thr, stop_take, risk, confidence, label_profile, seed in product(
         epoch_options, lr_options, l2_options, threshold_options,
-        stop_take_options, risk_options, confidence_options, seed_options,
+        stop_take_options, risk_options, confidence_options, label_profile_options, seed_options,
     ):
         stop, take = stop_take
+        label_threshold_multiplier, label_lookahead_multiplier = label_profile
         candidates.append(CandidateParams(
             epochs=int(epochs),
             learning_rate=float(lr),
@@ -242,6 +279,8 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
             take_profit_pct=max(0.001, float(take)),
             risk_per_trade=max(0.0005, min(0.05, float(risk))),
             confidence_beta=max(0.0, min(1.0, float(confidence))),
+            label_threshold_multiplier=max(0.10, min(5.0, float(label_threshold_multiplier))),
+            label_lookahead_multiplier=max(0.25, min(4.0, float(label_lookahead_multiplier))),
             seed=int(seed),
         ))
     # Deduplicate collisions produced by the arithmetic above.
@@ -471,8 +510,17 @@ def _purged_walk_forward_splits(
     return folds
 
 
-def _gate_result_payload(result: BacktestResult) -> dict[str, object]:
-    return {
+def _rejection_reasons(objective: ObjectiveSpec, result: BacktestResult) -> list[str]:
+    reasons = objective.rejection_reasons(result) if hasattr(objective, "rejection_reasons") else []
+    if result.realized_pnl <= 0.0 and "realized_pnl<=0.0" not in reasons:
+        reasons.append("realized_pnl<=0.0")
+    if result.stopped_by_drawdown and "stopped_by_drawdown" not in reasons:
+        reasons.append("stopped_by_drawdown")
+    return reasons
+
+
+def _gate_result_payload(result: BacktestResult, objective: ObjectiveSpec | None = None) -> dict[str, object]:
+    payload: dict[str, object] = {
         "realized_pnl": float(result.realized_pnl),
         "max_drawdown": float(result.max_drawdown),
         "closed_trades": int(result.closed_trades),
@@ -481,6 +529,12 @@ def _gate_result_payload(result: BacktestResult) -> dict[str, object]:
         "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
         "stopped_by_drawdown": bool(result.stopped_by_drawdown),
     }
+    if objective is not None:
+        reasons = _rejection_reasons(objective, result)
+        payload["accepted"] = not reasons
+        payload["reject_reasons"] = reasons
+        payload["reject_reason"] = "; ".join(reasons) if reasons else None
+    return payload
 
 
 def _finite_number_or_none(value: object) -> float | None:
@@ -530,11 +584,23 @@ def _candidate_rank_key(entry: dict[str, Any]) -> tuple[int, float]:
 
 def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
     model = entry.get("model")
+    feature_cfg = entry.get("feature_cfg")
     return {
         "score": _finite_number_or_none(entry.get("score")),
         "model_family": str(getattr(model, "model_family", "")) if model is not None else "",
         "probability_inverted": bool(getattr(model, "probability_inverted", False)),
         "candidate": entry["candidate"].asdict() if isinstance(entry.get("candidate"), CandidateParams) else {},
+        "feature_signature": str(entry.get("feature_signature") or ""),
+        "label_threshold": (
+            float(feature_cfg.label_threshold)
+            if isinstance(feature_cfg, AdvancedFeatureConfig)
+            else None
+        ),
+        "label_lookahead": (
+            int(feature_cfg.label_lookahead)
+            if isinstance(feature_cfg, AdvancedFeatureConfig)
+            else None
+        ),
         "selection_score": _finite_number_or_none(entry.get("selection_score")),
         "validation_score": _finite_number_or_none(entry.get("validation_score")),
         "full_sample_score": _finite_number_or_none(entry.get("full_sample_score")),
@@ -659,7 +725,7 @@ def _purged_walk_forward_gate(
                 **fold_payload,
                 "accepted": bool(accepted),
                 "score": float(score),
-                "result": _gate_result_payload(result),
+                "result": _gate_result_payload(result, objective),
                 "threshold": model.decision_threshold,
                 "threshold_source": model.threshold_source,
             })
@@ -702,6 +768,8 @@ def _candidate_variant(candidate: CandidateParams, **updates: float) -> Candidat
         take_profit_pct=max(0.001, float(payload["take_profit_pct"])),
         risk_per_trade=max(0.0005, min(0.05, float(payload["risk_per_trade"]))),
         confidence_beta=max(0.0, min(1.0, float(payload["confidence_beta"]))),
+        label_threshold_multiplier=max(0.10, min(5.0, float(payload["label_threshold_multiplier"]))),
+        label_lookahead_multiplier=max(0.25, min(4.0, float(payload["label_lookahead_multiplier"]))),
         seed=int(payload["seed"]),
     )
 
@@ -726,6 +794,10 @@ def _local_refinement_candidates(candidate: CandidateParams) -> list[CandidatePa
         _candidate_variant(candidate, risk_per_trade=candidate.risk_per_trade * 1.25),
         _candidate_variant(candidate, stop_loss_pct=candidate.stop_loss_pct * 0.85),
         _candidate_variant(candidate, take_profit_pct=candidate.take_profit_pct * 1.10),
+        _candidate_variant(candidate, label_threshold_multiplier=candidate.label_threshold_multiplier * 0.80),
+        _candidate_variant(candidate, label_threshold_multiplier=candidate.label_threshold_multiplier * 1.20),
+        _candidate_variant(candidate, label_lookahead_multiplier=candidate.label_lookahead_multiplier * 0.75),
+        _candidate_variant(candidate, label_lookahead_multiplier=candidate.label_lookahead_multiplier * 1.25),
     ]
 
 
@@ -765,9 +837,19 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     """
 
     candidate: CandidateParams = payload["candidate"]
-    rows_train: list[ModelRow] = payload["rows_train"]
-    rows_eval: list[ModelRow] = payload["rows_eval"]
-    feature_cfg: AdvancedFeatureConfig = payload["feature_cfg"]
+    base_rows_train: list[ModelRow] = payload["rows_train"]
+    base_rows_eval: list[ModelRow] = payload["rows_eval"]
+    base_feature_cfg: AdvancedFeatureConfig = payload["feature_cfg"]
+    candle_payload: Sequence[Candle] | None = payload.get("candles")
+    if candle_payload is not None:
+        all_rows, feature_cfg = _rows_for_candidate(candle_payload, [], base_feature_cfg, candidate)
+        if not all_rows:
+            raise ValueError("Candidate label profile produced zero advanced training rows")
+        rows_train, rows_eval = _walk_forward_split(all_rows)
+    else:
+        rows_train = list(base_rows_train)
+        rows_eval = list(base_rows_eval)
+        feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
     base_strategy: StrategyConfig = payload["base_strategy"]
     objective_name: str = payload["objective"]
     market_type: str = payload["market_type"]
@@ -1032,6 +1114,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         "candidate": candidate,
         "strategy": strategy,
         "model": model,
+        "feature_cfg": feature_cfg,
+        "feature_dim": advanced_feature_dimension(feature_cfg),
+        "feature_signature": advanced_feature_signature(feature_cfg),
         "row_count": report.row_count,
         "positive_rate": report.positive_rate,
         "threshold": model.decision_threshold,
@@ -1042,12 +1127,12 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         "selection_score": float(selection_score),
         "validation_score": float(validation_score),
         "full_sample_score": float(full_sample_score),
-        "selection_result": _gate_result_payload(selected_selection_result),
-        "validation_result": _gate_result_payload(selected_holdout_result),
-        "full_sample_result": _gate_result_payload(selected_full_result),
+        "selection_result": _gate_result_payload(selected_selection_result, objective),
+        "validation_result": _gate_result_payload(selected_holdout_result, objective),
+        "full_sample_result": _gate_result_payload(selected_full_result, objective),
         "inversion_score": float(inverted_score),
-        "inversion_validation_result": _gate_result_payload(inverted_holdout_result),
-        "inversion_full_sample_result": _gate_result_payload(inverted_full_result),
+        "inversion_validation_result": _gate_result_payload(inverted_holdout_result, objective),
+        "inversion_full_sample_result": _gate_result_payload(inverted_full_result, objective),
         "ensemble_refined": bool(ensemble_seeds),
     }
 
@@ -1090,8 +1175,9 @@ def train_for_objective(
     the candidates run in parallel via a ``ProcessPoolExecutor``.
     """
 
+    candle_list = list(candles)
     feature_cfg = default_config_for(objective.name, base_strategy.enabled_features)
-    rows = make_advanced_rows(candles, feature_cfg)
+    rows = make_advanced_rows(candle_list, feature_cfg)
     if not rows:
         raise ValueError("Insufficient candles to build advanced training rows")
     training = _default_training(objective)
@@ -1104,6 +1190,7 @@ def train_for_objective(
     if runner is not None:
         results: list[dict[str, Any]] = []
         for candidate in candidates:
+            candidate_feature_cfg = _feature_config_for_candidate(feature_cfg, candidate)
             score, strategy, model, row_count, positive_rate = runner(
                 objective, candidate, rows, base_strategy, feature_cfg,
                 market_type, starting_cash,
@@ -1114,6 +1201,9 @@ def train_for_objective(
                 "candidate": candidate,
                 "strategy": strategy,
                 "model": model,
+                "feature_cfg": candidate_feature_cfg,
+                "feature_dim": advanced_feature_dimension(candidate_feature_cfg),
+                "feature_signature": advanced_feature_signature(candidate_feature_cfg),
                 "row_count": row_count,
                 "positive_rate": positive_rate,
                 "threshold": getattr(model, "decision_threshold", None),
@@ -1131,6 +1221,7 @@ def train_for_objective(
                 "candidate": candidate,
                 "rows_train": train_rows,
                 "rows_eval": eval_rows,
+                "candles": candle_list,
                 "feature_cfg": feature_cfg,
                 "base_strategy": base_strategy,
                 "objective": objective.name,
@@ -1165,6 +1256,7 @@ def train_for_objective(
                 "candidate": local_candidate,
                 "rows_train": train_rows,
                 "rows_eval": eval_rows,
+                "candles": candle_list,
                 "feature_cfg": feature_cfg,
                 "base_strategy": base_strategy,
                 "objective": objective.name,
@@ -1185,6 +1277,7 @@ def train_for_objective(
                 "candidate": base_result["candidate"],
                 "rows_train": train_rows,
                 "rows_eval": eval_rows,
+                "candles": candle_list,
                 "feature_cfg": feature_cfg,
                 "base_strategy": base_strategy,
                 "objective": objective.name,
@@ -1207,11 +1300,30 @@ def train_for_objective(
         for candidate_result in ranked_pool:
             if not math.isfinite(float(candidate_result["score"])):
                 continue
+            gate_rows, gate_feature_cfg = _rows_for_candidate(
+                candle_list,
+                rows,
+                feature_cfg,
+                candidate_result["candidate"],
+            )
+            if not gate_rows:
+                candidate_result["walk_forward_gate"] = {
+                    "passed": False,
+                    "reason": "candidate_label_profile_produced_no_rows",
+                    "fold_count": 0,
+                    "accepted_folds": 0,
+                    "worst_score": None,
+                    "worst_realized_pnl": None,
+                    "worst_max_drawdown": None,
+                    "folds": [],
+                }
+                last_gate = candidate_result["walk_forward_gate"]
+                continue
             gate = _purged_walk_forward_gate(
                 candidate_result["candidate"],
-                rows,
+                gate_rows,
                 base_strategy,
-                feature_cfg,
+                gate_feature_cfg,
                 objective,
                 training,
                 market_type=market_type,
@@ -1238,7 +1350,14 @@ def train_for_objective(
             best = gated_best
 
         best_strategy = best["strategy"]
-        model_train_rows, selection_rows = _walk_forward_split(train_rows)
+        best_rows, best_feature_cfg = _rows_for_candidate(
+            candle_list,
+            rows,
+            feature_cfg,
+            best["candidate"],
+        )
+        best_train_rows, best_eval_rows = _walk_forward_split(best_rows)
+        model_train_rows, selection_rows = _walk_forward_split(best_train_rows)
         can_optimize_hybrid = (
             math.isfinite(float(best["score"]))
             and bool(model_train_rows)
@@ -1263,7 +1382,7 @@ def train_for_objective(
             hybrid_report = None
         if hybrid_report is not None and hybrid_report.accepted:
             holdout_result = run_backtest(
-                eval_rows,
+                best_eval_rows,
                 hybrid_report.model,
                 best_strategy,
                 starting_cash=starting_cash,
@@ -1273,7 +1392,7 @@ def train_for_objective(
             )
             holdout_score = objective.score(holdout_result) if objective.accepts(holdout_result) else float("-inf")
             full_result = run_backtest(
-                rows,
+                best_rows,
                 hybrid_report.model,
                 best_strategy,
                 starting_cash=starting_cash,
@@ -1296,6 +1415,9 @@ def train_for_objective(
                     "hybrid_best_score": hybrid_report.best_score,
                     "hybrid_evaluated_profiles": hybrid_report.evaluated_profiles,
                     "walk_forward_gate": best.get("walk_forward_gate"),
+                    "feature_cfg": best_feature_cfg,
+                    "feature_dim": advanced_feature_dimension(best_feature_cfg),
+                    "feature_signature": advanced_feature_signature(best_feature_cfg),
                 }
 
     rejected = sum(1 for entry in results if entry["score"] == float("-inf"))
@@ -1318,8 +1440,8 @@ def train_for_objective(
     return ObjectiveOutcome(
         objective=objective.name,
         model_path=model_path,
-        feature_dim=advanced_feature_dimension(feature_cfg),
-        feature_signature=advanced_feature_signature(feature_cfg),
+        feature_dim=int(best.get("feature_dim") or advanced_feature_dimension(feature_cfg)),
+        feature_signature=str(best.get("feature_signature") or advanced_feature_signature(feature_cfg)),
         best_score=float(best["score"]),
         best_params=best["candidate"].asdict(),
         explored_candidates=len(candidates),

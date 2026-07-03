@@ -49,14 +49,18 @@ The optimizer evaluates risk-level-specific weight profiles:
 - `aggressive`: allows stronger expert contribution, but still has to pass
   backtest gates and drawdown limits.
 
-The training-suite grid deliberately includes a lower threshold probe for every
-risk level. This prevents high-confidence-only candidates from being rejected
-only because they never trade, while the objective gates still require positive
-P&L, sufficient closed trades, buy-and-hold edge, and drawdown discipline.
+The training-suite grid deliberately includes lower threshold probes and three
+label target/horizon profiles for every risk level. This prevents
+high-confidence-only or single-horizon candidates from being rejected only
+because they never trade, while the objective gates still require positive P&L,
+sufficient closed trades, buy-and-hold edge, and drawdown discipline. Rejected
+model-lab candidates now include per-window `reject_reason` diagnostics so
+operators can distinguish missing trade count, negative P&L, buy-and-hold edge
+failure, drawdown failure, and stopped-by-drawdown failures.
 
 Accepted hybrid candidates must improve or preserve the objective score and pass
 the profitability, drawdown, and minimum-trade gates in
-`TrainingObjective.accepts`. If none pass, the original base model is kept.
+`ObjectiveSpec.accepts`. If none pass, the original base model is kept.
 
 ## Cross-Symbol Model Lab
 

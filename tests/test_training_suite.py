@@ -100,7 +100,7 @@ def test_candidate_params_asdict_keys() -> None:
     expected_keys = {
         "epochs", "learning_rate", "l2_penalty",
         "signal_threshold", "stop_loss_pct", "take_profit_pct", "risk_per_trade",
-        "confidence_beta", "seed",
+        "confidence_beta", "label_threshold_multiplier", "label_lookahead_multiplier", "seed",
     }
     assert set(d.keys()) == expected_keys
 
@@ -111,7 +111,7 @@ def test_candidate_params_asdict_keys() -> None:
 def test_candidate_grid_returns_unique_deduped_list() -> None:
     training = get_objective("default").training
     grid = _candidate_grid(training)
-    assert len(grid) == 288
+    assert len(grid) == 864
     # dedupe check: no two entries share identical tuple of values
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
@@ -121,6 +121,8 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     l2_set = {c.l2_penalty for c in grid}
     threshold_set = {c.signal_threshold for c in grid}
     confidence_set = {c.confidence_beta for c in grid}
+    label_threshold_set = {c.label_threshold_multiplier for c in grid}
+    label_lookahead_set = {c.label_lookahead_multiplier for c in grid}
     seed_set = {c.seed for c in grid}
     assert len(epoch_set) >= 2
     assert len(lr_set) >= 2
@@ -128,6 +130,8 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     assert len(threshold_set) >= 2
     assert min(threshold_set) == pytest.approx(training.signal_threshold - 0.08)
     assert confidence_set == {0.70, 0.85, 1.0}
+    assert label_threshold_set == {0.60, 1.0, 1.40}
+    assert label_lookahead_set == {0.50, 1.0, 1.75}
     assert seed_set == {7}
 
 
@@ -155,7 +159,7 @@ def test_candidate_grid_dedupes_colliding_entries() -> None:
     # All candidates distinct after dedup
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
-    assert len(grid) == 144
+    assert len(grid) == 432
 
 
 # ----- calibration helpers --------------------------------------------------
@@ -596,6 +600,18 @@ def _make_result(**overrides) -> BacktestResult:
     return BacktestResult(**defaults)
 
 
+def test_gate_result_payload_includes_objective_reject_reasons() -> None:
+    payload = training_suite._gate_result_payload(
+        _make_result(realized_pnl=25.0, edge_vs_buy_hold=-10.0, closed_trades=1),
+        get_objective("regular"),
+    )
+
+    assert payload["accepted"] is False
+    assert "closed_trades<3" in payload["reject_reasons"]
+    assert "edge_vs_buy_hold<0.0" in payload["reject_reasons"]
+    assert "closed_trades<3" in payload["reject_reason"]
+
+
 def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
     model = _fake_trained_model(2)
     model.model_family = "advanced:inverted"
@@ -608,13 +624,18 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
         stop_loss_pct=0.02,
         take_profit_pct=0.03,
         risk_per_trade=0.01,
+        label_threshold_multiplier=0.60,
+        label_lookahead_multiplier=0.50,
         seed=11,
     )
+    feature_cfg = training_suite._feature_config_for_candidate(default_config_for("default", ()), candidate)
 
     diagnostics = training_suite._candidate_diagnostics({
         "score": float("-inf"),
         "model": model,
         "candidate": candidate,
+        "feature_cfg": feature_cfg,
+        "feature_signature": "feature-signature-test",
         "selection_score": 1.0,
         "validation_score": float("-inf"),
         "full_sample_score": float("-inf"),
@@ -635,6 +656,9 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
     assert diagnostics["score"] is None
     assert diagnostics["model_family"] == "advanced:inverted"
     assert diagnostics["probability_inverted"] is True
+    assert diagnostics["feature_signature"] == "feature-signature-test"
+    assert diagnostics["label_threshold"] == pytest.approx(feature_cfg.label_threshold)
+    assert diagnostics["label_lookahead"] == feature_cfg.label_lookahead
     assert diagnostics["inversion_score"] is None
     assert diagnostics["inversion_validation_result"] == {"realized_pnl": -3.0}
     assert diagnostics["inversion_full_sample_result"] == {"realized_pnl": -4.0}
@@ -998,7 +1022,7 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
     def runner(_obj, candidate, rows, base, feat_cfg, market, cash):
         return float("-inf"), base, _fake_trained_model(feat_cfg.polynomial_top_features), 42, 0.5
 
-    with pytest.raises(TrainingSuiteRejected, match="All regular training candidates were rejected") as exc:
+    with pytest.raises(TrainingSuiteRejected, match="All conservative training candidates were rejected") as exc:
         train_for_objective(
             candles,
             strategy,
@@ -1008,7 +1032,7 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
             starting_cash=1000.0,
             runner=runner,
         )
-    assert exc.value.diagnostics["objective"] == "regular"
+    assert exc.value.diagnostics["objective"] == "conservative"
     assert exc.value.diagnostics["row_count"] > 0
     assert exc.value.diagnostics["top_candidates"]
     assert exc.value.diagnostics["top_candidates"][0]["score"] is None
@@ -1067,7 +1091,7 @@ def test_train_for_objective_rejects_failed_walk_forward_gate(
         },
     )
 
-    with pytest.raises(ValueError, match="All regular training candidates were rejected"):
+    with pytest.raises(ValueError, match="All conservative training candidates were rejected"):
         train_for_objective(
             _synthetic_candles(n=420),
             StrategyConfig(),
@@ -1406,10 +1430,10 @@ def test_train_for_objective_promotes_better_local_refinement(
         max_workers=1,
     )
 
-    assert len(_local_refinement_candidates(candidate)) == 12
+    assert len(_local_refinement_candidates(candidate)) == 16
     assert outcome.best_score == 2.0
     assert outcome.best_params["risk_per_trade"] == pytest.approx(0.005)
-    assert outcome.local_refinement_candidates == 12
+    assert outcome.local_refinement_candidates == 16
     assert outcome.ensemble_refined is False
 
 
