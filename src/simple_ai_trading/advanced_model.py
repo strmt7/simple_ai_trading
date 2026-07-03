@@ -55,6 +55,8 @@ class AdvancedFeatureConfig:
     long_window: int = 40
     label_threshold: float = 0.001
     label_lookahead: int = 4
+    label_mode: str = "forward_return"
+    label_stop_threshold: float | None = None
 
 
 def _tanh(x: float) -> float:
@@ -102,6 +104,49 @@ def _volatility(values: Sequence[float], window: int) -> float:
 
 def _safe(x: float) -> float:
     return 0.0 if not math.isfinite(x) else float(x)
+
+
+def _normalized_label_mode(value: str) -> str:
+    mode = str(value or "forward_return").strip().lower().replace("-", "_")
+    if mode in {"triple", "triple_barrier", "barrier"}:
+        return "triple_barrier"
+    return "forward_return"
+
+
+def _triple_barrier_label(
+    candles: Sequence[Candle],
+    index: int,
+    *,
+    horizon: int,
+    take_profit_pct: float,
+    stop_loss_pct: float,
+) -> int:
+    """Return 1 only when take-profit is hit before stop-loss inside horizon."""
+
+    if index < 0 or index >= len(candles):
+        return 0
+    entry = float(candles[index].close)
+    if entry <= 0.0 or not math.isfinite(entry):
+        return 0
+    take = max(0.0, float(take_profit_pct))
+    stop = max(0.0, float(stop_loss_pct))
+    if take <= 0.0:
+        return 0
+    end = min(len(candles) - 1, index + max(1, int(horizon)))
+    for next_index in range(index + 1, end + 1):
+        candle = candles[next_index]
+        high_return = _safe((float(candle.high) - entry) / entry)
+        low_return = _safe((float(candle.low) - entry) / entry)
+        hit_stop = stop > 0.0 and low_return <= -stop
+        hit_take = high_return >= take
+        if hit_stop and hit_take:
+            return 0
+        if hit_stop:
+            return 0
+        if hit_take:
+            return 1
+    final_return = _safe((float(candles[end].close) - entry) / entry)
+    return 1 if final_return >= take else 0
 
 
 def _prefix_sum(values: Sequence[float]) -> list[float]:
@@ -304,11 +349,26 @@ def make_advanced_rows(
     valid_candles = _filter_valid(candles)
     index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
     window_cache = _build_window_cache([candle.close for candle in valid_candles])
+    label_mode = _normalized_label_mode(cfg.label_mode)
+    stop_threshold = (
+        float(cfg.label_stop_threshold)
+        if cfg.label_stop_threshold is not None
+        else float(cfg.label_threshold)
+    )
     expanded: list[ModelRow] = []
     for row in base_rows:
         idx = index_by_time.get(row.timestamp)
         if idx is None:
             continue
+        label = row.label
+        if label_mode == "triple_barrier":
+            label = _triple_barrier_label(
+                valid_candles,
+                idx,
+                horizon=label_lookahead,
+                take_profit_pct=cfg.label_threshold,
+                stop_loss_pct=stop_threshold,
+            )
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
@@ -318,7 +378,7 @@ def make_advanced_rows(
                 timestamp=row.timestamp,
                 close=row.close,
                 features=tuple(_safe(value) for value in base + extras + transforms + pairs),
-                label=row.label,
+                label=label,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
             )
         )
@@ -385,6 +445,8 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"extra_lookback_windows={','.join(str(w) for w in cfg.extra_lookback_windows)}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
         f"label_lookahead={int(cfg.label_lookahead)}",
+        f"label_mode={_normalized_label_mode(cfg.label_mode)}",
+        f"label_stop_threshold={float(cfg.label_stop_threshold if cfg.label_stop_threshold is not None else cfg.label_threshold):.10g}",
         base,
     ])
 
