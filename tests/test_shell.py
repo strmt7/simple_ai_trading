@@ -228,8 +228,8 @@ def test_objectives_listing(tmp_path):
     shell, recorder, _ctrl, _pos = _make_shell(tmp_path)
     assert shell.dispatch("/objectives") == 0
     assert any("conservative" in line for line in recorder.lines)
-    assert any("default" in line for line in recorder.lines)
-    assert any("risky" in line for line in recorder.lines)
+    assert any("regular" in line for line in recorder.lines)
+    assert any("aggressive" in line for line in recorder.lines)
 
 
 def test_positions_empty_and_populated(tmp_path):
@@ -291,7 +291,7 @@ def test_auto_all_actions(tmp_path):
 
     recorder.lines.clear()
     assert shell.dispatch("/auto start --objective risky") == 0
-    assert any("risky" in line for line in recorder.lines)
+    assert any("aggressive" in line for line in recorder.lines)
 
     recorder.lines.clear()
     assert shell.dispatch("/auto start --objective") == 2

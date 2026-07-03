@@ -1,0 +1,56 @@
+name: beta-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Beta SemVer without v prefix; leave empty to use pyproject version
+        required: false
+        default: ""
+        type: string
+      replace_existing:
+        description: Exceptional beta replacement only; requires exact acknowledgement
+        required: false
+        default: false
+        type: boolean
+      replacement_acknowledgement:
+        description: Required only when replace_existing=true; enter replace <version>
+        required: false
+        default: ""
+        type: string
+      publish_release:
+        description: Publish the draft prerelease after artifacts are attached
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta-release-${{ inputs.release_version || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  hosted-windows-beta:
+    name: Hosted Windows beta release validation
+    runs-on: windows-2025
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run beta release pipeline
+        uses: ./.github/actions/windows-beta-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          release_version: ${{ inputs.release_version }}
+          replace_existing: ${{ inputs.replace_existing }}
+          replacement_acknowledgement: ${{ inputs.replacement_acknowledgement }}
+          publish_release: ${{ inputs.publish_release }}

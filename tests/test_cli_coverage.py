@@ -705,7 +705,7 @@ def test_readiness_report_accepts_train_suite_advanced_model(tmp_path, monkeypat
     ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
 
     assert ok is True
-    assert any("[ok] model artifact" in line and "kind=advanced:default" in line for line in lines)
+    assert any("[ok] model artifact" in line and "kind=advanced:regular" in line for line in lines)
     assert any("[ok] model strategy overlay" in line and "risk=0.0050" in line for line in lines)
     assert any("[ok] feature drift" in line for line in lines)
 

@@ -1,13 +1,13 @@
 """Objective functions for ranking backtest / walk-forward results.
 
-Three presets ship out of the box — ``conservative``, ``default``, ``risky`` —
+Three presets ship out of the box: ``conservative``, ``regular``, and ``aggressive``.
 each expressing a different risk-adjusted view of a candidate strategy.  They
 are pure functions of a ``BacktestResult`` so they can be reused from the CLI,
 the training suite, and the autonomous loop's sanity gates without import loops.
 
 The scorers all return values in roughly the same range so the training suite
 can compare across them when the user wants to see "how would the conservative
-pick score under the risky lens".
+pick score under the aggressive lens".
 """
 
 from __future__ import annotations
@@ -59,8 +59,9 @@ class ObjectiveTraining:
 
     These presets describe the intent of each objective — for example, the
     conservative profile trains on fewer epochs with stronger L2 regularization
-    because it preferences model stability over ultimate score, while the risky
-    profile pushes more epochs and a softer penalty to chase marginal gains.
+    because it preferences model stability over ultimate score, while the
+    aggressive profile pushes more epochs and a softer penalty to chase marginal
+    gains.
     """
 
     epochs: int
@@ -175,10 +176,10 @@ CONSERVATIVE = ObjectiveSpec(
     ),
 )
 
-DEFAULT = ObjectiveSpec(
-    name="default",
-    label="Default",
-    summary="Balanced risk-adjusted return — the middle preset for most operators.",
+REGULAR = ObjectiveSpec(
+    name="regular",
+    label="Regular",
+    summary="Balanced risk-adjusted return - the middle preset for most operators.",
     long_description=(
         "Balanced training budget and strategy defaults. Targets a middle-of-the-road "
         "Sharpe-like profile on walk-forward evaluation."
@@ -209,14 +210,14 @@ DEFAULT = ObjectiveSpec(
     ),
 )
 
-RISKY = ObjectiveSpec(
-    name="risky",
-    label="Risky",
+AGGRESSIVE = ObjectiveSpec(
+    name="aggressive",
+    label="Aggressive",
     summary="Seek higher returns with strict capital-preservation gates.",
     long_description=(
         "Uses a longer training budget with a softer L2 and a lower signal threshold so "
         "the model takes more shots. Strategy defaults remain capped so this preset is "
-        "aggressive relative to Default without allowing all-in exposure. Keep this preset "
+        "aggressive relative to Regular without allowing all-in exposure. Keep this preset "
         "on testnet until its live behavior is understood."
     ),
     scorer=_risky_scorer,
@@ -245,14 +246,19 @@ RISKY = ObjectiveSpec(
     ),
 )
 
+DEFAULT = REGULAR
+RISKY = AGGRESSIVE
+
 
 _REGISTRY: dict[str, ObjectiveSpec] = {
     CONSERVATIVE.name: CONSERVATIVE,
-    DEFAULT.name: DEFAULT,
-    RISKY.name: RISKY,
+    REGULAR.name: REGULAR,
+    AGGRESSIVE.name: AGGRESSIVE,
 }
 _ALIASES: dict[str, str] = {
-    "balanced": DEFAULT.name,
+    "balanced": REGULAR.name,
+    "default": REGULAR.name,
+    "risky": AGGRESSIVE.name,
 }
 
 

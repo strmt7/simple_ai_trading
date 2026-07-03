@@ -67,6 +67,12 @@ The universe gate does not use a static allowlist. It measures exchange status, 
 
 ## Windows App
 
+Build the native Win32 desktop app:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
+```
+
 Launch the desktop operator app:
 
 ```powershell
@@ -79,7 +85,7 @@ or:
 .\run-gui.cmd
 ```
 
-The Windows app builds its workflow list from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command is not visible to the Windows app.
+The Windows app is a native C++20 Win32 operator console inspired by the SuperZip app structure: PowerShell/CMake build, double-buffered GDI rendering, DWM dark window chrome, and generated workflow metadata. It builds its workflow list from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command is not visible to the Windows app.
 
 Startup behavior:
 
@@ -97,9 +103,12 @@ simple-ai-trading backtest --compute-backend directml
 simple-ai-trading backtest-chart --output data/backtest_performance.svg
 simple-ai-trading risk --paper
 simple-ai-trading universe
+simple-ai-trading model-lab --objective conservative --objective regular --objective aggressive --max-symbols 5
 ```
 
 `backtest-chart` writes an SVG performance chart for the day-trading simulation. The same command appears in the Windows app.
+
+`model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, and rejects any model outcome that fails profitability, drawdown, or trade-count gates. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
 ## Autonomous Control
 
@@ -155,6 +164,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 
 ```powershell
 .\.venv311\Scripts\python.exe -m pytest -q
+powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
 ```
 
 Focused checks used during this revamp:
@@ -162,3 +172,9 @@ Focused checks used during this revamp:
 ```powershell
 .\.venv311\Scripts\python.exe -m pytest -q tests/test_compute.py tests/test_ai_runtime_and_parity.py tests/test_autonomous.py tests/test_market_universe.py tests/test_backtest.py tests/test_backtest_coverage.py
 ```
+
+## Release
+
+The beta release tag is `v0.1.0-beta.1`. Python packaging uses the PEP 440-compatible version `0.1.0b1`.
+
+The manual GitHub Actions workflow `beta-release` builds the native Windows app, runs tests and coverage, packages a portable beta ZIP, attaches checksums, and publishes a GitHub prerelease. See [docs/release.md](docs/release.md).

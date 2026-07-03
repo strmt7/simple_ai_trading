@@ -854,7 +854,7 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
     def runner(_obj, candidate, rows, base, feat_cfg, market, cash):
         return float("-inf"), base, _fake_trained_model(feat_cfg.polynomial_top_features), 42, 0.5
 
-    with pytest.raises(ValueError, match="All default training candidates were rejected"):
+    with pytest.raises(ValueError, match="All regular training candidates were rejected"):
         train_for_objective(
             candles,
             strategy,
@@ -1247,12 +1247,12 @@ def test_run_training_suite_with_explicit_objectives(
         output_dir=tmp_path,
     )
     assert isinstance(report, SuiteReport)
-    assert {o.objective for o in report.outcomes} == {"default", "conservative"}
+    assert {o.objective for o in report.outcomes} == {"regular", "conservative"}
     summary = tmp_path / "training_suite_summary.json"
     assert summary.exists()
     data = json.loads(summary.read_text(encoding="utf-8"))
     assert data["total_candles"] == len(candles)
-    assert set(data["objectives_run"]) == {"default", "conservative"}
+    assert set(data["objectives_run"]) == {"regular", "conservative"}
 
 
 def test_run_training_suite_default_objectives_and_summary_path(

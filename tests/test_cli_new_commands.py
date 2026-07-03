@@ -37,8 +37,8 @@ def test_command_objectives_lists_three(capsys):
     assert cli.command_objectives(argparse.Namespace()) == 0
     out = capsys.readouterr().out
     assert "conservative" in out
-    assert "default" in out
-    assert "risky" in out
+    assert "regular" in out
+    assert "aggressive" in out
 
 
 # --------------------------------------------------------------------------- #
@@ -89,7 +89,7 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
     def fake_run(candles, strategy, *, objectives, market_type, starting_cash, output_dir, max_workers, compute_backend):
         # assert malformed entries were skipped
         assert len(candles) == 1
-        assert objectives == ("default",)
+        assert objectives == ("regular",)
         assert max_workers == 3
         assert compute_backend == "cpu"
         return _Fake()
@@ -149,7 +149,7 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
 
     class _Report:
         def __init__(self):
-            self.outcomes = [_Outcome("default")]
+            self.outcomes = [_Outcome("regular")]
             self.summary_path = tmp_path / "summary.json"
 
     def fake_run(*args, **kwargs):
@@ -169,7 +169,7 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
     )
     assert cli.command_train_suite(args) == 0
     out = capsys.readouterr().out
-    assert "default" in out
+    assert "regular" in out
     assert "ensemble=yes" in out
     assert "local_checks=10" in out
     assert "ensemble_checks=3" in out
@@ -291,7 +291,7 @@ def test_command_backtest_panel_success(tmp_path, monkeypatch, capsys):
         to_date="2026-01-02",
         input=str(input_path),
         model=None,
-        objective="default",
+        objective="regular",
         tag="ok",
         notes="",
         starting_cash=1000.0,
@@ -299,7 +299,7 @@ def test_command_backtest_panel_success(tmp_path, monkeypatch, capsys):
     assert cli.command_backtest_panel(args) == 0
     out = capsys.readouterr().out
     assert "backtest_ok_spot_1m" in out
-    assert "objective=default" in out
+    assert "objective=regular" in out
 
 
 def test_command_backtest_panel_success_without_objective(tmp_path, monkeypatch, capsys):
@@ -390,7 +390,7 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
     )
     assert cli.command_autonomous(args) == 0
     assert not path.exists()
-    assert calls["cfg"].objective == "default"
+    assert calls["cfg"].objective == "regular"
     assert calls["cfg"].poll_seconds == 2.5
     assert calls["cfg"].stop_after_iterations == 2
     assert calls["cfg"].heartbeat_every == 3
@@ -400,15 +400,15 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
     assert calls["decision_kwargs"]["effective_dry_run"] is True
     assert "autonomous: iteration-cap iterations=2 opened=1 closed=0 skipped=3" in capsys.readouterr().out
 
-    args_pause = argparse.Namespace(action="pause", objective="default")
+    args_pause = argparse.Namespace(action="pause", objective="regular")
     assert cli.command_autonomous(args_pause) == 0
     assert json.loads(path.read_text())["state"] == "PAUSED"
 
-    args_resume = argparse.Namespace(action="resume", objective="default")
+    args_resume = argparse.Namespace(action="resume", objective="regular")
     assert cli.command_autonomous(args_resume) == 0
-    args_stop = argparse.Namespace(action="stop", objective="default")
+    args_stop = argparse.Namespace(action="stop", objective="regular")
     assert cli.command_autonomous(args_stop) == 0
-    args_status = argparse.Namespace(action="status", objective="default")
+    args_status = argparse.Namespace(action="status", objective="regular")
     assert cli.command_autonomous(args_status) == 0
     out = capsys.readouterr().out
     assert "state=STOPPING" in out
@@ -426,7 +426,7 @@ def test_command_autonomous_start_blocks_unsafe_or_uncredentialed_live(tmp_path,
     _autonomous_control_path(tmp_path, monkeypatch)
     base_args = argparse.Namespace(
         action="start",
-        objective="default",
+        objective="regular",
         model="data/model.json",
         poll_seconds=1.0,
         iterations=1,

@@ -34,7 +34,7 @@ from .autonomous import (
     AutonomousControl,
 )
 from .backtest_panel import describe_supported_intervals, list_reports
-from .objective import available_objectives, describe_objectives
+from .objective import available_objectives, describe_objectives, get_objective
 from .positions import (
     PositionsStore,
     compute_stats,
@@ -406,7 +406,7 @@ def _cmd_auto(shell: Shell, args: list[str]) -> int:
     rest = args[1:]
     control = shell.control_factory()
     if action == "start":
-        objective = "default"
+        objective = "conservative"
         if "--objective" in rest:
             idx = rest.index("--objective")
             if idx + 1 >= len(rest):
@@ -414,7 +414,9 @@ def _cmd_auto(shell: Shell, args: list[str]) -> int:
                                   enabled=shell.state.color_enabled, palette=shell.palette))
                 return 2
             objective = rest[idx + 1]
-        if objective not in available_objectives():
+        try:
+            objective = get_objective(objective).name
+        except ValueError:
             shell.println(bad(f"unknown objective {objective!r}",
                               enabled=shell.state.color_enabled, palette=shell.palette))
             return 2

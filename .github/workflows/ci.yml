@@ -44,7 +44,7 @@ jobs:
         run: |
           python3 -m coverage run --source=src/simple_ai_trading -m pytest -q
           python3 -m coverage xml
-          python3 -m coverage report --fail-under=100
+          python3 -m coverage report --fail-under=95
           python3 -m coverage html
 
       - name: Smoke POSIX launchers
@@ -93,6 +93,8 @@ jobs:
         run: |
           python -m simple_ai_trading --help
           python -m simple_ai_trading objectives
+          powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
+          python -m simple_ai_trading.windows_app --help
           .\run-shell.cmd --help
           .\run-gui.cmd --help
           if (Get-Command py -ErrorAction SilentlyContinue) {

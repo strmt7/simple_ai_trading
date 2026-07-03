@@ -622,6 +622,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_train_suite.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for GPU training")
     parser_train_suite.set_defaults(func=command_train_suite)
 
+    parser_model_lab = subparsers.add_parser(
+        "model-lab",
+        help="rank liquid symbols and run profitability-gated model optimization across risk objectives",
+    )
+    parser_model_lab.add_argument("--output-dir", default="data/model_lab")
+    parser_model_lab.add_argument("--starting-cash", type=float, default=1000.0)
+    parser_model_lab.add_argument("--objective", action="append", default=None, help="objective/risk level to run; repeatable")
+    parser_model_lab.add_argument("--max-symbols", type=int, default=6)
+    parser_model_lab.add_argument("--max-scan", type=int, default=250)
+    parser_model_lab.add_argument("--limit", type=int, default=1000, help="candles per selected symbol")
+    parser_model_lab.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_model_lab.add_argument("--batch-size", type=int, default=8192)
+    parser_model_lab.add_argument("--score-batch-size", type=int, default=None)
+    parser_model_lab.set_defaults(func=command_model_lab)
+
     parser_backtest_panel = subparsers.add_parser(
         "backtest-panel", help="run a user-parameterized backtest and save a tagged report",
     )
@@ -644,7 +659,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "action", choices=["start", "pause", "resume", "stop", "status"],
         help="autonomous action to perform",
     )
-    parser_autonomous.add_argument("--objective", default="default")
+    parser_autonomous.add_argument("--objective", default="conservative")
     parser_autonomous.add_argument("--model", default="data/model.json", help="model artifact used for autonomous decisions")
     parser_autonomous.add_argument("--poll-seconds", type=float, default=30.0, help="seconds between autonomous iterations")
     parser_autonomous.add_argument("--iterations", type=int, default=None, help="stop after N iterations; default runs until stopped")
@@ -5923,6 +5938,7 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             f"validation={outcome.validation_score if outcome.validation_score is not None else 'n/a'} "
             f"full={outcome.full_sample_score if outcome.full_sample_score is not None else 'n/a'} "
             f"ensemble={'yes' if getattr(outcome, 'ensemble_refined', False) else 'no'} "
+            f"hybrid={getattr(outcome, 'hybrid_profile', 'base_only')} "
             f"backend={getattr(outcome, 'training_backend_kind', 'cpu')} "
             f"local_checks={getattr(outcome, 'local_refinement_candidates', 0)} "
             f"ensemble_checks={getattr(outcome, 'ensemble_refinement_candidates', 0)} "
@@ -5930,6 +5946,65 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         )
     print(f"summary -> {report.summary_path}")
     return 0
+
+
+def command_model_lab(args: argparse.Namespace) -> int:
+    from .model_lab import run_model_lab
+    from .objective import get_objective
+
+    runtime = load_runtime()
+    strategy = load_strategy()
+    try:
+        objectives = (
+            tuple(get_objective(name).name for name in args.objective)
+            if args.objective
+            else available_objectives()
+        )
+        if int(args.max_symbols) < 1:
+            raise ValueError("--max-symbols must be >= 1")
+        if int(args.max_scan) < 1:
+            raise ValueError("--max-scan must be >= 1")
+        if int(args.limit) < 100:
+            raise ValueError("--limit must be >= 100")
+        backend_label, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="model lab",
+        )
+        report = run_model_lab(
+            _build_client(runtime),
+            runtime,
+            strategy,
+            objectives=objectives,
+            output_dir=Path(args.output_dir),
+            starting_cash=float(args.starting_cash),
+            max_symbols=int(args.max_symbols),
+            max_scan=int(args.max_scan),
+            limit=int(args.limit),
+            compute_backend=backend_label,
+            batch_size=max(1, int(args.batch_size)),
+            score_batch_size=(
+                max(1, int(args.score_batch_size))
+                if getattr(args, "score_batch_size", None) is not None
+                else None
+            ),
+        )
+    except (BinanceAPIError, ValueError) as exc:
+        print(f"model lab failed: {exc}", file=sys.stderr)
+        return 2
+
+    print(
+        f"model lab complete: accepted={len(report.accepted_symbols)}/{len(report.outcomes)} "
+        f"symbols objectives={','.join(objectives)}"
+    )
+    for outcome in report.outcomes:
+        status = "accepted" if outcome.accepted else "rejected"
+        score_text = ", ".join(f"{key}={value:+.4f}" for key, value in sorted(outcome.objective_scores.items()))
+        hybrid_text = ", ".join(f"{key}:{value}" for key, value in sorted(outcome.hybrid_profiles.items()))
+        detail = score_text or outcome.error or "no accepted objectives"
+        print(f"  {status:<8} {outcome.symbol:<12} rows={outcome.rows:<5} {detail} hybrid={hybrid_text or 'n/a'}")
+    print(f"summary -> {report.report_path}")
+    return 0 if report.accepted_symbols else 2
 
 
 def command_backtest_panel(args: argparse.Namespace) -> int:

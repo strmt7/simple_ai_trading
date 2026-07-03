@@ -47,6 +47,27 @@ class EnsembleMember:
 
 
 @dataclass
+class HybridPrototype:
+    features: List[float]
+    label: int
+    timestamp: int = 0
+    close: float = 0.0
+
+
+@dataclass
+class HybridExpert:
+    name: str
+    kind: str
+    weight: float
+    prototypes: List[HybridPrototype] = field(default_factory=list)
+    k: int = 21
+    bandwidth: float = 1.0
+    alpha: float = 1.0
+    feature_count: int = 13
+    notes: str = ""
+
+
+@dataclass
 class TrainedModel:
     weights: List[float]
     bias: float
@@ -89,6 +110,9 @@ class TrainedModel:
     training_backend_device: str = "cpu"
     training_backend_vendor: str = "Python stdlib"
     training_backend_reason: str = ""
+    model_family: str = "advanced_logistic"
+    hybrid_base_weight: float = 1.0
+    hybrid_experts: List[HybridExpert] = field(default_factory=list)
 
     def _normalize(self, features: Tuple[float, ...]) -> Tuple[float, ...]:
         if len(features) != self.feature_dim:
@@ -117,12 +141,126 @@ class TrainedModel:
         )
         return _sigmoid(_temperature_scaled_score(score, self.probability_temperature))
 
-    def predict_proba(self, features: Tuple[float, ...]) -> float:
+    def _base_probability(self, features: Tuple[float, ...]) -> float:
         if self.ensemble_members:
             probabilities = [self._member_probability(member, features) for member in self.ensemble_members]
             return sum(probabilities) / len(probabilities)
         score = _temperature_scaled_score(self._linear_score(features), self.probability_temperature)
         return _sigmoid(score)
+
+    def _normalized_for_expert(self, features: Tuple[float, ...]) -> list[float]:
+        return list(self._normalize(features))
+
+    def _lorentzian_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        if not expert.prototypes:
+            return None
+        normalized = self._normalized_for_expert(features)
+        distances: list[tuple[float, int]] = []
+        for prototype in expert.prototypes:
+            if len(prototype.features) != self.feature_dim:
+                continue
+            distance = 0.0
+            for left, right in zip(normalized, prototype.features, strict=True):
+                distance += math.log1p(abs(left - right))
+            distances.append((distance / max(1, self.feature_dim), int(prototype.label)))
+        if not distances:
+            return None
+        distances.sort(key=lambda item: item[0])
+        neighbors = distances[: max(1, int(expert.k))]
+        weighted_positive = 0.0
+        total = 0.0
+        for distance, label in neighbors:
+            weight = 1.0 / max(1e-9, distance + 1e-6)
+            weighted_positive += weight * float(1 if label else 0)
+            total += weight
+        return _clamp(weighted_positive / total if total else 0.5, 0.0, 1.0)
+
+    def _kernel_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        if not expert.prototypes:
+            return None
+        normalized = self._normalized_for_expert(features)
+        bandwidth = max(1e-6, float(expert.bandwidth))
+        alpha = max(1e-6, float(expert.alpha))
+        weighted_positive = 0.0
+        total = 0.0
+        for prototype in expert.prototypes:
+            if len(prototype.features) != self.feature_dim:
+                continue
+            squared = 0.0
+            for left, right in zip(normalized, prototype.features, strict=True):
+                delta = left - right
+                squared += delta * delta
+            scaled = squared / max(1, self.feature_dim)
+            weight = (1.0 + scaled / (2.0 * alpha * bandwidth * bandwidth)) ** (-alpha)
+            weighted_positive += weight * float(1 if prototype.label else 0)
+            total += weight
+        return _clamp(weighted_positive / total if total else 0.5, 0.0, 1.0)
+
+    def _technical_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        if not features:
+            return None
+        values = list(features[: max(1, min(int(expert.feature_count), len(features)))])
+        while len(values) < 13:
+            values.append(0.0)
+        momentum_1, momentum_3, momentum_10, momentum_20 = values[0], values[1], values[2], values[3]
+        ema_spread = values[4]
+        rsi = _clamp(values[5], 0.0, 1.0)
+        ema_gap = values[6]
+        relative_atr = abs(values[7])
+        volatility_20 = abs(values[8])
+        volume_ratio = values[9]
+        trend_acceleration = values[10]
+        gap_to_vwap = values[11]
+        volume_trend = values[12]
+
+        trend = (
+            0.24 * math.tanh(momentum_20 * 80.0)
+            + 0.20 * math.tanh(momentum_10 * 100.0)
+            + 0.14 * math.tanh(momentum_3 * 140.0)
+            - 0.16 * math.tanh(ema_spread * 90.0)
+            + 0.10 * math.tanh(trend_acceleration * 240.0)
+            + 0.06 * math.tanh(volume_trend * 4.0)
+        )
+        mean_reversion = (
+            0.18 * math.tanh((0.38 - rsi) * 5.0)
+            - 0.14 * math.tanh(gap_to_vwap * 150.0)
+            - 0.08 * math.tanh(momentum_1 * 180.0)
+        )
+        breakout = (
+            0.10 * math.tanh(volume_ratio * 2.5)
+            + 0.10 * math.tanh((relative_atr + volatility_20) * 80.0)
+            + 0.08 * math.tanh((momentum_10 + momentum_20) * 80.0)
+            - 0.04 * math.tanh(abs(ema_gap) * 150.0)
+        )
+        score = trend + mean_reversion + breakout
+        return _clamp(_sigmoid(score * 2.2), 0.0, 1.0)
+
+    def _expert_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        if expert.kind == "lorentzian_knn":
+            return self._lorentzian_probability(expert, features)
+        if expert.kind == "rational_quadratic_kernel":
+            return self._kernel_probability(expert, features)
+        if expert.kind == "technical_confluence":
+            return self._technical_probability(expert, features)
+        return None
+
+    def predict_proba(self, features: Tuple[float, ...]) -> float:
+        base_probability = self._base_probability(features)
+        if not self.hybrid_experts:
+            return base_probability
+        base_weight = max(0.0, float(self.hybrid_base_weight))
+        weighted = base_probability * base_weight
+        total = base_weight
+        for expert in self.hybrid_experts:
+            expert_weight = max(0.0, float(expert.weight))
+            if expert_weight <= 0.0:
+                continue
+            probability = self._expert_probability(expert, features)
+            if probability is None:
+                continue
+            weighted += expert_weight * probability
+            total += expert_weight
+        return _clamp(weighted / total if total > 0.0 else base_probability, 0.0, 1.0)
 
     def predict(self, features: Tuple[float, ...], threshold: float) -> int:
         threshold = _clamp(threshold, 0.0, 1.0)
@@ -1359,6 +1497,59 @@ def _load_ensemble_members(raw: Any, feature_dim: int) -> list[EnsembleMember]:
     return members
 
 
+def _load_hybrid_prototypes(raw: Any, feature_dim: int) -> list[HybridPrototype]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ModelLoadError("Model payload hybrid expert prototypes must be an array")
+    prototypes: list[HybridPrototype] = []
+    for index, entry in enumerate(raw):
+        if not isinstance(entry, dict):
+            raise ModelLoadError(f"Model payload hybrid prototype {index} is not an object")
+        try:
+            features = [float(value) for value in entry["features"]]
+            label = int(entry.get("label", 0))
+            timestamp = int(entry.get("timestamp", 0) or 0)
+            close = float(entry.get("close", 0.0) or 0.0)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ModelLoadError(f"Model payload hybrid prototype {index} is invalid") from exc
+        if len(features) != feature_dim:
+            raise ModelLoadError(f"Model payload hybrid prototype {index} dimension mismatch")
+        prototypes.append(HybridPrototype(
+            features=features,
+            label=1 if label else 0,
+            timestamp=timestamp,
+            close=close,
+        ))
+    return prototypes
+
+
+def _load_hybrid_experts(raw: Any, feature_dim: int) -> list[HybridExpert]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ModelLoadError("Model payload hybrid_experts must be an array")
+    experts: list[HybridExpert] = []
+    for index, entry in enumerate(raw):
+        if not isinstance(entry, dict):
+            raise ModelLoadError(f"Model payload hybrid expert {index} is not an object")
+        try:
+            experts.append(HybridExpert(
+                name=str(entry.get("name", f"expert_{index}") or f"expert_{index}"),
+                kind=str(entry["kind"]),
+                weight=max(0.0, float(entry.get("weight", 0.0) or 0.0)),
+                prototypes=_load_hybrid_prototypes(entry.get("prototypes", []), feature_dim),
+                k=max(1, int(entry.get("k", 21) or 21)),
+                bandwidth=max(1e-6, float(entry.get("bandwidth", 1.0) or 1.0)),
+                alpha=max(1e-6, float(entry.get("alpha", 1.0) or 1.0)),
+                feature_count=max(1, int(entry.get("feature_count", feature_dim) or feature_dim)),
+                notes=str(entry.get("notes", "") or ""),
+            ))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ModelLoadError(f"Model payload hybrid expert {index} is invalid") from exc
+    return experts
+
+
 def load_model(
     path,
     *,
@@ -1516,4 +1707,7 @@ def load_model(
         training_backend_device=str(payload.get("training_backend_device", "cpu") or "cpu"),
         training_backend_vendor=str(payload.get("training_backend_vendor", "Python stdlib") or "Python stdlib"),
         training_backend_reason=str(payload.get("training_backend_reason", "") or ""),
+        model_family=str(payload.get("model_family", "advanced_logistic") or "advanced_logistic"),
+        hybrid_base_weight=max(0.0, float(payload.get("hybrid_base_weight", 1.0) or 1.0)),
+        hybrid_experts=_load_hybrid_experts(payload.get("hybrid_experts", []), dim),
     )
