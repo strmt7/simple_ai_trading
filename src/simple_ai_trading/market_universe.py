@@ -11,6 +11,22 @@ from .execution_simulation import SymbolExecutionProfile
 from .types import StrategyConfig
 
 _DANGEROUS_SUFFIXES = ("UP", "DOWN", "BULL", "BEAR")
+_AUTO_VOLUME_FLOOR_USDC = 10_000_000.0
+_AUTO_TRADE_COUNT_FLOOR = 5_000
+_AUTO_RELATIVE_VOLUME_FRACTION = 0.35
+_AUTO_RELATIVE_TRADE_FRACTION = 0.25
+_AUTO_MIN_LIQUIDITY_SCORE = 0.70
+_PEGGED_PRICE_MIN = 0.98
+_PEGGED_PRICE_MAX = 1.02
+_PEGGED_MAX_RANGE_BPS = 150.0
+
+
+@dataclass(frozen=True)
+class _LiquidityThresholds:
+    min_quote_volume_usdc: float
+    min_trade_count_24h: int
+    min_liquidity_score: float
+    max_spread_bps: float
 
 
 @dataclass(frozen=True)
@@ -99,6 +115,23 @@ def _looks_structurally_dangerous(symbol: str, quote_asset: str) -> bool:
     return any(base.endswith(suffix) for suffix in _DANGEROUS_SUFFIXES)
 
 
+def _looks_price_pegged(ticker: Mapping[str, object]) -> bool:
+    last = _safe_float(ticker.get("lastPrice") or ticker.get("weightedAvgPrice"))
+    high = _safe_float(ticker.get("highPrice"))
+    low = _safe_float(ticker.get("lowPrice"))
+    if last <= 0.0 or high <= 0.0 or low <= 0.0:
+        return False
+    mid = (high + low) / 2.0
+    if mid <= 0.0:
+        return False
+    range_bps = ((high - low) / mid) * 10_000.0
+    return (
+        _PEGGED_PRICE_MIN <= last <= _PEGGED_PRICE_MAX
+        and _PEGGED_PRICE_MIN <= mid <= _PEGGED_PRICE_MAX
+        and 0.0 <= range_bps <= _PEGGED_MAX_RANGE_BPS
+    )
+
+
 def _spread_bps(book: Mapping[str, object]) -> float:
     bid = _safe_float(book.get("bidPrice"))
     ask = _safe_float(book.get("askPrice"))
@@ -108,11 +141,52 @@ def _spread_bps(book: Mapping[str, object]) -> float:
     return max(0.0, ((ask - bid) / mid) * 10_000.0)
 
 
-def _score_liquidity(*, quote_volume: float, trade_count: int, spread_bps: float, strategy: StrategyConfig) -> float:
-    volume_score = min(1.0, quote_volume / max(1.0, strategy.min_quote_volume_usdc))
-    trade_score = min(1.0, trade_count / max(1, strategy.min_trade_count_24h))
-    spread_score = 1.0 if spread_bps <= 0 else min(1.0, max(0.0, strategy.max_spread_bps / spread_bps))
+def _score_liquidity_with_thresholds(
+    *,
+    quote_volume: float,
+    trade_count: int,
+    spread_bps: float,
+    thresholds: _LiquidityThresholds,
+) -> float:
+    volume_score = min(1.0, quote_volume / max(1.0, thresholds.min_quote_volume_usdc))
+    trade_score = min(1.0, trade_count / max(1, thresholds.min_trade_count_24h))
+    spread_score = 1.0 if spread_bps <= 0 else min(1.0, max(0.0, thresholds.max_spread_bps / spread_bps))
     return max(0.0, min(1.0, 0.50 * volume_score + 0.30 * trade_score + 0.20 * spread_score))
+
+
+def _static_thresholds(strategy: StrategyConfig) -> _LiquidityThresholds:
+    return _LiquidityThresholds(
+        min_quote_volume_usdc=strategy.min_quote_volume_usdc,
+        min_trade_count_24h=strategy.min_trade_count_24h,
+        min_liquidity_score=strategy.min_liquidity_score,
+        max_spread_bps=strategy.max_spread_bps,
+    )
+
+
+def _score_liquidity(*, quote_volume: float, trade_count: int, spread_bps: float, strategy: StrategyConfig) -> float:
+    return _score_liquidity_with_thresholds(
+        quote_volume=quote_volume,
+        trade_count=trade_count,
+        spread_bps=spread_bps,
+        thresholds=_static_thresholds(strategy),
+    )
+
+
+def _automatic_thresholds(
+    strategy: StrategyConfig,
+    measurements: Iterable[tuple[float, int]],
+) -> _LiquidityThresholds:
+    rows = tuple((max(0.0, volume), max(0, count)) for volume, count in measurements)
+    top_volume = max((volume for volume, _count in rows), default=0.0)
+    top_count = max((count for _volume, count in rows), default=0)
+    volume_floor = max(_AUTO_VOLUME_FLOOR_USDC, top_volume * _AUTO_RELATIVE_VOLUME_FRACTION)
+    trade_floor = max(_AUTO_TRADE_COUNT_FLOOR, int(round(top_count * _AUTO_RELATIVE_TRADE_FRACTION)))
+    return _LiquidityThresholds(
+        min_quote_volume_usdc=min(strategy.min_quote_volume_usdc, volume_floor) if top_volume > 0 else strategy.min_quote_volume_usdc,
+        min_trade_count_24h=min(strategy.min_trade_count_24h, trade_floor) if top_count > 0 else strategy.min_trade_count_24h,
+        min_liquidity_score=min(strategy.min_liquidity_score, _AUTO_MIN_LIQUIDITY_SCORE) if rows else strategy.min_liquidity_score,
+        max_spread_bps=strategy.max_spread_bps,
+    )
 
 
 def _exchange_symbol_map(client: BinanceClient) -> dict[str, Mapping[str, object]]:
@@ -161,6 +235,8 @@ def assess_symbol_liquidity(
         quote_volume = _safe_float(ticker.get("quoteVolume"))
         trade_count = _safe_int(ticker.get("count"))
         spread_bps = _spread_bps(book)
+        if _looks_price_pegged(ticker):
+            reasons.append("stable_or_pegged_pair_pattern")
     except BinanceAPIError as exc:
         reasons.append(f"market_data_unavailable:{exc}")
 
@@ -246,6 +322,24 @@ def rank_high_liquidity_universe(
         for item in client.get_all_book_tickers()
         if isinstance(item, Mapping) and item.get("symbol")
     }
+    measurements: list[tuple[float, int]] = []
+    for symbol, symbol_info in exchange_symbols.items():
+        if not symbol.endswith(quote_asset):
+            continue
+        ticker = tickers.get(symbol)
+        if ticker is None:
+            continue
+        status = str(symbol_info.get("status") if symbol_info else "MISSING")
+        if status != "TRADING" or _looks_structurally_dangerous(symbol, quote_asset):
+            continue
+        if _looks_price_pegged(ticker):
+            continue
+        spread_bps = _spread_bps(books.get(symbol, {}))
+        if spread_bps > strategy.max_spread_bps:
+            continue
+        measurements.append((_safe_float(ticker.get("quoteVolume")), _safe_int(ticker.get("count"))))
+
+    thresholds = _automatic_thresholds(strategy, measurements)
     candidates: list[tuple[float, str, MarketEligibility]] = []
     rejected: list[MarketEligibility] = []
     for symbol, symbol_info in exchange_symbols.items():
@@ -263,20 +357,22 @@ def rank_high_liquidity_universe(
             reasons.append(f"status_{status.lower()}")
         if _looks_structurally_dangerous(symbol, quote_asset):
             reasons.append("leveraged_or_inverse_token_pattern")
+        if _looks_price_pegged(ticker):
+            reasons.append("stable_or_pegged_pair_pattern")
         spread_bps = _spread_bps(books.get(symbol, {}))
-        if quote_volume < strategy.min_quote_volume_usdc:
+        if quote_volume < thresholds.min_quote_volume_usdc:
             reasons.append("quote_volume_below_threshold")
-        if trade_count < strategy.min_trade_count_24h:
+        if trade_count < thresholds.min_trade_count_24h:
             reasons.append("trade_count_below_threshold")
-        if spread_bps > strategy.max_spread_bps:
+        if spread_bps > thresholds.max_spread_bps:
             reasons.append("spread_above_threshold")
-        liquidity_score = _score_liquidity(
+        liquidity_score = _score_liquidity_with_thresholds(
             quote_volume=quote_volume,
             trade_count=trade_count,
             spread_bps=spread_bps,
-            strategy=strategy,
+            thresholds=thresholds,
         )
-        if liquidity_score < strategy.min_liquidity_score:
+        if liquidity_score < thresholds.min_liquidity_score:
             reasons.append("liquidity_score_below_threshold")
         item = MarketEligibility(
             symbol=symbol,

@@ -20,6 +20,10 @@ Execution cost is symbol-specific where market data exists:
 - `ticker/bookTicker` supplies bid/ask spread.
 - `exchangeInfo` proves the symbol exists and is trading.
 - Strategy thresholds decide if quote volume, trade count, spread, and liquidity score are acceptable.
+- Automatic universe ranking may derive volume and trade-count floors from the
+  current quote-asset leaders when static defaults exceed the available market,
+  but it keeps hard minimum floors and never relaxes spread, structural
+  leveraged-token, or likely pegged-pair filters.
 
 Backtest fill price uses:
 

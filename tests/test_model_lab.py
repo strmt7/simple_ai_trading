@@ -105,7 +105,11 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:
     def rejected_suite(candles, strategy, **kwargs):
         assert candles
-        raise TrainingSuiteRejected("all candidates rejected", row_count=77)
+        raise TrainingSuiteRejected(
+            "all candidates rejected",
+            row_count=77,
+            diagnostics={"top_candidates": [{"validation_score": None, "full_sample_score": None}]},
+        )
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", rejected_suite)
     runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
@@ -132,6 +136,7 @@ def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, mon
     assert report.outcomes[0].accepted is False
     assert report.outcomes[0].rows == 77
     assert report.outcomes[0].error == "all candidates rejected"
+    assert report.outcomes[0].diagnostics == {"top_candidates": [{"validation_score": None, "full_sample_score": None}]}
 
 
 def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, monkeypatch) -> None:

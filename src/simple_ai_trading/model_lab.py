@@ -27,6 +27,7 @@ class SymbolResearchOutcome:
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
     stress_validation: dict[str, object] | None = None
     stress_report_path: str | None = None
+    diagnostics: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -169,6 +170,7 @@ def run_model_lab(
                 objectives=list(objectives),
                 error=str(exc),
                 liquidity=item.asdict(),
+                diagnostics=exc.diagnostics,
             ))
         except (BinanceAPIError, ValueError, OSError) as exc:
             outcomes.append(SymbolResearchOutcome(
