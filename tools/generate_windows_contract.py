@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+from typing import Iterable
 
 
 def _repo_root() -> Path:
@@ -15,6 +16,22 @@ def _escape_wide(text: str) -> str:
     escaped = text.replace("\\", "\\\\").replace('"', '\\"')
     escaped = escaped.replace("\r", " ").replace("\n", " ")
     return f'L"{escaped}"'
+
+
+def _safe_identifier(text: str) -> str:
+    return "".join(ch if ch.isalnum() else "_" for ch in text).strip("_") or "command"
+
+
+def _join_values(values: Iterable[object]) -> str:
+    return ", ".join(str(value) for value in values if str(value))
+
+
+def _default_string(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
 
 
 def main() -> int:
@@ -29,17 +46,51 @@ def main() -> int:
         "",
         "namespace simple_ai_trading::native_contract {",
         "",
+        "struct CommandOptionSpec {",
+        "    const wchar_t* flags;",
+        "    const wchar_t* dest;",
+        "    const wchar_t* choices;",
+        "    const wchar_t* default_value;",
+        "    const wchar_t* help;",
+        "    bool required;",
+        "    bool takes_value;",
+        "};",
+        "",
         "struct CommandSpec {",
         "    const wchar_t* name;",
         "    const wchar_t* help;",
+        "    const CommandOptionSpec* options;",
         "    int option_count;",
         "};",
         "",
-        "inline constexpr CommandSpec kCommands[] = {",
     ]
-    for spec in command_specs():
+    specs = command_specs()
+    for spec in specs:
+        options = (*spec.options, *spec.positionals)
+        if not options:
+            continue
+        array_name = f"kOptions_{_safe_identifier(spec.name)}"
+        lines.append(f"inline constexpr CommandOptionSpec {array_name}[] = {{")
+        for option in options:
+            flags = _join_values(option.flags) or option.dest
+            lines.append(
+                "    {"
+                f"{_escape_wide(flags)}, "
+                f"{_escape_wide(option.dest)}, "
+                f"{_escape_wide(_join_values(option.choices))}, "
+                f"{_escape_wide(_default_string(option.default))}, "
+                f"{_escape_wide(option.help)}, "
+                f"{str(bool(option.required)).lower()}, "
+                f"{str(bool(option.takes_value)).lower()}"
+                "},"
+            )
+        lines.append("};")
+        lines.append("")
+    lines.append("inline constexpr CommandSpec kCommands[] = {")
+    for spec in specs:
         option_count = len(spec.options) + len(spec.positionals)
-        lines.append(f"    {{{_escape_wide(spec.name)}, {_escape_wide(spec.help)}, {option_count}}},")
+        array_name = f"kOptions_{_safe_identifier(spec.name)}" if option_count else "nullptr"
+        lines.append(f"    {{{_escape_wide(spec.name)}, {_escape_wide(spec.help)}, {array_name}, {option_count}}},")
     lines.extend([
         "};",
         "inline constexpr int kCommandCount = static_cast<int>(sizeof(kCommands) / sizeof(kCommands[0]));",
