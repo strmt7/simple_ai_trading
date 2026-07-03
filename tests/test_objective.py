@@ -101,6 +101,19 @@ def test_positive_pnl_negative_buy_hold_edge_is_rejected():
     assert ranked[0]["accepted"] is False
     assert ranked[0]["score"] == float("-inf")
     assert "edge_vs_buy_hold<0.0" in ranked[0]["reject_reason"]
+    assert obj.DEFAULT.reject_reason(r) == "edge_vs_buy_hold<0.0"
+
+
+def test_rejection_reasons_are_stable_machine_labels():
+    r = _result(realized_pnl=-1.0, closed_trades=1, edge_vs_buy_hold=-2.0)
+
+    reasons = obj.REGULAR.rejection_reasons(r)
+
+    assert reasons == [
+        "closed_trades<3",
+        "realized_pnl<=0.0",
+        "edge_vs_buy_hold<0.0",
+    ]
 
 
 def test_safe_and_return_ratio_non_finite():

@@ -40,17 +40,29 @@ class ObjectiveSpec:
     def accepts(self, result: BacktestResult) -> bool:
         """Return False when a candidate fails hard gates — used by tuning."""
 
+        return not self.rejection_reasons(result)
+
+    def rejection_reasons(self, result: BacktestResult) -> list[str]:
+        """Return stable machine-readable reasons for hard-gate rejection."""
+
+        reasons: list[str] = []
         if result.closed_trades < max(0, int(self.min_closed_trades)):
-            return False
+            reasons.append(f"closed_trades<{self.min_closed_trades}")
         if self.min_realized_pnl is not None and result.realized_pnl <= self.min_realized_pnl:
-            return False
+            reasons.append(f"realized_pnl<={self.min_realized_pnl}")
         if self.min_edge_vs_buy_hold is not None and result.edge_vs_buy_hold < self.min_edge_vs_buy_hold:
-            return False
+            reasons.append(f"edge_vs_buy_hold<{self.min_edge_vs_buy_hold}")
         if self.max_drawdown_rejection < 1.0 and result.max_drawdown > self.max_drawdown_rejection:
-            return False
+            reasons.append(f"max_drawdown>{self.max_drawdown_rejection}")
         if result.stopped_by_drawdown and self.max_drawdown_rejection < 0.5:
-            return False
-        return True
+            reasons.append("stopped_by_drawdown")
+        return reasons
+
+    def reject_reason(self, result: BacktestResult) -> str | None:
+        """Return a semicolon-delimited hard-gate reason for artifact payloads."""
+
+        reasons = self.rejection_reasons(result)
+        return "; ".join(reasons) if reasons else None
 
 
 @dataclass(frozen=True)
@@ -310,18 +322,11 @@ def rank_candidates(
         accepted = objective.accepts(result)
         reject_reason: str | None = None
         if not accepted:
-            reasons: list[str] = []
-            min_edge_vs_buy_hold = getattr(objective, "min_edge_vs_buy_hold", None)
-            if result.closed_trades < objective.min_closed_trades:
-                reasons.append(f"closed_trades<{objective.min_closed_trades}")
-            if objective.min_realized_pnl is not None and result.realized_pnl <= objective.min_realized_pnl:
-                reasons.append(f"realized_pnl<={objective.min_realized_pnl}")
-            if min_edge_vs_buy_hold is not None and result.edge_vs_buy_hold < min_edge_vs_buy_hold:
-                reasons.append(f"edge_vs_buy_hold<{min_edge_vs_buy_hold}")
-            if objective.max_drawdown_rejection < 1.0 and result.max_drawdown > objective.max_drawdown_rejection:
-                reasons.append(f"max_drawdown>{objective.max_drawdown_rejection}")
-            if result.stopped_by_drawdown and objective.max_drawdown_rejection < 0.5:
-                reasons.append("stopped_by_drawdown")
+            reasons = (
+                objective.rejection_reasons(result)
+                if hasattr(objective, "rejection_reasons")
+                else []
+            )
             reject_reason = "; ".join(reasons) or "hard-gate-failed"
         ranked.append({
             "params": params,
