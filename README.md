@@ -158,6 +158,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - CPU-only mode disables AI.
 - CLI and Windows app command parity is tested.
 - Backtests include pessimistic execution assumptions.
+- Authenticated live/testnet order loops do not trust requested quantity as filled quantity; they require execution fields or a signed order-status reconciliation.
 - Autonomous stop closes local open positions to avoid stale ledger exposure.
 
 ## Test

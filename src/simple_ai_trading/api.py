@@ -725,6 +725,26 @@ class BinanceClient:
         self.set_leverage(symbol, int(max(1, round(leverage))))
         return self._request_dict("POST", "/fapi/v1/order", payload, signed=True, label="order")
 
+    def get_order(
+        self,
+        symbol: str,
+        *,
+        order_id: int | str | None = None,
+        orig_client_order_id: str | None = None,
+    ) -> Dict[str, object]:
+        symbol = str(symbol or "").upper()
+        if not symbol:
+            raise BinanceAPIError("Order symbol is required")
+        params: Dict[str, object] = {"symbol": symbol}
+        if order_id is not None and str(order_id).strip():
+            params["orderId"] = str(order_id).strip()
+        if orig_client_order_id is not None and str(orig_client_order_id).strip():
+            params["origClientOrderId"] = str(orig_client_order_id).strip()
+        if "orderId" not in params and "origClientOrderId" not in params:
+            raise BinanceAPIError("Order query requires orderId or origClientOrderId")
+        endpoint = "/api/v3/order" if self.market_type == "spot" else "/fapi/v1/order"
+        return self._request_dict("GET", endpoint, params, signed=True, label="order status")
+
     def get_exchange_time(self) -> Dict[str, object]:
         endpoint = "/api/v3/time" if self.market_type == "spot" else "/fapi/v1/time"
         return self._request_dict("GET", endpoint, label="exchange time")
