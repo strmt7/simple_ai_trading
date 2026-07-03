@@ -85,13 +85,14 @@ or:
 .\run-gui.cmd
 ```
 
-The Windows app is a native C++20 Win32 operator console inspired by the SuperZip app structure: PowerShell/CMake build, double-buffered GDI rendering, DWM dark window chrome, and generated workflow metadata. It builds its workflow list and option preview from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command, option flag, positional argument, or choice is not present in the native contract.
+The Windows app is a native C++20 Win32 operator workstation inspired by the SuperZip app structure: PowerShell/CMake build, DPI-aware/resizable Win32 layout, DWM dark window chrome, real listbox/combobox/edit/button controls, grouped operator workflows, and generated workflow metadata. The command picker is still generated from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command, option flag, positional argument, or choice is not present in the native contract.
 
 Startup behavior:
 
-- If DirectML/GPU is available, the status bar reports the active backend.
+- The app resolves the repo-local `.venv311` Python and sets `PYTHONPATH` before launching CLI commands, so dev builds do not depend on a globally installed package.
+- If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
-- The app has direct buttons for AI preflight, risk report, backtest graph, and autonomous stop.
+- The app has direct buttons for AI preflight, risk report, model lab, backtest graph, and stop-and-close local autonomous positions.
 
 ## Core Workflows
 
