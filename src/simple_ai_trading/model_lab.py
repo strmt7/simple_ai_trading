@@ -8,6 +8,7 @@ from typing import Sequence
 
 from .api import BinanceAPIError, BinanceClient, Candle
 from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
+from .robust_validation import SuiteStressReport, validate_suite_under_stress
 from .storage import write_json_atomic
 from .training_suite import SuiteReport, TrainingSuiteRejected, run_training_suite
 from .types import RuntimeConfig, StrategyConfig
@@ -24,6 +25,8 @@ class SymbolResearchOutcome:
     liquidity: dict[str, object] | None = None
     objective_scores: dict[str, float] = field(default_factory=dict)
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
+    stress_validation: dict[str, object] | None = None
+    stress_report_path: str | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -70,19 +73,26 @@ def _outcome_from_suite(
     symbol: str,
     suite: SuiteReport,
     liquidity: MarketEligibility,
+    stress_report: SuiteStressReport,
+    stress_report_path: Path,
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
-    accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
+    score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
+    stress_accepted = bool(stress_report.accepted)
+    accepted = score_accepted and stress_accepted
     return SymbolResearchOutcome(
         symbol=symbol,
         accepted=accepted,
         rows=int(suite.total_rows),
         objectives=list(suite.objectives_run),
         report_path=str(suite.summary_path),
+        error=None if accepted else ("stress_validation_failed" if score_accepted and not stress_accepted else None),
         liquidity=liquidity.asdict(),
         objective_scores=scores,
         hybrid_profiles=hybrid_profiles,
+        stress_validation=stress_report.asdict(),
+        stress_report_path=str(stress_report_path),
     )
 
 
@@ -132,7 +142,25 @@ def run_model_lab(
                 batch_size=batch_size,
                 score_batch_size=score_batch_size,
             )
-            outcomes.append(_outcome_from_suite(symbol, suite, liquidity_by_symbol[symbol]))
+            liquidity = liquidity_by_symbol[symbol]
+            stress_profile = liquidity.execution_profile(
+                latency_ms=strategy.latency_buffer_ms,
+                liquidity_haircut=strategy.testnet_liquidity_haircut,
+            )
+            stress_report = validate_suite_under_stress(
+                candles,
+                strategy,
+                suite,
+                symbol=symbol,
+                symbol_profile=stress_profile,
+                starting_cash=starting_cash,
+                market_type=runtime.market_type,
+                compute_backend=compute_backend,
+                score_batch_size=score_batch_size or batch_size,
+            )
+            stress_report_path = symbol_dir / "stress_validation.json"
+            write_json_atomic(stress_report_path, stress_report.asdict(), indent=2, sort_keys=True)
+            outcomes.append(_outcome_from_suite(symbol, suite, liquidity, stress_report, stress_report_path))
         except TrainingSuiteRejected as exc:
             outcomes.append(SymbolResearchOutcome(
                 symbol=symbol,

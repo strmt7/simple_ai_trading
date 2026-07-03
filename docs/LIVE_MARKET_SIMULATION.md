@@ -31,6 +31,19 @@ Backtest fill price uses:
 - volatility buffer,
 - taker fees.
 
+Model-lab acceptance adds an additional stress matrix before a symbol is marked
+accepted. Each saved objective model is replayed with the selected symbol's
+measured spread/liquidity profile and must remain profitable under:
+
+- baseline measured execution assumptions,
+- wider spread and slippage,
+- latency spike with a liquidity haircut,
+- combined liquidity crunch, higher fee, wider spread, and latency stress.
+
+If any required scenario fails the objective gates, `model-lab` writes
+`stress_validation.json` for that symbol and rejects the candidate. This is
+intentional fail-closed behavior; a single profitable replay is not enough.
+
 Futures safety:
 
 - Binance can support larger initial leverage values, but this app hard-caps autonomous leverage at `10x`.
@@ -47,6 +60,8 @@ Known limitations:
 - Direct order-book depth and queue position are not yet replayed tick-by-tick.
 - Free VRAM is not exposed reliably by DirectML; the app verifies GPU backend functionality and reports unknown VRAM as a warning.
 - External news/sentiment sources are still broad crypto-oriented; the liquidity gate is the primary automatic asset filter.
+- The current stress model uses top-of-book and candle-volume proxies. It is
+  stricter than flat slippage, but still weaker than full L2 order-book replay.
 
 ## Operator Rule
 

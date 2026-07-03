@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, replace
 from typing import Dict, List
 
 from .compute import BackendInfo, resolve_backend
-from .execution_simulation import simulate_market_fill
+from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
 from .types import StrategyConfig
@@ -88,13 +88,22 @@ def _bps_to_rate(bps: float) -> float:
     return max(0.0, bps) / 10_000.0
 
 
-def _fill_price(price: float, side_sign: int, cfg: StrategyConfig, *, notional: float = 0.0, volume: float = 0.0) -> float:
+def _fill_price(
+    price: float,
+    side_sign: int,
+    cfg: StrategyConfig,
+    *,
+    notional: float = 0.0,
+    volume: float = 0.0,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> float:
     return simulate_market_fill(
         price,
         side_sign,
         notional,
         cfg,
         bar_volume_notional=volume,
+        symbol_profile=symbol_profile,
     ).fill_price
 
 
@@ -117,9 +126,18 @@ def _close_position(
     notional: float,
     margin_used: float,
     cfg: StrategyConfig,
+    *,
+    symbol_profile: SymbolExecutionProfile | None = None,
 ) -> tuple[float, float, float]:
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
-    exit_price = _fill_price(price, -position_side, cfg, notional=abs(notional), volume=abs(notional) * 20.0)
+    exit_price = _fill_price(
+        price,
+        -position_side,
+        cfg,
+        notional=abs(notional),
+        volume=abs(notional) * 20.0,
+        symbol_profile=symbol_profile,
+    )
     realized = position_side * (exit_price - entry_price) * qty
     exit_fee = abs(exit_price * qty) * fee_rate
     return margin_used + realized - exit_fee, realized, exit_fee
@@ -129,7 +147,13 @@ def _safe_day(ts_ms: int) -> int:
     return int(ts_ms // (24 * 60 * 60 * 1000))
 
 
-def _buy_hold_pnl(rows: List[ModelRow], starting_cash: float, cfg: StrategyConfig) -> float:
+def _buy_hold_pnl(
+    rows: List[ModelRow],
+    starting_cash: float,
+    cfg: StrategyConfig,
+    *,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> float:
     """Return fee/slippage-aware buy-and-hold baseline P&L."""
 
     if not rows or starting_cash <= 0:
@@ -139,8 +163,22 @@ def _buy_hold_pnl(rows: List[ModelRow], starting_cash: float, cfg: StrategyConfi
     if first <= 0 or last <= 0:
         return 0.0
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
-    entry = _fill_price(first, 1, cfg, notional=starting_cash, volume=starting_cash * 20.0)
-    exit_price = _fill_price(last, -1, cfg, notional=starting_cash, volume=starting_cash * 20.0)
+    entry = _fill_price(
+        first,
+        1,
+        cfg,
+        notional=starting_cash,
+        volume=starting_cash * 20.0,
+        symbol_profile=symbol_profile,
+    )
+    exit_price = _fill_price(
+        last,
+        -1,
+        cfg,
+        notional=starting_cash,
+        volume=starting_cash * 20.0,
+        symbol_profile=symbol_profile,
+    )
     if entry <= 0 or exit_price <= 0:
         return 0.0
     entry_notional = starting_cash / (1.0 + fee_rate)
@@ -380,6 +418,7 @@ def run_backtest(
     market_type: str = "spot",
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
+    symbol_profile: SymbolExecutionProfile | None = None,
 ) -> BacktestResult:
     score_backend = resolve_backend(compute_backend or "cpu")
     if not rows:
@@ -481,7 +520,14 @@ def run_backtest(
 
             side_sign = 1 if execution_signal > 0 else -1
             row_volume_notional = max(0.0, float(getattr(row, "volume", 0.0) or 0.0) * price)
-            entry = _fill_price(price, side_sign, cfg, notional=gross, volume=row_volume_notional)
+            entry = _fill_price(
+                price,
+                side_sign,
+                cfg,
+                notional=gross,
+                volume=row_volume_notional,
+                symbol_profile=symbol_profile,
+            )
             if entry <= 0:
                 continue
 
@@ -519,6 +565,7 @@ def run_backtest(
                     notional=notional,
                     margin_used=margin_used,
                     cfg=cfg,
+                    symbol_profile=symbol_profile,
                 )
                 cash += cash_delta
                 total_fees += exit_fee
@@ -560,6 +607,7 @@ def run_backtest(
             notional=notional,
             margin_used=margin_used,
             cfg=cfg,
+            symbol_profile=symbol_profile,
         )
         cash += final_delta
         total_fees += final_fee
@@ -582,7 +630,7 @@ def run_backtest(
 
     trades = closed_trades
 
-    buy_hold_pnl = _buy_hold_pnl(rows, starting_cash, cfg)
+    buy_hold_pnl = _buy_hold_pnl(rows, starting_cash, cfg, symbol_profile=symbol_profile)
 
     return BacktestResult(
         starting_cash=starting_cash,
