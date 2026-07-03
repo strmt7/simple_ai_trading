@@ -19,6 +19,7 @@ from simple_ai_trading.model import (
     model_decision_threshold,
     evaluate_classification,
     evaluate,
+    serialize_model,
     temporal_validation_split,
     train,
     walk_forward_report,
@@ -44,6 +45,34 @@ def test_train_and_evaluate() -> None:
     assert model.training_backend_vendor == "Python stdlib"
     score = evaluate(_rows(), model, threshold=0.5)
     assert 0.0 <= score <= 1.0
+
+
+def test_probability_inversion_roundtrip(tmp_path: Path) -> None:
+    base = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    inverted = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        probability_inverted=True,
+    )
+
+    assert inverted.predict_proba((1.0,)) == pytest.approx(1.0 - base.predict_proba((1.0,)))
+
+    path = tmp_path / "model.json"
+    serialize_model(inverted, path)
+    loaded = load_model(path)
+    assert loaded.probability_inverted is True
+    assert loaded.predict_proba((1.0,)) == pytest.approx(inverted.predict_proba((1.0,)))
 
 
 def test_train_records_requested_backend_fallback_when_unavailable() -> None:

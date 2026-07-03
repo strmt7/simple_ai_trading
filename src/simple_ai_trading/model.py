@@ -92,6 +92,7 @@ class TrainedModel:
     quality_score: float | None = None
     quality_warnings: List[str] = field(default_factory=list)
     probability_temperature: float = 1.0
+    probability_inverted: bool = False
     probability_calibration_size: int = 0
     probability_log_loss_before: float | None = None
     probability_log_loss_after: float | None = None
@@ -247,7 +248,7 @@ class TrainedModel:
     def predict_proba(self, features: Tuple[float, ...]) -> float:
         base_probability = self._base_probability(features)
         if not self.hybrid_experts:
-            return base_probability
+            return _clamp(1.0 - base_probability if self.probability_inverted else base_probability, 0.0, 1.0)
         base_weight = max(0.0, float(self.hybrid_base_weight))
         weighted = base_probability * base_weight
         total = base_weight
@@ -260,7 +261,8 @@ class TrainedModel:
                 continue
             weighted += expert_weight * probability
             total += expert_weight
-        return _clamp(weighted / total if total > 0.0 else base_probability, 0.0, 1.0)
+        probability = weighted / total if total > 0.0 else base_probability
+        return _clamp(1.0 - probability if self.probability_inverted else probability, 0.0, 1.0)
 
     def predict(self, features: Tuple[float, ...], threshold: float) -> int:
         threshold = _clamp(threshold, 0.0, 1.0)
@@ -1653,6 +1655,7 @@ def load_model(
             if isinstance(value, str)
         ],
         probability_temperature=float(payload.get("probability_temperature", 1.0)),
+        probability_inverted=payload.get("probability_inverted") is True,
         probability_calibration_size=int(payload.get("probability_calibration_size", 0)),
         probability_log_loss_before=(
             float(payload["probability_log_loss_before"])

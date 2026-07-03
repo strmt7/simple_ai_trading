@@ -596,6 +596,50 @@ def _make_result(**overrides) -> BacktestResult:
     return BacktestResult(**defaults)
 
 
+def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
+    model = _fake_trained_model(2)
+    model.model_family = "advanced:inverted"
+    model.probability_inverted = True
+    candidate = CandidateParams(
+        epochs=4,
+        learning_rate=0.01,
+        l2_penalty=0.001,
+        signal_threshold=0.64,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=11,
+    )
+
+    diagnostics = training_suite._candidate_diagnostics({
+        "score": float("-inf"),
+        "model": model,
+        "candidate": candidate,
+        "selection_score": 1.0,
+        "validation_score": float("-inf"),
+        "full_sample_score": float("-inf"),
+        "inversion_score": float("-inf"),
+        "threshold": 0.64,
+        "threshold_source": "strategy",
+        "threshold_score": None,
+        "calibration_rows": 0,
+        "validation_rows": 8,
+        "selection_result": {"realized_pnl": 1.0},
+        "validation_result": {"realized_pnl": -1.0},
+        "full_sample_result": {"realized_pnl": -2.0},
+        "inversion_validation_result": {"realized_pnl": -3.0},
+        "inversion_full_sample_result": {"realized_pnl": -4.0},
+        "walk_forward_gate": {"passed": False},
+    })
+
+    assert diagnostics["score"] is None
+    assert diagnostics["model_family"] == "advanced:inverted"
+    assert diagnostics["probability_inverted"] is True
+    assert diagnostics["inversion_score"] is None
+    assert diagnostics["inversion_validation_result"] == {"realized_pnl": -3.0}
+    assert diagnostics["inversion_full_sample_result"] == {"realized_pnl": -4.0}
+
+
 def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
     model = _fake_trained_model(2)
 
@@ -710,7 +754,9 @@ def test_evaluate_candidate_selects_full_fit_when_calibration_regresses(
             return _make_result(ending_cash=1000.0, realized_pnl=0.0, win_rate=0.2)
         if calls["backtest"] in {2, 3}:
             return _make_result(ending_cash=1010.0, realized_pnl=10.0, win_rate=0.4)
-        return _make_result(ending_cash=1075.0, realized_pnl=75.0, win_rate=0.8)
+        if calls["backtest"] in {4, 5, 6}:
+            return _make_result(ending_cash=1075.0, realized_pnl=75.0, win_rate=0.8)
+        return _make_result(ending_cash=990.0, realized_pnl=-10.0, win_rate=0.1)
 
     monkeypatch.setattr(training_suite, "train_advanced", fake_train_advanced)
     monkeypatch.setattr(
@@ -747,7 +793,7 @@ def test_evaluate_candidate_selects_full_fit_when_calibration_regresses(
     })
 
     assert calls["train"] == 2
-    assert calls["backtest"] == 6
+    assert calls["backtest"] == 9
     assert result["threshold"] == pytest.approx(0.64)
     assert result["threshold_source"] == "strategy_full_fit"
     assert result["threshold_score"] is None

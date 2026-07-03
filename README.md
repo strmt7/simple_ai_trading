@@ -103,12 +103,12 @@ simple-ai-trading backtest --compute-backend directml
 simple-ai-trading backtest-chart --output data/backtest_performance.svg
 simple-ai-trading risk --paper
 simple-ai-trading universe
-simple-ai-trading model-lab --objective conservative --objective regular --objective aggressive --max-symbols 5
+simple-ai-trading model-lab --market futures --objective conservative --objective regular --objective aggressive --max-symbols 5
 ```
 
 `backtest-chart` writes an SVG performance chart for the day-trading simulation. The same command appears in the Windows app.
 
-`model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model, requires purged chronological walk-forward evidence for selected candidates, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, then replays every accepted objective under symbol-specific execution stress. A symbol is rejected if any required objective fails profitability, drawdown, trade-count, spread, latency, fee, or liquidity-crunch gates. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
+`model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model, requires purged chronological walk-forward evidence for selected candidates, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, then replays every accepted objective under symbol-specific execution stress. Use `--market futures` to research long/short futures behavior without changing saved runtime defaults. A symbol is rejected if any required objective fails profitability, drawdown, trade-count, spread, latency, fee, or liquidity-crunch gates. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
 ## Autonomous Control
 

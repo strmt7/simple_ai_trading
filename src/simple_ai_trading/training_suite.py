@@ -19,6 +19,7 @@ spawning subprocesses.
 
 from __future__ import annotations
 
+import copy
 import math
 import os
 from concurrent.futures import ProcessPoolExecutor
@@ -489,12 +490,16 @@ def _finite_number_or_none(value: object) -> float | None:
 
 
 def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
+    model = entry.get("model")
     return {
         "score": _finite_number_or_none(entry.get("score")),
+        "model_family": str(getattr(model, "model_family", "")) if model is not None else "",
+        "probability_inverted": bool(getattr(model, "probability_inverted", False)),
         "candidate": entry["candidate"].asdict() if isinstance(entry.get("candidate"), CandidateParams) else {},
         "selection_score": _finite_number_or_none(entry.get("selection_score")),
         "validation_score": _finite_number_or_none(entry.get("validation_score")),
         "full_sample_score": _finite_number_or_none(entry.get("full_sample_score")),
+        "inversion_score": _finite_number_or_none(entry.get("inversion_score")),
         "threshold": _finite_number_or_none(entry.get("threshold")),
         "threshold_source": entry.get("threshold_source"),
         "threshold_score": _finite_number_or_none(entry.get("threshold_score")),
@@ -503,6 +508,16 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
         "selection_result": entry.get("selection_result") if isinstance(entry.get("selection_result"), dict) else None,
         "validation_result": entry.get("validation_result") if isinstance(entry.get("validation_result"), dict) else None,
         "full_sample_result": entry.get("full_sample_result") if isinstance(entry.get("full_sample_result"), dict) else None,
+        "inversion_validation_result": (
+            entry.get("inversion_validation_result")
+            if isinstance(entry.get("inversion_validation_result"), dict)
+            else None
+        ),
+        "inversion_full_sample_result": (
+            entry.get("inversion_full_sample_result")
+            if isinstance(entry.get("inversion_full_sample_result"), dict)
+            else None
+        ),
         "walk_forward_gate": entry.get("walk_forward_gate") if isinstance(entry.get("walk_forward_gate"), dict) else None,
     }
 
@@ -911,6 +926,66 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             selected_holdout_result = fallback_holdout_result
             selected_full_result = fallback_full_result
 
+    inverted_model = copy.deepcopy(model)
+    inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
+    inverted_model.model_family = f"{inverted_model.model_family}:inverted"
+    inverted_model.quality_warnings = [
+        *list(getattr(inverted_model, "quality_warnings", [])),
+        "probability_inversion_variant",
+    ]
+    inverted_selection_result = run_backtest(
+        selection_rows,
+        inverted_model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=score_batch_size,
+    )
+    inverted_selection_score = (
+        objective.score(inverted_selection_result)
+        if objective.accepts(inverted_selection_result)
+        else float("-inf")
+    )
+    inverted_holdout_result = run_backtest(
+        rows_eval,
+        inverted_model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=score_batch_size,
+    )
+    inverted_validation_score = (
+        objective.score(inverted_holdout_result)
+        if objective.accepts(inverted_holdout_result)
+        else float("-inf")
+    )
+    inverted_full_result = run_backtest(
+        rows_train + rows_eval,
+        inverted_model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=score_batch_size,
+    )
+    inverted_full_score = (
+        objective.score(inverted_full_result)
+        if objective.accepts(inverted_full_result)
+        else float("-inf")
+    )
+    inverted_score = min(inverted_validation_score, inverted_full_score)
+    if inverted_score > score + 1e-12:
+        score = inverted_score
+        model = inverted_model
+        selection_score = inverted_selection_score
+        validation_score = inverted_validation_score
+        full_sample_score = inverted_full_score
+        selected_selection_result = inverted_selection_result
+        selected_holdout_result = inverted_holdout_result
+        selected_full_result = inverted_full_result
+
     return {
         "score": float(score),
         "candidate": candidate,
@@ -929,6 +1004,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         "selection_result": _gate_result_payload(selected_selection_result),
         "validation_result": _gate_result_payload(selected_holdout_result),
         "full_sample_result": _gate_result_payload(selected_full_result),
+        "inversion_score": float(inverted_score),
+        "inversion_validation_result": _gate_result_payload(inverted_holdout_result),
+        "inversion_full_sample_result": _gate_result_payload(inverted_full_result),
         "ensemble_refined": bool(ensemble_seeds),
     }
 

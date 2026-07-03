@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import builtins
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -632,6 +633,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_model_lab.add_argument("--max-symbols", type=int, default=6)
     parser_model_lab.add_argument("--max-scan", type=int, default=250)
     parser_model_lab.add_argument("--limit", type=int, default=1000, help="candles per selected symbol")
+    parser_model_lab.add_argument("--market", choices=["spot", "futures"], default=None, help="override runtime market type for this lab run")
     parser_model_lab.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
     parser_model_lab.add_argument("--batch-size", type=int, default=8192)
     parser_model_lab.add_argument("--score-batch-size", type=int, default=None)
@@ -6028,6 +6030,8 @@ def command_model_lab(args: argparse.Namespace) -> int:
     runtime = load_runtime()
     strategy = load_strategy()
     try:
+        market_override = getattr(args, "market", None)
+        lab_runtime = replace(runtime, market_type=str(market_override or runtime.market_type).lower())
         objectives = (
             tuple(get_objective(name).name for name in args.objective)
             if args.objective
@@ -6040,13 +6044,13 @@ def command_model_lab(args: argparse.Namespace) -> int:
         if int(args.limit) < 100:
             raise ValueError("--limit must be >= 100")
         backend_label, _backend_info = _workflow_compute_backend(
-            runtime,
+            lab_runtime,
             getattr(args, "compute_backend", None),
             workflow="model lab",
         )
         report = run_model_lab(
-            _build_client(runtime),
-            runtime,
+            _build_client(lab_runtime),
+            lab_runtime,
             strategy,
             objectives=objectives,
             output_dir=Path(args.output_dir),
@@ -6068,7 +6072,7 @@ def command_model_lab(args: argparse.Namespace) -> int:
 
     print(
         f"model lab complete: accepted={len(report.accepted_symbols)}/{len(report.outcomes)} "
-        f"symbols objectives={','.join(objectives)}"
+        f"symbols market={report.market_type} objectives={','.join(objectives)}"
     )
     for outcome in report.outcomes:
         status = "accepted" if outcome.accepted else "rejected"
