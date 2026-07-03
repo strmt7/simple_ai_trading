@@ -309,7 +309,7 @@ def test_api_defensive_and_constraint_edges(monkeypatch) -> None:
 
     futures = api.BinanceClient("k", "s", market_type="futures")
     futures.get_leverage_brackets = lambda _symbol: [{"symbol": "BTCUSDC", "brackets": []}]
-    assert futures.get_max_leverage("BTCUSDC") == 10
+    assert futures.get_max_leverage("BTCUSDC") == 20
 
 
 def test_feature_model_dashboard_and_backtest_edges(tmp_path, monkeypatch) -> None:
@@ -517,7 +517,7 @@ def test_cli_remaining_helper_edges(tmp_path, monkeypatch, capsys) -> None:
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: ZeroLeverageClient())
     runtime = RuntimeConfig(market_type="futures", api_key="k", api_secret="s")
-    assert cli._resolve_futures_leverage(runtime, StrategyConfig(leverage=12)) == 10.0
+    assert cli._resolve_futures_leverage(runtime, StrategyConfig(leverage=12)) == 12.0
 
     class RaisingLeverageClient:
         def get_max_leverage(self, _symbol):
@@ -589,13 +589,13 @@ def test_cli_remaining_helper_edges(tmp_path, monkeypatch, capsys) -> None:
     save_strategy(StrategyConfig(enabled_features=("rsi",)))
     assert cli.command_strategy(_strategy_args(leverage=200, enable_feature=["rsi"])) == 0
     strategy = cli.load_strategy()
-    assert strategy.leverage == 10
+    assert strategy.leverage == 20
     assert strategy.enabled_features == ("rsi",)
 
     save_runtime(RuntimeConfig(market_type="futures"))
     save_strategy(StrategyConfig())
     assert cli.command_strategy(_strategy_args(leverage=200)) == 0
-    assert cli.load_strategy().leverage == 10
+    assert cli.load_strategy().leverage == 20
 
 
 def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkeypatch, capsys) -> None:
@@ -1045,16 +1045,16 @@ def test_cli_live_guards_leverage_clamps_and_no_rows(tmp_path, monkeypatch, caps
     )
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 200.0)
     assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 0
-    assert "effective leverage: 10.0x" in capsys.readouterr().out
+    assert "effective leverage: 20.0x" in capsys.readouterr().out
 
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 25.0)
     assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 0
-    assert "effective leverage: 10.0x" in capsys.readouterr().out
+    assert "effective leverage: 20.0x" in capsys.readouterr().out
 
     client = _LiveClient(set_response={"leverage": "50"})
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
     assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 0
-    assert "effective leverage: 10.0x" in capsys.readouterr().out
+    assert "effective leverage: 20.0x" in capsys.readouterr().out
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient(set_response={}))
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 0.2)

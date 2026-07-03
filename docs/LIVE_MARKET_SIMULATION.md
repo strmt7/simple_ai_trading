@@ -61,7 +61,7 @@ used as training examples for that fold.
 
 Futures safety:
 
-- Binance can support larger initial leverage values, but this app hard-caps autonomous leverage at `10x`.
+- Binance can support larger initial leverage values, but this app hard-caps autonomous leverage at `20x`.
 - Default leverage is `1x`.
 - Shorting is only available on futures mode.
 - Liquidation buffer is part of strategy config and risk reporting.

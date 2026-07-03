@@ -8,7 +8,7 @@ Simple AI Trading now targets multi-asset, high-liquidity day trading on Binance
 - Binance `ticker/24hr`: measure per-symbol quote volume and trade count.
 - Binance `ticker/bookTicker`: measure per-symbol bid/ask spread.
 - Binance klines: fetch historical bars for training, backtesting, and replay.
-- Binance USD-M futures leverage endpoints: read exchange brackets, then apply the app-level `10x` cap.
+- Binance USD-M futures leverage endpoints: read exchange brackets, then apply the app-level `20x` cap.
 - DirectML / `torch-directml`: Windows GPU acceleration for AMD, NVIDIA, and Intel GPUs.
 
 ## Planned Integrations

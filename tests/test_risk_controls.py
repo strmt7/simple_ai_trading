@@ -29,6 +29,7 @@ def test_stop_loss_sized_notional_pct_respects_caps_and_leverage() -> None:
 
     assert stop_loss_sized_notional_pct(spot, "spot") == 0.5
     assert stop_loss_sized_notional_pct(futures, "futures") == 0.5
+    assert stop_loss_sized_notional_pct(futures, "futures", leverage=20.0) == 0.5
 
 
 def test_risk_policy_blocks_mainnet_live_missing_credentials_and_zero_cash(tmp_path) -> None:
@@ -75,7 +76,7 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
     )
 
     assert report.allowed is False
-    assert report.leverage == 10.0
+    assert report.leverage == 20.0
     assert report.warning_count >= 3
     assert report.block_count >= 2
     assert any(check.label == "effective leverage" and check.status == "ok" for check in report.checks)

@@ -5,6 +5,7 @@ import math
 from dataclasses import asdict, dataclass, replace
 from typing import Dict, List
 
+from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
 from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
@@ -235,7 +236,7 @@ def _position_size_from_risk(
     if market_type == "spot":
         return max(0.0, gross), max(0.0, gross)
 
-    effective_leverage = max(1.0, min(10.0, _finite_float(leverage, 1.0)))
+    effective_leverage = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _finite_float(leverage, 1.0)))
     margin = gross / effective_leverage if effective_leverage > 0.0 else gross
     return max(0.0, gross), max(0.0, margin)
 
@@ -489,8 +490,8 @@ def run_backtest(
     leverage = 1.0 if market_type == "spot" else cfg.leverage
     if leverage < 1:
         leverage = 1.0
-    if market_type == "futures" and leverage > 10:
-        leverage = 10.0
+    if market_type == "futures" and leverage > MAX_AUTONOMOUS_LEVERAGE:
+        leverage = MAX_AUTONOMOUS_LEVERAGE
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
 
     daily_trade_count: Dict[int, int] = {}

@@ -18,6 +18,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 
 import requests
 
+from .assets import MAX_AUTONOMOUS_LEVERAGE
 
 BINANCE_SPOT_TESTNET = "https://testnet.binance.vision"
 BINANCE_SPOT_LIVE = "https://api.binance.com"
@@ -25,7 +26,7 @@ BINANCE_SPOT_DEMO = "https://demo-api.binance.com"
 BINANCE_FUTURES_TESTNET = "https://testnet.binancefuture.com"
 BINANCE_FUTURES_LIVE = "https://fapi.binance.com"
 BINANCE_FUTURES_DEMO = "https://demo-fapi.binance.com"
-_MAX_FUTURES_LEVERAGE = 10
+_MAX_FUTURES_LEVERAGE = int(MAX_AUTONOMOUS_LEVERAGE)
 _RETRY_HTTP_STATUSES = {418, 429, 500, 502, 503, 504}
 _RETRY_BAPI_CODES = {-1003, -1007}
 _SENSITIVE_QUERY_FIELDS = {"signature", "timestamp", "recvWindow"}
