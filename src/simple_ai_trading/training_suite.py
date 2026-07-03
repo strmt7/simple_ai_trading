@@ -116,6 +116,7 @@ class ObjectiveOutcome:
     validation_rows: int = 0
     validation_score: float | None = None
     full_sample_score: float | None = None
+    walk_forward_gate: dict[str, object] | None = None
     ensemble_refined: bool = False
     ensemble_refinement_candidates: int = 0
     local_refinement_candidates: int = 0
@@ -424,6 +425,182 @@ def _walk_forward_split(rows: Sequence[ModelRow], *, eval_ratio: float = 0.25) -
     split = int(len(rows) * (1.0 - eval_ratio))
     split = max(5, min(len(rows) - 5, split))
     return list(rows[:split]), list(rows[split:])
+
+
+def _purged_walk_forward_splits(
+    rows: Sequence[ModelRow],
+    training: ObjectiveTraining,
+    feature_cfg: AdvancedFeatureConfig,
+) -> list[dict[str, object]]:
+    ordered = list(rows)
+    row_count = len(ordered)
+    if row_count < 320:
+        return []
+    purge_gap = max(1, int(feature_cfg.label_lookahead))
+    train_window = min(max(80, int(training.walk_forward_train)), max(80, int(row_count * 0.60)))
+    remaining = row_count - train_window - purge_gap
+    if remaining < 40:
+        train_window = max(80, int(row_count * 0.55))
+        remaining = row_count - train_window - purge_gap
+    test_window = min(max(30, int(training.walk_forward_test)), max(30, int(remaining * 0.50)))
+    step = min(max(1, int(training.walk_forward_step)), max(1, test_window))
+    folds: list[dict[str, object]] = []
+    start = 0
+    fold_index = 0
+    while start + train_window + purge_gap + test_window <= row_count:
+        train_start = start
+        train_end = start + train_window
+        test_start = train_end + purge_gap
+        test_end = test_start + test_window
+        folds.append({
+            "index": fold_index,
+            "train_start": train_start,
+            "train_end": train_end,
+            "test_start": test_start,
+            "test_end": test_end,
+            "purge_gap": purge_gap,
+            "train_rows": ordered[train_start:train_end],
+            "test_rows": ordered[test_start:test_end],
+        })
+        fold_index += 1
+        start += step
+    return folds
+
+
+def _gate_result_payload(result: BacktestResult) -> dict[str, object]:
+    return {
+        "realized_pnl": float(result.realized_pnl),
+        "max_drawdown": float(result.max_drawdown),
+        "closed_trades": int(result.closed_trades),
+        "win_rate": float(result.win_rate),
+        "total_fees": float(result.total_fees),
+        "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
+        "stopped_by_drawdown": bool(result.stopped_by_drawdown),
+    }
+
+
+def _purged_walk_forward_gate(
+    candidate: CandidateParams,
+    rows: Sequence[ModelRow],
+    base_strategy: StrategyConfig,
+    feature_cfg: AdvancedFeatureConfig,
+    objective: ObjectiveSpec,
+    training: ObjectiveTraining,
+    *,
+    market_type: str,
+    starting_cash: float,
+    compute_backend: str | None = None,
+    batch_size: int = 8192,
+    score_batch_size: int = 8192,
+) -> dict[str, object]:
+    folds = _purged_walk_forward_splits(rows, training, feature_cfg)
+    if not folds:
+        return {
+            "passed": True,
+            "reason": "insufficient_rows_for_purged_walk_forward",
+            "fold_count": 0,
+            "accepted_folds": 0,
+            "worst_score": None,
+            "worst_realized_pnl": None,
+            "worst_max_drawdown": None,
+            "folds": [],
+        }
+    strategy = _strategy_for_candidate(base_strategy, candidate, training)
+    fold_reports: list[dict[str, object]] = []
+    worst_score = float("inf")
+    worst_realized = float("inf")
+    worst_drawdown = 0.0
+    accepted_folds = 0
+    for fold in folds:
+        train_rows = list(fold["train_rows"])
+        test_rows = list(fold["test_rows"])
+        fold_payload = {
+            "index": int(fold["index"]),
+            "train_start": int(fold["train_start"]),
+            "train_end": int(fold["train_end"]),
+            "test_start": int(fold["test_start"]),
+            "test_end": int(fold["test_end"]),
+            "purge_gap": int(fold["purge_gap"]),
+            "train_rows": len(train_rows),
+            "test_rows": len(test_rows),
+        }
+        try:
+            fit_rows, calibration_rows = _calibration_split(train_rows)
+            model, _report = train_advanced(
+                fit_rows,
+                feature_cfg,
+                epochs=candidate.epochs,
+                learning_rate=candidate.learning_rate,
+                l2_penalty=candidate.l2_penalty,
+                seed=candidate.seed,
+                validation_rows=calibration_rows,
+                early_stopping_rounds=max(10, min(40, int(candidate.epochs) // 8)) if calibration_rows else None,
+                compute_backend=compute_backend,
+                batch_size=batch_size,
+            )
+            if training.calibrate_threshold and calibration_rows:
+                threshold, threshold_source, threshold_score = _calibrate_candidate_threshold(
+                    model,
+                    calibration_rows,
+                    strategy,
+                    market_type=market_type,
+                    starting_cash=starting_cash,
+                    compute_backend=compute_backend,
+                    score_batch_size=score_batch_size,
+                )
+                model.decision_threshold = float(threshold)
+                model.threshold_source = threshold_source
+                model.threshold_calibration_score = threshold_score
+                model.threshold_calibration_trades = len(calibration_rows)
+                model.calibration_size = len(calibration_rows)
+            else:
+                model.decision_threshold = float(strategy.signal_threshold)
+                model.threshold_source = "strategy"
+            _attach_strategy_overrides(model, strategy)
+            result = run_backtest(
+                test_rows,
+                model,
+                strategy,
+                starting_cash=starting_cash,
+                market_type=market_type,
+                compute_backend=compute_backend,
+                score_batch_size=score_batch_size,
+            )
+            accepted = objective.accepts(result) and result.realized_pnl > 0.0 and not result.stopped_by_drawdown
+            score = objective.score(result) if accepted else float("-inf")
+            if accepted:
+                accepted_folds += 1
+            worst_score = min(worst_score, score)
+            worst_realized = min(worst_realized, float(result.realized_pnl))
+            worst_drawdown = max(worst_drawdown, float(result.max_drawdown))
+            fold_reports.append({
+                **fold_payload,
+                "accepted": bool(accepted),
+                "score": float(score),
+                "result": _gate_result_payload(result),
+                "threshold": model.decision_threshold,
+                "threshold_source": model.threshold_source,
+            })
+        except Exception as exc:  # pragma: no cover - defensive gate failure path
+            worst_score = float("-inf")
+            worst_realized = float("-inf")
+            fold_reports.append({
+                **fold_payload,
+                "accepted": False,
+                "score": float("-inf"),
+                "error": f"{exc.__class__.__name__}: {exc}",
+            })
+    passed = accepted_folds == len(folds)
+    return {
+        "passed": bool(passed),
+        "reason": None if passed else "purged_walk_forward_fold_failed",
+        "fold_count": len(folds),
+        "accepted_folds": accepted_folds,
+        "worst_score": None if worst_score == float("inf") else float(worst_score),
+        "worst_realized_pnl": None if worst_realized == float("inf") else float(worst_realized),
+        "worst_max_drawdown": float(worst_drawdown),
+        "folds": fold_reports,
+    }
 
 
 def _ensemble_seed_pack(seed: int) -> tuple[int, int, int]:
@@ -790,6 +967,7 @@ def train_for_objective(
                 "validation_rows": len(eval_rows),
                 "validation_score": float(score),
                 "full_sample_score": None,
+                "walk_forward_gate": None,
             })
     else:
         payloads = [
@@ -819,6 +997,7 @@ def train_for_objective(
                 results = list(pool.map(_evaluate_candidate, payloads))
 
     results.sort(key=lambda entry: entry["score"], reverse=True)
+    ranked_pool = list(results)
     best = results[0]
     ensemble_refinement_candidates = 0
     local_refinement_candidates = 0
@@ -843,6 +1022,7 @@ def train_for_objective(
             local_results.append(local_result)
         ranked_pool = sorted([*results, *local_results], key=lambda entry: entry["score"], reverse=True)
         best = ranked_pool[0]
+        ensemble_results: list[dict[str, Any]] = []
         for base_result in ranked_pool[:_ENSEMBLE_REFINEMENT_CANDIDATES]:
             ensemble_refinement_candidates += 1
             ensemble_result = _evaluate_candidate({
@@ -860,13 +1040,52 @@ def train_for_objective(
                 "score_batch_size": effective_score_batch_size,
                 "include_full_fit_fallback": True,
             })
+            ensemble_results.append(ensemble_result)
             if ensemble_result["score"] > best["score"] + 1e-12:
                 best = ensemble_result
+        if ensemble_results:
+            ranked_pool = sorted([*ranked_pool, *ensemble_results], key=lambda entry: entry["score"], reverse=True)
+
+        gated_best: dict[str, Any] | None = None
+        last_gate: dict[str, object] | None = None
+        for candidate_result in ranked_pool:
+            if not math.isfinite(float(candidate_result["score"])):
+                continue
+            gate = _purged_walk_forward_gate(
+                candidate_result["candidate"],
+                rows,
+                base_strategy,
+                feature_cfg,
+                objective,
+                training,
+                market_type=market_type,
+                starting_cash=starting_cash,
+                compute_backend=compute_backend or "cpu",
+                batch_size=batch_size,
+                score_batch_size=effective_score_batch_size,
+            )
+            candidate_result["walk_forward_gate"] = gate
+            last_gate = gate
+            if gate.get("passed"):
+                worst_score = gate.get("worst_score")
+                if isinstance(worst_score, (int, float)) and math.isfinite(float(worst_score)):
+                    candidate_result["score"] = min(float(candidate_result["score"]), float(worst_score))
+                gated_best = candidate_result
+                break
+        if gated_best is None:
+            best = {
+                **best,
+                "score": float("-inf"),
+                "walk_forward_gate": last_gate,
+            }
+        else:
+            best = gated_best
 
         best_strategy = best["strategy"]
         model_train_rows, selection_rows = _walk_forward_split(train_rows)
         can_optimize_hybrid = (
-            bool(model_train_rows)
+            math.isfinite(float(best["score"]))
+            and bool(model_train_rows)
             and bool(selection_rows)
             and int(getattr(best["model"], "feature_dim", -1)) == len(model_train_rows[0].features)
             and objective.name in available_objectives()
@@ -920,6 +1139,7 @@ def train_for_objective(
                     "hybrid_base_score": hybrid_report.base_score,
                     "hybrid_best_score": hybrid_report.best_score,
                     "hybrid_evaluated_profiles": hybrid_report.evaluated_profiles,
+                    "walk_forward_gate": best.get("walk_forward_gate"),
                 }
 
     rejected = sum(1 for entry in results if entry["score"] == float("-inf"))
@@ -971,6 +1191,11 @@ def train_for_objective(
         full_sample_score=(
             float(best["full_sample_score"])
             if best.get("full_sample_score") is not None
+            else None
+        ),
+        walk_forward_gate=(
+            dict(best["walk_forward_gate"])
+            if isinstance(best.get("walk_forward_gate"), dict)
             else None
         ),
         ensemble_refined=bool(best.get("ensemble_refined", False)),

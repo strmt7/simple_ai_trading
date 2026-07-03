@@ -5931,12 +5931,22 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         return 2
     print(f"training suite complete: {len(report.outcomes)} objective(s)")
     for outcome in report.outcomes:
+        wf_gate = getattr(outcome, "walk_forward_gate", None) or {}
+        wf_gate_text = "n/a"
+        if wf_gate:
+            reason = wf_gate.get("reason")
+            wf_gate_text = (
+                f"{wf_gate.get('accepted_folds', 0)}/{wf_gate.get('fold_count', 0)}"
+                if wf_gate.get("passed")
+                else f"failed:{reason or 'fold_gate'}"
+            )
         print(
             f"  {outcome.objective:<14} score={outcome.best_score:+.4f} "
             f"threshold={outcome.decision_threshold if outcome.decision_threshold is not None else 'n/a'} "
             f"source={outcome.threshold_source or 'n/a'} "
             f"validation={outcome.validation_score if outcome.validation_score is not None else 'n/a'} "
             f"full={outcome.full_sample_score if outcome.full_sample_score is not None else 'n/a'} "
+            f"walk_forward={wf_gate_text} "
             f"ensemble={'yes' if getattr(outcome, 'ensemble_refined', False) else 'no'} "
             f"hybrid={getattr(outcome, 'hybrid_profile', 'base_only')} "
             f"backend={getattr(outcome, 'training_backend_kind', 'cpu')} "
