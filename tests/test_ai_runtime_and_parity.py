@@ -93,7 +93,11 @@ def test_generated_native_contract_matches_cli() -> None:
 def test_native_window_initializes_hwnd_during_create() -> None:
     source = (windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp").read_text(encoding="utf-8")
     assert "self->hwnd_ = hwnd;" in source
-    assert "option_preview(kCommands[selected_])" in source
+    assert 'create_control(L"LISTBOX"' in source
+    assert 'L"COMBOBOX"' in source
+    assert 'L"Stop And Close All"' in source
+    assert "repo_root()" in source
+    assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
 
 
 def _wide(text: str) -> str:
