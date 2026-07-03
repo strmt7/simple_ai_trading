@@ -58,9 +58,18 @@ model-lab candidates now include per-window `reject_reason` diagnostics so
 operators can distinguish missing trade count, negative P&L, buy-and-hold edge
 failure, drawdown failure, and stopped-by-drawdown failures.
 
+For futures, threshold calibration stores the same effective neutral-band
+threshold used by live and backtest direction logic: values below `0.5` are not
+persisted as futures decision thresholds because long/short futures signals use
+`score >= threshold` for long and `score <= 1 - threshold` for short.
+
 Accepted hybrid candidates must improve or preserve the objective score and pass
 the profitability, drawdown, and minimum-trade gates in
-`ObjectiveSpec.accepts`. If none pass, the original base model is kept.
+`ObjectiveSpec.accepts`. If no base candidate survives the hard gates, the
+training suite now attempts a small fail-closed hybrid rescue pass over the top
+rejected base candidates. A rescued hybrid is serialized only when it passes the
+hybrid selection window, the final chronological holdout, and the full-sample
+objective gates; otherwise the objective remains rejected.
 
 ## Cross-Symbol Model Lab
 
