@@ -11,7 +11,7 @@ The autonomous loop is deliberately conservative:
   ``RUNNING``, ``PAUSED``, ``STOPPING``.  A separate command
   (``autonomous pause/resume/stop``) just rewrites that file.
 * Uses an objective-tagged model artifact so the user can flip between
-  Conservative, Default, and Risky without rebooting.
+  Conservative, Regular, and Aggressive without rebooting.
 
 Safety design principles:
 * No real-money execution.  The client must point at testnet; we re-verify this

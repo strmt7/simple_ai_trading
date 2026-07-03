@@ -605,7 +605,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_objectives.set_defaults(func=command_objectives)
 
     parser_train_suite = subparsers.add_parser(
-        "train-suite", help="train one advanced model per objective (Conservative/Default/Risky)",
+        "train-suite", help="train one advanced model per objective (Conservative/Regular/Aggressive)",
     )
     parser_train_suite.add_argument("--input", default="data/historical_btcusdc.json")
     parser_train_suite.add_argument("--output-dir", default="data")

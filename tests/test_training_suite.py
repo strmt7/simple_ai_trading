@@ -1523,12 +1523,12 @@ def test_run_training_suite_with_explicit_objectives(
         output_dir=tmp_path,
     )
     assert isinstance(report, SuiteReport)
-    assert {o.objective for o in report.outcomes} == {"regular", "conservative"}
+    assert [o.objective for o in report.outcomes] == ["conservative"]
     summary = tmp_path / "training_suite_summary.json"
     assert summary.exists()
     data = json.loads(summary.read_text(encoding="utf-8"))
     assert data["total_candles"] == len(candles)
-    assert set(data["objectives_run"]) == {"regular", "conservative"}
+    assert data["objectives_run"] == ["conservative"]
 
 
 def test_run_training_suite_default_objectives_and_summary_path(

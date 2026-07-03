@@ -246,7 +246,7 @@ AGGRESSIVE = ObjectiveSpec(
     ),
 )
 
-DEFAULT = REGULAR
+DEFAULT = CONSERVATIVE
 RISKY = AGGRESSIVE
 
 
@@ -257,7 +257,7 @@ _REGISTRY: dict[str, ObjectiveSpec] = {
 }
 _ALIASES: dict[str, str] = {
     "balanced": REGULAR.name,
-    "default": REGULAR.name,
+    "default": CONSERVATIVE.name,
     "risky": AGGRESSIVE.name,
 }
 
