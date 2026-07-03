@@ -1735,7 +1735,7 @@ def _ollama_prompt(news_texts: list[str]) -> str:
     bounded = _bounded_ollama_news_texts(news_texts)
     joined = "\n".join(f"- {text}" for text in bounded)
     return (
-        "Score public BTCUSDC market headlines. -1 bearish, +1 bullish. "
+        "Score public crypto market headlines for the requested trading symbol. -1 bearish, +1 bullish. "
         "Hacks, exploits, breaches, bans, and ETF denials are bearish. "
         "ETF approvals, inflows, and adoption are bullish. "
         "Use short horizon for breaking/emergency items needing a minutes response. JSON only.\n"

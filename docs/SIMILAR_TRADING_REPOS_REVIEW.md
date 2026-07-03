@@ -13,7 +13,7 @@ Scope: verified repositories and official documentation for the main matrix. Git
 5. Keep adapter boundaries explicit. CCXT, Hummingbot, python-binance, binance-connector-python, and Alpaca all separate exchange connectivity from strategy logic. This repo keeps the Binance client behind `_build_client` and tests connectivity through stubs.
 6. Treat exchange filters as normal runtime failures. Binance documentation and field reports repeatedly point to quantity, precision, notional, and price-filter rejections; started live loops now persist `order_error` events for entry, close, and emergency-close order failures.
 7. Batch public historical data only where it is safe. Binance kline downloads have request-size limits, so this repo pages historical fetches with `--batch-size`; live market/order loops remain sequential because signed calls and order state should not be parallelized casually.
-8. Reconcile live state before acting. Live-oriented systems and exchange SDK guidance assume account/order state can outlive a process; authenticated live runs now inspect exchange BTCUSDC balances or positions before assuming the bot is flat.
+8. Reconcile live state before acting. Live-oriented systems and exchange SDK guidance assume account/order state can outlive a process; authenticated live runs must inspect exchange balances or positions for the active symbol set before assuming the bot is flat.
 9. Preserve simple local artifacts. This repo remains intentionally small: JSON data, JSON model, JSON run artifacts, no database dependency, no multi-exchange abstraction until the operational need is real. Started live loops persist halt context for post-run inspection.
 
 ## Repository Matrix
@@ -66,7 +66,7 @@ Implemented in the current operator pass:
 9. Signed Binance request telemetry redacts timestamp, receive-window, and signature query values before storing request metadata.
 10. Futures account reporting includes non-zero `assets` and `positions`, not only spot `balances`.
 11. Entry, close, and emergency-close order rejections are caught, recorded as `order_error`, and returned as nonzero live-loop exits instead of uncaught exceptions.
-12. Authenticated live starts detect existing BTCUSDC spot/futures exposure and resume it into local run state instead of assuming a previous interrupted run exited flat.
+12. Authenticated live starts must detect existing spot/futures exposure for the active symbol set and resume it into local run state instead of assuming a previous interrupted run exited flat.
 13. Futures close and emergency-close paths submit reduce-only market orders and request result responses.
 
 ## Sources Checked

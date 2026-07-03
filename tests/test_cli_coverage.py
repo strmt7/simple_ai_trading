@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import asyncio
 import json
@@ -9,23 +9,23 @@ from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import cli
-from simple_ai_bitcoin_trading_binance.advanced_model import (
+from simple_ai_trading import cli
+from simple_ai_trading.advanced_model import (
     advanced_feature_signature,
     default_config_for,
     make_advanced_rows,
 )
-from simple_ai_bitcoin_trading_binance.api import BinanceAPIError, Candle, SymbolConstraints
-from simple_ai_bitcoin_trading_binance.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
-from simple_ai_bitcoin_trading_binance.model import (
+from simple_ai_trading.api import BinanceAPIError, Candle, SymbolConstraints
+from simple_ai_trading.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
+from simple_ai_trading.model import (
     ModelFeatureMismatchError,
     ModelLoadError,
     TemporalValidationSplit,
     TrainedModel,
     serialize_model,
 )
-from simple_ai_bitcoin_trading_binance.features import ModelRow, feature_signature
-from simple_ai_bitcoin_trading_binance.types import StrategyConfig
+from simple_ai_trading.features import ModelRow, feature_signature
+from simple_ai_trading.types import StrategyConfig
 
 
 def _exchange_account(usdc: str = "1000") -> dict[str, object]:
@@ -352,8 +352,8 @@ def test_command_audit_success_and_load_failure(tmp_path, monkeypatch, capsys) -
         max_feature_delta = 0.0
 
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: _simple_candles())
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.audit.build_audit_report", lambda *_args, **_kwargs: _Report())
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.audit.render_audit_report", lambda _report: "audit ok")
+    monkeypatch.setattr("simple_ai_trading.audit.build_audit_report", lambda *_args, **_kwargs: _Report())
+    monkeypatch.setattr("simple_ai_trading.audit.render_audit_report", lambda _report: "audit ok")
 
     assert cli.command_audit(argparse.Namespace(input="i.json", model="m.json")) == 0
     assert "audit ok" in capsys.readouterr().out
@@ -361,7 +361,7 @@ def test_command_audit_success_and_load_failure(tmp_path, monkeypatch, capsys) -
     class _BadReport(_Report):
         ok = False
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.audit.build_audit_report", lambda *_args, **_kwargs: _BadReport())
+    monkeypatch.setattr("simple_ai_trading.audit.build_audit_report", lambda *_args, **_kwargs: _BadReport())
     assert cli.command_audit(argparse.Namespace(input="i.json", model="m.json")) == 2
 
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: None)
@@ -495,7 +495,7 @@ def test_resolve_futures_leverage(monkeypatch) -> None:
     assert cli._resolve_futures_leverage(runtime, cfg) == 10.0
 
     runtime_no_key = RuntimeConfig(market_type="futures", api_key="", api_secret="")
-    assert cli._resolve_futures_leverage(runtime_no_key, cfg) == 50.0
+    assert cli._resolve_futures_leverage(runtime_no_key, cfg) == 10.0
 
     runtime_spot = RuntimeConfig(market_type="spot")
     assert cli._resolve_futures_leverage(runtime_spot, cfg) == 1.0
@@ -1372,7 +1372,7 @@ def test_command_live_requires_exchange_filters_before_signed_loop(tmp_path, mon
 
 
 def test_command_fetch_handles_binar_errors(tmp_path, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
+    from simple_ai_trading.api import BinanceAPIError
 
     class _ErrorClient(_FakeClient):
         def ensure_btcusdc(self):
@@ -1386,10 +1386,12 @@ def test_command_fetch_handles_binar_errors(tmp_path, monkeypatch) -> None:
     assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=10, output=str(output))) == 2
 
 
-def test_command_fetch_rejects_non_btcusdc_symbol(tmp_path, monkeypatch) -> None:
+def test_command_fetch_accepts_non_default_symbol(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
-    assert cli.command_fetch(argparse.Namespace(symbol="ETHUSDC", interval=None, limit=10, output=str(tmp_path / "candles.json"))) == 2
+    output = tmp_path / "candles.json"
+    assert cli.command_fetch(argparse.Namespace(symbol="ETHUSDC", interval=None, limit=10, output=str(output))) == 0
+    assert output.exists()
 
 
 def test_command_train_workflow(tmp_path, monkeypatch) -> None:
@@ -2239,7 +2241,7 @@ def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, 
 
 
 def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> None:
-    from simple_ai_bitcoin_trading_binance.model import serialize_model
+    from simple_ai_trading.model import serialize_model
 
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(api_key="secret-key", api_secret="secret-value"))
@@ -3463,8 +3465,8 @@ def test_command_strategy_profiles_apply_and_explicit_args_override(tmp_path, mo
 
     assert cli.command_strategy(args_for("conservative")) == 0
     conservative = load_strategy()
-    assert conservative.risk_per_trade == 0.005
-    assert conservative.signal_threshold == 0.64
+    assert conservative.risk_per_trade == 0.003
+    assert conservative.signal_threshold == 0.66
     assert conservative.training_epochs == 180
 
     assert cli.command_strategy(args_for("active", risk=0.003, signal_threshold=0.7)) == 0
@@ -3479,42 +3481,43 @@ def test_command_strategy_profiles_apply_and_explicit_args_override(tmp_path, mo
 
 def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_strategy(StrategyConfig())
+    cfg = StrategyConfig()
+    save_strategy(cfg)
 
     payload = {
         "profile": "active",
-        "leverage": "1.0",
-        "risk": "0.01",
-        "max_position": "0.2",
-        "stop": "0.02",
-        "take": "0.03",
-        "cooldown": "5",
-        "max_open": "1",
-        "max_trades_per_day": "24",
-        "signal_threshold": "0.58",
-        "max_drawdown": "0.25",
-        "taker_fee_bps": "1.0",
-        "slippage_bps": "5.0",
-        "label_threshold": "0.001",
-        "model_lookback": "250",
-        "training_epochs": "250",
-        "confidence_beta": "0.85",
-        "feature_window_short": "10",
-        "feature_window_long": "40",
-        "external_signals": "False",
-        "external_signal_max_adjustment": "0.04",
-        "external_signal_min_providers": "2",
-        "external_signal_ttl": "300",
-        "external_signal_timeout": "3.0",
-        "external_news_ai": "False",
-        "external_news_ai_model": "gemma4:e4b",
-        "external_news_provider_limit": "40",
-        "external_provider_parallelism": "12",
-        "external_provider_jitter": "0.25",
-        "external_poll_jitter": "2.0",
-        "telemetry_db": "data/trading_telemetry.sqlite",
-        "source_grading": "True",
-        "source_grading_interval": "3600",
+        "leverage": str(cfg.leverage),
+        "risk": str(cfg.risk_per_trade),
+        "max_position": str(cfg.max_position_pct),
+        "stop": str(cfg.stop_loss_pct),
+        "take": str(cfg.take_profit_pct),
+        "cooldown": str(cfg.cooldown_minutes),
+        "max_open": str(cfg.max_open_positions),
+        "max_trades_per_day": str(cfg.max_trades_per_day),
+        "signal_threshold": str(cfg.signal_threshold),
+        "max_drawdown": str(cfg.max_drawdown_limit),
+        "taker_fee_bps": str(cfg.taker_fee_bps),
+        "slippage_bps": str(cfg.slippage_bps),
+        "label_threshold": str(cfg.label_threshold),
+        "model_lookback": str(cfg.model_lookback),
+        "training_epochs": str(cfg.training_epochs),
+        "confidence_beta": str(cfg.confidence_beta),
+        "feature_window_short": str(cfg.feature_windows[0]),
+        "feature_window_long": str(cfg.feature_windows[1]),
+        "external_signals": str(cfg.external_signals_enabled),
+        "external_signal_max_adjustment": str(cfg.external_signal_max_adjustment),
+        "external_signal_min_providers": str(cfg.external_signal_min_providers),
+        "external_signal_ttl": str(cfg.external_signal_ttl_seconds),
+        "external_signal_timeout": str(cfg.external_signal_timeout_seconds),
+        "external_news_ai": str(cfg.external_news_ai_enabled),
+        "external_news_ai_model": str(cfg.external_news_ai_model),
+        "external_news_provider_limit": str(cfg.external_signal_news_provider_limit),
+        "external_provider_parallelism": str(cfg.external_signal_provider_parallelism),
+        "external_provider_jitter": str(cfg.external_signal_provider_jitter_seconds),
+        "external_poll_jitter": str(cfg.external_signal_poll_jitter_seconds),
+        "telemetry_db": str(cfg.telemetry_db_path),
+        "source_grading": str(cfg.source_grading_enabled),
+        "source_grading_interval": str(cfg.source_grading_interval_seconds),
         "source_grade_max_age_hours": "72",
     }
 
@@ -3536,7 +3539,7 @@ def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(tmp_path
     assert cli.command_strategy(args) == 0
     updated = load_strategy()
     assert updated.leverage == 3.0
-    assert updated.risk_per_trade == 0.015
+    assert updated.risk_per_trade == 0.010
     assert updated.signal_threshold == 0.55
     assert updated.external_signals_enabled is True
     assert updated.source_grade_max_age_hours == 72.0
@@ -5024,7 +5027,7 @@ def test_command_live_futures_preflight_blocks_before_leverage_mutation(tmp_path
 
 
 def test_command_backtest_model_missing_and_success(tmp_path, monkeypatch, capsys) -> None:
-    from simple_ai_bitcoin_trading_binance.model import serialize_model
+    from simple_ai_trading.model import serialize_model
 
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
@@ -5215,9 +5218,9 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
         cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, model=str(model_file), leverage=12.0))
         == 0
     )
-    assert client.set_calls == [12]
+    assert client.set_calls == [10]
     assert client.orders
-    assert client.orders[0][3] == 12.0
+    assert client.orders[0][3] == 10.0
     assert "effective leverage" in capsys.readouterr().out
 
 
@@ -5474,7 +5477,7 @@ def test_build_autonomous_decision_fn_returns_flat_without_training_rows(tmp_pat
 
 
 def test_command_autonomous_start_success_error_and_client_failure(tmp_path, monkeypatch, capsys) -> None:
-    from simple_ai_bitcoin_trading_binance import autonomous
+    from simple_ai_trading import autonomous
 
     base_args = {
         "action": "start",

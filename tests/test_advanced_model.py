@@ -1,4 +1,4 @@
-"""Branch-coverage tests for the advanced model / feature-expansion module."""
+﻿"""Branch-coverage tests for the advanced model / feature-expansion module."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ import math
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import advanced_model as am
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.features import FEATURE_NAMES, ModelRow
+from simple_ai_trading import advanced_model as am
+from simple_ai_trading.api import Candle
+from simple_ai_trading.features import FEATURE_NAMES, ModelRow
 
 
 def _candles(n: int = 220) -> list[Candle]:
@@ -29,7 +29,7 @@ def _candles(n: int = 220) -> list[Candle]:
 
 def test_tanh_overflow_branch_positive():
     # math.tanh raises OverflowError for very large inputs on some platforms; the
-    # helper must handle it by clamping to ±1.0.
+    # helper must handle it by clamping to Â±1.0.
     # We monkeypatch math.tanh via the module to force the overflow branch.
     original = am.math.tanh
     try:
@@ -57,7 +57,7 @@ def test_sma_and_rsi_guards():
     assert am._sma([1.0, 2.0, 3.0], 3) == 2.0
     assert math.isnan(am._rsi([1.0], 0))
     assert math.isnan(am._rsi([1.0], 5))
-    # all losses zero → 100
+    # all losses zero â†’ 100
     assert am._rsi([1.0, 1.0, 1.0, 1.0, 1.0], 3) == 100.0
     # alternating produces a number strictly between 0 and 100
     val = am._rsi([1.0, 2.0, 1.0, 2.0, 1.0], 3)
@@ -165,7 +165,7 @@ def test_make_advanced_rows_happy_path():
 def test_make_advanced_rows_handles_missing_index(monkeypatch):
     cfg = am.default_config_for("default", FEATURE_NAMES)
     # Force every base row to carry a timestamp not present in index_by_time
-    from simple_ai_bitcoin_trading_binance import advanced_model as mod
+    from simple_ai_trading import advanced_model as mod
 
     def fake_base(*_args, **_kwargs):
         return [ModelRow(timestamp=-999, close=100.0, features=(0.0,) * len(FEATURE_NAMES), label=0)]

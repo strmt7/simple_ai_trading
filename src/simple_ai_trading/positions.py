@@ -225,7 +225,7 @@ def compute_stats(
 ) -> LedgerStats:
     """Compute aggregate statistics from the ledger + open positions.
 
-    ``mark_price`` is the current BTCUSDC mark used to value open positions;
+    ``mark_price`` is the current symbol mark used to value open positions;
     pass ``None`` if the mark is unavailable — unrealized fields will be zero
     rather than raising.
     """

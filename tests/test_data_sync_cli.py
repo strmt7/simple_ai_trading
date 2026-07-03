@@ -1,18 +1,18 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import builtins
 import json
 from pathlib import Path
 
-from simple_ai_bitcoin_trading_binance import cli
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.config import save_runtime, save_strategy
-from simple_ai_bitcoin_trading_binance.external_signals import ExternalSignalComponent, ExternalSignalReport
-from simple_ai_bitcoin_trading_binance.features import ModelRow
-from simple_ai_bitcoin_trading_binance.market_store import MarketDataStore
-from simple_ai_bitcoin_trading_binance.data_downloader import MarketDataSyncResult
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading import cli
+from simple_ai_trading.api import Candle
+from simple_ai_trading.config import save_runtime, save_strategy
+from simple_ai_trading.external_signals import ExternalSignalComponent, ExternalSignalReport
+from simple_ai_trading.features import ModelRow
+from simple_ai_trading.market_store import MarketDataStore
+from simple_ai_trading.data_downloader import MarketDataSyncResult
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 NOW_MS = 1_700_000_000_000
@@ -333,7 +333,7 @@ def test_command_signals_and_external_score_helpers(tmp_path, monkeypatch, capsy
     adjusted, effective, applied = cli._apply_external_signal_to_score(0.6, StrategyConfig(), report)
     assert adjusted == 0.57
     assert applied == -0.03
-    assert effective.risk_per_trade == 0.005
+    assert effective.risk_per_trade == 0.0015
 
 
 def test_source_grades_and_signal_benchmark_commands(tmp_path, monkeypatch, capsys) -> None:
@@ -498,7 +498,7 @@ def test_record_model_telemetry_disabled_and_success(tmp_path) -> None:
         model=model,
         runtime=runtime,
     )
-    from simple_ai_bitcoin_trading_binance.telemetry_store import TradingTelemetryStore
+    from simple_ai_trading.telemetry_store import TradingTelemetryStore
 
     with TradingTelemetryStore(db) as store:
         assert store.recent_observations(since_ms=NOW_MS - 1, kind="model_decision")[0].source == "internal_model"

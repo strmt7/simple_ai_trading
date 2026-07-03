@@ -1,4 +1,4 @@
-# Security
+﻿# Security
 
 This project is **test-phase software** that trades on Binance **testnet** by
 default.  Real-money execution is intentionally blocked in the current phase.
@@ -17,14 +17,14 @@ opt-in, tests that prove redaction still holds, and an update to this file.
 ## Out of scope
 
 - Cryptographic attacks against Binance's HMAC implementation.
-- Attacks that require root on the host — the app inherits whatever trust the
+- Attacks that require root on the host â€” the app inherits whatever trust the
   host already has.
-- Losses caused by genuinely adverse markets on testnet — testnet funds are not
+- Losses caused by genuinely adverse markets on testnet â€” testnet funds are not
   real money.
 
 ## Credential hygiene
 
-- API keys + secrets live in `~/.config/simple_ai_bitcoin_trading_binance/runtime.json`
+- API keys + secrets live in `~/.config/simple_ai_trading/runtime.json`
   with mode `0600`, created by `configure`.  They are read lazily; nothing
   imports the secret at module load time.
 - Every outbound URL routed through `_redact_request_url` before any log, error

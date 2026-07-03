@@ -1,4 +1,4 @@
-"""Branch-coverage tests for the interactive shell module."""
+﻿"""Branch-coverage tests for the interactive shell module."""
 
 from __future__ import annotations
 
@@ -8,18 +8,18 @@ from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import shell as shell_mod
-from simple_ai_bitcoin_trading_binance.autonomous import (
+from simple_ai_trading import shell as shell_mod
+from simple_ai_trading.autonomous import (
     STATE_PAUSED,
     STATE_RUNNING,
     STATE_STOPPING,
     AutonomousControl,
 )
-from simple_ai_bitcoin_trading_binance.positions import (
+from simple_ai_trading.positions import (
     OpenPosition,
     PositionsStore,
 )
-from simple_ai_bitcoin_trading_binance.style import Palette
+from simple_ai_trading.style import Palette
 
 
 class _Recorder:
@@ -79,7 +79,7 @@ def test_banner_prompt_and_status_ascii_fallback(tmp_path):
     assert shell.prompt_text() == "simple-ai > "
     assert shell.dispatch("/status") == 0
     assert any(line.startswith("+") for line in recorder.lines)
-    assert not any("┌" in line or "│" in line for line in recorder.lines)
+    assert not any("â”Œ" in line or "â”‚" in line for line in recorder.lines)
 
 
 def test_banner_styled(tmp_path):
@@ -542,6 +542,6 @@ def test_default_cli_runner_calls_cli_main(monkeypatch):
         captured["argv"] = argv
         return 42
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.main", fake_main)
+    monkeypatch.setattr("simple_ai_trading.cli.main", fake_main)
     assert shell_mod._default_cli_runner(["status"]) == 42
     assert captured["argv"] == ["status"]

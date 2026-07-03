@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-from simple_ai_bitcoin_trading_binance.risk_controls import (
+from simple_ai_trading.risk_controls import (
     assess_entry_risk,
     build_risk_policy_report,
     render_risk_policy_report,
 )
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 def test_risk_policy_report_allows_default_paper_and_renders_summary() -> None:
@@ -14,9 +14,9 @@ def test_risk_policy_report_allows_default_paper_and_renders_summary() -> None:
     assert report.allowed is True
     assert report.block_count == 0
     assert report.warning_count >= 1
-    assert report.notional_cap_pct == 0.01
-    assert report.max_loss_per_trade_pct == 0.0002
-    assert report.checks[0].asdict()["label"] == "symbol"
+    assert report.notional_cap_pct == 0.003
+    assert report.max_loss_per_trade_pct == 0.00003
+    assert report.checks[0].asdict()["label"] == "primary symbol"
     rendered = render_risk_policy_report(report)
     assert "Risk policy report" in rendered
     assert "allowed=True" in rendered
@@ -66,10 +66,10 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
     )
 
     assert report.allowed is False
-    assert report.leverage == 80.0
+    assert report.leverage == 10.0
     assert report.warning_count >= 3
-    assert report.block_count >= 3
-    assert any(check.label == "effective leverage" and check.status == "block" for check in report.checks)
+    assert report.block_count >= 2
+    assert any(check.label == "effective leverage" and check.status == "ok" for check in report.checks)
     assert any(check.label == "max position" and check.status == "block" for check in report.checks)
     assert any(check.label == "drawdown stop" and check.status == "block" for check in report.checks)
 

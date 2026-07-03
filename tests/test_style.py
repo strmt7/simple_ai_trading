@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import types
 
 
 
-from simple_ai_bitcoin_trading_binance import style
+from simple_ai_trading import style
 
 
 class _FakeStream:

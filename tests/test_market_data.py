@@ -1,21 +1,21 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.data_downloader import (
+from simple_ai_trading.api import Candle
+from simple_ai_trading.data_downloader import (
     MarketDataSyncConfig,
     _snapshot_time,
     render_sync_result,
     sync_market_data,
 )
-import simple_ai_bitcoin_trading_binance.storage as storage
-from simple_ai_bitcoin_trading_binance.market_data import clean_candles
-from simple_ai_bitcoin_trading_binance.market_store import MarketDataStore
-from simple_ai_bitcoin_trading_binance.storage import write_json_atomic
+import simple_ai_trading.storage as storage
+from simple_ai_trading.market_data import clean_candles
+from simple_ai_trading.market_store import MarketDataStore
+from simple_ai_trading.storage import write_json_atomic
 
 
 def _candle(open_time: int, close: float = 100.0, close_time: int | None = None) -> Candle:
@@ -167,7 +167,7 @@ class _SyncClient:
 
     def get_ticker_24h(self, _symbol):
         if self.fail_snapshot:
-            from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
+            from simple_ai_trading.api import BinanceAPIError
 
             raise BinanceAPIError("ticker down")
         return {"closeTime": 120_000, "priceChangePercent": "1.5"}
@@ -218,7 +218,7 @@ def test_sync_market_data_incremental_mode_skips_duplicate_candle_writes(tmp_pat
             self.requests.append({"limit": limit, "end_time": end_time, "start_time": start_time})
             if start_time is not None:
                 if self.fail_incremental:
-                    from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
+                    from simple_ai_trading.api import BinanceAPIError
 
                     raise BinanceAPIError("incremental down")
                 assert start_time == 180_000
@@ -330,17 +330,17 @@ def test_sync_market_data_reports_snapshot_warnings_and_failures(tmp_path) -> No
 
 
 def test_sync_market_data_validates_symbol_interval_and_snapshot_time(tmp_path) -> None:
-    from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
+    from simple_ai_trading.api import BinanceAPIError
 
     assert _snapshot_time([{"x": 1}], 7) == 7
     assert _snapshot_time({"time": "bad"}, 8) == 8
     assert _snapshot_time({"fundingTime": "9"}, None) == 9
     assert _snapshot_time({"nothing": "9"}, 10) == 10
-    with pytest.raises(BinanceAPIError, match="BTCUSDC only"):
-        sync_market_data(
-            _SyncClient(),  # type: ignore[arg-type]
-            MarketDataSyncConfig(symbol="ETHUSDC", db_path=tmp_path / "x.sqlite"),
-        )
+    result = sync_market_data(
+        _SyncClient(),  # type: ignore[arg-type]
+        MarketDataSyncConfig(symbol="ETHUSDC", db_path=tmp_path / "eth.sqlite", include_futures_metrics=False),
+    )
+    assert result.symbol == "ETHUSDC"
     with pytest.raises(ValueError, match="not supported"):
         sync_market_data(
             _SyncClient(),  # type: ignore[arg-type]
@@ -349,7 +349,7 @@ def test_sync_market_data_validates_symbol_interval_and_snapshot_time(tmp_path) 
 
 
 def test_sync_market_data_handles_kline_error_empty_and_short_page(tmp_path) -> None:
-    from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
+    from simple_ai_trading.api import BinanceAPIError
 
     class ErrorClient(_SyncClient):
         def get_klines(self, *_args, **_kwargs):

@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 
 import pytest
 
 
-from simple_ai_bitcoin_trading_binance import external_signals as signals
+from simple_ai_trading import external_signals as signals
 
 
 NOW_MS = 1_700_000_000_000
@@ -248,7 +248,7 @@ def test_collect_external_signals_rss_ollama_and_telemetry(tmp_path) -> None:
     assert report.reaction_required is True
     text = signals.render_external_signal_report(report)
     assert "news_ai=ok" in text
-    from simple_ai_bitcoin_trading_binance.telemetry_store import TradingTelemetryStore
+    from simple_ai_trading.telemetry_store import TradingTelemetryStore
 
     with TradingTelemetryStore(telemetry) as store:
         observations = store.recent_observations(since_ms=NOW_MS - 10_000, limit=500)
@@ -280,7 +280,7 @@ def test_collect_external_signals_rss_ollama_and_telemetry(tmp_path) -> None:
 
 
 def test_collect_external_signals_uses_source_grades_for_live_weights(tmp_path) -> None:
-    from simple_ai_bitcoin_trading_binance.telemetry_store import TradingTelemetryStore
+    from simple_ai_trading.telemetry_store import TradingTelemetryStore
 
     telemetry = tmp_path / "graded.sqlite"
     with TradingTelemetryStore(telemetry) as store:

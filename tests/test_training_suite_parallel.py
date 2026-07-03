@@ -1,13 +1,13 @@
-"""Coverage tests for the parallelization + worker path of training_suite."""
+﻿"""Coverage tests for the parallelization + worker path of training_suite."""
 
 from __future__ import annotations
 
 
 
-from simple_ai_bitcoin_trading_binance import training_suite
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.config import load_strategy
-from simple_ai_bitcoin_trading_binance.objective import ObjectiveSpec, get_objective
+from simple_ai_trading import training_suite
+from simple_ai_trading.api import Candle
+from simple_ai_trading.config import load_strategy
+from simple_ai_trading.objective import ObjectiveSpec, get_objective
 
 
 def _candles(n: int = 240) -> list[Candle]:
@@ -43,11 +43,11 @@ def _lenient_default_objective() -> ObjectiveSpec:
 
 
 def test_resolve_workers_branches():
-    # Empty candidates → 1 worker no matter what
+    # Empty candidates â†’ 1 worker no matter what
     assert training_suite._resolve_workers(8, 0) == 1
     # Explicit max_workers clamps to candidate count
     assert training_suite._resolve_workers(8, 3) == 3
-    # max_workers=None → uses os.cpu_count() floor 1
+    # max_workers=None â†’ uses os.cpu_count() floor 1
     assert training_suite._resolve_workers(None, 4) >= 1
     # Negative / zero max_workers clamps to 1
     assert training_suite._resolve_workers(0, 5) == 1

@@ -1,15 +1,18 @@
-"""Opt-in compute backend selection for training and inference.
+"""Compute backend selection for training and inference.
 
-The default backend is pure Python on CPU so no heavy dependency is required. A
-user may opt into GPU acceleration by setting ``RuntimeConfig.compute_backend``
-to one of:
+Windows defaults to DirectML because it gives one GPU path across AMD, NVIDIA,
+and Intel devices. CPU-only mode is still supported for wider installability,
+but callers should warn the operator because model training, retraining, and
+backtest scoring will be much slower and AI features are not allowed there.
+
+``RuntimeConfig.compute_backend`` may be set to one of:
 
     * ``"cpu"``      - stdlib Python math (default, always available).
     * ``"cuda"``     - NVIDIA GPU via PyTorch (requires a CUDA PyTorch build).
     * ``"rocm"``     - AMD GPU via PyTorch (requires a ROCm PyTorch build).
-    * ``"directml"`` - Windows GPU via ``torch-directml``.
+    * ``"directml"`` - Windows GPU via ``torch-directml``; preferred on Windows.
     * ``"mps"``      - Apple Silicon via PyTorch MPS.
-    * ``"auto"``     - probe CUDA, ROCm, DirectML, then MPS, else CPU.
+    * ``"auto"``     - probe the platform-preferred GPU stack, else CPU.
 
 The selection never silently installs anything; if the requested backend is not
 usable on the current host, :func:`resolve_backend` returns a ``BackendInfo``
@@ -21,6 +24,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import importlib
+import platform
 from typing import Any, Literal
 
 BackendKind = Literal["cpu", "cuda", "rocm", "directml", "mps"]
@@ -162,6 +166,14 @@ def _cpu(requested: str, reason: str = "") -> BackendInfo:
     )
 
 
+def default_compute_backend() -> str:
+    """Return the operator-friendly default backend for the current platform."""
+
+    if platform.system().lower() == "windows":
+        return "directml"
+    return "auto"
+
+
 def resolve_backend(requested: str | None) -> BackendInfo:
     """Resolve a requested backend name to a usable ``BackendInfo``.
 
@@ -169,7 +181,7 @@ def resolve_backend(requested: str | None) -> BackendInfo:
     includes a reason in the return value.
     """
 
-    name = (requested or "cpu").strip().lower()
+    name = (requested or default_compute_backend()).strip().lower()
     if name == "cpu":
         return _cpu("cpu")
 
@@ -198,7 +210,10 @@ def resolve_backend(requested: str | None) -> BackendInfo:
         return _cpu("mps", reason="MPS unavailable (torch missing or not Apple Silicon)")
 
     if name == "auto":
-        for probe in (_try_rocm, _try_cuda, _try_directml, _try_mps):
+        probes = (_try_rocm, _try_cuda, _try_directml, _try_mps)
+        if platform.system().lower() == "windows":
+            probes = (_try_directml, _try_cuda, _try_rocm, _try_mps)
+        for probe in probes:
             info = probe()
             if info is not None:
                 return BackendInfo(
@@ -208,7 +223,7 @@ def resolve_backend(requested: str | None) -> BackendInfo:
                     vendor=info.vendor,
                     reason="",
                 )
-        return _cpu("auto", reason="No GPU backend available; running on CPU")
+        return _cpu("auto", reason="No GPU backend available; running on CPU-only mode")
 
     return _cpu(name, reason=f"Unknown backend {requested!r}; defaulting to CPU")
 

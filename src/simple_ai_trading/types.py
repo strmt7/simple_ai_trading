@@ -1,4 +1,4 @@
-"""Configuration and data structure definitions used across the CLI."""
+﻿"""Configuration and data structure definitions used across the CLI."""
 
 from __future__ import annotations
 
@@ -9,6 +9,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
+from .assets import (
+    DEFAULT_MIN_DIVERSIFIED_ASSETS,
+    DEFAULT_QUOTE_ASSET,
+    DEFAULT_SYMBOL,
+    DEFAULT_SYMBOLS,
+    MAX_AUTONOMOUS_LEVERAGE,
+    normalize_symbol,
+    normalize_symbols,
+)
+from .ai_runtime import AIRuntimeConfig
+from .compute import default_compute_backend
 from .features import FEATURE_NAMES, FEATURE_VERSION, normalize_enabled_features
 
 
@@ -49,7 +60,9 @@ def _normal_interval(value: object, default: str = "15m") -> str:
 class RuntimeConfig:
     """Runtime configuration stored in the user profile."""
 
-    symbol: str = "BTCUSDC"
+    symbol: str = DEFAULT_SYMBOL
+    symbols: tuple[str, ...] = DEFAULT_SYMBOLS
+    quote_asset: str = DEFAULT_QUOTE_ASSET
     interval: str = "15m"
     market_type: str = "spot"
     testnet: bool = True
@@ -60,12 +73,23 @@ class RuntimeConfig:
     validate_account: bool = True
     max_rate_calls_per_minute: int = 1100
     recv_window_ms: int = 5000
-    compute_backend: str = "cpu"
+    compute_backend: str = field(default_factory=default_compute_backend)
+    ai_enabled: bool = True
+    ai_provider: str = "auto"
+    ai_model: str = "auto"
+    ai_require_gpu: bool = True
+    ai_min_free_vram_gb: float = 8.0
+    ai_min_free_ram_gb: float = 16.0
+    ai_allow_paper_fallback: bool = True
     managed_usdc: float = 0.0
     managed_btc: float = 0.0
 
     def __post_init__(self) -> None:
-        self.symbol = "BTCUSDC" if str(self.symbol or "BTCUSDC").upper() != "BTCUSDC" else "BTCUSDC"
+        self.symbol = normalize_symbol(self.symbol)
+        self.symbols = normalize_symbols((*normalize_symbols(self.symbols), self.symbol))
+        if self.symbol not in self.symbols:
+            self.symbols = (self.symbol, *self.symbols)
+        self.quote_asset = str(self.quote_asset or DEFAULT_QUOTE_ASSET).strip().upper() or DEFAULT_QUOTE_ASSET
         self.interval = _normal_interval(self.interval)
         self.market_type = str(self.market_type or "spot").lower()
         self.testnet = _coerce_bool(self.testnet, True)
@@ -76,12 +100,21 @@ class RuntimeConfig:
         self.api_secret = str(self.api_secret or "")
         self.max_rate_calls_per_minute = max(1, min(2000, _coerce_int(self.max_rate_calls_per_minute, 1100)))
         self.recv_window_ms = max(1, min(60000, _coerce_int(self.recv_window_ms, 5000)))
-        self.compute_backend = str(self.compute_backend or "cpu")
+        self.compute_backend = str(self.compute_backend or default_compute_backend()).strip().lower()
+        self.ai_enabled = _coerce_bool(self.ai_enabled, True)
+        self.ai_provider = str(self.ai_provider or "auto")
+        self.ai_model = str(self.ai_model or "auto")
+        self.ai_require_gpu = _coerce_bool(self.ai_require_gpu, True)
+        self.ai_min_free_vram_gb = max(0.0, _finite_float(self.ai_min_free_vram_gb, 8.0))
+        self.ai_min_free_ram_gb = max(0.0, _finite_float(self.ai_min_free_ram_gb, 16.0))
+        self.ai_allow_paper_fallback = _coerce_bool(self.ai_allow_paper_fallback, True)
         self.managed_usdc = max(0.0, _finite_float(self.managed_usdc, 0.0))
         self.managed_btc = max(0.0, _finite_float(self.managed_btc, 0.0))
 
     def asdict(self) -> Dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["symbols"] = list(self.symbols)
+        return payload
 
     def public_dict(self) -> Dict[str, Any]:
         payload = self.asdict()
@@ -90,25 +123,52 @@ class RuntimeConfig:
                 payload[field_name] = "<redacted>"
         return payload
 
+    def ai_runtime_config(self) -> AIRuntimeConfig:
+        return AIRuntimeConfig(
+            enabled=self.ai_enabled,
+            provider=self.ai_provider,
+            model=self.ai_model,
+            require_gpu=self.ai_require_gpu,
+            compute_backend=self.compute_backend,
+            min_free_vram_gb=self.ai_min_free_vram_gb,
+            min_free_ram_gb=self.ai_min_free_ram_gb,
+            allow_paper_fallback=self.ai_allow_paper_fallback,
+        )
+
 
 @dataclass
 class StrategyConfig:
     """Tunable strategy inputs and risk controls."""
 
+    risk_level: str = "conservative"
+    reinvest_profits: bool = False
     leverage: float = 1.0
-    risk_per_trade: float = 0.01
-    max_position_pct: float = 0.20
-    max_open_positions: int = 1
-    stop_loss_pct: float = 0.02
-    take_profit_pct: float = 0.03
+    risk_per_trade: float = 0.003
+    max_position_pct: float = 0.08
+    max_open_positions: int = DEFAULT_MIN_DIVERSIFIED_ASSETS
+    min_diversified_assets: int = DEFAULT_MIN_DIVERSIFIED_ASSETS
+    max_asset_allocation_pct: float = 0.20
+    max_portfolio_risk_pct: float = 0.015
+    min_quote_volume_usdc: float = 50_000_000.0
+    min_trade_count_24h: int = 50_000
+    max_spread_bps: float = 5.0
+    min_liquidity_score: float = 0.80
+    unpredictability_cooldown_minutes: int = 90
+    max_prediction_entropy: float = 0.88
+    min_model_confidence: float = 0.66
+    liquidation_buffer_pct: float = 0.03
+    testnet_liquidity_haircut: float = 0.50
+    latency_buffer_ms: int = 750
+    stop_loss_pct: float = 0.010
+    take_profit_pct: float = 0.018
     feature_windows: tuple[int, int] = (10, 40)
-    signal_threshold: float = 0.58
+    signal_threshold: float = 0.66
     model_lookback: int = 250
-    cooldown_minutes: int = 5
-    max_trades_per_day: int = 24
-    max_drawdown_limit: float = 0.25
-    training_epochs: int = 250
-    confidence_beta: float = 0.85
+    cooldown_minutes: int = 20
+    max_trades_per_day: int = 6
+    max_drawdown_limit: float = 0.10
+    training_epochs: int = 180
+    confidence_beta: float = 0.90
     taker_fee_bps: float = 1.0
     slippage_bps: float = 5.0
     label_threshold: float = 0.001
@@ -147,19 +207,36 @@ class StrategyConfig:
         short_window = max(1, _coerce_int(windows[0], 10))
         long_window = max(short_window, _coerce_int(windows[1], 40))
         self.feature_windows = (short_window, long_window)
-        self.leverage = max(1.0, _finite_float(self.leverage, 1.0))
-        self.risk_per_trade = _finite_float(self.risk_per_trade, 0.01)
-        self.max_position_pct = _finite_float(self.max_position_pct, 0.20)
-        self.max_open_positions = max(0, _coerce_int(self.max_open_positions, 1))
-        self.stop_loss_pct = _finite_float(self.stop_loss_pct, 0.02)
-        self.take_profit_pct = _finite_float(self.take_profit_pct, 0.03)
-        self.signal_threshold = min(0.99, max(0.01, _finite_float(self.signal_threshold, 0.58)))
+        self.risk_level = str(self.risk_level or "conservative").strip().lower()
+        if self.risk_level not in {"conservative", "regular", "aggressive"}:
+            self.risk_level = "conservative"
+        self.reinvest_profits = _coerce_bool(self.reinvest_profits, False)
+        self.leverage = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _finite_float(self.leverage, 1.0)))
+        self.risk_per_trade = min(1.0, max(0.0, _finite_float(self.risk_per_trade, 0.003)))
+        self.max_position_pct = min(1.0, max(0.0, _finite_float(self.max_position_pct, 0.08)))
+        self.max_open_positions = max(0, _coerce_int(self.max_open_positions, DEFAULT_MIN_DIVERSIFIED_ASSETS))
+        self.min_diversified_assets = max(1, _coerce_int(self.min_diversified_assets, DEFAULT_MIN_DIVERSIFIED_ASSETS))
+        self.max_asset_allocation_pct = min(1.0, max(0.01, _finite_float(self.max_asset_allocation_pct, 0.20)))
+        self.max_portfolio_risk_pct = min(1.0, max(0.0, _finite_float(self.max_portfolio_risk_pct, 0.015)))
+        self.min_quote_volume_usdc = max(0.0, _finite_float(self.min_quote_volume_usdc, 50_000_000.0))
+        self.min_trade_count_24h = max(0, _coerce_int(self.min_trade_count_24h, 50_000))
+        self.max_spread_bps = max(0.0, _finite_float(self.max_spread_bps, 5.0))
+        self.min_liquidity_score = min(1.0, max(0.0, _finite_float(self.min_liquidity_score, 0.80)))
+        self.unpredictability_cooldown_minutes = max(0, _coerce_int(self.unpredictability_cooldown_minutes, 90))
+        self.max_prediction_entropy = min(1.0, max(0.0, _finite_float(self.max_prediction_entropy, 0.97)))
+        self.min_model_confidence = min(1.0, max(0.0, _finite_float(self.min_model_confidence, 0.66)))
+        self.liquidation_buffer_pct = min(1.0, max(0.0, _finite_float(self.liquidation_buffer_pct, 0.03)))
+        self.testnet_liquidity_haircut = min(1.0, max(0.0, _finite_float(self.testnet_liquidity_haircut, 0.50)))
+        self.latency_buffer_ms = max(0, _coerce_int(self.latency_buffer_ms, 750))
+        self.stop_loss_pct = _finite_float(self.stop_loss_pct, 0.010)
+        self.take_profit_pct = _finite_float(self.take_profit_pct, 0.018)
+        self.signal_threshold = min(0.99, max(0.01, _finite_float(self.signal_threshold, 0.66)))
         self.model_lookback = max(1, _coerce_int(self.model_lookback, 250))
-        self.cooldown_minutes = max(0, _coerce_int(self.cooldown_minutes, 5))
-        self.max_trades_per_day = max(0, _coerce_int(self.max_trades_per_day, 24))
-        self.max_drawdown_limit = _finite_float(self.max_drawdown_limit, 0.25)
-        self.training_epochs = max(1, _coerce_int(self.training_epochs, 250))
-        self.confidence_beta = min(1.0, max(0.0, _finite_float(self.confidence_beta, 0.85)))
+        self.cooldown_minutes = max(0, _coerce_int(self.cooldown_minutes, 20))
+        self.max_trades_per_day = max(0, _coerce_int(self.max_trades_per_day, 6))
+        self.max_drawdown_limit = _finite_float(self.max_drawdown_limit, 0.10)
+        self.training_epochs = max(1, _coerce_int(self.training_epochs, 180))
+        self.confidence_beta = min(1.0, max(0.0, _finite_float(self.confidence_beta, 0.90)))
         self.taker_fee_bps = _finite_float(self.taker_fee_bps, 1.0)
         self.slippage_bps = _finite_float(self.slippage_bps, 5.0)
         self.label_threshold = _finite_float(self.label_threshold, 0.001)
@@ -233,7 +310,7 @@ def config_paths() -> Dict[str, Path]:
     """Return the default config directories used by the CLI."""
 
     base_home = Path(os.environ.get("HOME") or Path.home())
-    base = base_home / ".config" / "simple_ai_bitcoin_trading_binance"
+    base = base_home / ".config" / "simple_ai_trading"
     return {
         "base": base,
         "runtime": base / "runtime.json",

@@ -1,4 +1,4 @@
-"""Comprehensive unit tests for the autonomous loop module."""
+﻿"""Comprehensive unit tests for the autonomous loop module."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
-from simple_ai_bitcoin_trading_binance.autonomous import (
+from simple_ai_trading.api import BinanceAPIError
+from simple_ai_trading.autonomous import (
     AutonomousConfig,
     AutonomousControl,
     Decision,
@@ -26,19 +26,20 @@ from simple_ai_bitcoin_trading_binance.autonomous import (
     _entry_gate,
     _evaluate_auto_close,
     _open_position_from_decision,
+    close_all_open_positions,
     ensure_credentials,
     ensure_testnet,
     run_loop,
 )
-from simple_ai_bitcoin_trading_binance.logging_ext import reset as reset_logger
-from simple_ai_bitcoin_trading_binance.objective import get_objective
-from simple_ai_bitcoin_trading_binance.positions import (
+from simple_ai_trading.logging_ext import reset as reset_logger
+from simple_ai_trading.objective import get_objective
+from simple_ai_trading.positions import (
     ClosedTrade,
     OpenPosition,
     PositionsStore,
     new_position_id,
 )
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 @pytest.fixture(autouse=True)
@@ -404,7 +405,7 @@ def test_run_loop_paused_and_resumed_and_stopped(tmp_path: Path) -> None:
     # To force a paused iteration first, override the state after the loop's
     # own initial write. We achieve that by monkey-patching sleep to only fire
     # the transitions, and by pre-writing PAUSED AFTER run_loop's initial
-    # write. That is done by a decision_fn that mutates state — but the state
+    # write. That is done by a decision_fn that mutates state â€” but the state
     # is checked before decision_fn. So instead: monkeypatch AutonomousControl
     # inside run_loop via a wrapper sleep? Simpler: we flip to PAUSED in the
     # first iteration by overwriting before the first iteration's check.
@@ -442,7 +443,7 @@ def test_run_loop_paused_and_resumed_and_stopped(tmp_path: Path) -> None:
         phase["n"] += 1
         ctl = AutonomousControl(path=control_path)
         if phase["n"] == 1:
-            # first sleep was after iter 1 (normal flow) — state already PAUSED
+            # first sleep was after iter 1 (normal flow) â€” state already PAUSED
             # so next iteration hits the paused branch. Next time sleep fires
             # it's the paused branch's sleep; transition to RUNNING.
             pass
@@ -459,6 +460,45 @@ def test_run_loop_paused_and_resumed_and_stopped(tmp_path: Path) -> None:
     )
     assert result.exit_reason == "operator-stop"
     assert result.iterations >= 3
+
+
+def test_run_loop_operator_stop_closes_open_positions(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=None)
+    control_path = tmp_path / "state.json"
+    store = PositionsStore(root=cfg.positions_root)
+    store.record_open(_make_position("LONG", entry=100.0))
+
+    def dec(_c, _r, _s, _o):
+        AutonomousControl(path=control_path).write(STATE_STOPPING)
+        return Decision(side="FLAT", confidence=0.0, mark_price=123.0)
+
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        replace(_strategy(), take_profit_pct=10.0, stop_loss_pct=10.0),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+    )
+
+    assert result.exit_reason == "operator-stop"
+    assert result.closed_trades == 1
+    assert store.load_open() == []
+    ledger = store.load_ledger()
+    assert ledger[-1].exit_price == 123.0
+    assert ledger[-1].reason == "operator-stop"
+
+
+def test_close_all_open_positions_falls_back_to_entry_price(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path / "positions")
+    store.record_open(_make_position("SHORT", entry=75.0))
+
+    assert close_all_open_positions(store, None, "manual-stop", clock=lambda: 1.0) == 1
+    assert store.load_open() == []
+    trade = store.load_ledger()[0]
+    assert trade.exit_price == 75.0
+    assert trade.reason == "manual-stop"
 
 
 def test_run_loop_decision_binance_error_continues(tmp_path: Path) -> None:

@@ -1,4 +1,4 @@
-"""Structured logging with aggressive credential redaction.
+﻿"""Structured logging with aggressive credential redaction.
 
 The repo's existing output surfaces (stdout, JSON artifacts, TUI activity log)
 already route through manual redaction helpers.  This module adds a stdlib
@@ -10,7 +10,7 @@ Design:
 
 * The log handlers install a ``RedactionFilter`` that scrubs known sensitive
   tokens from every ``record.msg`` and ``record.args`` before emission.
-* The file handler is ``RotatingFileHandler`` capped at 2 MiB × 5 files so the
+* The file handler is ``RotatingFileHandler`` capped at 2 MiB Ã— 5 files so the
   autonomous loop cannot fill a disk by accident.
 * ``configure(path=...)`` is idempotent; calling it twice reuses the existing
   handlers.  Tests can call ``reset()`` between cases.
@@ -25,7 +25,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
-LOGGER_NAME = "simple_ai_bitcoin_trading_binance"
+LOGGER_NAME = "simple_ai_trading"
 _MAX_BYTES = 2 * 1024 * 1024
 _BACKUP_COUNT = 5
 
@@ -152,7 +152,7 @@ def configure(*, path: Path | None = None, level: int = logging.INFO) -> logging
     if _CONFIGURED_PATH == resolved:
         return logger
 
-    # Remove any previous file handler — a re-configure with a new path replaces it.
+    # Remove any previous file handler â€” a re-configure with a new path replaces it.
     for handler in list(logger.handlers):
         if isinstance(handler, RotatingFileHandler):
             logger.removeHandler(handler)
@@ -206,7 +206,7 @@ def describe_handlers(logger: logging.Logger | None = None) -> list[str]:
 
 
 def iter_secret_placeholders() -> Iterable[str]:
-    """Yield every placeholder string this module emits — handy for tests."""
+    """Yield every placeholder string this module emits â€” handy for tests."""
 
     yield "<redacted-pat>"
     yield "<redacted-openai-key>"

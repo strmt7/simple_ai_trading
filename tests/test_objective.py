@@ -1,4 +1,4 @@
-"""Branch-coverage tests for the objective scoring module."""
+﻿"""Branch-coverage tests for the objective scoring module."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from dataclasses import replace
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.backtest import BacktestResult
-from simple_ai_bitcoin_trading_binance import objective as obj
+from simple_ai_trading.backtest import BacktestResult
+from simple_ai_trading import objective as obj
 
 
 def _result(**overrides) -> BacktestResult:
@@ -107,12 +107,12 @@ def test_safe_and_return_ratio_non_finite():
     r = _result(starting_cash=0.0, realized_pnl=10.0)
     assert obj._return_ratio(r) == 0.0
     r2 = _result(realized_pnl=float("nan"))
-    # scorer should absorb NaN → 0 via _safe
+    # scorer should absorb NaN â†’ 0 via _safe
     assert math.isfinite(obj.CONSERVATIVE.score(r2))
 
 
 def test_max_drawdown_rejection_one_never_rejects_on_drawdown():
-    # Manually craft an objective with rejection=1.0 — never rejects on drawdown
+    # Manually craft an objective with rejection=1.0 â€” never rejects on drawdown
     spec = replace(obj.DEFAULT, max_drawdown_rejection=1.0, min_closed_trades=0)
     assert spec.accepts(_result(max_drawdown=0.99)) is True
 
@@ -139,12 +139,12 @@ def test_rank_candidates_records_stopped_by_drawdown_reason():
 
 def test_rank_candidates_hard_gate_fallback_reason():
     # Build a fake objective where the only rejection is a hard gate we can't
-    # describe via the declared reasons — forces the "hard-gate-failed" default.
+    # describe via the declared reasons â€” forces the "hard-gate-failed" default.
     class _Custom(obj.ObjectiveSpec):
         pass
 
     spec = replace(obj.DEFAULT, min_closed_trades=0, max_drawdown_rejection=1.0)
-    # accepts is overridden implicitly by replace? No — but we can use a subclass
+    # accepts is overridden implicitly by replace? No â€” but we can use a subclass
     def never(_):
         return False
 

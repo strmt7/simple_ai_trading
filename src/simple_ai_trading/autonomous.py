@@ -259,6 +259,48 @@ def _close_to_trade(
     )
 
 
+def close_all_open_positions(
+    store: PositionsStore,
+    mark_price: float | None,
+    reason: str,
+    *,
+    clock=time.time,
+) -> int:
+    """Close every locally tracked open position at ``mark_price``.
+
+    Autonomous authenticated exchange execution is still disabled elsewhere;
+    this function is the fail-closed local ledger guard so operator stop,
+    process restarts, and emergency exits do not leave stale local positions.
+    """
+
+    closed = 0
+    for position in list(store.load_open()):
+        close_price = float(mark_price) if mark_price and mark_price > 0 else float(position.entry_price)
+        store.record_close(_close_to_trade(position, close_price, reason, clock=clock))
+        closed += 1
+    return closed
+
+
+def _stop_close_mark_price(
+    client: BinanceClient,
+    runtime: RuntimeConfig,
+    store: PositionsStore,
+    last_mark_price: float | None,
+    logger: logging.Logger,
+) -> float | None:
+    if last_mark_price is not None and last_mark_price > 0:
+        return last_mark_price
+    try:
+        price, _ts = client.get_symbol_price(runtime.symbol)
+        parsed = float(price)
+        if parsed > 0:
+            return parsed
+    except Exception as exc:  # noqa: BLE001 - stop must not be blocked by a quote failure
+        logger.warning("autonomous stop quote unavailable: %s", exc)
+    opens = store.load_open()
+    return opens[0].entry_price if opens else None
+
+
 @dataclass
 class LoopResult:
     """What ``run_loop`` returns once it exits."""
@@ -407,11 +449,17 @@ def run_loop(
     opened = 0
     skipped = 0
     exit_reason = "requested-stop"
+    last_mark_price: float | None = None
     try:
         while True:
             iteration += 1
             state = control.state()
             if state == STATE_STOPPING:
+                mark_price = _stop_close_mark_price(client, runtime, store, last_mark_price, logger)
+                forced = close_all_open_positions(store, mark_price, "operator-stop", clock=clock)
+                closed += forced
+                if forced:
+                    logger.info("autonomous iter=%d force-close-open=%d reason=operator-stop", iteration, forced)
                 exit_reason = "operator-stop"
                 break
             if state == STATE_PAUSED:
@@ -433,6 +481,7 @@ def run_loop(
                 "autonomous iter=%d side=%s conf=%.4f mark=%.2f",
                 iteration, decision.side, decision.confidence, decision.mark_price,
             )
+            last_mark_price = float(decision.mark_price) if decision.mark_price > 0 else last_mark_price
 
             # Close any open position that meets auto-close thresholds first
             for position in store.load_open():

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Deterministic repository quality metrics for before/after refinement checks."""
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC_PREFIX = "src/simple_ai_bitcoin_trading_binance/"
+SRC_PREFIX = "src/simple_ai_trading/"
 TEST_PREFIX = "tests/"
 _CLI_COMMAND_RE = re.compile(r"\bsubparsers\.add_parser\(\s*[\"']([^\"']+)[\"']")
 _FUNCTION_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)

@@ -116,7 +116,7 @@ def _grade_prompt(rollups: list[dict[str, object]]) -> str:
         for row in rollups[:120]
     ]
     return (
-        "Grade BTCUSDC data sources 0-10. Higher=timely, replayable, actionable, consistent. "
+        "Grade trading data sources 0-10. Higher=timely, replayable, actionable, consistent. "
         "Return every listed source|horizon key exactly once in a compact JSON object only, no markdown and no string values: "
         "{\"grades\":{\"source|horizon\":5}}.\n"
         + "\n".join(compact)
@@ -125,7 +125,7 @@ def _grade_prompt(rollups: list[dict[str, object]]) -> str:
 
 def _single_grade_prompt(row: Mapping[str, object]) -> str:
     return (
-        "Grade this BTCUSDC data source 0-10. Higher=timely, replayable, actionable, consistent. "
+        "Grade this trading data source 0-10. Higher=timely, replayable, actionable, consistent. "
         "Return JSON only: {\"grade\":5,\"reason\":\"brief reason\"}.\n"
         f"{row['source']}|{row['horizon']}|s={row['sample_count']}|"
         f"score={float(row['avg_score']):+.2f}|abs={float(row['avg_abs_score']):.2f}|"
@@ -198,7 +198,7 @@ def _ollama_chat_request(
         "messages": [
             {
                 "role": "system",
-                "content": "You grade BTCUSDC data sources. Return compact JSON only.",
+                "content": "You grade trading data sources. Return compact JSON only.",
             },
             {"role": "user", "content": prompt},
         ],

@@ -1,4 +1,4 @@
-"""Core package for a BTCUSDC-focused Binance testnet trading CLI."""
+"""Core package for Simple AI Trading's multi-asset day-trading CLI and Windows app."""
 
 from .types import RiskProfile, StrategyConfig, RuntimeConfig
 

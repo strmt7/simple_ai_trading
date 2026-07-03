@@ -1,510 +1,164 @@
-# simple_ai_bitcoin_trading_binance
+# Simple AI Trading
 
 <!-- BEGIN GENERATED BADGES -->
 [![andrej-karpathy-skills](https://img.shields.io/static/v1?label=&message=andrej-karpathy-skills&color=555&logo=github&logoColor=white)](https://github.com/forrestchang/andrej-karpathy-skills)
 <!-- END GENERATED BADGES -->
 
-> **Early alpha test software.** This project is experimental and incomplete. Many or most features, workflows, trading assumptions, integrations, outputs, and safeguards may not work correctly or as intended. Use it only for testing and review, preferably on Binance testnet or Binance Demo Trading with paper/dry-run behavior. The project authors and contributors take no responsibility for losses, incorrect behavior, missed trades, API issues, data errors, or any other consequences from using this software.
+Simple AI Trading is a Windows-first, testnet-first autonomous day-trading CLI and desktop app for liquid Binance spot and futures markets. It has been expanded from the original single-pair prototype into a diversified runtime that can manage multiple symbols, measure per-symbol liquidity automatically, train/retrain models, run realistic backtests with execution frictions, and expose the same workflows through both the CLI and Windows app.
 
-Interactive BTCUSDC non-mainnet trading console for Binance.
+This software is experimental trading infrastructure. It does not guarantee profit, 1-2% daily returns, or positive ROI. The goal is to make risk, liquidity, execution, and model checks explicit before any non-mainnet order path is used.
 
-The project is intentionally narrow and operator-focused:
+## Current Scope
 
-- `BTCUSDC` only for data, training, backtesting, and execution
-- Binance spot and futures testnet support, plus explicit Binance Demo Trading endpoint selection
-- one primary interface: the interactive terminal console
-- guided runtime editing, strategy editing, feature selection, training, tuning, backtesting, and live-loop control
-- local credential storage with `600` permissions
-- credential redaction in visible status output and generated JSON artifacts
+- Multi-asset day trading on Binance testnet or Demo Trading endpoints.
+- Default symbols: `BTCUSDC`, `ETHUSDC`, `BNBUSDC`; users can configure any Binance symbol, then `universe` must prove liquidity before use.
+- Conservative risk profile by default, with `conservative`, `regular`, and `aggressive` profiles.
+- Mandatory diversification controls: minimum eligible assets, single-asset allocation cap, portfolio risk cap, and max open positions.
+- Futures leverage allowed only up to the app-level safety ceiling of `10x`; default is no leverage (`1x`).
+- Profit reinvestment is disabled by default. Enabling it prints a warning because compounding amplifies losses as well as gains.
+- CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
+- Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
 
-## Safety defaults
-
-- `testnet` defaults to `true`.
-- `demo` defaults to `false`; when set to `true`, Binance Demo Trading endpoints are used.
-- Strategy can run in paper mode (`dry_run=true`) and is intended to be that way by default.
-- Real order execution happens only when `dry_run=false` in `live`.
-- This phase blocks real-money execution; signed live execution requires `testnet=true` or `demo=true`.
-- Authenticated non-mainnet live runs require API credentials and a readable model that matches the current strategy feature signature.
-- `max_trades_per_day` can be set to `0` to disable daily caps.
-
-## Quick start
-
-```bash
-python3 -m pip install -e .
-simple-ai-trading shell      # Claude-Code-style interactive shell
-simple-ai-trading menu       # legacy textual operator console
-simple-ai-trading objectives # preview Conservative / Default / Risky presets
-```
-
-If your shell does not expose the console entrypoint:
-
-```bash
-PYTHONPATH=src python3 -m simple_ai_bitcoin_trading_binance shell
-```
-
-On Windows from this checkout, prefer Windows Terminal and the bundled `.cmd`
-launchers. They do not require opening or activating any `.ps1` file:
+## Install
 
 ```powershell
-cd C:\trader\simple_ai_bitcoin_trading_binance
-.\run-shell.cmd
+py -3.11 -m venv .venv311
+.\.venv311\Scripts\python.exe -m pip install -e .[gpu]
+```
+
+For a CPU-only install:
+
+```powershell
+.\.venv311\Scripts\python.exe -m pip install -e .
+```
+
+CPU-only mode can run non-AI workflows, but AI features are disabled and training/backtesting will be much slower.
+
+## Verify Hardware
+
+```powershell
+.\.venv311\Scripts\python.exe -m simple_ai_trading compute
+.\.venv311\Scripts\python.exe -m simple_ai_trading ai
+```
+
+On Windows, a healthy AMD/NVIDIA/Intel GPU install should resolve to `compute=directml`. This host was verified with `torch-directml` on an AMD Radeon GPU using a real tensor operation on `privateuseone:0`.
+
+DirectML references:
+
+- https://microsoft.github.io/DirectML/
+- https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows
+- https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html
+
+## Configure
+
+```powershell
+.\.venv311\Scripts\python.exe -m simple_ai_trading configure
+.\.venv311\Scripts\python.exe -m simple_ai_trading connect
+.\.venv311\Scripts\python.exe -m simple_ai_trading strategy --profile conservative
+```
+
+Set multiple symbols in the runtime config or pass them to `universe`:
+
+```powershell
+.\.venv311\Scripts\python.exe -m simple_ai_trading universe --symbols BTCUSDC,ETHUSDC,BNBUSDC
+```
+
+The universe gate does not use a static allowlist. It measures exchange status, quote asset, structural leveraged-token patterns, 24h quote volume, trade count, bid/ask spread, and a combined liquidity score. If fewer than the configured minimum assets qualify, the command exits nonzero.
+
+## Windows App
+
+Launch the desktop operator app:
+
+```powershell
+.\.venv311\Scripts\simple-ai-trading-windows.exe
+```
+
+or:
+
+```powershell
 .\run-gui.cmd
 ```
 
-The Windows launchers print the interpreter or console script they selected.
-They try `.venv311`, `.venv`, `simple-ai-trading` on `PATH`, then Python module
-execution via local venv Python, `py -3.11`, or a `python` command that is
-Python 3.11 or newer.
+The Windows app builds its workflow list from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command is not visible to the Windows app.
 
-If you want to bypass the launcher, call the virtual-environment executable
-directly from the terminal:
+Startup behavior:
+
+- If DirectML/GPU is available, the status bar reports the active backend.
+- If only CPU is available, the app remains usable, shows a warning, and disables AI.
+- The app has direct buttons for AI preflight, risk report, backtest graph, and autonomous stop.
+
+## Core Workflows
 
 ```powershell
-.\.venv311\Scripts\simple-ai-trading.exe shell
-.\.venv311\Scripts\simple-ai-trading.exe menu
-```
-
-On Linux or macOS from this checkout, the matching launchers use the same
-resolution order with POSIX paths:
-
-```bash
-sh ./run-shell.sh
-sh ./run-gui.sh
-```
-
-`shell` is the robust slash-command REPL and falls back to plain ASCII when a
-legacy Windows console cannot render ANSI colors or Unicode glyphs. `menu` is
-the full-screen Textual operator console; use Windows Terminal for it, because
-full-screen terminal UIs require ANSI/virtual-terminal support.
-
-The `shell` command opens a slash-command REPL inspired by Claude Code — tab
-completion, a muted-gradient palette, live status bar, and fall-through to the
-rest of the CLI (type `status` or `/status`; both work).  The `menu` command
-launches the legacy full-screen Textual console.
-
-The layout is intentionally simple:
-
-- a single action list in operational order
-- a selected-action detail panel
-- a live runtime/strategy/artifact snapshot
-- an activity log
-- modal forms for editing connection, strategy, optimization, and order parameters
-- password-masked API key and secret fields inside `Connection settings`
-- a bottom bar that separates public endpoint reachability from authenticated account readiness
-
-Use the left action list to:
-
-- read `Help` for the recommended operator sequence
-- update `Connection settings`, then run `Connect`
-- open `Trading caps` to read exchange balances and set exchange-backed limits after credentials are configured
-- run `Safety check` before paper or authenticated testnet execution
-- edit connection settings
-- edit strategy and feature selection
-- run `Build full setup` for the download, train, evaluate, backtest, safety-check sequence
-- download market data
-- train or retrain the model with `custom`, `quick`, `balanced`, or `thorough` presets
-- tune over all data, a lookback window, or an explicit date range
-- run backtests and evaluation
-- run paper or authenticated testnet live loops
-- inspect recent artifacts, account state, and `Full report`
-
-By default data is written to `data/historical_btcusdc.json` and `data/model.json`.
-
-Useful direct commands:
-
-```bash
-simple-ai-trading menu
-simple-ai-trading shell                     # Claude-Code-style interactive REPL
-simple-ai-trading objectives                # list Conservative / Default / Risky
-simple-ai-trading train-suite               # parallel: one model per objective
-simple-ai-trading backtest-panel --interval 5m --tag week --objective default \
-    --from-date 2026-04-20 --to-date 2026-04-25 --model data/model_default.json
-simple-ai-trading autonomous start --objective default
-simple-ai-trading autonomous pause          # or: resume, stop, status
-simple-ai-trading positions --stats         # open positions + realized/unrealized P&L
-simple-ai-trading close <id|all>            # local ledger close (no exchange order)
-simple-ai-trading prepare --preset balanced --epochs 180 --learning-rate 0.05 --l2-penalty 0.0001 --batch-size 1000 --online-doctor
-simple-ai-trading report
+simple-ai-trading fetch --symbol ETHUSDC --limit 1000
+simple-ai-trading train --preset thorough --compute-backend directml
+simple-ai-trading evaluate
+simple-ai-trading backtest --compute-backend directml
+simple-ai-trading backtest-chart --output data/backtest_performance.svg
 simple-ai-trading risk --paper
-simple-ai-trading doctor --online
-simple-ai-trading audit
-simple-ai-trading data-sync --rows 1000 --db data/market_data.sqlite
-simple-ai-trading data-sync --background --rows 1000 --sleep 300
-simple-ai-trading signals --refresh --news-provider-limit 93 --provider-parallelism 24
-simple-ai-trading signals --loop --sleep 15 --jitter 3 --news-provider-limit 93
-simple-ai-trading signals-benchmark --provider-limit 60 --provider-limit 90 --provider-limit 93 --parallelism 16 --parallelism 24 --iterations 2
-simple-ai-trading source-grades --window-hours 24
-python tools/run_real_data_soak.py --duration-seconds 3660 --python .venv311/Scripts/python.exe
-python tools/terminal_navigation_probe.py --cwd .
-python tools/quality_metrics.py --compare-ref HEAD
-simple-ai-trading spot-roundtrip --mode auto --quantity 0.00008 --yes
-simple-ai-trading compute --backend auto
-simple-ai-trading train --source auto --preset balanced --download-missing --compute-backend auto
-simple-ai-trading backtest --compute-backend auto --score-batch-size 8192
-simple-ai-trading strategy --profile conservative --external-signals
-simple-ai-trading live --paper --model data/model.json --steps 20 --sleep 0 --external-signals
+simple-ai-trading universe
 ```
 
-### Market data database and external signals
+`backtest-chart` writes an SVG performance chart for the day-trading simulation. The same command appears in the Windows app.
 
-`data-sync` is the durable downloader. It writes closed BTCUSDC candles and
-auxiliary Binance metrics to SQLite (`data/market_data.sqlite` by default):
-
-- kline OHLCV plus quote volume, trade count, and taker-buy volumes
-- Binance 24h ticker and L1 book ticker snapshots
-- Binance USD-M futures premium index, open interest, and funding-rate history
-  when a futures public client is available
-- per-run sync summaries and warnings for later inspection
-
-The downloader uses the same client throttle/backoff path as the rest of the
-app, so `max_rate_calls_per_minute`, retry handling, and `Retry-After` support
-remain centralized. Run it once for a bounded backfill or with `--background`
-to start a detached loop that writes a PID and log file. Once the requested
-history window is present, later runs switch to incremental mode and request
-only candles after the latest stored open time. Sync output includes the mode,
-net new candle count, coverage ratio, and gap count so repeated no-new-data
-runs are visible instead of silently rewriting the same rows.
-
-`python tools/quality_metrics.py --compare-ref <sha>` prints deterministic
-before/after metrics for source lines, test lines, CLI command count, function
-length, and approximate cyclomatic complexity. Use it before accepting a broad
-refinement pass so changes can be judged by measured behavior, not intuition.
-
-Training can now use `--source auto|file|db`. In `auto` mode the CLI trains
-from the JSON file when present, otherwise it checks the SQLite store for the
-chosen `--market` and `--interval`. If not enough rows exist, an interactive
-terminal prompts to download the missing data; non-interactive runs can pass
-`--download-missing`.
-
-`signals` fetches the live external confirmation layer used by `live
---external-signals`. It blends Alternative.me Fear and Greed, CoinGecko,
-CoinPaprika, CoinLore, Binance spot/futures, Kraken, Coinbase Exchange,
-Bitstamp, Blockchain.com network stats, mempool.space fee pressure, CryptoCompare
-news, GDELT, Hacker News attention, and a bounded parallel RSS/news tier with
-100+ free crypto, macro, regulatory, technology, security, social-attention, and geopolitical feeds. Positive
-boosts require the configured minimum number of fresh providers; negative
-signals can reduce score and risk sizing.
-
-The external layer is replayable. When telemetry is enabled, every normalized
-component plus raw provider/model payload is appended to
-`data/trading_telemetry.sqlite` with SQLite WAL mode. This is intentionally raw:
-RSS XML, JSON API responses, Ollama parsed responses, and internal live model
-decision inputs are stored so future criteria can rescore or retrain from the
-same observations. Runtime credentials and signed request material are not
-journaled.
-
-Short-horizon news can be evaluated by a local Ollama model:
-
-```bash
-simple-ai-trading signals --refresh --ollama-news --ollama-model gemma4:e4b \
-    --news-provider-limit 93 --provider-parallelism 24 --provider-jitter 0.25
-```
-
-On Windows with AMD RX 9000 GPUs, Ollama's ROCm backend may need the HIP SDK
-7.x rocBLAS kernels exposed explicitly. The helper below only sets environment
-variables and starts Ollama; it does not install or modify drivers:
+## Autonomous Control
 
 ```powershell
-.\tools\start_ollama_rocm_windows.ps1
-ollama ps
+simple-ai-trading autonomous start --paper
+simple-ai-trading autonomous pause
+simple-ai-trading autonomous resume
+simple-ai-trading autonomous stop
+simple-ai-trading autonomous status
 ```
 
-For an RX 9070 XT, `ollama ps` should report `100% GPU` for `gemma4:e4b`.
-The critical setting is `ROCBLAS_TENSILE_LIBPATH` pointing at the HIP SDK
-`bin\rocblas\library` directory that contains `gfx1201` kernels. Gemma4-style
-thinking models are called through Ollama's chat API with `think:false` so the
-news classifier gets JSON content immediately instead of spending the token
-budget on hidden reasoning.
+`stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. Authenticated autonomous exchange execution remains disabled until exchange-order execution and reconciliation are fully wired.
 
-Polling supports jitter and host-aware pacing: `--provider-jitter` spreads
-individual provider requests inside a collection, repeated RSS requests to the
-same host are automatically spaced out, and `signals --loop --sleep N --jitter M`
-spreads repeated collections so the host and providers are not hit on exact
-wall-clock intervals. Strategy defaults poll the 93-feed RSS tier plus the
-structured API tier, yielding 100+ total active providers by default with
-24-way provider parallelism and a 60-second live cache TTL; tune those values
-with the strategy command if your host or the providers need a lighter cadence.
-`signals-benchmark` measures provider count, parallelism,
-success count, and latency on the current host before choosing an interval.
-`source-grades` reviews stored telemetry over a time window and writes integer
-0-10 grades per source/horizon; it uses Ollama when available and falls back to
-deterministic evidence scoring when unavailable.
-Live signal collection then uses the latest fresh grade for each source/horizon
-to downweight unreliable sources and modestly boost proven ones. The grade age
-cap is configurable with `--source-grade-max-age-hours` or the matching strategy
-setting; use `0` only when you intentionally want no age cap.
+## Risk Levels
 
-For an auditable real-data production soak, run:
+`conservative` is the default:
 
-```bash
-python tools/run_real_data_soak.py --duration-seconds 3660 \
-    --python .venv311/Scripts/python.exe \
-    --db data/trading_telemetry.sqlite \
-    --cache data/signals/hour_soak_external_signals.json
+- No leverage by default.
+- Lower risk per trade and position caps.
+- Longer cooldowns.
+- Stricter liquidity/spread thresholds.
+- Lower drawdown tolerance.
+
+`regular` and `aggressive` relax thresholds gradually, but still keep leverage capped at `10x`, require diversification, and preserve exchange/testnet safeguards.
+
+## Live-Market Simulation
+
+The backtester no longer assumes frictionless fills. It models:
+
+- per-symbol spread,
+- latency buffers,
+- liquidity haircuts for testnet-to-mainnet differences,
+- market impact from participation,
+- taker fees,
+- liquidation buffer settings,
+- buy-and-hold comparison and risk-adjusted scoring.
+
+See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
+
+## Safety Invariants
+
+- Mainnet signed calls are disabled by default.
+- Testnet or Demo Trading must be enabled for signed execution.
+- Runtime credentials are redacted in artifacts.
+- `10x` leverage is the hard app cap even if Binance reports a larger exchange bracket.
+- `universe` must prove liquidity for the configured diversified symbols.
+- CPU-only mode disables AI.
+- CLI and Windows app command parity is tested.
+- Backtests include pessimistic execution assumptions.
+- Autonomous stop closes local open positions to avoid stale ledger exposure.
+
+## Test
+
+```powershell
+.\.venv311\Scripts\python.exe -m pytest -q
 ```
 
-The soak runner polls the free external providers with jitter for at least an
-hour, uses the configured Ollama model for news review on each iteration,
-persists all raw telemetry into `data/trading_telemetry.sqlite`, then runs
-`source-grades` over the fresh window and prints database row counts. This is
-the quickest repeatable proof that provider polling, local AI news review,
-SQLite raw storage, and source grading are working together with live data.
+Focused checks used during this revamp:
 
-GPU training and backtest scoring backends are selected with `compute`, `train
---compute-backend`, `train-suite --compute-backend`, and `backtest
---compute-backend`. `auto` probes CUDA, ROCm, DirectML, MPS, then CPU. On
-Windows, DirectML requires Python < 3.12 and the `gpu` extra or a Python 3.11
-environment with `torch-directml`; GPU candidate searches run sequentially to
-avoid VRAM contention. Backtests keep the trade simulator deterministic and
-stateful, while batching model probability scoring on the selected accelerator.
-
-### Objectives (risk-adjusted scorers)
-
-`train-suite` trains one advanced model per registered objective and writes
-`data/model_<objective>.json` plus a `training_suite_summary.json`:
-
-| Objective | Intent | Notable defaults |
-|---|---|---|
-| `conservative` | Capital preservation, rejects > 15% drawdown, fewer trades. | 1x leverage, signal ≥ 0.66, stop 1.0%, take 2.2%, 400 epochs, poly deg 2 |
-| `default` | Balanced risk-adjusted return — the middle preset. | 1.5x, signal ≥ 0.58, stop 1.8%, take 3.0%, 600 epochs, poly deg 2 across all 13 base features |
-| `risky` | Chase return, tolerate bigger drawdowns + more trades. | 2.5x, signal ≥ 0.53, stop 2.8%, take 4.5%, 900 epochs, poly deg 3 |
-
-Training is parallelized across a `ProcessPoolExecutor` (defaults to
-`os.cpu_count()`).  Feature expansion is computed once per objective and
-shared across every candidate in the hyperparameter grid.  Each objective now
-searches 1,944 candidates across epochs, learning rate, L2 strength, threshold,
-stop/take profile, risk sizing, confidence shrinkage, and SGD seed, then keeps
-a full-fit fallback when held-out calibration would reduce the objective score.
-The default objective expands pairwise interactions across all enabled base
-features, which improved the verified BTCUSDC benchmark objective from
-`0.0795225461` to `0.0848076422` on the 619-candle testnet sample. The local
-refinement pass then selected a smaller risk size and raised the same objective
-to `0.0849038204` without changing the base grid size.
-The chosen model artifact also persists the selected execution overlay
-(threshold, risk size, stops/takes, fees, cooldown, and confidence shrinkage) so
-`backtest-panel`, readiness checks, and live startup reproduce the suite result.
-After the base grid is ranked, the suite probes a small local neighborhood
-around the winner so boundary candidates can be improved without expanding the
-whole grid.
-After ranking the base grid, the suite also tests small seed ensembles across
-the top candidates and only promotes an ensemble when the same
-validation/full-sample objective score improves.
-
-### Backtest panel (independent)
-
-`backtest-panel` is a standalone surface: pick any Binance-supported interval,
-any time window, any saved model — training is never forced.  Each run writes
-a timestamped, tagged JSON under `data/backtests/`:
-
+```powershell
+.\.venv311\Scripts\python.exe -m pytest -q tests/test_compute.py tests/test_ai_runtime_and_parity.py tests/test_autonomous.py tests/test_market_universe.py tests/test_backtest.py tests/test_backtest_coverage.py
 ```
-data/backtests/backtest_<tag>_<market>_<interval>_<YYYYMMDDHHMMSS>.json
-```
-
-Interval strings are validated against Binance's published enums (1s, 1m, 3m,
-5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M; spot-only adds `1s`).
-A typo is rejected with a clear error listing every allowed value.
-
-### Autonomous non-mainnet loop
-
-`autonomous start` drives an indefinite, pause-able live loop on Binance
-testnet or Binance Demo Trading.  Control is a tiny state file under `data/autonomous/state.json`
-(`RUNNING` / `PAUSED` / `STOPPING` / `STOPPED`) so a second shell can pause or
-stop the loop without signals.  Every iteration writes a heartbeat to
-`data/autonomous/heartbeat.json`; every fill + close updates
-`data/autonomous/open_positions.json` and `data/autonomous/ledger.json`.  The
-loop refuses to start when both `testnet=False` and `demo=False` — real-money execution stays
-blocked in this phase.
-
-### Positions + P&L stats
-
-```
-simple-ai-trading positions --stats
-#  id           side    qty       entry       mark        pnl$   pnl%
-# 1 ab3f2e…     LONG    0.012345  78200.00   78450.50   +3.09   +0.32%
-# Closed trades  : 12  (wins 7, losses 5)
-# Realized P&L   : +18.42 USDC  (+1.84%)
-# Unrealized P&L : +3.09 USDC  (+0.32%)
-```
-
-Inside the shell, the same data is reachable via `/positions`, `/stats`,
-`/close <id|all>`.
-
-## Host overrides
-
-If you need to point the client at a compatible proxy or alternate host without code changes, use environment overrides:
-
-```bash
-BINANCE_BASE_URL=https://example-proxy.local simple-ai-trading connect
-BINANCE_SPOT_BASE_URL=https://spot-proxy.local simple-ai-trading connect
-BINANCE_FUTURES_BASE_URL=https://futures-proxy.local simple-ai-trading connect
-```
-
-The local CLI reads these from the process environment; it does not load
-`.env` files by itself. Export variables in your shell, prefix the command as
-shown above, or let Docker Compose read a local `.env` file and pass the listed
-values through `docker-compose.yml`.
-
-## Interactive console capabilities
-
-### Connection Settings
-
-The console edits:
-
-- interval
-- market type
-- testnet flag
-- API key and secret through password-masked fields
-- paper/live default
-- startup validation
-- max REST calls per minute
-
-### Strategy settings
-
-The console edits:
-
-- leverage
-- risk per trade
-- max position percent
-- stop loss and take profit
-- cooldown
-- max open positions
-- max trades per day
-- signal threshold
-- max drawdown
-- taker fee and slippage
-- label threshold
-- model lookback
-- training epochs
-- confidence beta
-- short and long feature windows
-- enabled model features
-- cached external signal toggle, max score adjustment, provider quorum, TTL,
-  and timeout
-
-### Tuning windows
-
-The console supports:
-
-- all available data
-- a recent lookback window in days
-- an explicit inclusive date range
-
-### Model and execution workflow
-
-- training uses the current feature selection from strategy settings
-- training supports `custom`, `quick`, `balanced`, and `thorough` presets
-- `fetch --batch-size N` pages kline downloads into request sizes up to Binance's spot 1000-candle limit or USD-M futures 1500-candle limit; live and signed order calls stay sequential to preserve exchange state and rate-limit safety
-- `data-sync` persists closed candles and auxiliary market metrics into SQLite,
-  skips duplicate latest-window rewrites after the requested window is present,
-  and reports coverage quality for repeatable training and future enrichment
-- `train --source auto` falls back to the SQLite store for the selected
-  market/interval and can prompt or `--download-missing` when history is absent
-- `signals` and `live --external-signals` add cached free-provider confirmation
-  without blocking the exchange loop on slow non-Binance APIs
-- `prepare` runs the normal offline sequence: download market data, train, evaluate, backtest, data/model audit, then safety checks; it stops at the first failed step
-- `risk --paper` or `risk --live` prints the local risk policy before an
-  operator loop: endpoint safety, credentials, managed cash, leverage,
-  position sizing, stop-loss exposure, daily caps, drawdown stops,
-  fee/slippage assumptions, external-signal quorum, and model path status
-- `audit` runs no-network diagnostics for candle quality, feature stability,
-  model metadata, and risk posture; `prepare` runs it before the final
-  readiness check
-- `prepare` exposes fetch batch size, preset, epochs, learning rate, L2 penalty, seed, walk-forward windows, threshold calibration, and backtest starting cash so one command can reproduce many training configurations
-- `report` prints the current dashboard, recent artifacts, and readiness checks by default; add `--no-doctor`, `--online`, or `--account` when you need to omit readiness, check connectivity, or include authenticated account state
-- evaluation and backtesting use the current saved model artifact
-- backtests report fee/slippage-aware buy-and-hold BTCUSDC P&L and
-  `edge_vs_buy_hold` beside strategy P&L
-- the live loop supports paper mode and explicit authenticated testnet/demo execution; `--paper` forces paper mode, while `--live` forces authenticated non-mainnet execution
-- `live --model PATH` loads that model before the loop; paper runs can regenerate a missing or incompatible model from current rows, but authenticated live runs fail fast instead
-- `live --sleep 0` is preserved as a real zero-delay loop for scripted paper/test runs; authenticated `--live` mode clamps this to a one-second minimum
-- `spot-roundtrip --mode auto --yes` performs the smallest signed spot testnet/demo exchange check from the CLI; it uses BUY then SELL when USDC is available, or SELL then BUY when only test BTC is available
-- training stores early-stopping loss metadata and a model-quality report; `doctor`, `train`, and `evaluate` surface weak validation, overfit, class-balance, and probability-collapse warnings
-- authenticated live runs inspect exchange account state before the loop; futures positions are resumed, while spot BTC is resumed only up to the explicit managed BTC allocation
-- configured `recvWindow` is used for signed Binance requests, and startup credential validation calls an authenticated account endpoint when keys are present
-- futures close and emergency-close orders use reduce-only market orders with result responses requested, so a close path cannot intentionally increase exposure
-- exchange order rejections during entry, close, or emergency close are captured as `order_error` live artifacts instead of crashing the process
-- request telemetry redacts signed query fields such as timestamps and signatures before storing `last_request_info`
-- the `doctor` command checks safety flags, training data, model compatibility, risk settings, and optional exchange connectivity
-- the interactive bottom bar refreshes the exchange connection status automatically while the console is open
-- spot roundtrip execution is an explicit console action, not an automatic side effect
-
-### Strategy risk profiles
-
-Use `simple-ai-trading strategy --profile NAME` to apply a saved profile, then add explicit flags such as `--risk` or `--signal-threshold` to override individual fields.
-
-| Profile | Operator intent | Key defaults |
-|---|---|---|
-| `custom` | Keep current settings unless explicit flags are supplied. | no profile changes |
-| `conservative` | Smaller sizing, higher signal threshold, slower cadence. | 1x, 0.5% risk, 10% max position, 6 trades/day, 12% drawdown cap |
-| `balanced` | Middle default for testnet iteration. | 2x, 1% risk, 20% max position, 12 trades/day, 20% drawdown cap |
-| `active` | Faster and larger testnet experiments. | 3x, 1.5% risk, 25% max position, 24 trades/day, 25% drawdown cap |
-
-### Live artifacts
-
-Run artifacts are JSON files written next to the model path, normally under `data/`. `train`, `evaluate`, `backtest`, and started `live` loops persist run context with redacted runtime credentials. A started live loop still writes a `live_run_*.json` when it halts from market errors, exchange order rejections, drawdown limits, or model incompatibility during signal generation. Preflight rejections before the loop starts, such as missing credentials or an invalid model for authenticated live mode, return an error without a loop artifact.
-
-BNB Smart Chain faucet note: the official BNB Chain faucet at
-https://www.bnbchain.org/en/testnet-faucet funds BSC testnet wallet addresses
-with tBNB/BEP20 test tokens after an hCaptcha-backed browser request and the
-published 0.002 BNB BSC mainnet prerequisite. It does not directly fund a
-Binance Spot Testnet exchange account, so BTCUSDC exchange-order testing uses
-the Spot Testnet account balances exposed by the Binance API.
-
-Binance Demo Trading note: set `"demo": true` in runtime settings to route Spot
-requests to `https://demo-api.binance.com` and Futures requests to
-`https://demo-fapi.binance.com`. Demo Trading uses separate demo API keys from
-the regular Binance account API-key page. Binance documents it as the resettable
-virtual-funds path for user-facing Spot/Futures testing; existing Spot Testnet
-keys remain separate and cannot be reused on Demo Trading.
-
-## Research reference
-
-For verified design comparisons against high-status trading bots, exchange SDKs,
-and backtesting frameworks, see `docs/SIMILAR_TRADING_REPOS_REVIEW.md`. For the
-current free external signal/API inventory, see
-`docs/FREE_SIGNAL_SOURCE_INVENTORY.md`. The 2026-04-28 design pass is recorded
-in `docs/DESIGN_RESEARCH_NOTES_2026-04-28.md`. Agent instructions in
-`AGENTS.md` require reading the comparable-repo review before broad product,
-architecture, CLI, or workflow redesigns.
-
-## Development
-
-```bash
-.venv/bin/python -m pytest -q
-.venv/bin/python -m coverage run --source=src/simple_ai_bitcoin_trading_binance -m pytest -q
-.venv/bin/python -m coverage report --fail-under=100
-```
-
-### Containerized run
-
-```bash
-docker build -t simple-ai-trading:dev .
-docker compose run --rm simple-ai-trading                 # opens shell
-docker compose run --rm simple-ai-trading objectives      # one-shot command
-```
-
-Config and data live in named Docker volumes (`simple-ai-config`,
-`simple-ai-data`).  The image and Compose service both use
-`/home/trader/work` as the working directory, so relative `data/` paths land on
-the data volume mounted at `/home/trader/work/data`. Secrets are never baked
-into the image — the `configure`
-command writes them to a `0600` file under the mounted config volume at
-runtime.
-
-### Push with a PAT
-
-```bash
-python3 tools/push_with_pat.py origin feat/my-branch
-```
-
-The helper serves the token to `git push` over a short-lived UNIX socket so it
-never appears in `argv`, remote URLs, or `~/.git-credentials`. Enter the token
-at the hidden prompt when the helper asks for it; do not type it into the shell
-command line.
-
-## Limitations
-
-- The current model backend is still intentionally lightweight and conservative; it is configurable and retrainable, but it is not a large deep-learning stack.
-- This is not production trading software; behavior is intentionally conservative and constrained to test-phase workflows.
-- API key security depends on file-system permissions and host security; do not commit secrets to version control.
-- Host selection is configurable via environment overrides, but execution scope remains BTCUSDC-only and non-mainnet-first.

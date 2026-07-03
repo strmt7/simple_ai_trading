@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import importlib.util
@@ -20,15 +20,15 @@ def _load_push_helper():
 
 def test_pat_helper_only_allows_expected_https_github_remote() -> None:
     helper = _load_push_helper()
-    assert helper._github_owner_repo("https://github.com/strmt7/simple_ai_bitcoin_trading_binance.git") == (
+    assert helper._github_owner_repo("https://github.com/strmt7/simple_ai_trading.git") == (
         "strmt7",
-        "simple_ai_bitcoin_trading_binance",
+        "simple_ai_trading",
     )
-    assert helper._github_owner_repo("http://github.com/strmt7/simple_ai_bitcoin_trading_binance.git") is None
-    assert helper._github_owner_repo("git@github.com:strmt7/simple_ai_bitcoin_trading_binance.git") is None
-    helper._validate_allowed_remote("https://github.com/strmt7/simple_ai_bitcoin_trading_binance.git")
+    assert helper._github_owner_repo("http://github.com/strmt7/simple_ai_trading.git") is None
+    assert helper._github_owner_repo("git@github.com:strmt7/simple_ai_trading.git") is None
+    helper._validate_allowed_remote("https://github.com/strmt7/simple_ai_trading.git")
     with pytest.raises(SystemExit, match="unexpected remote"):
-        helper._validate_allowed_remote("https://github.com/other/simple_ai_bitcoin_trading_binance.git")
+        helper._validate_allowed_remote("https://github.com/other/simple_ai_trading.git")
 
 
 def test_pat_helper_resolves_named_remote_before_token_read(monkeypatch) -> None:

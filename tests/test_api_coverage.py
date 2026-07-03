@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import time
@@ -8,7 +8,7 @@ from json import JSONDecodeError
 import pytest
 import requests
 
-from simple_ai_bitcoin_trading_binance.api import (
+from simple_ai_trading.api import (
     BinanceAPIError,
     BinanceClient,
     SymbolConstraints,
@@ -492,8 +492,8 @@ def test_leverage_and_klines_errors(monkeypatch) -> None:
     assert candles[0].open_time == 1
     assert candles[0].quote_volume == 0.0
 
-    with pytest.raises(BinanceAPIError, match="This CLI supports BTCUSDC only"):
-        futures_client.get_klines("ETHUSDC", "15m")
+    with pytest.raises(BinanceAPIError, match="Symbol is required"):
+        futures_client.get_klines("", "15m")
 
     def request_bad_klines(_method: str, _path: str, _params=None, **_kwargs):
         return [[1, "100"]]
@@ -660,7 +660,7 @@ def test_get_max_leverage_missing_symbol_uses_default(monkeypatch) -> None:
         ]
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.get_max_leverage("BTCUSDC") == 125
+    assert client.get_max_leverage("BTCUSDC") == 10
 
 
 def test_retry_delay_caps_large_retry_after() -> None:
@@ -696,7 +696,7 @@ def test_get_max_leverage_defaults_when_brackets_have_no_numeric_values(monkeypa
         "_request",
         lambda _method, _path, _params=None, signed=False: [{"symbol": "BTCUSDC", "brackets": [{"foo": "bar"}]}],
     )
-    assert client.get_max_leverage("BTCUSDC") == 125
+    assert client.get_max_leverage("BTCUSDC") == 10
 
 
 def test_place_order_spot_live_uses_spot_endpoint(monkeypatch) -> None:
@@ -728,7 +728,7 @@ def test_signed_account_reads_refuse_mainnet_even_if_called_directly() -> None:
 def test_place_order_rejects_unsafe_direct_inputs() -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
     for symbol, side, quantity, message in (
-        ("ETHUSDC", "BUY", 0.25, "BTCUSDC only"),
+        ("", "BUY", 0.25, "Order symbol is required"),
         ("BTCUSDC", "HOLD", 0.25, "BUY or SELL"),
         ("BTCUSDC", "BUY", 0.0, "positive finite"),
         ("BTCUSDC", "BUY", float("nan"), "positive finite"),
@@ -778,7 +778,7 @@ def test_set_leverage_low_and_high_clamp(monkeypatch) -> None:
 
     monkeypatch.setattr(client, "_request", request)
     assert client.set_leverage("BTCUSDC", 0)["leverage"] == 1
-    assert client.set_leverage("BTCUSDC", 999)["leverage"] == 125
+    assert client.set_leverage("BTCUSDC", 999)["leverage"] == 10
 
 
 def test_quantize_and_symbol_constraints_handle_bad_data(monkeypatch) -> None:
@@ -820,7 +820,7 @@ def test_get_max_leverage_skips_invalid_payload_parts(monkeypatch) -> None:
         ]
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.get_max_leverage("BTCUSDC") == 125
+    assert client.get_max_leverage("BTCUSDC") == 10
 
 
 def test_set_leverage_spot_is_rejected() -> None:

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import asyncio
@@ -10,13 +10,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import api, cli, features, model
-from simple_ai_bitcoin_trading_binance.api import BinanceAPIError, Candle, SymbolConstraints
-from simple_ai_bitcoin_trading_binance.backtest import run_backtest
-from simple_ai_bitcoin_trading_binance.config import RuntimeConfig, save_runtime, save_strategy
-from simple_ai_bitcoin_trading_binance.dashboard import load_artifact_preview
-from simple_ai_bitcoin_trading_binance.features import ModelRow
-from simple_ai_bitcoin_trading_binance.model import (
+from simple_ai_trading import api, cli, features, model
+from simple_ai_trading.api import BinanceAPIError, Candle, SymbolConstraints
+from simple_ai_trading.backtest import run_backtest
+from simple_ai_trading.config import RuntimeConfig, save_runtime, save_strategy
+from simple_ai_trading.dashboard import load_artifact_preview
+from simple_ai_trading.features import ModelRow
+from simple_ai_trading.model import (
     ModelFeatureMismatchError,
     ModelLoadError,
     TrainedModel,
@@ -25,7 +25,7 @@ from simple_ai_bitcoin_trading_binance.model import (
     train,
     walk_forward_report,
 )
-from simple_ai_bitcoin_trading_binance.types import StrategyConfig
+from simple_ai_trading.types import StrategyConfig
 
 
 class _ScriptedUI:
@@ -309,7 +309,7 @@ def test_api_defensive_and_constraint_edges(monkeypatch) -> None:
 
     futures = api.BinanceClient("k", "s", market_type="futures")
     futures.get_leverage_brackets = lambda _symbol: [{"symbol": "BTCUSDC", "brackets": []}]
-    assert futures.get_max_leverage("BTCUSDC") == 125
+    assert futures.get_max_leverage("BTCUSDC") == 10
 
 
 def test_feature_model_dashboard_and_backtest_edges(tmp_path, monkeypatch) -> None:
@@ -517,7 +517,7 @@ def test_cli_remaining_helper_edges(tmp_path, monkeypatch, capsys) -> None:
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: ZeroLeverageClient())
     runtime = RuntimeConfig(market_type="futures", api_key="k", api_secret="s")
-    assert cli._resolve_futures_leverage(runtime, StrategyConfig(leverage=12)) == 12
+    assert cli._resolve_futures_leverage(runtime, StrategyConfig(leverage=12)) == 10.0
 
     class RaisingLeverageClient:
         def get_max_leverage(self, _symbol):
@@ -589,13 +589,13 @@ def test_cli_remaining_helper_edges(tmp_path, monkeypatch, capsys) -> None:
     save_strategy(StrategyConfig(enabled_features=("rsi",)))
     assert cli.command_strategy(_strategy_args(leverage=200, enable_feature=["rsi"])) == 0
     strategy = cli.load_strategy()
-    assert strategy.leverage == 200
+    assert strategy.leverage == 10
     assert strategy.enabled_features == ("rsi",)
 
     save_runtime(RuntimeConfig(market_type="futures"))
     save_strategy(StrategyConfig())
     assert cli.command_strategy(_strategy_args(leverage=200)) == 0
-    assert cli.load_strategy().leverage == 125
+    assert cli.load_strategy().leverage == 10
 
 
 def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkeypatch, capsys) -> None:
@@ -1044,17 +1044,17 @@ def test_cli_live_guards_leverage_clamps_and_no_rows(tmp_path, monkeypatch, caps
         lambda *_args, **_kwargs: SymbolConstraints("BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0),
     )
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 200.0)
-    assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 2
-    assert "leverage=125.0x" in capsys.readouterr().err
+    assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 0
+    assert "effective leverage: 10.0x" in capsys.readouterr().out
 
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 25.0)
-    assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 2
-    assert "allowed=False" in capsys.readouterr().err
+    assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 0
+    assert "effective leverage: 10.0x" in capsys.readouterr().out
 
     client = _LiveClient(set_response={"leverage": "50"})
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
     assert cli.command_live(_live_args(steps=0, paper=False, live=True)) == 0
-    assert "effective leverage: 50.0x" in capsys.readouterr().out
+    assert "effective leverage: 10.0x" in capsys.readouterr().out
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient(set_response={}))
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 0.2)
@@ -1233,5 +1233,5 @@ def test_cli_main_default_and_module_exit(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(sys, "argv", ["simple-ai-trading", "status"])
     with pytest.warns(RuntimeWarning, match="found in sys.modules"):
         with pytest.raises(SystemExit) as exc_info:
-            runpy.run_module("simple_ai_bitcoin_trading_binance.cli", run_name="__main__")
+            runpy.run_module("simple_ai_trading.cli", run_name="__main__")
     assert exc_info.value.code == 0

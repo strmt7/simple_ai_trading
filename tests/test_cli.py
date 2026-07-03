@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import asyncio
 
-from simple_ai_bitcoin_trading_binance.cli import (
+from simple_ai_trading.cli import (
     _artifact_summary,
     _filter_candles_for_time_window,
     _recent_artifacts,
@@ -19,10 +19,10 @@ from simple_ai_bitcoin_trading_binance.cli import (
     command_strategy,
     main,
 )
-from simple_ai_bitcoin_trading_binance.config import load_strategy
-from simple_ai_bitcoin_trading_binance.api import Candle, SymbolConstraints
-from simple_ai_bitcoin_trading_binance.tui import OperatorApp
-from simple_ai_bitcoin_trading_binance.types import StrategyConfig
+from simple_ai_trading.config import load_strategy
+from simple_ai_trading.api import Candle, SymbolConstraints
+from simple_ai_trading.tui import OperatorApp
+from simple_ai_trading.types import StrategyConfig
 
 
 class _AsyncUI:
@@ -73,7 +73,7 @@ def _action(title: str):
 
 
 def _runtime_config(**overrides):
-    from simple_ai_bitcoin_trading_binance.types import RuntimeConfig
+    from simple_ai_trading.types import RuntimeConfig
 
     return RuntimeConfig(**overrides)
 
@@ -81,17 +81,17 @@ def _runtime_config(**overrides):
 def test_effective_leverage_clamps_by_market() -> None:
     cfg = StrategyConfig(leverage=250.0)
     assert _effective_leverage(cfg, "spot") == 1.0
-    assert _effective_leverage(cfg, "futures") == 125.0
+    assert _effective_leverage(cfg, "futures") == 10.0
     cfg.leverage = float("nan")
     assert _effective_leverage(cfg, "futures") == 1.0
 
 
 def test_target_notional_scales_with_futures_leverage() -> None:
-    cfg = StrategyConfig(leverage=20.0, risk_per_trade=0.01, max_position_pct=0.2)
+    cfg = StrategyConfig(leverage=10.0, risk_per_trade=0.01, max_position_pct=0.2)
     spot_notional = _target_notional(1000.0, cfg, "spot")
     futures_notional = _target_notional(1000.0, cfg, "futures")
     assert spot_notional == 10.0
-    assert futures_notional == 200.0
+    assert futures_notional == 100.0
     assert _target_notional(float("nan"), cfg, "futures") == 0.0
     assert _target_notional(1000.0, cfg, "futures", leverage=float("nan")) == 0.0
 
@@ -175,7 +175,7 @@ def test_command_strategy_updates_risk_and_rate_limits(tmp_path, monkeypatch) ->
     monkeypatch.setenv("HOME", str(tmp_path))
     cfg = StrategyConfig()
     # ensure baseline config exists
-    from simple_ai_bitcoin_trading_binance.config import save_strategy
+    from simple_ai_trading.config import save_strategy
 
     save_strategy(cfg)
 
@@ -253,7 +253,7 @@ def test_build_live_model_respects_existing_model_and_retrain_cadence(monkeypatc
         calls.append((list(train_rows), epochs, _kwargs.get("feature_signature")))
         return {"trained": True}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.train", fake_train)
+    monkeypatch.setattr("simple_ai_trading.cli.train", fake_train)
     rebuilt = _build_live_model(
         rows,
         model=existing,
@@ -277,7 +277,7 @@ def test_build_live_model_returns_existing_when_rows_insufficient(monkeypatch) -
         called["value"] = True
         return {"trained": True}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.train", fake_train)
+    monkeypatch.setattr("simple_ai_trading.cli.train", fake_train)
     rebuilt = _build_live_model(
         [1, 2, 3],
         model=existing,
@@ -298,16 +298,16 @@ def test_main_without_args_routes_to_menu(monkeypatch) -> None:
         called["menu"] = True
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_menu", fake_menu)
+    monkeypatch.setattr("simple_ai_trading.cli.command_menu", fake_menu)
     assert main([]) == 0
     assert called["menu"] is True
 
 
 def test_command_menu_routes_to_tui_when_tty(monkeypatch) -> None:
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.supports_ansi_terminal", lambda _stream: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: _runtime_config())
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_trading.cli.supports_ansi_terminal", lambda _stream: True)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: _runtime_config())
 
     def fake_launch_tui(**kwargs):
         assert "Session" in kwargs["snapshot_provider"](width=72)
@@ -317,8 +317,8 @@ def test_command_menu_routes_to_tui_when_tty(monkeypatch) -> None:
         assert kwargs["actions"][1].is_enabled() is True
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.launch_tui", fake_launch_tui)
-    from simple_ai_bitcoin_trading_binance.cli import command_menu
+    monkeypatch.setattr("simple_ai_trading.tui.launch_tui", fake_launch_tui)
+    from simple_ai_trading.cli import command_menu
 
     assert command_menu(argparse.Namespace()) == 0
 
@@ -327,11 +327,11 @@ def test_command_menu_connection_provider_updates_credential_gate(monkeypatch) -
     current = {"runtime": _runtime_config(api_key="key-a", api_secret="secret-a")}
     connection = {"line": "Connection: authenticated"}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.supports_ansi_terminal", lambda _stream: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: current["runtime"])
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._connection_status_line", lambda: connection["line"])
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_trading.cli.supports_ansi_terminal", lambda _stream: True)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: current["runtime"])
+    monkeypatch.setattr("simple_ai_trading.cli._connection_status_line", lambda: connection["line"])
 
     def fake_launch_tui(**kwargs):
         actions = kwargs["actions"]
@@ -371,8 +371,8 @@ def test_command_menu_connection_provider_updates_credential_gate(monkeypatch) -
         assert "Connection settings first" in connect.lock_reason()
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.tui.launch_tui", fake_launch_tui)
-    from simple_ai_bitcoin_trading_binance.cli import command_menu
+    monkeypatch.setattr("simple_ai_trading.tui.launch_tui", fake_launch_tui)
+    from simple_ai_trading.cli import command_menu
 
     assert command_menu(argparse.Namespace()) == 0
 
@@ -397,9 +397,9 @@ def test_connection_status_respects_validate_account_false(monkeypatch) -> None:
             calls.append("account")
             return {}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._build_client", lambda _runtime: _Client())
-    from simple_ai_bitcoin_trading_binance.cli import _connection_status_line
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: runtime)
+    monkeypatch.setattr("simple_ai_trading.cli._build_client", lambda _runtime: _Client())
+    from simple_ai_trading.cli import _connection_status_line
 
     line = _connection_status_line()
     assert "credentials saved, not validated" in line
@@ -407,19 +407,19 @@ def test_connection_status_respects_validate_account_false(monkeypatch) -> None:
 
 
 def test_command_menu_rejects_without_tty(monkeypatch, capsys) -> None:
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: False)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: False)
-    from simple_ai_bitcoin_trading_binance.cli import command_menu
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdin.isatty", lambda: False)
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdout.isatty", lambda: False)
+    from simple_ai_trading.cli import command_menu
 
     assert command_menu(argparse.Namespace()) == 2
     assert "Interactive console requires a real terminal" in capsys.readouterr().err
 
 
 def test_command_menu_rejects_without_ansi_terminal(monkeypatch, capsys) -> None:
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdin.isatty", lambda: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.supports_ansi_terminal", lambda _stream: False)
-    from simple_ai_bitcoin_trading_binance.cli import command_menu
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_trading.cli.sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr("simple_ai_trading.cli.supports_ansi_terminal", lambda _stream: False)
+    from simple_ai_trading.cli import command_menu
 
     assert command_menu(argparse.Namespace()) == 2
     assert "virtual-terminal support" in capsys.readouterr().err
@@ -443,10 +443,10 @@ def test_tui_runtime_action_saves_runtime(monkeypatch) -> None:
     )()
     saved = {}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: current)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_runtime", lambda cfg: saved.setdefault("cfg", cfg) or cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: current)
+    monkeypatch.setattr("simple_ai_trading.cli.save_runtime", lambda cfg: saved.setdefault("cfg", cfg) or cfg)
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli._build_client",
+        "simple_ai_trading.cli._build_client",
         lambda _runtime: type(
             "C",
             (),
@@ -484,13 +484,13 @@ def test_tui_runtime_action_saves_runtime(monkeypatch) -> None:
 
 def test_tui_strategy_action_builds_full_strategy_args(monkeypatch) -> None:
     captured = {}
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", lambda: StrategyConfig())
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", lambda: StrategyConfig())
 
     def fake_strategy(args):
         captured["args"] = args
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_strategy", fake_strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.command_strategy", fake_strategy)
 
     ui = _AsyncUI(
         multiselects=[["momentum_1", "rsi"]],
@@ -552,13 +552,13 @@ def test_tui_strategy_action_builds_full_strategy_args(monkeypatch) -> None:
 
 def test_tui_strategy_shortcut_is_keyboard_navigable_in_textual_runtime(monkeypatch) -> None:
     captured = {}
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", lambda: StrategyConfig())
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", lambda: StrategyConfig())
 
     def fake_strategy(args):
         captured["args"] = args
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_strategy", fake_strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.command_strategy", fake_strategy)
 
     async def runner() -> None:
         app = OperatorApp(
@@ -599,15 +599,15 @@ def test_tui_settings_submenus_are_keyboard_navigable_in_textual_runtime(monkeyp
     saved_strategy = []
     captured_strategy = {}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_runtime", lambda cfg: saved_runtime.append(cfg) or cfg)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", lambda: strategy)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_strategy", lambda cfg: saved_strategy.append(cfg) or cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: runtime)
+    monkeypatch.setattr("simple_ai_trading.cli.save_runtime", lambda cfg: saved_runtime.append(cfg) or cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", lambda: strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.save_strategy", lambda cfg: saved_strategy.append(cfg) or cfg)
     def fake_strategy(args):
         captured_strategy["args"] = args
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_strategy", fake_strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.command_strategy", fake_strategy)
 
     async def drive_settings(option_index: int, *, expect_screen: str, save: bool = True) -> None:
         app = OperatorApp(
@@ -659,16 +659,16 @@ def test_tui_settings_menu_accepts_fallback_shortcuts_in_textual_runtime(monkeyp
     strategy = StrategyConfig()
     captured_strategy = {}
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_runtime", lambda cfg: cfg)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", lambda: strategy)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_strategy", lambda cfg: cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: runtime)
+    monkeypatch.setattr("simple_ai_trading.cli.save_runtime", lambda cfg: cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", lambda: strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.save_strategy", lambda cfg: cfg)
 
     def fake_strategy(args):
         captured_strategy["args"] = args
         return 0
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_strategy", fake_strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.command_strategy", fake_strategy)
 
     async def runner() -> None:
         app = OperatorApp(
@@ -714,13 +714,13 @@ def test_tui_all_numbered_menu_choices_are_reachable_in_textual_runtime(monkeypa
     runtime = _runtime_config(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=1000.0, managed_btc=0.0)
     strategy = StrategyConfig()
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_runtime", lambda cfg: cfg)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", lambda: strategy)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.save_strategy", lambda cfg: cfg)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_strategy", lambda _args: 0)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: runtime)
+    monkeypatch.setattr("simple_ai_trading.cli.save_runtime", lambda cfg: cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", lambda: strategy)
+    monkeypatch.setattr("simple_ai_trading.cli.save_strategy", lambda cfg: cfg)
+    monkeypatch.setattr("simple_ai_trading.cli.command_strategy", lambda _args: 0)
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli._build_client",
+        "simple_ai_trading.cli._build_client",
         lambda _runtime: type(
             "FundsClient",
             (),
@@ -789,7 +789,7 @@ def test_tui_all_numbered_menu_choices_are_reachable_in_textual_runtime(monkeypa
 
 def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) -> None:
     runtime = _runtime_config(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=1000.0, managed_btc=0.0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: runtime)
 
     async def runner() -> None:
         app = OperatorApp(
@@ -818,17 +818,17 @@ def test_tui_funds_menu_is_keyboard_navigable_in_textual_runtime(monkeypatch) ->
 
 def test_tui_signed_actions_default_confirmation_to_cancel_in_textual_runtime(monkeypatch) -> None:
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.load_runtime",
+        "simple_ai_trading.cli.load_runtime",
         lambda: _runtime_config(testnet=True, dry_run=False, api_key="fake-api-key", api_secret="fake-secret"),
     )
     live_calls = []
     roundtrip_calls = []
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.command_live",
+        "simple_ai_trading.cli.command_live",
         lambda args: live_calls.append(args) or 0,
     )
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.command_spot_roundtrip",
+        "simple_ai_trading.cli.command_spot_roundtrip",
         lambda args: roundtrip_calls.append(args) or 0,
     )
 
@@ -868,13 +868,13 @@ def test_tui_signed_actions_default_confirmation_to_cancel_in_textual_runtime(mo
 def test_tui_fetch_train_tune_and_backtest_actions_build_expected_args(monkeypatch) -> None:
     captured = {}
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.load_runtime",
+        "simple_ai_trading.cli.load_runtime",
         lambda: type("R", (), {"symbol": "BTCUSDC", "interval": "15m", "market_type": "spot"})(),
     )
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_fetch", lambda args: captured.__setitem__("fetch", args) or 0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_train", lambda args: captured.__setitem__("train", args) or 0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_tune", lambda args: captured.__setitem__("tune", args) or 0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_backtest", lambda args: captured.__setitem__("backtest", args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_fetch", lambda args: captured.__setitem__("fetch", args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_train", lambda args: captured.__setitem__("train", args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_tune", lambda args: captured.__setitem__("tune", args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_backtest", lambda args: captured.__setitem__("backtest", args) or 0)
 
     asyncio.run(
         _action("Fetch candles").run(
@@ -945,7 +945,7 @@ def test_tui_fetch_train_tune_and_backtest_actions_build_expected_args(monkeypat
 
 def test_tui_local_audit_action_builds_expected_args(monkeypatch) -> None:
     captured = {}
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_audit", lambda args: captured.__setitem__("audit", args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_audit", lambda args: captured.__setitem__("audit", args) or 0)
 
     result = asyncio.run(
         _action("Local audit").run(
@@ -967,12 +967,12 @@ def test_tui_local_audit_action_cancelled(capsys) -> None:
 def test_tui_evaluate_and_pipeline_actions(monkeypatch) -> None:
     captured = {"order": []}
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.load_runtime",
+        "simple_ai_trading.cli.load_runtime",
         lambda: type("R", (), {"symbol": "BTCUSDC", "interval": "15m", "market_type": "spot"})(),
     )
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_evaluate", lambda args: captured.setdefault("evaluate", args) or 0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_prepare", lambda args: captured["order"].append(("prepare", args.model, args.online_doctor)) or 0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_evaluate", lambda args: captured["order"].append(("evaluate", args.model)) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_evaluate", lambda args: captured.setdefault("evaluate", args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_prepare", lambda args: captured["order"].append(("prepare", args.model, args.online_doctor)) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_evaluate", lambda args: captured["order"].append(("evaluate", args.model)) or 0)
 
     ui_eval = _AsyncUI(
         forms=[
@@ -1012,11 +1012,11 @@ def test_tui_live_and_roundtrip_actions(monkeypatch, capsys) -> None:
     calls = []
     roundtrip_calls = []
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.load_runtime",
+        "simple_ai_trading.cli.load_runtime",
         lambda: _runtime_config(testnet=True, dry_run=False, api_key="fake-api-key", api_secret="fake-secret"),
     )
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_live", lambda args: calls.append(args) or 0)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.command_spot_roundtrip", lambda args: roundtrip_calls.append(args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_live", lambda args: calls.append(args) or 0)
+    monkeypatch.setattr("simple_ai_trading.cli.command_spot_roundtrip", lambda args: roundtrip_calls.append(args) or 0)
 
     asyncio.run(
         _action("Paper loop").run(
@@ -1099,19 +1099,19 @@ def test_recent_artifacts_and_summary(tmp_path) -> None:
 
 
 def test_show_recent_artifacts_handles_empty_and_populated(tmp_path, monkeypatch, capsys) -> None:
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._recent_artifacts", lambda: [])
+    monkeypatch.setattr("simple_ai_trading.cli._recent_artifacts", lambda: [])
     assert _show_recent_artifacts() == 0
     assert "No recent artifacts" in capsys.readouterr().out
 
     payload = tmp_path / "artifact.json"
     payload.write_text('{"command":"evaluate","timestamp":3,"runtime":{"symbol":"BTCUSDC","market_type":"spot"}}', encoding="utf-8")
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._recent_artifacts", lambda: [payload])
+    monkeypatch.setattr("simple_ai_trading.cli._recent_artifacts", lambda: [payload])
     assert _show_recent_artifacts() == 0
     assert "Recent artifacts:" in capsys.readouterr().out
 
 
 def test_show_account_overview_handles_missing_credentials(monkeypatch, capsys) -> None:
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: type("R", (), {"api_key": "", "api_secret": ""})())
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: type("R", (), {"api_key": "", "api_secret": ""})())
     assert _show_account_overview() == 2
     assert "Account balances requires Binance API key" in capsys.readouterr().err
 
@@ -1128,8 +1128,8 @@ def test_show_account_overview_prints_balances(monkeypatch, capsys) -> None:
                 ]
             }
 
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_runtime", lambda: runtime)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli._build_client", lambda _runtime: _Client())
+    monkeypatch.setattr("simple_ai_trading.cli.load_runtime", lambda: runtime)
+    monkeypatch.setattr("simple_ai_trading.cli._build_client", lambda _runtime: _Client())
     assert _show_account_overview() == 0
     output = capsys.readouterr().out
     assert "Account balances" in output
@@ -1155,7 +1155,7 @@ def test_command_live_rejects_conflicting_force_modes(capsys) -> None:
 def test_command_live_blocks_unsafe_testnet_base_url(monkeypatch, capsys) -> None:
     monkeypatch.setenv("BINANCE_BASE_URL", "https://api.binance.com")
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.cli.load_runtime",
+        "simple_ai_trading.cli.load_runtime",
         lambda: _runtime_config(
             testnet=True,
             dry_run=False,
@@ -1163,7 +1163,7 @@ def test_command_live_blocks_unsafe_testnet_base_url(monkeypatch, capsys) -> Non
             api_secret="fake-secret",
         ),
     )
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.cli.load_strategy", StrategyConfig)
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", StrategyConfig)
     args = argparse.Namespace(
         paper=False,
         live=True,

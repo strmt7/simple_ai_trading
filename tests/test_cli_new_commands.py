@@ -1,4 +1,4 @@
-"""Coverage tests for the new CLI subcommands added in the UX rework."""
+﻿"""Coverage tests for the new CLI subcommands added in the UX rework."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ import argparse
 import json
 from pathlib import Path
 
-from simple_ai_bitcoin_trading_binance import cli
-from simple_ai_bitcoin_trading_binance.config import save_runtime
-from simple_ai_bitcoin_trading_binance.positions import OpenPosition, PositionsStore
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading import cli
+from simple_ai_trading.config import save_runtime
+from simple_ai_trading.positions import OpenPosition, PositionsStore
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 # --------------------------------------------------------------------------- #
@@ -23,7 +23,7 @@ def test_command_shell_invokes_run_shell(monkeypatch):
         called["argv"] = list(argv)
         return 0
 
-    import simple_ai_bitcoin_trading_binance.shell as shell_mod
+    import simple_ai_trading.shell as shell_mod
     monkeypatch.setattr(shell_mod, "run_shell", fake_run)
     assert cli.command_shell(argparse.Namespace()) == 0
     assert called["argv"] == []
@@ -95,9 +95,9 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
         return _Fake()
 
     monkeypatch.setattr(cli, "run_training_suite", fake_run, raising=False)
-    # import path for monkeypatch — the function is resolved lazily inside command
+    # import path for monkeypatch â€” the function is resolved lazily inside command
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.training_suite.run_training_suite",
+        "simple_ai_trading.training_suite.run_training_suite",
         fake_run,
     )
     args = argparse.Namespace(
@@ -106,6 +106,8 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
         starting_cash=1000.0,
         objective=["balanced"],
         max_workers=3,
+        compute_backend="cpu",
+        batch_size=8192,
     )
     assert cli.command_train_suite(args) == 0
     out = capsys.readouterr().out
@@ -155,7 +157,7 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
         return _Report()
 
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.training_suite.run_training_suite",
+        "simple_ai_trading.training_suite.run_training_suite",
         fake_run,
     )
     args = argparse.Namespace(
@@ -187,7 +189,7 @@ def test_command_train_suite_passes_gpu_options(tmp_path, monkeypatch):
         return _Report()
 
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.training_suite.run_training_suite",
+        "simple_ai_trading.training_suite.run_training_suite",
         fake_run,
     )
     args = argparse.Namespace(
@@ -220,7 +222,7 @@ def test_command_train_suite_uses_saved_compute_backend_without_cli_override(tmp
         return _Report()
 
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.training_suite.run_training_suite",
+        "simple_ai_trading.training_suite.run_training_suite",
         fake_run,
     )
     args = argparse.Namespace(
@@ -279,7 +281,7 @@ def test_command_backtest_panel_success(tmp_path, monkeypatch, capsys):
         return _FakeReport()
 
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.backtest_panel.run_panel",
+        "simple_ai_trading.backtest_panel.run_panel",
         fake_run,
     )
     args = argparse.Namespace(
@@ -315,7 +317,7 @@ def test_command_backtest_panel_success_without_objective(tmp_path, monkeypatch,
         objective_score = None
 
     monkeypatch.setattr(
-        "simple_ai_bitcoin_trading_binance.backtest_panel.run_panel",
+        "simple_ai_trading.backtest_panel.run_panel",
         lambda req, strat: _FakeReport(),
     )
     args = argparse.Namespace(
@@ -374,7 +376,7 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(cli, "load_strategy", StrategyConfig)
     monkeypatch.setattr(cli, "_build_client", lambda runtime: ("client", runtime.symbol))
     monkeypatch.setattr(cli, "_build_autonomous_decision_fn", fake_decision_fn)
-    monkeypatch.setattr("simple_ai_bitcoin_trading_binance.autonomous.run_loop", fake_run_loop)
+    monkeypatch.setattr("simple_ai_trading.autonomous.run_loop", fake_run_loop)
     args = argparse.Namespace(
         action="start",
         objective="balanced",

@@ -1,13 +1,13 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import sqlite3
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance import source_grading
-from simple_ai_bitcoin_trading_binance.source_grading import grade_sources, render_source_grade_run
-from simple_ai_bitcoin_trading_binance.telemetry_store import TradingTelemetryStore
+from simple_ai_trading import source_grading
+from simple_ai_trading.source_grading import grade_sources, render_source_grade_run
+from simple_ai_trading.telemetry_store import TradingTelemetryStore
 
 
 NOW_MS = 1_700_000_000_000

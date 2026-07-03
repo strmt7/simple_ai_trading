@@ -1,4 +1,4 @@
-"""Run a real-data signal soak and grade collected sources afterward."""
+﻿"""Run a real-data signal soak and grade collected sources afterward."""
 
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ def _run_signal_iteration(args: argparse.Namespace) -> SignalIteration:
     cmd = [
         str(args.python),
         "-m",
-        "simple_ai_bitcoin_trading_binance.cli",
+        "simple_ai_trading.cli",
         "signals",
         "--refresh",
         "--timeout",
@@ -145,7 +145,7 @@ def _run_source_grades(args: argparse.Namespace) -> GradeSummary:
     cmd = [
         str(args.python),
         "-m",
-        "simple_ai_bitcoin_trading_binance.cli",
+        "simple_ai_trading.cli",
         "source-grades",
         "--db",
         str(args.db),

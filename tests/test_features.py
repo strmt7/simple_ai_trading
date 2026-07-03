@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import math
 import pytest
-from simple_ai_bitcoin_trading_binance.api import Candle
-from simple_ai_bitcoin_trading_binance.features import (
+from simple_ai_trading.api import Candle
+from simple_ai_trading.features import (
     FEATURE_NAMES,
     feature_signature,
     make_inference_rows,
@@ -20,8 +20,8 @@ from simple_ai_bitcoin_trading_binance.features import (
     _true_range,
     _valid_ohlcv,
 )
-from simple_ai_bitcoin_trading_binance import features as features_mod
-from simple_ai_bitcoin_trading_binance.features import _safe_features
+from simple_ai_trading import features as features_mod
+from simple_ai_trading.features import _safe_features
 
 
 def _fake_candles() -> list[Candle]:

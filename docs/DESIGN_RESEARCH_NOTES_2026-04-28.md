@@ -1,6 +1,6 @@
-# Design Research Notes - 2026-04-28
+﻿# Design Research Notes - 2026-04-28
 
-Scope: BTCUSDC-only, Binance testnet-first prototype. These notes summarize
+Current scope update: Simple AI Trading is now a multi-asset, Binance testnet-first day-trading app. The older BTCUSDC notes below are retained as historical research context, not as an active symbol restriction. These notes summarize
 the source-backed design pass used for the 2026-04-28 hardening work.
 
 ## High-confidence Findings
@@ -45,7 +45,7 @@ the source-backed design pass used for the 2026-04-28 hardening work.
 ## Implemented In This Pass
 
 - Added `simple-ai-trading audit` and a matching TUI action.
-- Added `src/simple_ai_bitcoin_trading_binance/audit.py` for no-network local
+- Added `src/simple_ai_trading/audit.py` for no-network local
   diagnostics.
 - Bounded EMA history in the feature pipeline so latest features match across
   full and live-sized caches.

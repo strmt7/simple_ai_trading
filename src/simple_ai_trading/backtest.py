@@ -1,4 +1,4 @@
-"""Backtesting engine for BTCUSDC model-driven strategies."""
+"""Backtesting engine for autonomous day-trading strategies."""
 
 from __future__ import annotations
 import math
@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, replace
 from typing import Dict, List
 
 from .compute import BackendInfo, resolve_backend
+from .execution_simulation import simulate_market_fill
 from .features import ModelRow
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
 from .types import StrategyConfig
@@ -87,9 +88,14 @@ def _bps_to_rate(bps: float) -> float:
     return max(0.0, bps) / 10_000.0
 
 
-def _fill_price(price: float, side_sign: int, slippage_bps: float) -> float:
-    slippage = _bps_to_rate(slippage_bps)
-    return price * (1.0 + side_sign * slippage)
+def _fill_price(price: float, side_sign: int, cfg: StrategyConfig, *, notional: float = 0.0, volume: float = 0.0) -> float:
+    return simulate_market_fill(
+        price,
+        side_sign,
+        notional,
+        cfg,
+        bar_volume_notional=volume,
+    ).fill_price
 
 
 def _normalize_market_direction(signal_score: float, threshold: float, market_type: str) -> int:
@@ -113,7 +119,7 @@ def _close_position(
     cfg: StrategyConfig,
 ) -> tuple[float, float, float]:
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
-    exit_price = _fill_price(price, -position_side, cfg.slippage_bps)
+    exit_price = _fill_price(price, -position_side, cfg, notional=abs(notional), volume=abs(notional) * 20.0)
     realized = position_side * (exit_price - entry_price) * qty
     exit_fee = abs(exit_price * qty) * fee_rate
     return margin_used + realized - exit_fee, realized, exit_fee
@@ -124,7 +130,7 @@ def _safe_day(ts_ms: int) -> int:
 
 
 def _buy_hold_pnl(rows: List[ModelRow], starting_cash: float, cfg: StrategyConfig) -> float:
-    """Return fee/slippage-aware buy-and-hold BTCUSDC baseline P&L."""
+    """Return fee/slippage-aware buy-and-hold baseline P&L."""
 
     if not rows or starting_cash <= 0:
         return 0.0
@@ -133,8 +139,8 @@ def _buy_hold_pnl(rows: List[ModelRow], starting_cash: float, cfg: StrategyConfi
     if first <= 0 or last <= 0:
         return 0.0
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
-    entry = _fill_price(first, 1, cfg.slippage_bps)
-    exit_price = _fill_price(last, -1, cfg.slippage_bps)
+    entry = _fill_price(first, 1, cfg, notional=starting_cash, volume=starting_cash * 20.0)
+    exit_price = _fill_price(last, -1, cfg, notional=starting_cash, volume=starting_cash * 20.0)
     if entry <= 0 or exit_price <= 0:
         return 0.0
     entry_notional = starting_cash / (1.0 + fee_rate)
@@ -413,8 +419,8 @@ def run_backtest(
     leverage = 1.0 if market_type == "spot" else cfg.leverage
     if leverage < 1:
         leverage = 1.0
-    if market_type == "futures" and leverage > 125:
-        leverage = 125.0
+    if market_type == "futures" and leverage > 10:
+        leverage = 10.0
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
 
     daily_trade_count: Dict[int, int] = {}
@@ -468,7 +474,8 @@ def run_backtest(
                 continue
 
             side_sign = 1 if execution_signal > 0 else -1
-            entry = _fill_price(price, side_sign, cfg.slippage_bps)
+            row_volume_notional = max(0.0, float(getattr(row, "volume", 0.0) or 0.0) * price)
+            entry = _fill_price(price, side_sign, cfg, notional=gross, volume=row_volume_notional)
             if entry <= 0:
                 continue
 

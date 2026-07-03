@@ -25,7 +25,7 @@ BINANCE_SPOT_DEMO = "https://demo-api.binance.com"
 BINANCE_FUTURES_TESTNET = "https://testnet.binancefuture.com"
 BINANCE_FUTURES_LIVE = "https://fapi.binance.com"
 BINANCE_FUTURES_DEMO = "https://demo-fapi.binance.com"
-_MAX_FUTURES_LEVERAGE = 125
+_MAX_FUTURES_LEVERAGE = 10
 _RETRY_HTTP_STATUSES = {418, 429, 500, 502, 503, 504}
 _RETRY_BAPI_CODES = {-1003, -1007}
 _SENSITIVE_QUERY_FIELDS = {"signature", "timestamp", "recvWindow"}
@@ -170,7 +170,7 @@ class BinanceClient:
             ensure_non_mainnet_base_url(self.base_url, testnet=self.testnet, demo=self.demo)
         self.session = requests.Session()
         self.session.headers.update({"X-MBX-APIKEY": api_key})
-        self.session.headers.update({"User-Agent": "simple-ai-btcusdc-cli"})
+        self.session.headers.update({"User-Agent": "simple-ai-trading/0.1"})
         self.timeout = timeout
         try:
             recv_window_ms = int(recv_window_ms)
@@ -555,15 +555,21 @@ class BinanceClient:
                 return min(max_leverage, _MAX_FUTURES_LEVERAGE)
         return _MAX_FUTURES_LEVERAGE
 
-    def ensure_btcusdc(self) -> Dict[str, object]:
+    def ensure_symbol(self, symbol: str) -> Dict[str, object]:
+        symbol = str(symbol or "").upper()
         info = self.get_exchange_info()
-        symbols = [item for item in self._symbols_from_exchange_info(info) if item.get("symbol") == "BTCUSDC"]
+        symbols = [item for item in self._symbols_from_exchange_info(info) if item.get("symbol") == symbol]
         if not symbols:
-            raise BinanceAPIError("BTCUSDC is unavailable on this endpoint. Check Binance support for the current market")
+            raise BinanceAPIError(f"{symbol} is unavailable on this endpoint. Check Binance support for the current market")
         symbol_info = symbols[0]
         if symbol_info.get("status") != "TRADING":
-            raise BinanceAPIError(f"BTCUSDC is not trading. Status: {symbol_info.get('status')}")
+            raise BinanceAPIError(f"{symbol} is not trading. Status: {symbol_info.get('status')}")
         return symbol_info
+
+    def ensure_btcusdc(self) -> Dict[str, object]:
+        """Backward-compatible alias for legacy tests and scripts."""
+
+        return self.ensure_symbol("BTCUSDC")
 
     @classmethod
     def _parse_kline_row(cls, row: object) -> Candle:
@@ -585,8 +591,9 @@ class BinanceClient:
 
     def get_klines(self, symbol: str, interval: str, *, limit: int = 500,
                    start_time: int | None = None, end_time: int | None = None) -> List[Candle]:
-        if symbol.upper() != "BTCUSDC":
-            raise BinanceAPIError("This CLI supports BTCUSDC only")
+        symbol = str(symbol or "").upper()
+        if not symbol:
+            raise BinanceAPIError("Symbol is required")
         params: Dict[str, object] = {
             "symbol": symbol,
             "interval": interval,
@@ -666,8 +673,8 @@ class BinanceClient:
             quantity_value = float(quantity)
         except (TypeError, ValueError):
             quantity_value = float("nan")
-        if symbol != "BTCUSDC":
-            raise BinanceAPIError("Authenticated order helper supports BTCUSDC only")
+        if not symbol:
+            raise BinanceAPIError("Order symbol is required")
         if side not in {"BUY", "SELL"}:
             raise BinanceAPIError("Order side must be BUY or SELL")
         if not math.isfinite(quantity_value) or quantity_value <= 0.0:

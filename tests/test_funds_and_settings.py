@@ -1,4 +1,4 @@
-"""Tests for the Funds allocation and Settings hub flows."""
+﻿"""Tests for the Funds allocation and Settings hub flows."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from typing import Any
 
 import pytest
 
-from simple_ai_bitcoin_trading_binance.api import BinanceAPIError
-from simple_ai_bitcoin_trading_binance.cli import (
+from simple_ai_trading.api import BinanceAPIError
+from simple_ai_trading.cli import (
     _account_free_balances,
     _apply_funds_change,
     _credential_fingerprint,
@@ -18,12 +18,12 @@ from simple_ai_bitcoin_trading_binance.cli import (
     _ui_funds_menu,
     _ui_settings_menu,
 )
-from simple_ai_bitcoin_trading_binance.config import (
+from simple_ai_trading.config import (
     load_runtime,
     save_runtime,
     save_strategy,
 )
-from simple_ai_bitcoin_trading_binance.types import RuntimeConfig, StrategyConfig
+from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 class _ScriptedUI:
@@ -152,7 +152,7 @@ def test_load_exchange_funds_requires_credentials(isolated_home) -> None:
 
 
 def test_load_exchange_funds_reads_authenticated_balances(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     monkeypatch.setattr(
@@ -216,7 +216,7 @@ def test_funds_menu_show_without_credentials_logs_requirement(isolated_home) -> 
 
 
 def test_funds_menu_sync_persists_exchange_balances(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     monkeypatch.setattr(
@@ -232,7 +232,7 @@ def test_funds_menu_sync_persists_exchange_balances(isolated_home, monkeypatch) 
 
 
 def test_funds_menu_set_usdc_cap_is_capped_to_exchange_free(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     monkeypatch.setattr(
@@ -250,7 +250,7 @@ def test_funds_menu_set_usdc_cap_is_capped_to_exchange_free(isolated_home, monke
 
 
 def test_funds_menu_invalid_amount_rejected(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     monkeypatch.setattr(
@@ -274,7 +274,7 @@ def test_funds_menu_clear_caps(isolated_home) -> None:
 
 
 def test_funds_menu_form_cancel_keeps_cap(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", managed_usdc=42.0))
     monkeypatch.setattr(
@@ -291,7 +291,7 @@ def test_funds_menu_form_cancel_keeps_cap(isolated_home, monkeypatch) -> None:
 
 
 def test_funds_menu_exchange_failure_logs_short_credential_message(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret"))
     monkeypatch.setattr(cli_mod, "_build_client", lambda _runtime: _FundsClient(BinanceAPIError("bad key")))
@@ -340,7 +340,7 @@ def test_settings_menu_execution_form_persists_choices(isolated_home) -> None:
         ],
     )
     asyncio.run(_ui_settings_menu(ui))
-    from simple_ai_bitcoin_trading_binance.config import load_strategy
+    from simple_ai_trading.config import load_strategy
 
     cfg = load_strategy()
     assert cfg.order_type == "MARKET"
@@ -363,7 +363,7 @@ def test_settings_menu_execution_unsupported_order_type_falls_back(isolated_home
         ],
     )
     asyncio.run(_ui_settings_menu(ui))
-    from simple_ai_bitcoin_trading_binance.config import load_strategy
+    from simple_ai_trading.config import load_strategy
 
     cfg = load_strategy()
     assert cfg.order_type == "MARKET"
@@ -417,7 +417,7 @@ def test_tui_settings_action_marks_credentials_after_settings_close(isolated_hom
 
 
 def test_connection_settings_escape_does_not_save_or_validate(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     runtime = RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", validate_account=True)
     save_runtime(runtime)
@@ -482,7 +482,7 @@ def test_signed_tui_actions_stop_before_forms_without_credentials(isolated_home)
 
 
 def test_direct_connection_settings_updates_credential_state(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     state = {"fingerprint": "", "status": "missing"}
     save_runtime(RuntimeConfig(validate_account=True))
@@ -538,7 +538,7 @@ def test_settings_menu_runtime_saves_when_form_valid(isolated_home) -> None:
 
 
 def test_settings_menu_runtime_marks_missing_and_valid_credentials(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     marks: list[str] = []
     save_runtime(RuntimeConfig(interval="15m", validate_account=True))
@@ -560,7 +560,7 @@ def test_settings_menu_runtime_marks_missing_and_valid_credentials(isolated_home
 
 
 def test_settings_menu_runtime_marks_invalid_credentials(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     marks: list[str] = []
     save_runtime(RuntimeConfig(validate_account=True))
@@ -582,7 +582,7 @@ def test_settings_menu_runtime_marks_invalid_credentials(isolated_home, monkeypa
 
 
 def test_settings_menu_runtime_validation_without_credential_callback(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     save_runtime(RuntimeConfig(validate_account=True))
     ui = _ScriptedUI(
@@ -610,7 +610,7 @@ def test_settings_menu_runtime_validation_without_credential_callback(isolated_h
 
 def test_settings_menu_runtime_invalid_value_logs_error(isolated_home, monkeypatch) -> None:
     """If _ui_edit_runtime raises ValueError the hub must log and continue."""
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     async def _exploder(_ui, _current):
         raise ValueError("intentionally bad")
@@ -622,7 +622,7 @@ def test_settings_menu_runtime_invalid_value_logs_error(isolated_home, monkeypat
 
 
 def test_settings_menu_strategy_invalid_value_logs_error(isolated_home, monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     async def _exploder(_ui, _current):
         raise ValueError("strategy boom")
@@ -636,7 +636,7 @@ def test_settings_menu_strategy_invalid_value_logs_error(isolated_home, monkeypa
 def test_settings_menu_strategy_custom_no_change_is_cancelled(isolated_home, monkeypatch) -> None:
     """When the strategy form returns the 'no change' sentinel, the hub logs cancellation."""
     import argparse
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     async def _no_change(_ui, _current):
         return argparse.Namespace(
@@ -674,14 +674,14 @@ def test_settings_menu_unknown_choice_loops_to_top(isolated_home) -> None:
     """A choice that doesn't match any known sub-menu must fall through and re-prompt."""
     ui = _ScriptedUI(menu_choices=["mystery", "close"])
     asyncio.run(_ui_settings_menu(ui))
-    # The hub must have re-prompted — i.e. asked the menu twice.
+    # The hub must have re-prompted â€” i.e. asked the menu twice.
     assert len(ui.menu_calls) == 2
 
 
 def test_settings_menu_strategy_with_change_runs_command(isolated_home, monkeypatch) -> None:
     """When the strategy form returns concrete values, command_strategy runs."""
     import argparse
-    from simple_ai_bitcoin_trading_binance import cli as cli_mod
+    from simple_ai_trading import cli as cli_mod
 
     async def _changed(_ui, _current):
         return argparse.Namespace(

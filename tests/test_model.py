@@ -1,12 +1,12 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import pytest
 
-from simple_ai_bitcoin_trading_binance.features import ModelRow
+from simple_ai_trading.features import ModelRow
 from pathlib import Path
 
-from simple_ai_bitcoin_trading_binance.model import (
+from simple_ai_trading.model import (
     TrainedModel,
     EnsembleMember,
     ClassificationReport,
@@ -23,8 +23,8 @@ from simple_ai_bitcoin_trading_binance.model import (
     train,
     walk_forward_report,
 )
-from simple_ai_bitcoin_trading_binance.compute import BackendInfo
-from simple_ai_bitcoin_trading_binance.strategy_overrides import clean_strategy_overrides
+from simple_ai_trading.compute import BackendInfo
+from simple_ai_trading.strategy_overrides import clean_strategy_overrides
 
 
 def _rows() -> list[ModelRow]:
@@ -54,7 +54,7 @@ def test_train_records_requested_backend_fallback_when_unavailable() -> None:
 
 
 def test_train_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None:
-    from simple_ai_bitcoin_trading_binance import model as model_mod
+    from simple_ai_trading import model as model_mod
 
     monkeypatch.setattr(
         model_mod,
@@ -302,7 +302,7 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
             ),
         ],
     )
-    from simple_ai_bitcoin_trading_binance.model import serialize_model
+    from simple_ai_trading.model import serialize_model
 
     path = tmp_path / "model.json"
     serialize_model(model, path)

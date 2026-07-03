@@ -1239,6 +1239,8 @@ def walk_forward_report(
     calibrate: bool = False,
     learning_rate: float = 0.05,
     l2_penalty: float = 1e-4,
+    compute_backend: str | None = None,
+    batch_size: int = 8192,
 ) -> dict[str, object]:
     if len(rows) <= train_window + test_window:
         raise ValueError("Not enough rows for walk-forward evaluation")
@@ -1257,7 +1259,14 @@ def walk_forward_report(
             calibration_size = max(1, int(len(train_rows) * 0.2))
             fit_rows = train_rows[:-calibration_size]
             calibration_rows = train_rows[-calibration_size:]
-        model = train(fit_rows, epochs=epochs, learning_rate=learning_rate, l2_penalty=l2_penalty)
+        model = train(
+            fit_rows,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            l2_penalty=l2_penalty,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
+        )
         threshold = 0.5
         if calibration_rows:
             threshold = calibrate_threshold(calibration_rows, model, start=0.05, end=0.95, steps=31)
@@ -1277,6 +1286,8 @@ def walk_forward_report(
         "step": step,
         "learning_rate": float(learning_rate),
         "l2_penalty": float(l2_penalty),
+        "compute_backend": compute_backend or "default",
+        "batch_size": int(batch_size),
     }
 
 

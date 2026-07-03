@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import importlib.util
 import sys
@@ -16,7 +16,7 @@ _SPEC.loader.exec_module(quality_metrics)
 def test_quality_metrics_counts_source_tests_complexity_and_cli_commands() -> None:
     blobs = [
         quality_metrics.FileBlob(
-            "src/simple_ai_bitcoin_trading_binance/cli.py",
+            "src/simple_ai_trading/cli.py",
             "\n".join(
                 [
                     "def build(subparsers):",
@@ -28,7 +28,7 @@ def test_quality_metrics_counts_source_tests_complexity_and_cli_commands() -> No
             ),
         ),
         quality_metrics.FileBlob(
-            "src/simple_ai_bitcoin_trading_binance/model.py",
+            "src/simple_ai_trading/model.py",
             "\n".join(
                 [
                     "def score(value):",
@@ -45,7 +45,7 @@ def test_quality_metrics_counts_source_tests_complexity_and_cli_commands() -> No
     assert metrics["test_files"] == 1
     assert metrics["source_lines"] == 7
     assert metrics["test_lines"] == 2
-    assert metrics["largest_source_file"] == "src/simple_ai_bitcoin_trading_binance/cli.py"
+    assert metrics["largest_source_file"] == "src/simple_ai_trading/cli.py"
     assert metrics["largest_source_file_lines"] == 5
     assert metrics["cli_lines"] == 5
     assert metrics["function_count"] == 2
@@ -57,7 +57,7 @@ def test_quality_metrics_counts_source_tests_complexity_and_cli_commands() -> No
 def test_quality_metrics_reports_parse_errors_and_numeric_deltas() -> None:
     metrics = quality_metrics.measure_blobs(
         [
-            quality_metrics.FileBlob("src/simple_ai_bitcoin_trading_binance/bad.py", "def broken(:\n"),
+            quality_metrics.FileBlob("src/simple_ai_trading/bad.py", "def broken(:\n"),
             quality_metrics.FileBlob("docs/ignore.py", "def ignored():\n    pass\n"),
         ]
     )
@@ -67,6 +67,6 @@ def test_quality_metrics_reports_parse_errors_and_numeric_deltas() -> None:
     )
 
     assert metrics["parse_error_count"] == 1
-    assert metrics["parse_errors"] == ["src/simple_ai_bitcoin_trading_binance/bad.py:1"]
+    assert metrics["parse_errors"] == ["src/simple_ai_trading/bad.py:1"]
     assert comparison["source_files"]["delta"] == 1.0
     assert comparison["source_lines"]["percent"] == 50.0
