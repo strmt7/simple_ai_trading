@@ -153,9 +153,11 @@ def _buy_hold_pnl(
     starting_cash: float,
     cfg: StrategyConfig,
     *,
+    market_type: str,
+    leverage: float,
     symbol_profile: SymbolExecutionProfile | None = None,
 ) -> float:
-    """Return fee/slippage-aware buy-and-hold baseline P&L."""
+    """Return fee/slippage-aware same-notional buy-and-hold baseline P&L."""
 
     if not rows or starting_cash <= 0:
         return 0.0
@@ -163,32 +165,33 @@ def _buy_hold_pnl(
     last = rows[-1].close
     if first <= 0 or last <= 0:
         return 0.0
+    baseline_notional = starting_cash * stop_loss_sized_notional_pct(cfg, market_type, leverage=leverage)
+    if baseline_notional <= 0.0:
+        return 0.0
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
     entry = _fill_price(
         first,
         1,
         cfg,
-        notional=starting_cash,
-        volume=starting_cash * 20.0,
+        notional=baseline_notional,
+        volume=baseline_notional * 20.0,
         symbol_profile=symbol_profile,
     )
     exit_price = _fill_price(
         last,
         -1,
         cfg,
-        notional=starting_cash,
-        volume=starting_cash * 20.0,
+        notional=baseline_notional,
+        volume=baseline_notional * 20.0,
         symbol_profile=symbol_profile,
     )
     if entry <= 0 or exit_price <= 0:
         return 0.0
-    entry_notional = starting_cash / (1.0 + fee_rate)
-    qty = entry_notional / entry
-    entry_fee = entry_notional * fee_rate
-    cash = starting_cash - entry_notional - entry_fee
+    qty = baseline_notional / entry
+    entry_fee = baseline_notional * fee_rate
     exit_notional = qty * exit_price
     exit_fee = exit_notional * fee_rate
-    return cash + exit_notional - exit_fee - starting_cash
+    return exit_notional - exit_fee - baseline_notional - entry_fee
 
 
 def _clamp_threshold(value: float) -> float:
@@ -650,7 +653,14 @@ def run_backtest(
 
     trades = closed_trades
 
-    buy_hold_pnl = _buy_hold_pnl(rows, starting_cash, cfg, symbol_profile=symbol_profile)
+    buy_hold_pnl = _buy_hold_pnl(
+        rows,
+        starting_cash,
+        cfg,
+        market_type=market_type,
+        leverage=leverage,
+        symbol_profile=symbol_profile,
+    )
 
     return BacktestResult(
         starting_cash=starting_cash,

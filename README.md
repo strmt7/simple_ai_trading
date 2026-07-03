@@ -146,7 +146,7 @@ The backtester no longer assumes frictionless fills. It models:
 - market impact from candle-volume participation,
 - taker fees,
 - liquidation buffer settings,
-- buy-and-hold comparison and risk-adjusted scoring.
+- same-notional buy-and-hold comparison and risk-adjusted scoring.
 
 See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 
