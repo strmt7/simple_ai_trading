@@ -50,6 +50,18 @@ class _Client:
         ]
 
 
+class _Stress:
+    def __init__(self, accepted: bool) -> None:
+        self.accepted = accepted
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "accepted": self.accepted,
+            "worst_realized_pnl": 10.0 if self.accepted else -5.0,
+            "worst_max_drawdown": 0.01 if self.accepted else 0.20,
+        }
+
+
 def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         assert candles
@@ -62,6 +74,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
         )
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
     runtime = RuntimeConfig(symbols=("AAAUSDC", "BBBUSDC"), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
@@ -84,7 +97,9 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
 
     assert report.accepted_symbols == ["AAAUSDC", "BBBUSDC"]
     assert (tmp_path / "model_lab_report.json").exists()
+    assert (tmp_path / "AAAUSDC" / "stress_validation.json").exists()
     assert report.outcomes[0].hybrid_profiles["regular"] == "balanced_neighbors"
+    assert report.outcomes[0].stress_validation["accepted"] is True
 
 
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:
@@ -117,3 +132,40 @@ def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, mon
     assert report.outcomes[0].accepted is False
     assert report.outcomes[0].rows == 77
     assert report.outcomes[0].error == "all candidates rejected"
+
+
+def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, monkeypatch) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            total_rows=123,
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(False))
+    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    strategy = StrategyConfig(
+        min_quote_volume_usdc=1000.0,
+        min_trade_count_24h=100,
+        max_spread_bps=10.0,
+        min_liquidity_score=0.1,
+        min_diversified_assets=1,
+    )
+
+    report = run_model_lab(
+        _Client(),
+        runtime,
+        strategy,
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=120,
+        compute_backend="cpu",
+    )
+
+    assert report.accepted_symbols == []
+    assert report.outcomes[0].accepted is False
+    assert report.outcomes[0].error == "stress_validation_failed"

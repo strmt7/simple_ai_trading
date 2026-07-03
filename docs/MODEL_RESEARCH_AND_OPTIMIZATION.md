@@ -62,8 +62,13 @@ the profitability, drawdown, and minimum-trade gates in
    bid/ask spread, exchange status, and quote-asset policy.
 3. Fetches recent klines for each ranked symbol.
 4. Runs the training suite and hybrid optimizer for one or more objectives.
-5. Writes a JSON report and marks an outcome accepted only when all objective
-   scores are positive and all risk gates pass.
+5. Replays every saved objective model under mandatory symbol-specific stress:
+   baseline measured execution, wider spread/slippage, latency spike with a
+   liquidity haircut, and combined liquidity crunch with fee/spread/latency
+   stress.
+6. Writes a JSON report plus per-symbol `stress_validation.json` and marks an
+   outcome accepted only when all objective scores are positive and every stress
+   replay passes the objective risk gates.
 
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
@@ -94,6 +99,7 @@ assert that every CLI command appears in the Windows app.
 - No leverage above 10x.
 - No AI in CPU-only mode.
 - No non-profitable accepted model-lab outcome.
+- No single-scenario-only model-lab acceptance.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

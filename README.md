@@ -108,7 +108,7 @@ simple-ai-trading model-lab --objective conservative --objective regular --objec
 
 `backtest-chart` writes an SVG performance chart for the day-trading simulation. The same command appears in the Windows app.
 
-`model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, and rejects any model outcome that fails profitability, drawdown, or trade-count gates. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
+`model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, then replays every accepted objective under symbol-specific execution stress. A symbol is rejected if any required objective fails profitability, drawdown, trade-count, spread, latency, fee, or liquidity-crunch gates. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
 ## Autonomous Control
 

@@ -6001,8 +6001,22 @@ def command_model_lab(args: argparse.Namespace) -> int:
         status = "accepted" if outcome.accepted else "rejected"
         score_text = ", ".join(f"{key}={value:+.4f}" for key, value in sorted(outcome.objective_scores.items()))
         hybrid_text = ", ".join(f"{key}:{value}" for key, value in sorted(outcome.hybrid_profiles.items()))
+        stress = outcome.stress_validation or {}
+        stress_text = "n/a"
+        if stress:
+            stress_text = (
+                "pass"
+                if stress.get("accepted")
+                else (
+                    f"fail worst_pnl={float(stress.get('worst_realized_pnl', 0.0)):+.2f} "
+                    f"worst_dd={float(stress.get('worst_max_drawdown', 0.0)):.2%}"
+                )
+            )
         detail = score_text or outcome.error or "no accepted objectives"
-        print(f"  {status:<8} {outcome.symbol:<12} rows={outcome.rows:<5} {detail} hybrid={hybrid_text or 'n/a'}")
+        print(
+            f"  {status:<8} {outcome.symbol:<12} rows={outcome.rows:<5} {detail} "
+            f"hybrid={hybrid_text or 'n/a'} stress={stress_text}"
+        )
     print(f"summary -> {report.report_path}")
     return 0 if report.accepted_symbols else 2
 

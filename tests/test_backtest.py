@@ -11,6 +11,7 @@ from simple_ai_trading.backtest import (
     run_backtest,
 )
 from simple_ai_trading.compute import BackendInfo
+from simple_ai_trading.execution_simulation import SymbolExecutionProfile
 from simple_ai_trading.features import ModelRow
 from simple_ai_trading.model import TrainedModel
 from simple_ai_trading.types import StrategyConfig
@@ -296,6 +297,50 @@ def test_backtest_uses_model_threshold_and_confidence_shrinkage() -> None:
 
     assert run_backtest(rows, model, active, starting_cash=1000.0).closed_trades == 1
     assert run_backtest(rows, model, conservative, starting_cash=1000.0).closed_trades == 0
+
+
+def test_backtest_applies_symbol_execution_profile_costs() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=130.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=10.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.2,
+        max_position_pct=0.2,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+    )
+    clean = run_backtest(rows, model, cfg, starting_cash=1000.0)
+    stressed = run_backtest(
+        rows,
+        model,
+        cfg,
+        starting_cash=1000.0,
+        symbol_profile=SymbolExecutionProfile(
+            symbol="TESTUSDC",
+            spread_bps=500.0,
+            quote_volume=10_000.0,
+            trade_count=100,
+            liquidity_score=0.05,
+            latency_ms=3000,
+            liquidity_haircut=0.9,
+        ),
+    )
+
+    assert clean.closed_trades == stressed.closed_trades == 1
+    assert stressed.realized_pnl < clean.realized_pnl
+    assert stressed.buy_hold_pnl < clean.buy_hold_pnl
 
 
 def test_backtest_buy_hold_baseline_handles_invalid_inputs() -> None:
