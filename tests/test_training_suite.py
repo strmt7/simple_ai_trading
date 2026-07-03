@@ -28,6 +28,7 @@ from simple_ai_trading.training_suite import (
     _calibration_split,
     _candidate_grid,
     _default_training,
+    _effective_threshold_for_market,
     _ensemble_seed_pack,
     _calibrate_candidate_threshold,
     _evaluate_candidate,
@@ -206,6 +207,12 @@ def test_threshold_values_clamps_single_step_and_expands_inverted_range() -> Non
     assert values[-1] == 0.71
 
 
+def test_effective_threshold_for_market_clamps_futures_to_neutral_band() -> None:
+    assert _effective_threshold_for_market(0.05, "futures") == pytest.approx(0.5)
+    assert _effective_threshold_for_market(0.61, "futures") == pytest.approx(0.61)
+    assert _effective_threshold_for_market(0.05, "spot") == pytest.approx(0.05)
+
+
 def test_calibrate_candidate_threshold_without_rows_uses_strategy_threshold() -> None:
     model = _fake_trained_model(2)
     strategy = StrategyConfig(signal_threshold=0.62)
@@ -219,6 +226,23 @@ def test_calibrate_candidate_threshold_without_rows_uses_strategy_threshold() ->
     )
 
     assert threshold == pytest.approx(0.62)
+    assert source == "strategy"
+    assert score is None
+
+
+def test_calibrate_candidate_threshold_without_rows_clamps_futures_threshold() -> None:
+    model = _fake_trained_model(2)
+    strategy = StrategyConfig(signal_threshold=0.12)
+
+    threshold, source, score = _calibrate_candidate_threshold(
+        model,
+        [],
+        strategy,
+        market_type="futures",
+        starting_cash=1000.0,
+    )
+
+    assert threshold == pytest.approx(0.5)
     assert source == "strategy"
     assert score is None
 
@@ -408,6 +432,46 @@ def test_refine_threshold_on_selection_rows_promotes_positive_profit(
     assert score == pytest.approx(1.75)
     assert observed
     assert all(item == ("directml", 64) for item in observed)
+
+
+def test_refine_threshold_on_selection_rows_clamps_futures_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed_thresholds: list[float] = []
+
+    monkeypatch.setattr(
+        training_suite,
+        "evaluate_classification",
+        lambda *_a, **_k: SimpleNamespace(
+            accuracy=0.70,
+            f1=0.70,
+            precision=0.70,
+            true_positive=3,
+            false_negative=0,
+        ),
+    )
+
+    def fake_run_backtest(_rows, model, *_args, **_kwargs):
+        threshold = float(model.decision_threshold or 0.0)
+        observed_thresholds.append(threshold)
+        return SimpleNamespace(realized_pnl=1.0, closed_trades=3, max_drawdown=0.01)
+
+    monkeypatch.setattr(training_suite, "run_backtest", fake_run_backtest)
+
+    refined = _refine_threshold_on_selection_rows(
+        _fake_trained_model(2),
+        _rows(40),
+        StrategyConfig(signal_threshold=0.10),
+        market_type="futures",
+        starting_cash=1000.0,
+    )
+
+    assert refined is not None
+    threshold, source, _score = refined
+    assert threshold >= 0.5
+    assert source == "selection_profit_backtest"
+    assert observed_thresholds
+    assert min(observed_thresholds) >= 0.5
 
 
 def test_refine_threshold_on_selection_rows_rejects_losing_profit(
@@ -1101,6 +1165,87 @@ def test_train_for_objective_rejects_failed_walk_forward_gate(
             starting_cash=1000.0,
             max_workers=1,
         )
+
+
+def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    feature_cfg = default_config_for("conservative", ())
+    feature_dim = training_suite.advanced_feature_dimension(feature_cfg)
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+
+    def fake_evaluate(payload):
+        return {
+            "score": float("-inf"),
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(feature_dim),
+            "feature_cfg": payload["feature_cfg"],
+            "feature_dim": feature_dim,
+            "feature_signature": "base-feature-signature",
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "selection_score": float("-inf"),
+            "validation_score": float("-inf"),
+            "full_sample_score": float("-inf"),
+            "selection_result": {"accepted": False, "reject_reason": "base_failed"},
+            "validation_result": {"accepted": False, "reject_reason": "base_failed"},
+            "full_sample_result": {"accepted": False, "reject_reason": "base_failed"},
+            "ensemble_refined": bool(payload.get("ensemble_seeds")),
+        }
+
+    rescue_result = _make_result(realized_pnl=35.0, edge_vs_buy_hold=12.0, closed_trades=6, win_rate=0.75)
+    rescue_model = _fake_trained_model(feature_dim)
+
+    monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
+    monkeypatch.setattr(
+        training_suite,
+        "optimize_hybrid_model_zoo",
+        lambda *_a, **_k: SimpleNamespace(
+            accepted=True,
+            model=rescue_model,
+            base_score=float("-inf"),
+            best_score=1.25,
+            best_profile="technical_rescue",
+            evaluated_profiles=4,
+            best_result=rescue_result,
+        ),
+    )
+    monkeypatch.setattr(training_suite, "run_backtest", lambda *_a, **_k: rescue_result)
+
+    outcome = train_for_objective(
+        _synthetic_candles(n=260),
+        StrategyConfig(),
+        objective,
+        output_dir=tmp_path,
+        market_type="spot",
+        starting_cash=1000.0,
+        max_workers=1,
+    )
+
+    assert outcome.hybrid_model is True
+    assert outcome.hybrid_rescue is True
+    assert outcome.hybrid_profile == "technical_rescue"
+    assert outcome.hybrid_rescue_candidates >= 1
+    assert outcome.best_score > 0.0
 
 
 def test_train_for_objective_persists_walk_forward_gate(

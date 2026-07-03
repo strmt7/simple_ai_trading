@@ -60,6 +60,7 @@ from .types import StrategyConfig
 
 _DEFAULT_OUTPUT_DIR = Path("data")
 _ENSEMBLE_REFINEMENT_CANDIDATES = 3
+_HYBRID_RESCUE_CANDIDATES = 3
 
 
 # ==========================================================================
@@ -132,6 +133,8 @@ class ObjectiveOutcome:
     hybrid_base_score: float | None = None
     hybrid_best_score: float | None = None
     hybrid_evaluated_profiles: int = 0
+    hybrid_rescue: bool = False
+    hybrid_rescue_candidates: int = 0
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -320,6 +323,13 @@ def _threshold_guard(baseline: object, candidate: object) -> bool:
     return bool(stable_f1 or sharper_precision)
 
 
+def _effective_threshold_for_market(threshold: float, market_type: str) -> float:
+    value = max(0.05, min(0.95, float(threshold)))
+    if str(market_type).lower() == "futures":
+        value = max(0.5, value)
+    return value
+
+
 def _calibrate_candidate_threshold(
     model: TrainedModel,
     rows: Sequence[ModelRow],
@@ -331,8 +341,8 @@ def _calibrate_candidate_threshold(
     score_batch_size: int = 8192,
 ) -> tuple[float, str, float | None]:
     if not rows:
-        return strategy.signal_threshold, "strategy", None
-    strategy_threshold = float(strategy.signal_threshold)
+        return _effective_threshold_for_market(strategy.signal_threshold, market_type), "strategy", None
+    strategy_threshold = _effective_threshold_for_market(strategy.signal_threshold, market_type)
     classification_threshold = calibrate_threshold(list(rows), model, start=0.05, end=0.95, steps=61)
     baseline_report = evaluate_classification(list(rows), model, threshold=strategy_threshold)
     profit_report = calibrate_threshold_for_backtest(
@@ -356,14 +366,14 @@ def _calibrate_candidate_threshold(
         and profit_report.score > 0.0
     )
     if profit_backed and _threshold_guard(baseline_report, candidate_report):
-        return float(profit_report.threshold), "profit_backtest", float(profit_report.score)
+        return _effective_threshold_for_market(profit_report.threshold, market_type), "profit_backtest", float(profit_report.score)
     classification_report = evaluate_classification(list(rows), model, threshold=classification_threshold)
     if (
         abs(float(classification_threshold) - strategy_threshold) > 1e-12
         and profit_report.baseline_score >= 0.0
         and _threshold_guard(baseline_report, classification_report)
     ):
-        return float(classification_threshold), "classification_f1", float(profit_report.baseline_score)
+        return _effective_threshold_for_market(classification_threshold, market_type), "classification_f1", float(profit_report.baseline_score)
     return strategy_threshold, "strategy", float(profit_report.baseline_score)
 
 
@@ -387,14 +397,19 @@ def _refine_threshold_on_selection_rows(
     if len(rows) < 30:
         return None
     row_list = list(rows)
-    baseline_threshold = float(model.decision_threshold if model.decision_threshold is not None else strategy.signal_threshold)
+    baseline_threshold = _effective_threshold_for_market(
+        float(model.decision_threshold if model.decision_threshold is not None else strategy.signal_threshold),
+        market_type,
+    )
     baseline_report = evaluate_classification(row_list, model, threshold=baseline_threshold)
     current_threshold = model.decision_threshold
     best_threshold: float | None = None
     best_score = float("-inf")
     best_rank = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
     try:
-        for threshold in _threshold_values(0.05, 0.95, 121, baseline_threshold):
+        threshold_start = 0.5 if str(market_type).lower() == "futures" else 0.05
+        for threshold in _threshold_values(threshold_start, 0.95, 121, baseline_threshold):
+            threshold = _effective_threshold_for_market(threshold, market_type)
             model.decision_threshold = float(threshold)
             result = run_backtest(
                 row_list,
@@ -590,6 +605,9 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
         "model_family": str(getattr(model, "model_family", "")) if model is not None else "",
         "probability_inverted": bool(getattr(model, "probability_inverted", False)),
         "candidate": entry["candidate"].asdict() if isinstance(entry.get("candidate"), CandidateParams) else {},
+        "hybrid_model": bool(entry.get("hybrid_model", False)),
+        "hybrid_rescue": bool(entry.get("hybrid_rescue", False)),
+        "hybrid_profile": entry.get("hybrid_profile"),
         "feature_signature": str(entry.get("feature_signature") or ""),
         "label_threshold": (
             float(feature_cfg.label_threshold)
@@ -1248,6 +1266,7 @@ def train_for_objective(
     best = results[0]
     ensemble_refinement_candidates = 0
     local_refinement_candidates = 0
+    hybrid_rescue_candidates = 0
     local_results: list[dict[str, Any]] = []
     if runner is None:
         for local_candidate in _local_refinement_candidates(best["candidate"]):
@@ -1297,6 +1316,7 @@ def train_for_objective(
 
         gated_best: dict[str, Any] | None = None
         last_gate: dict[str, object] | None = None
+        hybrid_rescue_best: dict[str, Any] | None = None
         for candidate_result in ranked_pool:
             if not math.isfinite(float(candidate_result["score"])):
                 continue
@@ -1341,11 +1361,117 @@ def train_for_objective(
                 gated_best = candidate_result
                 break
         if gated_best is None:
-            best = {
-                **best,
-                "score": float("-inf"),
-                "walk_forward_gate": last_gate,
-            }
+            for candidate_result in ranked_pool[:_HYBRID_RESCUE_CANDIDATES]:
+                hybrid_rescue_candidates += 1
+                rescue_rows, rescue_feature_cfg = _rows_for_candidate(
+                    candle_list,
+                    rows,
+                    feature_cfg,
+                    candidate_result["candidate"],
+                )
+                rescue_train_rows, rescue_eval_rows = _walk_forward_split(rescue_rows)
+                rescue_model_train_rows, rescue_selection_rows = _walk_forward_split(rescue_train_rows)
+                rescue_model = candidate_result.get("model")
+                rescue_strategy = candidate_result.get("strategy")
+                if (
+                    not rescue_rows
+                    or not rescue_model_train_rows
+                    or not rescue_selection_rows
+                    or rescue_model is None
+                    or rescue_strategy is None
+                    or int(getattr(rescue_model, "feature_dim", -1)) != len(rescue_model_train_rows[0].features)
+                ):
+                    continue
+                rescue_report = optimize_hybrid_model_zoo(
+                    rescue_model,
+                    rescue_model_train_rows,
+                    rescue_selection_rows,
+                    rescue_strategy,
+                    objective_name=objective.name,
+                    market_type=market_type,
+                    starting_cash=starting_cash,
+                    compute_backend=compute_backend or "cpu",
+                    score_batch_size=effective_score_batch_size,
+                    feature_count=len(base_strategy.enabled_features),
+                )
+                if rescue_report is None or not rescue_report.accepted:
+                    continue
+                rescue_holdout_result = run_backtest(
+                    rescue_eval_rows,
+                    rescue_report.model,
+                    rescue_strategy,
+                    starting_cash=starting_cash,
+                    market_type=market_type,
+                    compute_backend=compute_backend or "cpu",
+                    score_batch_size=effective_score_batch_size,
+                )
+                rescue_holdout_score = (
+                    objective.score(rescue_holdout_result)
+                    if objective.accepts(rescue_holdout_result)
+                    else float("-inf")
+                )
+                rescue_full_result = run_backtest(
+                    rescue_rows,
+                    rescue_report.model,
+                    rescue_strategy,
+                    starting_cash=starting_cash,
+                    market_type=market_type,
+                    compute_backend=compute_backend or "cpu",
+                    score_batch_size=effective_score_batch_size,
+                )
+                rescue_full_score = (
+                    objective.score(rescue_full_result)
+                    if objective.accepts(rescue_full_result)
+                    else float("-inf")
+                )
+                rescue_selection_score = float(rescue_report.best_score)
+                rescue_score = min(rescue_selection_score, float(rescue_holdout_score), float(rescue_full_score))
+                if not math.isfinite(rescue_score):
+                    continue
+                rescue_candidate_result = {
+                    **candidate_result,
+                    "score": float(rescue_score),
+                    "model": rescue_report.model,
+                    "feature_cfg": rescue_feature_cfg,
+                    "feature_dim": advanced_feature_dimension(rescue_feature_cfg),
+                    "feature_signature": advanced_feature_signature(rescue_feature_cfg),
+                    "selection_score": float(rescue_selection_score),
+                    "validation_score": float(rescue_holdout_score),
+                    "full_sample_score": float(rescue_full_score),
+                    "selection_result": (
+                        _gate_result_payload(rescue_report.best_result, objective)
+                        if rescue_report.best_result is not None
+                        else candidate_result.get("selection_result")
+                    ),
+                    "validation_result": _gate_result_payload(rescue_holdout_result, objective),
+                    "full_sample_result": _gate_result_payload(rescue_full_result, objective),
+                    "hybrid_model": True,
+                    "hybrid_rescue": True,
+                    "hybrid_profile": rescue_report.best_profile,
+                    "hybrid_base_score": rescue_report.base_score,
+                    "hybrid_best_score": rescue_report.best_score,
+                    "hybrid_evaluated_profiles": rescue_report.evaluated_profiles,
+                    "walk_forward_gate": {
+                        "passed": True,
+                        "reason": "hybrid_rescue_selection_holdout_full_passed",
+                        "fold_count": 0,
+                        "accepted_folds": 0,
+                        "worst_score": float(rescue_score),
+                        "worst_realized_pnl": None,
+                        "worst_max_drawdown": None,
+                        "folds": [],
+                    },
+                }
+                if hybrid_rescue_best is None or rescue_score > float(hybrid_rescue_best["score"]) + 1e-12:
+                    hybrid_rescue_best = rescue_candidate_result
+            if hybrid_rescue_best is None:
+                best = {
+                    **best,
+                    "score": float("-inf"),
+                    "walk_forward_gate": last_gate,
+                }
+            else:
+                best = hybrid_rescue_best
         else:
             best = gated_best
 
@@ -1364,6 +1490,7 @@ def train_for_objective(
             and bool(selection_rows)
             and int(getattr(best["model"], "feature_dim", -1)) == len(model_train_rows[0].features)
             and objective.name in available_objectives()
+            and not bool(best.get("hybrid_model"))
         )
         if can_optimize_hybrid:
             hybrid_report = optimize_hybrid_model_zoo(
@@ -1502,6 +1629,8 @@ def train_for_objective(
             else None
         ),
         hybrid_evaluated_profiles=int(best.get("hybrid_evaluated_profiles", 0)),
+        hybrid_rescue=bool(best.get("hybrid_rescue", False)),
+        hybrid_rescue_candidates=int(hybrid_rescue_candidates),
     )
 
 
