@@ -202,7 +202,8 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     """Curated first-pass grid without exploding runtime.
 
     Three epoch budgets, two learning rates, two L2 penalties, four thresholds,
-    one stop/take profile, two risk levels, one confidence beta, and one seed.
+    one stop/take profile, two risk levels, three confidence shrinkage levels,
+    and one seed.
     The suite then searches locally around the winner and checks seed ensembles
     for the best candidates, keeping GPU runs finishable while still deduping
     arithmetic collisions.
@@ -223,7 +224,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     )
     stop_take_options = ((training.stop_loss_pct, training.take_profit_pct),)
     risk_options = (training.risk_per_trade * 0.50, training.risk_per_trade)
-    confidence_options = (0.85,)
+    confidence_options = (0.70, 0.85, 1.0)
     seed_options = (7,)
 
     candidates: list[CandidateParams] = []
@@ -489,6 +490,44 @@ def _finite_number_or_none(value: object) -> float | None:
     return parsed if math.isfinite(parsed) else None
 
 
+def _payload_float(payload: object, key: str, default: float = 0.0) -> float:
+    if not isinstance(payload, dict):
+        return default
+    try:
+        value = float(payload.get(key, default))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return value if math.isfinite(value) else default
+
+
+def _rejected_candidate_quality(entry: dict[str, Any]) -> float:
+    """Rank rejected candidates for refinement without relaxing hard gates."""
+
+    quality = 0.0
+    for weight, payload_name in ((0.45, "validation_result"), (0.55, "full_sample_result")):
+        payload = entry.get(payload_name)
+        realized = _payload_float(payload, "realized_pnl")
+        edge = _payload_float(payload, "edge_vs_buy_hold")
+        drawdown = max(0.0, _payload_float(payload, "max_drawdown"))
+        trades = max(0.0, _payload_float(payload, "closed_trades"))
+        win_rate = max(0.0, min(1.0, _payload_float(payload, "win_rate")))
+        quality += weight * (
+            realized
+            + 0.25 * edge
+            + 0.05 * min(trades, 30.0)
+            + 2.0 * win_rate
+            - 100.0 * drawdown
+        )
+    return float(quality)
+
+
+def _candidate_rank_key(entry: dict[str, Any]) -> tuple[int, float]:
+    score = _finite_number_or_none(entry.get("score"))
+    if score is not None:
+        return 1, score
+    return 0, _rejected_candidate_quality(entry)
+
+
 def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
     model = entry.get("model")
     return {
@@ -681,6 +720,8 @@ def _local_refinement_candidates(candidate: CandidateParams) -> list[CandidatePa
         _candidate_variant(candidate, l2_penalty=candidate.l2_penalty * 3.0),
         _candidate_variant(candidate, signal_threshold=candidate.signal_threshold - 0.01),
         _candidate_variant(candidate, signal_threshold=candidate.signal_threshold + 0.01),
+        _candidate_variant(candidate, confidence_beta=candidate.confidence_beta * 0.75),
+        _candidate_variant(candidate, confidence_beta=min(1.0, candidate.confidence_beta * 1.15)),
         _candidate_variant(candidate, risk_per_trade=candidate.risk_per_trade * 0.50),
         _candidate_variant(candidate, risk_per_trade=candidate.risk_per_trade * 1.25),
         _candidate_variant(candidate, stop_loss_pct=candidate.stop_loss_pct * 0.85),
@@ -1111,7 +1152,7 @@ def train_for_objective(
             with ProcessPoolExecutor(max_workers=workers) as pool:
                 results = list(pool.map(_evaluate_candidate, payloads))
 
-    results.sort(key=lambda entry: entry["score"], reverse=True)
+    results.sort(key=_candidate_rank_key, reverse=True)
     ranked_pool = list(results)
     best = results[0]
     ensemble_refinement_candidates = 0
@@ -1135,7 +1176,7 @@ def train_for_objective(
                 "include_full_fit_fallback": True,
             })
             local_results.append(local_result)
-        ranked_pool = sorted([*results, *local_results], key=lambda entry: entry["score"], reverse=True)
+        ranked_pool = sorted([*results, *local_results], key=_candidate_rank_key, reverse=True)
         best = ranked_pool[0]
         ensemble_results: list[dict[str, Any]] = []
         for base_result in ranked_pool[:_ENSEMBLE_REFINEMENT_CANDIDATES]:
@@ -1159,7 +1200,7 @@ def train_for_objective(
             if ensemble_result["score"] > best["score"] + 1e-12:
                 best = ensemble_result
         if ensemble_results:
-            ranked_pool = sorted([*ranked_pool, *ensemble_results], key=lambda entry: entry["score"], reverse=True)
+            ranked_pool = sorted([*ranked_pool, *ensemble_results], key=_candidate_rank_key, reverse=True)
 
         gated_best: dict[str, Any] | None = None
         last_gate: dict[str, object] | None = None

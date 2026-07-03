@@ -111,7 +111,7 @@ def test_candidate_params_asdict_keys() -> None:
 def test_candidate_grid_returns_unique_deduped_list() -> None:
     training = get_objective("default").training
     grid = _candidate_grid(training)
-    assert len(grid) == 96
+    assert len(grid) == 288
     # dedupe check: no two entries share identical tuple of values
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
@@ -127,7 +127,7 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     assert len(l2_set) >= 2
     assert len(threshold_set) >= 2
     assert min(threshold_set) == pytest.approx(training.signal_threshold - 0.08)
-    assert confidence_set == {0.85}
+    assert confidence_set == {0.70, 0.85, 1.0}
     assert seed_set == {7}
 
 
@@ -155,7 +155,7 @@ def test_candidate_grid_dedupes_colliding_entries() -> None:
     # All candidates distinct after dedup
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
-    assert len(grid) == 48
+    assert len(grid) == 144
 
 
 # ----- calibration helpers --------------------------------------------------
@@ -638,6 +638,36 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
     assert diagnostics["inversion_score"] is None
     assert diagnostics["inversion_validation_result"] == {"realized_pnl": -3.0}
     assert diagnostics["inversion_full_sample_result"] == {"realized_pnl": -4.0}
+
+
+def test_candidate_rank_key_orders_rejected_candidates_by_evidence() -> None:
+    accepted = {"score": -0.5}
+    weak_rejected = {
+        "score": float("-inf"),
+        "validation_result": {"realized_pnl": -10.0, "edge_vs_buy_hold": -12.0, "max_drawdown": 0.05},
+        "full_sample_result": {"realized_pnl": -20.0, "edge_vs_buy_hold": -30.0, "max_drawdown": 0.08},
+    }
+    better_rejected = {
+        "score": float("-inf"),
+        "validation_result": {
+            "realized_pnl": 4.0,
+            "edge_vs_buy_hold": -2.0,
+            "max_drawdown": 0.01,
+            "closed_trades": 6,
+            "win_rate": 0.6,
+        },
+        "full_sample_result": {
+            "realized_pnl": 1.0,
+            "edge_vs_buy_hold": -5.0,
+            "max_drawdown": 0.02,
+            "closed_trades": 18,
+            "win_rate": 0.5,
+        },
+    }
+
+    ranked = sorted([weak_rejected, better_rejected, accepted], key=training_suite._candidate_rank_key, reverse=True)
+
+    assert ranked == [accepted, better_rejected, weak_rejected]
 
 
 def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1376,10 +1406,10 @@ def test_train_for_objective_promotes_better_local_refinement(
         max_workers=1,
     )
 
-    assert len(_local_refinement_candidates(candidate)) == 10
+    assert len(_local_refinement_candidates(candidate)) == 12
     assert outcome.best_score == 2.0
     assert outcome.best_params["risk_per_trade"] == pytest.approx(0.005)
-    assert outcome.local_refinement_candidates == 10
+    assert outcome.local_refinement_candidates == 12
     assert outcome.ensemble_refined is False
 
 
