@@ -56,6 +56,14 @@ Futures safety:
 - Shorting is only available on futures mode.
 - Liquidation buffer is part of strategy config and risk reporting.
 
+Authenticated order reconciliation:
+
+- Paper-mode fills may use simulated fallback quantities because no exchange order exists.
+- Live/testnet signed orders must prove execution from exchange fields such as `fills`, `executedQty`, cumulative quote quantity, or an authenticated order-status query.
+- A placement ACK that contains `origQty` but no executed quantity is treated as unresolved, not filled.
+- If an order response has an `orderId` or client order id but no fill, the app queries the spot `/api/v3/order` or futures `/fapi/v1/order` status endpoint before updating the local ledger.
+- If the fill is still unresolved, the loop records an order error and stops instead of silently assuming exposure changed.
+
 ## Testnet vs Mainnet
 
 Testnet fills, liquidity, queue position, and response times can diverge from live markets. The simulation therefore does not treat testnet as a perfect proxy. It applies conservative liquidity haircuts and latency buffers, and it requires per-symbol liquidity evidence before a symbol can join the trading universe.

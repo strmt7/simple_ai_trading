@@ -713,6 +713,40 @@ def test_place_order_spot_live_uses_spot_endpoint(monkeypatch) -> None:
     assert calls == [("POST", "/api/v3/order", {"symbol": "BTCUSDC", "side": "BUY", "type": "MARKET", "quantity": "0.25000000"}, True)]
 
 
+def test_get_order_spot_uses_signed_query(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
+    calls: list[tuple[str, str, dict, bool]] = []
+
+    def request(method: str, path: str, params=None, signed: bool = False):
+        calls.append((method, path, params or {}, signed))
+        return {"status": "FILLED"}
+
+    monkeypatch.setattr(client, "_request", request)
+
+    assert client.get_order("btcusdc", order_id=123) == {"status": "FILLED"}
+    assert calls == [("GET", "/api/v3/order", {"symbol": "BTCUSDC", "orderId": "123"}, True)]
+
+
+def test_get_order_futures_accepts_client_order_id(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
+    calls: list[tuple[str, str, dict, bool]] = []
+
+    def request(method: str, path: str, params=None, signed: bool = False):
+        calls.append((method, path, params or {}, signed))
+        return {"status": "FILLED"}
+
+    monkeypatch.setattr(client, "_request", request)
+
+    assert client.get_order("ethusdc", orig_client_order_id="abc") == {"status": "FILLED"}
+    assert calls == [("GET", "/fapi/v1/order", {"symbol": "ETHUSDC", "origClientOrderId": "abc"}, True)]
+
+
+def test_get_order_requires_identifier() -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
+    with pytest.raises(BinanceAPIError, match="requires orderId"):
+        client.get_order("BTCUSDC")
+
+
 def test_place_order_refuses_mainnet_even_if_called_directly() -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot", testnet=False)
     with pytest.raises(BinanceAPIError, match="disabled for mainnet/custom"):

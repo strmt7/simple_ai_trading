@@ -3076,6 +3076,7 @@ def _order_fill_details(
     *,
     fallback_qty: float,
     fallback_price: float,
+    allow_quantity_fallback: bool = True,
 ) -> tuple[float, float, float]:
     qty = 0.0
     quote = 0.0
@@ -3093,7 +3094,9 @@ def _order_fill_details(
                 qty += fill_qty
                 quote += fill_qty * fill_price
         if qty <= 0.0:
-            qty = _safe_float(order.get("executedQty") or order.get("origQty"))
+            qty = _safe_float(order.get("executedQty"))
+            if qty <= 0.0 and allow_quantity_fallback:
+                qty = _safe_float(order.get("origQty"))
         quote = quote or _safe_float(
             order.get("cummulativeQuoteQty")
             or order.get("cumQuote")
@@ -3101,12 +3104,60 @@ def _order_fill_details(
             or order.get("notional")
         )
         average = _safe_float(order.get("avgPrice") or order.get("price"))
-    if qty <= 0.0:
+    if qty <= 0.0 and allow_quantity_fallback:
         qty = max(0.0, float(fallback_qty))
     if average <= 0.0:
         average = quote / qty if qty > 0.0 and quote > 0.0 else max(0.0, float(fallback_price))
     notional = quote if quote > 0.0 else qty * average
     return float(qty), float(average), float(notional)
+
+
+def _order_query_keys(order: object) -> tuple[object | None, str | None]:
+    if not isinstance(order, dict):
+        return None, None
+    order_id = order.get("orderId")
+    client_order_id = order.get("clientOrderId") or order.get("origClientOrderId")
+    return order_id, str(client_order_id) if client_order_id else None
+
+
+def _resolved_order_fill_details(
+    client: BinanceClient,
+    runtime: RuntimeConfig,
+    order: object,
+    *,
+    fallback_qty: float,
+    fallback_price: float,
+    dry_run: bool,
+) -> tuple[float, float, float, str]:
+    allow_fallback = bool(dry_run)
+    qty, average, notional = _order_fill_details(
+        order,
+        fallback_qty=fallback_qty,
+        fallback_price=fallback_price,
+        allow_quantity_fallback=allow_fallback,
+    )
+    if dry_run or qty > 0.0:
+        return qty, average, notional, "order_response"
+    order_id, client_order_id = _order_query_keys(order)
+    if order_id is None and client_order_id is None:
+        return qty, average, notional, "unresolved_no_order_id"
+    if not hasattr(client, "get_order"):
+        return qty, average, notional, "unresolved_no_order_query"
+    try:
+        refreshed = client.get_order(
+            runtime.symbol,
+            order_id=order_id,
+            orig_client_order_id=client_order_id,
+        )
+    except BinanceAPIError:
+        raise
+    refreshed_qty, refreshed_average, refreshed_notional = _order_fill_details(
+        refreshed,
+        fallback_qty=0.0,
+        fallback_price=fallback_price,
+        allow_quantity_fallback=False,
+    )
+    return refreshed_qty, refreshed_average, refreshed_notional, "order_query"
 
 
 def _asset_free_balance(account: object, asset: str) -> float:
@@ -5625,10 +5676,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 record_order_error(i + 1, side, qty, exc)
                 break
 
-            filled_qty, fill, filled_notional = _order_fill_details(
+            filled_qty, fill, filled_notional, fill_source = _resolved_order_fill_details(
+                client,
+                runtime,
                 order_response,
                 fallback_qty=qty,
                 fallback_price=fill,
+                dry_run=effective_dry_run,
             )
             if filled_qty <= 0.0 or fill <= 0.0:
                 record_order_error(i + 1, side, qty, BinanceAPIError("Order response did not include executed quantity"))
@@ -5659,6 +5713,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "qty": float(qty),
                     "notional": float(notional),
                     "cash_after_entry": float(cash),
+                    "fill_source": fill_source,
                 }
             )
             cooldown_left = 0
@@ -5688,10 +5743,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 except BinanceAPIError as exc:
                     record_order_error(i + 1, side_to_close, abs(qty), exc)
                     break
-                closed_qty, fill, closed_notional = _order_fill_details(
+                closed_qty, fill, closed_notional, fill_source = _resolved_order_fill_details(
+                    client,
+                    runtime,
                     order_response,
                     fallback_qty=abs(qty),
                     fallback_price=fill,
+                    dry_run=effective_dry_run,
                 )
                 if closed_qty <= 0.0 or fill <= 0.0:
                     record_order_error(i + 1, side_to_close, abs(qty), BinanceAPIError("Close order response did not include executed quantity"))
@@ -5716,6 +5774,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "pnl": float(realized),
                         "qty_closed": float(closed_qty),
                         "cash_after": float(cash),
+                        "fill_source": fill_source,
                     }
                 )
                 if realized > 0:
@@ -5778,10 +5837,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     except BinanceAPIError as exc:
                         record_order_error(i + 1, side_to_close, abs(qty), exc)
                         break
-                    closed_qty, fill, closed_notional = _order_fill_details(
+                    closed_qty, fill, closed_notional, fill_source = _resolved_order_fill_details(
+                        client,
+                        runtime,
                         order_response,
                         fallback_qty=abs(qty),
                         fallback_price=fill,
+                        dry_run=effective_dry_run,
                     )
                     if closed_qty <= 0.0 or fill <= 0.0:
                         record_order_error(i + 1, side_to_close, abs(qty), BinanceAPIError("Emergency close order response did not include executed quantity"))
@@ -5812,6 +5874,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "score": float(score),
                         "drawdown": float(drawdown),
                         "cash_after": float(cash),
+                        "fill_source": fill_source,
                     }
                 )
                 print(f"step {i + 1:>2}: drawdown limit reached ({cfg.max_drawdown_limit:.1%}), stopping loop")

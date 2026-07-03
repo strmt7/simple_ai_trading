@@ -1042,6 +1042,12 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
     assert cli._order_fill_details({"executedQty": "0.1", "cummulativeQuoteQty": "12"}, fallback_qty=0.0, fallback_price=0.0) == (0.1, 120.0, 12.0)
     assert cli._order_fill_details({}, fallback_qty=0.2, fallback_price=50.0) == (0.2, 50.0, 10.0)
     assert cli._order_fill_details(
+        {"status": "NEW", "origQty": "0.2"},
+        fallback_qty=0.2,
+        fallback_price=50.0,
+        allow_quantity_fallback=False,
+    ) == (0.0, 50.0, 0.0)
+    assert cli._order_fill_details(
         {"fills": [object(), {"qty": "0", "price": "1"}, {"qty": "0.1", "price": "0"}], "executedQty": "0.2", "avgPrice": "77"},
         fallback_qty=0.0,
         fallback_price=0.0,
@@ -1092,6 +1098,55 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
 
     with pytest.raises(BinanceAPIError, match="below exchange minimum"):
         cli._roundtrip_quantity(_StickyMinNotionalClient(), "BTCUSDC", 0.00001, 76000.0)
+
+
+def test_resolved_order_fill_queries_exchange_when_live_ack_has_no_fill() -> None:
+    class _OrderQueryClient:
+        def __init__(self) -> None:
+            self.queries: list[tuple[str, object, str | None]] = []
+
+        def get_order(self, symbol: str, *, order_id=None, orig_client_order_id=None):
+            self.queries.append((symbol, order_id, orig_client_order_id))
+            return {
+                "symbol": symbol,
+                "status": "FILLED",
+                "executedQty": "0.4",
+                "cummulativeQuoteQty": "44",
+            }
+
+    client = _OrderQueryClient()
+    runtime = RuntimeConfig(symbol="ETHUSDC")
+    qty, average, notional, source = cli._resolved_order_fill_details(
+        client,  # type: ignore[arg-type]
+        runtime,
+        {"status": "NEW", "orderId": 123, "clientOrderId": "abc", "origQty": "0.4"},
+        fallback_qty=0.4,
+        fallback_price=100.0,
+        dry_run=False,
+    )
+
+    assert qty == pytest.approx(0.4)
+    assert average == pytest.approx(110.0)
+    assert notional == pytest.approx(44.0)
+    assert source == "order_query"
+    assert client.queries == [("ETHUSDC", 123, "abc")]
+
+
+def test_resolved_order_fill_does_not_query_or_trust_orig_qty_for_unidentified_live_order() -> None:
+    client = _FakeClient()
+    qty, average, notional, source = cli._resolved_order_fill_details(
+        client,  # type: ignore[arg-type]
+        RuntimeConfig(symbol="BTCUSDC"),
+        {"status": "NEW", "origQty": "0.4"},
+        fallback_qty=0.4,
+        fallback_price=100.0,
+        dry_run=False,
+    )
+
+    assert qty == 0.0
+    assert average == 100.0
+    assert notional == 0.0
+    assert source == "unresolved_no_order_id"
 
 
 def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, capsys) -> None:
@@ -4367,7 +4422,7 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
             self.order_calls += 1
             if self.order_calls == 2:
                 raise BinanceAPIError("close rejected")
-            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
+            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100", "dry_run": dry_run}
 
     class _OpenThenCloseModel:
         def __init__(self) -> None:
@@ -4460,7 +4515,7 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
             self.order_calls += 1
             if self.order_calls == 2:
                 raise BinanceAPIError("emergency close rejected")
-            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
+            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100", "dry_run": dry_run}
 
     class _AlwaysLongModel:
         def predict_proba(self, _features: tuple[float, ...]) -> float:
@@ -5196,7 +5251,7 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
 
         def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
             self.orders.append((side, size, dry_run, leverage))
-            return {"symbol": symbol, "side": side, "size": size}
+            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
     class _AlwaysLongModel:
         def predict_proba(self, _features: tuple[float, ...]) -> float:
