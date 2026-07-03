@@ -24,6 +24,7 @@ from simple_ai_trading.training_suite import (
     CandidateParams,
     ObjectiveOutcome,
     SuiteReport,
+    TrainingSuiteRejected,
     _calibration_split,
     _candidate_grid,
     _default_training,
@@ -110,7 +111,7 @@ def test_candidate_params_asdict_keys() -> None:
 def test_candidate_grid_returns_unique_deduped_list() -> None:
     training = get_objective("default").training
     grid = _candidate_grid(training)
-    assert len(grid) == 72
+    assert len(grid) == 96
     # dedupe check: no two entries share identical tuple of values
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
@@ -125,6 +126,7 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     assert len(lr_set) >= 2
     assert len(l2_set) >= 2
     assert len(threshold_set) >= 2
+    assert min(threshold_set) == pytest.approx(training.signal_threshold - 0.08)
     assert confidence_set == {0.85}
     assert seed_set == {7}
 
@@ -153,7 +155,7 @@ def test_candidate_grid_dedupes_colliding_entries() -> None:
     # All candidates distinct after dedup
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
-    assert len(grid) == 36
+    assert len(grid) == 48
 
 
 # ----- calibration helpers --------------------------------------------------
@@ -920,7 +922,7 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
     def runner(_obj, candidate, rows, base, feat_cfg, market, cash):
         return float("-inf"), base, _fake_trained_model(feat_cfg.polynomial_top_features), 42, 0.5
 
-    with pytest.raises(ValueError, match="All regular training candidates were rejected"):
+    with pytest.raises(TrainingSuiteRejected, match="All regular training candidates were rejected") as exc:
         train_for_objective(
             candles,
             strategy,
@@ -930,6 +932,10 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
             starting_cash=1000.0,
             runner=runner,
         )
+    assert exc.value.diagnostics["objective"] == "regular"
+    assert exc.value.diagnostics["row_count"] > 0
+    assert exc.value.diagnostics["top_candidates"]
+    assert exc.value.diagnostics["top_candidates"][0]["score"] is None
     assert not (tmp_path / f"model_{objective.name}.json").exists()
 
 

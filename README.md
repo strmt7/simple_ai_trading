@@ -63,7 +63,7 @@ Set multiple symbols in the runtime config or pass them to `universe`:
 .\.venv311\Scripts\python.exe -m simple_ai_trading universe --symbols BTCUSDC,ETHUSDC,BNBUSDC
 ```
 
-The universe gate does not use a static allowlist. It measures exchange status, quote asset, structural leveraged-token patterns, 24h quote volume, trade count, bid/ask spread, and a combined liquidity score. If fewer than the configured minimum assets qualify, the command exits nonzero.
+The universe gate does not use a static allowlist. It measures exchange status, quote asset, structural leveraged-token patterns, 24h quote volume, trade count, bid/ask spread, likely pegged-pair behavior, and a combined liquidity score. Automatic ranking can adapt the volume/trade floors to the current leaders in the selected quote-asset market, but only above hard absolute liquidity floors and without relaxing spread, leveraged-token, or pegged-pair filters. If fewer than the configured minimum assets qualify, the command exits nonzero.
 
 ## Windows App
 

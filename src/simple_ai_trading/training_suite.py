@@ -69,9 +69,10 @@ _ENSEMBLE_REFINEMENT_CANDIDATES = 3
 class TrainingSuiteRejected(ValueError):
     """Raised when every candidate for an objective fails its risk gates."""
 
-    def __init__(self, message: str, *, row_count: int) -> None:
+    def __init__(self, message: str, *, row_count: int, diagnostics: dict[str, object] | None = None) -> None:
         super().__init__(message)
         self.row_count = int(row_count)
+        self.diagnostics = diagnostics or {}
 
 
 @dataclass
@@ -199,7 +200,7 @@ def _attach_strategy_overrides(model: TrainedModel, strategy: StrategyConfig) ->
 def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     """Curated first-pass grid without exploding runtime.
 
-    Three epoch budgets, two learning rates, two L2 penalties, three thresholds,
+    Three epoch budgets, two learning rates, two L2 penalties, four thresholds,
     one stop/take profile, two risk levels, one confidence beta, and one seed.
     The suite then searches locally around the winner and checks seed ensembles
     for the best candidates, keeping GPU runs finishable while still deduping
@@ -214,6 +215,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     lr_options = (training.learning_rate * 0.75, training.learning_rate)
     l2_options = (training.l2_penalty, training.l2_penalty * 3.0)
     threshold_options = (
+        training.signal_threshold - 0.08,
         training.signal_threshold - 0.03,
         training.signal_threshold,
         training.signal_threshold + 0.03,
@@ -476,6 +478,32 @@ def _gate_result_payload(result: BacktestResult) -> dict[str, object]:
         "total_fees": float(result.total_fees),
         "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
         "stopped_by_drawdown": bool(result.stopped_by_drawdown),
+    }
+
+
+def _finite_number_or_none(value: object) -> float | None:
+    if not isinstance(value, (int, float)):
+        return None
+    parsed = float(value)
+    return parsed if math.isfinite(parsed) else None
+
+
+def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
+    return {
+        "score": _finite_number_or_none(entry.get("score")),
+        "candidate": entry["candidate"].asdict() if isinstance(entry.get("candidate"), CandidateParams) else {},
+        "selection_score": _finite_number_or_none(entry.get("selection_score")),
+        "validation_score": _finite_number_or_none(entry.get("validation_score")),
+        "full_sample_score": _finite_number_or_none(entry.get("full_sample_score")),
+        "threshold": _finite_number_or_none(entry.get("threshold")),
+        "threshold_source": entry.get("threshold_source"),
+        "threshold_score": _finite_number_or_none(entry.get("threshold_score")),
+        "calibration_rows": int(entry.get("calibration_rows") or 0),
+        "validation_rows": int(entry.get("validation_rows") or 0),
+        "selection_result": entry.get("selection_result") if isinstance(entry.get("selection_result"), dict) else None,
+        "validation_result": entry.get("validation_result") if isinstance(entry.get("validation_result"), dict) else None,
+        "full_sample_result": entry.get("full_sample_result") if isinstance(entry.get("full_sample_result"), dict) else None,
+        "walk_forward_gate": entry.get("walk_forward_gate") if isinstance(entry.get("walk_forward_gate"), dict) else None,
     }
 
 
@@ -769,6 +797,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         score_batch_size=score_batch_size,
     )
     selection_score = objective.score(selection_result) if objective.accepts(selection_result) else float("-inf")
+    selected_selection_result = selection_result
     holdout_result = run_backtest(
         rows_eval,
         model,
@@ -779,6 +808,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         score_batch_size=score_batch_size,
     )
     validation_score = objective.score(holdout_result) if objective.accepts(holdout_result) else float("-inf")
+    selected_holdout_result = holdout_result
     full_result = run_backtest(
         rows_train + rows_eval,
         model,
@@ -789,6 +819,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         score_batch_size=score_batch_size,
     )
     full_sample_score = objective.score(full_result) if objective.accepts(full_result) else float("-inf")
+    selected_full_result = full_result
     score = min(validation_score, full_sample_score)
     selected_calibration_rows = len(calibration_rows)
 
@@ -876,6 +907,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             selection_score = fallback_selection_score
             validation_score = fallback_validation_score
             full_sample_score = fallback_full_score
+            selected_selection_result = fallback_selection_result
+            selected_holdout_result = fallback_holdout_result
+            selected_full_result = fallback_full_result
 
     return {
         "score": float(score),
@@ -892,6 +926,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         "selection_score": float(selection_score),
         "validation_score": float(validation_score),
         "full_sample_score": float(full_sample_score),
+        "selection_result": _gate_result_payload(selected_selection_result),
+        "validation_result": _gate_result_payload(selected_holdout_result),
+        "full_sample_result": _gate_result_payload(selected_full_result),
         "ensemble_refined": bool(ensemble_seeds),
     }
 
@@ -1144,9 +1181,16 @@ def train_for_objective(
 
     rejected = sum(1 for entry in results if entry["score"] == float("-inf"))
     if not math.isfinite(float(best["score"])):
+        diagnostics = {
+            "objective": objective.name,
+            "row_count": len(rows),
+            "candidate_count": len(ranked_pool),
+            "top_candidates": [_candidate_diagnostics(entry) for entry in ranked_pool[:5]],
+        }
         raise TrainingSuiteRejected(
             f"All {objective.name} training candidates were rejected by objective gates",
             row_count=len(rows),
+            diagnostics=diagnostics,
         )
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = output_dir / f"model_{objective.name}.json"
