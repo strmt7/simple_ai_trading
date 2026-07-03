@@ -41,6 +41,7 @@ from .positions import (
     new_position_id,
     now_ms,
 )
+from .risk_controls import stop_loss_sized_notional_pct
 from .storage import write_json_atomic
 from .types import RuntimeConfig, StrategyConfig
 
@@ -206,9 +207,10 @@ def _open_position_from_decision(
 ) -> OpenPosition:
     """Build a position record from a decision + runtime state."""
 
-    risk_cash = max(0.0, cfg.starting_reference_cash * strategy.risk_per_trade)
     price = max(0.01, float(decision.mark_price))
-    qty = max(0.0, risk_cash / price)
+    notional_pct = stop_loss_sized_notional_pct(strategy, runtime.market_type, leverage=strategy.leverage)
+    target_notional = max(0.0, cfg.starting_reference_cash * notional_pct)
+    qty = max(0.0, target_notional / price)
     notional = qty * price
     return OpenPosition(
         id=new_position_id(),

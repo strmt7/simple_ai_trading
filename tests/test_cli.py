@@ -87,11 +87,11 @@ def test_effective_leverage_clamps_by_market() -> None:
 
 
 def test_target_notional_scales_with_futures_leverage() -> None:
-    cfg = StrategyConfig(leverage=10.0, risk_per_trade=0.01, max_position_pct=0.2)
+    cfg = StrategyConfig(leverage=10.0, risk_per_trade=0.01, max_position_pct=0.2, stop_loss_pct=0.01)
     spot_notional = _target_notional(1000.0, cfg, "spot")
     futures_notional = _target_notional(1000.0, cfg, "futures")
-    assert spot_notional == 10.0
-    assert futures_notional == 100.0
+    assert spot_notional == 200.0
+    assert futures_notional == 1000.0
     assert _target_notional(float("nan"), cfg, "futures") == 0.0
     assert _target_notional(1000.0, cfg, "futures", leverage=float("nan")) == 0.0
 
@@ -157,8 +157,8 @@ def test_build_order_notional_respects_symbol_constraints() -> None:
         client=client,
         constraints=constraints,
     )
-    assert notional == 0.0
-    assert qty == 0.0
+    assert notional == 1500.0
+    assert qty == 3.0
 
     assert _build_order_notional(
         cash=1000.0,

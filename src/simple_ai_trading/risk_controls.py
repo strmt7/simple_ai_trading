@@ -103,6 +103,24 @@ def _metric_float(value: Any) -> float:
         return float("nan")
 
 
+def stop_loss_sized_notional_pct(
+    strategy: StrategyConfig,
+    market_type: str,
+    *,
+    leverage: float | None = None,
+) -> float:
+    """Return gross notional exposure as an equity percentage from stop-loss risk."""
+
+    effective_leverage = _effective_leverage(strategy, market_type, leverage)
+    risk_budget_pct = max(0.0, _finite(strategy.risk_per_trade))
+    stop_loss_pct = max(0.0, _finite(strategy.stop_loss_pct))
+    risk_sized_notional_pct = risk_budget_pct / stop_loss_pct if stop_loss_pct > 0.0 else risk_budget_pct
+    max_position_pct = max(0.0, _finite(strategy.max_position_pct))
+    if market_type == "futures":
+        return max(0.0, min(risk_sized_notional_pct, max_position_pct * effective_leverage, effective_leverage))
+    return max(0.0, min(risk_sized_notional_pct, max_position_pct, 1.0))
+
+
 def build_risk_policy_report(
     runtime: RuntimeConfig,
     strategy: StrategyConfig,
@@ -115,12 +133,13 @@ def build_risk_policy_report(
 
     dry_run = bool(runtime.dry_run if effective_dry_run is None else effective_dry_run)
     effective_leverage = _effective_leverage(strategy, runtime.market_type, leverage)
-    notional_cap_pct = min(
-        max(0.0, _finite(strategy.risk_per_trade)) * effective_leverage,
-        max(0.0, _finite(strategy.max_position_pct)) * effective_leverage,
-        1.0,
+    stop_loss_pct = max(0.0, _finite(strategy.stop_loss_pct))
+    notional_cap_pct = stop_loss_sized_notional_pct(
+        strategy,
+        runtime.market_type,
+        leverage=effective_leverage,
     )
-    max_loss_per_trade_pct = notional_cap_pct * max(0.0, _finite(strategy.stop_loss_pct))
+    max_loss_per_trade_pct = notional_cap_pct * stop_loss_pct
     checks: list[RiskCheck] = []
 
     symbols = tuple(getattr(runtime, "symbols", ()) or (runtime.symbol,))

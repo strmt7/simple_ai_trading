@@ -127,12 +127,14 @@ simple-ai-trading autonomous status
 `conservative` is the default:
 
 - No leverage by default.
-- Lower risk per trade and position caps.
+- Lower stop-loss capital-at-risk budgets and position caps.
 - Longer cooldowns.
 - Stricter liquidity/spread thresholds.
 - Lower drawdown tolerance.
 
 `regular` and `aggressive` relax thresholds gradually, but still keep leverage capped at `10x`, require diversification, and preserve exchange/testnet safeguards.
+
+Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, and backtester all use the same stop-loss-sized notional calculation.
 
 ## Live-Market Simulation
 
@@ -141,7 +143,7 @@ The backtester no longer assumes frictionless fills. It models:
 - per-symbol spread,
 - latency buffers,
 - liquidity haircuts for testnet-to-mainnet differences,
-- market impact from participation,
+- market impact from candle-volume participation,
 - taker fees,
 - liquidation buffer settings,
 - buy-and-hold comparison and risk-adjusted scoring.

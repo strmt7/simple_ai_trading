@@ -958,8 +958,8 @@ def test_build_order_notional_paths() -> None:
         ),
     )
     notional, qty = cli._build_order_notional(1000.0, 10_000.0, cfg, "futures", 3.0, client)
-    assert math.isclose(notional, 300.0)
-    assert math.isclose(qty, 0.03)
+    assert math.isclose(notional, 1200.0)
+    assert math.isclose(qty, 0.12)
 
     bad_constraints = type(
         "C",

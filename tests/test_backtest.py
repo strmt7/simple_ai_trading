@@ -218,7 +218,7 @@ def test_backtest_exit_fee_uses_exit_notional() -> None:
     )
     result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
     assert result.closed_trades == 1
-    assert result.total_fees == pytest.approx(2.1945233707467544)
+    assert result.total_fees == pytest.approx(4.389046741493509)
 
 
 def test_backtest_signal_enters_on_next_bar_close() -> None:
@@ -245,7 +245,42 @@ def test_backtest_signal_enters_on_next_bar_close() -> None:
     result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
 
     assert result.closed_trades == 1
-    assert result.realized_pnl == pytest.approx(-0.45638577110378264)
+    assert result.realized_pnl == pytest.approx(-2.281928855519027)
+
+
+def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=120_000, close=105.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=10.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    spot_cfg = StrategyConfig(
+        risk_per_trade=0.01,
+        max_position_pct=0.5,
+        stop_loss_pct=0.02,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+        signal_threshold=0.55,
+        take_profit_pct=0.50,
+    )
+    futures_cfg = StrategyConfig(**{**spot_cfg.asdict(), "leverage": 5.0, "max_position_pct": 0.2})
+
+    spot = run_backtest(rows, model, spot_cfg, starting_cash=1000.0, market_type="spot")
+    futures = run_backtest(rows, model, futures_cfg, starting_cash=1000.0, market_type="futures")
+
+    assert spot.max_exposure == pytest.approx(500.0)
+    assert futures.max_exposure == pytest.approx(500.0)
 
 
 def test_backtest_cooldown_prevents_immediate_reentry() -> None:
@@ -341,6 +376,44 @@ def test_backtest_applies_symbol_execution_profile_costs() -> None:
     assert clean.closed_trades == stressed.closed_trades == 1
     assert stressed.realized_pnl < clean.realized_pnl
     assert stressed.buy_hold_pnl < clean.buy_hold_pnl
+
+
+def test_backtest_uses_row_volume_for_participation_impact() -> None:
+    low_volume_rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1, volume=0.0),
+        ModelRow(timestamp=60_000, close=100.0, features=(1.0,), label=1, volume=0.0),
+        ModelRow(timestamp=120_000, close=110.0, features=(1.0,), label=1, volume=0.0),
+    ]
+    high_volume_rows = [
+        ModelRow(timestamp=row.timestamp, close=row.close, features=row.features, label=row.label, volume=1_000_000.0)
+        for row in low_volume_rows
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=10.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.5,
+        max_position_pct=0.5,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+        signal_threshold=0.55,
+        take_profit_pct=0.50,
+        stop_loss_pct=0.50,
+    )
+
+    low_volume = run_backtest(low_volume_rows, model, cfg, starting_cash=1000.0)
+    high_volume = run_backtest(high_volume_rows, model, cfg, starting_cash=1000.0)
+
+    assert low_volume.closed_trades == high_volume.closed_trades == 1
+    assert high_volume.realized_pnl > low_volume.realized_pnl
 
 
 def test_backtest_buy_hold_baseline_handles_invalid_inputs() -> None:
