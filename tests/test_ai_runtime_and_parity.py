@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 
 from simple_ai_trading.ai_runtime import AIRuntimeConfig, detect_ai_capabilities
-from simple_ai_trading.command_contract import command_names
+from simple_ai_trading.command_contract import command_names, command_specs
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading import windows_app
 from simple_ai_trading.windows_app import WINDOWS_APP_COMMANDS
@@ -75,13 +75,31 @@ def test_windows_launcher_help_exits_cleanly(monkeypatch, capsys) -> None:
 def test_generated_native_contract_matches_cli() -> None:
     header = windows_app._repo_root() / "native" / "windows" / "generated" / "command_contract.hpp"
     text = header.read_text(encoding="utf-8")
-    for name in command_names():
-        assert f'L"{name}"' in text
+    for spec in command_specs():
+        option_count = len(spec.options) + len(spec.positionals)
+        array_name = "".join(ch if ch.isalnum() else "_" for ch in spec.name).strip("_") or "command"
+        options_ptr = f"kOptions_{array_name}" if option_count else "nullptr"
+        if option_count:
+            assert f"inline constexpr CommandOptionSpec kOptions_{array_name}[]" in text
+        assert f'{_wide(spec.name)}, {_wide(spec.help)}, {options_ptr}, {option_count}' in text
+        for option in (*spec.options, *spec.positionals):
+            flags = ", ".join(option.flags) or option.dest
+            assert _wide(flags) in text
+            assert _wide(option.dest) in text
+            if option.choices:
+                assert _wide(", ".join(option.choices)) in text
 
 
 def test_native_window_initializes_hwnd_during_create() -> None:
     source = (windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp").read_text(encoding="utf-8")
     assert "self->hwnd_ = hwnd;" in source
+    assert "option_preview(kCommands[selected_])" in source
+
+
+def _wide(text: str) -> str:
+    escaped = text.replace("\\", "\\\\").replace('"', '\\"')
+    escaped = escaped.replace("\r", " ").replace("\n", " ")
+    return f'L"{escaped}"'
 
 
 def test_runtime_ai_defaults_enabled_and_strategy_defaults_conservative() -> None:

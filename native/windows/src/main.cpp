@@ -16,6 +16,7 @@
 #include <vector>
 
 namespace app {
+using simple_ai_trading::native_contract::CommandSpec;
 using simple_ai_trading::native_contract::kCommandCount;
 using simple_ai_trading::native_contract::kCommands;
 
@@ -215,9 +216,31 @@ class MainWindow {
         text(dc, L"Selected Command", RECT{314, 118, 700, 142}, kMuted, small_font, DT_LEFT | DT_SINGLELINE);
         text(dc, name, RECT{314, 144, 700, 172}, kText, body, DT_LEFT | DT_SINGLELINE);
         text(dc, help, RECT{314, 174, 704, 210}, kMuted, small_font, DT_LEFT | DT_WORDBREAK | DT_END_ELLIPSIS);
-        text(dc, L"Safety Gates", RECT{766, 118, 1110, 142}, kMuted, small_font, DT_LEFT | DT_SINGLELINE);
-        text(dc, L"Stop closes local autonomous positions. Model Lab rejects non-profitable candidates. CPU mode disables AI.", RECT{766, 146, 1112, 206}, kText, small_font,
+        std::wstring options = kCommandCount > 0 ? option_preview(kCommands[selected_]) : L"No command metadata generated.";
+        text(dc, L"CLI Parity", RECT{766, 118, 1110, 142}, kMuted, small_font, DT_LEFT | DT_SINGLELINE);
+        text(dc, options, RECT{766, 144, 1112, 178}, kText, small_font,
+             DT_LEFT | DT_WORDBREAK | DT_END_ELLIPSIS);
+        text(dc, L"Stop closes local autonomous positions. CPU mode disables AI.", RECT{766, 180, 1112, 210}, kMuted, small_font,
              DT_LEFT | DT_WORDBREAK);
+    }
+
+    static std::wstring option_preview(const CommandSpec& command) {
+        if (command.option_count <= 0 || command.options == nullptr) {
+            return L"No CLI options for this workflow.";
+        }
+        std::wstring preview = L"Options: ";
+        const int shown = std::min(command.option_count, 5);
+        for (int i = 0; i < shown; ++i) {
+            if (i > 0) {
+                preview += L", ";
+            }
+            preview += command.options[i].flags;
+        }
+        if (command.option_count > shown) {
+            preview += L", ... +";
+            preview += std::to_wstring(command.option_count - shown);
+        }
+        return preview;
     }
 
     void draw_buttons(HDC dc, HFONT font) {

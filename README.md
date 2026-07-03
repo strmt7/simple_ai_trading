@@ -85,7 +85,7 @@ or:
 .\run-gui.cmd
 ```
 
-The Windows app is a native C++20 Win32 operator console inspired by the SuperZip app structure: PowerShell/CMake build, double-buffered GDI rendering, DWM dark window chrome, and generated workflow metadata. It builds its workflow list from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command is not visible to the Windows app.
+The Windows app is a native C++20 Win32 operator console inspired by the SuperZip app structure: PowerShell/CMake build, double-buffered GDI rendering, DWM dark window chrome, and generated workflow metadata. It builds its workflow list and option preview from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command, option flag, positional argument, or choice is not present in the native contract.
 
 Startup behavior:
 
@@ -157,6 +157,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - `universe` must prove liquidity for the configured diversified symbols.
 - CPU-only mode disables AI.
 - CLI and Windows app command parity is tested.
+- Native Windows metadata is generated from the Python CLI parser and includes command options, positionals, choices, defaults, and help text.
 - Backtests include pessimistic execution assumptions.
 - Authenticated live/testnet order loops do not trust requested quantity as filled quantity; they require execution fields or a signed order-status reconciliation.
 - Autonomous stop closes local open positions to avoid stale ledger exposure.
