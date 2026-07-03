@@ -56,7 +56,13 @@ from .model import (
     walk_forward_report,
 )
 from .objective import available_objectives
-from .risk_controls import EntryRiskDecision, assess_entry_risk, build_risk_policy_report, render_risk_policy_report
+from .risk_controls import (
+    EntryRiskDecision,
+    assess_entry_risk,
+    build_risk_policy_report,
+    render_risk_policy_report,
+    stop_loss_sized_notional_pct,
+)
 from . import risk_workflows
 from .strategy_overrides import apply_model_strategy_overrides
 from .storage import write_json_atomic
@@ -2832,9 +2838,7 @@ def _target_notional(
         leverage = _effective_leverage(strategy, market_type)
     if not math.isfinite(float(leverage)):
         return 0.0
-    risk_exposure = strategy.risk_per_trade * leverage
-    risk_exposure = min(risk_exposure, strategy.max_position_pct * leverage)
-    risk_exposure = min(risk_exposure, 1.0)
+    risk_exposure = stop_loss_sized_notional_pct(strategy, market_type, leverage=leverage)
     return max(0.0, cash * risk_exposure)
 
 

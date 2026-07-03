@@ -100,6 +100,7 @@ class ModelRow:
     close: float
     features: Tuple[float, ...]
     label: int
+    volume: float = 0.0
 
 
 def feature_dimension(enabled_features: Sequence[str] | None = None) -> int:
@@ -325,7 +326,15 @@ def make_rows(
         future = cache.closes[i + lookahead]
         present = cache.closes[i]
         label = int(_pct(future, present) >= label_threshold)
-        rows.append(ModelRow(timestamp=cache.candles[i].close_time, close=present, features=features, label=label))
+        rows.append(
+            ModelRow(
+                timestamp=cache.candles[i].close_time,
+                close=present,
+                features=features,
+                label=label,
+                volume=cache.candles[i].volume,
+            )
+        )
 
     return rows
 
@@ -354,7 +363,15 @@ def make_inference_rows(
         if full_features is None:
             continue
         features = tuple(full_features[index] for index in selected_indices)
-        rows.append(ModelRow(timestamp=cache.candles[i].close_time, close=cache.closes[i], features=features, label=0))
+        rows.append(
+            ModelRow(
+                timestamp=cache.candles[i].close_time,
+                close=cache.closes[i],
+                features=features,
+                label=0,
+                volume=cache.candles[i].volume,
+            )
+        )
 
     return rows
 

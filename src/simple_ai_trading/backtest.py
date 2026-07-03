@@ -9,6 +9,7 @@ from .compute import BackendInfo, resolve_backend
 from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
+from .risk_controls import stop_loss_sized_notional_pct
 from .types import StrategyConfig
 
 
@@ -213,6 +214,27 @@ def _fallback_score_backend(requested: BackendInfo, reason: str) -> BackendInfo:
         vendor="Python stdlib",
         reason=reason[:240],
     )
+
+
+def _position_size_from_risk(
+    cash: float,
+    cfg: StrategyConfig,
+    *,
+    market_type: str,
+    leverage: float,
+) -> tuple[float, float]:
+    """Return gross notional and margin sized from stop-loss risk budget."""
+
+    if cash <= 0.0:
+        return 0.0, 0.0
+    notional_pct = stop_loss_sized_notional_pct(cfg, market_type, leverage=leverage)
+    gross = cash * notional_pct
+    if market_type == "spot":
+        return max(0.0, gross), max(0.0, gross)
+
+    effective_leverage = max(1.0, min(10.0, _finite_float(leverage, 1.0)))
+    margin = gross / effective_leverage if effective_leverage > 0.0 else gross
+    return max(0.0, gross), max(0.0, margin)
 
 
 def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
@@ -502,14 +524,12 @@ def run_backtest(
             if trade_cap_reached:
                 cap_hits += 1
                 continue
-            gross = cash * cfg.risk_per_trade * leverage
-            if market_type == "spot":
-                gross = min(gross, cash * cfg.max_position_pct)
-                effective_margin = gross
-            else:
-                gross = min(gross, cash * cfg.max_position_pct * leverage, cash * leverage)
-                gross = max(0.0, gross)
-                effective_margin = gross / leverage
+            gross, effective_margin = _position_size_from_risk(
+                cash,
+                cfg,
+                market_type=market_type,
+                leverage=leverage,
+            )
 
             if gross <= 0 or effective_margin >= cash:
                 continue

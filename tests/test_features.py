@@ -1,6 +1,8 @@
 ﻿from __future__ import annotations
 
+from dataclasses import replace
 import math
+
 import pytest
 from simple_ai_trading.api import Candle
 from simple_ai_trading.features import (
@@ -58,6 +60,21 @@ def test_make_rows_respects_enabled_feature_subset() -> None:
     rows = make_rows(_fake_candles(), short_window=10, long_window=30, enabled_features=selected)
     assert rows
     assert len(rows[0].features) == 3
+
+
+def test_make_rows_preserves_candle_volume_for_execution_simulation() -> None:
+    candles = [
+        replace(candle, volume=10.0 + index)
+        for index, candle in enumerate(_fake_candles())
+    ]
+    rows = make_rows(candles, short_window=10, long_window=30)
+    inference_rows = make_inference_rows(candles, short_window=10, long_window=30)
+    volume_by_timestamp = {candle.close_time: candle.volume for candle in candles}
+
+    assert rows
+    assert inference_rows
+    assert rows[0].volume == pytest.approx(volume_by_timestamp[rows[0].timestamp])
+    assert inference_rows[-1].volume == pytest.approx(volume_by_timestamp[inference_rows[-1].timestamp])
 
 
 def test_normalize_enabled_features_validates_input() -> None:

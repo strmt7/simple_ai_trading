@@ -128,10 +128,11 @@ def test_advanced_feature_dimension_matches_expand():
         extra_lookback_windows=(5, 20),
     )
     dim = am.advanced_feature_dimension(cfg)
-    row = ModelRow(timestamp=0, close=100.0, features=(0.1,) * 6, label=1)
+    row = ModelRow(timestamp=0, close=100.0, features=(0.1,) * 6, label=1, volume=42.0)
     candles = _candles(60)
     expanded = am.expand_row(row, candles, cfg, at_index=59)
     assert len(expanded.features) == dim
+    assert expanded.volume == pytest.approx(42.0)
 
 
 def test_advanced_feature_signature_stable():
@@ -155,11 +156,14 @@ def test_default_config_for_branches():
 
 def test_make_advanced_rows_happy_path():
     cfg = am.default_config_for("default", FEATURE_NAMES)
-    rows = am.make_advanced_rows(_candles(250), cfg)
-    short_horizon_rows = am.make_advanced_rows(_candles(250), cfg, lookahead=1)
+    candles = _candles(250)
+    rows = am.make_advanced_rows(candles, cfg)
+    short_horizon_rows = am.make_advanced_rows(candles, cfg, lookahead=1)
+    volume_by_timestamp = {candle.close_time: candle.volume for candle in candles}
     assert rows
     assert len(short_horizon_rows) > len(rows)
     assert len(rows[0].features) == am.advanced_feature_dimension(cfg)
+    assert rows[0].volume == pytest.approx(volume_by_timestamp[rows[0].timestamp])
 
 
 def test_make_advanced_rows_handles_missing_index(monkeypatch):

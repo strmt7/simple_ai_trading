@@ -293,6 +293,8 @@ def test_open_position_from_decision_live_sets_dry_run_false(tmp_path: Path) -> 
         decision, runtime, strat, get_objective("default"), cfg, clock=lambda: 2.0,
     )
     assert position.entry_price == 200.0
+    assert position.notional == pytest.approx(80.0)
+    assert position.qty == pytest.approx(0.4)
     assert position.dry_run is False
     assert position.opened_at_ms == 2000
 

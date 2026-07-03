@@ -30,10 +30,16 @@ Backtest fill price uses:
 - half-spread cost,
 - configured slippage,
 - latency buffer,
-- market-impact cost based on order participation,
+- market-impact cost based on order participation versus candle-volume notional,
 - testnet liquidity haircut,
 - volatility buffer,
 - taker fees.
+
+Position sizing is stop-loss-budget based. `risk_per_trade` is interpreted as
+the equity budget that may be lost if the configured stop-loss is hit; gross
+notional is then capped by max position size, leverage, exchange constraints,
+and available cash. This same notional calculation is used by risk reporting,
+backtesting, and live/testnet order sizing.
 
 Model-lab acceptance adds an additional stress matrix before a symbol is marked
 accepted. Each saved objective model is replayed with the selected symbol's

@@ -184,7 +184,7 @@ def test_backtest_enforces_entry_filters_and_cap_hits() -> None:
     cfg = StrategyConfig(
         leverage=1.0,
         risk_per_trade=0.5,
-        max_position_pct=1.0,
+        max_position_pct=0.9,
         max_open_positions=1,
         max_trades_per_day=1,
         signal_threshold=0.55,
@@ -213,7 +213,7 @@ def test_backtest_hits_break_even_entry_and_exit_logic() -> None:
     assert result.max_exposure >= 0.0
 
 
-def test_backtest_can_experience_negative_mark_to_market_equity_and_cap_floor() -> None:
+def test_backtest_risk_sizing_limits_mark_to_market_loss() -> None:
     rows = [
         _flat_row(0, close=100.0, score=10.0, label=1),
         _flat_row(60_000, close=100.0, score=10.0, label=1),
@@ -237,8 +237,8 @@ def test_backtest_can_experience_negative_mark_to_market_equity_and_cap_floor() 
     )
     result = run_backtest(rows, model, cfg, starting_cash=10.0, market_type="futures")
     assert result.closed_trades == 1
-    assert result.ending_cash < 0
-    assert result.max_drawdown == 1.0
+    assert result.ending_cash > 0
+    assert result.max_drawdown < 1.0
 
 
 def test_backtest_force_close_and_max_open_cap_guard() -> None:
@@ -306,7 +306,7 @@ def test_backtest_records_drawdown_after_same_day_capped_close() -> None:
     cfg = StrategyConfig(
         leverage=1.0,
         risk_per_trade=0.5,
-        max_position_pct=1.0,
+        max_position_pct=0.9,
         max_trades_per_day=1,
         signal_threshold=0.55,
         stop_loss_pct=0.1,
@@ -317,8 +317,8 @@ def test_backtest_records_drawdown_after_same_day_capped_close() -> None:
     result = run_backtest(rows, _simple_model(10.0), cfg, starting_cash=1000.0, market_type="spot")
 
     assert result.closed_trades == 1
-    assert result.realized_pnl == pytest.approx(-251.1409644277595)
-    assert result.max_drawdown == pytest.approx(0.2511409644277595)
+    assert result.realized_pnl == pytest.approx(-452.0537359699672)
+    assert result.max_drawdown == pytest.approx(0.4520537359699672)
 
 
 def test_threshold_calibration_passes_gpu_scoring_options(monkeypatch) -> None:

@@ -4,6 +4,7 @@ from simple_ai_trading.risk_controls import (
     assess_entry_risk,
     build_risk_policy_report,
     render_risk_policy_report,
+    stop_loss_sized_notional_pct,
 )
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
@@ -14,12 +15,20 @@ def test_risk_policy_report_allows_default_paper_and_renders_summary() -> None:
     assert report.allowed is True
     assert report.block_count == 0
     assert report.warning_count >= 1
-    assert report.notional_cap_pct == 0.003
-    assert report.max_loss_per_trade_pct == 0.00003
+    assert report.notional_cap_pct == 0.08
+    assert report.max_loss_per_trade_pct == 0.0008
     assert report.checks[0].asdict()["label"] == "primary symbol"
     rendered = render_risk_policy_report(report)
     assert "Risk policy report" in rendered
     assert "allowed=True" in rendered
+
+
+def test_stop_loss_sized_notional_pct_respects_caps_and_leverage() -> None:
+    spot = StrategyConfig(risk_per_trade=0.01, max_position_pct=0.5, stop_loss_pct=0.02)
+    futures = StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, stop_loss_pct=0.02, leverage=5.0)
+
+    assert stop_loss_sized_notional_pct(spot, "spot") == 0.5
+    assert stop_loss_sized_notional_pct(futures, "futures") == 0.5
 
 
 def test_risk_policy_blocks_mainnet_live_missing_credentials_and_zero_cash(tmp_path) -> None:
