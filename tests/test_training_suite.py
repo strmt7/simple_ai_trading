@@ -31,6 +31,8 @@ from simple_ai_trading.training_suite import (
     _calibrate_candidate_threshold,
     _evaluate_candidate,
     _local_refinement_candidates,
+    _purged_walk_forward_gate,
+    _purged_walk_forward_splits,
     _refine_threshold_on_selection_rows,
     _strategy_for_candidate,
     _threshold_guard,
@@ -467,6 +469,70 @@ def test_walk_forward_split_large_rows_splits_properly() -> None:
     assert len(test) >= 5
 
 
+def test_purged_walk_forward_splits_apply_gap() -> None:
+    feature_cfg = default_config_for("regular", ())
+    training = _default_training(get_objective("regular"))
+    folds = _purged_walk_forward_splits(_rows(500), training, feature_cfg)
+
+    assert folds
+    first = folds[0]
+    assert first["test_start"] - first["train_end"] >= feature_cfg.label_lookahead
+    assert len(first["train_rows"]) >= 80
+    assert len(first["test_rows"]) >= 30
+
+
+def test_purged_walk_forward_gate_rejects_failed_fold(monkeypatch: pytest.MonkeyPatch) -> None:
+    model = _fake_trained_model(2)
+
+    monkeypatch.setattr(
+        training_suite,
+        "train_advanced",
+        lambda rows, cfg, **kwargs: (model, SimpleNamespace(row_count=len(rows), positive_rate=0.5)),
+    )
+    monkeypatch.setattr(
+        training_suite,
+        "_calibrate_candidate_threshold",
+        lambda *a, **k: (0.60, "test", 1.0),
+    )
+    results = iter([
+        _make_result(realized_pnl=20.0, closed_trades=5, edge_vs_buy_hold=5.0),
+        _make_result(realized_pnl=-5.0, ending_cash=995.0, closed_trades=5, edge_vs_buy_hold=-10.0),
+    ])
+
+    def fake_backtest(*_args, **_kwargs):
+        try:
+            return next(results)
+        except StopIteration:
+            return _make_result(realized_pnl=-5.0, ending_cash=995.0, closed_trades=5, edge_vs_buy_hold=-10.0)
+
+    monkeypatch.setattr(training_suite, "run_backtest", fake_backtest)
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.01,
+        l2_penalty=0.001,
+        signal_threshold=0.6,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+    )
+
+    gate = _purged_walk_forward_gate(
+        candidate,
+        _rows(500),
+        StrategyConfig(),
+        default_config_for("regular", ()),
+        get_objective("regular"),
+        _default_training(get_objective("regular")),
+        market_type="spot",
+        starting_cash=1000.0,
+    )
+
+    assert gate["passed"] is False
+    assert gate["reason"] == "purged_walk_forward_fold_failed"
+    assert gate["accepted_folds"] < gate["fold_count"]
+    assert gate["worst_realized_pnl"] == pytest.approx(-5.0)
+
+
 # ----- _default_training fallback ------------------------------------------
 
 
@@ -865,6 +931,134 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
             runner=runner,
         )
     assert not (tmp_path / f"model_{objective.name}.json").exists()
+
+
+def test_train_for_objective_rejects_failed_walk_forward_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+
+    def fake_evaluate(payload):
+        return {
+            "score": 2.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(),
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "validation_score": 2.0,
+            "full_sample_score": 2.0,
+            "ensemble_refined": False,
+        }
+
+    monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
+    monkeypatch.setattr(
+        training_suite,
+        "_purged_walk_forward_gate",
+        lambda *_a, **_k: {
+            "passed": False,
+            "reason": "purged_walk_forward_fold_failed",
+            "fold_count": 2,
+            "accepted_folds": 1,
+            "worst_score": float("-inf"),
+            "worst_realized_pnl": -1.0,
+            "worst_max_drawdown": 0.2,
+            "folds": [],
+        },
+    )
+
+    with pytest.raises(ValueError, match="All regular training candidates were rejected"):
+        train_for_objective(
+            _synthetic_candles(n=420),
+            StrategyConfig(),
+            objective,
+            output_dir=tmp_path,
+            market_type="spot",
+            starting_cash=1000.0,
+            max_workers=1,
+        )
+
+
+def test_train_for_objective_persists_walk_forward_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    gate = {
+        "passed": True,
+        "reason": None,
+        "fold_count": 2,
+        "accepted_folds": 2,
+        "worst_score": 1.25,
+        "worst_realized_pnl": 12.0,
+        "worst_max_drawdown": 0.03,
+        "folds": [],
+    }
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    monkeypatch.setattr(training_suite, "optimize_hybrid_model_zoo", lambda *a, **k: None)
+    monkeypatch.setattr(training_suite, "_purged_walk_forward_gate", lambda *_a, **_k: gate)
+    monkeypatch.setattr(
+        training_suite,
+        "_evaluate_candidate",
+        lambda payload: {
+            "score": 2.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(),
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "validation_score": 2.0,
+            "full_sample_score": 2.0,
+            "ensemble_refined": False,
+        },
+    )
+
+    outcome = train_for_objective(
+        _synthetic_candles(n=420),
+        StrategyConfig(),
+        objective,
+        output_dir=tmp_path,
+        market_type="spot",
+        starting_cash=1000.0,
+        max_workers=1,
+    )
+
+    assert outcome.best_score == pytest.approx(1.25)
+    assert outcome.walk_forward_gate == gate
 
 
 def test_train_for_objective_insufficient_candles(tmp_path: Path) -> None:

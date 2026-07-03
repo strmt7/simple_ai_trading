@@ -62,11 +62,14 @@ the profitability, drawdown, and minimum-trade gates in
    bid/ask spread, exchange status, and quote-asset policy.
 3. Fetches recent klines for each ranked symbol.
 4. Runs the training suite and hybrid optimizer for one or more objectives.
-5. Replays every saved objective model under mandatory symbol-specific stress:
+5. Requires the selected candidate to pass purged chronological walk-forward
+   folds before serialization. The purge gap protects against label-lookahead
+   leakage between train and test folds.
+6. Replays every saved objective model under mandatory symbol-specific stress:
    baseline measured execution, wider spread/slippage, latency spike with a
    liquidity haircut, and combined liquidity crunch with fee/spread/latency
    stress.
-6. Writes a JSON report plus per-symbol `stress_validation.json` and marks an
+7. Writes a JSON report plus per-symbol `stress_validation.json` and marks an
    outcome accepted only when all objective scores are positive and every stress
    replay passes the objective risk gates.
 
@@ -99,6 +102,8 @@ assert that every CLI command appears in the Windows app.
 - No leverage above 10x.
 - No AI in CPU-only mode.
 - No non-profitable accepted model-lab outcome.
+- No selected training-suite model without purged walk-forward evidence when
+  enough rows are available.
 - No single-scenario-only model-lab acceptance.
 - No Windows-app-only workflow.
 - No CLI-only workflow.

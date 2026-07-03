@@ -44,6 +44,11 @@ If any required scenario fails the objective gates, `model-lab` writes
 `stress_validation.json` for that symbol and rejects the candidate. This is
 intentional fail-closed behavior; a single profitable replay is not enough.
 
+The training suite also gates selected candidates with purged chronological
+walk-forward folds when enough rows are available. The purge gap is at least the
+model label lookahead, so rows whose labels can see into a test fold are not
+used as training examples for that fold.
+
 Futures safety:
 
 - Binance can support larger initial leverage values, but this app hard-caps autonomous leverage at `10x`.
@@ -62,6 +67,8 @@ Known limitations:
 - External news/sentiment sources are still broad crypto-oriented; the liquidity gate is the primary automatic asset filter.
 - The current stress model uses top-of-book and candle-volume proxies. It is
   stricter than flat slippage, but still weaker than full L2 order-book replay.
+- Very small datasets are marked as insufficient for purged walk-forward gates;
+  they are useful for unit tests and smoke checks, not production acceptance.
 
 ## Operator Rule
 
