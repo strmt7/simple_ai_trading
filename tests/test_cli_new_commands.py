@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from simple_ai_trading import cli
 from simple_ai_trading.config import save_runtime
@@ -236,6 +237,72 @@ def test_command_train_suite_uses_saved_compute_backend_without_cli_override(tmp
     )
     assert cli.command_train_suite(args) == 0
     assert observed["compute_backend"] == "directml"
+
+
+# --------------------------------------------------------------------------- #
+# model-lab
+# --------------------------------------------------------------------------- #
+
+def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp_path):
+    runtime = RuntimeConfig(market_type="spot")
+    captured = {}
+
+    def fake_backend(runtime_arg, *_args, **_kwargs):
+        captured["backend_market"] = runtime_arg.market_type
+        return "directml", object()
+
+    def fake_client(runtime_arg):
+        captured["client_market"] = runtime_arg.market_type
+        return object()
+
+    def fake_lab(_client, runtime_arg, _strategy, **kwargs):
+        captured["lab_market"] = runtime_arg.market_type
+        captured["compute_backend"] = kwargs["compute_backend"]
+        return SimpleNamespace(
+            accepted_symbols=["BTCUSDC"],
+            outcomes=[
+                SimpleNamespace(
+                    accepted=True,
+                    symbol="BTCUSDC",
+                    rows=100,
+                    objective_scores={"regular": 0.12},
+                    hybrid_profiles={},
+                    stress_validation=None,
+                    error=None,
+                )
+            ],
+            market_type=runtime_arg.market_type,
+            report_path=str(tmp_path / "report.json"),
+        )
+
+    monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
+    monkeypatch.setattr(cli, "load_strategy", StrategyConfig)
+    monkeypatch.setattr(cli, "_workflow_compute_backend", fake_backend)
+    monkeypatch.setattr(cli, "_build_client", fake_client)
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_model_lab", fake_lab)
+
+    args = argparse.Namespace(
+        output_dir=str(tmp_path),
+        starting_cash=1000.0,
+        objective=["regular"],
+        max_symbols=1,
+        max_scan=10,
+        limit=100,
+        market="futures",
+        compute_backend=None,
+        batch_size=8192,
+        score_batch_size=None,
+    )
+
+    assert cli.command_model_lab(args) == 0
+    assert captured == {
+        "backend_market": "futures",
+        "client_market": "futures",
+        "lab_market": "futures",
+        "compute_backend": "directml",
+    }
+    assert runtime.market_type == "spot"
+    assert "market=futures" in capsys.readouterr().out
 
 
 # --------------------------------------------------------------------------- #
