@@ -138,6 +138,12 @@ def test_advanced_feature_dimension_matches_expand():
 def test_advanced_feature_signature_stable():
     cfg = am.default_config_for("default", FEATURE_NAMES)
     assert am.advanced_feature_signature(cfg) == am.advanced_feature_signature(cfg)
+    triple = am.AdvancedFeatureConfig(
+        base_features=FEATURE_NAMES,
+        label_mode="triple_barrier",
+        label_stop_threshold=0.002,
+    )
+    assert am.advanced_feature_signature(cfg) != am.advanced_feature_signature(triple)
 
 
 def test_default_config_for_branches():
@@ -164,6 +170,23 @@ def test_make_advanced_rows_happy_path():
     assert len(short_horizon_rows) > len(rows)
     assert len(rows[0].features) == am.advanced_feature_dimension(cfg)
     assert rows[0].volume == pytest.approx(volume_by_timestamp[rows[0].timestamp])
+
+
+def test_make_advanced_rows_can_use_triple_barrier_labels() -> None:
+    candles = _candles(120)
+    cfg = am.AdvancedFeatureConfig(
+        base_features=FEATURE_NAMES,
+        label_threshold=0.002,
+        label_stop_threshold=0.001,
+        label_lookahead=4,
+        label_mode="triple_barrier",
+    )
+
+    rows = am.make_advanced_rows(candles, cfg)
+
+    assert rows
+    assert {row.label for row in rows} <= {0, 1}
+    assert "label_mode=triple_barrier" in am.advanced_feature_signature(cfg)
 
 
 def test_make_advanced_rows_handles_missing_index(monkeypatch):

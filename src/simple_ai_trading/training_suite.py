@@ -91,6 +91,7 @@ class CandidateParams:
     confidence_beta: float = 0.85
     label_threshold_multiplier: float = 1.0
     label_lookahead_multiplier: float = 1.0
+    label_mode: str = "forward_return"
     seed: int = 7
 
     def asdict(self) -> dict[str, float | int]:
@@ -215,6 +216,8 @@ def _feature_config_for_candidate(
         base,
         label_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
         label_lookahead=max(1, int(round(float(base.label_lookahead) * lookahead_multiplier))),
+        label_mode=str(candidate.label_mode or "forward_return"),
+        label_stop_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
     )
 
 
@@ -260,9 +263,10 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     risk_options = (training.risk_per_trade * 0.50, training.risk_per_trade)
     confidence_options = (0.70, 0.85, 1.0)
     label_profile_options = (
-        (1.0, 1.0),
-        (0.60, 0.50),
-        (1.40, 1.75),
+        (1.0, 1.0, "forward_return"),
+        (0.60, 0.50, "forward_return"),
+        (1.40, 1.75, "forward_return"),
+        (1.0, 1.0, "triple_barrier"),
     )
     seed_options = (7,)
 
@@ -272,7 +276,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
         stop_take_options, risk_options, confidence_options, label_profile_options, seed_options,
     ):
         stop, take = stop_take
-        label_threshold_multiplier, label_lookahead_multiplier = label_profile
+        label_threshold_multiplier, label_lookahead_multiplier, label_mode = label_profile
         candidates.append(CandidateParams(
             epochs=int(epochs),
             learning_rate=float(lr),
@@ -284,6 +288,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
             confidence_beta=max(0.0, min(1.0, float(confidence))),
             label_threshold_multiplier=max(0.10, min(5.0, float(label_threshold_multiplier))),
             label_lookahead_multiplier=max(0.25, min(4.0, float(label_lookahead_multiplier))),
+            label_mode=str(label_mode),
             seed=int(seed),
         ))
     # Deduplicate collisions produced by the arithmetic above.
@@ -619,6 +624,11 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
             if isinstance(feature_cfg, AdvancedFeatureConfig)
             else None
         ),
+        "label_mode": (
+            str(feature_cfg.label_mode)
+            if isinstance(feature_cfg, AdvancedFeatureConfig)
+            else None
+        ),
         "selection_score": _finite_number_or_none(entry.get("selection_score")),
         "validation_score": _finite_number_or_none(entry.get("validation_score")),
         "full_sample_score": _finite_number_or_none(entry.get("full_sample_score")),
@@ -774,7 +784,7 @@ def _ensemble_seed_pack(seed: int) -> tuple[int, int, int]:
     return base, base + 17, base + 37
 
 
-def _candidate_variant(candidate: CandidateParams, **updates: float) -> CandidateParams:
+def _candidate_variant(candidate: CandidateParams, **updates: object) -> CandidateParams:
     payload = candidate.asdict()
     payload.update(updates)
     return CandidateParams(
@@ -788,6 +798,7 @@ def _candidate_variant(candidate: CandidateParams, **updates: float) -> Candidat
         confidence_beta=max(0.0, min(1.0, float(payload["confidence_beta"]))),
         label_threshold_multiplier=max(0.10, min(5.0, float(payload["label_threshold_multiplier"]))),
         label_lookahead_multiplier=max(0.25, min(4.0, float(payload["label_lookahead_multiplier"]))),
+        label_mode=str(payload.get("label_mode") or "forward_return"),
         seed=int(payload["seed"]),
     )
 
@@ -811,11 +822,22 @@ def _local_refinement_candidates(candidate: CandidateParams) -> list[CandidatePa
         _candidate_variant(candidate, risk_per_trade=candidate.risk_per_trade * 0.50),
         _candidate_variant(candidate, risk_per_trade=candidate.risk_per_trade * 1.25),
         _candidate_variant(candidate, stop_loss_pct=candidate.stop_loss_pct * 0.85),
+        _candidate_variant(candidate, stop_loss_pct=candidate.stop_loss_pct * 1.20),
+        _candidate_variant(
+            candidate,
+            stop_loss_pct=candidate.stop_loss_pct * 0.75,
+            take_profit_pct=candidate.take_profit_pct * 0.75,
+        ),
         _candidate_variant(candidate, take_profit_pct=candidate.take_profit_pct * 1.10),
+        _candidate_variant(candidate, take_profit_pct=candidate.take_profit_pct * 0.80),
         _candidate_variant(candidate, label_threshold_multiplier=candidate.label_threshold_multiplier * 0.80),
         _candidate_variant(candidate, label_threshold_multiplier=candidate.label_threshold_multiplier * 1.20),
         _candidate_variant(candidate, label_lookahead_multiplier=candidate.label_lookahead_multiplier * 0.75),
         _candidate_variant(candidate, label_lookahead_multiplier=candidate.label_lookahead_multiplier * 1.25),
+        _candidate_variant(
+            candidate,
+            label_mode=("triple_barrier" if candidate.label_mode != "triple_barrier" else "forward_return"),
+        ),
     ]
 
 

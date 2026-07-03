@@ -101,7 +101,7 @@ def test_candidate_params_asdict_keys() -> None:
     expected_keys = {
         "epochs", "learning_rate", "l2_penalty",
         "signal_threshold", "stop_loss_pct", "take_profit_pct", "risk_per_trade",
-        "confidence_beta", "label_threshold_multiplier", "label_lookahead_multiplier", "seed",
+        "confidence_beta", "label_threshold_multiplier", "label_lookahead_multiplier", "label_mode", "seed",
     }
     assert set(d.keys()) == expected_keys
 
@@ -112,7 +112,7 @@ def test_candidate_params_asdict_keys() -> None:
 def test_candidate_grid_returns_unique_deduped_list() -> None:
     training = get_objective("default").training
     grid = _candidate_grid(training)
-    assert len(grid) == 864
+    assert len(grid) == 1152
     # dedupe check: no two entries share identical tuple of values
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
@@ -124,6 +124,7 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     confidence_set = {c.confidence_beta for c in grid}
     label_threshold_set = {c.label_threshold_multiplier for c in grid}
     label_lookahead_set = {c.label_lookahead_multiplier for c in grid}
+    label_mode_set = {c.label_mode for c in grid}
     seed_set = {c.seed for c in grid}
     assert len(epoch_set) >= 2
     assert len(lr_set) >= 2
@@ -133,6 +134,7 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     assert confidence_set == {0.70, 0.85, 1.0}
     assert label_threshold_set == {0.60, 1.0, 1.40}
     assert label_lookahead_set == {0.50, 1.0, 1.75}
+    assert label_mode_set == {"forward_return", "triple_barrier"}
     assert seed_set == {7}
 
 
@@ -160,7 +162,7 @@ def test_candidate_grid_dedupes_colliding_entries() -> None:
     # All candidates distinct after dedup
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
-    assert len(grid) == 432
+    assert len(grid) == 576
 
 
 # ----- calibration helpers --------------------------------------------------
@@ -723,6 +725,7 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
     assert diagnostics["feature_signature"] == "feature-signature-test"
     assert diagnostics["label_threshold"] == pytest.approx(feature_cfg.label_threshold)
     assert diagnostics["label_lookahead"] == feature_cfg.label_lookahead
+    assert diagnostics["label_mode"] == feature_cfg.label_mode
     assert diagnostics["inversion_score"] is None
     assert diagnostics["inversion_validation_result"] == {"realized_pnl": -3.0}
     assert diagnostics["inversion_full_sample_result"] == {"realized_pnl": -4.0}
@@ -1575,10 +1578,10 @@ def test_train_for_objective_promotes_better_local_refinement(
         max_workers=1,
     )
 
-    assert len(_local_refinement_candidates(candidate)) == 16
+    assert len(_local_refinement_candidates(candidate)) == 20
     assert outcome.best_score == 2.0
     assert outcome.best_params["risk_per_trade"] == pytest.approx(0.005)
-    assert outcome.local_refinement_candidates == 16
+    assert outcome.local_refinement_candidates == 20
     assert outcome.ensemble_refined is False
 
 

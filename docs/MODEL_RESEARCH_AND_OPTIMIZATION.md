@@ -20,6 +20,10 @@ gates, not a promise of guaranteed profit.
   optimization, cooldowns, stop guards, and drawdown gates:
   <https://www.freqtrade.io/en/stable/hyperopt/> and
   <https://www.freqtrade.io/en/2024.1/includes/protections/>
+- Triple-barrier labeling, event-driven sampling, and purged validation were
+  used as training inspiration so labels match stop/take economics instead of
+  only future-close direction:
+  <https://link.springer.com/article/10.1186/s40854-025-00866-w>
 - Microsoft DirectML was selected for the Windows-first GPU path because it
   supports DirectX 12 GPUs across AMD, NVIDIA, and Intel on Windows:
   <https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows>
@@ -49,19 +53,26 @@ The optimizer evaluates risk-level-specific weight profiles:
 - `aggressive`: allows stronger expert contribution, but still has to pass
   backtest gates and drawdown limits.
 
-The training-suite grid deliberately includes lower threshold probes and three
-label target/horizon profiles for every risk level. This prevents
-high-confidence-only or single-horizon candidates from being rejected only
-because they never trade, while the objective gates still require positive P&L,
-sufficient closed trades, buy-and-hold edge, and drawdown discipline. Rejected
-model-lab candidates now include per-window `reject_reason` diagnostics so
-operators can distinguish missing trade count, negative P&L, buy-and-hold edge
-failure, drawdown failure, and stopped-by-drawdown failures.
+The training-suite grid deliberately includes lower threshold probes, multiple
+label target/horizon profiles, and both forward-return and stop/take-aware
+triple-barrier labels for every risk level. This prevents high-confidence-only,
+single-horizon, or direction-only candidates from being rejected only because
+they never trade or because the label rewards moves that cannot survive fees,
+spread, stop losses, and take-profit geometry. The objective gates still require
+positive P&L, sufficient closed trades, buy-and-hold edge, and drawdown
+discipline. Rejected model-lab candidates now include per-window `reject_reason`
+diagnostics so operators can distinguish missing trade count, negative P&L,
+buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
 
 For futures, threshold calibration stores the same effective neutral-band
 threshold used by live and backtest direction logic: values below `0.5` are not
 persisted as futures decision thresholds because long/short futures signals use
 `score >= threshold` for long and `score <= 1 - threshold` for short.
+
+After the broad grid is ranked, local refinement also tests tighter and wider
+exit geometry around the best candidate, including lower take-profit variants
+that can close more intraday positions when the first pass fails trade-count
+or buy-and-hold edge gates.
 
 Accepted hybrid candidates must improve or preserve the objective score and pass
 the profitability, drawdown, and minimum-trade gates in
