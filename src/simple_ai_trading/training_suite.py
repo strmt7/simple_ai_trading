@@ -1,6 +1,6 @@
 """Multi-objective training orchestrator with process-pool parallelization.
 
-For every registered objective (Conservative / Default / Risky) the suite:
+For every registered objective (Conservative / Regular / Aggressive) the suite:
 
 1. Expands candles into an advanced feature vector **once** per objective.
 2. Splits the rows into train/eval **once**.
@@ -1399,11 +1399,18 @@ def run_training_suite(
 ) -> SuiteReport:
     """Train one model per objective and persist a suite summary."""
 
-    specs = (
+    requested_specs = (
         [get_objective(name) for name in objectives]
         if objectives
         else [get_objective(name) for name in available_objectives()]
     )
+    specs: list[ObjectiveSpec] = []
+    seen_specs: set[str] = set()
+    for spec in requested_specs:
+        if spec.name in seen_specs:
+            continue
+        seen_specs.add(spec.name)
+        specs.append(spec)
     names = tuple(spec.name for spec in specs)
     outcomes: list[ObjectiveOutcome] = []
     total_rows = 0

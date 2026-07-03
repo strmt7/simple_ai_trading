@@ -43,7 +43,7 @@ def test_available_and_describe():
 
 
 def test_get_objective_lookups():
-    assert obj.get_objective("DEFAULT").name == "regular"
+    assert obj.get_objective("DEFAULT").name == "conservative"
     assert obj.get_objective("balanced").name == "regular"
     assert obj.get_objective("risky").name == "aggressive"
     with pytest.raises(ValueError):
@@ -56,6 +56,7 @@ def test_scorer_paths_basic():
     result = _result()
     assert obj.CONSERVATIVE.score(result) < obj.RISKY.score(result)
     assert obj.DEFAULT.accepts(result) is True
+    assert obj.DEFAULT.name == "conservative"
 
 
 def test_stopped_by_drawdown_penalty_paths():
@@ -82,8 +83,8 @@ def test_min_closed_trades_gate():
 
 def test_min_realized_pnl_gate():
     r = _result(realized_pnl=-0.01, closed_trades=10)
-    assert obj.DEFAULT.accepts(r) is False
-    ranked = obj.rank_candidates([({"id": "negative"}, r)], obj.DEFAULT)
+    assert obj.REGULAR.accepts(r) is False
+    ranked = obj.rank_candidates([({"id": "negative"}, r)], obj.REGULAR)
     assert "realized_pnl<=0.0" in ranked[0]["reject_reason"]
 
 
@@ -95,8 +96,8 @@ def test_positive_pnl_negative_buy_hold_edge_is_rejected():
         closed_trades=10,
     )
 
-    assert obj.DEFAULT.accepts(r) is False
-    ranked = obj.rank_candidates([({"id": "underperformer"}, r)], obj.DEFAULT)
+    assert obj.REGULAR.accepts(r) is False
+    ranked = obj.rank_candidates([({"id": "underperformer"}, r)], obj.REGULAR)
     assert ranked[0]["accepted"] is False
     assert ranked[0]["score"] == float("-inf")
     assert "edge_vs_buy_hold<0.0" in ranked[0]["reject_reason"]
