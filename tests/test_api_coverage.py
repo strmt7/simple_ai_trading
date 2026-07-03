@@ -660,7 +660,7 @@ def test_get_max_leverage_missing_symbol_uses_default(monkeypatch) -> None:
         ]
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.get_max_leverage("BTCUSDC") == 10
+    assert client.get_max_leverage("BTCUSDC") == 20
 
 
 def test_retry_delay_caps_large_retry_after() -> None:
@@ -696,7 +696,7 @@ def test_get_max_leverage_defaults_when_brackets_have_no_numeric_values(monkeypa
         "_request",
         lambda _method, _path, _params=None, signed=False: [{"symbol": "BTCUSDC", "brackets": [{"foo": "bar"}]}],
     )
-    assert client.get_max_leverage("BTCUSDC") == 10
+    assert client.get_max_leverage("BTCUSDC") == 20
 
 
 def test_place_order_spot_live_uses_spot_endpoint(monkeypatch) -> None:
@@ -812,7 +812,7 @@ def test_set_leverage_low_and_high_clamp(monkeypatch) -> None:
 
     monkeypatch.setattr(client, "_request", request)
     assert client.set_leverage("BTCUSDC", 0)["leverage"] == 1
-    assert client.set_leverage("BTCUSDC", 999)["leverage"] == 10
+    assert client.set_leverage("BTCUSDC", 999)["leverage"] == 20
 
 
 def test_quantize_and_symbol_constraints_handle_bad_data(monkeypatch) -> None:
@@ -854,7 +854,7 @@ def test_get_max_leverage_skips_invalid_payload_parts(monkeypatch) -> None:
         ]
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.get_max_leverage("BTCUSDC") == 10
+    assert client.get_max_leverage("BTCUSDC") == 20
 
 
 def test_set_leverage_spot_is_rejected() -> None:

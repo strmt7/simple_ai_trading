@@ -25,6 +25,7 @@ from .advanced_model import (
     make_advanced_inference_rows,
     make_advanced_rows,
 )
+from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
 from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
@@ -2662,7 +2663,7 @@ def _effective_leverage(cfg: StrategyConfig, market_type: str) -> float:
     leverage = float(cfg.leverage)
     if not math.isfinite(leverage):
         return 1.0
-    return float(max(1.0, min(10.0, leverage)))
+    return float(max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, leverage)))
 
 
 def _resolve_futures_leverage(runtime, cfg: StrategyConfig) -> float:
@@ -3771,16 +3772,16 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if bool(getattr(args, "no_reinvest_profits", False)):
         updates["reinvest_profits"] = False
     if args.leverage is not None:
-        requested = max(1.0, min(10.0, args.leverage))
+        requested = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, args.leverage))
         if runtime.market_type == "futures":
             if runtime.api_key and runtime.api_secret:
                 try:
                     client = _build_client(runtime)
                     max_leverage = client.get_max_leverage(runtime.symbol)
                 except BinanceAPIError:
-                    max_leverage = 10
+                    max_leverage = MAX_AUTONOMOUS_LEVERAGE
             else:
-                max_leverage = 10
+                max_leverage = MAX_AUTONOMOUS_LEVERAGE
             requested = min(requested, float(max_leverage))
         updates["leverage"] = requested
     if args.risk is not None:
@@ -4404,13 +4405,13 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
 def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     cfg = load_strategy()
     runtime = load_runtime()
-    max_leverage = 10.0
+    max_leverage = MAX_AUTONOMOUS_LEVERAGE
     if runtime.market_type == "futures" and runtime.api_key and runtime.api_secret:
         try:
             client = _build_client(runtime)
-            max_leverage = min(10.0, float(client.get_max_leverage(runtime.symbol)))
+            max_leverage = min(MAX_AUTONOMOUS_LEVERAGE, float(client.get_max_leverage(runtime.symbol)))
         except BinanceAPIError:
-            max_leverage = 10.0
+            max_leverage = MAX_AUTONOMOUS_LEVERAGE
     candles = _load_rows_for_command(args.input, label="Tune data load failed")
     if candles is None:
         return 2
@@ -5181,8 +5182,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     qty = 0.0
     wait_ticks = cfg.cooldown_minutes
     cooldown_left = 0
-    if leverage > 10.0:
-        leverage = 10.0
+    if leverage > MAX_AUTONOMOUS_LEVERAGE:
+        leverage = MAX_AUTONOMOUS_LEVERAGE
     elif leverage < 1.0:
         leverage = 1.0
     equity_peak = cash
@@ -5201,7 +5202,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             set_response = client.set_leverage(runtime.symbol, int(leverage))
             leverage_value = set_response.get("leverage") if isinstance(set_response, dict) else None
             if leverage_value is not None:
-                leverage = max(1.0, min(10.0, _safe_float(leverage_value) or leverage))
+                leverage = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _safe_float(leverage_value) or leverage))
                 post_set_risk_policy = build_risk_policy_report(
                     runtime,
                     cfg,

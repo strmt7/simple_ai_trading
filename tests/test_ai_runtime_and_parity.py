@@ -111,4 +111,4 @@ def test_runtime_ai_defaults_enabled_and_strategy_defaults_conservative() -> Non
     assert runtime.ai_min_free_vram_gb == 8.0
     assert strategy.risk_level == "conservative"
     assert strategy.reinvest_profits is False
-    assert strategy.leverage == 10.0
+    assert strategy.leverage == 20.0

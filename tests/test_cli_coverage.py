@@ -495,7 +495,7 @@ def test_resolve_futures_leverage(monkeypatch) -> None:
     assert cli._resolve_futures_leverage(runtime, cfg) == 10.0
 
     runtime_no_key = RuntimeConfig(market_type="futures", api_key="", api_secret="")
-    assert cli._resolve_futures_leverage(runtime_no_key, cfg) == 10.0
+    assert cli._resolve_futures_leverage(runtime_no_key, cfg) == 20.0
 
     runtime_spot = RuntimeConfig(market_type="spot")
     assert cli._resolve_futures_leverage(runtime_spot, cfg) == 1.0
@@ -5273,9 +5273,9 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
         cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, model=str(model_file), leverage=12.0))
         == 0
     )
-    assert client.set_calls == [10]
+    assert client.set_calls == [12]
     assert client.orders
-    assert client.orders[0][3] == 10.0
+    assert client.orders[0][3] == 12.0
     assert "effective leverage" in capsys.readouterr().out
 
 

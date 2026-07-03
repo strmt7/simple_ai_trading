@@ -128,7 +128,7 @@ assert that every CLI command appears in the Windows app.
 - No static list of approved symbols. Liquidity must be measured from exchange
   data.
 - No mainnet trading by default.
-- No leverage above 10x.
+- No leverage above 20x.
 - No AI in CPU-only mode.
 - No non-profitable accepted model-lab outcome.
 - No selected training-suite model without purged walk-forward evidence when

@@ -21,9 +21,9 @@ def test_futures_leverage_bracket_parsing(monkeypatch) -> None:
         raise AssertionError(f"unexpected endpoint: {path}")
 
     monkeypatch.setattr(client, "_request", fake_request)
-    assert client.get_max_leverage("BTCUSDC") == 10
+    assert client.get_max_leverage("BTCUSDC") == 20
     response = client.set_leverage("BTCUSDC", 100)
-    assert response["leverage"] == 10
+    assert response["leverage"] == 20
     assert calls == [
         ("GET", "/fapi/v1/leverageBracket"),
         ("GET", "/fapi/v1/leverageBracket"),

@@ -14,7 +14,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - Default symbols: `BTCUSDC`, `ETHUSDC`, `BNBUSDC`; users can configure any Binance symbol, then `universe` must prove liquidity before use.
 - Conservative risk profile by default, with `conservative`, `regular`, and `aggressive` profiles.
 - Mandatory diversification controls: minimum eligible assets, single-asset allocation cap, portfolio risk cap, and max open positions.
-- Futures leverage allowed only up to the app-level safety ceiling of `10x`; default is no leverage (`1x`).
+- Futures leverage allowed only up to the app-level safety ceiling of `20x`; default is no leverage (`1x`).
 - Profit reinvestment is disabled by default. Enabling it prints a warning because compounding amplifies losses as well as gains.
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
@@ -132,7 +132,7 @@ simple-ai-trading autonomous status
 - Stricter liquidity/spread thresholds.
 - Lower drawdown tolerance.
 
-`regular` and `aggressive` relax thresholds gradually, but still keep leverage capped at `10x`, require diversification, and preserve exchange/testnet safeguards.
+`regular` and `aggressive` relax thresholds gradually, but still keep leverage capped at `20x`, require diversification, and preserve exchange/testnet safeguards.
 
 Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, and backtester all use the same stop-loss-sized notional calculation.
 
@@ -155,7 +155,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - Mainnet signed calls are disabled by default.
 - Testnet or Demo Trading must be enabled for signed execution.
 - Runtime credentials are redacted in artifacts.
-- `10x` leverage is the hard app cap even if Binance reports a larger exchange bracket.
+- `20x` leverage is the hard app cap even if Binance reports a larger exchange bracket.
 - `universe` must prove liquidity for the configured diversified symbols.
 - CPU-only mode disables AI.
 - CLI and Windows app command parity is tested.
