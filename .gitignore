@@ -19,6 +19,7 @@ htmlcov/
 src/*.egg-info/
 build/
 dist/
+out/
 *_raw_payloads/
 .mypy_cache/
 .ruff_cache/

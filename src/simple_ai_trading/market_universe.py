@@ -222,3 +222,84 @@ def select_tradeable_universe(
         rejected=rejected,
         min_required=max(1, strategy.min_diversified_assets),
     )
+
+
+def rank_high_liquidity_universe(
+    client: BinanceClient,
+    strategy: StrategyConfig,
+    *,
+    quote_asset: str = DEFAULT_QUOTE_ASSET,
+    max_symbols: int = 12,
+    max_scan: int = 250,
+) -> UniverseSelection:
+    """Automatically rank exchange symbols by live liquidity without an allowlist."""
+
+    quote_asset = str(quote_asset or DEFAULT_QUOTE_ASSET).upper()
+    exchange_symbols = _exchange_symbol_map(client)
+    tickers = {
+        str(item.get("symbol") or "").upper(): item
+        for item in client.get_all_tickers_24h()
+        if isinstance(item, Mapping) and item.get("symbol")
+    }
+    books = {
+        str(item.get("symbol") or "").upper(): item
+        for item in client.get_all_book_tickers()
+        if isinstance(item, Mapping) and item.get("symbol")
+    }
+    candidates: list[tuple[float, str, MarketEligibility]] = []
+    rejected: list[MarketEligibility] = []
+    for symbol, symbol_info in exchange_symbols.items():
+        if not symbol.endswith(quote_asset):
+            continue
+        ticker = tickers.get(symbol)
+        if ticker is None:
+            continue
+        quote_volume = _safe_float(ticker.get("quoteVolume"))
+        trade_count = _safe_int(ticker.get("count"))
+        rank = quote_volume + (trade_count * 1000.0)
+        status = str(symbol_info.get("status") if symbol_info else "MISSING")
+        reasons: list[str] = []
+        if status != "TRADING":
+            reasons.append(f"status_{status.lower()}")
+        if _looks_structurally_dangerous(symbol, quote_asset):
+            reasons.append("leveraged_or_inverse_token_pattern")
+        spread_bps = _spread_bps(books.get(symbol, {}))
+        if quote_volume < strategy.min_quote_volume_usdc:
+            reasons.append("quote_volume_below_threshold")
+        if trade_count < strategy.min_trade_count_24h:
+            reasons.append("trade_count_below_threshold")
+        if spread_bps > strategy.max_spread_bps:
+            reasons.append("spread_above_threshold")
+        liquidity_score = _score_liquidity(
+            quote_volume=quote_volume,
+            trade_count=trade_count,
+            spread_bps=spread_bps,
+            strategy=strategy,
+        )
+        if liquidity_score < strategy.min_liquidity_score:
+            reasons.append("liquidity_score_below_threshold")
+        item = MarketEligibility(
+            symbol=symbol,
+            eligible=not reasons,
+            status=status,
+            quote_volume=quote_volume,
+            trade_count=trade_count,
+            spread_bps=spread_bps,
+            liquidity_score=liquidity_score,
+            reasons=tuple(dict.fromkeys(reasons)),
+        )
+        if item.eligible:
+            candidates.append((rank, symbol, item))
+        else:
+            rejected.append(item)
+    candidates.sort(key=lambda entry: (entry[0], entry[2].liquidity_score), reverse=True)
+    rejected.sort(key=lambda item: (item.quote_volume, item.trade_count), reverse=True)
+    selected = tuple(item for _rank, _symbol, item in candidates[: max(1, int(max_symbols))])
+    requested = tuple(item.symbol for _rank, _symbol, item in candidates[: max(1, int(max_scan))])
+    return UniverseSelection(
+        quote_asset=quote_asset,
+        requested=requested or tuple(item.symbol for item in selected),
+        eligible=selected,
+        rejected=tuple(rejected[: max(0, int(max_scan))]),
+        min_required=max(1, min(strategy.min_diversified_assets, int(max_symbols))),
+    )

@@ -476,7 +476,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             label_threshold=0.0010,
             label_lookahead=8,
         )
-    if objective_name == "risky":
+    if objective_name in {"risky", "aggressive"}:
         return AdvancedFeatureConfig(
             base_features=names,
             polynomial_degree=3,

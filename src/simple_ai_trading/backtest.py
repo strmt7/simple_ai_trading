@@ -240,6 +240,12 @@ def _backtest_probabilities(
     backend = resolve_backend(compute_backend or "cpu")
     if backend.kind == "cpu":
         return [model.predict_proba(row.features) for row in rows], backend
+    if getattr(model, "hybrid_experts", None):
+        fallback = _fallback_score_backend(
+            backend,
+            "hybrid model-zoo scoring uses unified CPU expert path after GPU-trained base model",
+        )
+        return [model.predict_proba(row.features) for row in rows], fallback
     try:
         return _batch_probabilities_torch(rows, model, backend=backend, batch_size=batch_size), backend
     except Exception as exc:

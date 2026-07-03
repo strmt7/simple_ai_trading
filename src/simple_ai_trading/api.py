@@ -612,9 +612,25 @@ class BinanceClient:
         endpoint = "/api/v3/ticker/24hr" if self.market_type == "spot" else "/fapi/v1/ticker/24hr"
         return self._request_dict("GET", endpoint, {"symbol": symbol.upper()}, label="24h ticker")
 
+    def get_all_tickers_24h(self) -> list[Dict[str, object]]:
+        endpoint = "/api/v3/ticker/24hr" if self.market_type == "spot" else "/fapi/v1/ticker/24hr"
+        return [
+            dict(item)
+            for item in self._request_list("GET", endpoint, label="24h tickers")
+            if isinstance(item, dict)
+        ]
+
     def get_book_ticker(self, symbol: str) -> Dict[str, object]:
         endpoint = "/api/v3/ticker/bookTicker" if self.market_type == "spot" else "/fapi/v1/ticker/bookTicker"
         return self._request_dict("GET", endpoint, {"symbol": symbol.upper()}, label="book ticker")
+
+    def get_all_book_tickers(self) -> list[Dict[str, object]]:
+        endpoint = "/api/v3/ticker/bookTicker" if self.market_type == "spot" else "/fapi/v1/ticker/bookTicker"
+        return [
+            dict(item)
+            for item in self._request_list("GET", endpoint, label="book tickers")
+            if isinstance(item, dict)
+        ]
 
     def get_futures_premium_index(self, symbol: str) -> Dict[str, object]:
         if self.market_type != "futures":

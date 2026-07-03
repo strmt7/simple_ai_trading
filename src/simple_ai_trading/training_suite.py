@@ -38,6 +38,7 @@ from .advanced_model import (
 from .api import Candle
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
 from .features import ModelRow
+from .hybrid_models import optimize_hybrid_model_zoo
 from .model import (
     TrainedModel,
     calibrate_probability_temperature,
@@ -63,6 +64,14 @@ _ENSEMBLE_REFINEMENT_CANDIDATES = 3
 # ==========================================================================
 # Public dataclasses
 # ==========================================================================
+
+
+class TrainingSuiteRejected(ValueError):
+    """Raised when every candidate for an objective fails its risk gates."""
+
+    def __init__(self, message: str, *, row_count: int) -> None:
+        super().__init__(message)
+        self.row_count = int(row_count)
 
 
 @dataclass
@@ -113,6 +122,11 @@ class ObjectiveOutcome:
     training_backend_requested: str = "cpu"
     training_backend_kind: str = "cpu"
     training_backend_device: str = "cpu"
+    hybrid_model: bool = False
+    hybrid_profile: str = "base_only"
+    hybrid_base_score: float | None = None
+    hybrid_best_score: float | None = None
+    hybrid_evaluated_profiles: int = 0
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -849,9 +863,71 @@ def train_for_objective(
             if ensemble_result["score"] > best["score"] + 1e-12:
                 best = ensemble_result
 
+        best_strategy = best["strategy"]
+        model_train_rows, selection_rows = _walk_forward_split(train_rows)
+        can_optimize_hybrid = (
+            bool(model_train_rows)
+            and bool(selection_rows)
+            and int(getattr(best["model"], "feature_dim", -1)) == len(model_train_rows[0].features)
+            and objective.name in available_objectives()
+        )
+        if can_optimize_hybrid:
+            hybrid_report = optimize_hybrid_model_zoo(
+                best["model"],
+                model_train_rows,
+                selection_rows,
+                best_strategy,
+                objective_name=objective.name,
+                market_type=market_type,
+                starting_cash=starting_cash,
+                compute_backend=compute_backend or "cpu",
+                score_batch_size=effective_score_batch_size,
+                feature_count=len(base_strategy.enabled_features),
+            )
+        else:
+            hybrid_report = None
+        if hybrid_report is not None and hybrid_report.accepted:
+            holdout_result = run_backtest(
+                eval_rows,
+                hybrid_report.model,
+                best_strategy,
+                starting_cash=starting_cash,
+                market_type=market_type,
+                compute_backend=compute_backend or "cpu",
+                score_batch_size=effective_score_batch_size,
+            )
+            holdout_score = objective.score(holdout_result) if objective.accepts(holdout_result) else float("-inf")
+            full_result = run_backtest(
+                rows,
+                hybrid_report.model,
+                best_strategy,
+                starting_cash=starting_cash,
+                market_type=market_type,
+                compute_backend=compute_backend or "cpu",
+                score_batch_size=effective_score_batch_size,
+            )
+            full_score = objective.score(full_result) if objective.accepts(full_result) else float("-inf")
+            hybrid_score = min(float(holdout_score), float(full_score))
+            if hybrid_score > float(best["score"]) + 1e-12:
+                best = {
+                    **best,
+                    "score": float(hybrid_score),
+                    "model": hybrid_report.model,
+                    "validation_score": float(holdout_score),
+                    "full_sample_score": float(full_score),
+                    "hybrid_model": True,
+                    "hybrid_profile": hybrid_report.best_profile,
+                    "hybrid_base_score": hybrid_report.base_score,
+                    "hybrid_best_score": hybrid_report.best_score,
+                    "hybrid_evaluated_profiles": hybrid_report.evaluated_profiles,
+                }
+
     rejected = sum(1 for entry in results if entry["score"] == float("-inf"))
     if not math.isfinite(float(best["score"])):
-        raise ValueError(f"All {objective.name} training candidates were rejected by objective gates")
+        raise TrainingSuiteRejected(
+            f"All {objective.name} training candidates were rejected by objective gates",
+            row_count=len(rows),
+        )
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = output_dir / f"model_{objective.name}.json"
     serialize_model(best["model"], model_path)
@@ -903,6 +979,19 @@ def train_for_objective(
         training_backend_requested=str(getattr(best["model"], "training_backend_requested", "cpu")),
         training_backend_kind=str(getattr(best["model"], "training_backend_kind", "cpu")),
         training_backend_device=str(getattr(best["model"], "training_backend_device", "cpu")),
+        hybrid_model=bool(best.get("hybrid_model", False)),
+        hybrid_profile=str(best.get("hybrid_profile", "base_only")),
+        hybrid_base_score=(
+            float(best["hybrid_base_score"])
+            if best.get("hybrid_base_score") is not None
+            else None
+        ),
+        hybrid_best_score=(
+            float(best["hybrid_best_score"])
+            if best.get("hybrid_best_score") is not None
+            else None
+        ),
+        hybrid_evaluated_profiles=int(best.get("hybrid_evaluated_profiles", 0)),
     )
 
 
@@ -922,8 +1011,12 @@ def run_training_suite(
 ) -> SuiteReport:
     """Train one model per objective and persist a suite summary."""
 
-    names = tuple(objectives) if objectives else available_objectives()
-    specs = [get_objective(name) for name in names]
+    specs = (
+        [get_objective(name) for name in objectives]
+        if objectives
+        else [get_objective(name) for name in available_objectives()]
+    )
+    names = tuple(spec.name for spec in specs)
     outcomes: list[ObjectiveOutcome] = []
     total_rows = 0
     for spec in specs:
@@ -988,7 +1081,7 @@ def preview_candidates() -> list[dict[str, object]]:
 
 def rank_report(
     candidates_with_results: Sequence[tuple[dict[str, object], BacktestResult]],
-    objective: str | ObjectiveSpec = "default",
+    objective: str | ObjectiveSpec = "regular",
 ) -> list[dict[str, object]]:
     """Rank precomputed backtest results under an objective.
 
@@ -1005,6 +1098,7 @@ __all__ = [
     "CandidateParams",
     "ObjectiveOutcome",
     "SuiteReport",
+    "TrainingSuiteRejected",
     "describe_candidate_grid",
     "preview_candidates",
     "rank_candidates",

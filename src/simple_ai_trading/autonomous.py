@@ -112,7 +112,7 @@ class AutonomousConfig:
     never busy-waits.
     """
 
-    objective: str = "default"
+    objective: str = "conservative"
     poll_seconds: float = 30.0
     min_unrealized_close_pct: float | None = None  # auto-close at this pnl%
     max_unrealized_close_pct: float | None = None  # auto-close above this pnl%

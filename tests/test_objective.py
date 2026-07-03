@@ -32,9 +32,9 @@ def _result(**overrides) -> BacktestResult:
 
 def test_available_and_describe():
     names = obj.available_objectives()
-    assert set(names) == {"conservative", "default", "risky"}
+    assert set(names) == {"conservative", "regular", "aggressive"}
     described = obj.describe_objectives()
-    assert {entry["name"] for entry in described} == {"conservative", "default", "risky"}
+    assert {entry["name"] for entry in described} == {"conservative", "regular", "aggressive"}
     assert all("summary" in entry for entry in described)
     assert obj.RISKY.max_drawdown_rejection <= 0.30
     assert obj.RISKY.training is not None
@@ -43,8 +43,9 @@ def test_available_and_describe():
 
 
 def test_get_objective_lookups():
-    assert obj.get_objective("DEFAULT").name == "default"
-    assert obj.get_objective("balanced").name == "default"
+    assert obj.get_objective("DEFAULT").name == "regular"
+    assert obj.get_objective("balanced").name == "regular"
+    assert obj.get_objective("risky").name == "aggressive"
     with pytest.raises(ValueError):
         obj.get_objective("")
     with pytest.raises(ValueError):

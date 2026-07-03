@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import sys
+
 from simple_ai_trading.ai_runtime import AIRuntimeConfig, detect_ai_capabilities
 from simple_ai_trading.command_contract import command_names
 from simple_ai_trading.compute import BackendInfo
+from simple_ai_trading import windows_app
 from simple_ai_trading.windows_app import WINDOWS_APP_COMMANDS
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
@@ -37,6 +40,48 @@ def test_windows_app_commands_match_cli_contract() -> None:
     assert set(WINDOWS_APP_COMMANDS) == set(command_names())
     assert "ai" in WINDOWS_APP_COMMANDS
     assert "backtest" in WINDOWS_APP_COMMANDS
+    assert "model-lab" in WINDOWS_APP_COMMANDS
+
+
+def test_windows_launcher_reports_missing_native_executable(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(windows_app, "native_executable_candidates", lambda: ())
+    monkeypatch.setattr(windows_app, "find_native_executable", lambda: None)
+    assert windows_app.main() == 2
+    assert "Native Windows app executable was not found" in capsys.readouterr().err
+
+
+def test_windows_launcher_runs_native_executable(monkeypatch, tmp_path) -> None:
+    exe = tmp_path / "SimpleAITrading.exe"
+    exe.write_text("", encoding="utf-8")
+    calls = {}
+    monkeypatch.setattr(windows_app, "find_native_executable", lambda: exe)
+    def fake_call(args, env):
+        calls["args"] = args
+        calls["env"] = env
+        return 0
+
+    monkeypatch.setattr(windows_app.subprocess, "call", fake_call)
+    assert windows_app.main() == 0
+    assert calls["args"] == [str(exe)]
+    assert calls["env"]["SIMPLE_AI_TRADING_PYTHON"] == sys.executable
+
+
+def test_windows_launcher_help_exits_cleanly(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(sys, "argv", ["simple-ai-trading-windows", "--help"])
+    assert windows_app.main() == 0
+    assert "usage: simple-ai-trading-windows" in capsys.readouterr().out
+
+
+def test_generated_native_contract_matches_cli() -> None:
+    header = windows_app._repo_root() / "native" / "windows" / "generated" / "command_contract.hpp"
+    text = header.read_text(encoding="utf-8")
+    for name in command_names():
+        assert f'L"{name}"' in text
+
+
+def test_native_window_initializes_hwnd_during_create() -> None:
+    source = (windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp").read_text(encoding="utf-8")
+    assert "self->hwnd_ = hwnd;" in source
 
 
 def test_runtime_ai_defaults_enabled_and_strategy_defaults_conservative() -> None:

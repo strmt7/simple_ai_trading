@@ -886,3 +886,18 @@ def test_symbol_constraints_and_klines_cover_fallbacks_and_spot_endpoint(monkeyp
     assert constraints.max_notional == 0.0
     assert client.ensure_btcusdc()["symbol"] == "BTCUSDC"
     assert client.get_klines("BTCUSDC", "15m").__class__ is list
+def test_bulk_market_ticker_helpers_use_public_list_endpoints(monkeypatch) -> None:
+    client = BinanceClient("", "", testnet=True, market_type="spot")
+    calls: list[tuple[str, str]] = []
+
+    def fake_request_list(method, endpoint, params=None, *, label, signed=False):
+        calls.append((method, endpoint))
+        assert params is None
+        assert signed is False
+        assert label in {"24h tickers", "book tickers"}
+        return [{"symbol": "BTCUSDC"}, object()]
+
+    monkeypatch.setattr(client, "_request_list", fake_request_list)
+    assert client.get_all_tickers_24h() == [{"symbol": "BTCUSDC"}]
+    assert client.get_all_book_tickers() == [{"symbol": "BTCUSDC"}]
+    assert calls == [("GET", "/api/v3/ticker/24hr"), ("GET", "/api/v3/ticker/bookTicker")]

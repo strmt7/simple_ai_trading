@@ -1,0 +1,252 @@
+name: Windows beta release pipeline
+description: Build, test, package, smoke-test, and publish a Simple AI Trading Windows beta prerelease.
+
+inputs:
+  release_version:
+    description: Beta SemVer product version without a v prefix; empty uses pyproject version.
+    required: false
+    default: ""
+  replace_existing:
+    description: Delete an existing beta release/tag before publishing.
+    required: true
+  replacement_acknowledgement:
+    description: Required exact acknowledgement when replace_existing is true.
+    required: true
+  publish_release:
+    description: Publish the draft prerelease after artifacts are attached.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Export release inputs
+      shell: pwsh
+      env:
+        RELEASE_VERSION_INPUT: ${{ inputs.release_version }}
+        REPLACE_EXISTING: ${{ inputs.replace_existing }}
+        REPLACEMENT_ACKNOWLEDGEMENT: ${{ inputs.replacement_acknowledgement }}
+        PUBLISH_RELEASE: ${{ inputs.publish_release }}
+      run: |
+        $ErrorActionPreference = "Stop"
+        foreach ($name in @("RELEASE_VERSION_INPUT", "REPLACE_EXISTING", "REPLACEMENT_ACKNOWLEDGEMENT", "PUBLISH_RELEASE")) {
+            $value = [string](Get-Item "env:$name").Value
+            if ($value -match "[`r`n]") {
+                throw "$name must be a single-line value."
+            }
+            Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value"
+        }
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+        cache: pip
+        cache-dependency-path: pyproject.toml
+
+    - name: Resolve release metadata
+      id: meta
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        New-Item -ItemType Directory -Force -Path out | Out-Null
+        $existingTagsPath = "out\existing-release-tags.txt"
+        $existingTags = @(gh api --paginate "repos/$env:GITHUB_REPOSITORY/tags" --jq ".[].name")
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to query existing release tags."
+        }
+        $existingTags | Where-Object { $_ } | Sort-Object -Unique | Set-Content -LiteralPath $existingTagsPath
+        if (-not (Test-Path -LiteralPath $existingTagsPath)) {
+            Set-Content -LiteralPath $existingTagsPath -Value ""
+        }
+
+        if ($env:REPLACE_EXISTING -notin @("true", "false")) {
+            throw "replace_existing must be true or false."
+        }
+        if ($env:PUBLISH_RELEASE -notin @("true", "false")) {
+            throw "publish_release must be true or false."
+        }
+        $replaceExisting = $env:REPLACE_EXISTING -eq "true"
+        $requestedVersion = [string]$env:RELEASE_VERSION_INPUT
+        if ($replaceExisting -and -not $requestedVersion.Trim()) {
+            throw "replace_existing requires an explicit release_version."
+        }
+        if (-not $replaceExisting -and $env:REPLACEMENT_ACKNOWLEDGEMENT.Trim()) {
+            throw "replacement_acknowledgement is only valid when replace_existing=true."
+        }
+        if ($replaceExisting) {
+            $expectedAcknowledgement = "replace $($requestedVersion.Trim())"
+            if ($env:REPLACEMENT_ACKNOWLEDGEMENT -ne $expectedAcknowledgement) {
+                throw "replace_existing=true requires replacement_acknowledgement exactly '$expectedAcknowledgement'."
+            }
+        }
+
+        $metadataArgs = @(
+            "tools/release_metadata.py",
+            "--requested-version", $requestedVersion,
+            "--existing-tags-file", $existingTagsPath,
+            "--repo-root", "$PWD",
+            "--json-output", "out\release-metadata.json"
+        )
+        if ($replaceExisting) {
+            $metadataArgs += "--allow-existing"
+        }
+        python @metadataArgs
+        $metadata = Get-Content -LiteralPath out\release-metadata.json -Raw | ConvertFrom-Json
+        $releaseTag = [string]$metadata.RELEASE_TAG
+
+        $existingRelease = $false
+        gh release view $releaseTag *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $existingRelease = $true
+        } else {
+            $global:LASTEXITCODE = 0
+        }
+        $existingTag = $false
+        $tagQuery = git ls-remote --tags origin "refs/tags/$releaseTag"
+        if ($tagQuery) {
+            $existingTag = $true
+        }
+        if (($existingRelease -or $existingTag) -and -not $replaceExisting) {
+            throw "Release or tag $releaseTag already exists. Re-run with replace_existing=true to replace it."
+        }
+        if ($replaceExisting) {
+            "REPLACE_RELEASE_TAG=$releaseTag" | Add-Content -LiteralPath $env:GITHUB_ENV
+        }
+
+    - name: Install project and release dependencies
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        python -m pip install -q --upgrade pip
+        python -m pip install -q -e .
+        python -m pip install -q build coverage pytest
+
+    - name: Run Python tests and coverage gate
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        python -m coverage run --source=src/simple_ai_trading -m pytest -q
+        python -m coverage xml -o out\coverage.xml
+        python -m coverage report --fail-under=95
+
+    - name: Build native Windows app
+      shell: pwsh
+      run: powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
+
+    - name: Smoke CLI and native launcher
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        python -m simple_ai_trading --help
+        python -m simple_ai_trading objectives
+        python -m simple_ai_trading compute
+        python -m simple_ai_trading.windows_app --help
+        .\run-shell.cmd --help
+        .\run-gui.cmd --help
+        if (-not (Test-Path -LiteralPath "build\windows\SimpleAITrading.exe")) {
+            throw "Native SimpleAITrading.exe was not produced."
+        }
+
+    - name: Build Python distributions
+      shell: pwsh
+      run: python -m build --sdist --wheel --outdir out\python-dist
+
+    - name: Create portable Windows beta bundle
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $bundle = Join-Path $PWD "out\$env:PACKAGE_BASE"
+        New-Item -ItemType Directory -Force -Path $bundle | Out-Null
+        New-Item -ItemType Directory -Force -Path (Join-Path $bundle "bin") | Out-Null
+        New-Item -ItemType Directory -Force -Path (Join-Path $bundle "python-dist") | Out-Null
+        Copy-Item -LiteralPath "build\windows\SimpleAITrading.exe" -Destination (Join-Path $bundle "bin\SimpleAITrading.exe")
+        Copy-Item -LiteralPath "run-gui.cmd", "run-shell.cmd", "README.md", "pyproject.toml" -Destination $bundle
+        Copy-Item -LiteralPath "docs" -Destination (Join-Path $bundle "docs") -Recurse
+        Copy-Item -LiteralPath "native\windows\generated\command_contract.hpp" -Destination (Join-Path $bundle "command_contract.hpp")
+        Copy-Item -Path "out\python-dist\*" -Destination (Join-Path $bundle "python-dist")
+        @"
+        Simple AI Trading $env:RELEASE_VERSION beta portable bundle
+
+        1. Install Python 3.11.
+        2. Install the wheel from python-dist.
+        3. Run bin\SimpleAITrading.exe or run-gui.cmd.
+
+        This is a beta prerelease. Mainnet trading remains disabled by default.
+        "@ | Set-Content -LiteralPath (Join-Path $bundle "BETA-NOTES.txt")
+        Compress-Archive -LiteralPath $bundle -DestinationPath "out\$env:PACKAGE_BASE-portable.zip" -Force
+
+    - name: Generate checksums
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        Get-ChildItem -LiteralPath out -Recurse -File |
+            Where-Object { $_.Extension -in @(".zip", ".whl", ".gz", ".xml") } |
+            ForEach-Object {
+                $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
+                "$hash  $($_.Name)" | Set-Content -LiteralPath "$($_.FullName).sha256"
+            }
+
+    - name: Upload release candidate artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: simple-ai-trading-beta-release-candidate
+        path: |
+          out/*.zip
+          out/*.sha256
+          out/python-dist/*
+          out/coverage.xml
+          out/release-metadata.json
+
+    - name: Generate release notes
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        @"
+        Windows beta prerelease generated by the manual beta-release workflow.
+
+        - Release track: beta prerelease.
+        - Python package version: 0.1.0b1 for packaging compatibility.
+        - Native Win32 operator app built on hosted Windows.
+        - CLI, launcher, native build, tests, and coverage gate completed before publishing.
+        - Portable ZIP includes the native app, launch scripts, docs, generated CLI parity header, and Python wheel/sdist artifacts.
+        - Mainnet trading remains disabled by default; use Binance testnet/Demo Trading until live execution reconciliation is separately audited.
+        "@ | Set-Content -LiteralPath "out\release-notes.md"
+
+    - name: Publish GitHub beta prerelease
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $assets = @(
+            "out\$env:PACKAGE_BASE-portable.zip",
+            "out\$env:PACKAGE_BASE-portable.zip.sha256"
+        )
+        $assets += @(Get-ChildItem -LiteralPath "out\python-dist" -File | Where-Object { $_.Extension -ne ".sha256" } | ForEach-Object { $_.FullName })
+        $assets += @(Get-ChildItem -LiteralPath "out\python-dist" -File -Filter "*.sha256" | ForEach-Object { $_.FullName })
+
+        if ($env:REPLACE_EXISTING -eq "true") {
+            if ($env:REPLACE_RELEASE_TAG -ne $env:RELEASE_TAG) {
+                throw "Replacement tag tracking mismatch."
+            }
+            gh release view $env:RELEASE_TAG *> $null
+            if ($LASTEXITCODE -eq 0) {
+                gh release delete $env:RELEASE_TAG --yes --cleanup-tag
+            } else {
+                $global:LASTEXITCODE = 0
+                $tagQuery = git ls-remote --tags origin "refs/tags/$env:RELEASE_TAG"
+                if ($tagQuery) {
+                    gh api -X DELETE "repos/$env:GITHUB_REPOSITORY/git/refs/tags/$env:RELEASE_TAG"
+                }
+            }
+        }
+
+        gh release create $env:RELEASE_TAG @assets `
+          --target $env:GITHUB_SHA `
+          --title "Simple AI Trading $env:RELEASE_TAG" `
+          --notes-file "out\release-notes.md" `
+          --draft `
+          --prerelease
+        gh release view $env:RELEASE_TAG --json tagName,isDraft,isPrerelease,assets
+        if ($env:PUBLISH_RELEASE -eq "true") {
+            gh release edit $env:RELEASE_TAG --draft=false --prerelease
+            gh release view $env:RELEASE_TAG --json tagName,isDraft,isPrerelease,assets
+        }
