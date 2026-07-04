@@ -26,6 +26,7 @@ from .backtest import BacktestResult, run_backtest
 from .execution_simulation import SymbolExecutionProfile
 from .model import ModelLoadError, TrainedModel, load_model
 from .objective import get_objective
+from .regime import classify_market_regime, summarize_regime_windows
 from .training_suite import SuiteReport
 from .types import StrategyConfig
 
@@ -148,6 +149,7 @@ class TemporalWindowResult:
     end_index: int
     rows: int
     result: dict[str, object]
+    regime: dict[str, object]
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -170,6 +172,7 @@ class ObjectiveTemporalRobustnessReport:
     worst_realized_pnl: float
     worst_max_drawdown: float
     statistical_edge: dict[str, object]
+    regime_summary: dict[str, object]
     windows: list[TemporalWindowResult]
     error: str | None = None
 
@@ -192,6 +195,7 @@ class SuiteTemporalRobustnessReport:
     statistical_edge_accepted: bool
     worst_sign_test_p_value: float
     worst_bootstrap_lower_mean_return: float
+    regime_summary: dict[str, object]
     objectives: list[ObjectiveTemporalRobustnessReport]
 
     def asdict(self) -> dict[str, object]:
@@ -609,6 +613,7 @@ def validate_model_temporal_robustness(
         else max(1, int(math.ceil(active_policy.min_windows * active_policy.min_accepted_rate)))
     )
     window_results: list[TemporalWindowResult] = []
+    overall_regime = classify_market_regime(rows).asdict()
     worst_score = float("inf")
     worst_realized = float("inf")
     worst_drawdown = 0.0
@@ -628,6 +633,7 @@ def validate_model_temporal_robustness(
         worst_score = min(worst_score, score)
         worst_realized = min(worst_realized, float(result.realized_pnl))
         worst_drawdown = max(worst_drawdown, float(result.max_drawdown))
+        regime = classify_market_regime(window_rows).asdict()
         window_results.append(TemporalWindowResult(
             objective=spec.name,
             window_index=index,
@@ -638,6 +644,7 @@ def validate_model_temporal_robustness(
             end_index=end,
             rows=len(window_rows),
             result=_result_payload(result),
+            regime=regime,
         ))
     accepted_windows = sum(1 for item in window_results if item.accepted)
     latest_window_accepted = bool(window_results[-1].accepted) if window_results else False
@@ -656,6 +663,17 @@ def validate_model_temporal_robustness(
     )
     if reason is None and not statistical_edge.get("accepted"):
         reason = str(statistical_edge.get("reason") or "statistical_edge_failed")
+    regime_summary = summarize_regime_windows(
+        [
+            {
+                "regime": item.regime,
+                "result": item.result,
+                "accepted": item.accepted,
+            }
+            for item in window_results
+        ],
+        overall_regime=overall_regime,
+    )
     if worst_score == float("inf"):
         worst_score = float("-inf")
     if worst_realized == float("inf"):
@@ -676,6 +694,7 @@ def validate_model_temporal_robustness(
         worst_realized_pnl=float(worst_realized),
         worst_max_drawdown=float(worst_drawdown),
         statistical_edge=statistical_edge,
+        regime_summary=regime_summary,
         windows=window_results,
     )
 
@@ -755,6 +774,7 @@ def validate_suite_temporal_robustness(
                     "bootstrap_lower_mean_return": 0.0,
                     "min_bootstrap_lower_mean_return": float(policy.min_bootstrap_lower_mean_return),
                 },
+                regime_summary=summarize_regime_windows([], overall_regime=classify_market_regime([]).asdict()),
                 windows=[],
                 error=str(exc),
             )
@@ -783,6 +803,21 @@ def validate_suite_temporal_robustness(
         (_finite(edge.get("bootstrap_lower_mean_return")) for edge in edge_reports),
         default=0.0,
     )
+    suite_regime_summary = summarize_regime_windows(
+        [
+            {
+                "regime": window.regime,
+                "result": window.result,
+                "accepted": window.accepted,
+            }
+            for report in objective_reports
+            for window in report.windows
+        ],
+        overall_regime={
+            "dominant_regime": "suite_objective_windows",
+            "rows": total_windows,
+        },
+    )
     return SuiteTemporalRobustnessReport(
         symbol=symbol,
         accepted=bool(objective_reports) and accepted_count == len(objective_reports) and edge_accepted,
@@ -797,6 +832,7 @@ def validate_suite_temporal_robustness(
         statistical_edge_accepted=edge_accepted,
         worst_sign_test_p_value=float(worst_sign_p),
         worst_bootstrap_lower_mean_return=float(worst_bootstrap_lower),
+        regime_summary=suite_regime_summary,
         objectives=objective_reports,
     )
 

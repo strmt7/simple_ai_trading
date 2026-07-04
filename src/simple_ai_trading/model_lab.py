@@ -35,6 +35,7 @@ class SymbolResearchOutcome:
     stress_report_path: str | None = None
     robustness_validation: dict[str, object] | None = None
     robustness_report_path: str | None = None
+    regime_validation: dict[str, object] | None = None
     diagnostics: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
@@ -91,6 +92,8 @@ def _outcome_from_suite(
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
+    robustness_payload = robustness_report.asdict()
+    regime_payload = robustness_payload.get("regime_summary") if isinstance(robustness_payload, dict) else None
     score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
     stress_accepted = bool(stress_report.accepted)
     robustness_accepted = bool(robustness_report.accepted)
@@ -112,8 +115,9 @@ def _outcome_from_suite(
         hybrid_profiles=hybrid_profiles,
         stress_validation=stress_report.asdict(),
         stress_report_path=str(stress_report_path),
-        robustness_validation=robustness_report.asdict(),
+        robustness_validation=robustness_payload,
         robustness_report_path=str(robustness_report_path),
+        regime_validation=regime_payload if isinstance(regime_payload, dict) else None,
     )
 
 

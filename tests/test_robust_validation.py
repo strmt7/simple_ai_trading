@@ -168,6 +168,9 @@ def test_validate_model_temporal_robustness_rejects_bad_latest_window(
     assert report.window_count == 4
     assert report.accepted_windows == 3
     assert report.windows[-1].reject_reason is not None
+    assert report.windows[-1].regime["dominant_regime"]
+    assert report.regime_summary["window_count"] == 4
+    assert "by_regime" in report.regime_summary
     assert report.statistical_edge["positive_windows"] == 3
 
 

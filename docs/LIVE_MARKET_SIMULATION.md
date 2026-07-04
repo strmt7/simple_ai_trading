@@ -70,15 +70,18 @@ intentional fail-closed behavior; a single profitable replay is not enough.
 
 After stress validation, the exact serialized final model is also replayed over
 separate chronological windows. `temporal_robustness.json` records accepted
-window count, latest-window status, worst P&L, and worst drawdown. Conservative
-objectives require the highest window pass rate, regular objectives use the
-middle policy, and aggressive objectives allow more dispersion while still
-requiring multiple profitable windows.
+window count, latest-window status, worst P&L, worst drawdown, and deterministic
+market-regime evidence. Conservative objectives require the highest window pass
+rate, regular objectives use the middle policy, and aggressive objectives allow
+more dispersion while still requiring multiple profitable windows.
 
 The temporal report also includes a statistical edge gate. It computes an exact
 sign-test p-value for positive windows and a deterministic bootstrap lower
 confidence bound for mean window return. A symbol is rejected if the final model
 looks like a lucky aggregate winner rather than a repeatable window-level edge.
+The same report summarizes realized P&L, accepted windows, profit factor, and
+expectancy by detected regime so operators can see when an apparent edge is
+concentrated in one market state.
 
 The training suite also gates selected candidates with purged chronological
 walk-forward folds when enough rows are available. The purge gap is at least the
@@ -115,8 +118,9 @@ Known limitations:
   stricter than flat slippage, but still weaker than full L2 order-book replay.
 - Very small datasets are marked as insufficient for purged walk-forward gates;
   they are useful for unit tests and smoke checks, not production acceptance.
-- Temporal robustness currently uses candle-window replays; full order-book
-  regime replay remains a future improvement after depth snapshots are stored.
+- Temporal robustness currently uses candle-window regime evidence; full
+  order-book regime replay remains a future improvement after depth snapshots
+  are stored.
 - Statistical edge prefers trade-return samples when enough trades exist and
   falls back to window-level P&L for sparse strategies. It is stricter than no
   statistical screen, but still weaker than a full intrabar order-book
@@ -134,7 +138,8 @@ Do not interpret a profitable backtest as approval to trade real money. A candid
 - `audit`
 - `backtest`
 - `backtest-chart`
-- `model-lab` stress, temporal robustness, statistical edge, and portfolio gates
+- `model-lab` stress, temporal robustness, regime evidence, statistical edge,
+  and portfolio gates
 - paper or testnet run review
 
 The project remains non-mainnet-first.
