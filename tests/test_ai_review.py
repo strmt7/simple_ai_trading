@@ -56,6 +56,17 @@ def _write_report(path: Path, *, accepted: bool = True) -> None:
                     "worst_realized_pnl": 4.2,
                     "worst_max_drawdown": 0.01,
                 },
+                "robustness_validation": {
+                    "accepted": accepted,
+                    "window_count": 5,
+                    "accepted_windows": 5 if accepted else 2,
+                    "accepted_window_rate": 1.0 if accepted else 0.4,
+                    "worst_realized_pnl": 2.0 if accepted else -3.0,
+                    "worst_max_drawdown": 0.015,
+                    "statistical_edge_accepted": accepted,
+                    "worst_sign_test_p_value": 0.03125 if accepted else 0.8125,
+                    "worst_bootstrap_lower_mean_return": 0.002 if accepted else -0.006,
+                },
             }
         ],
     }
@@ -157,4 +168,3 @@ def test_ai_review_blocks_on_capability_failure(tmp_path: Path, monkeypatch) -> 
     assert review.approved is False
     assert review.status == "blocked"
     assert "GPU compute backend" in str(review.error)
-
