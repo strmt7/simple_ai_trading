@@ -41,6 +41,12 @@ Execution cost is symbol-specific where market data exists:
   archive-status counts, and checksum-status counts, and it exits nonzero when
   configured minimum rows, maximum gaps, coverage ratio, archive errors,
   checksum mismatches, or required verified checksums are not satisfied.
+- Promotion-grade `tools/optimization_round.py` runs can use the same checks
+  with `--require-prefilled-data`, `--min-data-rows`,
+  `--min-coverage-ratio`, `--max-gap-count`, and
+  `--require-verified-checksum`. In that mode optimization records
+  `data-health.json` and blocks model training/backtesting for a symbol before
+  any network backfill can hide missing or unverified archive data.
 - `data-sync --full-history` pages backward through exchange klines with the
   venue maximum request size until no older rows are returned. Recent bounded
   syncs remain available for incremental refreshes, but reports label them as
