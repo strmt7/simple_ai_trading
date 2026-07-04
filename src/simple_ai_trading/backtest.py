@@ -12,7 +12,8 @@ from .features import ModelRow
 from .liquidity_session import apply_liquidity_session_meta, liquidity_session_adjustment
 from .meta_label import MetaLabelDecision, apply_meta_label_policy
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
-from .risk_controls import stop_loss_sized_notional_pct
+from .regime import classify_market_regime
+from .risk_controls import market_regime_unpredictability, stop_loss_sized_notional_pct
 from .types import StrategyConfig
 
 
@@ -49,6 +50,7 @@ class BacktestResult:
     max_consecutive_losses: int = 0
     meta_label_skips: int = 0
     meta_label_downsizes: int = 0
+    regime_entry_skips: int = 0
 
 
 @dataclass(frozen=True)
@@ -417,6 +419,7 @@ def _result_payload(result: BacktestResult) -> dict[str, float | int]:
         "expectancy": float(getattr(result, "expectancy", 0.0)),
         "average_trade_return": float(getattr(result, "average_trade_return", 0.0)),
         "max_consecutive_losses": int(getattr(result, "max_consecutive_losses", 0)),
+        "regime_entry_skips": int(getattr(result, "regime_entry_skips", 0)),
     }
 
 
@@ -558,6 +561,7 @@ def run_backtest(
     trade_log: list[dict[str, object]] = []
     meta_label_skips = 0
     meta_label_downsizes = 0
+    regime_entry_skips = 0
 
     position_side = 0
     notional = 0.0
@@ -572,6 +576,8 @@ def run_backtest(
     pending_meta = MetaLabelDecision(False, "no_signal", 0.0, 0.0, "initial")
     last_close_timestamp: int | None = None
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
+    unpredictability_cooldown_ms = max(0, int(cfg.unpredictability_cooldown_minutes)) * 60 * 1000
+    regime_cooldown_until: int | None = None
     final_mark_price = rows[-1].close
 
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
@@ -588,6 +594,7 @@ def run_backtest(
         max_daily = None
 
     max_open_positions = int(cfg.max_open_positions)
+    regime_gate_min_rows = max(8, min(len(rows), int(cfg.liquidity_lookback_bars)))
     probabilities, score_backend = _backtest_probabilities(
         rows,
         model,
@@ -616,6 +623,25 @@ def run_backtest(
         pending_meta = apply_liquidity_session_meta(base_pending_meta, liquidity_adjustment) if pending_signal != 0 else base_pending_meta
         price = row.close
         final_mark_price = price
+        regime_gate_ready = row_index + 1 >= regime_gate_min_rows
+        if regime_gate_ready:
+            regime_window_start = max(0, row_index + 1 - max(8, int(cfg.liquidity_lookback_bars)))
+            regime_evidence = classify_market_regime(rows[regime_window_start:row_index + 1])
+            regime_score = market_regime_unpredictability(
+                regime_evidence.dominant_regime,
+                regime_evidence.confidence,
+                regime_evidence.notes,
+            )
+        else:
+            regime_score = 0.0
+        regime_limit = float(cfg.max_regime_unpredictability)
+        regime_score_over_limit = regime_score > regime_limit
+        if regime_score_over_limit and unpredictability_cooldown_ms > 0:
+            regime_cooldown_until = max(
+                int(regime_cooldown_until or row.timestamp),
+                int(row.timestamp) + unpredictability_cooldown_ms,
+            )
+        regime_cooldown_active = regime_cooldown_until is not None and int(row.timestamp) < regime_cooldown_until
         day = _safe_day(row.timestamp)
         if day not in daily_trade_count:
             daily_trade_count[day] = 0
@@ -629,6 +655,9 @@ def run_backtest(
             if execution_meta.size_multiplier <= 0.0:
                 if execution_meta.enabled:
                     meta_label_skips += 1
+                continue
+            if regime_score_over_limit or regime_cooldown_active:
+                regime_entry_skips += 1
                 continue
             if cooldown_active:
                 continue
@@ -861,5 +890,6 @@ def run_backtest(
         max_consecutive_losses=int(path_quality["max_consecutive_losses"]),
         meta_label_skips=int(meta_label_skips),
         meta_label_downsizes=int(meta_label_downsizes),
+        regime_entry_skips=int(regime_entry_skips),
         **_score_backend_payload(score_backend),
     )

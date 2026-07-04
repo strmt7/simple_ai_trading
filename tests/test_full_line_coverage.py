@@ -1110,6 +1110,7 @@ def test_cli_live_spot_close_cooldown_trade_cap_and_signal_artifact(tmp_path, mo
             taker_fee_bps=0.0,
             slippage_bps=0.0,
             enabled_features=("momentum_1",),
+            max_regime_unpredictability=1.0,
         )
     )
     client = _LiveClient()
@@ -1142,7 +1143,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.99]))
 
     save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True, managed_usdc=1000.0))
-    save_strategy(StrategyConfig(slippage_bps=20_000, enabled_features=("momentum_1",)))
+    save_strategy(StrategyConfig(slippage_bps=20_000, enabled_features=("momentum_1",), max_regime_unpredictability=1.0))
     monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(1, 100.0, (0.0,), 0)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: [ModelRow(1, 100.0, (0.0,), 0)])
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.01]))
@@ -1156,6 +1157,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
             taker_fee_bps=6000,
             slippage_bps=10_000,
             enabled_features=("momentum_1",),
+            max_regime_unpredictability=1.0,
         )
     )
     monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(2, 100.0, (0.0,), 1)])
@@ -1177,6 +1179,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
             taker_fee_bps=0.0,
             slippage_bps=0.0,
             enabled_features=("momentum_1",),
+            max_regime_unpredictability=1.0,
         )
     )
     hold_model = _SequenceModel([0.99, 0.5, 0.5])
@@ -1202,6 +1205,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
             taker_fee_bps=0.0,
             slippage_bps=0.0,
             enabled_features=("momentum_1",),
+            max_regime_unpredictability=1.0,
         )
     )
     emergency_model = _SequenceModel([0.99, 0.5])
@@ -1226,6 +1230,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
             taker_fee_bps=0.0,
             slippage_bps=0.0,
             enabled_features=("momentum_1",),
+            max_regime_unpredictability=1.0,
         )
     )
     spot_loss_model = _SequenceModel([0.99, 0.99])

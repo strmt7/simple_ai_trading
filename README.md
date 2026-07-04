@@ -76,6 +76,8 @@ The universe gate does not use a static allowlist. It measures exchange status, 
 
 Out-of-market and low-liquidity handling is also data-probed, not a fixed clock rule. Backtests, `live`, and `autonomous start` compare each bar's volume against trailing per-symbol history and same UTC weekday/hour/minute-bucket history from prior bars. That means holidays, partial sessions, unusually thin periods, and changing market participation are detected from the actual exchange data available for that symbol and timestamp, then translated into stricter signal thresholds and smaller position sizes.
 
+Live entry risk also includes a deterministic market-regime unpredictability gate. Conservative, regular, and aggressive profiles set different `max_regime_unpredictability` thresholds and cooldown durations; volatile chop, mixed/low-separation regimes, short windows, or insufficient data can block fresh entries and force the bot to wait instead of trading into noise.
+
 ## Windows App
 
 Build the native Win32 desktop app:

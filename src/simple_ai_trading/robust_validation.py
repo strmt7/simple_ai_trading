@@ -390,6 +390,7 @@ def _result_payload(result: BacktestResult, *, objective_name: str | None = None
         "average_trade_return": float(getattr(result, "average_trade_return", 0.0)),
         "trade_return_stdev": float(getattr(result, "trade_return_stdev", 0.0)),
         "max_consecutive_losses": int(getattr(result, "max_consecutive_losses", 0)),
+        "regime_entry_skips": int(getattr(result, "regime_entry_skips", 0)),
         "scoring_backend_requested": result.scoring_backend_requested,
         "scoring_backend_kind": result.scoring_backend_kind,
         "scoring_backend_device": result.scoring_backend_device,
