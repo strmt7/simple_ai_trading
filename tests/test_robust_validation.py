@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -172,3 +173,78 @@ def test_validate_suite_under_stress_loads_saved_models(tmp_path: Path, monkeypa
     assert report.objective_count == 1
     assert report.scenario_count == 1
     assert report.objectives[0].model_path == str(model_path)
+
+
+def test_validate_suite_under_stress_uses_model_signature_config(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed_dims: list[int] = []
+
+    def fake_backtest(rows, *_args, **_kwargs):
+        observed_dims.append(len(rows[0].features))
+        return _result()
+
+    monkeypatch.setattr(robust_validation, "run_backtest", fake_backtest)
+    strategy = StrategyConfig()
+    candidate_cfg = replace(
+        default_config_for("regular", strategy.enabled_features),
+        label_lookahead=7,
+        label_threshold=0.00168,
+        label_stop_threshold=0.00168,
+        confluence_windows=(5, 13, 34),
+    )
+    model_path = tmp_path / "model_regular_candidate.json"
+    dim = advanced_feature_dimension(candidate_cfg)
+    serialize_model(
+        TrainedModel(
+            weights=[0.0] * dim,
+            bias=10.0,
+            feature_dim=dim,
+            epochs=1,
+            feature_means=[0.0] * dim,
+            feature_stds=[1.0] * dim,
+            feature_signature=advanced_feature_signature(candidate_cfg),
+        ),
+        model_path,
+    )
+    suite = SuiteReport(
+        outcomes=[
+            ObjectiveOutcome(
+                objective="regular",
+                model_path=model_path,
+                feature_dim=dim,
+                feature_signature=advanced_feature_signature(candidate_cfg),
+                best_score=0.5,
+                best_params={"epochs": 1},
+                explored_candidates=1,
+                rejected_candidates=0,
+                epochs=1,
+                learning_rate=0.01,
+                l2_penalty=0.0,
+                row_count=200,
+                positive_rate=0.5,
+            )
+        ],
+        total_rows=200,
+        total_candles=240,
+        output_dir=tmp_path,
+        summary_path=tmp_path / "summary.json",
+        objectives_run=["regular"],
+    )
+
+    report = robust_validation.validate_suite_under_stress(
+        _candles(),
+        strategy,
+        suite,
+        symbol="AAAUSDC",
+        symbol_profile=SymbolExecutionProfile("AAAUSDC", 1.0, 10_000_000.0, 50_000, 0.9, 100, 0.2),
+        starting_cash=1000.0,
+        market_type="spot",
+        scenarios=[robust_validation.StressScenario("base")],
+    )
+
+    assert report.accepted is True
+    assert report.scenario_count == 1
+    assert report.objectives[0].error is None
+    assert observed_dims == [dim]

@@ -111,6 +111,8 @@ simple-ai-trading model-lab --market futures --objective conservative --objectiv
 
 `model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model across multiple label target/horizon profiles, requires purged chronological walk-forward evidence for selected candidates, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, then replays every accepted objective under symbol-specific execution stress. Use `--market futures` to research long/short futures behavior without changing saved runtime defaults. A symbol is rejected if any required objective fails profitability, drawdown, trade-count, spread, latency, fee, or liquidity-crunch gates, and rejection reports include explicit per-window reasons. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
+For quick host checks, `model-lab` and `train-suite` accept `--max-candidates N`. This is a smoke/research limiter only; omit it for a full optimization run.
+
 ## Autonomous Control
 
 ```powershell

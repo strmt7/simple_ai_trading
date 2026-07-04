@@ -66,6 +66,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     def fake_suite(candles, strategy, **kwargs):
         assert candles
         assert kwargs["objectives"] == ("regular",)
+        assert kwargs["max_candidates"] == 5
         return SimpleNamespace(
             outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="balanced_neighbors")],
             total_rows=123,
@@ -93,6 +94,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
         max_symbols=2,
         limit=120,
         compute_backend="cpu",
+        max_candidates=5,
     )
 
     assert report.accepted_symbols == ["AAAUSDC", "BBBUSDC"]
