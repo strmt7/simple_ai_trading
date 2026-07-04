@@ -104,11 +104,14 @@ simple-ai-trading backtest --compute-backend directml
 simple-ai-trading backtest-chart --output data/backtest_performance.svg
 simple-ai-trading risk --paper
 simple-ai-trading universe
+simple-ai-trading model-blueprint --risk-level conservative
 simple-ai-trading model-lab --market futures --objective conservative --objective regular --objective aggressive --max-symbols 5
 simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 ```
 
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. The same command appears in the Windows app.
+
+`model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
 
 `model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model across multiple label target/horizon profiles, records observe-only meta-label take/downsize/skip evidence, requires purged chronological walk-forward evidence for selected candidates, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, then replays every accepted objective under symbol-specific execution stress and final-model temporal robustness windows. Use `--market futures` to research long/short futures behavior without changing saved runtime defaults. A symbol is rejected if any required objective fails profitability, drawdown, trade-count, spread, latency, fee, liquidity-crunch, temporal robustness, or statistical edge gates. After individual symbols pass, model-lab also writes `portfolio_risk.json` and rejects the accepted set if combined correlation clusters, effective symbol count, portfolio CVaR, or portfolio drawdown break the risk-level policy. Rejection reports include explicit per-window and portfolio reasons. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md) and [docs/MODEL_TRAINING_INSPIRATION.md](docs/MODEL_TRAINING_INSPIRATION.md).
 

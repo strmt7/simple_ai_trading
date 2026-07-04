@@ -627,6 +627,24 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_objectives = subparsers.add_parser("objectives", help="list registered training objectives")
     parser_objectives.set_defaults(func=command_objectives)
 
+    parser_model_blueprint = subparsers.add_parser(
+        "model-blueprint",
+        help="show the research-backed model and training roadmap",
+    )
+    parser_model_blueprint.add_argument(
+        "--risk-level",
+        choices=["conservative", "regular", "aggressive", "default", "balanced", "risky"],
+        default=None,
+        help="filter the roadmap to one risk level",
+    )
+    parser_model_blueprint.add_argument(
+        "--implemented-only",
+        action="store_true",
+        help="hide research-only, blocked, and sandbox model families",
+    )
+    parser_model_blueprint.add_argument("--json", action="store_true")
+    parser_model_blueprint.set_defaults(func=command_model_blueprint)
+
     parser_train_suite = subparsers.add_parser(
         "train-suite", help="train one advanced model per objective (Conservative/Regular/Aggressive)",
     )
@@ -6075,6 +6093,26 @@ def command_objectives(_: argparse.Namespace) -> int:
     print(f"{'name':<14} {'label':<14} summary")
     for entry in entries:
         print(f"{entry['name']:<14} {entry['label']:<14} {entry['summary']}")
+    return 0
+
+
+def command_model_blueprint(args: argparse.Namespace) -> int:
+    from .model_blueprint import dumps_blueprint, render_blueprint, validate_blueprint_contract
+
+    errors = validate_blueprint_contract()
+    if errors:
+        for error in errors:
+            print(f"model blueprint invalid: {error}", file=sys.stderr)
+        return 2
+    include_research = not bool(getattr(args, "implemented_only", False))
+    try:
+        if getattr(args, "json", False):
+            print(dumps_blueprint(risk_level=getattr(args, "risk_level", None), include_research=include_research))
+        else:
+            print(render_blueprint(risk_level=getattr(args, "risk_level", None), include_research=include_research))
+    except ValueError as err:
+        print(f"model blueprint failed: {err}", file=sys.stderr)
+        return 2
     return 0
 
 

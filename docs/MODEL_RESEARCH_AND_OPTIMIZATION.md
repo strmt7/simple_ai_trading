@@ -12,6 +12,16 @@ the current direction for regime detection, meta-labeling, patch-based
 time-series models, foundation-model forecasts, AMD-friendly GPU candidates,
 and market-microstructure simulation upgrades.
 
+The same direction is also exposed as a tested CLI/Windows-app parity surface:
+
+```powershell
+simple-ai-trading model-blueprint --json
+```
+
+Future model work should update that structured blueprint whenever a model
+family moves from research to implemented evidence or from advisory evidence to
+execution gating.
+
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,
   volume, trend, and volatility:

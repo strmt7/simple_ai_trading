@@ -30,6 +30,60 @@ separation between advisory AI and executable risk controls.
 Source:
 <https://www.bloomberg.com/opinion/articles/2026-04-28/ai-trading-bots-are-creating-a-major-financial-risk>
 
+## Structured Blueprint Surface
+
+The research direction is now codified in
+`src/simple_ai_trading/model_blueprint.py` and exposed through:
+
+```powershell
+simple-ai-trading model-blueprint
+simple-ai-trading model-blueprint --risk-level conservative --implemented-only
+simple-ai-trading model-blueprint --risk-level regular --json
+```
+
+This command is intentionally part of the CLI contract, so the Windows app sees
+the same roadmap as the terminal. The blueprint separates implemented,
+implemented-evidence, research-candidate, blocked, sandbox, and advisory model
+families. It also records execution authority so future changes cannot silently
+promote an AI forecast, RL policy, or order-book research model into direct
+order placement without tests failing.
+
+Current blueprint principles:
+
+- Implemented supervised and hybrid models can produce candidate signals only
+  after objective, temporal, path-quality, and portfolio gates pass.
+- Regime and AI-review layers are veto/cooldown/review layers, not alpha engines.
+- Foundation forecasts are logged features until ablation and no-lookahead
+  replay prove that they add value after costs.
+- RL is limited to sandboxed meta-control research. It must not emit raw
+  buy/sell orders.
+- Order-book models stay blocked until symbol-specific depth/top-of-book data
+  and realistic fill simulation exist.
+
+## Training Architecture Inspiration
+
+Enterprise quant platforms such as Qlib, FreqAI, FinRL, and NautilusTrader point
+to the same pattern: separate data preparation, feature engineering, model
+training, portfolio/risk evaluation, and live/sandbox execution. This repo
+should stay smaller, but its training flow should keep those boundaries:
+
+1. Build features from cleaned candles plus exchange/liquidity evidence.
+2. Train supervised candidates with barrier-aware labels and calibrated
+   probabilities.
+3. Run regime evidence before trusting the signal distribution.
+4. Train or derive meta-label evidence from simulated trade outcomes.
+5. Add optional AI/foundation forecasts only as timestamped features.
+6. Score candidates with purged walk-forward, temporal robustness, path quality,
+   and portfolio stress.
+7. Promote only the exact serialized artifact that passed replay.
+
+Sources:
+
+- <https://github.com/microsoft/qlib>
+- <https://www.freqtrade.io/en/stable/freqai/>
+- <https://arxiv.org/abs/2111.09395>
+- <https://nautilustrader.io/docs/latest/concepts/backtesting/>
+
 ## Model Families Worth Implementing
 
 ### 1. Regime Detection
