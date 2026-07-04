@@ -56,6 +56,42 @@ References:
   and
   <https://www.sec.gov/rules-regulations/staff-guidance/trading-markets-frequently-asked-questions/divisionsmarketregfaq-0>
 
+## Market Edge Requirement
+
+Profit alone is not accepted as evidence of a useful algorithm. A candidate must
+show net market edge: realized P&L must beat the same-notional buy-and-hold
+baseline after fees, spread, slippage, latency/liquidity stress, and the current
+risk profile's position sizing. Objective acceptance now rejects candidates
+whose `edge_vs_buy_hold / starting_cash` is below the profile threshold:
+
+- conservative: `0.20%`,
+- regular: `0.30%`,
+- aggressive: `0.50%`.
+
+This is intentionally a first-line filter, not the whole proof. Model-lab still
+requires temporal robustness, stress validation, portfolio-risk acceptance,
+statistical-edge evidence, financial sanity, and full data provenance. The edge
+threshold is designed to reject tiny noisy improvements before the more
+expensive validation layers run.
+
+The standard follows three research cautions:
+
+- White's Reality Check: selected strategies can look good by chance after data
+  reuse, so benchmark outperformance needs explicit testing.
+- Bailey and Lopez de Prado's Deflated Sharpe Ratio work: backtest selection,
+  non-normal returns, and multiple trials inflate apparent performance.
+- Harvey, Liu, and Zhu's multiple-testing research: a newly discovered edge
+  needs a higher hurdle than ordinary single-test significance.
+
+References:
+
+- White, "A Reality Check for Data Snooping":
+  <https://www.ssc.wisc.edu/~bhansen/718/White2000.pdf>
+- Bailey and Lopez de Prado, "The Deflated Sharpe Ratio":
+  <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551>
+- Harvey, Liu, and Zhu, "... and the Cross-Section of Expected Returns":
+  <https://www.nber.org/system/files/working_papers/w20592/w20592.pdf>
+
 ## Current Status
 
 No repo-facing ROI, P&L, win-rate, or drawdown claim is made here. Regenerate

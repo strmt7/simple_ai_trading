@@ -786,7 +786,7 @@ def test_command_close_all_and_hit_and_miss(tmp_path, monkeypatch, capsys):
     args_hit = argparse.Namespace(position_id="c1")
     assert cli.command_close(args_hit) == 0
     out = capsys.readouterr().out
-    assert "closed c1" in out
+    assert "closed paper position c1" in out
 
     args_miss = argparse.Namespace(position_id="missing")
     assert cli.command_close(args_miss) == 1
@@ -800,4 +800,22 @@ def test_command_close_all_and_hit_and_miss(tmp_path, monkeypatch, capsys):
     args_all = argparse.Namespace(position_id="all")
     assert cli.command_close(args_all) == 0
     out = capsys.readouterr().out
-    assert "closed 1 positions" in out
+    assert "closed 1 paper positions" in out
+
+
+def test_command_close_refuses_live_local_ledger_erasure(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    store = PositionsStore()
+    store.record_open(OpenPosition(
+        id="liveclose", symbol="BTCUSDC", market_type="spot", side="LONG",
+        qty=1.0, entry_price=10.0, leverage=1.0, opened_at_ms=0, notional=10.0,
+        dry_run=False, open_client_order_id="sait-o-liveclose",
+    ))
+
+    assert cli.command_close(argparse.Namespace(position_id="liveclose")) == 2
+    assert "refusing local-only close" in capsys.readouterr().err
+    assert PositionsStore().find_open("liveclose") is not None
+
+    assert cli.command_close(argparse.Namespace(position_id="all")) == 2
+    assert "refusing local-only close" in capsys.readouterr().err
+    assert PositionsStore().find_open("liveclose") is not None

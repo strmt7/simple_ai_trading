@@ -7,12 +7,15 @@ import json
 import pytest
 
 from simple_ai_trading.positions import (
+    BOT_CLIENT_ORDER_PREFIX,
     ClosedTrade,
     LedgerStats,
     OpenPosition,
     PositionsStore,
+    bot_client_order_id,
     build_learning_feedback,
     compute_stats,
+    is_bot_owned_position,
     load_learning_feedback,
     new_position_id,
     now_ms,
@@ -59,6 +62,15 @@ def test_module_level_helpers():
     pos = _long()
     assert unrealized_pnl_usd(pos, 150.0) == pytest.approx(50.0)
     assert unrealized_pnl_pct(pos, 150.0) == pytest.approx(0.5)
+
+
+def test_bot_client_order_id_and_ownership() -> None:
+    pos = _long(id_="abc123")
+    pos.dry_run = False
+    assert is_bot_owned_position(pos) is False
+    pos.open_client_order_id = bot_client_order_id(pos.id, "open")
+    assert pos.open_client_order_id.startswith(f"{BOT_CLIENT_ORDER_PREFIX}-o-")
+    assert is_bot_owned_position(pos) is True
 
 
 def test_store_record_load_and_remove(tmp_path):
@@ -241,6 +253,7 @@ def test_render_positions_table_empty_and_populated():
     rows = render_positions_table([_long(id_="p1"), _short(id_="p2")], mark_price=110.0)
     assert any("p1" in row for row in rows)
     assert any("p2" in row for row in rows)
+    assert any("paper" in row for row in rows)
     # mark_price None branch
     rows_none = render_positions_table([_long(id_="p3")], mark_price=None)
     assert any("p3" in row for row in rows_none)

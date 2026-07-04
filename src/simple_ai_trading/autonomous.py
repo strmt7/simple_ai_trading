@@ -26,9 +26,9 @@ from __future__ import annotations
 import json
 import logging
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 
 from .api import BinanceAPIError, BinanceClient
 from .logging_ext import configure as configure_logging
@@ -37,7 +37,9 @@ from .positions import (
     ClosedTrade,
     OpenPosition,
     PositionsStore,
+    bot_client_order_id,
     compute_stats,
+    is_bot_owned_position,
     new_position_id,
     now_ms,
 )
@@ -175,6 +177,20 @@ class CapitalGuard:
     force_close: bool = False
 
 
+@dataclass(frozen=True)
+class CloseAllReport:
+    """Result of closing locally tracked autonomous positions."""
+
+    closed: int
+    skipped: int
+    failed: int
+    failures: tuple[str, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return self.failed == 0
+
+
 def _default_reconcile(
     client: BinanceClient,
     runtime: RuntimeConfig,
@@ -238,8 +254,9 @@ def _open_position_from_decision(
     target_notional = max(0.0, cfg.starting_reference_cash * notional_pct * size_multiplier)
     qty = max(0.0, target_notional / price)
     notional = qty * price
+    position_id = new_position_id()
     return OpenPosition(
-        id=new_position_id(),
+        id=position_id,
         symbol=runtime.symbol,
         market_type=runtime.market_type,
         side=decision.side,
@@ -253,6 +270,8 @@ def _open_position_from_decision(
         dry_run=cfg.dry_run,
         stop_loss_pct=strategy.stop_loss_pct,
         take_profit_pct=strategy.take_profit_pct,
+        open_client_order_id=bot_client_order_id(position_id, "open"),
+        exchange_status="paper" if cfg.dry_run else "pending_open",
     )
 
 
@@ -284,7 +303,160 @@ def _close_to_trade(
         strategy_profile=position.strategy_profile,
         objective=position.objective,
         dry_run=position.dry_run,
+        owner=position.owner,
+        open_client_order_id=position.open_client_order_id,
+        open_exchange_order_id=position.open_exchange_order_id,
     )
+
+
+def _position_order_side(position: OpenPosition, *, close: bool = False) -> str:
+    side = str(position.side or "").upper()
+    if side == "SHORT":
+        return "BUY" if close else "SELL"
+    return "SELL" if close else "BUY"
+
+
+def _order_text(order: Mapping[str, object], *names: str) -> str:
+    for name in names:
+        value = order.get(name)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _order_float(order: Mapping[str, object], *names: str) -> float:
+    for name in names:
+        value = order.get(name)
+        if value is None:
+            continue
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if parsed == parsed and abs(parsed) != float("inf"):
+            return parsed
+    return 0.0
+
+
+def _order_fill_details(
+    order: Mapping[str, object],
+    *,
+    fallback_qty: float,
+    fallback_price: float,
+) -> tuple[float, float]:
+    qty = _order_float(order, "executedQty", "origQty")
+    quote = _order_float(order, "cummulativeQuoteQty", "cumQuote", "cumBase")
+    avg = _order_float(order, "avgPrice", "averagePrice", "price")
+    fills = order.get("fills")
+    if isinstance(fills, list):
+        fill_qty = 0.0
+        fill_quote = 0.0
+        for fill in fills:
+            if not isinstance(fill, Mapping):
+                continue
+            q = _order_float(fill, "qty")
+            p = _order_float(fill, "price")
+            if q > 0.0 and p > 0.0:
+                fill_qty += q
+                fill_quote += q * p
+        if fill_qty > 0.0:
+            qty = fill_qty
+            quote = fill_quote
+    if avg <= 0.0 and qty > 0.0 and quote > 0.0:
+        avg = quote / qty
+    if qty <= 0.0:
+        qty = max(0.0, float(fallback_qty))
+    if avg <= 0.0:
+        avg = max(0.01, float(fallback_price))
+    return qty, avg
+
+
+def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> OpenPosition:
+    qty, entry_price = _order_fill_details(
+        order,
+        fallback_qty=position.qty,
+        fallback_price=position.entry_price,
+    )
+    return replace(
+        position,
+        qty=qty,
+        entry_price=entry_price,
+        notional=qty * entry_price,
+        open_exchange_order_id=_order_text(order, "orderId"),
+        open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or position.open_client_order_id,
+        exchange_status=_order_text(order, "status") or "accepted",
+    )
+
+
+def _apply_close_order(trade: ClosedTrade, order: Mapping[str, object], close_client_order_id: str) -> ClosedTrade:
+    qty, exit_price = _order_fill_details(
+        order,
+        fallback_qty=trade.qty,
+        fallback_price=trade.exit_price,
+    )
+    if qty > 0.0 and abs(qty - trade.qty) > max(1e-12, trade.qty * 1e-8):
+        # Market reduce-only partials are possible. Keep the realized ledger
+        # tied to the actually executed close size when the venue reports one.
+        scaled = qty / max(trade.qty, 1e-12)
+        realized = trade.realized_pnl * scaled
+    else:
+        realized = trade.realized_pnl
+    return replace(
+        trade,
+        qty=qty,
+        exit_price=exit_price,
+        realized_pnl=realized,
+        close_exchange_order_id=_order_text(order, "orderId"),
+        close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or close_client_order_id,
+        exchange_status=_order_text(order, "status") or "accepted",
+    )
+
+
+def _submit_open_position(client: BinanceClient, position: OpenPosition) -> OpenPosition:
+    if position.dry_run:
+        return position
+    try:
+        order = client.place_order(
+            position.symbol,
+            _position_order_side(position, close=False),
+            position.qty,
+            dry_run=False,
+            leverage=position.leverage,
+            reduce_only=False,
+            client_order_id=position.open_client_order_id,
+        )
+    except BinanceAPIError:
+        # The request may have reached the exchange before the network failed.
+        # Query by the deterministic client id before treating the position as
+        # untracked.
+        recovered = client.get_order(
+            position.symbol,
+            orig_client_order_id=position.open_client_order_id,
+        )
+        return _apply_open_order(position, recovered)
+    return _apply_open_order(position, order)
+
+
+def _submit_close_position(
+    client: BinanceClient,
+    position: OpenPosition,
+    trade: ClosedTrade,
+    *,
+    reduce_only: bool,
+) -> ClosedTrade:
+    if position.dry_run:
+        return replace(trade, exchange_status="paper")
+    close_client_order_id = bot_client_order_id(position.id, "close")
+    order = client.place_order(
+        position.symbol,
+        _position_order_side(position, close=True),
+        position.qty,
+        dry_run=False,
+        leverage=position.leverage,
+        reduce_only=reduce_only,
+        client_order_id=close_client_order_id,
+    )
+    return _apply_close_order(trade, order, close_client_order_id)
 
 
 def close_all_open_positions(
@@ -293,6 +465,8 @@ def close_all_open_positions(
     reason: str,
     *,
     clock=time.time,
+    client: BinanceClient | None = None,
+    reduce_only: bool = True,
 ) -> int:
     """Close every locally tracked open position at ``mark_price``.
 
@@ -301,12 +475,59 @@ def close_all_open_positions(
     process restarts, and emergency exits do not leave stale local positions.
     """
 
+    return close_tracked_open_positions(
+        store,
+        mark_price,
+        reason,
+        clock=clock,
+        client=client,
+        reduce_only=reduce_only,
+    ).closed
+
+
+def close_tracked_open_positions(
+    store: PositionsStore,
+    mark_price: float | None,
+    reason: str,
+    *,
+    clock=time.time,
+    client: BinanceClient | None = None,
+    reduce_only: bool = True,
+) -> CloseAllReport:
+    """Close bot-owned local ledger positions and preserve anything uncertain."""
+
     closed = 0
+    skipped = 0
+    failed = 0
+    failures: list[str] = []
     for position in list(store.load_open()):
+        if not is_bot_owned_position(position):
+            skipped += 1
+            failures.append(f"{position.id}:ownership-unverified")
+            continue
         close_price = float(mark_price) if mark_price and mark_price > 0 else float(position.entry_price)
-        store.record_close(_close_to_trade(position, close_price, reason, clock=clock))
+        trade = _close_to_trade(position, close_price, reason, clock=clock)
+        try:
+            if not position.dry_run:
+                if client is None:
+                    raise BinanceAPIError("live close requires Binance client")
+                trade = _submit_close_position(
+                    client,
+                    position,
+                    trade,
+                    reduce_only=reduce_only,
+                )
+            else:
+                trade = replace(trade, exchange_status="paper")
+        except BinanceAPIError as exc:
+            failed += 1
+            failures.append(f"{position.id}:{exc}")
+            continue
+        store.record_close(trade)
         closed += 1
-    return closed
+    return CloseAllReport(closed=closed, skipped=skipped, failed=failed, failures=tuple(failures))
+
+
 
 
 def _stop_close_mark_price(
@@ -575,11 +796,26 @@ def run_loop(
             state = control.state()
             if state == STATE_STOPPING:
                 mark_price = _stop_close_mark_price(client, runtime, store, last_mark_price, logger)
-                forced = close_all_open_positions(store, mark_price, "operator-stop", clock=clock)
-                closed += forced
-                if forced:
-                    logger.info("autonomous iter=%d force-close-open=%d reason=operator-stop", iteration, forced)
-                exit_reason = "operator-stop"
+                close_report = close_tracked_open_positions(
+                    store,
+                    mark_price,
+                    "operator-stop",
+                    clock=clock,
+                    client=None if cfg.dry_run else client,
+                    reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                )
+                closed += close_report.closed
+                if close_report.closed:
+                    logger.info("autonomous iter=%d force-close-open=%d reason=operator-stop", iteration, close_report.closed)
+                if not close_report.ok or close_report.skipped:
+                    logger.error(
+                        "autonomous iter=%d operator-stop incomplete close report=%s",
+                        iteration,
+                        close_report,
+                    )
+                    exit_reason = "operator-stop-close-incomplete"
+                else:
+                    exit_reason = "operator-stop"
                 break
             if state == STATE_PAUSED:
                 logger.info("autonomous iter=%d paused", iteration)
@@ -652,20 +888,25 @@ def run_loop(
                 )
                 if not capital_guard.allowed:
                     if capital_guard.force_close:
-                        forced = close_all_open_positions(
+                        close_report = close_tracked_open_positions(
                             store,
                             last_mark_price,
                             capital_guard.reason,
                             clock=clock,
+                            client=None if cfg.dry_run else client,
+                            reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
                         )
-                        closed += forced
-                        if forced:
+                        closed += close_report.closed
+                        if close_report.closed:
                             logger.warning(
                                 "autonomous iter=%d recovery force-close-open=%d reason=%s",
                                 iteration,
-                                forced,
+                                close_report.closed,
                                 capital_guard.reason,
                             )
+                        if not close_report.ok or close_report.skipped:
+                            exit_reason = f"{capital_guard.reason}:close-incomplete"
+                            break
                     exit_reason = capital_guard.reason
                     break
                 recovery_pending = False
@@ -706,20 +947,25 @@ def run_loop(
             )
             if not capital_guard.allowed:
                 if capital_guard.force_close:
-                    forced = close_all_open_positions(
+                    close_report = close_tracked_open_positions(
                         store,
                         last_mark_price,
                         capital_guard.reason,
                         clock=clock,
+                        client=None if cfg.dry_run else client,
+                        reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
                     )
-                    closed += forced
-                    if forced:
+                    closed += close_report.closed
+                    if close_report.closed:
                         logger.warning(
                             "autonomous iter=%d force-close-open=%d reason=%s",
                             iteration,
-                            forced,
+                            close_report.closed,
                             capital_guard.reason,
                         )
+                    if not close_report.ok or close_report.skipped:
+                        exit_reason = f"{capital_guard.reason}:close-incomplete"
+                        break
                 exit_reason = capital_guard.reason
                 break
 
@@ -728,12 +974,28 @@ def run_loop(
                 should_close, reason = _evaluate_auto_close(position, decision.mark_price, cfg, strategy)
                 if should_close:
                     trade = _close_to_trade(position, decision.mark_price, reason, clock=clock)
+                    try:
+                        if not position.dry_run:
+                            trade = _submit_close_position(
+                                client,
+                                position,
+                                trade,
+                                reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                            )
+                        else:
+                            trade = replace(trade, exchange_status="paper")
+                    except BinanceAPIError as exc:
+                        logger.error("autonomous iter=%d close-order-failed id=%s error=%s", iteration, position.id, exc)
+                        exit_reason = "close-order-failed"
+                        break
                     store.record_close(trade)
                     closed += 1
                     logger.info(
                         "autonomous iter=%d close id=%s reason=%s pnl=%+.2f (%+.2%%)",
                         iteration, trade.id, reason, trade.realized_pnl, trade.realized_pnl_pct,
                     )
+            if exit_reason == "close-order-failed":
+                break
 
             # Open new position only after the same risk gates used in operator
             # readiness checks approve it.
@@ -749,6 +1011,12 @@ def run_loop(
                 position = _open_position_from_decision(
                     decision, runtime, strategy, objective, cfg, clock=clock,
                 )
+                try:
+                    position = _submit_open_position(client, position)
+                except BinanceAPIError as exc:
+                    logger.error("autonomous iter=%d open-order-failed id=%s error=%s", iteration, position.id, exc)
+                    exit_reason = "open-order-failed"
+                    break
                 store.record_open(position)
                 opened += 1
                 logger.info(

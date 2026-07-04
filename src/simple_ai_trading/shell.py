@@ -38,6 +38,7 @@ from .objective import available_objectives, describe_objectives, get_objective
 from .positions import (
     PositionsStore,
     compute_stats,
+    is_bot_owned_position,
     render_positions_table,
     render_stats_lines,
 )
@@ -383,17 +384,36 @@ def _cmd_close(shell: Shell, args: list[str]) -> int:
     target = args[0]
     if target.lower() == "all":
         opens = store.load_open()
+        live = [position for position in opens if not position.dry_run]
+        if live:
+            shell.println(bad(
+                "refusing local-only close for live positions; use /auto stop or CLI autonomous stop",
+                enabled=shell.state.color_enabled,
+                palette=shell.palette,
+            ))
+            return 2
         for position in opens:
             store.remove_open(position.id)
-        shell.println(ok(f"closed {len(opens)} positions (local ledger only)",
+        shell.println(ok(f"closed {len(opens)} paper positions (local ledger only)",
                          enabled=shell.state.color_enabled, palette=shell.palette))
         return 0
+    position = store.find_open(target)
+    if position is None:
+        shell.println(warn(f"no open position with id {target!r}",
+                           enabled=shell.state.color_enabled, palette=shell.palette))
+        return 1
+    if not position.dry_run:
+        ownership = "verified" if is_bot_owned_position(position) else "unverified"
+        shell.println(bad(
+            f"refusing local-only close for live {ownership} position {target}; use /auto stop or CLI autonomous stop",
+            enabled=shell.state.color_enabled,
+            palette=shell.palette,
+        ))
+        return 2
     if store.remove_open(target):
-        shell.println(ok(f"closed {target} (local ledger only)",
+        shell.println(ok(f"closed paper position {target} (local ledger only)",
                          enabled=shell.state.color_enabled, palette=shell.palette))
         return 0
-    shell.println(warn(f"no open position with id {target!r}",
-                       enabled=shell.state.color_enabled, palette=shell.palette))
     return 1
 
 

@@ -666,6 +666,8 @@ def _make_result(**overrides) -> BacktestResult:
         win_rate=0.6, trades=5, max_drawdown=0.02, closed_trades=5,
         gross_exposure=100.0, total_fees=0.1, stopped_by_drawdown=False,
         max_exposure=100.0, trades_per_day_cap_hit=0,
+        buy_hold_pnl=25.0,
+        edge_vs_buy_hold=25.0,
         trade_pnls=(20.0, -5.0, 15.0, 10.0, 10.0),
         trade_returns=(0.020, -0.005, 0.015, 0.010, 0.010),
         gross_profit=55.0,
@@ -1576,6 +1578,7 @@ def test_train_for_objective_gpu_backend_forces_sequential_workers(
         min_closed_trades=0,
         min_realized_pnl=None,
         min_edge_vs_buy_hold=None,
+        min_market_edge_pct=None,
         max_drawdown_rejection=1.0,
         training=default_objective.training,
     )
@@ -2104,6 +2107,7 @@ def test_train_for_objective_real_runner_small_dataset(tmp_path: Path) -> None:
         min_closed_trades=0,
         min_realized_pnl=None,
         min_edge_vs_buy_hold=None,
+        min_market_edge_pct=None,
         max_drawdown_rejection=1.0,
         training=default_objective.training,
     )

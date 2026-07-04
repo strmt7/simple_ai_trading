@@ -400,18 +400,7 @@ def _reject_reason(result: BacktestResult, *, objective_name: str, accepted: boo
     if accepted:
         return None
     spec = get_objective(objective_name)
-    reasons: list[str] = []
-    if result.closed_trades < spec.min_closed_trades:
-        reasons.append(f"closed_trades<{spec.min_closed_trades}")
-    if spec.min_realized_pnl is not None and result.realized_pnl <= spec.min_realized_pnl:
-        reasons.append(f"realized_pnl<={spec.min_realized_pnl}")
-    if spec.min_edge_vs_buy_hold is not None and result.edge_vs_buy_hold < spec.min_edge_vs_buy_hold:
-        reasons.append(f"edge_vs_buy_hold<{spec.min_edge_vs_buy_hold}")
-    if spec.max_drawdown_rejection < 1.0 and result.max_drawdown > spec.max_drawdown_rejection:
-        reasons.append(f"max_drawdown>{spec.max_drawdown_rejection}")
-    if result.stopped_by_drawdown:
-        reasons.append("stopped_by_drawdown")
-    return "; ".join(reasons) or "objective_gate_failed"
+    return spec.reject_reason(result) or "objective_gate_failed"
 
 
 def validate_model_under_stress(

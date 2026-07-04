@@ -31,6 +31,7 @@ class ObjectiveSpec:
     min_closed_trades: int = 3
     min_realized_pnl: float | None = None
     min_edge_vs_buy_hold: float | None = 0.0
+    min_market_edge_pct: float | None = 0.001
     max_drawdown_rejection: float = 1.0  # 1.0 = never reject on drawdown alone
     min_profit_factor: float | None = None
     min_expectancy: float | None = None
@@ -55,6 +56,9 @@ class ObjectiveSpec:
             reasons.append(f"realized_pnl<={self.min_realized_pnl}")
         if self.min_edge_vs_buy_hold is not None and result.edge_vs_buy_hold < self.min_edge_vs_buy_hold:
             reasons.append(f"edge_vs_buy_hold<{self.min_edge_vs_buy_hold}")
+        edge_ratio = _market_edge_ratio(result)
+        if self.min_market_edge_pct is not None and edge_ratio < self.min_market_edge_pct:
+            reasons.append(f"market_edge_pct<{self.min_market_edge_pct}")
         if self.max_drawdown_rejection < 1.0 and result.max_drawdown > self.max_drawdown_rejection:
             reasons.append(f"max_drawdown>{self.max_drawdown_rejection}")
         if result.stopped_by_drawdown and self.max_drawdown_rejection < 0.5:
@@ -166,6 +170,15 @@ def _return_ratio(result: BacktestResult) -> float:
     return _safe(result.realized_pnl / result.starting_cash)
 
 
+def _market_edge_ratio(result: BacktestResult) -> float:
+    """Return net edge over the same-notional buy/hold baseline as capital pct."""
+
+    starting_cash = _safe(float(getattr(result, "starting_cash", 0.0)))
+    if starting_cash <= 0.0:
+        return 0.0
+    return _safe(float(getattr(result, "edge_vs_buy_hold", 0.0))) / starting_cash
+
+
 def _conservative_scorer(result: BacktestResult) -> float:
     """Reward steady, low-drawdown returns with a modest preference for win rate.
 
@@ -225,6 +238,7 @@ CONSERVATIVE = ObjectiveSpec(
     scorer=_conservative_scorer,
     min_closed_trades=5,
     min_realized_pnl=0.0,
+    min_market_edge_pct=0.0020,
     max_drawdown_rejection=0.15,
     min_profit_factor=1.10,
     min_expectancy=0.0,
@@ -262,6 +276,7 @@ REGULAR = ObjectiveSpec(
     scorer=_default_scorer,
     min_closed_trades=3,
     min_realized_pnl=0.0,
+    min_market_edge_pct=0.0030,
     max_drawdown_rejection=0.25,
     min_profit_factor=1.05,
     min_expectancy=0.0,
@@ -301,6 +316,7 @@ AGGRESSIVE = ObjectiveSpec(
     scorer=_risky_scorer,
     min_closed_trades=2,
     min_realized_pnl=0.0,
+    min_market_edge_pct=0.0050,
     max_drawdown_rejection=0.30,
     min_profit_factor=1.00,
     min_expectancy=0.0,

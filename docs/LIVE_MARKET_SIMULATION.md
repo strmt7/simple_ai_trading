@@ -78,6 +78,13 @@ notional is then capped by max position size, leverage, exchange constraints,
 and available cash. This same notional calculation is used by risk reporting,
 backtesting, live/testnet order sizing, and the buy-and-hold edge baseline.
 
+Autonomous live/testnet orders use bot-owned client-order IDs. Live stop/close
+paths only submit reduce-only closes for positions that are still present in
+the local ledger and carry this bot ownership proof. Manual or external
+exchange exposure is reported by reconciliation and is not touched by the bot.
+CLI and shell local-close commands refuse to erase live ledger entries because
+that would make exchange exposure stale or untracked.
+
 Model-lab acceptance adds stress and temporal robustness gates before a symbol
 is marked accepted. Each saved objective model is replayed with the selected
 symbol's measured spread/liquidity profile and must remain profitable under:

@@ -27,6 +27,9 @@ from typing import Any, Mapping
 
 from .storage import write_json_atomic
 
+BOT_OWNER = "simple_ai_trading"
+BOT_CLIENT_ORDER_PREFIX = "sait"
+
 
 @dataclass
 class OpenPosition:
@@ -46,6 +49,10 @@ class OpenPosition:
     dry_run: bool = True
     stop_loss_pct: float = 0.0
     take_profit_pct: float = 0.0
+    owner: str = BOT_OWNER
+    open_client_order_id: str = ""
+    open_exchange_order_id: str = ""
+    exchange_status: str = "local"
 
     def unrealized_pnl(self, mark_price: float) -> float:
         if self.side == "LONG":
@@ -81,6 +88,12 @@ class ClosedTrade:
     strategy_profile: str = ""
     objective: str = ""
     dry_run: bool = True
+    owner: str = BOT_OWNER
+    open_client_order_id: str = ""
+    open_exchange_order_id: str = ""
+    close_client_order_id: str = ""
+    close_exchange_order_id: str = ""
+    exchange_status: str = "local"
 
 
 @dataclass
@@ -227,6 +240,30 @@ def new_position_id() -> str:
     """Generate a short, collision-resistant identifier for a position."""
 
     return uuid.uuid4().hex[:12]
+
+
+def bot_client_order_id(position_id: str, action: str) -> str:
+    """Return a Binance-safe bot-owned client order id.
+
+    Binance accepts a client order id on spot and USD-M futures orders.  The
+    short deterministic id lets recovery code query an ambiguous order after a
+    network failure without ever using a broad account-wide close.
+    """
+
+    clean_id = "".join(ch for ch in str(position_id) if ch.isalnum())[:18] or new_position_id()
+    clean_action = "o" if str(action).lower().startswith("open") else "c"
+    return f"{BOT_CLIENT_ORDER_PREFIX}-{clean_action}-{clean_id}"[:36]
+
+
+def is_bot_owned_position(position: OpenPosition) -> bool:
+    """Return whether a live position has enough proof to be exchange-closed."""
+
+    if position.dry_run:
+        return True
+    if str(position.owner or "") != BOT_OWNER:
+        return False
+    client_id = str(position.open_client_order_id or "")
+    return client_id.startswith(f"{BOT_CLIENT_ORDER_PREFIX}-o-")
 
 
 def now_ms(clock=time.time) -> int:
@@ -498,14 +535,18 @@ def render_positions_table(
 
     if not positions:
         return []
-    header = f"{'#':>2} {'id':<12} {'side':<5} {'qty':>10} {'entry':>12} {'mark':>12} {'pnl$':>12} {'pnl%':>7}"
+    header = (
+        f"{'#':>2} {'id':<12} {'own':<9} {'side':<5} {'qty':>10} "
+        f"{'entry':>12} {'mark':>12} {'pnl$':>12} {'pnl%':>7}"
+    )
     rows = [header]
     for idx, pos in enumerate(positions, start=1):
         mark_value = mark_price if mark_price is not None else pos.entry_price
         pnl_usd = pos.unrealized_pnl(mark_value) if mark_price is not None else 0.0
         pnl_pct = pos.unrealized_pnl_pct(mark_value) if mark_price is not None else 0.0
+        ownership = "paper" if pos.dry_run else ("verified" if is_bot_owned_position(pos) else "unknown")
         rows.append(
-            f"{idx:>2} {pos.id:<12} {pos.side:<5} "
+            f"{idx:>2} {pos.id:<12} {ownership:<9} {pos.side:<5} "
             f"{pos.qty:>10.6f} {pos.entry_price:>12.2f} "
             f"{mark_value:>12.2f} {pnl_usd:>+12.2f} {pnl_pct:>+7.2%}"
         )
