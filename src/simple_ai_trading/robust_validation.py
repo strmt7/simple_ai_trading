@@ -1,9 +1,10 @@
-"""Stress validation for model-lab acceptance.
+"""Stress and temporal robustness validation for model-lab acceptance.
 
 This module is deliberately stricter than the ordinary backtest path. A model
 that only survives one optimistic execution assumption is not acceptable for
 autonomous day trading, so model-lab acceptance requires profitability under a
-small matrix of adverse spread, fee, latency, and liquidity assumptions.
+small matrix of adverse spread, fee, latency, and liquidity assumptions plus
+separate chronological windows for the final serialized artifact.
 """
 
 from __future__ import annotations
@@ -119,6 +120,76 @@ class SuiteStressReport:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class TemporalRobustnessPolicy:
+    objective: str
+    target_windows: int
+    min_windows: int
+    min_accepted_rate: float
+    require_latest_window: bool
+    min_window_rows: int
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class TemporalWindowResult:
+    objective: str
+    window_index: int
+    accepted: bool
+    reject_reason: str | None
+    score: float
+    start_index: int
+    end_index: int
+    rows: int
+    result: dict[str, object]
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ObjectiveTemporalRobustnessReport:
+    objective: str
+    accepted: bool
+    model_path: str
+    policy: dict[str, object]
+    reason: str | None
+    window_count: int
+    min_windows: int
+    required_accepted_windows: int
+    accepted_windows: int
+    accepted_window_rate: float
+    latest_window_accepted: bool
+    worst_score: float
+    worst_realized_pnl: float
+    worst_max_drawdown: float
+    windows: list[TemporalWindowResult]
+    error: str | None = None
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class SuiteTemporalRobustnessReport:
+    symbol: str
+    accepted: bool
+    objective_count: int
+    accepted_objectives: int
+    window_count: int
+    accepted_windows: int
+    accepted_window_rate: float
+    worst_score: float
+    worst_realized_pnl: float
+    worst_max_drawdown: float
+    objectives: list[ObjectiveTemporalRobustnessReport]
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 def default_stress_scenarios() -> tuple[StressScenario, ...]:
     return (
         StressScenario("baseline"),
@@ -141,6 +212,63 @@ def _finite(value: object, default: float = 0.0) -> float:
     except (TypeError, ValueError, OverflowError):
         return default
     return parsed if math.isfinite(parsed) else default
+
+
+def default_temporal_robustness_policy(objective_name: str) -> TemporalRobustnessPolicy:
+    objective = get_objective(objective_name).name
+    if objective == "conservative":
+        return TemporalRobustnessPolicy(
+            objective=objective,
+            target_windows=6,
+            min_windows=4,
+            min_accepted_rate=0.80,
+            require_latest_window=True,
+            min_window_rows=45,
+        )
+    if objective == "aggressive":
+        return TemporalRobustnessPolicy(
+            objective=objective,
+            target_windows=4,
+            min_windows=2,
+            min_accepted_rate=0.60,
+            require_latest_window=False,
+            min_window_rows=35,
+        )
+    return TemporalRobustnessPolicy(
+        objective=objective,
+        target_windows=5,
+        min_windows=3,
+        min_accepted_rate=0.70,
+        require_latest_window=True,
+        min_window_rows=40,
+    )
+
+
+def _chronological_windows(
+    rows: Sequence[object],
+    *,
+    target_windows: int,
+    min_window_rows: int,
+) -> list[tuple[int, int, list[object]]]:
+    row_list = list(rows)
+    row_count = len(row_list)
+    min_rows = max(1, int(min_window_rows))
+    if row_count < min_rows:
+        return []
+    count = min(max(1, int(target_windows)), max(1, row_count // min_rows))
+    window_size = max(min_rows, row_count // count)
+    windows: list[tuple[int, int, list[object]]] = []
+    start = 0
+    for index in range(count):
+        end = start + window_size
+        if index == count - 1 or end + min_rows > row_count:
+            end = row_count
+        if end - start >= min_rows:
+            windows.append((start, end, row_list[start:end]))
+        start = end
+        if start >= row_count:
+            break
+    return windows
 
 
 def _result_payload(result: BacktestResult) -> dict[str, object]:
@@ -269,6 +397,202 @@ def _load_objective_model(path: Path, objective_name: str, strategy: StrategyCon
     return model, feature_cfg
 
 
+def _temporal_reason(
+    *,
+    window_count: int,
+    min_windows: int,
+    accepted_windows: int,
+    required_accepted_windows: int,
+    latest_window_accepted: bool,
+    require_latest_window: bool,
+) -> str | None:
+    if window_count <= 0:
+        return "insufficient_rows_for_temporal_robustness"
+    if window_count < min_windows:
+        return f"window_count<{min_windows}"
+    if accepted_windows < required_accepted_windows:
+        return f"accepted_windows<{required_accepted_windows}"
+    if require_latest_window and not latest_window_accepted:
+        return "latest_window_failed"
+    return None
+
+
+def validate_model_temporal_robustness(
+    rows: Sequence[object],
+    model: TrainedModel,
+    strategy: StrategyConfig,
+    *,
+    objective_name: str,
+    starting_cash: float,
+    market_type: str,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    compute_backend: str | None = None,
+    score_batch_size: int = 8192,
+    model_path: Path | str | None = None,
+    policy: TemporalRobustnessPolicy | None = None,
+) -> ObjectiveTemporalRobustnessReport:
+    """Replay the final serialized model across chronological windows."""
+
+    spec = get_objective(objective_name)
+    active_policy = policy or default_temporal_robustness_policy(spec.name)
+    windows = _chronological_windows(
+        rows,
+        target_windows=active_policy.target_windows,
+        min_window_rows=active_policy.min_window_rows,
+    )
+    required_accepted = (
+        max(1, int(math.ceil(len(windows) * active_policy.min_accepted_rate)))
+        if windows
+        else max(1, int(math.ceil(active_policy.min_windows * active_policy.min_accepted_rate)))
+    )
+    window_results: list[TemporalWindowResult] = []
+    worst_score = float("inf")
+    worst_realized = float("inf")
+    worst_drawdown = 0.0
+    for index, (start, end, window_rows) in enumerate(windows):
+        result = run_backtest(
+            window_rows,
+            model,
+            strategy,
+            starting_cash=starting_cash,
+            market_type=market_type,
+            compute_backend=compute_backend,
+            score_batch_size=score_batch_size,
+            symbol_profile=symbol_profile,
+        )
+        accepted = spec.accepts(result) and result.realized_pnl > 0.0 and not result.stopped_by_drawdown
+        score = spec.score(result) if accepted else float("-inf")
+        worst_score = min(worst_score, score)
+        worst_realized = min(worst_realized, float(result.realized_pnl))
+        worst_drawdown = max(worst_drawdown, float(result.max_drawdown))
+        window_results.append(TemporalWindowResult(
+            objective=spec.name,
+            window_index=index,
+            accepted=bool(accepted),
+            reject_reason=_reject_reason(result, objective_name=spec.name, accepted=bool(accepted)),
+            score=float(score),
+            start_index=start,
+            end_index=end,
+            rows=len(window_rows),
+            result=_result_payload(result),
+        ))
+    accepted_windows = sum(1 for item in window_results if item.accepted)
+    latest_window_accepted = bool(window_results[-1].accepted) if window_results else False
+    reason = _temporal_reason(
+        window_count=len(window_results),
+        min_windows=active_policy.min_windows,
+        accepted_windows=accepted_windows,
+        required_accepted_windows=required_accepted,
+        latest_window_accepted=latest_window_accepted,
+        require_latest_window=active_policy.require_latest_window,
+    )
+    if worst_score == float("inf"):
+        worst_score = float("-inf")
+    if worst_realized == float("inf"):
+        worst_realized = 0.0
+    return ObjectiveTemporalRobustnessReport(
+        objective=spec.name,
+        accepted=reason is None,
+        model_path=str(model_path or ""),
+        policy=active_policy.asdict(),
+        reason=reason,
+        window_count=len(window_results),
+        min_windows=active_policy.min_windows,
+        required_accepted_windows=required_accepted,
+        accepted_windows=accepted_windows,
+        accepted_window_rate=(accepted_windows / len(window_results) if window_results else 0.0),
+        latest_window_accepted=latest_window_accepted,
+        worst_score=float(worst_score),
+        worst_realized_pnl=float(worst_realized),
+        worst_max_drawdown=float(worst_drawdown),
+        windows=window_results,
+    )
+
+
+def validate_suite_temporal_robustness(
+    candles: Sequence[Candle],
+    strategy: StrategyConfig,
+    suite: SuiteReport,
+    *,
+    symbol: str,
+    symbol_profile: SymbolExecutionProfile | None,
+    starting_cash: float,
+    market_type: str,
+    compute_backend: str | None = None,
+    score_batch_size: int = 8192,
+) -> SuiteTemporalRobustnessReport:
+    objective_reports: list[ObjectiveTemporalRobustnessReport] = []
+    worst_score = float("inf")
+    worst_realized = float("inf")
+    worst_drawdown = 0.0
+    total_windows = 0
+    total_accepted_windows = 0
+    for outcome in suite.outcomes:
+        objective_name = get_objective(outcome.objective).name
+        model_path = Path(outcome.model_path)
+        try:
+            model, feature_cfg = _load_objective_model(model_path, objective_name, strategy)
+            rows = make_advanced_rows(candles, feature_cfg)
+            if not rows:
+                raise ValueError("temporal robustness could not build feature rows")
+            report = validate_model_temporal_robustness(
+                rows,
+                model,
+                strategy,
+                objective_name=objective_name,
+                starting_cash=starting_cash,
+                market_type=market_type,
+                symbol_profile=symbol_profile,
+                compute_backend=compute_backend,
+                score_batch_size=score_batch_size,
+                model_path=model_path,
+            )
+        except (ModelLoadError, OSError, ValueError) as exc:
+            policy = default_temporal_robustness_policy(objective_name)
+            report = ObjectiveTemporalRobustnessReport(
+                objective=objective_name,
+                accepted=False,
+                model_path=str(model_path),
+                policy=policy.asdict(),
+                reason="temporal_robustness_error",
+                window_count=0,
+                min_windows=policy.min_windows,
+                required_accepted_windows=max(1, int(math.ceil(policy.min_windows * policy.min_accepted_rate))),
+                accepted_windows=0,
+                accepted_window_rate=0.0,
+                latest_window_accepted=False,
+                worst_score=float("-inf"),
+                worst_realized_pnl=0.0,
+                worst_max_drawdown=1.0,
+                windows=[],
+                error=str(exc),
+            )
+        objective_reports.append(report)
+        total_windows += int(report.window_count)
+        total_accepted_windows += int(report.accepted_windows)
+        worst_score = min(worst_score, _finite(report.worst_score, float("-inf")))
+        worst_realized = min(worst_realized, _finite(report.worst_realized_pnl))
+        worst_drawdown = max(worst_drawdown, _finite(report.worst_max_drawdown))
+    accepted_count = sum(1 for item in objective_reports if item.accepted)
+    if worst_score == float("inf"):
+        worst_score = float("-inf")
+    if worst_realized == float("inf"):
+        worst_realized = 0.0
+    return SuiteTemporalRobustnessReport(
+        symbol=symbol,
+        accepted=bool(objective_reports) and accepted_count == len(objective_reports),
+        objective_count=len(objective_reports),
+        accepted_objectives=accepted_count,
+        window_count=total_windows,
+        accepted_windows=total_accepted_windows,
+        accepted_window_rate=(total_accepted_windows / total_windows if total_windows else 0.0),
+        worst_score=float(worst_score),
+        worst_realized_pnl=float(worst_realized),
+        worst_max_drawdown=float(worst_drawdown),
+        objectives=objective_reports,
+    )
+
+
 def validate_suite_under_stress(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
@@ -338,10 +662,17 @@ def validate_suite_under_stress(
 
 __all__ = [
     "ObjectiveStressReport",
+    "ObjectiveTemporalRobustnessReport",
     "StressScenario",
     "StressScenarioResult",
     "SuiteStressReport",
+    "SuiteTemporalRobustnessReport",
+    "TemporalRobustnessPolicy",
+    "TemporalWindowResult",
     "default_stress_scenarios",
+    "default_temporal_robustness_policy",
     "validate_model_under_stress",
+    "validate_model_temporal_robustness",
     "validate_suite_under_stress",
+    "validate_suite_temporal_robustness",
 ]

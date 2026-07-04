@@ -87,6 +87,21 @@ class _Stress:
         }
 
 
+class _Robustness:
+    def __init__(self, accepted: bool) -> None:
+        self.accepted = accepted
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "accepted": self.accepted,
+            "window_count": 4,
+            "accepted_windows": 4 if self.accepted else 2,
+            "accepted_window_rate": 1.0 if self.accepted else 0.5,
+            "worst_realized_pnl": 8.0 if self.accepted else -3.0,
+            "worst_max_drawdown": 0.02 if self.accepted else 0.18,
+        }
+
+
 def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         assert candles
@@ -101,6 +116,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
     runtime = RuntimeConfig(symbols=("AAAUSDC", "BBBUSDC"), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
@@ -125,11 +141,13 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.accepted_symbols == ["AAAUSDC", "BBBUSDC"]
     assert (tmp_path / "model_lab_report.json").exists()
     assert (tmp_path / "AAAUSDC" / "stress_validation.json").exists()
+    assert (tmp_path / "AAAUSDC" / "temporal_robustness.json").exists()
     assert (tmp_path / "portfolio_risk.json").exists()
     assert report.portfolio_risk is not None
     assert report.portfolio_risk["accepted"] is True
     assert report.outcomes[0].hybrid_profiles["regular"] == "balanced_neighbors"
     assert report.outcomes[0].stress_validation["accepted"] is True
+    assert report.outcomes[0].robustness_validation["accepted"] is True
 
 
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:
@@ -180,6 +198,7 @@ def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, 
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(False))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
     runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
@@ -206,6 +225,45 @@ def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, 
     assert report.outcomes[0].error == "stress_validation_failed"
 
 
+def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp_path: Path, monkeypatch) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            total_rows=123,
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(False))
+    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    strategy = StrategyConfig(
+        min_quote_volume_usdc=1000.0,
+        min_trade_count_24h=100,
+        max_spread_bps=10.0,
+        min_liquidity_score=0.1,
+        min_diversified_assets=1,
+    )
+
+    report = run_model_lab(
+        _Client(),
+        runtime,
+        strategy,
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=120,
+        compute_backend="cpu",
+    )
+
+    assert report.accepted_symbols == []
+    assert report.outcomes[0].accepted is False
+    assert report.outcomes[0].error == "temporal_robustness_failed"
+    assert report.outcomes[0].robustness_validation["accepted"] is False
+
+
 def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
@@ -217,6 +275,7 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
     runtime = RuntimeConfig(symbols=("AAAUSDC", "BBBUSDC", "CCCUSDC"), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,

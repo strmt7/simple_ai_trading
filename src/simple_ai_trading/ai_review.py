@@ -204,6 +204,17 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                     "worst_realized_pnl": _finite(stress.get("worst_realized_pnl")),
                     "worst_max_drawdown": _finite(stress.get("worst_max_drawdown")),
                 }
+            robustness = item.get("robustness_validation")
+            robustness_summary: dict[str, object] | None = None
+            if isinstance(robustness, Mapping):
+                robustness_summary = {
+                    "accepted": bool(robustness.get("accepted")),
+                    "window_count": int(_finite(robustness.get("window_count"))),
+                    "accepted_windows": int(_finite(robustness.get("accepted_windows"))),
+                    "accepted_window_rate": _finite(robustness.get("accepted_window_rate")),
+                    "worst_realized_pnl": _finite(robustness.get("worst_realized_pnl")),
+                    "worst_max_drawdown": _finite(robustness.get("worst_max_drawdown")),
+                }
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
                 "accepted": bool(item.get("accepted")),
@@ -212,6 +223,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "objective_scores": item.get("objective_scores") if isinstance(item.get("objective_scores"), Mapping) else {},
                 "hybrid_profiles": item.get("hybrid_profiles") if isinstance(item.get("hybrid_profiles"), Mapping) else {},
                 "stress_validation": stress_summary,
+                "robustness_validation": robustness_summary,
                 "diagnostics": item.get("diagnostics") if isinstance(item.get("diagnostics"), Mapping) else None,
             })
     portfolio = report.get("portfolio_risk")
@@ -259,8 +271,9 @@ def _prompt(compact: Mapping[str, object]) -> str:
     return (
         "You are a cautious institutional trading risk reviewer for an autonomous day-trading testnet system. "
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
-        "Approve only when deterministic gates passed, stress scenarios are coherent, portfolio tail risk is acceptable, "
-        "and there is no obvious reason to require a human review. Return JSON matching the schema.\n"
+        "Approve only when deterministic gates passed, stress scenarios are coherent, temporal robustness is coherent, "
+        "portfolio tail risk is acceptable, and there is no obvious reason to require a human review. "
+        "Return JSON matching the schema.\n"
         f"SCHEMA={schema}\n"
         f"MODEL_LAB_REPORT={payload}"
     )
@@ -364,4 +377,3 @@ def run_model_lab_ai_review(
         )
     write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
     return result
-

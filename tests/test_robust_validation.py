@@ -129,6 +129,73 @@ def test_validate_model_under_stress_rejects_failed_scenario(monkeypatch: pytest
     assert observed_profiles[0].symbol == "AAAUSDC"
 
 
+def test_validate_model_temporal_robustness_rejects_bad_latest_window(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+
+    def fake_backtest(_rows, *_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 4:
+            return _result(realized_pnl=-2.0, ending_cash=998.0, closed_trades=5, edge_vs_buy_hold=-5.0)
+        return _result()
+
+    monkeypatch.setattr(robust_validation, "run_backtest", fake_backtest)
+    model = TrainedModel(weights=[0.0], bias=10.0, feature_dim=1, epochs=1, feature_means=[0.0], feature_stds=[1.0])
+
+    report = robust_validation.validate_model_temporal_robustness(
+        [object() for _ in range(40)],
+        model,
+        StrategyConfig(),
+        objective_name="regular",
+        starting_cash=1000.0,
+        market_type="spot",
+        policy=robust_validation.TemporalRobustnessPolicy(
+            objective="regular",
+            target_windows=4,
+            min_windows=3,
+            min_accepted_rate=0.75,
+            require_latest_window=True,
+            min_window_rows=10,
+        ),
+    )
+
+    assert report.accepted is False
+    assert report.reason == "latest_window_failed"
+    assert report.window_count == 4
+    assert report.accepted_windows == 3
+    assert report.windows[-1].reject_reason is not None
+
+
+def test_validate_model_temporal_robustness_requires_enough_windows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(robust_validation, "run_backtest", lambda *_a, **_k: _result())
+    model = TrainedModel(weights=[0.0], bias=10.0, feature_dim=1, epochs=1, feature_means=[0.0], feature_stds=[1.0])
+
+    report = robust_validation.validate_model_temporal_robustness(
+        [object() for _ in range(20)],
+        model,
+        StrategyConfig(),
+        objective_name="conservative",
+        starting_cash=1000.0,
+        market_type="spot",
+        policy=robust_validation.TemporalRobustnessPolicy(
+            objective="conservative",
+            target_windows=2,
+            min_windows=3,
+            min_accepted_rate=1.0,
+            require_latest_window=True,
+            min_window_rows=10,
+        ),
+    )
+
+    assert report.accepted is False
+    assert report.reason == "window_count<3"
+    assert report.accepted_windows == 2
+
+
 def test_validate_suite_under_stress_loads_saved_models(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(robust_validation, "run_backtest", lambda *_a, **_k: _result())
     strategy = StrategyConfig()
@@ -173,6 +240,63 @@ def test_validate_suite_under_stress_loads_saved_models(tmp_path: Path, monkeypa
     assert report.objective_count == 1
     assert report.scenario_count == 1
     assert report.objectives[0].model_path == str(model_path)
+
+
+def test_validate_suite_temporal_robustness_loads_saved_models(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed_profiles: list[SymbolExecutionProfile | None] = []
+
+    def fake_backtest(_rows, *_args, **kwargs):
+        observed_profiles.append(kwargs.get("symbol_profile"))
+        return _result()
+
+    monkeypatch.setattr(robust_validation, "run_backtest", fake_backtest)
+    strategy = StrategyConfig()
+    model_path = tmp_path / "model_regular.json"
+    _model_for_objective(model_path, "regular", strategy)
+    outcome = ObjectiveOutcome(
+        objective="regular",
+        model_path=model_path,
+        feature_dim=1,
+        feature_signature="sig",
+        best_score=0.5,
+        best_params={"epochs": 1},
+        explored_candidates=1,
+        rejected_candidates=0,
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        row_count=420,
+        positive_rate=0.5,
+    )
+    suite = SuiteReport(
+        outcomes=[outcome],
+        total_rows=420,
+        total_candles=520,
+        output_dir=tmp_path,
+        summary_path=tmp_path / "summary.json",
+        objectives_run=["regular"],
+    )
+    profile = SymbolExecutionProfile("AAAUSDC", 1.0, 10_000_000.0, 50_000, 0.9, 100, 0.2)
+
+    report = robust_validation.validate_suite_temporal_robustness(
+        _candles(520),
+        strategy,
+        suite,
+        symbol="AAAUSDC",
+        symbol_profile=profile,
+        starting_cash=1000.0,
+        market_type="spot",
+    )
+
+    assert report.accepted is True
+    assert report.objective_count == 1
+    assert report.accepted_windows >= 3
+    assert report.objectives[0].model_path == str(model_path)
+    assert observed_profiles
+    assert all(item and item.symbol == "AAAUSDC" for item in observed_profiles)
 
 
 def test_validate_suite_under_stress_uses_model_signature_config(

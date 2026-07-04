@@ -25,6 +25,15 @@ gates, not a promise of guaranteed profit.
   optimization, cooldowns, stop guards, and drawdown gates:
   <https://www.freqtrade.io/en/stable/hyperopt/> and
   <https://www.freqtrade.io/en/2024.1/includes/protections/>
+- Bailey, Borwein, Lopez de Prado, and Zhu's Probability of Backtest
+  Overfitting framework influenced the requirement that model-lab reject
+  single-path winners and report how a selected model behaves across multiple
+  chronological windows:
+  <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253>
+- Bailey and Lopez de Prado's Deflated Sharpe Ratio work influenced the
+  project policy of treating high backtest scores as suspect unless the
+  selection process and holdout evidence are visible in the artifact:
+  <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551>
 - Triple-barrier labeling, event-driven sampling, and purged validation were
   used as training inspiration so labels match stop/take economics instead of
   only future-close direction:
@@ -127,6 +136,15 @@ rejected base candidates. A rescued hybrid is serialized only when it passes the
 hybrid selection window, the final chronological holdout, and the full-sample
 objective gates; otherwise the objective remains rejected.
 
+Model-lab also replays the final serialized model artifact across separate
+chronological windows after training is complete. This differs from the
+training-suite purged walk-forward gate: purged walk-forward retrains candidates
+to select a stable configuration, while `temporal_robustness.json` tests the
+exact saved model, including any hybrid expert overlay. Conservative models
+must satisfy the strictest window coverage, regular models use the middle
+threshold, and aggressive models allow more dispersion while still requiring
+positive, non-drawdown-stopped windows.
+
 ## Cross-Symbol Model Lab
 
 `simple-ai-trading model-lab` is the iterative optimization workflow. It:
@@ -143,13 +161,18 @@ objective gates; otherwise the objective remains rejected.
    baseline measured execution, wider spread/slippage, latency spike with a
    liquidity haircut, and combined liquidity crunch with fee/spread/latency
    stress.
-7. Builds a portfolio-level risk report from aligned symbol returns. This gate
+7. Replays every saved objective model through `temporal_robustness.json`, a
+   separate chronological-window robustness gate for the final serialized
+   artifact. This catches models that pass aggregate stress but fail in recent
+   or regime-specific windows.
+8. Builds a portfolio-level risk report from aligned symbol returns. This gate
    computes inverse-volatility capped weights, effective symbol count,
    pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
    and portfolio drawdown.
-8. Writes a JSON report plus per-symbol `stress_validation.json` and
-   `portfolio_risk.json`. An outcome is accepted only when all objective scores
-   are positive, every stress replay passes the objective risk gates, and the
+9. Writes a JSON report plus per-symbol `stress_validation.json`,
+   `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
+   accepted only when all objective scores are positive, every stress replay
+   passes the objective risk gates, temporal robustness passes, and the
    accepted set passes the portfolio diversification and tail-risk gates.
 
 After model-lab writes a report, `simple-ai-trading ai-review --report ...`
@@ -199,6 +222,8 @@ assert that every CLI command appears in the Windows app.
 - No selected training-suite model without purged walk-forward evidence when
   enough rows are available.
 - No single-scenario-only model-lab acceptance.
+- No model-lab symbol acceptance when the final serialized model fails
+  chronological temporal robustness windows.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,

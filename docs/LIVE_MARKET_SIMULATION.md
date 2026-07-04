@@ -41,9 +41,9 @@ notional is then capped by max position size, leverage, exchange constraints,
 and available cash. This same notional calculation is used by risk reporting,
 backtesting, live/testnet order sizing, and the buy-and-hold edge baseline.
 
-Model-lab acceptance adds an additional stress matrix before a symbol is marked
-accepted. Each saved objective model is replayed with the selected symbol's
-measured spread/liquidity profile and must remain profitable under:
+Model-lab acceptance adds stress and temporal robustness gates before a symbol
+is marked accepted. Each saved objective model is replayed with the selected
+symbol's measured spread/liquidity profile and must remain profitable under:
 
 - baseline measured execution assumptions,
 - wider spread and slippage,
@@ -53,6 +53,13 @@ measured spread/liquidity profile and must remain profitable under:
 If any required scenario fails the objective gates, `model-lab` writes
 `stress_validation.json` for that symbol and rejects the candidate. This is
 intentional fail-closed behavior; a single profitable replay is not enough.
+
+After stress validation, the exact serialized final model is also replayed over
+separate chronological windows. `temporal_robustness.json` records accepted
+window count, latest-window status, worst P&L, and worst drawdown. Conservative
+objectives require the highest window pass rate, regular objectives use the
+middle policy, and aggressive objectives allow more dispersion while still
+requiring multiple profitable windows.
 
 The training suite also gates selected candidates with purged chronological
 walk-forward folds when enough rows are available. The purge gap is at least the
@@ -89,6 +96,8 @@ Known limitations:
   stricter than flat slippage, but still weaker than full L2 order-book replay.
 - Very small datasets are marked as insufficient for purged walk-forward gates;
   they are useful for unit tests and smoke checks, not production acceptance.
+- Temporal robustness currently uses candle-window replays; full order-book
+  regime replay remains a future improvement after depth snapshots are stored.
 
 ## Operator Rule
 
@@ -102,6 +111,7 @@ Do not interpret a profitable backtest as approval to trade real money. A candid
 - `audit`
 - `backtest`
 - `backtest-chart`
+- `model-lab` stress, temporal robustness, and portfolio gates
 - paper or testnet run review
 
 The project remains non-mainnet-first.

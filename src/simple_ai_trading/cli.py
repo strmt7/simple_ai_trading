@@ -6238,10 +6238,21 @@ def command_model_lab(args: argparse.Namespace) -> int:
                     f"worst_dd={float(stress.get('worst_max_drawdown', 0.0)):.2%}"
                 )
             )
+        robustness = getattr(outcome, "robustness_validation", None) or {}
+        robustness_text = "n/a"
+        if robustness:
+            robustness_text = (
+                f"pass {int(robustness.get('accepted_windows', 0))}/{int(robustness.get('window_count', 0))}"
+                if robustness.get("accepted")
+                else (
+                    f"fail {int(robustness.get('accepted_windows', 0))}/{int(robustness.get('window_count', 0))} "
+                    f"worst_pnl={float(robustness.get('worst_realized_pnl', 0.0)):+.2f}"
+                )
+            )
         detail = score_text or outcome.error or "no accepted objectives"
         print(
             f"  {status:<8} {outcome.symbol:<12} rows={outcome.rows:<5} {detail} "
-            f"hybrid={hybrid_text or 'n/a'} stress={stress_text}"
+            f"hybrid={hybrid_text or 'n/a'} stress={stress_text} robustness={robustness_text}"
         )
     print(f"summary -> {report.report_path}")
     return 0 if report.accepted_symbols else 2
