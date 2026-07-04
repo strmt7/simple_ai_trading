@@ -154,6 +154,31 @@ def test_advanced_feature_dimension_matches_expand():
     assert expanded.volume == pytest.approx(42.0)
 
 
+def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:5]),
+        polynomial_degree=3,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5, 20),
+        confluence_windows=(8,),
+        nonlinear_transforms=("tanh", "log1p"),
+    )
+
+    spans = am.advanced_feature_group_spans(cfg)
+
+    assert [span.name for span in spans] == [
+        "base_features",
+        "extra_lookback_windows",
+        "technical_confluence",
+        "nonlinear_transforms",
+        "polynomial_interactions",
+    ]
+    assert spans[0].start == 0
+    assert spans[-1].end == am.advanced_feature_dimension(cfg)
+    assert all(left.end == right.start for left, right in zip(spans[:-1], spans[1:], strict=True))
+    assert spans[-1].asdict()["size"] == spans[-1].size
+
+
 def test_advanced_feature_signature_stable():
     cfg = am.default_config_for("default", FEATURE_NAMES)
     assert am.advanced_feature_signature(cfg) == am.advanced_feature_signature(cfg)

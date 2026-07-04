@@ -32,6 +32,7 @@ from simple_ai_trading.training_suite import (
     _ensemble_seed_pack,
     _calibrate_candidate_threshold,
     _evaluate_candidate,
+    _feature_ablation_report,
     _local_refinement_candidates,
     _purged_walk_forward_gate,
     _purged_walk_forward_splits,
@@ -1677,6 +1678,70 @@ def test_train_for_objective_checks_top_candidates_for_seed_ensembles(
     assert outcome.ensemble_refined is True
     assert outcome.ensemble_refinement_candidates == 3
     assert evaluated[-3:] == [(7, True), (11, True), (13, True)]
+
+
+def test_feature_ablation_report_replays_masked_feature_groups(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    feature_cfg = default_config_for("regular", ("momentum_1", "momentum_3", "momentum_10", "momentum_20"))
+    feature_dim = training_suite.advanced_feature_dimension(feature_cfg)
+    rows = [
+        ModelRow(timestamp=index, close=100.0 + index, features=tuple([0.1] * feature_dim), label=1)
+        for index in range(20)
+    ]
+    model = _fake_trained_model(feature_dim)
+    pnl_by_group = {
+        None: 10.0,
+        "base_features": 7.0,
+        "extra_lookback_windows": 9.0,
+        "technical_confluence": 5.0,
+        "nonlinear_transforms": 8.0,
+        "polynomial_interactions": 6.0,
+    }
+
+    def fake_run_backtest(_rows, scored_model, _strategy, **_kwargs):
+        pnl = pnl_by_group[getattr(scored_model, "ablated_feature_group", None)]
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + pnl,
+            realized_pnl=pnl,
+            win_rate=1.0,
+            trades=6,
+            max_drawdown=0.0,
+            closed_trades=6,
+            gross_exposure=100.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=pnl,
+            gross_profit=pnl,
+            gross_loss=0.0,
+            profit_factor=999.0,
+            expectancy=pnl / 6.0,
+            trade_pnls=(pnl,),
+            trade_returns=(pnl / 1000.0,),
+        )
+
+    monkeypatch.setattr(training_suite, "run_backtest", fake_run_backtest)
+
+    report = _feature_ablation_report(
+        rows,
+        model,
+        StrategyConfig(),
+        feature_cfg,
+        get_objective("regular"),
+        market_type="spot",
+        starting_cash=1000.0,
+        score_batch_size=16,
+    )
+
+    by_group = {entry["removed_group"]: entry for entry in report}
+    assert set(by_group) == set(pnl_by_group) - {None}
+    assert by_group["technical_confluence"]["delta_vs_selected"] < 0.0
+    assert by_group["technical_confluence"]["realized_pnl"] == pytest.approx(5.0)
+    assert by_group["base_features"]["baseline_score"] > by_group["base_features"]["score"]
+    assert all(entry["status"] == "evaluated" for entry in report)
 
 
 # ----- run_training_suite --------------------------------------------------

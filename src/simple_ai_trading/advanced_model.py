@@ -61,6 +61,22 @@ class AdvancedFeatureConfig:
     label_stop_threshold: float | None = None
 
 
+@dataclass(frozen=True)
+class FeatureGroupSpan:
+    """Contiguous feature-vector group used for ablation reports."""
+
+    name: str
+    start: int
+    end: int
+
+    @property
+    def size(self) -> int:
+        return max(0, int(self.end) - int(self.start))
+
+    def asdict(self) -> dict[str, int | str]:
+        return {"name": self.name, "start": int(self.start), "end": int(self.end), "size": self.size}
+
+
 def _tanh(x: float) -> float:
     try:
         return math.tanh(x)
@@ -407,6 +423,35 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
         if cfg.polynomial_degree >= 3 and k >= 3:
             pairs += 1 + 3
     return base + extras + confluence + transforms + pairs
+
+
+def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGroupSpan, ...]:
+    """Return contiguous feature ranges matching the advanced feature layout."""
+
+    spans: list[FeatureGroupSpan] = []
+    cursor = 0
+
+    def add(name: str, size: int) -> None:
+        nonlocal cursor
+        if size <= 0:
+            return
+        start = cursor
+        cursor += int(size)
+        spans.append(FeatureGroupSpan(name=name, start=start, end=cursor))
+
+    base = len(cfg.base_features)
+    add("base_features", base)
+    add("extra_lookback_windows", _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows))
+    add("technical_confluence", _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows))
+    add("nonlinear_transforms", base * len(cfg.nonlinear_transforms))
+    pair_count = 0
+    if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
+        k = min(cfg.polynomial_top_features, base)
+        pair_count = k * (k + 1) // 2
+        if cfg.polynomial_degree >= 3 and k >= 3:
+            pair_count += 1 + 3
+    add("polynomial_interactions", pair_count)
+    return tuple(spans)
 
 
 def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureConfig,
