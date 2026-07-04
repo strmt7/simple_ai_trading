@@ -896,6 +896,27 @@ def test_entry_gate_blocks_meta_label_zero_size(tmp_path: Path) -> None:
     assert gate.reason == "meta_label_skip"
 
 
+def test_entry_gate_blocks_unpredictable_regime(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
+    gate = _entry_gate(
+        PositionsStore(root=cfg.positions_root),
+        Decision(
+            side="LONG",
+            confidence=0.9,
+            mark_price=100.0,
+            regime="volatile_chop",
+            regime_confidence=0.9,
+        ),
+        StrategyConfig(cooldown_minutes=0, max_regime_unpredictability=0.60),
+        cfg,
+        get_objective("default"),
+        now_ms_value=3_000,
+    )
+
+    assert gate.allowed is False
+    assert gate.reason.startswith("regime-unpredictable:volatile_chop")
+
+
 def test_run_loop_respects_max_open_positions(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=2)
     # Pre-stage a position so the open branch is skipped.

@@ -35,9 +35,9 @@ market regime is noisy, under-separated, or data-poor.
   and flat/noisy returns on a 0-1 scale.
 - Extended `assess_entry_risk()` with `unpredictable_regime` and
   `regime_cooldown` blocks.
-- Wired `live` to classify the rolling point-in-time model rows, log
-  `regime_unpredictability_gate` events, and activate the configured cooldown
-  before order sizing.
+- Wired `live` and autonomous decisions to classify rolling point-in-time model
+  rows before order sizing. `live` also logs `regime_unpredictability_gate`
+  events and activates the configured cooldown.
 
 ## Performance Evidence
 

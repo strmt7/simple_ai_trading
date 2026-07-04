@@ -738,6 +738,8 @@ def test_build_autonomous_decision_fn_scores_model_and_external_signals(monkeypa
     assert decision.side == "FLAT"
     assert decision.confidence == 0.30
     assert decision.mark_price == 101.5
+    assert decision.regime == "insufficient_data"
+    assert decision.regime_unpredictability_score == 1.0
     assert telemetry
 
 
