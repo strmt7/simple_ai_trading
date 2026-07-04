@@ -118,6 +118,9 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'create_control(L"LISTBOX"' in source
     assert 'L"COMBOBOX"' in source
     assert 'L"Stop And Close All"' in source
+    assert "status_bar_" in source
+    assert "kApiBudgetRefreshMs = 90000" in source
+    assert 'L"api-budget --compact"' in source
     assert "repo_root()" in source
     assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
 

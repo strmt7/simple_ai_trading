@@ -167,6 +167,44 @@ def test_market_data_store_roundtrip_snapshots_and_sync_runs(tmp_path) -> None:
             ts_ms=8,
         )
     assert store.latest_snapshot("BTCUSDC", "spot", "missing") is None
+    assert store.insert_api_rate_limit_snapshot(
+        "binance",
+        "spot",
+        {"status": "ok", "generated_at_ms": 9, "lines": []},
+        ts_ms=9,
+    ) == 1
+    assert store.latest_api_rate_limit_snapshot("binance", "spot") == {
+        "generated_at_ms": 9,
+        "lines": [],
+        "status": "ok",
+    }
+    assert store.insert_api_rate_limit_snapshot(
+        "binance",
+        "spot",
+        {"status": "ok", "generated_at_ms": 9, "lines": []},
+        ts_ms=9,
+    ) == 0
+    store.begin_archive_file(
+        url="https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip",
+        symbol="btcusdc",
+        market_type="spot",
+        interval="1s",
+        period="2026-01-01",
+        started_at_ms=10,
+    )
+    store.complete_archive_file(
+        url="https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip",
+        status="complete",
+        rows_inserted=86_400,
+        bytes_downloaded=1234,
+        sha256="abc",
+        completed_at_ms=11,
+    )
+    archive_rows = store.archive_files(symbol="btcusdc", interval="1s", status="complete")
+    assert len(archive_rows) == 1
+    assert archive_rows[0].rows_inserted == 86_400
+    assert archive_rows[0].sha256 == "abc"
+    assert store.archive_file_status(archive_rows[0].url) == "complete"
     store.connect().execute(
         "INSERT OR REPLACE INTO market_snapshots VALUES (?, ?, ?, ?, ?, ?)",
         ("binance", "BTCUSDC", "spot", "scalar", 1, "3"),
@@ -178,6 +216,7 @@ def test_market_data_store_roundtrip_snapshots_and_sync_runs(tmp_path) -> None:
     store.close()
     with MarketDataStore(db) as reopened:
         assert reopened.coverage("BTCUSDC", "spot", "15m").count == 2
+        assert reopened.fetch_candles("BTCUSDC", "spot", "15m", start_ms=60_000)[0].open_time == 60_000
     with MarketDataStore(tmp_path / "empty.sqlite") as empty_store:
         empty = empty_store.coverage_quality("BTCUSDC", "spot", "15m", 60_000)
         assert empty.expected_count == 0

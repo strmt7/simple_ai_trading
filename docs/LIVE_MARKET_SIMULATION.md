@@ -14,7 +14,7 @@ Primary references used for the current design:
 - NautilusTrader backtesting concepts: https://nautilustrader.io/docs/latest/concepts/backtesting/
 - QuantConnect slippage modeling concepts: https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/slippage/key-concepts
 
-## Implemented Assumptions
+## Implemented Controls and Evidence
 
 Execution cost is symbol-specific where market data exists:
 
@@ -23,6 +23,10 @@ Execution cost is symbol-specific where market data exists:
 - `data-sync` now persists a typed top-of-book history with bid/ask price,
   bid/ask quantity, mid price, spread bps, and top-level notional depth in
   SQLite, while still retaining the raw exchange payload for audit.
+- `archive-sync` ingests official Binance public archive kline ZIPs directly
+  into the same SQLite store. This is the preferred path for 1-second spot
+  history because Binance REST klines support `1s` but paging years of
+  second-bars through 1,000-row REST pages is unnecessarily expensive.
 - `data-sync --full-history` pages backward through exchange klines with the
   venue maximum request size until no older rows are returned. Recent bounded
   syncs remain available for incremental refreshes, but reports label them as
@@ -31,6 +35,11 @@ Execution cost is symbol-specific where market data exists:
   gap count, and Binance used-weight/order-count headers when the exchange
   provides them. This makes API usage cost auditable while keeping paging
   efficient.
+- `api-budget` reads that rate-limit state from SQLite and refreshes it at
+  most opportunistically. The Windows app bottom bar uses the same command.
+  Signed live startup is blocked when a current sample shows any known Binance
+  request-weight or order-count window is at least 80% consumed, or when the
+  exchange returns a `Retry-After` value.
 - `backtest`, `backtest-chart`, and `backtest-panel` can consume the latest
   typed top-of-book row with `--execution-db data/market_data.sqlite`. The
   loaded profile is written into run artifacts and panel reports, including
@@ -42,6 +51,12 @@ Execution cost is symbol-specific where market data exists:
   current quote-asset leaders when static defaults exceed the available market,
   but it keeps hard minimum floors and never relaxes spread, structural
   leveraged-token, or likely pegged-pair filters.
+- Day-trading session risk is not a fixed UTC window. Backtests compare the
+  current bar against trailing per-symbol volume and against same UTC
+  weekday/hour/minute-bucket history from prior bars. Holidays, partial days,
+  low-liquidity overnight periods, and schedule changes are therefore treated
+  as measured low-liquidity evidence for that symbol and timestamp, not as an
+  assumption baked into the code.
 
 Backtest fill price uses:
 
@@ -66,6 +81,9 @@ Every backtest now keeps path evidence, not only a final P&L scalar:
   return.
 - path-quality metrics: gross profit/loss, finite profit factor, expectancy,
   average trade return, trade-return dispersion, and max consecutive losses.
+- pre-entry liquidity-session decisions that show whether a trade was
+  down-sized because trailing liquidity or a data-probed same-bucket session
+  was below history.
 
 `backtest-chart` renders this actual equity path instead of a three-point
 display fallback. When equity timestamps are present, the SVG labels the
@@ -157,6 +175,13 @@ Autonomous network-interruption recovery:
 
 Testnet fills, liquidity, queue position, and response times can diverge from live markets. The simulation therefore does not treat testnet as a perfect proxy. It applies conservative liquidity haircuts and latency buffers, and it requires per-symbol liquidity evidence before a symbol can join the trading universe.
 
+Live monitoring should use exchange streams for open/trading symbols whenever
+possible. REST polling remains useful for bounded preflight and recovery checks,
+but second/subsecond live observation must not burn through REST request weight
+when Binance WebSocket streams can carry trade/book/kline updates. The local
+supervisor must treat stale market data as a new-entry block, not as permission
+to reuse the last signal.
+
 Market modes are handled as exposure controls, not as a reason to force trades.
 When regime evidence, model confidence, entropy, loss streaks, or post-outage
 recovery indicate that the current market is not predictable enough, the
@@ -180,6 +205,15 @@ timescale and truth basis used for its promotion.
 Known limitations:
 
 - Full L2 order-book depth and queue position are not yet replayed tick-by-tick.
+- Data-probed session liquidity is only as good as the available exchange
+  history for that symbol and interval. A newly listed symbol or sparse archive
+  cannot prove historical session behavior and should fail promotion-grade data
+  coverage gates rather than be treated as known-liquid.
+- The default database is SQLite for zero-service local installation. It uses
+  compact numeric columns and WAL mode, but standard SQLite is not a compressed
+  time-series engine. Very large 1-second or tick archives should eventually be
+  migrated to PostgreSQL/TimescaleDB or DuckDB when full built-in compression
+  and columnar/time-series storage become operational requirements.
 - Free VRAM is not exposed reliably by DirectML; the app verifies GPU backend functionality and reports unknown VRAM as a warning.
 - External news/sentiment sources are still broad crypto-oriented; the liquidity gate is the primary automatic asset filter.
 - The current stress model uses top-of-book and candle-volume proxies. It is

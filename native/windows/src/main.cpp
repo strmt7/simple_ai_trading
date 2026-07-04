@@ -34,6 +34,8 @@ constexpr COLORREF kDanger = RGB(139, 55, 60);
 constexpr COLORREF kText = RGB(238, 242, 244);
 constexpr COLORREF kMuted = RGB(172, 183, 190);
 constexpr COLORREF kSubtle = RGB(115, 127, 135);
+constexpr UINT_PTR kApiBudgetTimerId = 301;
+constexpr UINT kApiBudgetRefreshMs = 90000;
 
 enum ControlId : int {
     kPageListId = 100,
@@ -147,6 +149,7 @@ class MainWindow {
     HWND risk_report_{};
     HWND model_lab_{};
     HWND backtest_chart_{};
+    HWND status_bar_{};
     std::array<HWND, 12> quick_buttons_{};
     HFONT title_font_{};
     HFONT body_font_{};
@@ -160,8 +163,11 @@ class MainWindow {
     std::vector<CommandEntry> command_entries_;
     std::vector<QuickAction> quick_actions_;
     std::wstring output_{L"Ready.\r\n"};
+    std::wstring api_budget_{L"API budget: loading"};
     std::mutex output_mutex_;
+    std::mutex api_budget_mutex_;
     std::atomic_bool running_{false};
+    std::atomic_bool api_budget_running_{false};
     bool smoke_ = false;
 
     static constexpr std::array<const wchar_t*, 6> kPages{
@@ -218,6 +224,12 @@ class MainWindow {
         case WM_COMMAND:
             on_command(LOWORD(wparam), HIWORD(wparam));
             return 0;
+        case WM_TIMER:
+            if (wparam == kApiBudgetTimerId) {
+                refresh_api_budget_async(false);
+                return 0;
+            }
+            return DefWindowProcW(hwnd_, message, wparam, lparam);
         case WM_CTLCOLORSTATIC:
         case WM_CTLCOLOREDIT:
         case WM_CTLCOLORLISTBOX:
@@ -228,6 +240,9 @@ class MainWindow {
             return 0;
         case WM_APP + 1:
             sync_output();
+            return 0;
+        case WM_APP + 2:
+            sync_api_budget();
             return 0;
         case WM_DESTROY:
             cleanup();
@@ -250,9 +265,12 @@ class MainWindow {
         refresh_page();
         sync_output();
         layout();
+        SetTimer(hwnd_, kApiBudgetTimerId, kApiBudgetRefreshMs, nullptr);
+        refresh_api_budget_async(false);
     }
 
     void cleanup() {
+        KillTimer(hwnd_, kApiBudgetTimerId);
         DeleteObject(title_font_);
         DeleteObject(body_font_);
         DeleteObject(small_font_);
@@ -306,7 +324,7 @@ class MainWindow {
 
     std::vector<HWND> all_controls() const {
         std::vector<HWND> controls{
-            title_,       subtitle_,      safety_,       page_list_,     command_label_,
+            title_,       subtitle_,      safety_,       status_bar_,    page_list_,     command_label_,
             command_combo_, args_label_, args_edit_,    help_label_,    output_label_,
             output_edit_, run_selected_, selected_help_, stop_all_,     ai_preflight_,
             risk_report_, model_lab_,    backtest_chart_,
@@ -368,6 +386,7 @@ class MainWindow {
         risk_report_ = create_control(L"BUTTON", L"Risk Report", BS_PUSHBUTTON | WS_TABSTOP, kRiskReportId);
         model_lab_ = create_control(L"BUTTON", L"Model Lab", BS_PUSHBUTTON | WS_TABSTOP, kModelLabId);
         backtest_chart_ = create_control(L"BUTTON", L"Backtest Chart", BS_PUSHBUTTON | WS_TABSTOP, kBacktestChartId);
+        status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, 0);
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             quick_buttons_[static_cast<std::size_t>(i)] =
                 create_control(L"BUTTON", L"", BS_PUSHBUTTON | WS_TABSTOP, kQuickBaseId + i);
@@ -390,8 +409,10 @@ class MainWindow {
         const int top = scale(82);
         const int rail = scale(232);
         const int gap = scale(18);
+        const int status_h = scale(32);
+        const int status_gap = scale(12);
         const int right = client.right - pad;
-        const int bottom = client.bottom - pad;
+        const int bottom = client.bottom - pad - status_h - status_gap;
         const int main_left = pad + rail + gap;
         const int main_width = std::max(scale(640), right - main_left);
 
@@ -443,6 +464,7 @@ class MainWindow {
         const int output_top = tools_top + scale(58);
         MoveWindow(output_label_, main_left, output_top - scale(28), main_width, scale(22), TRUE);
         MoveWindow(output_edit_, main_left, output_top, main_width, std::max(scale(180), bottom - output_top), TRUE);
+        MoveWindow(status_bar_, pad, client.bottom - pad - status_h, right - pad, status_h, TRUE);
     }
 
     void paint() {
@@ -461,6 +483,8 @@ class MainWindow {
         fill_rect(dc, nav_panel, kPanel);
         RECT top_panel{pad + rail + scale(10), scale(10), client.right - pad + scale(8), top - scale(12)};
         fill_rect(dc, top_panel, kShell);
+        RECT status_panel{pad - scale(8), client.bottom - pad - scale(32) - scale(8), client.right - pad + scale(8), client.bottom - pad + scale(8)};
+        fill_rect(dc, status_panel, kShell);
         EndPaint(hwnd_, &ps);
     }
 
@@ -644,6 +668,7 @@ class MainWindow {
             };
         } else if (page_index_ == 3) {
             quick_actions_ = {
+                {L"API Budget", {L"api-budget --compact"}},
                 {L"Data Sync", {L"data-sync --help"}},
                 {L"Fetch", {L"fetch --help"}},
                 {L"Configure", {L"configure --help"}},
@@ -784,6 +809,7 @@ class MainWindow {
                 append_output(execute_cli(command));
             }
             running_ = false;
+            refresh_api_budget_async(true);
             if (smoke_) {
                 write_smoke_log();
             }
@@ -819,6 +845,34 @@ class MainWindow {
         SetWindowTextW(output_label_, running_ ? L"Output - running" : L"Output");
     }
 
+    void refresh_api_budget_async(bool cached_only) {
+        if (api_budget_running_.exchange(true)) {
+            return;
+        }
+        std::thread([this, cached_only] {
+            std::wstring command = cached_only ? L"api-budget --compact --cached-only" : L"api-budget --compact";
+            std::wstring text = execute_cli_first_line(command);
+            if (text.empty()) {
+                text = L"API budget: unavailable";
+            }
+            {
+                std::lock_guard lock(api_budget_mutex_);
+                api_budget_ = text;
+            }
+            api_budget_running_ = false;
+            PostMessageW(hwnd_, WM_APP + 2, 0, 0);
+        }).detach();
+    }
+
+    void sync_api_budget() {
+        std::wstring snapshot;
+        {
+            std::lock_guard lock(api_budget_mutex_);
+            snapshot = api_budget_;
+        }
+        SetWindowTextW(status_bar_, snapshot.c_str());
+    }
+
     std::wstring execute_cli(const std::wstring& args) {
         std::wstring command = shell_command_for_cli(args);
         FILE* pipe = _wpopen(command.c_str(), L"r");
@@ -833,6 +887,21 @@ class MainWindow {
         int exit_code = _pclose(pipe);
         captured += L"\r\n(exit " + std::to_wstring(exit_code) + L")\r\n";
         return captured;
+    }
+
+    std::wstring execute_cli_first_line(const std::wstring& args) {
+        std::wstring command = shell_command_for_cli(args);
+        FILE* pipe = _wpopen(command.c_str(), L"r");
+        if (!pipe) {
+            return L"";
+        }
+        std::array<wchar_t, 2048> buffer{};
+        std::wstring first;
+        if (fgetws(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
+            first = trim(buffer.data());
+        }
+        _pclose(pipe);
+        return first;
     }
 
     static bool env_present(const wchar_t* name) {
