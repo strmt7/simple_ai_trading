@@ -40,6 +40,18 @@ gates, not a promise of guaranteed profit.
   liquidity, and risk aversion must live inside the evaluation loop before any
   autonomous model can be accepted:
   <https://arxiv.org/abs/2111.09395>
+- Lopez de Prado's Hierarchical Risk Parity work influenced the portfolio
+  acceptance layer: individual profitable symbols are not enough if the
+  accepted set is concentrated in one high-correlation cluster:
+  <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678>
+- The Basel market-risk backtesting framework influenced the tail-risk gate:
+  the portfolio report measures VaR/CVaR-style losses and drawdown from the
+  same aligned returns used for model-lab acceptance:
+  <https://www.bis.org/publ/bcbs22.pdf>
+- NIST AI RMF's govern/map/measure/manage structure influenced the decision to
+  make AI/model risk explicit in reports instead of hiding it behind a single
+  score:
+  <https://airc.nist.gov/airmf-resources/airmf/5-sec-core/>
 - Microsoft DirectML was selected for the Windows-first GPU path because it
   supports DirectX 12 GPUs across AMD, NVIDIA, and Intel on Windows:
   <https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows>
@@ -126,9 +138,14 @@ objective gates; otherwise the objective remains rejected.
    baseline measured execution, wider spread/slippage, latency spike with a
    liquidity haircut, and combined liquidity crunch with fee/spread/latency
    stress.
-7. Writes a JSON report plus per-symbol `stress_validation.json` and marks an
-   outcome accepted only when all objective scores are positive and every stress
-   replay passes the objective risk gates.
+7. Builds a portfolio-level risk report from aligned symbol returns. This gate
+   computes inverse-volatility capped weights, effective symbol count,
+   pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
+   and portfolio drawdown.
+8. Writes a JSON report plus per-symbol `stress_validation.json` and
+   `portfolio_risk.json`. An outcome is accepted only when all objective scores
+   are positive, every stress replay passes the objective risk gates, and the
+   accepted set passes the portfolio diversification and tail-risk gates.
 
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
@@ -168,6 +185,8 @@ assert that every CLI command appears in the Windows app.
 - No selected training-suite model without purged walk-forward evidence when
   enough rows are available.
 - No single-scenario-only model-lab acceptance.
+- No model-lab acceptance when the individually passing symbols fail the
+  portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

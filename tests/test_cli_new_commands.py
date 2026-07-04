@@ -287,6 +287,14 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
             ],
             market_type=runtime_arg.market_type,
             report_path=str(tmp_path / "report.json"),
+            portfolio_risk={
+                "accepted": True,
+                "deployed_weight": 0.4,
+                "effective_symbol_count": 2.0,
+                "portfolio_cvar_95": 0.001,
+                "max_pairwise_correlation": 0.25,
+                "reason": None,
+            },
         )
 
     monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
@@ -318,7 +326,9 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
         "max_candidates": 4,
     }
     assert runtime.market_type == "spot"
-    assert "market=futures" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "market=futures" in out
+    assert "portfolio risk: pass" in out
 
 
 # --------------------------------------------------------------------------- #

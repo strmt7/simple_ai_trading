@@ -50,6 +50,31 @@ class _Client:
         ]
 
 
+class _ThreeLiquidClient(_Client):
+    def get_exchange_info(self):
+        return {
+            "symbols": [
+                {"symbol": "AAAUSDC", "status": "TRADING"},
+                {"symbol": "BBBUSDC", "status": "TRADING"},
+                {"symbol": "CCCUSDC", "status": "TRADING"},
+            ]
+        }
+
+    def get_all_tickers_24h(self):
+        return [
+            {"symbol": "AAAUSDC", "quoteVolume": "1000000", "count": "10000"},
+            {"symbol": "BBBUSDC", "quoteVolume": "900000", "count": "9000"},
+            {"symbol": "CCCUSDC", "quoteVolume": "800000", "count": "8000"},
+        ]
+
+    def get_all_book_tickers(self):
+        return [
+            {"symbol": "AAAUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+            {"symbol": "BBBUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+            {"symbol": "CCCUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+        ]
+
+
 class _Stress:
     def __init__(self, accepted: bool) -> None:
         self.accepted = accepted
@@ -100,6 +125,9 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.accepted_symbols == ["AAAUSDC", "BBBUSDC"]
     assert (tmp_path / "model_lab_report.json").exists()
     assert (tmp_path / "AAAUSDC" / "stress_validation.json").exists()
+    assert (tmp_path / "portfolio_risk.json").exists()
+    assert report.portfolio_risk is not None
+    assert report.portfolio_risk["accepted"] is True
     assert report.outcomes[0].hybrid_profiles["regular"] == "balanced_neighbors"
     assert report.outcomes[0].stress_validation["accepted"] is True
 
@@ -176,3 +204,44 @@ def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, 
     assert report.accepted_symbols == []
     assert report.outcomes[0].accepted is False
     assert report.outcomes[0].error == "stress_validation_failed"
+
+
+def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_path: Path, monkeypatch) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            total_rows=len(candles),
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    runtime = RuntimeConfig(symbols=("AAAUSDC", "BBBUSDC", "CCCUSDC"), quote_asset="USDC", interval="1m")
+    strategy = StrategyConfig(
+        min_quote_volume_usdc=1000.0,
+        min_trade_count_24h=100,
+        max_spread_bps=10.0,
+        min_liquidity_score=0.1,
+        min_diversified_assets=3,
+        max_asset_allocation_pct=0.20,
+    )
+
+    report = run_model_lab(
+        _ThreeLiquidClient(),
+        runtime,
+        strategy,
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=3,
+        limit=120,
+        compute_backend="cpu",
+    )
+
+    assert report.accepted_symbols == []
+    assert report.portfolio_risk is not None
+    assert report.portfolio_risk["accepted"] is False
+    assert "cluster_weight>" in str(report.portfolio_risk["reason"])
+    assert {outcome.error for outcome in report.outcomes} == {"portfolio_risk_failed"}
+    assert all(outcome.diagnostics and "portfolio_risk_reason" in outcome.diagnostics for outcome in report.outcomes)

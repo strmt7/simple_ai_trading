@@ -8,6 +8,7 @@ from typing import Sequence
 
 from .api import BinanceAPIError, BinanceClient, Candle
 from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
+from .portfolio_risk import PortfolioRiskReport, build_portfolio_risk_report
 from .robust_validation import SuiteStressReport, validate_suite_under_stress
 from .storage import write_json_atomic
 from .training_suite import SuiteReport, TrainingSuiteRejected, run_training_suite
@@ -43,6 +44,7 @@ class ModelLabReport:
     outcomes: list[SymbolResearchOutcome]
     output_dir: str
     report_path: str
+    portfolio_risk: dict[str, object] | None = None
 
     @property
     def accepted_symbols(self) -> list[str]:
@@ -56,6 +58,7 @@ class ModelLabReport:
             "requested_objectives": list(self.requested_objectives),
             "universe": self.universe,
             "accepted_symbols": self.accepted_symbols,
+            "portfolio_risk": self.portfolio_risk,
             "outcomes": [item.asdict() for item in self.outcomes],
             "output_dir": self.output_dir,
             "report_path": self.report_path,
@@ -97,6 +100,38 @@ def _outcome_from_suite(
     )
 
 
+def _apply_portfolio_risk_gate(
+    outcomes: list[SymbolResearchOutcome],
+    candles_by_symbol: dict[str, list[Candle]],
+    strategy: StrategyConfig,
+    *,
+    min_symbols: int,
+) -> PortfolioRiskReport:
+    candidates = {
+        outcome.symbol: candles_by_symbol[outcome.symbol]
+        for outcome in outcomes
+        if outcome.accepted and outcome.symbol in candles_by_symbol
+    }
+    report = build_portfolio_risk_report(candidates, strategy, min_symbols=min_symbols)
+    if report.accepted or not candidates:
+        return report
+    for outcome in outcomes:
+        if not outcome.accepted:
+            continue
+        outcome.accepted = False
+        outcome.error = "portfolio_risk_failed"
+        details = {
+            "portfolio_risk_reason": report.reason,
+            "portfolio_cvar_95": report.portfolio_cvar_95,
+            "portfolio_max_drawdown": report.portfolio_max_drawdown,
+            "effective_symbol_count": report.effective_symbol_count,
+            "max_pairwise_correlation": report.max_pairwise_correlation,
+            "max_cluster_weight": report.max_cluster_weight,
+        }
+        outcome.diagnostics = {**(outcome.diagnostics or {}), **details}
+    return report
+
+
 def run_model_lab(
     client: BinanceClient,
     runtime: RuntimeConfig,
@@ -125,12 +160,14 @@ def run_model_lab(
     )
     outcomes: list[SymbolResearchOutcome] = []
     liquidity_by_symbol = {item.symbol: item for item in universe.eligible}
+    candles_by_symbol: dict[str, list[Candle]] = {}
     for item in universe.eligible:
         symbol = item.symbol
         symbol_dir = output_dir / _safe_symbol_path(symbol)
         symbol_dir.mkdir(parents=True, exist_ok=True)
         try:
             candles = _candles_for_symbol(client, symbol, runtime.interval, limit)
+            candles_by_symbol[symbol] = candles
             suite = run_training_suite(
                 candles,
                 strategy,
@@ -183,6 +220,14 @@ def run_model_lab(
                 error=str(exc),
                 liquidity=item.asdict(),
             ))
+    portfolio_report = _apply_portfolio_risk_gate(
+        outcomes,
+        candles_by_symbol,
+        strategy,
+        min_symbols=universe.min_required,
+    )
+    portfolio_report_path = output_dir / "portfolio_risk.json"
+    write_json_atomic(portfolio_report_path, portfolio_report.asdict(), indent=2, sort_keys=True)
     report_path = output_dir / "model_lab_report.json"
     report = ModelLabReport(
         quote_asset=runtime.quote_asset,
@@ -193,6 +238,10 @@ def run_model_lab(
         outcomes=outcomes,
         output_dir=str(output_dir),
         report_path=str(report_path),
+        portfolio_risk={
+            **portfolio_report.asdict(),
+            "report_path": str(portfolio_report_path),
+        },
     )
     write_json_atomic(report_path, report.asdict(), indent=2)
     return report
