@@ -24,6 +24,7 @@ from .advanced_model import (
 from .api import Candle
 from .backtest import BacktestResult, run_backtest
 from .execution_simulation import SymbolExecutionProfile
+from .market_edge import build_market_edge_report
 from .model import ModelLoadError, TrainedModel, load_model
 from .objective import get_objective
 from .regime import classify_market_regime, summarize_regime_windows
@@ -351,7 +352,7 @@ def _chronological_windows(
     return windows
 
 
-def _result_payload(result: BacktestResult) -> dict[str, object]:
+def _result_payload(result: BacktestResult, *, objective_name: str | None = None) -> dict[str, object]:
     trade_returns = [
         float(value)
         for value in getattr(result, "trade_returns", ())
@@ -363,7 +364,7 @@ def _result_payload(result: BacktestResult) -> dict[str, object]:
         if isinstance(value, (int, float)) and math.isfinite(float(value))
     ]
     equity_curve = getattr(result, "equity_curve", ())
-    return {
+    payload: dict[str, object] = {
         "starting_cash": float(result.starting_cash),
         "ending_cash": float(result.ending_cash),
         "realized_pnl": float(result.realized_pnl),
@@ -394,6 +395,9 @@ def _result_payload(result: BacktestResult) -> dict[str, object]:
         "scoring_backend_device": result.scoring_backend_device,
         "scoring_backend_reason": result.scoring_backend_reason,
     }
+    if objective_name:
+        payload["market_edge"] = build_market_edge_report(result, objective_name).asdict()
+    return payload
 
 
 def _reject_reason(result: BacktestResult, *, objective_name: str, accepted: bool) -> str | None:
@@ -446,7 +450,7 @@ def validate_model_under_stress(
             accepted=bool(accepted),
             reject_reason=_reject_reason(result, objective_name=spec.name, accepted=bool(accepted)),
             score=float(score),
-            result=_result_payload(result),
+            result=_result_payload(result, objective_name=spec.name),
             assumptions={
                 "scenario": scenario.asdict(),
                 "strategy": {
@@ -632,7 +636,7 @@ def validate_model_temporal_robustness(
             start_index=start,
             end_index=end,
             rows=len(window_rows),
-            result=_result_payload(result),
+            result=_result_payload(result, objective_name=spec.name),
             regime=regime,
         ))
     accepted_windows = sum(1 for item in window_results if item.accepted)

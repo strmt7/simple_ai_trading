@@ -346,6 +346,9 @@ def test_validate_suite_under_stress_loads_saved_models(tmp_path: Path, monkeypa
     assert report.objective_count == 1
     assert report.scenario_count == 1
     assert report.objectives[0].model_path == str(model_path)
+    edge = report.objectives[0].results[0].result["market_edge"]
+    assert edge["objective"] == "regular"
+    assert edge["net_edge_pct"] == pytest.approx(0.015)
 
 
 def test_validate_suite_temporal_robustness_loads_saved_models(

@@ -238,6 +238,65 @@ def _accepted_outcomes(payload: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return [item for item in outcomes if isinstance(item, Mapping) and item.get("accepted") is True]
 
 
+def _iter_market_edge_reports(payload: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
+    reports: list[tuple[str, Mapping[str, Any]]] = []
+    direct = payload.get("market_edge")
+    if isinstance(direct, Mapping):
+        reports.append(("market_edge", direct))
+    objectives = payload.get("objectives")
+    if not isinstance(objectives, list):
+        return reports
+    for objective_index, objective in enumerate(objectives):
+        if not isinstance(objective, Mapping):
+            continue
+        objective_edge = objective.get("market_edge")
+        if isinstance(objective_edge, Mapping):
+            reports.append((f"objectives[{objective_index}].market_edge", objective_edge))
+        for collection_name in ("results", "windows"):
+            collection = objective.get(collection_name)
+            if not isinstance(collection, list):
+                continue
+            for item_index, item in enumerate(collection):
+                if not isinstance(item, Mapping):
+                    continue
+                result = item.get("result")
+                if not isinstance(result, Mapping):
+                    continue
+                edge = result.get("market_edge")
+                if isinstance(edge, Mapping):
+                    reports.append((f"objectives[{objective_index}].{collection_name}[{item_index}].result.market_edge", edge))
+    return reports
+
+
+def _market_edge_checks(payload: Mapping[str, Any], *, path: str) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    reports = _iter_market_edge_reports(payload)
+    summary_accepted = payload.get("market_edge_accepted")
+    if summary_accepted is False:
+        checks.append(_check("block", "market edge", "summary reports failed market-edge evidence", path=f"{path}.market_edge_accepted"))
+    if payload.get("accepted") is True and isinstance(payload.get("objectives"), list) and not reports:
+        checks.append(_check("block", "market edge", "accepted validation report is missing market-edge evidence", path=path))
+    for relative_path, report in reports:
+        accepted = report.get("accepted")
+        net_edge_pct = _finite(report.get("net_edge_pct"))
+        min_edge_pct = _finite(report.get("min_net_edge_pct"))
+        reason = str(report.get("reason") or "accepted")[:240]
+        full_path = f"{path}.{relative_path}"
+        checks.append(
+            _check(
+                "ok" if accepted is True else "block",
+                "market edge",
+                reason,
+                path=full_path,
+                metric=net_edge_pct if net_edge_pct is not None else "missing",
+                limit=f">={min_edge_pct:g}" if min_edge_pct is not None else "positive audited edge",
+            )
+        )
+        if net_edge_pct is None:
+            checks.append(_check("block", "market edge pct", "missing or non-finite net edge", path=f"{full_path}.net_edge_pct"))
+    return checks
+
+
 def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, source: str = "model_lab") -> FinancialSanityReport:
     checks: list[FinancialSanityCheck] = []
     portfolio = payload.get("portfolio_risk")
@@ -317,6 +376,9 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 continue
             if field_value.get("accepted") is not True:
                 checks.append(_check("block", field_name, "accepted outcome has failed validation", path=f"{prefix}.{field_name}.accepted"))
+            if field_name == "robustness_validation" and field_value.get("statistical_edge_accepted") is False:
+                checks.append(_check("block", field_name, "accepted outcome failed statistical-edge evidence", path=f"{prefix}.{field_name}.statistical_edge_accepted"))
+            checks.extend(_market_edge_checks(field_value, path=f"{prefix}.{field_name}"))
             drawdown_key = "worst_max_drawdown"
             if drawdown_key in field_value:
                 checks.append(

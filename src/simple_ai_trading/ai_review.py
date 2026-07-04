@@ -215,6 +215,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                     "scenario_count": int(_finite(stress.get("scenario_count"))),
                     "worst_realized_pnl": _finite(stress.get("worst_realized_pnl")),
                     "worst_max_drawdown": _finite(stress.get("worst_max_drawdown")),
+                    **_compact_market_edge_validation(stress),
                 }
             robustness = item.get("robustness_validation")
             robustness_summary: dict[str, object] | None = None
@@ -233,6 +234,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                     ),
                     "worst_sign_test_p_value": _finite(robustness.get("worst_sign_test_p_value")),
                     "worst_bootstrap_lower_mean_return": _finite(robustness.get("worst_bootstrap_lower_mean_return")),
+                    **_compact_market_edge_validation(robustness),
                 }
             regime = item.get("regime_validation")
             if not isinstance(regime, Mapping) and isinstance(robustness, Mapping):
@@ -320,6 +322,48 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
         "portfolio_risk": portfolio_summary,
         "learning_feedback": learning_feedback,
         "outcomes": compact_outcomes,
+    }
+
+
+def _compact_market_edge_validation(validation: Mapping[str, object]) -> dict[str, object]:
+    reports: list[Mapping[str, object]] = []
+    direct = validation.get("market_edge")
+    if isinstance(direct, Mapping):
+        reports.append(direct)
+    objectives = validation.get("objectives")
+    if isinstance(objectives, list):
+        for objective in objectives[:4]:
+            if not isinstance(objective, Mapping):
+                continue
+            objective_edge = objective.get("market_edge")
+            if isinstance(objective_edge, Mapping):
+                reports.append(objective_edge)
+            for collection_name in ("results", "windows"):
+                collection = objective.get(collection_name)
+                if not isinstance(collection, list):
+                    continue
+                for item in collection[:8]:
+                    if not isinstance(item, Mapping):
+                        continue
+                    result = item.get("result")
+                    if not isinstance(result, Mapping):
+                        continue
+                    edge = result.get("market_edge")
+                    if isinstance(edge, Mapping):
+                        reports.append(edge)
+    if not reports:
+        if "market_edge_accepted" in validation:
+            return {"market_edge_accepted": bool(validation.get("market_edge_accepted"))}
+        return {}
+    failed_reasons = [
+        _bounded_text(report.get("reason"))
+        for report in reports
+        if report.get("accepted") is not True and report.get("reason")
+    ]
+    return {
+        "market_edge_accepted": all(report.get("accepted") is True for report in reports),
+        "worst_market_edge_pct": min((_finite(report.get("net_edge_pct")) for report in reports), default=0.0),
+        "market_edge_failed_reasons": failed_reasons[:_MAX_CONCERNS],
     }
 
 
