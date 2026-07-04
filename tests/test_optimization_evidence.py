@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from simple_ai_trading.api import Candle
 from simple_ai_trading.assets import DEFAULT_REGULAR_LEVERAGE
+from simple_ai_trading.backtest import BacktestResult
+from simple_ai_trading.features import ModelRow
 from simple_ai_trading import optimization_evidence as oe
 from simple_ai_trading.market_store import MarketDataStore
+from simple_ai_trading.model import TrainedModel
+from simple_ai_trading.objective import get_objective
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -158,6 +163,100 @@ def test_fetch_full_history_refuses_network_backfill_when_prefill_required(
         )
 
     assert called is False
+
+
+def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_inversion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(
+            timestamp=index * 60_000,
+            close=100.0 + index,
+            features=(1.0,),
+            label=1,
+        )
+        for index in range(100)
+    ]
+    model = TrainedModel(
+        weights=[-1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    observed: dict[str, object] = {"run_lengths": []}
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+
+    def fake_train_advanced(train_rows, _feature_cfg, **kwargs):
+        observed["train_rows"] = len(train_rows)
+        observed["train_validation_rows"] = len(kwargs["validation_rows"])
+        return model, SimpleNamespace(row_count=len(train_rows), positive_rate=1.0)
+
+    monkeypatch.setattr(oe, "train_advanced", fake_train_advanced)
+    monkeypatch.setattr(
+        oe,
+        "calibrate_probability_temperature",
+        lambda calibration_rows, _model: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+    )
+
+    def fake_threshold(selection_rows, _model, _strategy, **_kwargs):
+        observed["threshold_rows"] = len(selection_rows)
+        return SimpleNamespace(
+            accepted=True,
+            threshold=0.77,
+            score=2.0,
+            realized_pnl=12.0,
+            closed_trades=7,
+        )
+
+    monkeypatch.setattr(oe, "calibrate_threshold_for_backtest", fake_threshold)
+
+    def result_for(realized_pnl: float) -> BacktestResult:
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + realized_pnl,
+            realized_pnl=realized_pnl,
+            win_rate=0.75,
+            trades=8,
+            max_drawdown=0.01,
+            closed_trades=8,
+            gross_exposure=100.0,
+            total_fees=1.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            buy_hold_pnl=1.0,
+            edge_vs_buy_hold=realized_pnl - 1.0,
+            profit_factor=1.5,
+            expectancy=realized_pnl / 8.0,
+            max_consecutive_losses=1,
+        )
+
+    def fake_run_backtest(selection_rows, candidate_model, *_args, **_kwargs):
+        observed["run_lengths"].append(len(selection_rows))  # type: ignore[index]
+        return result_for(20.0 if candidate_model.probability_inverted else 10.0)
+
+    monkeypatch.setattr(oe, "run_backtest", fake_run_backtest)
+
+    selected_model, _report, _all_rows, holdout_rows = oe.train_round_model(
+        [_candle(index) for index in range(100)],
+        StrategyConfig(),
+        get_objective("conservative"),
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+    )
+
+    assert observed["train_rows"] == 60
+    assert observed["train_validation_rows"] == 15
+    assert observed["threshold_rows"] == 15
+    assert observed["run_lengths"] == [15, 15]
+    assert len(holdout_rows) == 25
+    assert selected_model.decision_threshold == pytest.approx(0.77)
+    assert selected_model.threshold_source == "round_selection_backtest"
+    assert selected_model.probability_inverted is True
 
 
 def test_build_round_evidence_records_data_health_block_before_training(
