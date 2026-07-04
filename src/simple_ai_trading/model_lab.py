@@ -31,6 +31,7 @@ class SymbolResearchOutcome:
     liquidity: dict[str, object] | None = None
     objective_scores: dict[str, float] = field(default_factory=dict)
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
+    hybrid_ablation: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     meta_label_validation: dict[str, object] = field(default_factory=dict)
     stress_validation: dict[str, object] | None = None
     stress_report_path: str | None = None
@@ -93,6 +94,11 @@ def _outcome_from_suite(
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
+    hybrid_ablation = {
+        outcome.objective: list(getattr(outcome, "hybrid_ablation", []) or [])
+        for outcome in suite.outcomes
+        if getattr(outcome, "hybrid_ablation", None)
+    }
     meta_labels = {
         outcome.objective: outcome.meta_label_report
         for outcome in suite.outcomes
@@ -119,6 +125,7 @@ def _outcome_from_suite(
         liquidity=liquidity.asdict(),
         objective_scores=scores,
         hybrid_profiles=hybrid_profiles,
+        hybrid_ablation=hybrid_ablation,
         meta_label_validation=meta_labels,
         stress_validation=stress_report.asdict(),
         stress_report_path=str(stress_report_path),

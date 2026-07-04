@@ -22,6 +22,19 @@ from .types import StrategyConfig
 
 
 @dataclass(frozen=True)
+class HybridAblationResult:
+    removed_expert_kind: str
+    removed_expert_count: int
+    remaining_expert_count: int
+    accepted: bool
+    score: float
+    delta_vs_best: float
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class HybridOptimizationReport:
     accepted: bool
     model: TrainedModel
@@ -31,11 +44,13 @@ class HybridOptimizationReport:
     evaluated_profiles: int
     base_result: BacktestResult | None
     best_result: BacktestResult | None
+    ablation_results: tuple[HybridAblationResult, ...] = ()
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
         payload["base_result"] = asdict(self.base_result) if self.base_result is not None else None
         payload["best_result"] = asdict(self.best_result) if self.best_result is not None else None
+        payload["ablation_results"] = [item.asdict() for item in self.ablation_results]
         return payload
 
 
@@ -207,6 +222,68 @@ def _evaluate_model(
     return float(objective.score(result)), result
 
 
+def _score_delta(score: float, best_score: float) -> float:
+    if not math.isfinite(score) or not math.isfinite(best_score):
+        return float("-inf")
+    return float(score - best_score)
+
+
+def _hybrid_ablation_results(
+    *,
+    base_model: TrainedModel,
+    best_model: TrainedModel,
+    base_score: float,
+    best_score: float,
+    rows: Sequence[ModelRow],
+    strategy: StrategyConfig,
+    objective_name: str,
+    market_type: str,
+    starting_cash: float,
+    compute_backend: str | None,
+    score_batch_size: int,
+) -> tuple[HybridAblationResult, ...]:
+    """Replay the selected hybrid with individual expert families removed."""
+
+    if not best_model.hybrid_experts:
+        return ()
+    results: list[HybridAblationResult] = [
+        HybridAblationResult(
+            removed_expert_kind="all_hybrid_experts",
+            removed_expert_count=len(best_model.hybrid_experts),
+            remaining_expert_count=0,
+            accepted=math.isfinite(base_score),
+            score=float(base_score),
+            delta_vs_best=_score_delta(float(base_score), best_score),
+        )
+    ]
+    for kind in sorted({expert.kind for expert in best_model.hybrid_experts}):
+        candidate = copy.deepcopy(best_model)
+        original_count = len(candidate.hybrid_experts)
+        candidate.hybrid_experts = [expert for expert in candidate.hybrid_experts if expert.kind != kind]
+        removed = original_count - len(candidate.hybrid_experts)
+        if removed <= 0:
+            continue
+        score, _result = _evaluate_model(
+            candidate if candidate.hybrid_experts else base_model,
+            rows,
+            strategy,
+            objective_name=objective_name,
+            market_type=market_type,
+            starting_cash=starting_cash,
+            compute_backend=compute_backend,
+            score_batch_size=score_batch_size,
+        )
+        results.append(HybridAblationResult(
+            removed_expert_kind=kind,
+            removed_expert_count=removed,
+            remaining_expert_count=len(candidate.hybrid_experts),
+            accepted=math.isfinite(score),
+            score=float(score),
+            delta_vs_best=_score_delta(float(score), best_score),
+        ))
+    return tuple(results)
+
+
 def optimize_hybrid_model_zoo(
     model: TrainedModel,
     training_rows: Sequence[ModelRow],
@@ -277,6 +354,23 @@ def optimize_hybrid_model_zoo(
             best_result = result
             best_profile = profile.name
     accepted = bool(best_model.hybrid_experts and math.isfinite(best_score))
+    ablation_results = (
+        _hybrid_ablation_results(
+            base_model=base_model,
+            best_model=best_model,
+            base_score=float(base_score),
+            best_score=float(best_score),
+            rows=selection_rows,
+            strategy=strategy,
+            objective_name=objective_name,
+            market_type=market_type,
+            starting_cash=starting_cash,
+            compute_backend=compute_backend,
+            score_batch_size=score_batch_size,
+        )
+        if accepted
+        else ()
+    )
     return HybridOptimizationReport(
         accepted=accepted,
         model=best_model,
@@ -286,4 +380,5 @@ def optimize_hybrid_model_zoo(
         evaluated_profiles=evaluated,
         base_result=base_result,
         best_result=best_result,
+        ablation_results=ablation_results,
     )
