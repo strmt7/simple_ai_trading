@@ -117,10 +117,11 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "self->hwnd_ = hwnd;" in source
     assert 'create_control(L"LISTBOX"' in source
     assert 'L"COMBOBOX"' in source
-    assert 'L"Dashboard"' in source
-    assert 'L"Market Data"' in source
-    assert 'L"Stop Trading"' in source
-    assert 'L"Backtest Chart"' in source
+    assert 'L"Home"' in source
+    assert 'L"Data Center"' in source
+    assert 'L"Stop + Close"' in source
+    assert 'L"Backtest Graph"' in source
+    assert 'L"Recommended Workflows"' in source
     assert 'L"Activity Log"' in source
     assert "status_bar_" in source
     assert "kStatusBarId = 111" in source
@@ -142,8 +143,8 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     layout = (root / "tools" / "validate_native_windows_layout.ps1").read_text(encoding="utf-8")
 
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
-    assert "Stop Trading" in smoke
-    assert "Backtest Chart" in smoke
+    assert "Stop + Close" in smoke
+    assert "Backtest Graph" in smoke
     assert "SetProcessDPIAware" in capture
     assert "PrintWindow" in capture
     assert "Captured window is too small" in capture

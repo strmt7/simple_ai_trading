@@ -222,9 +222,9 @@ try {
     $output = Assert-VisibleControl $window $OutputEditId "activity log" 700 150
     $run = Assert-VisibleControl $window $RunSelectedId "run selected" 120 34
     $help = Assert-VisibleControl $window $SelectedHelpId "show help" 120 30
-    $stop = Assert-VisibleControl $window $StopAllId "stop trading" 140 54
-    $ai = Assert-VisibleControl $window $AiPreflightId "pause bot" 140 54
-    $risk = Assert-VisibleControl $window $RiskReportId "risk check" 140 54
+    $stop = Assert-VisibleControl $window $StopAllId "stop and close" 140 58
+    $ai = Assert-VisibleControl $window $AiPreflightId "pause" 120 58
+    $risk = Assert-VisibleControl $window $RiskReportId "risk review" 140 58
     $model = Assert-VisibleControl $window $ModelLabId "positions" 140 54
     $chart = Assert-VisibleControl $window $BacktestChartId "reconcile" 140 54
     $status = Assert-VisibleControl $window $StatusBarId "API budget footer" 900 20
@@ -236,9 +236,9 @@ try {
         @{ Name = "activity log"; Rect = $output },
         @{ Name = "run selected"; Rect = $run },
         @{ Name = "show help"; Rect = $help },
-        @{ Name = "stop trading"; Rect = $stop },
-        @{ Name = "pause bot"; Rect = $ai },
-        @{ Name = "risk check"; Rect = $risk },
+        @{ Name = "stop and close"; Rect = $stop },
+        @{ Name = "pause"; Rect = $ai },
+        @{ Name = "risk review"; Rect = $risk },
         @{ Name = "positions"; Rect = $model },
         @{ Name = "reconcile"; Rect = $chart },
         @{ Name = "API budget footer"; Rect = $status }
@@ -258,7 +258,7 @@ try {
     Assert-True ($output.Bottom -lt $status.Top) "activity log overlaps API budget footer"
 
     $quickRects = @()
-    for ($i = 0; $i -lt 5; $i++) {
+    for ($i = 0; $i -lt 4; $i++) {
         $quickRects += Assert-VisibleControl $window ($QuickBaseId + $i) "dashboard workflow card $i" 190 58
     }
     for ($i = 0; $i -lt $quickRects.Count; $i++) {
@@ -267,7 +267,7 @@ try {
             Assert-NoOverlap "dashboard workflow card $i" $quickRects[$i] "dashboard workflow card $j" $quickRects[$j]
         }
     }
-    $hiddenQuick = Get-Control $window ($QuickBaseId + 5) "unused dashboard workflow card"
+    $hiddenQuick = Get-Control $window ($QuickBaseId + 4) "unused dashboard workflow card"
     Assert-True (-not [SatNativeLayoutAudit]::IsWindowVisible($hiddenQuick)) "unused dashboard workflow card is visible"
 
     $pageCount = [SatNativeLayoutAudit]::SendMessage((Get-Control $window $PageListId "workflow navigation"), $LB_GETCOUNT, [IntPtr]::Zero, [IntPtr]::Zero).ToInt32()

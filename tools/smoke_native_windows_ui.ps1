@@ -151,7 +151,7 @@ try {
     }
 
     Select-Page $window $pageList 0
-    Select-Command $window $combo "Dashboard / compute"
+    Select-Command $window $combo "Home / compute"
     Click-Control (Get-Control $window $RunSelectedId)
     Assert-OutputContains $output "dry-run: simple-ai-trading compute"
 
@@ -159,11 +159,10 @@ try {
     Assert-OutputContains $output "dry-run: simple-ai-trading compute --help"
 
     foreach ($expected in @(
-        @{ Id = $QuickBaseId + 0; Text = "Health Check"; Needle = "dry-run: simple-ai-trading doctor" },
-        @{ Id = $QuickBaseId + 1; Text = "API Budget"; Needle = "dry-run: simple-ai-trading api-budget --compact" },
-        @{ Id = $QuickBaseId + 2; Text = "Paper Status"; Needle = "dry-run: simple-ai-trading positions" },
-        @{ Id = $QuickBaseId + 3; Text = "Backtest Chart"; Needle = "dry-run: simple-ai-trading backtest-chart" },
-        @{ Id = $QuickBaseId + 4; Text = "Model Lab"; Needle = "dry-run: simple-ai-trading model-lab --objective conservative" }
+        @{ Id = $QuickBaseId + 0; Text = "System Check"; Needle = "dry-run: simple-ai-trading doctor" },
+        @{ Id = $QuickBaseId + 1; Text = "Paper Trial"; Needle = "dry-run: simple-ai-trading live --paper --steps 1" },
+        @{ Id = $QuickBaseId + 2; Text = "Research Run"; Needle = "dry-run: simple-ai-trading model-lab --objective conservative" },
+        @{ Id = $QuickBaseId + 3; Text = "Backtest Graph"; Needle = "dry-run: simple-ai-trading backtest-chart" }
     )) {
         $button = Get-Control $window $expected.Id
         $text = Get-ControlText $button
@@ -178,9 +177,9 @@ try {
     }
 
     foreach ($expected in @(
-        @{ Id = $StopAllId; Text = "Stop Trading"; Needle = "dry-run: simple-ai-trading close all" },
-        @{ Id = $AiPreflightId; Text = "Pause Bot"; Needle = "dry-run: simple-ai-trading autonomous pause" },
-        @{ Id = $RiskReportId; Text = "Risk Check"; Needle = "dry-run: simple-ai-trading risk --paper" },
+        @{ Id = $StopAllId; Text = "Stop + Close"; Needle = "dry-run: simple-ai-trading close all" },
+        @{ Id = $AiPreflightId; Text = "Pause"; Needle = "dry-run: simple-ai-trading autonomous pause" },
+        @{ Id = $RiskReportId; Text = "Risk Review"; Needle = "dry-run: simple-ai-trading risk --paper" },
         @{ Id = $ModelLabId; Text = "Positions"; Needle = "dry-run: simple-ai-trading positions" },
         @{ Id = $BacktestChartId; Text = "Reconcile"; Needle = "dry-run: simple-ai-trading reconcile" }
     )) {
