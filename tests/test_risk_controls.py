@@ -120,6 +120,12 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
                 "trial_penalty": 0.02,
                 "deflated_score": 0.08,
             },
+            execution_validation={
+                "passed": True,
+                "symbol": "BTCUSDC",
+                "stress": {"accepted": True},
+                "temporal_robustness": {"accepted": True},
+            },
         ),
         promoted_path,
     )

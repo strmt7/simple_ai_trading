@@ -8,6 +8,7 @@ from typing import Sequence
 
 from .api import BinanceAPIError, BinanceClient, Candle
 from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
+from .model import ModelLoadError, load_model, serialize_model
 from .portfolio_risk import PortfolioRiskReport, build_portfolio_risk_report
 from .robust_validation import (
     SuiteStressReport,
@@ -155,6 +156,92 @@ def _outcome_from_suite(
     )
 
 
+def _objective_report(payload: dict[str, object], objective: str) -> dict[str, object] | None:
+    reports = payload.get("objectives")
+    if not isinstance(reports, list):
+        return None
+    for item in reports:
+        if isinstance(item, dict) and str(item.get("objective") or "") == objective:
+            return item
+    return None
+
+
+def _stamp_model_execution_validation(
+    suite: SuiteReport,
+    *,
+    symbol: str,
+    market_type: str,
+    interval: str,
+    liquidity: MarketEligibility,
+    stress_profile: object,
+    stress_report: SuiteStressReport,
+    stress_report_path: Path,
+    robustness_report: SuiteTemporalRobustnessReport,
+    robustness_report_path: Path,
+) -> None:
+    """Persist symbol-specific execution validation on each model-lab artifact."""
+
+    stress_payload = stress_report.asdict()
+    robustness_payload = robustness_report.asdict()
+    for outcome in getattr(suite, "outcomes", []):
+        model_path = getattr(outcome, "model_path", None)
+        objective = str(getattr(outcome, "objective", "") or "")
+        if not model_path or not objective:
+            continue
+        path = Path(model_path)
+        if not path.exists():
+            continue
+        stress_objective = _objective_report(stress_payload, objective)
+        robustness_objective = _objective_report(robustness_payload, objective)
+        stress_accepted = bool(stress_objective.get("accepted")) if stress_objective else bool(stress_report.accepted)
+        robustness_accepted = (
+            bool(robustness_objective.get("accepted"))
+            if robustness_objective
+            else bool(robustness_report.accepted)
+        )
+        try:
+            model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
+            model.execution_validation = {
+                "passed": bool(stress_accepted and robustness_accepted),
+                "source": "model_lab",
+                "symbol": symbol.upper(),
+                "market_type": market_type,
+                "interval": interval,
+                "objective": objective,
+                "liquidity": liquidity.asdict(),
+                "symbol_execution_profile": (
+                    stress_profile.asdict()
+                    if hasattr(stress_profile, "asdict")
+                    else None
+                ),
+                "stress": {
+                    "accepted": bool(stress_accepted),
+                    "suite_accepted": bool(stress_report.accepted),
+                    "scenario_count": int(getattr(stress_report, "scenario_count", 0)),
+                    "accepted_objectives": int(getattr(stress_report, "accepted_objectives", 0)),
+                    "worst_realized_pnl": float(getattr(stress_report, "worst_realized_pnl", 0.0)),
+                    "worst_max_drawdown": float(getattr(stress_report, "worst_max_drawdown", 0.0)),
+                    "report_path": str(stress_report_path),
+                    "objective": stress_objective,
+                },
+                "temporal_robustness": {
+                    "accepted": bool(robustness_accepted),
+                    "suite_accepted": bool(robustness_report.accepted),
+                    "window_count": int(getattr(robustness_report, "window_count", 0)),
+                    "accepted_windows": int(getattr(robustness_report, "accepted_windows", 0)),
+                    "accepted_window_rate": float(getattr(robustness_report, "accepted_window_rate", 0.0)),
+                    "worst_realized_pnl": float(getattr(robustness_report, "worst_realized_pnl", 0.0)),
+                    "worst_max_drawdown": float(getattr(robustness_report, "worst_max_drawdown", 0.0)),
+                    "statistical_edge_accepted": bool(getattr(robustness_report, "statistical_edge_accepted", False)),
+                    "report_path": str(robustness_report_path),
+                    "objective": robustness_objective,
+                },
+            }
+            serialize_model(model, path)
+        except (ModelLoadError, OSError, ValueError):
+            continue
+
+
 def _apply_portfolio_risk_gate(
     outcomes: list[SymbolResearchOutcome],
     candles_by_symbol: dict[str, list[Candle]],
@@ -268,6 +355,18 @@ def run_model_lab(
             )
             robustness_report_path = symbol_dir / "temporal_robustness.json"
             write_json_atomic(robustness_report_path, robustness_report.asdict(), indent=2, sort_keys=True)
+            _stamp_model_execution_validation(
+                suite,
+                symbol=symbol,
+                market_type=runtime.market_type,
+                interval=runtime.interval,
+                liquidity=liquidity,
+                stress_profile=stress_profile,
+                stress_report=stress_report,
+                stress_report_path=stress_report_path,
+                robustness_report=robustness_report,
+                robustness_report_path=robustness_report_path,
+            )
             outcomes.append(_outcome_from_suite(
                 symbol,
                 suite,

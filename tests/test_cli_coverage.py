@@ -792,6 +792,12 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
             "trial_penalty": 0.01,
             "deflated_score": 0.11,
         },
+        execution_validation={
+            "passed": True,
+            "symbol": "BTCUSDC",
+            "stress": {"accepted": True},
+            "temporal_robustness": {"accepted": True},
+        },
     )
     model_file = tmp_path / "model_default.json"
     serialize_model(model, model_file)
@@ -2825,6 +2831,12 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
                 "trial_penalty": 0.03,
                 "deflated_score": 0.09,
             },
+            execution_validation={
+                "passed": True,
+                "symbol": "BTCUSDC",
+                "stress": {"accepted": True},
+                "temporal_robustness": {"accepted": True},
+            },
         ),
         model_file,
     )
@@ -3090,6 +3102,12 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
             "selected_score": 0.12,
             "trial_penalty": 0.03,
             "deflated_score": 0.09,
+        },
+        execution_validation={
+            "passed": True,
+            "symbol": "BTCUSDC",
+            "stress": {"accepted": True},
+            "temporal_robustness": {"accepted": True},
         },
     )
 
