@@ -48,6 +48,14 @@ families. It also records execution authority so future changes cannot silently
 promote an AI forecast, RL policy, or order-book research model into direct
 order placement without tests failing.
 
+The same module now contains a tested training-lane map and source catalog.
+Every model family must belong to a promotion lane with explicit next build
+steps, runtime limits, and validation gates. Research papers and official docs
+can guide implementation, while community TradingView scripts are marked as
+inspiration only and must not be copied. The contract test fails if a model
+family loses its lane, if a source references an unknown model family, or if a
+community source lacks a no-copy policy.
+
 Current blueprint principles:
 
 - Implemented supervised and hybrid models can produce candidate signals only
@@ -85,6 +93,45 @@ Sources:
 - <https://www.freqtrade.io/en/stable/freqai/>
 - <https://arxiv.org/abs/2111.09395>
 - <https://nautilustrader.io/docs/latest/concepts/backtesting/>
+
+## July 2026 Research Pass: Model Lessons
+
+This pass checked primary research, official documentation, and public
+community indicators for training ideas that fit the current app without
+weakening risk controls.
+
+- PatchTST and Temporal Fusion Transformer research support compact sequence
+  forecast experiments, but these should start as timestamped forecast features
+  with ablation replay, not as direct order engines.
+- Chronos-style time-series foundation models can provide probabilistic
+  advisory forecasts. They remain blocked from execution authority until
+  no-lookahead logs and same-cost replay show value after fees and slippage.
+- LightGBM's OpenCL GPU path is the best near-term AMD-friendly tabular
+  candidate. XGBoost GPU remains CUDA-centered, so it should not become the
+  default on this Windows/AMD target.
+- Bailey/Lopez de Prado PBO and Deflated Sharpe work reinforces the current
+  direction: a high backtest score is not enough unless the number of trials,
+  walk-forward behavior, holdout replay, and statistical edge evidence are
+  visible.
+- FreqAI reinforces the value of periodic retraining, feature boundaries,
+  backtesting/live separation, and adaptive model workflows.
+- TradingView Lorentzian, rational-quadratic kernel, and Technical Ratings
+  pages are useful product/model inspiration only. The implemented hybrid
+  experts are original code and should stay independently tested.
+
+Sources:
+
+- <https://github.com/yuqinie98/patchtst>
+- <https://arxiv.org/abs/1912.09363>
+- <https://github.com/amazon-science/chronos-forecasting>
+- <https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html>
+- <https://lightgbm.readthedocs.io/en/latest/GPU-Targets.html>
+- <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253>
+- <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551>
+- <https://www.freqtrade.io/en/stable/freqai/>
+- <https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/>
+- <https://www.tradingview.com/script/AWNvbPRM-Nadaraya-Watson-Rational-Quadratic-Kernel-Non-Repainting/>
+- <https://www.tradingview.com/support/solutions/43000614331-technical-ratings/>
 
 ## Model Families Worth Implementing
 

@@ -112,7 +112,7 @@ def test_candidate_params_asdict_keys() -> None:
 def test_candidate_grid_returns_unique_deduped_list() -> None:
     training = get_objective("default").training
     grid = _candidate_grid(training)
-    assert len(grid) == 1152
+    assert len(grid) == 1728
     # dedupe check: no two entries share identical tuple of values
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
@@ -132,9 +132,11 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     assert len(threshold_set) >= 2
     assert min(threshold_set) == pytest.approx(training.signal_threshold - 0.08)
     assert confidence_set == {0.70, 0.85, 1.0}
-    assert label_threshold_set == {0.60, 1.0, 1.40}
-    assert label_lookahead_set == {0.50, 1.0, 1.75}
+    assert label_threshold_set == {0.60, 0.75, 1.0, 1.25, 1.40}
+    assert label_lookahead_set == {0.50, 0.75, 1.0, 1.50, 1.75}
     assert label_mode_set == {"forward_return", "triple_barrier"}
+    assert sum(1 for candidate in grid if candidate.label_mode == "triple_barrier") == 864
+    assert sum(1 for candidate in grid if candidate.label_mode == "forward_return") == 864
     assert seed_set == {7}
 
 
@@ -162,7 +164,7 @@ def test_candidate_grid_dedupes_colliding_entries() -> None:
     # All candidates distinct after dedup
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
-    assert len(grid) == 576
+    assert len(grid) == 864
 
 
 # ----- calibration helpers --------------------------------------------------

@@ -7,7 +7,9 @@ from simple_ai_trading import cli
 from simple_ai_trading.model_blueprint import (
     blueprint_payload,
     model_families,
+    research_sources,
     render_blueprint,
+    training_lanes,
     validate_blueprint_contract,
 )
 
@@ -23,6 +25,26 @@ def test_model_blueprint_contract_is_fail_closed() -> None:
     assert "blocked_until_depth_store" == families["deep_lob_microstructure"].status
 
 
+def test_model_blueprint_training_lanes_cover_every_family() -> None:
+    family_names = {item.family for item in model_families()}
+    lane_family_names = {family for lane in training_lanes() for family in lane.families}
+    lanes = {lane.lane: lane for lane in training_lanes()}
+
+    assert lane_family_names == family_names
+    assert "sequence_forecast_features" in lanes
+    assert "timestamped forecast-feature store" in lanes["sequence_forecast_features"].next_build_step
+    assert "No direct orders" in lanes["sandbox_meta_control"].runtime_limit
+
+
+def test_model_blueprint_source_catalog_blocks_copying_community_scripts() -> None:
+    sources = {source.source_id: source for source in research_sources()}
+
+    assert "patchtst" in sources
+    assert sources["lightgbm_opencl"].source_type == "official_docs"
+    assert sources["tradingview_lorentzian"].source_type == "community_inspiration"
+    assert "do not copy" in sources["tradingview_lorentzian"].usage_policy.lower()
+
+
 def test_model_blueprint_filters_research_and_risk_level() -> None:
     regular_payload = blueprint_payload(risk_level="balanced", include_research=False)
     family_names = {item["family"] for item in regular_payload["families"]}
@@ -32,6 +54,9 @@ def test_model_blueprint_filters_research_and_risk_level() -> None:
     assert "patch_transformer" not in family_names
     assert "rl_meta_controller" not in family_names
     assert [item["name"] for item in regular_payload["risk_blueprints"]] == ["regular"]
+    assert regular_payload["training_lanes"]
+    assert regular_payload["research_sources"]
+    assert "Community TradingView scripts" in regular_payload["source_policy"]
 
 
 def test_model_blueprint_render_is_operator_readable() -> None:
@@ -41,6 +66,8 @@ def test_model_blueprint_render_is_operator_readable() -> None:
     assert "patch_transformer" in text
     assert "rl_meta_controller" in text
     assert "not a profitability claim" in text
+    assert "Training lanes and promotion gates" in text
+    assert "community scripts are inspiration only" in text
 
 
 def test_command_model_blueprint_json(capsys) -> None:

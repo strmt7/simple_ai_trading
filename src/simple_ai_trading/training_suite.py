@@ -95,7 +95,7 @@ class CandidateParams:
     label_mode: str = "forward_return"
     seed: int = 7
 
-    def asdict(self) -> dict[str, float | int]:
+    def asdict(self) -> dict[str, float | int | str]:
         return asdict(self)
 
 
@@ -242,7 +242,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
 
     Three epoch budgets, two learning rates, two L2 penalties, four thresholds,
     one stop/take profile, two risk levels, three confidence shrinkage levels,
-    three label horizon/target profiles, and one seed.
+    six label horizon/target profiles, and one seed.
     The suite then searches locally around the winner and checks seed ensembles
     for the best candidates, keeping GPU runs finishable while still deduping
     arithmetic collisions.
@@ -269,6 +269,8 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
         (0.60, 0.50, "forward_return"),
         (1.40, 1.75, "forward_return"),
         (1.0, 1.0, "triple_barrier"),
+        (0.75, 0.75, "triple_barrier"),
+        (1.25, 1.50, "triple_barrier"),
     )
     seed_options = (7,)
 
