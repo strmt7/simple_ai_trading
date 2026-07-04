@@ -332,6 +332,87 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
 
 
 # --------------------------------------------------------------------------- #
+# ai-review
+# --------------------------------------------------------------------------- #
+
+def test_command_ai_review_renders_decision(monkeypatch, capsys, tmp_path):
+    class _Decision:
+        action = "needs_human_review"
+        confidence = 0.75
+        risk_score = 0.64
+        rationale = "Tail risk needs manual review."
+        concerns = ["portfolio CVaR is close to policy"]
+        required_actions = ["run a longer model-lab window"]
+
+    class _Review:
+        status = "review_required"
+        approved = False
+        decision = _Decision()
+        error = None
+        output_path = str(tmp_path / "ai_risk_review.json")
+
+        def asdict(self):
+            return {"status": self.status, "approved": self.approved}
+
+    observed = {}
+
+    def fake_review(path, runtime, **kwargs):
+        observed["path"] = path
+        observed["runtime"] = runtime
+        observed.update(kwargs)
+        return _Review()
+
+    monkeypatch.setattr(cli, "load_runtime", lambda: RuntimeConfig(compute_backend="directml"))
+    monkeypatch.setattr("simple_ai_trading.ai_review.run_model_lab_ai_review", fake_review)
+
+    assert cli.command_ai_review(argparse.Namespace(
+        report=str(tmp_path / "model_lab_report.json"),
+        output=None,
+        model="qwen2.5:7b",
+        url="http://127.0.0.1:11434",
+        timeout=2.0,
+        json=False,
+    )) == 2
+    out = capsys.readouterr().out
+    assert "ai-review: status=review_required" in out
+    assert "Tail risk needs manual review" in out
+    assert observed["model"] == "qwen2.5:7b"
+
+
+def test_command_ai_review_json_returns_success_for_approved(monkeypatch, capsys, tmp_path):
+    class _Decision:
+        action = "approve"
+        confidence = 0.9
+        risk_score = 0.1
+        rationale = "Passed."
+        concerns = []
+        required_actions = []
+
+    class _Review:
+        status = "ok"
+        approved = True
+        decision = _Decision()
+        error = None
+        output_path = None
+
+        def asdict(self):
+            return {"status": self.status, "approved": self.approved}
+
+    monkeypatch.setattr(cli, "load_runtime", lambda: RuntimeConfig(compute_backend="directml"))
+    monkeypatch.setattr("simple_ai_trading.ai_review.run_model_lab_ai_review", lambda *_a, **_k: _Review())
+
+    assert cli.command_ai_review(argparse.Namespace(
+        report=str(tmp_path / "model_lab_report.json"),
+        output=str(tmp_path / "review.json"),
+        model=None,
+        url="http://127.0.0.1:11434",
+        timeout=2.0,
+        json=True,
+    )) == 0
+    assert '"approved": true' in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------- #
 # backtest-panel
 # --------------------------------------------------------------------------- #
 

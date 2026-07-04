@@ -22,6 +22,7 @@ simple-ai-trading compute
 simple-ai-trading compute --backend directml
 simple-ai-trading compute --backend cpu
 simple-ai-trading ai
+simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 ```
 
 CPU-only mode is allowed. When selected or when GPU probing fails:
@@ -29,6 +30,8 @@ CPU-only mode is allowed. When selected or when GPU probing fails:
 - AI features are disabled.
 - Training, retraining, tuning, and backtest scoring continue on CPU.
 - CLI and Windows app warn that the run is slower.
+- Structured local AI review cannot approve a model-lab artifact until the AI
+  capability preflight passes again.
 
 References:
 

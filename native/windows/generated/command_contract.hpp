@@ -33,6 +33,15 @@ inline constexpr CommandOptionSpec kOptions_ai[] = {
     {L"--json", L"json", L"", L"false", L"", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_ai_review[] = {
+    {L"--report", L"report", L"", L"data/model_lab/model_lab_report.json", L"", false, true},
+    {L"--output", L"output", L"", L"", L"", false, true},
+    {L"--model", L"model", L"", L"", L"", false, true},
+    {L"--url", L"url", L"", L"http://127.0.0.1:11434", L"", false, true},
+    {L"--timeout", L"timeout", L"", L"20.0", L"", false, true},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_audit[] = {
     {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
@@ -383,6 +392,7 @@ inline constexpr CommandOptionSpec kOptions_universe[] = {
 
 inline constexpr CommandSpec kCommands[] = {
     {L"ai", L"usage: simple-ai-trading ai [-h] [--enable] [--disable] [--provider PROVIDER]                             [--model MODEL] [--require-gpu] [--no-require-gpu]                             [--min-free-vram-gb MIN_FREE_VRAM_GB]                             [--min-free-ram-gb MIN_FREE_RAM_GB]                             [--allow-paper-fallback] [--no-paper-fallback]                             [--json]", kOptions_ai, 11},
+    {L"ai-review", L"usage: simple-ai-trading ai-review [-h] [--report REPORT] [--output OUTPUT]                                    [--model MODEL] [--url URL]                                    [--timeout TIMEOUT] [--json]", kOptions_ai_review, 6},
     {L"audit", L"usage: simple-ai-trading audit [-h] [--input INPUT] [--model MODEL]", kOptions_audit, 2},
     {L"autonomous", L"usage: simple-ai-trading autonomous [-h] [--objective OBJECTIVE]                                     [--model MODEL]                                     [--poll-seconds POLL_SECONDS]                                     [--iterations ITERATIONS]                                     [--heartbeat-every HEARTBEAT_EVERY]                                     [--starting-cash STARTING_CASH] [--paper]                                     [--live]                                     {start,pause,resume,stop,status}", kOptions_autonomous, 9},
     {L"backtest", L"usage: simple-ai-trading backtest [-h] [--input INPUT] [--model MODEL]                                   [--start-cash START_CASH]                                   [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                   [--score-batch-size SCORE_BATCH_SIZE]", kOptions_backtest, 5},

@@ -52,6 +52,11 @@ gates, not a promise of guaranteed profit.
   make AI/model risk explicit in reports instead of hiding it behind a single
   score:
   <https://airc.nist.gov/airmf-resources/airmf/5-sec-core/>
+- Ollama structured outputs and OpenAI structured outputs influenced the
+  `ai-review` workflow: local model output is constrained to a JSON schema,
+  then validated by deterministic code before it can be treated as an approval:
+  <https://docs.ollama.com/capabilities/structured-outputs> and
+  <https://developers.openai.com/api/docs/guides/structured-outputs>
 - Microsoft DirectML was selected for the Windows-first GPU path because it
   supports DirectX 12 GPUs across AMD, NVIDIA, and Intel on Windows:
   <https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows>
@@ -147,6 +152,15 @@ objective gates; otherwise the objective remains rejected.
    are positive, every stress replay passes the objective risk gates, and the
    accepted set passes the portfolio diversification and tail-risk gates.
 
+After model-lab writes a report, `simple-ai-trading ai-review --report ...`
+can run a local structured-output model over a compact artifact summary. The
+review is intentionally bounded and non-executing: it receives no credentials,
+uses the AI capability preflight, requires GPU AI unless the user explicitly
+changes runtime settings, validates the JSON schema, and writes
+`ai_risk_review.json`. Missing accepted symbols, failed portfolio gates, failed
+AI preflight, provider errors, or invalid model JSON all produce a veto/review
+result instead of approval.
+
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
 candidate instead of forcing a trade.
@@ -187,6 +201,9 @@ assert that every CLI command appears in the Windows app.
 - No single-scenario-only model-lab acceptance.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
+- No AI review approval unless deterministic model-lab/portfolio gates passed,
+  the local AI capability gate passed, and the provider returned valid
+  structured JSON.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

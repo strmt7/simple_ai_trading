@@ -540,6 +540,18 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai.add_argument("--json", action="store_true")
     parser_ai.set_defaults(func=command_ai)
 
+    parser_ai_review = subparsers.add_parser(
+        "ai-review",
+        help="run a structured local-AI risk review over a model-lab report",
+    )
+    parser_ai_review.add_argument("--report", default="data/model_lab/model_lab_report.json")
+    parser_ai_review.add_argument("--output", default=None)
+    parser_ai_review.add_argument("--model", default=None)
+    parser_ai_review.add_argument("--url", default="http://127.0.0.1:11434")
+    parser_ai_review.add_argument("--timeout", type=float, default=20.0)
+    parser_ai_review.add_argument("--json", action="store_true")
+    parser_ai_review.set_defaults(func=command_ai_review)
+
     parser_strategy = subparsers.add_parser("strategy", help="adjust strategy and risk parameters")
     parser_strategy.add_argument("--profile", choices=sorted(_STRATEGY_PROFILES), default="custom")
     parser_strategy.add_argument("--risk-level", choices=["conservative", "regular", "aggressive"], default=None)
@@ -3770,6 +3782,47 @@ def command_ai(args: argparse.Namespace) -> int:
     if enable_requested and enable_blocked:
         return 2
     return 0 if (report.ok or not runtime.ai_enabled or runtime.ai_allow_paper_fallback) else 2
+
+
+def command_ai_review(args: argparse.Namespace) -> int:
+    from .ai_review import run_model_lab_ai_review
+
+    runtime = load_runtime()
+    try:
+        review = run_model_lab_ai_review(
+            Path(args.report),
+            runtime,
+            model=getattr(args, "model", None),
+            base_url=str(getattr(args, "url", None) or "http://127.0.0.1:11434"),
+            timeout_seconds=max(0.1, float(getattr(args, "timeout", 20.0))),
+            output_path=(Path(args.output) if getattr(args, "output", None) else None),
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"ai-review failed: {exc}", file=sys.stderr)
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(review.asdict(), indent=2))
+    else:
+        decision = review.decision
+        print(
+            f"ai-review: status={review.status} action={decision.action} "
+            f"approved={review.approved} risk={decision.risk_score:.2f} "
+            f"confidence={decision.confidence:.2f}"
+        )
+        print(f"  rationale: {decision.rationale}")
+        if decision.concerns:
+            print("  concerns:")
+            for concern in decision.concerns:
+                print(f"    - {concern}")
+        if decision.required_actions:
+            print("  required actions:")
+            for action in decision.required_actions:
+                print(f"    - {action}")
+        if review.error:
+            print(f"  error: {review.error}")
+        if review.output_path:
+            print(f"  review -> {review.output_path}")
+    return 0 if review.approved else 2
 
 
 def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000

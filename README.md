@@ -92,7 +92,7 @@ Startup behavior:
 - The app resolves the repo-local `.venv311` Python and sets `PYTHONPATH` before launching CLI commands, so dev builds do not depend on a globally installed package.
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
-- The app has direct buttons for AI preflight, risk report, model lab, backtest graph, and stop-and-close local autonomous positions.
+- The app has direct buttons for AI preflight, AI risk review, risk report, model lab, backtest graph, and stop-and-close local autonomous positions.
 
 ## Core Workflows
 
@@ -105,11 +105,14 @@ simple-ai-trading backtest-chart --output data/backtest_performance.svg
 simple-ai-trading risk --paper
 simple-ai-trading universe
 simple-ai-trading model-lab --market futures --objective conservative --objective regular --objective aggressive --max-symbols 5
+simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 ```
 
 `backtest-chart` writes an SVG performance chart for the day-trading simulation. The same command appears in the Windows app.
 
 `model-lab` is the cross-symbol optimization workflow. It automatically ranks high-liquidity symbols from exchange ticker/book data, trains the base GPU model across multiple label target/horizon profiles, requires purged chronological walk-forward evidence for selected candidates, evaluates Lorentzian-neighbor, rational-quadratic-kernel, and technical-confluence hybrid experts, then replays every accepted objective under symbol-specific execution stress. Use `--market futures` to research long/short futures behavior without changing saved runtime defaults. A symbol is rejected if any required objective fails profitability, drawdown, trade-count, spread, latency, fee, or liquidity-crunch gates. After individual symbols pass, model-lab also writes `portfolio_risk.json` and rejects the accepted set if combined correlation clusters, effective symbol count, portfolio CVaR, or portfolio drawdown break the risk-level policy. Rejection reports include explicit per-window and portfolio reasons. See [docs/MODEL_RESEARCH_AND_OPTIMIZATION.md](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
+
+`ai-review` sends a compact, redacted model-lab report to a local structured-output Ollama model and writes `ai_risk_review.json`. It is an advisory risk review with fail-closed output: deterministic model-lab/portfolio failures, missing GPU AI capability, unavailable providers, or invalid model JSON all produce a veto/review-required result rather than an approval.
 
 For quick host checks, `model-lab` and `train-suite` accept `--max-candidates N`. This is a smoke/research limiter only; omit it for a full optimization run.
 
