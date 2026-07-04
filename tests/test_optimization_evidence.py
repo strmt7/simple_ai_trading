@@ -139,6 +139,77 @@ def test_market_data_health_accepts_verified_contiguous_archive(tmp_path: Path) 
     assert health["reasons"] == []
 
 
+def test_select_data_healthy_top_liquidity_symbols_skips_unhealthy_candidates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidates = [
+        oe.SelectedSymbol(
+            rank=index,
+            symbol=symbol,
+            quote_volume=1_000_000_000.0 / index,
+            trade_count=1_000_000,
+            spread_bps=1.0,
+            liquidity_score=1.0,
+            selection_score=10.0 - index,
+            strict_default_eligible=True,
+            tier="strict-live-eligible-at-selection",
+            reasons=(),
+        )
+        for index, symbol in enumerate(("BADUSDT", "GOOD1USDT", "GOOD2USDT"), start=1)
+    ]
+
+    monkeypatch.setattr(oe, "select_top_liquidity_symbols", lambda *_args, **_kwargs: candidates)
+
+    def fake_health(**kwargs):
+        symbol = str(kwargs["symbol"])
+        if symbol == "BADUSDT":
+            return {
+                "status": "block",
+                "symbol": symbol,
+                "rows": 500,
+                "coverage_ratio": 0.50,
+                "gap_count": 12,
+                "reasons": ["rows_below_min:500/1000"],
+            }
+        return {
+            "status": "ok",
+            "symbol": symbol,
+            "rows": 2000,
+            "coverage_ratio": 1.0,
+            "gap_count": 0,
+            "reasons": [],
+        }
+
+    monkeypatch.setattr(oe, "market_data_health_for_symbol", fake_health)
+
+    selected, rejections = oe.select_data_healthy_top_liquidity_symbols(
+        _SelectionClient(),
+        StrategyConfig(),
+        quote_asset="USDT",
+        count=2,
+        market_type="futures",
+        interval="1m",
+        db_path=tmp_path / "market.sqlite",
+        min_rows=1000,
+        require_verified_checksum=True,
+    )
+
+    assert [item.symbol for item in selected] == ["GOOD1USDT", "GOOD2USDT"]
+    assert [item.rank for item in selected] == [1, 2]
+    assert rejections == [
+        {
+            "selection_rank": 1,
+            "symbol": "BADUSDT",
+            "tier": "strict-live-eligible-at-selection",
+            "rows": 500,
+            "coverage_ratio": 0.5,
+            "gap_count": 12,
+            "reasons": ["rows_below_min:500/1000"],
+        }
+    ]
+
+
 def test_fetch_full_history_refuses_network_backfill_when_prefill_required(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -6,7 +6,7 @@ import csv
 import copy
 import math
 import statistics
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
@@ -364,6 +364,67 @@ def select_top_liquidity_symbols(
         )
         for index, item in enumerate(ranked[: max(1, int(count))], start=1)
     ]
+
+
+def select_data_healthy_top_liquidity_symbols(
+    client: BinanceClient,
+    strategy: StrategyConfig,
+    *,
+    quote_asset: str = "USDT",
+    count: int = 50,
+    market_type: str,
+    interval: str,
+    db_path: Path,
+    min_rows: int = 0,
+    min_coverage_ratio: float = 0.995,
+    max_gap_count: int = 0,
+    require_verified_checksum: bool = False,
+    max_scan: int = 1000,
+) -> tuple[list[SelectedSymbol], list[dict[str, object]]]:
+    """Return live-ranked symbols that also pass local market-data health gates."""
+
+    requested = max(1, int(count))
+    candidate_count = max(1, int(max_scan))
+    candidates = select_top_liquidity_symbols(
+        client,
+        strategy,
+        quote_asset=quote_asset,
+        count=candidate_count,
+        max_scan=max_scan,
+    )
+    selected: list[SelectedSymbol] = []
+    health_rejections: list[dict[str, object]] = []
+    for item in candidates:
+        health = market_data_health_for_symbol(
+            db_path=db_path,
+            symbol=item.symbol,
+            market_type=market_type,
+            interval=interval,
+            min_rows=min_rows,
+            min_coverage_ratio=min_coverage_ratio,
+            max_gap_count=max_gap_count,
+            require_verified_checksum=require_verified_checksum,
+        )
+        if health.get("status") == "ok":
+            selected.append(replace(item, rank=len(selected) + 1))
+        else:
+            health_rejections.append({
+                "selection_rank": int(item.rank),
+                "symbol": item.symbol,
+                "tier": item.tier,
+                "rows": int(health.get("rows") or 0),
+                "coverage_ratio": float(health.get("coverage_ratio") or 0.0),
+                "gap_count": int(health.get("gap_count") or 0),
+                "reasons": list(health.get("reasons") or []),
+            })
+        if len(selected) >= requested:
+            break
+    if len(selected) < requested:
+        raise ValueError(
+            "data_health_selection_shortfall: "
+            f"selected {len(selected)}/{requested} symbols after scanning {len(candidates)} live-ranked candidates"
+        )
+    return selected, health_rejections
 
 
 def select_named_symbols(
@@ -802,11 +863,26 @@ def build_round_evidence(
     )
     effective_leverage = effective_leverage_for_market(evidence_strategy, market_type)
     leverage_applies = market_type == "futures"
-    selected = (
-        select_named_symbols(client, evidence_strategy, symbols, quote_asset=quote_asset)
-        if symbols
-        else select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
-    )
+    health_required = bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum)
+    selection_health_rejections: list[dict[str, object]] = []
+    if symbols:
+        selected = select_named_symbols(client, evidence_strategy, symbols, quote_asset=quote_asset)
+    elif health_required:
+        selected, selection_health_rejections = select_data_healthy_top_liquidity_symbols(
+            client,
+            evidence_strategy,
+            quote_asset=quote_asset,
+            count=symbol_count,
+            market_type=market_type,
+            interval=interval,
+            db_path=paths.market_db_path,
+            min_rows=min_data_rows,
+            min_coverage_ratio=min_coverage_ratio,
+            max_gap_count=max_gap_count,
+            require_verified_checksum=require_verified_checksum,
+        )
+    else:
+        selected = select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
     write_json_atomic(paths.docs_data_dir / "selected-universe.json", [item.asdict() for item in selected], indent=2, sort_keys=True)
     metrics: list[BacktestEvidence] = []
     data_health: list[dict[str, object]] = []
@@ -829,7 +905,6 @@ def build_round_evidence(
                 require_verified_checksum=require_verified_checksum,
             )
             data_health.append(health)
-            health_required = bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum)
             if health_required and health.get("status") != "ok":
                 reasons = ", ".join(str(reason) for reason in health.get("reasons", []) if reason)
                 raise ValueError(f"data_health_failed: {reasons or 'unknown'}")
@@ -1106,6 +1181,8 @@ def build_round_evidence(
         "min_coverage_ratio": float(min_coverage_ratio),
         "max_gap_count": int(max_gap_count),
         "require_verified_checksum": bool(require_verified_checksum),
+        "health_filtered_symbol_selection": bool(not symbols and health_required),
+        "selection_health_rejections": selection_health_rejections,
         "data_health_path": str(paths.data_health_path).replace("\\", "/"),
         "data_health": data_health,
         "selected_universe_path": str(paths.docs_data_dir / "selected-universe.json").replace("\\", "/"),
@@ -1130,6 +1207,7 @@ __all__ = [
     "make_evidence_paths",
     "market_data_health_for_symbol",
     "render_comparison_svg",
+    "select_data_healthy_top_liquidity_symbols",
     "select_named_symbols",
     "select_top_liquidity_symbols",
     "strategy_with_objective_defaults",
