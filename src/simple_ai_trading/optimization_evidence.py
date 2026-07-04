@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import copy
 import math
 import statistics
 from dataclasses import asdict, dataclass
@@ -13,7 +14,7 @@ from typing import Iterable, Mapping, Sequence
 from .advanced_model import default_config_for, make_advanced_rows, train_advanced
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE
-from .backtest import BacktestResult, run_backtest
+from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
 from .data_coverage import describe_candle_coverage, iso_utc
 from .data_downloader import MarketDataSyncConfig, sync_market_data
 from .execution_simulation import SymbolExecutionProfile
@@ -669,13 +670,15 @@ def train_round_model(
     objective: ObjectiveSpec,
     *,
     market_type: str,
+    starting_cash: float,
     compute_backend: str,
     batch_size: int,
 ) -> tuple[object, object, list[object], list[object]]:
     feature_cfg = default_config_for(objective.name, strategy.enabled_features)
     rows = make_advanced_rows(candles, feature_cfg)
-    train_rows, validation_rows = _split_train_validation(rows, validation_fraction=0.25)
-    if not train_rows or not validation_rows:
+    train_selection_rows, validation_rows = _split_train_validation(rows, validation_fraction=0.25)
+    train_rows, selection_rows = _split_train_validation(train_selection_rows, validation_fraction=0.20)
+    if not train_rows or not selection_rows or not validation_rows:
         raise ValueError("insufficient rows for train/validation backtest evidence")
     model, report = train_advanced(
         train_rows,
@@ -683,17 +686,66 @@ def train_round_model(
         epochs=max(1, int(objective.training.epochs if objective.training else 100)),
         learning_rate=float(objective.training.learning_rate if objective.training else 0.03),
         l2_penalty=float(objective.training.l2_penalty if objective.training else 1e-3),
-        validation_rows=validation_rows[: max(1, min(len(validation_rows), 5000))],
+        validation_rows=selection_rows[: max(1, min(len(selection_rows), 5000))],
         early_stopping_rounds=30,
         compute_backend=compute_backend,
         batch_size=batch_size,
     )
-    calibration = calibrate_probability_temperature(list(validation_rows[: max(1, min(len(validation_rows), 5000))]), model)
+    calibration = calibrate_probability_temperature(list(selection_rows[: max(1, min(len(selection_rows), 5000))]), model)
     if calibration.status != "fail":
         model.probability_temperature = float(calibration.temperature)
         model.probability_calibration_size = int(calibration.rows)
     model.decision_threshold = float(objective.training.signal_threshold if objective.training else strategy.signal_threshold)
     model.threshold_source = "objective_round_evidence_default"
+    threshold_report = calibrate_threshold_for_backtest(
+        selection_rows,
+        model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        baseline_threshold=model.decision_threshold,
+        start=0.50 if market_type == "futures" else 0.05,
+        end=0.95,
+        steps=19,
+        min_score_delta=0.0,
+        compute_backend=compute_backend,
+        score_batch_size=batch_size,
+    )
+    if threshold_report.accepted:
+        model.decision_threshold = float(threshold_report.threshold)
+        model.threshold_source = "round_selection_backtest"
+        model.threshold_calibration_score = float(threshold_report.score)
+        model.threshold_calibration_pnl = float(threshold_report.realized_pnl)
+        model.threshold_calibration_trades = int(threshold_report.closed_trades)
+    base_result = run_backtest(
+        selection_rows,
+        model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=batch_size,
+    )
+    base_score = objective.score(base_result) if objective.accepts(base_result) else float("-inf")
+    inverted_model = copy.deepcopy(model)
+    inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
+    inverted_model.model_family = f"{inverted_model.model_family}:round_selection_inverted"
+    inverted_model.quality_warnings = [
+        *list(getattr(inverted_model, "quality_warnings", [])),
+        "round_selection_probability_inversion_variant",
+    ]
+    inverted_result = run_backtest(
+        selection_rows,
+        inverted_model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=batch_size,
+    )
+    inverted_score = objective.score(inverted_result) if objective.accepts(inverted_result) else float("-inf")
+    if inverted_score > base_score + 1e-12:
+        model = inverted_model
     return model, report, list(rows), list(validation_rows)
 
 
@@ -787,6 +839,7 @@ def build_round_evidence(
                 evidence_strategy,
                 objective,
                 market_type=market_type,
+                starting_cash=starting_cash,
                 compute_backend=compute_backend,
                 batch_size=batch_size,
             )
