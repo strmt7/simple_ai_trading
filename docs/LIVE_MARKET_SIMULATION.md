@@ -57,9 +57,10 @@ Execution cost is symbol-specific where market data exists:
   efficient.
 - `api-budget` reads that rate-limit state from SQLite and refreshes it at
   most opportunistically. The Windows app bottom bar uses the same command.
-  Signed live startup is blocked when a current sample shows any known Binance
-  request-weight or order-count window is at least 80% consumed, or when the
-  exchange returns a `Retry-After` value.
+  Signed `live --live` startup and authenticated autonomous startup are blocked
+  when a current sample shows any known Binance request-weight or order-count
+  window is at least 80% consumed, or when the exchange returns a `Retry-After`
+  value.
 - `backtest`, `backtest-chart`, and `backtest-panel` can consume the latest
   typed top-of-book row with `--execution-db data/market_data.sqlite`. The
   loaded profile is written into run artifacts and panel reports, including
