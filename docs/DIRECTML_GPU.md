@@ -28,7 +28,11 @@ simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 CPU-only mode is allowed. When selected or when GPU probing fails:
 
 - AI features are disabled.
-- Training, retraining, tuning, and backtest scoring continue on CPU.
+- Training, retraining, tuning, external-signal scoring, threshold calibration,
+  and backtest scoring use GPU-first `auto` when no explicit backend is passed.
+  They continue on CPU only when the user selects CPU or every GPU probe fails,
+  and artifacts record the requested backend, resolved backend, device, and
+  fallback reason.
 - CLI and Windows app warn that the run is slower.
 - Structured local AI review cannot approve a model-lab artifact until the AI
   capability preflight passes again.

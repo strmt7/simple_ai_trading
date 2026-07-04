@@ -10,9 +10,11 @@ For every registered objective (Conservative / Regular / Aggressive) the suite:
 4. Picks the highest-scoring candidate under the objective's own scorer.
 5. Writes ``data/model_<objective>.json`` plus a suite-level summary report.
 
-The suite is stdlib-only.  Each worker process imports this package and calls
-:func:`_evaluate_candidate` with a fully self-contained payload; there are no
-shared globals or closures in the worker path.  Tests keep the legacy
+Each worker process imports this package and calls :func:`_evaluate_candidate`
+with a fully self-contained payload; there are no shared globals or closures in
+the worker path.  Omitted compute backends resolve to GPU-first ``auto``; an
+explicit CPU request or failed GPU probe records CPU fallback metadata on the
+model artifact.  Tests keep the legacy
 ``runner=`` injection seam so they can stub out candidate evaluation without
 spawning subprocesses.
 """
@@ -48,6 +50,7 @@ from .model import (
     TrainedModel,
     calibrate_probability_temperature,
     calibrate_threshold,
+    effective_training_backend_name,
     evaluate_classification,
     serialize_model,
 )
@@ -1684,6 +1687,7 @@ def train_for_objective(
         raise ValueError("Candidate grid produced zero evaluable entries")
     train_rows, eval_rows = _walk_forward_split(rows)
     effective_score_batch_size = int(score_batch_size if score_batch_size is not None else batch_size)
+    effective_compute_backend = effective_training_backend_name(compute_backend)
 
     if runner is not None:
         results: list[dict[str, Any]] = []
@@ -1725,7 +1729,7 @@ def train_for_objective(
                 "objective": objective.name,
                 "market_type": market_type,
                 "starting_cash": starting_cash,
-                "compute_backend": compute_backend or "cpu",
+                "compute_backend": effective_compute_backend,
                 "batch_size": batch_size,
                 "score_batch_size": effective_score_batch_size,
                 "include_full_fit_fallback": True,
@@ -1733,7 +1737,7 @@ def train_for_objective(
             for candidate in candidates
         ]
         workers = _resolve_workers(max_workers, len(payloads))
-        if str(compute_backend or "cpu").strip().lower() not in {"", "cpu"}:
+        if effective_compute_backend != "cpu":
             workers = 1
         if workers <= 1:
             results = [_evaluate_candidate(p) for p in payloads]
@@ -1761,7 +1765,7 @@ def train_for_objective(
                 "objective": objective.name,
                 "market_type": market_type,
                 "starting_cash": starting_cash,
-                "compute_backend": compute_backend or "cpu",
+                "compute_backend": effective_compute_backend,
                 "batch_size": batch_size,
                 "score_batch_size": effective_score_batch_size,
                 "include_full_fit_fallback": True,
@@ -1783,7 +1787,7 @@ def train_for_objective(
                 "market_type": market_type,
                 "starting_cash": starting_cash,
                 "ensemble_seeds": _ensemble_seed_pack(int(base_result["candidate"].seed)),
-                "compute_backend": compute_backend or "cpu",
+                "compute_backend": effective_compute_backend,
                 "batch_size": batch_size,
                 "score_batch_size": effective_score_batch_size,
                 "include_full_fit_fallback": True,
@@ -1831,7 +1835,7 @@ def train_for_objective(
                 training,
                 market_type=market_type,
                 starting_cash=starting_cash,
-                compute_backend=compute_backend or "cpu",
+                compute_backend=effective_compute_backend,
                 batch_size=batch_size,
                 score_batch_size=effective_score_batch_size,
             )
@@ -1873,7 +1877,7 @@ def train_for_objective(
                     objective_name=objective.name,
                     market_type=market_type,
                     starting_cash=starting_cash,
-                    compute_backend=compute_backend or "cpu",
+                    compute_backend=effective_compute_backend,
                     score_batch_size=effective_score_batch_size,
                     feature_count=len(base_strategy.enabled_features),
                 )
@@ -1885,7 +1889,7 @@ def train_for_objective(
                     rescue_strategy,
                     starting_cash=starting_cash,
                     market_type=market_type,
-                    compute_backend=compute_backend or "cpu",
+                    compute_backend=effective_compute_backend,
                     score_batch_size=effective_score_batch_size,
                 )
                 rescue_holdout_score = (
@@ -1899,7 +1903,7 @@ def train_for_objective(
                     rescue_strategy,
                     starting_cash=starting_cash,
                     market_type=market_type,
-                    compute_backend=compute_backend or "cpu",
+                    compute_backend=effective_compute_backend,
                     score_batch_size=effective_score_batch_size,
                 )
                 rescue_full_score = (
@@ -1993,7 +1997,7 @@ def train_for_objective(
                 objective_name=objective.name,
                 market_type=market_type,
                 starting_cash=starting_cash,
-                compute_backend=compute_backend or "cpu",
+                compute_backend=effective_compute_backend,
                 score_batch_size=effective_score_batch_size,
                 feature_count=len(base_strategy.enabled_features),
             )
@@ -2006,7 +2010,7 @@ def train_for_objective(
                 best_strategy,
                 starting_cash=starting_cash,
                 market_type=market_type,
-                compute_backend=compute_backend or "cpu",
+                compute_backend=effective_compute_backend,
                 score_batch_size=effective_score_batch_size,
             )
             holdout_score = objective.score(holdout_result) if objective.accepts(holdout_result) else float("-inf")
@@ -2016,7 +2020,7 @@ def train_for_objective(
                 best_strategy,
                 starting_cash=starting_cash,
                 market_type=market_type,
-                compute_backend=compute_backend or "cpu",
+                compute_backend=effective_compute_backend,
                 score_batch_size=effective_score_batch_size,
             )
             full_score = objective.score(full_result) if objective.accepts(full_result) else float("-inf")
@@ -2092,7 +2096,7 @@ def train_for_objective(
                     best["strategy"],
                     starting_cash=starting_cash,
                     market_type=market_type,
-                    compute_backend=compute_backend or "cpu",
+                    compute_backend=effective_compute_backend,
                     score_batch_size=effective_score_batch_size,
                 )
                 report = build_meta_label_report(
