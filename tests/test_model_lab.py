@@ -122,6 +122,13 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
                 objective="regular",
                 best_score=0.12,
                 hybrid_profile="balanced_neighbors",
+                selection_risk={
+                    "passed": True,
+                    "effective_trials": 24,
+                    "selected_score": 0.12,
+                    "trial_penalty": 0.01,
+                    "deflated_score": 0.11,
+                },
                 hybrid_ablation=[{"removed_expert_kind": "lorentzian_knn", "delta_vs_best": -0.03}],
                 feature_ablation=[{"removed_group": "technical_confluence", "delta_vs_selected": -0.04}],
                 meta_label_report={"status": "trained", "take_precision": 0.75},
@@ -163,6 +170,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.portfolio_risk is not None
     assert report.portfolio_risk["accepted"] is True
     assert report.outcomes[0].hybrid_profiles["regular"] == "balanced_neighbors"
+    assert report.outcomes[0].selection_risk["regular"]["passed"] is True
     assert report.outcomes[0].hybrid_ablation["regular"][0]["removed_expert_kind"] == "lorentzian_knn"
     assert report.outcomes[0].feature_ablation["regular"][0]["removed_group"] == "technical_confluence"
     assert report.outcomes[0].meta_label_validation["regular"]["status"] == "trained"
@@ -244,6 +252,57 @@ def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, 
     assert report.accepted_symbols == []
     assert report.outcomes[0].accepted is False
     assert report.outcomes[0].error == "stress_validation_failed"
+
+
+def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path: Path, monkeypatch) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                best_score=0.12,
+                hybrid_profile="base_only",
+                selection_risk={
+                    "passed": False,
+                    "reason": "selection_risk_deflated_score<=0",
+                    "effective_trials": 900,
+                    "selected_score": 0.12,
+                    "trial_penalty": 0.14,
+                    "deflated_score": -0.02,
+                },
+            )],
+            total_rows=123,
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
+    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    strategy = StrategyConfig(
+        min_quote_volume_usdc=1000.0,
+        min_trade_count_24h=100,
+        max_spread_bps=10.0,
+        min_liquidity_score=0.1,
+        min_diversified_assets=1,
+    )
+
+    report = run_model_lab(
+        _Client(),
+        runtime,
+        strategy,
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=120,
+        compute_backend="cpu",
+    )
+
+    assert report.accepted_symbols == []
+    assert report.outcomes[0].accepted is False
+    assert report.outcomes[0].error == "selection_risk_failed"
+    assert report.outcomes[0].selection_risk["regular"]["passed"] is False
 
 
 def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp_path: Path, monkeypatch) -> None:

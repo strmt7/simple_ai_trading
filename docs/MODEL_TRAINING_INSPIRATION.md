@@ -112,7 +112,9 @@ weakening risk controls.
 - Bailey/Lopez de Prado PBO and Deflated Sharpe work reinforces the current
   direction: a high backtest score is not enough unless the number of trials,
   walk-forward behavior, holdout replay, and statistical edge evidence are
-  visible.
+  visible. The training suite now records a selection-risk report and rejects a
+  candidate when its score does not remain positive after a trial-count
+  deflation haircut.
 - FreqAI reinforces the value of periodic retraining, feature boundaries,
   backtesting/live separation, and adaptive model workflows.
 - TradingView Lorentzian, rational-quadratic kernel, and Technical Ratings
@@ -375,6 +377,7 @@ No future model family should be accepted unless it writes:
 - final serialized-model temporal robustness,
 - market-regime evidence for each temporal window,
 - statistical edge evidence,
+- multiple-trials selection-risk evidence and deflated selected score,
 - path-quality metrics: profit factor, expectancy, return dispersion, and loss
   streak,
 - symbol-specific execution stress,

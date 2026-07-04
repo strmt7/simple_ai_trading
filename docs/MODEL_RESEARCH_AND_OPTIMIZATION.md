@@ -139,6 +139,11 @@ model. This remains attribution evidence for model selection, and it is also
 carried into `ai-review`: if the compact accepted report shows that removing a
 hybrid expert or feature group improves the selected score, the AI review
 deterministically vetoes before calling the local model.
+The training suite also writes a `selection_risk` report for the selected
+candidate and serialized model. This deterministic multiple-trials haircut uses
+the explored candidate count plus local, ensemble, and hybrid-rescue checks to
+deflate the selected score by observed score dispersion. A candidate is not
+promoted unless the deflated score remains positive.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
@@ -235,21 +240,23 @@ All three require positive expectancy.
    and portfolio drawdown.
 10. Writes a JSON report plus per-symbol `stress_validation.json`,
    `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
-   accepted only when all objective scores are positive, every stress replay
-   passes the objective risk gates, temporal robustness passes, and the
-   accepted set passes the portfolio diversification and tail-risk gates.
+   accepted only when all objective scores are positive, selection-risk
+   deflation passes, every stress replay passes the objective risk gates,
+   temporal robustness passes, and the accepted set passes the portfolio
+   diversification and tail-risk gates.
 
 After model-lab writes a report, `simple-ai-trading ai-review --report ...`
 can run a local structured-output model over a compact artifact summary. The
 review is intentionally bounded and non-executing: it receives no credentials,
 uses the AI capability preflight, requires GPU AI unless the user explicitly
 changes runtime settings, validates the JSON schema, and writes
-`ai_risk_review.json`. Missing accepted symbols, failed portfolio gates,
-positive hybrid/feature ablation deltas on accepted outcomes, failed AI
-preflight, provider errors, or invalid model JSON all produce a veto/review
-result instead of approval. The local model sees compact hybrid and feature
-ablation summaries, but harmful positive ablation deltas are blocked in
-deterministic code before provider invocation.
+`ai_risk_review.json`. Missing accepted symbols, failed portfolio gates, failed
+selection-risk deflation, positive hybrid/feature ablation deltas on accepted
+outcomes, failed AI preflight, provider errors, or invalid model JSON all
+produce a veto/review result instead of approval. The local model sees compact
+selection-risk plus hybrid and feature ablation summaries, but failed deflated
+scores and harmful positive ablation deltas are blocked in deterministic code
+before provider invocation.
 
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
@@ -293,12 +300,15 @@ assert that every CLI command appears in the Windows app.
   chronological temporal robustness windows.
 - No model-lab symbol acceptance when temporal windows have weak statistical
   edge evidence after selection.
+- No model-lab symbol acceptance when the selected score does not remain
+  positive after the multiple-trials selection-risk haircut.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,
-  hybrid/feature ablation evidence does not show that removing a selected
-  component improves the accepted score, the local AI capability gate passed,
-  and the provider returned valid structured JSON.
+  selection-risk evidence remains positive, hybrid/feature ablation evidence
+  does not show that removing a selected component improves the accepted score,
+  the local AI capability gate passed, and the provider returned valid
+  structured JSON.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

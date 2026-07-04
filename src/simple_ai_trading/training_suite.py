@@ -63,6 +63,8 @@ from .types import StrategyConfig
 _DEFAULT_OUTPUT_DIR = Path("data")
 _ENSEMBLE_REFINEMENT_CANDIDATES = 3
 _HYBRID_RESCUE_CANDIDATES = 3
+_SELECTION_RISK_DISPERSION_FLOOR = 1e-4
+_SELECTION_RISK_RELATIVE_FLOOR = 0.03
 
 
 # ==========================================================================
@@ -141,6 +143,7 @@ class ObjectiveOutcome:
     hybrid_rescue_candidates: int = 0
     feature_ablation: list[dict[str, object]] = field(default_factory=list)
     meta_label_report: dict[str, object] | None = None
+    selection_risk: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -609,6 +612,106 @@ def _candidate_rank_key(entry: dict[str, Any]) -> tuple[int, float]:
     return 0, _rejected_candidate_quality(entry)
 
 
+def _score_quantile(values: Sequence[float], q: float) -> float | None:
+    clean = sorted(float(value) for value in values if math.isfinite(float(value)))
+    if not clean:
+        return None
+    if len(clean) == 1:
+        return clean[0]
+    position = max(0.0, min(1.0, float(q))) * (len(clean) - 1)
+    low = int(math.floor(position))
+    high = int(math.ceil(position))
+    if low == high:
+        return clean[low]
+    fraction = position - low
+    return clean[low] + (clean[high] - clean[low]) * fraction
+
+
+def _selection_risk_report(
+    best: dict[str, Any],
+    ranked_pool: Sequence[dict[str, Any]],
+    *,
+    base_candidate_count: int,
+    local_refinement_candidates: int,
+    ensemble_refinement_candidates: int,
+    hybrid_rescue_candidates: int,
+) -> dict[str, object]:
+    """Estimate whether the selected score survives the number of tried models.
+
+    This is a deterministic multiple-trials haircut inspired by PBO/Deflated
+    Sharpe discipline. It is intentionally scale-light: use observed score
+    dispersion when available, otherwise use a small relative/fixed floor.
+    """
+
+    best_score = _finite_number_or_none(best.get("score"))
+    entry_ids = {id(entry) for entry in ranked_pool}
+    entries = list(ranked_pool)
+    if id(best) not in entry_ids:
+        entries.append(best)
+    scores = [
+        score
+        for entry in entries
+        if (score := _finite_number_or_none(entry.get("score"))) is not None
+    ]
+    effective_trials = max(
+        1,
+        int(base_candidate_count)
+        + int(local_refinement_candidates)
+        + int(ensemble_refinement_candidates)
+        + int(hybrid_rescue_candidates),
+        len(entries),
+    )
+    if best_score is None:
+        return {
+            "passed": False,
+            "reason": "no_finite_selected_score",
+            "effective_trials": effective_trials,
+            "base_candidates": int(base_candidate_count),
+            "local_refinement_candidates": int(local_refinement_candidates),
+            "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
+            "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
+            "finite_candidate_scores": len(scores),
+        }
+
+    sorted_desc = sorted(scores, reverse=True)
+    runner_up = sorted_desc[1] if len(sorted_desc) > 1 else None
+    q1 = _score_quantile(scores, 0.25)
+    median = _score_quantile(scores, 0.50)
+    q3 = _score_quantile(scores, 0.75)
+    iqr = max(0.0, float(q3 - q1)) if q1 is not None and q3 is not None else 0.0
+    dispersion = max(
+        iqr,
+        abs(float(best_score)) * _SELECTION_RISK_RELATIVE_FLOOR,
+        _SELECTION_RISK_DISPERSION_FLOOR,
+    )
+    trial_penalty = math.log1p(float(effective_trials)) * dispersion / math.sqrt(max(1.0, float(len(scores))))
+    deflated_score = float(best_score) - trial_penalty
+    passed = bool(float(best_score) > 0.0 and deflated_score > 0.0)
+    return {
+        "passed": passed,
+        "reason": None if passed else "selection_risk_deflated_score<=0",
+        "effective_trials": effective_trials,
+        "base_candidates": int(base_candidate_count),
+        "local_refinement_candidates": int(local_refinement_candidates),
+        "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
+        "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
+        "finite_candidate_scores": len(scores),
+        "selected_score": float(best_score),
+        "runner_up_score": float(runner_up) if runner_up is not None else None,
+        "median_score": float(median) if median is not None else None,
+        "score_iqr": float(iqr),
+        "dispersion_floor": float(_SELECTION_RISK_DISPERSION_FLOOR),
+        "relative_floor": float(_SELECTION_RISK_RELATIVE_FLOOR),
+        "trial_penalty": float(trial_penalty),
+        "deflated_score": float(deflated_score),
+        "score_margin_to_runner_up": (
+            float(best_score - runner_up)
+            if runner_up is not None
+            else None
+        ),
+    }
+
+
 class _FeatureAblationModel:
     """Proxy that zeroes one contiguous feature group before scoring."""
 
@@ -764,6 +867,7 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
             else None
         ),
         "walk_forward_gate": entry.get("walk_forward_gate") if isinstance(entry.get("walk_forward_gate"), dict) else None,
+        "selection_risk": entry.get("selection_risk") if isinstance(entry.get("selection_risk"), dict) else None,
     }
 
 
@@ -1692,6 +1796,20 @@ def train_for_objective(
                     "feature_signature": advanced_feature_signature(best_feature_cfg),
                 }
 
+    selection_risk = _selection_risk_report(
+        best,
+        ranked_pool,
+        base_candidate_count=len(candidates),
+        local_refinement_candidates=local_refinement_candidates,
+        ensemble_refinement_candidates=ensemble_refinement_candidates,
+        hybrid_rescue_candidates=hybrid_rescue_candidates,
+    )
+    best["selection_risk"] = selection_risk
+    if not selection_risk.get("passed"):
+        best["score"] = float("-inf")
+        if all(id(entry) != id(best) for entry in ranked_pool):
+            ranked_pool = [best, *ranked_pool]
+
     rejected = sum(1 for entry in results if entry["score"] == float("-inf"))
     if not math.isfinite(float(best["score"])):
         diagnostics = {
@@ -1776,6 +1894,7 @@ def train_for_objective(
                 "objective": objective.name,
             }]
     model_path = output_dir / f"model_{objective.name}.json"
+    best["model"].selection_risk = dict(selection_risk)
     serialize_model(best["model"], model_path)
 
     return ObjectiveOutcome(
@@ -1848,6 +1967,7 @@ def train_for_objective(
         hybrid_rescue_candidates=int(hybrid_rescue_candidates),
         feature_ablation=feature_ablation,
         meta_label_report=meta_label_report,
+        selection_risk=dict(selection_risk),
     )
 
 

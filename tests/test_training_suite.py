@@ -773,6 +773,36 @@ def test_candidate_rank_key_orders_rejected_candidates_by_evidence() -> None:
     assert ranked == [accepted, better_rejected, weak_rejected]
 
 
+def test_selection_risk_report_deflates_tiny_scores_under_large_trial_count() -> None:
+    tiny_best = {"score": 0.0001}
+    tiny_report = training_suite._selection_risk_report(
+        tiny_best,
+        [tiny_best, {"score": 0.00009}],
+        base_candidate_count=2000,
+        local_refinement_candidates=20,
+        ensemble_refinement_candidates=3,
+        hybrid_rescue_candidates=0,
+    )
+
+    assert tiny_report["passed"] is False
+    assert tiny_report["reason"] == "selection_risk_deflated_score<=0"
+    assert tiny_report["effective_trials"] == 2023
+    assert tiny_report["deflated_score"] < 0.0
+
+    stronger_best = {"score": 0.12}
+    stronger_report = training_suite._selection_risk_report(
+        stronger_best,
+        [stronger_best, {"score": 0.09}, {"score": 0.07}],
+        base_candidate_count=2000,
+        local_refinement_candidates=20,
+        ensemble_refinement_candidates=3,
+        hybrid_rescue_candidates=0,
+    )
+
+    assert stronger_report["passed"] is True
+    assert stronger_report["deflated_score"] > 0.0
+
+
 def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
     model = _fake_trained_model(2)
 
@@ -1087,6 +1117,11 @@ def test_train_for_objective_happy_with_fake_runner(tmp_path: Path) -> None:
     assert model_file.exists()
     # outcome.asdict conversion covered
     assert outcome.asdict()["model_path"] == str(model_file)
+    assert outcome.selection_risk is not None
+    assert outcome.selection_risk["passed"] is True
+    saved_model = json.loads(model_file.read_text(encoding="utf-8"))
+    assert saved_model["selection_risk"]["passed"] is True
+    assert saved_model["selection_risk"]["effective_trials"] >= outcome.explored_candidates
     # rejected counts entries scored as -inf
     assert outcome.rejected_candidates >= 1
     assert outcome.validation_rows >= 0
@@ -1120,6 +1155,47 @@ def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> 
     assert exc.value.diagnostics["row_count"] > 0
     assert exc.value.diagnostics["top_candidates"]
     assert exc.value.diagnostics["top_candidates"][0]["score"] is None
+    assert not (tmp_path / f"model_{objective.name}.json").exists()
+
+
+def test_train_for_objective_rejects_failed_selection_risk(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candles = _synthetic_candles(n=200)
+    strategy = StrategyConfig()
+    objective = get_objective("default")
+
+    def runner(_obj, candidate, rows, base, feat_cfg, market, cash):
+        del _obj, candidate, rows, market, cash
+        return 1.0, base, _fake_trained_model(feat_cfg.polynomial_top_features), 42, 0.5
+
+    monkeypatch.setattr(
+        training_suite,
+        "_selection_risk_report",
+        lambda *_a, **_k: {
+            "passed": False,
+            "reason": "selection_risk_deflated_score<=0",
+            "effective_trials": 999,
+            "finite_candidate_scores": 1,
+            "selected_score": 1.0,
+            "trial_penalty": 1.5,
+            "deflated_score": -0.5,
+        },
+    )
+
+    with pytest.raises(TrainingSuiteRejected, match="All conservative training candidates were rejected") as exc:
+        train_for_objective(
+            candles,
+            strategy,
+            objective,
+            output_dir=tmp_path,
+            market_type="spot",
+            starting_cash=1000.0,
+            runner=runner,
+        )
+
+    assert exc.value.diagnostics["top_candidates"][0]["selection_risk"]["passed"] is False
     assert not (tmp_path / f"model_{objective.name}.json").exists()
 
 
