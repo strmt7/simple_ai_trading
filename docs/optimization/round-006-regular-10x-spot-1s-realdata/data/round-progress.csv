@@ -1,0 +1,2 @@
+round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct
+round-006-regular-10x-spot-1s-realdata,2026-07-04T17:13:16.999825Z,2,0,-0.04763401325266727,-0.04763401325266727,-0.23062267646728182,0.18298866321461454,0.18298866321461454,0.09526802650533454,1,0.0

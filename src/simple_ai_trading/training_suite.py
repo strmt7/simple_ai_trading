@@ -39,6 +39,7 @@ from .advanced_model import (
 )
 from .api import Candle
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
+from .assets import DEFAULT_CONSERVATIVE_LEVERAGE
 from .features import ModelRow
 from .hybrid_models import optimize_hybrid_model_zoo
 from .market_edge import build_market_edge_report
@@ -1308,7 +1309,7 @@ def _default_training(objective: ObjectiveSpec) -> ObjectiveTraining:
         risk_per_trade=0.01,
         max_position_pct=0.2,
         max_trades_per_day=12,
-        leverage=1.0,
+        leverage=DEFAULT_CONSERVATIVE_LEVERAGE,
         cooldown_minutes=5,
         calibrate_threshold=True,
         walk_forward_train=300,

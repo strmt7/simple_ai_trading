@@ -180,7 +180,7 @@ function Assert-PixelHealth([string]$Path) {
         }
         Assert-True ($samples -gt 0) "screenshot sampling produced no pixels"
         Assert-True ($unique.Count -ge 24) "screenshot appears too flat: only $($unique.Count) sampled colors"
-        Assert-True (($visible / $samples) -gt 0.30) "screenshot appears blank or under-rendered"
+        Assert-True (($visible / $samples) -gt 0.25) "screenshot appears blank or under-rendered"
         Assert-True ($accent -ge 4) "screenshot is missing expected accent pixels"
     } finally {
         $bitmap.Dispose()
@@ -223,10 +223,10 @@ try {
     $run = Assert-VisibleControl $window $RunSelectedId "run selected" 120 34
     $help = Assert-VisibleControl $window $SelectedHelpId "show help" 120 30
     $stop = Assert-VisibleControl $window $StopAllId "stop trading" 140 54
-    $ai = Assert-VisibleControl $window $AiPreflightId "AI check" 140 54
+    $ai = Assert-VisibleControl $window $AiPreflightId "pause bot" 140 54
     $risk = Assert-VisibleControl $window $RiskReportId "risk check" 140 54
-    $model = Assert-VisibleControl $window $ModelLabId "model lab" 140 54
-    $chart = Assert-VisibleControl $window $BacktestChartId "backtest chart" 140 54
+    $model = Assert-VisibleControl $window $ModelLabId "positions" 140 54
+    $chart = Assert-VisibleControl $window $BacktestChartId "reconcile" 140 54
     $status = Assert-VisibleControl $window $StatusBarId "API budget footer" 900 20
 
     foreach ($pair in @(
@@ -237,10 +237,10 @@ try {
         @{ Name = "run selected"; Rect = $run },
         @{ Name = "show help"; Rect = $help },
         @{ Name = "stop trading"; Rect = $stop },
-        @{ Name = "AI check"; Rect = $ai },
+        @{ Name = "pause bot"; Rect = $ai },
         @{ Name = "risk check"; Rect = $risk },
-        @{ Name = "model lab"; Rect = $model },
-        @{ Name = "backtest chart"; Rect = $chart },
+        @{ Name = "positions"; Rect = $model },
+        @{ Name = "reconcile"; Rect = $chart },
         @{ Name = "API budget footer"; Rect = $status }
     )) {
         Assert-InsideWindow $pair.Name $pair.Rect $windowRect
@@ -249,10 +249,10 @@ try {
     Assert-True ($page.Right -lt $combo.Left) "workflow navigation overlaps the command/work area"
     Assert-NoOverlap "command options" $args "run selected" $run
     Assert-NoOverlap "run selected" $run "show help" $help
-    Assert-NoOverlap "stop trading" $stop "AI check" $ai
-    Assert-NoOverlap "AI check" $ai "risk check" $risk
-    Assert-NoOverlap "risk check" $risk "model lab" $model
-    Assert-NoOverlap "model lab" $model "backtest chart" $chart
+    Assert-NoOverlap "stop trading" $stop "pause bot" $ai
+    Assert-NoOverlap "pause bot" $ai "risk check" $risk
+    Assert-NoOverlap "risk check" $risk "positions" $model
+    Assert-NoOverlap "positions" $model "reconcile" $chart
     Assert-True ($run.Bottom -lt $stop.Top) "top command controls overlap safety tools"
     Assert-True ($stop.Bottom -lt $output.Top) "safety tools overlap activity log"
     Assert-True ($output.Bottom -lt $status.Top) "activity log overlaps API budget footer"

@@ -71,6 +71,11 @@ class BacktestEvidence:
     round_id: str
     symbol: str
     objective: str
+    risk_level: str
+    leverage: float
+    risk_per_trade: float
+    max_position_pct: float
+    max_drawdown_limit_pct: float
     accepted: bool
     reason: str | None
     start_utc: str | None
@@ -430,6 +435,29 @@ def _split_train_validation(rows: Sequence[object], validation_fraction: float =
     return row_list[:-validation_size], row_list[-validation_size:]
 
 
+def strategy_with_objective_defaults(strategy: StrategyConfig, objective: ObjectiveSpec) -> StrategyConfig:
+    """Apply the objective's trading defaults while preserving unrelated safeguards."""
+
+    training = objective.training
+    if training is None:
+        return StrategyConfig(**{**strategy.asdict(), "risk_level": objective.name})
+    return StrategyConfig(
+        **{
+            **strategy.asdict(),
+            "risk_level": objective.name,
+            "leverage": float(training.leverage),
+            "signal_threshold": float(training.signal_threshold),
+            "stop_loss_pct": float(training.stop_loss_pct),
+            "take_profit_pct": float(training.take_profit_pct),
+            "risk_per_trade": float(training.risk_per_trade),
+            "max_position_pct": float(training.max_position_pct),
+            "max_trades_per_day": int(training.max_trades_per_day),
+            "cooldown_minutes": int(training.cooldown_minutes),
+            "training_epochs": int(training.epochs),
+        }
+    )
+
+
 def _baseline_equity_series(rows: Sequence[object], starting_cash: float, cfg: StrategyConfig, *, market_type: str) -> list[dict[str, float | int]]:
     if not rows:
         return []
@@ -680,15 +708,21 @@ def build_round_evidence(
     min_coverage_ratio: float = 0.995,
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
+    use_objective_strategy_defaults: bool = False,
 ) -> dict[str, object]:
     paths = make_evidence_paths(round_id, data_root=data_root, docs_root=docs_root, market_db_path=db_path)
     for directory in (paths.output_dir, paths.docs_dir, paths.docs_data_dir, paths.docs_charts_dir):
         directory.mkdir(parents=True, exist_ok=True)
     objective = get_objective(objective_name)
+    evidence_strategy = (
+        strategy_with_objective_defaults(strategy, objective)
+        if use_objective_strategy_defaults
+        else strategy
+    )
     selected = (
-        select_named_symbols(client, strategy, symbols, quote_asset=quote_asset)
+        select_named_symbols(client, evidence_strategy, symbols, quote_asset=quote_asset)
         if symbols
-        else select_top_liquidity_symbols(client, strategy, quote_asset=quote_asset, count=symbol_count)
+        else select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
     )
     write_json_atomic(paths.docs_data_dir / "selected-universe.json", [item.asdict() for item in selected], indent=2, sort_keys=True)
     metrics: list[BacktestEvidence] = []
@@ -736,7 +770,7 @@ def build_round_evidence(
             )
             model, train_report, rows, validation_rows = train_round_model(
                 candles,
-                strategy,
+                evidence_strategy,
                 objective,
                 market_type=market_type,
                 compute_backend=compute_backend,
@@ -745,7 +779,7 @@ def build_round_evidence(
             result = run_backtest(
                 validation_rows,
                 model,
-                strategy,
+                evidence_strategy,
                 starting_cash=starting_cash,
                 market_type=market_type,
                 compute_backend=compute_backend,
@@ -756,15 +790,15 @@ def build_round_evidence(
                     item.quote_volume,
                     item.trade_count,
                     item.liquidity_score,
-                    latency_ms=strategy.latency_buffer_ms,
-                    liquidity_haircut=strategy.testnet_liquidity_haircut,
+                    latency_ms=evidence_strategy.latency_buffer_ms,
+                    liquidity_haircut=evidence_strategy.testnet_liquidity_haircut,
                 ),
             )
             market_edge = build_market_edge_report(result, objective)
             accepted = bool(objective.accepts(result) and market_edge.accepted and not result.stopped_by_drawdown)
             reason = objective.reject_reason(result) or market_edge.reason
             strategy_points = _result_points(result)
-            baseline_series = _baseline_equity_series(validation_rows, starting_cash, strategy, market_type=market_type)
+            baseline_series = _baseline_equity_series(validation_rows, starting_cash, evidence_strategy, market_type=market_type)
             baseline_points = [
                 EquityPoint(index=index, equity=_finite(point.get("equity")), drawdown=_finite(point.get("drawdown")), timestamp_ms=int(point["timestamp"]))
                 for index, point in enumerate(baseline_series)
@@ -833,6 +867,11 @@ def build_round_evidence(
                 round_id=round_id,
                 symbol=item.symbol,
                 objective=objective.name,
+                risk_level=str(evidence_strategy.risk_level),
+                leverage=float(evidence_strategy.leverage),
+                risk_per_trade=float(evidence_strategy.risk_per_trade),
+                max_position_pct=float(evidence_strategy.max_position_pct),
+                max_drawdown_limit_pct=float(evidence_strategy.max_drawdown_limit * 100.0),
                 accepted=accepted,
                 reason=reason,
                 start_utc=iso_utc(int(validation_rows[0].timestamp)) if validation_rows else coverage.used_start_utc,
@@ -872,6 +911,11 @@ def build_round_evidence(
                 round_id=round_id,
                 symbol=item.symbol,
                 objective=objective.name,
+                risk_level=str(evidence_strategy.risk_level),
+                leverage=float(evidence_strategy.leverage),
+                risk_per_trade=float(evidence_strategy.risk_per_trade),
+                max_position_pct=float(evidence_strategy.max_position_pct),
+                max_drawdown_limit_pct=float(evidence_strategy.max_drawdown_limit * 100.0),
                 accepted=False,
                 reason=str(exc)[:240],
                 start_utc=(coverage.used_start_utc if coverage is not None else None),
@@ -960,6 +1004,8 @@ def build_round_evidence(
         "quote_asset": quote_asset,
         "interval": interval,
         "objective": objective.name,
+        "use_objective_strategy_defaults": bool(use_objective_strategy_defaults),
+        "strategy": evidence_strategy.asdict(),
         "starting_cash": float(starting_cash),
         "symbol_count_requested": len([str(symbol).strip() for symbol in (symbols or []) if str(symbol).strip()]) if symbols else int(symbol_count),
         "symbol_count_completed": len(metrics),
@@ -994,4 +1040,5 @@ __all__ = [
     "render_comparison_svg",
     "select_named_symbols",
     "select_top_liquidity_symbols",
+    "strategy_with_objective_defaults",
 ]

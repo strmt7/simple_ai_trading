@@ -161,9 +161,10 @@ used as training examples for that fold.
 Futures safety:
 
 - Binance can support larger initial leverage values, but this app hard-caps autonomous leverage at `20x`.
-- Default leverage is `1x`.
+- Risk-profile defaults are `5x` conservative, `10x` regular, and `15x` aggressive in futures mode. Spot mode still resolves to `1x` because spot orders cannot use futures leverage.
 - Shorting is only available on futures mode.
 - Liquidation buffer is part of strategy config and risk reporting.
+- Leverage is subordinate to stop-loss-sized position sizing, position caps, daily/session loss budgets, exchange brackets, and reconciliation gates. A higher default does not authorize larger loss-at-stop budgets.
 
 Authenticated order reconciliation:
 
@@ -179,6 +180,12 @@ Authenticated order reconciliation:
   bot-owned ledger position is a startup block, not an implicit adoption. This
   keeps the CLI from closing or modifying positions that were not opened and
   tracked by the bot.
+- Signed `live --live` entries stamp exchange orders with `sait-o-*` client
+  order ids and immediately write the resolved fill into the local bot ledger.
+  Signed live closes stamp `sait-c-*` client order ids, write a closed-trade
+  ledger entry, and remove or shrink the open ledger position after the resolved
+  fill. If a submit call fails after reaching the exchange, the order wrapper
+  queries the deterministic client order id before declaring an order error.
 
 Autonomous network-interruption recovery:
 

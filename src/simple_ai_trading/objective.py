@@ -16,6 +16,11 @@ import math
 from dataclasses import dataclass
 from typing import Callable
 
+from .assets import (
+    DEFAULT_AGGRESSIVE_LEVERAGE,
+    DEFAULT_CONSERVATIVE_LEVERAGE,
+    DEFAULT_REGULAR_LEVERAGE,
+)
 from .backtest import BacktestResult
 
 
@@ -253,7 +258,7 @@ CONSERVATIVE = ObjectiveSpec(
         risk_per_trade=0.005,
         max_position_pct=0.10,
         max_trades_per_day=8,
-        leverage=1.0,
+        leverage=DEFAULT_CONSERVATIVE_LEVERAGE,
         cooldown_minutes=15,
         calibrate_threshold=True,
         walk_forward_train=400,
@@ -291,7 +296,7 @@ REGULAR = ObjectiveSpec(
         risk_per_trade=0.010,
         max_position_pct=0.20,
         max_trades_per_day=16,
-        leverage=1.5,
+        leverage=DEFAULT_REGULAR_LEVERAGE,
         cooldown_minutes=7,
         calibrate_threshold=True,
         walk_forward_train=500,
@@ -331,7 +336,7 @@ AGGRESSIVE = ObjectiveSpec(
         risk_per_trade=0.012,
         max_position_pct=0.25,
         max_trades_per_day=24,
-        leverage=2.0,
+        leverage=DEFAULT_AGGRESSIVE_LEVERAGE,
         cooldown_minutes=4,
         calibrate_threshold=True,
         walk_forward_train=600,

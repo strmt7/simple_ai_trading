@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from simple_ai_trading.api import Candle
+from simple_ai_trading.assets import DEFAULT_REGULAR_LEVERAGE
 from simple_ai_trading import optimization_evidence as oe
 from simple_ai_trading.market_store import MarketDataStore
 from simple_ai_trading.types import StrategyConfig
@@ -230,3 +231,35 @@ def test_build_round_evidence_blocks_explicit_low_liquidity_symbol_before_traini
     assert "symbol_selection_failed" in str(report["metrics"][0]["reason"])
     assert "quote_volume_below_default_live_gate" in str(report["metrics"][0]["reason"])
     assert report["data_health"] == []
+
+
+def test_build_round_evidence_records_objective_strategy_defaults(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_training(*_args, **_kwargs):
+        raise AssertionError("training should not start when data-health blocks")
+
+    monkeypatch.setattr(oe, "train_round_model", fail_training)
+    report = oe.build_round_evidence(
+        round_id="round-test-regular-leverage",
+        client=_SelectionClient(),
+        strategy=StrategyConfig(leverage=1.0),
+        quote_asset="USDT",
+        symbols=["BTCUSDT"],
+        interval="1s",
+        market_type="spot",
+        objective_name="regular",
+        data_root=tmp_path / "data" / "optimization",
+        docs_root=tmp_path / "docs" / "optimization",
+        db_path=tmp_path / "market.sqlite",
+        require_prefilled_data=True,
+        min_data_rows=10,
+        use_objective_strategy_defaults=True,
+    )
+
+    assert report["use_objective_strategy_defaults"] is True
+    assert report["strategy"]["risk_level"] == "regular"
+    assert report["strategy"]["leverage"] == pytest.approx(DEFAULT_REGULAR_LEVERAGE)
+    assert report["metrics"][0]["risk_level"] == "regular"
+    assert report["metrics"][0]["leverage"] == pytest.approx(DEFAULT_REGULAR_LEVERAGE)

@@ -23,6 +23,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--interval", default="1s")
     parser.add_argument("--market", choices=("spot",), default="spot")
     parser.add_argument("--objective", default="conservative")
+    parser.add_argument(
+        "--no-objective-strategy-defaults",
+        action="store_true",
+        help="Use the saved strategy as-is instead of applying the selected objective's profile defaults.",
+    )
     parser.add_argument("--starting-cash", type=float, default=1000.0)
     parser.add_argument("--compute-backend", choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"), default="auto")
     parser.add_argument("--batch-size", type=int, default=8192)
@@ -93,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
         min_coverage_ratio=args.min_coverage_ratio,
         max_gap_count=args.max_gap_count,
         require_verified_checksum=args.require_verified_checksum,
+        use_objective_strategy_defaults=not args.no_objective_strategy_defaults,
     )
     print(f"round: {report['round_id']}")
     print(f"symbols completed: {report['symbol_count_completed']}/{report['symbol_count_requested']}")

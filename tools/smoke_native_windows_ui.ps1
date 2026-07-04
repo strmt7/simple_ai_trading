@@ -160,10 +160,10 @@ try {
 
     foreach ($expected in @(
         @{ Id = $QuickBaseId + 0; Text = "Health Check"; Needle = "dry-run: simple-ai-trading doctor" },
-        @{ Id = $QuickBaseId + 1; Text = "Paper Status"; Needle = "dry-run: simple-ai-trading positions" },
-        @{ Id = $QuickBaseId + 2; Text = "Risk Snapshot"; Needle = "dry-run: simple-ai-trading risk --paper" },
+        @{ Id = $QuickBaseId + 1; Text = "API Budget"; Needle = "dry-run: simple-ai-trading api-budget --compact" },
+        @{ Id = $QuickBaseId + 2; Text = "Paper Status"; Needle = "dry-run: simple-ai-trading positions" },
         @{ Id = $QuickBaseId + 3; Text = "Backtest Chart"; Needle = "dry-run: simple-ai-trading backtest-chart" },
-        @{ Id = $QuickBaseId + 4; Text = "Model Lab Smoke"; Needle = "dry-run: simple-ai-trading model-lab --objective conservative" }
+        @{ Id = $QuickBaseId + 4; Text = "Model Lab"; Needle = "dry-run: simple-ai-trading model-lab --objective conservative" }
     )) {
         $button = Get-Control $window $expected.Id
         $text = Get-ControlText $button
@@ -179,10 +179,10 @@ try {
 
     foreach ($expected in @(
         @{ Id = $StopAllId; Text = "Stop Trading"; Needle = "dry-run: simple-ai-trading close all" },
-        @{ Id = $AiPreflightId; Text = "AI Check"; Needle = "dry-run: simple-ai-trading ai" },
+        @{ Id = $AiPreflightId; Text = "Pause Bot"; Needle = "dry-run: simple-ai-trading autonomous pause" },
         @{ Id = $RiskReportId; Text = "Risk Check"; Needle = "dry-run: simple-ai-trading risk --paper" },
-        @{ Id = $ModelLabId; Text = "Model Lab"; Needle = "dry-run: simple-ai-trading model-lab --objective conservative" },
-        @{ Id = $BacktestChartId; Text = "Backtest Chart"; Needle = "dry-run: simple-ai-trading backtest-chart" }
+        @{ Id = $ModelLabId; Text = "Positions"; Needle = "dry-run: simple-ai-trading positions" },
+        @{ Id = $BacktestChartId; Text = "Reconcile"; Needle = "dry-run: simple-ai-trading reconcile" }
     )) {
         $button = Get-Control $window $expected.Id
         $text = Get-ControlText $button
