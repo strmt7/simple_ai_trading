@@ -118,6 +118,11 @@ weakening risk controls.
 - TradingView Lorentzian, rational-quadratic kernel, and Technical Ratings
   pages are useful product/model inspiration only. The implemented hybrid
   experts are original code and should stay independently tested.
+- Ablation evidence must close the loop between research and review. A hybrid
+  expert or feature group that looks sophisticated but hurts the accepted score
+  is not allowed to hide behind an aggregate ensemble result; compact ablation
+  summaries are now part of the AI-review prompt, and positive ablation deltas
+  veto before any local model is called.
 
 Sources:
 
@@ -375,6 +380,7 @@ No future model family should be accepted unless it writes:
 - symbol-specific execution stress,
 - portfolio-level correlation and CVaR stress,
 - source of any AI/foundation forecast used,
+- hybrid and feature ablation deltas for accepted candidates,
 - reproducibility seeds or nondeterminism warning.
 
 Implemented objective gates:

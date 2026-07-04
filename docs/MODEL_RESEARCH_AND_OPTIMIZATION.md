@@ -135,9 +135,10 @@ The selected advanced feature vector is replayed with base features, extra
 lookback windows, technical-confluence features, nonlinear transforms, and
 polynomial interactions zeroed out one group at a time. The report records
 acceptance, score, P&L, drawdown, trade count, and delta versus the selected
-model. This is accountability evidence first; it does not automatically reject
-a model until enough cross-symbol and out-of-sample evidence proves a feature
-family is harmful.
+model. This remains attribution evidence for model selection, and it is also
+carried into `ai-review`: if the compact accepted report shows that removing a
+hybrid expert or feature group improves the selected score, the AI review
+deterministically vetoes before calling the local model.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
@@ -243,9 +244,12 @@ can run a local structured-output model over a compact artifact summary. The
 review is intentionally bounded and non-executing: it receives no credentials,
 uses the AI capability preflight, requires GPU AI unless the user explicitly
 changes runtime settings, validates the JSON schema, and writes
-`ai_risk_review.json`. Missing accepted symbols, failed portfolio gates, failed
-AI preflight, provider errors, or invalid model JSON all produce a veto/review
-result instead of approval.
+`ai_risk_review.json`. Missing accepted symbols, failed portfolio gates,
+positive hybrid/feature ablation deltas on accepted outcomes, failed AI
+preflight, provider errors, or invalid model JSON all produce a veto/review
+result instead of approval. The local model sees compact hybrid and feature
+ablation summaries, but harmful positive ablation deltas are blocked in
+deterministic code before provider invocation.
 
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
@@ -292,8 +296,9 @@ assert that every CLI command appears in the Windows app.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,
-  the local AI capability gate passed, and the provider returned valid
-  structured JSON.
+  hybrid/feature ablation evidence does not show that removing a selected
+  component improves the accepted score, the local AI capability gate passed,
+  and the provider returned valid structured JSON.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

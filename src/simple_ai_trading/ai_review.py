@@ -22,6 +22,8 @@ _MAX_CONCERNS = 8
 _MAX_ACTIONS = 8
 _MAX_REASON_CHARS = 240
 _MAX_PROMPT_CHARS = 12_000
+_MAX_ABLATION_ITEMS = 6
+_POSITIVE_ABLATION_DELTA_EPS = 1e-9
 
 PostJson = Callable[[str, Mapping[str, object], float], object]
 
@@ -251,6 +253,16 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                         "take_precision": _finite(raw_meta.get("take_precision")),
                         "target_precision": _finite(raw_meta.get("target_precision")),
                     }
+            hybrid_ablation = _compact_ablation_map(
+                item.get("hybrid_ablation"),
+                group_key="removed_expert_kind",
+                delta_key="delta_vs_best",
+            )
+            feature_ablation = _compact_ablation_map(
+                item.get("feature_ablation"),
+                group_key="removed_group",
+                delta_key="delta_vs_selected",
+            )
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
                 "accepted": bool(item.get("accepted")),
@@ -262,6 +274,8 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "robustness_validation": robustness_summary,
                 "regime_validation": regime_summary,
                 "meta_label_validation": meta_summary,
+                "hybrid_ablation": hybrid_ablation,
+                "feature_ablation": feature_ablation,
                 "diagnostics": item.get("diagnostics") if isinstance(item.get("diagnostics"), Mapping) else None,
             })
     portfolio = report.get("portfolio_risk")
@@ -289,15 +303,80 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
     }
 
 
+def _compact_ablation_map(
+    raw_map: object,
+    *,
+    group_key: str,
+    delta_key: str,
+) -> dict[str, list[dict[str, object]]]:
+    if not isinstance(raw_map, Mapping):
+        return {}
+    compact: dict[str, list[dict[str, object]]] = {}
+    for objective, raw_items in list(raw_map.items())[:4]:
+        if not isinstance(raw_items, list):
+            continue
+        items: list[dict[str, object]] = []
+        for item in raw_items[:_MAX_ABLATION_ITEMS]:
+            if not isinstance(item, Mapping):
+                continue
+            items.append({
+                "group": _bounded_text(item.get(group_key)),
+                "accepted": bool(item.get("accepted")),
+                "score": _finite(item.get("score")),
+                "delta": _finite(item.get(delta_key)),
+                "realized_pnl": _finite(item.get("realized_pnl")),
+                "max_drawdown": _finite(item.get("max_drawdown")),
+                "closed_trades": int(_finite(item.get("closed_trades"))),
+                "status": _bounded_text(item.get("status")),
+                "reject_reason": _bounded_text(item.get("reject_reason")),
+            })
+        if items:
+            compact[str(objective)] = items
+    return compact
+
+
+def _ablation_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
+    warnings: list[str] = []
+    outcomes = compact.get("outcomes")
+    if not isinstance(outcomes, list):
+        return warnings
+    for item in outcomes[:_MAX_OUTCOMES]:
+        if not isinstance(item, Mapping):
+            continue
+        symbol = str(item.get("symbol") or "unknown")
+        for field, label in (("hybrid_ablation", "hybrid"), ("feature_ablation", "feature")):
+            raw_map = item.get(field)
+            if not isinstance(raw_map, Mapping):
+                continue
+            for objective, raw_items in raw_map.items():
+                if not isinstance(raw_items, list):
+                    continue
+                for raw in raw_items:
+                    if not isinstance(raw, Mapping):
+                        continue
+                    delta = _finite(raw.get("delta"))
+                    if delta > _POSITIVE_ABLATION_DELTA_EPS:
+                        group = _bounded_text(raw.get("group")) or "unknown_group"
+                        warnings.append(
+                            f"{symbol} {objective} {label} ablation improves score when removing {group}: +{delta:.6g}"
+                        )
+                        if len(warnings) >= _MAX_CONCERNS:
+                            return warnings
+    return warnings
+
+
 def _deterministic_precheck(compact: Mapping[str, object]) -> dict[str, object]:
     accepted_symbols = list(compact.get("accepted_symbols") or [])
     portfolio = compact.get("portfolio_risk")
     portfolio_ok = bool(portfolio.get("accepted")) if isinstance(portfolio, Mapping) else False
+    ablation_warnings = _ablation_precheck_warnings(compact)
     return {
         "accepted_symbol_count": len(accepted_symbols),
         "portfolio_accepted": portfolio_ok,
         "portfolio_reason": _bounded_text(portfolio.get("reason")) if isinstance(portfolio, Mapping) else "missing_portfolio_risk",
-        "allowed_for_ai_review": bool(accepted_symbols) and portfolio_ok,
+        "ablation_warning_count": len(ablation_warnings),
+        "ablation_warnings": ablation_warnings,
+        "allowed_for_ai_review": bool(accepted_symbols) and portfolio_ok and not ablation_warnings,
     }
 
 
@@ -311,7 +390,8 @@ def _prompt(compact: Mapping[str, object]) -> str:
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
         "Approve only when deterministic gates passed, stress scenarios are coherent, meta-label evidence does not "
         "show fragile take/skip behavior, temporal robustness and statistical edge evidence are coherent, regime "
-        "concentration is not hiding a fragile one-state edge, portfolio tail risk is acceptable, and there is no "
+        "concentration is not hiding a fragile one-state edge, hybrid and feature ablation evidence does not show "
+        "that removing a model component improves the accepted score, portfolio tail risk is acceptable, and there is no "
         "obvious reason to require a human review. "
         "Return JSON matching the schema.\n"
         f"SCHEMA={schema}\n"
@@ -340,12 +420,17 @@ def run_model_lab_ai_review(
     compact = _compact_model_lab_report(report_payload)
     precheck = _deterministic_precheck(compact)
     if not precheck["allowed_for_ai_review"]:
+        ablation_warnings = precheck.get("ablation_warnings")
+        if isinstance(ablation_warnings, list) and ablation_warnings:
+            reason = "ablation evidence shows accepted model improves when a component is removed"
+        else:
+            reason = "deterministic gates did not produce an accepted portfolio for AI review"
         result = _blocked_report(
             source_report=source_path,
             provider=provider,
             model=selected_model,
             endpoint=endpoint,
-            reason="deterministic gates did not produce an accepted portfolio for AI review",
+            reason=reason,
             deterministic_precheck=precheck,
             output_path=output_path,
         )
