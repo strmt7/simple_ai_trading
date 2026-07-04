@@ -12,6 +12,7 @@ import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
@@ -24,6 +25,7 @@ from .market_store import MarketDataStore
 
 BINANCE_ARCHIVE_BASE_URL = "https://data.binance.vision/data"
 _ZIP_LINK_PATTERN = re.compile(r'href=["\'](?P<href>[^"\']+\.zip)["\']', re.IGNORECASE)
+_CHECKSUM_PATTERN = re.compile(r"\b(?P<sha256>[a-fA-F0-9]{64})\b")
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,8 @@ class ArchiveIngestResult:
     rows_read: int
     bytes_downloaded: int
     sha256: str
+    checksum_sha256: str = ""
+    checksum_status: str = "unverified"
     error: str = ""
 
     def asdict(self) -> dict[str, object]:
@@ -236,6 +240,27 @@ def _download_to_temp(url: str, *, timeout: int, chunk_size: int = 1024 * 1024) 
     return path, bytes_downloaded, digest.hexdigest()
 
 
+def _checksum_url(url: str) -> str:
+    return f"{url}.CHECKSUM"
+
+
+def _parse_checksum_text(text: str) -> str | None:
+    match = _CHECKSUM_PATTERN.search(text)
+    return match.group("sha256").lower() if match else None
+
+
+def _fetch_archive_checksum(url: str, *, timeout: int) -> str | None:
+    try:
+        with urlopen(_checksum_url(url), timeout=timeout) as response:  # nosec B310 - official public archive URL
+            return _parse_checksum_text(response.read(4096).decode("utf-8", errors="ignore"))
+    except HTTPError as exc:
+        if exc.code == 404:
+            return None
+        return None
+    except (OSError, URLError, ValueError):
+        return None
+
+
 def ingest_archive_url(
     store: MarketDataStore,
     *,
@@ -247,6 +272,8 @@ def ingest_archive_url(
     timeout: int = 120,
     chunk_size: int = 10_000,
     force: bool = False,
+    verify_checksum: bool = True,
+    require_checksum: bool = False,
 ) -> ArchiveIngestResult:
     symbol = symbol.upper()
     if not force and store.archive_file_status(url) == "complete":
@@ -261,6 +288,8 @@ def ingest_archive_url(
             rows_read=0,
             bytes_downloaded=0,
             sha256="",
+            checksum_sha256="",
+            checksum_status="skipped",
         )
 
     store.begin_archive_file(url=url, symbol=symbol, market_type=market_type, interval=interval, period=period)
@@ -269,8 +298,24 @@ def ingest_archive_url(
     rows_read = 0
     bytes_downloaded = 0
     sha256 = ""
+    checksum_sha256 = ""
+    checksum_status = "unverified"
     try:
         zip_path, bytes_downloaded, sha256 = _download_to_temp(url, timeout=timeout)
+        if verify_checksum:
+            checksum_sha256 = _fetch_archive_checksum(url, timeout=max(1, min(timeout, 30))) or ""
+            if checksum_sha256:
+                if checksum_sha256.lower() != sha256.lower():
+                    checksum_status = "mismatch"
+                    raise ValueError(
+                        f"archive checksum mismatch expected={checksum_sha256.lower()} actual={sha256.lower()}"
+                    )
+                checksum_status = "verified"
+            elif require_checksum:
+                checksum_status = "missing"
+                raise ValueError(f"archive checksum sidecar missing for {url}")
+            else:
+                checksum_status = "unavailable"
         batch: list[Candle] = []
         ingested_at_ms = int(time.time() * 1000)
         for candle in _iter_zip_candles(zip_path):
@@ -303,6 +348,8 @@ def ingest_archive_url(
             rows_inserted=rows_inserted,
             bytes_downloaded=bytes_downloaded,
             sha256=sha256,
+            checksum_sha256=checksum_sha256,
+            checksum_status=checksum_status,
         )
         return ArchiveIngestResult(
             url=url,
@@ -315,6 +362,8 @@ def ingest_archive_url(
             rows_read=rows_read,
             bytes_downloaded=bytes_downloaded,
             sha256=sha256,
+            checksum_sha256=checksum_sha256,
+            checksum_status=checksum_status,
         )
     except (OSError, ValueError, zipfile.BadZipFile, RuntimeError) as exc:
         store.complete_archive_file(
@@ -323,6 +372,8 @@ def ingest_archive_url(
             rows_inserted=rows_inserted,
             bytes_downloaded=bytes_downloaded,
             sha256=sha256,
+            checksum_sha256=checksum_sha256,
+            checksum_status=checksum_status,
             error=str(exc)[:500],
         )
         return ArchiveIngestResult(
@@ -336,6 +387,8 @@ def ingest_archive_url(
             rows_read=rows_read,
             bytes_downloaded=bytes_downloaded,
             sha256=sha256,
+            checksum_sha256=checksum_sha256,
+            checksum_status=checksum_status,
             error=str(exc)[:500],
         )
     finally:
@@ -355,6 +408,8 @@ def ingest_archive_urls(
     market_type: str = "spot",
     timeout: int = 120,
     force: bool = False,
+    verify_checksum: bool = True,
+    require_checksum: bool = False,
 ) -> list[ArchiveIngestResult]:
     results: list[ArchiveIngestResult] = []
     with MarketDataStore(db_path) as store:
@@ -372,6 +427,8 @@ def ingest_archive_urls(
                     period=period,
                     timeout=timeout,
                     force=force,
+                    verify_checksum=verify_checksum,
+                    require_checksum=require_checksum,
                 )
             )
     return results
@@ -383,6 +440,7 @@ __all__ = [
     "archive_directory_url",
     "archive_file_url",
     "archive_listing_url",
+    "_checksum_url",
     "ingest_archive_url",
     "ingest_archive_urls",
     "list_archive_urls",

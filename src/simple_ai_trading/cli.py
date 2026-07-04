@@ -370,6 +370,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_archive_sync.add_argument("--max-files", type=int, default=None, help="optional safety cap for smoke runs")
     parser_archive_sync.add_argument("--timeout", type=int, default=120)
     parser_archive_sync.add_argument("--force", action="store_true")
+    parser_archive_sync.add_argument("--no-verify-checksum", action="store_true", help="skip Binance .CHECKSUM sidecar verification")
+    parser_archive_sync.add_argument("--require-checksum", action="store_true", help="fail archive files without a readable .CHECKSUM sidecar")
     parser_archive_sync.add_argument("--json", action="store_true")
     parser_archive_sync.set_defaults(func=command_archive_sync)
 
@@ -4428,6 +4430,8 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 market_type=market_type,
                 timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
                 force=bool(getattr(args, "force", False)),
+                verify_checksum=not bool(getattr(args, "no_verify_checksum", False)),
+                require_checksum=bool(getattr(args, "require_checksum", False)),
             )
         )
     payload = {

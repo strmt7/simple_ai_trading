@@ -31,6 +31,11 @@ Execution cost is symbol-specific where market data exists:
   with `--quote-asset` to auto-rank liquid symbols from current exchange
   metadata before archive ingestion. This keeps the 50-pair research path
   automatic rather than relying on a static list.
+- Archive downloads compute SHA-256 locally and, by default, verify Binance's
+  `.CHECKSUM` sidecar when it is available. A checksum mismatch fails before
+  any candle rows are written. `--require-checksum` makes missing sidecars a
+  hard failure for promotion-grade data builds; without it, unavailable
+  sidecars are recorded as `checksum_status=unavailable` for audit.
 - `data-sync --full-history` pages backward through exchange klines with the
   venue maximum request size until no older rows are returned. Recent bounded
   syncs remain available for incremental refreshes, but reports label them as
