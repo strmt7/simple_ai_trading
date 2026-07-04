@@ -190,8 +190,10 @@ Autonomous network-interruption recovery:
   and consecutive-loss budgets. Breached daily/session budgets close locally
   tracked bot positions at the latest mark and stop the loop; loss-streak
   lockout stops new entries.
-- A clean recovery still waits through `recovery_cooldown_seconds` and writes a
-  recovery-observation heartbeat before normal entry logic can resume.
+- A clean recovery still writes a recovery-observation heartbeat and skips that
+  iteration before normal entry logic can resume. It waits through
+  `recovery_cooldown_seconds` when configured; a zero-second cooldown still
+  gets one no-entry observation cycle.
 
 ## Testnet vs Mainnet
 
