@@ -125,6 +125,19 @@ weakening risk controls.
   is not allowed to hide behind an aggregate ensemble result; compact ablation
   summaries are now part of the AI-review prompt, and positive ablation deltas
   veto before any local model is called.
+- The refreshed backtesting literature reinforces that candle-only fills are
+  not enough for day trading claims. Future promotion artifacts should disclose
+  whether a model was tested with symbol-specific spread, top-of-book depth,
+  feed latency, order latency, and queue/fill uncertainty. When those fields are
+  missing, the artifact is lower-confidence and cannot justify an HFT-style
+  claim.
+- Deflated selected score is the minimum acceptable multiple-testing guard.
+  The next training-suite step should add CPCV/PBO-style diagnostics for broad
+  searches so repeated parameter sweeps do not select a lucky equity curve.
+- DirectML remains the Windows-first AMD/NVIDIA-compatible research path for
+  PyTorch experiments, with ONNX Runtime DirectML available for inference
+  parity checks. Every accelerated run must still persist backend package
+  versions, selected device, VRAM/RAM checks, and fallback reason.
 
 Sources:
 
@@ -135,7 +148,13 @@ Sources:
 - <https://lightgbm.readthedocs.io/en/latest/GPU-Targets.html>
 - <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253>
 - <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551>
+- <https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf>
+- <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4686376>
 - <https://www.freqtrade.io/en/stable/freqai/>
+- <https://hftbacktest.readthedocs.io/en/py-v2.2.0/>
+- <https://www.quantstart.com/articles/Successful-Backtesting-of-Algorithmic-Trading-Strategies-Part-II/>
+- <https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows>
+- <https://github.com/microsoft/DirectML>
 - <https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/>
 - <https://www.tradingview.com/script/AWNvbPRM-Nadaraya-Watson-Rational-Quadratic-Kernel-Non-Repainting/>
 - <https://www.tradingview.com/support/solutions/43000614331-technical-ratings/>
@@ -307,6 +326,10 @@ Implementation direction:
 - Every GPU model family must have a CPU fallback for tests, plus a capability
   artifact that records backend, device, package versions, and reason for
   fallback.
+- A model cannot be used by signed live startup just because it deserializes.
+  Runtime readiness requires the promoted artifact to carry passing
+  selection-risk evidence with a positive deflated score; otherwise the operator
+  must rerun model-lab.
 
 Sources:
 

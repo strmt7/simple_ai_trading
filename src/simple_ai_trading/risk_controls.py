@@ -9,6 +9,8 @@ from typing import Any
 
 from .types import RuntimeConfig, StrategyConfig
 from .assets import MAX_AUTONOMOUS_LEVERAGE
+from .model import ModelLoadError
+from .model_readiness import load_model_readiness_report
 
 
 @dataclass(frozen=True)
@@ -339,13 +341,32 @@ def build_risk_policy_report(
 
     if model_path is not None:
         path = Path(model_path)
+        exists = path.exists()
         checks.append(
             _check(
-                "ok" if dry_run or path.exists() else "block",
+                "ok" if dry_run or exists else "block",
                 "model path",
-                str(path) if path.exists() else f"missing {path}",
+                str(path) if exists else f"missing {path}",
             )
         )
+        if exists:
+            try:
+                readiness = load_model_readiness_report(path)
+                status = "ok" if readiness.allowed else ("warn" if dry_run else "block")
+                detail = "passed" if readiness.allowed else "; ".join(
+                    f"{check.label}: {check.detail}"
+                    for check in readiness.checks
+                    if check.status == "block"
+                )
+                checks.append(_check(status, "model promotion evidence", detail or "failed"))
+            except (OSError, ValueError, ModelLoadError) as exc:
+                checks.append(
+                    _check(
+                        "warn" if dry_run else "block",
+                        "model promotion evidence",
+                        f"unreadable model evidence: {exc}",
+                    )
+                )
 
     return RiskPolicyReport(
         checks=tuple(checks),

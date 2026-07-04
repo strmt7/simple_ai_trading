@@ -258,6 +258,16 @@ selection-risk plus hybrid and feature ablation summaries, but failed deflated
 scores and harmful positive ablation deltas are blocked in deterministic code
 before provider invocation.
 
+Runtime startup also enforces promotion evidence. `live --live` loads the model
+through a readiness gate that requires passing `selection_risk` evidence with a
+positive deflated score, and the risk report exposes the same check under
+`model promotion evidence`. Paper runs may regenerate an incompatible or stale
+model for experimentation, but signed live-style execution cannot use a stale,
+hand-edited, or legacy model artifact. Authenticated live mode also disables
+in-loop retraining, because an ad hoc model trained during a live session has
+not passed model-lab promotion, stress, robustness, ablation, AI-review, or
+portfolio gates.
+
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
 candidate instead of forcing a trade.
@@ -309,6 +319,9 @@ assert that every CLI command appears in the Windows app.
   does not show that removing a selected component improves the accepted score,
   the local AI capability gate passed, and the provider returned valid
   structured JSON.
+- No signed live startup with a stale or unpromoted model artifact.
+- No authenticated live in-loop retraining; retrain through model-lab and
+  promote a fresh artifact.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.
