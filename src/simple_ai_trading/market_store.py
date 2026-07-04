@@ -361,6 +361,41 @@ class MarketDataStore:
             last_open_time=row["last_open_time"],
         )
 
+    def candle_series(
+        self,
+        *,
+        market_type: str | None = None,
+        interval: str | None = None,
+    ) -> list[CandleCoverage]:
+        where: list[str] = []
+        params: list[object] = []
+        if market_type is not None:
+            where.append("market_type = ?")
+            params.append(market_type)
+        if interval is not None:
+            where.append("interval = ?")
+            params.append(interval)
+        query = """
+            SELECT symbol, market_type, interval, COUNT(*) AS count,
+                   MIN(open_time) AS first_open_time, MAX(open_time) AS last_open_time
+            FROM candles
+            """
+        if where:
+            query += " WHERE " + " AND ".join(where)
+        query += " GROUP BY symbol, market_type, interval ORDER BY symbol, market_type, interval"
+        rows = self.connect().execute(query, params).fetchall()
+        return [
+            CandleCoverage(
+                symbol=str(row["symbol"]),
+                market_type=str(row["market_type"]),
+                interval=str(row["interval"]),
+                count=int(row["count"]),
+                first_open_time=row["first_open_time"],
+                last_open_time=row["last_open_time"],
+            )
+            for row in rows
+        ]
+
     def coverage_quality(
         self,
         symbol: str,

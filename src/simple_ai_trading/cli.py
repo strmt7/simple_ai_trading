@@ -44,6 +44,7 @@ from .data_downloader import MarketDataSyncConfig, render_sync_result, sync_mark
 from .features import FEATURE_NAMES, ModelRow, feature_signature, make_inference_rows, make_rows, normalize_enabled_features
 from .api import SymbolConstraints
 from .external_signals import ExternalSignalReport, collect_external_signals, render_external_signal_report
+from .intervals import interval_milliseconds
 from .liquidity_session import apply_liquidity_session_meta, liquidity_session_adjustment
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
@@ -340,6 +341,22 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_data_sync.add_argument("--log-file", default="data/market_data_sync.log")
     parser_data_sync.add_argument("--json", action="store_true")
     parser_data_sync.set_defaults(func=command_data_sync)
+
+    parser_data_health = subparsers.add_parser(
+        "data-health",
+        help="audit SQLite market-data coverage, gaps, archive files, and checksum evidence",
+    )
+    parser_data_health.add_argument("--db", default="data/market_data.sqlite")
+    parser_data_health.add_argument("--symbol", default=None)
+    parser_data_health.add_argument("--symbols", default=None, help="comma-separated symbols; defaults to stored series")
+    parser_data_health.add_argument("--interval", default=None)
+    parser_data_health.add_argument("--market", choices=["spot", "futures"], default=None)
+    parser_data_health.add_argument("--min-rows", type=int, default=0)
+    parser_data_health.add_argument("--min-coverage-ratio", type=float, default=0.995)
+    parser_data_health.add_argument("--max-gap-count", type=int, default=0)
+    parser_data_health.add_argument("--require-verified-checksum", action="store_true")
+    parser_data_health.add_argument("--json", action="store_true")
+    parser_data_health.set_defaults(func=command_data_health)
 
     parser_api_budget = subparsers.add_parser(
         "api-budget",
@@ -4335,6 +4352,120 @@ def command_data_sync(args: argparse.Namespace) -> int:
         python_executable=sys.executable,
         popen=subprocess.Popen,
     )
+
+
+def _data_health_iso(ts_ms: int | None) -> str:
+    if ts_ms is None:
+        return ""
+    try:
+        return datetime.fromtimestamp(int(ts_ms) / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    except (OSError, OverflowError, ValueError):
+        return ""
+
+
+def _count_by(items: Sequence[object], attr: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        key = str(getattr(item, attr, "") or "unknown")
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def command_data_health(args: argparse.Namespace) -> int:
+    runtime = load_runtime()
+    market_filter = getattr(args, "market", None) or runtime.market_type
+    interval_filter = getattr(args, "interval", None) or runtime.interval
+    raw_symbols = str(getattr(args, "symbols", "") or "").strip()
+    symbols = [item.strip().upper() for item in raw_symbols.split(",") if item.strip()]
+    if not symbols and getattr(args, "symbol", None):
+        symbols = [str(args.symbol).upper()]
+    min_rows = max(0, int(getattr(args, "min_rows", 0) or 0))
+    min_coverage_ratio = max(0.0, min(1.0, float(getattr(args, "min_coverage_ratio", 0.995) or 0.995)))
+    max_gap_count = max(0, int(getattr(args, "max_gap_count", 0) or 0))
+    require_verified_checksum = bool(getattr(args, "require_verified_checksum", False))
+    db_path = Path(getattr(args, "db", "data/market_data.sqlite"))
+
+    try:
+        step_ms = interval_milliseconds(interval_filter)
+    except ValueError as exc:
+        print(f"data-health failed: {exc}", file=sys.stderr)
+        return 2
+
+    items: list[dict[str, object]] = []
+    with MarketDataStore(db_path) as store:
+        if symbols:
+            coverages = [store.coverage(symbol, market_filter, interval_filter) for symbol in symbols]
+        else:
+            coverages = store.candle_series(market_type=market_filter, interval=interval_filter)
+        for coverage in coverages:
+            quality = store.coverage_quality(coverage.symbol, coverage.market_type, coverage.interval, step_ms)
+            archives = store.archive_files(symbol=coverage.symbol, market_type=coverage.market_type, interval=coverage.interval)
+            archive_status_counts = _count_by(archives, "status")
+            checksum_status_counts = _count_by(archives, "checksum_status")
+            reasons: list[str] = []
+            if quality.coverage.count < min_rows:
+                reasons.append(f"rows_below_min:{quality.coverage.count}/{min_rows}")
+            if quality.gap_count > max_gap_count:
+                reasons.append(f"gap_count_above_max:{quality.gap_count}/{max_gap_count}")
+            if quality.coverage_ratio < min_coverage_ratio:
+                reasons.append(f"coverage_ratio_below_min:{quality.coverage_ratio:.6f}/{min_coverage_ratio:.6f}")
+            if archive_status_counts.get("error", 0) > 0:
+                reasons.append(f"archive_errors:{archive_status_counts['error']}")
+            if checksum_status_counts.get("mismatch", 0) > 0:
+                reasons.append(f"checksum_mismatches:{checksum_status_counts['mismatch']}")
+            if require_verified_checksum and checksum_status_counts.get("verified", 0) <= 0:
+                reasons.append("no_verified_archive_checksum")
+            item_status = "ok" if not reasons else "block"
+            items.append(
+                {
+                    "status": item_status,
+                    "symbol": coverage.symbol,
+                    "market_type": coverage.market_type,
+                    "interval": coverage.interval,
+                    "rows": quality.coverage.count,
+                    "expected_rows": quality.expected_count,
+                    "first_open_time": quality.coverage.first_open_time,
+                    "last_open_time": quality.coverage.last_open_time,
+                    "first_utc": _data_health_iso(quality.coverage.first_open_time),
+                    "last_utc": _data_health_iso(quality.coverage.last_open_time),
+                    "coverage_ratio": quality.coverage_ratio,
+                    "gap_count": quality.gap_count,
+                    "archive_status_counts": archive_status_counts,
+                    "checksum_status_counts": checksum_status_counts,
+                    "reasons": reasons,
+                }
+            )
+
+    overall_status = "ok" if items and all(item["status"] == "ok" for item in items) else "block"
+    payload = {
+        "status": overall_status,
+        "db": str(db_path),
+        "market_type": market_filter,
+        "interval": interval_filter,
+        "symbol_count": len(items),
+        "min_rows": min_rows,
+        "min_coverage_ratio": min_coverage_ratio,
+        "max_gap_count": max_gap_count,
+        "require_verified_checksum": require_verified_checksum,
+        "items": items,
+    }
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "data-health: "
+            f"status={overall_status} symbols={len(items)} market={market_filter} interval={interval_filter} "
+            f"min_rows={min_rows} min_coverage={min_coverage_ratio:.4f} max_gaps={max_gap_count}"
+        )
+        for item in items:
+            print(
+                f"{item['symbol']} {item['status']} rows={item['rows']} "
+                f"coverage={float(item['coverage_ratio']):.4f} gaps={item['gap_count']} "
+                f"checksum={item['checksum_status_counts']}"
+            )
+            for reason in item["reasons"]:
+                print(f"warning: {item['symbol']} {reason}", file=sys.stderr)
+    return 0 if overall_status == "ok" else 2
 
 
 def command_api_budget(args: argparse.Namespace) -> int:
