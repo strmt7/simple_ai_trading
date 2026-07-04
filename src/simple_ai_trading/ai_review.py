@@ -100,6 +100,14 @@ def _finite(value: object, default: float = 0.0) -> float:
     return parsed if math.isfinite(parsed) else default
 
 
+def _optional_finite(value: object) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
 def _bounded_text(value: object, limit: int = _MAX_REASON_CHARS) -> str:
     return " ".join(str(value or "").split())[:limit]
 
@@ -263,6 +271,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 group_key="removed_group",
                 delta_key="delta_vs_selected",
             )
+            selection_risk = _compact_selection_risk_map(item.get("selection_risk"))
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
                 "accepted": bool(item.get("accepted")),
@@ -270,6 +279,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "error": _bounded_text(item.get("error")),
                 "objective_scores": item.get("objective_scores") if isinstance(item.get("objective_scores"), Mapping) else {},
                 "hybrid_profiles": item.get("hybrid_profiles") if isinstance(item.get("hybrid_profiles"), Mapping) else {},
+                "selection_risk": selection_risk,
                 "stress_validation": stress_summary,
                 "robustness_validation": robustness_summary,
                 "regime_validation": regime_summary,
@@ -301,6 +311,30 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
         "portfolio_risk": portfolio_summary,
         "outcomes": compact_outcomes,
     }
+
+
+def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]:
+    if not isinstance(raw_map, Mapping):
+        return {}
+    compact: dict[str, dict[str, object]] = {}
+    for objective, raw in list(raw_map.items())[:4]:
+        if not isinstance(raw, Mapping):
+            continue
+        raw_passed = raw.get("passed")
+        compact[str(objective)] = {
+            "passed": raw_passed if isinstance(raw_passed, bool) else None,
+            "reason": _bounded_text(raw.get("reason")),
+            "effective_trials": int(_finite(raw.get("effective_trials"))),
+            "finite_candidate_scores": int(_finite(raw.get("finite_candidate_scores"))),
+            "selected_score": _optional_finite(raw.get("selected_score")),
+            "runner_up_score": _optional_finite(raw.get("runner_up_score")),
+            "median_score": _optional_finite(raw.get("median_score")),
+            "score_iqr": _optional_finite(raw.get("score_iqr")),
+            "trial_penalty": _optional_finite(raw.get("trial_penalty")),
+            "deflated_score": _optional_finite(raw.get("deflated_score")),
+            "score_margin_to_runner_up": _optional_finite(raw.get("score_margin_to_runner_up")),
+        }
+    return compact
 
 
 def _compact_ablation_map(
@@ -365,18 +399,55 @@ def _ablation_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
     return warnings
 
 
+def _selection_risk_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
+    warnings: list[str] = []
+    outcomes = compact.get("outcomes")
+    if not isinstance(outcomes, list):
+        return warnings
+    for item in outcomes[:_MAX_OUTCOMES]:
+        if not isinstance(item, Mapping):
+            continue
+        symbol = str(item.get("symbol") or "unknown")
+        raw_map = item.get("selection_risk")
+        if not isinstance(raw_map, Mapping):
+            continue
+        for objective, raw in raw_map.items():
+            if not isinstance(raw, Mapping):
+                continue
+            explicit_failed = raw.get("passed") is False
+            raw_deflated = raw.get("deflated_score")
+            deflated_score = float(raw_deflated) if isinstance(raw_deflated, (int, float)) else None
+            if explicit_failed or (deflated_score is not None and deflated_score <= 0.0):
+                reason = _bounded_text(raw.get("reason")) or "selection_risk_failed"
+                deflated_text = f"{deflated_score:.6g}" if deflated_score is not None else "missing"
+                warnings.append(
+                    f"{symbol} {objective} selection risk failed ({reason}); deflated_score={deflated_text}"
+                )
+                if len(warnings) >= _MAX_CONCERNS:
+                    return warnings
+    return warnings
+
+
 def _deterministic_precheck(compact: Mapping[str, object]) -> dict[str, object]:
     accepted_symbols = list(compact.get("accepted_symbols") or [])
     portfolio = compact.get("portfolio_risk")
     portfolio_ok = bool(portfolio.get("accepted")) if isinstance(portfolio, Mapping) else False
     ablation_warnings = _ablation_precheck_warnings(compact)
+    selection_risk_warnings = _selection_risk_precheck_warnings(compact)
     return {
         "accepted_symbol_count": len(accepted_symbols),
         "portfolio_accepted": portfolio_ok,
         "portfolio_reason": _bounded_text(portfolio.get("reason")) if isinstance(portfolio, Mapping) else "missing_portfolio_risk",
         "ablation_warning_count": len(ablation_warnings),
         "ablation_warnings": ablation_warnings,
-        "allowed_for_ai_review": bool(accepted_symbols) and portfolio_ok and not ablation_warnings,
+        "selection_risk_warning_count": len(selection_risk_warnings),
+        "selection_risk_warnings": selection_risk_warnings,
+        "allowed_for_ai_review": (
+            bool(accepted_symbols)
+            and portfolio_ok
+            and not ablation_warnings
+            and not selection_risk_warnings
+        ),
     }
 
 
@@ -390,7 +461,8 @@ def _prompt(compact: Mapping[str, object]) -> str:
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
         "Approve only when deterministic gates passed, stress scenarios are coherent, meta-label evidence does not "
         "show fragile take/skip behavior, temporal robustness and statistical edge evidence are coherent, regime "
-        "concentration is not hiding a fragile one-state edge, hybrid and feature ablation evidence does not show "
+        "concentration is not hiding a fragile one-state edge, selection-risk evidence shows the selected score "
+        "survived the number of tried models, hybrid and feature ablation evidence does not show "
         "that removing a model component improves the accepted score, portfolio tail risk is acceptable, and there is no "
         "obvious reason to require a human review. "
         "Return JSON matching the schema.\n"
@@ -421,8 +493,11 @@ def run_model_lab_ai_review(
     precheck = _deterministic_precheck(compact)
     if not precheck["allowed_for_ai_review"]:
         ablation_warnings = precheck.get("ablation_warnings")
+        selection_risk_warnings = precheck.get("selection_risk_warnings")
         if isinstance(ablation_warnings, list) and ablation_warnings:
             reason = "ablation evidence shows accepted model improves when a component is removed"
+        elif isinstance(selection_risk_warnings, list) and selection_risk_warnings:
+            reason = "selection-risk evidence shows accepted model score does not survive trial burden"
         else:
             reason = "deterministic gates did not produce an accepted portfolio for AI review"
         result = _blocked_report(

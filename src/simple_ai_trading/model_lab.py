@@ -31,6 +31,7 @@ class SymbolResearchOutcome:
     liquidity: dict[str, object] | None = None
     objective_scores: dict[str, float] = field(default_factory=dict)
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
+    selection_risk: dict[str, object] = field(default_factory=dict)
     hybrid_ablation: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     feature_ablation: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     meta_label_validation: dict[str, object] = field(default_factory=dict)
@@ -95,6 +96,11 @@ def _outcome_from_suite(
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
+    selection_risk = {
+        outcome.objective: dict(getattr(outcome, "selection_risk", {}) or {})
+        for outcome in suite.outcomes
+        if getattr(outcome, "selection_risk", None)
+    }
     hybrid_ablation = {
         outcome.objective: list(getattr(outcome, "hybrid_ablation", []) or [])
         for outcome in suite.outcomes
@@ -113,13 +119,19 @@ def _outcome_from_suite(
     robustness_payload = robustness_report.asdict()
     regime_payload = robustness_payload.get("regime_summary") if isinstance(robustness_payload, dict) else None
     score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
+    selection_risk_accepted = all(
+        not isinstance(report, dict) or report.get("passed") is not False
+        for report in selection_risk.values()
+    )
     stress_accepted = bool(stress_report.accepted)
     robustness_accepted = bool(robustness_report.accepted)
-    accepted = score_accepted and stress_accepted and robustness_accepted
+    accepted = score_accepted and selection_risk_accepted and stress_accepted and robustness_accepted
     error = None
-    if not accepted and score_accepted and not stress_accepted:
+    if not accepted and score_accepted and not selection_risk_accepted:
+        error = "selection_risk_failed"
+    elif not accepted and score_accepted and selection_risk_accepted and not stress_accepted:
         error = "stress_validation_failed"
-    elif not accepted and score_accepted and stress_accepted and not robustness_accepted:
+    elif not accepted and score_accepted and selection_risk_accepted and stress_accepted and not robustness_accepted:
         error = "temporal_robustness_failed"
     return SymbolResearchOutcome(
         symbol=symbol,
@@ -131,6 +143,7 @@ def _outcome_from_suite(
         liquidity=liquidity.asdict(),
         objective_scores=scores,
         hybrid_profiles=hybrid_profiles,
+        selection_risk=selection_risk,
         hybrid_ablation=hybrid_ablation,
         feature_ablation=feature_ablation,
         meta_label_validation=meta_labels,

@@ -115,6 +115,7 @@ class TrainedModel:
     hybrid_base_weight: float = 1.0
     hybrid_experts: List[HybridExpert] = field(default_factory=list)
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
+    selection_risk: dict[str, Any] = field(default_factory=dict)
 
     def _normalize(self, features: Tuple[float, ...]) -> Tuple[float, ...]:
         if len(features) != self.feature_dim:
@@ -1717,6 +1718,11 @@ def load_model(
         meta_label_policy=(
             dict(payload["meta_label_policy"])
             if isinstance(payload.get("meta_label_policy"), dict)
+            else {}
+        ),
+        selection_risk=(
+            dict(payload["selection_risk"])
+            if isinstance(payload.get("selection_risk"), dict)
             else {}
         ),
     )

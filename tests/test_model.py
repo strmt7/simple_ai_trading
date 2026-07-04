@@ -316,6 +316,13 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
             "take_threshold": 0.12,
             "downsize_threshold": 0.06,
         },
+        selection_risk={
+            "passed": True,
+            "effective_trials": 24,
+            "selected_score": 0.12,
+            "trial_penalty": 0.01,
+            "deflated_score": 0.11,
+        },
         ensemble_members=[
             EnsembleMember(
                 weights=[0.0],
@@ -364,6 +371,8 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     }
     assert loaded.meta_label_policy["enabled"] is True
     assert loaded.meta_label_policy["take_threshold"] == pytest.approx(0.12)
+    assert loaded.selection_risk["passed"] is True
+    assert loaded.selection_risk["deflated_score"] == pytest.approx(0.11)
     assert len(loaded.ensemble_members) == 2
     assert loaded.ensemble_members[0].seed == 7
     assert loaded.ensemble_members[0].training_loss == 0.4

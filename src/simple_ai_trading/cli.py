@@ -6302,6 +6302,20 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             downsize_count = int(float(meta.get("downsize_count", 0) or 0))
             skip_count = int(float(meta.get("skip_count", 0) or 0))
             meta_text = f"{meta_status}:take{take_count}/down{downsize_count}/skip{skip_count}"
+        selection_risk = getattr(outcome, "selection_risk", None) or {}
+        selection_text = "n/a"
+        if isinstance(selection_risk, dict) and selection_risk:
+            deflated = selection_risk.get("deflated_score")
+            penalty = selection_risk.get("trial_penalty")
+            trials = selection_risk.get("effective_trials")
+            passed = selection_risk.get("passed") is True
+            try:
+                selection_text = (
+                    f"{'pass' if passed else 'fail'}:"
+                    f"deflated={float(deflated):+.4f}/penalty={float(penalty):.4f}/trials={int(float(trials))}"
+                )
+            except (TypeError, ValueError, OverflowError):
+                selection_text = "fail:selection_risk_malformed" if not passed else "pass:selection_risk"
         print(
             f"  {outcome.objective:<14} score={outcome.best_score:+.4f} "
             f"threshold={outcome.decision_threshold if outcome.decision_threshold is not None else 'n/a'} "
@@ -6309,6 +6323,7 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             f"validation={outcome.validation_score if outcome.validation_score is not None else 'n/a'} "
             f"full={outcome.full_sample_score if outcome.full_sample_score is not None else 'n/a'} "
             f"walk_forward={wf_gate_text} "
+            f"selection_risk={selection_text} "
             f"meta_label={meta_text} "
             f"ensemble={'yes' if getattr(outcome, 'ensemble_refined', False) else 'no'} "
             f"hybrid={getattr(outcome, 'hybrid_profile', 'base_only')} "
