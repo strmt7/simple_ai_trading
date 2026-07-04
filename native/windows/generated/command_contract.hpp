@@ -152,6 +152,12 @@ inline constexpr CommandOptionSpec kOptions_live[] = {
     {L"--no-external-signals", L"external_signals", L"", L"true", L"disable cached free external signal adjustment for this run", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_model_blueprint[] = {
+    {L"--risk-level", L"risk_level", L"conservative, regular, aggressive, default, balanced, risky", L"", L"filter the roadmap to one risk level", false, true},
+    {L"--implemented-only", L"implemented_only", L"", L"false", L"hide research-only, blocked, and sandbox model families", false, false},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_model_lab[] = {
     {L"--output-dir", L"output_dir", L"", L"data/model_lab", L"", false, true},
     {L"--starting-cash", L"starting_cash", L"", L"1000.0", L"", false, true},
@@ -414,6 +420,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
+    {L"model-blueprint", L"usage: simple-ai-trading model-blueprint [-h]                                          [--risk-level {conservative,regular,aggressive,default,balanced,risky}]                                          [--implemented-only] [--json]", kOptions_model_blueprint, 3},
     {L"model-lab", L"usage: simple-ai-trading model-lab [-h] [--output-dir OUTPUT_DIR]                                    [--starting-cash STARTING_CASH]                                    [--objective OBJECTIVE]                                    [--max-symbols MAX_SYMBOLS]                                    [--max-scan MAX_SCAN] [--limit LIMIT]                                    [--market {spot,futures}]                                    [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                    [--batch-size BATCH_SIZE]                                    [--score-batch-size SCORE_BATCH_SIZE]                                    [--max-candidates MAX_CANDIDATES]", kOptions_model_lab, 11},
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats]", kOptions_positions, 1},
