@@ -350,17 +350,68 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
             model_specs.append((member.weights, member.bias, member.feature_means, member.feature_stds))
     else:
         model_specs.append((model.weights, model.bias, model.feature_means, model.feature_stds))
+    model_tensors = []
+    for weights, bias, means, stds in model_specs:
+        w = torch.tensor(list(weights), dtype=torch.float32, device=device)
+        b = torch.tensor(float(bias), dtype=torch.float32, device=device)
+        mean_t = torch.tensor(list(means), dtype=torch.float32, device=device)
+        std_t = torch.tensor(list(stds), dtype=torch.float32, device=device)
+        std_t = torch.where(torch.abs(std_t) > 0.0, std_t, torch.ones_like(std_t))
+        model_tensors.append((w, b, mean_t, std_t))
+
+    base_mean_t = torch.tensor(list(model.feature_means), dtype=torch.float32, device=device)
+    base_std_t = torch.tensor(list(model.feature_stds), dtype=torch.float32, device=device)
+    base_std_t = torch.where(torch.abs(base_std_t) > 0.0, base_std_t, torch.ones_like(base_std_t))
+    hybrid_specs = []
+    for expert in getattr(model, "hybrid_experts", []) or []:
+        expert_weight = max(0.0, float(expert.weight))
+        if expert_weight <= 0.0:
+            continue
+        if expert.kind in {"lorentzian_knn", "rational_quadratic_kernel"}:
+            prototypes = [
+                prototype
+                for prototype in expert.prototypes
+                if len(prototype.features) == model.feature_dim
+            ]
+            if not prototypes:
+                continue
+            proto_features = torch.tensor(
+                [prototype.features for prototype in prototypes],
+                dtype=torch.float32,
+                device=device,
+            )
+            proto_labels = torch.tensor(
+                [float(1 if prototype.label else 0) for prototype in prototypes],
+                dtype=torch.float32,
+                device=device,
+            )
+            hybrid_specs.append((
+                expert.kind,
+                expert_weight,
+                proto_features,
+                proto_labels,
+                max(1, min(int(expert.k), len(prototypes))),
+                max(1e-6, float(expert.bandwidth)),
+                max(1e-6, float(expert.alpha)),
+                max(1, int(expert.feature_count)),
+            ))
+        elif expert.kind == "technical_confluence":
+            hybrid_specs.append((
+                expert.kind,
+                expert_weight,
+                None,
+                None,
+                0,
+                1.0,
+                1.0,
+                max(1, int(expert.feature_count)),
+            ))
 
     for start in range(0, len(rows), batch):
         chunk = rows[start:start + batch]
         features = torch.tensor([row.features for row in chunk], dtype=torch.float32, device=device)
         chunk_probs = None
-        for weights, bias, means, stds in model_specs:
-            w = torch.tensor(list(weights), dtype=torch.float32, device=device)
-            b = torch.tensor(float(bias), dtype=torch.float32, device=device)
-            mean_t = torch.tensor(list(means), dtype=torch.float32, device=device)
-            std_t = torch.tensor(list(stds), dtype=torch.float32, device=device)
-            std_t = torch.where(torch.abs(std_t) > 0.0, std_t, torch.ones_like(std_t))
+        for w, b, mean_t, std_t in model_tensors:
             normalized = (features - mean_t) / std_t
             logits = normalized.matmul(w.reshape(-1, 1)).reshape(-1) + b
             logits = torch.clamp(logits / temperature, min=-50.0, max=50.0)
@@ -370,6 +421,78 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
             raise RuntimeError("No model probabilities were produced.")
         if len(model_specs) > 1:
             chunk_probs = chunk_probs / float(len(model_specs))
+        if hybrid_specs:
+            base_weight = max(0.0, float(getattr(model, "hybrid_base_weight", 1.0)))
+            weighted = chunk_probs * base_weight
+            total = torch.full_like(chunk_probs, base_weight)
+            expert_features = (features - base_mean_t) / base_std_t
+            for kind, expert_weight, proto_features, proto_labels, k, bandwidth, alpha, feature_count in hybrid_specs:
+                expert_probs = None
+                if kind == "lorentzian_knn" and proto_features is not None and proto_labels is not None:
+                    distances = torch.log1p(torch.abs(expert_features[:, None, :] - proto_features[None, :, :]))
+                    distances = distances.sum(dim=2) / float(max(1, model.feature_dim))
+                    nearest_distance, nearest_index = torch.topk(distances, k=int(k), dim=1, largest=False)
+                    label_matrix = proto_labels.reshape(1, -1).expand(features.shape[0], -1)
+                    nearest_labels = torch.gather(label_matrix, 1, nearest_index)
+                    neighbor_weights = 1.0 / torch.clamp(nearest_distance + 1e-6, min=1e-9)
+                    expert_probs = (neighbor_weights * nearest_labels).sum(dim=1) / neighbor_weights.sum(dim=1)
+                elif kind == "rational_quadratic_kernel" and proto_features is not None and proto_labels is not None:
+                    deltas = expert_features[:, None, :] - proto_features[None, :, :]
+                    scaled = torch.sum(deltas * deltas, dim=2) / float(max(1, model.feature_dim))
+                    kernel_weights = torch.pow(
+                        1.0 + scaled / float(2.0 * alpha * bandwidth * bandwidth),
+                        float(-alpha),
+                    )
+                    expert_probs = (kernel_weights * proto_labels.reshape(1, -1)).sum(dim=1) / kernel_weights.sum(dim=1)
+                elif kind == "technical_confluence":
+                    count = max(1, min(int(feature_count), int(features.shape[1]), 13))
+                    values = features[:, :count]
+                    if count < 13:
+                        padding = torch.zeros((features.shape[0], 13 - count), dtype=torch.float32, device=device)
+                        values = torch.cat((values, padding), dim=1)
+                    else:
+                        values = values[:, :13]
+                    momentum_1 = values[:, 0]
+                    momentum_3 = values[:, 1]
+                    momentum_10 = values[:, 2]
+                    momentum_20 = values[:, 3]
+                    ema_spread = values[:, 4]
+                    rsi = torch.clamp(values[:, 5], min=0.0, max=1.0)
+                    ema_gap = values[:, 6]
+                    relative_atr = torch.abs(values[:, 7])
+                    volatility_20 = torch.abs(values[:, 8])
+                    volume_ratio = values[:, 9]
+                    trend_acceleration = values[:, 10]
+                    gap_to_vwap = values[:, 11]
+                    volume_trend = values[:, 12]
+                    trend = (
+                        0.24 * torch.tanh(momentum_20 * 80.0)
+                        + 0.20 * torch.tanh(momentum_10 * 100.0)
+                        + 0.14 * torch.tanh(momentum_3 * 140.0)
+                        - 0.16 * torch.tanh(ema_spread * 90.0)
+                        + 0.10 * torch.tanh(trend_acceleration * 240.0)
+                        + 0.06 * torch.tanh(volume_trend * 4.0)
+                    )
+                    mean_reversion = (
+                        0.18 * torch.tanh((0.38 - rsi) * 5.0)
+                        - 0.14 * torch.tanh(gap_to_vwap * 150.0)
+                        - 0.08 * torch.tanh(momentum_1 * 180.0)
+                    )
+                    breakout = (
+                        0.10 * torch.tanh(volume_ratio * 2.5)
+                        + 0.10 * torch.tanh((relative_atr + volatility_20) * 80.0)
+                        + 0.08 * torch.tanh((momentum_10 + momentum_20) * 80.0)
+                        - 0.04 * torch.tanh(torch.abs(ema_gap) * 150.0)
+                    )
+                    expert_probs = torch.clamp(torch.sigmoid((trend + mean_reversion + breakout) * 2.2), min=0.0, max=1.0)
+                if expert_probs is None:
+                    continue
+                weighted = weighted + float(expert_weight) * expert_probs
+                total = total + float(expert_weight)
+            chunk_probs = weighted / torch.clamp(total, min=1e-12)
+        if bool(getattr(model, "probability_inverted", False)):
+            chunk_probs = 1.0 - chunk_probs
+        chunk_probs = torch.clamp(chunk_probs, min=0.0, max=1.0)
         probabilities.extend(float(value) for value in chunk_probs.detach().cpu().tolist())
     return probabilities
 
@@ -384,12 +507,6 @@ def _backtest_probabilities(
     backend = resolve_backend(effective_training_backend_name(compute_backend))
     if backend.kind == "cpu":
         return [model.predict_proba(row.features) for row in rows], backend
-    if getattr(model, "hybrid_experts", None):
-        fallback = _fallback_score_backend(
-            backend,
-            "hybrid model-zoo scoring uses unified CPU expert path after GPU-trained base model",
-        )
-        return [model.predict_proba(row.features) for row in rows], fallback
     try:
         return _batch_probabilities_torch(rows, model, backend=backend, batch_size=batch_size), backend
     except Exception as exc:
