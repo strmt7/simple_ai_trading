@@ -2431,6 +2431,105 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> 
     assert "scoring_backend_reason: DirectML unavailable in test" in capsys.readouterr().out
 
 
+def test_command_backtest_uses_top_of_book_execution_db(tmp_path, monkeypatch, capsys) -> None:
+    from simple_ai_trading.market_store import MarketDataStore
+    from simple_ai_trading.model import serialize_model
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(symbol="ETHUSDC", market_type="spot"))
+    save_strategy(StrategyConfig(max_spread_bps=5.0))
+    captured: dict[str, object] = {}
+
+    candles = [
+        {
+            "open_time": i * 60_000,
+            "open": 100.0 + i,
+            "high": 101.0 + i,
+            "low": 99.0 + i,
+            "close": 100.0 + i,
+            "volume": 10.0,
+            "close_time": (i + 1) * 60_000,
+        }
+        for i in range(220)
+    ]
+    input_file = tmp_path / "hist.json"
+    model_file = tmp_path / "model.json"
+    db_file = tmp_path / "market.sqlite"
+    input_file.write_text(json.dumps(candles), encoding="utf-8")
+    serialize_model(
+        TrainedModel(
+            weights=[0.0] * 13,
+            bias=0.0,
+            feature_dim=13,
+            epochs=5,
+            feature_means=[0.0] * 13,
+            feature_stds=[1.0] * 13,
+            feature_signature=cli._strategy_feature_signature(StrategyConfig()),
+        ),
+        model_file,
+    )
+    with MarketDataStore(db_file) as store:
+        store.insert_top_of_book_snapshot(
+            "binance",
+            "ETHUSDC",
+            "spot",
+            {"bidPrice": "2500.00", "bidQty": "12", "askPrice": "2500.50", "askQty": "10"},
+            ts_ms=int(cli.time.time() * 1000),
+        )
+
+    def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
+        captured["artifact"] = payload
+        return output_dir / f"{kind}.json"
+
+    def fake_run_backtest(*_args, **kwargs):
+        captured["profile"] = kwargs.get("symbol_profile")
+        return SimpleNamespace(
+            trades=0,
+            win_rate=0.0,
+            realized_pnl=0.0,
+            total_fees=0.0,
+            max_exposure=0.0,
+            starting_cash=1000.0,
+            ending_cash=1000.0,
+            buy_hold_pnl=0.0,
+            edge_vs_buy_hold=0.0,
+            max_drawdown=0.0,
+            stopped_by_drawdown=False,
+            trades_per_day_cap_hit=0,
+            closed_trades=0,
+            gross_exposure=0.0,
+            scoring_backend_requested="cpu",
+            scoring_backend_kind="cpu",
+            scoring_backend_device="cpu",
+            scoring_backend_reason="",
+        )
+
+    monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
+    monkeypatch.setattr(cli, "run_backtest", fake_run_backtest)
+
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file),
+                model=str(model_file),
+                start_cash=1000.0,
+                compute_backend="cpu",
+                score_batch_size=4,
+                execution_db=str(db_file),
+            )
+        )
+        == 0
+    )
+
+    profile = captured["profile"]
+    assert getattr(profile, "symbol") == "ETHUSDC"
+    assert getattr(profile, "spread_bps") > 0.0
+    artifact = captured["artifact"]
+    assert artifact["execution_profile"]["profile"]["symbol"] == "ETHUSDC"
+    assert artifact["execution_profile"]["source"] == "top_of_book:binance"
+    assert "execution_profile: top_of_book:binance" in capsys.readouterr().out
+
+
 def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
     class _LiveClient:
         def __init__(self):

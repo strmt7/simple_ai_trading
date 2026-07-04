@@ -387,6 +387,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=8192,
         help="batch size for GPU-assisted probability scoring",
     )
+    parser_backtest.add_argument(
+        "--execution-db",
+        default=None,
+        help="optional SQLite market-data DB; latest typed top-of-book row becomes symbol-specific fill stress",
+    )
     parser_backtest.set_defaults(func=command_backtest)
 
     parser_backtest_chart = subparsers.add_parser("backtest-chart", help="run backtest and save an SVG performance chart")
@@ -396,6 +401,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest_chart.add_argument("--start-cash", type=float, default=1000.0)
     parser_backtest_chart.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
     parser_backtest_chart.add_argument("--score-batch-size", type=int, default=8192)
+    parser_backtest_chart.add_argument(
+        "--execution-db",
+        default=None,
+        help="optional SQLite market-data DB for symbol-specific top-of-book fill stress",
+    )
     parser_backtest_chart.set_defaults(func=command_backtest_chart)
 
     parser_evaluate = subparsers.add_parser("evaluate", help="evaluate saved model against cached candles")
@@ -712,6 +722,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest_panel.add_argument("--tag", default="")
     parser_backtest_panel.add_argument("--notes", default="")
     parser_backtest_panel.add_argument("--starting-cash", type=float, default=1000.0)
+    parser_backtest_panel.add_argument(
+        "--execution-db",
+        default=None,
+        help="optional SQLite market-data DB for symbol-specific top-of-book fill stress",
+    )
     parser_backtest_panel.set_defaults(func=command_backtest_panel)
 
     parser_autonomous = subparsers.add_parser(
@@ -4691,6 +4706,7 @@ def command_backtest(args: argparse.Namespace) -> int:
         print(f"Backtest settings invalid: {exc}.", file=sys.stderr)
         return 2
     score_batch_size = max(1, int(getattr(args, "score_batch_size", 8192) or 8192))
+    execution_profile = _load_cli_execution_profile(args, runtime, cfg, workflow="backtest execution profile")
     result = run_backtest(
         rows,
         model,
@@ -4699,6 +4715,7 @@ def command_backtest(args: argparse.Namespace) -> int:
         market_type=runtime.market_type,
         compute_backend=compute_backend,
         score_batch_size=score_batch_size,
+        symbol_profile=execution_profile.profile,
     )
     artifact = {
         "command": "backtest",
@@ -4719,6 +4736,7 @@ def command_backtest(args: argparse.Namespace) -> int:
             "reason": result.scoring_backend_reason,
             "score_batch_size": score_batch_size,
         },
+        "execution_profile": execution_profile.asdict(),
         "result": {
             "trades": int(result.trades),
             "win_rate": float(result.win_rate),
@@ -4753,6 +4771,7 @@ def command_backtest(args: argparse.Namespace) -> int:
     print(f"scoring_backend: {result.scoring_backend_kind} device={result.scoring_backend_device}")
     if result.scoring_backend_reason:
         print(f"scoring_backend_reason: {result.scoring_backend_reason}")
+    _print_execution_profile_evidence(execution_profile)
     print(f"trades: {result.trades}")
     print(f"win_rate: {result.win_rate:.2%}")
     print(f"realized_pnl: {result.realized_pnl:.2f}")
@@ -4802,6 +4821,7 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"Backtest chart settings invalid: {exc}.", file=sys.stderr)
         return 2
+    execution_profile = _load_cli_execution_profile(args, runtime, cfg, workflow="backtest chart execution profile")
     result = run_backtest(
         rows,
         model,
@@ -4810,6 +4830,7 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         market_type=runtime.market_type,
         compute_backend=compute_backend,
         score_batch_size=max(1, int(getattr(args, "score_batch_size", 8192))),
+        symbol_profile=execution_profile.profile,
     )
     points = [
         EquityPoint(int(index), float(point["equity"]), float(point["drawdown"]))
@@ -4823,6 +4844,7 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         ]
     output = write_equity_svg(points, args.output, title=f"{runtime.symbol} day-trading backtest")
     print(f"backtest chart saved to {output}")
+    _print_execution_profile_evidence(execution_profile)
     print(
         f"ending_cash={result.ending_cash:.2f} realized_pnl={result.realized_pnl:.2f} "
         f"max_drawdown={result.max_drawdown:.2%}"
@@ -6137,6 +6159,41 @@ def command_objectives(_: argparse.Namespace) -> int:
     return 0
 
 
+def _load_cli_execution_profile(
+    args: argparse.Namespace,
+    runtime: RuntimeConfig,
+    cfg: StrategyConfig,
+    *,
+    workflow: str,
+):
+    from .execution_profiles import load_top_of_book_execution_profile
+
+    evidence = load_top_of_book_execution_profile(
+        getattr(args, "execution_db", None),
+        symbol=runtime.symbol,
+        market_type=runtime.market_type,
+        strategy=cfg,
+    )
+    if evidence.warning:
+        print(f"{workflow}: {evidence.warning}", file=sys.stderr)
+    return evidence
+
+
+def _print_execution_profile_evidence(evidence: object) -> None:
+    profile = getattr(evidence, "profile", None)
+    if profile is None:
+        if getattr(evidence, "source", "disabled") != "disabled":
+            print("execution_profile: unavailable")
+        return
+    print(
+        "execution_profile: "
+        f"{getattr(evidence, 'source', 'unknown')} "
+        f"spread_bps={float(getattr(evidence, 'spread_bps', profile.spread_bps) or 0.0):.3f} "
+        f"depth_notional={float(getattr(evidence, 'depth_notional', profile.quote_volume) or 0.0):.2f} "
+        f"liquidity_score={profile.liquidity_score:.3f}"
+    )
+
+
 def command_model_blueprint(args: argparse.Namespace) -> int:
     from .model_blueprint import dumps_blueprint, render_blueprint, validate_blueprint_contract
 
@@ -6381,10 +6438,12 @@ def command_backtest_panel(args: argparse.Namespace) -> int:
         request = BacktestRequest(
             interval=args.interval,
             market_type=market,
+            symbol=runtime.symbol,
             start_ms=parse_date_ms(args.from_date),
             end_ms=parse_date_ms(args.to_date, end_of_day=True),
             model_path=args.model,
             data_path=args.input,
+            execution_db=getattr(args, "execution_db", None),
             starting_cash=args.starting_cash,
             objective=args.objective,
             tag=args.tag,

@@ -65,6 +65,7 @@ inline constexpr CommandOptionSpec kOptions_backtest[] = {
     {L"--start-cash", L"start_cash", L"", L"1000.0", L"", false, true},
     {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"", L"model-scoring backend override; default uses saved runtime compute_backend", false, true},
     {L"--score-batch-size", L"score_batch_size", L"", L"8192", L"batch size for GPU-assisted probability scoring", false, true},
+    {L"--execution-db", L"execution_db", L"", L"", L"optional SQLite market-data DB; latest typed top-of-book row becomes symbol-specific fill stress", false, true},
 };
 
 inline constexpr CommandOptionSpec kOptions_backtest_chart[] = {
@@ -74,6 +75,7 @@ inline constexpr CommandOptionSpec kOptions_backtest_chart[] = {
     {L"--start-cash", L"start_cash", L"", L"1000.0", L"", false, true},
     {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"", L"", false, true},
     {L"--score-batch-size", L"score_batch_size", L"", L"8192", L"", false, true},
+    {L"--execution-db", L"execution_db", L"", L"", L"optional SQLite market-data DB for symbol-specific top-of-book fill stress", false, true},
 };
 
 inline constexpr CommandOptionSpec kOptions_backtest_panel[] = {
@@ -87,6 +89,7 @@ inline constexpr CommandOptionSpec kOptions_backtest_panel[] = {
     {L"--tag", L"tag", L"", L"", L"", false, true},
     {L"--notes", L"notes", L"", L"", L"", false, true},
     {L"--starting-cash", L"starting_cash", L"", L"1000.0", L"", false, true},
+    {L"--execution-db", L"execution_db", L"", L"", L"optional SQLite market-data DB for symbol-specific top-of-book fill stress", false, true},
 };
 
 inline constexpr CommandOptionSpec kOptions_close[] = {
@@ -407,9 +410,9 @@ inline constexpr CommandSpec kCommands[] = {
     {L"ai-review", L"usage: simple-ai-trading ai-review [-h] [--report REPORT] [--output OUTPUT]                                    [--model MODEL] [--url URL]                                    [--timeout TIMEOUT] [--json]", kOptions_ai_review, 6},
     {L"audit", L"usage: simple-ai-trading audit [-h] [--input INPUT] [--model MODEL]", kOptions_audit, 2},
     {L"autonomous", L"usage: simple-ai-trading autonomous [-h] [--objective OBJECTIVE]                                     [--model MODEL]                                     [--poll-seconds POLL_SECONDS]                                     [--iterations ITERATIONS]                                     [--heartbeat-every HEARTBEAT_EVERY]                                     [--starting-cash STARTING_CASH] [--paper]                                     [--live]                                     {start,pause,resume,stop,status}", kOptions_autonomous, 9},
-    {L"backtest", L"usage: simple-ai-trading backtest [-h] [--input INPUT] [--model MODEL]                                   [--start-cash START_CASH]                                   [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                   [--score-batch-size SCORE_BATCH_SIZE]", kOptions_backtest, 5},
-    {L"backtest-chart", L"usage: simple-ai-trading backtest-chart [-h] [--input INPUT] [--model MODEL]                                         [--output OUTPUT]                                         [--start-cash START_CASH]                                         [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                         [--score-batch-size SCORE_BATCH_SIZE]", kOptions_backtest_chart, 6},
-    {L"backtest-panel", L"usage: simple-ai-trading backtest-panel [-h] --interval INTERVAL                                         [--market MARKET]                                         [--from-date FROM_DATE]                                         [--to-date TO_DATE] [--input INPUT]                                         [--model MODEL]                                         [--objective OBJECTIVE] [--tag TAG]                                         [--notes NOTES]                                         [--starting-cash STARTING_CASH]", kOptions_backtest_panel, 10},
+    {L"backtest", L"usage: simple-ai-trading backtest [-h] [--input INPUT] [--model MODEL]                                   [--start-cash START_CASH]                                   [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                   [--score-batch-size SCORE_BATCH_SIZE]                                   [--execution-db EXECUTION_DB]", kOptions_backtest, 6},
+    {L"backtest-chart", L"usage: simple-ai-trading backtest-chart [-h] [--input INPUT] [--model MODEL]                                         [--output OUTPUT]                                         [--start-cash START_CASH]                                         [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                         [--score-batch-size SCORE_BATCH_SIZE]                                         [--execution-db EXECUTION_DB]", kOptions_backtest_chart, 7},
+    {L"backtest-panel", L"usage: simple-ai-trading backtest-panel [-h] --interval INTERVAL                                         [--market MARKET]                                         [--from-date FROM_DATE]                                         [--to-date TO_DATE] [--input INPUT]                                         [--model MODEL]                                         [--objective OBJECTIVE] [--tag TAG]                                         [--notes NOTES]                                         [--starting-cash STARTING_CASH]                                         [--execution-db EXECUTION_DB]", kOptions_backtest_panel, 11},
     {L"close", L"usage: simple-ai-trading close [-h] position_id", kOptions_close, 1},
     {L"compute", L"usage: simple-ai-trading compute [-h]                                  [--backend {cpu,cuda,rocm,directml,mps,auto}]", kOptions_compute, 1},
     {L"configure", L"usage: simple-ai-trading configure [-h]", nullptr, 0},
