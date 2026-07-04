@@ -87,12 +87,24 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
             self.outcomes = []
             self.summary_path = tmp_path / "summary.json"
 
-    def fake_run(candles, strategy, *, objectives, market_type, starting_cash, output_dir, max_workers, compute_backend):
+    def fake_run(
+        candles,
+        strategy,
+        *,
+        objectives,
+        market_type,
+        starting_cash,
+        output_dir,
+        max_workers,
+        compute_backend,
+        max_candidates,
+    ):
         # assert malformed entries were skipped
         assert len(candles) == 1
         assert objectives == ("regular",)
         assert max_workers == 3
         assert compute_backend == "cpu"
+        assert max_candidates == 7
         return _Fake()
 
     monkeypatch.setattr(cli, "run_training_suite", fake_run, raising=False)
@@ -109,6 +121,7 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
         max_workers=3,
         compute_backend="cpu",
         batch_size=8192,
+        max_candidates=7,
     )
     assert cli.command_train_suite(args) == 0
     out = capsys.readouterr().out
@@ -258,6 +271,7 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
     def fake_lab(_client, runtime_arg, _strategy, **kwargs):
         captured["lab_market"] = runtime_arg.market_type
         captured["compute_backend"] = kwargs["compute_backend"]
+        captured["max_candidates"] = kwargs["max_candidates"]
         return SimpleNamespace(
             accepted_symbols=["BTCUSDC"],
             outcomes=[
@@ -292,6 +306,7 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
         compute_backend=None,
         batch_size=8192,
         score_batch_size=None,
+        max_candidates=4,
     )
 
     assert cli.command_model_lab(args) == 0
@@ -300,6 +315,7 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
         "client_market": "futures",
         "lab_market": "futures",
         "compute_backend": "directml",
+        "max_candidates": 4,
     }
     assert runtime.market_type == "spot"
     assert "market=futures" in capsys.readouterr().out

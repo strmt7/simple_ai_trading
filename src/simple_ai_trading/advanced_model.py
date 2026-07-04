@@ -33,8 +33,9 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v3-advanced"
+ADVANCED_FEATURE_VERSION = "v4-advanced-confluence"
 _EXTRA_FEATURES_PER_WINDOW = 7
+_CONFLUENCE_FEATURES_PER_WINDOW = 9
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,7 @@ class AdvancedFeatureConfig:
     polynomial_degree: int = 2
     polynomial_top_features: int = 6
     extra_lookback_windows: tuple[int, ...] = (5, 20, 60)
+    confluence_windows: tuple[int, ...] = ()
     nonlinear_transforms: tuple[str, ...] = ("tanh", "log1p")
     short_window: int = 10
     long_window: int = 40
@@ -172,6 +174,19 @@ class _AdvancedWindowCache:
     abs_move_prefix: list[float]
 
 
+@dataclass(frozen=True)
+class _ConfluenceCache:
+    candles: list[Candle]
+    opens: list[float]
+    highs: list[float]
+    lows: list[float]
+    closes: list[float]
+    volumes: list[float]
+    close_prefix: list[float]
+    volume_prefix: list[float]
+    true_range_prefix: list[float]
+
+
 def _build_window_cache(closes: Sequence[float]) -> _AdvancedWindowCache:
     close_values = [float(value) for value in closes]
     gains = [0.0]
@@ -254,6 +269,97 @@ def _extra_window_features(closes: Sequence[float], windows: Sequence[int]) -> l
     return _extra_window_features_at(_build_window_cache(closes), len(closes) - 1, windows)
 
 
+def _sign_vote(value: float, deadband: float = 0.0) -> float:
+    if not math.isfinite(value) or abs(value) <= deadband:
+        return 0.0
+    return 1.0 if value > 0.0 else -1.0
+
+
+def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
+    values = list(candles)
+    opens = [float(candle.open) for candle in values]
+    highs = [float(candle.high) for candle in values]
+    lows = [float(candle.low) for candle in values]
+    closes = [float(candle.close) for candle in values]
+    volumes = [float(candle.volume) for candle in values]
+    true_ranges = [0.0]
+    for index in range(1, len(values)):
+        previous_close = closes[index - 1]
+        high = highs[index]
+        low = lows[index]
+        true_ranges.append(max(high - low, abs(high - previous_close), abs(low - previous_close)))
+    return _ConfluenceCache(
+        candles=values,
+        opens=opens,
+        highs=highs,
+        lows=lows,
+        closes=closes,
+        volumes=volumes,
+        close_prefix=_prefix_sum(closes),
+        volume_prefix=_prefix_sum(volumes),
+        true_range_prefix=_prefix_sum(true_ranges),
+    )
+
+
+def _confluence_features_at(cache: _ConfluenceCache, end: int, windows: Sequence[int]) -> list[float]:
+    """Return multi-timeframe technical-rating and candle microstructure proxies."""
+
+    features: list[float] = []
+    if not windows:
+        return features
+    if end < 0 or end >= len(cache.closes):
+        return [0.0 for _ in range(_CONFLUENCE_FEATURES_PER_WINDOW * len(windows))]
+    close = cache.closes[end]
+    open_ = cache.opens[end]
+    volume = cache.volumes[end]
+    previous_close = cache.closes[end - 1] if end > 0 else close
+    candle_range = max(0.0, cache.highs[end] - cache.lows[end])
+    body_ratio = _safe((close - open_) / candle_range) if candle_range > 0.0 else 0.0
+    close_location = _safe(((close - cache.lows[end]) / candle_range) - 0.5) if candle_range > 0.0 else 0.0
+    upper_wick = _safe((cache.highs[end] - max(open_, close)) / candle_range) if candle_range > 0.0 else 0.0
+    lower_wick = _safe((min(open_, close) - cache.lows[end]) / candle_range) if candle_range > 0.0 else 0.0
+
+    for window in windows:
+        window = max(1, int(window))
+        if end < window - 1 or close <= 0.0:
+            features.extend([0.0] * _CONFLUENCE_FEATURES_PER_WINDOW)
+            continue
+        start = end + 1 - window
+        sma = _window_mean(cache.close_prefix, start, end)
+        avg_volume = _window_mean(cache.volume_prefix, start, end)
+        avg_true_range = _window_mean(cache.true_range_prefix, start, end)
+        avg_true_range = max(avg_true_range, close * 0.00001)
+        previous_high = max(cache.highs[start:end]) if end > start else cache.highs[end]
+        previous_low = min(cache.lows[start:end]) if end > start else cache.lows[end]
+        trend_atr = _safe((close - sma) / avg_true_range) if math.isfinite(sma) else 0.0
+        volume_surge = _safe((volume / avg_volume) - 1.0) if avg_volume > 0.0 else 0.0
+        breakout_atr = 0.0
+        if close > previous_high:
+            breakout_atr = _safe((close - previous_high) / avg_true_range)
+        elif close < previous_low:
+            breakout_atr = _safe((close - previous_low) / avg_true_range)
+        votes = (
+            _sign_vote(close - sma, close * 0.00005),
+            _sign_vote(close - previous_close, close * 0.00005),
+            _sign_vote(body_ratio, 0.02),
+            _sign_vote(volume_surge, 0.05),
+            _sign_vote(breakout_atr, 0.10),
+        )
+        technical_rating = sum(votes) / float(len(votes))
+        features.extend([
+            _safe(technical_rating),
+            _safe(trend_atr),
+            _safe(close_location),
+            _safe(body_ratio),
+            _safe(upper_wick),
+            _safe(lower_wick),
+            _safe(volume_surge),
+            _safe(avg_true_range / close),
+            _safe(breakout_atr),
+        ])
+    return features
+
+
 def _nonlinear_expand(values: Sequence[float], transforms: Sequence[str]) -> list[float]:
     out: list[float] = []
     for name in transforms:
@@ -292,6 +398,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
     base = len(cfg.base_features)
     # each extra window contributes trend, momentum, volatility, and regime shape features
     extras = _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows)
+    confluence = _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows)
     transforms = base * len(cfg.nonlinear_transforms)
     pairs = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -299,7 +406,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
         pairs = k * (k + 1) // 2
         if cfg.polynomial_degree >= 3 and k >= 3:
             pairs += 1 + 3
-    return base + extras + transforms + pairs
+    return base + extras + confluence + transforms + pairs
 
 
 def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureConfig,
@@ -313,9 +420,10 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
     base = list(row.features)
     closes = [c.close for c in candles[: at_index + 1]]
     extras = _extra_window_features(closes, cfg.extra_lookback_windows)
+    confluence = _confluence_features_at(_build_confluence_cache(candles[: at_index + 1]), at_index, cfg.confluence_windows)
     transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
     pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
-    expanded = tuple(_safe(v) for v in base + extras + transforms + pairs)
+    expanded = tuple(_safe(v) for v in base + extras + confluence + transforms + pairs)
     return ModelRow(
         timestamp=row.timestamp,
         close=row.close,
@@ -349,6 +457,7 @@ def make_advanced_rows(
     valid_candles = _filter_valid(candles)
     index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
     window_cache = _build_window_cache([candle.close for candle in valid_candles])
+    confluence_cache = _build_confluence_cache(valid_candles)
     label_mode = _normalized_label_mode(cfg.label_mode)
     stop_threshold = (
         float(cfg.label_stop_threshold)
@@ -371,13 +480,14 @@ def make_advanced_rows(
             )
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
+        confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(_safe(value) for value in base + extras + transforms + pairs),
+                features=tuple(_safe(value) for value in base + extras + confluence + transforms + pairs),
                 label=label,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
             )
@@ -403,6 +513,7 @@ def make_advanced_inference_rows(
     valid_candles = _filter_valid(candles)
     index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
     window_cache = _build_window_cache([candle.close for candle in valid_candles])
+    confluence_cache = _build_confluence_cache(valid_candles)
     expanded: list[ModelRow] = []
     for row in base_rows:
         idx = index_by_time.get(row.timestamp)
@@ -410,13 +521,14 @@ def make_advanced_inference_rows(
             continue
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
+        confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(_safe(value) for value in base + extras + transforms + pairs),
+                features=tuple(_safe(value) for value in base + extras + confluence + transforms + pairs),
                 label=0,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
             )
@@ -426,6 +538,35 @@ def make_advanced_inference_rows(
 
 def _filter_valid(candles: Sequence[Candle]) -> list[Candle]:
     return clean_candles(candles)
+
+
+def _signature_fields(signature: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    for part in str(signature or "").split("|"):
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        fields[key] = value
+    return fields
+
+
+def _parse_int_tuple(value: str | None) -> tuple[int, ...]:
+    if value is None or not value.strip():
+        return ()
+    parsed: list[int] = []
+    for item in value.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        parsed.append(max(1, int(item)))
+    return tuple(parsed)
+
+
+def _parse_str_tuple(value: str | None, *, default: tuple[str, ...]) -> tuple[str, ...]:
+    if value is None:
+        return default
+    parsed = tuple(item.strip() for item in value.split(",") if item.strip())
+    return parsed or default
 
 
 def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
@@ -443,12 +584,51 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"polynomial_degree={cfg.polynomial_degree}",
         f"polynomial_top_features={cfg.polynomial_top_features}",
         f"extra_lookback_windows={','.join(str(w) for w in cfg.extra_lookback_windows)}",
+        f"confluence_windows={','.join(str(w) for w in cfg.confluence_windows)}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
         f"label_lookahead={int(cfg.label_lookahead)}",
         f"label_mode={_normalized_label_mode(cfg.label_mode)}",
         f"label_stop_threshold={float(cfg.label_stop_threshold if cfg.label_stop_threshold is not None else cfg.label_threshold):.10g}",
         base,
     ])
+
+
+def advanced_config_from_signature(
+    signature: str | None,
+    fallback_feature_names: Sequence[str] | None = None,
+) -> AdvancedFeatureConfig | None:
+    """Rebuild the exact feature config encoded in an advanced signature.
+
+    Model-lab intentionally mutates label horizons, thresholds, and feature
+    windows per candidate. Stress validation and runtime checks must rebuild
+    that exact shape instead of guessing from an objective name.
+    """
+
+    fields = _signature_fields(str(signature or ""))
+    if fields.get("advanced_version") != ADVANCED_FEATURE_VERSION:
+        return None
+    try:
+        feature_names_raw = fields.get("feature_names", "")
+        feature_names = tuple(item.strip() for item in feature_names_raw.split(",") if item.strip())
+        base_features = normalize_enabled_features(feature_names or fallback_feature_names or FEATURE_NAMES)
+        label_threshold = float(fields.get("label_threshold", "0.001"))
+        stop_threshold = float(fields.get("label_stop_threshold", str(label_threshold)))
+        return AdvancedFeatureConfig(
+            base_features=base_features,
+            polynomial_degree=max(1, int(fields.get("polynomial_degree", "2"))),
+            polynomial_top_features=max(1, int(fields.get("polynomial_top_features", str(len(base_features))))),
+            extra_lookback_windows=_parse_int_tuple(fields.get("extra_lookback_windows")),
+            confluence_windows=_parse_int_tuple(fields.get("confluence_windows")),
+            nonlinear_transforms=_parse_str_tuple(fields.get("nonlinear_transforms"), default=("tanh", "log1p")),
+            short_window=max(1, int(fields.get("short_window", "10"))),
+            long_window=max(1, int(fields.get("long_window", "40"))),
+            label_threshold=label_threshold,
+            label_lookahead=max(1, int(fields.get("label_lookahead", "4"))),
+            label_mode=_normalized_label_mode(fields.get("label_mode", "forward_return")),
+            label_stop_threshold=stop_threshold,
+        )
+    except (TypeError, ValueError):
+        return None
 
 
 @dataclass(frozen=True)
@@ -538,6 +718,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             polynomial_degree=2,
             polynomial_top_features=5,
             extra_lookback_windows=(10, 30, 90),
+            confluence_windows=(12, 36, 96),
             label_threshold=0.0010,
             label_lookahead=8,
         )
@@ -547,6 +728,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             polynomial_degree=3,
             polynomial_top_features=9,
             extra_lookback_windows=(3, 15, 45, 120),
+            confluence_windows=(5, 13, 34, 89),
             label_threshold=0.0005,
             label_lookahead=2,
         )
@@ -555,6 +737,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
         polynomial_degree=2,
         polynomial_top_features=len(names),
         extra_lookback_windows=(5, 20, 60),
+        confluence_windows=(8, 21, 55),
         label_threshold=0.0010,
         label_lookahead=4,
     )

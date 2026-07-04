@@ -20,6 +20,7 @@ from .api import BinanceAPIError, BinanceClient, Candle
 from .ai_runtime import detect_ai_capabilities, render_ai_capability_report
 from .advanced_model import (
     AdvancedFeatureConfig,
+    advanced_config_from_signature,
     advanced_feature_signature,
     default_config_for,
     make_advanced_inference_rows,
@@ -628,6 +629,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="training backend override; GPU backends run candidates sequentially to protect VRAM",
     )
     parser_train_suite.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for GPU training")
+    parser_train_suite.add_argument(
+        "--max-candidates",
+        type=int,
+        default=None,
+        help="smoke/research cap per objective; default evaluates the full grid",
+    )
     parser_train_suite.set_defaults(func=command_train_suite)
 
     parser_model_lab = subparsers.add_parser(
@@ -644,6 +651,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_model_lab.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
     parser_model_lab.add_argument("--batch-size", type=int, default=8192)
     parser_model_lab.add_argument("--score-batch-size", type=int, default=None)
+    parser_model_lab.add_argument(
+        "--max-candidates",
+        type=int,
+        default=None,
+        help="smoke/research cap per objective; default evaluates the full grid",
+    )
     parser_model_lab.set_defaults(func=command_model_lab)
 
     parser_backtest_panel = subparsers.add_parser(
@@ -2711,6 +2724,9 @@ def _advanced_objective_for_model(
         feature_cfg = default_config_for(objective_name, strategy.enabled_features)
         if advanced_feature_signature(feature_cfg) == str(model_signature):
             return objective_name, feature_cfg
+    feature_cfg = advanced_config_from_signature(str(model_signature), strategy.enabled_features)
+    if feature_cfg is not None:
+        return "custom", feature_cfg
     return None
 
 
@@ -5968,7 +5984,12 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             if args.objective
             else available_objectives()
         )
+        max_candidates = getattr(args, "max_candidates", None)
+        if max_candidates is not None and int(max_candidates) < 1:
+            raise ValueError("--max-candidates must be >= 1")
         grid_counts = {name: len(describe_candidate_grid(get_objective(name))) for name in objectives}
+        if max_candidates is not None:
+            grid_counts = {name: min(int(max_candidates), count) for name, count in grid_counts.items()}
         total_candidates = sum(grid_counts.values())
         try:
             backend_label, _backend_info = _workflow_compute_backend(
@@ -5995,6 +6016,8 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         }
         if getattr(args, "batch_size", 8192) != 8192:
             suite_kwargs["batch_size"] = max(1, int(args.batch_size))
+        if max_candidates is not None:
+            suite_kwargs["max_candidates"] = int(max_candidates)
         report = run_training_suite(candles, strategy, **suite_kwargs)
     except ValueError as err:
         print(f"training suite failed: {err}", file=sys.stderr)
@@ -6048,6 +6071,9 @@ def command_model_lab(args: argparse.Namespace) -> int:
             raise ValueError("--max-scan must be >= 1")
         if int(args.limit) < 100:
             raise ValueError("--limit must be >= 100")
+        max_candidates = getattr(args, "max_candidates", None)
+        if max_candidates is not None and int(max_candidates) < 1:
+            raise ValueError("--max-candidates must be >= 1")
         backend_label, _backend_info = _workflow_compute_backend(
             lab_runtime,
             getattr(args, "compute_backend", None),
@@ -6070,6 +6096,7 @@ def command_model_lab(args: argparse.Namespace) -> int:
                 if getattr(args, "score_batch_size", None) is not None
                 else None
             ),
+            max_candidates=(int(max_candidates) if max_candidates is not None else None),
         )
     except (BinanceAPIError, ValueError) as exc:
         print(f"model lab failed: {exc}", file=sys.stderr)

@@ -10,6 +10,11 @@ gates, not a promise of guaranteed profit.
   conceptual references for common technical features such as RSI, EMA, ATR,
   volume, trend, and volatility:
   <https://www.tradingview.com/pine-script-docs/language/built-ins/>
+- TradingView Technical Ratings inspired the multi-timeframe confluence block:
+  moving-average direction, oscillator/candle confirmation, and aggregate
+  +1/0/-1-style voting are represented as original numeric features rather
+  than copied Pine logic:
+  <https://www.tradingview.com/support/solutions/43000614331-technical-ratings/>
 - The public Lorentzian Classification indicator inspired the Lorentzian
   nearest-neighbor expert. No Pine source was copied:
   <https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/>
@@ -24,6 +29,17 @@ gates, not a promise of guaranteed profit.
   used as training inspiration so labels match stop/take economics instead of
   only future-close direction:
   <https://link.springer.com/article/10.1186/s40854-025-00866-w>
+- MLFinPy's triple-barrier docs reinforce the same principle: barriers should
+  reflect volatility/risk, not a single fixed close-to-close horizon:
+  <https://mlfinpy.readthedocs.io/en/latest/Labelling.html>
+- DeepLOB influenced the roadmap for true order-book models; until depth
+  snapshots are persisted, this repo uses candle microstructure proxies such as
+  body, wick, close-location, ATR, breakout, and volume-surge features:
+  <https://arxiv.org/abs/1808.03668>
+- FinRL influenced the training-environment boundary: transaction cost,
+  liquidity, and risk aversion must live inside the evaluation loop before any
+  autonomous model can be accepted:
+  <https://arxiv.org/abs/2111.09395>
 - Microsoft DirectML was selected for the Windows-first GPU path because it
   supports DirectX 12 GPUs across AMD, NVIDIA, and Intel on Windows:
   <https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows>
@@ -34,8 +50,17 @@ gates, not a promise of guaranteed profit.
 ## Implemented Model Zoo
 
 The base classifier remains the advanced logistic/GPU training path already
-used by the CLI. The revamp adds a hybrid expert layer stored directly inside
-the serialized model:
+used by the CLI. The advanced feature vector now includes:
+
+- multi-window technical rating votes inspired by TradingView's MA/oscillator
+  aggregation structure,
+- candle microstructure proxies inspired by order-book literature when only
+  OHLCV candles are available,
+- ATR-normalized trend and breakout features,
+- volume-surge confirmation for high-frequency day-trading entries.
+
+The revamp also adds a hybrid expert layer stored directly inside the serialized
+model:
 
 - `lorentzian_knn`: balanced long/short prototypes selected from chronological
   training rows, scored with Lorentzian distance.
@@ -63,6 +88,9 @@ positive P&L, sufficient closed trades, buy-and-hold edge, and drawdown
 discipline. Rejected model-lab candidates now include per-window `reject_reason`
 diagnostics so operators can distinguish missing trade count, negative P&L,
 buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
+For host smoke checks, `train-suite` and `model-lab` expose `--max-candidates`;
+this caps candidate count per objective only when explicitly set and should not
+be used to claim a full optimization result.
 
 For futures, threshold calibration stores the same effective neutral-band
 threshold used by live and backtest direction logic: values below `0.5` are not

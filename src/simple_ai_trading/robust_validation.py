@@ -13,7 +13,13 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Sequence
 
-from .advanced_model import advanced_feature_dimension, advanced_feature_signature, default_config_for, make_advanced_rows
+from .advanced_model import (
+    advanced_config_from_signature,
+    advanced_feature_dimension,
+    advanced_feature_signature,
+    default_config_for,
+    make_advanced_rows,
+)
 from .api import Candle
 from .backtest import BacktestResult, run_backtest
 from .execution_simulation import SymbolExecutionProfile
@@ -250,10 +256,16 @@ def validate_model_under_stress(
 
 
 def _load_objective_model(path: Path, objective_name: str, strategy: StrategyConfig) -> tuple[TrainedModel, object]:
-    feature_cfg = default_config_for(objective_name, strategy.enabled_features)
+    model = load_model(path, expected_feature_dim=None, expected_feature_signature=None)
+    feature_cfg = advanced_config_from_signature(model.feature_signature, strategy.enabled_features)
+    if feature_cfg is None:
+        feature_cfg = default_config_for(objective_name, strategy.enabled_features)
     feature_dim = advanced_feature_dimension(feature_cfg)
     signature = advanced_feature_signature(feature_cfg)
-    model = load_model(path, expected_feature_dim=feature_dim, expected_feature_signature=signature)
+    if int(model.feature_dim) != feature_dim:
+        raise ModelLoadError(f"Feature dimension mismatch: model={model.feature_dim} expected={feature_dim}")
+    if str(model.feature_signature or "") != signature:
+        raise ModelLoadError(f"Feature signature mismatch: model={model.feature_signature} runtime={signature}")
     return model, feature_cfg
 
 

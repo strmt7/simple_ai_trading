@@ -111,6 +111,7 @@ def run_model_lab(
     compute_backend: str | None = None,
     batch_size: int = 8192,
     score_batch_size: int | None = None,
+    max_candidates: int | None = None,
 ) -> ModelLabReport:
     """Rank liquid symbols, train all risk objectives, and write a lab report."""
 
@@ -142,6 +143,7 @@ def run_model_lab(
                 compute_backend=compute_backend,
                 batch_size=batch_size,
                 score_batch_size=score_batch_size,
+                max_candidates=max_candidates,
             )
             liquidity = liquidity_by_symbol[symbol]
             stress_profile = liquidity.execution_profile(

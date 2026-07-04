@@ -81,6 +81,25 @@ def test_safe_helper_and_extras():
     assert math.isnan(am._window_mean(cache.close_prefix, 2, 1))
 
 
+def test_confluence_features_are_finite_and_dimensioned():
+    candles = _candles(80)
+    cache = am._build_confluence_cache(candles)
+    features = am._confluence_features_at(cache, 60, (5, 20))
+
+    assert len(features) == 18
+    assert all(math.isfinite(value) for value in features)
+    assert am._confluence_features_at(cache, -1, (5,)) == [0.0] * 9
+
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        confluence_windows=(5, 20),
+    )
+    assert am.advanced_feature_dimension(cfg) == 4 + 7 + 18 + 8
+
+
 def test_nonlinear_expand_unknown_raises():
     with pytest.raises(ValueError):
         am._nonlinear_expand([0.1], ["unknown"])
@@ -146,16 +165,43 @@ def test_advanced_feature_signature_stable():
     assert am.advanced_feature_signature(cfg) != am.advanced_feature_signature(triple)
 
 
+def test_advanced_config_from_signature_round_trips_candidate_specific_fields() -> None:
+    cfg = am.AdvancedFeatureConfig(
+        base_features=FEATURE_NAMES[:8],
+        polynomial_degree=3,
+        polynomial_top_features=7,
+        extra_lookback_windows=(4, 12, 48),
+        confluence_windows=(5, 13, 34),
+        nonlinear_transforms=("tanh", "log1p"),
+        short_window=8,
+        long_window=34,
+        label_threshold=0.00168,
+        label_lookahead=7,
+        label_mode="triple_barrier",
+        label_stop_threshold=0.00125,
+    )
+
+    parsed = am.advanced_config_from_signature(am.advanced_feature_signature(cfg), FEATURE_NAMES)
+
+    assert parsed is not None
+    assert parsed == cfg
+    assert am.advanced_feature_signature(parsed) == am.advanced_feature_signature(cfg)
+    assert am.advanced_config_from_signature("feature_version=v1") is None
+
+
 def test_default_config_for_branches():
     a = am.default_config_for("conservative", FEATURE_NAMES)
     b = am.default_config_for("risky", FEATURE_NAMES)
     c = am.default_config_for("default", FEATURE_NAMES)
     d = am.default_config_for("nothing", ())
     assert a.polynomial_top_features == 5
+    assert a.confluence_windows == (12, 36, 96)
     assert a.label_lookahead == 8
     assert b.polynomial_degree == 3
+    assert b.confluence_windows == (5, 13, 34, 89)
     assert b.label_threshold == pytest.approx(0.0005)
     assert c.polynomial_top_features == len(FEATURE_NAMES)
+    assert c.confluence_windows == (8, 21, 55)
     assert c.label_lookahead == 4
     assert d.polynomial_top_features == len(FEATURE_NAMES)
 

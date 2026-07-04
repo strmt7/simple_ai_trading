@@ -1206,6 +1206,7 @@ def train_for_objective(
     compute_backend: str | None = None,
     batch_size: int = 8192,
     score_batch_size: int | None = None,
+    max_candidates: int | None = None,
 ) -> ObjectiveOutcome:
     """Run the training suite for one objective, returning the outcome.
 
@@ -1222,6 +1223,8 @@ def train_for_objective(
         raise ValueError("Insufficient candles to build advanced training rows")
     training = _default_training(objective)
     candidates = _candidate_grid(training)
+    if max_candidates is not None:
+        candidates = candidates[:max(1, int(max_candidates))]
     if not candidates:
         raise ValueError("Candidate grid produced zero evaluable entries")
     train_rows, eval_rows = _walk_forward_split(rows)
@@ -1669,6 +1672,7 @@ def run_training_suite(
     compute_backend: str | None = None,
     batch_size: int = 8192,
     score_batch_size: int | None = None,
+    max_candidates: int | None = None,
 ) -> SuiteReport:
     """Train one model per objective and persist a suite summary."""
 
@@ -1700,6 +1704,8 @@ def run_training_suite(
             extra["batch_size"] = int(batch_size)
         if score_batch_size is not None:
             extra["score_batch_size"] = int(score_batch_size)
+        if max_candidates is not None:
+            extra["max_candidates"] = max(1, int(max_candidates))
         outcome = train_for_objective(
             candles, base_strategy, spec,
             output_dir=output_dir,

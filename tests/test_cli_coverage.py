@@ -4,6 +4,7 @@ import asyncio
 import json
 import argparse
 import math
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -736,6 +737,37 @@ def test_readiness_model_rejects_unknown_advanced_signature(
     )
     with pytest.raises(ModelFeatureMismatchError, match="runtime mismatch"):
         cli._load_readiness_model(model_file, strategy)
+
+
+def test_cli_recognizes_model_lab_candidate_advanced_signature() -> None:
+    strategy = StrategyConfig()
+    candles = _simple_candles(320)
+    feature_cfg = replace(
+        default_config_for("regular", strategy.enabled_features),
+        label_lookahead=7,
+        label_threshold=0.00168,
+        label_stop_threshold=0.00168,
+        confluence_windows=(5, 13, 34),
+    )
+    rows = make_advanced_rows(candles, feature_cfg)
+    assert rows
+    dim = len(rows[0].features)
+    model = TrainedModel(
+        weights=[0.0] * dim,
+        bias=0.0,
+        feature_dim=dim,
+        epochs=1,
+        feature_means=[0.0] * dim,
+        feature_stds=[1.0] * dim,
+        feature_signature=advanced_feature_signature(feature_cfg),
+    )
+
+    recognized = cli._advanced_objective_for_model(model, strategy)
+    backtest_rows = cli._backtest_rows_for_model(candles, strategy, model)
+
+    assert recognized == ("custom", feature_cfg)
+    assert backtest_rows
+    assert len(backtest_rows[-1].features) == dim
 
 
 def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
