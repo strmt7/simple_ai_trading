@@ -553,13 +553,13 @@ class MainWindow {
         if (page_index_ == 0) {
             add_group(L"Operate", {L"status", L"connect", L"compute", L"live", L"autonomous", L"positions", L"close"});
         } else if (page_index_ == 1) {
-            add_group(L"Research", {L"model-lab", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives"});
+            add_group(L"Research", {L"model-lab", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives"});
         } else if (page_index_ == 2) {
             add_group(L"Risk", {L"risk", L"audit", L"doctor", L"universe", L"signals", L"signals-benchmark", L"source-grades", L"report"});
         } else if (page_index_ == 3) {
             add_group(L"Data", {L"data-sync", L"fetch", L"configure", L"strategy", L"spot-roundtrip"});
         } else if (page_index_ == 4) {
-            add_group(L"Settings", {L"ai", L"compute", L"configure", L"strategy", L"menu", L"shell"});
+            add_group(L"Settings", {L"ai", L"ai-review", L"compute", L"configure", L"strategy", L"menu", L"shell"});
         } else {
             for (int i = 0; i < kCommandCount; ++i) {
                 add_command_entry(L"CLI", kCommands[i].name);
@@ -620,6 +620,7 @@ class MainWindow {
             quick_actions_ = {
                 {L"Model Lab Conservative", {L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"}},
                 {L"Model Lab Regular", {L"model-lab --objective regular --max-symbols 3 --max-scan 20 --limit 500 --market futures"}},
+                {L"AI Risk Review", {L"ai-review --report data/model_lab/model_lab_report.json"}},
                 {L"Train Suite", {L"train-suite --help"}},
                 {L"Prepare Pipeline", {L"prepare --help"}},
                 {L"Backtest", {L"backtest --help"}},
@@ -650,6 +651,7 @@ class MainWindow {
         } else if (page_index_ == 4) {
             quick_actions_ = {
                 {L"AI Preflight", {L"ai"}},
+                {L"AI Risk Review", {L"ai-review --report data/model_lab/model_lab_report.json"}},
                 {L"Compute", {L"compute"}},
                 {L"Configure", {L"configure --help"}},
                 {L"Strategy", {L"strategy --help"}},
