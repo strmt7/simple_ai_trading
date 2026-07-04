@@ -157,6 +157,11 @@ aggregate score is not enough when the distribution of tested windows still
 looks like selection luck. When the backtest produces enough closed trades, the
 statistical gate uses net trade returns; otherwise it falls back to
 chronological-window returns so sparse strategies are still screened.
+Each temporal window is also tagged with deterministic market-regime evidence
+such as dominant regime, confidence, trend return, realized volatility,
+direction consistency, reversal rate, lag-1 autocorrelation, and optional volume
+z-score. The objective and suite reports summarize accepted windows and P&L by
+regime so model-lab can reveal when a candidate only works in one market state.
 Backtest artifacts also record finite profit factor, expectancy, average trade
 return, return dispersion, and max consecutive loss streak so future objective
 gates can penalize fragile P&L profiles instead of looking only at final cash.
@@ -187,8 +192,8 @@ All three require positive expectancy.
    artifact. This catches models that pass aggregate stress but fail in recent
    or regime-specific windows. The temporal report also records statistical
    edge evidence, including sign-test p-value and bootstrap lower mean return,
-   and rejects candidates whose window evidence is too weak for the selected
-   risk level.
+   records market-regime concentration, and rejects candidates whose window
+   evidence is too weak for the selected risk level.
 8. Builds a portfolio-level risk report from aligned symbol returns. This gate
    computes inverse-volatility capped weights, effective symbol count,
    pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,

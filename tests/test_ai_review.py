@@ -67,6 +67,14 @@ def _write_report(path: Path, *, accepted: bool = True) -> None:
                     "worst_sign_test_p_value": 0.03125 if accepted else 0.8125,
                     "worst_bootstrap_lower_mean_return": 0.002 if accepted else -0.006,
                 },
+                "regime_validation": {
+                    "window_count": 5,
+                    "dominant_regime": "trend_up",
+                    "dominant_regime_window_share": 0.8,
+                    "accepted_regime_count": 2 if accepted else 0,
+                    "concentration_warning": True,
+                    "notes": ["window_regime_concentration"],
+                },
             }
         ],
     }
@@ -118,6 +126,9 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
         "concerns",
         "required_actions",
     ]
+    prompt = observed["payload"]["messages"][1]["content"]
+    assert "regime_validation" in prompt
+    assert "trend_up" in prompt
     assert (tmp_path / "ai_risk_review.json").exists()
 
 

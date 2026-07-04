@@ -257,6 +257,7 @@ No future model family should be accepted unless it writes:
 - feature signature and data interval,
 - purged walk-forward results,
 - final serialized-model temporal robustness,
+- market-regime evidence for each temporal window,
 - statistical edge evidence,
 - path-quality metrics: profit factor, expectancy, return dispersion, and loss
   streak,
@@ -268,7 +269,7 @@ No future model family should be accepted unless it writes:
 Implemented objective gates:
 
 - Conservative: require positive expectancy, finite profit factor above 1.10,
-  max loss streak at or below 3, and regime-level pass evidence.
+  and max loss streak at or below 3.
 - Regular: require positive expectancy, profit factor above 1.05, and max loss
   streak at or below 5.
 - Aggressive: allow higher variance but require positive expectancy, profit
@@ -276,15 +277,14 @@ Implemented objective gates:
 
 ## Prioritized Backlog
 
-1. Regime evidence in model-lab artifacts.
-2. Meta-label take/skip/downsize model trained on simulator outcomes.
-3. Depth/top-of-book data store and microstructure feature block.
-4. LightGBM OpenCL tabular candidate with repeated-seed validation.
-5. Patch-transformer research candidate using PyTorch DirectML.
-6. Foundation forecast feature provider with timestamped no-lookahead logs.
-7. RL sandbox for meta-control only after realistic depth simulation exists.
-8. Feature ablation reports for every indicator/model family.
-9. ONNX/WinML inference parity checks before packaging AI inference into the
+1. Meta-label take/skip/downsize model trained on simulator outcomes.
+2. Depth/top-of-book data store and microstructure feature block.
+3. LightGBM OpenCL tabular candidate with repeated-seed validation.
+4. Patch-transformer research candidate using PyTorch DirectML.
+5. Foundation forecast feature provider with timestamped no-lookahead logs.
+6. RL sandbox for meta-control only after realistic depth simulation exists.
+7. Feature ablation reports for every indicator/model family.
+8. ONNX/WinML inference parity checks before packaging AI inference into the
     Windows app.
 
 ## What Not To Do

@@ -102,6 +102,13 @@ class _Robustness:
             "statistical_edge_accepted": self.accepted,
             "worst_sign_test_p_value": 0.125 if self.accepted else 0.6875,
             "worst_bootstrap_lower_mean_return": 0.003 if self.accepted else -0.006,
+            "regime_summary": {
+                "window_count": 4,
+                "dominant_regime": "trend_up",
+                "accepted_regime_count": 1 if self.accepted else 0,
+                "concentration_warning": True,
+                "by_regime": {"trend_up": {"windows": 4, "accepted_windows": 4 if self.accepted else 2}},
+            },
         }
 
 
@@ -151,6 +158,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.outcomes[0].hybrid_profiles["regular"] == "balanced_neighbors"
     assert report.outcomes[0].stress_validation["accepted"] is True
     assert report.outcomes[0].robustness_validation["accepted"] is True
+    assert report.outcomes[0].regime_validation["dominant_regime"] == "trend_up"
 
 
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:
