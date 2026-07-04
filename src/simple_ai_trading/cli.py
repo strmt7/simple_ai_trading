@@ -6012,42 +6012,108 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     live_events = cast(list[dict[str, object]], live_run["events"])
     if risk_policy.warning_count:
         print(f"risk policy warnings: {risk_policy.warning_count}")
+
+    def persist_live_startup_block(status: str, reason: str, details: Mapping[str, object] | None = None) -> None:
+        event: dict[str, object] = {"step": 0, "status": status, "reason": reason}
+        if details is not None:
+            event["details"] = dict(details)
+        live_events.append(event)
+        live_run["result"] = {
+            "status": status,
+            "reason": reason,
+            "steps_executed": 0,
+            "entries": 0,
+            "closes": 0,
+            "skipped_entries": 0,
+            "model_loads": 0 if model is None else 1,
+            "drawdown_seen": 0.0,
+            "ending_cash": float(cash),
+            "ending_cash_is_estimate": True,
+            "equity_peak": float(cash),
+            "drawdown_limit": float(cfg.max_drawdown_limit),
+        }
+        _persist_run_artifact("live", model_path.parent, live_run)
+
     if not effective_dry_run:
-        try:
-            detected_position = _detect_existing_position(
-                runtime,
-                client,
-                leverage=leverage,
-                account=exchange_account_snapshot,
-            )
-        except BinanceAPIError as exc:
-            print(f"Existing position check failed: {exc}", file=sys.stderr)
+        from .positions import PositionsStore, is_bot_owned_position
+        from .reconciliation import reconcile_account_positions
+
+        if not isinstance(exchange_account_snapshot, Mapping):
+            reason = "signed account payload was not a mapping"
+            print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
+            persist_live_startup_block("startup_reconciliation_error", reason)
             return 2
-        if detected_position is not None:
-            position_side = int(detected_position["side"])
-            qty = float(detected_position["qty"])
-            entry_price = float(detected_position["entry_price"])
-            position_notional = position_side * float(detected_position["notional"])
-            margin_used = max(0.0, float(detected_position["margin"]))
-            cash = max(0.0, cash - margin_used)
-            entry_basis = str(detected_position.get("entry_price_basis") or "exchange_entry_price")
-            basis_note = " (mark-price basis; PnL estimate only)" if entry_basis != "exchange_entry_price" else ""
+        position_store = PositionsStore()
+        try:
+            reconciliation_report = reconcile_account_positions(
+                exchange_account_snapshot,
+                runtime,
+                position_store,
+                quantity_tolerance=1e-8,
+            )
+        except (OSError, ValueError) as exc:
+            reason = f"reconciliation failed: {exc}"
+            print(f"Authenticated live startup blocked: {reason}", file=sys.stderr)
+            persist_live_startup_block("startup_reconciliation_error", reason)
+            return 2
+        if not reconciliation_report.ok:
+            reason = "exchange exposure does not match the bot-owned local ledger"
             print(
-                "Detected existing exchange position: "
-                f"{'long' if position_side > 0 else 'short'} qty={qty:.8f} entry={entry_price:.2f}{basis_note}"
+                "Authenticated live startup blocked: "
+                f"{reason}. Run `simple-ai-trading reconcile` and resolve the mismatch before live trading.",
+                file=sys.stderr,
+            )
+            persist_live_startup_block(
+                "startup_reconciliation_mismatch",
+                reason,
+                reconciliation_report.asdict(),
+            )
+            return 2
+
+        ledger_positions = [
+            position
+            for position in position_store.load_open()
+            if not position.dry_run and str(position.symbol).upper() == runtime.symbol.upper()
+        ]
+        if len(ledger_positions) > 1:
+            reason = f"multiple bot-owned ledger positions for {runtime.symbol}"
+            print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
+            persist_live_startup_block("startup_reconciliation_mismatch", reason, reconciliation_report.asdict())
+            return 2
+        if ledger_positions:
+            ledger_position = ledger_positions[0]
+            if not is_bot_owned_position(ledger_position):
+                reason = f"ledger position {ledger_position.id} lacks bot order ownership proof"
+                print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
+                persist_live_startup_block("startup_reconciliation_mismatch", reason, reconciliation_report.asdict())
+                return 2
+            position_side = 1 if str(ledger_position.side).upper() == "LONG" else -1
+            qty = max(0.0, float(ledger_position.qty))
+            entry_price = max(0.0, float(ledger_position.entry_price))
+            position_notional = position_side * max(0.0, float(ledger_position.notional or qty * entry_price))
+            margin_used = (
+                min(cash, abs(position_notional))
+                if runtime.market_type == "spot"
+                else min(cash, abs(position_notional) / max(1.0, leverage))
+            )
+            cash = max(0.0, cash - margin_used)
+            print(
+                "Resuming bot-owned ledger position: "
+                f"{'long' if position_side > 0 else 'short'} qty={qty:.8f} entry={entry_price:.2f}"
             )
             live_events.append(
                 {
                     "step": 0,
-                    "status": "resume_exchange_position",
-                    "market": str(detected_position["market"]),
+                    "status": "resume_bot_ledger_position",
+                    "position_id": ledger_position.id,
+                    "market": ledger_position.market_type,
                     "direction": int(position_side),
                     "qty": float(qty),
                     "entry_price": float(entry_price),
-                    "entry_price_basis": entry_basis,
                     "notional": float(position_notional),
                     "margin": float(margin_used),
                     "cash_after_resume": float(cash),
+                    "open_client_order_id": ledger_position.open_client_order_id,
                 }
             )
     drawdown_limit = float(cfg.max_drawdown_limit)

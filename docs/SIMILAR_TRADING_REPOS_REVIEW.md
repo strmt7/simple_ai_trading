@@ -66,7 +66,7 @@ Implemented in the current operator pass:
 9. Signed Binance request telemetry redacts timestamp, receive-window, and signature query values before storing request metadata.
 10. Futures account reporting includes non-zero `assets` and `positions`, not only spot `balances`.
 11. Entry, close, and emergency-close order rejections are caught, recorded as `order_error`, and returned as nonzero live-loop exits instead of uncaught exceptions.
-12. Authenticated live starts must detect existing spot/futures exposure for the active symbol set and resume it into local run state instead of assuming a previous interrupted run exited flat.
+12. Authenticated live starts must detect existing spot/futures exposure for the active symbol set, reconcile it against the bot-owned local ledger, and refuse startup when the exposure lacks ownership proof. The app must not implicitly adopt or close external user positions.
 13. Futures close and emergency-close paths submit reduce-only market orders and request result responses.
 
 ## Sources Checked
