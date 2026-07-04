@@ -59,3 +59,62 @@ def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
 
     assert report.allowed is False
     assert any("rows=0" in check.detail for check in report.checks if check.status == "block")
+
+
+def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None:
+    payload = {
+        "accepted_symbols": ["AAAUSDC"],
+        "portfolio_risk": {
+            "accepted": True,
+            "portfolio_cvar_95": 0.01,
+            "portfolio_max_drawdown": 0.02,
+            "deployed_weight": 0.4,
+            "max_pairwise_correlation": 0.1,
+            "max_cluster_weight": 0.4,
+        },
+        "outcomes": [
+            {
+                "symbol": "AAAUSDC",
+                "accepted": True,
+                "rows": 500,
+                "objective_scores": {"regular": 0.15},
+                "data_coverage": {
+                    "integrity_status": "ok",
+                    "coverage_ratio": 1.0,
+                    "gap_count": 0,
+                },
+                "stress_validation": {
+                    "accepted": True,
+                    "worst_max_drawdown": 0.01,
+                    "objectives": [
+                        {
+                            "objective": "regular",
+                            "accepted": True,
+                            "results": [
+                                {
+                                    "result": {
+                                        "market_edge": {
+                                            "accepted": False,
+                                            "reason": "net_edge_pct<0.003000",
+                                            "net_edge_pct": 0.001,
+                                            "min_net_edge_pct": 0.003,
+                                        }
+                                    }
+                                }
+                            ],
+                        }
+                    ],
+                },
+                "robustness_validation": {
+                    "accepted": True,
+                    "worst_max_drawdown": 0.02,
+                    "statistical_edge_accepted": True,
+                },
+            }
+        ],
+    }
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(check.label == "market edge" and check.status == "block" for check in report.checks)

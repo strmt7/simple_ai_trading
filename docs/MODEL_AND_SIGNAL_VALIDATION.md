@@ -83,6 +83,24 @@ The standard follows three research cautions:
 - Harvey, Liu, and Zhu's multiple-testing research: a newly discovered edge
   needs a higher hurdle than ordinary single-test significance.
 
+The code now emits a `market_edge` evidence report for training, stress, and
+temporal validation payloads. Accepted model-lab artifacts are blocked by the
+financial-sanity gate if any nested stress scenario or temporal window contains
+failed market-edge evidence. The report captures:
+
+- benchmark P&L and strategy P&L,
+- net edge as a percentage of starting capital,
+- closed-trade and sample counts,
+- profit-factor and expectancy evidence when available,
+- sign-test p-value over trade/window samples,
+- bootstrap lower mean return,
+- failed checks as stable machine-readable strings.
+
+This makes "edge over the average market" explicit: a model must show audited
+net outperformance over the same-symbol passive market benchmark, then preserve
+that edge through adverse execution assumptions and chronological replay before
+it can be promoted.
+
 References:
 
 - White, "A Reality Check for Data Snooping":

@@ -692,6 +692,8 @@ def test_gate_result_payload_includes_objective_reject_reasons() -> None:
     assert "closed_trades<3" in payload["reject_reasons"]
     assert "edge_vs_buy_hold<0.0" in payload["reject_reasons"]
     assert "closed_trades<3" in payload["reject_reason"]
+    assert payload["market_edge"]["accepted"] is False
+    assert "net_edge_pct<0.003000" in payload["market_edge"]["failed_checks"]
 
 
 def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:

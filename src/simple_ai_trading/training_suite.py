@@ -41,6 +41,7 @@ from .api import Candle
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
 from .features import ModelRow
 from .hybrid_models import optimize_hybrid_model_zoo
+from .market_edge import build_market_edge_report
 from .meta_label import build_meta_label_report
 from .model import (
     TrainedModel,
@@ -567,6 +568,7 @@ def _gate_result_payload(result: BacktestResult, objective: ObjectiveSpec | None
         payload["accepted"] = not reasons
         payload["reject_reasons"] = reasons
         payload["reject_reason"] = "; ".join(reasons) if reasons else None
+        payload["market_edge"] = build_market_edge_report(result, objective).asdict()
     return payload
 
 
