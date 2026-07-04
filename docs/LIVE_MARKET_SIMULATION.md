@@ -177,8 +177,18 @@ Authenticated order reconciliation:
 
 Autonomous network-interruption recovery:
 
+- The `live` CLI loop treats Binance market-data failures as retryable recovery
+  state. It records `market_error_retry` events, keeps polling at the configured
+  cadence, and if the finite run ends before a clean market read it exits
+  nonzero with `market_recovery_pending`.
+- The first successful `live` market read after an interruption is an observation
+  step, not entry permission. Fresh entries are blocked through the shared entry
+  risk gate with `recovery_pending=true`, a `recovery_observation` event is
+  persisted, and the loop waits through `recovery_cooldown_seconds` when
+  configured. Existing open positions still pass through the normal stop,
+  take-profit, and emergency drawdown logic on the recovered quote.
 - A Binance/network exception does not trigger a new trade, and it does not
-  assume the account is flat. The loop records a heartbeat that says
+  assume the account is flat. The autonomous loop records a heartbeat that says
   `reconcile-before-resume` and keeps retrying at the configured cadence.
 - After connectivity returns, the first successful market read is treated as a
   recovery transition. If the run is authenticated, signed account exposure is

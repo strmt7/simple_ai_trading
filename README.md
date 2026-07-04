@@ -169,7 +169,7 @@ simple-ai-trading positions --stats --learning
 
 `stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. `reconcile` reads the signed spot/futures account state, compares exchange exposure against non-paper local open positions, writes `data/autonomous/reconciliation.json`, and exits nonzero on exchange-only, local-only, or quantity-mismatched exposure.
 
-Network interruptions are treated as a recovery state, not as a normal trading iteration. The autonomous loop keeps retrying at the configured cadence, records a heartbeat that says reconciliation is required, and after connectivity returns it first reconciles signed exchange exposure, checks daily/session loss budgets, checks loss streaks, writes an observation heartbeat, and skips that iteration before allowing any new entry. If `recovery_cooldown_seconds` is nonzero, it also waits through that cooldown; if it is zero, the no-entry observation cycle still happens. If reconciliation finds exchange-only exposure, local-only exposure, or a quantity mismatch, the loop exits fail-closed and does not touch positions that are not represented in the bot ledger.
+Network interruptions are treated as a recovery state, not as a normal trading iteration. The `live` loop keeps retrying market-data reads and records `market_error_retry` events instead of entering on stale data. After connectivity returns, it records a clean recovery observation, waits through `recovery_cooldown_seconds` when configured, and skips fresh entries for that observation step. The autonomous loop adds signed reconciliation before resume: it records a heartbeat that says reconciliation is required, reconciles exchange exposure, checks daily/session loss budgets, checks loss streaks, writes an observation heartbeat, and skips that iteration before allowing any new entry. If reconciliation finds exchange-only exposure, local-only exposure, or a quantity mismatch, the autonomous loop exits fail-closed and does not touch positions that are not represented in the bot ledger.
 
 Closed trades automatically refresh `data/autonomous/learning_feedback.json`. This is the bounded self-improvement loop: it summarizes recurring loss reasons, symbols, sides, loss streaks, and retraining/cooldown review hints. It never edits a live model, loosens risk settings, or changes open positions. The next model-lab run consumes it automatically and blocks a symbol with repeated losses unless the new candidate shows positive stress and temporal recovery evidence.
 
@@ -227,7 +227,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - Authenticated live/testnet order loops do not trust requested quantity as filled quantity; they require execution fields or a signed order-status reconciliation.
 - Autonomous stop closes local open positions to avoid stale ledger exposure.
 - `reconcile` must be clean before treating the local autonomous ledger as flat or aligned with exchange state.
-- Autonomous post-outage recovery requires reconciliation, hard loss-budget checks, and an observation cooldown before any new entry.
+- `live` post-outage recovery requires a clean market observation and cooldown before any fresh entry; autonomous recovery additionally requires reconciliation and hard loss-budget checks.
 - Exchange exposure that is not represented in the bot ledger is reported as a mismatch and is not closed by the bot.
 
 ## Test
