@@ -48,6 +48,7 @@ from .liquidity_session import apply_liquidity_session_meta, liquidity_session_a
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
 from .market_store import MarketDataStore
+from .market_universe import rank_high_liquidity_universe
 from .meta_label import apply_meta_label_policy
 from .model import (
     assess_probability_calibration,
@@ -359,6 +360,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_archive_sync.add_argument("--db", default="data/market_data.sqlite")
     parser_archive_sync.add_argument("--symbol", default=None)
+    parser_archive_sync.add_argument("--symbols", default=None, help="comma-separated symbols; overrides --symbol")
+    parser_archive_sync.add_argument("--top-symbols", type=int, default=0, help="auto-rank this many high-liquidity symbols")
+    parser_archive_sync.add_argument("--quote-asset", default=None, help="quote asset used with --top-symbols")
+    parser_archive_sync.add_argument("--max-scan", type=int, default=250, help="maximum universe candidates scanned with --top-symbols")
     parser_archive_sync.add_argument("--interval", default=None)
     parser_archive_sync.add_argument("--market", choices=["spot", "futures"], default="spot")
     parser_archive_sync.add_argument("--cadence", choices=["monthly", "daily"], default="monthly")
@@ -4373,52 +4378,85 @@ def command_api_budget(args: argparse.Namespace) -> int:
 
 def command_archive_sync(args: argparse.Namespace) -> int:
     runtime = load_runtime()
-    symbol = str(getattr(args, "symbol", None) or runtime.symbol).upper()
     interval = str(getattr(args, "interval", None) or runtime.interval)
     market_type = str(getattr(args, "market", "spot") or "spot")
     cadence = str(getattr(args, "cadence", "monthly") or "monthly")
-    try:
-        urls = list_archive_urls(symbol=symbol, interval=interval, market_type=market_type, cadence=cadence)
-    except (OSError, ValueError) as exc:
-        print(f"archive-sync failed to list Binance archive: {exc}", file=sys.stderr)
-        return 2
+    raw_symbols = str(getattr(args, "symbols", "") or "").strip()
+    symbols = [item.strip().upper() for item in raw_symbols.split(",") if item.strip()]
+    if not symbols and int(getattr(args, "top_symbols", 0) or 0) > 0:
+        top_symbols = max(1, int(getattr(args, "top_symbols", 0) or 0))
+        quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
+        max_scan = max(top_symbols, int(getattr(args, "max_scan", 250) or 250))
+        try:
+            ranked_runtime = _runtime_with_market(runtime, market_type)
+            selection = rank_high_liquidity_universe(
+                _build_client(ranked_runtime),
+                load_strategy(),
+                quote_asset=quote_asset,
+                max_symbols=top_symbols,
+                max_scan=max_scan,
+            )
+        except (BinanceAPIError, OSError, ValueError) as exc:
+            print(f"archive-sync failed to rank high-liquidity symbols: {exc}", file=sys.stderr)
+            return 2
+        symbols = [item.symbol for item in selection.eligible[:top_symbols]]
+        if not symbols:
+            print(f"archive-sync found no eligible high-liquidity {quote_asset} symbols", file=sys.stderr)
+            return 2
+    if not symbols:
+        symbols = [str(getattr(args, "symbol", None) or runtime.symbol).upper()]
     max_files = getattr(args, "max_files", None)
-    if max_files is not None:
-        urls = urls[: max(0, int(max_files))]
-    if not urls:
-        print(f"archive-sync found no {cadence} archive files for {symbol} {interval} {market_type}", file=sys.stderr)
-        return 2
-    results = ingest_archive_urls(
-        db_path=Path(getattr(args, "db", "data/market_data.sqlite")),
-        symbol=symbol,
-        interval=interval,
-        urls=urls,
-        market_type=market_type,
-        timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
-        force=bool(getattr(args, "force", False)),
-    )
+    all_results = []
+    errors: list[dict[str, str]] = []
+    for symbol in symbols:
+        try:
+            urls = list_archive_urls(symbol=symbol, interval=interval, market_type=market_type, cadence=cadence)
+        except (OSError, ValueError) as exc:
+            errors.append({"symbol": symbol, "error": f"list_failed:{exc}"})
+            continue
+        if max_files is not None:
+            urls = urls[: max(0, int(max_files))]
+        if not urls:
+            errors.append({"symbol": symbol, "error": f"no_{cadence}_archive_files"})
+            continue
+        all_results.extend(
+            ingest_archive_urls(
+                db_path=Path(getattr(args, "db", "data/market_data.sqlite")),
+                symbol=symbol,
+                interval=interval,
+                urls=urls,
+                market_type=market_type,
+                timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
+                force=bool(getattr(args, "force", False)),
+            )
+        )
     payload = {
-        "status": "ok" if all(item.status in {"complete", "skipped"} for item in results) else "warn",
-        "symbol": symbol,
+        "status": "ok" if not errors and all(item.status in {"complete", "skipped"} for item in all_results) else "warn",
+        "symbol": symbols[0] if len(symbols) == 1 else "",
+        "symbols": symbols,
+        "symbol_count": len(symbols),
         "interval": interval,
         "market_type": market_type,
         "cadence": cadence,
-        "files": len(results),
-        "rows_read": sum(item.rows_read for item in results),
-        "rows_inserted": sum(item.rows_inserted for item in results),
-        "bytes_downloaded": sum(item.bytes_downloaded for item in results),
-        "results": [item.asdict() for item in results],
+        "files": len(all_results),
+        "rows_read": sum(item.rows_read for item in all_results),
+        "rows_inserted": sum(item.rows_inserted for item in all_results),
+        "bytes_downloaded": sum(item.bytes_downloaded for item in all_results),
+        "errors": errors,
+        "results": [item.asdict() for item in all_results],
     }
     if getattr(args, "json", False):
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
         print(
             "archive-sync: "
-            f"status={payload['status']} symbol={symbol} interval={interval} market={market_type} "
+            f"status={payload['status']} symbols={payload['symbol_count']} interval={interval} market={market_type} "
             f"files={payload['files']} rows_read={payload['rows_read']} "
             f"rows_inserted={payload['rows_inserted']} bytes={payload['bytes_downloaded']}"
         )
-        for item in results:
+        for error in errors:
+            print(f"warning: {error['symbol']} {error['error']}", file=sys.stderr)
+        for item in all_results:
             if item.status == "error":
                 print(f"warning: {item.url} {item.error}", file=sys.stderr)
     return 0 if payload["status"] == "ok" else 2

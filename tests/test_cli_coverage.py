@@ -604,6 +604,124 @@ def test_command_archive_sync_delegates_archive_listing_and_ingestion(tmp_path, 
     assert "rows_inserted=2" in capsys.readouterr().out
 
 
+def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+    list_calls: list[str] = []
+    ingest_calls: list[str] = []
+
+    class Result:
+        status = "complete"
+        rows_read = 1
+        rows_inserted = 1
+        bytes_downloaded = 10
+        error = ""
+
+        def __init__(self, symbol: str) -> None:
+            self.symbol = symbol
+            self.url = f"https://data.binance.vision/x/{symbol}-1s-2026-01.zip"
+
+        def asdict(self):
+            return {
+                "status": self.status,
+                "symbol": self.symbol,
+                "rows_read": self.rows_read,
+                "rows_inserted": self.rows_inserted,
+                "bytes_downloaded": self.bytes_downloaded,
+                "url": self.url,
+            }
+
+    def fake_list(**kwargs):
+        list_calls.append(str(kwargs["symbol"]))
+        return [f"https://data.binance.vision/x/{kwargs['symbol']}-1s-2026-01.zip"]
+
+    def fake_ingest(**kwargs):
+        ingest_calls.append(str(kwargs["symbol"]))
+        return [Result(str(kwargs["symbol"]))]
+
+    monkeypatch.setattr(cli, "list_archive_urls", fake_list)
+    monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols="btcusdc, ethusdc",
+        top_symbols=0,
+        quote_asset=None,
+        max_scan=250,
+        interval="1s",
+        market="spot",
+        cadence="monthly",
+        max_files=1,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["symbols"] == ["BTCUSDC", "ETHUSDC"]
+    assert payload["symbol_count"] == 2
+    assert payload["rows_inserted"] == 2
+    assert list_calls == ["BTCUSDC", "ETHUSDC"]
+    assert ingest_calls == ["BTCUSDC", "ETHUSDC"]
+
+
+def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+    ranked: dict[str, object] = {}
+
+    class Result:
+        status = "skipped"
+        rows_read = 0
+        rows_inserted = 0
+        bytes_downloaded = 0
+        error = ""
+
+        def __init__(self, symbol: str) -> None:
+            self.symbol = symbol
+            self.url = f"https://data.binance.vision/x/{symbol}-1s-2026-01.zip"
+
+        def asdict(self):
+            return {"status": self.status, "symbol": self.symbol, "url": self.url}
+
+    def fake_rank(client, strategy, *, quote_asset, max_symbols, max_scan):
+        ranked.update({
+            "client": client,
+            "risk_level": strategy.risk_level,
+            "quote_asset": quote_asset,
+            "max_symbols": max_symbols,
+            "max_scan": max_scan,
+        })
+        return SimpleNamespace(eligible=[SimpleNamespace(symbol="BTCUSDT"), SimpleNamespace(symbol="ETHUSDT")])
+
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
+    monkeypatch.setattr(cli, "rank_high_liquidity_universe", fake_rank)
+    monkeypatch.setattr(cli, "list_archive_urls", lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"])
+    monkeypatch.setattr(cli, "ingest_archive_urls", lambda **kwargs: [Result(str(kwargs["symbol"]))])
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols=None,
+        top_symbols=2,
+        quote_asset="USDT",
+        max_scan=50,
+        interval="1s",
+        market="spot",
+        cadence="daily",
+        max_files=1,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
+    assert payload["files"] == 2
+    assert ranked["quote_asset"] == "USDT"
+    assert ranked["max_symbols"] == 2
+    assert ranked["max_scan"] == 50
+
+
 def test_live_startup_blocks_when_cached_api_budget_is_over_eighty_percent(tmp_path, monkeypatch) -> None:
     db = tmp_path / "market.sqlite"
     now_ms = 1_000_000
