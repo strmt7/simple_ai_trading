@@ -42,6 +42,8 @@ Every backtest now keeps path evidence, not only a final P&L scalar:
 - trade returns relative to account equity at entry,
 - a compact trade log with open/close timestamps, side, notional, fees, and
   return.
+- path-quality metrics: gross profit/loss, finite profit factor, expectancy,
+  average trade return, trade-return dispersion, and max consecutive losses.
 
 `backtest-chart` renders this actual equity path instead of a synthetic
 start/mid/end curve, and model-lab robustness gates can use trade-return

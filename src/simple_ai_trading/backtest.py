@@ -38,6 +38,13 @@ class BacktestResult:
     trade_pnls: tuple[float, ...] = ()
     trade_returns: tuple[float, ...] = ()
     trade_log: tuple[dict[str, float | int], ...] = ()
+    gross_profit: float = 0.0
+    gross_loss: float = 0.0
+    profit_factor: float = 0.0
+    expectancy: float = 0.0
+    average_trade_return: float = 0.0
+    trade_return_stdev: float = 0.0
+    max_consecutive_losses: int = 0
 
 
 @dataclass(frozen=True)
@@ -165,6 +172,50 @@ def _equity_point(timestamp: int, equity: float, drawdown: float, position_side:
 def _trade_return(net_pnl: float, equity_reference: float) -> float:
     reference = max(1.0, abs(_finite_float(equity_reference, 1.0)))
     return float(net_pnl) / reference
+
+
+def _max_consecutive_losses(trade_pnls: list[float]) -> int:
+    longest = 0
+    current = 0
+    for pnl in trade_pnls:
+        if pnl < 0.0:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
+
+
+def _path_quality_metrics(
+    trade_pnls: list[float],
+    trade_returns: list[float],
+) -> dict[str, float | int]:
+    clean_pnls = [float(value) for value in trade_pnls if math.isfinite(float(value))]
+    clean_returns = [float(value) for value in trade_returns if math.isfinite(float(value))]
+    gross_profit = sum(value for value in clean_pnls if value > 0.0)
+    gross_loss = abs(sum(value for value in clean_pnls if value < 0.0))
+    if gross_loss > 0.0:
+        profit_factor = gross_profit / gross_loss
+    elif gross_profit > 0.0:
+        profit_factor = 999.0
+    else:
+        profit_factor = 0.0
+    expectancy = sum(clean_pnls) / len(clean_pnls) if clean_pnls else 0.0
+    average_return = sum(clean_returns) / len(clean_returns) if clean_returns else 0.0
+    if len(clean_returns) >= 2:
+        variance = sum((value - average_return) ** 2 for value in clean_returns) / (len(clean_returns) - 1)
+        return_stdev = math.sqrt(max(0.0, variance))
+    else:
+        return_stdev = 0.0
+    return {
+        "gross_profit": float(gross_profit),
+        "gross_loss": float(gross_loss),
+        "profit_factor": float(min(999.0, max(0.0, profit_factor))),
+        "expectancy": float(expectancy),
+        "average_trade_return": float(average_return),
+        "trade_return_stdev": float(return_stdev),
+        "max_consecutive_losses": int(_max_consecutive_losses(clean_pnls)),
+    }
 
 
 def _buy_hold_pnl(
@@ -358,6 +409,10 @@ def _result_payload(result: BacktestResult) -> dict[str, float | int]:
         "win_rate": float(result.win_rate),
         "closed_trades": int(result.closed_trades),
         "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
+        "profit_factor": float(getattr(result, "profit_factor", 0.0)),
+        "expectancy": float(getattr(result, "expectancy", 0.0)),
+        "average_trade_return": float(getattr(result, "average_trade_return", 0.0)),
+        "max_consecutive_losses": int(getattr(result, "max_consecutive_losses", 0)),
     }
 
 
@@ -734,6 +789,7 @@ def run_backtest(
         leverage=leverage,
         symbol_profile=symbol_profile,
     )
+    path_quality = _path_quality_metrics(trade_pnls, trade_returns)
 
     return BacktestResult(
         starting_cash=starting_cash,
@@ -754,5 +810,12 @@ def run_backtest(
         trade_pnls=tuple(trade_pnls),
         trade_returns=tuple(trade_returns),
         trade_log=tuple(trade_log),
+        gross_profit=float(path_quality["gross_profit"]),
+        gross_loss=float(path_quality["gross_loss"]),
+        profit_factor=float(path_quality["profit_factor"]),
+        expectancy=float(path_quality["expectancy"]),
+        average_trade_return=float(path_quality["average_trade_return"]),
+        trade_return_stdev=float(path_quality["trade_return_stdev"]),
+        max_consecutive_losses=int(path_quality["max_consecutive_losses"]),
         **_score_backend_payload(score_backend),
     )

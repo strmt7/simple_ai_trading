@@ -151,6 +151,9 @@ aggregate score is not enough when the distribution of tested windows still
 looks like selection luck. When the backtest produces enough closed trades, the
 statistical gate uses net trade returns; otherwise it falls back to
 chronological-window returns so sparse strategies are still screened.
+Backtest artifacts also record finite profit factor, expectancy, average trade
+return, return dispersion, and max consecutive loss streak so future objective
+gates can penalize fragile P&L profiles instead of looking only at final cash.
 
 ## Cross-Symbol Model Lab
 

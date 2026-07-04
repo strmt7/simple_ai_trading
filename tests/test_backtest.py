@@ -254,6 +254,11 @@ def test_backtest_signal_enters_on_next_bar_close() -> None:
     assert result.trade_log[0]["opened_at"] == 60_000
     assert result.trade_log[0]["closed_at"] == 60_000
     assert result.equity_curve[-1]["equity"] == pytest.approx(result.ending_cash)
+    assert result.gross_loss == pytest.approx(abs(result.realized_pnl))
+    assert result.profit_factor == pytest.approx(0.0)
+    assert result.expectancy == pytest.approx(result.realized_pnl)
+    assert result.average_trade_return == pytest.approx(result.trade_returns[0])
+    assert result.max_consecutive_losses == 1
 
 
 def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:
@@ -289,6 +294,50 @@ def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:
 
     assert spot.max_exposure == pytest.approx(500.0)
     assert futures.max_exposure == pytest.approx(500.0)
+
+
+def test_backtest_path_quality_metrics_cover_profit_factor_and_loss_streak() -> None:
+    class _StepModel:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def predict_proba(self, _features: tuple[float, ...]) -> float:
+            scores = [0.99, 0.0, 0.99, 0.0, 0.99, 0.0]
+            value = scores[min(self.calls, len(scores) - 1)]
+            self.calls += 1
+            return value
+
+    rows = [
+        ModelRow(timestamp=i * 60_000, close=price, features=(0.0,), label=1)
+        for i, price in enumerate([100.0, 100.0, 110.0, 110.0, 100.0, 100.0, 95.0])
+    ]
+    result = run_backtest(
+        rows,
+        _StepModel(),
+        StrategyConfig(
+            risk_per_trade=0.1,
+            max_position_pct=0.2,
+            taker_fee_bps=0.0,
+            slippage_bps=0.0,
+            signal_threshold=0.55,
+            take_profit_pct=0.5,
+            stop_loss_pct=0.5,
+            cooldown_minutes=0,
+            max_trades_per_day=10,
+        ),
+        starting_cash=1000.0,
+        market_type="spot",
+    )
+
+    assert result.closed_trades == 3
+    assert len(result.trade_pnls) == 3
+    assert result.gross_profit > 0.0
+    assert result.gross_loss > 0.0
+    assert result.profit_factor == pytest.approx(result.gross_profit / result.gross_loss)
+    assert result.expectancy == pytest.approx(sum(result.trade_pnls) / 3)
+    assert result.average_trade_return == pytest.approx(sum(result.trade_returns) / 3)
+    assert result.trade_return_stdev > 0.0
+    assert result.max_consecutive_losses == 2
 
 
 def test_backtest_cooldown_prevents_immediate_reentry() -> None:
