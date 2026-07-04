@@ -6326,6 +6326,14 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     f"{'pass' if passed else 'fail'}:"
                     f"deflated={float(deflated):+.4f}/penalty={float(penalty):.4f}/trials={int(float(trials))}"
                 )
+                overfit = selection_risk.get("overfit_diagnostics")
+                if isinstance(overfit, dict):
+                    pbo = overfit.get("probability_backtest_overfit")
+                    status = str(overfit.get("status") or "unknown")
+                    if isinstance(pbo, (int, float)) and math.isfinite(float(pbo)):
+                        selection_text += f"/pbo={float(pbo):.2f}"
+                    elif status == "skipped":
+                        selection_text += "/pbo=skipped"
             except (TypeError, ValueError, OverflowError):
                 selection_text = "fail:selection_risk_malformed" if not passed else "pass:selection_risk"
         print(
