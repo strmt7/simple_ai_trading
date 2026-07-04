@@ -2758,6 +2758,87 @@ def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
     )
 
 
+def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, monkeypatch) -> None:
+    captured: list[tuple[str, str, dict[str, object]]] = []
+
+    class _LiveClient:
+        def __init__(self) -> None:
+            self.orders: list[tuple[str, str, float]] = []
+
+        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+            return _simple_candles(limit)
+
+        def get_symbol_constraints(self, symbol: str):
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
+
+        def normalize_quantity(self, symbol: str, quantity: float):
+            return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
+
+        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+            self.orders.append((symbol, side, size))
+            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
+
+    class _AlwaysLongModel:
+        def predict_proba(self, _features: tuple[float, ...]) -> float:
+            return 0.95
+
+    base_ts = 1_767_621_600_000
+    rows = [
+        ModelRow(
+            timestamp=base_ts + index * 60_000,
+            close=100.0,
+            features=(1.0,),
+            label=1,
+            volume=10.0 if index == 8 else 1000.0,
+        )
+        for index in range(9)
+    ]
+    client = _LiveClient()
+
+    def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
+        captured.append((kind, str(output_dir), payload))
+        return output_dir / "live.json"
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_strategy(
+        StrategyConfig(
+            risk_per_trade=0.01,
+            max_position_pct=0.50,
+            stop_loss_pct=0.01,
+            take_profit_pct=0.50,
+            signal_threshold=0.70,
+            taker_fee_bps=0.0,
+            slippage_bps=0.0,
+            liquidity_lookback_bars=8,
+            low_liquidity_volume_ratio=0.50,
+            low_liquidity_size_multiplier=0.25,
+            low_liquidity_signal_threshold_add=0.0,
+            dynamic_liquidity_session_enabled=False,
+        )
+    )
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
+    monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: rows)
+    monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: rows)
+    monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
+    monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
+    monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 0
+
+    assert client.orders == [("BTCUSDC", "BUY", pytest.approx(1.25))]
+    assert captured and captured[0][0] == "live"
+    statuses = [event.get("status") for event in captured[0][2]["events"] if isinstance(event, dict)]
+    assert "liquidity_session_guard" in statuses
+
+
 def test_command_live_artifact_is_emitted(tmp_path, monkeypatch) -> None:
     captured: list[tuple[str, str, dict[str, object]]] = []
 
@@ -5804,6 +5885,53 @@ def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_pa
     assert decision.confidence == pytest.approx(0.99)
     assert train_calls == [1]
     assert signal_calls == ["BTCUSDC"]
+
+
+def test_build_autonomous_decision_fn_applies_liquidity_guard(tmp_path, monkeypatch) -> None:
+    class _Client:
+        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+            return _simple_candles(limit)
+
+    class _Model:
+        def predict_proba(self, _features: tuple[float, ...]) -> float:
+            return 0.95
+
+    base_ts = 1_767_621_600_000
+    rows = [
+        ModelRow(
+            timestamp=base_ts + index * 60_000,
+            close=100.0,
+            features=(0.1,),
+            label=1,
+            volume=10.0 if index == 8 else 1000.0,
+        )
+        for index in range(9)
+    ]
+    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (_Model(), None, None))
+    monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: rows)
+    monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_args, **_kwargs: rows)
+    monkeypatch.setattr(cli, "_record_model_telemetry", lambda *_args, **_kwargs: None)
+
+    strategy = StrategyConfig(
+        signal_threshold=0.70,
+        liquidity_lookback_bars=8,
+        low_liquidity_volume_ratio=0.50,
+        low_liquidity_size_multiplier=0.25,
+        low_liquidity_signal_threshold_add=0.0,
+        dynamic_liquidity_session_enabled=False,
+    )
+    decision_fn, error, _notice = cli._build_autonomous_decision_fn(
+        model_path=tmp_path / "model.json",
+        strategy=strategy,
+        effective_dry_run=True,
+    )
+    assert error is None and decision_fn is not None
+    decision = decision_fn(_Client(), RuntimeConfig(testnet=True), strategy, None)
+
+    assert decision.side == "LONG"
+    assert decision.size_multiplier == pytest.approx(0.25)
+    assert decision.meta_label_action == "downsize"
+    assert "low_liquidity_requires_stronger_signal" in decision.meta_label_reason
 
 
 def test_build_autonomous_decision_fn_loaded_model_short_without_external_signals(tmp_path, monkeypatch) -> None:
