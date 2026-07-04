@@ -51,12 +51,13 @@ Execution cost is symbol-specific where market data exists:
   current quote-asset leaders when static defaults exceed the available market,
   but it keeps hard minimum floors and never relaxes spread, structural
   leveraged-token, or likely pegged-pair filters.
-- Day-trading session risk is not a fixed UTC window. Backtests compare the
-  current bar against trailing per-symbol volume and against same UTC
-  weekday/hour/minute-bucket history from prior bars. Holidays, partial days,
-  low-liquidity overnight periods, and schedule changes are therefore treated
-  as measured low-liquidity evidence for that symbol and timestamp, not as an
-  assumption baked into the code.
+- Day-trading session risk is not a fixed UTC window. Backtests, `live`, and
+  the autonomous decision function compare the current bar against trailing
+  per-symbol volume and against same UTC weekday/hour/minute-bucket history
+  from prior bars. Holidays, partial days, low-liquidity overnight periods,
+  and schedule changes are therefore treated as measured low-liquidity
+  evidence for that symbol and timestamp, not as an assumption baked into the
+  code.
 
 Backtest fill price uses:
 

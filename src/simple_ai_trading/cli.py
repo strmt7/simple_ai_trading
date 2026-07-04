@@ -44,6 +44,7 @@ from .data_downloader import MarketDataSyncConfig, render_sync_result, sync_mark
 from .features import FEATURE_NAMES, ModelRow, feature_signature, make_inference_rows, make_rows, normalize_enabled_features
 from .api import SymbolConstraints
 from .external_signals import ExternalSignalReport, collect_external_signals, render_external_signal_report
+from .liquidity_session import apply_liquidity_session_meta, liquidity_session_adjustment
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
 from .market_store import MarketDataStore
@@ -6131,24 +6132,39 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     }
                 )
                 print(f"step {i + 1:>2}: external signals unavailable: {exc}", file=sys.stderr)
+        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_cfg, threshold)
+        effective_threshold = liquidity_adjustment.threshold
         _record_model_telemetry(
             cfg,
             step=i + 1,
             row=latest,
             raw_score=raw_score,
             adjusted_score=score,
-            threshold=threshold,
+            threshold=effective_threshold,
             model=model,
             runtime=runtime,
         )
-        direction = _score_to_direction(score, decision_cfg, runtime.market_type, threshold)
-        meta_decision = apply_meta_label_policy(
+        direction = _score_to_direction(score, decision_cfg, runtime.market_type, effective_threshold)
+        base_meta_decision = apply_meta_label_policy(
             getattr(model, "meta_label_policy", {}),
             adjusted_probability=score,
-            threshold=threshold,
+            threshold=effective_threshold,
             side=direction,
             market_type=runtime.market_type,
         )
+        meta_decision = apply_liquidity_session_meta(base_meta_decision, liquidity_adjustment) if direction != 0 else base_meta_decision
+        if liquidity_adjustment.active:
+            live_events.append(
+                {
+                    "step": i + 1,
+                    "status": "liquidity_session_guard",
+                    "threshold": float(effective_threshold),
+                    "size_multiplier": float(liquidity_adjustment.size_multiplier),
+                    "low_liquidity": bool(liquidity_adjustment.low_liquidity),
+                    "low_dynamic_session": bool(liquidity_adjustment.low_dynamic_session),
+                    "reasons": list(liquidity_adjustment.reasons),
+                }
+            )
 
         # cooldown reduces immediate flip-flopping in choppy conditions
         if cooldown_left > 0:
@@ -6964,24 +6980,27 @@ def _build_autonomous_decision_fn(
                 source_grade_max_age_hours=current_strategy.source_grade_max_age_hours,
             )
             score, decision_strategy, _applied_adjustment = _apply_external_signal_to_score(score, current_strategy, external_report)
+        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_strategy, threshold)
+        effective_threshold = liquidity_adjustment.threshold
         _record_model_telemetry(
             current_strategy,
             step=int(state["step"]),
             row=latest,
             raw_score=raw_score,
             adjusted_score=score,
-            threshold=threshold,
+            threshold=effective_threshold,
             model=current_model,
             runtime=runtime,
         )
-        direction = _score_to_direction(score, decision_strategy, runtime.market_type, threshold)
-        meta_decision = apply_meta_label_policy(
+        direction = _score_to_direction(score, decision_strategy, runtime.market_type, effective_threshold)
+        base_meta_decision = apply_meta_label_policy(
             getattr(current_model, "meta_label_policy", {}),
             adjusted_probability=score,
-            threshold=threshold,
+            threshold=effective_threshold,
             side=direction,
             market_type=runtime.market_type,
         )
+        meta_decision = apply_liquidity_session_meta(base_meta_decision, liquidity_adjustment) if direction != 0 else base_meta_decision
         if direction > 0:
             side = "LONG"
         elif direction < 0:
