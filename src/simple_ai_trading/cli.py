@@ -6106,6 +6106,18 @@ def command_model_lab(args: argparse.Namespace) -> int:
         f"model lab complete: accepted={len(report.accepted_symbols)}/{len(report.outcomes)} "
         f"symbols market={report.market_type} objectives={','.join(objectives)}"
     )
+    portfolio_risk = getattr(report, "portfolio_risk", None) or {}
+    if portfolio_risk:
+        status = "pass" if portfolio_risk.get("accepted") else "fail"
+        reason = str(portfolio_risk.get("reason") or "ok")
+        print(
+            "portfolio risk: "
+            f"{status} deployed={float(portfolio_risk.get('deployed_weight', 0.0)):.1%} "
+            f"effective_symbols={float(portfolio_risk.get('effective_symbol_count', 0.0)):.2f} "
+            f"cvar95={float(portfolio_risk.get('portfolio_cvar_95', 0.0)):.2%} "
+            f"max_corr={float(portfolio_risk.get('max_pairwise_correlation', 0.0)):.2f} "
+            f"reason={reason}"
+        )
     for outcome in report.outcomes:
         status = "accepted" if outcome.accepted else "rejected"
         score_text = ", ".join(f"{key}={value:+.4f}" for key, value in sorted(outcome.objective_scores.items()))
