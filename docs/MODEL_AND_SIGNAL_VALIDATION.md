@@ -1,46 +1,63 @@
 # Model and Signal Validation
 
-Last local validation: 2026-05-03 on Windows 11 with DirectML GPU backend.
+This page records the validation standard for model and signal work. Historical
+local performance numbers were removed because they did not carry the current
+data-provenance fields required for repo-facing financial evidence.
 
-## Market Data
+## Required Local Validation
 
-- Command: `fetch --limit 5000 --batch-size 1000`
-- Result: 3,100 public BTCUSDC 15m candles saved locally
-- Audit: 3,100 clean candles, 0 duplicates, 0 time gaps, 3,058 feature rows
+A validation report may be documented only when it includes:
 
-## Model Runs
+- command used,
+- source API or signed account source,
+- symbol list,
+- market type,
+- interval,
+- exact UTC start and end,
+- candle/fill row count,
+- coverage ratio and gap count,
+- execution assumptions,
+- compute backend and device,
+- generated artifact path.
 
-Baseline model on expanded data:
+## Financial Sanity Standard
 
-- Backtest: 35 trades, 65.71% win rate, +1.19 realized PnL, 0.06% max drawdown
-- DirectML scoring backend: `privateuseone:0`
+Model artifacts must pass the built-in financial sanity gate before they can be
+treated as live-ready, AI-reviewable, or suitable for optimization evidence.
+The gate enforces:
 
-DirectML retrain candidate:
+- finite model parameters and matching feature dimensions,
+- bounded learning-rate, regularization, class-weight, threshold, and
+  probability-temperature settings,
+- positive accepted row counts and finite objective scores,
+- complete data-coverage metadata with no failed integrity status,
+- accepted stress, temporal robustness, and portfolio-risk reports,
+- bounded drawdown, CVaR, deployed weight, correlation, and cluster exposure
+  metrics.
 
-- Command: `train --preset thorough --compute-backend directml --batch-size 512 --walk-forward --calibrate-threshold`
-- Training backend: DirectML `privateuseone:0`
-- Backtest: 42 trades, 40.48% win rate, +1.45 realized PnL, 0.07% max drawdown
-- Audit: model artifact accepted, threshold 0.290, validation rows 458
+These checks are intentionally conservative. They follow the practical model
+risk themes in the April 17, 2026 interagency revised model-risk guidance:
+sound model development and use, validation and monitoring, conceptual
+soundness, outcomes analysis, governance, and controls. They also align with
+Basel-style market-risk backtesting discipline: compare predicted risk with
+subsequent trading outcomes and treat exceptions as model-quality evidence, not
+as cosmetic reporting.
 
-Conservative objective candidate:
+References:
 
-- Source: `train-suite --objective conservative --compute-backend directml`
-- Evaluation quality: `ok`, 0.599 validation accuracy, 0.501 F1
-- Backtest: 9 trades, -0.14 realized PnL, 0.02% max drawdown
+- Federal Reserve SR 26-2 revised model-risk guidance:
+  <https://www.federalreserve.gov/supervisionreg/srletters/SR2602.pdf>
+- OCC Bulletin 2026-13 model-risk guidance summary:
+  <https://www.occ.gov/news-issuances/bulletins/2026/bulletin-2026-13.html>
+- Basel Committee market-risk backtesting framework:
+  <https://www.bis.org/publ/bcbs22.pdf>
+- SEC/FINRA market-access risk-control context:
+  <https://www.finra.org/rules-guidance/key-topics/market-access>
+  and
+  <https://www.sec.gov/rules-regulations/staff-guidance/trading-markets-frequently-asked-questions/divisionsmarketregfaq-0>
 
-The DirectML retrain improved realized PnL over the baseline on the local expanded dataset, but it still trails buy-and-hold during a strongly rising sample and keeps the model-quality warning. Treat it as a safer incremental candidate, not proof of production profitability.
+## Current Status
 
-## Signal Harvest
-
-Live signal run:
-
-- Command: `signals --news-provider-limit 30 --news-items-per-provider 3 --provider-parallelism 12 --ollama-news --ollama-model gemma4:e4b --compute-backend directml --refresh`
-- Result: 45 provider components, 42 fresh, telemetry written
-- Horizons: short, medium, and long scores populated
-- Slow providers: CryptoCompare, GDELT, and the dedicated Ollama news component reported warnings without blocking the harvest
-
-Source grading:
-
-- Command: `source-grades --window-hours 24 --ollama --ollama-model gemma4:e4b`
-- Result: 274 source-grade rows written
-- Ollama grading timed out at the configured 3s budget and the command completed with heuristic grading instead of blocking.
+No repo-facing ROI, P&L, win-rate, or drawdown claim is made here. Regenerate
+validation from real source data and attach full provenance before publishing
+model performance.

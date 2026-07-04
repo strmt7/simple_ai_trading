@@ -265,6 +265,28 @@ def test_sync_market_data_paginates_and_stores_metrics(tmp_path) -> None:
         assert latest_book.spread_bps == 200.0
 
 
+def test_sync_market_data_full_history_ignores_recent_row_target(tmp_path) -> None:
+    client = _SyncClient()
+
+    result = sync_market_data(
+        client,  # type: ignore[arg-type]
+        MarketDataSyncConfig(
+            db_path=tmp_path / "full.sqlite",
+            rows=1,
+            batch_size=2,
+            full_history=True,
+            include_futures_metrics=False,
+            now_ms=999_999,
+        ),
+    )
+
+    assert result.status == "ok"
+    assert result.sync_mode == "full_history"
+    assert result.candles_available == 3
+    assert result.kline_requests == 2
+    assert client.calls == 2
+
+
 def test_sync_market_data_incremental_mode_skips_duplicate_candle_writes(tmp_path) -> None:
     class IncrementalClient(_SyncClient):
         def __init__(self, *, fail_incremental: bool = False) -> None:

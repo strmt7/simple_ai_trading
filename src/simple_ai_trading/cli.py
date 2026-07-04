@@ -32,6 +32,7 @@ from .compute import BackendInfo, default_compute_backend, describe_backend, res
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
 from . import data_workflows
+from .data_coverage import describe_candle_coverage
 from .data_downloader import MarketDataSyncConfig, render_sync_result, sync_market_data
 from .features import FEATURE_NAMES, ModelRow, feature_signature, make_inference_rows, make_rows, normalize_enabled_features
 from .api import SymbolConstraints
@@ -313,6 +314,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_data_sync.add_argument("--interval", default=None)
     parser_data_sync.add_argument("--market", choices=["spot", "futures"], default=None)
     parser_data_sync.add_argument("--rows", type=int, default=500)
+    parser_data_sync.add_argument(
+        "--full-history",
+        action="store_true",
+        help="page historical klines backward until the exchange has no older closed candles",
+    )
     parser_data_sync.add_argument("--batch-size", type=int, default=1000)
     parser_data_sync.add_argument("--include-futures-metrics", action="store_true", default=True)
     parser_data_sync.add_argument("--no-include-futures-metrics", action="store_false", dest="include_futures_metrics")
@@ -728,6 +734,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_model_lab.add_argument("--max-symbols", type=int, default=6)
     parser_model_lab.add_argument("--max-scan", type=int, default=250)
     parser_model_lab.add_argument("--limit", type=int, default=1000, help="candles per selected symbol")
+    parser_model_lab.add_argument(
+        "--full-history",
+        action="store_true",
+        help="page klines backward for each selected symbol until no older closed candles are returned",
+    )
     parser_model_lab.add_argument("--market", choices=["spot", "futures"], default=None, help="override runtime market type for this lab run")
     parser_model_lab.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
     parser_model_lab.add_argument("--batch-size", type=int, default=8192)
@@ -737,6 +748,14 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="smoke/research cap per objective; default evaluates the full grid",
+    )
+    parser_model_lab.add_argument(
+        "--learning-feedback",
+        default=None,
+        help=(
+            "optional learning_feedback.json artifact; default uses "
+            "data/autonomous/learning_feedback.json when present"
+        ),
     )
     parser_model_lab.set_defaults(func=command_model_lab)
 
@@ -4794,6 +4813,15 @@ def command_backtest(args: argparse.Namespace) -> int:
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
     rows = _backtest_rows_for_model(candles, cfg, model)
+    data_coverage = describe_candle_coverage(
+        symbol=runtime.symbol,
+        market_type=runtime.market_type,
+        interval=runtime.interval,
+        available_candles=candles,
+        used_candles=candles,
+        rows_used=len(rows),
+        source_scope="json_file_loaded_candles",
+    )
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
     try:
         compute_backend, _backend_info = _workflow_compute_backend(
@@ -4826,6 +4854,7 @@ def command_backtest(args: argparse.Namespace) -> int:
         "decision_threshold": float(decision_threshold),
         "starting_cash": float(args.start_cash),
         "rows": len(rows),
+        "data_coverage": data_coverage.asdict(),
         "market": runtime.market_type,
         "symbol": runtime.symbol,
         "scoring_backend": {
@@ -4867,6 +4896,13 @@ def command_backtest(args: argparse.Namespace) -> int:
 
     print(f"day-trading backtest {runtime.symbol}")
     print(f"market: {runtime.market_type}")
+    print(
+        "data_span: "
+        f"{data_coverage.used_start_utc or 'n/a'} -> {data_coverage.used_end_utc or 'n/a'} "
+        f"interval={data_coverage.interval} candles={data_coverage.candles_used} "
+        f"rows={data_coverage.rows_used} years={data_coverage.used_duration_years:.2f} "
+        f"coverage={data_coverage.coverage_ratio:.4f} gaps={data_coverage.gap_count}"
+    )
     print(f"scoring_backend: {result.scoring_backend_kind} device={result.scoring_backend_device}")
     if result.scoring_backend_reason:
         print(f"scoring_backend_reason: {result.scoring_backend_reason}")
@@ -4908,6 +4944,15 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
     rows = _backtest_rows_for_model(candles, cfg, model)
+    data_coverage = describe_candle_coverage(
+        symbol=runtime.symbol,
+        market_type=runtime.market_type,
+        interval=runtime.interval,
+        available_candles=candles,
+        used_candles=candles,
+        rows_used=len(rows),
+        source_scope="json_file_loaded_candles",
+    )
     if not rows:
         print("Backtest chart failed: no rows available.", file=sys.stderr)
         return 2
@@ -4932,7 +4977,12 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         symbol_profile=execution_profile.profile,
     )
     points = [
-        EquityPoint(int(index), float(point["equity"]), float(point["drawdown"]))
+        EquityPoint(
+            int(index),
+            float(point["equity"]),
+            float(point["drawdown"]),
+            int(point["timestamp"]) if "timestamp" in point else None,
+        )
         for index, point in enumerate(getattr(result, "equity_curve", ()) or ())
         if isinstance(point, dict) and "equity" in point and "drawdown" in point
     ]
@@ -4943,6 +4993,13 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         ]
     output = write_equity_svg(points, args.output, title=f"{runtime.symbol} day-trading backtest")
     print(f"backtest chart saved to {output}")
+    print(
+        "data_span: "
+        f"{data_coverage.used_start_utc or 'n/a'} -> {data_coverage.used_end_utc or 'n/a'} "
+        f"interval={data_coverage.interval} candles={data_coverage.candles_used} "
+        f"rows={data_coverage.rows_used} years={data_coverage.used_duration_years:.2f} "
+        f"coverage={data_coverage.coverage_ratio:.4f} gaps={data_coverage.gap_count}"
+    )
     _print_execution_profile_evidence(execution_profile)
     print(
         f"ending_cash={result.ending_cash:.2f} realized_pnl={result.realized_pnl:.2f} "
@@ -6492,6 +6549,12 @@ def command_model_lab(args: argparse.Namespace) -> int:
                 else None
             ),
             max_candidates=(int(max_candidates) if max_candidates is not None else None),
+            learning_feedback_path=(
+                Path(args.learning_feedback)
+                if getattr(args, "learning_feedback", None)
+                else None
+            ),
+            full_history=bool(getattr(args, "full_history", False)),
         )
     except (BinanceAPIError, ValueError) as exc:
         print(f"model lab failed: {exc}", file=sys.stderr)
@@ -6545,9 +6608,21 @@ def command_model_lab(args: argparse.Namespace) -> int:
                 )
             )
         detail = score_text or outcome.error or "no accepted objectives"
+        coverage = getattr(outcome, "data_coverage", None) or {}
+        coverage_text = "coverage=n/a"
+        if isinstance(coverage, dict):
+            coverage_text = (
+                f"span={coverage.get('used_start_utc') or 'n/a'}->{coverage.get('used_end_utc') or 'n/a'} "
+                f"years={float(coverage.get('used_duration_years') or 0.0):.2f} "
+                f"candles={int(coverage.get('candles_used') or 0)} "
+                f"coverage={float(coverage.get('coverage_ratio') or 0.0):.4f} "
+                f"integrity={coverage.get('integrity_status') or 'unknown'} "
+                f"source={coverage.get('source_scope') or 'unknown'}"
+            )
         print(
             f"  {status:<8} {outcome.symbol:<12} rows={outcome.rows:<5} {detail} "
-            f"hybrid={hybrid_text or 'n/a'} stress={stress_text} robustness={robustness_text}"
+            f"hybrid={hybrid_text or 'n/a'} stress={stress_text} robustness={robustness_text} "
+            f"{coverage_text}"
         )
     print(f"summary -> {report.report_path}")
     return 0 if report.accepted_symbols else 2
@@ -6579,6 +6654,14 @@ def command_backtest_panel(args: argparse.Namespace) -> int:
         print(f"backtest-panel: {err}", file=sys.stderr)
         return 2
     print(f"backtest report -> data/backtests/{report.filename}")
+    coverage = getattr(report, "data_coverage", None)
+    if coverage is not None:
+        print(
+            f"  data_span={coverage.used_start_utc or 'n/a'}->{coverage.used_end_utc or 'n/a'} "
+            f"interval={coverage.interval} candles={coverage.candles_used}/{coverage.candles_available} "
+            f"rows={coverage.rows_used} years={coverage.used_duration_years:.2f} "
+            f"coverage={coverage.coverage_ratio:.4f} gaps={coverage.gap_count}"
+        )
     print(
         f"  trades={report.result.closed_trades} "
         f"realized_pnl={report.result.realized_pnl:+.2f} "

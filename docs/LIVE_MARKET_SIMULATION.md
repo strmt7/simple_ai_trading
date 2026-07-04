@@ -7,6 +7,8 @@ Simple AI Trading backtests are intentionally pessimistic. A strategy that only 
 Primary references used for the current design:
 
 - Binance Spot testnet and market data docs: https://developers.binance.com/docs/binance-spot-api-docs/testnet and https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
+- Binance USD-M futures kline docs: https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data
+- Binance rate-limit guidance for backing off on `429`/`418` and tracking request weight: https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/rate-limits
 - Binance WebSocket stream constraints: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
 - Binance USD-M futures leverage endpoints: https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Notional-and-Leverage-Brackets and https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Change-Initial-Leverage
 - NautilusTrader backtesting concepts: https://nautilustrader.io/docs/latest/concepts/backtesting/
@@ -21,6 +23,14 @@ Execution cost is symbol-specific where market data exists:
 - `data-sync` now persists a typed top-of-book history with bid/ask price,
   bid/ask quantity, mid price, spread bps, and top-level notional depth in
   SQLite, while still retaining the raw exchange payload for audit.
+- `data-sync --full-history` pages backward through exchange klines with the
+  venue maximum request size until no older rows are returned. Recent bounded
+  syncs remain available for incremental refreshes, but reports label them as
+  recent-limit evidence rather than full available history.
+- Sync results record kline request count, rows received, coverage ratio,
+  gap count, and Binance used-weight/order-count headers when the exchange
+  provides them. This makes API usage cost auditable while keeping paging
+  efficient.
 - `backtest`, `backtest-chart`, and `backtest-panel` can consume the latest
   typed top-of-book row with `--execution-db data/market_data.sqlite`. The
   loaded profile is written into run artifacts and panel reports, including
@@ -46,6 +56,9 @@ Backtest fill price uses:
 
 Every backtest now keeps path evidence, not only a final P&L scalar:
 
+- a `data_coverage` record with symbol, market type, interval, UTC date span,
+  requested/used history scope, candle counts, row count, gap count, coverage
+  ratio, full-history flag, and truth basis,
 - mark-to-market equity points with drawdown and position side,
 - net trade P&L after entry and exit fees,
 - trade returns relative to account equity at entry,
@@ -54,9 +67,10 @@ Every backtest now keeps path evidence, not only a final P&L scalar:
 - path-quality metrics: gross profit/loss, finite profit factor, expectancy,
   average trade return, trade-return dispersion, and max consecutive losses.
 
-`backtest-chart` renders this actual equity path instead of a synthetic
-start/mid/end curve, and model-lab robustness gates can use trade-return
-samples when enough trades exist.
+`backtest-chart` renders this actual equity path instead of a three-point
+display fallback. When equity timestamps are present, the SVG labels the
+simulation start/end dates and duration in days/years. Model-lab robustness
+gates can use trade-return samples when enough trades exist.
 
 Position sizing is stop-loss-budget based. `risk_per_trade` is interpreted as
 the equity budget that may be lost if the configured stop-loss is hit; gross
@@ -150,6 +164,12 @@ risk. This keeps a generic candle-trained model, or an individually strong
 symbol from a rejected portfolio, from being treated as live-ready just because
 it deserializes and has a positive selection score.
 
+Data provenance is a safety gate, not an annotation. Model-lab rejects accepted
+symbols when coverage evidence is missing, has no model rows, has detected
+gaps, or falls below the coverage threshold. It also stamps data coverage into
+the model's `execution_validation` block so a promoted model carries the exact
+timescale and truth basis used for its promotion.
+
 Known limitations:
 
 - Full L2 order-book depth and queue position are not yet replayed tick-by-tick.
@@ -159,6 +179,8 @@ Known limitations:
   stricter than flat slippage, but still weaker than full L2 order-book replay.
 - Very small datasets are marked as insufficient for purged walk-forward gates;
   they are useful for unit tests and smoke checks, not production acceptance.
+- Recent-limit kline pulls are useful for smoke checks, but they are not
+  equivalent to full-history evidence and are labeled accordingly.
 - Temporal robustness currently uses candle-window regime evidence; full
   order-book regime replay remains a future improvement after L2 depth
   snapshots are stored.

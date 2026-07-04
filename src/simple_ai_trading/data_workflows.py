@@ -39,6 +39,7 @@ def data_sync_config_from_args(args: argparse.Namespace, runtime: RuntimeConfig)
         rows=max(0, int(getattr(args, "rows", 500))),
         batch_size=max(1, int(getattr(args, "batch_size", 1000))),
         include_futures_metrics=bool(getattr(args, "include_futures_metrics", True)),
+        full_history=bool(getattr(args, "full_history", False)),
     )
 
 
@@ -78,6 +79,8 @@ def start_background_data_sync(
             command.extend([option, str(value)])
     if not bool(getattr(args, "include_futures_metrics", True)):
         command.append("--no-include-futures-metrics")
+    if bool(getattr(args, "full_history", False)):
+        command.append("--full-history")
     with log_file.open("ab") as log_handle:
         process = popen(command, stdout=log_handle, stderr=subprocess.STDOUT, start_new_session=True)
     pid_file.write_text(f"{process.pid}\n", encoding="utf-8")
@@ -245,6 +248,7 @@ def download_training_candles(
         rows=max(min_rows, min_rows + 50),
         batch_size=1000,
         include_futures_metrics=True,
+        full_history=False,
         loop=False,
         iterations=1,
         sleep=0,

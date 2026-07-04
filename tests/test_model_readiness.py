@@ -122,3 +122,14 @@ def test_model_readiness_reports_quality_warning_variants() -> None:
     generic.quality_warnings = ["calibration_sparse"]
     report = build_model_readiness_report(generic)
     assert any(check.label == "model quality warnings" and "calibration_sparse" in check.detail for check in report.checks)
+
+
+def test_model_readiness_blocks_financially_unsound_artifact() -> None:
+    bad = _model()
+    bad.weights = [0.0, 1.0]
+    bad.learning_rate = 2.0
+
+    report = build_model_readiness_report(bad)
+
+    assert report.allowed is False
+    assert any(check.label.startswith("financial sanity") for check in report.checks)

@@ -31,14 +31,16 @@ reconciliation, market data, machine learning, AI, and learning feedback publish
 independent status. The coordinator combines those statuses into one decision
 and blocks only the appropriate surface. Risk, execution, and reconciliation can
 block execution; stale market data, missing models, or failed AI capability can
-block new entries; learning feedback stays advisory and feeds future retraining
-review.
+block new entries; learning feedback stays non-mutating in live operation, but
+it feeds model-lab promotion and AI review.
 
 Self-improvement is intentionally bounded. Closed trades refresh a learning
 feedback artifact with recurring loss reasons, symbol/side loss clusters, loss
 streaks, and retraining/cooldown hints. That artifact can influence the next
 model-lab cycle and AI review, but it must not mutate a live model, relax risk
-limits, or change open positions while the bot is running.
+limits, or change open positions while the bot is running. If a symbol has
+repeated closed-trade losses, the next model-lab promotion for that symbol now
+requires positive stress and temporal robustness recovery evidence.
 
 The Bloomberg Opinion article the user referenced shows why this matters:
 modern AI tooling can accelerate exchange connectors, news/social ingestion,
@@ -455,6 +457,10 @@ Implementation direction:
 
 - Use the persisted typed top-of-book samples from `data-sync` for L1 spread,
   depth, and quote-quality evidence.
+- Use `data-sync --full-history` and `model-lab --full-history` for
+  promotion-grade research. Recent-limit API pulls are acceptable for smoke
+  checks only when the artifact labels source scope, UTC date span, row count,
+  gap count, and coverage ratio.
 - Add L2 depth snapshots before claiming queue-position or full order-book
   replay realism.
 - Add features for spread percentile, depth imbalance, microprice, quote
@@ -506,8 +512,13 @@ Sources:
 No future model family should be accepted unless it writes:
 
 - candidate family and hyperparameters,
+- financial-sanity status for model dimensions, finite parameters, probability
+  calibration, row counts, coverage, and bounded risk metrics,
 - training backend and device evidence,
 - feature signature and data interval,
+- data coverage evidence: symbol, market type, interval, UTC span, source
+  scope, full-history flag, candle count, model-row count, coverage ratio, gap
+  count, and truth basis,
 - purged walk-forward results,
 - final serialized-model temporal robustness,
 - market-regime evidence for each temporal window,

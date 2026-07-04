@@ -5,6 +5,8 @@ import builtins
 import json
 from pathlib import Path
 
+import pytest
+
 from simple_ai_trading import cli
 from simple_ai_trading.api import Candle
 from simple_ai_trading.config import save_runtime, save_strategy
@@ -16,6 +18,11 @@ from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
 NOW_MS = 1_700_000_000_000
+
+
+@pytest.fixture(autouse=True)
+def _isolate_repo_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
 
 
 def _candle(index: int, close: float = 100.0) -> Candle:
@@ -30,6 +37,7 @@ def _sync_args(**overrides):
         "interval": None,
         "market": None,
         "rows": 5,
+        "full_history": False,
         "batch_size": 5,
         "include_futures_metrics": True,
         "loop": False,
@@ -133,6 +141,7 @@ def test_command_data_sync_background_builds_detached_process(tmp_path, monkeypa
     command = captured["command"]
     assert "--no-include-futures-metrics" in command
     assert "--interval" in command
+    assert "--full-history" not in command
     assert "started market data downloader" in capsys.readouterr().out
 
     args = _sync_args(
@@ -146,11 +155,24 @@ def test_command_data_sync_background_builds_detached_process(tmp_path, monkeypa
     assert "--symbol" not in captured["command"]
     assert "--no-include-futures-metrics" not in captured["command"]
 
+    args = _sync_args(
+        db=str(tmp_path / "m3.sqlite"),
+        background=True,
+        pid_file=str(tmp_path / "sync3.pid"),
+        log_file=str(tmp_path / "sync3.log"),
+        full_history=True,
+    )
+    assert cli.command_data_sync(args) == 0
+    assert "--full-history" in captured["command"]
+
 
 def test_data_sync_compatibility_wrappers_delegate_to_structured_module(tmp_path, monkeypatch) -> None:
     runtime = RuntimeConfig(market_type="spot", interval="15m")
     futures_runtime = cli._runtime_with_market(runtime, "futures")
-    config = cli._data_sync_config_from_args(_sync_args(db=str(tmp_path / "m.sqlite"), interval="1m"), runtime)
+    config = cli._data_sync_config_from_args(
+        _sync_args(db=str(tmp_path / "m.sqlite"), interval="1m", full_history=True),
+        runtime,
+    )
     captured: dict[str, object] = {}
 
     class _Process:
@@ -166,6 +188,7 @@ def test_data_sync_compatibility_wrappers_delegate_to_structured_module(tmp_path
     assert futures_runtime.market_type == "futures"
     assert config.interval == "1m"
     assert config.db_path == str(tmp_path / "m.sqlite")
+    assert config.full_history is True
     assert cli._start_background_data_sync(
         _sync_args(
             db=str(tmp_path / "m.sqlite"),

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
 from simple_ai_trading.api import Candle
 from simple_ai_trading.model import TrainedModel, load_model, serialize_model
 from simple_ai_trading import model_lab
+from simple_ai_trading.data_coverage import describe_candle_coverage
 from simple_ai_trading.model_lab import run_model_lab
 from simple_ai_trading.training_suite import TrainingSuiteRejected
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
@@ -77,33 +79,67 @@ class _ThreeLiquidClient(_Client):
         ]
 
 
+class _PagedHistoryClient(_Client):
+    def __init__(self) -> None:
+        self.kline_calls: list[int | None] = []
+
+    def get_klines(self, symbol: str, interval: str, *, limit: int = 500, end_time: int | None = None):
+        self.kline_calls.append(end_time)
+        if end_time is None:
+            indexes = [2, 3]
+        else:
+            indexes = [0, 1]
+        return [
+            Candle(
+                open_time=index * 60_000,
+                open=100.0,
+                high=105.0,
+                low=99.0,
+                close=100.0 + index,
+                volume=10.0,
+                close_time=index * 60_000 + 59_000,
+            )
+            for index in indexes[:limit]
+        ]
+
+
 class _Stress:
     def __init__(self, accepted: bool) -> None:
         self.accepted = accepted
+        self.worst_realized_pnl = 10.0 if self.accepted else -5.0
+        self.worst_max_drawdown = 0.01 if self.accepted else 0.20
 
     def asdict(self) -> dict[str, object]:
         return {
             "accepted": self.accepted,
-            "worst_realized_pnl": 10.0 if self.accepted else -5.0,
-            "worst_max_drawdown": 0.01 if self.accepted else 0.20,
+            "worst_realized_pnl": self.worst_realized_pnl,
+            "worst_max_drawdown": self.worst_max_drawdown,
         }
 
 
 class _Robustness:
     def __init__(self, accepted: bool) -> None:
         self.accepted = accepted
+        self.window_count = 4
+        self.accepted_windows = 4 if self.accepted else 2
+        self.accepted_window_rate = 1.0 if self.accepted else 0.5
+        self.worst_realized_pnl = 8.0 if self.accepted else -3.0
+        self.worst_max_drawdown = 0.02 if self.accepted else 0.18
+        self.statistical_edge_accepted = accepted
+        self.worst_sign_test_p_value = 0.125 if self.accepted else 0.6875
+        self.worst_bootstrap_lower_mean_return = 0.003 if self.accepted else -0.006
 
     def asdict(self) -> dict[str, object]:
         return {
             "accepted": self.accepted,
-            "window_count": 4,
-            "accepted_windows": 4 if self.accepted else 2,
-            "accepted_window_rate": 1.0 if self.accepted else 0.5,
-            "worst_realized_pnl": 8.0 if self.accepted else -3.0,
-            "worst_max_drawdown": 0.02 if self.accepted else 0.18,
-            "statistical_edge_accepted": self.accepted,
-            "worst_sign_test_p_value": 0.125 if self.accepted else 0.6875,
-            "worst_bootstrap_lower_mean_return": 0.003 if self.accepted else -0.006,
+            "window_count": self.window_count,
+            "accepted_windows": self.accepted_windows,
+            "accepted_window_rate": self.accepted_window_rate,
+            "worst_realized_pnl": self.worst_realized_pnl,
+            "worst_max_drawdown": self.worst_max_drawdown,
+            "statistical_edge_accepted": self.statistical_edge_accepted,
+            "worst_sign_test_p_value": self.worst_sign_test_p_value,
+            "worst_bootstrap_lower_mean_return": self.worst_bootstrap_lower_mean_return,
             "regime_summary": {
                 "window_count": 4,
                 "dominant_regime": "trend_up",
@@ -112,6 +148,18 @@ class _Robustness:
                 "by_regime": {"trend_up": {"windows": 4, "accepted_windows": 4 if self.accepted else 2}},
             },
         }
+
+
+class _WeakAcceptedStress(_Stress):
+    def __init__(self) -> None:
+        super().__init__(True)
+        self.worst_realized_pnl = -1.0
+
+
+class _WeakAcceptedRobustness(_Robustness):
+    def __init__(self) -> None:
+        super().__init__(True)
+        self.worst_realized_pnl = -0.5
 
 
 class _ObjectiveReport:
@@ -165,6 +213,27 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
         ]
     )
     liquidity = model_lab.MarketEligibility("AAAUSDC", True, "TRADING", 1_000_000.0, 10_000, 2.0, 0.95, ())
+    candles = [
+        Candle(
+            open_time=index * 60_000,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.0,
+            volume=10.0,
+            close_time=index * 60_000 + 59_000,
+        )
+        for index in range(5)
+    ]
+    data_coverage = describe_candle_coverage(
+        symbol="AAAUSDC",
+        market_type="spot",
+        interval="1m",
+        available_candles=candles,
+        used_candles=candles,
+        rows_used=5,
+        source_scope="binance_full_history",
+    )
 
     model_lab._stamp_model_execution_validation(
         suite,
@@ -188,6 +257,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
             max_cluster_weight=0.5,
         ),
         portfolio_report_path=tmp_path / "portfolio.json",
+        data_coverage=data_coverage,
     )
 
     stamped = load_model(valid_path, expected_feature_dim=1)
@@ -282,11 +352,56 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.outcomes[0].stress_validation["accepted"] is True
     assert report.outcomes[0].robustness_validation["accepted"] is True
     assert report.outcomes[0].regime_validation["dominant_regime"] == "trend_up"
+    assert report.outcomes[0].data_coverage is not None
+    assert report.outcomes[0].data_coverage["symbol"] == "AAAUSDC"
+    assert report.outcomes[0].data_coverage["interval"] == "1m"
+    assert report.outcomes[0].data_coverage["candles_used"] == 120
+    assert "used_duration_years" in report.outcomes[0].data_coverage
     stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
     assert stamped.execution_validation["passed"] is True
     assert stamped.execution_validation["symbol"] == "AAAUSDC"
     assert stamped.execution_validation["stress"]["accepted"] is True
     assert stamped.execution_validation["temporal_robustness"]["accepted"] is True
+
+
+def test_run_model_lab_full_history_paginates_and_labels_data_scope(tmp_path: Path, monkeypatch) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            total_rows=len(candles),
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    client = _PagedHistoryClient()
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
+
+    report = run_model_lab(
+        client,
+        RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m"),
+        StrategyConfig(
+            min_quote_volume_usdc=1000.0,
+            min_trade_count_24h=100,
+            max_spread_bps=10.0,
+            min_liquidity_score=0.1,
+            min_diversified_assets=1,
+        ),
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=2,
+        compute_backend="cpu",
+        full_history=True,
+    )
+
+    assert len(client.kline_calls) == 2
+    assert report.outcomes[0].data_coverage is not None
+    assert report.outcomes[0].data_coverage["source_scope"] == "binance_full_history"
+    assert report.outcomes[0].data_coverage["candles_used"] == 4
+    assert report.outcomes[0].data_coverage["full_available_history_used"] is True
 
 
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:
@@ -452,6 +567,96 @@ def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp
     assert report.outcomes[0].accepted is False
     assert report.outcomes[0].error == "temporal_robustness_failed"
     assert report.outcomes[0].robustness_validation["accepted"] is False
+
+
+def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        model_path = kwargs["output_dir"] / "model_regular.json"
+        serialize_model(
+            TrainedModel(
+                weights=[0.0],
+                bias=0.0,
+                feature_dim=1,
+                epochs=1,
+                feature_means=[0.0],
+                feature_stds=[1.0],
+            ),
+            model_path,
+        )
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(objective="regular", model_path=model_path, best_score=0.12, hybrid_profile="base_only")],
+            total_rows=123,
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    feedback_path = tmp_path / "learning_feedback.json"
+    feedback_path.write_text(
+        json.dumps({
+            "generated_at_ms": 123,
+            "lookback_trades": 100,
+            "closed_trades": 4,
+            "wins": 1,
+            "losses": 3,
+            "net_realized_pnl": -7.0,
+            "win_rate": 0.25,
+            "max_consecutive_losses": 3,
+            "worst_trade_pnl": -4.0,
+            "recurring_loss_reasons": {"auto-stop-loss": 3},
+            "loss_by_symbol": {"AAAUSDC": 3},
+            "loss_by_side": {"LONG": 3},
+            "recommendations": [
+                "trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion",
+                "review_symbol_specific_edge:AAAUSDC",
+            ],
+            "promotion_safe": False,
+            "notes": [],
+        }),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _WeakAcceptedStress())
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_temporal_robustness",
+        lambda *_a, **_k: _WeakAcceptedRobustness(),
+    )
+    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    strategy = StrategyConfig(
+        min_quote_volume_usdc=1000.0,
+        min_trade_count_24h=100,
+        max_spread_bps=10.0,
+        min_liquidity_score=0.1,
+        min_diversified_assets=1,
+    )
+
+    report = run_model_lab(
+        _Client(),
+        runtime,
+        strategy,
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=120,
+        compute_backend="cpu",
+        learning_feedback_path=feedback_path,
+    )
+
+    assert report.accepted_symbols == []
+    assert report.learning_feedback is not None
+    assert report.learning_feedback["source_path"] == str(feedback_path)
+    assert report.outcomes[0].accepted is False
+    assert report.outcomes[0].error == "learning_feedback_failed"
+    assert report.outcomes[0].learning_feedback is not None
+    assert report.outcomes[0].learning_feedback["blocks_promotion"] is True
+    assert report.outcomes[0].diagnostics["learning_feedback_symbol_loss_count"] == 3
+    stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
+    assert stamped.execution_validation["passed"] is False
+    assert stamped.execution_validation["learning_feedback"]["blocks_promotion"] is True
 
 
 def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_path: Path, monkeypatch) -> None:

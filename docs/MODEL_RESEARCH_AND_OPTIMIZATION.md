@@ -106,6 +106,17 @@ operator docs all agree.
 - Binance market-data endpoints are used for automatic universe ranking instead
   of static symbol allowlists:
   <https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints>
+- Binance spot and USD-M futures kline docs drive the full-history paging
+  contract: spot klines are capped at 1000 rows per request, futures klines
+  have limit-weight tiers, and the app records recent-limit versus full-history
+  scope explicitly instead of treating both as equivalent evidence:
+  <https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints>
+  and
+  <https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data>
+- Binance rate-limit docs influenced request telemetry and backoff handling:
+  the client records used-weight/order-count headers when provided and respects
+  `Retry-After` on retryable rate-limit responses:
+  <https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/rate-limits>
 
 ## Implemented Model Zoo
 
@@ -240,6 +251,28 @@ regular requires profit factor above 1.05 with no loss streak above 5, and
 aggressive requires profit factor at least 1.00 with no loss streak above 8.
 All three require positive expectancy.
 
+## Financial Sanity Gates
+
+The repo now applies a separate financial-sanity layer before live-style model
+readiness and before AI review. These checks are meant to catch malformed or
+analytically incoherent artifacts before they reach an operator:
+
+- model dimensions must match weights, means, and standard deviations,
+- model weights, bias, calibration values, scores, drawdowns, coverage ratios,
+  and AI uplift deltas must be finite,
+- learning rate, L2 penalty, probability temperature, class weights, hybrid
+  weights, and neighbor counts must stay inside hard numerical bounds,
+- accepted model-lab outcomes must have positive rows and positive objective
+  scores,
+- accepted coverage cannot have failed integrity, detected gaps, or impossible
+  coverage ratios,
+- accepted stress, temporal robustness, and portfolio metrics must remain in
+  financial ranges such as drawdown/CVaR/deployed-weight between 0 and 1.
+
+This layer does not prove a model is profitable. It prevents bad math,
+impossible metrics, and strange parameterization from being treated as valid
+finance evidence.
+
 ## Cross-Symbol Model Lab
 
 `simple-ai-trading model-lab` is the iterative optimization workflow. It:
@@ -247,7 +280,9 @@ All three require positive expectancy.
 1. Pulls exchange metadata, 24h tickers, and book tickers.
 2. Automatically ranks high-liquidity symbols using quote volume, trade count,
    bid/ask spread, exchange status, and quote-asset policy.
-3. Fetches recent klines for each ranked symbol.
+3. Fetches klines for each ranked symbol. Default runs are recent-limit
+   research/smoke runs; `--full-history` pages backward through venue maximum
+   kline batches until the exchange returns no older rows.
 4. Runs the training suite and hybrid optimizer for one or more objectives.
 5. Records and serializes meta-label take/downsize/skip policy evidence from
    simulated trade outcomes for every selected objective model.
@@ -265,16 +300,32 @@ All three require positive expectancy.
    edge evidence, including sign-test p-value and bootstrap lower mean return,
    records market-regime concentration, and rejects candidates whose window
    evidence is too weak for the selected risk level.
-9. Builds a portfolio-level risk report from aligned symbol returns. This gate
+9. Loads `data/autonomous/learning_feedback.json` when present, or an explicit
+   `--learning-feedback PATH`, and blocks symbol promotion when repeated
+   closed-trade losses for that symbol have not recovered in current stress and
+   temporal validation. This is the bounded self-improvement path: it can veto a
+   promotion, but it cannot mutate a live model, loosen risk, or alter open
+   positions.
+10. Builds a portfolio-level risk report from aligned symbol returns. This gate
    computes inverse-volatility capped weights, effective symbol count,
    pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
    and portfolio drawdown.
-10. Writes a JSON report plus per-symbol `stress_validation.json`,
+11. Writes a JSON report plus per-symbol `stress_validation.json`,
    `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
    accepted only when all objective scores are positive, selection-risk
    deflation passes, every stress replay passes the objective risk gates,
-   temporal robustness passes, and the accepted set passes the portfolio
-   diversification and tail-risk gates.
+   temporal robustness passes, data coverage has no hard integrity failure,
+   learning feedback has no unresolved repeated-loss block, and the accepted
+   set passes the portfolio diversification and tail-risk gates.
+
+Every outcome now includes a `data_coverage` evidence block. It records symbol,
+market type, interval, source scope, requested and used UTC date span, candle
+counts, model-row count, gap count, largest gap, coverage ratio, full-history
+flags, and a `truth_basis` list that explicitly says the execution results are
+simulated rather than exchange fills. Missing candles, missing model rows,
+coverage gaps, or coverage below `99.5%` fail promotion. Recent-limit API runs
+are not hard failures by themselves, but they are labeled `binance_recent_limit`
+and must not be presented as full-history optimization evidence.
 
 After model-lab writes a report, `simple-ai-trading ai-review --report ...`
 can run a local structured-output model over a compact artifact summary. The
@@ -283,11 +334,13 @@ uses the AI capability preflight, requires GPU AI unless the user explicitly
 changes runtime settings, validates the JSON schema, and writes
 `ai_risk_review.json`. Missing accepted symbols, failed portfolio gates, failed
 selection-risk deflation, positive hybrid/feature ablation deltas on accepted
-outcomes, failed AI preflight, provider errors, or invalid model JSON all
-produce a veto/review result instead of approval. The local model sees compact
-selection-risk plus hybrid and feature ablation summaries, but failed deflated
-scores and harmful positive ablation deltas are blocked in deterministic code
-before provider invocation.
+outcomes, unresolved learning-feedback promotion blocks, failed AI preflight,
+provider errors, missing/failed data-coverage evidence, or invalid model JSON
+all produce a veto/review result instead of approval. The local model sees
+compact data-coverage, selection-risk, hybrid, feature-ablation, and
+learning-feedback summaries, but failed coverage integrity, failed deflated
+scores, harmful positive ablation deltas, and unresolved repeated-loss blocks
+are rejected in deterministic code before provider invocation.
 
 Runtime startup also enforces promotion evidence. `live --live` loads the model
 through a readiness gate that requires passing `selection_risk` evidence with a
@@ -303,14 +356,16 @@ The same readiness gate now requires `execution_validation` on signed live
 artifacts. `model-lab` stamps each serialized model after it runs
 symbol-specific stress validation and final-model temporal robustness against
 the selected liquid symbol, then after the portfolio risk gate is known. The
-stamp records the symbol, market type, liquidity measurements, stress report
-path, temporal-robustness report path, portfolio report path, accepted
-scenario/window counts, portfolio CVaR/drawdown/correlation metrics, and worst
-realized/drawdown metrics. A plain `train-suite` model may be useful for
-research, but it is not signed-live ready until this execution and portfolio
-evidence is accepted and persisted into the model JSON. If individual symbols
-pass but portfolio diversification fails, model-lab stamps those model files as
-not live-ready.
+stamp records the symbol, market type, liquidity measurements, data-coverage
+integrity, stress report path, temporal-robustness report path, portfolio report
+path, accepted scenario/window counts, portfolio CVaR/drawdown/correlation
+metrics, and worst realized/drawdown metrics, plus any learning-feedback
+recovery decision. A plain `train-suite` model may be useful for research, but
+it is not signed-live ready until this execution, data-coverage,
+learning-feedback, and portfolio evidence is accepted and persisted into the
+model JSON. If individual symbols pass but data coverage, portfolio
+diversification, or learning feedback blocks a symbol, model-lab stamps those
+model files as not live-ready.
 
 The selection-risk artifact now includes a two-panel CSCV/PBO-style diagnostic.
 It ranks candidates by the selection panel and checks where the in-sample winner
@@ -328,15 +383,20 @@ candidate instead of forcing a trade.
 ## Optimization Rounds
 
 Every model-improvement round that changes feature, selection, or risk logic
-should write a reproducible report under `docs/optimization/` with JSON metrics
-and financial charts.
+should write an implementation note under `docs/optimization/`. ROI, P&L,
+drawdown, and chart claims are allowed only when generated from exchange-sourced
+backtests or signed testnet/paper artifacts with the provenance required by
+[Data Provenance Policy](DATA_PROVENANCE_POLICY.md).
 
 - [Round 001 - Market-Quality Regime Features](optimization/round-001-market-quality.md)
-  compares the previous advanced feature vector against the new
-  `v5-regime-quality` vector on a deterministic multi-regime futures holdout.
-  Baseline: `-0.80%` ROI, `1.88%` max drawdown, 12 trades. Optimized:
-  `+3.92%` ROI, `0.10%` max drawdown, 16 trades. The report includes equity
-  and metric SVGs plus the full JSON artifact.
+  adds the `v5-regime-quality` vector and risk non-degradation checks.
+- [Round 002 - Learning Feedback Promotion Gate](optimization/round-002-learning-feedback-gate.md)
+  blocks future promotion of symbols with repeated closed-trade losses unless
+  the new candidate proves recovery under stress and temporal validation.
+- [Round 003 - Full-History Data Coverage and API Efficiency](optimization/round-003-data-coverage-api-efficiency.md)
+  adds full-history paging, data-coverage truth records, timestamped chart
+  axes, and Binance request-weight telemetry so future optimization reports can
+  be audited for timescale, gaps, row counts, and API cost.
 
 ## SuperZip Windows-App Alignment
 
@@ -378,6 +438,17 @@ assert that every CLI command appears in the Windows app.
   edge evidence after selection.
 - No model-lab symbol acceptance when the selected score does not remain
   positive after the multiple-trials selection-risk haircut.
+- No model-lab symbol acceptance when closed-trade learning feedback shows
+  repeated symbol losses and current stress plus temporal recovery evidence is
+  not positive.
+- No model-lab symbol acceptance when candle coverage is missing, has no model
+  rows, contains detected gaps, or has coverage below the integrity threshold.
+- No model or accepted AI-reviewed model-lab report when financial-sanity
+  checks detect non-finite values, impossible dimensions, incoherent
+  probability parameters, impossible row counts, or out-of-range risk metrics.
+- No optimization report may claim full-history evidence unless its artifacts
+  name the source scope, UTC date span, interval, symbol, row count, coverage
+  ratio, and gap count.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,
@@ -405,7 +476,7 @@ assert that every CLI command appears in the Windows app.
   failed.
 - No self-improvement loop may mutate a live model, loosen risk controls, or
   alter open positions; closed-trade learning feedback is evidence for the next
-  model-lab/review cycle only.
+  model-lab/review cycle and can only make promotion stricter.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

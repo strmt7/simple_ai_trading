@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from .financial_sanity import build_model_financial_sanity_report
 from .model import ModelLoadError, TrainedModel, load_model
 
 
@@ -162,6 +163,20 @@ def build_model_readiness_report(
         checks.append(_check("warn", "model quality warnings", "; ".join(warnings[:3])))
     else:
         checks.append(_check("ok", "model quality warnings", "none"))
+
+    sanity = build_model_financial_sanity_report(model, source=str(model_path or "model"))
+    for item in sanity.checks:
+        if item.status == "ok":
+            continue
+        checks.append(
+            _check(
+                item.status,
+                f"financial sanity: {item.label}",
+                item.detail if not item.path else f"{item.path}: {item.detail}",
+                metric=item.metric,
+                limit=item.limit,
+            )
+        )
 
     return ModelReadinessReport(
         checks=tuple(checks),

@@ -274,6 +274,36 @@ def test_last_request_info_records_success(monkeypatch) -> None:
     assert client.last_request_info["attempts"] == 1
 
 
+def test_last_request_info_records_binance_rate_limit_headers(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
+    response = _FakeResponse(
+        200,
+        {"ok": True},
+        headers={
+            "X-MBX-USED-WEIGHT-1M": "47",
+            "X-MBX-ORDER-COUNT-10S": "3",
+            "Content-Type": "application/json",
+        },
+    )
+    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None: response)
+
+    assert client._request("GET", "/api/v3/ping") == {"ok": True}
+    assert client.last_request_info["rate_limit_headers"] == {
+        "X-MBX-USED-WEIGHT-1M": "47",
+        "X-MBX-ORDER-COUNT-10S": "3",
+    }
+
+
+def test_last_request_info_records_retry_after_on_exhausted_rate_limit(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="spot", max_retries=0)
+    response = _FakeResponse(429, text="rate limit", headers={"Retry-After": "2.5"})
+    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None: response)
+
+    with pytest.raises(BinanceAPIError, match="429"):
+        client._request("GET", "/api/v3/ping")
+    assert client.last_request_info["retry_after_seconds"] == 2.5
+
+
 def test_request_raises_for_transport_errors(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", max_retries=0)
 

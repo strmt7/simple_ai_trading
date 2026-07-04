@@ -813,6 +813,7 @@ def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkey
 
 def test_cli_strategy_tune_evaluate_and_live_remaining_edges(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
 
     save_runtime(RuntimeConfig(market_type="futures", api_key="k", api_secret="s"))
     save_strategy(StrategyConfig(enabled_features=("momentum_1",)))
