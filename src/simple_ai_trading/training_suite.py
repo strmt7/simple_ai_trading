@@ -135,6 +135,7 @@ class ObjectiveOutcome:
     hybrid_base_score: float | None = None
     hybrid_best_score: float | None = None
     hybrid_evaluated_profiles: int = 0
+    hybrid_ablation: list[dict[str, object]] = field(default_factory=list)
     hybrid_rescue: bool = False
     hybrid_rescue_candidates: int = 0
     meta_label_report: dict[str, object] | None = None
@@ -617,6 +618,7 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
         "hybrid_model": bool(entry.get("hybrid_model", False)),
         "hybrid_rescue": bool(entry.get("hybrid_rescue", False)),
         "hybrid_profile": entry.get("hybrid_profile"),
+        "hybrid_ablation": list(entry.get("hybrid_ablation", []) or []),
         "feature_signature": str(entry.get("feature_signature") or ""),
         "label_threshold": (
             float(feature_cfg.label_threshold)
@@ -1480,6 +1482,10 @@ def train_for_objective(
                     "hybrid_base_score": rescue_report.base_score,
                     "hybrid_best_score": rescue_report.best_score,
                     "hybrid_evaluated_profiles": rescue_report.evaluated_profiles,
+                    "hybrid_ablation": [
+                        item.asdict()
+                        for item in getattr(rescue_report, "ablation_results", ()) or ()
+                    ],
                     "walk_forward_gate": {
                         "passed": True,
                         "reason": "hybrid_rescue_selection_holdout_full_passed",
@@ -1570,6 +1576,10 @@ def train_for_objective(
                     "hybrid_base_score": hybrid_report.base_score,
                     "hybrid_best_score": hybrid_report.best_score,
                     "hybrid_evaluated_profiles": hybrid_report.evaluated_profiles,
+                    "hybrid_ablation": [
+                        item.asdict()
+                        for item in getattr(hybrid_report, "ablation_results", ()) or ()
+                    ],
                     "walk_forward_gate": best.get("walk_forward_gate"),
                     "feature_cfg": best_feature_cfg,
                     "feature_dim": advanced_feature_dimension(best_feature_cfg),
@@ -1702,6 +1712,7 @@ def train_for_objective(
             else None
         ),
         hybrid_evaluated_profiles=int(best.get("hybrid_evaluated_profiles", 0)),
+        hybrid_ablation=list(best.get("hybrid_ablation", []) or []),
         hybrid_rescue=bool(best.get("hybrid_rescue", False)),
         hybrid_rescue_candidates=int(hybrid_rescue_candidates),
         meta_label_report=meta_label_report,

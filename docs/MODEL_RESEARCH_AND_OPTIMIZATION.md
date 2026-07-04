@@ -159,6 +159,12 @@ training suite now attempts a small fail-closed hybrid rescue pass over the top
 rejected base candidates. A rescued hybrid is serialized only when it passes the
 hybrid selection window, the final chronological holdout, and the full-sample
 objective gates; otherwise the objective remains rejected.
+Accepted hybrid reports also include an ablation table. The optimizer replays
+the selected hybrid as base-only and with each expert family removed, then
+records acceptance, score, and delta versus the selected hybrid. This makes
+Lorentzian, rational-quadratic-kernel, and technical-confluence contribution
+visible in `training_suite_summary.json` and model-lab outcomes instead of
+trusting a blended score without attribution.
 
 Model-lab also replays the final serialized model artifact across separate
 chronological windows after training is complete. This differs from the

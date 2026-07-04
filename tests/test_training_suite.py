@@ -1246,6 +1246,16 @@ def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
             best_profile="technical_rescue",
             evaluated_profiles=4,
             best_result=rescue_result,
+            ablation_results=[
+                SimpleNamespace(asdict=lambda: {
+                    "removed_expert_kind": "all_hybrid_experts",
+                    "score": float("-inf"),
+                    "delta_vs_best": float("-inf"),
+                    "accepted": False,
+                    "removed_expert_count": 3,
+                    "remaining_expert_count": 0,
+                })
+            ],
         ),
     )
     monkeypatch.setattr(training_suite, "run_backtest", lambda *_a, **_k: rescue_result)
@@ -1264,6 +1274,7 @@ def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
     assert outcome.hybrid_rescue is True
     assert outcome.hybrid_profile == "technical_rescue"
     assert outcome.hybrid_rescue_candidates >= 1
+    assert outcome.hybrid_ablation[0]["removed_expert_kind"] == "all_hybrid_experts"
     assert outcome.best_score > 0.0
 
 
