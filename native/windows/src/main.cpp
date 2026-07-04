@@ -21,10 +21,10 @@ using simple_ai_trading::native_contract::CommandSpec;
 using simple_ai_trading::native_contract::kCommandCount;
 using simple_ai_trading::native_contract::kCommands;
 
-constexpr int kInitialWidth = 1500;
-constexpr int kInitialHeight = 960;
-constexpr int kMinWidth = 1180;
-constexpr int kMinHeight = 840;
+constexpr int kInitialWidth = 1680;
+constexpr int kInitialHeight = 1020;
+constexpr int kMinWidth = 1280;
+constexpr int kMinHeight = 860;
 constexpr COLORREF kBg = RGB(18, 22, 25);
 constexpr COLORREF kShell = RGB(24, 30, 34);
 constexpr COLORREF kPanel = RGB(31, 38, 43);
@@ -184,23 +184,23 @@ class MainWindow {
     bool dry_run_ = false;
 
     static constexpr std::array<const wchar_t*, 7> kPages{
-        L"Dashboard",
-        L"Trading",
-        L"Model Lab",
-        L"Risk",
-        L"Market Data",
+        L"Home",
+        L"Run Bot",
+        L"Research",
+        L"Risk Center",
+        L"Data Center",
         L"Settings",
-        L"All Commands",
+        L"Command Browser",
     };
 
     static constexpr std::array<const wchar_t*, 7> kPageSummaries{
-        L"Health, budget, risk, positions, model lab.",
-        L"Paper/live controls with pause, stop, reconcile, positions, and close.",
-        L"Research, train, evaluate, review, and preserve evidence artifacts.",
-        L"Risk controls, universe eligibility, audits, reports, and signals.",
-        L"Archive ingestion, data-health gates, API budget, fetch, and sync.",
-        L"AI runtime, compute backend, strategy, configuration, and shell.",
-        L"Every generated CLI command for parity and advanced operations.",
+        L"Start with system checks, paper trials, research, and backtest graphs.",
+        L"Launch guarded paper/live runs. Emergency controls stay pinned below.",
+        L"Train, evaluate, review, and preserve optimization evidence artifacts.",
+        L"Inspect universe eligibility, audits, signals, readiness, and risk gates.",
+        L"Ingest archives, audit database health, monitor rate limits, and sync data.",
+        L"Configure AI, compute backend, strategy defaults, and expert tools.",
+        L"Full CLI parity surface for advanced operations and future commands.",
     };
 
     static void log_startup_failure(const wchar_t* stage) {
@@ -337,10 +337,10 @@ class MainWindow {
         if (body_font_) DeleteObject(body_font_);
         if (small_font_) DeleteObject(small_font_);
         if (mono_font_) DeleteObject(mono_font_);
-        title_font_ = make_font(21, FW_SEMIBOLD);
-        body_font_ = make_font(13, FW_NORMAL);
-        small_font_ = make_font(11, FW_NORMAL);
-        mono_font_ = make_font(12, FW_NORMAL, L"Consolas");
+        title_font_ = make_font(24, FW_SEMIBOLD);
+        body_font_ = make_font(15, FW_NORMAL);
+        small_font_ = make_font(12, FW_NORMAL);
+        mono_font_ = make_font(13, FW_NORMAL, L"Consolas");
         for (HWND control : all_controls()) {
             if (control) {
                 SendMessageW(control, WM_SETFONT, reinterpret_cast<WPARAM>(body_font_), TRUE);
@@ -391,34 +391,34 @@ class MainWindow {
         subtitle_ = create_control(L"STATIC", L"Day-trading workstation", SS_LEFT, 0);
         safety_ = create_control(
             L"STATIC",
-            L"Conservative default: 5x futures, spot stays 1x. Testnet first.\r\nProfit reinvestment off. Stop only closes bot-owned positions.",
+            L"Conservative default: 5x futures, spot stays 1x. Testnet first.\r\nProfit reinvestment is off. Stop + Close acts only on bot-owned positions.",
             SS_LEFT | SS_NOPREFIX,
             0);
-        page_title_ = create_control(L"STATIC", L"Dashboard", SS_LEFT, 0);
+        page_title_ = create_control(L"STATIC", L"Home", SS_LEFT, 0);
         page_summary_ = create_control(L"STATIC", kPageSummaries[0], SS_LEFT | SS_NOPREFIX, 0);
         page_list_ = create_control(L"LISTBOX", L"", LBS_NOTIFY | LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | WS_TABSTOP, kPageListId);
-        command_label_ = create_control(L"STATIC", L"Workflow Command", SS_LEFT, 0);
+        command_label_ = create_control(L"STATIC", L"Advanced Command", SS_LEFT, 0);
         command_combo_ = create_control(
             L"COMBOBOX",
             L"",
             CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
             kCommandComboId);
-        args_label_ = create_control(L"STATIC", L"Command Options", SS_LEFT, 0);
+        args_label_ = create_control(L"STATIC", L"Extra Flags", SS_LEFT, 0);
         args_edit_ = create_control(L"EDIT", L"", ES_AUTOHSCROLL | WS_TABSTOP, kArgsEditId);
         help_label_ = create_control(L"STATIC", L"", SS_LEFT | SS_NOPREFIX, 0);
-        quick_label_ = create_control(L"STATIC", L"Primary Workflows", SS_LEFT, 0);
-        tools_label_ = create_control(L"STATIC", L"Trading Guards", SS_LEFT, 0);
+        quick_label_ = create_control(L"STATIC", L"Recommended Workflows", SS_LEFT, 0);
+        tools_label_ = create_control(L"STATIC", L"Safety Controls", SS_LEFT, 0);
         output_label_ = create_control(L"STATIC", L"Activity Log", SS_LEFT, 0);
         output_edit_ = create_control(
             L"EDIT",
             L"",
             ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_TABSTOP,
             kOutputEditId);
-        run_selected_ = create_control(L"BUTTON", L"Run Selected", BS_OWNERDRAW | WS_TABSTOP, kRunSelectedId);
-        selected_help_ = create_control(L"BUTTON", L"Show Help", BS_OWNERDRAW | WS_TABSTOP, kSelectedHelpId);
-        stop_all_ = create_control(L"BUTTON", L"Stop Trading", BS_OWNERDRAW | WS_TABSTOP, kStopAllId);
-        ai_preflight_ = create_control(L"BUTTON", L"Pause Bot", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
-        risk_report_ = create_control(L"BUTTON", L"Risk Check", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
+        run_selected_ = create_control(L"BUTTON", L"Run Command", BS_OWNERDRAW | WS_TABSTOP, kRunSelectedId);
+        selected_help_ = create_control(L"BUTTON", L"Command Help", BS_OWNERDRAW | WS_TABSTOP, kSelectedHelpId);
+        stop_all_ = create_control(L"BUTTON", L"Stop + Close", BS_OWNERDRAW | WS_TABSTOP, kStopAllId);
+        ai_preflight_ = create_control(L"BUTTON", L"Pause", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
+        risk_report_ = create_control(L"BUTTON", L"Risk Review", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
         model_lab_ = create_control(L"BUTTON", L"Positions", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
         backtest_chart_ = create_control(L"BUTTON", L"Reconcile", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
         status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, kStatusBarId);
@@ -442,8 +442,8 @@ class MainWindow {
         RECT client{};
         GetClientRect(hwnd_, &client);
         const int pad = scale(20);
-        const int sidebar = scale(220);
-        const int header_h = scale(82);
+        const int sidebar = scale(236);
+        const int header_h = scale(86);
         const int footer_h = scale(68);
         const int gap = scale(18);
         const int right = client.right - pad;
@@ -452,37 +452,38 @@ class MainWindow {
         const int main_left = sidebar + gap;
         const int main_width = std::max(scale(720), right - main_left);
 
-        MoveWindow(title_, pad + scale(48), scale(22), sidebar - scale(76), scale(30), TRUE);
-        MoveWindow(subtitle_, pad + scale(48), scale(54), sidebar - scale(76), scale(22), TRUE);
-        MoveWindow(safety_, main_left + scale(58), scale(23), std::max(scale(420), main_width - scale(540)), scale(48), TRUE);
-        MoveWindow(page_list_, scale(14), scale(126), sidebar - scale(28), std::max(scale(260), bottom - scale(126)), TRUE);
-        MoveWindow(page_title_, main_left + scale(42), header_h + scale(26), main_width - scale(42), scale(34), TRUE);
-        MoveWindow(page_summary_, main_left + scale(42), header_h + scale(62), main_width - scale(42), scale(24), TRUE);
+        MoveWindow(title_, pad + scale(48), scale(20), sidebar - scale(76), scale(34), TRUE);
+        MoveWindow(subtitle_, pad + scale(48), scale(56), sidebar - scale(76), scale(24), TRUE);
+        MoveWindow(safety_, main_left + scale(58), scale(22), std::max(scale(460), main_width - scale(560)), scale(54), TRUE);
+        MoveWindow(page_list_, scale(14), scale(128), sidebar - scale(28), std::max(scale(300), bottom - scale(128)), TRUE);
+        MoveWindow(page_title_, main_left + scale(42), header_h + scale(24), main_width - scale(42), scale(38), TRUE);
+        MoveWindow(page_summary_, main_left + scale(42), header_h + scale(64), main_width - scale(42), scale(28), TRUE);
 
-        const int command_card_top = header_h + scale(94);
-        const int command_card_h = scale(116);
+        const int command_card_top = header_h + scale(102);
+        const int command_card_h = scale(136);
         const int command_inner_top = command_card_top + scale(18);
-        const int run_w = scale(142);
-        const int combo_w = std::min(scale(330), std::max(scale(260), main_width * 30 / 100));
-        const int args_w = std::min(scale(330), std::max(scale(240), main_width * 28 / 100));
-        const int args_left = main_left + scale(22) + combo_w + gap;
-        const int run_left = right - run_w - scale(22);
-        const int help_left = args_left + args_w + gap;
-        const int help_w = std::max(scale(220), run_left - help_left - gap);
-        MoveWindow(command_label_, main_left + scale(22), command_inner_top, combo_w, scale(22), TRUE);
-        MoveWindow(command_combo_, main_left + scale(22), command_inner_top + scale(32), combo_w, scale(220), TRUE);
-        MoveWindow(args_label_, args_left, command_inner_top, args_w, scale(22), TRUE);
-        MoveWindow(args_edit_, args_left, command_inner_top + scale(32), args_w, scale(34), TRUE);
-        MoveWindow(help_label_, help_left, command_inner_top, help_w, scale(78), TRUE);
-        MoveWindow(run_selected_, run_left, command_inner_top + scale(2), run_w, scale(38), TRUE);
-        MoveWindow(selected_help_, run_left, command_inner_top + scale(50), run_w, scale(36), TRUE);
+        const int action_w = scale(156);
+        const int action_left = right - action_w - scale(22);
+        const int field_left = main_left + scale(22);
+        const int field_gap = scale(16);
+        const int field_area_w = std::max(scale(500), action_left - field_left - gap);
+        const int combo_w = std::max(scale(230), (field_area_w - field_gap) / 2);
+        const int args_w = std::max(scale(230), field_area_w - combo_w - field_gap);
+        const int args_left = field_left + combo_w + field_gap;
+        MoveWindow(command_label_, field_left, command_inner_top, combo_w, scale(24), TRUE);
+        MoveWindow(command_combo_, field_left, command_inner_top + scale(34), combo_w, scale(240), TRUE);
+        MoveWindow(args_label_, args_left, command_inner_top, args_w, scale(24), TRUE);
+        MoveWindow(args_edit_, args_left, command_inner_top + scale(34), args_w, scale(38), TRUE);
+        MoveWindow(help_label_, field_left, command_inner_top + scale(82), std::max(scale(320), field_area_w), scale(36), TRUE);
+        MoveWindow(run_selected_, action_left, command_inner_top + scale(6), action_w, scale(42), TRUE);
+        MoveWindow(selected_help_, action_left, command_inner_top + scale(60), action_w, scale(40), TRUE);
 
         const int quick_label_top = command_card_top + command_card_h + scale(24);
         MoveWindow(quick_label_, main_left, quick_label_top, main_width, scale(26), TRUE);
         const int quick_top = quick_label_top + scale(34);
-        const int quick_cols = page_index_ == 0 && main_width >= scale(980) ? 5 : (main_width >= scale(780) ? 3 : 2);
-        const int quick_gap = scale(12);
-        const int quick_h = scale(68);
+        const int quick_cols = main_width >= scale(1040) ? 4 : (main_width >= scale(760) ? 2 : 1);
+        const int quick_gap = scale(14);
+        const int quick_h = scale(76);
         const int quick_w = (main_width - (quick_gap * (quick_cols - 1))) / quick_cols;
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             const int col = i % quick_cols;
@@ -498,18 +499,18 @@ class MainWindow {
 
         const int visible_actions = std::min(static_cast<int>(quick_actions_.size()), static_cast<int>(quick_buttons_.size()));
         const int quick_rows = std::max(1, (visible_actions + quick_cols - 1) / quick_cols);
-        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(24);
+        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(26);
         MoveWindow(tools_label_, main_left, tools_label_top, main_width, scale(26), TRUE);
         const int tools_top = tools_label_top + scale(34);
         const int tool_gap = scale(12);
         const int tool_w = (main_width - (tool_gap * 4)) / 5;
-        MoveWindow(stop_all_, main_left, tools_top, tool_w, scale(58), TRUE);
-        MoveWindow(ai_preflight_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(58), TRUE);
-        MoveWindow(backtest_chart_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
-        MoveWindow(model_lab_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
-        MoveWindow(risk_report_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(stop_all_, main_left, tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(ai_preflight_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(backtest_chart_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(model_lab_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
+        MoveWindow(risk_report_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(62), TRUE);
 
-        const int output_top = tools_top + scale(110);
+        const int output_top = tools_top + scale(116);
         MoveWindow(output_label_, main_left + scale(18), output_top - scale(34), main_width - scale(36), scale(28), TRUE);
         MoveWindow(output_edit_, main_left + scale(18), output_top, main_width - scale(36), std::max(scale(96), bottom - output_top), TRUE);
         MoveWindow(status_bar_, scale(28), footer_top + scale(24), client.right - scale(56), scale(30), TRUE);
@@ -523,8 +524,8 @@ class MainWindow {
         fill_rect(dc, client, kBg);
 
         const int pad = scale(20);
-        const int sidebar = scale(220);
-        const int header_h = scale(82);
+        const int sidebar = scale(236);
+        const int header_h = scale(86);
         const int footer_h = scale(68);
         const int gap = scale(18);
         const int footer_top = client.bottom - footer_h;
@@ -544,9 +545,9 @@ class MainWindow {
         RECT shield{main_left + scale(16), scale(28), main_left + scale(42), scale(54)};
         draw_simple_icon(dc, shield, RGB(185, 196, 202), 0);
 
-        RECT health_box{right - scale(372), scale(12), right - scale(242), scale(74)};
-        RECT time_box{right - scale(228), scale(12), right - scale(112), scale(74)};
-        RECT config_box{right - scale(98), scale(12), right, scale(74)};
+        RECT health_box{right - scale(414), scale(12), right - scale(270), scale(76)};
+        RECT time_box{right - scale(254), scale(12), right - scale(122), scale(76)};
+        RECT config_box{right - scale(108), scale(12), right, scale(76)};
         round_rect(dc, health_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         round_rect(dc, time_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         round_rect(dc, config_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
@@ -568,22 +569,23 @@ class MainWindow {
         RECT page_icon{main_left + scale(2), header_h + scale(33), main_left + scale(28), header_h + scale(59)};
         draw_simple_icon(dc, page_icon, RGB(176, 190, 198), page_index_);
 
-        const int command_card_top = header_h + scale(94);
-        RECT command_card{main_left, command_card_top, right, command_card_top + scale(116)};
+        const int command_card_top = header_h + scale(102);
+        RECT command_card{main_left, command_card_top, right, command_card_top + scale(136)};
         round_rect(dc, command_card, RGB(22, 30, 36), RGB(43, 57, 65), scale(8));
-        RECT command_divider{main_left + main_width * 60 / 100, command_card.top + scale(18), main_left + main_width * 60 / 100 + scale(1), command_card.bottom - scale(18)};
+        const int action_left = right - scale(156) - scale(22);
+        RECT command_divider{action_left - scale(16), command_card.top + scale(18), action_left - scale(15), command_card.bottom - scale(18)};
         fill_rect(dc, command_divider, RGB(35, 45, 52));
 
         const int quick_label_top = command_card.bottom + scale(24);
         const int quick_top = quick_label_top + scale(34);
-        const int quick_cols = page_index_ == 0 && main_width >= scale(980) ? 5 : (main_width >= scale(780) ? 3 : 2);
-        const int quick_gap = scale(12);
-        const int quick_h = scale(68);
+        const int quick_cols = main_width >= scale(1040) ? 4 : (main_width >= scale(760) ? 2 : 1);
+        const int quick_gap = scale(14);
+        const int quick_h = scale(76);
         const int visible_actions = std::min(static_cast<int>(quick_actions_.size()), static_cast<int>(quick_buttons_.size()));
         const int quick_rows = std::max(1, (visible_actions + quick_cols - 1) / quick_cols);
-        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(24);
+        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(26);
         const int tools_top = tools_label_top + scale(34);
-        const int output_top = tools_top + scale(110);
+        const int output_top = tools_top + scale(116);
         RECT output_card{main_left, output_top - scale(46), right, footer_top - pad};
         round_rect(dc, output_card, RGB(20, 27, 32), RGB(43, 57, 65), scale(8));
 
@@ -849,15 +851,15 @@ class MainWindow {
         command_entries_.clear();
         SendMessageW(command_combo_, CB_RESETCONTENT, 0, 0);
         if (page_index_ == 0) {
-            add_group(L"Dashboard", {L"status", L"compute", L"api-budget", L"doctor", L"positions", L"risk", L"model-lab", L"backtest-chart"});
+            add_group(L"Home", {L"status", L"compute", L"api-budget", L"doctor"});
         } else if (page_index_ == 1) {
-            add_group(L"Trading", {L"connect", L"live", L"autonomous", L"positions", L"reconcile", L"close", L"spot-roundtrip"});
+            add_group(L"Run Bot", {L"connect", L"live", L"autonomous", L"spot-roundtrip", L"positions", L"reconcile", L"close"});
         } else if (page_index_ == 2) {
-            add_group(L"Model Lab", {L"model-lab", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives", L"signals-benchmark"});
+            add_group(L"Research", {L"model-lab", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives", L"signals-benchmark"});
         } else if (page_index_ == 3) {
-            add_group(L"Risk", {L"risk", L"universe", L"reconcile", L"audit", L"doctor", L"signals", L"source-grades", L"report"});
+            add_group(L"Risk Center", {L"risk", L"universe", L"audit", L"signals", L"source-grades", L"report", L"doctor"});
         } else if (page_index_ == 4) {
-            add_group(L"Market Data", {L"api-budget", L"data-health", L"archive-sync", L"data-sync", L"fetch", L"signals", L"source-grades"});
+            add_group(L"Data Center", {L"data-health", L"archive-sync", L"data-sync", L"fetch", L"api-budget", L"signals", L"source-grades"});
         } else if (page_index_ == 5) {
             add_group(L"Settings", {L"ai", L"compute", L"configure", L"strategy", L"menu", L"shell"});
         } else {
@@ -905,62 +907,45 @@ class MainWindow {
         quick_actions_.clear();
         if (page_index_ == 0) {
             quick_actions_ = {
-                {L"Health Check", {L"compute", L"api-budget --compact", L"doctor"}},
-                {L"API Budget", {L"api-budget --compact"}},
-                {L"Paper Status", {L"status", L"positions"}},
-                {L"Backtest Chart", {L"backtest-chart"}},
-                {L"Model Lab", {L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"}},
+                {L"System Check", {L"compute", L"api-budget --compact", L"doctor"}},
+                {L"Paper Trial", {L"live --paper --steps 1"}},
+                {L"Research Run", {L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"}},
+                {L"Backtest Graph", {L"backtest-chart"}},
             };
         } else if (page_index_ == 1) {
             quick_actions_ = {
-                {L"Live Paper Step", {L"live --paper --steps 1"}},
-                {L"Paper Iteration", {L"autonomous start --paper --iterations 1"}},
-                {L"Autonomous Status", {L"autonomous status"}},
-                {L"Pause Bot", {L"autonomous pause"}},
-                {L"Stop Bot", {L"autonomous stop"}},
-                {L"Positions", {L"positions"}},
-                {L"Reconcile", {L"reconcile"}},
-                {L"Close Bot Positions", {L"close all"}},
+                {L"Paper Step", {L"live --paper --steps 1"}},
+                {L"Guarded Start", {L"autonomous start --paper --iterations 1"}},
+                {L"Run Status", {L"autonomous status"}},
+                {L"Connect", {L"connect"}},
             };
         } else if (page_index_ == 2) {
             quick_actions_ = {
                 {L"Conservative Lab", {L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"}},
-                {L"Regular Lab", {L"model-lab --objective regular --max-symbols 3 --max-scan 20 --limit 500 --market futures"}},
-                {L"Aggressive Lab", {L"model-lab --objective aggressive --max-symbols 3 --max-scan 20 --limit 500 --market futures"}},
+                {L"Regular Futures Lab", {L"model-lab --objective regular --max-symbols 3 --max-scan 20 --limit 500 --market futures"}},
+                {L"Aggressive Futures", {L"model-lab --objective aggressive --max-symbols 3 --max-scan 20 --limit 500 --market futures"}},
                 {L"AI Review", {L"ai-review --report data/model_lab/model_lab_report.json"}},
-                {L"Train Suite Help", {L"train-suite --help"}},
-                {L"Backtest Panel", {L"backtest-panel --help"}},
-                {L"Tune Help", {L"tune --help"}},
-                {L"Objectives", {L"objectives"}},
             };
         } else if (page_index_ == 3) {
             quick_actions_ = {
-                {L"Risk Paper", {L"risk --paper"}},
                 {L"Universe Gate", {L"universe"}},
-                {L"Reconcile", {L"reconcile"}},
-                {L"Audit", {L"audit"}},
-                {L"Doctor", {L"doctor"}},
-                {L"Signals", {L"signals"}},
+                {L"Audit Trail", {L"audit"}},
+                {L"Signal Health", {L"signals"}},
                 {L"Source Grades", {L"source-grades"}},
-                {L"Report", {L"report"}},
             };
         } else if (page_index_ == 4) {
             quick_actions_ = {
-                {L"API Budget", {L"api-budget --compact"}},
                 {L"Data Health", {L"data-health --interval 1s --market spot --json"}},
+                {L"Rate Limit Detail", {L"api-budget --compact"}},
                 {L"Archive Sync Help", {L"archive-sync --help"}},
                 {L"Data Sync Help", {L"data-sync --help"}},
-                {L"Fetch Help", {L"fetch --help"}},
-                {L"Signal Sources", {L"source-grades"}},
             };
         } else if (page_index_ == 5) {
             quick_actions_ = {
-                {L"AI Preflight", {L"ai"}},
-                {L"Compute", {L"compute"}},
-                {L"Configure", {L"configure --help"}},
-                {L"Strategy", {L"strategy --help"}},
-                {L"Menu", {L"menu --help"}},
-                {L"Shell", {L"shell --help"}},
+                {L"AI Check", {L"ai"}},
+                {L"Compute Backend", {L"compute"}},
+                {L"Strategy Help", {L"strategy --help"}},
+                {L"Shell Help", {L"shell --help"}},
             };
         } else {
             quick_actions_ = {
