@@ -26,6 +26,7 @@ from simple_ai_trading.model import (
     serialize_model,
 )
 from simple_ai_trading.features import ModelRow, feature_signature
+from simple_ai_trading.market_store import MarketDataStore
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -519,6 +520,125 @@ def test_build_client_forwards_runtime_request_window(monkeypatch) -> None:
     assert captured["recv_window_ms"] == 9000
     assert captured["max_calls_per_minute"] == 1100
     assert captured["demo"] is True
+
+
+def test_command_api_budget_auto_refreshes_stale_cache(tmp_path, monkeypatch, capsys) -> None:
+    db = tmp_path / "market.sqlite"
+    with MarketDataStore(db) as store:
+        store.insert_api_rate_limit_snapshot(
+            "binance",
+            "spot",
+            {
+                "status": "ok",
+                "generated_at_ms": 1_000,
+                "market_type": "spot",
+                "lines": [],
+            },
+            ts_ms=1_000,
+        )
+    save_runtime(RuntimeConfig(market_type="spot"))
+
+    class BudgetClient:
+        last_request_info = {"rate_limit_headers": {"X-MBX-USED-WEIGHT-1M": "12"}}
+
+        def get_exchange_info(self):
+            return {"rateLimits": [{"rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 1200}]}
+
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: BudgetClient())
+    monkeypatch.setattr(cli.time, "time", lambda: 1_000_000.0)
+
+    args = argparse.Namespace(db=str(db), market=None, refresh=False, cached_only=False, max_age_seconds=90, compact=True, json=False)
+    assert cli.command_api_budget(args) == 0
+
+    assert "remaining=1188/1200" in capsys.readouterr().out
+    with MarketDataStore(db) as store:
+        latest = store.latest_api_rate_limit_snapshot("binance", "spot")
+    assert latest is not None
+    assert "1188" in str(latest)
+
+
+def test_command_archive_sync_delegates_archive_listing_and_ingestion(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+    monkeypatch.setattr(cli, "list_archive_urls", lambda **_kwargs: ["https://data.binance.vision/x/BTCUSDC-1s-2026-01.zip"])
+
+    captured: dict[str, object] = {}
+
+    class Result:
+        status = "complete"
+        rows_read = 2
+        rows_inserted = 2
+        bytes_downloaded = 123
+        url = "https://data.binance.vision/x/BTCUSDC-1s-2026-01.zip"
+        error = ""
+
+        def asdict(self):
+            return {
+                "status": self.status,
+                "rows_read": self.rows_read,
+                "rows_inserted": self.rows_inserted,
+                "bytes_downloaded": self.bytes_downloaded,
+                "url": self.url,
+            }
+
+    def fake_ingest(**kwargs):
+        captured.update(kwargs)
+        return [Result()]
+
+    monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
+    args = argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        interval=None,
+        market="spot",
+        cadence="monthly",
+        max_files=None,
+        timeout=120,
+        force=False,
+        json=False,
+    )
+
+    assert cli.command_archive_sync(args) == 0
+
+    assert captured["symbol"] == "BTCUSDC"
+    assert captured["interval"] == "1s"
+    assert "rows_inserted=2" in capsys.readouterr().out
+
+
+def test_live_startup_blocks_when_cached_api_budget_is_over_eighty_percent(tmp_path, monkeypatch) -> None:
+    db = tmp_path / "market.sqlite"
+    now_ms = 1_000_000
+    with MarketDataStore(db) as store:
+        store.insert_api_rate_limit_snapshot(
+            "binance",
+            "spot",
+            {
+                "status": "critical",
+                "generated_at_ms": now_ms,
+                "market_type": "spot",
+                "retry_after_seconds": None,
+                "lines": [
+                    {
+                        "rate_limit_type": "REQUEST_WEIGHT",
+                        "interval_num": 1,
+                        "interval_letter": "M",
+                        "interval_label": "1M",
+                        "interval_ms": 60_000,
+                        "used": 960,
+                        "limit": 1200,
+                        "remaining": 240,
+                        "remaining_pct": 0.2,
+                        "status": "ok",
+                    }
+                ],
+            },
+            ts_ms=now_ms,
+        )
+    runtime = RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="spot")
+    client = _FakeClient()
+    monkeypatch.setattr(cli.time, "time", lambda: now_ms / 1000.0)
+
+    with pytest.raises(BinanceAPIError, match="blocked startup"):
+        cli._ensure_api_budget_startup_safe(runtime, client, db_path=db)
 
 
 def test_validate_runtime_connection_skips_account_without_keys() -> None:

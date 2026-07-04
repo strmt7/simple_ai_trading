@@ -59,6 +59,25 @@ class TopOfBookSnapshot:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class ArchiveFileRecord:
+    url: str
+    symbol: str
+    market_type: str
+    interval: str
+    period: str
+    status: str
+    rows_inserted: int
+    bytes_downloaded: int
+    sha256: str
+    error: str
+    started_at_ms: int
+    completed_at_ms: int | None
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 class MarketDataStore:
     """Small SQLite store optimized for append/update market-data ingestion."""
 
@@ -151,6 +170,33 @@ class MarketDataStore:
                 created_at_ms INTEGER NOT NULL,
                 payload_json TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS api_rate_limit_snapshots (
+                provider TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                ts_ms INTEGER NOT NULL,
+                payload_json TEXT NOT NULL,
+                PRIMARY KEY (provider, market_type, ts_ms)
+            );
+            CREATE INDEX IF NOT EXISTS idx_api_rate_limit_latest
+                ON api_rate_limit_snapshots(provider, market_type, ts_ms);
+
+            CREATE TABLE IF NOT EXISTS archive_files (
+                url TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                interval TEXT NOT NULL,
+                period TEXT NOT NULL,
+                status TEXT NOT NULL,
+                rows_inserted INTEGER NOT NULL DEFAULT 0,
+                bytes_downloaded INTEGER NOT NULL DEFAULT 0,
+                sha256 TEXT NOT NULL DEFAULT '',
+                error TEXT NOT NULL DEFAULT '',
+                started_at_ms INTEGER NOT NULL,
+                completed_at_ms INTEGER
+            );
+            CREATE INDEX IF NOT EXISTS idx_archive_files_lookup
+                ON archive_files(symbol, market_type, interval, status);
             """
         )
         conn.commit()
@@ -240,14 +286,23 @@ class MarketDataStore:
         market_type: str,
         interval: str,
         *,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
         limit: int | None = None,
     ) -> list[Candle]:
         params: list[object] = [symbol.upper(), market_type, interval]
+        where = ["symbol = ?", "market_type = ?", "interval = ?"]
+        if start_ms is not None:
+            where.append("open_time >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("open_time <= ?")
+            params.append(int(end_ms))
         query = """
             SELECT open_time, open, high, low, close, volume, close_time,
                    quote_volume, trade_count, taker_buy_base_volume, taker_buy_quote_volume
             FROM candles
-            WHERE symbol = ? AND market_type = ? AND interval = ?
+            WHERE """ + " AND ".join(where) + """
             ORDER BY open_time DESC
             """
         if limit is not None:
@@ -520,3 +575,165 @@ class MarketDataStore:
         )
         self.connect().commit()
         return int(cast(int, cursor.lastrowid))
+
+    def insert_api_rate_limit_snapshot(
+        self,
+        provider: str,
+        market_type: str,
+        payload: Mapping[str, object],
+        *,
+        ts_ms: int | None = None,
+    ) -> int:
+        timestamp = self._now_ms() if ts_ms is None else int(ts_ms)
+        before_changes = self.connect().total_changes
+        self.connect().execute(
+            """
+            INSERT INTO api_rate_limit_snapshots(provider, market_type, ts_ms, payload_json)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(provider, market_type, ts_ms) DO UPDATE SET
+                payload_json=excluded.payload_json
+            WHERE api_rate_limit_snapshots.payload_json IS NOT excluded.payload_json
+            """,
+            (provider, market_type, timestamp, json.dumps(dict(payload), sort_keys=True)),
+        )
+        self.connect().commit()
+        return max(0, self.connect().total_changes - before_changes)
+
+    def latest_api_rate_limit_snapshot(
+        self,
+        provider: str = "binance",
+        market_type: str = "spot",
+    ) -> dict[str, object] | None:
+        row = self.connect().execute(
+            """
+            SELECT payload_json
+            FROM api_rate_limit_snapshots
+            WHERE provider = ? AND market_type = ?
+            ORDER BY ts_ms DESC
+            LIMIT 1
+            """,
+            (provider, market_type),
+        ).fetchone()
+        if row is None:
+            return None
+        payload = json.loads(str(row["payload_json"]))
+        return payload if isinstance(payload, dict) else None
+
+    def begin_archive_file(
+        self,
+        *,
+        url: str,
+        symbol: str,
+        market_type: str,
+        interval: str,
+        period: str,
+        started_at_ms: int | None = None,
+    ) -> None:
+        timestamp = self._now_ms() if started_at_ms is None else int(started_at_ms)
+        self.connect().execute(
+            """
+            INSERT INTO archive_files(
+                url, symbol, market_type, interval, period, status, rows_inserted,
+                bytes_downloaded, sha256, error, started_at_ms, completed_at_ms
+            )
+            VALUES (?, ?, ?, ?, ?, 'started', 0, 0, '', '', ?, NULL)
+            ON CONFLICT(url) DO UPDATE SET
+                status='started',
+                error='',
+                started_at_ms=excluded.started_at_ms,
+                completed_at_ms=NULL
+            """,
+            (url, symbol.upper(), market_type, interval, period, timestamp),
+        )
+        self.connect().commit()
+
+    def complete_archive_file(
+        self,
+        *,
+        url: str,
+        status: str,
+        rows_inserted: int,
+        bytes_downloaded: int,
+        sha256: str,
+        error: str = "",
+        completed_at_ms: int | None = None,
+    ) -> None:
+        timestamp = self._now_ms() if completed_at_ms is None else int(completed_at_ms)
+        self.connect().execute(
+            """
+            UPDATE archive_files
+            SET status = ?,
+                rows_inserted = ?,
+                bytes_downloaded = ?,
+                sha256 = ?,
+                error = ?,
+                completed_at_ms = ?
+            WHERE url = ?
+            """,
+            (
+                status,
+                max(0, int(rows_inserted)),
+                max(0, int(bytes_downloaded)),
+                str(sha256 or ""),
+                str(error or ""),
+                timestamp,
+                url,
+            ),
+        )
+        self.connect().commit()
+
+    def archive_file_status(self, url: str) -> str | None:
+        row = self.connect().execute(
+            "SELECT status FROM archive_files WHERE url = ?",
+            (url,),
+        ).fetchone()
+        return str(row["status"]) if row is not None else None
+
+    def archive_files(
+        self,
+        *,
+        symbol: str | None = None,
+        market_type: str | None = None,
+        interval: str | None = None,
+        status: str | None = None,
+    ) -> list[ArchiveFileRecord]:
+        where: list[str] = []
+        params: list[object] = []
+        if symbol is not None:
+            where.append("symbol = ?")
+            params.append(symbol.upper())
+        if market_type is not None:
+            where.append("market_type = ?")
+            params.append(market_type)
+        if interval is not None:
+            where.append("interval = ?")
+            params.append(interval)
+        if status is not None:
+            where.append("status = ?")
+            params.append(status)
+        query = """
+            SELECT url, symbol, market_type, interval, period, status, rows_inserted,
+                   bytes_downloaded, sha256, error, started_at_ms, completed_at_ms
+            FROM archive_files
+            """
+        if where:
+            query += " WHERE " + " AND ".join(where)
+        query += " ORDER BY symbol, interval, url"
+        rows = self.connect().execute(query, params).fetchall()
+        return [
+            ArchiveFileRecord(
+                url=str(row["url"]),
+                symbol=str(row["symbol"]),
+                market_type=str(row["market_type"]),
+                interval=str(row["interval"]),
+                period=str(row["period"]),
+                status=str(row["status"]),
+                rows_inserted=int(row["rows_inserted"]),
+                bytes_downloaded=int(row["bytes_downloaded"]),
+                sha256=str(row["sha256"]),
+                error=str(row["error"]),
+                started_at_ms=int(row["started_at_ms"]),
+                completed_at_ms=(int(row["completed_at_ms"]) if row["completed_at_ms"] is not None else None),
+            )
+            for row in rows
+        ]

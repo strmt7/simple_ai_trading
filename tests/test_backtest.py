@@ -126,6 +126,142 @@ def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
     assert skipped.trade_log == ()
 
 
+def test_backtest_downsizes_entries_after_measured_low_liquidity_signal() -> None:
+    base_ts = 1_767_621_600_000  # 2026-01-05 14:00:00 UTC.
+    rows = [
+        ModelRow(
+            timestamp=base_ts + i * 60_000,
+            close=100.0 + i * 0.4,
+            features=(1.0 if i >= 8 else 0.0,),
+            label=1,
+            volume=10.0 if i == 8 else 1000.0,
+        )
+        for i in range(14)
+    ]
+    model = TrainedModel(
+        weights=[6.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.70,
+    )
+    common = dict(
+        risk_per_trade=0.01,
+        max_position_pct=0.50,
+        stop_loss_pct=0.01,
+        take_profit_pct=0.50,
+        signal_threshold=0.70,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        liquidity_lookback_bars=8,
+        low_liquidity_volume_ratio=0.50,
+        low_liquidity_size_multiplier=0.25,
+        low_liquidity_signal_threshold_add=0.0,
+        dynamic_liquidity_session_enabled=False,
+    )
+
+    normal = run_backtest(rows, model, StrategyConfig(**common, liquidity_risk_enabled=False), starting_cash=1000.0)
+    adjusted = run_backtest(rows, model, StrategyConfig(**common, liquidity_risk_enabled=True), starting_cash=1000.0)
+
+    assert normal.closed_trades == 1
+    assert adjusted.closed_trades == 1
+    assert float(adjusted.trade_log[0]["gross_notional"]) == pytest.approx(float(normal.trade_log[0]["gross_notional"]) * 0.25)
+    assert adjusted.trade_log[0]["meta_label_action"] == "downsize"
+    assert "low_liquidity_requires_stronger_signal" in str(adjusted.trade_log[0]["meta_label_reason"])
+
+
+def test_backtest_does_not_apply_fixed_utc_session_penalty() -> None:
+    base_ts = 1_767_578_400_000  # 2026-01-05 02:00:00 UTC.
+    rows = [
+        ModelRow(
+            timestamp=base_ts + i * 60_000,
+            close=100.0 + i * 0.4,
+            features=(1.0 if i >= 8 else 0.0,),
+            label=1,
+            volume=1000.0,
+        )
+        for i in range(14)
+    ]
+    model = TrainedModel(
+        weights=[6.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.70,
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.01,
+        max_position_pct=0.50,
+        stop_loss_pct=0.01,
+        take_profit_pct=0.50,
+        signal_threshold=0.70,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        liquidity_lookback_bars=8,
+        off_session_signal_threshold_add=0.10,
+        off_session_size_multiplier=0.10,
+    )
+
+    result = run_backtest(rows, model, cfg, starting_cash=1000.0)
+
+    assert result.closed_trades == 1
+    assert result.trade_log[0]["meta_label_action"] == "take"
+    assert "outside_preferred" not in str(result.trade_log[0]["meta_label_reason"])
+
+
+def test_backtest_downsizes_entries_after_data_probed_low_liquidity_session() -> None:
+    base_ts = 1_767_621_600_000  # 2026-01-05 14:00:00 UTC.
+    rows = [
+        ModelRow(
+            timestamp=base_ts + i * 60_000,
+            close=100.0 + i * 0.4,
+            features=(1.0 if i >= 8 else 0.0,),
+            label=1,
+            volume=10.0 if i == 8 else 1000.0,
+        )
+        for i in range(14)
+    ]
+    model = TrainedModel(
+        weights=[6.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.70,
+    )
+    common = dict(
+        risk_per_trade=0.01,
+        max_position_pct=0.50,
+        stop_loss_pct=0.01,
+        take_profit_pct=0.50,
+        signal_threshold=0.70,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        liquidity_lookback_bars=8,
+        low_liquidity_volume_ratio=0.01,
+        low_liquidity_signal_threshold_add=0.0,
+        dynamic_liquidity_bucket_minutes=15,
+        dynamic_liquidity_session_min_samples=3,
+        low_session_liquidity_volume_ratio=0.50,
+        low_session_signal_threshold_add=0.0,
+        low_session_size_multiplier=0.40,
+    )
+
+    normal = run_backtest(rows, model, StrategyConfig(**common, dynamic_liquidity_session_enabled=False), starting_cash=1000.0)
+    adjusted = run_backtest(rows, model, StrategyConfig(**common, dynamic_liquidity_session_enabled=True), starting_cash=1000.0)
+
+    assert normal.closed_trades == 1
+    assert adjusted.closed_trades == 1
+    assert float(adjusted.trade_log[0]["gross_notional"]) == pytest.approx(float(normal.trade_log[0]["gross_notional"]) * 0.40)
+    assert adjusted.trade_log[0]["meta_label_action"] == "downsize"
+    assert "data_probed_liquidity_session_below_history" in str(adjusted.trade_log[0]["meta_label_reason"])
+
+
 def test_backtest_gpu_batch_scoring_path(monkeypatch) -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),

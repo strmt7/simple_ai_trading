@@ -6,6 +6,10 @@
 
 Simple AI Trading is a Windows-first, testnet-first autonomous day-trading CLI and desktop app for liquid Binance spot and futures markets. It has been expanded from the original single-pair prototype into a diversified runtime that can manage multiple symbols, measure per-symbol liquidity automatically, train/retrain models, run realistic backtests with execution frictions, and expose the same workflows through both the CLI and Windows app.
 
+## Beta Warning
+
+`0.1.0-beta.1` is a beta research release. Many advanced AI, live-trading, high-frequency archive, optimization, and Windows-app workflows are still incomplete or non-functional in production terms. Signed execution remains testnet/demo-first and real-money mainnet execution is intentionally disabled. Do not rely on this software to protect capital or produce profit.
+
 This software is experimental trading infrastructure. It does not guarantee profit, 1-2% daily returns, or positive ROI. The goal is to make risk, liquidity, execution, and model checks explicit before any non-mainnet order path is used.
 
 ## Current Scope
@@ -20,6 +24,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
 - AI defaults to a local multibillion model identifier (`qwen2.5:7b`) and a minimum 2B-parameter preflight. AI-assisted signal approval requires explicit holdout uplift over the non-AI ML baseline; otherwise AI remains advisory/review-only.
+- Binance API budget telemetry is captured from exchange response headers when available. Authenticated live startup is blocked when a current budget sample shows any known request-weight or order-count window is 80% or more consumed, or when Binance returns `Retry-After`.
 
 ## Install
 
@@ -69,6 +74,8 @@ Set multiple symbols in the runtime config or pass them to `universe`:
 
 The universe gate does not use a static allowlist. It measures exchange status, quote asset, structural leveraged-token patterns, 24h quote volume, trade count, bid/ask spread, likely pegged-pair behavior, and a combined liquidity score. Automatic ranking can adapt the volume/trade floors to the current leaders in the selected quote-asset market, but only above hard absolute liquidity floors and without relaxing spread, leveraged-token, or pegged-pair filters. If fewer than the configured minimum assets qualify, the command exits nonzero.
 
+Out-of-market and low-liquidity handling is also data-probed, not a fixed clock rule. Backtests compare each bar's volume against trailing per-symbol history and same UTC weekday/hour/minute-bucket history from prior bars. That means holidays, partial sessions, unusually thin periods, and changing market participation are detected from the actual exchange data available for that symbol and timestamp, then translated into stricter signal thresholds and smaller position sizes.
+
 ## Windows App
 
 Build the native Win32 desktop app:
@@ -99,6 +106,7 @@ Startup behavior:
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
 - The app has direct buttons for AI preflight, AI risk review, risk report, model lab, backtest graph, and stop-and-close local autonomous positions.
+- The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
 
 ## Core Workflows
 
@@ -112,12 +120,16 @@ simple-ai-trading risk --paper
 simple-ai-trading coordinator
 simple-ai-trading universe
 simple-ai-trading data-sync --symbol BTCUSDC --interval 1m --full-history
+simple-ai-trading api-budget --compact
+simple-ai-trading archive-sync --symbol BTCUSDC --interval 1s --cadence monthly
 simple-ai-trading model-blueprint --risk-level conservative
 simple-ai-trading model-lab --market futures --objective conservative --objective regular --objective aggressive --max-symbols 5 --full-history
 simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 ```
 
-`data-sync` writes closed candles, raw exchange snapshots, and typed top-of-book spread/depth rows to SQLite. With `--full-history`, it pages backward through the venue's maximum allowed kline page size until the exchange returns no older data; normal bounded syncs remain efficient for incremental refreshes. Sync artifacts include kline request counts, rows received, coverage ratio, gap count, and Binance rate-limit telemetry captured from response headers when the exchange provides it. `backtest`, `backtest-chart`, and `backtest-panel` can opt into SQLite evidence with `--execution-db data/market_data.sqlite`, which converts the latest per-symbol bid/ask spread and top-level depth into pessimistic fill assumptions and stores the execution-profile evidence in backtest artifacts.
+`data-sync` writes closed candles, raw exchange snapshots, typed top-of-book spread/depth rows, sync runs, archive-file ingestion records, and API-budget snapshots to the single SQLite market database. With `--full-history`, it pages backward through the venue's maximum allowed kline page size until the exchange returns no older data; normal bounded syncs remain efficient for incremental refreshes. `archive-sync` ingests official Binance public archive ZIPs such as 1-second spot klines from `data.binance.vision` directly into the same SQLite database and records source URL, rows, byte count, SHA-256, and status. Sync artifacts include kline request counts, rows received, coverage ratio, gap count, and Binance rate-limit telemetry captured from response headers when the exchange provides it. `api-budget` reads or refreshes that status; cached samples auto-refresh only when stale, defaulting to 90 seconds. `backtest`, `backtest-chart`, and `backtest-panel` can opt into SQLite evidence with `--execution-db data/market_data.sqlite`, which converts the latest per-symbol bid/ask spread and top-level depth into pessimistic fill assumptions and stores the execution-profile evidence in backtest artifacts.
+
+Backtest liquidity-session controls do not assume that “day trading hours” are fixed forever. The active defaults use observed bar volume by symbol and historical clock bucket, so low-liquidity holidays, partial days, overnight crypto liquidity drops, and future stock-market schedule changes can be reflected by the data instead of a static UTC start/end hour.
 
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. When timestamps are present, the chart labels the UTC start/end dates and the simulated duration in days/years instead of presenting an unlabeled sample index. The same command appears in the Windows app.
 

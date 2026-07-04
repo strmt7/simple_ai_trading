@@ -6,9 +6,11 @@ results, or generated performance charts as optimization evidence.
 ## Rules
 
 - No tracked files under `data/`.
-- No committed optimization result JSON/SVG unless it is generated from
+- No committed optimization result JSON/SVG/CSV unless it is generated from
   exchange-sourced candles or signed exchange/account evidence and includes
-  machine-readable provenance.
+  machine-readable provenance. The round `report.json` must declare
+  `artifact_class: exchange_sourced_backtest_graph_data`,
+  `tracked_repo_artifact: true`, and list every tracked graph/data artifact.
 - No docs may present test-double output, unit-test candles, or generated
   regression scenarios as financial performance.
 - Backtest and model-lab reports must identify symbol, market, interval, UTC
@@ -38,6 +40,7 @@ profit factor must include:
 - coverage ratio and gap count,
 - fees, spread, latency, liquidity, and slippage assumptions,
 - generated artifact path,
+- committed CSV/table source for each graph,
 - command used to regenerate it.
 
 If that evidence is missing, the report must say that no performance claim is

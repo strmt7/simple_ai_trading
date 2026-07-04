@@ -43,6 +43,28 @@ inline constexpr CommandOptionSpec kOptions_ai_review[] = {
     {L"--json", L"json", L"", L"false", L"", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_api_budget[] = {
+    {L"--db", L"db", L"", L"data/market_data.sqlite", L"", false, true},
+    {L"--market", L"market", L"spot, futures", L"", L"", false, true},
+    {L"--refresh", L"refresh", L"", L"false", L"query Binance exchangeInfo once and cache the latest headers", false, false},
+    {L"--cached-only", L"cached_only", L"", L"false", L"do not refresh even when the cached sample is stale", false, false},
+    {L"--max-age-seconds", L"max_age_seconds", L"", L"90", L"automatic refresh threshold for cached status", false, true},
+    {L"--compact", L"compact", L"", L"false", L"print one status-bar friendly line", false, false},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_archive_sync[] = {
+    {L"--db", L"db", L"", L"data/market_data.sqlite", L"", false, true},
+    {L"--symbol", L"symbol", L"", L"", L"", false, true},
+    {L"--interval", L"interval", L"", L"", L"", false, true},
+    {L"--market", L"market", L"spot, futures", L"spot", L"", false, true},
+    {L"--cadence", L"cadence", L"monthly, daily", L"monthly", L"", false, true},
+    {L"--max-files", L"max_files", L"", L"", L"optional safety cap for smoke runs", false, true},
+    {L"--timeout", L"timeout", L"", L"120", L"", false, true},
+    {L"--force", L"force", L"", L"false", L"", false, false},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_audit[] = {
     {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
@@ -424,6 +446,8 @@ inline constexpr CommandOptionSpec kOptions_universe[] = {
 inline constexpr CommandSpec kCommands[] = {
     {L"ai", L"usage: simple-ai-trading ai [-h] [--enable] [--disable] [--provider PROVIDER]                             [--model MODEL] [--require-gpu] [--no-require-gpu]                             [--min-free-vram-gb MIN_FREE_VRAM_GB]                             [--min-free-ram-gb MIN_FREE_RAM_GB]                             [--min-model-parameters-b MIN_MODEL_PARAMETERS_B]                             [--allow-paper-fallback] [--no-paper-fallback]                             [--json]", kOptions_ai, 12},
     {L"ai-review", L"usage: simple-ai-trading ai-review [-h] [--report REPORT] [--output OUTPUT]                                    [--model MODEL] [--url URL]                                    [--timeout TIMEOUT] [--json]", kOptions_ai_review, 6},
+    {L"api-budget", L"usage: simple-ai-trading api-budget [-h] [--db DB] [--market {spot,futures}]                                     [--refresh] [--cached-only]                                     [--max-age-seconds MAX_AGE_SECONDS]                                     [--compact] [--json]", kOptions_api_budget, 7},
+    {L"archive-sync", L"usage: simple-ai-trading archive-sync [-h] [--db DB] [--symbol SYMBOL]                                       [--interval INTERVAL]                                       [--market {spot,futures}]                                       [--cadence {monthly,daily}]                                       [--max-files MAX_FILES]                                       [--timeout TIMEOUT] [--force] [--json]", kOptions_archive_sync, 9},
     {L"audit", L"usage: simple-ai-trading audit [-h] [--input INPUT] [--model MODEL]", kOptions_audit, 2},
     {L"autonomous", L"usage: simple-ai-trading autonomous [-h] [--objective OBJECTIVE]                                     [--model MODEL]                                     [--poll-seconds POLL_SECONDS]                                     [--iterations ITERATIONS]                                     [--heartbeat-every HEARTBEAT_EVERY]                                     [--starting-cash STARTING_CASH] [--paper]                                     [--live]                                     {start,pause,resume,stop,status}", kOptions_autonomous, 9},
     {L"backtest", L"usage: simple-ai-trading backtest [-h] [--input INPUT] [--model MODEL]                                   [--start-cash START_CASH]                                   [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                   [--score-batch-size SCORE_BATCH_SIZE]                                   [--execution-db EXECUTION_DB]", kOptions_backtest, 6},

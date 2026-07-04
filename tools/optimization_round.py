@@ -1,0 +1,66 @@
+"""Generate numbered optimization-round graph data from exchange-sourced backtests."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from simple_ai_trading.api import BinanceClient
+from simple_ai_trading.config import load_strategy
+from simple_ai_trading.optimization_evidence import build_round_evidence
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--round-id", default="round-001")
+    parser.add_argument("--symbol-count", type=int, default=50)
+    parser.add_argument("--quote-asset", default="USDT")
+    parser.add_argument("--interval", default="1s")
+    parser.add_argument("--market", choices=("spot",), default="spot")
+    parser.add_argument("--objective", default="conservative")
+    parser.add_argument("--starting-cash", type=float, default=1000.0)
+    parser.add_argument("--compute-backend", choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"), default="auto")
+    parser.add_argument("--batch-size", type=int, default=8192)
+    parser.add_argument("--data-root", type=Path, default=Path("data/optimization"))
+    parser.add_argument("--docs-root", type=Path, default=Path("docs/optimization"))
+    parser.add_argument("--db", type=Path, default=Path("data/market_data.sqlite"))
+    parser.add_argument("--max-calls-per-minute", type=int, default=1800)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    strategy = load_strategy()
+    client = BinanceClient(
+        "",
+        "",
+        testnet=False,
+        market_type=args.market,
+        max_calls_per_minute=max(1, int(args.max_calls_per_minute)),
+    )
+    report = build_round_evidence(
+        round_id=args.round_id,
+        client=client,
+        strategy=strategy,
+        quote_asset=args.quote_asset,
+        symbol_count=args.symbol_count,
+        interval=args.interval,
+        market_type=args.market,
+        objective_name=args.objective,
+        starting_cash=args.starting_cash,
+        compute_backend=args.compute_backend,
+        batch_size=args.batch_size,
+        data_root=args.data_root,
+        docs_root=args.docs_root,
+        db_path=args.db,
+    )
+    print(f"round: {report['round_id']}")
+    print(f"symbols completed: {report['symbol_count_completed']}/{report['symbol_count_requested']}")
+    print(f"metrics: {report['metrics_csv_path']}")
+    print(f"portfolio timeline: {report['portfolio_timeline_csv_path']}")
+    print(f"progress: {report['progress_csv_path']}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable
 
 from .api import BinanceAPIError, BinanceClient, Candle
+from .api_budget import build_api_budget_report
 from .assets import DEFAULT_SYMBOL, normalize_symbol
 from .intervals import interval_milliseconds, max_limit, validate_interval
 from .market_data import clean_candles
@@ -381,6 +382,17 @@ def sync_market_data(
             top_of_book_inserted=top_of_book_inserted,
             latest_spread_bps=latest_book.spread_bps if latest_book is not None else None,
             latest_depth_notional=latest_book.depth_notional if latest_book is not None else None,
+        )
+        budget_report = build_api_budget_report(
+            market_type=config.market_type,
+            request_info=result.request_info,
+            generated_at_ms=config.now_ms,
+        )
+        store.insert_api_rate_limit_snapshot(
+            "binance",
+            config.market_type,
+            budget_report.asdict(),
+            ts_ms=config.now_ms,
         )
         store.insert_sync_run(result.asdict())
         return result

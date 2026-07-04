@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -30,6 +31,39 @@ def _tracked_files() -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def _optimization_report_for(path: str) -> Path | None:
+    normalized = path.replace("\\", "/")
+    parts = normalized.split("/")
+    if len(parts) < 4 or parts[0] != "docs" or parts[1] != "optimization":
+        return None
+    return REPO_ROOT / "docs" / "optimization" / parts[2] / "data" / "report.json"
+
+
+def _tracked_optimization_artifact_allowed(item: str) -> bool:
+    normalized = item.replace("\\", "/")
+    report_path = _optimization_report_for(normalized)
+    if report_path is None or not report_path.exists():
+        return False
+    try:
+        payload = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("artifact_class") != "exchange_sourced_backtest_graph_data":
+        return False
+    if payload.get("tracked_repo_artifact") is not True:
+        return False
+    report_rel = report_path.relative_to(REPO_ROOT).as_posix()
+    if normalized == report_rel:
+        return True
+    tracked = payload.get("tracked_artifacts")
+    if not isinstance(tracked, list):
+        return False
+    allowed = {str(path).replace("\\", "/") for path in tracked}
+    return normalized in allowed
+
+
 def audit() -> list[str]:
     failures: list[str] = []
     for item in _tracked_files():
@@ -40,7 +74,11 @@ def audit() -> list[str]:
             continue
         if lower.startswith(FORBIDDEN_REPO_DATA_PREFIXES):
             failures.append(f"tracked runtime data is forbidden: {item}")
-        if lower.startswith("docs/optimization/") and lower.endswith(FORBIDDEN_OPTIMIZATION_ARTIFACT_SUFFIXES):
+        if (
+            lower.startswith("docs/optimization/")
+            and lower.endswith(FORBIDDEN_OPTIMIZATION_ARTIFACT_SUFFIXES)
+            and not _tracked_optimization_artifact_allowed(normalized)
+        ):
             failures.append(f"tracked optimization artifact requires real-data provenance and review: {item}")
         if (
             lower not in TEXT_AUDIT_EXCLUDE

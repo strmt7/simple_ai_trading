@@ -17,6 +17,12 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence, TypeVar, cast
 
 from .api import BinanceAPIError, BinanceClient, Candle
+from .api_budget import (
+    api_budget_startup_block_reason,
+    build_api_budget_report,
+    render_api_budget,
+    summarize_api_budget,
+)
 from .ai_runtime import detect_ai_capabilities, render_ai_capability_report
 from .advanced_model import (
     AdvancedFeatureConfig,
@@ -28,6 +34,7 @@ from .advanced_model import (
 )
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
+from .binance_archive import ingest_archive_urls, list_archive_urls
 from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
@@ -39,6 +46,7 @@ from .api import SymbolConstraints
 from .external_signals import ExternalSignalReport, collect_external_signals, render_external_signal_report
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
+from .market_store import MarketDataStore
 from .meta_label import apply_meta_label_policy
 from .model import (
     assess_probability_calibration,
@@ -330,6 +338,34 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_data_sync.add_argument("--log-file", default="data/market_data_sync.log")
     parser_data_sync.add_argument("--json", action="store_true")
     parser_data_sync.set_defaults(func=command_data_sync)
+
+    parser_api_budget = subparsers.add_parser(
+        "api-budget",
+        help="show cached or refreshed Binance API used-weight and order-count budget",
+    )
+    parser_api_budget.add_argument("--db", default="data/market_data.sqlite")
+    parser_api_budget.add_argument("--market", choices=["spot", "futures"], default=None)
+    parser_api_budget.add_argument("--refresh", action="store_true", help="query Binance exchangeInfo once and cache the latest headers")
+    parser_api_budget.add_argument("--cached-only", action="store_true", help="do not refresh even when the cached sample is stale")
+    parser_api_budget.add_argument("--max-age-seconds", type=int, default=90, help="automatic refresh threshold for cached status")
+    parser_api_budget.add_argument("--compact", action="store_true", help="print one status-bar friendly line")
+    parser_api_budget.add_argument("--json", action="store_true")
+    parser_api_budget.set_defaults(func=command_api_budget)
+
+    parser_archive_sync = subparsers.add_parser(
+        "archive-sync",
+        help="ingest official Binance public kline archive ZIPs into SQLite",
+    )
+    parser_archive_sync.add_argument("--db", default="data/market_data.sqlite")
+    parser_archive_sync.add_argument("--symbol", default=None)
+    parser_archive_sync.add_argument("--interval", default=None)
+    parser_archive_sync.add_argument("--market", choices=["spot", "futures"], default="spot")
+    parser_archive_sync.add_argument("--cadence", choices=["monthly", "daily"], default="monthly")
+    parser_archive_sync.add_argument("--max-files", type=int, default=None, help="optional safety cap for smoke runs")
+    parser_archive_sync.add_argument("--timeout", type=int, default=120)
+    parser_archive_sync.add_argument("--force", action="store_true")
+    parser_archive_sync.add_argument("--json", action="store_true")
+    parser_archive_sync.set_defaults(func=command_archive_sync)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_btcusdc.json")
@@ -869,6 +905,92 @@ def _validate_runtime_connection(runtime, client) -> None:
         client.ensure_btcusdc()
     if _has_api_credentials(runtime):
         client.get_account()
+
+
+_API_BUDGET_LIVE_START_MAX_USED_RATIO = 0.80
+
+
+def _latest_api_budget_snapshot(db_path: str | Path, market_type: str) -> dict[str, object] | None:
+    try:
+        with MarketDataStore(db_path) as store:
+            return store.latest_api_rate_limit_snapshot("binance", market_type)
+    except OSError:
+        return None
+
+
+def _safe_int_value(value: object) -> int | None:
+    try:
+        parsed = int(float(str(value).strip()))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if parsed >= 0 else None
+
+
+def _api_budget_snapshot_age_ms(payload: Mapping[str, object], *, now_ms: int | None = None) -> int | None:
+    generated_at = _safe_int_value(payload.get("generated_at_ms"))
+    if generated_at is None:
+        return None
+    current = int(time.time() * 1000) if now_ms is None else int(now_ms)
+    return max(0, current - generated_at)
+
+
+def _api_budget_snapshot_is_fresh(
+    payload: Mapping[str, object],
+    *,
+    now_ms: int | None = None,
+    max_age_ms: int = 90_000,
+) -> bool:
+    age = _api_budget_snapshot_age_ms(payload, now_ms=now_ms)
+    return age is not None and 0 <= age <= max(1, int(max_age_ms))
+
+
+def _store_api_budget_snapshot(
+    db_path: str | Path,
+    market_type: str,
+    payload: Mapping[str, object],
+) -> None:
+    try:
+        with MarketDataStore(db_path) as store:
+            store.insert_api_rate_limit_snapshot(
+                "binance",
+                market_type,
+                payload,
+                ts_ms=int(payload.get("generated_at_ms") or time.time() * 1000),
+            )
+    except OSError:
+        return
+
+
+def _refresh_api_budget_report(runtime: RuntimeConfig, client, *, db_path: str | Path = "data/market_data.sqlite"):
+    fetch_exchange_info = getattr(client, "get_exchange_info", None)
+    exchange_info = fetch_exchange_info() if callable(fetch_exchange_info) else None
+    request_info = dict(getattr(client, "last_request_info", {}) or {})
+    report = build_api_budget_report(
+        market_type=runtime.market_type,
+        exchange_info=exchange_info if isinstance(exchange_info, Mapping) else None,
+        request_info=request_info,
+    )
+    _store_api_budget_snapshot(db_path, runtime.market_type, report.asdict())
+    return report
+
+
+def _ensure_api_budget_startup_safe(
+    runtime: RuntimeConfig,
+    client,
+    *,
+    db_path: str | Path = "data/market_data.sqlite",
+    max_used_ratio: float = _API_BUDGET_LIVE_START_MAX_USED_RATIO,
+):
+    cached = _latest_api_budget_snapshot(db_path, runtime.market_type)
+    if cached is not None and _api_budget_snapshot_is_fresh(cached, max_age_ms=90_000):
+        reason = api_budget_startup_block_reason(cached, max_used_ratio=max_used_ratio)
+        if reason is not None:
+            raise BinanceAPIError(reason)
+    report = _refresh_api_budget_report(runtime, client, db_path=db_path)
+    reason = api_budget_startup_block_reason(report, max_used_ratio=max_used_ratio)
+    if reason is not None:
+        raise BinanceAPIError(reason)
+    return report
 
 
 def _parse_form_bool(raw: str, default: bool) -> bool:
@@ -4207,6 +4329,100 @@ def command_data_sync(args: argparse.Namespace) -> int:
     )
 
 
+def command_api_budget(args: argparse.Namespace) -> int:
+    runtime = load_runtime()
+    market_type = getattr(args, "market", None) or runtime.market_type
+    runtime = _runtime_with_market(runtime, market_type)
+    db_path = Path(getattr(args, "db", "data/market_data.sqlite"))
+    report: object | None
+    cached = _latest_api_budget_snapshot(db_path, market_type)
+    max_age_seconds = max(60, min(120, int(getattr(args, "max_age_seconds", 90) or 90)))
+    should_refresh = bool(getattr(args, "refresh", False))
+    if not getattr(args, "cached_only", False) and cached is None:
+        should_refresh = True
+    if (
+        not getattr(args, "cached_only", False)
+        and cached is not None
+        and not _api_budget_snapshot_is_fresh(cached, max_age_ms=max_age_seconds * 1000)
+    ):
+        should_refresh = True
+    if should_refresh:
+        try:
+            client = _build_client(runtime)
+            report = _refresh_api_budget_report(runtime, client, db_path=db_path)
+        except (BinanceAPIError, OSError, ValueError) as exc:
+            if cached is None or getattr(args, "refresh", False):
+                print(f"API budget refresh failed: {exc}", file=sys.stderr)
+                return 2
+            print(f"API budget refresh failed; using cached sample: {exc}", file=sys.stderr)
+            report = cached
+    else:
+        report = cached
+
+    if getattr(args, "json", False):
+        payload = report.asdict() if hasattr(report, "asdict") else (dict(report) if isinstance(report, Mapping) else {})
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+    if getattr(args, "compact", False):
+        print(summarize_api_budget(report if isinstance(report, Mapping) else report))
+        return 0
+    print(render_api_budget(report if isinstance(report, Mapping) else report))
+    return 0
+
+
+def command_archive_sync(args: argparse.Namespace) -> int:
+    runtime = load_runtime()
+    symbol = str(getattr(args, "symbol", None) or runtime.symbol).upper()
+    interval = str(getattr(args, "interval", None) or runtime.interval)
+    market_type = str(getattr(args, "market", "spot") or "spot")
+    cadence = str(getattr(args, "cadence", "monthly") or "monthly")
+    try:
+        urls = list_archive_urls(symbol=symbol, interval=interval, market_type=market_type, cadence=cadence)
+    except (OSError, ValueError) as exc:
+        print(f"archive-sync failed to list Binance archive: {exc}", file=sys.stderr)
+        return 2
+    max_files = getattr(args, "max_files", None)
+    if max_files is not None:
+        urls = urls[: max(0, int(max_files))]
+    if not urls:
+        print(f"archive-sync found no {cadence} archive files for {symbol} {interval} {market_type}", file=sys.stderr)
+        return 2
+    results = ingest_archive_urls(
+        db_path=Path(getattr(args, "db", "data/market_data.sqlite")),
+        symbol=symbol,
+        interval=interval,
+        urls=urls,
+        market_type=market_type,
+        timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
+        force=bool(getattr(args, "force", False)),
+    )
+    payload = {
+        "status": "ok" if all(item.status in {"complete", "skipped"} for item in results) else "warn",
+        "symbol": symbol,
+        "interval": interval,
+        "market_type": market_type,
+        "cadence": cadence,
+        "files": len(results),
+        "rows_read": sum(item.rows_read for item in results),
+        "rows_inserted": sum(item.rows_inserted for item in results),
+        "bytes_downloaded": sum(item.bytes_downloaded for item in results),
+        "results": [item.asdict() for item in results],
+    }
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "archive-sync: "
+            f"status={payload['status']} symbol={symbol} interval={interval} market={market_type} "
+            f"files={payload['files']} rows_read={payload['rows_read']} "
+            f"rows_inserted={payload['rows_inserted']} bytes={payload['bytes_downloaded']}"
+        )
+        for item in results:
+            if item.status == "error":
+                print(f"warning: {item.url} {item.error}", file=sys.stderr)
+    return 0 if payload["status"] == "ok" else 2
+
+
 def command_fetch(args: argparse.Namespace) -> int:
     return data_workflows.command_fetch(
         args,
@@ -5485,6 +5701,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     except BinanceAPIError as exc:
         print(f"Live startup blocked: {exc}", file=sys.stderr)
         return 2
+    if not effective_dry_run:
+        try:
+            budget_report = _ensure_api_budget_startup_safe(runtime, client)
+        except BinanceAPIError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        print(summarize_api_budget(budget_report))
     sleep_seconds = max(0, int(getattr(args, "sleep", 0)))
     if not effective_dry_run and sleep_seconds < 1:
         print("Authenticated live mode uses minimum sleep=1s.")
