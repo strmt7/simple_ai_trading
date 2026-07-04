@@ -6,6 +6,12 @@ gates, not a promise of guaranteed profit.
 
 ## Research Inputs
 
+The implementation roadmap is expanded in
+[Model and Training Inspiration](MODEL_TRAINING_INSPIRATION.md), which records
+the current direction for regime detection, meta-labeling, patch-based
+time-series models, foundation-model forecasts, AMD-friendly GPU candidates,
+and market-microstructure simulation upgrades.
+
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,
   volume, trend, and volatility:
