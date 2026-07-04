@@ -13,7 +13,7 @@ from simple_ai_trading.backtest import (
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.execution_simulation import SymbolExecutionProfile
 from simple_ai_trading.features import ModelRow
-from simple_ai_trading.model import TrainedModel
+from simple_ai_trading.model import HybridExpert, HybridPrototype, TrainedModel
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -353,6 +353,71 @@ def test_backtest_gpu_batch_scoring_falls_back_to_cpu(monkeypatch) -> None:
     assert result.scoring_backend_requested == "cuda"
     assert result.scoring_backend_kind == "cpu"
     assert "fell back to CPU" in result.scoring_backend_reason
+
+
+def test_backtest_hybrid_gpu_batch_scoring_matches_cpu_when_available() -> None:
+    backend = backtest_module.resolve_backend("directml")
+    if backend.kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+    rows: list[ModelRow] = []
+    for index in range(20):
+        sign = 1.0 if index % 2 else -1.0
+        rows.append(ModelRow(
+            timestamp=index * 60_000,
+            close=100.0 + index,
+            features=(sign, 0.2 * sign, 0.1, 0.05, 0.01, 0.45, 0.02, 0.01, 0.02, 2.0, 0.03, 0.01, 0.1),
+            label=1 if sign > 0 else 0,
+        ))
+    model = TrainedModel(
+        weights=[0.3] * 13,
+        bias=0.0,
+        feature_dim=13,
+        epochs=1,
+        feature_means=[0.0] * 13,
+        feature_stds=[1.0] * 13,
+    )
+    model.hybrid_base_weight = 0.4
+    model.hybrid_experts = [
+        HybridExpert(
+            name="near",
+            kind="lorentzian_knn",
+            weight=0.3,
+            prototypes=[
+                HybridPrototype(features=list(rows[1].features), label=1),
+                HybridPrototype(features=list(rows[0].features), label=0),
+            ],
+            k=1,
+            feature_count=13,
+        ),
+        HybridExpert(
+            name="kernel",
+            kind="rational_quadratic_kernel",
+            weight=0.2,
+            prototypes=[
+                HybridPrototype(features=list(rows[1].features), label=1),
+                HybridPrototype(features=list(rows[0].features), label=0),
+            ],
+            bandwidth=1.0,
+            alpha=1.0,
+            feature_count=13,
+        ),
+        HybridExpert(name="tech", kind="technical_confluence", weight=0.1, feature_count=13),
+    ]
+
+    gpu = backtest_module._batch_probabilities_torch(rows, model, backend=backend, batch_size=7)
+    cpu = [model.predict_proba(row.features) for row in rows]
+
+    assert max(abs(left - right) for left, right in zip(gpu, cpu, strict=True)) < 1e-5
+
+    result = run_backtest(
+        rows,
+        model,
+        StrategyConfig(signal_threshold=0.5, risk_per_trade=0.1),
+        compute_backend="directml",
+        score_batch_size=7,
+    )
+    assert result.scoring_backend_kind == "directml"
+    assert not result.scoring_backend_reason
 
 
 def test_backtest_tracks_fees_and_cap_hits() -> None:

@@ -33,6 +33,9 @@ CPU-only mode is allowed. When selected or when GPU probing fails:
   They continue on CPU only when the user selects CPU or every GPU probe fails,
   and artifacts record the requested backend, resolved backend, device, and
   fallback reason.
+- Hybrid model-zoo backtest scoring keeps Lorentzian nearest-neighbor,
+  rational-quadratic kernel, and technical-confluence expert math on the tensor
+  backend when the backend supports the required operations.
 - CLI and Windows app warn that the run is slower.
 - Structured local AI review cannot approve a model-lab artifact until the AI
   capability preflight passes again.
