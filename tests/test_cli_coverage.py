@@ -3114,6 +3114,147 @@ def test_command_live_artifact_is_emitted(tmp_path, monkeypatch) -> None:
     assert payload["runtime"]["api_secret"] == "<redacted>"
 
 
+def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, monkeypatch) -> None:
+    captured: list[dict[str, object]] = []
+
+    def candles_for(close: float, n: int = 320) -> list[Candle]:
+        return [
+            Candle(
+                open_time=index * 60_000,
+                open=close,
+                high=close * 1.001,
+                low=close * 0.999,
+                close=close,
+                volume=1000.0,
+                close_time=(index + 1) * 60_000,
+            )
+            for index in range(n)
+        ]
+
+    def rows_from_candles(candles: list[Candle], *_args, **_kwargs) -> list[ModelRow]:
+        close = candles[-1].close
+        return [
+            ModelRow(
+                timestamp=index * 60_000,
+                close=close,
+                features=(0.1,),
+                label=1,
+                volume=1000.0,
+            )
+            for index in range(20)
+        ]
+
+    class _RecoveringClient:
+        def __init__(self) -> None:
+            self.kline_calls = 0
+            self.orders: list[tuple[str, str, float]] = []
+
+        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+            self.kline_calls += 1
+            if self.kline_calls == 1:
+                raise BinanceAPIError("temporary network outage")
+            return candles_for(100.0 if self.kline_calls == 2 else 125.0, n=limit)
+
+        def get_symbol_constraints(self, symbol: str):
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
+
+        def normalize_quantity(self, symbol: str, quantity: float):
+            return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
+
+        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+            self.orders.append((symbol, side, size))
+            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
+
+    class _AlwaysLongModel:
+        def predict_proba(self, _features: tuple[float, ...]) -> float:
+            return 0.95
+
+    client = _RecoveringClient()
+
+    def fake_persist(_kind: str, _output_dir: Path, payload: dict[str, object]) -> Path:
+        captured.append(payload)
+        return _output_dir / "live.json"
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_strategy(
+        StrategyConfig(
+            risk_per_trade=0.001,
+            max_position_pct=1.0,
+            stop_loss_pct=0.01,
+            signal_threshold=0.70,
+            taker_fee_bps=0.0,
+            slippage_bps=0.0,
+            cooldown_minutes=0,
+            recovery_cooldown_seconds=0,
+            max_regime_unpredictability=1.0,
+            dynamic_liquidity_session_enabled=False,
+        )
+    )
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
+    monkeypatch.setattr(cli, "_live_rows_for_model", rows_from_candles)
+    monkeypatch.setattr(cli, "_build_model_rows", rows_from_candles)
+    monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
+    monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
+    monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    assert cli.command_live(_live_args(tmp_path, steps=3, sleep=0)) == 0
+
+    assert client.kline_calls == 3
+    assert client.orders == [("BTCUSDC", "BUY", pytest.approx(0.8))]
+    statuses = [event.get("status") for event in captured[0]["events"] if isinstance(event, dict)]
+    assert "market_error_retry" in statuses
+    assert "skip_risk_recovery_pending" in statuses
+    assert "recovery_observation" in statuses
+    assert captured[0]["result"]["status"] == "completed"
+
+
+def test_command_live_market_recovery_pending_exits_nonzero(tmp_path, monkeypatch) -> None:
+    captured: list[dict[str, object]] = []
+
+    class _OfflineClient:
+        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+            raise BinanceAPIError("offline")
+
+        def get_symbol_constraints(self, symbol: str):
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
+
+        def normalize_quantity(self, symbol: str, quantity: float):
+            return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
+
+    def fake_persist(_kind: str, _output_dir: Path, payload: dict[str, object]) -> Path:
+        captured.append(payload)
+        return _output_dir / "live.json"
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_strategy(StrategyConfig(max_network_errors=1, recovery_cooldown_seconds=0))
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _OfflineClient())
+    monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
+    monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    assert cli.command_live(_live_args(tmp_path, steps=2, sleep=0)) == 2
+
+    assert captured[0]["result"]["status"] == "market_recovery_pending"
+    assert captured[0]["result"]["steps_executed"] == 0
+    statuses = [event.get("status") for event in captured[0]["events"] if isinstance(event, dict)]
+    assert statuses == ["market_error_retry_limit", "market_error_retry_limit"]
+
+
 def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monkeypatch) -> None:
     class _CappedClient:
         def __init__(self) -> None:

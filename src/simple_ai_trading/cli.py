@@ -6058,6 +6058,10 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     skipped_entries = 0
     model_loads = 0 if model is None else 1
     exit_code = 0
+    network_errors = 0
+    max_network_errors = max(1, int(getattr(cfg, "max_network_errors", 1) or 1))
+    recovery_pending = False
+
     def _next_source_grade_time_ms(after_ms: int) -> int:  # pragma: no cover - hourly live-loop scheduler
         return after_ms + int(_jittered_seconds(cfg.source_grading_interval_seconds, cfg.external_signal_poll_jitter_seconds) * 1000)
 
@@ -6113,19 +6117,69 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             }
         )
 
+    def finish_recovery_observation(step: int, price: float, reason: str) -> None:
+        nonlocal network_errors, recovery_pending, halt_reason, exit_code
+        observed_errors = int(network_errors)
+        cooldown = max(0, int(getattr(cfg, "recovery_cooldown_seconds", 0) or 0))
+        live_events.append(
+            {
+                "step": step,
+                "status": "recovery_observation",
+                "reason": reason,
+                "price": float(price),
+                "network_errors": observed_errors,
+                "max_network_errors": int(max_network_errors),
+                "cooldown_seconds": int(cooldown),
+            }
+        )
+        print(
+            f"step {step:>2}: recovery observation after {observed_errors} market errors; "
+            "new entries paused"
+        )
+        recovery_pending = False
+        network_errors = 0
+        if halt_reason == "market_recovery_pending":
+            halt_reason = "completed"
+            exit_code = 0
+
+    def recovery_sleep() -> None:
+        cooldown = max(0, int(getattr(cfg, "recovery_cooldown_seconds", 0) or 0))
+        if cooldown > sleep_seconds:
+            time.sleep(float(cooldown))
+        else:
+            live_sleep()
+
     for i in range(args.steps):
         if unpredictability_cooldown_left > 0:
             unpredictability_cooldown_left -= 1
         try:
             candles = client.get_klines(runtime.symbol, runtime.interval, limit=max(cfg.model_lookback, 300))
         except BinanceAPIError as exc:
-            print(f"market error: {exc}", file=sys.stderr)
-            halt_reason = "market_error"
+            network_errors += 1
+            recovery_pending = True
+            halt_reason = "market_recovery_pending"
             exit_code = 2
-            live_events.append({"step": i + 1, "status": "market_error", "error": str(exc)})
-            break
+            status = "market_error_retry_limit" if network_errors >= max_network_errors else "market_error_retry"
+            print(
+                f"market error: {exc}; retrying "
+                f"({network_errors}/{max_network_errors}) before any new entry",
+                file=sys.stderr,
+            )
+            live_events.append(
+                {
+                    "step": i + 1,
+                    "status": status,
+                    "error": str(exc),
+                    "network_errors": int(network_errors),
+                    "max_network_errors": int(max_network_errors),
+                    "recovery_pending": True,
+                }
+            )
+            live_sleep()
+            continue
 
         steps_executed += 1
+        recovery_observation_active = bool(recovery_pending)
 
         rows = _live_rows_for_model(candles, cfg, model)
         training_rows = _readiness_model_rows(candles, cfg, model) if model is not None else _build_model_rows(candles, cfg)
@@ -6391,6 +6445,43 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         price = latest.close
         day = _safe_day_ms(latest.timestamp)
         if position_side == 0 and direction != 0:
+            if recovery_observation_active:
+                current_drawdown = (equity_peak - cash) / equity_peak if equity_peak else 0.0
+                entry_risk = assess_entry_risk(
+                    direction=direction,
+                    position_side=position_side,
+                    max_open_positions=max_open_positions,
+                    max_daily_trades=max_daily_trades,
+                    daily_trade_count=daily_trade_count.get(day, 0),
+                    cash=cash,
+                    price=price,
+                    drawdown=current_drawdown,
+                    drawdown_limit=drawdown_limit,
+                    network_errors=network_errors,
+                    max_network_errors=max_network_errors,
+                    recovery_pending=True,
+                    regime=regime_evidence.dominant_regime,
+                    regime_confidence=regime_evidence.confidence,
+                    regime_notes=regime_evidence.notes,
+                    regime_unpredictability_score=regime_score,
+                    max_regime_unpredictability=regime_limit,
+                    regime_cooldown_active=regime_cooldown_active,
+                )
+                message, event = _live_entry_risk_skip(
+                    step=i + 1,
+                    day=day,
+                    score=score,
+                    entry_risk=entry_risk,
+                    max_daily_trades=max_daily_trades,
+                    max_open_positions=max_open_positions,
+                )
+                print(message)
+                skipped_entries += 1
+                live_events.append(event)
+                finish_recovery_observation(i + 1, price, "entry-risk")
+                maybe_grade_sources(i + 1)
+                recovery_sleep()
+                continue
             if meta_decision.enabled and meta_decision.size_multiplier <= 0.0:
                 print(f"step {i + 1:>2}: meta-label skipped entry ({meta_decision.reason})")
                 skipped_entries += 1
@@ -6741,7 +6832,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             )
 
         maybe_grade_sources(i + 1)
-        live_sleep()
+        if recovery_observation_active:
+            finish_recovery_observation(i + 1, price, "post-interruption-clean-market-read")
+            recovery_sleep()
+        else:
+            live_sleep()
     live_run["result"] = {
         "status": halt_reason,
         "steps_executed": steps_executed,
