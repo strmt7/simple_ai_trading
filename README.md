@@ -109,6 +109,8 @@ simple-ai-trading model-lab --market futures --objective conservative --objectiv
 simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 ```
 
+`data-sync` writes closed candles, raw exchange snapshots, and typed top-of-book spread/depth rows to SQLite so future model and backtest work can use symbol-specific liquidity evidence instead of flat assumptions.
+
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. The same command appears in the Windows app.
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.

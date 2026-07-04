@@ -123,6 +123,49 @@ def test_market_data_store_roundtrip_snapshots_and_sync_runs(tmp_path) -> None:
     assert store.latest_open_time("BTCUSDC", "spot", "15m") == 60_000
     assert store.insert_snapshot("binance", "btcusdc", "spot", "ticker_24h", {"closeTime": 5}, ts_ms=5) == 1
     assert store.latest_snapshot("BTCUSDC", "spot", "ticker_24h") == {"closeTime": 5}
+    assert store.insert_top_of_book_snapshot(
+        "binance",
+        "btcusdc",
+        "spot",
+        {"bidPrice": "99", "bidQty": "2", "askPrice": "101", "askQty": "3"},
+        ts_ms=6,
+        ingested_at_ms=7,
+    ) == 1
+    assert store.insert_top_of_book_snapshot(
+        "binance",
+        "btcusdc",
+        "spot",
+        {"bidPrice": "99", "bidQty": "2", "askPrice": "101", "askQty": "3"},
+        ts_ms=6,
+        ingested_at_ms=8,
+    ) == 0
+    latest_book = store.latest_top_of_book("BTCUSDC", "spot")
+    assert latest_book is not None
+    assert latest_book.symbol == "BTCUSDC"
+    assert latest_book.market_type == "spot"
+    assert latest_book.mid_price == 100.0
+    assert latest_book.spread == 2.0
+    assert latest_book.spread_bps == 200.0
+    assert latest_book.depth_notional == 501.0
+    assert latest_book.asdict()["ingested_at_ms"] == 7
+    assert [item.ts_ms for item in store.fetch_top_of_book("BTCUSDC", "spot", limit=1)] == [6]
+    assert store.fetch_top_of_book("BTCUSDC", "spot", start_ms=7) == []
+    with pytest.raises(ValueError, match="askPrice is below bidPrice"):
+        store.insert_top_of_book_snapshot(
+            "binance",
+            "BTCUSDC",
+            "spot",
+            {"bidPrice": "101", "bidQty": "1", "askPrice": "99", "askQty": "1"},
+            ts_ms=7,
+        )
+    with pytest.raises(ValueError, match="bidQty"):
+        store.insert_top_of_book_snapshot(
+            "binance",
+            "BTCUSDC",
+            "spot",
+            {"bidPrice": "99", "askPrice": "101", "askQty": "1"},
+            ts_ms=8,
+        )
     assert store.latest_snapshot("BTCUSDC", "spot", "missing") is None
     store.connect().execute(
         "INSERT OR REPLACE INTO market_snapshots VALUES (?, ?, ?, ?, ?, ?)",
@@ -173,7 +216,13 @@ class _SyncClient:
         return {"closeTime": 120_000, "priceChangePercent": "1.5"}
 
     def get_book_ticker(self, _symbol):
-        return "bad" if self.bad_book else {"time": 120_001, "bidPrice": "99", "askPrice": "101"}
+        return "bad" if self.bad_book else {
+            "time": 120_001,
+            "bidPrice": "99",
+            "bidQty": "2",
+            "askPrice": "101",
+            "askQty": "3",
+        }
 
     def get_futures_premium_index(self, _symbol):
         return {"time": 120_002, "lastFundingRate": "0.0001"}
@@ -203,8 +252,17 @@ def test_sync_market_data_paginates_and_stores_metrics(tmp_path) -> None:
     assert result.kline_requests == 2
     assert result.kline_rows_received == 3
     assert result.snapshots_inserted == 5
+    assert result.top_of_book_inserted == 1
+    assert result.latest_spread_bps == 200.0
+    assert result.latest_depth_notional == 501.0
     assert "candles_available=3" in render_sync_result(result)
+    assert "top_of_book=1" in render_sync_result(result)
+    assert "latest_spread_bps=200.0000 latest_depth_notional=501.00" in render_sync_result(result)
     assert "kline_requests=2 kline_rows=3" in render_sync_result(result)
+    with MarketDataStore(tmp_path / "m.sqlite") as store:
+        latest_book = store.latest_top_of_book("BTCUSDC", "spot")
+        assert latest_book is not None
+        assert latest_book.spread_bps == 200.0
 
 
 def test_sync_market_data_incremental_mode_skips_duplicate_candle_writes(tmp_path) -> None:
@@ -317,6 +375,19 @@ def test_sync_market_data_reports_snapshot_warnings_and_failures(tmp_path) -> No
     assert warn.status == "warn"
     assert any("ticker_24h" in error for error in warn.errors)
     assert any("book_ticker" in error for error in warn.errors)
+
+    class MissingQtyClient(_SyncClient):
+        def get_book_ticker(self, _symbol):
+            return {"time": 120_001, "bidPrice": "99", "askPrice": "101", "askQty": "1"}
+
+    top_warn = sync_market_data(
+        MissingQtyClient(),  # type: ignore[arg-type]
+        MarketDataSyncConfig(db_path=tmp_path / "top-warn.sqlite", rows=1, include_futures_metrics=False),
+    )
+    assert top_warn.status == "warn"
+    assert top_warn.snapshots_inserted == 2
+    assert top_warn.top_of_book_inserted == 0
+    assert any("top_of_book" in error for error in top_warn.errors)
 
     fail = sync_market_data(
         _SyncClient(),  # type: ignore[arg-type]
