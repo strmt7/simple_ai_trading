@@ -720,8 +720,83 @@ def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, mon
     assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
     assert payload["files"] == 2
     assert ranked["quote_asset"] == "USDT"
-    assert ranked["max_symbols"] == 2
+    assert ranked["max_symbols"] == 50
     assert ranked["max_scan"] == 50
+
+
+def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1m", market_type="futures"))
+    ingested: list[str] = []
+
+    class Result:
+        status = "skipped"
+        rows_read = 0
+        rows_inserted = 0
+        bytes_downloaded = 0
+        error = ""
+
+        def __init__(self, symbol: str) -> None:
+            self.symbol = symbol
+            self.url = f"https://data.binance.vision/x/{symbol}.zip"
+
+        def asdict(self):
+            return {"status": self.status, "symbol": self.symbol, "url": self.url}
+
+    def fake_rank(_client, _strategy, *, quote_asset, max_symbols, max_scan):
+        assert quote_asset == "USDT"
+        assert max_symbols == 10
+        assert max_scan == 10
+        return SimpleNamespace(
+            eligible=[
+                SimpleNamespace(symbol="BTCUSDT"),
+                SimpleNamespace(symbol="NEWUSDT"),
+                SimpleNamespace(symbol="ETHUSDT"),
+            ]
+        )
+
+    def fake_list(**kwargs):
+        symbol = str(kwargs["symbol"])
+        counts = {"BTCUSDT": 3, "NEWUSDT": 1, "ETHUSDT": 2}
+        return [f"https://data.binance.vision/x/{symbol}-{index}.zip" for index in range(counts[symbol])]
+
+    def fake_ingest(**kwargs):
+        symbol = str(kwargs["symbol"])
+        ingested.append(symbol)
+        return [Result(symbol)]
+
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
+    monkeypatch.setattr(cli, "rank_high_liquidity_universe", fake_rank)
+    monkeypatch.setattr(cli, "list_archive_urls", fake_list)
+    monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols=None,
+        top_symbols=2,
+        quote_asset="USDT",
+        max_scan=10,
+        min_history_months=2,
+        interval="1m",
+        market="futures",
+        cadence="monthly",
+        max_files=None,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
+    assert payload["requested_top_symbols"] == 2
+    assert payload["history_rejections"] == [
+        {"symbol": "NEWUSDT", "error": "history_months_below_min:1/2"}
+    ]
+    assert ingested == ["BTCUSDT", "ETHUSDT"]
 
 
 def test_command_data_health_reports_verified_archive_coverage(tmp_path, monkeypatch, capsys) -> None:

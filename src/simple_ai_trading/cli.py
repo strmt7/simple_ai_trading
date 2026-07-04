@@ -400,6 +400,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_archive_sync.add_argument("--top-symbols", type=int, default=0, help="auto-rank this many high-liquidity symbols")
     parser_archive_sync.add_argument("--quote-asset", default=None, help="quote asset used with --top-symbols")
     parser_archive_sync.add_argument("--max-scan", type=int, default=250, help="maximum universe candidates scanned with --top-symbols")
+    parser_archive_sync.add_argument(
+        "--min-history-months",
+        type=int,
+        default=0,
+        help="with --top-symbols and monthly cadence, require this many monthly archive files before selecting a symbol",
+    )
     parser_archive_sync.add_argument("--interval", default=None)
     parser_archive_sync.add_argument("--market", choices=["spot", "futures"], default="spot")
     parser_archive_sync.add_argument("--cadence", choices=["monthly", "daily"], default="monthly")
@@ -4561,8 +4567,12 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     cadence = str(getattr(args, "cadence", "monthly") or "monthly")
     raw_symbols = str(getattr(args, "symbols", "") or "").strip()
     symbols = [item.strip().upper() for item in raw_symbols.split(",") if item.strip()]
+    requested_top_symbols = 0
+    prelisted_archive_urls: dict[str, list[str]] = {}
+    history_rejections: list[dict[str, str]] = []
     if not symbols and int(getattr(args, "top_symbols", 0) or 0) > 0:
         top_symbols = max(1, int(getattr(args, "top_symbols", 0) or 0))
+        requested_top_symbols = top_symbols
         quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
         max_scan = max(top_symbols, int(getattr(args, "max_scan", 250) or 250))
         try:
@@ -4571,15 +4581,35 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 _build_client(ranked_runtime),
                 load_strategy(),
                 quote_asset=quote_asset,
-                max_symbols=top_symbols,
+                max_symbols=max_scan,
                 max_scan=max_scan,
             )
         except (BinanceAPIError, OSError, ValueError) as exc:
             print(f"archive-sync failed to rank high-liquidity symbols: {exc}", file=sys.stderr)
             return 2
-        symbols = [item.symbol for item in selection.eligible[:top_symbols]]
+        min_history_months = max(0, int(getattr(args, "min_history_months", 0) or 0))
+        symbols = []
+        history_rejections: list[dict[str, str]] = []
+        for item in selection.eligible:
+            if len(symbols) >= top_symbols:
+                break
+            try:
+                urls = list_archive_urls(symbol=item.symbol, interval=interval, market_type=market_type, cadence=cadence)
+            except (OSError, ValueError) as exc:
+                history_rejections.append({"symbol": item.symbol, "error": f"list_failed:{exc}"})
+                continue
+            if cadence == "monthly" and min_history_months > 0 and len(urls) < min_history_months:
+                history_rejections.append({
+                    "symbol": item.symbol,
+                    "error": f"history_months_below_min:{len(urls)}/{min_history_months}",
+                })
+                continue
+            symbols.append(item.symbol)
+            prelisted_archive_urls[item.symbol] = urls
         if not symbols:
             print(f"archive-sync found no eligible high-liquidity {quote_asset} symbols", file=sys.stderr)
+            for rejection in history_rejections:
+                print(f"warning: {rejection['symbol']} {rejection['error']}", file=sys.stderr)
             return 2
     if not symbols:
         symbols = [str(getattr(args, "symbol", None) or runtime.symbol).upper()]
@@ -4588,7 +4618,9 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     errors: list[dict[str, str]] = []
     for symbol in symbols:
         try:
-            urls = list_archive_urls(symbol=symbol, interval=interval, market_type=market_type, cadence=cadence)
+            urls = prelisted_archive_urls.get(symbol)
+            if urls is None:
+                urls = list_archive_urls(symbol=symbol, interval=interval, market_type=market_type, cadence=cadence)
         except (OSError, ValueError) as exc:
             errors.append({"symbol": symbol, "error": f"list_failed:{exc}"})
             continue
@@ -4610,11 +4642,17 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 require_checksum=bool(getattr(args, "require_checksum", False)),
             )
         )
+    shortfall = requested_top_symbols > 0 and len(symbols) < requested_top_symbols
     payload = {
-        "status": "ok" if not errors and all(item.status in {"complete", "skipped"} for item in all_results) else "warn",
+        "status": (
+            "ok"
+            if not errors and not shortfall and all(item.status in {"complete", "skipped"} for item in all_results)
+            else "warn"
+        ),
         "symbol": symbols[0] if len(symbols) == 1 else "",
         "symbols": symbols,
         "symbol_count": len(symbols),
+        "requested_top_symbols": int(requested_top_symbols),
         "interval": interval,
         "market_type": market_type,
         "cadence": cadence,
@@ -4622,6 +4660,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         "rows_read": sum(item.rows_read for item in all_results),
         "rows_inserted": sum(item.rows_inserted for item in all_results),
         "bytes_downloaded": sum(item.bytes_downloaded for item in all_results),
+        "history_rejections": history_rejections,
         "errors": errors,
         "results": [item.asdict() for item in all_results],
     }
@@ -4634,7 +4673,12 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             f"files={payload['files']} rows_read={payload['rows_read']} "
             f"rows_inserted={payload['rows_inserted']} bytes={payload['bytes_downloaded']}"
         )
-        for error in errors:
+        if shortfall:
+            print(
+                f"warning: archive-sync selected {len(symbols)}/{requested_top_symbols} symbols after history-depth gates",
+                file=sys.stderr,
+            )
+        for error in [*history_rejections, *errors]:
             print(f"warning: {error['symbol']} {error['error']}", file=sys.stderr)
         for item in all_results:
             if item.status == "error":
