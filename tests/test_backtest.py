@@ -43,6 +43,8 @@ def test_backtest_runs() -> None:
     assert result.edge_vs_buy_hold == result.realized_pnl - result.buy_hold_pnl
     assert result.scoring_backend_kind == "cpu"
     assert result.scoring_backend_device == "cpu"
+    assert 1 <= len(result.equity_curve) <= len(rows)
+    assert result.equity_curve[0]["equity"] == pytest.approx(1000.0)
 
 
 def test_backtest_empty_rows_preserves_requested_scoring_backend() -> None:
@@ -246,6 +248,12 @@ def test_backtest_signal_enters_on_next_bar_close() -> None:
 
     assert result.closed_trades == 1
     assert result.realized_pnl == pytest.approx(-2.281928855519027)
+    assert len(result.trade_log) == 1
+    assert len(result.trade_returns) == 1
+    assert result.trade_pnls[0] == pytest.approx(result.realized_pnl)
+    assert result.trade_log[0]["opened_at"] == 60_000
+    assert result.trade_log[0]["closed_at"] == 60_000
+    assert result.equity_curve[-1]["equity"] == pytest.approx(result.ending_cash)
 
 
 def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:

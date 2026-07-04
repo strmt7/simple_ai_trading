@@ -148,7 +148,9 @@ statistical edge gate: an exact one-sided sign test over positive windows plus a
 deterministic bootstrap-style lower confidence bound over mean window return.
 This implements the practical lesson from PBO/Deflated-Sharpe research: a high
 aggregate score is not enough when the distribution of tested windows still
-looks like selection luck.
+looks like selection luck. When the backtest produces enough closed trades, the
+statistical gate uses net trade returns; otherwise it falls back to
+chronological-window returns so sparse strategies are still screened.
 
 ## Cross-Symbol Model Lab
 

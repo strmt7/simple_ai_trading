@@ -34,6 +34,10 @@ class BacktestResult:
     scoring_backend_kind: str = "cpu"
     scoring_backend_device: str = "cpu"
     scoring_backend_reason: str = ""
+    equity_curve: tuple[dict[str, float | int], ...] = ()
+    trade_pnls: tuple[float, ...] = ()
+    trade_returns: tuple[float, ...] = ()
+    trade_log: tuple[dict[str, float | int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -147,6 +151,20 @@ def _close_position(
 
 def _safe_day(ts_ms: int) -> int:
     return int(ts_ms // (24 * 60 * 60 * 1000))
+
+
+def _equity_point(timestamp: int, equity: float, drawdown: float, position_side: int) -> dict[str, float | int]:
+    return {
+        "timestamp": int(timestamp),
+        "equity": float(equity),
+        "drawdown": float(max(0.0, drawdown)),
+        "position_side": int(position_side),
+    }
+
+
+def _trade_return(net_pnl: float, equity_reference: float) -> float:
+    reference = max(1.0, abs(_finite_float(equity_reference, 1.0)))
+    return float(net_pnl) / reference
 
 
 def _buy_hold_pnl(
@@ -475,12 +493,19 @@ def run_backtest(
     total_fees = 0.0
     max_exposure = 0.0
     cap_hits = 0
+    equity_curve: list[dict[str, float | int]] = []
+    trade_pnls: list[float] = []
+    trade_returns: list[float] = []
+    trade_log: list[dict[str, float | int]] = []
 
     position_side = 0
     notional = 0.0
     qty = 0.0
     entry_price = 0.0
     margin_used = 0.0
+    entry_fee_paid = 0.0
+    entry_equity_reference = cash
+    entry_timestamp = int(rows[0].timestamp)
     pending_signal = 0
     last_close_timestamp: int | None = None
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
@@ -560,6 +585,9 @@ def run_backtest(
             if cash < total_cost:
                 continue
 
+            entry_equity_reference = cash
+            entry_timestamp = int(row.timestamp)
+            entry_fee_paid = fee
             cash -= total_cost
             total_fees += fee
             position_side = side_sign
@@ -581,6 +609,9 @@ def run_backtest(
             )
 
             if should_close:
+                closed_side = position_side
+                closed_notional = abs(notional)
+                closed_entry_price = entry_price
                 cash_delta, realized, exit_fee = _close_position(
                     position_side=position_side,
                     price=price,
@@ -594,6 +625,23 @@ def run_backtest(
                 cash += cash_delta
                 total_fees += exit_fee
                 closed_trades += 1
+                net_pnl = realized - entry_fee_paid - exit_fee
+                return_pct = _trade_return(net_pnl, entry_equity_reference)
+                trade_pnls.append(float(net_pnl))
+                trade_returns.append(float(return_pct))
+                trade_log.append({
+                    "opened_at": int(entry_timestamp),
+                    "closed_at": int(row.timestamp),
+                    "side": int(closed_side),
+                    "gross_notional": float(closed_notional),
+                    "entry_price": float(closed_entry_price),
+                    "exit_mark_price": float(price),
+                    "realized_pnl": float(realized),
+                    "net_pnl": float(net_pnl),
+                    "return_pct": float(return_pct),
+                    "entry_fee": float(entry_fee_paid),
+                    "exit_fee": float(exit_fee),
+                })
                 if realized > 0:
                     wins += 1
 
@@ -602,6 +650,8 @@ def run_backtest(
                 qty = 0.0
                 entry_price = 0.0
                 margin_used = 0.0
+                entry_fee_paid = 0.0
+                entry_equity_reference = cash
                 last_close_timestamp = row.timestamp
 
         # mark-to-market drawdown control with unrealized exposure
@@ -616,6 +666,7 @@ def run_backtest(
         dd = 1.0 if equity <= 0.0 and equity_peak > 0.0 else ((equity_peak - equity) / equity_peak if equity_peak else 0.0)
         if dd > max_drawdown:
             max_drawdown = dd
+        equity_curve.append(_equity_point(int(row.timestamp), equity, dd, position_side))
 
         if cfg.max_drawdown_limit > 0.0 and dd >= cfg.max_drawdown_limit:
             stopped_by_drawdown = True
@@ -623,6 +674,9 @@ def run_backtest(
 
     # force close residual position at final mark
     if position_side != 0:
+        closed_side = position_side
+        closed_notional = abs(notional)
+        closed_entry_price = entry_price
         final_delta, final_realized, final_fee = _close_position(
             position_side=position_side,
             price=final_mark_price,
@@ -636,6 +690,23 @@ def run_backtest(
         cash += final_delta
         total_fees += final_fee
         closed_trades += 1
+        net_pnl = final_realized - entry_fee_paid - final_fee
+        return_pct = _trade_return(net_pnl, entry_equity_reference)
+        trade_pnls.append(float(net_pnl))
+        trade_returns.append(float(return_pct))
+        trade_log.append({
+            "opened_at": int(entry_timestamp),
+            "closed_at": int(rows[-1].timestamp),
+            "side": int(closed_side),
+            "gross_notional": float(closed_notional),
+            "entry_price": float(closed_entry_price),
+            "exit_mark_price": float(final_mark_price),
+            "realized_pnl": float(final_realized),
+            "net_pnl": float(net_pnl),
+            "return_pct": float(return_pct),
+            "entry_fee": float(entry_fee_paid),
+            "exit_fee": float(final_fee),
+        })
         if final_realized > 0:
             wins += 1
         position_side = 0
@@ -648,6 +719,7 @@ def run_backtest(
         final_dd = 1.0 if cash <= 0.0 and equity_peak > 0.0 else ((equity_peak - cash) / equity_peak if equity_peak else 0.0)
         if final_dd > max_drawdown:
             max_drawdown = final_dd
+        equity_curve.append(_equity_point(int(rows[-1].timestamp), cash, final_dd, position_side))
 
     realized_pnl = cash - starting_cash
     win_rate = wins / closed_trades if closed_trades else 0.0
@@ -678,5 +750,9 @@ def run_backtest(
         trades_per_day_cap_hit=cap_hits,
         buy_hold_pnl=buy_hold_pnl,
         edge_vs_buy_hold=realized_pnl - buy_hold_pnl,
+        equity_curve=tuple(equity_curve),
+        trade_pnls=tuple(trade_pnls),
+        trade_returns=tuple(trade_returns),
+        trade_log=tuple(trade_log),
         **_score_backend_payload(score_backend),
     )

@@ -214,6 +214,56 @@ def test_validate_model_temporal_robustness_rejects_weak_statistical_edge(
     assert float(report.statistical_edge["bootstrap_lower_mean_return"]) < 0.0
 
 
+def test_temporal_robustness_prefers_trade_return_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trade_sets = [
+        (-0.02, -0.01, 0.03),
+        (-0.03, 0.01, -0.02),
+        (-0.01, -0.01, 0.02),
+        (-0.02, 0.01, -0.03),
+    ]
+
+    def fake_backtest(_rows, *_args, **_kwargs):
+        returns = trade_sets.pop(0)
+        return _result(
+            realized_pnl=10.0,
+            ending_cash=1010.0,
+            closed_trades=3,
+            edge_vs_buy_hold=10.0,
+            trade_returns=returns,
+            trade_pnls=tuple(value * 1000.0 for value in returns),
+        )
+
+    monkeypatch.setattr(robust_validation, "run_backtest", fake_backtest)
+    model = TrainedModel(weights=[0.0], bias=10.0, feature_dim=1, epochs=1, feature_means=[0.0], feature_stds=[1.0])
+
+    report = robust_validation.validate_model_temporal_robustness(
+        [object() for _ in range(40)],
+        model,
+        StrategyConfig(),
+        objective_name="aggressive",
+        starting_cash=1000.0,
+        market_type="spot",
+        policy=robust_validation.TemporalRobustnessPolicy(
+            objective="aggressive",
+            target_windows=4,
+            min_windows=2,
+            min_accepted_rate=0.60,
+            require_latest_window=False,
+            min_window_rows=10,
+            max_sign_test_p_value=0.55,
+            min_bootstrap_lower_mean_return=-0.005,
+        ),
+    )
+
+    assert report.accepted is False
+    assert report.statistical_edge["evidence_unit"] == "trade"
+    assert report.statistical_edge["sample_count"] == 12
+    assert report.statistical_edge["trade_return_count"] == 12
+    assert str(report.reason).startswith("sign_test_p_value>")
+
+
 def test_validate_model_temporal_robustness_requires_enough_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

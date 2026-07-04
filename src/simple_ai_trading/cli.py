@@ -4714,6 +4714,10 @@ def command_backtest(args: argparse.Namespace) -> int:
             "gross_exposure": float(result.gross_exposure),
             "buy_hold_pnl": float(result.buy_hold_pnl),
             "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
+            "equity_curve_points": len(getattr(result, "equity_curve", ()) or ()),
+            "trade_return_count": len(getattr(result, "trade_returns", ()) or ()),
+            "trade_pnls": list(getattr(result, "trade_pnls", ()) or ()),
+            "trade_returns": list(getattr(result, "trade_returns", ()) or ()),
         },
     }
     _persist_run_artifact("backtest", model_path.parent, artifact)
@@ -4778,10 +4782,15 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         score_batch_size=max(1, int(getattr(args, "score_batch_size", 8192))),
     )
     points = [
-        EquityPoint(0, float(result.starting_cash), 0.0),
-        EquityPoint(1, float(result.starting_cash + result.realized_pnl / 2.0), float(result.max_drawdown) * 0.5),
-        EquityPoint(2, float(result.ending_cash), float(result.max_drawdown)),
+        EquityPoint(int(index), float(point["equity"]), float(point["drawdown"]))
+        for index, point in enumerate(getattr(result, "equity_curve", ()) or ())
+        if isinstance(point, dict) and "equity" in point and "drawdown" in point
     ]
+    if not points:
+        points = [
+            EquityPoint(0, float(result.starting_cash), 0.0),
+            EquityPoint(1, float(result.ending_cash), float(result.max_drawdown)),
+        ]
     output = write_equity_svg(points, args.output, title=f"{runtime.symbol} day-trading backtest")
     print(f"backtest chart saved to {output}")
     print(
