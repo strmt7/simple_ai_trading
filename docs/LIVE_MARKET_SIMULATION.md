@@ -18,6 +18,9 @@ Execution cost is symbol-specific where market data exists:
 
 - `ticker/24hr` supplies quote volume and trade count.
 - `ticker/bookTicker` supplies bid/ask spread.
+- `data-sync` now persists a typed top-of-book history with bid/ask price,
+  bid/ask quantity, mid price, spread bps, and top-level notional depth in
+  SQLite, while still retaining the raw exchange payload for audit.
 - `exchangeInfo` proves the symbol exists and is trading.
 - Strategy thresholds decide if quote volume, trade count, spread, and liquidity score are acceptable.
 - Automatic universe ranking may derive volume and trade-count floors from the
@@ -111,7 +114,7 @@ Testnet fills, liquidity, queue position, and response times can diverge from li
 
 Known limitations:
 
-- Direct order-book depth and queue position are not yet replayed tick-by-tick.
+- Full L2 order-book depth and queue position are not yet replayed tick-by-tick.
 - Free VRAM is not exposed reliably by DirectML; the app verifies GPU backend functionality and reports unknown VRAM as a warning.
 - External news/sentiment sources are still broad crypto-oriented; the liquidity gate is the primary automatic asset filter.
 - The current stress model uses top-of-book and candle-volume proxies. It is
@@ -119,8 +122,8 @@ Known limitations:
 - Very small datasets are marked as insufficient for purged walk-forward gates;
   they are useful for unit tests and smoke checks, not production acceptance.
 - Temporal robustness currently uses candle-window regime evidence; full
-  order-book regime replay remains a future improvement after depth snapshots
-  are stored.
+  order-book regime replay remains a future improvement after L2 depth
+  snapshots are stored.
 - Statistical edge prefers trade-return samples when enough trades exist and
   falls back to window-level P&L for sparse strategies. It is stricter than no
   statistical screen, but still weaker than a full intrabar order-book

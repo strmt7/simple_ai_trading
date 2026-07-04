@@ -154,9 +154,10 @@ they are high-signal, cheap, and fit the current repo shape.
 
 Implemented in this prototype:
 
-- `data-sync` stores Binance closed candles, 24h ticker, L1 book ticker, USD-M
-  premium index, open interest, and funding history in SQLite with the existing
-  rate-limited Binance client.
+- `data-sync` stores Binance closed candles, 24h ticker, raw L1 book ticker,
+  normalized top-of-book spread/depth snapshots, USD-M premium index, open
+  interest, and funding history in SQLite with the existing rate-limited
+  Binance client.
 - `signals` and `live --external-signals` cache and blend Alternative.me,
   CoinGecko, Binance futures positioning, and mempool.space into a bounded
   score/risk adjustment with provider quorum checks.

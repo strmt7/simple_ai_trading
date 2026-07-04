@@ -44,6 +44,9 @@ class MarketDataSyncResult:
     coverage_ratio: float = 0.0
     kline_requests: int = 0
     kline_rows_received: int = 0
+    top_of_book_inserted: int = 0
+    latest_spread_bps: float | None = None
+    latest_depth_notional: float | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -99,6 +102,45 @@ def _capture_snapshot(
     except (BinanceAPIError, OSError, ValueError) as exc:
         errors.append(f"{kind}: {exc}")
         return 0
+
+
+def _capture_book_ticker_snapshot(
+    store: MarketDataStore,
+    client: object,
+    symbol: str,
+    market_type: str,
+    errors: list[str],
+    now_ms: int | None,
+) -> tuple[int, int]:
+    try:
+        payload = client.get_book_ticker(symbol)  # type: ignore[attr-defined]
+        if not isinstance(payload, dict):
+            raise BinanceAPIError("Unexpected book_ticker payload")
+        ts_ms = _snapshot_time(payload, now_ms)
+        raw_rows = store.insert_snapshot(
+            "binance",
+            symbol,
+            market_type,
+            "book_ticker",
+            payload,
+            ts_ms=ts_ms,
+        )
+        try:
+            top_rows = store.insert_top_of_book_snapshot(
+                "binance",
+                symbol,
+                market_type,
+                payload,
+                ts_ms=ts_ms,
+                ingested_at_ms=now_ms,
+            )
+        except ValueError as exc:
+            errors.append(f"top_of_book: {exc}")
+            top_rows = 0
+        return raw_rows, top_rows
+    except (BinanceAPIError, OSError, ValueError) as exc:
+        errors.append(f"book_ticker: {exc}")
+        return 0, 0
 
 
 def _store_candle_chunk(
@@ -201,6 +243,7 @@ def sync_market_data(
     kline_requests = 0
     kline_rows_received = 0
     snapshots_inserted = 0
+    top_of_book_inserted = 0
     sync_mode = "backfill"
 
     with MarketDataStore(config.db_path) as store:
@@ -256,16 +299,16 @@ def sync_market_data(
             errors,
             config.now_ms,
         )
-        snapshots_inserted += _capture_snapshot(
+        raw_book_rows, typed_book_rows = _capture_book_ticker_snapshot(
             store,
             client,
             symbol,
             config.market_type,
-            "book_ticker",
-            lambda: client.get_book_ticker(symbol),
             errors,
             config.now_ms,
         )
+        snapshots_inserted += raw_book_rows
+        top_of_book_inserted += typed_book_rows
 
         fclient = futures_client if futures_client is not None else client
         if config.include_futures_metrics and getattr(fclient, "market_type", "") == "futures":
@@ -303,6 +346,7 @@ def sync_market_data(
             errors.append("futures_metrics: futures client unavailable")
 
         coverage_quality = store.coverage_quality(symbol, config.market_type, interval, step_ms)
+        latest_book = store.latest_top_of_book(symbol, config.market_type)
         coverage = coverage_quality.coverage
         has_candles = coverage.count > 0
         status = "ok" if has_candles and not errors else ("warn" if has_candles else "fail")
@@ -324,6 +368,9 @@ def sync_market_data(
             coverage_ratio=coverage_quality.coverage_ratio,
             kline_requests=kline_requests,
             kline_rows_received=kline_rows_received,
+            top_of_book_inserted=top_of_book_inserted,
+            latest_spread_bps=latest_book.spread_bps if latest_book is not None else None,
+            latest_depth_notional=latest_book.depth_notional if latest_book is not None else None,
         )
         store.insert_sync_run(result.asdict())
         return result
@@ -337,12 +384,18 @@ def render_sync_result(result: MarketDataSyncResult) -> str:
             f"interval={result.interval} mode={result.sync_mode} "
             f"candles_inserted={result.candles_inserted} candles_added={result.candles_added} "
             f"candles_available={result.candles_available} snapshots={result.snapshots_inserted} "
+            f"top_of_book={result.top_of_book_inserted} "
             f"kline_requests={result.kline_requests} kline_rows={result.kline_rows_received}"
         ),
         f"db={result.db_path}",
     ]
     if result.latest_open_time is not None:
         lines.append(f"latest_open_time={result.latest_open_time}")
+    if result.latest_spread_bps is not None:
+        lines.append(
+            f"latest_spread_bps={result.latest_spread_bps:.4f} "
+            f"latest_depth_notional={float(result.latest_depth_notional or 0.0):.2f}"
+        )
     lines.append(f"coverage_ratio={result.coverage_ratio:.4f} gap_count={result.gap_count}")
     for error in result.errors:
         lines.append(f"warning: {error}")

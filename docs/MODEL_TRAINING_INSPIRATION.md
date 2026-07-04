@@ -268,7 +268,10 @@ symbol-specific order-book evidence.
 
 Implementation direction:
 
-- Persist depth snapshots or rolling top-of-book samples per symbol.
+- Use the persisted typed top-of-book samples from `data-sync` for L1 spread,
+  depth, and quote-quality evidence.
+- Add L2 depth snapshots before claiming queue-position or full order-book
+  replay realism.
 - Add features for spread percentile, depth imbalance, microprice, quote
   volatility, top-level depth, and observed quote update rate.
 - Simulate queue/fill uncertainty for limit orders, adverse selection after
@@ -340,7 +343,8 @@ Implemented objective gates:
 
 1. Expand meta-label validation with cross-symbol, out-of-sample policy replay
    and per-risk-level precision/drift dashboards.
-2. Depth/top-of-book data store and microstructure feature block.
+2. Microstructure feature block from typed top-of-book samples, then L2 depth
+   snapshots for queue/fill simulation.
 3. LightGBM OpenCL tabular candidate with repeated-seed validation.
 4. Patch-transformer research candidate using PyTorch DirectML.
 5. Foundation forecast feature provider with timestamped no-lookahead logs.
