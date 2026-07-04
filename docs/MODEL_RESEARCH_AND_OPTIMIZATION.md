@@ -271,11 +271,15 @@ portfolio gates.
 The same readiness gate now requires `execution_validation` on signed live
 artifacts. `model-lab` stamps each serialized model after it runs
 symbol-specific stress validation and final-model temporal robustness against
-the selected liquid symbol. The stamp records the symbol, market type,
-liquidity measurements, stress report path, temporal-robustness report path,
-accepted scenario/window counts, and worst realized/drawdown metrics. A plain
-`train-suite` model may be useful for research, but it is not signed-live ready
-until this execution evidence is accepted and persisted into the model JSON.
+the selected liquid symbol, then after the portfolio risk gate is known. The
+stamp records the symbol, market type, liquidity measurements, stress report
+path, temporal-robustness report path, portfolio report path, accepted
+scenario/window counts, portfolio CVaR/drawdown/correlation metrics, and worst
+realized/drawdown metrics. A plain `train-suite` model may be useful for
+research, but it is not signed-live ready until this execution and portfolio
+evidence is accepted and persisted into the model JSON. If individual symbols
+pass but portfolio diversification fails, model-lab stamps those model files as
+not live-ready.
 
 The selection-risk artifact now includes a two-panel CSCV/PBO-style diagnostic.
 It ranks candidates by the selection panel and checks where the in-sample winner
@@ -343,7 +347,7 @@ assert that every CLI command appears in the Windows app.
 - No promoted model when the selection-risk artifact reports severe PBO-style
   in-sample/out-of-sample rank inversion.
 - No signed live startup when the model lacks accepted symbol-specific
-  execution stress and temporal robustness evidence.
+  execution stress, temporal robustness, and portfolio-risk evidence.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

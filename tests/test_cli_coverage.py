@@ -797,6 +797,7 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
             "symbol": "BTCUSDC",
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
+            "portfolio": {"accepted": True},
         },
     )
     model_file = tmp_path / "model_default.json"
@@ -2836,6 +2837,7 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
                 "symbol": "BTCUSDC",
                 "stress": {"accepted": True},
                 "temporal_robustness": {"accepted": True},
+                "portfolio": {"accepted": True},
             },
         ),
         model_file,
@@ -3108,6 +3110,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
             "symbol": "BTCUSDC",
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
+            "portfolio": {"accepted": True},
         },
     )
 

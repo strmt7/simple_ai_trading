@@ -155,6 +155,7 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
             "symbol": "BTCUSDC",
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
+            "portfolio": {"accepted": True},
         },
     )
 

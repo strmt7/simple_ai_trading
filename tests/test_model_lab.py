@@ -177,12 +177,24 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
         stress_report_path=tmp_path / "stress.json",
         robustness_report=_ObjectiveReport(accepted=True),
         robustness_report_path=tmp_path / "robustness.json",
+        portfolio_report=SimpleNamespace(
+            accepted=True,
+            reason=None,
+            accepted_symbols=["AAAUSDC"],
+            effective_symbol_count=1.0,
+            portfolio_cvar_95=0.01,
+            portfolio_max_drawdown=0.02,
+            max_pairwise_correlation=0.0,
+            max_cluster_weight=0.5,
+        ),
+        portfolio_report_path=tmp_path / "portfolio.json",
     )
 
     stamped = load_model(valid_path, expected_feature_dim=1)
     assert stamped.execution_validation["passed"] is True
     assert stamped.execution_validation["symbol_execution_profile"] is None
     assert stamped.execution_validation["stress"]["objective"]["objective"] == "regular"
+    assert stamped.execution_validation["portfolio"]["accepted"] is True
 
 
 def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, monkeypatch) -> None:
@@ -444,8 +456,32 @@ def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp
 
 def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
+        model_path = kwargs["output_dir"] / "model_regular.json"
+        serialize_model(
+            TrainedModel(
+                weights=[0.0],
+                bias=0.0,
+                feature_dim=1,
+                epochs=1,
+                feature_means=[0.0],
+                feature_stds=[1.0],
+                selection_risk={
+                    "passed": True,
+                    "effective_trials": 24,
+                    "selected_score": 0.12,
+                    "trial_penalty": 0.01,
+                    "deflated_score": 0.11,
+                },
+            ),
+            model_path,
+        )
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                model_path=model_path,
+                best_score=0.12,
+                hybrid_profile="base_only",
+            )],
             total_rows=len(candles),
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
@@ -482,3 +518,9 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
     assert "cluster_weight>" in str(report.portfolio_risk["reason"])
     assert {outcome.error for outcome in report.outcomes} == {"portfolio_risk_failed"}
     assert all(outcome.diagnostics and "portfolio_risk_reason" in outcome.diagnostics for outcome in report.outcomes)
+    stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
+    assert stamped.execution_validation["passed"] is False
+    assert stamped.execution_validation["stress"]["accepted"] is True
+    assert stamped.execution_validation["temporal_robustness"]["accepted"] is True
+    assert stamped.execution_validation["portfolio"]["accepted"] is False
+    assert "cluster_weight>" in str(stamped.execution_validation["portfolio"]["reason"])

@@ -125,6 +125,7 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
                 "symbol": "BTCUSDC",
                 "stress": {"accepted": True},
                 "temporal_robustness": {"accepted": True},
+                "portfolio": {"accepted": True},
             },
         ),
         promoted_path,
