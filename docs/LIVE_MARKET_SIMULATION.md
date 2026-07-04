@@ -120,9 +120,10 @@ Testnet fills, liquidity, queue position, and response times can diverge from li
 
 Signed live startup also checks the final model artifact. `model-lab` must stamp
 `execution_validation` into the serialized model after the symbol passes
-liquidity selection, stress replay, and temporal robustness. This keeps a
-generic candle-trained model from being treated as live-ready just because it
-deserializes and has a positive selection score.
+liquidity selection, stress replay, temporal robustness, and final portfolio
+risk. This keeps a generic candle-trained model, or an individually strong
+symbol from a rejected portfolio, from being treated as live-ready just because
+it deserializes and has a positive selection score.
 
 Known limitations:
 

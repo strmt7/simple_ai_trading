@@ -129,11 +129,13 @@ def build_model_readiness_report(
             passed = execution_validation.get("passed") is True
             stress = execution_validation.get("stress")
             temporal = execution_validation.get("temporal_robustness")
+            portfolio = execution_validation.get("portfolio")
             stress_passed = isinstance(stress, dict) and stress.get("accepted") is True
             temporal_passed = isinstance(temporal, dict) and temporal.get("accepted") is True
+            portfolio_passed = isinstance(portfolio, dict) and portfolio.get("accepted") is True
             symbol = str(execution_validation.get("symbol") or "").strip().upper()
-            if passed and stress_passed and temporal_passed and symbol:
-                checks.append(_check("ok", "execution validation", f"{symbol} stress+temporal accepted"))
+            if passed and stress_passed and temporal_passed and portfolio_passed and symbol:
+                checks.append(_check("ok", "execution validation", f"{symbol} stress+temporal+portfolio accepted"))
             else:
                 checks.append(
                     _check(
@@ -141,7 +143,8 @@ def build_model_readiness_report(
                         "execution validation",
                         (
                             "failed symbol-specific execution evidence "
-                            f"passed={passed} stress={stress_passed} temporal={temporal_passed} symbol={symbol or 'missing'}"
+                            f"passed={passed} stress={stress_passed} temporal={temporal_passed} "
+                            f"portfolio={portfolio_passed} symbol={symbol or 'missing'}"
                         ),
                     )
                 )

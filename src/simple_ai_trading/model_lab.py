@@ -166,6 +166,20 @@ def _objective_report(payload: dict[str, object], objective: str) -> dict[str, o
     return None
 
 
+@dataclass(frozen=True)
+class _ExecutionStampContext:
+    suite: SuiteReport
+    symbol: str
+    market_type: str
+    interval: str
+    liquidity: MarketEligibility
+    stress_profile: object
+    stress_report: SuiteStressReport
+    stress_report_path: Path
+    robustness_report: SuiteTemporalRobustnessReport
+    robustness_report_path: Path
+
+
 def _stamp_model_execution_validation(
     suite: SuiteReport,
     *,
@@ -178,6 +192,8 @@ def _stamp_model_execution_validation(
     stress_report_path: Path,
     robustness_report: SuiteTemporalRobustnessReport,
     robustness_report_path: Path,
+    portfolio_report: PortfolioRiskReport,
+    portfolio_report_path: Path,
 ) -> None:
     """Persist symbol-specific execution validation on each model-lab artifact."""
 
@@ -199,10 +215,14 @@ def _stamp_model_execution_validation(
             if robustness_objective
             else bool(robustness_report.accepted)
         )
+        portfolio_accepted = bool(
+            portfolio_report.accepted
+            and symbol.upper() in {str(item).upper() for item in portfolio_report.accepted_symbols}
+        )
         try:
             model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
             model.execution_validation = {
-                "passed": bool(stress_accepted and robustness_accepted),
+                "passed": bool(stress_accepted and robustness_accepted and portfolio_accepted),
                 "source": "model_lab",
                 "symbol": symbol.upper(),
                 "market_type": market_type,
@@ -235,6 +255,18 @@ def _stamp_model_execution_validation(
                     "statistical_edge_accepted": bool(getattr(robustness_report, "statistical_edge_accepted", False)),
                     "report_path": str(robustness_report_path),
                     "objective": robustness_objective,
+                },
+                "portfolio": {
+                    "accepted": portfolio_accepted,
+                    "suite_accepted": bool(portfolio_report.accepted),
+                    "report_path": str(portfolio_report_path),
+                    "reason": portfolio_report.reason,
+                    "accepted_symbols": list(portfolio_report.accepted_symbols),
+                    "effective_symbol_count": float(portfolio_report.effective_symbol_count),
+                    "portfolio_cvar_95": float(portfolio_report.portfolio_cvar_95),
+                    "portfolio_max_drawdown": float(portfolio_report.portfolio_max_drawdown),
+                    "max_pairwise_correlation": float(portfolio_report.max_pairwise_correlation),
+                    "max_cluster_weight": float(portfolio_report.max_cluster_weight),
                 },
             }
             serialize_model(model, path)
@@ -303,6 +335,7 @@ def run_model_lab(
     outcomes: list[SymbolResearchOutcome] = []
     liquidity_by_symbol = {item.symbol: item for item in universe.eligible}
     candles_by_symbol: dict[str, list[Candle]] = {}
+    execution_stamp_contexts: list[_ExecutionStampContext] = []
     for item in universe.eligible:
         symbol = item.symbol
         symbol_dir = output_dir / _safe_symbol_path(symbol)
@@ -355,8 +388,8 @@ def run_model_lab(
             )
             robustness_report_path = symbol_dir / "temporal_robustness.json"
             write_json_atomic(robustness_report_path, robustness_report.asdict(), indent=2, sort_keys=True)
-            _stamp_model_execution_validation(
-                suite,
+            execution_stamp_contexts.append(_ExecutionStampContext(
+                suite=suite,
                 symbol=symbol,
                 market_type=runtime.market_type,
                 interval=runtime.interval,
@@ -366,7 +399,7 @@ def run_model_lab(
                 stress_report_path=stress_report_path,
                 robustness_report=robustness_report,
                 robustness_report_path=robustness_report_path,
-            )
+            ))
             outcomes.append(_outcome_from_suite(
                 symbol,
                 suite,
@@ -403,6 +436,21 @@ def run_model_lab(
     )
     portfolio_report_path = output_dir / "portfolio_risk.json"
     write_json_atomic(portfolio_report_path, portfolio_report.asdict(), indent=2, sort_keys=True)
+    for context in execution_stamp_contexts:
+        _stamp_model_execution_validation(
+            context.suite,
+            symbol=context.symbol,
+            market_type=context.market_type,
+            interval=context.interval,
+            liquidity=context.liquidity,
+            stress_profile=context.stress_profile,
+            stress_report=context.stress_report,
+            stress_report_path=context.stress_report_path,
+            robustness_report=context.robustness_report,
+            robustness_report_path=context.robustness_report_path,
+            portfolio_report=portfolio_report,
+            portfolio_report_path=portfolio_report_path,
+        )
     report_path = output_dir / "model_lab_report.json"
     report = ModelLabReport(
         quote_asset=runtime.quote_asset,

@@ -328,6 +328,7 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
             "symbol": "BTCUSDC",
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
+            "portfolio": {"accepted": True},
         },
         ensemble_members=[
             EnsembleMember(

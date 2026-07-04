@@ -31,6 +31,7 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
             "symbol": "BTCUSDC",
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
+            "portfolio": {"accepted": True},
         } if promoted else {},
         meta_label_policy={
             "enabled": True,
@@ -94,9 +95,21 @@ def test_model_readiness_blocks_missing_or_failed_execution_validation() -> None
         "symbol": "BTCUSDC",
         "stress": {"accepted": True},
         "temporal_robustness": {"accepted": False},
+        "portfolio": {"accepted": True},
     }
     with pytest.raises(ModelPromotionError, match="execution validation"):
         assert_model_promoted(failed)
+
+    failed_portfolio = _model()
+    failed_portfolio.execution_validation = {
+        "passed": True,
+        "symbol": "BTCUSDC",
+        "stress": {"accepted": True},
+        "temporal_robustness": {"accepted": True},
+        "portfolio": {"accepted": False},
+    }
+    report = build_model_readiness_report(failed_portfolio)
+    assert any("portfolio=False" in check.detail for check in report.checks if check.label == "execution validation")
 
 
 def test_model_readiness_reports_quality_warning_variants() -> None:
