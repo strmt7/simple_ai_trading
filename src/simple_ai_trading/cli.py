@@ -7202,6 +7202,13 @@ def _build_autonomous_decision_fn(
                 source_grade_max_age_hours=current_strategy.source_grade_max_age_hours,
             )
             score, decision_strategy, _applied_adjustment = _apply_external_signal_to_score(score, current_strategy, external_report)
+        regime_window_size = max(8, min(len(rows), int(decision_strategy.liquidity_lookback_bars)))
+        regime_evidence = classify_market_regime(rows[-regime_window_size:])
+        regime_score = market_regime_unpredictability(
+            regime_evidence.dominant_regime,
+            regime_evidence.confidence,
+            regime_evidence.notes,
+        )
         liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_strategy, threshold)
         effective_threshold = liquidity_adjustment.threshold
         _record_model_telemetry(
@@ -7236,6 +7243,10 @@ def _build_autonomous_decision_fn(
             size_multiplier=float(meta_decision.size_multiplier),
             meta_label_action=str(meta_decision.action),
             meta_label_reason=str(meta_decision.reason),
+            regime=regime_evidence.dominant_regime,
+            regime_confidence=float(regime_evidence.confidence),
+            regime_notes=tuple(regime_evidence.notes),
+            regime_unpredictability_score=float(regime_score),
         )
 
     return decide, None, model_notice

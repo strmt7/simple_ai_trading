@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import time
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
@@ -50,7 +51,7 @@ from .positions import (
     now_ms,
 )
 from .reconciliation import ReconciliationReport, reconcile_account_positions
-from .risk_controls import stop_loss_sized_notional_pct
+from .risk_controls import market_regime_unpredictability, stop_loss_sized_notional_pct
 from .storage import write_json_atomic
 from .types import RuntimeConfig, StrategyConfig
 
@@ -188,6 +189,10 @@ class Decision:
     size_multiplier: float = 1.0
     meta_label_action: str = ""
     meta_label_reason: str = ""
+    regime: str = ""
+    regime_confidence: float = 0.0
+    regime_notes: tuple[str, ...] = ()
+    regime_unpredictability_score: float | None = None
 
 
 DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
@@ -746,6 +751,21 @@ def _entry_gate(
     cooldown_remaining = 0
     if cooldown_ms > 0 and last_activity > 0:
         cooldown_remaining = max(0, cooldown_ms - max(0, now_ms_value - last_activity))
+    if decision.regime_unpredictability_score is None:
+        regime_score = market_regime_unpredictability(
+            decision.regime,
+            decision.regime_confidence,
+            decision.regime_notes,
+        ) if decision.regime else 0.0
+    else:
+        try:
+            regime_score = float(decision.regime_unpredictability_score)
+        except (TypeError, ValueError, OverflowError):
+            regime_score = 1.0
+        if not math.isfinite(regime_score):
+            regime_score = 1.0
+    regime_score = max(0.0, min(1.0, regime_score))
+    regime_limit = max(0.0, min(1.0, float(strategy.max_regime_unpredictability)))
 
     if decision.side not in {"LONG", "SHORT"}:
         reason = "flat-signal"
@@ -761,6 +781,9 @@ def _entry_gate(
         reason = f"daily-cap-reached:{daily_entries}/{int(strategy.max_trades_per_day)}"
     elif cooldown_remaining > 0:
         reason = f"cooldown-active:{cooldown_remaining}ms"
+    elif regime_score > regime_limit:
+        regime_name = decision.regime or "unknown"
+        reason = f"regime-unpredictable:{regime_name}:{regime_score:.2f}>{regime_limit:.2f}"
     elif not capital_guard.allowed:
         reason = capital_guard.reason
     elif strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
