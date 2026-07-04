@@ -746,6 +746,23 @@ def train_round_model(
     inverted_score = objective.score(inverted_result) if objective.accepts(inverted_result) else float("-inf")
     if inverted_score > base_score + 1e-12:
         model = inverted_model
+    elif not math.isfinite(base_score):
+        model.meta_label_policy = {
+            "enabled": True,
+            "mode": "take_downsize_skip",
+            "reason": "round_selection_gate_failed",
+            "objective": objective.name,
+            "target_precision": 1.0,
+            "take_threshold": 1_000_000_000.0,
+            "downsize_threshold": 1_000_000_000.0,
+            "downsize_fraction": 0.05,
+            "sample_count": 0,
+        }
+        model.threshold_source = "round_selection_fail_closed"
+        model.quality_warnings = [
+            *list(getattr(model, "quality_warnings", [])),
+            "round_selection_gate_failed_no_final_holdout_entries",
+        ]
     return model, report, list(rows), list(validation_rows)
 
 
