@@ -27,6 +27,7 @@ from simple_ai_trading.model import (
 )
 from simple_ai_trading.features import ModelRow, feature_signature
 from simple_ai_trading.market_store import MarketDataStore
+from simple_ai_trading.positions import OpenPosition, PositionsStore, bot_client_order_id
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -3829,8 +3830,28 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
         retrain_window=300,
         retrain_min_rows=240,
     )
+    assert cli.command_live(live_args) == 2
+    assert "exchange exposure does not match the bot-owned local ledger" in capsys.readouterr().err
+
+    position_id = "livepos001"
+    PositionsStore().record_open(
+        OpenPosition(
+            id=position_id,
+            symbol="BTCUSDC",
+            market_type="futures",
+            side="LONG",
+            qty=0.2,
+            entry_price=50_000.0,
+            leverage=1.0,
+            opened_at_ms=1,
+            notional=10_000.0,
+            dry_run=False,
+            open_client_order_id=bot_client_order_id(position_id, "open"),
+            exchange_status="FILLED",
+        )
+    )
     assert cli.command_live(live_args) == 0
-    assert "Detected existing exchange position: long" in capsys.readouterr().out
+    assert "Resuming bot-owned ledger position: long" in capsys.readouterr().out
 
     class _FailingPositionClient(_FakeClient):
         def set_leverage(self, symbol: str, leverage: int):
@@ -3951,7 +3972,7 @@ def test_command_live_reports_risk_policy_after_balance_check(tmp_path, monkeypa
     assert "Risk policy report denied" in capsys.readouterr().err
 
 
-def test_command_live_existing_position_check_failure_after_balance(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_reconciliation_mismatch_after_balance(tmp_path, monkeypatch, capsys) -> None:
     class _SignedModel:
         feature_signature = "runtime-signature"
 
@@ -3962,6 +3983,19 @@ def test_command_live_existing_position_check_failure_after_balance(tmp_path, mo
         def set_leverage(self, symbol: str, leverage: int):
             return {"leverage": leverage}
 
+        def get_account(self):
+            return {
+                "positions": [
+                    {
+                        "symbol": "BTCUSDC",
+                        "positionAmt": "0.1",
+                        "entryPrice": "50000",
+                        "positionInitialMargin": "100",
+                    }
+                ],
+                "assets": [{"asset": "USDC", "availableBalance": "100"}],
+            }
+
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -3970,7 +4004,6 @@ def test_command_live_existing_position_check_failure_after_balance(tmp_path, mo
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _SignedClient())
     monkeypatch.setattr(cli, "_resolve_symbol_constraints", lambda *_a, **_k: SymbolConstraints("BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0))
-    monkeypatch.setattr(cli, "_detect_existing_position", lambda *_a, **_k: (_ for _ in ()).throw(BinanceAPIError("position offline")))
 
     assert cli.command_live(
         argparse.Namespace(
@@ -3986,7 +4019,7 @@ def test_command_live_existing_position_check_failure_after_balance(tmp_path, mo
             external_signals=None,
         )
     ) == 2
-    assert "Existing position check failed: position offline" in capsys.readouterr().err
+    assert "exchange exposure does not match the bot-owned local ledger" in capsys.readouterr().err
 
 
 def test_command_tune_saves_candidate(monkeypatch, tmp_path) -> None:

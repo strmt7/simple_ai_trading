@@ -174,6 +174,11 @@ Authenticated order reconciliation:
 - If the fill is still unresolved, the loop records an order error and stops instead of silently assuming exposure changed.
 - `simple-ai-trading reconcile` compares signed account exposure with the local autonomous ledger. Paper positions are reported but ignored for exchange mismatch math; non-paper local positions must match spot balances or futures positions for the active symbol set.
 - Reconciliation writes `data/autonomous/reconciliation.json` and exits nonzero on exchange-only exposure, local-only exposure, or quantity mismatches.
+- Signed `live --live` startup runs the same reconciliation check before it is allowed
+  to resume exposure. A pre-existing exchange position without a matching
+  bot-owned ledger position is a startup block, not an implicit adoption. This
+  keeps the CLI from closing or modifying positions that were not opened and
+  tracked by the bot.
 
 Autonomous network-interruption recovery:
 
