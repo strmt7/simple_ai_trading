@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 from simple_ai_trading.api import BinanceClient
 from simple_ai_trading.config import load_strategy
@@ -21,7 +22,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--quote-asset", default="USDT")
     parser.add_argument("--interval", default="1s")
-    parser.add_argument("--market", choices=("spot",), default="spot")
+    parser.add_argument("--market", choices=("spot", "futures"), default="spot")
     parser.add_argument("--objective", default="conservative")
     parser.add_argument(
         "--no-objective-strategy-defaults",
@@ -77,31 +78,36 @@ def main(argv: list[str] | None = None) -> int:
         max_calls_per_minute=max(1, int(args.max_calls_per_minute)),
     )
     explicit_symbols = [symbol.strip().upper() for symbol in str(args.symbols or "").split(",") if symbol.strip()]
-    report = build_round_evidence(
-        round_id=args.round_id,
-        client=client,
-        strategy=strategy,
-        quote_asset=args.quote_asset,
-        symbol_count=args.symbol_count,
-        symbols=explicit_symbols or None,
-        interval=args.interval,
-        market_type=args.market,
-        objective_name=args.objective,
-        starting_cash=args.starting_cash,
-        compute_backend=args.compute_backend,
-        batch_size=args.batch_size,
-        data_root=args.data_root,
-        docs_root=args.docs_root,
-        db_path=args.db,
-        require_prefilled_data=args.require_prefilled_data,
-        min_data_rows=args.min_data_rows,
-        min_coverage_ratio=args.min_coverage_ratio,
-        max_gap_count=args.max_gap_count,
-        require_verified_checksum=args.require_verified_checksum,
-        use_objective_strategy_defaults=not args.no_objective_strategy_defaults,
-    )
+    try:
+        report = build_round_evidence(
+            round_id=args.round_id,
+            client=client,
+            strategy=strategy,
+            quote_asset=args.quote_asset,
+            symbol_count=args.symbol_count,
+            symbols=explicit_symbols or None,
+            interval=args.interval,
+            market_type=args.market,
+            objective_name=args.objective,
+            starting_cash=args.starting_cash,
+            compute_backend=args.compute_backend,
+            batch_size=args.batch_size,
+            data_root=args.data_root,
+            docs_root=args.docs_root,
+            db_path=args.db,
+            require_prefilled_data=args.require_prefilled_data,
+            min_data_rows=args.min_data_rows,
+            min_coverage_ratio=args.min_coverage_ratio,
+            max_gap_count=args.max_gap_count,
+            require_verified_checksum=args.require_verified_checksum,
+            use_objective_strategy_defaults=not args.no_objective_strategy_defaults,
+        )
+    except ValueError as exc:
+        print(f"optimization round failed: {exc}", file=sys.stderr)
+        return 2
     print(f"round: {report['round_id']}")
     print(f"symbols completed: {report['symbol_count_completed']}/{report['symbol_count_requested']}")
+    print(f"effective leverage: {report['effective_leverage']}x applies={report['leverage_applies']}")
     print(f"metrics: {report['metrics_csv_path']}")
     print(f"portfolio timeline: {report['portfolio_timeline_csv_path']}")
     print(f"progress: {report['progress_csv_path']}")
