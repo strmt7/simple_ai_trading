@@ -46,6 +46,36 @@ class ModelFamilyBlueprint:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class TrainingLaneBlueprint:
+    """A promotion lane that turns research inspiration into guarded work."""
+
+    lane: str
+    families: tuple[str, ...]
+    research_takeaway: str
+    next_build_step: str
+    promotion_gates: tuple[str, ...]
+    runtime_limit: str
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ResearchSourceBlueprint:
+    """Source-catalog entry with explicit usage policy."""
+
+    source_id: str
+    label: str
+    url: str
+    source_type: str
+    applied_to: tuple[str, ...]
+    usage_policy: str
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
     ModelFamilyBlueprint(
         family="advanced_logistic",
@@ -261,6 +291,244 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
 )
 
 
+TRAINING_LANES: tuple[TrainingLaneBlueprint, ...] = (
+    TrainingLaneBlueprint(
+        lane="supervised_signal_baselines",
+        families=("advanced_logistic", "lightgbm_opencl"),
+        research_takeaway=(
+            "Keep a strong tabular baseline before adding heavier sequence or "
+            "foundation models; require calibrated probabilities and repeated "
+            "candidate evidence after trading costs."
+        ),
+        next_build_step=(
+            "Compare the implemented advanced logistic model against an optional "
+            "LightGBM OpenCL candidate on the same purged walk-forward folds."
+        ),
+        promotion_gates=(
+            "same feature signature and no-lookahead rows",
+            "probability calibration artifact",
+            "repeated-seed variance report",
+            "objective and path-quality gates after execution stress",
+        ),
+        runtime_limit="Can propose candidate probabilities only after objective gates pass.",
+    ),
+    TrainingLaneBlueprint(
+        lane="hybrid_confirmation",
+        families=("adaptive_hybrid_model_zoo",),
+        research_takeaway=(
+            "Community indicator families are useful as independent confirmation "
+            "signals, not as copied entry rules."
+        ),
+        next_build_step=(
+            "Add ablation reports showing whether Lorentzian, kernel, and "
+            "technical-confluence experts improve net performance per objective."
+        ),
+        promotion_gates=(
+            "separate chronological selection window",
+            "holdout replay cannot degrade accepted objective score",
+            "community-source no-copy audit",
+            "model artifact records expert weights and prototype counts",
+        ),
+        runtime_limit="Can only refine an already accepted base signal.",
+    ),
+    TrainingLaneBlueprint(
+        lane="regime_and_meta_gates",
+        families=("regime_gate", "meta_label_gate"),
+        research_takeaway=(
+            "The safer way to use ML in non-stationary markets is to learn when "
+            "not to trade, when to downsize, and when to cool down."
+        ),
+        next_build_step=(
+            "Promote regime-conditioned meta-label precision reports by symbol, "
+            "risk level, and execution-stress scenario."
+        ),
+        promotion_gates=(
+            "skip/downsize/take policy cannot create entries",
+            "malformed enabled policy fails closed",
+            "per-regime precision and expectancy evidence",
+            "backtest and live entry paths consume the same policy fields",
+        ),
+        runtime_limit="Veto, cooldown, skip, or downsize only.",
+    ),
+    TrainingLaneBlueprint(
+        lane="sequence_forecast_features",
+        families=("patch_transformer", "foundation_forecaster"),
+        research_takeaway=(
+            "Patch-based and foundation time-series models are promising for "
+            "longer context, but forecasts must first be logged features."
+        ),
+        next_build_step=(
+            "Build a timestamped forecast-feature store with ablation replay "
+            "before allowing sequence forecasts to influence position sizing."
+        ),
+        promotion_gates=(
+            "forecast timestamp audit proves no lookahead",
+            "ablation beats tabular baseline after fees and slippage",
+            "DirectML capability artifact for GPU runs",
+            "CPU-only mode disables AI approval",
+        ),
+        runtime_limit="Advisory or feature-provider role until ablation and path gates pass.",
+    ),
+    TrainingLaneBlueprint(
+        lane="microstructure_depth_research",
+        families=("deep_lob_microstructure",),
+        research_takeaway=(
+            "Order-book models need actual quote/depth tensors and a fill "
+            "simulator; candle proxies are not enough for HFT claims."
+        ),
+        next_build_step=(
+            "Extend typed top-of-book storage into L2 depth snapshots, quote "
+            "update-rate evidence, microprice, and queue/fill uncertainty labels."
+        ),
+        promotion_gates=(
+            "symbol-specific spread and depth data exists",
+            "latency and fill-uncertainty simulation exists",
+            "quote-time walk-forward split",
+            "market-impact stress passes per objective",
+        ),
+        runtime_limit="Blocked from executable authority until depth simulator exists.",
+    ),
+    TrainingLaneBlueprint(
+        lane="sandbox_meta_control",
+        families=("rl_meta_controller",),
+        research_takeaway=(
+            "Financial RL belongs in portfolio/execution meta-control research "
+            "before it can safely affect autonomous operation."
+        ),
+        next_build_step=(
+            "Create a deterministic simulator benchmark after microstructure "
+            "storage exists; compare RL against simple cooldown and sizing baselines."
+        ),
+        promotion_gates=(
+            "deterministic baseline beats naive policy",
+            "repeated-seed stability",
+            "out-of-sample regime stress",
+            "human-visible sandbox artifact",
+        ),
+        runtime_limit="No direct orders and no raw buy/sell decisions.",
+    ),
+    TrainingLaneBlueprint(
+        lane="governance_and_ai_review",
+        families=("ai_risk_reviewer",),
+        research_takeaway=(
+            "LLM-style AI should review structured evidence and identify risk, "
+            "not override deterministic gates or trade directly."
+        ),
+        next_build_step=(
+            "Expand the AI review prompt/report to reference source catalog, "
+            "training lanes, and per-family promotion status."
+        ),
+        promotion_gates=(
+            "schema-validated JSON output",
+            "no credential access",
+            "cannot approve failed deterministic gates",
+            "redacted report artifacts only",
+        ),
+        runtime_limit="Veto or review-only authority.",
+    ),
+)
+
+
+RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
+    ResearchSourceBlueprint(
+        source_id="pbo_cscv",
+        label="Probability of Backtest Overfitting",
+        url="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+        source_type="primary_research",
+        applied_to=("advanced_logistic", "adaptive_hybrid_model_zoo", "lightgbm_opencl"),
+        usage_policy="Use for validation design: record multiple trials, holdout behavior, and overfit risk.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="deflated_sharpe",
+        label="Deflated Sharpe Ratio",
+        url="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551",
+        source_type="primary_research",
+        applied_to=("advanced_logistic", "adaptive_hybrid_model_zoo", "lightgbm_opencl"),
+        usage_policy="Use for statistical-edge skepticism; do not treat raw Sharpe or ROI as enough.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="freqai",
+        label="FreqAI adaptive ML workflow",
+        url="https://www.freqtrade.io/en/stable/freqai/",
+        source_type="official_docs",
+        applied_to=("advanced_logistic", "meta_label_gate", "regime_gate"),
+        usage_policy="Use as workflow inspiration for retraining and feature boundaries, not copied strategy logic.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="patchtst",
+        label="PatchTST",
+        url="https://github.com/yuqinie98/patchtst",
+        source_type="primary_research",
+        applied_to=("patch_transformer",),
+        usage_policy="Use as sequence-model inspiration; implement original compact DirectML candidate and ablation gates.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="tft",
+        label="Temporal Fusion Transformer",
+        url="https://arxiv.org/abs/1912.09363",
+        source_type="primary_research",
+        applied_to=("patch_transformer", "foundation_forecaster"),
+        usage_policy="Use for interpretable multi-horizon forecast design and feature-selection ideas.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="chronos",
+        label="Chronos time-series foundation models",
+        url="https://github.com/amazon-science/chronos-forecasting",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster",),
+        usage_policy="Use only as timestamped probabilistic forecast features until ablation passes.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="deep_lob",
+        label="DeepLOB",
+        url="https://arxiv.org/abs/1808.03668",
+        source_type="primary_research",
+        applied_to=("deep_lob_microstructure",),
+        usage_policy="Use for LOB tensor architecture inspiration after L2 depth storage exists.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="lightgbm_opencl",
+        label="LightGBM GPU/OpenCL",
+        url="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html",
+        source_type="official_docs",
+        applied_to=("lightgbm_opencl",),
+        usage_policy="Use optional OpenCL GPU training path for AMD/NVIDIA only after capability artifacts pass.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="tradingview_lorentzian",
+        label="TradingView Lorentzian Classification",
+        url="https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/",
+        source_type="community_inspiration",
+        applied_to=("adaptive_hybrid_model_zoo",),
+        usage_policy="Do not copy Pine source; use only as conceptual inspiration for original neighbor features.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="tradingview_kernel",
+        label="TradingView rational-quadratic kernel indicator",
+        url="https://www.tradingview.com/script/AWNvbPRM-Nadaraya-Watson-Rational-Quadratic-Kernel-Non-Repainting/",
+        source_type="community_inspiration",
+        applied_to=("adaptive_hybrid_model_zoo",),
+        usage_policy="Do not copy Pine source; use only as conceptual inspiration for original kernel confirmation.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="tradingview_technical_ratings",
+        label="TradingView Technical Ratings",
+        url="https://www.tradingview.com/support/solutions/43000614331-technical-ratings/",
+        source_type="official_docs",
+        applied_to=("adaptive_hybrid_model_zoo", "regime_gate"),
+        usage_policy="Use as product/feature inspiration for compact confluence scoring, not as a copied ruleset.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="directml_pytorch",
+        label="PyTorch with DirectML",
+        url="https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows",
+        source_type="official_docs",
+        applied_to=("patch_transformer", "foundation_forecaster", "ai_risk_reviewer"),
+        usage_policy="Use for Windows GPU capability detection and DirectML training/scoring paths.",
+    ),
+)
+
+
 RISK_BLUEPRINTS: tuple[RiskTrainingBlueprint, ...] = (
     RiskTrainingBlueprint(
         name="conservative",
@@ -348,6 +616,18 @@ def risk_blueprints() -> tuple[RiskTrainingBlueprint, ...]:
     return RISK_BLUEPRINTS
 
 
+def training_lanes() -> tuple[TrainingLaneBlueprint, ...]:
+    """Return guarded model-promotion lanes in implementation order."""
+
+    return TRAINING_LANES
+
+
+def research_sources() -> tuple[ResearchSourceBlueprint, ...]:
+    """Return the source catalog that anchors model/training inspiration."""
+
+    return RESEARCH_SOURCES
+
+
 def blueprint_payload(
     *,
     risk_level: str | None = None,
@@ -370,6 +650,13 @@ def blueprint_payload(
         "include_research": bool(include_research),
         "families": [item.asdict() for item in model_families(risk_level=normalized_risk, include_research=include_research)],
         "risk_blueprints": risks,
+        "training_lanes": [item.asdict() for item in TRAINING_LANES],
+        "research_sources": [item.asdict() for item in RESEARCH_SOURCES],
+        "source_policy": (
+            "Primary research and official docs can guide implementation. "
+            "Community TradingView scripts are inspiration only; do not copy "
+            "source code or promote them to direct order authority."
+        ),
     }
 
 
@@ -400,6 +687,15 @@ def render_blueprint(
             continue
         lines.append(f"- {risk['name']}: {risk['primary_focus']}")
         lines.append(f"  acceptance: {risk['acceptance_bias']}")
+    lines.append("")
+    lines.append("Training lanes and promotion gates")
+    for lane in TRAINING_LANES:
+        lines.append(f"- {lane.lane}: {lane.next_build_step}")
+        lines.append(f"  limit: {lane.runtime_limit}")
+        if lane.promotion_gates:
+            lines.append(f"  first gate: {lane.promotion_gates[0]}")
+    lines.append("")
+    lines.append("Source policy: research and docs guide design; community scripts are inspiration only.")
     return "\n".join(lines)
 
 
@@ -425,6 +721,35 @@ def validate_blueprint_contract() -> tuple[str, ...]:
         for family in risk.promoted_families:
             if family not in family_names:
                 errors.append(f"{risk.name} references unknown family {family}")
+    lane_family_names: set[str] = set()
+    for lane in TRAINING_LANES:
+        if not lane.families:
+            errors.append(f"{lane.lane} has no families")
+        if not lane.promotion_gates:
+            errors.append(f"{lane.lane} has no promotion gates")
+        if not lane.runtime_limit:
+            errors.append(f"{lane.lane} has no runtime limit")
+        for family in lane.families:
+            if family not in family_names:
+                errors.append(f"{lane.lane} references unknown family {family}")
+            lane_family_names.add(family)
+    missing_lane_families = sorted(family_names.difference(lane_family_names))
+    if missing_lane_families:
+        errors.append(f"model families missing training lane: {','.join(missing_lane_families)}")
+    source_ids = [source.source_id for source in RESEARCH_SOURCES]
+    if len(set(source_ids)) != len(source_ids):
+        errors.append("duplicate research source id")
+    allowed_source_types = {"primary_research", "official_docs", "community_inspiration", "vendor_docs", "governance"}
+    for source in RESEARCH_SOURCES:
+        if source.source_type not in allowed_source_types:
+            errors.append(f"{source.source_id} has unknown source type {source.source_type}")
+        if not source.url.startswith("https://"):
+            errors.append(f"{source.source_id} must cite an https URL")
+        for family in source.applied_to:
+            if family not in family_names:
+                errors.append(f"{source.source_id} references unknown family {family}")
+        if source.source_type == "community_inspiration" and "do not copy" not in source.usage_policy.lower():
+            errors.append(f"{source.source_id} community source must be no-copy")
     return tuple(errors)
 
 
@@ -458,11 +783,15 @@ __all__ = [
     "RISK_BLUEPRINTS",
     "RISK_LEVELS",
     "ModelFamilyBlueprint",
+    "ResearchSourceBlueprint",
     "RiskTrainingBlueprint",
+    "TrainingLaneBlueprint",
     "blueprint_payload",
     "dumps_blueprint",
     "model_families",
+    "research_sources",
     "render_blueprint",
     "risk_blueprints",
+    "training_lanes",
     "validate_blueprint_contract",
 ]
