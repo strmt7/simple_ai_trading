@@ -134,6 +134,10 @@ weakening risk controls.
 - Deflated selected score is the minimum acceptable multiple-testing guard.
   The next training-suite step should add CPCV/PBO-style diagnostics for broad
   searches so repeated parameter sweeps do not select a lucky equity curve.
+- Implemented update: training-suite selection risk now stores a two-panel
+  CSCV/PBO-style proxy over selection and validation scores. It blocks promotion
+  when the in-sample winner falls below the out-of-sample median in both
+  symmetric views, and it prints `pbo=` in the CLI training summary.
 - DirectML remains the Windows-first AMD/NVIDIA-compatible research path for
   PyTorch experiments, with ONNX Runtime DirectML available for inference
   parity checks. Every accelerated run must still persist backend package

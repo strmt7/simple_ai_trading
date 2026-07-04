@@ -788,6 +788,7 @@ def test_selection_risk_report_deflates_tiny_scores_under_large_trial_count() ->
     assert tiny_report["reason"] == "selection_risk_deflated_score<=0"
     assert tiny_report["effective_trials"] == 2023
     assert tiny_report["deflated_score"] < 0.0
+    assert tiny_report["overfit_diagnostics"]["status"] == "skipped"
 
     stronger_best = {"score": 0.12}
     stronger_report = training_suite._selection_risk_report(
@@ -801,6 +802,54 @@ def test_selection_risk_report_deflates_tiny_scores_under_large_trial_count() ->
 
     assert stronger_report["passed"] is True
     assert stronger_report["deflated_score"] > 0.0
+
+
+def test_selection_risk_report_blocks_severe_pbo_overfit() -> None:
+    overfit_best = {"score": 0.90, "selection_score": 0.90, "validation_score": 0.10}
+    report = training_suite._selection_risk_report(
+        overfit_best,
+        [
+            overfit_best,
+            {"score": 0.80, "selection_score": 0.80, "validation_score": 0.70},
+            {"score": 0.70, "selection_score": 0.70, "validation_score": 0.90},
+        ],
+        base_candidate_count=3,
+        local_refinement_candidates=0,
+        ensemble_refinement_candidates=0,
+        hybrid_rescue_candidates=0,
+    )
+
+    assert report["passed"] is False
+    assert report["reason"] == "selection_risk_pbo>0.50"
+    overfit = report["overfit_diagnostics"]
+    assert overfit["status"] == "available"
+    assert overfit["passed"] is False
+    assert overfit["probability_backtest_overfit"] == pytest.approx(1.0)
+    assert overfit["overfit_splits"] == 2
+    assert report["deflated_score"] > 0.0
+
+
+def test_selection_risk_report_allows_stable_selection_validation_ranking() -> None:
+    stable_best = {"score": 0.90, "selection_score": 0.90, "validation_score": 0.91}
+    report = training_suite._selection_risk_report(
+        stable_best,
+        [
+            stable_best,
+            {"score": 0.80, "selection_score": 0.80, "validation_score": 0.75},
+            {"score": 0.70, "selection_score": 0.70, "validation_score": 0.72},
+        ],
+        base_candidate_count=3,
+        local_refinement_candidates=0,
+        ensemble_refinement_candidates=0,
+        hybrid_rescue_candidates=0,
+    )
+
+    assert report["passed"] is True
+    overfit = report["overfit_diagnostics"]
+    assert overfit["status"] == "available"
+    assert overfit["passed"] is True
+    assert overfit["probability_backtest_overfit"] == pytest.approx(0.0)
+    assert overfit["selected_validation_rank_percentile"] == pytest.approx(1.0)
 
 
 def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1122,6 +1171,7 @@ def test_train_for_objective_happy_with_fake_runner(tmp_path: Path) -> None:
     saved_model = json.loads(model_file.read_text(encoding="utf-8"))
     assert saved_model["selection_risk"]["passed"] is True
     assert saved_model["selection_risk"]["effective_trials"] >= outcome.explored_candidates
+    assert saved_model["selection_risk"]["overfit_diagnostics"]["status"] == "skipped"
     # rejected counts entries scored as -inf
     assert outcome.rejected_candidates >= 1
     assert outcome.validation_rows >= 0

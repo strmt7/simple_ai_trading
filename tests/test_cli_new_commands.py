@@ -160,6 +160,16 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
             self.ensemble_refinement_candidates = 3
             self.local_refinement_candidates = 10
             self.explored_candidates = 1944
+            self.selection_risk = {
+                "passed": True,
+                "deflated_score": 0.10,
+                "trial_penalty": 0.02,
+                "effective_trials": 1944,
+                "overfit_diagnostics": {
+                    "status": "available",
+                    "probability_backtest_overfit": 0.0,
+                },
+            }
 
     class _Report:
         def __init__(self):
@@ -187,6 +197,7 @@ def test_command_train_suite_all_objectives(tmp_path, monkeypatch, capsys):
     assert "ensemble=yes" in out
     assert "local_checks=10" in out
     assert "ensemble_checks=3" in out
+    assert "pbo=0.00" in out
 
 
 def test_command_train_suite_passes_gpu_options(tmp_path, monkeypatch):

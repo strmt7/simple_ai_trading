@@ -65,6 +65,9 @@ _ENSEMBLE_REFINEMENT_CANDIDATES = 3
 _HYBRID_RESCUE_CANDIDATES = 3
 _SELECTION_RISK_DISPERSION_FLOOR = 1e-4
 _SELECTION_RISK_RELATIVE_FLOOR = 0.03
+_PBO_MAX_PROBABILITY = 0.50
+_PBO_MIN_CANDIDATES = 3
+_PBO_EPSILON = 1e-6
 
 
 # ==========================================================================
@@ -627,6 +630,144 @@ def _score_quantile(values: Sequence[float], q: float) -> float | None:
     return clean[low] + (clean[high] - clean[low]) * fraction
 
 
+def _score_rank_percentile(values: Sequence[float], index: int) -> float | None:
+    clean = [float(value) for value in values if math.isfinite(float(value))]
+    if len(clean) != len(values) or not 0 <= int(index) < len(clean):
+        return None
+    if len(clean) == 1:
+        return 1.0
+    value = clean[int(index)]
+    lower = sum(1 for item in clean if item < value)
+    equal = sum(1 for item in clean if item == value)
+    tie_adjusted_rank = lower + (equal - 1) / 2.0
+    return max(0.0, min(1.0, tie_adjusted_rank / (len(clean) - 1)))
+
+
+def _pbo_logit(rank_percentile: float) -> float:
+    clipped = max(_PBO_EPSILON, min(1.0 - _PBO_EPSILON, float(rank_percentile)))
+    return math.log(clipped / (1.0 - clipped))
+
+
+def _mean_panel_score(entry: dict[str, Any], panel_names: Sequence[str]) -> float | None:
+    values: list[float] = []
+    for panel in panel_names:
+        value = _finite_number_or_none(entry.get(f"{panel}_score"))
+        if value is None:
+            return None
+        values.append(float(value))
+    return sum(values) / len(values) if values else None
+
+
+def _overfit_diagnostics(best: dict[str, Any], ranked_pool: Sequence[dict[str, Any]]) -> dict[str, object]:
+    """Return a compact CSCV/PBO-style diagnostic over selection/validation panels.
+
+    This is deliberately conservative in naming: with the current artifacts all
+    candidates expose at most one selection panel and one holdout validation
+    panel, so this is a two-panel CSCV proxy rather than full CPCV over many
+    purged folds. It still catches the dangerous case where the selected
+    in-sample winner ranks poorly out-of-sample in both symmetric views.
+    """
+
+    entries: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    for entry in [*ranked_pool, best]:
+        entry_id = id(entry)
+        if entry_id in seen:
+            continue
+        seen.add(entry_id)
+        if (
+            _finite_number_or_none(entry.get("selection_score")) is not None
+            and _finite_number_or_none(entry.get("validation_score")) is not None
+        ):
+            entries.append(entry)
+
+    if len(entries) < _PBO_MIN_CANDIDATES:
+        return {
+            "status": "skipped",
+            "reason": "requires_selection_and_validation_scores",
+            "method": "two_panel_cscv_proxy",
+            "candidate_count": len(entries),
+            "min_candidates": _PBO_MIN_CANDIDATES,
+            "passed": True,
+        }
+
+    split_specs = (
+        (("selection",), ("validation",)),
+        (("validation",), ("selection",)),
+    )
+    split_reports: list[dict[str, object]] = []
+    overfit_splits = 0
+    degradation_values: list[float] = []
+    for in_sample_panels, out_sample_panels in split_specs:
+        in_scores = [_mean_panel_score(entry, in_sample_panels) for entry in entries]
+        out_scores = [_mean_panel_score(entry, out_sample_panels) for entry in entries]
+        if any(score is None for score in in_scores) or any(score is None for score in out_scores):
+            continue
+        in_values = [float(score) for score in in_scores if score is not None]
+        out_values = [float(score) for score in out_scores if score is not None]
+        winner_index = max(range(len(in_values)), key=lambda index: (in_values[index], -index))
+        rank_percentile = _score_rank_percentile(out_values, winner_index)
+        if rank_percentile is None:
+            continue
+        logit_rank = _pbo_logit(rank_percentile)
+        degradation = out_values[winner_index] - in_values[winner_index]
+        degradation_values.append(float(degradation))
+        overfit = bool(logit_rank < 0.0)
+        if overfit:
+            overfit_splits += 1
+        split_reports.append({
+            "in_sample_panels": list(in_sample_panels),
+            "out_sample_panels": list(out_sample_panels),
+            "winner_index": int(winner_index),
+            "winner_in_sample_score": float(in_values[winner_index]),
+            "winner_out_sample_score": float(out_values[winner_index]),
+            "winner_out_sample_rank_percentile": float(rank_percentile),
+            "logit_rank": float(logit_rank),
+            "performance_degradation": float(degradation),
+            "overfit": overfit,
+        })
+
+    if not split_reports:
+        return {
+            "status": "skipped",
+            "reason": "no_comparable_cscv_splits",
+            "method": "two_panel_cscv_proxy",
+            "candidate_count": len(entries),
+            "min_candidates": _PBO_MIN_CANDIDATES,
+            "passed": True,
+        }
+
+    selected_index = next((index for index, entry in enumerate(entries) if id(entry) == id(best)), None)
+    selected_validation_percentile = None
+    if selected_index is not None:
+        validation_scores = [float(_finite_number_or_none(entry.get("validation_score")) or 0.0) for entry in entries]
+        selected_validation_percentile = _score_rank_percentile(validation_scores, selected_index)
+    probability = overfit_splits / len(split_reports)
+    passed = probability <= _PBO_MAX_PROBABILITY
+    return {
+        "status": "available",
+        "method": "two_panel_cscv_proxy",
+        "passed": bool(passed),
+        "reason": None if passed else "selection_risk_pbo>0.50",
+        "probability_backtest_overfit": float(probability),
+        "max_probability_backtest_overfit": float(_PBO_MAX_PROBABILITY),
+        "candidate_count": len(entries),
+        "split_count": len(split_reports),
+        "overfit_splits": int(overfit_splits),
+        "mean_performance_degradation": (
+            float(sum(degradation_values) / len(degradation_values))
+            if degradation_values
+            else None
+        ),
+        "selected_validation_rank_percentile": (
+            float(selected_validation_percentile)
+            if selected_validation_percentile is not None
+            else None
+        ),
+        "splits": split_reports,
+    }
+
+
 def _selection_risk_report(
     best: dict[str, Any],
     ranked_pool: Sequence[dict[str, Any]],
@@ -662,15 +803,18 @@ def _selection_risk_report(
         len(entries),
     )
     if best_score is None:
+        overfit = _overfit_diagnostics(best, entries)
         return {
             "passed": False,
             "reason": "no_finite_selected_score",
+            "reasons": ["no_finite_selected_score"],
             "effective_trials": effective_trials,
             "base_candidates": int(base_candidate_count),
             "local_refinement_candidates": int(local_refinement_candidates),
             "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
             "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
             "finite_candidate_scores": len(scores),
+            "overfit_diagnostics": overfit,
         }
 
     sorted_desc = sorted(scores, reverse=True)
@@ -686,10 +830,19 @@ def _selection_risk_report(
     )
     trial_penalty = math.log1p(float(effective_trials)) * dispersion / math.sqrt(max(1.0, float(len(scores))))
     deflated_score = float(best_score) - trial_penalty
-    passed = bool(float(best_score) > 0.0 and deflated_score > 0.0)
+    overfit = _overfit_diagnostics(best, entries)
+    score_passed = bool(float(best_score) > 0.0 and deflated_score > 0.0)
+    overfit_passed = bool(overfit.get("passed", True))
+    passed = score_passed and overfit_passed
+    reasons: list[str] = []
+    if not score_passed:
+        reasons.append("selection_risk_deflated_score<=0")
+    if not overfit_passed:
+        reasons.append(str(overfit.get("reason") or "selection_risk_pbo_failed"))
     return {
         "passed": passed,
-        "reason": None if passed else "selection_risk_deflated_score<=0",
+        "reason": None if passed else reasons[0],
+        "reasons": reasons,
         "effective_trials": effective_trials,
         "base_candidates": int(base_candidate_count),
         "local_refinement_candidates": int(local_refinement_candidates),
@@ -709,6 +862,7 @@ def _selection_risk_report(
             if runner_up is not None
             else None
         ),
+        "overfit_diagnostics": overfit,
     }
 
 

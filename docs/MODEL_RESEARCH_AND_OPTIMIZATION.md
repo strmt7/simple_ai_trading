@@ -268,6 +268,15 @@ in-loop retraining, because an ad hoc model trained during a live session has
 not passed model-lab promotion, stress, robustness, ablation, AI-review, or
 portfolio gates.
 
+The selection-risk artifact now includes a two-panel CSCV/PBO-style diagnostic.
+It ranks candidates by the selection panel and checks where the in-sample winner
+lands on the validation panel, then repeats the symmetric validation-to-selection
+view. Severe rank inversion, where both views show the in-sample winner falling
+below the out-of-sample median, fails promotion even when the raw selected score
+and deflated score look positive. This is not a full CPCV implementation over
+many purged paths yet, but it is persisted evidence against the most common
+backtest-overfit failure mode.
+
 This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
 candidate instead of forcing a trade.
@@ -322,6 +331,8 @@ assert that every CLI command appears in the Windows app.
 - No signed live startup with a stale or unpromoted model artifact.
 - No authenticated live in-loop retraining; retrain through model-lab and
   promote a fresh artifact.
+- No promoted model when the selection-risk artifact reports severe PBO-style
+  in-sample/out-of-sample rank inversion.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.
