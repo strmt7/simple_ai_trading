@@ -35,6 +35,18 @@ Backtest fill price uses:
 - volatility buffer,
 - taker fees.
 
+Every backtest now keeps path evidence, not only a final P&L scalar:
+
+- mark-to-market equity points with drawdown and position side,
+- net trade P&L after entry and exit fees,
+- trade returns relative to account equity at entry,
+- a compact trade log with open/close timestamps, side, notional, fees, and
+  return.
+
+`backtest-chart` renders this actual equity path instead of a synthetic
+start/mid/end curve, and model-lab robustness gates can use trade-return
+samples when enough trades exist.
+
 Position sizing is stop-loss-budget based. `risk_per_trade` is interpreted as
 the equity budget that may be lost if the configured stop-loss is hit; gross
 notional is then capped by max position size, leverage, exchange constraints,
@@ -103,9 +115,10 @@ Known limitations:
   they are useful for unit tests and smoke checks, not production acceptance.
 - Temporal robustness currently uses candle-window replays; full order-book
   regime replay remains a future improvement after depth snapshots are stored.
-- Statistical edge uses window-level P&L because the current backtester does not
-  persist every intrabar equity point. This is stricter than no statistical
-  screen, but weaker than a full trade-path deflated-Sharpe implementation.
+- Statistical edge prefers trade-return samples when enough trades exist and
+  falls back to window-level P&L for sparse strategies. It is stricter than no
+  statistical screen, but still weaker than a full intrabar order-book
+  deflated-Sharpe implementation.
 
 ## Operator Rule
 

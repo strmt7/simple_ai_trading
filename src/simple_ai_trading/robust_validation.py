@@ -348,6 +348,17 @@ def _chronological_windows(
 
 
 def _result_payload(result: BacktestResult) -> dict[str, object]:
+    trade_returns = [
+        float(value)
+        for value in getattr(result, "trade_returns", ())
+        if isinstance(value, (int, float)) and math.isfinite(float(value))
+    ]
+    trade_pnls = [
+        float(value)
+        for value in getattr(result, "trade_pnls", ())
+        if isinstance(value, (int, float)) and math.isfinite(float(value))
+    ]
+    equity_curve = getattr(result, "equity_curve", ())
     return {
         "starting_cash": float(result.starting_cash),
         "ending_cash": float(result.ending_cash),
@@ -363,6 +374,10 @@ def _result_payload(result: BacktestResult) -> dict[str, object]:
         "trades_per_day_cap_hit": int(result.trades_per_day_cap_hit),
         "buy_hold_pnl": float(result.buy_hold_pnl),
         "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
+        "trade_returns": trade_returns,
+        "trade_pnls": trade_pnls,
+        "trade_return_count": len(trade_returns),
+        "equity_curve_points": len(equity_curve) if isinstance(equity_curve, (tuple, list)) else 0,
         "scoring_backend_requested": result.scoring_backend_requested,
         "scoring_backend_kind": result.scoring_backend_kind,
         "scoring_backend_device": result.scoring_backend_device,
@@ -500,11 +515,25 @@ def _statistical_edge_report(
     policy: TemporalRobustnessPolicy,
 ) -> dict[str, object]:
     cash = max(1.0, abs(_finite(starting_cash, 1000.0)))
-    returns = [
+    window_returns = [
         _finite(window.result.get("realized_pnl")) / cash
         for window in windows
         if isinstance(window.result, dict)
     ]
+    trade_returns: list[float] = []
+    for window in windows:
+        if not isinstance(window.result, dict):
+            continue
+        raw_returns = window.result.get("trade_returns")
+        if not isinstance(raw_returns, list):
+            continue
+        trade_returns.extend(
+            float(value)
+            for value in raw_returns
+            if isinstance(value, (int, float)) and math.isfinite(float(value))
+        )
+    returns = trade_returns if len(trade_returns) >= max(3, len(window_returns)) else window_returns
+    evidence_unit = "trade" if returns is trade_returns else "window"
     positive_windows = sum(1 for value in returns if value > 0.0)
     window_count = len(returns)
     sign_p_value = _binomial_upper_tail(window_count, positive_windows)
@@ -525,8 +554,13 @@ def _statistical_edge_report(
     return {
         "accepted": reason is None,
         "reason": reason,
-        "window_count": window_count,
+        "evidence_unit": evidence_unit,
+        "sample_count": window_count,
+        "window_count": len(window_returns),
+        "trade_return_count": len(trade_returns),
+        "positive_samples": positive_windows,
         "positive_windows": positive_windows,
+        "positive_sample_rate": (positive_windows / window_count if window_count else 0.0),
         "positive_window_rate": (positive_windows / window_count if window_count else 0.0),
         "sign_test_p_value": float(sign_p_value),
         "max_sign_test_p_value": float(policy.max_sign_test_p_value),
@@ -697,8 +731,13 @@ def validate_suite_temporal_robustness(
                 statistical_edge={
                     "accepted": False,
                     "reason": "temporal_robustness_error",
+                    "evidence_unit": "none",
+                    "sample_count": 0,
                     "window_count": 0,
+                    "trade_return_count": 0,
+                    "positive_samples": 0,
                     "positive_windows": 0,
+                    "positive_sample_rate": 0.0,
                     "positive_window_rate": 0.0,
                     "sign_test_p_value": 1.0,
                     "max_sign_test_p_value": float(policy.max_sign_test_p_value),
