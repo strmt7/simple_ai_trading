@@ -76,6 +76,9 @@ Implementation direction:
 - Conservative mode should require high meta-label precision and skip more
   often. Aggressive mode can accept lower meta precision only if drawdown,
   loss-streak, and CVaR gates remain intact.
+- Current implementation trains an observe-only meta-label policy from simulated
+  trade outcomes and persists it in model/training artifacts. It is not yet a
+  live execution gate.
 
 Sources:
 
@@ -277,7 +280,8 @@ Implemented objective gates:
 
 ## Prioritized Backlog
 
-1. Meta-label take/skip/downsize model trained on simulator outcomes.
+1. Promote meta-label policy from observe-only evidence to a tested execution
+   gate after enough out-of-sample artifacts support it.
 2. Depth/top-of-book data store and microstructure feature block.
 3. LightGBM OpenCL tabular candidate with repeated-seed validation.
 4. Patch-transformer research candidate using PyTorch DirectML.

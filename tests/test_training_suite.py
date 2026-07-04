@@ -1088,6 +1088,11 @@ def test_train_for_objective_happy_with_fake_runner(tmp_path: Path) -> None:
     assert outcome.rejected_candidates >= 1
     assert outcome.validation_rows >= 0
     assert outcome.validation_score is not None
+    assert outcome.meta_label_report == {
+        "status": "not_run",
+        "reason": "runner_path",
+        "objective": "conservative",
+    }
 
 
 def test_train_for_objective_rejects_all_rejected_candidates(tmp_path: Path) -> None:
