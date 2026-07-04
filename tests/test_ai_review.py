@@ -75,6 +75,17 @@ def _write_report(path: Path, *, accepted: bool = True) -> None:
                     "concentration_warning": True,
                     "notes": ["window_regime_concentration"],
                 },
+                "meta_label_validation": {
+                    "regular": {
+                        "status": "trained",
+                        "sample_count": 24,
+                        "take_count": 12,
+                        "downsize_count": 5,
+                        "skip_count": 7,
+                        "take_precision": 0.75,
+                        "target_precision": 0.60,
+                    }
+                },
             }
         ],
     }
@@ -128,6 +139,7 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     ]
     prompt = observed["payload"]["messages"][1]["content"]
     assert "regime_validation" in prompt
+    assert "meta_label_validation" in prompt
     assert "trend_up" in prompt
     assert (tmp_path / "ai_risk_review.json").exists()
 

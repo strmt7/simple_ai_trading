@@ -6158,6 +6158,14 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 if wf_gate.get("passed")
                 else f"failed:{reason or 'fold_gate'}"
             )
+        meta = getattr(outcome, "meta_label_report", None) or {}
+        meta_text = "n/a"
+        if isinstance(meta, dict) and meta:
+            meta_status = str(meta.get("status") or "unknown")
+            take_count = int(float(meta.get("take_count", 0) or 0))
+            downsize_count = int(float(meta.get("downsize_count", 0) or 0))
+            skip_count = int(float(meta.get("skip_count", 0) or 0))
+            meta_text = f"{meta_status}:take{take_count}/down{downsize_count}/skip{skip_count}"
         print(
             f"  {outcome.objective:<14} score={outcome.best_score:+.4f} "
             f"threshold={outcome.decision_threshold if outcome.decision_threshold is not None else 'n/a'} "
@@ -6165,6 +6173,7 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             f"validation={outcome.validation_score if outcome.validation_score is not None else 'n/a'} "
             f"full={outcome.full_sample_score if outcome.full_sample_score is not None else 'n/a'} "
             f"walk_forward={wf_gate_text} "
+            f"meta_label={meta_text} "
             f"ensemble={'yes' if getattr(outcome, 'ensemble_refined', False) else 'no'} "
             f"hybrid={getattr(outcome, 'hybrid_profile', 'base_only')} "
             f"backend={getattr(outcome, 'training_backend_kind', 'cpu')} "

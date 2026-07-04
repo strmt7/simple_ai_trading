@@ -236,6 +236,21 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                     "concentration_warning": bool(regime.get("concentration_warning")),
                     "notes": list(regime.get("notes") or [])[:6],
                 }
+            meta_labels = item.get("meta_label_validation")
+            meta_summary: dict[str, object] = {}
+            if isinstance(meta_labels, Mapping):
+                for objective, raw_meta in list(meta_labels.items())[:4]:
+                    if not isinstance(raw_meta, Mapping):
+                        continue
+                    meta_summary[str(objective)] = {
+                        "status": _bounded_text(raw_meta.get("status")),
+                        "sample_count": int(_finite(raw_meta.get("sample_count"))),
+                        "take_count": int(_finite(raw_meta.get("take_count"))),
+                        "downsize_count": int(_finite(raw_meta.get("downsize_count"))),
+                        "skip_count": int(_finite(raw_meta.get("skip_count"))),
+                        "take_precision": _finite(raw_meta.get("take_precision")),
+                        "target_precision": _finite(raw_meta.get("target_precision")),
+                    }
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
                 "accepted": bool(item.get("accepted")),
@@ -246,6 +261,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "stress_validation": stress_summary,
                 "robustness_validation": robustness_summary,
                 "regime_validation": regime_summary,
+                "meta_label_validation": meta_summary,
                 "diagnostics": item.get("diagnostics") if isinstance(item.get("diagnostics"), Mapping) else None,
             })
     portfolio = report.get("portfolio_risk")
@@ -293,9 +309,10 @@ def _prompt(compact: Mapping[str, object]) -> str:
     return (
         "You are a cautious institutional trading risk reviewer for an autonomous day-trading testnet system. "
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
-        "Approve only when deterministic gates passed, stress scenarios are coherent, temporal robustness and "
-        "statistical edge evidence are coherent, regime concentration is not hiding a fragile one-state edge, "
-        "portfolio tail risk is acceptable, and there is no obvious reason to require a human review. "
+        "Approve only when deterministic gates passed, stress scenarios are coherent, meta-label evidence does not "
+        "show fragile take/skip behavior, temporal robustness and statistical edge evidence are coherent, regime "
+        "concentration is not hiding a fragile one-state edge, portfolio tail risk is acceptable, and there is no "
+        "obvious reason to require a human review. "
         "Return JSON matching the schema.\n"
         f"SCHEMA={schema}\n"
         f"MODEL_LAB_REPORT={payload}"

@@ -40,6 +40,7 @@ from .api import Candle
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
 from .features import ModelRow
 from .hybrid_models import optimize_hybrid_model_zoo
+from .meta_label import build_meta_label_report
 from .model import (
     TrainedModel,
     calibrate_probability_temperature,
@@ -136,6 +137,7 @@ class ObjectiveOutcome:
     hybrid_evaluated_profiles: int = 0
     hybrid_rescue: bool = False
     hybrid_rescue_candidates: int = 0
+    meta_label_report: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -1586,6 +1588,50 @@ def train_for_objective(
             diagnostics=diagnostics,
         )
     output_dir.mkdir(parents=True, exist_ok=True)
+    meta_label_report: dict[str, object] | None = None
+    if runner is None:
+        try:
+            meta_rows, _meta_feature_cfg = _rows_for_candidate(
+                candle_list,
+                rows,
+                feature_cfg,
+                best["candidate"],
+            )
+            if meta_rows:
+                meta_result = run_backtest(
+                    meta_rows,
+                    best["model"],
+                    best["strategy"],
+                    starting_cash=starting_cash,
+                    market_type=market_type,
+                    compute_backend=compute_backend or "cpu",
+                    score_batch_size=effective_score_batch_size,
+                )
+                report = build_meta_label_report(
+                    meta_rows,
+                    best["model"],
+                    best["strategy"],
+                    meta_result,
+                    objective_name=objective.name,
+                    market_type=market_type,
+                )
+                meta_label_report = report.asdict()
+                best["model"].meta_label_policy = dict(report.policy)
+        except (ValueError, RuntimeError, OSError) as exc:
+            meta_label_report = {
+                "status": "error",
+                "reason": str(exc),
+                "objective": objective.name,
+            }
+            warnings = list(getattr(best["model"], "quality_warnings", []))
+            warnings.append("meta_label_policy_unavailable")
+            best["model"].quality_warnings = warnings
+    else:
+        meta_label_report = {
+            "status": "not_run",
+            "reason": "runner_path",
+            "objective": objective.name,
+        }
     model_path = output_dir / f"model_{objective.name}.json"
     serialize_model(best["model"], model_path)
 
@@ -1656,6 +1702,7 @@ def train_for_objective(
         hybrid_evaluated_profiles=int(best.get("hybrid_evaluated_profiles", 0)),
         hybrid_rescue=bool(best.get("hybrid_rescue", False)),
         hybrid_rescue_candidates=int(hybrid_rescue_candidates),
+        meta_label_report=meta_label_report,
     )
 
 

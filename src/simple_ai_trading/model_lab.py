@@ -31,6 +31,7 @@ class SymbolResearchOutcome:
     liquidity: dict[str, object] | None = None
     objective_scores: dict[str, float] = field(default_factory=dict)
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
+    meta_label_validation: dict[str, object] = field(default_factory=dict)
     stress_validation: dict[str, object] | None = None
     stress_report_path: str | None = None
     robustness_validation: dict[str, object] | None = None
@@ -92,6 +93,11 @@ def _outcome_from_suite(
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
+    meta_labels = {
+        outcome.objective: outcome.meta_label_report
+        for outcome in suite.outcomes
+        if getattr(outcome, "meta_label_report", None) is not None
+    }
     robustness_payload = robustness_report.asdict()
     regime_payload = robustness_payload.get("regime_summary") if isinstance(robustness_payload, dict) else None
     score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
@@ -113,6 +119,7 @@ def _outcome_from_suite(
         liquidity=liquidity.asdict(),
         objective_scores=scores,
         hybrid_profiles=hybrid_profiles,
+        meta_label_validation=meta_labels,
         stress_validation=stress_report.asdict(),
         stress_report_path=str(stress_report_path),
         robustness_validation=robustness_payload,

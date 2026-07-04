@@ -310,6 +310,12 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
             "signal_threshold": 0.63,
             "take_profit_pct": 0.04,
         },
+        meta_label_policy={
+            "enabled": True,
+            "mode": "take_downsize_skip",
+            "take_threshold": 0.12,
+            "downsize_threshold": 0.06,
+        },
         ensemble_members=[
             EnsembleMember(
                 weights=[0.0],
@@ -356,6 +362,8 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         "signal_threshold": 0.63,
         "take_profit_pct": 0.04,
     }
+    assert loaded.meta_label_policy["enabled"] is True
+    assert loaded.meta_label_policy["take_threshold"] == pytest.approx(0.12)
     assert len(loaded.ensemble_members) == 2
     assert loaded.ensemble_members[0].seed == 7
     assert loaded.ensemble_members[0].training_loss == 0.4

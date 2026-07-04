@@ -120,6 +120,12 @@ positive P&L, sufficient closed trades, buy-and-hold edge, and drawdown
 discipline. Rejected model-lab candidates now include per-window `reject_reason`
 diagnostics so operators can distinguish missing trade count, negative P&L,
 buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
+After a candidate survives selection, the suite trains an observe-only
+meta-label policy from the accepted model's simulated trade log. The policy
+records the signal-strength thresholds that would take, downsize, or skip trades
+under the current objective precision target and is persisted in both the model
+artifact and `training_suite_summary.json`. It is evidence for future execution
+gating; it does not silently override live orders yet.
 For host smoke checks, `train-suite` and `model-lab` expose `--max-candidates`;
 this caps candidate count per objective only when explicitly set and should not
 be used to claim a full optimization result.
@@ -180,25 +186,27 @@ All three require positive expectancy.
    bid/ask spread, exchange status, and quote-asset policy.
 3. Fetches recent klines for each ranked symbol.
 4. Runs the training suite and hybrid optimizer for one or more objectives.
-5. Requires the selected candidate to pass purged chronological walk-forward
+5. Records observe-only meta-label take/downsize/skip evidence from simulated
+   trade outcomes for every selected objective model.
+6. Requires the selected candidate to pass purged chronological walk-forward
    folds before serialization. The purge gap protects against label-lookahead
    leakage between train and test folds.
-6. Replays every saved objective model under mandatory symbol-specific stress:
+7. Replays every saved objective model under mandatory symbol-specific stress:
    baseline measured execution, wider spread/slippage, latency spike with a
    liquidity haircut, and combined liquidity crunch with fee/spread/latency
    stress.
-7. Replays every saved objective model through `temporal_robustness.json`, a
+8. Replays every saved objective model through `temporal_robustness.json`, a
    separate chronological-window robustness gate for the final serialized
    artifact. This catches models that pass aggregate stress but fail in recent
    or regime-specific windows. The temporal report also records statistical
    edge evidence, including sign-test p-value and bootstrap lower mean return,
    records market-regime concentration, and rejects candidates whose window
    evidence is too weak for the selected risk level.
-8. Builds a portfolio-level risk report from aligned symbol returns. This gate
+9. Builds a portfolio-level risk report from aligned symbol returns. This gate
    computes inverse-volatility capped weights, effective symbol count,
    pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
    and portfolio drawdown.
-9. Writes a JSON report plus per-symbol `stress_validation.json`,
+10. Writes a JSON report plus per-symbol `stress_validation.json`,
    `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
    accepted only when all objective scores are positive, every stress replay
    passes the objective risk gates, temporal robustness passes, and the
