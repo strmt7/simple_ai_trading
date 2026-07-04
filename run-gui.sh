@@ -26,6 +26,8 @@ else
     PYTHONPATH="$APP_DIR/src"
 fi
 export PYTHONPATH
+SIMPLE_AI_TRADING_REPO_ROOT="$APP_DIR"
+export SIMPLE_AI_TRADING_REPO_ROOT
 
 if [ -x "$APP_DIR/build/windows/SimpleAITrading.exe" ]; then
     if [ -z "${SIMPLE_AI_TRADING_PYTHON:-}" ] && [ -x "$APP_DIR/.venv311/Scripts/python.exe" ]; then
