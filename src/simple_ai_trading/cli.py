@@ -4614,6 +4614,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     if not symbols:
         symbols = [str(getattr(args, "symbol", None) or runtime.symbol).upper()]
     max_files = getattr(args, "max_files", None)
+    max_files_int = None if max_files is None else max(0, int(max_files))
     all_results = []
     errors: list[dict[str, str]] = []
     for symbol in symbols:
@@ -4624,8 +4625,10 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         except (OSError, ValueError) as exc:
             errors.append({"symbol": symbol, "error": f"list_failed:{exc}"})
             continue
-        if max_files is not None:
-            urls = urls[: max(0, int(max_files))]
+        if max_files_int is not None:
+            if max_files_int == 0 and urls:
+                continue
+            urls = urls[:max_files_int]
         if not urls:
             errors.append({"symbol": symbol, "error": f"no_{cadence}_archive_files"})
             continue

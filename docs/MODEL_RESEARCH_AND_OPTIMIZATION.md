@@ -24,6 +24,16 @@ execution gating. Do not treat roadmap entries as product capabilities: a
 capability is executable only when its blueprint status, code path, tests, and
 operator docs all agree.
 
+Promotion-grade optimization is also data-health gated. If
+`tools/optimization_round.py` is run without explicit symbols and with hard
+requirements such as `--require-prefilled-data`, `--min-data-rows`, or
+`--require-verified-checksum`, the round builder scans the live liquidity-ranked
+universe and keeps only candidates whose local SQLite candles pass the requested
+row-count, coverage, gap, archive-status, and checksum gates. Rejected candidates
+are recorded in `selection_health_rejections`, so a report cannot hide that a
+popular or high-volume pair was skipped because the local evidence was too short,
+gappy, or unverified.
+
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,
   volume, trend, and volatility:
