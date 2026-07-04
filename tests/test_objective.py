@@ -34,6 +34,8 @@ def _result(**overrides) -> BacktestResult:
         average_trade_return=0.00927,
         trade_return_stdev=0.0073,
         max_consecutive_losses=1,
+        buy_hold_pnl=80.0,
+        edge_vs_buy_hold=20.0,
     )
     base.update(overrides)
     return BacktestResult(**base)
@@ -110,7 +112,8 @@ def test_positive_pnl_negative_buy_hold_edge_is_rejected():
     assert ranked[0]["accepted"] is False
     assert ranked[0]["score"] == float("-inf")
     assert "edge_vs_buy_hold<0.0" in ranked[0]["reject_reason"]
-    assert obj.DEFAULT.reject_reason(r) == "edge_vs_buy_hold<0.0"
+    assert "market_edge_pct<0.003" in ranked[0]["reject_reason"]
+    assert obj.DEFAULT.reject_reason(r) == "edge_vs_buy_hold<0.0; market_edge_pct<0.002"
 
 
 def test_rejection_reasons_are_stable_machine_labels():
@@ -122,7 +125,17 @@ def test_rejection_reasons_are_stable_machine_labels():
         "closed_trades<3",
         "realized_pnl<=0.0",
         "edge_vs_buy_hold<0.0",
+        "market_edge_pct<0.003",
     ]
+
+
+def test_market_edge_must_clear_material_threshold() -> None:
+    barely_profitable = _result(realized_pnl=10.0, buy_hold_pnl=9.5, edge_vs_buy_hold=0.5)
+
+    reasons = obj.REGULAR.rejection_reasons(barely_profitable)
+
+    assert "market_edge_pct<0.003" in reasons
+    assert obj.REGULAR.accepts(barely_profitable) is False
 
 
 def test_path_quality_gates_reject_fragile_profitable_models():

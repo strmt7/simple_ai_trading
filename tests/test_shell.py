@@ -265,7 +265,7 @@ def test_close_usage_and_hit_and_miss_and_all(tmp_path):
     ))
     recorder.lines.clear()
     assert shell.dispatch("/close pos1") == 0
-    assert any("closed pos1" in line for line in recorder.lines)
+    assert any("closed paper position pos1" in line for line in recorder.lines)
 
     recorder.lines.clear()
     assert shell.dispatch("/close ghost") == 1
@@ -277,7 +277,26 @@ def test_close_usage_and_hit_and_miss_and_all(tmp_path):
     ))
     recorder.lines.clear()
     assert shell.dispatch("/close all") == 0
-    assert any("closed 1 positions" in line for line in recorder.lines)
+    assert any("closed 1 paper positions" in line for line in recorder.lines)
+
+
+def test_close_refuses_live_local_ledger_erasure(tmp_path):
+    shell, recorder, _ctrl, positions_root = _make_shell(tmp_path)
+    store = PositionsStore(root=positions_root)
+    store.record_open(OpenPosition(
+        id="live1", symbol="BTCUSDC", market_type="spot", side="LONG",
+        qty=1.0, entry_price=10.0, leverage=1.0, opened_at_ms=1, notional=10.0,
+        dry_run=False, open_client_order_id="sait-o-live1",
+    ))
+
+    assert shell.dispatch("/close live1") == 2
+    assert any("refusing local-only close" in line for line in recorder.lines)
+    assert store.find_open("live1") is not None
+
+    recorder.lines.clear()
+    assert shell.dispatch("/close all") == 2
+    assert any("refusing local-only close" in line for line in recorder.lines)
+    assert store.find_open("live1") is not None
 
 
 def test_auto_all_actions(tmp_path):

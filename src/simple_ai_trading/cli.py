@@ -6784,7 +6784,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
         STATE_RUNNING,
         STATE_STOPPING,
         AutonomousControl,
-        close_all_open_positions,
+        close_tracked_open_positions,
         run_loop,
     )
     from .objective import get_objective
@@ -6867,7 +6867,9 @@ def command_autonomous(args: argparse.Namespace) -> int:
     if action == "stop":
         control.write(STATE_STOPPING, note="CLI stop")
         runtime = load_runtime()
+        strategy = load_strategy()
         mark_price: float | None = None
+        client: BinanceClient | None = None
         try:
             client = _build_client(runtime)
             quote_fn = getattr(client, "get_symbol_price", None)
@@ -6877,8 +6879,22 @@ def command_autonomous(args: argparse.Namespace) -> int:
             mark_price = float(price)
         except (AttributeError, BinanceAPIError, TypeError, ValueError) as exc:
             print(f"autonomous: stop quote unavailable; local positions will close at entry price if needed ({exc})", file=sys.stderr)
-        closed = close_all_open_positions(PositionsStore(), mark_price, "operator-stop-command")
-        suffix = f"; closed_local_positions={closed}" if closed else ""
+        close_report = close_tracked_open_positions(
+            PositionsStore(),
+            mark_price,
+            "operator-stop-command",
+            client=client,
+            reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+        )
+        suffix = f"; closed_positions={close_report.closed}" if close_report.closed else ""
+        if close_report.skipped or close_report.failed:
+            failures = ", ".join(close_report.failures[:5])
+            print(
+                f"autonomous: STOPPING{suffix}; close_incomplete "
+                f"skipped={close_report.skipped} failed={close_report.failed} {failures}",
+                file=sys.stderr,
+            )
+            return 2
         print(f"autonomous: STOPPING{suffix}")
         return 0
     # status
@@ -6921,20 +6937,37 @@ def command_positions(args: argparse.Namespace) -> int:
 
 
 def command_close(args: argparse.Namespace) -> int:
-    from .positions import PositionsStore
+    from .positions import PositionsStore, is_bot_owned_position
 
     store = PositionsStore()
     target = args.position_id
     if target.lower() == "all":
         opens = store.load_open()
+        live = [position for position in opens if not position.dry_run]
+        if live:
+            print(
+                "refusing local-only close for live positions; use autonomous stop",
+                file=sys.stderr,
+            )
+            return 2
         for position in opens:
             store.remove_open(position.id)
-        print(f"closed {len(opens)} positions (local ledger only)")
+        print(f"closed {len(opens)} paper positions (local ledger only)")
         return 0
+    position = store.find_open(target)
+    if position is None:
+        print(f"no open position with id {target!r}", file=sys.stderr)
+        return 1
+    if not position.dry_run:
+        ownership = "verified" if is_bot_owned_position(position) else "unverified"
+        print(
+            f"refusing local-only close for live {ownership} position {target}; use autonomous stop",
+            file=sys.stderr,
+        )
+        return 2
     if store.remove_open(target):
-        print(f"closed {target} (local ledger only)")
+        print(f"closed paper position {target} (local ledger only)")
         return 0
-    print(f"no open position with id {target!r}", file=sys.stderr)
     return 1
 
 

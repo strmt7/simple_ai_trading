@@ -28,6 +28,7 @@ from simple_ai_trading.autonomous import (
     _loss_budget_guard,
     _open_position_from_decision,
     close_all_open_positions,
+    close_tracked_open_positions,
     ensure_credentials,
     ensure_testnet,
     run_loop,
@@ -39,6 +40,7 @@ from simple_ai_trading.positions import (
     ClosedTrade,
     OpenPosition,
     PositionsStore,
+    bot_client_order_id,
     new_position_id,
 )
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
@@ -56,9 +58,46 @@ class FakeClient:
 
     def __init__(self, price: float = 100.0):
         self._price = price
+        self.orders: list[dict[str, object]] = []
 
     def get_symbol_price(self, symbol: str):
         return (float(self._price), 0)
+
+    def place_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        *,
+        dry_run: bool,
+        leverage: float = 1.0,
+        reduce_only: bool = False,
+        client_order_id: str | None = None,
+    ):
+        order = {
+            "orderId": len(self.orders) + 1,
+            "clientOrderId": client_order_id or "",
+            "symbol": symbol,
+            "side": side,
+            "executedQty": str(quantity),
+            "avgPrice": str(self._price),
+            "status": "FILLED",
+            "reduceOnly": reduce_only,
+            "dryRun": dry_run,
+            "leverage": leverage,
+        }
+        self.orders.append(order)
+        return order
+
+    def get_order(self, symbol: str, *, order_id=None, orig_client_order_id=None):
+        for order in self.orders:
+            if order.get("symbol") != symbol:
+                continue
+            if order_id is not None and str(order.get("orderId")) == str(order_id):
+                return order
+            if orig_client_order_id is not None and order.get("clientOrderId") == orig_client_order_id:
+                return order
+        raise BinanceAPIError("order not found")
 
 
 def _make_config(tmp_path: Path, **overrides) -> AutonomousConfig:
@@ -505,6 +544,61 @@ def test_close_all_open_positions_falls_back_to_entry_price(tmp_path: Path) -> N
     assert trade.reason == "manual-stop"
 
 
+def test_close_tracked_live_verified_position_uses_reduce_only_order(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+    client = FakeClient(price=111.0)
+
+    report = close_tracked_open_positions(
+        store,
+        111.0,
+        "operator-stop",
+        client=client,
+        reduce_only=True,
+        clock=lambda: 10.0,
+    )
+
+    assert report.ok is True
+    assert report.closed == 1
+    assert store.load_open() == []
+    assert client.orders[-1]["side"] == "SELL"
+    assert client.orders[-1]["reduceOnly"] is True
+    assert client.orders[-1]["clientOrderId"] == bot_client_order_id(position.id, "close")
+    trade = store.load_ledger()[0]
+    assert trade.close_client_order_id == bot_client_order_id(position.id, "close")
+    assert trade.exchange_status == "FILLED"
+
+
+def test_close_tracked_live_unverified_position_is_not_touched(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("SHORT", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = ""
+    store.record_open(position)
+    client = FakeClient(price=90.0)
+
+    report = close_tracked_open_positions(
+        store,
+        90.0,
+        "operator-stop",
+        client=client,
+        reduce_only=True,
+        clock=lambda: 10.0,
+    )
+
+    assert report.closed == 0
+    assert report.skipped == 1
+    assert report.ok is True
+    assert "ownership-unverified" in report.failures[0]
+    assert client.orders == []
+    assert len(store.load_open()) == 1
+    assert store.load_ledger() == []
+
+
 def test_run_loop_decision_binance_error_continues(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=2)
 
@@ -672,6 +766,41 @@ def test_run_loop_opens_position_when_flat_and_long_signal(tmp_path: Path) -> No
     opens = store.load_open()
     assert len(opens) == 1
     assert opens[0].side == "LONG"
+
+
+def test_run_loop_live_open_submits_bot_client_order_id(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=1, dry_run=False)
+    client = FakeClient(price=125.0)
+
+    def dec(_c, _r, _s, _o):
+        return Decision(side="LONG", confidence=0.8, mark_price=125.0)
+
+    result = run_loop(
+        client,
+        _runtime(),
+        replace(_strategy(), max_open_positions=1),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+        reconcile_fn=lambda _c, runtime, _store: ReconciliationReport(
+            ok=True,
+            market_type=runtime.market_type,
+            symbols_checked=[runtime.symbol],
+            local_open_count=0,
+            local_live_open_count=0,
+            local_paper_open_count=0,
+            exchange_exposure_count=0,
+        ),
+    )
+
+    assert result.opened_trades == 1
+    assert client.orders[0]["clientOrderId"].startswith("sait-o-")
+    opens = PositionsStore(root=cfg.positions_root).load_open()
+    assert opens[0].dry_run is False
+    assert opens[0].open_client_order_id == client.orders[0]["clientOrderId"]
+    assert opens[0].open_exchange_order_id == "1"
+    assert opens[0].exchange_status == "FILLED"
 
 
 def test_open_position_uses_meta_label_size_multiplier(tmp_path: Path) -> None:

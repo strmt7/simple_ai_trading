@@ -49,6 +49,8 @@ class ReconciliationReport:
     mismatches: list[ReconciliationMismatch] = field(default_factory=list)
     exchange_exposures: list[ExchangeExposure] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    external_exchange_exposure_count: int = 0
+    stale_local_position_count: int = 0
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -62,6 +64,8 @@ class ReconciliationReport:
             "mismatches": [item.asdict() for item in self.mismatches],
             "exchange_exposures": [item.asdict() for item in self.exchange_exposures],
             "warnings": list(self.warnings),
+            "external_exchange_exposure_count": self.external_exchange_exposure_count,
+            "stale_local_position_count": self.stale_local_position_count,
         }
 
 
@@ -219,6 +223,16 @@ def reconcile_account_positions(
         warnings.append(f"paper_positions_ignored={len(paper_positions)}")
     if not isinstance(account, Mapping):
         warnings.append("account_payload_not_mapping")
+    external_exposure_count = sum(
+        1
+        for mismatch in mismatches
+        if mismatch.reason == "exchange_exposure_without_local_position"
+    )
+    stale_local_count = sum(
+        1
+        for mismatch in mismatches
+        if mismatch.reason == "local_position_without_exchange_exposure"
+    )
     symbols_checked = sorted(_symbol_set(runtime, open_positions))
     return ReconciliationReport(
         ok=not mismatches,
@@ -231,5 +245,6 @@ def reconcile_account_positions(
         mismatches=mismatches,
         exchange_exposures=list(exposures),
         warnings=warnings,
+        external_exchange_exposure_count=external_exposure_count,
+        stale_local_position_count=stale_local_count,
     )
-

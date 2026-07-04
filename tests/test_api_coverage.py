@@ -743,6 +743,25 @@ def test_place_order_spot_live_uses_spot_endpoint(monkeypatch) -> None:
     assert calls == [("POST", "/api/v3/order", {"symbol": "BTCUSDC", "side": "BUY", "type": "MARKET", "quantity": "0.25000000"}, True)]
 
 
+def test_place_order_passes_client_order_id(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
+    calls: list[tuple[str, str, dict, bool]] = []
+
+    def request(method: str, path: str, params=None, signed: bool = False):
+        calls.append((method, path, params or {}, signed))
+        return {"ok": True}
+
+    monkeypatch.setattr(client, "_request", request)
+    assert client.place_order(
+        "BTCUSDC",
+        "BUY",
+        0.25,
+        dry_run=False,
+        client_order_id="sait-o-abc123",
+    ) == {"ok": True}
+    assert calls[-1][2]["newClientOrderId"] == "sait-o-abc123"
+
+
 def test_get_order_spot_uses_signed_query(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
     calls: list[tuple[str, str, dict, bool]] = []
@@ -813,7 +832,15 @@ def test_place_order_futures_reduce_only_requests_result(monkeypatch) -> None:
         return {"ok": True}
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.place_order("BTCUSDC", "SELL", 0.25, dry_run=False, leverage=2.0, reduce_only=True) == {"ok": True}
+    assert client.place_order(
+        "BTCUSDC",
+        "SELL",
+        0.25,
+        dry_run=False,
+        leverage=2.0,
+        reduce_only=True,
+        client_order_id="sait-c-abc123",
+    ) == {"ok": True}
     order_call = calls[-1]
     assert order_call == (
         "POST",
@@ -823,6 +850,7 @@ def test_place_order_futures_reduce_only_requests_result(monkeypatch) -> None:
             "side": "SELL",
             "type": "MARKET",
             "quantity": "0.25000000",
+            "newClientOrderId": "sait-c-abc123",
             "newOrderRespType": "RESULT",
             "reduceOnly": "true",
         },

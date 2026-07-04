@@ -704,8 +704,17 @@ class BinanceClient:
         payload = {"symbol": symbol, "leverage": leverage}
         return self._request_dict("POST", "/fapi/v1/leverage", payload, signed=True, label="leverage")
 
-    def place_order(self, symbol: str, side: str, quantity: float, *, dry_run: bool,
-                   leverage: float = 1.0, reduce_only: bool = False) -> Dict[str, object]:
+    def place_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        *,
+        dry_run: bool,
+        leverage: float = 1.0,
+        reduce_only: bool = False,
+        client_order_id: str | None = None,
+    ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         side = str(side or "").upper()
         try:
@@ -724,6 +733,8 @@ class BinanceClient:
             "type": "MARKET",
             "quantity": f"{quantity_value:.8f}",
         }
+        if client_order_id is not None and str(client_order_id).strip():
+            payload["newClientOrderId"] = str(client_order_id).strip()[:36]
 
         if dry_run:
             return {
@@ -734,6 +745,7 @@ class BinanceClient:
                 "quantity": payload["quantity"],
                 "leverage": leverage,
                 "reduceOnly": bool(reduce_only),
+                "clientOrderId": payload.get("newClientOrderId", ""),
             }
 
         self._ensure_signed_endpoint_allowed()
