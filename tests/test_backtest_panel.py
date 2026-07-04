@@ -424,6 +424,68 @@ def test_run_panel_applies_loaded_model_strategy_overrides(
     assert captured == {"risk": 0.005, "threshold": 0.64, "take": 0.04}
 
 
+def test_run_panel_uses_execution_db_and_records_profile(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from simple_ai_trading.market_store import MarketDataStore
+
+    db_file = tmp_path / "market.sqlite"
+    with MarketDataStore(db_file) as store:
+        store.insert_top_of_book_snapshot(
+            "binance",
+            "BTCUSDC",
+            "spot",
+            {"bidPrice": "100.00", "bidQty": "100", "askPrice": "100.04", "askQty": "100"},
+            ts_ms=1_700_000_000_000,
+            ingested_at_ms=1_700_000_000_010,
+        )
+    req = BacktestRequest(
+        interval="5m",
+        market_type="spot",
+        symbol="BTCUSDC",
+        model_path="model.json",
+        data_path="ignored",
+        execution_db=str(db_file),
+        starting_cash=1000.0,
+        tag="profile",
+    )
+    captured: dict[str, object] = {}
+
+    def fake_run_backtest(rows, loaded_model, strategy, **kwargs):
+        captured["profile"] = kwargs.get("symbol_profile")
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1001.0,
+            realized_pnl=1.0,
+            win_rate=1.0,
+            trades=1,
+            max_drawdown=0.0,
+            closed_trades=1,
+            gross_exposure=10.0,
+            total_fees=0.1,
+            stopped_by_drawdown=False,
+            max_exposure=10.0,
+            trades_per_day_cap_hit=0,
+        )
+
+    monkeypatch.setattr("simple_ai_trading.backtest_panel.run_backtest", fake_run_backtest)
+
+    report = run_panel(
+        req,
+        StrategyConfig(max_spread_bps=5.0),
+        candles_loader=lambda _path: _synthetic_candles(n=300),
+        model_loader=lambda _path: _zero_model(13),
+        report_dir=tmp_path / "reports",
+        clock=lambda: 1_700_000_000.5,
+    )
+
+    assert getattr(captured["profile"], "symbol") == "BTCUSDC"
+    data = json.loads(((tmp_path / "reports") / report.filename).read_text(encoding="utf-8"))
+    assert data["execution_profile"]["source"] == "top_of_book:binance"
+    assert data["execution_profile"]["profile"]["symbol"] == "BTCUSDC"
+
+
 def test_run_panel_rejects_mismatched_model_dimension(tmp_path: Path) -> None:
     req = BacktestRequest(
         interval="5m",

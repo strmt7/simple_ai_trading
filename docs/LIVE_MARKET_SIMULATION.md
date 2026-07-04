@@ -21,6 +21,11 @@ Execution cost is symbol-specific where market data exists:
 - `data-sync` now persists a typed top-of-book history with bid/ask price,
   bid/ask quantity, mid price, spread bps, and top-level notional depth in
   SQLite, while still retaining the raw exchange payload for audit.
+- `backtest`, `backtest-chart`, and `backtest-panel` can consume the latest
+  typed top-of-book row with `--execution-db data/market_data.sqlite`. The
+  loaded profile is written into run artifacts and panel reports, including
+  source, spread bps, top-level depth, snapshot timestamp, stale-data warning,
+  and the derived liquidity score.
 - `exchangeInfo` proves the symbol exists and is trading.
 - Strategy thresholds decide if quote volume, trade count, spread, and liquidity score are acceptable.
 - Automatic universe ranking may derive volume and trade-count floors from the
@@ -31,6 +36,7 @@ Execution cost is symbol-specific where market data exists:
 Backtest fill price uses:
 
 - half-spread cost,
+- optional symbol-specific spread and top-of-book depth from SQLite,
 - configured slippage,
 - latency buffer,
 - market-impact cost based on order participation versus candle-volume notional,

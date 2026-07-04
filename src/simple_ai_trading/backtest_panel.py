@@ -23,6 +23,7 @@ from typing import Callable, Sequence
 from .advanced_model import default_config_for, make_advanced_rows
 from .api import Candle
 from .backtest import BacktestResult, run_backtest
+from .execution_profiles import ExecutionProfileEvidence, load_top_of_book_execution_profile
 from .features import ModelRow, make_rows
 from .intervals import interval_minutes, supported_intervals, validate_interval
 from .model import ModelLoadError, TrainedModel, load_model
@@ -44,10 +45,12 @@ class BacktestRequest:
 
     interval: str
     market_type: str = "spot"
+    symbol: str = ""
     start_ms: int | None = None
     end_ms: int | None = None
     model_path: str | None = None
     data_path: str = "data/historical_btcusdc.json"
+    execution_db: str | None = None
     starting_cash: float = 1000.0
     objective: str | None = None
     tag: str = ""
@@ -71,6 +74,7 @@ class BacktestReport:
     model_path_resolved: str | None
     objective_score: float | None
     objective_accepts: bool | None
+    execution_profile: ExecutionProfileEvidence
     tag: str
     filename: str
 
@@ -92,6 +96,7 @@ class BacktestReport:
                 "score": self.objective_score,
                 "accepted": self.objective_accepts,
             },
+            "execution_profile": self.execution_profile.asdict(),
             "tag": self.tag,
             "filename": self.filename,
         }
@@ -257,12 +262,20 @@ def run_panel(
             "this panel request; objective runs need train-suite model_<objective>.json, "
             "while standard runs need train model artifacts with the same strategy features."
         )
+    execution_profile = load_top_of_book_execution_profile(
+        request.execution_db,
+        symbol=request.symbol,
+        market_type=request.market_type,
+        strategy=effective_strategy,
+        now_ms=started_ms,
+    )
     result = run_backtest(
         rows,
         model,
         effective_strategy,
         starting_cash=request.starting_cash,
         market_type=request.market_type,
+        symbol_profile=execution_profile.profile,
     )
     finished_ms = int(clock() * 1000)
 
@@ -285,6 +298,7 @@ def run_panel(
         model_path_resolved=resolved,
         objective_score=score,
         objective_accepts=accepts,
+        execution_profile=execution_profile,
         tag=request.tag,
         filename=filename,
     )

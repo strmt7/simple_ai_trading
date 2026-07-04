@@ -100,8 +100,8 @@ Startup behavior:
 simple-ai-trading fetch --symbol ETHUSDC --limit 1000
 simple-ai-trading train --preset thorough --compute-backend directml
 simple-ai-trading evaluate
-simple-ai-trading backtest --compute-backend directml
-simple-ai-trading backtest-chart --output data/backtest_performance.svg
+simple-ai-trading backtest --compute-backend directml --execution-db data/market_data.sqlite
+simple-ai-trading backtest-chart --output data/backtest_performance.svg --execution-db data/market_data.sqlite
 simple-ai-trading risk --paper
 simple-ai-trading universe
 simple-ai-trading model-blueprint --risk-level conservative
@@ -109,7 +109,7 @@ simple-ai-trading model-lab --market futures --objective conservative --objectiv
 simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 ```
 
-`data-sync` writes closed candles, raw exchange snapshots, and typed top-of-book spread/depth rows to SQLite so future model and backtest work can use symbol-specific liquidity evidence instead of flat assumptions.
+`data-sync` writes closed candles, raw exchange snapshots, and typed top-of-book spread/depth rows to SQLite. `backtest`, `backtest-chart`, and `backtest-panel` can now opt into that SQLite evidence with `--execution-db data/market_data.sqlite`, which converts the latest per-symbol bid/ask spread and top-level depth into pessimistic fill assumptions and stores the execution-profile evidence in backtest artifacts.
 
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. The same command appears in the Windows app.
 
