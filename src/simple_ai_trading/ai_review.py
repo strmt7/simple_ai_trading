@@ -12,6 +12,7 @@ from typing import Callable, Mapping
 import requests
 
 from .ai_runtime import AICapabilityReport, detect_ai_capabilities
+from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
 from .storage import write_json_atomic
 from .types import RuntimeConfig
 
@@ -274,6 +275,8 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
             )
             selection_risk = _compact_selection_risk_map(item.get("selection_risk"))
             ai_uplift = _compact_ai_uplift(item.get("ai_uplift"))
+            learning_feedback = _compact_learning_feedback(item.get("learning_feedback"))
+            data_coverage = _compact_data_coverage(item.get("data_coverage"))
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
                 "accepted": bool(item.get("accepted")),
@@ -289,6 +292,8 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "hybrid_ablation": hybrid_ablation,
                 "feature_ablation": feature_ablation,
                 "ai_uplift": ai_uplift,
+                "learning_feedback": learning_feedback,
+                "data_coverage": data_coverage,
                 "diagnostics": item.get("diagnostics") if isinstance(item.get("diagnostics"), Mapping) else None,
             })
     portfolio = report.get("portfolio_risk")
@@ -305,6 +310,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
             "deployed_weight": _finite(portfolio.get("deployed_weight")),
             "accepted_symbols": list(portfolio.get("accepted_symbols") or [])[:_MAX_OUTCOMES],
         }
+    learning_feedback = _compact_learning_feedback(report.get("learning_feedback"))
     return {
         "quote_asset": str(report.get("quote_asset") or ""),
         "interval": str(report.get("interval") or ""),
@@ -312,6 +318,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
         "requested_objectives": list(report.get("requested_objectives") or []),
         "accepted_symbols": list(report.get("accepted_symbols") or []),
         "portfolio_risk": portfolio_summary,
+        "learning_feedback": learning_feedback,
         "outcomes": compact_outcomes,
     }
 
@@ -391,6 +398,72 @@ def _compact_ai_uplift(raw: object) -> dict[str, object] | None:
     }
 
 
+def _compact_learning_feedback(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    recovery = raw.get("recovery_evidence")
+    recovery_summary = None
+    if isinstance(recovery, Mapping):
+        recovery_summary = {
+            "passed": bool(recovery.get("passed")),
+            "stress_accepted": bool(recovery.get("stress_accepted")),
+            "stress_worst_realized_pnl": _finite(recovery.get("stress_worst_realized_pnl")),
+            "temporal_robustness_accepted": bool(recovery.get("temporal_robustness_accepted")),
+            "temporal_worst_realized_pnl": _finite(recovery.get("temporal_worst_realized_pnl")),
+        }
+    loss_by_symbol = raw.get("loss_by_symbol")
+    return {
+        "source_path": _bounded_text(raw.get("source_path")),
+        "source": _bounded_text(raw.get("source")),
+        "promotion_safe": (
+            bool(raw.get("promotion_safe"))
+            if "promotion_safe" in raw
+            else None
+        ),
+        "closed_trades": int(_finite(raw.get("closed_trades"))),
+        "losses": int(_finite(raw.get("losses"))),
+        "net_realized_pnl": _finite(raw.get("net_realized_pnl")),
+        "max_consecutive_losses": int(_finite(raw.get("max_consecutive_losses"))),
+        "symbol": _bounded_text(raw.get("symbol")),
+        "symbol_loss_count": int(_finite(raw.get("symbol_loss_count"))),
+        "review_required": bool(raw.get("review_required")),
+        "blocks_promotion": bool(raw.get("blocks_promotion")),
+        "reason": _bounded_text(raw.get("reason")),
+        "recovery_evidence": recovery_summary,
+        "loss_by_symbol": (
+            {str(key): int(_finite(value)) for key, value in list(loss_by_symbol.items())[:6]}
+            if isinstance(loss_by_symbol, Mapping)
+            else {}
+        ),
+        "recommendations": _bounded_list(raw.get("recommendations"), limit=6),
+    }
+
+
+def _compact_data_coverage(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    return {
+        "symbol": _bounded_text(raw.get("symbol")),
+        "market_type": _bounded_text(raw.get("market_type")),
+        "interval": _bounded_text(raw.get("interval")),
+        "source_scope": _bounded_text(raw.get("source_scope")),
+        "integrity_status": _bounded_text(raw.get("integrity_status")),
+        "integrity_warnings": _bounded_list(raw.get("integrity_warnings"), limit=8),
+        "truth_basis": _bounded_list(raw.get("truth_basis"), limit=6),
+        "candles_available": int(_finite(raw.get("candles_available"))),
+        "candles_used": int(_finite(raw.get("candles_used"))),
+        "rows_used": int(_finite(raw.get("rows_used"))),
+        "used_start_utc": _bounded_text(raw.get("used_start_utc")),
+        "used_end_utc": _bounded_text(raw.get("used_end_utc")),
+        "used_duration_years": _finite(raw.get("used_duration_years")),
+        "full_available_history_used": bool(raw.get("full_available_history_used")),
+        "coverage_ratio": _finite(raw.get("coverage_ratio")),
+        "gap_count": int(_finite(raw.get("gap_count"))),
+        "largest_gap_intervals": _finite(raw.get("largest_gap_intervals")),
+        "notes": _bounded_list(raw.get("notes"), limit=6),
+    }
+
+
 def _ablation_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
     warnings: list[str] = []
     outcomes = compact.get("outcomes")
@@ -418,6 +491,46 @@ def _ablation_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
                         )
                         if len(warnings) >= _MAX_CONCERNS:
                             return warnings
+    return warnings
+
+
+def _learning_feedback_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
+    warnings: list[str] = []
+    outcomes = compact.get("outcomes")
+    if not isinstance(outcomes, list):
+        return warnings
+    for item in outcomes[:_MAX_OUTCOMES]:
+        if not isinstance(item, Mapping) or not bool(item.get("accepted")):
+            continue
+        symbol = str(item.get("symbol") or "unknown")
+        raw = item.get("learning_feedback")
+        if not isinstance(raw, Mapping):
+            continue
+        if raw.get("blocks_promotion") is True:
+            reason = _bounded_text(raw.get("reason")) or "learning_feedback_failed"
+            warnings.append(f"{symbol} learning feedback blocks promotion ({reason})")
+        if len(warnings) >= _MAX_CONCERNS:
+            return warnings
+    return warnings
+
+
+def _data_coverage_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
+    warnings: list[str] = []
+    outcomes = compact.get("outcomes")
+    if not isinstance(outcomes, list):
+        return warnings
+    for item in outcomes[:_MAX_OUTCOMES]:
+        if not isinstance(item, Mapping) or not bool(item.get("accepted")):
+            continue
+        symbol = str(item.get("symbol") or "unknown")
+        raw = item.get("data_coverage")
+        if not isinstance(raw, Mapping):
+            warnings.append(f"{symbol} missing data coverage evidence")
+        elif raw.get("integrity_status") == "fail":
+            reason = ",".join(str(value) for value in list(raw.get("integrity_warnings") or [])[:3])
+            warnings.append(f"{symbol} data coverage failed ({reason or 'integrity_status=fail'})")
+        if len(warnings) >= _MAX_CONCERNS:
+            return warnings
     return warnings
 
 
@@ -486,28 +599,41 @@ def _deterministic_precheck(
     portfolio = compact.get("portfolio_risk")
     portfolio_ok = bool(portfolio.get("accepted")) if isinstance(portfolio, Mapping) else False
     ablation_warnings = _ablation_precheck_warnings(compact)
+    data_coverage_warnings = _data_coverage_precheck_warnings(compact)
+    learning_feedback_warnings = _learning_feedback_precheck_warnings(compact)
     selection_risk_warnings = _selection_risk_precheck_warnings(compact)
     ai_uplift_warnings = _ai_uplift_precheck_warnings(
         compact,
         require_ai_uplift=require_ai_uplift,
     )
+    financial_sanity = build_model_lab_financial_sanity_report(compact, source="ai_review_precheck")
+    financial_sanity_warnings = blocking_reasons(financial_sanity)[:_MAX_CONCERNS]
     return {
         "accepted_symbol_count": len(accepted_symbols),
         "portfolio_accepted": portfolio_ok,
         "portfolio_reason": _bounded_text(portfolio.get("reason")) if isinstance(portfolio, Mapping) else "missing_portfolio_risk",
         "ablation_warning_count": len(ablation_warnings),
         "ablation_warnings": ablation_warnings,
+        "data_coverage_warning_count": len(data_coverage_warnings),
+        "data_coverage_warnings": data_coverage_warnings,
+        "learning_feedback_warning_count": len(learning_feedback_warnings),
+        "learning_feedback_warnings": learning_feedback_warnings,
         "selection_risk_warning_count": len(selection_risk_warnings),
         "selection_risk_warnings": selection_risk_warnings,
         "ai_uplift_required": bool(require_ai_uplift),
         "ai_uplift_warning_count": len(ai_uplift_warnings),
         "ai_uplift_warnings": ai_uplift_warnings,
+        "financial_sanity_warning_count": len(financial_sanity_warnings),
+        "financial_sanity_warnings": financial_sanity_warnings,
         "allowed_for_ai_review": (
             bool(accepted_symbols)
             and portfolio_ok
             and not ablation_warnings
+            and not data_coverage_warnings
+            and not learning_feedback_warnings
             and not selection_risk_warnings
             and not ai_uplift_warnings
+            and not financial_sanity_warnings
         ),
     }
 
@@ -525,7 +651,8 @@ def _prompt(compact: Mapping[str, object]) -> str:
         "concentration is not hiding a fragile one-state edge, selection-risk evidence shows the selected score "
         "survived the number of tried models, hybrid and feature ablation evidence does not show "
         "that removing a model component improves the accepted score, any AI-assisted signal has explicit holdout "
-        "uplift over the non-AI ML baseline without worse drawdown, portfolio tail risk is acceptable, and there "
+        "uplift over the non-AI ML baseline without worse drawdown, learning feedback from closed trades does "
+        "not indicate an unresolved repeated-loss pattern, portfolio tail risk is acceptable, and there "
         "is no obvious reason to require a human review. "
         "Return JSON matching the schema.\n"
         f"SCHEMA={schema}\n"
@@ -555,14 +682,23 @@ def run_model_lab_ai_review(
     precheck = _deterministic_precheck(compact, require_ai_uplift=bool(runtime.ai_enabled))
     if not precheck["allowed_for_ai_review"]:
         ablation_warnings = precheck.get("ablation_warnings")
+        data_coverage_warnings = precheck.get("data_coverage_warnings")
+        learning_feedback_warnings = precheck.get("learning_feedback_warnings")
         selection_risk_warnings = precheck.get("selection_risk_warnings")
         ai_uplift_warnings = precheck.get("ai_uplift_warnings")
+        financial_sanity_warnings = precheck.get("financial_sanity_warnings")
         if isinstance(ablation_warnings, list) and ablation_warnings:
             reason = "ablation evidence shows accepted model improves when a component is removed"
+        elif isinstance(data_coverage_warnings, list) and data_coverage_warnings:
+            reason = "data coverage evidence is missing or failed for an accepted symbol"
+        elif isinstance(learning_feedback_warnings, list) and learning_feedback_warnings:
+            reason = "learning feedback shows unresolved repeated-loss promotion risk"
         elif isinstance(selection_risk_warnings, list) and selection_risk_warnings:
             reason = "selection-risk evidence shows accepted model score does not survive trial burden"
         elif isinstance(ai_uplift_warnings, list) and ai_uplift_warnings:
             reason = "AI-vs-ML uplift evidence is missing or failed for an accepted symbol"
+        elif isinstance(financial_sanity_warnings, list) and financial_sanity_warnings:
+            reason = "financial sanity checks failed for an accepted model-lab artifact"
         else:
             reason = "deterministic gates did not produce an accepted portfolio for AI review"
         result = _blocked_report(

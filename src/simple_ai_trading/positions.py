@@ -23,7 +23,7 @@ import uuid
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from .storage import write_json_atomic
 
@@ -396,33 +396,67 @@ def write_learning_feedback(
     return report
 
 
+def _int_counter_payload(raw: object) -> dict[str, int]:
+    if not isinstance(raw, Mapping):
+        return {}
+    parsed: dict[str, int] = {}
+    for key, value in raw.items():
+        try:
+            parsed[str(key)] = int(value)
+        except (TypeError, ValueError):
+            continue
+    return parsed
+
+
+def _string_tuple_payload(raw: object) -> tuple[str, ...]:
+    if not isinstance(raw, (list, tuple)):
+        return ()
+    return tuple(str(item) for item in raw)
+
+
+def learning_feedback_from_mapping(payload: Mapping[str, Any]) -> LearningFeedbackReport:
+    """Parse a persisted learning-feedback artifact with bounded defaults."""
+
+    return LearningFeedbackReport(
+        generated_at_ms=int(payload.get("generated_at_ms") or 0),
+        lookback_trades=int(payload.get("lookback_trades") or 100),
+        closed_trades=int(payload.get("closed_trades") or 0),
+        wins=int(payload.get("wins") or 0),
+        losses=int(payload.get("losses") or 0),
+        net_realized_pnl=float(payload.get("net_realized_pnl") or 0.0),
+        win_rate=float(payload.get("win_rate") or 0.0),
+        max_consecutive_losses=int(payload.get("max_consecutive_losses") or 0),
+        worst_trade_pnl=float(payload.get("worst_trade_pnl") or 0.0),
+        recurring_loss_reasons=_int_counter_payload(payload.get("recurring_loss_reasons")),
+        loss_by_symbol=_int_counter_payload(payload.get("loss_by_symbol")),
+        loss_by_side=_int_counter_payload(payload.get("loss_by_side")),
+        recommendations=_string_tuple_payload(payload.get("recommendations")),
+        promotion_safe=bool(payload.get("promotion_safe")),
+        notes=_string_tuple_payload(payload.get("notes")),
+    )
+
+
+def load_learning_feedback_file(path: Path) -> LearningFeedbackReport | None:
+    """Load a learning-feedback file without mutating ledgers or models."""
+
+    source = Path(path)
+    if not source.exists():
+        return None
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        if isinstance(payload, Mapping):
+            return learning_feedback_from_mapping(payload)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+    return None
+
+
 def load_learning_feedback(store: PositionsStore) -> LearningFeedbackReport:
     """Load persisted feedback or rebuild it from the ledger."""
 
-    path = store.learning_feedback_path
-    if path.exists():
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(payload, dict):
-                return LearningFeedbackReport(
-                    generated_at_ms=int(payload.get("generated_at_ms") or 0),
-                    lookback_trades=int(payload.get("lookback_trades") or 100),
-                    closed_trades=int(payload.get("closed_trades") or 0),
-                    wins=int(payload.get("wins") or 0),
-                    losses=int(payload.get("losses") or 0),
-                    net_realized_pnl=float(payload.get("net_realized_pnl") or 0.0),
-                    win_rate=float(payload.get("win_rate") or 0.0),
-                    max_consecutive_losses=int(payload.get("max_consecutive_losses") or 0),
-                    worst_trade_pnl=float(payload.get("worst_trade_pnl") or 0.0),
-                    recurring_loss_reasons=dict(payload.get("recurring_loss_reasons") or {}),
-                    loss_by_symbol=dict(payload.get("loss_by_symbol") or {}),
-                    loss_by_side=dict(payload.get("loss_by_side") or {}),
-                    recommendations=tuple(payload.get("recommendations") or ()),
-                    promotion_safe=bool(payload.get("promotion_safe")),
-                    notes=tuple(payload.get("notes") or ()),
-                )
-        except (OSError, ValueError, TypeError, json.JSONDecodeError):
-            pass
+    loaded = load_learning_feedback_file(store.learning_feedback_path)
+    if loaded is not None:
+        return loaded
     return write_learning_feedback(store)
 
 

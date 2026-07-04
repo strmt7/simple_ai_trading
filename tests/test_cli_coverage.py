@@ -29,6 +29,11 @@ from simple_ai_trading.features import ModelRow, feature_signature
 from simple_ai_trading.types import StrategyConfig
 
 
+@pytest.fixture(autouse=True)
+def _isolate_repo_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+
+
 def _exchange_account(usdc: str = "1000") -> dict[str, object]:
     return {
         "updateTime": 123,

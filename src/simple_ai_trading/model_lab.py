@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Sequence
 
 from .api import BinanceAPIError, BinanceClient, Candle
+from .data_coverage import DataCoverageReport, describe_candle_coverage
+from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
+from .intervals import max_limit
 from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
+from .market_data import clean_candles
 from .model import ModelLoadError, load_model, serialize_model
 from .portfolio_risk import PortfolioRiskReport, build_portfolio_risk_report
+from .positions import LearningFeedbackReport, load_learning_feedback_file
 from .robust_validation import (
     SuiteStressReport,
     SuiteTemporalRobustnessReport,
@@ -41,6 +46,8 @@ class SymbolResearchOutcome:
     robustness_validation: dict[str, object] | None = None
     robustness_report_path: str | None = None
     regime_validation: dict[str, object] | None = None
+    learning_feedback: dict[str, object] | None = None
+    data_coverage: dict[str, object] | None = None
     diagnostics: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
@@ -58,6 +65,8 @@ class ModelLabReport:
     output_dir: str
     report_path: str
     portfolio_risk: dict[str, object] | None = None
+    learning_feedback: dict[str, object] | None = None
+    financial_sanity: dict[str, object] | None = None
 
     @property
     def accepted_symbols(self) -> list[str]:
@@ -72,6 +81,8 @@ class ModelLabReport:
             "universe": self.universe,
             "accepted_symbols": self.accepted_symbols,
             "portfolio_risk": self.portfolio_risk,
+            "learning_feedback": self.learning_feedback,
+            "financial_sanity": self.financial_sanity,
             "outcomes": [item.asdict() for item in self.outcomes],
             "output_dir": self.output_dir,
             "report_path": self.report_path,
@@ -86,6 +97,147 @@ def _candles_for_symbol(client: BinanceClient, symbol: str, interval: str, limit
     return client.get_klines(symbol, interval, limit=max(1, int(limit)))
 
 
+def _candles_for_symbol_full_history(
+    client: BinanceClient,
+    symbol: str,
+    interval: str,
+    *,
+    batch_size: int,
+) -> list[Candle]:
+    request_limit = max(1, min(max_limit(getattr(client, "market_type", "spot")), int(batch_size)))
+    candles_by_open_time: dict[int, Candle] = {}
+    end_time = None
+    while True:
+        kwargs: dict[str, int] = {"limit": request_limit}
+        if end_time is not None:
+            kwargs["end_time"] = int(end_time)
+        chunk = client.get_klines(symbol, interval, **kwargs)
+        if not chunk:
+            break
+        before = len(candles_by_open_time)
+        for candle in chunk:
+            candles_by_open_time[int(candle.open_time)] = candle
+        earliest_open = min(int(candle.open_time) for candle in chunk)
+        next_end = earliest_open - 1
+        if len(candles_by_open_time) == before or len(chunk) < request_limit or next_end == end_time or next_end < 0:
+            break
+        end_time = next_end
+    return clean_candles(candles_by_open_time.values())
+
+
+def _load_model_lab_learning_feedback(
+    learning_feedback_path: Path | None,
+) -> tuple[LearningFeedbackReport | None, Path | None]:
+    """Load bounded post-trade feedback for model promotion, if available."""
+
+    if learning_feedback_path is None:
+        default_path = Path("data/autonomous/learning_feedback.json")
+        if not default_path.exists():
+            return None, None
+        report = load_learning_feedback_file(default_path)
+        if report is None:
+            raise ValueError(f"learning feedback file is missing or invalid: {default_path}")
+        return report, default_path
+    source = Path(learning_feedback_path)
+    report = load_learning_feedback_file(source)
+    if report is None:
+        raise ValueError(f"learning feedback file is missing or invalid: {source}")
+    return report, source
+
+
+def _learning_feedback_summary(
+    report: LearningFeedbackReport | None,
+    source_path: Path | None,
+) -> dict[str, object] | None:
+    if report is None:
+        return None
+    return {
+        **report.asdict(),
+        "source_path": str(source_path) if source_path is not None else None,
+    }
+
+
+def _report_metric(report: object, field: str) -> float:
+    try:
+        value = getattr(report, field)
+        return float(value)
+    except (AttributeError, TypeError, ValueError):
+        return 0.0
+
+
+def _symbol_loss_count(report: LearningFeedbackReport, symbol: str) -> int:
+    target = symbol.upper()
+    total = 0
+    for raw_symbol, count in report.loss_by_symbol.items():
+        if str(raw_symbol).upper() == target:
+            total += int(count)
+    return total
+
+
+def _symbol_learning_feedback(
+    report: LearningFeedbackReport | None,
+    symbol: str,
+    stress_report: SuiteStressReport,
+    robustness_report: SuiteTemporalRobustnessReport,
+) -> dict[str, object] | None:
+    if report is None:
+        return None
+    loss_count = _symbol_loss_count(report, symbol)
+    review_required = loss_count >= 2
+    stress_worst_pnl = _report_metric(stress_report, "worst_realized_pnl")
+    robustness_worst_pnl = _report_metric(robustness_report, "worst_realized_pnl")
+    recovery_evidence_passed = (
+        not review_required
+        or (
+            bool(getattr(stress_report, "accepted", False))
+            and bool(getattr(robustness_report, "accepted", False))
+            and stress_worst_pnl > 0.0
+            and robustness_worst_pnl > 0.0
+        )
+    )
+    relevant_recommendations = [
+        item for item in report.recommendations
+        if symbol.upper() in item.upper() or not item.startswith("review_symbol_specific_edge:")
+    ][:8]
+    blocks_promotion = bool(review_required and not recovery_evidence_passed)
+    reason = None
+    if blocks_promotion:
+        reason = "repeated_symbol_losses_require_positive_stress_and_temporal_recovery_evidence"
+    elif review_required:
+        reason = "repeated_symbol_losses_recovered_in_current_promotion_evidence"
+    return {
+        "symbol": symbol.upper(),
+        "source": "closed_trade_learning_feedback",
+        "symbol_loss_count": loss_count,
+        "review_required": review_required,
+        "promotion_safe": bool(report.promotion_safe),
+        "global_max_consecutive_losses": int(report.max_consecutive_losses),
+        "global_net_realized_pnl": float(report.net_realized_pnl),
+        "recovery_evidence": {
+            "passed": recovery_evidence_passed,
+            "stress_accepted": bool(getattr(stress_report, "accepted", False)),
+            "stress_worst_realized_pnl": stress_worst_pnl,
+            "temporal_robustness_accepted": bool(getattr(robustness_report, "accepted", False)),
+            "temporal_worst_realized_pnl": robustness_worst_pnl,
+        },
+        "blocks_promotion": blocks_promotion,
+        "reason": reason,
+        "recommendations": relevant_recommendations,
+    }
+
+
+def _data_coverage_blocks_promotion(data_coverage: DataCoverageReport | None) -> bool:
+    if data_coverage is None:
+        return True
+    hard_warnings = {
+        "no_candles_used",
+        "no_model_rows_used",
+        "coverage_gaps_detected",
+        "coverage_ratio_below_99_5_percent",
+    }
+    return any(item in hard_warnings for item in data_coverage.integrity_warnings)
+
+
 def _outcome_from_suite(
     symbol: str,
     suite: SuiteReport,
@@ -94,6 +246,8 @@ def _outcome_from_suite(
     stress_report_path: Path,
     robustness_report: SuiteTemporalRobustnessReport,
     robustness_report_path: Path,
+    learning_feedback: dict[str, object] | None = None,
+    data_coverage: DataCoverageReport | None = None,
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
@@ -126,7 +280,16 @@ def _outcome_from_suite(
     )
     stress_accepted = bool(stress_report.accepted)
     robustness_accepted = bool(robustness_report.accepted)
-    accepted = score_accepted and selection_risk_accepted and stress_accepted and robustness_accepted
+    learning_feedback_accepted = not bool(learning_feedback and learning_feedback.get("blocks_promotion"))
+    data_coverage_accepted = not _data_coverage_blocks_promotion(data_coverage)
+    accepted = (
+        score_accepted
+        and selection_risk_accepted
+        and stress_accepted
+        and robustness_accepted
+        and learning_feedback_accepted
+        and data_coverage_accepted
+    )
     error = None
     if not accepted and score_accepted and not selection_risk_accepted:
         error = "selection_risk_failed"
@@ -134,6 +297,20 @@ def _outcome_from_suite(
         error = "stress_validation_failed"
     elif not accepted and score_accepted and selection_risk_accepted and stress_accepted and not robustness_accepted:
         error = "temporal_robustness_failed"
+    elif not accepted and score_accepted and selection_risk_accepted and stress_accepted and robustness_accepted:
+        error = "learning_feedback_failed" if not learning_feedback_accepted else "data_coverage_failed"
+    diagnostics = None
+    if learning_feedback and learning_feedback.get("blocks_promotion"):
+        diagnostics = {
+            "learning_feedback_reason": learning_feedback.get("reason"),
+            "learning_feedback_symbol_loss_count": learning_feedback.get("symbol_loss_count"),
+        }
+    if data_coverage is not None and data_coverage.integrity_status == "fail":
+        diagnostics = {
+            **(diagnostics or {}),
+            "data_coverage_status": data_coverage.integrity_status,
+            "data_coverage_warnings": list(data_coverage.integrity_warnings),
+        }
     return SymbolResearchOutcome(
         symbol=symbol,
         accepted=accepted,
@@ -153,6 +330,9 @@ def _outcome_from_suite(
         robustness_validation=robustness_payload,
         robustness_report_path=str(robustness_report_path),
         regime_validation=regime_payload if isinstance(regime_payload, dict) else None,
+        learning_feedback=learning_feedback,
+        data_coverage=data_coverage.asdict() if data_coverage is not None else None,
+        diagnostics=diagnostics,
     )
 
 
@@ -178,6 +358,8 @@ class _ExecutionStampContext:
     stress_report_path: Path
     robustness_report: SuiteTemporalRobustnessReport
     robustness_report_path: Path
+    learning_feedback: dict[str, object] | None = None
+    data_coverage: DataCoverageReport | None = None
 
 
 def _stamp_model_execution_validation(
@@ -194,6 +376,8 @@ def _stamp_model_execution_validation(
     robustness_report_path: Path,
     portfolio_report: PortfolioRiskReport,
     portfolio_report_path: Path,
+    learning_feedback: dict[str, object] | None = None,
+    data_coverage: DataCoverageReport | None = None,
 ) -> None:
     """Persist symbol-specific execution validation on each model-lab artifact."""
 
@@ -219,10 +403,18 @@ def _stamp_model_execution_validation(
             portfolio_report.accepted
             and symbol.upper() in {str(item).upper() for item in portfolio_report.accepted_symbols}
         )
+        learning_blocked = bool(learning_feedback and learning_feedback.get("blocks_promotion"))
+        data_coverage_passed = not _data_coverage_blocks_promotion(data_coverage)
         try:
             model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
             model.execution_validation = {
-                "passed": bool(stress_accepted and robustness_accepted and portfolio_accepted),
+                "passed": bool(
+                    stress_accepted
+                    and robustness_accepted
+                    and portfolio_accepted
+                    and not learning_blocked
+                    and data_coverage_passed
+                ),
                 "source": "model_lab",
                 "symbol": symbol.upper(),
                 "market_type": market_type,
@@ -268,6 +460,8 @@ def _stamp_model_execution_validation(
                     "max_pairwise_correlation": float(portfolio_report.max_pairwise_correlation),
                     "max_cluster_weight": float(portfolio_report.max_cluster_weight),
                 },
+                "learning_feedback": learning_feedback,
+                "data_coverage": data_coverage.asdict() if data_coverage is not None else None,
             }
             serialize_model(model, path)
         except (ModelLoadError, OSError, ValueError):
@@ -321,10 +515,14 @@ def run_model_lab(
     batch_size: int = 8192,
     score_batch_size: int | None = None,
     max_candidates: int | None = None,
+    learning_feedback_path: Path | None = None,
+    full_history: bool = False,
 ) -> ModelLabReport:
     """Rank liquid symbols, train all risk objectives, and write a lab report."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    learning_report, learning_source_path = _load_model_lab_learning_feedback(learning_feedback_path)
+    learning_summary = _learning_feedback_summary(learning_report, learning_source_path)
     universe = rank_high_liquidity_universe(
         client,
         strategy,
@@ -340,8 +538,18 @@ def run_model_lab(
         symbol = item.symbol
         symbol_dir = output_dir / _safe_symbol_path(symbol)
         symbol_dir.mkdir(parents=True, exist_ok=True)
+        candles: list[Candle] = []
         try:
-            candles = _candles_for_symbol(client, symbol, runtime.interval, limit)
+            candles = (
+                _candles_for_symbol_full_history(
+                    client,
+                    symbol,
+                    runtime.interval,
+                    batch_size=max(1, int(limit)),
+                )
+                if full_history
+                else _candles_for_symbol(client, symbol, runtime.interval, limit)
+            )
             candles_by_symbol[symbol] = candles
             suite = run_training_suite(
                 candles,
@@ -388,6 +596,21 @@ def run_model_lab(
             )
             robustness_report_path = symbol_dir / "temporal_robustness.json"
             write_json_atomic(robustness_report_path, robustness_report.asdict(), indent=2, sort_keys=True)
+            data_coverage = describe_candle_coverage(
+                symbol=symbol,
+                market_type=runtime.market_type,
+                interval=runtime.interval,
+                available_candles=candles,
+                used_candles=candles,
+                rows_used=int(getattr(suite, "total_rows", 0)),
+                source_scope="binance_full_history" if full_history else "binance_recent_limit",
+            )
+            learning_feedback = _symbol_learning_feedback(
+                learning_report,
+                symbol,
+                stress_report,
+                robustness_report,
+            )
             execution_stamp_contexts.append(_ExecutionStampContext(
                 suite=suite,
                 symbol=symbol,
@@ -399,6 +622,8 @@ def run_model_lab(
                 stress_report_path=stress_report_path,
                 robustness_report=robustness_report,
                 robustness_report_path=robustness_report_path,
+                learning_feedback=learning_feedback,
+                data_coverage=data_coverage,
             ))
             outcomes.append(_outcome_from_suite(
                 symbol,
@@ -408,8 +633,23 @@ def run_model_lab(
                 stress_report_path,
                 robustness_report,
                 robustness_report_path,
+                learning_feedback=learning_feedback,
+                data_coverage=data_coverage,
             ))
         except TrainingSuiteRejected as exc:
+            data_coverage = (
+                describe_candle_coverage(
+                    symbol=symbol,
+                    market_type=runtime.market_type,
+                    interval=runtime.interval,
+                    available_candles=candles,
+                    used_candles=candles,
+                    rows_used=int(exc.row_count),
+                    source_scope="binance_full_history" if full_history else "binance_recent_limit",
+                ).asdict()
+                if candles
+                else None
+            )
             outcomes.append(SymbolResearchOutcome(
                 symbol=symbol,
                 accepted=False,
@@ -417,9 +657,23 @@ def run_model_lab(
                 objectives=list(objectives),
                 error=str(exc),
                 liquidity=item.asdict(),
+                data_coverage=data_coverage,
                 diagnostics=exc.diagnostics,
             ))
         except (BinanceAPIError, ValueError, OSError) as exc:
+            data_coverage = (
+                describe_candle_coverage(
+                    symbol=symbol,
+                    market_type=runtime.market_type,
+                    interval=runtime.interval,
+                    available_candles=candles,
+                    used_candles=candles,
+                    rows_used=0,
+                    source_scope="binance_full_history" if full_history else "binance_recent_limit",
+                ).asdict()
+                if candles
+                else None
+            )
             outcomes.append(SymbolResearchOutcome(
                 symbol=symbol,
                 accepted=False,
@@ -427,6 +681,7 @@ def run_model_lab(
                 objectives=list(objectives),
                 error=str(exc),
                 liquidity=item.asdict(),
+                data_coverage=data_coverage,
             ))
     portfolio_report = _apply_portfolio_risk_gate(
         outcomes,
@@ -435,6 +690,43 @@ def run_model_lab(
         min_symbols=universe.min_required,
     )
     portfolio_report_path = output_dir / "portfolio_risk.json"
+    report_path = output_dir / "model_lab_report.json"
+    preliminary_report = ModelLabReport(
+        quote_asset=runtime.quote_asset,
+        interval=runtime.interval,
+        market_type=runtime.market_type,
+        requested_objectives=list(objectives),
+        universe=universe.asdict(),
+        outcomes=outcomes,
+        output_dir=str(output_dir),
+        report_path=str(report_path),
+        portfolio_risk={
+            **portfolio_report.asdict(),
+            "report_path": str(portfolio_report_path),
+        },
+        learning_feedback=learning_summary,
+    )
+    sanity_report = build_model_lab_financial_sanity_report(
+        preliminary_report.asdict(),
+        source="model_lab",
+    )
+    sanity_blocks = blocking_reasons(sanity_report)
+    if sanity_blocks:
+        for outcome in outcomes:
+            if not outcome.accepted:
+                continue
+            outcome.accepted = False
+            outcome.error = "financial_sanity_failed"
+            outcome.diagnostics = {
+                **(outcome.diagnostics or {}),
+                "financial_sanity_blocking_reasons": sanity_blocks[:8],
+            }
+        portfolio_report = replace(
+            portfolio_report,
+            accepted=False,
+            reason="financial_sanity_failed",
+            accepted_symbols=[],
+        )
     write_json_atomic(portfolio_report_path, portfolio_report.asdict(), indent=2, sort_keys=True)
     for context in execution_stamp_contexts:
         _stamp_model_execution_validation(
@@ -450,8 +742,9 @@ def run_model_lab(
             robustness_report_path=context.robustness_report_path,
             portfolio_report=portfolio_report,
             portfolio_report_path=portfolio_report_path,
+            learning_feedback=context.learning_feedback,
+            data_coverage=context.data_coverage,
         )
-    report_path = output_dir / "model_lab_report.json"
     report = ModelLabReport(
         quote_asset=runtime.quote_asset,
         interval=runtime.interval,
@@ -465,6 +758,8 @@ def run_model_lab(
             **portfolio_report.asdict(),
             "report_path": str(portfolio_report_path),
         },
+        learning_feedback=learning_summary,
+        financial_sanity=sanity_report.asdict(),
     )
     write_json_atomic(report_path, report.asdict(), indent=2)
     return report

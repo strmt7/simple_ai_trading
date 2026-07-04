@@ -23,6 +23,7 @@ class MarketDataSyncConfig:
     batch_size: int = 1000
     include_futures_metrics: bool = True
     now_ms: int | None = None
+    full_history: bool = False
 
 
 @dataclass(frozen=True)
@@ -196,6 +197,7 @@ def _sync_backfill_candles(
     *,
     batch_size: int,
     rows_requested: int,
+    full_history: bool,
     now_ms: int | None,
     errors: list[str],
 ) -> CandleSyncStats:
@@ -203,10 +205,10 @@ def _sync_backfill_candles(
     requests = 0
     rows_received = 0
     end_time = None
-    remaining_closed = rows_requested
-    while remaining_closed > 0:
+    remaining_closed: int | None = None if full_history else rows_requested
+    while full_history or (remaining_closed is not None and remaining_closed > 0):
         latest_page_extra = 1 if end_time is None else 0
-        request_limit = min(batch_size, remaining_closed + latest_page_extra)
+        request_limit = batch_size if remaining_closed is None else min(batch_size, remaining_closed + latest_page_extra)
         requests += 1
         try:
             chunk = client.get_klines(symbol, interval, limit=request_limit, end_time=end_time)
@@ -218,10 +220,11 @@ def _sync_backfill_candles(
         rows_received += len(chunk)
         chunk_stats = _store_candle_chunk(store, symbol, market_type, interval, chunk, now_ms)
         rows_changed += chunk_stats.rows_changed
-        remaining_closed -= chunk_stats.closed_rows
+        if remaining_closed is not None:
+            remaining_closed -= chunk_stats.closed_rows
         earliest_open = min(candle.open_time for candle in chunk)
         next_end = earliest_open - 1
-        if len(chunk) < request_limit or next_end == end_time:
+        if len(chunk) < request_limit or next_end == end_time or next_end < 0:
             break
         end_time = next_end
     return CandleSyncStats(rows_changed=rows_changed, requests=requests, rows_received=rows_received)
@@ -238,6 +241,7 @@ def sync_market_data(
     step_ms = interval_milliseconds(interval)
     batch_size = max(1, min(max_limit(config.market_type), int(config.batch_size)))
     rows_requested = max(0, int(config.rows))
+    full_history = bool(config.full_history)
     errors: list[str] = []
     candles_inserted = 0
     kline_requests = 0
@@ -254,7 +258,12 @@ def sync_market_data(
         latest_open_time = coverage_before.last_open_time
         incremental_start_time = (
             int(latest_open_time) + step_ms
-            if rows_requested > 0 and coverage_before.count >= rows_requested and latest_open_time is not None
+            if (
+                not full_history
+                and rows_requested > 0
+                and coverage_before.count >= rows_requested
+                and latest_open_time is not None
+            )
             else None
         )
         if incremental_start_time is not None:
@@ -279,6 +288,7 @@ def sync_market_data(
                 interval,
                 batch_size=batch_size,
                 rows_requested=rows_requested,
+                full_history=full_history,
                 now_ms=config.now_ms,
                 errors=errors,
             )
@@ -362,7 +372,7 @@ def sync_market_data(
             snapshots_inserted=snapshots_inserted,
             errors=errors,
             request_info=dict(getattr(client, "last_request_info", {})),
-            sync_mode=sync_mode,
+            sync_mode="full_history" if full_history and sync_mode == "backfill" else sync_mode,
             candles_added=candles_added,
             gap_count=coverage_quality.gap_count,
             coverage_ratio=coverage_quality.coverage_ratio,

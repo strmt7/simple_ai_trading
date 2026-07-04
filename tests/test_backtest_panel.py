@@ -335,6 +335,10 @@ def test_run_panel_end_to_end_without_objective(tmp_path: Path) -> None:
     assert data["tag"] == "runpanel"
     assert data["objective"]["name"] is None
     assert data["objective"]["score"] is None
+    assert data["data_coverage"]["interval"] == "5m"
+    assert data["data_coverage"]["candles_available"] == 300
+    assert data["data_coverage"]["full_available_history_used"] is True
+    assert "used_duration_years" in data["data_coverage"]
 
 
 def test_run_panel_end_to_end_with_objective(tmp_path: Path) -> None:

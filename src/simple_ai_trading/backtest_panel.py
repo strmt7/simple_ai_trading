@@ -23,6 +23,7 @@ from typing import Callable, Sequence
 from .advanced_model import default_config_for, make_advanced_rows
 from .api import Candle
 from .backtest import BacktestResult, run_backtest
+from .data_coverage import DataCoverageReport, describe_candle_coverage
 from .execution_profiles import ExecutionProfileEvidence, load_top_of_book_execution_profile
 from .features import ModelRow, make_rows
 from .intervals import interval_minutes, supported_intervals, validate_interval
@@ -75,6 +76,7 @@ class BacktestReport:
     objective_score: float | None
     objective_accepts: bool | None
     execution_profile: ExecutionProfileEvidence
+    data_coverage: DataCoverageReport
     tag: str
     filename: str
 
@@ -97,6 +99,7 @@ class BacktestReport:
                 "accepted": self.objective_accepts,
             },
             "execution_profile": self.execution_profile.asdict(),
+            "data_coverage": self.data_coverage.asdict(),
             "tag": self.tag,
             "filename": self.filename,
         }
@@ -284,6 +287,17 @@ def run_panel(
     if objective is not None:
         score = objective.score(result)
         accepts = objective.accepts(result)
+    data_coverage = describe_candle_coverage(
+        symbol=request.symbol,
+        market_type=request.market_type,
+        interval=request.validated_interval(),
+        available_candles=candles,
+        used_candles=filtered,
+        rows_used=len(rows),
+        requested_start_ms=request.start_ms,
+        requested_end_ms=request.end_ms,
+        source_scope="json_file_loaded_candles",
+    )
 
     report_dir.mkdir(parents=True, exist_ok=True)
     filename = build_report_filename(request, ts_ms=finished_ms)
@@ -299,6 +313,7 @@ def run_panel(
         objective_score=score,
         objective_accepts=accepts,
         execution_profile=execution_profile,
+        data_coverage=data_coverage,
         tag=request.tag,
         filename=filename,
     )

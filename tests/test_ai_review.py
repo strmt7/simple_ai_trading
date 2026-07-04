@@ -87,6 +87,42 @@ def _write_report(
                 "symbol": "AAAUSDC",
                 "accepted": accepted,
                 "rows": 500,
+                "data_coverage": {
+                    "symbol": "AAAUSDC",
+                    "market_type": "futures",
+                    "interval": "15m",
+                    "source_scope": "binance_full_history",
+                    "expected_interval_ms": 900000,
+                    "integrity_status": "ok",
+                    "integrity_warnings": [],
+                    "truth_basis": [
+                        "prices_from_timestamped_closed_candles",
+                        "coverage_measured_from_candle_close_time",
+                        "execution_results_are_simulated_not_exchange_fills",
+                    ],
+                    "full_history_requested": True,
+                    "full_available_history_used": True,
+                    "candles_available": 70080,
+                    "candles_used": 70080,
+                    "rows_used": 500,
+                    "requested_start_ms": None,
+                    "requested_end_ms": None,
+                    "available_start_ms": 1640995200000,
+                    "available_end_ms": 1704078900000,
+                    "used_start_ms": 1640995200000,
+                    "used_end_ms": 1704078900000,
+                    "available_start_utc": "2022-01-01T00:00:00Z",
+                    "available_end_utc": "2024-01-01T00:15:00Z",
+                    "used_start_utc": "2022-01-01T00:00:00Z",
+                    "used_end_utc": "2024-01-01T00:15:00Z",
+                    "used_duration_days": 730.0104166667,
+                    "used_duration_years": 1.9986595939,
+                    "gap_count": 0,
+                    "largest_gap_ms": 900000,
+                    "largest_gap_intervals": 1.0,
+                    "coverage_ratio": 1.0,
+                    "notes": [],
+                },
                 "objective_scores": {"regular": 0.15},
                 "hybrid_profiles": {"regular": "balanced_neighbors"},
                 "selection_risk": {
@@ -337,6 +373,30 @@ def test_ai_review_blocks_before_model_call_when_ai_uplift_fails(tmp_path: Path,
     assert review.status == "blocked"
     assert review.deterministic_precheck["ai_uplift_warning_count"] == 1
     assert "ai_pnl_not_above_baseline" in review.deterministic_precheck["ai_uplift_warnings"][0]
+
+
+def test_ai_review_blocks_financially_unsound_accepted_report(tmp_path: Path, monkeypatch) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    payload["outcomes"][0]["rows"] = 0
+    report_path.write_text(json.dumps(payload), encoding="utf-8")
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("AI provider should not be called")
+
+    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+
+    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+
+    assert called is False
+    assert review.approved is False
+    assert review.status == "blocked"
+    assert review.deterministic_precheck["financial_sanity_warning_count"] >= 1
+    assert "financial sanity" in str(review.error)
 
 
 def test_ai_review_fails_closed_on_invalid_ai_payload(tmp_path: Path, monkeypatch) -> None:

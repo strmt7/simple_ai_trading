@@ -29,6 +29,10 @@ def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
     monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
     monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime.resolve_backend",
+        lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
+    )
 
     report = detect_ai_capabilities(AIRuntimeConfig(enabled=True, require_gpu=True))
 
@@ -41,6 +45,10 @@ def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
     monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
     monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime.resolve_backend",
+        lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
+    )
 
     report = detect_ai_capabilities(
         AIRuntimeConfig(enabled=True, require_gpu=True, model="tiny-560m")

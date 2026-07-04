@@ -45,6 +45,24 @@ def _extract_retry_after(value: str | None) -> float | None:
         return None
 
 
+def _response_rate_limit_metadata(headers: Mapping[str, Any] | None) -> dict[str, object]:
+    if not headers:
+        return {"rate_limit_headers": {}}
+    rate_limit_headers: dict[str, str] = {}
+    retry_after = None
+    for key, value in headers.items():
+        header = str(key)
+        normalized = header.lower()
+        if normalized.startswith("x-mbx-used-weight") or normalized.startswith("x-mbx-order-count"):
+            rate_limit_headers[header] = str(value)
+        if normalized == "retry-after":
+            retry_after = _extract_retry_after(str(value))
+    metadata: dict[str, object] = {"rate_limit_headers": rate_limit_headers}
+    if retry_after is not None:
+        metadata["retry_after_seconds"] = float(retry_after)
+    return metadata
+
+
 def _redact_request_url(url: str) -> str:
     parts = urlsplit(url)
     if not parts.query:
@@ -201,6 +219,7 @@ class BinanceClient:
         path: str,
         url: str,
         last_error: str | None,
+        response_headers: Mapping[str, Any] | None = None,
     ) -> None:
         self.last_request_info = {
             "attempts": attempt,
@@ -210,6 +229,7 @@ class BinanceClient:
             "path": path,
             "last_error": last_error,
             "url": _redact_request_url(url),
+            **_response_rate_limit_metadata(response_headers),
         }
 
     def _throttle(self) -> None:
@@ -290,15 +310,16 @@ class BinanceClient:
                 raise BinanceAPIError(f"Binance request failed: {last_error}") from err
 
             response_status = response.status_code
+            response_headers = getattr(response, "headers", {}) or {}
             if response_status >= 400:
-                retry_after = _extract_retry_after(response.headers.get("Retry-After"))
+                retry_after = _extract_retry_after(response_headers.get("Retry-After"))
                 response_text = _redact_sensitive_text(response.text, url)
                 last_error = f"HTTP {response_status}: {response_text}"
                 if response_status in _RETRY_HTTP_STATUSES and attempt < self.max_retries:
                     delay = self._retry_delay(attempt, response_status=response_status, retry_after=retry_after)
                     time.sleep(delay)
                     continue
-                self._record_request(attempt + 1, response_status, method, path, url, last_error)
+                self._record_request(attempt + 1, response_status, method, path, url, last_error, response_headers)
                 raise BinanceAPIError(f"Binance returned {response.status_code}: {response_text}")
 
             try:
@@ -309,7 +330,7 @@ class BinanceClient:
                     delay = self._retry_delay(attempt, response_status=response_status)
                     time.sleep(delay)
                     continue
-                self._record_request(attempt + 1, response_status, method, path, url, last_error)
+                self._record_request(attempt + 1, response_status, method, path, url, last_error, response_headers)
                 raise BinanceAPIError("Malformed response from Binance") from err
 
             if isinstance(data, dict) and data.get("code") and data.get("msg"):
@@ -330,10 +351,11 @@ class BinanceClient:
                     path,
                     url,
                     api_error,
+                    response_headers,
                 )
                 raise BinanceAPIError(api_error)
 
-            self._record_request(attempt + 1, response_status, method, path, url, None)
+            self._record_request(attempt + 1, response_status, method, path, url, None, response_headers)
             return data
 
         last_error = _redact_sensitive_text(last_error or "", last_url) or None
