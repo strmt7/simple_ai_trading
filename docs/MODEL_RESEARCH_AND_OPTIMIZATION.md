@@ -20,7 +20,9 @@ simple-ai-trading model-blueprint --json
 
 Future model work should update that structured blueprint whenever a model
 family moves from research to implemented evidence or from advisory evidence to
-execution gating.
+execution gating. Do not treat roadmap entries as product capabilities: a
+capability is executable only when its blueprint status, code path, tests, and
+operator docs all agree.
 
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,
@@ -65,6 +67,22 @@ execution gating.
   liquidity, and risk aversion must live inside the evaluation loop before any
   autonomous model can be accepted:
   <https://arxiv.org/abs/2111.09395>
+- TimesFM, Chronos, and Moirai reinforced the value of foundation-style
+  probabilistic forecasts for time series, but the repo treats them as logged
+  feature providers until no-lookahead replay and AI-vs-ML uplift evidence pass:
+  <https://arxiv.org/abs/2310.10688>,
+  <https://arxiv.org/abs/2403.07815>, and
+  <https://arxiv.org/abs/2402.02592>
+- BloombergGPT and FinGPT reinforced the expectation that financial LLM work
+  should use multibillion local models and financial-domain evaluation. This
+  repo uses that as a capability and governance check, not as permission for an
+  LLM to place orders:
+  <https://arxiv.org/abs/2303.17564> and
+  <https://arxiv.org/abs/2306.06031>
+- HMM-style regime research supports the existing abstention policy: a regime
+  model should reduce exposure, cool down, or wait during high-noise phases,
+  not force a trade:
+  <https://arxiv.org/abs/2007.14874>
 - Lopez de Prado's Hierarchical Risk Parity work influenced the portfolio
   acceptance layer: individual profitable symbols are not enough if the
   accepted set is concentrated in one high-correlation cluster:
@@ -100,6 +118,9 @@ used by the CLI. The advanced feature vector now includes:
   OHLCV candles are available,
 - ATR-normalized trend and breakout features,
 - volume-surge confirmation for high-frequency day-trading entries.
+- market-quality regime features for trend efficiency, downside pressure,
+  lagged return autocorrelation, volatility-of-volatility, volume pressure,
+  volume/return correlation, ATR pressure, and current volume z-score.
 
 The revamp also adds a hybrid expert layer stored directly inside the serialized
 model:
@@ -132,8 +153,9 @@ diagnostics so operators can distinguish missing trade count, negative P&L,
 buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
 Selected training-suite models also receive feature-group ablation replays.
 The selected advanced feature vector is replayed with base features, extra
-lookback windows, technical-confluence features, nonlinear transforms, and
-polynomial interactions zeroed out one group at a time. The report records
+lookback windows, technical-confluence features, market-quality regime
+features, nonlinear transforms, and polynomial interactions zeroed out one
+group at a time. The report records
 acceptance, score, P&L, drawdown, trade count, and delta versus the selected
 model. This remains attribution evidence for model selection, and it is also
 carried into `ai-review`: if the compact accepted report shows that removing a
@@ -144,6 +166,12 @@ candidate and serialized model. This deterministic multiple-trials haircut uses
 the explored candidate count plus local, ensemble, and hybrid-rescue checks to
 deflate the selected score by observed score dispersion. A candidate is not
 promoted unless the deflated score remains positive.
+AI-assisted alpha has a separate deterministic uplift gate. When AI is enabled,
+`ai-review` will not call the local LLM unless every accepted AI-assisted symbol
+includes an `ai_uplift` artifact showing the AI-assisted holdout beats the
+non-AI ML baseline on realized P&L and expectancy, does not worsen max
+drawdown, has enough closed trades, and was produced by a multibillion model.
+Missing or failed uplift evidence leaves AI in advisory/review-only mode.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
@@ -165,6 +193,9 @@ After the broad grid is ranked, local refinement also tests tighter and wider
 exit geometry around the best candidate, including lower take-profit variants
 that can close more intraday positions when the first pass fails trade-count
 or buy-and-hold edge gates.
+Score-improving local, ensemble, and hybrid refinements are promoted only when
+their validation/full-sample risk snapshot is non-degrading: max drawdown must
+stay within tolerance, and P&L plus buy-and-hold edge cannot materially worsen.
 
 Accepted hybrid candidates must improve or preserve the objective score and pass
 the profitability, drawdown, and minimum-trade gates in
@@ -294,6 +325,19 @@ This is deliberately fail-closed. If live testnet data cannot produce a
 profitable, diversified, risk-bounded candidate, the report should reject the
 candidate instead of forcing a trade.
 
+## Optimization Rounds
+
+Every model-improvement round that changes feature, selection, or risk logic
+should write a reproducible report under `docs/optimization/` with JSON metrics
+and financial charts.
+
+- [Round 001 - Market-Quality Regime Features](optimization/round-001-market-quality.md)
+  compares the previous advanced feature vector against the new
+  `v5-regime-quality` vector on a deterministic multi-regime futures holdout.
+  Baseline: `-0.80%` ROI, `1.88%` max drawdown, 12 trades. Optimized:
+  `+3.92%` ROI, `0.10%` max drawdown, 16 trades. The report includes equity
+  and metric SVGs plus the full JSON artifact.
+
 ## SuperZip Windows-App Alignment
 
 The Windows app follows the SuperZip design direction:
@@ -339,8 +383,11 @@ assert that every CLI command appears in the Windows app.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,
   selection-risk evidence remains positive, hybrid/feature ablation evidence
   does not show that removing a selected component improves the accepted score,
-  the local AI capability gate passed, and the provider returned valid
+  AI-vs-ML uplift evidence is present and accepted when AI is enabled, the
+  local multibillion AI capability gate passed, and the provider returned valid
   structured JSON.
+- No roadmap-only feature may be documented as executable unless the code,
+  blueprint status, CLI/Windows parity surface, and tests agree.
 - No signed live startup with a stale or unpromoted model artifact.
 - No authenticated live in-loop retraining; retrain through model-lab and
   promote a fresh artifact.
@@ -348,6 +395,17 @@ assert that every CLI command appears in the Windows app.
   in-sample/out-of-sample rank inversion.
 - No signed live startup when the model lacks accepted symbol-specific
   execution stress, temporal robustness, and portfolio-risk evidence.
+- No score-improving model refinement if the validation/full-sample risk
+  snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
+- No autonomous post-outage resume until signed exchange exposure reconciles
+  cleanly, hard daily/session loss budgets remain intact, and the reconnect
+  observation cooldown has elapsed.
+- No coordinator state may allow entries when required risk, execution,
+  reconciliation, market-data, machine-learning, or AI heartbeats are stale or
+  failed.
+- No self-improvement loop may mutate a live model, loosen risk controls, or
+  alter open positions; closed-trade learning feedback is evidence for the next
+  model-lab/review cycle only.
 - No Windows-app-only workflow.
 - No CLI-only workflow.
 - Stop/pause controls must remain visible and tested.

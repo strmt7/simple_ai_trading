@@ -262,6 +262,62 @@ def build_risk_policy_report(
             limit="<=5%",
         )
     )
+    daily_loss_budget = _finite(getattr(strategy, "max_daily_loss_pct", 0.0))
+    if daily_loss_budget <= 0.0:
+        checks.append(_check("block" if not dry_run else "warn", "daily loss budget", "disabled", metric=0.0, limit=">0"))
+    else:
+        checks.append(
+            _check(
+                "ok" if daily_loss_budget <= 0.02 else ("warn" if dry_run or daily_loss_budget <= 0.04 else "block"),
+                "daily loss budget",
+                f"{daily_loss_budget:.2%} of reference equity",
+                metric=daily_loss_budget,
+                limit="<=4% hard",
+            )
+        )
+    session_loss_budget = _finite(getattr(strategy, "max_session_loss_pct", 0.0))
+    if session_loss_budget <= 0.0:
+        checks.append(_check("block" if not dry_run else "warn", "session loss budget", "disabled", metric=0.0, limit=">0"))
+    else:
+        checks.append(
+            _check(
+                "ok" if session_loss_budget <= 0.05 else ("warn" if dry_run or session_loss_budget <= 0.10 else "block"),
+                "session loss budget",
+                f"{session_loss_budget:.2%} of reference equity",
+                metric=session_loss_budget,
+                limit="<=10% hard",
+            )
+        )
+    max_losses = int(getattr(strategy, "max_consecutive_losses", 0) or 0)
+    checks.append(
+        _check(
+            "ok" if 1 <= max_losses <= 5 else ("warn" if dry_run or max_losses <= 10 else "block"),
+            "loss-streak lockout",
+            f"{max_losses} consecutive losses" if max_losses > 0 else "disabled",
+            metric=max_losses,
+            limit="1-5 preferred",
+        )
+    )
+    max_network_errors = int(getattr(strategy, "max_network_errors", 0) or 0)
+    checks.append(
+        _check(
+            "ok" if 1 <= max_network_errors <= 5 else ("warn" if dry_run or max_network_errors <= 10 else "block"),
+            "network interruption halt",
+            f"{max_network_errors} consecutive API errors",
+            metric=max_network_errors,
+            limit="1-5 preferred",
+        )
+    )
+    recovery_cooldown = int(getattr(strategy, "recovery_cooldown_seconds", 0) or 0)
+    checks.append(
+        _check(
+            "ok" if recovery_cooldown >= 5 else ("warn" if dry_run else "block"),
+            "reconnect recovery cooldown",
+            f"{recovery_cooldown}s observe-before-resume",
+            metric=recovery_cooldown,
+            limit=">=5s",
+        )
+    )
     checks.append(
         _check(
             "ok" if strategy.max_asset_allocation_pct <= 0.35 else ("warn" if dry_run else "block"),
@@ -388,6 +444,15 @@ def assess_entry_risk(
     price: float,
     drawdown: float,
     drawdown_limit: float,
+    daily_loss: float = 0.0,
+    daily_loss_limit: float = 0.0,
+    session_loss: float = 0.0,
+    session_loss_limit: float = 0.0,
+    consecutive_losses: int = 0,
+    max_consecutive_losses: int = 0,
+    network_errors: int = 0,
+    max_network_errors: int = 0,
+    recovery_pending: bool = False,
 ) -> EntryRiskDecision:
     metrics: dict[str, Any] = {
         "direction": int(direction),
@@ -399,9 +464,32 @@ def assess_entry_risk(
         "price": _metric_float(price),
         "drawdown": _metric_float(drawdown),
         "drawdown_limit": _metric_float(drawdown_limit),
+        "daily_loss": _metric_float(daily_loss),
+        "daily_loss_limit": _metric_float(daily_loss_limit),
+        "session_loss": _metric_float(session_loss),
+        "session_loss_limit": _metric_float(session_loss_limit),
+        "consecutive_losses": int(consecutive_losses),
+        "max_consecutive_losses": int(max_consecutive_losses),
+        "network_errors": int(network_errors),
+        "max_network_errors": int(max_network_errors),
+        "recovery_pending": bool(recovery_pending),
     }
-    if not all(math.isfinite(float(metrics[key])) for key in ("cash", "price", "drawdown", "drawdown_limit")):
+    finite_keys = (
+        "cash",
+        "price",
+        "drawdown",
+        "drawdown_limit",
+        "daily_loss",
+        "daily_loss_limit",
+        "session_loss",
+        "session_loss_limit",
+    )
+    if not all(math.isfinite(float(metrics[key])) for key in finite_keys):
         return EntryRiskDecision(False, "nonfinite", "non-finite risk input", metrics)
+    if recovery_pending:
+        return EntryRiskDecision(False, "recovery_pending", "post-interruption recovery must finish before entry", metrics)
+    if max_network_errors > 0 and network_errors >= max_network_errors:
+        return EntryRiskDecision(False, "network_halt", "network interruption halt is active", metrics)
     if direction == 0:
         return EntryRiskDecision(False, "no_signal", "no actionable entry signal", metrics)
     if position_side != 0:
@@ -414,6 +502,12 @@ def assess_entry_risk(
         return EntryRiskDecision(False, "cash", "no managed cash available", metrics)
     if price <= 0.0:
         return EntryRiskDecision(False, "price", "invalid market price", metrics)
+    if daily_loss_limit > 0.0 and daily_loss >= daily_loss_limit:
+        return EntryRiskDecision(False, "daily_loss", "daily loss budget reached", metrics)
+    if session_loss_limit > 0.0 and session_loss >= session_loss_limit:
+        return EntryRiskDecision(False, "session_loss", "session loss budget reached", metrics)
+    if max_consecutive_losses > 0 and consecutive_losses >= max_consecutive_losses:
+        return EntryRiskDecision(False, "loss_streak", "consecutive loss lockout reached", metrics)
     if drawdown_limit > 0.0 and drawdown >= drawdown_limit:
         return EntryRiskDecision(False, "drawdown", "drawdown limit already reached", metrics)
     return EntryRiskDecision(True, "allowed", "entry risk checks passed", metrics)

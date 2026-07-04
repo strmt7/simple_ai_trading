@@ -17,8 +17,28 @@ The next serious model stack should be layered:
 4. A risk model converts accepted signals into leverage, stop, cooldown, and
    portfolio-cap decisions.
 5. Optional AI/foundation-model components can add forecasts or risk review,
-   but they must be backtested as logged features and cannot bypass
-   deterministic gates.
+   but they must be backtested as logged features, prove AI-vs-ML uplift, and
+   cannot bypass deterministic gates.
+
+The operator interface should stay simple. Market-mode detection, AI uplift
+proof, portfolio CVaR, selection-risk deflation, and connectivity recovery
+belong in background gates and reports. The user-facing result should be a
+clear state such as running, waiting, review required, blocked, paused, or
+stop-and-close.
+
+The implemented coordinator follows that shape: risk, execution,
+reconciliation, market data, machine learning, AI, and learning feedback publish
+independent status. The coordinator combines those statuses into one decision
+and blocks only the appropriate surface. Risk, execution, and reconciliation can
+block execution; stale market data, missing models, or failed AI capability can
+block new entries; learning feedback stays advisory and feeds future retraining
+review.
+
+Self-improvement is intentionally bounded. Closed trades refresh a learning
+feedback artifact with recurring loss reasons, symbol/side loss clusters, loss
+streaks, and retraining/cooldown hints. That artifact can influence the next
+model-lab cycle and AI review, but it must not mutate a live model, relax risk
+limits, or change open positions while the bot is running.
 
 The Bloomberg Opinion article the user referenced shows why this matters:
 modern AI tooling can accelerate exchange connectors, news/social ingestion,
@@ -64,7 +84,11 @@ Current blueprint principles:
 - The trained meta-label layer is a pre-entry execution gate only: it can skip
   or downsize a signal, but it cannot create a new signal or override exits.
 - Foundation forecasts are logged features until ablation and no-lookahead
-  replay prove that they add value after costs.
+  replay prove that they add value after costs. AI-assisted variants also need
+  an explicit uplift artifact showing improvement over the non-AI ML baseline.
+- Market-regime gates are allowed to abstain for long periods. In noisy,
+  high-reversal, high-volatility, or low-confidence phases, the correct action
+  can be to wait for days rather than force a low-edge trade.
 - RL is limited to sandboxed meta-control research. It must not emit raw
   buy/sell orders.
 - Order-book models stay blocked until symbol-specific depth/top-of-book data
@@ -105,7 +129,20 @@ weakening risk controls.
   with ablation replay, not as direct order engines.
 - Chronos-style time-series foundation models can provide probabilistic
   advisory forecasts. They remain blocked from execution authority until
-  no-lookahead logs and same-cost replay show value after fees and slippage.
+  no-lookahead logs, same-cost replay, and AI-vs-ML uplift evidence show value
+  after fees and slippage.
+- TimesFM and Moirai-style universal forecasters are useful additions to the
+  foundation-model research lane because they target cross-domain zero-shot
+  time-series forecasting. In this repo they stay feature-provider candidates
+  until the same no-lookahead and uplift gates pass.
+- BloombergGPT and FinGPT reinforce the need for financial-domain evaluation
+  and multibillion model checks. They do not justify letting an LLM directly
+  trade; the implemented AI-uplift gate now fails closed when the local model
+  is too small or when the AI-assisted holdout does not beat the non-AI ML
+  baseline.
+- HMM and regime-switching literature supports the abstention design: detect
+  volatility/chop/range/trend phases and reduce exposure or cool down when the
+  current state is not where the strategy has demonstrated edge.
 - LightGBM's OpenCL GPU path is the best near-term AMD-friendly tabular
   candidate. XGBoost GPU remains CUDA-centered, so it should not become the
   default on this Windows/AMD target.
@@ -172,6 +209,11 @@ Sources:
 - <https://github.com/yuqinie98/patchtst>
 - <https://arxiv.org/abs/1912.09363>
 - <https://github.com/amazon-science/chronos-forecasting>
+- <https://arxiv.org/abs/2310.10688>
+- <https://arxiv.org/abs/2402.02592>
+- <https://arxiv.org/abs/2303.17564>
+- <https://arxiv.org/abs/2306.06031>
+- <https://arxiv.org/abs/2007.14874>
 - <https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html>
 - <https://lightgbm.readthedocs.io/en/latest/GPU-Targets.html>
 - <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253>

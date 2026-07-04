@@ -124,6 +124,11 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
         "min_model_confidence": 0.66,
         "max_prediction_entropy": 0.88,
         "max_drawdown_limit": 0.10,
+        "max_daily_loss_pct": 0.006,
+        "max_session_loss_pct": 0.012,
+        "max_consecutive_losses": 2,
+        "max_network_errors": 3,
+        "recovery_cooldown_seconds": 60,
         "min_quote_volume_usdc": 50_000_000.0,
         "min_trade_count_24h": 50_000,
         "max_spread_bps": 5.0,
@@ -152,6 +157,11 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
         "min_model_confidence": 0.58,
         "max_prediction_entropy": 0.94,
         "max_drawdown_limit": 0.18,
+        "max_daily_loss_pct": 0.010,
+        "max_session_loss_pct": 0.020,
+        "max_consecutive_losses": 3,
+        "max_network_errors": 3,
+        "recovery_cooldown_seconds": 45,
         "min_quote_volume_usdc": 25_000_000.0,
         "min_trade_count_24h": 25_000,
         "max_spread_bps": 8.0,
@@ -180,6 +190,11 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
         "min_model_confidence": 0.55,
         "max_prediction_entropy": 0.97,
         "max_drawdown_limit": 0.25,
+        "max_daily_loss_pct": 0.015,
+        "max_session_loss_pct": 0.030,
+        "max_consecutive_losses": 4,
+        "max_network_errors": 4,
+        "recovery_cooldown_seconds": 30,
         "min_quote_volume_usdc": 15_000_000.0,
         "min_trade_count_24h": 15_000,
         "max_spread_bps": 12.0,
@@ -268,6 +283,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_report.add_argument("--model", default="data/model.json")
     parser_report.set_defaults(doctor=True)
     parser_report.set_defaults(func=command_report)
+
+    parser_coordinator = subparsers.add_parser(
+        "coordinator",
+        help="show independent risk, ML, AI, learning, reconciliation, and execution loop state",
+    )
+    parser_coordinator.add_argument("--model", default="data/model.json")
+    parser_coordinator.add_argument("--positions-root", default="data/autonomous")
+    parser_coordinator.add_argument("--json", action="store_true")
+    parser_coordinator.set_defaults(func=command_coordinator)
 
     parser_menu = subparsers.add_parser("menu", help="launch the full-screen operator console")
     parser_menu.set_defaults(func=command_menu)
@@ -556,6 +580,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai.add_argument("--no-require-gpu", action="store_true", default=None)
     parser_ai.add_argument("--min-free-vram-gb", type=float, default=None)
     parser_ai.add_argument("--min-free-ram-gb", type=float, default=None)
+    parser_ai.add_argument("--min-model-parameters-b", type=float, default=None)
     parser_ai.add_argument("--allow-paper-fallback", action="store_true", default=None)
     parser_ai.add_argument("--no-paper-fallback", action="store_true", default=None)
     parser_ai.add_argument("--json", action="store_true")
@@ -598,6 +623,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_strategy.add_argument("--max-trades-per-day", type=int, default=None)
     parser_strategy.add_argument("--signal-threshold", type=float, default=None)
     parser_strategy.add_argument("--max-drawdown", type=float, default=None)
+    parser_strategy.add_argument("--max-daily-loss", type=float, default=None)
+    parser_strategy.add_argument("--max-session-loss", type=float, default=None)
+    parser_strategy.add_argument("--max-consecutive-losses", type=int, default=None)
+    parser_strategy.add_argument("--max-network-errors", type=int, default=None)
+    parser_strategy.add_argument("--recovery-cooldown-seconds", type=int, default=None)
     parser_strategy.add_argument("--taker-fee-bps", type=float, default=None)
     parser_strategy.add_argument("--slippage-bps", type=float, default=None)
     parser_strategy.add_argument("--label-threshold", type=float, default=None)
@@ -751,6 +781,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "positions", help="list autonomous open positions and P&L stats",
     )
     parser_positions.add_argument("--stats", action="store_true", help="also print realized + unrealized stats")
+    parser_positions.add_argument("--learning", action="store_true", help="also print bounded post-trade learning feedback")
     parser_positions.set_defaults(func=command_positions)
 
     parser_close = subparsers.add_parser(
@@ -1001,6 +1032,11 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             max_trades_per_day=None,
             signal_threshold=None,
             max_drawdown=None,
+            max_daily_loss=None,
+            max_session_loss=None,
+            max_consecutive_losses=None,
+            max_network_errors=None,
+            recovery_cooldown_seconds=None,
             taker_fee_bps=None,
             slippage_bps=None,
             label_threshold=None,
@@ -1047,6 +1083,11 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             FormField("max_trades_per_day", "Max trades per day", str(cfg.max_trades_per_day)),
             FormField("signal_threshold", "Signal threshold", str(cfg.signal_threshold)),
             FormField("max_drawdown", "Max drawdown limit", str(cfg.max_drawdown_limit)),
+            FormField("max_daily_loss", "Max daily loss", str(cfg.max_daily_loss_pct)),
+            FormField("max_session_loss", "Max session loss", str(cfg.max_session_loss_pct)),
+            FormField("max_consecutive_losses", "Max consecutive losses", str(cfg.max_consecutive_losses)),
+            FormField("max_network_errors", "Network errors before halt", str(cfg.max_network_errors)),
+            FormField("recovery_cooldown_seconds", "Reconnect recovery seconds", str(cfg.recovery_cooldown_seconds)),
             FormField("taker_fee_bps", "Taker fee bps", str(cfg.taker_fee_bps)),
             FormField("slippage_bps", "Slippage bps", str(cfg.slippage_bps)),
             FormField("label_threshold", "Label threshold", str(cfg.label_threshold)),
@@ -1085,6 +1126,11 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             max_trades_per_day=None,
             signal_threshold=None,
             max_drawdown=None,
+            max_daily_loss=None,
+            max_session_loss=None,
+            max_consecutive_losses=None,
+            max_network_errors=None,
+            recovery_cooldown_seconds=None,
             taker_fee_bps=None,
             slippage_bps=None,
             label_threshold=None,
@@ -1171,6 +1217,21 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
         max_trades_per_day=field_int("max_trades_per_day", cfg.max_trades_per_day, "Max trades per day", minimum=0),
         signal_threshold=field_float("signal_threshold", cfg.signal_threshold, "Signal threshold", minimum=0.01, maximum=0.99),
         max_drawdown=field_float("max_drawdown", cfg.max_drawdown_limit, "Max drawdown limit", minimum=0.0, maximum=1.0),
+        max_daily_loss=field_float("max_daily_loss", cfg.max_daily_loss_pct, "Max daily loss", minimum=0.0, maximum=0.25),
+        max_session_loss=field_float("max_session_loss", cfg.max_session_loss_pct, "Max session loss", minimum=0.0, maximum=0.50),
+        max_consecutive_losses=field_int(
+            "max_consecutive_losses",
+            cfg.max_consecutive_losses,
+            "Max consecutive losses",
+            minimum=0,
+        ),
+        max_network_errors=field_int("max_network_errors", cfg.max_network_errors, "Network errors before halt", minimum=1),
+        recovery_cooldown_seconds=field_int(
+            "recovery_cooldown_seconds",
+            cfg.recovery_cooldown_seconds,
+            "Reconnect recovery seconds",
+            minimum=0,
+        ),
         taker_fee_bps=field_float("taker_fee_bps", cfg.taker_fee_bps, "Taker fee bps", minimum=0.0),
         slippage_bps=field_float("slippage_bps", cfg.slippage_bps, "Slippage bps", minimum=0.0),
         label_threshold=field_float("label_threshold", cfg.label_threshold, "Label threshold", minimum=0.0001),
@@ -3651,6 +3712,22 @@ def command_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_coordinator(args: argparse.Namespace) -> int:
+    from .coordinator import build_runtime_coordinator, render_coordinator_decision
+
+    decision = build_runtime_coordinator(
+        load_runtime(),
+        load_strategy(),
+        model_path=Path(getattr(args, "model", "data/model.json")),
+        positions_root=Path(getattr(args, "positions_root", "data/autonomous")),
+    )
+    if getattr(args, "json", False):
+        print(json.dumps(decision.asdict(), indent=2, sort_keys=True))
+    else:
+        print(render_coordinator_decision(decision))
+    return 0
+
+
 def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     try:
         runtime = load_runtime()
@@ -3848,6 +3925,9 @@ def command_ai(args: argparse.Namespace) -> int:
     if getattr(args, "min_free_ram_gb", None) is not None:
         runtime.ai_min_free_ram_gb = max(0.0, float(args.min_free_ram_gb))
         changed = True
+    if getattr(args, "min_model_parameters_b", None) is not None:
+        runtime.ai_min_model_parameters_b = max(0.0, float(args.min_model_parameters_b))
+        changed = True
     if bool(getattr(args, "allow_paper_fallback", False)):
         runtime.ai_allow_paper_fallback = True
         changed = True
@@ -3986,6 +4066,16 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         updates["signal_threshold"] = _clamp(args.signal_threshold, 0.01, 0.99)
     if args.max_drawdown is not None:
         updates["max_drawdown_limit"] = max(0.0, args.max_drawdown)
+    if getattr(args, "max_daily_loss", None) is not None:
+        updates["max_daily_loss_pct"] = _clamp(float(args.max_daily_loss), 0.0, 0.25)
+    if getattr(args, "max_session_loss", None) is not None:
+        updates["max_session_loss_pct"] = _clamp(float(args.max_session_loss), 0.0, 0.50)
+    if getattr(args, "max_consecutive_losses", None) is not None:
+        updates["max_consecutive_losses"] = max(0, int(args.max_consecutive_losses))
+    if getattr(args, "max_network_errors", None) is not None:
+        updates["max_network_errors"] = max(1, int(args.max_network_errors))
+    if getattr(args, "recovery_cooldown_seconds", None) is not None:
+        updates["recovery_cooldown_seconds"] = max(0, int(args.recovery_cooldown_seconds))
     if args.taker_fee_bps is not None:
         updates["taker_fee_bps"] = max(0.0, args.taker_fee_bps)
     if args.slippage_bps is not None:
@@ -6721,7 +6811,9 @@ def command_positions(args: argparse.Namespace) -> int:
     from .positions import (
         PositionsStore,
         compute_stats,
+        load_learning_feedback,
         render_positions_table,
+        render_learning_feedback,
         render_stats_lines,
     )
 
@@ -6736,6 +6828,11 @@ def command_positions(args: argparse.Namespace) -> int:
         stats = compute_stats(store, mark_price=None)
         print("")
         for line in render_stats_lines(stats):
+            print(line)
+    if getattr(args, "learning", False):
+        report = load_learning_feedback(store)
+        print("")
+        for line in render_learning_feedback(report):
             print(line)
     return 0
 

@@ -100,6 +100,32 @@ def test_confluence_features_are_finite_and_dimensioned():
     assert am.advanced_feature_dimension(cfg) == 4 + 7 + 18 + 8
 
 
+def test_market_quality_features_are_finite_and_live_inference_safe():
+    candles = _candles(160)
+    cache = am._build_confluence_cache(candles)
+    features = am._market_quality_features_at(cache, 120, (20, 60))
+
+    assert len(features) == 20
+    assert all(math.isfinite(value) for value in features)
+    assert am._market_quality_features_at(cache, -1, (20,)) == [0.0] * 10
+
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(),
+        confluence_windows=(),
+        market_quality_windows=(20, 60),
+    )
+    train_rows = am.make_advanced_rows(candles, cfg)
+    inference_rows = am.make_advanced_inference_rows(candles, cfg)
+
+    assert train_rows
+    assert inference_rows
+    assert len(train_rows[0].features) == am.advanced_feature_dimension(cfg)
+    assert len(inference_rows[-1].features) == am.advanced_feature_dimension(cfg)
+
+
 def test_nonlinear_expand_unknown_raises():
     with pytest.raises(ValueError):
         am._nonlinear_expand([0.1], ["unknown"])
@@ -161,6 +187,7 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
         polynomial_top_features=4,
         extra_lookback_windows=(5, 20),
         confluence_windows=(8,),
+        market_quality_windows=(13,),
         nonlinear_transforms=("tanh", "log1p"),
     )
 
@@ -170,6 +197,7 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
         "base_features",
         "extra_lookback_windows",
         "technical_confluence",
+        "market_quality_regime",
         "nonlinear_transforms",
         "polynomial_interactions",
     ]
@@ -197,6 +225,7 @@ def test_advanced_config_from_signature_round_trips_candidate_specific_fields() 
         polynomial_top_features=7,
         extra_lookback_windows=(4, 12, 48),
         confluence_windows=(5, 13, 34),
+        market_quality_windows=(10, 30),
         nonlinear_transforms=("tanh", "log1p"),
         short_window=8,
         long_window=34,
@@ -221,12 +250,15 @@ def test_default_config_for_branches():
     d = am.default_config_for("nothing", ())
     assert a.polynomial_top_features == 5
     assert a.confluence_windows == (12, 36, 96)
+    assert a.market_quality_windows == (30, 90, 180)
     assert a.label_lookahead == 8
     assert b.polynomial_degree == 3
     assert b.confluence_windows == (5, 13, 34, 89)
+    assert b.market_quality_windows == (10, 30, 90)
     assert b.label_threshold == pytest.approx(0.0005)
     assert c.polynomial_top_features == len(FEATURE_NAMES)
     assert c.confluence_windows == (8, 21, 55)
+    assert c.market_quality_windows == (20, 60, 120)
     assert c.label_lookahead == 4
     assert d.polynomial_top_features == len(FEATURE_NAMES)
 

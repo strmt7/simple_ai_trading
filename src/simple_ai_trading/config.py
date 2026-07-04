@@ -169,6 +169,7 @@ def prompt_runtime(current: RuntimeConfig, key_getter: Callable[[str], str] = in
         ai_require_gpu=current.ai_require_gpu,
         ai_min_free_vram_gb=current.ai_min_free_vram_gb,
         ai_min_free_ram_gb=current.ai_min_free_ram_gb,
+        ai_min_model_parameters_b=current.ai_min_model_parameters_b,
         ai_allow_paper_fallback=current.ai_allow_paper_fallback,
         managed_usdc=current.managed_usdc,
         managed_btc=current.managed_btc,

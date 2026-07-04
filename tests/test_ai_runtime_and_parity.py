@@ -34,6 +34,20 @@ def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
 
     assert report.ok is True
     assert report.gpu_vendor == "nvidia"
+    assert report.model_parameters_b == 7.0
+
+
+def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
+
+    report = detect_ai_capabilities(
+        AIRuntimeConfig(enabled=True, require_gpu=True, model="tiny-560m")
+    )
+
+    assert report.ok is False
+    assert any("below required" in message for message in report.messages)
 
 
 def test_windows_app_commands_match_cli_contract() -> None:
@@ -111,8 +125,10 @@ def test_runtime_ai_defaults_enabled_and_strategy_defaults_conservative() -> Non
     strategy = StrategyConfig(leverage=999.0)
 
     assert runtime.ai_enabled is True
+    assert runtime.ai_model == "qwen2.5:7b"
     assert runtime.ai_require_gpu is True
     assert runtime.ai_min_free_vram_gb == 8.0
+    assert runtime.ai_min_model_parameters_b == 2.0
     assert strategy.risk_level == "conservative"
     assert strategy.reinvest_profits is False
     assert strategy.leverage == 20.0

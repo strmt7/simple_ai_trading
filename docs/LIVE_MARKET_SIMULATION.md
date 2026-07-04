@@ -114,9 +114,34 @@ Authenticated order reconciliation:
 - `simple-ai-trading reconcile` compares signed account exposure with the local autonomous ledger. Paper positions are reported but ignored for exchange mismatch math; non-paper local positions must match spot balances or futures positions for the active symbol set.
 - Reconciliation writes `data/autonomous/reconciliation.json` and exits nonzero on exchange-only exposure, local-only exposure, or quantity mismatches.
 
+Autonomous network-interruption recovery:
+
+- A Binance/network exception does not trigger a new trade, and it does not
+  assume the account is flat. The loop records a heartbeat that says
+  `reconcile-before-resume` and keeps retrying at the configured cadence.
+- After connectivity returns, the first successful market read is treated as a
+  recovery transition. If the run is authenticated, signed account exposure is
+  reconciled against the local autonomous ledger before any entry logic runs.
+- If reconciliation finds exchange-only exposure, local-only exposure, or a
+  quantity mismatch, the loop exits fail-closed. It does not close exposure
+  that is not represented in the bot ledger.
+- If reconciliation is clean, the loop checks hard daily loss, session loss,
+  and consecutive-loss budgets. Breached daily/session budgets close locally
+  tracked bot positions at the latest mark and stop the loop; loss-streak
+  lockout stops new entries.
+- A clean recovery still waits through `recovery_cooldown_seconds` and writes a
+  recovery-observation heartbeat before normal entry logic can resume.
+
 ## Testnet vs Mainnet
 
 Testnet fills, liquidity, queue position, and response times can diverge from live markets. The simulation therefore does not treat testnet as a perfect proxy. It applies conservative liquidity haircuts and latency buffers, and it requires per-symbol liquidity evidence before a symbol can join the trading universe.
+
+Market modes are handled as exposure controls, not as a reason to force trades.
+When regime evidence, model confidence, entropy, loss streaks, or post-outage
+recovery indicate that the current market is not predictable enough, the
+correct action is to wait. That wait can last for many days if the configured
+cooldowns and repeated checks keep failing; the UI should show a simple
+waiting/blocked state while the detailed evidence remains in reports.
 
 Signed live startup also checks the final model artifact. `model-lab` must stamp
 `execution_validation` into the serialized model after the symbol passes
@@ -148,8 +173,10 @@ Do not interpret a profitable backtest as approval to trade real money. A candid
 
 - `compute`
 - `ai` if AI is enabled
+- accepted AI-vs-ML uplift evidence when AI-assisted signal features are enabled
 - `universe`
 - `risk`
+- `coordinator`
 - `reconcile`
 - `audit`
 - `backtest`

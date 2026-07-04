@@ -615,6 +615,53 @@ def _candidate_rank_key(entry: dict[str, Any]) -> tuple[int, float]:
     return 0, _rejected_candidate_quality(entry)
 
 
+def _candidate_risk_snapshot(entry: dict[str, Any]) -> tuple[float, float, float]:
+    payloads = [
+        item
+        for item in (entry.get("validation_result"), entry.get("full_sample_result"))
+        if isinstance(item, dict)
+    ]
+    if not payloads:
+        return 1.0, 0.0, 0.0
+    max_drawdown = max(max(0.0, _payload_float(payload, "max_drawdown", 1.0)) for payload in payloads)
+    min_pnl = min(_payload_float(payload, "realized_pnl", 0.0) for payload in payloads)
+    min_edge = min(_payload_float(payload, "edge_vs_buy_hold", 0.0) for payload in payloads)
+    return float(max_drawdown), float(min_pnl), float(min_edge)
+
+
+def _risk_non_degrading(candidate: dict[str, Any], incumbent: dict[str, Any]) -> bool:
+    """Return True only when a higher-score refinement does not materially worsen risk."""
+
+    candidate_drawdown, candidate_pnl, candidate_edge = _candidate_risk_snapshot(candidate)
+    incumbent_drawdown, incumbent_pnl, incumbent_edge = _candidate_risk_snapshot(incumbent)
+    drawdown_tolerance = max(0.0025, incumbent_drawdown * 0.05)
+    pnl_tolerance = max(1e-6, abs(incumbent_pnl) * 0.05)
+    edge_tolerance = max(1e-6, abs(incumbent_edge) * 0.05)
+    return bool(
+        candidate_drawdown <= incumbent_drawdown + drawdown_tolerance
+        and candidate_pnl + pnl_tolerance >= incumbent_pnl
+        and candidate_edge + edge_tolerance >= incumbent_edge
+    )
+
+
+def _risk_aware_best(
+    incumbent: dict[str, Any],
+    candidates: Sequence[dict[str, Any]],
+) -> dict[str, Any]:
+    """Promote a score-improving candidate only if its risk evidence is not worse."""
+
+    best = incumbent
+    best_score = _finite_number_or_none(best.get("score"))
+    for candidate in sorted(candidates, key=_candidate_rank_key, reverse=True):
+        candidate_score = _finite_number_or_none(candidate.get("score"))
+        if candidate_score is None or best_score is None:
+            continue
+        if candidate_score > best_score + 1e-12 and _risk_non_degrading(candidate, best):
+            best = candidate
+            best_score = candidate_score
+    return best
+
+
 def _score_quantile(values: Sequence[float], q: float) -> float | None:
     clean = sorted(float(value) for value in values if math.isfinite(float(value)))
     if not clean:
@@ -1198,6 +1245,26 @@ def _local_refinement_candidates(candidate: CandidateParams) -> list[CandidatePa
             stop_loss_pct=candidate.stop_loss_pct * 0.75,
             take_profit_pct=candidate.take_profit_pct * 0.75,
         ),
+        _candidate_variant(
+            candidate,
+            stop_loss_pct=candidate.stop_loss_pct * 0.65,
+            take_profit_pct=candidate.take_profit_pct * 1.15,
+        ),
+        _candidate_variant(
+            candidate,
+            stop_loss_pct=candidate.stop_loss_pct * 0.80,
+            take_profit_pct=candidate.take_profit_pct * 1.45,
+        ),
+        _candidate_variant(
+            candidate,
+            stop_loss_pct=candidate.stop_loss_pct * 1.10,
+            take_profit_pct=candidate.take_profit_pct * 0.90,
+        ),
+        _candidate_variant(
+            candidate,
+            stop_loss_pct=candidate.stop_loss_pct * 1.35,
+            take_profit_pct=candidate.take_profit_pct * 1.35,
+        ),
         _candidate_variant(candidate, take_profit_pct=candidate.take_profit_pct * 1.10),
         _candidate_variant(candidate, take_profit_pct=candidate.take_profit_pct * 0.80),
         _candidate_variant(candidate, label_threshold_multiplier=candidate.label_threshold_multiplier * 0.80),
@@ -1683,7 +1750,7 @@ def train_for_objective(
             })
             local_results.append(local_result)
         ranked_pool = sorted([*results, *local_results], key=_candidate_rank_key, reverse=True)
-        best = ranked_pool[0]
+        best = _risk_aware_best(best, ranked_pool)
         ensemble_results: list[dict[str, Any]] = []
         for base_result in ranked_pool[:_ENSEMBLE_REFINEMENT_CANDIDATES]:
             ensemble_refinement_candidates += 1
@@ -1704,7 +1771,10 @@ def train_for_objective(
                 "include_full_fit_fallback": True,
             })
             ensemble_results.append(ensemble_result)
-            if ensemble_result["score"] > best["score"] + 1e-12:
+            if (
+                ensemble_result["score"] > best["score"] + 1e-12
+                and _risk_non_degrading(ensemble_result, best)
+            ):
                 best = ensemble_result
         if ensemble_results:
             ranked_pool = sorted([*ranked_pool, *ensemble_results], key=_candidate_rank_key, reverse=True)
@@ -1861,7 +1931,12 @@ def train_for_objective(
                         "folds": [],
                     },
                 }
-                if hybrid_rescue_best is None or rescue_score > float(hybrid_rescue_best["score"]) + 1e-12:
+                if hybrid_rescue_best is None:
+                    hybrid_rescue_best = rescue_candidate_result
+                elif (
+                    rescue_score > float(hybrid_rescue_best["score"]) + 1e-12
+                    and _risk_non_degrading(rescue_candidate_result, hybrid_rescue_best)
+                ):
                     hybrid_rescue_best = rescue_candidate_result
             if hybrid_rescue_best is None:
                 best = {
@@ -1929,27 +2004,32 @@ def train_for_objective(
             full_score = objective.score(full_result) if objective.accepts(full_result) else float("-inf")
             hybrid_score = min(float(holdout_score), float(full_score))
             if hybrid_score > float(best["score"]) + 1e-12:
-                best = {
+                hybrid_candidate = {
                     **best,
                     "score": float(hybrid_score),
-                    "model": hybrid_report.model,
-                    "validation_score": float(holdout_score),
-                    "full_sample_score": float(full_score),
-                    "hybrid_model": True,
-                    "hybrid_profile": hybrid_report.best_profile,
-                    "hybrid_base_score": hybrid_report.base_score,
-                    "hybrid_best_score": hybrid_report.best_score,
-                    "hybrid_evaluated_profiles": hybrid_report.evaluated_profiles,
-                    "hybrid_ablation": [
-                        item.asdict()
-                        for item in getattr(hybrid_report, "ablation_results", ()) or ()
-                    ],
-                    "walk_forward_gate": best.get("walk_forward_gate"),
-                    "feature_cfg": best_feature_cfg,
-                    "feature_dim": advanced_feature_dimension(best_feature_cfg),
-                    "feature_signature": advanced_feature_signature(best_feature_cfg),
+                    "validation_result": _gate_result_payload(holdout_result, objective),
+                    "full_sample_result": _gate_result_payload(full_result, objective),
                 }
-
+                if _risk_non_degrading(hybrid_candidate, best):
+                    best = {
+                        **hybrid_candidate,
+                        "model": hybrid_report.model,
+                        "validation_score": float(holdout_score),
+                        "full_sample_score": float(full_score),
+                        "hybrid_model": True,
+                        "hybrid_profile": hybrid_report.best_profile,
+                        "hybrid_base_score": hybrid_report.base_score,
+                        "hybrid_best_score": hybrid_report.best_score,
+                        "hybrid_evaluated_profiles": hybrid_report.evaluated_profiles,
+                        "hybrid_ablation": [
+                            item.asdict()
+                            for item in getattr(hybrid_report, "ablation_results", ()) or ()
+                        ],
+                        "walk_forward_gate": best.get("walk_forward_gate"),
+                        "feature_cfg": best_feature_cfg,
+                        "feature_dim": advanced_feature_dimension(best_feature_cfg),
+                        "feature_signature": advanced_feature_signature(best_feature_cfg),
+                    }
     selection_risk = _selection_risk_report(
         best,
         ranked_pool,

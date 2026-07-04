@@ -37,6 +37,8 @@ from simple_ai_trading.training_suite import (
     _purged_walk_forward_gate,
     _purged_walk_forward_splits,
     _refine_threshold_on_selection_rows,
+    _risk_aware_best,
+    _risk_non_degrading,
     _strategy_for_candidate,
     _threshold_guard,
     _threshold_values,
@@ -1732,11 +1734,49 @@ def test_train_for_objective_promotes_better_local_refinement(
         max_workers=1,
     )
 
-    assert len(_local_refinement_candidates(candidate)) == 20
+    assert len(_local_refinement_candidates(candidate)) == 24
     assert outcome.best_score == 2.0
     assert outcome.best_params["risk_per_trade"] == pytest.approx(0.005)
-    assert outcome.local_refinement_candidates == 20
+    assert outcome.local_refinement_candidates == 24
     assert outcome.ensemble_refined is False
+
+
+def test_risk_non_degrading_blocks_fragile_score_improvement() -> None:
+    incumbent = {
+        "validation_result": {"realized_pnl": 100.0, "edge_vs_buy_hold": 80.0, "max_drawdown": 0.04},
+        "full_sample_result": {"realized_pnl": 90.0, "edge_vs_buy_hold": 70.0, "max_drawdown": 0.05},
+    }
+    better_and_stable = {
+        "validation_result": {"realized_pnl": 103.0, "edge_vs_buy_hold": 78.0, "max_drawdown": 0.051},
+        "full_sample_result": {"realized_pnl": 94.0, "edge_vs_buy_hold": 72.0, "max_drawdown": 0.052},
+    }
+    worse_drawdown = {
+        "validation_result": {"realized_pnl": 130.0, "edge_vs_buy_hold": 110.0, "max_drawdown": 0.09},
+        "full_sample_result": {"realized_pnl": 125.0, "edge_vs_buy_hold": 105.0, "max_drawdown": 0.10},
+    }
+
+    assert _risk_non_degrading(better_and_stable, incumbent) is True
+    assert _risk_non_degrading(worse_drawdown, incumbent) is False
+
+
+def test_risk_aware_best_refuses_fragile_higher_score() -> None:
+    incumbent = {
+        "score": 1.0,
+        "validation_result": {"realized_pnl": 100.0, "edge_vs_buy_hold": 80.0, "max_drawdown": 0.04},
+        "full_sample_result": {"realized_pnl": 90.0, "edge_vs_buy_hold": 70.0, "max_drawdown": 0.05},
+    }
+    fragile = {
+        "score": 2.0,
+        "validation_result": {"realized_pnl": 130.0, "edge_vs_buy_hold": 110.0, "max_drawdown": 0.12},
+        "full_sample_result": {"realized_pnl": 125.0, "edge_vs_buy_hold": 105.0, "max_drawdown": 0.13},
+    }
+    stable = {
+        "score": 1.5,
+        "validation_result": {"realized_pnl": 104.0, "edge_vs_buy_hold": 79.0, "max_drawdown": 0.051},
+        "full_sample_result": {"realized_pnl": 94.0, "edge_vs_buy_hold": 72.0, "max_drawdown": 0.052},
+    }
+
+    assert _risk_aware_best(incumbent, [fragile, stable]) is stable
 
 
 def test_train_for_objective_checks_top_candidates_for_seed_ensembles(
@@ -1821,6 +1861,7 @@ def test_feature_ablation_report_replays_masked_feature_groups(
         "base_features": 7.0,
         "extra_lookback_windows": 9.0,
         "technical_confluence": 5.0,
+        "market_quality_regime": 8.5,
         "nonlinear_transforms": 8.0,
         "polynomial_interactions": 6.0,
     }

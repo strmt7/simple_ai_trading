@@ -76,10 +76,11 @@ class RuntimeConfig:
     compute_backend: str = field(default_factory=default_compute_backend)
     ai_enabled: bool = True
     ai_provider: str = "auto"
-    ai_model: str = "auto"
+    ai_model: str = "qwen2.5:7b"
     ai_require_gpu: bool = True
     ai_min_free_vram_gb: float = 8.0
     ai_min_free_ram_gb: float = 16.0
+    ai_min_model_parameters_b: float = 2.0
     ai_allow_paper_fallback: bool = True
     managed_usdc: float = 0.0
     managed_btc: float = 0.0
@@ -103,10 +104,11 @@ class RuntimeConfig:
         self.compute_backend = str(self.compute_backend or default_compute_backend()).strip().lower()
         self.ai_enabled = _coerce_bool(self.ai_enabled, True)
         self.ai_provider = str(self.ai_provider or "auto")
-        self.ai_model = str(self.ai_model or "auto")
+        self.ai_model = str(self.ai_model or "qwen2.5:7b")
         self.ai_require_gpu = _coerce_bool(self.ai_require_gpu, True)
         self.ai_min_free_vram_gb = max(0.0, _finite_float(self.ai_min_free_vram_gb, 8.0))
         self.ai_min_free_ram_gb = max(0.0, _finite_float(self.ai_min_free_ram_gb, 16.0))
+        self.ai_min_model_parameters_b = max(0.0, _finite_float(self.ai_min_model_parameters_b, 2.0))
         self.ai_allow_paper_fallback = _coerce_bool(self.ai_allow_paper_fallback, True)
         self.managed_usdc = max(0.0, _finite_float(self.managed_usdc, 0.0))
         self.managed_btc = max(0.0, _finite_float(self.managed_btc, 0.0))
@@ -132,6 +134,7 @@ class RuntimeConfig:
             compute_backend=self.compute_backend,
             min_free_vram_gb=self.ai_min_free_vram_gb,
             min_free_ram_gb=self.ai_min_free_ram_gb,
+            min_model_parameters_b=self.ai_min_model_parameters_b,
             allow_paper_fallback=self.ai_allow_paper_fallback,
         )
 
@@ -167,6 +170,11 @@ class StrategyConfig:
     cooldown_minutes: int = 20
     max_trades_per_day: int = 6
     max_drawdown_limit: float = 0.10
+    max_daily_loss_pct: float = 0.006
+    max_session_loss_pct: float = 0.012
+    max_consecutive_losses: int = 2
+    max_network_errors: int = 3
+    recovery_cooldown_seconds: int = 60
     training_epochs: int = 180
     confidence_beta: float = 0.90
     taker_fee_bps: float = 1.0
@@ -235,6 +243,11 @@ class StrategyConfig:
         self.cooldown_minutes = max(0, _coerce_int(self.cooldown_minutes, 20))
         self.max_trades_per_day = max(0, _coerce_int(self.max_trades_per_day, 6))
         self.max_drawdown_limit = _finite_float(self.max_drawdown_limit, 0.10)
+        self.max_daily_loss_pct = min(0.25, max(0.0, _finite_float(self.max_daily_loss_pct, 0.006)))
+        self.max_session_loss_pct = min(0.50, max(0.0, _finite_float(self.max_session_loss_pct, 0.012)))
+        self.max_consecutive_losses = max(0, min(100, _coerce_int(self.max_consecutive_losses, 2)))
+        self.max_network_errors = max(1, min(100, _coerce_int(self.max_network_errors, 3)))
+        self.recovery_cooldown_seconds = max(0, min(3600, _coerce_int(self.recovery_cooldown_seconds, 60)))
         self.training_epochs = max(1, _coerce_int(self.training_epochs, 180))
         self.confidence_beta = min(1.0, max(0.0, _finite_float(self.confidence_beta, 0.90)))
         self.taker_fee_bps = _finite_float(self.taker_fee_bps, 1.0)

@@ -69,6 +69,11 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
             risk_per_trade=0.04,
             max_position_pct=0.90,
             max_drawdown_limit=0.75,
+            max_daily_loss_pct=0.05,
+            max_session_loss_pct=0.12,
+            max_consecutive_losses=12,
+            max_network_errors=12,
+            recovery_cooldown_seconds=0,
             slippage_bps=150.0,
             taker_fee_bps=125.0,
         ),
@@ -83,6 +88,8 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
     assert any(check.label == "effective leverage" and check.status == "ok" for check in report.checks)
     assert any(check.label == "max position" and check.status == "block" for check in report.checks)
     assert any(check.label == "drawdown stop" and check.status == "block" for check in report.checks)
+    assert any(check.label == "daily loss budget" and check.status == "block" for check in report.checks)
+    assert any(check.label == "session loss budget" and check.status == "block" for check in report.checks)
 
     disabled_drawdown = build_risk_policy_report(
         RuntimeConfig(),
@@ -101,6 +108,15 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
     )
     assert coerced.leverage == 1.0
     assert any(check.label == "risk per trade" and check.status == "block" for check in coerced.checks)
+
+    disabled_loss = build_risk_policy_report(
+        RuntimeConfig(dry_run=False, api_key="k", api_secret="s", managed_usdc=1000.0),
+        StrategyConfig(max_daily_loss_pct=0.0, max_session_loss_pct=0.0, recovery_cooldown_seconds=0),
+        effective_dry_run=False,
+    )
+    assert any(check.label == "daily loss budget" and check.status == "block" for check in disabled_loss.checks)
+    assert any(check.label == "session loss budget" and check.status == "block" for check in disabled_loss.checks)
+    assert any(check.label == "reconnect recovery cooldown" and check.status == "block" for check in disabled_loss.checks)
 
 
 def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
@@ -183,6 +199,11 @@ def test_entry_risk_decision_explains_each_block() -> None:
         (dict(max_daily_trades=2, daily_trade_count=2), "trade_cap"),
         (dict(cash=0.0), "cash"),
         (dict(price=0.0), "price"),
+        (dict(daily_loss=0.02, daily_loss_limit=0.01), "daily_loss"),
+        (dict(session_loss=0.02, session_loss_limit=0.01), "session_loss"),
+        (dict(consecutive_losses=2, max_consecutive_losses=2), "loss_streak"),
+        (dict(recovery_pending=True), "recovery_pending"),
+        (dict(network_errors=3, max_network_errors=3), "network_halt"),
         (dict(drawdown=0.2, drawdown_limit=0.2), "drawdown"),
         (dict(price=float("nan")), "nonfinite"),
         (dict(cash=object()), "nonfinite"),

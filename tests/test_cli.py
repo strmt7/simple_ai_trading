@@ -507,6 +507,11 @@ def test_tui_strategy_action_builds_full_strategy_args(monkeypatch) -> None:
                 "max_trades_per_day": "7",
                 "signal_threshold": "0.6",
                 "max_drawdown": "0.2",
+                "max_daily_loss": "0.01",
+                "max_session_loss": "0.02",
+                "max_consecutive_losses": "3",
+                "max_network_errors": "4",
+                "recovery_cooldown_seconds": "30",
                 "taker_fee_bps": "2",
                 "slippage_bps": "4",
                 "label_threshold": "0.002",
@@ -542,6 +547,11 @@ def test_tui_strategy_action_builds_full_strategy_args(monkeypatch) -> None:
     assert captured["args"].feature_window_long == 48
     assert captured["args"].training_epochs == 500
     assert captured["args"].confidence_beta == 0.9
+    assert captured["args"].max_daily_loss == 0.01
+    assert captured["args"].max_session_loss == 0.02
+    assert captured["args"].max_consecutive_losses == 3
+    assert captured["args"].max_network_errors == 4
+    assert captured["args"].recovery_cooldown_seconds == 30
     assert captured["args"].external_signals is True
     assert captured["args"].external_signal_min_providers == 3
     assert captured["args"].external_news_ai is True
