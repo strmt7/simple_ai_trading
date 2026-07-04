@@ -6,6 +6,7 @@ from simple_ai_trading.risk_controls import (
     render_risk_policy_report,
     stop_loss_sized_notional_pct,
 )
+from simple_ai_trading.model import TrainedModel, serialize_model
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
@@ -100,6 +101,57 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
     )
     assert coerced.leverage == 1.0
     assert any(check.label == "risk per trade" and check.status == "block" for check in coerced.checks)
+
+
+def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
+    promoted_path = tmp_path / "promoted.json"
+    serialize_model(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            selection_risk={
+                "passed": True,
+                "effective_trials": 10,
+                "selected_score": 0.10,
+                "trial_penalty": 0.02,
+                "deflated_score": 0.08,
+            },
+        ),
+        promoted_path,
+    )
+    runtime = RuntimeConfig(testnet=True, dry_run=False, api_key="k", api_secret="s", managed_usdc=1000.0)
+    promoted = build_risk_policy_report(
+        runtime,
+        StrategyConfig(),
+        effective_dry_run=False,
+        model_path=promoted_path,
+    )
+    assert any(check.label == "model promotion evidence" and check.status == "ok" for check in promoted.checks)
+
+    stale_path = tmp_path / "stale.json"
+    serialize_model(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+        ),
+        stale_path,
+    )
+    stale = build_risk_policy_report(
+        runtime,
+        StrategyConfig(),
+        effective_dry_run=False,
+        model_path=stale_path,
+    )
+    assert stale.allowed is False
+    assert any(check.label == "model promotion evidence" and check.status == "block" for check in stale.checks)
 
 
 def test_entry_risk_decision_explains_each_block() -> None:

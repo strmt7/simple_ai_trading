@@ -143,6 +143,13 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
         epochs=1,
         feature_means=[0.0] * feature_dim,
         feature_stds=[1.0] * feature_dim,
+        selection_risk={
+            "passed": True,
+            "effective_trials": 12,
+            "selected_score": 0.12,
+            "trial_penalty": 0.03,
+            "deflated_score": 0.09,
+        },
     )
 
 

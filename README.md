@@ -134,6 +134,8 @@ simple-ai-trading reconcile
 
 `stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. `reconcile` reads the signed spot/futures account state, compares exchange exposure against non-paper local open positions, writes `data/autonomous/reconciliation.json`, and exits nonzero on exchange-only, local-only, or quantity-mismatched exposure.
 
+Signed live-style startup requires a promoted model artifact. A model must carry passing `selection_risk` evidence from the model-lab/training-suite promotion path before `live --live` will use it; stale or hand-written model JSON is rejected before order logic starts. Paper mode can regenerate a bad model for experimentation, but it will not silently trade with a stale artifact. Authenticated live mode also refuses in-loop retraining; run `model-lab` again and promote a fresh artifact instead.
+
 ## Risk Levels
 
 `conservative` is the default:

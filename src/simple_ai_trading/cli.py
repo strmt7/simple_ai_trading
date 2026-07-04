@@ -58,6 +58,7 @@ from .model import (
     TrainedModel,
     walk_forward_report,
 )
+from .model_readiness import ModelPromotionError, assert_model_promoted
 from .objective import available_objectives
 from .risk_controls import (
     EntryRiskDecision,
@@ -2883,7 +2884,15 @@ def _load_live_start_model(
 ) -> tuple[TrainedModel | None, str | None, str | None]:
     if model_path.exists():
         try:
-            return _load_readiness_model(model_path, strategy)[0], None, None
+            model = _load_readiness_model(model_path, strategy)[0]
+            if isinstance(model, TrainedModel):
+                assert_model_promoted(model, model_path=model_path)
+            return model, None, None
+        except ModelPromotionError as exc:
+            if not effective_dry_run:
+                return None, f"Live mode requires a promoted model: {exc}", None
+            model = _load_readiness_model(model_path, strategy)[0]
+            return model, None, f"Paper mode model promotion warning: {exc}"
         except ModelLoadError as exc:
             if not effective_dry_run:
                 return None, f"Live mode requires a compatible model: {exc}", None
@@ -5315,6 +5324,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         effective_dry_run = False
     else:
         effective_dry_run = runtime.dry_run or getattr(args, "paper", False)
+    if not effective_dry_run and int(getattr(args, "retrain_interval", 0) or 0) > 0:
+        print("Authenticated live mode cannot retrain inside the live loop; use model-lab promotion first.", file=sys.stderr)
+        return 2
     if not _allows_signed_execution(runtime):
         print("Real-money execution is disabled in this phase. Set testnet=true or demo=true to run.")
         return 2

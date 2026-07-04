@@ -1181,6 +1181,34 @@ def test_command_live_blocks_unsafe_testnet_base_url(monkeypatch, capsys) -> Non
     assert "unsafe Binance base URL" in capsys.readouterr().err
 
 
+def test_command_live_blocks_signed_retrain_interval(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "simple_ai_trading.cli.load_runtime",
+        lambda: _runtime_config(
+            testnet=True,
+            dry_run=False,
+            api_key="fake-api-key",
+            api_secret="fake-secret",
+        ),
+    )
+    monkeypatch.setattr("simple_ai_trading.cli.load_strategy", StrategyConfig)
+    args = argparse.Namespace(
+        paper=False,
+        live=True,
+        leverage=None,
+        external_signals=None,
+        model="data/model.json",
+        steps=1,
+        sleep=1,
+        retrain_interval=3,
+        retrain_window=300,
+        retrain_min_rows=240,
+    )
+
+    assert command_live(args) == 2
+    assert "cannot retrain inside the live loop" in capsys.readouterr().err
+
+
 def test_filter_candles_for_time_window_handles_lookback_and_ranges() -> None:
     candles = [
         Candle(open_time=1_700_000_000_000, open=1.0, high=1.0, low=1.0, close=1.0, volume=1.0, close_time=1_700_000_059_999),

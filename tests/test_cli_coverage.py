@@ -785,6 +785,13 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
         feature_means=[0.0] * len(advanced_rows[0].features),
         feature_stds=[1.0] * len(advanced_rows[0].features),
         feature_signature=advanced_feature_signature(feature_cfg),
+        selection_risk={
+            "passed": True,
+            "effective_trials": 24,
+            "selected_score": 0.12,
+            "trial_penalty": 0.01,
+            "deflated_score": 0.11,
+        },
     )
     model_file = tmp_path / "model_default.json"
     serialize_model(model, model_file)
@@ -975,6 +982,33 @@ def test_load_live_start_model_handles_unexpected_model_loader_failure(tmp_path,
     assert model is None
     assert "requires a readable model" in str(error)
     assert notice is None
+
+
+def test_load_live_start_model_rejects_unpromoted_model_for_signed_mode(tmp_path) -> None:
+    model_file = tmp_path / "model.json"
+    serialize_model(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            feature_signature=cli._strategy_feature_signature(StrategyConfig(enabled_features=("momentum_1",))),
+        ),
+        model_file,
+    )
+    strategy = StrategyConfig(enabled_features=("momentum_1",))
+
+    model, error, notice = cli._load_live_start_model(model_file, strategy, effective_dry_run=False)
+    assert model is None
+    assert "requires a promoted model" in str(error)
+    assert notice is None
+
+    model, error, notice = cli._load_live_start_model(model_file, strategy, effective_dry_run=True)
+    assert model is not None
+    assert error is None
+    assert "promotion warning" in str(notice)
 
 
 def test_build_order_notional_paths() -> None:
@@ -2784,6 +2818,13 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
             feature_means=[0.0] * 13,
             feature_stds=[1.0] * 13,
             feature_signature=cli._strategy_feature_signature(strategy),
+            selection_risk={
+                "passed": True,
+                "effective_trials": 12,
+                "selected_score": 0.12,
+                "trial_penalty": 0.03,
+                "deflated_score": 0.09,
+            },
         ),
         model_file,
     )
@@ -3043,6 +3084,13 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
         epochs=1,
         feature_means=[0.0],
         feature_stds=[1.0],
+        selection_risk={
+            "passed": True,
+            "effective_trials": 12,
+            "selected_score": 0.12,
+            "trial_penalty": 0.03,
+            "deflated_score": 0.09,
+        },
     )
 
     def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
