@@ -111,6 +111,7 @@ Startup behavior:
 - The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
 - `tools\smoke_native_windows_ui.ps1` launches the app in dry-run mode, walks every workflow page, clicks the dashboard cards and safety buttons, and then performs a real Compute smoke unless `-SkipRealCompute` is passed.
 - `tools\capture_native_windows_app.ps1` creates a DPI-aware PNG artifact of the dashboard and fails if the captured app is smaller than the configured minimum window size.
+- `tools\validate_native_windows_layout.ps1` launches the real Win32 app, checks stable control geometry, footer API-budget presence, hidden/visible workflow cards, and screenshot pixel health so small-window or overlapping UI regressions fail before release.
 
 ## Core Workflows
 

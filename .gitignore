@@ -21,6 +21,7 @@ build/
 dist/
 out/
 *_raw_payloads/
+artifacts/native-windows-layout-audit.png
 .mypy_cache/
 .ruff_cache/
 

@@ -123,6 +123,7 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'L"Backtest Chart"' in source
     assert 'L"Activity Log"' in source
     assert "status_bar_" in source
+    assert "kStatusBarId = 111" in source
     assert "page_summary_" in source
     assert "kApiBudgetRefreshMs = 90000" in source
     assert 'L"api-budget --compact"' in source
@@ -138,6 +139,7 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     root = windows_app._repo_root()
     smoke = (root / "tools" / "smoke_native_windows_ui.ps1").read_text(encoding="utf-8")
     capture = (root / "tools" / "capture_native_windows_app.ps1").read_text(encoding="utf-8")
+    layout = (root / "tools" / "validate_native_windows_layout.ps1").read_text(encoding="utf-8")
 
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
     assert "Stop Trading" in smoke
@@ -145,6 +147,10 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "SetProcessDPIAware" in capture
     assert "PrintWindow" in capture
     assert "Captured window is too small" in capture
+    assert "$StatusBarId = 111" in layout
+    assert "dashboard workflow card" in layout
+    assert "Assert-PixelHealth" in layout
+    assert "API budget footer" in layout
 
 
 def _wide(text: str) -> str:
