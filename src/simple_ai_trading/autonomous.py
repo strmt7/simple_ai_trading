@@ -967,31 +967,30 @@ def run_loop(
                 recovery_pending = False
                 network_errors = 0
                 cooldown = max(0, int(strategy.recovery_cooldown_seconds))
-                if cooldown > 0:
-                    stats = compute_stats(
-                        store,
-                        mark_price=last_mark_price,
-                        starting_reference_cash=cfg.starting_reference_cash,
-                    )
-                    Heartbeat(
-                        iteration=iteration,
-                        state=STATE_RUNNING,
-                        last_signal=decision.confidence,
-                        last_side="RECOVERY_OBSERVE",
-                        last_price=decision.mark_price,
-                        open_positions=stats.open_positions,
-                        realized_pnl=stats.realized_pnl,
-                        unrealized_pnl=stats.unrealized_pnl,
-                        objective=objective.name,
-                        updated_at_ms=int(clock() * 1000),
-                        message=f"recovery-clean; cooldown={cooldown}s",
-                    ).write(cfg.heartbeat_path)
-                    heartbeats += 1
-                    sleep(max(poll, float(cooldown)))
-                    if cfg.stop_after_iterations is not None and iteration >= cfg.stop_after_iterations:
-                        exit_reason = "iteration-cap"
-                        break
-                    continue
+                stats = compute_stats(
+                    store,
+                    mark_price=last_mark_price,
+                    starting_reference_cash=cfg.starting_reference_cash,
+                )
+                Heartbeat(
+                    iteration=iteration,
+                    state=STATE_RUNNING,
+                    last_signal=decision.confidence,
+                    last_side="RECOVERY_OBSERVE",
+                    last_price=decision.mark_price,
+                    open_positions=stats.open_positions,
+                    realized_pnl=stats.realized_pnl,
+                    unrealized_pnl=stats.unrealized_pnl,
+                    objective=objective.name,
+                    updated_at_ms=int(clock() * 1000),
+                    message=f"recovery-clean; cooldown={cooldown}s; no-entry-observation",
+                ).write(cfg.heartbeat_path)
+                heartbeats += 1
+                sleep(max(poll, float(cooldown)))
+                if cfg.stop_after_iterations is not None and iteration >= cfg.stop_after_iterations:
+                    exit_reason = "iteration-cap"
+                    break
+                continue
 
             capital_guard = _loss_budget_guard(
                 store,

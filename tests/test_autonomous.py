@@ -663,7 +663,7 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Pat
         attempts["n"] += 1
         if attempts["n"] == 1:
             raise BinanceAPIError("temporary network outage")
-        return Decision(side="LONG", confidence=0.9, mark_price=100.0)
+        return Decision(side="LONG", confidence=0.9, mark_price=100.0 if attempts["n"] == 2 else 125.0)
 
     def reconcile(_client, runtime, _store):
         reconciliations.append(runtime.symbol)
@@ -692,6 +692,43 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Pat
     assert result.opened_trades == 1
     assert attempts["n"] == 3
     assert reconciliations == ["BTCUSDC", "BTCUSDC"]
+
+
+def test_run_loop_zero_recovery_cooldown_still_observes_before_entry(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
+    attempts = {"n": 0}
+
+    def dec(_c, _r, _s, _o):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise BinanceAPIError("temporary network outage")
+        return Decision(side="LONG", confidence=0.9, mark_price=100.0 if attempts["n"] == 2 else 125.0)
+
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        replace(_strategy(), recovery_cooldown_seconds=0, max_open_positions=1),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+        reconcile_fn=lambda _client, runtime, _store: ReconciliationReport(
+            ok=True,
+            market_type=runtime.market_type,
+            symbols_checked=[runtime.symbol],
+            local_open_count=0,
+            local_live_open_count=0,
+            local_paper_open_count=0,
+            exchange_exposure_count=0,
+        ),
+    )
+
+    assert result.exit_reason == "iteration-cap"
+    assert result.opened_trades == 1
+    assert attempts["n"] == 3
+    opened = PositionsStore(root=cfg.positions_root).load_open()
+    assert len(opened) == 1
+    assert opened[0].qty == pytest.approx(0.64)
 
 
 def test_run_loop_reconciliation_mismatch_after_outage_fails_closed(tmp_path: Path) -> None:
