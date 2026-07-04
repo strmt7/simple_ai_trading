@@ -661,6 +661,15 @@ def _make_result(**overrides) -> BacktestResult:
         win_rate=0.6, trades=5, max_drawdown=0.02, closed_trades=5,
         gross_exposure=100.0, total_fees=0.1, stopped_by_drawdown=False,
         max_exposure=100.0, trades_per_day_cap_hit=0,
+        trade_pnls=(20.0, -5.0, 15.0, 10.0, 10.0),
+        trade_returns=(0.020, -0.005, 0.015, 0.010, 0.010),
+        gross_profit=55.0,
+        gross_loss=5.0,
+        profit_factor=11.0,
+        expectancy=10.0,
+        average_trade_return=0.010,
+        trade_return_stdev=0.009,
+        max_consecutive_losses=1,
     )
     defaults.update(overrides)
     return BacktestResult(**defaults)

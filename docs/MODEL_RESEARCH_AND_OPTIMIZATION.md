@@ -160,6 +160,11 @@ chronological-window returns so sparse strategies are still screened.
 Backtest artifacts also record finite profit factor, expectancy, average trade
 return, return dispersion, and max consecutive loss streak so future objective
 gates can penalize fragile P&L profiles instead of looking only at final cash.
+The risk objectives now apply those gates when path evidence is present:
+conservative requires profit factor above 1.10 with no loss streak above 3,
+regular requires profit factor above 1.05 with no loss streak above 5, and
+aggressive requires profit factor at least 1.00 with no loss streak above 8.
+All three require positive expectancy.
 
 ## Cross-Symbol Model Lab
 
