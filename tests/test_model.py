@@ -22,6 +22,7 @@ from simple_ai_trading.model import (
     serialize_model,
     temporal_validation_split,
     train,
+    effective_training_backend_name,
     walk_forward_report,
 )
 from simple_ai_trading.compute import BackendInfo
@@ -37,12 +38,21 @@ def _rows() -> list[ModelRow]:
     return out
 
 
+def test_effective_training_backend_defaults_to_gpu_first_auto() -> None:
+    assert effective_training_backend_name(None) == "auto"
+    assert effective_training_backend_name("") == "auto"
+    assert effective_training_backend_name("directml") == "directml"
+    assert effective_training_backend_name("cpu") == "cpu"
+
+
 def test_train_and_evaluate() -> None:
     model = train(_rows(), epochs=5)
     assert isinstance(model, TrainedModel)
     assert model.feature_dim == 13
-    assert model.training_backend_kind == "cpu"
-    assert model.training_backend_vendor == "Python stdlib"
+    assert model.training_backend_requested == "auto"
+    assert model.training_backend_kind in {"directml", "cuda", "rocm", "mps", "cpu"}
+    if model.training_backend_kind == "cpu":
+        assert model.training_backend_reason
     score = evaluate(_rows(), model, threshold=0.5)
     assert 0.0 <= score <= 1.0
 

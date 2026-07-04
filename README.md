@@ -23,6 +23,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - Profit reinvestment is disabled by default. Enabling it prints a warning because compounding amplifies losses as well as gains.
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
+- Training, retraining, tuning, model-lab scoring, external-signal scoring, threshold calibration, and backtest replay use GPU-first `auto` whenever the caller does not explicitly select a backend. CPU use is explicit or recorded as a fallback reason in model/backtest artifacts.
 - AI defaults to a local multibillion model identifier (`qwen2.5:7b`) and a minimum 2B-parameter preflight. AI-assisted signal approval requires explicit holdout uplift over the non-AI ML baseline; otherwise AI remains advisory/review-only.
 - Binance API budget telemetry is captured from exchange response headers when available. Authenticated live startup is blocked when a current budget sample shows any known request-weight or order-count window is 80% or more consumed, or when Binance returns `Retry-After`.
 

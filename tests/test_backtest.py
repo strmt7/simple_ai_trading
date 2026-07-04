@@ -41,8 +41,10 @@ def test_backtest_runs() -> None:
     assert result.starting_cash == 1000.0
     assert result.buy_hold_pnl > 0.0
     assert result.edge_vs_buy_hold == result.realized_pnl - result.buy_hold_pnl
-    assert result.scoring_backend_kind == "cpu"
-    assert result.scoring_backend_device == "cpu"
+    assert result.scoring_backend_requested == "auto"
+    assert result.scoring_backend_kind in {"directml", "cuda", "rocm", "mps", "cpu"}
+    if result.scoring_backend_kind == "cpu":
+        assert result.scoring_backend_reason
     assert 1 <= len(result.equity_curve) <= len(rows)
     assert result.equity_curve[0]["equity"] == pytest.approx(1000.0)
 

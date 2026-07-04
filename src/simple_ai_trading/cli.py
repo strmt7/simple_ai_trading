@@ -5687,7 +5687,7 @@ def command_signals(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 max_adjustment=_clamp(float(getattr(args, "max_adjustment", 0.04)), 0.0, 0.20),
                 min_providers=max(0, min(120, int(getattr(args, "min_providers", 2)))),
                 force_refresh=bool(getattr(args, "refresh", False)),
-                compute_backend=str(getattr(args, "compute_backend", None) or runtime.compute_backend or "cpu"),
+                compute_backend=str(getattr(args, "compute_backend", None) or runtime.compute_backend or "auto"),
                 short_reaction_refresh_seconds=max(1, int(getattr(args, "short_reaction_refresh", 30))),
                 news_provider_limit=max(
                     0,

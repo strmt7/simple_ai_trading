@@ -148,7 +148,10 @@ def test_collect_external_signals_success_cache_and_render(tmp_path) -> None:
     assert report.medium_term_score != 0.0
     assert report.long_term_score != 0.0
     assert report.reaction_required is True
-    assert report.news_backend_kind == "cpu"
+    assert report.news_backend_requested == "auto"
+    assert report.news_backend_kind in {"directml", "cuda", "rocm", "mps", "cpu"}
+    if report.news_backend_kind == "cpu":
+        assert report.news_backend_reason
     assert cache.exists()
     text = signals.render_external_signal_report(report)
     assert "alternative_fear_greed" in text

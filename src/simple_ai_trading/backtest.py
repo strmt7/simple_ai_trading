@@ -11,7 +11,12 @@ from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
 from .liquidity_session import apply_liquidity_session_meta, liquidity_session_adjustment
 from .meta_label import MetaLabelDecision, apply_meta_label_policy
-from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
+from .model import (
+    TrainedModel,
+    confidence_adjusted_probability,
+    effective_training_backend_name,
+    model_decision_threshold,
+)
 from .regime import classify_market_regime
 from .risk_controls import market_regime_unpredictability, stop_loss_sized_notional_pct
 from .types import StrategyConfig
@@ -376,7 +381,7 @@ def _backtest_probabilities(
     compute_backend: str | None,
     batch_size: int,
 ) -> tuple[list[float], BackendInfo]:
-    backend = resolve_backend(compute_backend or "cpu")
+    backend = resolve_backend(effective_training_backend_name(compute_backend))
     if backend.kind == "cpu":
         return [model.predict_proba(row.features) for row in rows], backend
     if getattr(model, "hybrid_experts", None):
@@ -526,7 +531,7 @@ def run_backtest(
     score_batch_size: int = 8192,
     symbol_profile: SymbolExecutionProfile | None = None,
 ) -> BacktestResult:
-    score_backend = resolve_backend(compute_backend or "cpu")
+    score_backend = resolve_backend(effective_training_backend_name(compute_backend))
     if not rows:
         return BacktestResult(
             starting_cash=starting_cash,

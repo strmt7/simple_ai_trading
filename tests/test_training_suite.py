@@ -1630,9 +1630,63 @@ def test_train_for_objective_gpu_backend_forces_sequential_workers(
         batch_size=64,
         score_batch_size=32,
     )
-    assert outcome.training_backend_kind == "cpu"
     assert observed
     assert all(item == ("directml", 64, 32) for item in observed)
+    assert outcome.training_backend_kind == "cpu"
+
+
+def test_train_for_objective_defaults_to_auto_backend(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    observed: list[str] = []
+
+    def fake_evaluate(payload):
+        observed.append(payload["compute_backend"])
+        return {
+            "score": 1.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(),
+            "row_count": 10,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 0,
+            "validation_rows": 5,
+            "validation_score": 1.0,
+            "full_sample_score": 1.0,
+            "ensemble_refined": False,
+        }
+
+    monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
+
+    train_for_objective(
+        _synthetic_candles(n=220),
+        StrategyConfig(),
+        objective,
+        output_dir=tmp_path,
+        market_type="spot",
+        starting_cash=1000.0,
+        max_workers=4,
+    )
+
+    assert observed
+    assert set(observed) == {"auto"}
 
 
 def test_train_for_objective_rejects_weaker_seed_ensemble(
@@ -2135,6 +2189,7 @@ def test_train_for_objective_real_runner_small_dataset(tmp_path: Path) -> None:
             output_dir=tmp_path,
             market_type="spot",
             starting_cash=1000.0,
+            compute_backend="cpu",
         )
     finally:
         training_suite._candidate_grid = original

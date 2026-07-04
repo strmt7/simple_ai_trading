@@ -1029,6 +1029,18 @@ def _fallback_backend(requested: BackendInfo, reason: str) -> BackendInfo:
     )
 
 
+def effective_training_backend_name(compute_backend: str | None) -> str:
+    """Return the backend name used by training/scoring when callers omit it.
+
+    Omitted values mean GPU-first auto-probing. CPU is used only when explicitly
+    requested or when every GPU probe fails, and the resolved metadata records
+    that fallback.
+    """
+
+    requested = str(compute_backend or "").strip().lower()
+    return requested or "auto"
+
+
 def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
     if backend.kind == "directml":
         import torch_directml  # type: ignore
@@ -1202,7 +1214,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
             expected_feature_dim=feature_dim,
         )
 
-    backend = resolve_backend(compute_backend or "cpu")
+    backend = resolve_backend(effective_training_backend_name(compute_backend))
     if backend.kind != "cpu":
         try:
             return _with_backend_metadata(

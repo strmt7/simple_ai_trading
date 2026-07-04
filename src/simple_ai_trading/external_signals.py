@@ -24,6 +24,7 @@ from defusedxml import ElementTree as ET
 import requests
 
 from .compute import BackendInfo, resolve_backend
+from .model import effective_training_backend_name
 from .storage import write_json_atomic
 
 
@@ -589,7 +590,7 @@ def _score_news_texts(
         ages = [max(0, int(age)) for age in ages_ms[: len(texts)]]
         ages.extend([0] * max(0, len(texts) - len(ages)))
     counts = [_keyword_counts(text, age_ms=age) for text, age in zip(texts, ages, strict=True)]
-    backend = resolve_backend(compute_backend or "cpu")
+    backend = resolve_backend(effective_training_backend_name(compute_backend))
     if backend.kind != "cpu" and counts:
         try:  # pragma: no cover - covered by host GPU smoke, not CI
             import torch  # type: ignore
@@ -2283,7 +2284,7 @@ def collect_external_signals(
             record_report_telemetry(cached_report, [{"provider": "external_signal_cache", "known_at_ms": now, "payload": cached.asdict()}])
             return cached_report
 
-    news_backend = resolve_backend(compute_backend or "cpu")
+    news_backend = resolve_backend(effective_training_backend_name(compute_backend))
     raw_records: list[object] = []
     raw_records_lock = Lock()
 
