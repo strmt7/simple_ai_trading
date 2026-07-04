@@ -21,10 +21,10 @@ using simple_ai_trading::native_contract::CommandSpec;
 using simple_ai_trading::native_contract::kCommandCount;
 using simple_ai_trading::native_contract::kCommands;
 
-constexpr int kInitialWidth = 1320;
-constexpr int kInitialHeight = 900;
-constexpr int kMinWidth = 940;
-constexpr int kMinHeight = 680;
+constexpr int kInitialWidth = 1500;
+constexpr int kInitialHeight = 960;
+constexpr int kMinWidth = 1180;
+constexpr int kMinHeight = 840;
 constexpr COLORREF kBg = RGB(18, 22, 25);
 constexpr COLORREF kShell = RGB(24, 30, 34);
 constexpr COLORREF kPanel = RGB(31, 38, 43);
@@ -49,6 +49,7 @@ enum ControlId : int {
     kRiskReportId = 108,
     kModelLabId = 109,
     kBacktestChartId = 110,
+    kStatusBarId = 111,
     kQuickBaseId = 200,
 };
 
@@ -336,10 +337,10 @@ class MainWindow {
         if (body_font_) DeleteObject(body_font_);
         if (small_font_) DeleteObject(small_font_);
         if (mono_font_) DeleteObject(mono_font_);
-        title_font_ = make_font(20, FW_SEMIBOLD);
-        body_font_ = make_font(12, FW_NORMAL);
-        small_font_ = make_font(10, FW_NORMAL);
-        mono_font_ = make_font(11, FW_NORMAL, L"Consolas");
+        title_font_ = make_font(21, FW_SEMIBOLD);
+        body_font_ = make_font(13, FW_NORMAL);
+        small_font_ = make_font(11, FW_NORMAL);
+        mono_font_ = make_font(12, FW_NORMAL, L"Consolas");
         for (HWND control : all_controls()) {
             if (control) {
                 SendMessageW(control, WM_SETFONT, reinterpret_cast<WPARAM>(body_font_), TRUE);
@@ -420,7 +421,7 @@ class MainWindow {
         risk_report_ = create_control(L"BUTTON", L"Risk Check", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
         model_lab_ = create_control(L"BUTTON", L"Model Lab", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
         backtest_chart_ = create_control(L"BUTTON", L"Backtest Chart", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
-        status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, 0);
+        status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, kStatusBarId);
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             quick_buttons_[static_cast<std::size_t>(i)] =
                 create_control(L"BUTTON", L"", BS_OWNERDRAW | WS_TABSTOP, kQuickBaseId + i);
@@ -442,8 +443,8 @@ class MainWindow {
         GetClientRect(hwnd_, &client);
         const int pad = scale(20);
         const int sidebar = scale(220);
-        const int header_h = scale(88);
-        const int footer_h = scale(76);
+        const int header_h = scale(82);
+        const int footer_h = scale(68);
         const int gap = scale(18);
         const int right = client.right - pad;
         const int footer_top = client.bottom - footer_h;
@@ -458,9 +459,9 @@ class MainWindow {
         MoveWindow(page_title_, main_left + scale(42), header_h + scale(26), main_width - scale(42), scale(34), TRUE);
         MoveWindow(page_summary_, main_left + scale(42), header_h + scale(62), main_width - scale(42), scale(24), TRUE);
 
-        const int command_card_top = header_h + scale(102);
-        const int command_card_h = scale(126);
-        const int command_inner_top = command_card_top + scale(22);
+        const int command_card_top = header_h + scale(94);
+        const int command_card_h = scale(116);
+        const int command_inner_top = command_card_top + scale(18);
         const int run_w = scale(142);
         const int combo_w = std::min(scale(330), std::max(scale(260), main_width * 30 / 100));
         const int args_w = std::min(scale(330), std::max(scale(240), main_width * 28 / 100));
@@ -476,12 +477,12 @@ class MainWindow {
         MoveWindow(run_selected_, run_left, command_inner_top + scale(2), run_w, scale(38), TRUE);
         MoveWindow(selected_help_, run_left, command_inner_top + scale(50), run_w, scale(36), TRUE);
 
-        const int quick_label_top = command_card_top + command_card_h + scale(28);
+        const int quick_label_top = command_card_top + command_card_h + scale(24);
         MoveWindow(quick_label_, main_left, quick_label_top, main_width, scale(26), TRUE);
-        const int quick_top = quick_label_top + scale(38);
+        const int quick_top = quick_label_top + scale(34);
         const int quick_cols = page_index_ == 0 && main_width >= scale(980) ? 5 : (main_width >= scale(780) ? 3 : 2);
         const int quick_gap = scale(12);
-        const int quick_h = scale(72);
+        const int quick_h = scale(68);
         const int quick_w = (main_width - (quick_gap * (quick_cols - 1))) / quick_cols;
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             const int col = i % quick_cols;
@@ -497,20 +498,20 @@ class MainWindow {
 
         const int visible_actions = std::min(static_cast<int>(quick_actions_.size()), static_cast<int>(quick_buttons_.size()));
         const int quick_rows = std::max(1, (visible_actions + quick_cols - 1) / quick_cols);
-        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(28);
+        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(24);
         MoveWindow(tools_label_, main_left, tools_label_top, main_width, scale(26), TRUE);
-        const int tools_top = tools_label_top + scale(38);
+        const int tools_top = tools_label_top + scale(34);
         const int tool_gap = scale(12);
         const int tool_w = (main_width - (tool_gap * 4)) / 5;
-        MoveWindow(stop_all_, main_left, tools_top, tool_w, scale(64), TRUE);
-        MoveWindow(ai_preflight_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(64), TRUE);
-        MoveWindow(risk_report_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(64), TRUE);
-        MoveWindow(model_lab_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(64), TRUE);
-        MoveWindow(backtest_chart_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(64), TRUE);
+        MoveWindow(stop_all_, main_left, tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(ai_preflight_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(risk_report_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(model_lab_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(backtest_chart_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
 
-        const int output_top = tools_top + scale(126);
+        const int output_top = tools_top + scale(110);
         MoveWindow(output_label_, main_left + scale(18), output_top - scale(34), main_width - scale(36), scale(28), TRUE);
-        MoveWindow(output_edit_, main_left + scale(18), output_top, main_width - scale(36), std::max(scale(160), bottom - output_top), TRUE);
+        MoveWindow(output_edit_, main_left + scale(18), output_top, main_width - scale(36), std::max(scale(96), bottom - output_top), TRUE);
         MoveWindow(status_bar_, scale(28), footer_top + scale(24), client.right - scale(56), scale(30), TRUE);
     }
 
@@ -523,8 +524,8 @@ class MainWindow {
 
         const int pad = scale(20);
         const int sidebar = scale(220);
-        const int header_h = scale(88);
-        const int footer_h = scale(76);
+        const int header_h = scale(82);
+        const int footer_h = scale(68);
         const int gap = scale(18);
         const int footer_top = client.bottom - footer_h;
         const int main_left = sidebar + gap;
@@ -543,22 +544,22 @@ class MainWindow {
         RECT shield{main_left + scale(16), scale(28), main_left + scale(42), scale(54)};
         draw_simple_icon(dc, shield, RGB(185, 196, 202), 0);
 
-        RECT health_box{right - scale(372), scale(16), right - scale(242), scale(66)};
-        RECT time_box{right - scale(228), scale(16), right - scale(112), scale(66)};
-        RECT config_box{right - scale(98), scale(16), right, scale(66)};
+        RECT health_box{right - scale(372), scale(12), right - scale(242), scale(74)};
+        RECT time_box{right - scale(228), scale(12), right - scale(112), scale(74)};
+        RECT config_box{right - scale(98), scale(12), right, scale(74)};
         round_rect(dc, health_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         round_rect(dc, time_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         round_rect(dc, config_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
-        RECT health_title{health_box.left + scale(16), health_box.top + scale(9), health_box.right - scale(12), health_box.top + scale(27)};
-        RECT health_status{health_box.left + scale(16), health_box.top + scale(29), health_box.right - scale(12), health_box.bottom - scale(8)};
+        RECT health_title{health_box.left + scale(16), health_box.top + scale(10), health_box.right - scale(12), health_box.top + scale(31)};
+        RECT health_status{health_box.left + scale(16), health_box.top + scale(34), health_box.right - scale(12), health_box.bottom - scale(8)};
         draw_text(dc, L"System Health", health_title, small_font_, kText, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         draw_text(dc, L"Healthy", health_status, small_font_, RGB(85, 206, 116), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         SYSTEMTIME local_time{};
         GetLocalTime(&local_time);
         wchar_t time_value[16]{};
         swprintf_s(time_value, L"%02d:%02d:%02d", local_time.wHour, local_time.wMinute, local_time.wSecond);
-        RECT time_main{time_box.left + scale(14), time_box.top + scale(9), time_box.right - scale(10), time_box.top + scale(29)};
-        RECT time_caption{time_box.left + scale(14), time_box.top + scale(31), time_box.right - scale(10), time_box.bottom - scale(8)};
+        RECT time_main{time_box.left + scale(14), time_box.top + scale(10), time_box.right - scale(10), time_box.top + scale(32)};
+        RECT time_caption{time_box.left + scale(14), time_box.top + scale(35), time_box.right - scale(10), time_box.bottom - scale(8)};
         draw_text(dc, time_value, time_main, body_font_, kText, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         draw_text(dc, L"Local Time", time_caption, small_font_, kMuted, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         RECT config_text{config_box.left + scale(14), config_box.top, config_box.right - scale(10), config_box.bottom};
@@ -567,22 +568,22 @@ class MainWindow {
         RECT page_icon{main_left + scale(2), header_h + scale(33), main_left + scale(28), header_h + scale(59)};
         draw_simple_icon(dc, page_icon, RGB(176, 190, 198), page_index_);
 
-        const int command_card_top = header_h + scale(102);
-        RECT command_card{main_left, command_card_top, right, command_card_top + scale(126)};
+        const int command_card_top = header_h + scale(94);
+        RECT command_card{main_left, command_card_top, right, command_card_top + scale(116)};
         round_rect(dc, command_card, RGB(22, 30, 36), RGB(43, 57, 65), scale(8));
         RECT command_divider{main_left + main_width * 60 / 100, command_card.top + scale(18), main_left + main_width * 60 / 100 + scale(1), command_card.bottom - scale(18)};
         fill_rect(dc, command_divider, RGB(35, 45, 52));
 
-        const int quick_label_top = command_card.bottom + scale(28);
-        const int quick_top = quick_label_top + scale(38);
+        const int quick_label_top = command_card.bottom + scale(24);
+        const int quick_top = quick_label_top + scale(34);
         const int quick_cols = page_index_ == 0 && main_width >= scale(980) ? 5 : (main_width >= scale(780) ? 3 : 2);
         const int quick_gap = scale(12);
-        const int quick_h = scale(72);
+        const int quick_h = scale(68);
         const int visible_actions = std::min(static_cast<int>(quick_actions_.size()), static_cast<int>(quick_buttons_.size()));
         const int quick_rows = std::max(1, (visible_actions + quick_cols - 1) / quick_cols);
-        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(28);
-        const int tools_top = tools_label_top + scale(38);
-        const int output_top = tools_top + scale(126);
+        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(24);
+        const int tools_top = tools_label_top + scale(34);
+        const int output_top = tools_top + scale(110);
         RECT output_card{main_left, output_top - scale(46), right, footer_top - pad};
         round_rect(dc, output_card, RGB(20, 27, 32), RGB(43, 57, 65), scale(8));
 

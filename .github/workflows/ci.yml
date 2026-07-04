@@ -94,6 +94,8 @@ jobs:
           python -m simple_ai_trading --help
           python -m simple_ai_trading objectives
           powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
+          powershell -ExecutionPolicy Bypass -File tools\smoke_native_windows_ui.ps1 -SkipRealCompute
+          powershell -ExecutionPolicy Bypass -File tools\validate_native_windows_layout.ps1
           python -m simple_ai_trading.windows_app --help
           .\run-shell.cmd --help
           .\run-gui.cmd --help

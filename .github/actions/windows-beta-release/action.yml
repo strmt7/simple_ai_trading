@@ -146,6 +146,8 @@ runs:
         if (-not (Test-Path -LiteralPath "build\windows\SimpleAITrading.exe")) {
             throw "Native SimpleAITrading.exe was not produced."
         }
+        powershell -ExecutionPolicy Bypass -File tools\smoke_native_windows_ui.ps1
+        powershell -ExecutionPolicy Bypass -File tools\validate_native_windows_layout.ps1
 
     - name: Build Python distributions
       shell: pwsh
