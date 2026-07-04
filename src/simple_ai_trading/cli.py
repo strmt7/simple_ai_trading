@@ -4718,6 +4718,13 @@ def command_backtest(args: argparse.Namespace) -> int:
             "trade_return_count": len(getattr(result, "trade_returns", ()) or ()),
             "trade_pnls": list(getattr(result, "trade_pnls", ()) or ()),
             "trade_returns": list(getattr(result, "trade_returns", ()) or ()),
+            "gross_profit": float(getattr(result, "gross_profit", 0.0)),
+            "gross_loss": float(getattr(result, "gross_loss", 0.0)),
+            "profit_factor": float(getattr(result, "profit_factor", 0.0)),
+            "expectancy": float(getattr(result, "expectancy", 0.0)),
+            "average_trade_return": float(getattr(result, "average_trade_return", 0.0)),
+            "trade_return_stdev": float(getattr(result, "trade_return_stdev", 0.0)),
+            "max_consecutive_losses": int(getattr(result, "max_consecutive_losses", 0)),
         },
     }
     _persist_run_artifact("backtest", model_path.parent, artifact)
@@ -4736,6 +4743,10 @@ def command_backtest(args: argparse.Namespace) -> int:
     print(f"ending_cash: {result.ending_cash:.2f}")
     print(f"buy_hold_pnl: {result.buy_hold_pnl:.2f}")
     print(f"edge_vs_buy_hold: {result.edge_vs_buy_hold:.2f}")
+    print(f"profit_factor: {float(getattr(result, 'profit_factor', 0.0)):.2f}")
+    print(f"expectancy: {float(getattr(result, 'expectancy', 0.0)):.2f}")
+    print(f"average_trade_return: {float(getattr(result, 'average_trade_return', 0.0)):.2%}")
+    print(f"max_consecutive_losses: {int(getattr(result, 'max_consecutive_losses', 0))}")
     print(f"max_drawdown: {result.max_drawdown:.2%}")
     print(f"stopped_by_drawdown: {result.stopped_by_drawdown}")
     return 0

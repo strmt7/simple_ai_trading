@@ -126,6 +126,8 @@ def test_validate_model_under_stress_rejects_failed_scenario(monkeypatch: pytest
     assert report.accepted_scenarios == 1
     assert report.worst_realized_pnl == pytest.approx(-5.0)
     assert report.results[1].reject_reason is not None
+    assert "profit_factor" in report.results[0].result
+    assert "max_consecutive_losses" in report.results[0].result
     assert observed_profiles[0].symbol == "AAAUSDC"
 
 
