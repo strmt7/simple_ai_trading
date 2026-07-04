@@ -25,7 +25,9 @@ def _capability(ok: bool = True) -> AICapabilityReport:
     )
 
 
-def _write_report(path: Path, *, accepted: bool = True) -> None:
+def _write_report(path: Path, *, accepted: bool = True, harmful_ablation: bool = False) -> None:
+    feature_delta = 0.004 if harmful_ablation else -0.004
+    hybrid_delta = 0.003 if harmful_ablation else -0.003
     payload = {
         "quote_asset": "USDC",
         "interval": "15m",
@@ -50,6 +52,30 @@ def _write_report(path: Path, *, accepted: bool = True) -> None:
                 "rows": 500,
                 "objective_scores": {"regular": 0.15},
                 "hybrid_profiles": {"regular": "balanced_neighbors"},
+                "hybrid_ablation": {
+                    "regular": [
+                        {
+                            "removed_expert_kind": "lorentzian_knn",
+                            "accepted": True,
+                            "score": 0.147 + hybrid_delta,
+                            "delta_vs_best": hybrid_delta,
+                        }
+                    ]
+                },
+                "feature_ablation": {
+                    "regular": [
+                        {
+                            "removed_group": "technical_confluence",
+                            "status": "evaluated",
+                            "accepted": True,
+                            "score": 0.15 + feature_delta,
+                            "delta_vs_selected": feature_delta,
+                            "realized_pnl": 3.0,
+                            "max_drawdown": 0.01,
+                            "closed_trades": 7,
+                        }
+                    ]
+                },
                 "stress_validation": {
                     "accepted": accepted,
                     "scenario_count": 4,
@@ -140,6 +166,8 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     prompt = observed["payload"]["messages"][1]["content"]
     assert "regime_validation" in prompt
     assert "meta_label_validation" in prompt
+    assert "hybrid_ablation" in prompt
+    assert "feature_ablation" in prompt
     assert "trend_up" in prompt
     assert (tmp_path / "ai_risk_review.json").exists()
 
@@ -163,6 +191,28 @@ def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(tmp_path:
     assert review.status == "blocked"
     assert review.decision.action == "veto"
     assert "deterministic gates" in review.error
+
+
+def test_ai_review_blocks_before_model_call_on_harmful_ablation(tmp_path: Path, monkeypatch) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True, harmful_ablation=True)
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("AI provider should not be called")
+
+    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+
+    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+
+    assert called is False
+    assert review.approved is False
+    assert review.status == "blocked"
+    assert review.deterministic_precheck["ablation_warning_count"] == 2
+    assert "ablation evidence" in str(review.error)
+    assert any("technical_confluence" in item for item in review.deterministic_precheck["ablation_warnings"])
 
 
 def test_ai_review_fails_closed_on_invalid_ai_payload(tmp_path: Path, monkeypatch) -> None:
