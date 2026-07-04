@@ -135,6 +135,19 @@ inline constexpr CommandOptionSpec kOptions_coordinator[] = {
     {L"--json", L"json", L"", L"false", L"", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_data_health[] = {
+    {L"--db", L"db", L"", L"data/market_data.sqlite", L"", false, true},
+    {L"--symbol", L"symbol", L"", L"", L"", false, true},
+    {L"--symbols", L"symbols", L"", L"", L"comma-separated symbols; defaults to stored series", false, true},
+    {L"--interval", L"interval", L"", L"", L"", false, true},
+    {L"--market", L"market", L"spot, futures", L"", L"", false, true},
+    {L"--min-rows", L"min_rows", L"", L"0", L"", false, true},
+    {L"--min-coverage-ratio", L"min_coverage_ratio", L"", L"0.995", L"", false, true},
+    {L"--max-gap-count", L"max_gap_count", L"", L"0", L"", false, true},
+    {L"--require-verified-checksum", L"require_verified_checksum", L"", L"false", L"", false, false},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_data_sync[] = {
     {L"--db", L"db", L"", L"data/market_data.sqlite", L"", false, true},
     {L"--symbol", L"symbol", L"", L"", L"", false, true},
@@ -464,6 +477,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"configure", L"usage: simple-ai-trading configure [-h]", nullptr, 0},
     {L"connect", L"usage: simple-ai-trading connect [-h]", nullptr, 0},
     {L"coordinator", L"usage: simple-ai-trading coordinator [-h] [--model MODEL]                                      [--positions-root POSITIONS_ROOT]                                      [--json]", kOptions_coordinator, 3},
+    {L"data-health", L"usage: simple-ai-trading data-health [-h] [--db DB] [--symbol SYMBOL]                                      [--symbols SYMBOLS] [--interval INTERVAL]                                      [--market {spot,futures}]                                      [--min-rows MIN_ROWS]                                      [--min-coverage-ratio MIN_COVERAGE_RATIO]                                      [--max-gap-count MAX_GAP_COUNT]                                      [--require-verified-checksum] [--json]", kOptions_data_health, 10},
     {L"data-sync", L"usage: simple-ai-trading data-sync [-h] [--db DB] [--symbol SYMBOL]                                    [--interval INTERVAL]                                    [--market {spot,futures}] [--rows ROWS]                                    [--full-history] [--batch-size BATCH_SIZE]                                    [--include-futures-metrics]                                    [--no-include-futures-metrics] [--loop]                                    [--iterations ITERATIONS] [--sleep SLEEP]                                    [--background] [--pid-file PID_FILE]                                    [--log-file LOG_FILE] [--json]", kOptions_data_sync, 16},
     {L"doctor", L"usage: simple-ai-trading doctor [-h] [--input INPUT] [--model MODEL]                                 [--online]", kOptions_doctor, 3},
     {L"evaluate", L"usage: simple-ai-trading evaluate [-h] [--input INPUT] [--model MODEL]                                   [--threshold THRESHOLD]                                   [--calibrate-threshold]", kOptions_evaluate, 4},

@@ -722,6 +722,89 @@ def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, mon
     assert ranked["max_scan"] == 50
 
 
+def test_command_data_health_reports_verified_archive_coverage(tmp_path, monkeypatch, capsys) -> None:
+    db = tmp_path / "market.sqlite"
+    candles = [
+        Candle(
+            open_time=index * 1000,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.0,
+            volume=1.0,
+            close_time=index * 1000 + 999,
+        )
+        for index in range(3)
+    ]
+    with MarketDataStore(db) as store:
+        store.upsert_candles("BTCUSDC", "spot", "1s", candles, source="binance_public_archive")
+        url = "https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip"
+        store.begin_archive_file(url=url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01-01")
+        store.complete_archive_file(
+            url=url,
+            status="complete",
+            rows_inserted=3,
+            bytes_downloaded=123,
+            sha256="a" * 64,
+            checksum_sha256="a" * 64,
+            checksum_status="verified",
+        )
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+
+    assert cli.command_data_health(argparse.Namespace(
+        db=str(db),
+        symbol=None,
+        symbols=None,
+        interval="1s",
+        market="spot",
+        min_rows=3,
+        min_coverage_ratio=1.0,
+        max_gap_count=0,
+        require_verified_checksum=True,
+        json=True,
+    )) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "ok"
+    assert payload["items"][0]["checksum_status_counts"] == {"verified": 1}
+    assert payload["items"][0]["coverage_ratio"] == 1.0
+
+
+def test_command_data_health_blocks_missing_rows_gaps_and_checksum(tmp_path, monkeypatch, capsys) -> None:
+    db = tmp_path / "market.sqlite"
+    candles = [
+        Candle(open_time=0, open=100.0, high=101.0, low=99.0, close=100.0, volume=1.0, close_time=999),
+        Candle(open_time=3000, open=100.0, high=101.0, low=99.0, close=100.0, volume=1.0, close_time=3999),
+    ]
+    with MarketDataStore(db) as store:
+        store.upsert_candles("BTCUSDC", "spot", "1s", candles, source="binance_public_archive")
+        url = "https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip"
+        store.begin_archive_file(url=url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01-01")
+        store.complete_archive_file(url=url, status="complete", rows_inserted=2, bytes_downloaded=123, sha256="a" * 64)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+
+    assert cli.command_data_health(argparse.Namespace(
+        db=str(db),
+        symbol="BTCUSDC",
+        symbols=None,
+        interval="1s",
+        market="spot",
+        min_rows=3,
+        min_coverage_ratio=1.0,
+        max_gap_count=0,
+        require_verified_checksum=True,
+        json=True,
+    )) == 2
+
+    payload = json.loads(capsys.readouterr().out)
+    reasons = payload["items"][0]["reasons"]
+    assert "rows_below_min:2/3" in reasons
+    assert "gap_count_above_max:2/0" in reasons
+    assert "no_verified_archive_checksum" in reasons
+
+
 def test_live_startup_blocks_when_cached_api_budget_is_over_eighty_percent(tmp_path, monkeypatch) -> None:
     db = tmp_path / "market.sqlite"
     now_ms = 1_000_000

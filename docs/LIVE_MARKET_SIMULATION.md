@@ -36,6 +36,11 @@ Execution cost is symbol-specific where market data exists:
   any candle rows are written. `--require-checksum` makes missing sidecars a
   hard failure for promotion-grade data builds; without it, unavailable
   sidecars are recorded as `checksum_status=unavailable` for audit.
+- `data-health` is the pre-training database gate. It emits machine-readable
+  row counts, UTC spans, expected rows, coverage ratio, gap count,
+  archive-status counts, and checksum-status counts, and it exits nonzero when
+  configured minimum rows, maximum gaps, coverage ratio, archive errors,
+  checksum mismatches, or required verified checksums are not satisfied.
 - `data-sync --full-history` pages backward through exchange klines with the
   venue maximum request size until no older rows are returned. Recent bounded
   syncs remain available for incremental refreshes, but reports label them as
