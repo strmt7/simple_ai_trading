@@ -9,7 +9,12 @@ from typing import Sequence
 from .api import BinanceAPIError, BinanceClient, Candle
 from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
 from .portfolio_risk import PortfolioRiskReport, build_portfolio_risk_report
-from .robust_validation import SuiteStressReport, validate_suite_under_stress
+from .robust_validation import (
+    SuiteStressReport,
+    SuiteTemporalRobustnessReport,
+    validate_suite_temporal_robustness,
+    validate_suite_under_stress,
+)
 from .storage import write_json_atomic
 from .training_suite import SuiteReport, TrainingSuiteRejected, run_training_suite
 from .types import RuntimeConfig, StrategyConfig
@@ -28,6 +33,8 @@ class SymbolResearchOutcome:
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
     stress_validation: dict[str, object] | None = None
     stress_report_path: str | None = None
+    robustness_validation: dict[str, object] | None = None
+    robustness_report_path: str | None = None
     diagnostics: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
@@ -79,24 +86,34 @@ def _outcome_from_suite(
     liquidity: MarketEligibility,
     stress_report: SuiteStressReport,
     stress_report_path: Path,
+    robustness_report: SuiteTemporalRobustnessReport,
+    robustness_report_path: Path,
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
     score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
     stress_accepted = bool(stress_report.accepted)
-    accepted = score_accepted and stress_accepted
+    robustness_accepted = bool(robustness_report.accepted)
+    accepted = score_accepted and stress_accepted and robustness_accepted
+    error = None
+    if not accepted and score_accepted and not stress_accepted:
+        error = "stress_validation_failed"
+    elif not accepted and score_accepted and stress_accepted and not robustness_accepted:
+        error = "temporal_robustness_failed"
     return SymbolResearchOutcome(
         symbol=symbol,
         accepted=accepted,
         rows=int(suite.total_rows),
         objectives=list(suite.objectives_run),
         report_path=str(suite.summary_path),
-        error=None if accepted else ("stress_validation_failed" if score_accepted and not stress_accepted else None),
+        error=error,
         liquidity=liquidity.asdict(),
         objective_scores=scores,
         hybrid_profiles=hybrid_profiles,
         stress_validation=stress_report.asdict(),
         stress_report_path=str(stress_report_path),
+        robustness_validation=robustness_report.asdict(),
+        robustness_report_path=str(robustness_report_path),
     )
 
 
@@ -200,7 +217,28 @@ def run_model_lab(
             )
             stress_report_path = symbol_dir / "stress_validation.json"
             write_json_atomic(stress_report_path, stress_report.asdict(), indent=2, sort_keys=True)
-            outcomes.append(_outcome_from_suite(symbol, suite, liquidity, stress_report, stress_report_path))
+            robustness_report = validate_suite_temporal_robustness(
+                candles,
+                strategy,
+                suite,
+                symbol=symbol,
+                symbol_profile=stress_profile,
+                starting_cash=starting_cash,
+                market_type=runtime.market_type,
+                compute_backend=compute_backend,
+                score_batch_size=score_batch_size or batch_size,
+            )
+            robustness_report_path = symbol_dir / "temporal_robustness.json"
+            write_json_atomic(robustness_report_path, robustness_report.asdict(), indent=2, sort_keys=True)
+            outcomes.append(_outcome_from_suite(
+                symbol,
+                suite,
+                liquidity,
+                stress_report,
+                stress_report_path,
+                robustness_report,
+                robustness_report_path,
+            ))
         except TrainingSuiteRejected as exc:
             outcomes.append(SymbolResearchOutcome(
                 symbol=symbol,
