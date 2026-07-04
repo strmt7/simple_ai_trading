@@ -261,5 +261,60 @@ def test_build_round_evidence_records_objective_strategy_defaults(
     assert report["use_objective_strategy_defaults"] is True
     assert report["strategy"]["risk_level"] == "regular"
     assert report["strategy"]["leverage"] == pytest.approx(DEFAULT_REGULAR_LEVERAGE)
+    assert report["effective_leverage"] == pytest.approx(1.0)
+    assert report["leverage_applies"] is False
     assert report["metrics"][0]["risk_level"] == "regular"
     assert report["metrics"][0]["leverage"] == pytest.approx(DEFAULT_REGULAR_LEVERAGE)
+    assert report["metrics"][0]["effective_leverage"] == pytest.approx(1.0)
+    assert report["metrics"][0]["leverage_applies"] is False
+
+
+def test_build_round_evidence_records_futures_effective_leverage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_training(*_args, **_kwargs):
+        raise AssertionError("training should not start when data-health blocks")
+
+    monkeypatch.setattr(oe, "train_round_model", fail_training)
+    report = oe.build_round_evidence(
+        round_id="round-test-futures-leverage",
+        client=_SelectionClient(),
+        strategy=StrategyConfig(leverage=12.0),
+        quote_asset="USDT",
+        symbols=["BTCUSDT"],
+        interval="1m",
+        market_type="futures",
+        objective_name="conservative",
+        data_root=tmp_path / "data" / "optimization",
+        docs_root=tmp_path / "docs" / "optimization",
+        db_path=tmp_path / "market.sqlite",
+        require_prefilled_data=True,
+        min_data_rows=10,
+    )
+
+    assert report["market_type"] == "futures"
+    assert report["configured_leverage"] == pytest.approx(12.0)
+    assert report["effective_leverage"] == pytest.approx(12.0)
+    assert report["leverage_applies"] is True
+    assert report["metrics"][0]["leverage"] == pytest.approx(12.0)
+    assert report["metrics"][0]["effective_leverage"] == pytest.approx(12.0)
+    assert report["metrics"][0]["leverage_applies"] is True
+
+
+def test_build_round_evidence_rejects_unsupported_market_interval(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="not supported on futures"):
+        oe.build_round_evidence(
+            round_id="round-test-bad-interval",
+            client=_SelectionClient(),
+            strategy=StrategyConfig(),
+            quote_asset="USDT",
+            symbols=["BTCUSDT"],
+            interval="1s",
+            market_type="futures",
+            objective_name="conservative",
+            data_root=tmp_path / "data" / "optimization",
+            docs_root=tmp_path / "docs" / "optimization",
+            db_path=tmp_path / "market.sqlite",
+            require_prefilled_data=True,
+        )

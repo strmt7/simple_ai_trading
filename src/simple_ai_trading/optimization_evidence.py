@@ -12,11 +12,12 @@ from typing import Iterable, Mapping, Sequence
 
 from .advanced_model import default_config_for, make_advanced_rows, train_advanced
 from .api import BinanceAPIError, BinanceClient, Candle
+from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .backtest import BacktestResult, run_backtest
 from .data_coverage import describe_candle_coverage, iso_utc
 from .data_downloader import MarketDataSyncConfig, sync_market_data
 from .execution_simulation import SymbolExecutionProfile
-from .intervals import interval_milliseconds
+from .intervals import interval_milliseconds, validate_interval
 from .market_edge import build_market_edge_report
 from .market_store import MarketDataStore
 from .market_universe import (
@@ -73,6 +74,8 @@ class BacktestEvidence:
     objective: str
     risk_level: str
     leverage: float
+    effective_leverage: float
+    leverage_applies: bool
     risk_per_trade: float
     max_position_pct: float
     max_drawdown_limit_pct: float
@@ -147,6 +150,14 @@ def _finite(value: object, default: float = 0.0) -> float:
     except (TypeError, ValueError, OverflowError):
         return default
     return parsed if math.isfinite(parsed) else default
+
+
+def effective_leverage_for_market(strategy: StrategyConfig, market_type: str) -> float:
+    """Return the leverage that can actually affect fills for the market type."""
+
+    if str(market_type).lower() != "futures":
+        return 1.0
+    return max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _finite(strategy.leverage, 1.0)))
 
 
 def fetch_full_history(
@@ -710,6 +721,7 @@ def build_round_evidence(
     require_verified_checksum: bool = False,
     use_objective_strategy_defaults: bool = False,
 ) -> dict[str, object]:
+    interval = validate_interval(interval, market_type)
     paths = make_evidence_paths(round_id, data_root=data_root, docs_root=docs_root, market_db_path=db_path)
     for directory in (paths.output_dir, paths.docs_dir, paths.docs_data_dir, paths.docs_charts_dir):
         directory.mkdir(parents=True, exist_ok=True)
@@ -719,6 +731,8 @@ def build_round_evidence(
         if use_objective_strategy_defaults
         else strategy
     )
+    effective_leverage = effective_leverage_for_market(evidence_strategy, market_type)
+    leverage_applies = market_type == "futures"
     selected = (
         select_named_symbols(client, evidence_strategy, symbols, quote_asset=quote_asset)
         if symbols
@@ -869,6 +883,8 @@ def build_round_evidence(
                 objective=objective.name,
                 risk_level=str(evidence_strategy.risk_level),
                 leverage=float(evidence_strategy.leverage),
+                effective_leverage=float(effective_leverage),
+                leverage_applies=bool(leverage_applies),
                 risk_per_trade=float(evidence_strategy.risk_per_trade),
                 max_position_pct=float(evidence_strategy.max_position_pct),
                 max_drawdown_limit_pct=float(evidence_strategy.max_drawdown_limit * 100.0),
@@ -913,6 +929,8 @@ def build_round_evidence(
                 objective=objective.name,
                 risk_level=str(evidence_strategy.risk_level),
                 leverage=float(evidence_strategy.leverage),
+                effective_leverage=float(effective_leverage),
+                leverage_applies=bool(leverage_applies),
                 risk_per_trade=float(evidence_strategy.risk_per_trade),
                 max_position_pct=float(evidence_strategy.max_position_pct),
                 max_drawdown_limit_pct=float(evidence_strategy.max_drawdown_limit * 100.0),
@@ -1006,6 +1024,9 @@ def build_round_evidence(
         "objective": objective.name,
         "use_objective_strategy_defaults": bool(use_objective_strategy_defaults),
         "strategy": evidence_strategy.asdict(),
+        "configured_leverage": float(evidence_strategy.leverage),
+        "effective_leverage": float(effective_leverage),
+        "leverage_applies": bool(leverage_applies),
         "starting_cash": float(starting_cash),
         "symbol_count_requested": len([str(symbol).strip() for symbol in (symbols or []) if str(symbol).strip()]) if symbols else int(symbol_count),
         "symbol_count_completed": len(metrics),
@@ -1035,6 +1056,7 @@ __all__ = [
     "SelectedSymbol",
     "build_round_evidence",
     "fetch_full_history",
+    "effective_leverage_for_market",
     "make_evidence_paths",
     "market_data_health_for_symbol",
     "render_comparison_svg",
