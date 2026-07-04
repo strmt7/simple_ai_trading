@@ -130,6 +130,14 @@ positive P&L, sufficient closed trades, buy-and-hold edge, and drawdown
 discipline. Rejected model-lab candidates now include per-window `reject_reason`
 diagnostics so operators can distinguish missing trade count, negative P&L,
 buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
+Selected training-suite models also receive feature-group ablation replays.
+The selected advanced feature vector is replayed with base features, extra
+lookback windows, technical-confluence features, nonlinear transforms, and
+polynomial interactions zeroed out one group at a time. The report records
+acceptance, score, P&L, drawdown, trade count, and delta versus the selected
+model. This is accountability evidence first; it does not automatically reject
+a model until enough cross-symbol and out-of-sample evidence proves a feature
+family is harmful.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades

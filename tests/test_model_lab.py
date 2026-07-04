@@ -123,6 +123,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
                 best_score=0.12,
                 hybrid_profile="balanced_neighbors",
                 hybrid_ablation=[{"removed_expert_kind": "lorentzian_knn", "delta_vs_best": -0.03}],
+                feature_ablation=[{"removed_group": "technical_confluence", "delta_vs_selected": -0.04}],
                 meta_label_report={"status": "trained", "take_precision": 0.75},
             )],
             total_rows=123,
@@ -163,6 +164,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.portfolio_risk["accepted"] is True
     assert report.outcomes[0].hybrid_profiles["regular"] == "balanced_neighbors"
     assert report.outcomes[0].hybrid_ablation["regular"][0]["removed_expert_kind"] == "lorentzian_knn"
+    assert report.outcomes[0].feature_ablation["regular"][0]["removed_group"] == "technical_confluence"
     assert report.outcomes[0].meta_label_validation["regular"]["status"] == "trained"
     assert report.outcomes[0].stress_validation["accepted"] is True
     assert report.outcomes[0].robustness_validation["accepted"] is True

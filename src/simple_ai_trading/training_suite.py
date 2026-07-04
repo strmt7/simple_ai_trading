@@ -31,6 +31,7 @@ from typing import Any, Callable, Sequence
 from .advanced_model import (
     AdvancedFeatureConfig,
     advanced_feature_dimension,
+    advanced_feature_group_spans,
     advanced_feature_signature,
     default_config_for,
     make_advanced_rows,
@@ -138,6 +139,7 @@ class ObjectiveOutcome:
     hybrid_ablation: list[dict[str, object]] = field(default_factory=list)
     hybrid_rescue: bool = False
     hybrid_rescue_candidates: int = 0
+    feature_ablation: list[dict[str, object]] = field(default_factory=list)
     meta_label_report: dict[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
@@ -607,6 +609,109 @@ def _candidate_rank_key(entry: dict[str, Any]) -> tuple[int, float]:
     return 0, _rejected_candidate_quality(entry)
 
 
+class _FeatureAblationModel:
+    """Proxy that zeroes one contiguous feature group before scoring."""
+
+    def __init__(self, model: TrainedModel, *, group_name: str, start: int, end: int) -> None:
+        self._model = model
+        self.ablated_feature_group = str(group_name)
+        self.ablated_feature_start = int(start)
+        self.ablated_feature_end = int(end)
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._model, name)
+
+    def _mask(self, features: Sequence[float]) -> tuple[float, ...]:
+        values = list(features)
+        start = max(0, min(len(values), self.ablated_feature_start))
+        end = max(start, min(len(values), self.ablated_feature_end))
+        for index in range(start, end):
+            values[index] = 0.0
+        return tuple(values)
+
+    def predict_proba(self, features: tuple[float, ...]) -> float:
+        return self._model.predict_proba(self._mask(features))
+
+    def predict(self, features: tuple[float, ...], threshold: float) -> int:
+        return int(self.predict_proba(features) >= threshold)
+
+
+def _feature_ablation_report(
+    rows: Sequence[ModelRow],
+    model: TrainedModel,
+    strategy: StrategyConfig,
+    feature_cfg: AdvancedFeatureConfig,
+    objective: ObjectiveSpec,
+    *,
+    market_type: str,
+    starting_cash: float,
+    score_batch_size: int,
+) -> list[dict[str, object]]:
+    """Replay the selected model with broad feature groups zeroed out."""
+
+    if not rows:
+        return []
+    expected_dim = advanced_feature_dimension(feature_cfg)
+    if int(getattr(model, "feature_dim", -1)) != expected_dim:
+        return [{
+            "status": "skipped",
+            "reason": "feature_dimension_mismatch",
+            "model_feature_dim": int(getattr(model, "feature_dim", -1)),
+            "expected_feature_dim": expected_dim,
+        }]
+    baseline_result = run_backtest(
+        list(rows),
+        model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend="cpu",
+        score_batch_size=score_batch_size,
+    )
+    baseline_accepted = objective.accepts(baseline_result)
+    baseline_score = objective.score(baseline_result) if baseline_accepted else float("-inf")
+    reports: list[dict[str, object]] = []
+    for span in advanced_feature_group_spans(feature_cfg):
+        proxy = _FeatureAblationModel(
+            model,
+            group_name=span.name,
+            start=span.start,
+            end=span.end,
+        )
+        result = run_backtest(
+            list(rows),
+            proxy,  # type: ignore[arg-type]
+            strategy,
+            starting_cash=starting_cash,
+            market_type=market_type,
+            compute_backend="cpu",
+            score_batch_size=score_batch_size,
+        )
+        accepted = objective.accepts(result)
+        score = objective.score(result) if accepted else float("-inf")
+        delta = (
+            float(score - baseline_score)
+            if math.isfinite(float(score)) and math.isfinite(float(baseline_score))
+            else float("-inf")
+        )
+        reports.append({
+            "status": "evaluated",
+            "removed_group": span.name,
+            "start": span.start,
+            "end": span.end,
+            "size": span.size,
+            "accepted": accepted,
+            "score": float(score),
+            "baseline_score": float(baseline_score),
+            "delta_vs_selected": delta,
+            "realized_pnl": float(result.realized_pnl),
+            "max_drawdown": float(result.max_drawdown),
+            "closed_trades": int(result.closed_trades),
+            "reject_reason": objective.reject_reason(result),
+        })
+    return reports
+
+
 def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
     model = entry.get("model")
     feature_cfg = entry.get("feature_cfg")
@@ -619,6 +724,7 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
         "hybrid_rescue": bool(entry.get("hybrid_rescue", False)),
         "hybrid_profile": entry.get("hybrid_profile"),
         "hybrid_ablation": list(entry.get("hybrid_ablation", []) or []),
+        "feature_ablation": list(entry.get("feature_ablation", []) or []),
         "feature_signature": str(entry.get("feature_signature") or ""),
         "label_threshold": (
             float(feature_cfg.label_threshold)
@@ -1644,6 +1750,31 @@ def train_for_objective(
             "reason": "runner_path",
             "objective": objective.name,
         }
+    feature_ablation: list[dict[str, object]] = []
+    if runner is None:
+        try:
+            ablation_rows, ablation_feature_cfg = _rows_for_candidate(
+                candle_list,
+                rows,
+                feature_cfg,
+                best["candidate"],
+            )
+            feature_ablation = _feature_ablation_report(
+                ablation_rows,
+                best["model"],
+                best["strategy"],
+                ablation_feature_cfg,
+                objective,
+                market_type=market_type,
+                starting_cash=starting_cash,
+                score_batch_size=effective_score_batch_size,
+            )
+        except (ValueError, RuntimeError, OSError) as exc:
+            feature_ablation = [{
+                "status": "error",
+                "reason": str(exc),
+                "objective": objective.name,
+            }]
     model_path = output_dir / f"model_{objective.name}.json"
     serialize_model(best["model"], model_path)
 
@@ -1715,6 +1846,7 @@ def train_for_objective(
         hybrid_ablation=list(best.get("hybrid_ablation", []) or []),
         hybrid_rescue=bool(best.get("hybrid_rescue", False)),
         hybrid_rescue_candidates=int(hybrid_rescue_candidates),
+        feature_ablation=feature_ablation,
         meta_label_report=meta_label_report,
     )
 
