@@ -228,6 +228,29 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         ),
     ),
     ModelFamilyBlueprint(
+        family="cross_asset_graph_sequence",
+        role="Multi-asset graph/sequence model for correlation shocks, rank forecasts, and portfolio-context features.",
+        status="research_candidate",
+        training_target=(
+            "No-lookahead cross-symbol return ranks, volatility regimes, dynamic correlation graphs, "
+            "and diversification stress features."
+        ),
+        gpu_path="Compact PyTorch DirectML graph/sequence candidate; CPU fallback for contract tests.",
+        risk_levels=RISK_LEVELS,
+        execution_authority="portfolio_context_features_only_until_ablation_passes",
+        validation_gates=(
+            "point-in-time cross-symbol joins",
+            "graph sparsity stability",
+            "ablation versus independent-symbol baseline",
+            "portfolio CVaR and correlation-cluster stress",
+        ),
+        sources=(
+            "https://arxiv.org/html/2502.06707v2",
+            "https://arxiv.org/abs/2402.18959",
+            "https://arxiv.org/abs/1912.09363",
+        ),
+    ),
+    ModelFamilyBlueprint(
         family="deep_lob_microstructure",
         role="Limit-order-book model family for spread, depth, queue, and short-horizon mid-price dynamics.",
         status="blocked_until_depth_store",
@@ -243,8 +266,12 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         ),
         sources=(
             "https://arxiv.org/abs/1808.03668",
+            "https://arxiv.org/abs/2405.18938",
             "https://arxiv.org/html/2403.09267v1",
-            "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints",
+            (
+                "https://developers.binance.com/docs/derivatives/usds-margined-futures/"
+                "websocket-market-streams/How-to-manage-a-local-order-book-correctly"
+            ),
         ),
     ),
     ModelFamilyBlueprint(
@@ -263,7 +290,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "human-visible research artifact",
         ),
         sources=(
-            "https://arxiv.org/abs/2111.09395",
+            "https://arxiv.org/abs/2011.09607",
             "https://github.com/AI4Finance-Foundation/FinRL",
             "https://nautilustrader.io/docs/latest/concepts/backtesting/",
         ),
@@ -352,18 +379,20 @@ TRAINING_LANES: tuple[TrainingLaneBlueprint, ...] = (
     ),
     TrainingLaneBlueprint(
         lane="sequence_forecast_features",
-        families=("patch_transformer", "foundation_forecaster"),
+        families=("patch_transformer", "foundation_forecaster", "cross_asset_graph_sequence"),
         research_takeaway=(
-            "Patch-based and foundation time-series models are promising for "
-            "longer context, but forecasts must first be logged features."
+            "Patch-based, foundation, and cross-asset graph/sequence models are "
+            "promising for longer context, but forecasts must first be logged features."
         ),
         next_build_step=(
-            "Build a timestamped forecast-feature store with ablation replay "
-            "before allowing sequence forecasts to influence position sizing."
+            "Build a timestamped forecast-feature store with ablation replay, "
+            "including cross-symbol graph features, before allowing sequence "
+            "forecasts to influence position sizing."
         ),
         promotion_gates=(
             "forecast timestamp audit proves no lookahead",
             "ablation beats tabular baseline after fees and slippage",
+            "cross-symbol joins are point-in-time and portfolio-aware",
             "DirectML capability artifact for GPU runs",
             "CPU-only mode disables AI approval",
         ),
@@ -487,6 +516,58 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         usage_policy="Use for LOB tensor architecture inspiration after L2 depth storage exists.",
     ),
     ResearchSourceBlueprint(
+        source_id="hlob",
+        label="HLOB order-book structure model",
+        url="https://arxiv.org/abs/2405.18938",
+        source_type="primary_research",
+        applied_to=("deep_lob_microstructure",),
+        usage_policy="Use for deeper LOB level-structure inspiration after symbol-specific depth data exists.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="binance_local_order_book",
+        label="Binance local order book reconstruction",
+        url=(
+            "https://developers.binance.com/docs/derivatives/usds-margined-futures/"
+            "websocket-market-streams/How-to-manage-a-local-order-book-correctly"
+        ),
+        source_type="official_docs",
+        applied_to=("deep_lob_microstructure",),
+        usage_policy="Use for live-like depth synchronization requirements before LOB model training.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="finmamba",
+        label="FinMamba market-aware graph sequence model",
+        url="https://arxiv.org/html/2502.06707v2",
+        source_type="primary_research",
+        applied_to=("cross_asset_graph_sequence",),
+        usage_policy=(
+            "Use for cross-asset dynamic graph inspiration; output remains a "
+            "logged feature until ablation passes."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="mambastock",
+        label="MambaStock selective state-space model",
+        url="https://arxiv.org/abs/2402.18959",
+        source_type="primary_research",
+        applied_to=("cross_asset_graph_sequence",),
+        usage_policy=(
+            "Use for efficient sequence-model inspiration; require repeated-seed "
+            "and temporal robustness evidence."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="finrl",
+        label="FinRL reproducible reinforcement-learning workflow",
+        url="https://arxiv.org/abs/2011.09607",
+        source_type="primary_research",
+        applied_to=("rl_meta_controller",),
+        usage_policy=(
+            "Use for environment/agent/evaluation structure, with costs, "
+            "liquidity, and risk aversion embedded."
+        ),
+    ),
+    ResearchSourceBlueprint(
         source_id="lightgbm_opencl",
         label="LightGBM GPU/OpenCL",
         url="https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html",
@@ -519,12 +600,59 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         usage_policy="Use as product/feature inspiration for compact confluence scoring, not as a copied ruleset.",
     ),
     ResearchSourceBlueprint(
+        source_id="tradingview_strategies",
+        label="TradingView strategy tester and order simulation",
+        url="https://www.tradingview.com/pine-script-docs/concepts/strategies/",
+        source_type="official_docs",
+        applied_to=("adaptive_hybrid_model_zoo", "meta_label_gate"),
+        usage_policy=(
+            "Use for product/backtest UX expectations around order types and "
+            "forward testing, not copied entries."
+        ),
+    ),
+    ResearchSourceBlueprint(
         source_id="directml_pytorch",
         label="PyTorch with DirectML",
         url="https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows",
         source_type="official_docs",
         applied_to=("patch_transformer", "foundation_forecaster", "ai_risk_reviewer"),
         usage_policy="Use for Windows GPU capability detection and DirectML training/scoring paths.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="onnx_directml",
+        label="ONNX Runtime DirectML execution provider",
+        url="https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html",
+        source_type="official_docs",
+        applied_to=("foundation_forecaster", "ai_risk_reviewer", "cross_asset_graph_sequence"),
+        usage_policy=(
+            "Use for inference parity and packaging constraints; fixed shapes "
+            "and session limits must be recorded."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="boe_agentic_ai",
+        label="Bank of England agentic AI financial-stability speech",
+        url=(
+            "https://www.bankofengland.co.uk/speech/2026/june/"
+            "sarah-breeden-panel-at-the-european-central-bank-forum-on-central-banking-2026"
+        ),
+        source_type="governance",
+        applied_to=("ai_risk_reviewer", "rl_meta_controller", "foundation_forecaster"),
+        usage_policy=(
+            "Use for governance inspiration: AI components must not bypass "
+            "circuit breakers or accountability logs."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="sec_market_access_rule",
+        label="SEC market-access risk controls",
+        url=(
+            "https://www.sec.gov/rules-regulations/staff-guidance/"
+            "trading-markets-frequently-asked-questions/divisionsmarketregfaq-0"
+        ),
+        source_type="governance",
+        applied_to=("ai_risk_reviewer", "meta_label_gate", "rl_meta_controller"),
+        usage_policy="Use for automated pre-trade control inspiration: limits must apply before any order is routed.",
     ),
 )
 
@@ -559,6 +687,7 @@ RISK_BLUEPRINTS: tuple[RiskTrainingBlueprint, ...] = (
             "lightgbm_opencl",
             "patch_transformer",
             "foundation_forecaster",
+            "cross_asset_graph_sequence",
             "ai_risk_reviewer",
         ),
         veto_rules=(
@@ -579,6 +708,7 @@ RISK_BLUEPRINTS: tuple[RiskTrainingBlueprint, ...] = (
             "lightgbm_opencl",
             "patch_transformer",
             "foundation_forecaster",
+            "cross_asset_graph_sequence",
             "deep_lob_microstructure",
             "rl_meta_controller",
             "ai_risk_reviewer",

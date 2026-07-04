@@ -138,10 +138,34 @@ weakening risk controls.
   CSCV/PBO-style proxy over selection and validation scores. It blocks promotion
   when the in-sample winner falls below the out-of-sample median in both
   symmetric views, and it prints `pbo=` in the CLI training summary.
+- DeepLOB and HLOB reinforce that credible day-trading/HFT-style modeling
+  needs actual order-book tensors, not candle-only proxies. The app should not
+  promote an order-book model until it can reconstruct local books, prove depth
+  continuity, replay quote-time walk-forward windows, and simulate queue/fill
+  uncertainty per symbol.
+- FinMamba/Mamba-style research is useful inspiration for "trade anything"
+  workflows because cross-asset relationships and market regimes can change
+  quickly. In this repo, those models should begin as point-in-time
+  cross-symbol context features for rank, correlation-shock, and diversification
+  evidence; they must not directly emit orders.
+- FinRL is the right kind of reinforcement-learning inspiration: environment,
+  agent, evaluation, transaction-cost, liquidity, and risk-aversion structure.
+  That supports keeping RL in a sandboxed meta-control lane until the simulator
+  is realistic enough.
+- TradingView strategy docs are useful product inspiration for operator
+  expectations around market, limit, stop, stop-limit, backtesting, and forward
+  testing. They are not a source for copied strategies.
+- Bank of England and SEC risk-control material reinforces the same model rule:
+  autonomous AI can review or veto, but hard pre-trade limits, stops, kill
+  switches, and accountability logs remain deterministic and apply before order
+  routing.
 - DirectML remains the Windows-first AMD/NVIDIA-compatible research path for
   PyTorch experiments, with ONNX Runtime DirectML available for inference
-  parity checks. Every accelerated run must still persist backend package
-  versions, selected device, VRAM/RAM checks, and fallback reason.
+  parity checks. ONNX Runtime DirectML has practical packaging constraints:
+  prefer fixed tensor shapes, avoid shared multi-threaded `Run` calls on one
+  DirectML session, and record provider/fallback details. Every accelerated run
+  must still persist backend package versions, selected device, VRAM/RAM
+  checks, and fallback reason.
 
 Sources:
 
@@ -162,6 +186,16 @@ Sources:
 - <https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/>
 - <https://www.tradingview.com/script/AWNvbPRM-Nadaraya-Watson-Rational-Quadratic-Kernel-Non-Repainting/>
 - <https://www.tradingview.com/support/solutions/43000614331-technical-ratings/>
+- <https://arxiv.org/abs/1808.03668>
+- <https://arxiv.org/abs/2405.18938>
+- <https://arxiv.org/html/2502.06707v2>
+- <https://arxiv.org/abs/2402.18959>
+- <https://arxiv.org/abs/2011.09607>
+- <https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly>
+- <https://www.tradingview.com/pine-script-docs/concepts/strategies/>
+- <https://www.bankofengland.co.uk/speech/2026/june/sarah-breeden-panel-at-the-european-central-bank-forum-on-central-banking-2026>
+- <https://www.sec.gov/rules-regulations/staff-guidance/trading-markets-frequently-asked-questions/divisionsmarketregfaq-0>
+- <https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html>
 
 ## Model Families Worth Implementing
 
@@ -266,6 +300,34 @@ Sources:
 - <https://research.google/blog/a-decoder-only-foundation-model-for-time-series-forecasting/>
 - <https://arxiv.org/abs/2310.10688>
 
+### 4B. Cross-Asset Graph/Sequence Models
+
+The repo is no longer a single-Bitcoin concept. A realistic autonomous
+day-trading system needs to understand when assets move together, when
+correlations break, and when diversification is fake because the whole accepted
+set is one crowded trade. FinMamba-style market-aware graphs and selective
+state-space models are useful inspiration for this, but they should not be
+treated as magic alpha engines.
+
+Implementation direction:
+
+- Build a point-in-time cross-symbol feature store with return ranks,
+  volatility ranks, rolling correlation clusters, quote/liquidity ranks, and
+  regime states.
+- Train compact graph/sequence candidates to output portfolio-context features:
+  rank forecast, correlation-shock risk, diversification warning, and
+  market-wide stress probability.
+- Require graph sparsity stability and ablation against independent per-symbol
+  baselines before any output can influence sizing.
+- Keep execution authority at `portfolio_context_features_only` until
+  walk-forward, temporal robustness, and portfolio CVaR gates pass.
+
+Sources:
+
+- <https://arxiv.org/html/2502.06707v2>
+- <https://arxiv.org/abs/2402.18959>
+- <https://arxiv.org/abs/1912.09363>
+
 ### 5. Gradient-Boosting Candidates
 
 Tree ensembles are still practical for tabular technical, liquidity, and regime
@@ -309,7 +371,7 @@ Implementation direction:
 
 Sources:
 
-- <https://arxiv.org/html/2504.02281v3>
+- <https://arxiv.org/abs/2011.09607>
 - <https://github.com/AI4Finance-Foundation/FinRL>
 
 ## GPU Direction
@@ -367,6 +429,9 @@ Sources:
 - <https://www.cis.upenn.edu/~mkearns/papers/KearnsNevmyvakaHFTRiskBooks.pdf>
 - <https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints>
 - <https://binance.github.io/binance-api-swagger/>
+- <https://arxiv.org/abs/1808.03668>
+- <https://arxiv.org/abs/2405.18938>
+- <https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly>
 
 ## TradingView-Inspired Feature Ideas
 
@@ -389,6 +454,7 @@ Implementation direction:
 Sources:
 
 - <https://www.tradingview.com/pine-script-docs/language/built-ins/>
+- <https://www.tradingview.com/pine-script-docs/concepts/strategies/>
 - <https://www.tradingview.com/support/solutions/43000614331-technical-ratings/>
 - <https://www.tradingview.com/script/WhBzgfDu-Machine-Learning-Lorentzian-Classification/>
 - <https://www.tradingview.com/script/AWNvbPRM-Nadaraya-Watson-Rational-Quadratic-Kernel-Non-Repainting/>
@@ -430,10 +496,12 @@ Implemented objective gates:
    snapshots for queue/fill simulation.
 3. LightGBM OpenCL tabular candidate with repeated-seed validation.
 4. Patch-transformer research candidate using PyTorch DirectML.
-5. Foundation forecast feature provider with timestamped no-lookahead logs.
-6. RL sandbox for meta-control only after realistic depth simulation exists.
-7. Feature ablation reports for every indicator/model family.
-8. ONNX/WinML inference parity checks before packaging AI inference into the
+5. Cross-asset graph/sequence feature store for diversification-aware ranking
+   and correlation-shock warnings.
+6. Foundation forecast feature provider with timestamped no-lookahead logs.
+7. RL sandbox for meta-control only after realistic depth simulation exists.
+8. Feature ablation reports for every indicator/model family.
+9. ONNX/WinML inference parity checks before packaging AI inference into the
    Windows app.
 
 ## What Not To Do

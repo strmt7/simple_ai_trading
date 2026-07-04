@@ -33,6 +33,7 @@ def test_model_blueprint_training_lanes_cover_every_family() -> None:
     assert lane_family_names == family_names
     assert "sequence_forecast_features" in lanes
     assert "timestamped forecast-feature store" in lanes["sequence_forecast_features"].next_build_step
+    assert "cross_asset_graph_sequence" in lanes["sequence_forecast_features"].families
     assert "No direct orders" in lanes["sandbox_meta_control"].runtime_limit
 
 
@@ -40,6 +41,8 @@ def test_model_blueprint_source_catalog_blocks_copying_community_scripts() -> No
     sources = {source.source_id: source for source in research_sources()}
 
     assert "patchtst" in sources
+    assert sources["finmamba"].applied_to == ("cross_asset_graph_sequence",)
+    assert sources["boe_agentic_ai"].source_type == "governance"
     assert sources["lightgbm_opencl"].source_type == "official_docs"
     assert sources["tradingview_lorentzian"].source_type == "community_inspiration"
     assert "do not copy" in sources["tradingview_lorentzian"].usage_policy.lower()
