@@ -117,12 +117,34 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "self->hwnd_ = hwnd;" in source
     assert 'create_control(L"LISTBOX"' in source
     assert 'L"COMBOBOX"' in source
-    assert 'L"Stop And Close All"' in source
+    assert 'L"Dashboard"' in source
+    assert 'L"Market Data"' in source
+    assert 'L"Stop Trading"' in source
+    assert 'L"Backtest Chart"' in source
+    assert 'L"Activity Log"' in source
     assert "status_bar_" in source
+    assert "page_summary_" in source
     assert "kApiBudgetRefreshMs = 90000" in source
     assert 'L"api-budget --compact"' in source
+    assert "SIMPLE_AI_TRADING_REPO_ROOT" in source
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in source
+    assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
+    assert "runtime_summary()" in source
     assert "repo_root()" in source
     assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
+
+
+def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
+    root = windows_app._repo_root()
+    smoke = (root / "tools" / "smoke_native_windows_ui.ps1").read_text(encoding="utf-8")
+    capture = (root / "tools" / "capture_native_windows_app.ps1").read_text(encoding="utf-8")
+
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
+    assert "Stop Trading" in smoke
+    assert "Backtest Chart" in smoke
+    assert "SetProcessDPIAware" in capture
+    assert "PrintWindow" in capture
+    assert "Captured window is too small" in capture
 
 
 def _wide(text: str) -> str:

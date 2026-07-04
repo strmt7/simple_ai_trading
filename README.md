@@ -96,7 +96,7 @@ or:
 .\run-gui.cmd
 ```
 
-The Windows app is a native C++20 Win32 operator workstation inspired by the SuperZip app structure: PowerShell/CMake build, DPI-aware/resizable Win32 layout, DWM dark window chrome, real listbox/combobox/edit/button controls, grouped operator workflows, and generated workflow metadata. The command picker is still generated from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command, option flag, positional argument, or choice is not present in the native contract.
+The Windows app is a native C++20 Win32 operator workstation inspired by the SuperZip app structure: PowerShell/CMake build, DPI-aware/resizable Win32 layout, DWM dark window chrome, real listbox/combobox/edit/button controls, grouped operator workflows, and generated workflow metadata. The current shell uses a dashboard layout with header health cards, primary workflow cards, safety controls, an activity log, and bottom API-budget telemetry. The command picker is still generated from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command, option flag, positional argument, or choice is not present in the native contract.
 
 The interface is intentionally simple: the app groups workflows by operator intent instead of exposing every internal model check as a separate task. Complex safeguards run in the background and surface as clear states such as blocked, waiting, review required, or stop-and-close.
 
@@ -107,6 +107,8 @@ Startup behavior:
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
 - The app has direct buttons for AI preflight, AI risk review, risk report, model lab, backtest graph, and stop-and-close local autonomous positions.
 - The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
+- `tools\smoke_native_windows_ui.ps1` launches the app in dry-run mode, walks every workflow page, clicks the dashboard cards and safety buttons, and then performs a real Compute smoke unless `-SkipRealCompute` is passed.
+- `tools\capture_native_windows_app.ps1` creates a DPI-aware PNG artifact of the dashboard and fails if the captured app is smaller than the configured minimum window size.
 
 ## Core Workflows
 

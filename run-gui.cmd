@@ -15,6 +15,7 @@ if defined PYTHONPATH (
 ) else (
     set "PYTHONPATH=%APP_DIR%src"
 )
+set "SIMPLE_AI_TRADING_REPO_ROOT=%APP_DIR:~0,-1%"
 
 set "NATIVE_EXE=%APP_DIR%build\windows\SimpleAITrading.exe"
 if exist "%NATIVE_EXE%" (
