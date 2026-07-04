@@ -76,9 +76,11 @@ from .risk_controls import (
     EntryRiskDecision,
     assess_entry_risk,
     build_risk_policy_report,
+    market_regime_unpredictability,
     render_risk_policy_report,
     stop_loss_sized_notional_pct,
 )
+from .regime import classify_market_regime
 from . import risk_workflows
 from .strategy_overrides import apply_model_strategy_overrides
 from .storage import write_json_atomic
@@ -145,6 +147,7 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
         "min_trade_count_24h": 50_000,
         "max_spread_bps": 5.0,
         "min_liquidity_score": 0.80,
+        "max_regime_unpredictability": 0.60,
         "training_epochs": 180,
         "confidence_beta": 0.90,
         "external_signals_enabled": True,
@@ -178,6 +181,7 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
         "min_trade_count_24h": 25_000,
         "max_spread_bps": 8.0,
         "min_liquidity_score": 0.70,
+        "max_regime_unpredictability": 0.72,
         "training_epochs": 250,
         "confidence_beta": 0.85,
         "external_signals_enabled": True,
@@ -211,6 +215,7 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
         "min_trade_count_24h": 15_000,
         "max_spread_bps": 12.0,
         "min_liquidity_score": 0.60,
+        "max_regime_unpredictability": 0.85,
         "training_epochs": 300,
         "confidence_beta": 0.80,
         "external_signals_enabled": True,
@@ -685,6 +690,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_strategy.add_argument("--max-spread-bps", type=float, default=None)
     parser_strategy.add_argument("--min-liquidity-score", type=float, default=None)
     parser_strategy.add_argument("--unpredictability-cooldown", type=int, default=None)
+    parser_strategy.add_argument("--max-regime-unpredictability", type=float, default=None)
     parser_strategy.add_argument("--max-prediction-entropy", type=float, default=None)
     parser_strategy.add_argument("--min-model-confidence", type=float, default=None)
     parser_strategy.add_argument("--max-trades-per-day", type=int, default=None)
@@ -4220,6 +4226,8 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         updates["min_liquidity_score"] = _clamp(float(args.min_liquidity_score), 0.0, 1.0)
     if getattr(args, "unpredictability_cooldown", None) is not None:
         updates["unpredictability_cooldown_minutes"] = max(0, int(args.unpredictability_cooldown))
+    if getattr(args, "max_regime_unpredictability", None) is not None:
+        updates["max_regime_unpredictability"] = _clamp(float(args.max_regime_unpredictability), 0.0, 1.0)
     if getattr(args, "max_prediction_entropy", None) is not None:
         updates["max_prediction_entropy"] = _clamp(float(args.max_prediction_entropy), 0.0, 1.0)
     if getattr(args, "min_model_confidence", None) is not None:
@@ -5933,6 +5941,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     qty = 0.0
     wait_ticks = cfg.cooldown_minutes
     cooldown_left = 0
+    unpredictability_cooldown_left = 0
     if leverage > MAX_AUTONOMOUS_LEVERAGE:
         leverage = MAX_AUTONOMOUS_LEVERAGE
     elif leverage < 1.0:
@@ -6105,6 +6114,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         )
 
     for i in range(args.steps):
+        if unpredictability_cooldown_left > 0:
+            unpredictability_cooldown_left -= 1
         try:
             candles = client.get_klines(runtime.symbol, runtime.interval, limit=max(cfg.model_lookback, 300))
         except BinanceAPIError as exc:
@@ -6175,6 +6186,38 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             )
             model_loads += 1
         latest = rows[-1]
+        regime_window_size = max(8, min(len(rows), int(cfg.liquidity_lookback_bars)))
+        regime_evidence = classify_market_regime(rows[-regime_window_size:])
+        regime_score = market_regime_unpredictability(
+            regime_evidence.dominant_regime,
+            regime_evidence.confidence,
+            regime_evidence.notes,
+        )
+        regime_limit = float(cfg.max_regime_unpredictability)
+        if regime_score > regime_limit:
+            unpredictability_cooldown_left = max(
+                unpredictability_cooldown_left,
+                max(1, int(cfg.unpredictability_cooldown_minutes)),
+            )
+        regime_cooldown_active = unpredictability_cooldown_left > 0
+        if regime_cooldown_active or regime_score > regime_limit:
+            live_events.append(
+                {
+                    "step": i + 1,
+                    "status": "regime_unpredictability_gate",
+                    "regime": regime_evidence.dominant_regime,
+                    "confidence": float(regime_evidence.confidence),
+                    "score": float(regime_score),
+                    "limit": float(regime_limit),
+                    "cooldown_left": int(unpredictability_cooldown_left),
+                    "notes": list(regime_evidence.notes),
+                }
+            )
+            relation = ">" if regime_score > regime_limit else "<="
+            print(
+                f"step {i + 1:>2}: regime gate {regime_evidence.dominant_regime} "
+                f"score={regime_score:.2f}{relation}{regime_limit:.2f} cooldown={unpredictability_cooldown_left}"
+            )
         if hasattr(model, "feature_means") and hasattr(model, "feature_stds"):
             try:
                 drift = feature_drift_report([latest], model)
@@ -6378,6 +6421,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 price=price,
                 drawdown=current_drawdown,
                 drawdown_limit=drawdown_limit,
+                regime=regime_evidence.dominant_regime,
+                regime_confidence=regime_evidence.confidence,
+                regime_notes=regime_evidence.notes,
+                regime_unpredictability_score=regime_score,
+                max_regime_unpredictability=regime_limit,
+                regime_cooldown_active=regime_cooldown_active,
             )
             if not entry_risk.allowed:
                 message, event = _live_entry_risk_skip(

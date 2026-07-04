@@ -210,6 +210,16 @@ correct action is to wait. That wait can last for many days if the configured
 cooldowns and repeated checks keep failing; the UI should show a simple
 waiting/blocked state while the detailed evidence remains in reports.
 
+The live loop now applies this as an explicit entry-risk gate. On every step,
+it classifies the rolling point-in-time model rows, computes a deterministic
+`regime_unpredictability_score`, compares that score with
+`StrategyConfig.max_regime_unpredictability`, and records
+`regime_unpredictability_gate` events with regime name, confidence, score,
+threshold, notes, and cooldown remaining. Conservative defaults block at a
+lower score than regular or aggressive profiles. An active cooldown blocks new
+entries before order sizing, while existing bot-owned positions still follow
+their normal stop/take/close logic.
+
 Signed live startup also checks the final model artifact. `model-lab` must stamp
 `execution_validation` into the serialized model after the symbol passes
 liquidity selection, stress replay, temporal robustness, and final portfolio

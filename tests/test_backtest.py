@@ -126,6 +126,44 @@ def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
     assert skipped.trade_log == ()
 
 
+def test_backtest_applies_regime_unpredictability_entry_gate() -> None:
+    closes = [100.0, 106.0, 94.0, 107.0, 93.0, 108.0, 92.0, 109.0, 91.0, 110.0, 90.0, 111.0]
+    rows = [
+        ModelRow(timestamp=i * 60_000, close=close, features=(1.0 if i >= 7 else -1.0,), label=1)
+        for i, close in enumerate(closes)
+    ]
+    model = TrainedModel(
+        weights=[10.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.60,
+    )
+    base_cfg = StrategyConfig(
+        cooldown_minutes=0,
+        max_regime_unpredictability=1.0,
+        unpredictability_cooldown_minutes=0,
+        liquidity_lookback_bars=8,
+        signal_threshold=0.60,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+    )
+    baseline = run_backtest(rows, model, base_cfg, starting_cash=1000.0)
+    gated = run_backtest(
+        rows,
+        model,
+        StrategyConfig(**{**base_cfg.asdict(), "max_regime_unpredictability": 0.40, "unpredictability_cooldown_minutes": 5}),
+        starting_cash=1000.0,
+    )
+
+    assert baseline.closed_trades >= 1
+    assert gated.closed_trades == 0
+    assert gated.regime_entry_skips > 0
+    assert gated.trade_log == ()
+
+
 def test_backtest_downsizes_entries_after_measured_low_liquidity_signal() -> None:
     base_ts = 1_767_621_600_000  # 2026-01-05 14:00:00 UTC.
     rows = [

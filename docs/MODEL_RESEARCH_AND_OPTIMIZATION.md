@@ -397,6 +397,10 @@ backtests or signed testnet/paper artifacts with the provenance required by
   adds full-history paging, data-coverage truth records, timestamped chart
   axes, and Binance request-weight telemetry so future optimization reports can
   be audited for timescale, gaps, row counts, and API cost.
+- [Round 004 - Regime Entry Gate](optimization/round-004-regime-entry-gate.md)
+  adds a live-entry regime-unpredictability score and cooldown gate so the bot
+  can wait through volatile chop, mixed low-separation regimes, short windows,
+  or insufficient data instead of forcing trades.
 
 ## SuperZip Windows-App Alignment
 
@@ -439,6 +443,9 @@ assert that every CLI command appears in the Windows app.
   chronological temporal robustness windows.
 - No model-lab symbol acceptance when temporal windows have weak statistical
   edge evidence after selection.
+- No fresh live entry when rolling market-regime evidence exceeds the selected
+  risk profile's `max_regime_unpredictability` threshold or its cooldown is
+  still active.
 - No model-lab symbol acceptance when the selected score does not remain
   positive after the multiple-trials selection-risk haircut.
 - No model-lab symbol acceptance when closed-trade learning feedback shows

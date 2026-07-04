@@ -157,6 +157,7 @@ class StrategyConfig:
     max_spread_bps: float = 5.0
     min_liquidity_score: float = 0.80
     unpredictability_cooldown_minutes: int = 90
+    max_regime_unpredictability: float = 0.60
     max_prediction_entropy: float = 0.88
     min_model_confidence: float = 0.66
     liquidation_buffer_pct: float = 0.03
@@ -246,6 +247,7 @@ class StrategyConfig:
         self.max_spread_bps = max(0.0, _finite_float(self.max_spread_bps, 5.0))
         self.min_liquidity_score = min(1.0, max(0.0, _finite_float(self.min_liquidity_score, 0.80)))
         self.unpredictability_cooldown_minutes = max(0, _coerce_int(self.unpredictability_cooldown_minutes, 90))
+        self.max_regime_unpredictability = min(1.0, max(0.0, _finite_float(self.max_regime_unpredictability, 0.60)))
         self.max_prediction_entropy = min(1.0, max(0.0, _finite_float(self.max_prediction_entropy, 0.97)))
         self.min_model_confidence = min(1.0, max(0.0, _finite_float(self.min_model_confidence, 0.66)))
         self.liquidation_buffer_pct = min(1.0, max(0.0, _finite_float(self.liquidation_buffer_pct, 0.03)))

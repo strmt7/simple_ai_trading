@@ -165,3 +165,4 @@ def test_runtime_ai_defaults_enabled_and_strategy_defaults_conservative() -> Non
     assert strategy.risk_level == "conservative"
     assert strategy.reinvest_profits is False
     assert strategy.leverage == 20.0
+    assert strategy.max_regime_unpredictability == 0.60

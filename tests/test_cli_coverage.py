@@ -1799,7 +1799,7 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
             return 0.99
 
     save_runtime(RuntimeConfig(managed_usdc=1000.0, dry_run=True))
-    save_strategy(StrategyConfig(enabled_features=("momentum_1",)))
+    save_strategy(StrategyConfig(enabled_features=("momentum_1",), max_regime_unpredictability=1.0))
     args.paper = True
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [SimpleNamespace(timestamp=1, close=0.0, features=(0.0,))])
     monkeypatch.setattr(cli, "_build_live_model", lambda *_args, **_kwargs: _RiskModel())
@@ -3023,6 +3023,7 @@ def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, mon
             low_liquidity_size_multiplier=0.25,
             low_liquidity_signal_threshold_add=0.0,
             dynamic_liquidity_session_enabled=False,
+            max_regime_unpredictability=1.0,
         )
     )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
@@ -3186,7 +3187,15 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
 
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
-    save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, max_trades_per_day=1, cooldown_minutes=0))
+    save_strategy(
+        StrategyConfig(
+            risk_per_trade=0.01,
+            max_position_pct=0.2,
+            max_trades_per_day=1,
+            cooldown_minutes=0,
+            max_regime_unpredictability=1.0,
+        )
+    )
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _StepModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _CappedClient())
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
@@ -5147,6 +5156,7 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
             max_drawdown_limit=0.01,
             stop_loss_pct=0.99,
             cooldown_minutes=0,
+            max_regime_unpredictability=1.0,
         )
     )
     model_file = tmp_path / "model.json"
@@ -5326,6 +5336,7 @@ def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, 
             take_profit_pct=0.95,
             stop_loss_pct=0.99,
             max_drawdown_limit=0.01,
+            max_regime_unpredictability=1.0,
         )
     )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EmergencyClient())
@@ -5447,6 +5458,7 @@ def test_command_live_handles_partial_emergency_close(tmp_path, monkeypatch) -> 
             take_profit_pct=0.95,
             stop_loss_pct=0.99,
             max_drawdown_limit=0.01,
+            max_regime_unpredictability=1.0,
         )
     )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _PartialEmergencyClient())
@@ -5948,10 +5960,11 @@ def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatc
             max_position_pct=1.0,
             take_profit_pct=0.95,
             stop_loss_pct=0.99,
-            max_drawdown_limit=0.20,
-            feature_windows=(4, 20),
+                max_drawdown_limit=0.20,
+                feature_windows=(4, 20),
+                max_regime_unpredictability=1.0,
+            )
         )
-    )
 
     class _DrawdownClient:
         call_count = 0

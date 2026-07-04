@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from .types import RuntimeConfig, StrategyConfig
 from .assets import MAX_AUTONOMOUS_LEVERAGE
@@ -103,6 +103,50 @@ def _metric_float(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError, OverflowError):
         return float("nan")
+
+
+_UNPREDICTABLE_REGIMES = frozenset({"volatile_chop", "mixed", "insufficient_data"})
+
+
+def market_regime_unpredictability(
+    regime: str | None,
+    confidence: float | int | None = None,
+    notes: Sequence[str] | None = None,
+) -> float:
+    """Return a deterministic 0-1 score for regimes where new entries should wait.
+
+    This intentionally uses only point-in-time regime evidence. It is a risk
+    gate, not a predictive alpha model: high values mean the market state is too
+    noisy, under-separated, or data-poor for a fresh autonomous entry.
+    """
+
+    name = str(regime or "").strip().lower()
+    conf = _metric_float(confidence)
+    if not math.isfinite(conf):
+        conf = 0.0
+    conf = max(0.0, min(1.0, conf))
+    note_set = {str(note).strip().lower() for note in (notes or ())}
+    if name == "insufficient_data":
+        score = 1.0
+    elif name == "volatile_chop":
+        score = 0.72 + 0.24 * conf
+    elif name == "mixed":
+        score = 0.58 + 0.30 * (1.0 - conf)
+    elif name == "range_bound":
+        score = 0.35 + 0.20 * (1.0 - conf)
+    elif name == "serial_correlation":
+        score = 0.30 + 0.15 * (1.0 - conf)
+    elif name in {"trend_up", "trend_down"}:
+        score = 0.18 + 0.22 * (1.0 - conf)
+    else:
+        score = 0.65
+    if "low_regime_separation" in note_set:
+        score += 0.18
+    if "short_window" in note_set:
+        score += 0.08
+    if "flat_returns" in note_set:
+        score += 0.05
+    return max(0.0, min(1.0, float(score)))
 
 
 def stop_loss_sized_notional_pct(
@@ -343,6 +387,15 @@ def build_risk_policy_report(
             limit=">=0.60",
         )
     )
+    checks.append(
+        _check(
+            "ok" if strategy.max_regime_unpredictability <= 0.85 else "warn",
+            "regime unpredictability gate",
+            f"max score {strategy.max_regime_unpredictability:.2f}; cooldown {strategy.unpredictability_cooldown_minutes}m",
+            metric=strategy.max_regime_unpredictability,
+            limit="<=0.85",
+        )
+    )
 
     if strategy.max_trades_per_day <= 0:
         checks.append(_check("warn", "daily trade cap", "disabled", metric=0, limit=">0"))
@@ -453,7 +506,18 @@ def assess_entry_risk(
     network_errors: int = 0,
     max_network_errors: int = 0,
     recovery_pending: bool = False,
+    regime: str | None = None,
+    regime_confidence: float | None = None,
+    regime_notes: Sequence[str] | None = None,
+    regime_unpredictability_score: float | None = None,
+    max_regime_unpredictability: float = 1.0,
+    regime_cooldown_active: bool = False,
 ) -> EntryRiskDecision:
+    computed_regime_score = (
+        market_regime_unpredictability(regime, regime_confidence, regime_notes)
+        if regime_unpredictability_score is None
+        else _metric_float(regime_unpredictability_score)
+    )
     metrics: dict[str, Any] = {
         "direction": int(direction),
         "position_side": int(position_side),
@@ -473,6 +537,11 @@ def assess_entry_risk(
         "network_errors": int(network_errors),
         "max_network_errors": int(max_network_errors),
         "recovery_pending": bool(recovery_pending),
+        "regime": str(regime or ""),
+        "regime_confidence": _metric_float(regime_confidence),
+        "regime_unpredictability_score": computed_regime_score,
+        "max_regime_unpredictability": _metric_float(max_regime_unpredictability),
+        "regime_cooldown_active": bool(regime_cooldown_active),
     }
     finite_keys = (
         "cash",
@@ -488,6 +557,16 @@ def assess_entry_risk(
         return EntryRiskDecision(False, "nonfinite", "non-finite risk input", metrics)
     if recovery_pending:
         return EntryRiskDecision(False, "recovery_pending", "post-interruption recovery must finish before entry", metrics)
+    max_regime_score = _metric_float(max_regime_unpredictability)
+    if regime_cooldown_active:
+        return EntryRiskDecision(False, "regime_cooldown", "market-regime unpredictability cooldown is active", metrics)
+    if (
+        math.isfinite(float(metrics["regime_unpredictability_score"]))
+        and math.isfinite(max_regime_score)
+        and max_regime_score >= 0.0
+        and float(metrics["regime_unpredictability_score"]) > max_regime_score
+    ):
+        return EntryRiskDecision(False, "unpredictable_regime", "market regime is too unpredictable for a new entry", metrics)
     if max_network_errors > 0 and network_errors >= max_network_errors:
         return EntryRiskDecision(False, "network_halt", "network interruption halt is active", metrics)
     if direction == 0:

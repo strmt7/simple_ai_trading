@@ -197,6 +197,7 @@ def test_command_strategy_updates_risk_and_rate_limits(tmp_path, monkeypatch) ->
         confidence_beta=0.92,
         feature_window_short=12,
         feature_window_long=48,
+        max_regime_unpredictability=0.61,
         max_trades_per_day=7,
         set_features="momentum_1,rsi",
         enable_feature=None,
@@ -211,6 +212,7 @@ def test_command_strategy_updates_risk_and_rate_limits(tmp_path, monkeypatch) ->
     assert updated.model_lookback == 320
     assert updated.training_epochs == 480
     assert updated.confidence_beta == 0.92
+    assert updated.max_regime_unpredictability == 0.61
     assert updated.feature_windows == (12, 48)
     assert updated.enabled_features == ("momentum_1", "rsi")
 

@@ -3,6 +3,7 @@
 from simple_ai_trading.risk_controls import (
     assess_entry_risk,
     build_risk_policy_report,
+    market_regime_unpredictability,
     render_risk_policy_report,
     stop_loss_sized_notional_pct,
 )
@@ -19,9 +20,17 @@ def test_risk_policy_report_allows_default_paper_and_renders_summary() -> None:
     assert report.notional_cap_pct == 0.08
     assert report.max_loss_per_trade_pct == 0.0008
     assert report.checks[0].asdict()["label"] == "primary symbol"
+    assert any(check.label == "regime unpredictability gate" for check in report.checks)
     rendered = render_risk_policy_report(report)
     assert "Risk policy report" in rendered
     assert "allowed=True" in rendered
+
+
+def test_market_regime_unpredictability_scores_wait_conditions() -> None:
+    assert market_regime_unpredictability("volatile_chop", 0.9) > 0.90
+    assert market_regime_unpredictability("mixed", 0.2, ("low_regime_separation",)) > 0.85
+    assert market_regime_unpredictability("insufficient_data", 0.0) == 1.0
+    assert market_regime_unpredictability("trend_up", 0.9) < 0.25
 
 
 def test_stop_loss_sized_notional_pct_respects_caps_and_leverage() -> None:
@@ -203,6 +212,11 @@ def test_entry_risk_decision_explains_each_block() -> None:
         (dict(session_loss=0.02, session_loss_limit=0.01), "session_loss"),
         (dict(consecutive_losses=2, max_consecutive_losses=2), "loss_streak"),
         (dict(recovery_pending=True), "recovery_pending"),
+        (
+            dict(regime="volatile_chop", regime_confidence=0.9, max_regime_unpredictability=0.60),
+            "unpredictable_regime",
+        ),
+        (dict(regime_cooldown_active=True), "regime_cooldown"),
         (dict(network_errors=3, max_network_errors=3), "network_halt"),
         (dict(drawdown=0.2, drawdown_limit=0.2), "drawdown"),
         (dict(price=float("nan")), "nonfinite"),
