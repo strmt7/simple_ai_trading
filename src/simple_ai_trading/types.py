@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from .assets import (
+    DEFAULT_CONSERVATIVE_LEVERAGE,
     DEFAULT_MIN_DIVERSIFIED_ASSETS,
     DEFAULT_QUOTE_ASSET,
     DEFAULT_SYMBOL,
@@ -145,7 +146,7 @@ class StrategyConfig:
 
     risk_level: str = "conservative"
     reinvest_profits: bool = False
-    leverage: float = 1.0
+    leverage: float = DEFAULT_CONSERVATIVE_LEVERAGE
     risk_per_trade: float = 0.003
     max_position_pct: float = 0.08
     max_open_positions: int = DEFAULT_MIN_DIVERSIFIED_ASSETS

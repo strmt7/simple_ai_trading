@@ -11,6 +11,14 @@ DEFAULT_SYMBOL = "BTCUSDC"
 DEFAULT_SYMBOLS = ("BTCUSDC", "ETHUSDC", "BNBUSDC")
 DEFAULT_MIN_DIVERSIFIED_ASSETS = 3
 MAX_AUTONOMOUS_LEVERAGE = 20.0
+DEFAULT_CONSERVATIVE_LEVERAGE = 5.0
+DEFAULT_REGULAR_LEVERAGE = 10.0
+DEFAULT_AGGRESSIVE_LEVERAGE = 15.0
+DEFAULT_LEVERAGE_BY_RISK_LEVEL = {
+    "conservative": DEFAULT_CONSERVATIVE_LEVERAGE,
+    "regular": DEFAULT_REGULAR_LEVERAGE,
+    "aggressive": DEFAULT_AGGRESSIVE_LEVERAGE,
+}
 
 _SYMBOL_RE = re.compile(r"^[A-Z0-9]{3,30}$")
 
@@ -50,6 +58,13 @@ def normalize_symbols(values: object, *, default: Iterable[str] = DEFAULT_SYMBOL
                 seen.add(symbol)
                 normalized.append(symbol)
     return tuple(normalized)
+
+
+def default_leverage_for_risk_level(risk_level: object) -> float:
+    """Return the shared futures leverage default for a configured risk level."""
+
+    key = str(risk_level or "conservative").strip().lower()
+    return float(DEFAULT_LEVERAGE_BY_RISK_LEVEL.get(key, DEFAULT_CONSERVATIVE_LEVERAGE))
 
 
 def base_asset(symbol: str, quote_asset: str = DEFAULT_QUOTE_ASSET) -> str:

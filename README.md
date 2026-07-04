@@ -19,7 +19,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - Conservative risk profile by default, with `conservative`, `regular`, and `aggressive` profiles.
 - Mandatory diversification controls: minimum eligible assets, single-asset allocation cap, portfolio risk cap, and max open positions.
 - Hard loss-budget controls: daily loss, session loss, consecutive-loss lockout, network-interruption halt, and post-reconnect observation cooldown.
-- Futures leverage allowed only up to the app-level safety ceiling of `20x`; default is no leverage (`1x`).
+- Futures leverage is risk-profile driven when futures mode is enabled: `5x` conservative, `10x` regular, `15x` aggressive, with a hard app-level ceiling of `20x`. Spot trading still resolves to `1x`.
 - Profit reinvestment is disabled by default. Enabling it prints a warning because compounding amplifies losses as well as gains.
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
@@ -107,7 +107,7 @@ Startup behavior:
 - The app resolves the repo-local `.venv311` Python and sets `PYTHONPATH` before launching CLI commands, so dev builds do not depend on a globally installed package.
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
-- The app has direct buttons for AI preflight, AI risk review, risk report, model lab, backtest graph, and stop-and-close local autonomous positions.
+- The app has direct buttons for stop, pause, reconciliation, positions, and risk checks, while model and chart workflows stay in the primary workflow cards and command picker.
 - The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
 - `tools\smoke_native_windows_ui.ps1` launches the app in dry-run mode, walks every workflow page, clicks the dashboard cards and safety buttons, and then performs a real Compute smoke unless `-SkipRealCompute` is passed.
 - `tools\capture_native_windows_app.ps1` creates a DPI-aware PNG artifact of the dashboard and fails if the captured app is smaller than the configured minimum window size.
@@ -167,7 +167,7 @@ simple-ai-trading reconcile
 simple-ai-trading positions --stats --learning
 ```
 
-`stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. `reconcile` reads the signed spot/futures account state, compares exchange exposure against non-paper local open positions, writes `data/autonomous/reconciliation.json`, and exits nonzero on exchange-only, local-only, or quantity-mismatched exposure. Signed `live --live` startup also uses that reconciliation gate; it refuses to manage pre-existing exchange exposure unless it matches a bot-owned ledger position with a bot client order id.
+`stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. `reconcile` reads the signed spot/futures account state, compares exchange exposure against non-paper local open positions, writes `data/autonomous/reconciliation.json`, and exits nonzero on exchange-only, local-only, or quantity-mismatched exposure. Signed `live --live` startup also uses that reconciliation gate; it refuses to manage pre-existing exchange exposure unless it matches a bot-owned ledger position with a bot client order id. Signed CLI opens now use deterministic `sait-o-*` client order ids and signed closes use `sait-c-*`, so a restarted session can prove which exchange exposure is bot-owned before touching it.
 
 Network interruptions are treated as a recovery state, not as a normal trading iteration. The `live` loop keeps retrying market-data reads and records `market_error_retry` events instead of entering on stale data. After connectivity returns, it records a clean recovery observation, waits through `recovery_cooldown_seconds` when configured, and skips fresh entries for that observation step. The autonomous loop adds signed reconciliation before resume: it records a heartbeat that says reconciliation is required, reconciles exchange exposure, checks daily/session loss budgets, checks loss streaks, writes an observation heartbeat, and skips that iteration before allowing any new entry. If reconciliation finds exchange-only exposure, local-only exposure, or a quantity mismatch, the autonomous loop exits fail-closed and does not touch positions that are not represented in the bot ledger.
 
@@ -179,15 +179,15 @@ Signed live-style startup requires a promoted model artifact. A model must carry
 
 `conservative` is the default:
 
-- No leverage by default.
+- `5x` default futures leverage, while spot mode still resolves to `1x`.
 - Lower stop-loss capital-at-risk budgets and position caps.
 - Longer cooldowns.
 - Stricter liquidity/spread thresholds.
 - Lower drawdown tolerance.
 
-`regular` and `aggressive` relax thresholds gradually, but still keep leverage capped at `20x`, require diversification, and preserve exchange/testnet safeguards.
+`regular` and `aggressive` default to `10x` and `15x` futures leverage respectively, but still keep leverage capped at `20x`, require diversification, and preserve exchange/testnet safeguards. Leverage is not treated as an ROI target; it only scales permitted futures notional after stop-loss sizing, position caps, loss budgets, exchange brackets, and reconciliation gates pass.
 
-Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, and backtester all use the same stop-loss-sized notional calculation.
+Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, backtester, optimization evidence generator, and Windows app command surface all use the same stop-loss-sized notional calculation.
 
 Hard capital controls are separate from ROI goals. The conservative profile defaults to a `0.60%` daily loss budget, `1.20%` session loss budget, two-loss streak lockout, three consecutive network errors before recovery-halt messaging, and a 60 second post-reconnect observation cooldown. Regular and aggressive raise those limits gradually, but risk reporting blocks live operation when these controls are disabled or dangerously loose.
 

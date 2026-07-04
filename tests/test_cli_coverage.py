@@ -17,6 +17,7 @@ from simple_ai_trading.advanced_model import (
     make_advanced_rows,
 )
 from simple_ai_trading.api import BinanceAPIError, Candle, SymbolConstraints
+from simple_ai_trading.assets import DEFAULT_AGGRESSIVE_LEVERAGE
 from simple_ai_trading.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
 from simple_ai_trading.model import (
     ModelFeatureMismatchError,
@@ -3186,10 +3187,10 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(
-        StrategyConfig(
-            risk_per_trade=0.001,
-            max_position_pct=1.0,
-            stop_loss_pct=0.01,
+            StrategyConfig(
+                risk_per_trade=0.001,
+                max_position_pct=0.2,
+                stop_loss_pct=0.01,
             signal_threshold=0.70,
             taker_fee_bps=0.0,
             slippage_bps=0.0,
@@ -3865,6 +3866,208 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
     assert "Account balance check failed: rate limit" in capsys.readouterr().err
 
 
+def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypatch) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0, features=(0.1,), label=1, volume=1000.0)
+        for index in range(20)
+    ]
+
+    class _SignedModel:
+        feature_signature = "runtime-signature"
+
+        def predict_proba(self, _features):
+            return 0.95
+
+    class _SignedEntryClient(_FakeClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.submitted_client_ids: list[str] = []
+
+        def get_max_leverage(self, symbol: str) -> int:
+            return 10
+
+        def set_leverage(self, symbol: str, leverage: int):
+            return {"leverage": leverage}
+
+        def get_account(self):
+            return {"positions": [], "assets": [{"asset": "USDC", "availableBalance": "1000"}]}
+
+        def get_symbol_constraints(self, symbol: str):
+            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+
+        def normalize_quantity(self, symbol: str, quantity: float):
+            return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
+
+        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+            return _simple_candles(limit)
+
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            reduce_only: bool = False,
+            client_order_id: str | None = None,
+        ):
+            assert client_order_id is not None and client_order_id.startswith("sait-o-")
+            self.submitted_client_ids.append(client_order_id)
+            return {
+                "status": "FILLED",
+                "orderId": "101",
+                "clientOrderId": client_order_id,
+                "executedQty": str(size),
+                "avgPrice": "100",
+                "cummulativeQuoteQty": str(size * 100.0),
+            }
+
+    client = _SignedEntryClient()
+    monkeypatch.setenv("HOME", str(tmp_path))
+    model_file = tmp_path / "model.json"
+    model_file.write_text("{}", encoding="utf-8")
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_strategy(
+        StrategyConfig(
+            risk_per_trade=0.001,
+            max_position_pct=0.2,
+            stop_loss_pct=0.01,
+            signal_threshold=0.70,
+            taker_fee_bps=0.0,
+            slippage_bps=0.0,
+            max_regime_unpredictability=1.0,
+            dynamic_liquidity_session_enabled=False,
+        )
+    )
+    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
+    monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_a, **_k: rows)
+    monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_a, **_k: rows)
+    monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    assert cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True, model=str(model_file))) == 0
+
+    open_positions = PositionsStore().load_open()
+    assert len(open_positions) == 1
+    assert open_positions[0].dry_run is False
+    assert open_positions[0].open_client_order_id == client.submitted_client_ids[0]
+    assert open_positions[0].open_client_order_id.startswith("sait-o-")
+
+
+def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, monkeypatch) -> None:
+    position_id = "ownedclose001"
+    open_client_id = bot_client_order_id(position_id, "open")
+    PositionsStore().record_open(
+        OpenPosition(
+            id=position_id,
+            symbol="BTCUSDC",
+            market_type="futures",
+            side="LONG",
+            qty=0.2,
+            entry_price=100.0,
+            leverage=1.0,
+            opened_at_ms=1,
+            notional=20.0,
+            dry_run=False,
+            open_client_order_id=open_client_id,
+            exchange_status="FILLED",
+        )
+    )
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=102.0, features=(0.1,), label=1, volume=1000.0)
+        for index in range(20)
+    ]
+
+    class _SignedModel:
+        feature_signature = "runtime-signature"
+
+        def predict_proba(self, _features):
+            return 0.95
+
+    class _SignedCloseClient(_FakeClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.close_client_id = ""
+
+        def get_max_leverage(self, symbol: str) -> int:
+            return 10
+
+        def set_leverage(self, symbol: str, leverage: int):
+            return {"leverage": leverage}
+
+        def get_account(self):
+            return {
+                "positions": [{"symbol": "BTCUSDC", "positionAmt": "0.2", "entryPrice": "100"}],
+                "assets": [{"asset": "USDC", "availableBalance": "1000"}],
+            }
+
+        def get_symbol_constraints(self, symbol: str):
+            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+
+        def normalize_quantity(self, symbol: str, quantity: float):
+            return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
+
+        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+            return _simple_candles(limit)
+
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            reduce_only: bool = False,
+            client_order_id: str | None = None,
+        ):
+            assert side == "SELL"
+            assert reduce_only is True
+            assert client_order_id is not None and client_order_id.startswith("sait-c-")
+            self.close_client_id = client_order_id
+            return {
+                "status": "FILLED",
+                "orderId": "202",
+                "clientOrderId": client_order_id,
+                "executedQty": str(size),
+                "avgPrice": "102",
+                "cummulativeQuoteQty": str(size * 102.0),
+            }
+
+    client = _SignedCloseClient()
+    monkeypatch.setenv("HOME", str(tmp_path))
+    model_file = tmp_path / "model.json"
+    model_file.write_text("{}", encoding="utf-8")
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_strategy(
+        StrategyConfig(
+            take_profit_pct=0.01,
+            stop_loss_pct=0.10,
+            taker_fee_bps=0.0,
+            slippage_bps=0.0,
+            max_regime_unpredictability=1.0,
+            dynamic_liquidity_session_enabled=False,
+        )
+    )
+    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
+    monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_a, **_k: rows)
+    monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_a, **_k: rows)
+    monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    assert cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True, model=str(model_file))) == 0
+
+    store = PositionsStore()
+    assert store.load_open() == []
+    ledger = store.load_ledger()
+    assert len(ledger) == 1
+    assert ledger[0].id == position_id
+    assert ledger[0].open_client_order_id == open_client_id
+    assert ledger[0].close_client_order_id == client.close_client_id
+    assert ledger[0].realized_pnl > 0.0
+
+
 def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatch, capsys) -> None:
     class _SignedModel:
         feature_signature = "runtime-signature"
@@ -4316,7 +4519,7 @@ def test_command_strategy_profiles_apply_and_explicit_args_override(tmp_path, mo
 
     assert cli.command_strategy(args_for("active", risk=0.003, signal_threshold=0.7)) == 0
     active = load_strategy()
-    assert active.leverage == 3.0
+    assert active.leverage == pytest.approx(DEFAULT_AGGRESSIVE_LEVERAGE)
     assert active.risk_per_trade == 0.003
     assert active.signal_threshold == 0.7
 
@@ -4388,7 +4591,7 @@ def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(tmp_path
     save_runtime(RuntimeConfig(market_type="spot"))
     assert cli.command_strategy(args) == 0
     updated = load_strategy()
-    assert updated.leverage == 3.0
+    assert updated.leverage == pytest.approx(DEFAULT_AGGRESSIVE_LEVERAGE)
     assert updated.risk_per_trade == 0.010
     assert updated.signal_threshold == 0.55
     assert updated.external_signals_enabled is True
@@ -5142,7 +5345,16 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            client_order_id: str | None = None,
+        ):
             raise BinanceAPIError("Filter failure: NOTIONAL")
 
     class _AlwaysLongModel:
@@ -5213,7 +5425,16 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            client_order_id: str | None = None,
+        ):
             self.order_calls += 1
             if self.order_calls == 2:
                 raise BinanceAPIError("close rejected")
@@ -5306,7 +5527,16 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            client_order_id: str | None = None,
+        ):
             self.order_calls += 1
             if self.order_calls == 2:
                 raise BinanceAPIError("emergency close rejected")
@@ -5378,7 +5608,16 @@ def test_command_live_records_malformed_entry_fill_response(tmp_path, monkeypatc
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            client_order_id: str | None = None,
+        ):
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
     class _AlwaysLongModel:
@@ -6047,7 +6286,17 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
             self.set_calls.append(leverage)
             return {"symbol": symbol, "leverage": leverage}
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            reduce_only: bool = False,
+            client_order_id: str | None = None,
+        ):
             self.orders.append((side, size, dry_run, leverage))
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 

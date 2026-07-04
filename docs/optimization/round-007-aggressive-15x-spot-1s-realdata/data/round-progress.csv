@@ -1,0 +1,2 @@
+round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct
+round-007-aggressive-15x-spot-1s-realdata,2026-07-04T17:16:15.468025Z,2,0,-0.11908503313167101,-0.11908503313167101,-0.2882783455841016,0.1691933124524306,0.1691933124524306,0.11908503313167101,2,0.0

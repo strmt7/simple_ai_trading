@@ -7,6 +7,7 @@ from dataclasses import replace
 
 import pytest
 
+from simple_ai_trading.assets import DEFAULT_AGGRESSIVE_LEVERAGE
 from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading import objective as obj
 
@@ -50,7 +51,7 @@ def test_available_and_describe():
     assert obj.RISKY.max_drawdown_rejection <= 0.30
     assert obj.RISKY.training is not None
     assert obj.RISKY.training.max_position_pct <= 0.25
-    assert obj.RISKY.training.leverage <= 2.0
+    assert obj.RISKY.training.leverage == pytest.approx(DEFAULT_AGGRESSIVE_LEVERAGE)
 
 
 def test_get_objective_lookups():

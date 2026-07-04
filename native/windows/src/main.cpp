@@ -95,12 +95,12 @@ class MainWindow {
             height = std::min(height, std::max(560, work_height - 24));
         }
         RECT frame{0, 0, width, height};
-        AdjustWindowRectEx(&frame, WS_OVERLAPPEDWINDOW, FALSE, 0);
+        AdjustWindowRectEx(&frame, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, FALSE, 0);
         hwnd_ = CreateWindowExW(
             0,
             wc.lpszClassName,
             L"Simple AI Trading",
-            WS_OVERLAPPEDWINDOW,
+            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
             frame.right - frame.left,
@@ -373,7 +373,7 @@ class MainWindow {
             ex_style,
             klass,
             text,
-            WS_CHILD | WS_VISIBLE | style,
+            WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | style,
             0,
             0,
             10,
@@ -391,7 +391,7 @@ class MainWindow {
         subtitle_ = create_control(L"STATIC", L"Day-trading workstation", SS_LEFT, 0);
         safety_ = create_control(
             L"STATIC",
-            L"Conservative default. Testnet first.\r\nNo leverage or profit reinvestment. Stop closes bot-owned positions.",
+            L"Conservative default: 5x futures, spot stays 1x. Testnet first.\r\nProfit reinvestment off. Stop only closes bot-owned positions.",
             SS_LEFT | SS_NOPREFIX,
             0);
         page_title_ = create_control(L"STATIC", L"Dashboard", SS_LEFT, 0);
@@ -407,7 +407,7 @@ class MainWindow {
         args_edit_ = create_control(L"EDIT", L"", ES_AUTOHSCROLL | WS_TABSTOP, kArgsEditId);
         help_label_ = create_control(L"STATIC", L"", SS_LEFT | SS_NOPREFIX, 0);
         quick_label_ = create_control(L"STATIC", L"Primary Workflows", SS_LEFT, 0);
-        tools_label_ = create_control(L"STATIC", L"Safety Tools", SS_LEFT, 0);
+        tools_label_ = create_control(L"STATIC", L"Trading Guards", SS_LEFT, 0);
         output_label_ = create_control(L"STATIC", L"Activity Log", SS_LEFT, 0);
         output_edit_ = create_control(
             L"EDIT",
@@ -417,10 +417,10 @@ class MainWindow {
         run_selected_ = create_control(L"BUTTON", L"Run Selected", BS_OWNERDRAW | WS_TABSTOP, kRunSelectedId);
         selected_help_ = create_control(L"BUTTON", L"Show Help", BS_OWNERDRAW | WS_TABSTOP, kSelectedHelpId);
         stop_all_ = create_control(L"BUTTON", L"Stop Trading", BS_OWNERDRAW | WS_TABSTOP, kStopAllId);
-        ai_preflight_ = create_control(L"BUTTON", L"AI Check", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
+        ai_preflight_ = create_control(L"BUTTON", L"Pause Bot", BS_OWNERDRAW | WS_TABSTOP, kAiPreflightId);
         risk_report_ = create_control(L"BUTTON", L"Risk Check", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
-        model_lab_ = create_control(L"BUTTON", L"Model Lab", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
-        backtest_chart_ = create_control(L"BUTTON", L"Backtest Chart", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
+        model_lab_ = create_control(L"BUTTON", L"Positions", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
+        backtest_chart_ = create_control(L"BUTTON", L"Reconcile", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
         status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, kStatusBarId);
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             quick_buttons_[static_cast<std::size_t>(i)] =
@@ -505,9 +505,9 @@ class MainWindow {
         const int tool_w = (main_width - (tool_gap * 4)) / 5;
         MoveWindow(stop_all_, main_left, tools_top, tool_w, scale(58), TRUE);
         MoveWindow(ai_preflight_, main_left + (tool_w + tool_gap), tools_top, tool_w, scale(58), TRUE);
-        MoveWindow(risk_report_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(backtest_chart_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
         MoveWindow(model_lab_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
-        MoveWindow(backtest_chart_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
+        MoveWindow(risk_report_, main_left + (4 * (tool_w + tool_gap)), tools_top, tool_w, scale(58), TRUE);
 
         const int output_top = tools_top + scale(110);
         MoveWindow(output_label_, main_left + scale(18), output_top - scale(34), main_width - scale(36), scale(28), TRUE);
@@ -589,14 +589,6 @@ class MainWindow {
 
         RECT footer_line{pad, footer_top, client.right - pad, footer_top + scale(1)};
         fill_rect(dc, footer_line, RGB(37, 50, 58));
-        RECT segment{pad, footer_top + scale(18), pad + scale(130), client.bottom - scale(14)};
-        draw_text(dc, L"API Budget", segment, small_font_, kMuted, DT_LEFT | DT_TOP | DT_SINGLELINE);
-        RECT segment2{pad + scale(250), footer_top + scale(18), pad + scale(430), client.bottom - scale(14)};
-        draw_text(dc, L"Environment\r\nTestnet", segment2, small_font_, kMuted, DT_LEFT | DT_TOP);
-        RECT segment3{pad + scale(460), footer_top + scale(18), pad + scale(650), client.bottom - scale(14)};
-        draw_text(dc, L"Mode\r\nAutonomous", segment3, small_font_, kMuted, DT_LEFT | DT_TOP);
-        RECT segment4{pad + scale(690), footer_top + scale(18), pad + scale(900), client.bottom - scale(14)};
-        draw_text(dc, L"Paper Trading\r\nEnabled", segment4, small_font_, kMuted, DT_LEFT | DT_TOP);
         EndPaint(hwnd_, &ps);
     }
 
@@ -634,9 +626,10 @@ class MainWindow {
             return reinterpret_cast<LRESULT>(edit_brush_);
         }
         if (message == WM_CTLCOLORSTATIC) {
-            SetBkMode(dc, TRANSPARENT);
+            SetBkMode(dc, OPAQUE);
+            SetBkColor(dc, kBg);
             SetTextColor(dc, control == status_bar_ ? kText : kText);
-            return reinterpret_cast<LRESULT>(GetStockObject(HOLLOW_BRUSH));
+            return reinterpret_cast<LRESULT>(bg_brush_);
         }
         if (message == WM_CTLCOLORLISTBOX || control == page_list_ || control == command_combo_) {
             SetTextColor(dc, kText);
@@ -704,7 +697,7 @@ class MainWindow {
         const bool disabled = (item->itemState & ODS_DISABLED) != 0;
         const bool focused = (item->itemState & ODS_FOCUS) != 0;
         const bool danger = id == kStopAllId;
-        const bool primary = id == kRunSelectedId || id == kModelLabId;
+        const bool primary = id == kRunSelectedId;
         const bool workflow_card = id >= kQuickBaseId;
         const bool safety_card = id == kStopAllId || id == kAiPreflightId || id == kRiskReportId || id == kModelLabId || id == kBacktestChartId;
         COLORREF fill = danger ? RGB(57, 31, 36) : (primary ? RGB(29, 86, 80) : RGB(28, 36, 42));
@@ -818,16 +811,16 @@ class MainWindow {
             run_sequence({L"autonomous stop", L"close all"});
             return;
         case kAiPreflightId:
-            run_sequence({L"ai"});
+            run_sequence({L"autonomous pause"});
             return;
         case kRiskReportId:
             run_sequence({L"risk --paper"});
             return;
         case kModelLabId:
-            run_sequence({L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"});
+            run_sequence({L"positions"});
             return;
         case kBacktestChartId:
-            run_sequence({L"backtest-chart"});
+            run_sequence({L"reconcile"});
             return;
         default:
             if (id >= kQuickBaseId && id < kQuickBaseId + static_cast<int>(quick_buttons_.size())) {
@@ -913,10 +906,10 @@ class MainWindow {
         if (page_index_ == 0) {
             quick_actions_ = {
                 {L"Health Check", {L"compute", L"api-budget --compact", L"doctor"}},
+                {L"API Budget", {L"api-budget --compact"}},
                 {L"Paper Status", {L"status", L"positions"}},
-                {L"Risk Snapshot", {L"risk --paper"}},
                 {L"Backtest Chart", {L"backtest-chart"}},
-                {L"Model Lab Smoke", {L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"}},
+                {L"Model Lab", {L"model-lab --objective conservative --max-symbols 3 --max-scan 20 --limit 500"}},
             };
         } else if (page_index_ == 1) {
             quick_actions_ = {

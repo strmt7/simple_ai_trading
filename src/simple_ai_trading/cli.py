@@ -32,7 +32,12 @@ from .advanced_model import (
     make_advanced_inference_rows,
     make_advanced_rows,
 )
-from .assets import MAX_AUTONOMOUS_LEVERAGE
+from .assets import (
+    DEFAULT_AGGRESSIVE_LEVERAGE,
+    DEFAULT_CONSERVATIVE_LEVERAGE,
+    DEFAULT_REGULAR_LEVERAGE,
+    MAX_AUTONOMOUS_LEVERAGE,
+)
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
 from .binance_archive import ingest_archive_urls, list_archive_urls
 from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
@@ -72,6 +77,15 @@ from .model import (
 )
 from .model_readiness import ModelPromotionError, assert_model_promoted
 from .objective import available_objectives
+from .positions import (
+    ClosedTrade,
+    OpenPosition,
+    PositionsStore,
+    bot_client_order_id,
+    is_bot_owned_position,
+    new_position_id,
+)
+from .reconciliation import reconcile_account_positions
 from .risk_controls import (
     EntryRiskDecision,
     assess_entry_risk,
@@ -122,7 +136,7 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
     "custom": {},
     "conservative": {
         "risk_level": "conservative",
-        "leverage": 1.0,
+        "leverage": DEFAULT_CONSERVATIVE_LEVERAGE,
         "risk_per_trade": 0.003,
         "max_position_pct": 0.08,
         "max_asset_allocation_pct": 0.20,
@@ -156,7 +170,7 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
     },
     "regular": {
         "risk_level": "regular",
-        "leverage": 2.0,
+        "leverage": DEFAULT_REGULAR_LEVERAGE,
         "risk_per_trade": 0.006,
         "max_position_pct": 0.15,
         "max_asset_allocation_pct": 0.25,
@@ -190,7 +204,7 @@ _STRATEGY_PROFILES: dict[str, dict[str, object]] = {
     },
     "aggressive": {
         "risk_level": "aggressive",
-        "leverage": 3.0,
+        "leverage": DEFAULT_AGGRESSIVE_LEVERAGE,
         "risk_per_trade": 0.010,
         "max_position_pct": 0.20,
         "max_asset_allocation_pct": 0.30,
@@ -3376,13 +3390,26 @@ def _paper_or_live_order(
     dry_run: bool,
     leverage: float | None = None,
     reduce_only: bool = False,
+    client_order_id: str | None = None,
 ) -> dict[str, object]:
     if leverage is None:
         leverage = _effective_leverage(strategy, runtime.market_type)
     kwargs = {"dry_run": dry_run, "leverage": leverage}
     if reduce_only and not dry_run:
         kwargs["reduce_only"] = True
-    response = client.place_order(runtime.symbol, side, size, **kwargs)
+    if client_order_id:
+        kwargs["client_order_id"] = client_order_id
+    try:
+        response = client.place_order(runtime.symbol, side, size, **kwargs)
+    except TypeError as exc:
+        if client_order_id and "client_order_id" in str(exc):
+            raise BinanceAPIError("Signed live orders require client_order_id support") from exc
+        raise
+    except BinanceAPIError:
+        if not dry_run and client_order_id and hasattr(client, "get_order"):
+            response = client.get_order(runtime.symbol, orig_client_order_id=client_order_id)
+        else:
+            raise
     if dry_run:
         print("paper order:", json.dumps(response, indent=2))
         return response
@@ -3438,6 +3465,16 @@ def _order_query_keys(order: object) -> tuple[object | None, str | None]:
     order_id = order.get("orderId")
     client_order_id = order.get("clientOrderId") or order.get("origClientOrderId")
     return order_id, str(client_order_id) if client_order_id else None
+
+
+def _order_response_text(order: object, *names: str) -> str:
+    if not isinstance(order, Mapping):
+        return ""
+    for name in names:
+        value = order.get(name)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
 
 
 def _resolved_order_fill_details(
@@ -6012,6 +6049,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     live_events = cast(list[dict[str, object]], live_run["events"])
     if risk_policy.warning_count:
         print(f"risk policy warnings: {risk_policy.warning_count}")
+    live_position_store = PositionsStore() if not effective_dry_run else None
+    current_position_id = ""
+    current_open_client_order_id = ""
+    current_open_exchange_order_id = ""
+    current_opened_at_ms = 0
+    entry_fee_paid = 0.0
 
     def persist_live_startup_block(status: str, reason: str, details: Mapping[str, object] | None = None) -> None:
         event: dict[str, object] = {"step": 0, "status": status, "reason": reason}
@@ -6035,15 +6078,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         _persist_run_artifact("live", model_path.parent, live_run)
 
     if not effective_dry_run:
-        from .positions import PositionsStore, is_bot_owned_position
-        from .reconciliation import reconcile_account_positions
-
         if not isinstance(exchange_account_snapshot, Mapping):
             reason = "signed account payload was not a mapping"
             print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
             persist_live_startup_block("startup_reconciliation_error", reason)
             return 2
-        position_store = PositionsStore()
+        position_store = live_position_store if live_position_store is not None else PositionsStore()
         try:
             reconciliation_report = reconcile_account_positions(
                 exchange_account_snapshot,
@@ -6116,6 +6156,10 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "open_client_order_id": ledger_position.open_client_order_id,
                 }
             )
+            current_position_id = ledger_position.id
+            current_open_client_order_id = ledger_position.open_client_order_id
+            current_open_exchange_order_id = ledger_position.open_exchange_order_id
+            current_opened_at_ms = int(ledger_position.opened_at_ms)
     drawdown_limit = float(cfg.max_drawdown_limit)
     halt_reason = "completed"
     steps_executed = 0
@@ -6181,6 +6225,120 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 "size": float(size),
                 "error": str(exc),
             }
+        )
+
+    def record_signed_live_open(
+        *,
+        position_id: str,
+        side_sign: int,
+        filled_qty: float,
+        fill_price: float,
+        notional: float,
+        order_response: object,
+        open_client_order_id: str,
+    ) -> None:
+        nonlocal current_position_id, current_open_client_order_id, current_open_exchange_order_id, current_opened_at_ms
+        if live_position_store is None or not position_id:
+            return
+        current_position_id = position_id
+        current_open_client_order_id = _order_response_text(order_response, "clientOrderId", "origClientOrderId") or open_client_order_id
+        current_open_exchange_order_id = _order_response_text(order_response, "orderId")
+        current_opened_at_ms = int(time.time() * 1000)
+        live_position_store.record_open(
+            OpenPosition(
+                id=position_id,
+                symbol=runtime.symbol,
+                market_type=runtime.market_type,
+                side="LONG" if side_sign > 0 else "SHORT",
+                qty=max(0.0, float(filled_qty)),
+                entry_price=max(0.0, float(fill_price)),
+                leverage=float(leverage),
+                opened_at_ms=current_opened_at_ms,
+                notional=abs(float(notional)),
+                strategy_profile="live-cli",
+                objective="live",
+                dry_run=False,
+                stop_loss_pct=float(cfg.stop_loss_pct),
+                take_profit_pct=float(cfg.take_profit_pct),
+                open_client_order_id=current_open_client_order_id,
+                open_exchange_order_id=current_open_exchange_order_id,
+                exchange_status=_order_response_text(order_response, "status") or "accepted",
+            )
+        )
+
+    def record_signed_live_close(
+        *,
+        reason: str,
+        closed_qty: float,
+        fill_price: float,
+        realized_pnl: float,
+        close_ratio: float,
+        close_fee: float,
+        order_response: object,
+        close_client_order_id: str | None,
+    ) -> None:
+        nonlocal current_position_id, current_open_client_order_id, current_open_exchange_order_id, current_opened_at_ms, entry_fee_paid
+        if live_position_store is None or not current_position_id:
+            return
+        open_position = live_position_store.find_open(current_position_id)
+        if open_position is None:
+            live_events.append(
+                {
+                    "step": 0,
+                    "status": "ledger_close_missing_open_position",
+                    "position_id": current_position_id,
+                    "reason": reason,
+                }
+            )
+            return
+        fee_total = max(0.0, entry_fee_paid * max(0.0, min(1.0, close_ratio))) + max(0.0, float(close_fee))
+        close_client = _order_response_text(order_response, "clientOrderId", "origClientOrderId") or str(close_client_order_id or "")
+        close_exchange = _order_response_text(order_response, "orderId")
+        if close_ratio >= 0.999:
+            live_position_store.record_close(
+                ClosedTrade(
+                    id=open_position.id,
+                    symbol=open_position.symbol,
+                    market_type=open_position.market_type,
+                    side=open_position.side,
+                    qty=max(0.0, float(closed_qty)),
+                    entry_price=float(open_position.entry_price),
+                    exit_price=max(0.0, float(fill_price)),
+                    leverage=float(open_position.leverage),
+                    opened_at_ms=int(open_position.opened_at_ms),
+                    closed_at_ms=int(time.time() * 1000),
+                    realized_pnl=float(realized_pnl) - fee_total,
+                    realized_pnl_pct=(
+                        (float(realized_pnl) - fee_total) / max(1e-12, abs(float(open_position.entry_price) * float(closed_qty)))
+                    ),
+                    fees=fee_total,
+                    reason=reason,
+                    strategy_profile=open_position.strategy_profile,
+                    objective=open_position.objective,
+                    dry_run=False,
+                    owner=open_position.owner,
+                    open_client_order_id=open_position.open_client_order_id,
+                    open_exchange_order_id=open_position.open_exchange_order_id,
+                    close_client_order_id=close_client,
+                    close_exchange_order_id=close_exchange,
+                    exchange_status=_order_response_text(order_response, "status") or "accepted",
+                )
+            )
+            current_position_id = ""
+            current_open_client_order_id = ""
+            current_open_exchange_order_id = ""
+            current_opened_at_ms = 0
+            entry_fee_paid = 0.0
+            return
+        remaining_qty = max(0.0, float(open_position.qty) - max(0.0, float(closed_qty)))
+        entry_fee_paid = max(0.0, entry_fee_paid * (1.0 - max(0.0, min(1.0, close_ratio))))
+        live_position_store.record_open(
+            replace(
+                open_position,
+                qty=remaining_qty,
+                notional=remaining_qty * max(0.0, float(open_position.entry_price)),
+                exchange_status="partial",
+            )
         )
 
     def finish_recovery_observation(step: int, price: float, reason: str) -> None:
@@ -6667,6 +6825,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 continue
 
             side = "BUY" if side_sign > 0 else "SELL"
+            live_position_id = new_position_id() if not effective_dry_run else ""
+            open_client_order_id = bot_client_order_id(live_position_id, "open") if live_position_id else None
             try:
                 order_response = _paper_or_live_order(
                     client,
@@ -6676,6 +6836,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     size=qty,
                     dry_run=effective_dry_run,
                     leverage=leverage,
+                    client_order_id=open_client_order_id,
                 )
             except BinanceAPIError as exc:
                 record_order_error(i + 1, side, qty, exc)
@@ -6704,7 +6865,17 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             qty = abs(qty)
             entry_price = fill
             margin_used = margin
+            entry_fee_paid = fee
             daily_trade_count[day] = daily_trade_count.get(day, 0) + 1
+            record_signed_live_open(
+                position_id=live_position_id,
+                side_sign=side_sign,
+                filled_qty=qty,
+                fill_price=fill,
+                notional=notional,
+                order_response=order_response,
+                open_client_order_id=str(open_client_order_id or ""),
+            )
 
             print(f"step {i + 1:>2}: enter {'long' if position_side > 0 else 'short'} at {fill:.2f} qty={qty:.6f}")
             entries += 1
@@ -6720,6 +6891,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "cash_after_entry": float(cash),
                     "fill_source": fill_source,
                     "meta_label": meta_decision.asdict(),
+                    "position_id": current_position_id,
+                    "open_client_order_id": current_open_client_order_id,
                 }
             )
             cooldown_left = 0
@@ -6735,6 +6908,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 fill = price * (1.0 - position_side * slippage)
 
                 side_to_close = "SELL" if position_side > 0 else "BUY"
+                close_position_id = current_position_id
+                close_client_order_id = (
+                    bot_client_order_id(current_position_id, "close")
+                    if not effective_dry_run and current_position_id
+                    else None
+                )
                 try:
                     order_response = _paper_or_live_order(
                         client,
@@ -6745,6 +6924,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         dry_run=effective_dry_run,
                         leverage=leverage,
                         reduce_only=runtime.market_type == "futures",
+                        client_order_id=close_client_order_id,
                     )
                 except BinanceAPIError as exc:
                     record_order_error(i + 1, side_to_close, abs(qty), exc)
@@ -6765,6 +6945,16 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 exit_fee = abs(closed_notional if closed_notional > 0.0 else fill * closed_qty) * fee_rate
                 close_ratio = min(1.0, closed_qty / abs(qty)) if qty else 1.0
                 cash += margin_used * close_ratio + realized - exit_fee
+                record_signed_live_close(
+                    reason="signal_or_stop",
+                    closed_qty=closed_qty,
+                    fill_price=fill,
+                    realized_pnl=realized,
+                    close_ratio=close_ratio,
+                    close_fee=exit_fee,
+                    order_response=order_response,
+                    close_client_order_id=close_client_order_id,
+                )
                 print(
                     f"step {i + 1:>2}: close {'long' if position_side > 0 else 'short'} "
                     f"pnl={realized:.2f} cash={cash:.2f}"
@@ -6781,6 +6971,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "qty_closed": float(closed_qty),
                         "cash_after": float(cash),
                         "fill_source": fill_source,
+                        "position_id": close_position_id,
+                        "close_client_order_id": str(close_client_order_id or ""),
                     }
                 )
                 if realized > 0:
@@ -6825,10 +7017,19 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             if drawdown > max_drawdown_seen:
                 max_drawdown_seen = drawdown
             if cfg.max_drawdown_limit > 0.0 and drawdown >= cfg.max_drawdown_limit:
+                emergency_position_id = ""
+                emergency_close_client_order_id: str | None = None
+                fill_source = "not_applicable"
                 if position_side != 0:
                     fill = price * (1.0 - position_side * slippage)
 
                     side_to_close = "SELL" if position_side > 0 else "BUY"
+                    emergency_position_id = current_position_id
+                    emergency_close_client_order_id = (
+                        bot_client_order_id(current_position_id, "close")
+                        if not effective_dry_run and current_position_id
+                        else None
+                    )
                     try:
                         order_response = _paper_or_live_order(
                             client,
@@ -6839,6 +7040,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                             dry_run=effective_dry_run,
                             leverage=leverage,
                             reduce_only=runtime.market_type == "futures",
+                            client_order_id=emergency_close_client_order_id,
                         )
                     except BinanceAPIError as exc:
                         record_order_error(i + 1, side_to_close, abs(qty), exc)
@@ -6859,6 +7061,16 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     exit_fee = abs(closed_notional if closed_notional > 0.0 else fill * closed_qty) * fee_rate
                     close_ratio = min(1.0, closed_qty / abs(qty)) if qty else 1.0
                     cash += margin_used * close_ratio + realized - exit_fee
+                    record_signed_live_close(
+                        reason="drawdown_limit",
+                        closed_qty=closed_qty,
+                        fill_price=fill,
+                        realized_pnl=realized,
+                        close_ratio=close_ratio,
+                        close_fee=exit_fee,
+                        order_response=order_response,
+                        close_client_order_id=emergency_close_client_order_id,
+                    )
                     print(
                         f"step {i + 1:>2}: emergency close from drawdown "
                         f"{drawdown:.2%}; cash={cash:.2f}"
@@ -6881,6 +7093,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "drawdown": float(drawdown),
                         "cash_after": float(cash),
                         "fill_source": fill_source,
+                        "position_id": emergency_position_id,
+                        "close_client_order_id": str(emergency_close_client_order_id or ""),
                     }
                 )
                 print(f"step {i + 1:>2}: drawdown limit reached ({cfg.max_drawdown_limit:.1%}), stopping loop")
