@@ -6241,12 +6241,17 @@ def command_model_lab(args: argparse.Namespace) -> int:
         robustness = getattr(outcome, "robustness_validation", None) or {}
         robustness_text = "n/a"
         if robustness:
+            edge_p = robustness.get("worst_sign_test_p_value")
+            edge_lower = robustness.get("worst_bootstrap_lower_mean_return")
+            edge_text = ""
+            if isinstance(edge_p, (int, float)) and isinstance(edge_lower, (int, float)):
+                edge_text = f" edge_p={float(edge_p):.3f} lower={float(edge_lower):+.2%}"
             robustness_text = (
-                f"pass {int(robustness.get('accepted_windows', 0))}/{int(robustness.get('window_count', 0))}"
+                f"pass {int(robustness.get('accepted_windows', 0))}/{int(robustness.get('window_count', 0))}{edge_text}"
                 if robustness.get("accepted")
                 else (
                     f"fail {int(robustness.get('accepted_windows', 0))}/{int(robustness.get('window_count', 0))} "
-                    f"worst_pnl={float(robustness.get('worst_realized_pnl', 0.0)):+.2f}"
+                    f"worst_pnl={float(robustness.get('worst_realized_pnl', 0.0)):+.2f}{edge_text}"
                 )
             )
         detail = score_text or outcome.error or "no accepted objectives"

@@ -214,6 +214,13 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                     "accepted_window_rate": _finite(robustness.get("accepted_window_rate")),
                     "worst_realized_pnl": _finite(robustness.get("worst_realized_pnl")),
                     "worst_max_drawdown": _finite(robustness.get("worst_max_drawdown")),
+                    "statistical_edge_accepted": (
+                        bool(robustness.get("statistical_edge_accepted"))
+                        if "statistical_edge_accepted" in robustness
+                        else None
+                    ),
+                    "worst_sign_test_p_value": _finite(robustness.get("worst_sign_test_p_value")),
+                    "worst_bootstrap_lower_mean_return": _finite(robustness.get("worst_bootstrap_lower_mean_return")),
                 }
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
@@ -271,8 +278,9 @@ def _prompt(compact: Mapping[str, object]) -> str:
     return (
         "You are a cautious institutional trading risk reviewer for an autonomous day-trading testnet system. "
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
-        "Approve only when deterministic gates passed, stress scenarios are coherent, temporal robustness is coherent, "
-        "portfolio tail risk is acceptable, and there is no obvious reason to require a human review. "
+        "Approve only when deterministic gates passed, stress scenarios are coherent, temporal robustness and "
+        "statistical edge evidence are coherent, portfolio tail risk is acceptable, and there is no obvious reason "
+        "to require a human review. "
         "Return JSON matching the schema.\n"
         f"SCHEMA={schema}\n"
         f"MODEL_LAB_REPORT={payload}"

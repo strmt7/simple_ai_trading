@@ -166,6 +166,52 @@ def test_validate_model_temporal_robustness_rejects_bad_latest_window(
     assert report.window_count == 4
     assert report.accepted_windows == 3
     assert report.windows[-1].reject_reason is not None
+    assert report.statistical_edge["positive_windows"] == 3
+
+
+def test_validate_model_temporal_robustness_rejects_weak_statistical_edge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    returns = [20.0, 18.0, 15.0, -80.0]
+
+    def fake_backtest(_rows, *_args, **_kwargs):
+        pnl = returns.pop(0)
+        return _result(
+            realized_pnl=pnl,
+            ending_cash=1000.0 + pnl,
+            closed_trades=5,
+            edge_vs_buy_hold=pnl,
+            max_drawdown=0.02 if pnl > 0 else 0.08,
+        )
+
+    monkeypatch.setattr(robust_validation, "run_backtest", fake_backtest)
+    model = TrainedModel(weights=[0.0], bias=10.0, feature_dim=1, epochs=1, feature_means=[0.0], feature_stds=[1.0])
+
+    report = robust_validation.validate_model_temporal_robustness(
+        [object() for _ in range(40)],
+        model,
+        StrategyConfig(),
+        objective_name="aggressive",
+        starting_cash=1000.0,
+        market_type="spot",
+        policy=robust_validation.TemporalRobustnessPolicy(
+            objective="aggressive",
+            target_windows=4,
+            min_windows=2,
+            min_accepted_rate=0.60,
+            require_latest_window=False,
+            min_window_rows=10,
+            max_sign_test_p_value=0.55,
+            min_bootstrap_lower_mean_return=0.0,
+        ),
+    )
+
+    assert report.accepted is False
+    assert str(report.reason).startswith("bootstrap_lower_mean_return<")
+    assert report.accepted_windows == 3
+    assert report.statistical_edge["accepted"] is False
+    assert report.statistical_edge["sign_test_p_value"] == pytest.approx(0.3125)
+    assert float(report.statistical_edge["bootstrap_lower_mean_return"]) < 0.0
 
 
 def test_validate_model_temporal_robustness_requires_enough_windows(
@@ -295,6 +341,9 @@ def test_validate_suite_temporal_robustness_loads_saved_models(
     assert report.objective_count == 1
     assert report.accepted_windows >= 3
     assert report.objectives[0].model_path == str(model_path)
+    assert report.statistical_edge_accepted is True
+    assert report.worst_sign_test_p_value < 0.35
+    assert report.worst_bootstrap_lower_mean_return > 0.0
     assert observed_profiles
     assert all(item and item.symbol == "AAAUSDC" for item in observed_profiles)
 

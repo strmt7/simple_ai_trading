@@ -61,6 +61,11 @@ objectives require the highest window pass rate, regular objectives use the
 middle policy, and aggressive objectives allow more dispersion while still
 requiring multiple profitable windows.
 
+The temporal report also includes a statistical edge gate. It computes an exact
+sign-test p-value for positive windows and a deterministic bootstrap lower
+confidence bound for mean window return. A symbol is rejected if the final model
+looks like a lucky aggregate winner rather than a repeatable window-level edge.
+
 The training suite also gates selected candidates with purged chronological
 walk-forward folds when enough rows are available. The purge gap is at least the
 model label lookahead, so rows whose labels can see into a test fold are not
@@ -98,6 +103,9 @@ Known limitations:
   they are useful for unit tests and smoke checks, not production acceptance.
 - Temporal robustness currently uses candle-window replays; full order-book
   regime replay remains a future improvement after depth snapshots are stored.
+- Statistical edge uses window-level P&L because the current backtester does not
+  persist every intrabar equity point. This is stricter than no statistical
+  screen, but weaker than a full trade-path deflated-Sharpe implementation.
 
 ## Operator Rule
 
@@ -111,7 +119,7 @@ Do not interpret a profitable backtest as approval to trade real money. A candid
 - `audit`
 - `backtest`
 - `backtest-chart`
-- `model-lab` stress, temporal robustness, and portfolio gates
+- `model-lab` stress, temporal robustness, statistical edge, and portfolio gates
 - paper or testnet run review
 
 The project remains non-mainnet-first.

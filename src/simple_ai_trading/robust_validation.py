@@ -128,6 +128,10 @@ class TemporalRobustnessPolicy:
     min_accepted_rate: float
     require_latest_window: bool
     min_window_rows: int
+    max_sign_test_p_value: float = 0.35
+    min_bootstrap_lower_mean_return: float = 0.0
+    bootstrap_confidence: float = 0.90
+    bootstrap_samples: int = 512
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -165,6 +169,7 @@ class ObjectiveTemporalRobustnessReport:
     worst_score: float
     worst_realized_pnl: float
     worst_max_drawdown: float
+    statistical_edge: dict[str, object]
     windows: list[TemporalWindowResult]
     error: str | None = None
 
@@ -184,6 +189,9 @@ class SuiteTemporalRobustnessReport:
     worst_score: float
     worst_realized_pnl: float
     worst_max_drawdown: float
+    statistical_edge_accepted: bool
+    worst_sign_test_p_value: float
+    worst_bootstrap_lower_mean_return: float
     objectives: list[ObjectiveTemporalRobustnessReport]
 
     def asdict(self) -> dict[str, object]:
@@ -224,6 +232,9 @@ def default_temporal_robustness_policy(objective_name: str) -> TemporalRobustnes
             min_accepted_rate=0.80,
             require_latest_window=True,
             min_window_rows=45,
+            max_sign_test_p_value=0.20,
+            min_bootstrap_lower_mean_return=0.0,
+            bootstrap_confidence=0.90,
         )
     if objective == "aggressive":
         return TemporalRobustnessPolicy(
@@ -233,6 +244,9 @@ def default_temporal_robustness_policy(objective_name: str) -> TemporalRobustnes
             min_accepted_rate=0.60,
             require_latest_window=False,
             min_window_rows=35,
+            max_sign_test_p_value=0.55,
+            min_bootstrap_lower_mean_return=-0.005,
+            bootstrap_confidence=0.90,
         )
     return TemporalRobustnessPolicy(
         objective=objective,
@@ -241,7 +255,69 @@ def default_temporal_robustness_policy(objective_name: str) -> TemporalRobustnes
         min_accepted_rate=0.70,
         require_latest_window=True,
         min_window_rows=40,
+        max_sign_test_p_value=0.35,
+        min_bootstrap_lower_mean_return=-0.001,
+        bootstrap_confidence=0.90,
     )
+
+
+def _clamped_rate(value: float, *, default: float) -> float:
+    if not math.isfinite(float(value)):
+        return default
+    return max(0.0, min(1.0, float(value)))
+
+
+def _quantile(values: Sequence[float], q: float) -> float:
+    clean = sorted(float(value) for value in values if math.isfinite(float(value)))
+    if not clean:
+        return 0.0
+    if len(clean) == 1:
+        return float(clean[0])
+    q = _clamped_rate(q, default=0.0)
+    position = q * (len(clean) - 1)
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return float(clean[lower])
+    weight = position - lower
+    return float(clean[lower] * (1.0 - weight) + clean[upper] * weight)
+
+
+def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
+    n = max(0, int(trials))
+    k = max(0, min(n, int(successes)))
+    p = _clamped_rate(p, default=0.5)
+    if n <= 0:
+        return 1.0
+    total = 0.0
+    for hits in range(k, n + 1):
+        total += math.comb(n, hits) * (p ** hits) * ((1.0 - p) ** (n - hits))
+    return max(0.0, min(1.0, float(total)))
+
+
+def _bootstrap_lower_mean_return(
+    returns: Sequence[float],
+    *,
+    confidence: float,
+    samples: int,
+) -> float:
+    clean = [float(value) for value in returns if math.isfinite(float(value))]
+    if not clean:
+        return 0.0
+    if len(clean) == 1:
+        return clean[0]
+    sample_count = max(64, min(4096, int(samples)))
+    means: list[float] = []
+    mask = (1 << 32) - 1
+    for sample_index in range(sample_count):
+        state = (sample_index + 1) & mask
+        total = 0.0
+        for _ in clean:
+            state = (1664525 * state + 1013904223) & mask
+            total += clean[state % len(clean)]
+        means.append(total / len(clean))
+    lower_tail = 1.0 - _clamped_rate(confidence, default=0.90)
+    return _quantile(means, lower_tail)
 
 
 def _chronological_windows(
@@ -417,6 +493,52 @@ def _temporal_reason(
     return None
 
 
+def _statistical_edge_report(
+    windows: Sequence[TemporalWindowResult],
+    *,
+    starting_cash: float,
+    policy: TemporalRobustnessPolicy,
+) -> dict[str, object]:
+    cash = max(1.0, abs(_finite(starting_cash, 1000.0)))
+    returns = [
+        _finite(window.result.get("realized_pnl")) / cash
+        for window in windows
+        if isinstance(window.result, dict)
+    ]
+    positive_windows = sum(1 for value in returns if value > 0.0)
+    window_count = len(returns)
+    sign_p_value = _binomial_upper_tail(window_count, positive_windows)
+    mean_return = sum(returns) / window_count if window_count else 0.0
+    median_return = _quantile(returns, 0.5)
+    lower_mean = _bootstrap_lower_mean_return(
+        returns,
+        confidence=policy.bootstrap_confidence,
+        samples=policy.bootstrap_samples,
+    )
+    reason = None
+    if window_count <= 0:
+        reason = "no_windows_for_statistical_edge"
+    elif sign_p_value > policy.max_sign_test_p_value:
+        reason = f"sign_test_p_value>{policy.max_sign_test_p_value:.4f}"
+    elif lower_mean < policy.min_bootstrap_lower_mean_return:
+        reason = f"bootstrap_lower_mean_return<{policy.min_bootstrap_lower_mean_return:.4f}"
+    return {
+        "accepted": reason is None,
+        "reason": reason,
+        "window_count": window_count,
+        "positive_windows": positive_windows,
+        "positive_window_rate": (positive_windows / window_count if window_count else 0.0),
+        "sign_test_p_value": float(sign_p_value),
+        "max_sign_test_p_value": float(policy.max_sign_test_p_value),
+        "mean_window_return": float(mean_return),
+        "median_window_return": float(median_return),
+        "bootstrap_confidence": float(policy.bootstrap_confidence),
+        "bootstrap_samples": int(policy.bootstrap_samples),
+        "bootstrap_lower_mean_return": float(lower_mean),
+        "min_bootstrap_lower_mean_return": float(policy.min_bootstrap_lower_mean_return),
+    }
+
+
 def validate_model_temporal_robustness(
     rows: Sequence[object],
     model: TrainedModel,
@@ -486,6 +608,13 @@ def validate_model_temporal_robustness(
         latest_window_accepted=latest_window_accepted,
         require_latest_window=active_policy.require_latest_window,
     )
+    statistical_edge = _statistical_edge_report(
+        window_results,
+        starting_cash=starting_cash,
+        policy=active_policy,
+    )
+    if reason is None and not statistical_edge.get("accepted"):
+        reason = str(statistical_edge.get("reason") or "statistical_edge_failed")
     if worst_score == float("inf"):
         worst_score = float("-inf")
     if worst_realized == float("inf"):
@@ -505,6 +634,7 @@ def validate_model_temporal_robustness(
         worst_score=float(worst_score),
         worst_realized_pnl=float(worst_realized),
         worst_max_drawdown=float(worst_drawdown),
+        statistical_edge=statistical_edge,
         windows=window_results,
     )
 
@@ -564,6 +694,21 @@ def validate_suite_temporal_robustness(
                 worst_score=float("-inf"),
                 worst_realized_pnl=0.0,
                 worst_max_drawdown=1.0,
+                statistical_edge={
+                    "accepted": False,
+                    "reason": "temporal_robustness_error",
+                    "window_count": 0,
+                    "positive_windows": 0,
+                    "positive_window_rate": 0.0,
+                    "sign_test_p_value": 1.0,
+                    "max_sign_test_p_value": float(policy.max_sign_test_p_value),
+                    "mean_window_return": 0.0,
+                    "median_window_return": 0.0,
+                    "bootstrap_confidence": float(policy.bootstrap_confidence),
+                    "bootstrap_samples": int(policy.bootstrap_samples),
+                    "bootstrap_lower_mean_return": 0.0,
+                    "min_bootstrap_lower_mean_return": float(policy.min_bootstrap_lower_mean_return),
+                },
                 windows=[],
                 error=str(exc),
             )
@@ -578,9 +723,23 @@ def validate_suite_temporal_robustness(
         worst_score = float("-inf")
     if worst_realized == float("inf"):
         worst_realized = 0.0
+    edge_reports = [
+        report.statistical_edge
+        for report in objective_reports
+        if isinstance(report.statistical_edge, dict)
+    ]
+    edge_accepted = bool(edge_reports) and all(bool(edge.get("accepted")) for edge in edge_reports)
+    worst_sign_p = max(
+        (_finite(edge.get("sign_test_p_value"), 1.0) for edge in edge_reports),
+        default=1.0,
+    )
+    worst_bootstrap_lower = min(
+        (_finite(edge.get("bootstrap_lower_mean_return")) for edge in edge_reports),
+        default=0.0,
+    )
     return SuiteTemporalRobustnessReport(
         symbol=symbol,
-        accepted=bool(objective_reports) and accepted_count == len(objective_reports),
+        accepted=bool(objective_reports) and accepted_count == len(objective_reports) and edge_accepted,
         objective_count=len(objective_reports),
         accepted_objectives=accepted_count,
         window_count=total_windows,
@@ -589,6 +748,9 @@ def validate_suite_temporal_robustness(
         worst_score=float(worst_score),
         worst_realized_pnl=float(worst_realized),
         worst_max_drawdown=float(worst_drawdown),
+        statistical_edge_accepted=edge_accepted,
+        worst_sign_test_p_value=float(worst_sign_p),
+        worst_bootstrap_lower_mean_return=float(worst_bootstrap_lower),
         objectives=objective_reports,
     )
 

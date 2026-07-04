@@ -143,7 +143,12 @@ to select a stable configuration, while `temporal_robustness.json` tests the
 exact saved model, including any hybrid expert overlay. Conservative models
 must satisfy the strictest window coverage, regular models use the middle
 threshold, and aggressive models allow more dispersion while still requiring
-positive, non-drawdown-stopped windows.
+positive, non-drawdown-stopped windows. The same artifact now includes a
+statistical edge gate: an exact one-sided sign test over positive windows plus a
+deterministic bootstrap-style lower confidence bound over mean window return.
+This implements the practical lesson from PBO/Deflated-Sharpe research: a high
+aggregate score is not enough when the distribution of tested windows still
+looks like selection luck.
 
 ## Cross-Symbol Model Lab
 
@@ -164,7 +169,10 @@ positive, non-drawdown-stopped windows.
 7. Replays every saved objective model through `temporal_robustness.json`, a
    separate chronological-window robustness gate for the final serialized
    artifact. This catches models that pass aggregate stress but fail in recent
-   or regime-specific windows.
+   or regime-specific windows. The temporal report also records statistical
+   edge evidence, including sign-test p-value and bootstrap lower mean return,
+   and rejects candidates whose window evidence is too weak for the selected
+   risk level.
 8. Builds a portfolio-level risk report from aligned symbol returns. This gate
    computes inverse-volatility capped weights, effective symbol count,
    pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
@@ -224,6 +232,8 @@ assert that every CLI command appears in the Windows app.
 - No single-scenario-only model-lab acceptance.
 - No model-lab symbol acceptance when the final serialized model fails
   chronological temporal robustness windows.
+- No model-lab symbol acceptance when temporal windows have weak statistical
+  edge evidence after selection.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,

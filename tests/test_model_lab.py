@@ -99,6 +99,9 @@ class _Robustness:
             "accepted_window_rate": 1.0 if self.accepted else 0.5,
             "worst_realized_pnl": 8.0 if self.accepted else -3.0,
             "worst_max_drawdown": 0.02 if self.accepted else 0.18,
+            "statistical_edge_accepted": self.accepted,
+            "worst_sign_test_p_value": 0.125 if self.accepted else 0.6875,
+            "worst_bootstrap_lower_mean_return": 0.003 if self.accepted else -0.006,
         }
 
 
