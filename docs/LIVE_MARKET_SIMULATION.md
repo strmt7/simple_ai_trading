@@ -27,6 +27,10 @@ Execution cost is symbol-specific where market data exists:
   into the same SQLite store. This is the preferred path for 1-second spot
   history because Binance REST klines support `1s` but paging years of
   second-bars through 1,000-row REST pages is unnecessarily expensive.
+  Operators can pass `--symbols` for an explicit batch or `--top-symbols N`
+  with `--quote-asset` to auto-rank liquid symbols from current exchange
+  metadata before archive ingestion. This keeps the 50-pair research path
+  automatic rather than relying on a static list.
 - `data-sync --full-history` pages backward through exchange klines with the
   venue maximum request size until no older rows are returned. Recent bounded
   syncs remain available for incremental refreshes, but reports label them as
