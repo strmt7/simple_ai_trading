@@ -26,6 +26,12 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
             "trial_penalty": 0.03,
             "deflated_score": deflated_score,
         } if promoted or deflated_score <= 0.0 else {},
+        execution_validation={
+            "passed": True,
+            "symbol": "BTCUSDC",
+            "stress": {"accepted": True},
+            "temporal_robustness": {"accepted": True},
+        } if promoted else {},
         meta_label_policy={
             "enabled": True,
             "mode": "take_downsize_skip",
@@ -73,3 +79,33 @@ def test_model_readiness_blocks_missing_or_failed_selection_risk() -> None:
 
     with pytest.raises(ModelPromotionError, match="selection risk"):
         assert_model_promoted(failed)
+
+
+def test_model_readiness_blocks_missing_or_failed_execution_validation() -> None:
+    missing = _model()
+    missing.execution_validation = {}
+    report = build_model_readiness_report(missing)
+    assert report.allowed is False
+    assert any(check.label == "execution validation" and check.status == "block" for check in report.checks)
+
+    failed = _model()
+    failed.execution_validation = {
+        "passed": True,
+        "symbol": "BTCUSDC",
+        "stress": {"accepted": True},
+        "temporal_robustness": {"accepted": False},
+    }
+    with pytest.raises(ModelPromotionError, match="execution validation"):
+        assert_model_promoted(failed)
+
+
+def test_model_readiness_reports_quality_warning_variants() -> None:
+    unavailable = _model()
+    unavailable.quality_warnings = ["meta_label_policy_unavailable"]
+    report = build_model_readiness_report(unavailable)
+    assert any(check.label == "model quality warnings" and "unavailable" in check.detail for check in report.checks)
+
+    generic = _model()
+    generic.quality_warnings = ["calibration_sparse"]
+    report = build_model_readiness_report(generic)
+    assert any(check.label == "model quality warnings" and "calibration_sparse" in check.detail for check in report.checks)

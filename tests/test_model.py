@@ -323,6 +323,12 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
             "trial_penalty": 0.01,
             "deflated_score": 0.11,
         },
+        execution_validation={
+            "passed": True,
+            "symbol": "BTCUSDC",
+            "stress": {"accepted": True},
+            "temporal_robustness": {"accepted": True},
+        },
         ensemble_members=[
             EnsembleMember(
                 weights=[0.0],
@@ -373,6 +379,8 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     assert loaded.meta_label_policy["take_threshold"] == pytest.approx(0.12)
     assert loaded.selection_risk["passed"] is True
     assert loaded.selection_risk["deflated_score"] == pytest.approx(0.11)
+    assert loaded.execution_validation["passed"] is True
+    assert loaded.execution_validation["symbol"] == "BTCUSDC"
     assert len(loaded.ensemble_members) == 2
     assert loaded.ensemble_members[0].seed == 7
     assert loaded.ensemble_members[0].training_loss == 0.4

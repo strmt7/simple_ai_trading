@@ -116,6 +116,7 @@ class TrainedModel:
     hybrid_experts: List[HybridExpert] = field(default_factory=list)
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
     selection_risk: dict[str, Any] = field(default_factory=dict)
+    execution_validation: dict[str, Any] = field(default_factory=dict)
 
     def _normalize(self, features: Tuple[float, ...]) -> Tuple[float, ...]:
         if len(features) != self.feature_dim:
@@ -1723,6 +1724,11 @@ def load_model(
         selection_risk=(
             dict(payload["selection_risk"])
             if isinstance(payload.get("selection_risk"), dict)
+            else {}
+        ),
+        execution_validation=(
+            dict(payload["execution_validation"])
+            if isinstance(payload.get("execution_validation"), dict)
             else {}
         ),
     )

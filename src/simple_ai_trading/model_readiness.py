@@ -75,6 +75,7 @@ def build_model_readiness_report(
     *,
     model_path: str | Path | None = None,
     require_selection_risk: bool = True,
+    require_execution_validation: bool = True,
 ) -> ModelReadinessReport:
     checks: list[ModelReadinessCheck] = []
     selection_risk = getattr(model, "selection_risk", None)
@@ -120,6 +121,31 @@ def build_model_readiness_report(
                     )
                 )
 
+    execution_validation = getattr(model, "execution_validation", None)
+    if require_execution_validation:
+        if not isinstance(execution_validation, dict) or not execution_validation:
+            checks.append(_check("block", "execution validation", "missing symbol-specific execution evidence"))
+        else:
+            passed = execution_validation.get("passed") is True
+            stress = execution_validation.get("stress")
+            temporal = execution_validation.get("temporal_robustness")
+            stress_passed = isinstance(stress, dict) and stress.get("accepted") is True
+            temporal_passed = isinstance(temporal, dict) and temporal.get("accepted") is True
+            symbol = str(execution_validation.get("symbol") or "").strip().upper()
+            if passed and stress_passed and temporal_passed and symbol:
+                checks.append(_check("ok", "execution validation", f"{symbol} stress+temporal accepted"))
+            else:
+                checks.append(
+                    _check(
+                        "block",
+                        "execution validation",
+                        (
+                            "failed symbol-specific execution evidence "
+                            f"passed={passed} stress={stress_passed} temporal={temporal_passed} symbol={symbol or 'missing'}"
+                        ),
+                    )
+                )
+
     policy = getattr(model, "meta_label_policy", None)
     if isinstance(policy, dict) and policy.get("enabled") is True:
         checks.append(_check("ok", "meta-label policy", str(policy.get("mode") or "enabled")))
@@ -145,11 +171,13 @@ def assert_model_promoted(
     *,
     model_path: str | Path | None = None,
     require_selection_risk: bool = True,
+    require_execution_validation: bool = True,
 ) -> ModelReadinessReport:
     report = build_model_readiness_report(
         model,
         model_path=model_path,
         require_selection_risk=require_selection_risk,
+        require_execution_validation=require_execution_validation,
     )
     if not report.allowed:
         reasons = "; ".join(f"{check.label}: {check.detail}" for check in report.checks if check.status == "block")
@@ -161,6 +189,7 @@ def load_model_readiness_report(
     model_path: str | Path,
     *,
     require_selection_risk: bool = True,
+    require_execution_validation: bool = True,
 ) -> ModelReadinessReport:
     path = Path(model_path)
     model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
@@ -168,4 +197,5 @@ def load_model_readiness_report(
         model,
         model_path=path,
         require_selection_risk=require_selection_risk,
+        require_execution_validation=require_execution_validation,
     )

@@ -118,6 +118,12 @@ Authenticated order reconciliation:
 
 Testnet fills, liquidity, queue position, and response times can diverge from live markets. The simulation therefore does not treat testnet as a perfect proxy. It applies conservative liquidity haircuts and latency buffers, and it requires per-symbol liquidity evidence before a symbol can join the trading universe.
 
+Signed live startup also checks the final model artifact. `model-lab` must stamp
+`execution_validation` into the serialized model after the symbol passes
+liquidity selection, stress replay, and temporal robustness. This keeps a
+generic candle-trained model from being treated as live-ready just because it
+deserializes and has a positive selection score.
+
 Known limitations:
 
 - Full L2 order-book depth and queue position are not yet replayed tick-by-tick.

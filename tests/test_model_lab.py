@@ -4,6 +4,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from simple_ai_trading.api import Candle
+from simple_ai_trading.model import TrainedModel, load_model, serialize_model
+from simple_ai_trading import model_lab
 from simple_ai_trading.model_lab import run_model_lab
 from simple_ai_trading.training_suite import TrainingSuiteRejected
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
@@ -112,14 +114,105 @@ class _Robustness:
         }
 
 
+class _ObjectiveReport:
+    def __init__(self, *, accepted: bool = True) -> None:
+        self.accepted = accepted
+        self.scenario_count = 2
+        self.accepted_objectives = 1 if accepted else 0
+        self.worst_realized_pnl = 4.0 if accepted else -2.0
+        self.worst_max_drawdown = 0.02 if accepted else 0.12
+        self.window_count = 3
+        self.accepted_windows = 3 if accepted else 1
+        self.accepted_window_rate = 1.0 if accepted else 1 / 3
+        self.statistical_edge_accepted = accepted
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "accepted": self.accepted,
+            "objectives": [
+                {"objective": "regular", "accepted": self.accepted, "worst_realized_pnl": self.worst_realized_pnl}
+            ],
+        }
+
+
+def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
+    assert model_lab._objective_report({"objectives": [{"objective": "regular", "accepted": True}]}, "regular") == {
+        "objective": "regular",
+        "accepted": True,
+    }
+    assert model_lab._objective_report({"objectives": [{"objective": "regular"}]}, "aggressive") is None
+
+    valid_path = tmp_path / "model_regular.json"
+    serialize_model(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+        ),
+        valid_path,
+    )
+    invalid_path = tmp_path / "bad.json"
+    invalid_path.write_text("{}", encoding="utf-8")
+    suite = SimpleNamespace(
+        outcomes=[
+            SimpleNamespace(objective="", model_path=valid_path),
+            SimpleNamespace(objective="regular", model_path=tmp_path / "missing.json"),
+            SimpleNamespace(objective="regular", model_path=invalid_path),
+            SimpleNamespace(objective="regular", model_path=valid_path),
+        ]
+    )
+    liquidity = model_lab.MarketEligibility("AAAUSDC", True, "TRADING", 1_000_000.0, 10_000, 2.0, 0.95, ())
+
+    model_lab._stamp_model_execution_validation(
+        suite,
+        symbol="AAAUSDC",
+        market_type="spot",
+        interval="1m",
+        liquidity=liquidity,
+        stress_profile=object(),
+        stress_report=_ObjectiveReport(accepted=True),
+        stress_report_path=tmp_path / "stress.json",
+        robustness_report=_ObjectiveReport(accepted=True),
+        robustness_report_path=tmp_path / "robustness.json",
+    )
+
+    stamped = load_model(valid_path, expected_feature_dim=1)
+    assert stamped.execution_validation["passed"] is True
+    assert stamped.execution_validation["symbol_execution_profile"] is None
+    assert stamped.execution_validation["stress"]["objective"]["objective"] == "regular"
+
+
 def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         assert candles
         assert kwargs["objectives"] == ("regular",)
         assert kwargs["max_candidates"] == 5
+        model_path = kwargs["output_dir"] / "model_regular.json"
+        serialize_model(
+            TrainedModel(
+                weights=[0.0],
+                bias=0.0,
+                feature_dim=1,
+                epochs=1,
+                feature_means=[0.0],
+                feature_stds=[1.0],
+                selection_risk={
+                    "passed": True,
+                    "effective_trials": 24,
+                    "selected_score": 0.12,
+                    "trial_penalty": 0.01,
+                    "deflated_score": 0.11,
+                },
+            ),
+            model_path,
+        )
         return SimpleNamespace(
             outcomes=[SimpleNamespace(
                 objective="regular",
+                model_path=model_path,
                 best_score=0.12,
                 hybrid_profile="balanced_neighbors",
                 selection_risk={
@@ -177,6 +270,11 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.outcomes[0].stress_validation["accepted"] is True
     assert report.outcomes[0].robustness_validation["accepted"] is True
     assert report.outcomes[0].regime_validation["dominant_regime"] == "trend_up"
+    stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
+    assert stamped.execution_validation["passed"] is True
+    assert stamped.execution_validation["symbol"] == "AAAUSDC"
+    assert stamped.execution_validation["stress"]["accepted"] is True
+    assert stamped.execution_validation["temporal_robustness"]["accepted"] is True
 
 
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:

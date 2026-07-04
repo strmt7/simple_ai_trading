@@ -150,6 +150,12 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
             "trial_penalty": 0.03,
             "deflated_score": 0.09,
         },
+        execution_validation={
+            "passed": True,
+            "symbol": "BTCUSDC",
+            "stress": {"accepted": True},
+            "temporal_robustness": {"accepted": True},
+        },
     )
 
 
