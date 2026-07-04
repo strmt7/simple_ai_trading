@@ -53,6 +53,8 @@ Current blueprint principles:
 - Implemented supervised and hybrid models can produce candidate signals only
   after objective, temporal, path-quality, and portfolio gates pass.
 - Regime and AI-review layers are veto/cooldown/review layers, not alpha engines.
+- The trained meta-label layer is a pre-entry execution gate only: it can skip
+  or downsize a signal, but it cannot create a new signal or override exits.
 - Foundation forecasts are logged features until ablation and no-lookahead
   replay prove that they add value after costs.
 - RL is limited to sandboxed meta-control research. It must not emit raw
@@ -130,9 +132,11 @@ Implementation direction:
 - Conservative mode should require high meta-label precision and skip more
   often. Aggressive mode can accept lower meta precision only if drawdown,
   loss-streak, and CVaR gates remain intact.
-- Current implementation trains an observe-only meta-label policy from simulated
-  trade outcomes and persists it in model/training artifacts. It is not yet a
-  live execution gate.
+- Current implementation trains a compact meta-label policy from simulated trade
+  outcomes, persists it in model/training artifacts, and applies it as a
+  deterministic pre-entry gate in backtests and live/autonomous entry paths.
+  Enabled policies can only `take`, `downsize`, or `skip`; malformed enabled
+  policies fail closed by skipping the entry.
 
 Sources:
 
@@ -334,8 +338,8 @@ Implemented objective gates:
 
 ## Prioritized Backlog
 
-1. Promote meta-label policy from observe-only evidence to a tested execution
-   gate after enough out-of-sample artifacts support it.
+1. Expand meta-label validation with cross-symbol, out-of-sample policy replay
+   and per-risk-level precision/drift dashboards.
 2. Depth/top-of-book data store and microstructure feature block.
 3. LightGBM OpenCL tabular candidate with repeated-seed validation.
 4. Patch-transformer research candidate using PyTorch DirectML.
@@ -343,7 +347,7 @@ Implemented objective gates:
 6. RL sandbox for meta-control only after realistic depth simulation exists.
 7. Feature ablation reports for every indicator/model family.
 8. ONNX/WinML inference parity checks before packaging AI inference into the
-    Windows app.
+   Windows app.
 
 ## What Not To Do
 

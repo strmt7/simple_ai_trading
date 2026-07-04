@@ -575,6 +575,64 @@ def test_run_loop_opens_position_when_flat_and_long_signal(tmp_path: Path) -> No
     assert opens[0].side == "LONG"
 
 
+def test_open_position_uses_meta_label_size_multiplier(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
+    strategy = replace(
+        StrategyConfig(),
+        risk_per_trade=0.01,
+        max_position_pct=0.50,
+        stop_loss_pct=0.02,
+    )
+    full = _open_position_from_decision(
+        Decision(side="LONG", confidence=0.9, mark_price=100.0),
+        _runtime(),
+        strategy,
+        get_objective("default"),
+        cfg,
+        clock=_tick_clock(),
+    )
+    downsized = _open_position_from_decision(
+        Decision(
+            side="LONG",
+            confidence=0.9,
+            mark_price=100.0,
+            size_multiplier=0.25,
+            meta_label_action="downsize",
+            meta_label_reason="meta_label_downsize",
+        ),
+        _runtime(),
+        strategy,
+        get_objective("default"),
+        cfg,
+        clock=_tick_clock(),
+    )
+
+    assert downsized.notional == pytest.approx(full.notional * 0.25)
+    assert downsized.qty == pytest.approx(full.qty * 0.25)
+
+
+def test_entry_gate_blocks_meta_label_zero_size(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
+    gate = _entry_gate(
+        PositionsStore(root=cfg.positions_root),
+        Decision(
+            side="LONG",
+            confidence=0.9,
+            mark_price=100.0,
+            size_multiplier=0.0,
+            meta_label_action="skip",
+            meta_label_reason="meta_label_skip",
+        ),
+        replace(StrategyConfig(), max_open_positions=1),
+        cfg,
+        get_objective("default"),
+        now_ms_value=3_000,
+    )
+
+    assert gate.allowed is False
+    assert gate.reason == "meta_label_skip"
+
+
 def test_run_loop_respects_max_open_positions(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=2)
     # Pre-stage a position so the open branch is skipped.

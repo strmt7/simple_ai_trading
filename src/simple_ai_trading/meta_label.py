@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict, dataclass
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
-from .backtest import BacktestResult
 from .features import ModelRow
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
-from .objective import get_objective
 from .types import StrategyConfig
+
+if TYPE_CHECKING:
+    from .backtest import BacktestResult
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,18 @@ class MetaLabelReport:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class MetaLabelDecision:
+    enabled: bool
+    action: str
+    size_multiplier: float
+    signal_strength: float
+    reason: str
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 def _finite(value: object, default: float = 0.0) -> float:
     try:
         parsed = float(value)
@@ -75,6 +88,8 @@ def _mean_return(samples: Sequence[MetaLabelSample]) -> float:
 
 
 def _target_precision(objective_name: str) -> float:
+    from .objective import get_objective
+
     objective = get_objective(objective_name).name
     if objective == "conservative":
         return 0.70
@@ -88,6 +103,53 @@ def _signal_strength(adjusted_probability: float, threshold: float, side: int, m
         boundary = 1.0 - threshold
         return max(0.0, boundary - adjusted_probability)
     return max(0.0, adjusted_probability - threshold)
+
+
+def apply_meta_label_policy(
+    policy: object,
+    *,
+    adjusted_probability: float,
+    threshold: float,
+    side: int,
+    market_type: str,
+) -> MetaLabelDecision:
+    """Return take/downsize/skip behavior for a persisted meta-label policy.
+
+    Missing or disabled policies preserve legacy behavior.  An explicitly
+    enabled but malformed policy fails closed by skipping the entry, because a
+    corrupted execution gate is more dangerous than a missed trade.
+    """
+
+    side = 1 if side > 0 else (-1 if side < 0 else 0)
+    strength = _signal_strength(
+        _finite(adjusted_probability, 0.5),
+        _finite(threshold, 0.5),
+        side,
+        market_type,
+    )
+    if side == 0:
+        return MetaLabelDecision(False, "no_signal", 0.0, float(strength), "no_actionable_signal")
+    if not isinstance(policy, dict) or policy.get("enabled") is not True:
+        return MetaLabelDecision(False, "take", 1.0, float(strength), "meta_label_policy_disabled")
+    if str(policy.get("mode", "")) != "take_downsize_skip":
+        return MetaLabelDecision(True, "skip", 0.0, float(strength), "invalid_meta_label_mode")
+    take_threshold = _finite(policy.get("take_threshold"), math.nan)
+    downsize_threshold = _finite(policy.get("downsize_threshold"), math.nan)
+    downsize_fraction = _finite(policy.get("downsize_fraction"), 0.5)
+    if (
+        not math.isfinite(take_threshold)
+        or not math.isfinite(downsize_threshold)
+        or take_threshold < 0.0
+        or downsize_threshold < 0.0
+        or downsize_threshold > take_threshold
+    ):
+        return MetaLabelDecision(True, "skip", 0.0, float(strength), "invalid_meta_label_thresholds")
+    downsize_fraction = max(0.05, min(1.0, downsize_fraction))
+    if strength >= take_threshold:
+        return MetaLabelDecision(True, "take", 1.0, float(strength), "meta_label_take")
+    if strength >= downsize_threshold:
+        return MetaLabelDecision(True, "downsize", float(downsize_fraction), float(strength), "meta_label_downsize")
+    return MetaLabelDecision(True, "skip", 0.0, float(strength), "meta_label_skip")
 
 
 def extract_meta_label_samples(
@@ -148,6 +210,8 @@ def build_meta_label_report(
     market_type: str,
 ) -> MetaLabelReport:
     """Train a compact take/downsize/skip policy from simulated trade outcomes."""
+
+    from .objective import get_objective
 
     objective = get_objective(objective_name)
     samples = extract_meta_label_samples(rows, model, strategy, result, market_type=market_type)

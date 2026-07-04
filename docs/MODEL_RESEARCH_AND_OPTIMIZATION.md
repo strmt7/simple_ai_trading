@@ -130,12 +130,14 @@ positive P&L, sufficient closed trades, buy-and-hold edge, and drawdown
 discipline. Rejected model-lab candidates now include per-window `reject_reason`
 diagnostics so operators can distinguish missing trade count, negative P&L,
 buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
-After a candidate survives selection, the suite trains an observe-only
-meta-label policy from the accepted model's simulated trade log. The policy
+After a candidate survives selection, the suite trains a compact meta-label
+policy from the accepted model's simulated trade log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
 under the current objective precision target and is persisted in both the model
-artifact and `training_suite_summary.json`. It is evidence for future execution
-gating; it does not silently override live orders yet.
+artifact and `training_suite_summary.json`. Backtests, the legacy live loop, and
+the autonomous loop now apply that policy as a deterministic pre-entry
+skip/downsize gate. It cannot create entries or override exits, and malformed
+enabled policies fail closed by skipping the entry.
 For host smoke checks, `train-suite` and `model-lab` expose `--max-candidates`;
 this caps candidate count per objective only when explicitly set and should not
 be used to claim a full optimization result.
@@ -196,8 +198,8 @@ All three require positive expectancy.
    bid/ask spread, exchange status, and quote-asset policy.
 3. Fetches recent klines for each ranked symbol.
 4. Runs the training suite and hybrid optimizer for one or more objectives.
-5. Records observe-only meta-label take/downsize/skip evidence from simulated
-   trade outcomes for every selected objective model.
+5. Records and serializes meta-label take/downsize/skip policy evidence from
+   simulated trade outcomes for every selected objective model.
 6. Requires the selected candidate to pass purged chronological walk-forward
    folds before serialization. The purge gap protects against label-lookahead
    leakage between train and test folds.

@@ -4,7 +4,7 @@ import pytest
 
 from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading.features import ModelRow
-from simple_ai_trading.meta_label import build_meta_label_report, extract_meta_label_samples
+from simple_ai_trading.meta_label import apply_meta_label_policy, build_meta_label_report, extract_meta_label_samples
 from simple_ai_trading.model import TrainedModel
 from simple_ai_trading.types import StrategyConfig
 
@@ -113,3 +113,64 @@ def test_build_meta_label_report_handles_insufficient_samples() -> None:
 
     assert report.status == "insufficient"
     assert report.policy["enabled"] is False
+
+
+def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> None:
+    policy = {
+        "enabled": True,
+        "mode": "take_downsize_skip",
+        "take_threshold": 0.20,
+        "downsize_threshold": 0.10,
+        "downsize_fraction": 0.35,
+    }
+
+    take = apply_meta_label_policy(
+        policy,
+        adjusted_probability=0.82,
+        threshold=0.60,
+        side=1,
+        market_type="spot",
+    )
+    assert take.action == "take"
+    assert take.size_multiplier == pytest.approx(1.0)
+
+    downsize = apply_meta_label_policy(
+        policy,
+        adjusted_probability=0.72,
+        threshold=0.60,
+        side=1,
+        market_type="spot",
+    )
+    assert downsize.action == "downsize"
+    assert downsize.size_multiplier == pytest.approx(0.35)
+
+    skip = apply_meta_label_policy(
+        policy,
+        adjusted_probability=0.65,
+        threshold=0.60,
+        side=1,
+        market_type="spot",
+    )
+    assert skip.action == "skip"
+    assert skip.size_multiplier == 0.0
+
+    disabled = apply_meta_label_policy(
+        {"enabled": False},
+        adjusted_probability=0.40,
+        threshold=0.60,
+        side=-1,
+        market_type="futures",
+    )
+    assert disabled.enabled is False
+    assert disabled.action == "take"
+
+    invalid = apply_meta_label_policy(
+        {"enabled": True, "mode": "take_downsize_skip", "take_threshold": 0.1, "downsize_threshold": 0.2},
+        adjusted_probability=0.99,
+        threshold=0.60,
+        side=1,
+        market_type="spot",
+    )
+    assert invalid.enabled is True
+    assert invalid.action == "skip"
+    assert invalid.reason == "invalid_meta_label_thresholds"

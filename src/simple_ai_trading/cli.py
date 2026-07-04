@@ -38,6 +38,7 @@ from .api import SymbolConstraints
 from .external_signals import ExternalSignalReport, collect_external_signals, render_external_signal_report
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
+from .meta_label import apply_meta_label_policy
 from .model import (
     assess_probability_calibration,
     build_model_quality_report,
@@ -4982,6 +4983,19 @@ def _strategy_with_external_risk(cfg: StrategyConfig, risk_multiplier: float) ->
     )
 
 
+def _strategy_with_size_multiplier(cfg: StrategyConfig, size_multiplier: float) -> StrategyConfig:
+    multiplier = _clamp(float(size_multiplier), 0.0, 1.0)
+    if multiplier >= 0.999:
+        return cfg
+    return StrategyConfig(
+        **{
+            **cfg.asdict(),
+            "risk_per_trade": max(0.0001, cfg.risk_per_trade * multiplier),
+            "max_position_pct": max(0.0, cfg.max_position_pct * multiplier),
+        }
+    )
+
+
 def _apply_external_signal_to_score(
     score: float,
     cfg: StrategyConfig,
@@ -5724,6 +5738,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             runtime=runtime,
         )
         direction = _score_to_direction(score, decision_cfg, runtime.market_type, threshold)
+        meta_decision = apply_meta_label_policy(
+            getattr(model, "meta_label_policy", {}),
+            adjusted_probability=score,
+            threshold=threshold,
+            side=direction,
+            market_type=runtime.market_type,
+        )
 
         # cooldown reduces immediate flip-flopping in choppy conditions
         if cooldown_left > 0:
@@ -5734,6 +5755,25 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         price = latest.close
         day = _safe_day_ms(latest.timestamp)
         if position_side == 0 and direction != 0:
+            if meta_decision.enabled and meta_decision.size_multiplier <= 0.0:
+                print(f"step {i + 1:>2}: meta-label skipped entry ({meta_decision.reason})")
+                skipped_entries += 1
+                live_events.append(
+                    {
+                        "step": i + 1,
+                        "status": "skip_meta_label",
+                        "score": float(score),
+                        "direction": int(direction),
+                        "meta_label": meta_decision.asdict(),
+                    }
+                )
+                live_sleep()
+                continue
+            entry_cfg = (
+                _strategy_with_size_multiplier(decision_cfg, meta_decision.size_multiplier)
+                if meta_decision.enabled and meta_decision.action == "downsize"
+                else decision_cfg
+            )
             current_drawdown = (equity_peak - cash) / equity_peak if equity_peak else 0.0
             entry_risk = assess_entry_risk(
                 direction=direction,
@@ -5764,7 +5804,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             notional, qty = _build_order_notional(
                 cash,
                 price,
-                decision_cfg,
+                entry_cfg,
                 runtime.market_type,
                 leverage,
                 client,
@@ -5832,7 +5872,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 order_response = _paper_or_live_order(
                     client,
                     runtime,
-                    decision_cfg,
+                    entry_cfg,
                     side=side,
                     size=qty,
                     dry_run=effective_dry_run,
@@ -5880,6 +5920,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "notional": float(notional),
                     "cash_after_entry": float(cash),
                     "fill_source": fill_source,
+                    "meta_label": meta_decision.asdict(),
                 }
             )
             cooldown_left = 0
@@ -6444,13 +6485,27 @@ def _build_autonomous_decision_fn(
             runtime=runtime,
         )
         direction = _score_to_direction(score, decision_strategy, runtime.market_type, threshold)
+        meta_decision = apply_meta_label_policy(
+            getattr(current_model, "meta_label_policy", {}),
+            adjusted_probability=score,
+            threshold=threshold,
+            side=direction,
+            market_type=runtime.market_type,
+        )
         if direction > 0:
             side = "LONG"
         elif direction < 0:
             side = "SHORT"
         else:
             side = "FLAT"
-        return Decision(side=side, confidence=float(score), mark_price=float(latest.close))
+        return Decision(
+            side=side,
+            confidence=float(score),
+            mark_price=float(latest.close),
+            size_multiplier=float(meta_decision.size_multiplier),
+            meta_label_action=str(meta_decision.action),
+            meta_label_reason=str(meta_decision.reason),
+        )
 
     return decide, None, model_notice
 

@@ -18,6 +18,7 @@ def test_model_blueprint_contract_is_fail_closed() -> None:
 
     assert families["foundation_forecaster"].execution_authority == "advisory_features_only"
     assert families["rl_meta_controller"].execution_authority == "none_for_raw_buy_sell_decisions"
+    assert families["meta_label_gate"].execution_authority == "pre_entry_skip_or_downsize_only"
     assert "conservative" not in families["rl_meta_controller"].risk_levels
     assert "blocked_until_depth_store" == families["deep_lob_microstructure"].status
 
