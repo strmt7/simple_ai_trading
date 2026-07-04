@@ -191,6 +191,12 @@ inline constexpr CommandOptionSpec kOptions_prepare[] = {
     {L"--online-doctor", L"online_doctor", L"", L"false", L"include exchange connectivity in final readiness checks", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_reconcile[] = {
+    {L"--json", L"json", L"", L"false", L"", false, false},
+    {L"--output", L"output", L"", L"data/autonomous/reconciliation.json", L"", false, true},
+    {L"--quantity-tolerance", L"quantity_tolerance", L"", L"1e-08", L"", false, true},
+};
+
 inline constexpr CommandOptionSpec kOptions_report[] = {
     {L"--account", L"account", L"", L"false", L"include authenticated account state", false, false},
     {L"--doctor", L"doctor", L"", L"true", L"include readiness checks", false, false},
@@ -412,6 +418,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats]", kOptions_positions, 1},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
+    {L"reconcile", L"usage: simple-ai-trading reconcile [-h] [--json] [--output OUTPUT]                                    [--quantity-tolerance QUANTITY_TOLERANCE]", kOptions_reconcile, 3},
     {L"report", L"usage: simple-ai-trading report [-h] [--account] [--doctor] [--no-doctor]                                 [--online] [--input INPUT] [--model MODEL]", kOptions_report, 6},
     {L"risk", L"usage: simple-ai-trading risk [-h] [--model MODEL] [--paper] [--live]                               [--leverage LEVERAGE] [--json]", kOptions_risk, 5},
     {L"shell", L"usage: simple-ai-trading shell [-h]", nullptr, 0},

@@ -124,9 +124,10 @@ simple-ai-trading autonomous pause
 simple-ai-trading autonomous resume
 simple-ai-trading autonomous stop
 simple-ai-trading autonomous status
+simple-ai-trading reconcile
 ```
 
-`stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. Authenticated autonomous exchange execution remains disabled until exchange-order execution and reconciliation are fully wired.
+`stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes any locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available. `reconcile` reads the signed spot/futures account state, compares exchange exposure against non-paper local open positions, writes `data/autonomous/reconciliation.json`, and exits nonzero on exchange-only, local-only, or quantity-mismatched exposure.
 
 ## Risk Levels
 
@@ -169,6 +170,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - Backtests include pessimistic execution assumptions.
 - Authenticated live/testnet order loops do not trust requested quantity as filled quantity; they require execution fields or a signed order-status reconciliation.
 - Autonomous stop closes local open positions to avoid stale ledger exposure.
+- `reconcile` must be clean before treating the local autonomous ledger as flat or aligned with exchange state.
 
 ## Test
 

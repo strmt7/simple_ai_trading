@@ -73,6 +73,8 @@ Authenticated order reconciliation:
 - A placement ACK that contains `origQty` but no executed quantity is treated as unresolved, not filled.
 - If an order response has an `orderId` or client order id but no fill, the app queries the spot `/api/v3/order` or futures `/fapi/v1/order` status endpoint before updating the local ledger.
 - If the fill is still unresolved, the loop records an order error and stops instead of silently assuming exposure changed.
+- `simple-ai-trading reconcile` compares signed account exposure with the local autonomous ledger. Paper positions are reported but ignored for exchange mismatch math; non-paper local positions must match spot balances or futures positions for the active symbol set.
+- Reconciliation writes `data/autonomous/reconciliation.json` and exits nonzero on exchange-only exposure, local-only exposure, or quantity mismatches.
 
 ## Testnet vs Mainnet
 
@@ -96,6 +98,7 @@ Do not interpret a profitable backtest as approval to trade real money. A candid
 - `ai` if AI is enabled
 - `universe`
 - `risk`
+- `reconcile`
 - `audit`
 - `backtest`
 - `backtest-chart`

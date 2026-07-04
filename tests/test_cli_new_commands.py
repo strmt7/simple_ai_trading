@@ -332,6 +332,58 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
 
 
 # --------------------------------------------------------------------------- #
+# reconcile
+# --------------------------------------------------------------------------- #
+
+def test_command_reconcile_requires_credentials(monkeypatch, capsys, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli, "load_runtime", lambda: RuntimeConfig(testnet=True, api_key="", api_secret=""))
+
+    assert cli.command_reconcile(argparse.Namespace(json=False, output="data/autonomous/reconciliation.json", quantity_tolerance=1e-8)) == 2
+    assert "requires Binance API key and secret" in capsys.readouterr().err
+
+
+def test_command_reconcile_writes_ok_report(monkeypatch, capsys, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    class _Client:
+        def get_account(self):
+            return {"positions": [{"symbol": "BTCUSDC", "positionAmt": "0", "entryPrice": "0"}]}
+
+    monkeypatch.setattr(
+        cli,
+        "load_runtime",
+        lambda: RuntimeConfig(testnet=True, market_type="futures", api_key="k", api_secret="s"),
+    )
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _Client())
+
+    assert cli.command_reconcile(argparse.Namespace(json=False, output="data/autonomous/reconciliation.json", quantity_tolerance=1e-8)) == 0
+    out = capsys.readouterr().out
+    assert "reconcile: ok" in out
+    assert (tmp_path / "data" / "autonomous" / "reconciliation.json").exists()
+
+
+def test_command_reconcile_returns_nonzero_on_exchange_mismatch(monkeypatch, capsys, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    class _Client:
+        def get_account(self):
+            return {"positions": [{"symbol": "BTCUSDC", "positionAmt": "0.25", "entryPrice": "100", "notional": "25"}]}
+
+    monkeypatch.setattr(
+        cli,
+        "load_runtime",
+        lambda: RuntimeConfig(testnet=True, market_type="futures", api_key="k", api_secret="s"),
+    )
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _Client())
+
+    assert cli.command_reconcile(argparse.Namespace(json=True, output="data/autonomous/reconciliation.json", quantity_tolerance=1e-8)) == 2
+    out = capsys.readouterr().out
+    assert '"ok": false' in out
+    assert "exchange_exposure_without_local_position" in out
+
+
+# --------------------------------------------------------------------------- #
 # ai-review
 # --------------------------------------------------------------------------- #
 
