@@ -153,6 +153,9 @@ class Decision:
     side: str  # "LONG" / "SHORT" / "FLAT"
     confidence: float
     mark_price: float
+    size_multiplier: float = 1.0
+    meta_label_action: str = ""
+    meta_label_reason: str = ""
 
 
 DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
@@ -209,7 +212,8 @@ def _open_position_from_decision(
 
     price = max(0.01, float(decision.mark_price))
     notional_pct = stop_loss_sized_notional_pct(strategy, runtime.market_type, leverage=strategy.leverage)
-    target_notional = max(0.0, cfg.starting_reference_cash * notional_pct)
+    size_multiplier = _decision_size_multiplier(decision)
+    target_notional = max(0.0, cfg.starting_reference_cash * notional_pct * size_multiplier)
     qty = max(0.0, target_notional / price)
     notional = qty * price
     return OpenPosition(
@@ -346,6 +350,14 @@ def _directional_confidence(decision: Decision) -> float:
     return confidence
 
 
+def _decision_size_multiplier(decision: Decision) -> float:
+    try:
+        multiplier = float(decision.size_multiplier)
+    except (TypeError, ValueError):
+        return 0.0
+    return max(0.0, min(1.0, multiplier))
+
+
 def _daily_entry_count(store: PositionsStore, day: int) -> int:
     opened = sum(1 for position in store.load_open() if _safe_day_ms(position.opened_at_ms) == day)
     closed = sum(1 for trade in store.load_ledger() if _safe_day_ms(trade.opened_at_ms) == day)
@@ -397,6 +409,8 @@ def _entry_gate(
 
     if decision.side not in {"LONG", "SHORT"}:
         reason = "flat-signal"
+    elif _decision_size_multiplier(decision) <= 0.0:
+        reason = decision.meta_label_reason or "meta-label-skip"
     elif confidence < min_confidence:
         reason = f"low-confidence<{min_confidence:.3f}"
     elif max_open <= 0:

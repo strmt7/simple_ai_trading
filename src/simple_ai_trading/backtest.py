@@ -9,6 +9,7 @@ from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
 from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
+from .meta_label import MetaLabelDecision, apply_meta_label_policy
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
 from .risk_controls import stop_loss_sized_notional_pct
 from .types import StrategyConfig
@@ -37,7 +38,7 @@ class BacktestResult:
     equity_curve: tuple[dict[str, float | int], ...] = ()
     trade_pnls: tuple[float, ...] = ()
     trade_returns: tuple[float, ...] = ()
-    trade_log: tuple[dict[str, float | int], ...] = ()
+    trade_log: tuple[dict[str, object], ...] = ()
     gross_profit: float = 0.0
     gross_loss: float = 0.0
     profit_factor: float = 0.0
@@ -45,6 +46,8 @@ class BacktestResult:
     average_trade_return: float = 0.0
     trade_return_stdev: float = 0.0
     max_consecutive_losses: int = 0
+    meta_label_skips: int = 0
+    meta_label_downsizes: int = 0
 
 
 @dataclass(frozen=True)
@@ -551,7 +554,9 @@ def run_backtest(
     equity_curve: list[dict[str, float | int]] = []
     trade_pnls: list[float] = []
     trade_returns: list[float] = []
-    trade_log: list[dict[str, float | int]] = []
+    trade_log: list[dict[str, object]] = []
+    meta_label_skips = 0
+    meta_label_downsizes = 0
 
     position_side = 0
     notional = 0.0
@@ -561,7 +566,9 @@ def run_backtest(
     entry_fee_paid = 0.0
     entry_equity_reference = cash
     entry_timestamp = int(rows[0].timestamp)
+    entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "initial")
     pending_signal = 0
+    pending_meta = MetaLabelDecision(False, "no_signal", 0.0, 0.0, "initial")
     last_close_timestamp: int | None = None
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
     final_mark_price = rows[-1].close
@@ -589,8 +596,16 @@ def run_backtest(
 
     for row, raw_score in zip(rows, probabilities, strict=True):
         execution_signal = pending_signal
+        execution_meta = pending_meta
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
         pending_signal = _normalize_market_direction(score, decision_threshold, market_type)
+        pending_meta = apply_meta_label_policy(
+            getattr(model, "meta_label_policy", {}),
+            adjusted_probability=score,
+            threshold=decision_threshold,
+            side=pending_signal,
+            market_type=market_type,
+        )
         price = row.close
         final_mark_price = price
         day = _safe_day(row.timestamp)
@@ -603,6 +618,10 @@ def run_backtest(
             and row.timestamp - last_close_timestamp < cooldown_ms
         )
         if position_side == 0 and execution_signal != 0:
+            if execution_meta.size_multiplier <= 0.0:
+                if execution_meta.enabled:
+                    meta_label_skips += 1
+                continue
             if cooldown_active:
                 continue
             if trade_cap_reached:
@@ -614,6 +633,11 @@ def run_backtest(
                 market_type=market_type,
                 leverage=leverage,
             )
+            if execution_meta.enabled and execution_meta.action == "downsize":
+                meta_label_downsizes += 1
+                multiplier = max(0.0, min(1.0, float(execution_meta.size_multiplier)))
+                gross *= multiplier
+                effective_margin *= multiplier
 
             if gross <= 0 or effective_margin >= cash:
                 continue
@@ -651,6 +675,7 @@ def run_backtest(
             entry_price = entry
             margin_used = effective_margin
             daily_trade_count[day] = daily_trade_count.get(day, 0) + 1
+            entry_meta = execution_meta
 
             max_exposure = max(max_exposure, abs(notional))
 
@@ -696,6 +721,9 @@ def run_backtest(
                     "return_pct": float(return_pct),
                     "entry_fee": float(entry_fee_paid),
                     "exit_fee": float(exit_fee),
+                    "meta_label_action": str(entry_meta.action),
+                    "meta_label_size_multiplier": float(entry_meta.size_multiplier),
+                    "meta_label_signal_strength": float(entry_meta.signal_strength),
                 })
                 if realized > 0:
                     wins += 1
@@ -707,6 +735,7 @@ def run_backtest(
                 margin_used = 0.0
                 entry_fee_paid = 0.0
                 entry_equity_reference = cash
+                entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "reset")
                 last_close_timestamp = row.timestamp
 
         # mark-to-market drawdown control with unrealized exposure
@@ -761,6 +790,9 @@ def run_backtest(
             "return_pct": float(return_pct),
             "entry_fee": float(entry_fee_paid),
             "exit_fee": float(final_fee),
+            "meta_label_action": str(entry_meta.action),
+            "meta_label_size_multiplier": float(entry_meta.size_multiplier),
+            "meta_label_signal_strength": float(entry_meta.signal_strength),
         })
         if final_realized > 0:
             wins += 1
@@ -817,5 +849,7 @@ def run_backtest(
         average_trade_return=float(path_quality["average_trade_return"]),
         trade_return_stdev=float(path_quality["trade_return_stdev"]),
         max_consecutive_losses=int(path_quality["max_consecutive_losses"]),
+        meta_label_skips=int(meta_label_skips),
+        meta_label_downsizes=int(meta_label_downsizes),
         **_score_backend_payload(score_backend),
     )

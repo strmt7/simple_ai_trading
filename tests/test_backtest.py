@@ -61,6 +61,71 @@ def test_backtest_empty_rows_preserves_requested_scoring_backend() -> None:
     assert result.scoring_backend_kind == "cpu"
 
 
+def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
+    rows = [
+        ModelRow(timestamp=i * 60_000, close=100.0 + i, features=(1.0,), label=1)
+        for i in range(8)
+    ]
+    cfg = StrategyConfig(
+        risk_per_trade=0.01,
+        max_position_pct=0.5,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.50,
+        signal_threshold=0.60,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+    )
+    base_model = TrainedModel(
+        weights=[0.0],
+        bias=5.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.60,
+    )
+
+    baseline = run_backtest(rows, base_model, cfg, starting_cash=1000.0)
+    assert baseline.closed_trades >= 1
+    baseline_notional = float(baseline.trade_log[0]["gross_notional"])
+
+    downsize_model = TrainedModel(
+        **{
+            **base_model.__dict__,
+            "meta_label_policy": {
+                "enabled": True,
+                "mode": "take_downsize_skip",
+                "take_threshold": 0.90,
+                "downsize_threshold": 0.20,
+                "downsize_fraction": 0.25,
+            },
+        }
+    )
+    downsized = run_backtest(rows, downsize_model, cfg, starting_cash=1000.0)
+    assert downsized.closed_trades >= 1
+    assert downsized.meta_label_downsizes >= 1
+    assert float(downsized.trade_log[0]["gross_notional"]) == pytest.approx(baseline_notional * 0.25)
+    assert downsized.trade_log[0]["meta_label_action"] == "downsize"
+
+    skip_model = TrainedModel(
+        **{
+            **base_model.__dict__,
+            "meta_label_policy": {
+                "enabled": True,
+                "mode": "take_downsize_skip",
+                "take_threshold": 1.0,
+                "downsize_threshold": 0.90,
+                "downsize_fraction": 0.25,
+            },
+        }
+    )
+    skipped = run_backtest(rows, skip_model, cfg, starting_cash=1000.0)
+    assert skipped.closed_trades == 0
+    assert skipped.meta_label_skips >= 1
+    assert skipped.trades_per_day_cap_hit == 0
+    assert skipped.trade_log == ()
+
+
 def test_backtest_gpu_batch_scoring_path(monkeypatch) -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
