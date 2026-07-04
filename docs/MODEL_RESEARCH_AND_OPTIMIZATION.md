@@ -476,6 +476,9 @@ assert that every CLI command appears in the Windows app.
   in-sample/out-of-sample rank inversion.
 - No signed live startup when the model lacks accepted symbol-specific
   execution stress, temporal robustness, and portfolio-risk evidence.
+- No signed live or authenticated autonomous startup when current Binance
+  request-weight/order-count evidence is at or above the 80% startup threshold
+  or the exchange has returned `Retry-After`.
 - No score-improving model refinement if the validation/full-sample risk
   snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
 - No autonomous post-outage resume until signed exchange exposure reconciles

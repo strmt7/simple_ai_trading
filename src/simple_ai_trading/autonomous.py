@@ -30,6 +30,12 @@ from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Mapping
 
+from .api_budget import (
+    ApiBudgetReport,
+    api_budget_startup_block_reason,
+    build_api_budget_report,
+    summarize_api_budget,
+)
 from .api import BinanceAPIError, BinanceClient
 from .logging_ext import configure as configure_logging
 from .objective import ObjectiveSpec, get_objective
@@ -55,6 +61,7 @@ STATE_STOPPED = "STOPPED"
 _VALID_STATES = {STATE_RUNNING, STATE_PAUSED, STATE_STOPPING, STATE_STOPPED}
 _MIN_INTERVAL_SECONDS = 1.0
 _DEFAULT_AUTONOMOUS_DIR = Path("data/autonomous")
+_API_BUDGET_LIVE_START_MAX_USED_RATIO = 0.80
 
 
 @dataclass
@@ -147,6 +154,28 @@ def ensure_credentials(runtime: RuntimeConfig, cfg: AutonomousConfig) -> None:
         return
     if not runtime.api_key or not runtime.api_secret:
         raise RuntimeError("Autonomous live mode requires runtime.api_key and runtime.api_secret.")
+
+
+def ensure_api_budget_headroom(
+    runtime: RuntimeConfig,
+    client: BinanceClient,
+    *,
+    max_used_ratio: float = _API_BUDGET_LIVE_START_MAX_USED_RATIO,
+) -> ApiBudgetReport:
+    """Fail closed before autonomous live startup when Binance rate budget is tight."""
+
+    fetch_exchange_info = getattr(client, "get_exchange_info", None)
+    exchange_info = fetch_exchange_info() if callable(fetch_exchange_info) else None
+    request_info = dict(getattr(client, "last_request_info", {}) or {})
+    report = build_api_budget_report(
+        market_type=runtime.market_type,
+        exchange_info=exchange_info if isinstance(exchange_info, Mapping) else None,
+        request_info=request_info,
+    )
+    reason = api_budget_startup_block_reason(report, max_used_ratio=max_used_ratio)
+    if reason is not None:
+        raise RuntimeError(reason)
+    return report
 
 
 @dataclass
@@ -768,6 +797,9 @@ def run_loop(
     ensure_credentials(runtime, cfg)
     objective = get_objective(cfg.objective)
     logger = logger or configure_logging(path=cfg.log_path)
+    if not cfg.dry_run:
+        api_budget_report = ensure_api_budget_headroom(runtime, client)
+        logger.info("autonomous api-budget %s", summarize_api_budget(api_budget_report))
     control = AutonomousControl(path=cfg.control_path)
     control.write(STATE_RUNNING, note=f"objective={objective.name}")
     store = PositionsStore(root=cfg.positions_root)

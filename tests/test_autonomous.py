@@ -29,6 +29,7 @@ from simple_ai_trading.autonomous import (
     _open_position_from_decision,
     close_all_open_positions,
     close_tracked_open_positions,
+    ensure_api_budget_headroom,
     ensure_credentials,
     ensure_testnet,
     run_loop,
@@ -244,6 +245,40 @@ def test_ensure_credentials_live_with_keys_passes() -> None:
 def test_ensure_credentials_dry_run_short_circuits() -> None:
     cfg = AutonomousConfig(dry_run=True)
     ensure_credentials(_runtime(api_key="", api_secret=""), cfg)
+
+
+def test_autonomous_live_blocks_when_api_budget_is_too_tight(tmp_path: Path) -> None:
+    class _BudgetClient(FakeClient):
+        last_request_info = {"rate_limit_headers": {"X-MBX-USED-WEIGHT-1M": "960"}}
+
+        def get_exchange_info(self):
+            return {
+                "rateLimits": [
+                    {
+                        "rateLimitType": "REQUEST_WEIGHT",
+                        "interval": "MINUTE",
+                        "intervalNum": 1,
+                        "limit": 1200,
+                    }
+                ]
+            }
+
+    runtime = _runtime()
+    runtime = RuntimeConfig(**{**runtime.asdict(), "dry_run": False})
+    cfg = _make_config(tmp_path, dry_run=False)
+    client = _BudgetClient()
+
+    with pytest.raises(RuntimeError, match="80%"):
+        ensure_api_budget_headroom(runtime, client)
+    with pytest.raises(RuntimeError, match="blocked startup"):
+        run_loop(
+            client,
+            runtime,
+            _strategy(),
+            cfg,
+            decision_fn=lambda *_args: Decision(side="FLAT", confidence=0.0, mark_price=100.0),
+        )
+    assert not (tmp_path / "state.json").exists()
 
 
 # ----- _evaluate_auto_close -------------------------------------------------
