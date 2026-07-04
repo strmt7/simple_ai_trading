@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import shutil
 import subprocess  # nosec B404
 from dataclasses import asdict, dataclass
@@ -15,11 +16,12 @@ from .compute import BackendInfo, default_compute_backend, resolve_backend
 class AIRuntimeConfig:
     enabled: bool = True
     provider: str = "auto"
-    model: str = "auto"
+    model: str = "qwen2.5:7b"
     require_gpu: bool = True
     compute_backend: str = ""
     min_free_vram_gb: float = 8.0
     min_free_ram_gb: float = 16.0
+    min_model_parameters_b: float = 2.0
     allow_paper_fallback: bool = True
 
     def asdict(self) -> dict[str, object]:
@@ -38,6 +40,7 @@ class AICapabilityReport:
     compute_backend_reason: str
     free_vram_gb: float | None
     free_ram_gb: float | None
+    model_parameters_b: float | None
     messages: tuple[str, ...]
     warnings: tuple[str, ...]
 
@@ -51,6 +54,25 @@ def _safe_float(value: object) -> float | None:
     except (TypeError, ValueError, OverflowError):
         return None
     return parsed if parsed == parsed else None
+
+
+def estimate_model_parameters_b(model: str) -> float | None:
+    """Extract an approximate parameter count from common local model names."""
+
+    text = str(model or "").lower()
+    if not text or text in {"auto", "operator-selected-local-llm"}:
+        return None
+    matches = list(re.finditer(r"(?<![a-z0-9])(\d+(?:\.\d+)?)([bm])(?![a-z0-9])", text))
+    values: list[float] = []
+    for match in matches:
+        number = _safe_float(match.group(1))
+        if number is None:
+            continue
+        unit = match.group(2)
+        values.append(number if unit == "b" else number / 1000.0)
+    if values:
+        return max(values)
+    return None
 
 
 def _memory_status_gb() -> float | None:
@@ -203,6 +225,20 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
     model = cfg.model
     if model == "auto":
         model = "operator-selected-local-llm"
+    model_parameters_b = estimate_model_parameters_b(model)
+
+    if cfg.enabled:
+        minimum_parameters_b = max(0.0, float(cfg.min_model_parameters_b))
+        if model_parameters_b is None:
+            warnings.append(
+                "AI model parameter count could not be inferred from the model name; "
+                "use a name like qwen2.5:7b for an enforceable multibillion check"
+            )
+        elif model_parameters_b < minimum_parameters_b:
+            messages.append(
+                f"AI model {model} is {model_parameters_b:.2f}B parameters, below required "
+                f"{minimum_parameters_b:.2f}B"
+            )
 
     if not cfg.enabled:
         messages.append("AI features are disabled")
@@ -218,6 +254,7 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
         compute_backend_reason=backend.reason,
         free_vram_gb=free_vram,
         free_ram_gb=free_ram,
+        model_parameters_b=model_parameters_b,
         messages=tuple(messages),
         warnings=tuple(warnings),
     )
@@ -230,6 +267,7 @@ def render_ai_capability_report(report: AICapabilityReport) -> str:
         f"compute={report.compute_backend_kind} device={report.compute_backend_device}",
         f"free_vram_gb={report.free_vram_gb if report.free_vram_gb is not None else 'unknown'}",
         f"free_ram_gb={report.free_ram_gb if report.free_ram_gb is not None else 'unknown'}",
+        f"model_parameters_b={report.model_parameters_b if report.model_parameters_b is not None else 'unknown'}",
     ]
     for message in report.messages:
         lines.append(f"blocked: {message}")

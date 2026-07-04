@@ -18,7 +18,9 @@ def test_model_blueprint_contract_is_fail_closed() -> None:
     assert validate_blueprint_contract() == ()
     families = {item.family: item for item in model_families()}
 
-    assert families["foundation_forecaster"].execution_authority == "advisory_features_only"
+    assert families["foundation_forecaster"].execution_authority == "advisory_features_only_until_ai_uplift_gate_passes"
+    assert families["ai_uplift_gate"].status == "implemented_governance_gate"
+    assert families["ai_uplift_gate"].execution_authority == "approval_gate_only"
     assert families["rl_meta_controller"].execution_authority == "none_for_raw_buy_sell_decisions"
     assert families["meta_label_gate"].execution_authority == "pre_entry_skip_or_downsize_only"
     assert "conservative" not in families["rl_meta_controller"].risk_levels
@@ -34,6 +36,7 @@ def test_model_blueprint_training_lanes_cover_every_family() -> None:
     assert "sequence_forecast_features" in lanes
     assert "timestamped forecast-feature store" in lanes["sequence_forecast_features"].next_build_step
     assert "cross_asset_graph_sequence" in lanes["sequence_forecast_features"].families
+    assert "ai_uplift_gate" in lanes["governance_and_ai_review"].families
     assert "No direct orders" in lanes["sandbox_meta_control"].runtime_limit
 
 
@@ -41,6 +44,10 @@ def test_model_blueprint_source_catalog_blocks_copying_community_scripts() -> No
     sources = {source.source_id: source for source in research_sources()}
 
     assert "patchtst" in sources
+    assert sources["moirai"].applied_to == ("foundation_forecaster", "cross_asset_graph_sequence")
+    assert sources["bloomberggpt"].applied_to == ("ai_risk_reviewer", "ai_uplift_gate")
+    assert sources["fingpt"].source_type == "primary_research"
+    assert sources["hmm_regime_filter"].applied_to == ("regime_gate", "meta_label_gate")
     assert sources["finmamba"].applied_to == ("cross_asset_graph_sequence",)
     assert sources["boe_agentic_ai"].source_type == "governance"
     assert sources["lightgbm_opencl"].source_type == "official_docs"

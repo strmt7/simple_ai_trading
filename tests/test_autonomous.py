@@ -25,12 +25,14 @@ from simple_ai_trading.autonomous import (
     _directional_confidence,
     _entry_gate,
     _evaluate_auto_close,
+    _loss_budget_guard,
     _open_position_from_decision,
     close_all_open_positions,
     ensure_credentials,
     ensure_testnet,
     run_loop,
 )
+from simple_ai_trading.reconciliation import ReconciliationMismatch, ReconciliationReport
 from simple_ai_trading.logging_ext import reset as reset_logger
 from simple_ai_trading.objective import get_objective
 from simple_ai_trading.positions import (
@@ -523,6 +525,103 @@ def test_run_loop_decision_binance_error_continues(tmp_path: Path) -> None:
     assert result.iterations == 2
 
 
+def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
+    attempts = {"n": 0}
+    reconciliations: list[str] = []
+
+    def dec(_c, _r, _s, _o):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise BinanceAPIError("temporary network outage")
+        return Decision(side="LONG", confidence=0.9, mark_price=100.0)
+
+    def reconcile(_client, runtime, _store):
+        reconciliations.append(runtime.symbol)
+        return ReconciliationReport(
+            ok=True,
+            market_type=runtime.market_type,
+            symbols_checked=[runtime.symbol],
+            local_open_count=0,
+            local_live_open_count=0,
+            local_paper_open_count=0,
+            exchange_exposure_count=0,
+        )
+
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        replace(_strategy(), recovery_cooldown_seconds=1, max_open_positions=1),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+        reconcile_fn=reconcile,
+    )
+
+    assert result.exit_reason == "iteration-cap"
+    assert result.opened_trades == 1
+    assert attempts["n"] == 3
+    assert reconciliations == ["BTCUSDC", "BTCUSDC"]
+
+
+def test_run_loop_reconciliation_mismatch_after_outage_fails_closed(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
+    attempts = {"n": 0}
+
+    def dec(_c, _r, _s, _o):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise BinanceAPIError("temporary network outage")
+        return Decision(side="LONG", confidence=0.9, mark_price=100.0)
+
+    def reconcile(_client, runtime, _store):
+        if attempts["n"] == 0:
+            return ReconciliationReport(
+                ok=True,
+                market_type=runtime.market_type,
+                symbols_checked=[runtime.symbol],
+                local_open_count=0,
+                local_live_open_count=0,
+                local_paper_open_count=0,
+                exchange_exposure_count=0,
+            )
+        return ReconciliationReport(
+            ok=False,
+            market_type=runtime.market_type,
+            symbols_checked=[runtime.symbol],
+            local_open_count=0,
+            local_live_open_count=0,
+            local_paper_open_count=0,
+            exchange_exposure_count=1,
+            mismatches=[
+                ReconciliationMismatch(
+                    symbol=runtime.symbol,
+                    side="LONG",
+                    local_qty=0.0,
+                    exchange_qty=0.1,
+                    difference=0.1,
+                    reason="exchange_exposure_without_local_position",
+                )
+            ],
+        )
+
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        replace(_strategy(), recovery_cooldown_seconds=1),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+        reconcile_fn=reconcile,
+    )
+
+    assert result.exit_reason == "reconciliation-mismatch"
+    assert result.opened_trades == 0
+    assert PositionsStore(root=cfg.positions_root).load_open() == []
+
+
 def test_run_loop_decision_generic_exception_breaks(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=5)
 
@@ -719,7 +818,13 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(tmp_pa
     )
     assert gate.reason.startswith("cooldown-active")
 
-    no_cooldown = replace(no_cap, cooldown_minutes=0)
+    no_cooldown = replace(
+        no_cap,
+        cooldown_minutes=0,
+        max_daily_loss_pct=0.25,
+        max_session_loss_pct=0.50,
+        max_consecutive_losses=0,
+    )
     gate = _entry_gate(
         store,
         Decision(side="LONG", confidence=0.9, mark_price=100.0),
@@ -751,6 +856,81 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(tmp_pa
     )
     assert zero_reference.allowed is True
     assert zero_reference.drawdown == 0.0
+
+
+def test_loss_budget_guard_and_entry_gate_block_capital_erosion(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
+    store = PositionsStore(root=cfg.positions_root)
+    store.record_close(ClosedTrade(
+        id="loss",
+        symbol="BTCUSDC",
+        market_type="spot",
+        side="LONG",
+        qty=1.0,
+        entry_price=100.0,
+        exit_price=94.0,
+        leverage=1.0,
+        opened_at_ms=1_000,
+        closed_at_ms=2_000,
+        realized_pnl=-12.0,
+        realized_pnl_pct=-0.12,
+    ))
+    strategy = replace(
+        StrategyConfig(),
+        max_trades_per_day=0,
+        cooldown_minutes=0,
+        max_drawdown_limit=0.0,
+        max_daily_loss_pct=0.005,
+        max_session_loss_pct=0.010,
+        max_consecutive_losses=3,
+    )
+
+    guard = _loss_budget_guard(store, 100.0, strategy, cfg, now_ms_value=3_000)
+    assert guard.allowed is False
+    assert guard.force_close is True
+    assert guard.reason.startswith("daily-loss-lockout")
+
+    gate = _entry_gate(
+        store,
+        Decision(side="LONG", confidence=0.9, mark_price=100.0),
+        strategy,
+        cfg,
+        get_objective("default"),
+        now_ms_value=3_000,
+    )
+    assert gate.allowed is False
+    assert gate.reason.startswith("daily-loss-lockout")
+
+
+def test_loss_budget_guard_blocks_loss_streak_without_forced_close(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
+    store = PositionsStore(root=cfg.positions_root)
+    for idx in range(2):
+        store.record_close(ClosedTrade(
+            id=f"loss-{idx}",
+            symbol="BTCUSDC",
+            market_type="spot",
+            side="LONG",
+            qty=1.0,
+            entry_price=100.0,
+            exit_price=99.9,
+            leverage=1.0,
+            opened_at_ms=1_000 + idx,
+            closed_at_ms=2_000 + idx,
+            realized_pnl=-0.1,
+            realized_pnl_pct=-0.001,
+        ))
+    strategy = replace(
+        StrategyConfig(),
+        max_daily_loss_pct=0.05,
+        max_session_loss_pct=0.05,
+        max_consecutive_losses=2,
+    )
+
+    guard = _loss_budget_guard(store, 100.0, strategy, cfg, now_ms_value=3_000)
+    assert guard.allowed is False
+    assert guard.force_close is False
+    assert guard.reason == "loss-streak-lockout:2"
 
 
 def test_run_loop_custom_logger_is_honored(tmp_path: Path) -> None:

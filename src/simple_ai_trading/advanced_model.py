@@ -33,9 +33,10 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v4-advanced-confluence"
+ADVANCED_FEATURE_VERSION = "v5-regime-quality"
 _EXTRA_FEATURES_PER_WINDOW = 7
 _CONFLUENCE_FEATURES_PER_WINDOW = 9
+_MARKET_QUALITY_FEATURES_PER_WINDOW = 10
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class AdvancedFeatureConfig:
     polynomial_top_features: int = 6
     extra_lookback_windows: tuple[int, ...] = (5, 20, 60)
     confluence_windows: tuple[int, ...] = ()
+    market_quality_windows: tuple[int, ...] = ()
     nonlinear_transforms: tuple[str, ...] = ("tanh", "log1p")
     short_window: int = 10
     long_window: int = 40
@@ -122,6 +124,23 @@ def _volatility(values: Sequence[float], window: int) -> float:
 
 def _safe(x: float) -> float:
     return 0.0 if not math.isfinite(x) else float(x)
+
+
+def _safe_ratio(numerator: float, denominator: float) -> float:
+    if denominator == 0.0 or not math.isfinite(denominator):
+        return 0.0
+    return _safe(numerator / denominator)
+
+
+def _correlation(left: Sequence[float], right: Sequence[float]) -> float:
+    if len(left) != len(right) or len(left) < 2:
+        return 0.0
+    mean_left = sum(left) / len(left)
+    mean_right = sum(right) / len(right)
+    covariance = sum((a - mean_left) * (b - mean_right) for a, b in zip(left, right, strict=True))
+    var_left = sum((a - mean_left) ** 2 for a in left)
+    var_right = sum((b - mean_right) ** 2 for b in right)
+    return _safe_ratio(covariance, math.sqrt(max(0.0, var_left * var_right)))
 
 
 def _normalized_label_mode(value: str) -> str:
@@ -376,6 +395,74 @@ def _confluence_features_at(cache: _ConfluenceCache, end: int, windows: Sequence
     return features
 
 
+def _window_returns(values: Sequence[float]) -> list[float]:
+    returns: list[float] = []
+    for previous, current in zip(values[:-1], values[1:], strict=True):
+        returns.append(_safe_ratio(current - previous, previous))
+    return returns
+
+
+def _market_quality_features_at(cache: _ConfluenceCache, end: int, windows: Sequence[int]) -> list[float]:
+    """Return regime and execution-quality proxies from point-in-time candles.
+
+    These are not exchange order-book features. They are candle-derived context
+    that helps the model learn when trend, chop, tail risk, volume pressure, or
+    noisy high-range bars historically made signals less reliable.
+    """
+
+    features: list[float] = []
+    if not windows:
+        return features
+    if end < 0 or end >= len(cache.closes):
+        return [0.0 for _ in range(_MARKET_QUALITY_FEATURES_PER_WINDOW * len(windows))]
+    close = cache.closes[end]
+    current_volume = cache.volumes[end]
+    for window in windows:
+        window = max(2, int(window))
+        if end < window - 1 or close <= 0.0:
+            features.extend([0.0] * _MARKET_QUALITY_FEATURES_PER_WINDOW)
+            continue
+        start = end + 1 - window
+        closes = cache.closes[start:end + 1]
+        volumes = cache.volumes[start:end + 1]
+        returns = _window_returns(closes)
+        abs_returns = [abs(value) for value in returns]
+        path = sum(abs_returns)
+        net_return = _safe_ratio(closes[-1] - closes[0], closes[0])
+        efficiency = _safe_ratio(abs(net_return), path)
+        downside_pressure = _safe_ratio(sum(abs(value) for value in returns if value < 0.0), path)
+        autocorr = _correlation(returns[:-1], returns[1:]) if len(returns) >= 3 else 0.0
+        mean_abs_return = sum(abs_returns) / len(abs_returns) if abs_returns else 0.0
+        abs_return_stdev = 0.0
+        if len(abs_returns) >= 2:
+            abs_return_stdev = math.sqrt(
+                max(0.0, sum((value - mean_abs_return) ** 2 for value in abs_returns) / (len(abs_returns) - 1))
+            )
+        tail_ratio = _safe_ratio(max(abs_returns) if abs_returns else 0.0, mean_abs_return)
+        return_volumes = volumes[1:] if len(volumes) > 1 else []
+        total_return_volume = sum(max(0.0, value) for value in return_volumes)
+        volume_return_pressure = _safe_ratio(
+            sum(ret * max(0.0, vol) for ret, vol in zip(returns, return_volumes, strict=True)),
+            total_return_volume,
+        )
+        volume_abs_return_corr = _correlation(return_volumes, abs_returns) if return_volumes else 0.0
+        avg_true_range = _window_mean(cache.true_range_prefix, start, end)
+        avg_volume = sum(max(0.0, value) for value in volumes) / len(volumes)
+        features.extend([
+            _safe(math.copysign(efficiency, net_return)),
+            _safe(efficiency),
+            _safe(downside_pressure),
+            _safe(autocorr),
+            _safe_ratio(abs_return_stdev, mean_abs_return),
+            _safe(math.tanh(tail_ratio / 5.0)),
+            _safe(math.tanh(volume_return_pressure * 120.0)),
+            _safe(volume_abs_return_corr),
+            _safe_ratio(avg_true_range, close),
+            _safe(math.tanh(_safe_ratio(current_volume - avg_volume, avg_volume))),
+        ])
+    return features
+
+
 def _nonlinear_expand(values: Sequence[float], transforms: Sequence[str]) -> list[float]:
     out: list[float] = []
     for name in transforms:
@@ -415,6 +502,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
     # each extra window contributes trend, momentum, volatility, and regime shape features
     extras = _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows)
     confluence = _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows)
+    market_quality = _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows)
     transforms = base * len(cfg.nonlinear_transforms)
     pairs = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -422,7 +510,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
         pairs = k * (k + 1) // 2
         if cfg.polynomial_degree >= 3 and k >= 3:
             pairs += 1 + 3
-    return base + extras + confluence + transforms + pairs
+    return base + extras + confluence + market_quality + transforms + pairs
 
 
 def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGroupSpan, ...]:
@@ -443,6 +531,7 @@ def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGro
     add("base_features", base)
     add("extra_lookback_windows", _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows))
     add("technical_confluence", _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows))
+    add("market_quality_regime", _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows))
     add("nonlinear_transforms", base * len(cfg.nonlinear_transforms))
     pair_count = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -465,10 +554,12 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
     base = list(row.features)
     closes = [c.close for c in candles[: at_index + 1]]
     extras = _extra_window_features(closes, cfg.extra_lookback_windows)
-    confluence = _confluence_features_at(_build_confluence_cache(candles[: at_index + 1]), at_index, cfg.confluence_windows)
+    confluence_cache = _build_confluence_cache(candles[: at_index + 1])
+    confluence = _confluence_features_at(confluence_cache, at_index, cfg.confluence_windows)
+    market_quality = _market_quality_features_at(confluence_cache, at_index, cfg.market_quality_windows)
     transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
     pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
-    expanded = tuple(_safe(v) for v in base + extras + confluence + transforms + pairs)
+    expanded = tuple(_safe(v) for v in base + extras + confluence + market_quality + transforms + pairs)
     return ModelRow(
         timestamp=row.timestamp,
         close=row.close,
@@ -526,13 +617,14 @@ def make_advanced_rows(
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
+        market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(_safe(value) for value in base + extras + confluence + transforms + pairs),
+                features=tuple(_safe(value) for value in base + extras + confluence + market_quality + transforms + pairs),
                 label=label,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
             )
@@ -567,13 +659,14 @@ def make_advanced_inference_rows(
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
+        market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(_safe(value) for value in base + extras + confluence + transforms + pairs),
+                features=tuple(_safe(value) for value in base + extras + confluence + market_quality + transforms + pairs),
                 label=0,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
             )
@@ -630,6 +723,7 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"polynomial_top_features={cfg.polynomial_top_features}",
         f"extra_lookback_windows={','.join(str(w) for w in cfg.extra_lookback_windows)}",
         f"confluence_windows={','.join(str(w) for w in cfg.confluence_windows)}",
+        f"market_quality_windows={','.join(str(w) for w in cfg.market_quality_windows)}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
         f"label_lookahead={int(cfg.label_lookahead)}",
         f"label_mode={_normalized_label_mode(cfg.label_mode)}",
@@ -664,6 +758,7 @@ def advanced_config_from_signature(
             polynomial_top_features=max(1, int(fields.get("polynomial_top_features", str(len(base_features))))),
             extra_lookback_windows=_parse_int_tuple(fields.get("extra_lookback_windows")),
             confluence_windows=_parse_int_tuple(fields.get("confluence_windows")),
+            market_quality_windows=_parse_int_tuple(fields.get("market_quality_windows")),
             nonlinear_transforms=_parse_str_tuple(fields.get("nonlinear_transforms"), default=("tanh", "log1p")),
             short_window=max(1, int(fields.get("short_window", "10"))),
             long_window=max(1, int(fields.get("long_window", "40"))),
@@ -764,6 +859,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             polynomial_top_features=5,
             extra_lookback_windows=(10, 30, 90),
             confluence_windows=(12, 36, 96),
+            market_quality_windows=(30, 90, 180),
             label_threshold=0.0010,
             label_lookahead=8,
         )
@@ -774,6 +870,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             polynomial_top_features=9,
             extra_lookback_windows=(3, 15, 45, 120),
             confluence_windows=(5, 13, 34, 89),
+            market_quality_windows=(10, 30, 90),
             label_threshold=0.0005,
             label_lookahead=2,
         )
@@ -783,6 +880,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
         polynomial_top_features=len(names),
         extra_lookback_windows=(5, 20, 60),
         confluence_windows=(8, 21, 55),
+        market_quality_windows=(20, 60, 120),
         label_threshold=0.0010,
         label_lookahead=4,
     )

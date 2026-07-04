@@ -20,6 +20,7 @@ def _capability(ok: bool = True) -> AICapabilityReport:
         compute_backend_reason="" if ok else "DirectML unavailable",
         free_vram_gb=12.0 if ok else None,
         free_ram_gb=32.0,
+        model_parameters_b=7.0 if ok else None,
         messages=() if ok else ("AI requires a GPU compute backend",),
         warnings=(),
     )
@@ -31,10 +32,39 @@ def _write_report(
     accepted: bool = True,
     harmful_ablation: bool = False,
     harmful_selection_risk: bool = False,
+    include_ai_uplift: bool = True,
+    failed_ai_uplift: bool = False,
 ) -> None:
     feature_delta = 0.004 if harmful_ablation else -0.004
     hybrid_delta = 0.003 if harmful_ablation else -0.003
     deflated_score = -0.02 if harmful_selection_risk else 0.11
+    ai_uplift = None
+    if include_ai_uplift:
+        ai_uplift = {
+            "accepted": not failed_ai_uplift,
+            "advisory_only": failed_ai_uplift,
+            "model_name": "qwen2.5:7b",
+            "model_parameters_b": 7.0,
+            "baseline": {
+                "realized_pnl": 6.0,
+                "max_drawdown": 0.02,
+                "expectancy": 0.6,
+                "closed_trades": 8,
+            },
+            "ai": {
+                "realized_pnl": 7.5 if not failed_ai_uplift else 5.0,
+                "max_drawdown": 0.018 if not failed_ai_uplift else 0.04,
+                "expectancy": 0.8 if not failed_ai_uplift else 0.4,
+                "closed_trades": 9,
+            },
+            "deltas": {
+                "realized_pnl": 1.5 if not failed_ai_uplift else -1.0,
+                "max_drawdown": -0.002 if not failed_ai_uplift else 0.02,
+                "expectancy": 0.2 if not failed_ai_uplift else -0.2,
+                "closed_trades": 1,
+            },
+            "reasons": [] if not failed_ai_uplift else ["ai_pnl_not_above_baseline"],
+        }
     payload = {
         "quote_asset": "USDC",
         "interval": "15m",
@@ -102,6 +132,7 @@ def _write_report(
                         }
                     ]
                 },
+                "ai_uplift": ai_uplift,
                 "stress_validation": {
                     "accepted": accepted,
                     "scenario_count": 4,
@@ -195,6 +226,7 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert "selection_risk" in prompt
     assert "hybrid_ablation" in prompt
     assert "feature_ablation" in prompt
+    assert "ai_uplift" in prompt
     assert "trend_up" in prompt
     assert (tmp_path / "ai_risk_review.json").exists()
 
@@ -262,6 +294,49 @@ def test_ai_review_blocks_before_model_call_on_failed_selection_risk(tmp_path: P
     assert review.deterministic_precheck["selection_risk_warning_count"] == 1
     assert "selection-risk evidence" in str(review.error)
     assert "deflated_score=-0.02" in review.deterministic_precheck["selection_risk_warnings"][0]
+
+
+def test_ai_review_blocks_before_model_call_when_ai_uplift_missing(tmp_path: Path, monkeypatch) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True, include_ai_uplift=False)
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("AI provider should not be called")
+
+    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+
+    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+
+    assert called is False
+    assert review.approved is False
+    assert review.status == "blocked"
+    assert review.deterministic_precheck["ai_uplift_warning_count"] == 1
+    assert "AI-vs-ML uplift" in str(review.error)
+    assert "missing AI-vs-ML uplift evidence" in review.deterministic_precheck["ai_uplift_warnings"][0]
+
+
+def test_ai_review_blocks_before_model_call_when_ai_uplift_fails(tmp_path: Path, monkeypatch) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True, failed_ai_uplift=True)
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("AI provider should not be called")
+
+    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+
+    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+
+    assert called is False
+    assert review.approved is False
+    assert review.status == "blocked"
+    assert review.deterministic_precheck["ai_uplift_warning_count"] == 1
+    assert "ai_pnl_not_above_baseline" in review.deterministic_precheck["ai_uplift_warnings"][0]
 
 
 def test_ai_review_fails_closed_on_invalid_ai_payload(tmp_path: Path, monkeypatch) -> None:

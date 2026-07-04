@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -104,6 +105,30 @@ class LedgerStats:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class LearningFeedbackReport:
+    """Bounded post-trade feedback for safe retraining and review loops."""
+
+    generated_at_ms: int
+    lookback_trades: int
+    closed_trades: int
+    wins: int
+    losses: int
+    net_realized_pnl: float
+    win_rate: float
+    max_consecutive_losses: int
+    worst_trade_pnl: float
+    recurring_loss_reasons: dict[str, int]
+    loss_by_symbol: dict[str, int]
+    loss_by_side: dict[str, int]
+    recommendations: tuple[str, ...]
+    promotion_safe: bool
+    notes: tuple[str, ...] = ()
+
+    def asdict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 @dataclass
 class PositionsStore:
     """Durable storage for open positions + closed trades ledger."""
@@ -161,6 +186,7 @@ class PositionsStore:
         # also drop the matching open entry if present
         opens = [p for p in self.load_open() if p.id != trade.id]
         self._write(self.open_path, [asdict(p) for p in opens])
+        write_learning_feedback(self)
         return trade
 
     def remove_open(self, position_id: str) -> bool:
@@ -191,6 +217,10 @@ class PositionsStore:
                     "exit_price", "leverage", "opened_at_ms", "closed_at_ms",
                     "realized_pnl", "realized_pnl_pct"}
         return required.issubset(entry.keys())
+
+    @property
+    def learning_feedback_path(self) -> Path:
+        return self.root / "learning_feedback.json"
 
 
 def new_position_id() -> str:
@@ -261,6 +291,164 @@ def compute_stats(
         unrealized_pnl_pct=unrealized_pct,
         starting_reference_cash=starting_reference_cash,
     )
+
+
+def _max_consecutive_losses(trades: list[ClosedTrade]) -> int:
+    longest = 0
+    current = 0
+    for trade in trades:
+        if trade.realized_pnl < 0.0:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
+
+
+def _top_counter(counter: Counter[str], limit: int = 5) -> dict[str, int]:
+    return {key: int(value) for key, value in counter.most_common(limit) if key}
+
+
+def build_learning_feedback(
+    trades: list[ClosedTrade],
+    *,
+    lookback_trades: int = 100,
+    generated_at_ms: int | None = None,
+) -> LearningFeedbackReport:
+    """Build a bounded mistake-learning artifact from closed trades only."""
+
+    lookback = max(1, int(lookback_trades))
+    recent = sorted(trades, key=lambda trade: int(trade.closed_at_ms))[-lookback:]
+    generated = int(generated_at_ms if generated_at_ms is not None else now_ms())
+    wins = sum(1 for trade in recent if trade.realized_pnl > 0.0)
+    losses = sum(1 for trade in recent if trade.realized_pnl < 0.0)
+    net = sum(float(trade.realized_pnl) for trade in recent)
+    loss_reasons: Counter[str] = Counter()
+    loss_symbols: Counter[str] = Counter()
+    loss_sides: Counter[str] = Counter()
+    pnl_by_reason: defaultdict[str, float] = defaultdict(float)
+    for trade in recent:
+        reason = str(trade.reason or "unspecified")
+        pnl_by_reason[reason] += float(trade.realized_pnl)
+        if trade.realized_pnl < 0.0:
+            loss_reasons[reason] += 1
+            loss_symbols[str(trade.symbol or "unknown")] += 1
+            loss_sides[str(trade.side or "unknown")] += 1
+
+    max_loss_streak = _max_consecutive_losses(recent)
+    worst = min((float(trade.realized_pnl) for trade in recent), default=0.0)
+    recurring = Counter({key: value for key, value in loss_reasons.items() if value >= 2})
+    recommendations: list[str] = []
+    notes: list[str] = []
+    if not recent:
+        recommendations.append("collect_more_closed_trade_outcomes_before_self_improvement")
+        notes.append("no_closed_trades")
+    if max_loss_streak >= 2:
+        recommendations.append("trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion")
+    if net <= 0.0 and recent:
+        recommendations.append("require_retraining_or_model_lab_replay_before_promoting_this_profile")
+    if recurring:
+        recommendations.append("increase_penalty_for_recurring_exit_reason_or_market_mode")
+    if loss_symbols:
+        symbol, count = loss_symbols.most_common(1)[0]
+        if count >= 2:
+            recommendations.append(f"review_symbol_specific_edge:{symbol}")
+    if loss_sides:
+        side, count = loss_sides.most_common(1)[0]
+        if count >= 2:
+            recommendations.append(f"review_side_specific_edge:{side}")
+    if not recommendations:
+        recommendations.append("continue_monitoring_no_retraining_change_required")
+    promotion_safe = bool(recent) and net > 0.0 and max_loss_streak < 2 and not recurring
+    return LearningFeedbackReport(
+        generated_at_ms=generated,
+        lookback_trades=lookback,
+        closed_trades=len(recent),
+        wins=wins,
+        losses=losses,
+        net_realized_pnl=float(net),
+        win_rate=(wins / len(recent)) if recent else 0.0,
+        max_consecutive_losses=max_loss_streak,
+        worst_trade_pnl=float(worst),
+        recurring_loss_reasons=_top_counter(recurring),
+        loss_by_symbol=_top_counter(loss_symbols),
+        loss_by_side=_top_counter(loss_sides),
+        recommendations=tuple(dict.fromkeys(recommendations)),
+        promotion_safe=promotion_safe,
+        notes=tuple(notes),
+    )
+
+
+def write_learning_feedback(
+    store: PositionsStore,
+    *,
+    lookback_trades: int = 100,
+    generated_at_ms: int | None = None,
+) -> LearningFeedbackReport:
+    """Persist the latest bounded learning feedback beside the ledger."""
+
+    report = build_learning_feedback(
+        store.load_ledger(),
+        lookback_trades=lookback_trades,
+        generated_at_ms=generated_at_ms,
+    )
+    write_json_atomic(store.learning_feedback_path, report.asdict(), indent=2, sort_keys=True)
+    return report
+
+
+def load_learning_feedback(store: PositionsStore) -> LearningFeedbackReport:
+    """Load persisted feedback or rebuild it from the ledger."""
+
+    path = store.learning_feedback_path
+    if path.exists():
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                return LearningFeedbackReport(
+                    generated_at_ms=int(payload.get("generated_at_ms") or 0),
+                    lookback_trades=int(payload.get("lookback_trades") or 100),
+                    closed_trades=int(payload.get("closed_trades") or 0),
+                    wins=int(payload.get("wins") or 0),
+                    losses=int(payload.get("losses") or 0),
+                    net_realized_pnl=float(payload.get("net_realized_pnl") or 0.0),
+                    win_rate=float(payload.get("win_rate") or 0.0),
+                    max_consecutive_losses=int(payload.get("max_consecutive_losses") or 0),
+                    worst_trade_pnl=float(payload.get("worst_trade_pnl") or 0.0),
+                    recurring_loss_reasons=dict(payload.get("recurring_loss_reasons") or {}),
+                    loss_by_symbol=dict(payload.get("loss_by_symbol") or {}),
+                    loss_by_side=dict(payload.get("loss_by_side") or {}),
+                    recommendations=tuple(payload.get("recommendations") or ()),
+                    promotion_safe=bool(payload.get("promotion_safe")),
+                    notes=tuple(payload.get("notes") or ()),
+                )
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            pass
+    return write_learning_feedback(store)
+
+
+def render_learning_feedback(report: LearningFeedbackReport) -> list[str]:
+    """Render post-trade learning feedback for operators and reports."""
+
+    lines = [
+        "Learning feedback",
+        (
+            f"closed={report.closed_trades} wins={report.wins} losses={report.losses} "
+            f"win_rate={report.win_rate:.0%} net_pnl={report.net_realized_pnl:+.2f}"
+        ),
+        (
+            f"max_loss_streak={report.max_consecutive_losses} "
+            f"worst_trade={report.worst_trade_pnl:+.2f} promotion_safe={report.promotion_safe}"
+        ),
+    ]
+    if report.recurring_loss_reasons:
+        reasons = ", ".join(f"{key}:{value}" for key, value in report.recurring_loss_reasons.items())
+        lines.append(f"recurring_loss_reasons={reasons}")
+    if report.loss_by_symbol:
+        symbols = ", ".join(f"{key}:{value}" for key, value in report.loss_by_symbol.items())
+        lines.append(f"loss_by_symbol={symbols}")
+    for item in report.recommendations:
+        lines.append(f"- {item}")
+    return lines
 
 
 def render_positions_table(

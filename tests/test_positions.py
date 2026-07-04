@@ -11,9 +11,12 @@ from simple_ai_trading.positions import (
     LedgerStats,
     OpenPosition,
     PositionsStore,
+    build_learning_feedback,
     compute_stats,
+    load_learning_feedback,
     new_position_id,
     now_ms,
+    render_learning_feedback,
     render_positions_table,
     render_stats_lines,
     unrealized_pnl_pct,
@@ -92,6 +95,7 @@ def test_store_record_close_removes_matching_open(tmp_path):
     store.record_close(trade)
     assert store.load_ledger()[0].id == "same"
     assert store.load_open() == []
+    assert store.learning_feedback_path.exists()
 
 
 def test_store_ignores_malformed_json(tmp_path):
@@ -200,6 +204,36 @@ def test_compute_stats_open_zero_entry_notional(tmp_path):
     ))
     stats = compute_stats(store, mark_price=100.0)
     assert stats.unrealized_pnl_pct == 0.0
+
+
+def test_learning_feedback_flags_recurring_losses(tmp_path):
+    store = PositionsStore(root=tmp_path)
+    for idx, pnl in enumerate((-3.0, -2.0, 4.0), start=1):
+        store.record_close(ClosedTrade(
+            id=f"t{idx}", symbol="ETHUSDC", market_type="futures", side="SHORT",
+            qty=1.0, entry_price=100.0, exit_price=101.0, leverage=2.0,
+            opened_at_ms=idx, closed_at_ms=idx, realized_pnl=pnl,
+            realized_pnl_pct=pnl / 100.0, reason="auto-stop-loss",
+        ))
+
+    report = load_learning_feedback(store)
+    lines = render_learning_feedback(report)
+
+    assert report.closed_trades == 3
+    assert report.max_consecutive_losses == 2
+    assert report.recurring_loss_reasons["auto-stop-loss"] == 2
+    assert report.promotion_safe is False
+    assert any("trigger_cooldown" in item for item in report.recommendations)
+    assert any("Learning feedback" in line for line in lines)
+
+
+def test_learning_feedback_empty_report_is_safe_and_bounded():
+    report = build_learning_feedback([], generated_at_ms=123)
+
+    assert report.generated_at_ms == 123
+    assert report.closed_trades == 0
+    assert report.promotion_safe is False
+    assert report.recommendations == ("collect_more_closed_trade_outcomes_before_self_improvement",)
 
 
 def test_render_positions_table_empty_and_populated():

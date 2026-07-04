@@ -213,10 +213,11 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         training_target="Timestamped return distribution, volatility, and tail-risk forecasts used as logged features.",
         gpu_path="Local GPU provider required for AI-enabled mode; CPU mode disables this family.",
         risk_levels=RISK_LEVELS,
-        execution_authority="advisory_features_only",
+        execution_authority="advisory_features_only_until_ai_uplift_gate_passes",
         validation_gates=(
             "forecast timestamp audit",
             "feature ablation",
+            "AI-vs-ML holdout uplift",
             "same-cost backtest replay",
             "cannot override risk controls",
         ),
@@ -225,6 +226,31 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "https://github.com/amazon-science/chronos-forecasting",
             "https://research.google/blog/a-decoder-only-foundation-model-for-time-series-forecasting/",
             "https://arxiv.org/abs/2310.10688",
+            "https://arxiv.org/abs/2402.02592",
+        ),
+    ),
+    ModelFamilyBlueprint(
+        family="ai_uplift_gate",
+        role=(
+            "Deterministic governance gate proving any AI-assisted candidate beats "
+            "the non-AI ML baseline on holdout evidence before approval."
+        ),
+        status="implemented_governance_gate",
+        training_target="No training; compares accepted AI-assisted backtest metrics against the non-AI baseline.",
+        gpu_path="No GPU compute required; consumes artifacts produced by GPU-backed model runs.",
+        risk_levels=RISK_LEVELS,
+        execution_authority="approval_gate_only",
+        validation_gates=(
+            "minimum multibillion model parameter evidence",
+            "AI realized PnL and expectancy exceed baseline",
+            "AI drawdown does not exceed baseline",
+            "minimum AI trade count",
+            "missing evidence fails closed",
+        ),
+        sources=(
+            "https://arxiv.org/abs/2303.17564",
+            "https://arxiv.org/abs/2306.06031",
+            "https://arxiv.org/abs/2403.07815",
         ),
     ),
     ModelFamilyBlueprint(
@@ -305,6 +331,8 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         execution_authority="veto_or_review_only",
         validation_gates=(
             "deterministic gates must already pass",
+            "AI-vs-ML uplift evidence must pass when AI is enabled",
+            "minimum multibillion local model check",
             "schema validation",
             "no credential access",
             "cannot approve failed model-lab outcome",
@@ -438,16 +466,18 @@ TRAINING_LANES: tuple[TrainingLaneBlueprint, ...] = (
     ),
     TrainingLaneBlueprint(
         lane="governance_and_ai_review",
-        families=("ai_risk_reviewer",),
+        families=("ai_risk_reviewer", "ai_uplift_gate"),
         research_takeaway=(
-            "LLM-style AI should review structured evidence and identify risk, "
-            "not override deterministic gates or trade directly."
+            "LLM-style AI should review structured evidence, and AI-assisted "
+            "alpha must prove uplift over the non-AI baseline before approval."
         ),
         next_build_step=(
-            "Expand the AI review prompt/report to reference source catalog, "
-            "training lanes, and per-family promotion status."
+            "Keep the deterministic AI-uplift precheck ahead of provider calls "
+            "and require model-lab artifacts to include AI-vs-ML holdout metrics."
         ),
         promotion_gates=(
+            "AI-vs-ML uplift artifact accepted for each AI-assisted symbol",
+            "minimum multibillion local model check",
             "schema-validated JSON output",
             "no credential access",
             "cannot approve failed deterministic gates",
@@ -506,6 +536,38 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         source_type="primary_research",
         applied_to=("foundation_forecaster",),
         usage_policy="Use only as timestamped probabilistic forecast features until ablation passes.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="moirai",
+        label="Moirai universal time-series transformer",
+        url="https://arxiv.org/abs/2402.02592",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster", "cross_asset_graph_sequence"),
+        usage_policy="Use for universal forecast inspiration; promotion still requires AI-vs-ML uplift evidence.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="bloomberggpt",
+        label="BloombergGPT financial LLM",
+        url="https://arxiv.org/abs/2303.17564",
+        source_type="primary_research",
+        applied_to=("ai_risk_reviewer", "ai_uplift_gate"),
+        usage_policy="Use for financial-domain LLM context and multibillion-model expectations, not direct trading authority.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="fingpt",
+        label="FinGPT open financial LLM framework",
+        url="https://arxiv.org/abs/2306.06031",
+        source_type="primary_research",
+        applied_to=("ai_risk_reviewer", "ai_uplift_gate"),
+        usage_policy="Use for financial data-curation and domain-adaptation inspiration; require local holdout uplift proof.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="hmm_regime_filter",
+        label="Market regime filters with HMM-style state detection",
+        url="https://arxiv.org/abs/2007.14874",
+        source_type="primary_research",
+        applied_to=("regime_gate", "meta_label_gate"),
+        usage_policy="Use for abstention and cooldown design; regime models cannot create orders by themselves.",
     ),
     ResearchSourceBlueprint(
         source_id="deep_lob",
@@ -667,6 +729,7 @@ RISK_BLUEPRINTS: tuple[RiskTrainingBlueprint, ...] = (
             "adaptive_hybrid_model_zoo",
             "regime_gate",
             "meta_label_gate",
+            "ai_uplift_gate",
             "ai_risk_reviewer",
         ),
         veto_rules=(
@@ -688,6 +751,7 @@ RISK_BLUEPRINTS: tuple[RiskTrainingBlueprint, ...] = (
             "patch_transformer",
             "foundation_forecaster",
             "cross_asset_graph_sequence",
+            "ai_uplift_gate",
             "ai_risk_reviewer",
         ),
         veto_rules=(
@@ -711,6 +775,7 @@ RISK_BLUEPRINTS: tuple[RiskTrainingBlueprint, ...] = (
             "cross_asset_graph_sequence",
             "deep_lob_microstructure",
             "rl_meta_controller",
+            "ai_uplift_gate",
             "ai_risk_reviewer",
         ),
         veto_rules=(

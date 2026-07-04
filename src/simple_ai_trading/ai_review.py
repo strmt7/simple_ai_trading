@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -23,6 +23,7 @@ _MAX_ACTIONS = 8
 _MAX_REASON_CHARS = 240
 _MAX_PROMPT_CHARS = 12_000
 _MAX_ABLATION_ITEMS = 6
+_MAX_AI_UPLIFT_WARNINGS = 8
 _POSITIVE_ABLATION_DELTA_EPS = 1e-9
 
 PostJson = Callable[[str, Mapping[str, object], float], object]
@@ -272,6 +273,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 delta_key="delta_vs_selected",
             )
             selection_risk = _compact_selection_risk_map(item.get("selection_risk"))
+            ai_uplift = _compact_ai_uplift(item.get("ai_uplift"))
             compact_outcomes.append({
                 "symbol": str(item.get("symbol") or ""),
                 "accepted": bool(item.get("accepted")),
@@ -286,6 +288,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "meta_label_validation": meta_summary,
                 "hybrid_ablation": hybrid_ablation,
                 "feature_ablation": feature_ablation,
+                "ai_uplift": ai_uplift,
                 "diagnostics": item.get("diagnostics") if isinstance(item.get("diagnostics"), Mapping) else None,
             })
     portfolio = report.get("portfolio_risk")
@@ -369,6 +372,25 @@ def _compact_ablation_map(
     return compact
 
 
+def _compact_ai_uplift(raw: object) -> dict[str, object] | None:
+    if not isinstance(raw, Mapping):
+        return None
+    reasons = raw.get("reasons")
+    baseline = raw.get("baseline")
+    ai_metrics = raw.get("ai")
+    deltas = raw.get("deltas")
+    return {
+        "accepted": bool(raw.get("accepted")),
+        "advisory_only": bool(raw.get("advisory_only")),
+        "model_name": _bounded_text(raw.get("model_name")),
+        "model_parameters_b": _optional_finite(raw.get("model_parameters_b")),
+        "baseline": baseline if isinstance(baseline, Mapping) else {},
+        "ai": ai_metrics if isinstance(ai_metrics, Mapping) else {},
+        "deltas": deltas if isinstance(deltas, Mapping) else {},
+        "reasons": _bounded_list(reasons, limit=_MAX_CONCERNS),
+    }
+
+
 def _ablation_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
     warnings: list[str] = []
     outcomes = compact.get("outcomes")
@@ -428,12 +450,47 @@ def _selection_risk_precheck_warnings(compact: Mapping[str, object]) -> list[str
     return warnings
 
 
-def _deterministic_precheck(compact: Mapping[str, object]) -> dict[str, object]:
+def _ai_uplift_precheck_warnings(
+    compact: Mapping[str, object],
+    *,
+    require_ai_uplift: bool,
+) -> list[str]:
+    if not require_ai_uplift:
+        return []
+    warnings: list[str] = []
+    outcomes = compact.get("outcomes")
+    if not isinstance(outcomes, list):
+        return ["missing outcomes for AI uplift evidence"]
+    for item in outcomes[:_MAX_OUTCOMES]:
+        if not isinstance(item, Mapping) or not bool(item.get("accepted")):
+            continue
+        symbol = str(item.get("symbol") or "unknown")
+        raw = item.get("ai_uplift")
+        if not isinstance(raw, Mapping):
+            warnings.append(f"{symbol} missing AI-vs-ML uplift evidence")
+        elif raw.get("accepted") is not True:
+            reasons = raw.get("reasons")
+            reason_text = ",".join(str(value) for value in reasons[:3]) if isinstance(reasons, list) else "failed"
+            warnings.append(f"{symbol} AI-vs-ML uplift failed: {reason_text}")
+        if len(warnings) >= _MAX_AI_UPLIFT_WARNINGS:
+            return warnings
+    return warnings
+
+
+def _deterministic_precheck(
+    compact: Mapping[str, object],
+    *,
+    require_ai_uplift: bool = False,
+) -> dict[str, object]:
     accepted_symbols = list(compact.get("accepted_symbols") or [])
     portfolio = compact.get("portfolio_risk")
     portfolio_ok = bool(portfolio.get("accepted")) if isinstance(portfolio, Mapping) else False
     ablation_warnings = _ablation_precheck_warnings(compact)
     selection_risk_warnings = _selection_risk_precheck_warnings(compact)
+    ai_uplift_warnings = _ai_uplift_precheck_warnings(
+        compact,
+        require_ai_uplift=require_ai_uplift,
+    )
     return {
         "accepted_symbol_count": len(accepted_symbols),
         "portfolio_accepted": portfolio_ok,
@@ -442,11 +499,15 @@ def _deterministic_precheck(compact: Mapping[str, object]) -> dict[str, object]:
         "ablation_warnings": ablation_warnings,
         "selection_risk_warning_count": len(selection_risk_warnings),
         "selection_risk_warnings": selection_risk_warnings,
+        "ai_uplift_required": bool(require_ai_uplift),
+        "ai_uplift_warning_count": len(ai_uplift_warnings),
+        "ai_uplift_warnings": ai_uplift_warnings,
         "allowed_for_ai_review": (
             bool(accepted_symbols)
             and portfolio_ok
             and not ablation_warnings
             and not selection_risk_warnings
+            and not ai_uplift_warnings
         ),
     }
 
@@ -463,8 +524,9 @@ def _prompt(compact: Mapping[str, object]) -> str:
         "show fragile take/skip behavior, temporal robustness and statistical edge evidence are coherent, regime "
         "concentration is not hiding a fragile one-state edge, selection-risk evidence shows the selected score "
         "survived the number of tried models, hybrid and feature ablation evidence does not show "
-        "that removing a model component improves the accepted score, portfolio tail risk is acceptable, and there is no "
-        "obvious reason to require a human review. "
+        "that removing a model component improves the accepted score, any AI-assisted signal has explicit holdout "
+        "uplift over the non-AI ML baseline without worse drawdown, portfolio tail risk is acceptable, and there "
+        "is no obvious reason to require a human review. "
         "Return JSON matching the schema.\n"
         f"SCHEMA={schema}\n"
         f"MODEL_LAB_REPORT={payload}"
@@ -490,14 +552,17 @@ def run_model_lab_ai_review(
     if not isinstance(report_payload, Mapping):
         raise ValueError("model-lab report must be a JSON object")
     compact = _compact_model_lab_report(report_payload)
-    precheck = _deterministic_precheck(compact)
+    precheck = _deterministic_precheck(compact, require_ai_uplift=bool(runtime.ai_enabled))
     if not precheck["allowed_for_ai_review"]:
         ablation_warnings = precheck.get("ablation_warnings")
         selection_risk_warnings = precheck.get("selection_risk_warnings")
+        ai_uplift_warnings = precheck.get("ai_uplift_warnings")
         if isinstance(ablation_warnings, list) and ablation_warnings:
             reason = "ablation evidence shows accepted model improves when a component is removed"
         elif isinstance(selection_risk_warnings, list) and selection_risk_warnings:
             reason = "selection-risk evidence shows accepted model score does not survive trial burden"
+        elif isinstance(ai_uplift_warnings, list) and ai_uplift_warnings:
+            reason = "AI-vs-ML uplift evidence is missing or failed for an accepted symbol"
         else:
             reason = "deterministic gates did not produce an accepted portfolio for AI review"
         result = _blocked_report(
@@ -511,7 +576,10 @@ def run_model_lab_ai_review(
         )
         write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
         return result
-    capability = detect_ai_capabilities(runtime.ai_runtime_config())
+    capability_config = runtime.ai_runtime_config()
+    if capability_config.model == "auto":
+        capability_config = replace(capability_config, model=selected_model)
+    capability = detect_ai_capabilities(capability_config)
     if not capability.ok:
         reason = "; ".join(capability.messages) or "AI capability preflight failed"
         result = _blocked_report(

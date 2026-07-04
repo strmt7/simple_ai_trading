@@ -41,6 +41,7 @@ from .positions import (
     new_position_id,
     now_ms,
 )
+from .reconciliation import ReconciliationReport, reconcile_account_positions
 from .risk_controls import stop_loss_sized_notional_pct
 from .storage import write_json_atomic
 from .types import RuntimeConfig, StrategyConfig
@@ -159,6 +160,27 @@ class Decision:
 
 
 DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
+ReconcileFn = Callable[[BinanceClient, RuntimeConfig, PositionsStore], ReconciliationReport]
+
+
+@dataclass(frozen=True)
+class CapitalGuard:
+    """Hard local capital-at-risk decision for autonomous execution."""
+
+    allowed: bool
+    reason: str
+    daily_loss: float
+    session_loss: float
+    consecutive_losses: int
+    force_close: bool = False
+
+
+def _default_reconcile(
+    client: BinanceClient,
+    runtime: RuntimeConfig,
+    store: PositionsStore,
+) -> ReconciliationReport:
+    return reconcile_account_positions(client.get_account(), runtime, store)
 
 
 def _default_decision(
@@ -364,6 +386,67 @@ def _daily_entry_count(store: PositionsStore, day: int) -> int:
     return opened + closed
 
 
+def _consecutive_losses(store: PositionsStore) -> int:
+    losses = 0
+    for trade in reversed(store.load_ledger()):
+        if trade.realized_pnl < 0.0:
+            losses += 1
+            continue
+        break
+    return losses
+
+
+def _loss_budget_guard(
+    store: PositionsStore,
+    mark_price: float | None,
+    strategy: StrategyConfig,
+    cfg: AutonomousConfig,
+    *,
+    now_ms_value: int,
+) -> CapitalGuard:
+    mark = float(mark_price) if mark_price is not None and mark_price > 0.0 else None
+    stats = compute_stats(store, mark_price=mark, starting_reference_cash=cfg.starting_reference_cash)
+    reference = max(1.0, float(cfg.starting_reference_cash))
+    day = _safe_day_ms(now_ms_value)
+    realized_today = sum(
+        trade.realized_pnl
+        for trade in store.load_ledger()
+        if _safe_day_ms(trade.closed_at_ms) == day
+    )
+    unrealized = float(stats.unrealized_pnl) if mark is not None else 0.0
+    daily_loss = max(0.0, -(realized_today + unrealized) / reference)
+    session_loss = max(0.0, -(float(stats.realized_pnl) + unrealized) / reference)
+    consecutive_losses = _consecutive_losses(store)
+    if strategy.max_daily_loss_pct > 0.0 and daily_loss >= strategy.max_daily_loss_pct:
+        return CapitalGuard(
+            False,
+            f"daily-loss-lockout:{daily_loss:.2%}",
+            daily_loss,
+            session_loss,
+            consecutive_losses,
+            force_close=True,
+        )
+    if strategy.max_session_loss_pct > 0.0 and session_loss >= strategy.max_session_loss_pct:
+        return CapitalGuard(
+            False,
+            f"session-loss-lockout:{session_loss:.2%}",
+            daily_loss,
+            session_loss,
+            consecutive_losses,
+            force_close=True,
+        )
+    if strategy.max_consecutive_losses > 0 and consecutive_losses >= strategy.max_consecutive_losses:
+        return CapitalGuard(
+            False,
+            f"loss-streak-lockout:{consecutive_losses}",
+            daily_loss,
+            session_loss,
+            consecutive_losses,
+            force_close=False,
+        )
+    return CapitalGuard(True, "allowed", daily_loss, session_loss, consecutive_losses)
+
+
 def _last_activity_ms(store: PositionsStore) -> int:
     candidates = [position.opened_at_ms for position in store.load_open()]
     candidates.extend(trade.closed_at_ms for trade in store.load_ledger())
@@ -394,6 +477,13 @@ def _entry_gate(
     if cfg.starting_reference_cash > 0:
         equity_delta = stats.realized_pnl + stats.unrealized_pnl
         drawdown = max(0.0, -equity_delta / cfg.starting_reference_cash)
+    capital_guard = _loss_budget_guard(
+        store,
+        decision.mark_price,
+        strategy,
+        cfg,
+        now_ms_value=now_ms_value,
+    )
     confidence = _directional_confidence(decision)
     min_confidence = (
         objective.training.signal_threshold
@@ -421,6 +511,8 @@ def _entry_gate(
         reason = f"daily-cap-reached:{daily_entries}/{int(strategy.max_trades_per_day)}"
     elif cooldown_remaining > 0:
         reason = f"cooldown-active:{cooldown_remaining}ms"
+    elif not capital_guard.allowed:
+        reason = capital_guard.reason
     elif strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
         reason = f"drawdown-lockout:{drawdown:.2%}"
     else:
@@ -447,6 +539,7 @@ def run_loop(
     sleep=time.sleep,
     clock=time.time,
     logger: logging.Logger | None = None,
+    reconcile_fn: ReconcileFn | None = None,
 ) -> LoopResult:
     """Run the autonomous loop until the control file requests a stop."""
 
@@ -457,6 +550,14 @@ def run_loop(
     control = AutonomousControl(path=cfg.control_path)
     control.write(STATE_RUNNING, note=f"objective={objective.name}")
     store = PositionsStore(root=cfg.positions_root)
+    reconcile = reconcile_fn or _default_reconcile
+    if not cfg.dry_run:
+        startup_reconciliation = reconcile(client, runtime, store)
+        if not startup_reconciliation.ok:
+            raise RuntimeError(
+                "Autonomous live mode refuses to start with unreconciled exchange exposure: "
+                f"{startup_reconciliation.asdict()}"
+            )
     poll = max(_MIN_INTERVAL_SECONDS, float(cfg.poll_seconds))
 
     iteration = 0
@@ -466,6 +567,8 @@ def run_loop(
     skipped = 0
     exit_reason = "requested-stop"
     last_mark_price: float | None = None
+    network_errors = 0
+    recovery_pending = False
     try:
         while True:
             iteration += 1
@@ -485,7 +588,38 @@ def run_loop(
             try:
                 decision = decision_fn(client, runtime, strategy, objective)
             except BinanceAPIError as err:
-                logger.warning("autonomous iter=%d binance-error=%s", iteration, err)
+                network_errors += 1
+                recovery_pending = True
+                logger.warning(
+                    "autonomous iter=%d binance-error=%s network_errors=%d/%d",
+                    iteration,
+                    err,
+                    network_errors,
+                    strategy.max_network_errors,
+                )
+                if iteration % max(1, cfg.heartbeat_every) == 0:
+                    stats = compute_stats(
+                        store,
+                        mark_price=last_mark_price,
+                        starting_reference_cash=cfg.starting_reference_cash,
+                    )
+                    Heartbeat(
+                        iteration=iteration,
+                        state=STATE_RUNNING,
+                        last_signal=0.0,
+                        last_side="NETWORK_ERROR",
+                        last_price=float(last_mark_price or 0.0),
+                        open_positions=stats.open_positions,
+                        realized_pnl=stats.realized_pnl,
+                        unrealized_pnl=stats.unrealized_pnl,
+                        objective=objective.name,
+                        updated_at_ms=int(clock() * 1000),
+                        message=(
+                            f"network-interruption:{network_errors}/{strategy.max_network_errors}; "
+                            "reconcile-before-resume"
+                        ),
+                    ).write(cfg.heartbeat_path)
+                    heartbeats += 1
                 sleep(poll)
                 continue
             except Exception as err:  # noqa: BLE001 - loop-wide guard
@@ -498,6 +632,96 @@ def run_loop(
                 iteration, decision.side, decision.confidence, decision.mark_price,
             )
             last_mark_price = float(decision.mark_price) if decision.mark_price > 0 else last_mark_price
+            if recovery_pending:
+                if not cfg.dry_run:
+                    recovery_report = reconcile(client, runtime, store)
+                    if not recovery_report.ok:
+                        logger.error(
+                            "autonomous iter=%d recovery-reconciliation-failed report=%s",
+                            iteration,
+                            recovery_report.asdict(),
+                        )
+                        exit_reason = "reconciliation-mismatch"
+                        break
+                capital_guard = _loss_budget_guard(
+                    store,
+                    last_mark_price,
+                    strategy,
+                    cfg,
+                    now_ms_value=int(clock() * 1000),
+                )
+                if not capital_guard.allowed:
+                    if capital_guard.force_close:
+                        forced = close_all_open_positions(
+                            store,
+                            last_mark_price,
+                            capital_guard.reason,
+                            clock=clock,
+                        )
+                        closed += forced
+                        if forced:
+                            logger.warning(
+                                "autonomous iter=%d recovery force-close-open=%d reason=%s",
+                                iteration,
+                                forced,
+                                capital_guard.reason,
+                            )
+                    exit_reason = capital_guard.reason
+                    break
+                recovery_pending = False
+                network_errors = 0
+                cooldown = max(0, int(strategy.recovery_cooldown_seconds))
+                if cooldown > 0:
+                    stats = compute_stats(
+                        store,
+                        mark_price=last_mark_price,
+                        starting_reference_cash=cfg.starting_reference_cash,
+                    )
+                    Heartbeat(
+                        iteration=iteration,
+                        state=STATE_RUNNING,
+                        last_signal=decision.confidence,
+                        last_side="RECOVERY_OBSERVE",
+                        last_price=decision.mark_price,
+                        open_positions=stats.open_positions,
+                        realized_pnl=stats.realized_pnl,
+                        unrealized_pnl=stats.unrealized_pnl,
+                        objective=objective.name,
+                        updated_at_ms=int(clock() * 1000),
+                        message=f"recovery-clean; cooldown={cooldown}s",
+                    ).write(cfg.heartbeat_path)
+                    heartbeats += 1
+                    sleep(max(poll, float(cooldown)))
+                    if cfg.stop_after_iterations is not None and iteration >= cfg.stop_after_iterations:
+                        exit_reason = "iteration-cap"
+                        break
+                    continue
+
+            capital_guard = _loss_budget_guard(
+                store,
+                last_mark_price,
+                strategy,
+                cfg,
+                now_ms_value=int(clock() * 1000),
+            )
+            if not capital_guard.allowed:
+                if capital_guard.force_close:
+                    forced = close_all_open_positions(
+                        store,
+                        last_mark_price,
+                        capital_guard.reason,
+                        clock=clock,
+                    )
+                    closed += forced
+                    if forced:
+                        logger.warning(
+                            "autonomous iter=%d force-close-open=%d reason=%s",
+                            iteration,
+                            forced,
+                            capital_guard.reason,
+                        )
+                exit_reason = capital_guard.reason
+                break
 
             # Close any open position that meets auto-close thresholds first
             for position in store.load_open():
