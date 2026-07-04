@@ -70,6 +70,8 @@ class ArchiveFileRecord:
     rows_inserted: int
     bytes_downloaded: int
     sha256: str
+    checksum_sha256: str
+    checksum_status: str
     error: str
     started_at_ms: int
     completed_at_ms: int | None
@@ -191,6 +193,8 @@ class MarketDataStore:
                 rows_inserted INTEGER NOT NULL DEFAULT 0,
                 bytes_downloaded INTEGER NOT NULL DEFAULT 0,
                 sha256 TEXT NOT NULL DEFAULT '',
+                checksum_sha256 TEXT NOT NULL DEFAULT '',
+                checksum_status TEXT NOT NULL DEFAULT 'unverified',
                 error TEXT NOT NULL DEFAULT '',
                 started_at_ms INTEGER NOT NULL,
                 completed_at_ms INTEGER
@@ -199,7 +203,20 @@ class MarketDataStore:
                 ON archive_files(symbol, market_type, interval, status);
             """
         )
+        self._ensure_archive_file_columns(conn)
         conn.commit()
+
+    @staticmethod
+    def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        return {str(row["name"]) for row in rows}
+
+    def _ensure_archive_file_columns(self, conn: sqlite3.Connection) -> None:
+        columns = self._table_columns(conn, "archive_files")
+        if "checksum_sha256" not in columns:
+            conn.execute("ALTER TABLE archive_files ADD COLUMN checksum_sha256 TEXT NOT NULL DEFAULT ''")
+        if "checksum_status" not in columns:
+            conn.execute("ALTER TABLE archive_files ADD COLUMN checksum_status TEXT NOT NULL DEFAULT 'unverified'")
 
     @staticmethod
     def _now_ms() -> int:
@@ -634,9 +651,10 @@ class MarketDataStore:
             """
             INSERT INTO archive_files(
                 url, symbol, market_type, interval, period, status, rows_inserted,
-                bytes_downloaded, sha256, error, started_at_ms, completed_at_ms
+                bytes_downloaded, sha256, checksum_sha256, checksum_status, error,
+                started_at_ms, completed_at_ms
             )
-            VALUES (?, ?, ?, ?, ?, 'started', 0, 0, '', '', ?, NULL)
+            VALUES (?, ?, ?, ?, ?, 'started', 0, 0, '', '', 'unverified', '', ?, NULL)
             ON CONFLICT(url) DO UPDATE SET
                 status='started',
                 error='',
@@ -655,6 +673,8 @@ class MarketDataStore:
         rows_inserted: int,
         bytes_downloaded: int,
         sha256: str,
+        checksum_sha256: str = "",
+        checksum_status: str = "unverified",
         error: str = "",
         completed_at_ms: int | None = None,
     ) -> None:
@@ -666,6 +686,8 @@ class MarketDataStore:
                 rows_inserted = ?,
                 bytes_downloaded = ?,
                 sha256 = ?,
+                checksum_sha256 = ?,
+                checksum_status = ?,
                 error = ?,
                 completed_at_ms = ?
             WHERE url = ?
@@ -675,6 +697,8 @@ class MarketDataStore:
                 max(0, int(rows_inserted)),
                 max(0, int(bytes_downloaded)),
                 str(sha256 or ""),
+                str(checksum_sha256 or ""),
+                str(checksum_status or "unverified"),
                 str(error or ""),
                 timestamp,
                 url,
@@ -713,7 +737,8 @@ class MarketDataStore:
             params.append(status)
         query = """
             SELECT url, symbol, market_type, interval, period, status, rows_inserted,
-                   bytes_downloaded, sha256, error, started_at_ms, completed_at_ms
+                   bytes_downloaded, sha256, checksum_sha256, checksum_status,
+                   error, started_at_ms, completed_at_ms
             FROM archive_files
             """
         if where:
@@ -731,6 +756,8 @@ class MarketDataStore:
                 rows_inserted=int(row["rows_inserted"]),
                 bytes_downloaded=int(row["bytes_downloaded"]),
                 sha256=str(row["sha256"]),
+                checksum_sha256=str(row["checksum_sha256"]),
+                checksum_status=str(row["checksum_status"]),
                 error=str(row["error"]),
                 started_at_ms=int(row["started_at_ms"]),
                 completed_at_ms=(int(row["completed_at_ms"]) if row["completed_at_ms"] is not None else None),

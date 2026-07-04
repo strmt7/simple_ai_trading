@@ -59,6 +59,7 @@ def test_ingest_archive_url_streams_zip_into_market_store(tmp_path, monkeypatch)
         return zip_path, zip_path.stat().st_size, "sha"
 
     monkeypatch.setattr(binance_archive, "_download_to_temp", fake_download)
+    monkeypatch.setattr(binance_archive, "_fetch_archive_checksum", lambda _url, *, timeout: None)
 
     with MarketDataStore(tmp_path / "market.sqlite") as store:
         result = ingest_archive_url(
@@ -78,6 +79,42 @@ def test_ingest_archive_url_streams_zip_into_market_store(tmp_path, monkeypatch)
     assert candles[0].open_time == micro_open // 1000
     assert candles[0].trade_count == 4
     assert archive_rows[0].sha256 == "sha"
+    assert archive_rows[0].checksum_status == "unavailable"
+
+
+def test_ingest_archive_url_rejects_checksum_mismatch_before_writing_rows(tmp_path, monkeypatch) -> None:
+    zip_path = tmp_path / "BTCUSDC-1s-2026-01-01.zip"
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr(
+            "BTCUSDC-1s-2026-01-01.csv",
+            "1767225600000,100,101,99,100.5,1,1767225600999,100.5,4,0.5,50,0\n",
+        )
+
+    actual = "a" * 64
+    expected = "b" * 64
+    monkeypatch.setattr(binance_archive, "_download_to_temp", lambda *_args, **_kwargs: (zip_path, zip_path.stat().st_size, actual))
+    monkeypatch.setattr(binance_archive, "_fetch_archive_checksum", lambda _url, *, timeout: expected)
+
+    with MarketDataStore(tmp_path / "market.sqlite") as store:
+        result = ingest_archive_url(
+            store,
+            url="https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip",
+            symbol="BTCUSDC",
+            interval="1s",
+            market_type="spot",
+            period="2026-01-01",
+        )
+        candles = store.fetch_candles("BTCUSDC", "spot", "1s")
+        archive_rows = store.archive_files(symbol="BTCUSDC")
+
+    assert result.status == "error"
+    assert result.checksum_status == "mismatch"
+    assert result.checksum_sha256 == expected
+    assert "checksum mismatch" in result.error
+    assert candles == []
+    assert archive_rows[0].status == "error"
+    assert archive_rows[0].checksum_status == "mismatch"
+    assert archive_rows[0].checksum_sha256 == expected
 
 
 def test_ingest_archive_url_skips_completed_file(tmp_path) -> None:

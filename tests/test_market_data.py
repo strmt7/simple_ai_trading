@@ -204,6 +204,7 @@ def test_market_data_store_roundtrip_snapshots_and_sync_runs(tmp_path) -> None:
     assert len(archive_rows) == 1
     assert archive_rows[0].rows_inserted == 86_400
     assert archive_rows[0].sha256 == "abc"
+    assert archive_rows[0].checksum_status == "unverified"
     assert store.archive_file_status(archive_rows[0].url) == "complete"
     store.connect().execute(
         "INSERT OR REPLACE INTO market_snapshots VALUES (?, ?, ?, ?, ?, ?)",
