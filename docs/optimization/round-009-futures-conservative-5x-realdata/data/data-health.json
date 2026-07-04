@@ -1,0 +1,40 @@
+[
+  {
+    "archive_status_counts": {
+      "complete": 12
+    },
+    "checksum_status_counts": {
+      "verified": 12
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 527040,
+    "first_open_time": 1577836800000,
+    "gap_count": 0,
+    "interval": "1m",
+    "last_open_time": 1609459140000,
+    "market_type": "futures",
+    "reasons": [],
+    "rows": 527040,
+    "status": "ok",
+    "symbol": "BTCUSDT"
+  },
+  {
+    "archive_status_counts": {
+      "complete": 12
+    },
+    "checksum_status_counts": {
+      "verified": 12
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 527040,
+    "first_open_time": 1577836800000,
+    "gap_count": 0,
+    "interval": "1m",
+    "last_open_time": 1609459140000,
+    "market_type": "futures",
+    "reasons": [],
+    "rows": 527040,
+    "status": "ok",
+    "symbol": "ETHUSDT"
+  }
+]
