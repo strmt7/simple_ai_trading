@@ -43,6 +43,7 @@ class EvidencePaths:
     docs_data_dir: Path
     docs_charts_dir: Path
     report_path: Path
+    data_health_path: Path
     progress_csv_path: Path
     metrics_csv_path: Path
     timeline_csv_path: Path
@@ -124,6 +125,7 @@ def make_evidence_paths(
         docs_data_dir=docs_data_dir,
         docs_charts_dir=docs_charts_dir,
         report_path=docs_data_dir / "report.json",
+        data_health_path=docs_data_dir / "data-health.json",
         progress_csv_path=docs_data_dir / "round-progress.csv",
         metrics_csv_path=docs_data_dir / "backtest-metrics.csv",
         timeline_csv_path=docs_data_dir / "portfolio-timeline.csv",
@@ -150,11 +152,14 @@ def fetch_full_history(
     db_path: Path,
     market_type: str = "spot",
     batch_size: int = 1000,
+    allow_network_backfill: bool = True,
 ) -> list[Candle]:
     with MarketDataStore(db_path) as store:
         candles = store.fetch_candles(symbol, market_type, interval)
     if candles:
         return candles
+    if not allow_network_backfill:
+        raise ValueError(f"market database has no prefilled candles for {symbol} {market_type} {interval}")
 
     result = sync_market_data(
         client,
@@ -179,6 +184,65 @@ def fetch_full_history(
     if quality.gap_count:
         raise ValueError(f"market database has {quality.gap_count} gaps for {symbol} {interval}")
     return candles
+
+
+def _count_by(items: Sequence[object], attr: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        key = str(getattr(item, attr, "") or "unknown")
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def market_data_health_for_symbol(
+    *,
+    db_path: Path,
+    symbol: str,
+    market_type: str,
+    interval: str,
+    min_rows: int = 0,
+    min_coverage_ratio: float = 0.995,
+    max_gap_count: int = 0,
+    require_verified_checksum: bool = False,
+) -> dict[str, object]:
+    """Return a fail-closed health report for one optimization data series."""
+
+    with MarketDataStore(db_path) as store:
+        quality = store.coverage_quality(symbol, market_type, interval, interval_milliseconds(interval))
+        archives = store.archive_files(symbol=symbol, market_type=market_type, interval=interval)
+    archive_status_counts = _count_by(archives, "status")
+    checksum_status_counts = _count_by(archives, "checksum_status")
+    min_rows = max(0, int(min_rows))
+    max_gap_count = max(0, int(max_gap_count))
+    min_coverage_ratio = max(0.0, min(1.0, float(min_coverage_ratio)))
+    reasons: list[str] = []
+    if quality.coverage.count < min_rows:
+        reasons.append(f"rows_below_min:{quality.coverage.count}/{min_rows}")
+    if quality.gap_count > max_gap_count:
+        reasons.append(f"gap_count_above_max:{quality.gap_count}/{max_gap_count}")
+    if quality.coverage_ratio < min_coverage_ratio:
+        reasons.append(f"coverage_ratio_below_min:{quality.coverage_ratio:.6f}/{min_coverage_ratio:.6f}")
+    if archive_status_counts.get("error", 0) > 0:
+        reasons.append(f"archive_errors:{archive_status_counts['error']}")
+    if checksum_status_counts.get("mismatch", 0) > 0:
+        reasons.append(f"checksum_mismatches:{checksum_status_counts['mismatch']}")
+    if require_verified_checksum and checksum_status_counts.get("verified", 0) <= 0:
+        reasons.append("no_verified_archive_checksum")
+    return {
+        "status": "ok" if not reasons else "block",
+        "symbol": symbol.upper(),
+        "market_type": market_type,
+        "interval": interval,
+        "rows": quality.coverage.count,
+        "expected_rows": quality.expected_count,
+        "first_open_time": quality.coverage.first_open_time,
+        "last_open_time": quality.coverage.last_open_time,
+        "coverage_ratio": quality.coverage_ratio,
+        "gap_count": quality.gap_count,
+        "archive_status_counts": archive_status_counts,
+        "checksum_status_counts": checksum_status_counts,
+        "reasons": reasons,
+    }
 
 
 def select_top_liquidity_symbols(
@@ -283,6 +347,78 @@ def select_top_liquidity_symbols(
         )
         for index, item in enumerate(ranked[: max(1, int(count))], start=1)
     ]
+
+
+def select_named_symbols(
+    client: BinanceClient,
+    strategy: StrategyConfig,
+    symbols: Sequence[str],
+    *,
+    quote_asset: str = "USDT",
+) -> list[SelectedSymbol]:
+    """Build selection metadata for an explicit operator-supplied symbol set."""
+
+    quote_asset = str(quote_asset or "USDT").upper()
+    requested = [str(symbol).strip().upper() for symbol in symbols if str(symbol).strip()]
+    if not requested:
+        return []
+    exchange_symbols = _exchange_symbol_map(client)
+    tickers = {
+        str(item.get("symbol") or "").upper(): item
+        for item in client.get_all_tickers_24h()
+        if isinstance(item, Mapping) and item.get("symbol")
+    }
+    books = {
+        str(item.get("symbol") or "").upper(): item
+        for item in client.get_all_book_tickers()
+        if isinstance(item, Mapping) and item.get("symbol")
+    }
+    selected: list[SelectedSymbol] = []
+    for index, symbol in enumerate(dict.fromkeys(requested), start=1):
+        symbol_info = exchange_symbols.get(symbol, {})
+        ticker = tickers.get(symbol, {})
+        book = books.get(symbol, {})
+        quote_volume = _safe_float(ticker.get("quoteVolume")) if isinstance(ticker, Mapping) else 0.0
+        trade_count = _safe_int(ticker.get("count")) if isinstance(ticker, Mapping) else 0
+        spread_bps = _spread_bps(book if isinstance(book, Mapping) else {})
+        liquidity_score = _score_liquidity(
+            quote_volume=quote_volume,
+            trade_count=trade_count,
+            spread_bps=spread_bps,
+            strategy=strategy,
+        )
+        reasons: list[str] = []
+        if not symbol.endswith(quote_asset):
+            reasons.append("quote_asset_mismatch")
+        if not symbol_info:
+            reasons.append("missing_exchange_metadata")
+        elif str(symbol_info.get("status") or "") != "TRADING":
+            reasons.append("not_trading")
+        if _looks_structurally_dangerous(symbol, quote_asset):
+            reasons.append("leveraged_or_inverse_token_pattern")
+        if isinstance(ticker, Mapping) and ticker and _looks_price_pegged(ticker):
+            reasons.append("stable_or_pegged_pair_pattern")
+        if quote_volume < strategy.min_quote_volume_usdc:
+            reasons.append("quote_volume_below_default_live_gate")
+        if trade_count < strategy.min_trade_count_24h:
+            reasons.append("trade_count_below_default_live_gate")
+        if spread_bps > strategy.max_spread_bps:
+            reasons.append("spread_above_default_live_gate")
+        selected.append(
+            SelectedSymbol(
+                rank=index,
+                symbol=symbol,
+                quote_volume=float(quote_volume),
+                trade_count=int(trade_count),
+                spread_bps=float(spread_bps),
+                liquidity_score=float(liquidity_score),
+                selection_score=float(liquidity_score),
+                strict_default_eligible=not reasons,
+                tier="explicit-symbol",
+                reasons=tuple(dict.fromkeys(reasons)),
+            )
+        )
+    return selected
 
 
 def _split_train_validation(rows: Sequence[object], validation_fraction: float = 0.25) -> tuple[list[object], list[object]]:
@@ -529,6 +665,7 @@ def build_round_evidence(
     strategy: StrategyConfig,
     quote_asset: str = "USDT",
     symbol_count: int = 50,
+    symbols: Sequence[str] | None = None,
     interval: str = "15m",
     market_type: str = "spot",
     objective_name: str = "conservative",
@@ -538,34 +675,65 @@ def build_round_evidence(
     data_root: Path = Path("data/optimization"),
     docs_root: Path = Path("docs/optimization"),
     db_path: Path = Path("data/market_data.sqlite"),
+    require_prefilled_data: bool = False,
+    min_data_rows: int = 0,
+    min_coverage_ratio: float = 0.995,
+    max_gap_count: int = 0,
+    require_verified_checksum: bool = False,
 ) -> dict[str, object]:
     paths = make_evidence_paths(round_id, data_root=data_root, docs_root=docs_root, market_db_path=db_path)
     for directory in (paths.output_dir, paths.docs_dir, paths.docs_data_dir, paths.docs_charts_dir):
         directory.mkdir(parents=True, exist_ok=True)
     objective = get_objective(objective_name)
-    selected = select_top_liquidity_symbols(client, strategy, quote_asset=quote_asset, count=symbol_count)
+    selected = (
+        select_named_symbols(client, strategy, symbols, quote_asset=quote_asset)
+        if symbols
+        else select_top_liquidity_symbols(client, strategy, quote_asset=quote_asset, count=symbol_count)
+    )
     write_json_atomic(paths.docs_data_dir / "selected-universe.json", [item.asdict() for item in selected], indent=2, sort_keys=True)
     metrics: list[BacktestEvidence] = []
+    data_health: list[dict[str, object]] = []
     timeline_rows_all: list[list[dict[str, object]]] = []
     for item in selected:
-        candles = fetch_full_history(
-            client,
-            item.symbol,
-            interval,
-            db_path=paths.market_db_path,
-            market_type=market_type,
-            batch_size=batch_size,
-        )
-        coverage = describe_candle_coverage(
-            symbol=item.symbol,
-            market_type=market_type,
-            interval=interval,
-            available_candles=candles,
-            used_candles=candles,
-            rows_used=max(0, len(candles) - 1),
-            source_scope="binance_full_history_public_market_data",
-        )
+        candles: list[Candle] = []
+        coverage = None
         try:
+            if item.tier == "explicit-symbol" and item.reasons:
+                reasons = ", ".join(item.reasons)
+                raise ValueError(f"symbol_selection_failed: {reasons}")
+            health = market_data_health_for_symbol(
+                db_path=paths.market_db_path,
+                symbol=item.symbol,
+                market_type=market_type,
+                interval=interval,
+                min_rows=min_data_rows,
+                min_coverage_ratio=min_coverage_ratio,
+                max_gap_count=max_gap_count,
+                require_verified_checksum=require_verified_checksum,
+            )
+            data_health.append(health)
+            health_required = bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum)
+            if health_required and health.get("status") != "ok":
+                reasons = ", ".join(str(reason) for reason in health.get("reasons", []) if reason)
+                raise ValueError(f"data_health_failed: {reasons or 'unknown'}")
+            candles = fetch_full_history(
+                client,
+                item.symbol,
+                interval,
+                db_path=paths.market_db_path,
+                market_type=market_type,
+                batch_size=batch_size,
+                allow_network_backfill=not require_prefilled_data,
+            )
+            coverage = describe_candle_coverage(
+                symbol=item.symbol,
+                market_type=market_type,
+                interval=interval,
+                available_candles=candles,
+                used_candles=candles,
+                rows_used=max(0, len(candles) - 1),
+                source_scope="binance_full_history_public_market_data",
+            )
             model, train_report, rows, validation_rows = train_round_model(
                 candles,
                 strategy,
@@ -706,9 +874,9 @@ def build_round_evidence(
                 objective=objective.name,
                 accepted=False,
                 reason=str(exc)[:240],
-                start_utc=coverage.used_start_utc,
-                end_utc=coverage.used_end_utc,
-                duration_years=float(coverage.used_duration_years),
+                start_utc=(coverage.used_start_utc if coverage is not None else None),
+                end_utc=(coverage.used_end_utc if coverage is not None else None),
+                duration_years=float(coverage.used_duration_years if coverage is not None else 0.0),
                 candles=len(candles),
                 rows=0,
                 starting_cash=float(starting_cash),
@@ -757,6 +925,7 @@ def build_round_evidence(
         str(paths.metrics_csv_path).replace("\\", "/"),
         str(paths.timeline_csv_path).replace("\\", "/"),
         str(paths.report_path).replace("\\", "/"),
+        str(paths.data_health_path).replace("\\", "/"),
         str(paths.docs_data_dir / "selected-universe.json").replace("\\", "/"),
     ]
     for metric in metrics:
@@ -779,6 +948,7 @@ def build_round_evidence(
         "mean_low_liquidity_sample_rate_pct": statistics.mean([metric.low_liquidity_sample_rate_pct for metric in metrics]) if metrics else 0.0,
     }
     _write_csv(paths.progress_csv_path, [progress], tuple(progress.keys()))
+    write_json_atomic(paths.data_health_path, data_health, indent=2, sort_keys=True)
     report = {
         "round_id": round_id,
         "generated_at_utc": _utc_now(),
@@ -791,8 +961,16 @@ def build_round_evidence(
         "interval": interval,
         "objective": objective.name,
         "starting_cash": float(starting_cash),
-        "symbol_count_requested": int(symbol_count),
+        "symbol_count_requested": len([str(symbol).strip() for symbol in (symbols or []) if str(symbol).strip()]) if symbols else int(symbol_count),
         "symbol_count_completed": len(metrics),
+        "explicit_symbols": [str(symbol).upper() for symbol in (symbols or [])],
+        "require_prefilled_data": bool(require_prefilled_data),
+        "min_data_rows": int(min_data_rows),
+        "min_coverage_ratio": float(min_coverage_ratio),
+        "max_gap_count": int(max_gap_count),
+        "require_verified_checksum": bool(require_verified_checksum),
+        "data_health_path": str(paths.data_health_path).replace("\\", "/"),
+        "data_health": data_health,
         "selected_universe_path": str(paths.docs_data_dir / "selected-universe.json").replace("\\", "/"),
         "metrics_csv_path": str(paths.metrics_csv_path).replace("\\", "/"),
         "portfolio_timeline_csv_path": str(paths.timeline_csv_path).replace("\\", "/"),
@@ -812,6 +990,8 @@ __all__ = [
     "build_round_evidence",
     "fetch_full_history",
     "make_evidence_paths",
+    "market_data_health_for_symbol",
     "render_comparison_svg",
+    "select_named_symbols",
     "select_top_liquidity_symbols",
 ]
