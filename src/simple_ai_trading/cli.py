@@ -243,6 +243,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_risk.add_argument("--json", action="store_true")
     parser_risk.set_defaults(func=command_risk)
 
+    parser_reconcile = subparsers.add_parser(
+        "reconcile",
+        help="compare signed exchange exposure with the local autonomous position ledger",
+    )
+    parser_reconcile.add_argument("--json", action="store_true")
+    parser_reconcile.add_argument("--output", default="data/autonomous/reconciliation.json")
+    parser_reconcile.add_argument("--quantity-tolerance", type=float, default=1e-8)
+    parser_reconcile.set_defaults(func=command_reconcile)
+
     parser_universe = subparsers.add_parser("universe", help="measure automatic high-liquidity multi-asset eligibility")
     parser_universe.add_argument("--symbols", default=None, help="comma-separated symbols; default uses runtime.symbols")
     parser_universe.add_argument("--json", action="store_true")
@@ -3495,6 +3504,49 @@ def command_risk(args: argparse.Namespace) -> int:
         load_runtime_fn=load_runtime,
         load_strategy_fn=load_strategy,
     )
+
+
+def command_reconcile(args: argparse.Namespace) -> int:
+    from .positions import PositionsStore
+    from .reconciliation import reconcile_account_positions
+    from .storage import write_json_atomic
+
+    runtime = load_runtime()
+    if not _has_api_credentials(runtime):
+        print(_credential_required_message("Reconciliation"), file=sys.stderr)
+        return 2
+    try:
+        account = _build_client(runtime).get_account()
+        report = reconcile_account_positions(
+            account,
+            runtime,
+            PositionsStore(),
+            quantity_tolerance=max(0.0, float(getattr(args, "quantity_tolerance", 1e-8))),
+        )
+    except (BinanceAPIError, OSError, ValueError) as exc:
+        print(f"reconcile failed: {exc}", file=sys.stderr)
+        return 2
+    output = Path(getattr(args, "output", "data/autonomous/reconciliation.json"))
+    write_json_atomic(output, report.asdict(), indent=2, sort_keys=True)
+    if getattr(args, "json", False):
+        print(json.dumps(report.asdict(), indent=2))
+    else:
+        status = "ok" if report.ok else "mismatch"
+        print(
+            f"reconcile: {status} market={report.market_type} "
+            f"local_live={report.local_live_open_count} paper={report.local_paper_open_count} "
+            f"exchange={report.exchange_exposure_count}"
+        )
+        for mismatch in report.mismatches:
+            print(
+                f"  {mismatch.reason}: {mismatch.symbol} {mismatch.side} "
+                f"local={mismatch.local_qty:.8f} exchange={mismatch.exchange_qty:.8f} "
+                f"diff={mismatch.difference:+.8f}"
+            )
+        for warning in report.warnings:
+            print(f"  warning: {warning}")
+        print(f"  report -> {output}")
+    return 0 if report.ok else 2
 
 
 def command_universe(args: argparse.Namespace) -> int:

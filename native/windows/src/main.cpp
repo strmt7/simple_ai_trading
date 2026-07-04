@@ -551,11 +551,11 @@ class MainWindow {
         command_entries_.clear();
         SendMessageW(command_combo_, CB_RESETCONTENT, 0, 0);
         if (page_index_ == 0) {
-            add_group(L"Operate", {L"status", L"connect", L"compute", L"live", L"autonomous", L"positions", L"close"});
+            add_group(L"Operate", {L"status", L"connect", L"compute", L"live", L"autonomous", L"positions", L"reconcile", L"close"});
         } else if (page_index_ == 1) {
             add_group(L"Research", {L"model-lab", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives"});
         } else if (page_index_ == 2) {
-            add_group(L"Risk", {L"risk", L"audit", L"doctor", L"universe", L"signals", L"signals-benchmark", L"source-grades", L"report"});
+            add_group(L"Risk", {L"risk", L"reconcile", L"audit", L"doctor", L"universe", L"signals", L"signals-benchmark", L"source-grades", L"report"});
         } else if (page_index_ == 3) {
             add_group(L"Data", {L"data-sync", L"fetch", L"configure", L"strategy", L"spot-roundtrip"});
         } else if (page_index_ == 4) {
@@ -610,6 +610,7 @@ class MainWindow {
                 {L"Compute GPU", {L"compute"}},
                 {L"Live Paper Step", {L"live --paper --steps 1"}},
                 {L"Autonomous Status", {L"autonomous status"}},
+                {L"Reconcile", {L"reconcile"}},
                 {L"Paper Iteration", {L"autonomous start --paper --iterations 1"}},
                 {L"Pause", {L"autonomous pause"}},
                 {L"Stop", {L"autonomous stop"}},
@@ -632,6 +633,7 @@ class MainWindow {
         } else if (page_index_ == 2) {
             quick_actions_ = {
                 {L"Risk Paper", {L"risk --paper"}},
+                {L"Reconcile", {L"reconcile"}},
                 {L"Audit", {L"audit"}},
                 {L"Doctor", {L"doctor"}},
                 {L"Universe", {L"universe"}},
