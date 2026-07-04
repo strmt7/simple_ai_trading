@@ -233,6 +233,11 @@ def test_temporal_robustness_prefers_trade_return_evidence(
             ending_cash=1010.0,
             closed_trades=3,
             edge_vs_buy_hold=10.0,
+            gross_profit=50.0,
+            gross_loss=5.0,
+            profit_factor=10.0,
+            expectancy=3.0,
+            max_consecutive_losses=1,
             trade_returns=returns,
             trade_pnls=tuple(value * 1000.0 for value in returns),
         )

@@ -25,6 +25,15 @@ def _result(**overrides) -> BacktestResult:
         stopped_by_drawdown=False,
         max_exposure=500.0,
         trades_per_day_cap_hit=0,
+        trade_pnls=(12.5, 12.5, 12.5, -12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5),
+        trade_returns=(0.0125, 0.0123, 0.0121, -0.0120, 0.0118, 0.0116, 0.0114, 0.0112, 0.0110, 0.0108),
+        gross_profit=112.5,
+        gross_loss=12.5,
+        profit_factor=9.0,
+        expectancy=10.0,
+        average_trade_return=0.00927,
+        trade_return_stdev=0.0073,
+        max_consecutive_losses=1,
     )
     base.update(overrides)
     return BacktestResult(**base)
@@ -114,6 +123,59 @@ def test_rejection_reasons_are_stable_machine_labels():
         "realized_pnl<=0.0",
         "edge_vs_buy_hold<0.0",
     ]
+
+
+def test_path_quality_gates_reject_fragile_profitable_models():
+    weak_factor = _result(profit_factor=1.04)
+    weak_expectancy = _result(expectancy=0.0)
+    long_loss_streak = _result(max_consecutive_losses=6)
+
+    assert "profit_factor<1.1" in obj.CONSERVATIVE.rejection_reasons(weak_factor)
+    assert "expectancy<=0.0" in obj.REGULAR.rejection_reasons(weak_expectancy)
+    assert "max_consecutive_losses>5" in obj.REGULAR.rejection_reasons(long_loss_streak)
+
+
+def test_path_quality_gates_skip_legacy_payloads_without_trade_evidence():
+    legacy = _result(
+        trade_pnls=(),
+        trade_returns=(),
+        gross_profit=0.0,
+        gross_loss=0.0,
+        profit_factor=0.0,
+        expectancy=0.0,
+        max_consecutive_losses=0,
+    )
+
+    assert obj.CONSERVATIVE.accepts(legacy) is True
+
+
+def test_path_quality_gates_can_derive_metrics_from_trade_pnls():
+    raw_path = _result(
+        closed_trades=3,
+        trade_pnls=(10.0, -20.0, -1.0),
+        trade_returns=(0.010, -0.020, -0.001),
+        gross_profit=0.0,
+        gross_loss=0.0,
+        profit_factor=0.0,
+        expectancy=0.0,
+        max_consecutive_losses=0,
+    )
+    clean_winner = _result(
+        closed_trades=3,
+        trade_pnls=(6.0, 7.0, 8.0),
+        trade_returns=(0.006, 0.007, 0.008),
+        gross_profit=0.0,
+        gross_loss=0.0,
+        profit_factor=0.0,
+        expectancy=0.0,
+        max_consecutive_losses=0,
+    )
+
+    reasons = obj.REGULAR.rejection_reasons(raw_path)
+
+    assert "profit_factor<1.05" in reasons
+    assert "expectancy<=0.0" in reasons
+    assert obj.REGULAR.accepts(clean_winner) is True
 
 
 def test_safe_and_return_ratio_non_finite():

@@ -32,6 +32,9 @@ class ObjectiveSpec:
     min_realized_pnl: float | None = None
     min_edge_vs_buy_hold: float | None = 0.0
     max_drawdown_rejection: float = 1.0  # 1.0 = never reject on drawdown alone
+    min_profit_factor: float | None = None
+    min_expectancy: float | None = None
+    max_consecutive_losses_allowed: int | None = None
     training: "ObjectiveTraining | None" = None
 
     def score(self, result: BacktestResult) -> float:
@@ -56,6 +59,18 @@ class ObjectiveSpec:
             reasons.append(f"max_drawdown>{self.max_drawdown_rejection}")
         if result.stopped_by_drawdown and self.max_drawdown_rejection < 0.5:
             reasons.append("stopped_by_drawdown")
+        path_quality = _path_quality_evidence(result)
+        if path_quality is not None:
+            profit_factor, expectancy, max_consecutive_losses = path_quality
+            if self.min_profit_factor is not None and profit_factor < self.min_profit_factor:
+                reasons.append(f"profit_factor<{self.min_profit_factor}")
+            if self.min_expectancy is not None and expectancy <= self.min_expectancy:
+                reasons.append(f"expectancy<={self.min_expectancy}")
+            if (
+                self.max_consecutive_losses_allowed is not None
+                and max_consecutive_losses > self.max_consecutive_losses_allowed
+            ):
+                reasons.append(f"max_consecutive_losses>{self.max_consecutive_losses_allowed}")
         return reasons
 
     def reject_reason(self, result: BacktestResult) -> str | None:
@@ -98,6 +113,51 @@ class ObjectiveTraining:
 
 def _safe(value: float, default: float = 0.0) -> float:
     return default if not math.isfinite(value) else float(value)
+
+
+def _loss_streak(values: list[float]) -> int:
+    longest = 0
+    current = 0
+    for value in values:
+        if value < 0.0:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
+
+
+def _path_quality_evidence(result: BacktestResult) -> tuple[float, float, int] | None:
+    gross_profit = _safe(float(getattr(result, "gross_profit", 0.0)))
+    gross_loss = _safe(float(getattr(result, "gross_loss", 0.0)))
+    profit_factor = _safe(float(getattr(result, "profit_factor", 0.0)))
+    expectancy = _safe(float(getattr(result, "expectancy", 0.0)))
+    max_consecutive_losses = int(getattr(result, "max_consecutive_losses", 0))
+    if (
+        gross_profit > 0.0
+        or gross_loss > 0.0
+        or profit_factor > 0.0
+        or expectancy != 0.0
+        or max_consecutive_losses > 0
+    ):
+        return profit_factor, expectancy, max_consecutive_losses
+
+    trade_pnls = getattr(result, "trade_pnls", ())
+    if not isinstance(trade_pnls, (tuple, list)) or len(trade_pnls) == 0:
+        return None
+    clean_pnls = [float(value) for value in trade_pnls if math.isfinite(float(value))]
+    if not clean_pnls:
+        return None
+    gross_profit = sum(value for value in clean_pnls if value > 0.0)
+    gross_loss = abs(sum(value for value in clean_pnls if value < 0.0))
+    if gross_loss > 0.0:
+        profit_factor = gross_profit / gross_loss
+    elif gross_profit > 0.0:
+        profit_factor = 999.0
+    else:
+        profit_factor = 0.0
+    expectancy = sum(clean_pnls) / len(clean_pnls)
+    return min(999.0, max(0.0, profit_factor)), expectancy, _loss_streak(clean_pnls)
 
 
 def _return_ratio(result: BacktestResult) -> float:
@@ -166,6 +226,9 @@ CONSERVATIVE = ObjectiveSpec(
     min_closed_trades=5,
     min_realized_pnl=0.0,
     max_drawdown_rejection=0.15,
+    min_profit_factor=1.10,
+    min_expectancy=0.0,
+    max_consecutive_losses_allowed=3,
     training=ObjectiveTraining(
         epochs=400,
         learning_rate=0.02,
@@ -200,6 +263,9 @@ REGULAR = ObjectiveSpec(
     min_closed_trades=3,
     min_realized_pnl=0.0,
     max_drawdown_rejection=0.25,
+    min_profit_factor=1.05,
+    min_expectancy=0.0,
+    max_consecutive_losses_allowed=5,
     training=ObjectiveTraining(
         epochs=600,
         learning_rate=0.03,
@@ -236,6 +302,9 @@ AGGRESSIVE = ObjectiveSpec(
     min_closed_trades=2,
     min_realized_pnl=0.0,
     max_drawdown_rejection=0.30,
+    min_profit_factor=1.00,
+    min_expectancy=0.0,
+    max_consecutive_losses_allowed=8,
     training=ObjectiveTraining(
         epochs=720,
         learning_rate=0.04,

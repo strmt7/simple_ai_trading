@@ -265,7 +265,7 @@ No future model family should be accepted unless it writes:
 - source of any AI/foundation forecast used,
 - reproducibility seeds or nondeterminism warning.
 
-Recommended next gates:
+Implemented objective gates:
 
 - Conservative: require positive expectancy, finite profit factor above 1.10,
   max loss streak at or below 3, and regime-level pass evidence.
@@ -278,14 +278,13 @@ Recommended next gates:
 
 1. Regime evidence in model-lab artifacts.
 2. Meta-label take/skip/downsize model trained on simulator outcomes.
-3. Objective gates that use the new path-quality metrics.
-4. Depth/top-of-book data store and microstructure feature block.
-5. LightGBM OpenCL tabular candidate with repeated-seed validation.
-6. Patch-transformer research candidate using PyTorch DirectML.
-7. Foundation forecast feature provider with timestamped no-lookahead logs.
-8. RL sandbox for meta-control only after realistic depth simulation exists.
-9. Feature ablation reports for every indicator/model family.
-10. ONNX/WinML inference parity checks before packaging AI inference into the
+3. Depth/top-of-book data store and microstructure feature block.
+4. LightGBM OpenCL tabular candidate with repeated-seed validation.
+5. Patch-transformer research candidate using PyTorch DirectML.
+6. Foundation forecast feature provider with timestamped no-lookahead logs.
+7. RL sandbox for meta-control only after realistic depth simulation exists.
+8. Feature ablation reports for every indicator/model family.
+9. ONNX/WinML inference parity checks before packaging AI inference into the
     Windows app.
 
 ## What Not To Do
