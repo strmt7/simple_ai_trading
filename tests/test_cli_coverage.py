@@ -6346,9 +6346,9 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,
-            max_position_pct=0.5,
+            max_position_pct=0.2,
             max_drawdown_limit=0.01,
-            stop_loss_pct=0.99,
+            stop_loss_pct=0.02,
             cooldown_minutes=0,
             max_regime_unpredictability=1.0,
         )

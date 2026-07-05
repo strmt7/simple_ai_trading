@@ -198,6 +198,65 @@ def test_risk_policy_blocks_extreme_capital_loss_settings(tmp_path) -> None:
     assert any(check.label == "reconnect recovery cooldown" and check.status == "block" for check in disabled_loss.checks)
 
 
+def test_risk_policy_blocks_live_when_one_stop_can_breach_loss_budget() -> None:
+    strategy = StrategyConfig(
+        risk_per_trade=0.02,
+        max_position_pct=0.35,
+        max_asset_allocation_pct=0.35,
+        stop_loss_pct=0.02,
+        max_daily_loss_pct=0.006,
+        max_session_loss_pct=0.012,
+        max_portfolio_risk_pct=0.015,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+    )
+    report = build_risk_policy_report(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        ),
+        strategy,
+        effective_dry_run=False,
+    )
+
+    coherence = [check for check in report.checks if check.label == "loss budget coherence"]
+    assert report.allowed is False
+    assert report.max_loss_per_trade_pct == pytest.approx(
+        report.notional_cap_pct * stop_loss_effective_loss_pct(strategy)
+    )
+    assert report.max_loss_per_trade_pct > strategy.max_daily_loss_pct
+    assert coherence[0].status == "block"
+    assert "daily loss budget 0.60%" in coherence[0].detail
+
+
+def test_risk_policy_warns_paper_when_one_stop_can_breach_loss_budget() -> None:
+    strategy = StrategyConfig(
+        risk_per_trade=0.02,
+        max_position_pct=0.35,
+        max_asset_allocation_pct=0.35,
+        stop_loss_pct=0.02,
+        max_daily_loss_pct=0.006,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+    )
+
+    report = build_risk_policy_report(
+        RuntimeConfig(testnet=True, dry_run=True),
+        strategy,
+        effective_dry_run=True,
+    )
+
+    assert report.allowed is True
+    assert any(check.label == "loss budget coherence" and check.status == "warn" for check in report.checks)
+
+
 def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
     promoted_path = tmp_path / "promoted.json"
     serialize_model(

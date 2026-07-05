@@ -85,7 +85,10 @@ def _environment(runtime: RuntimeConfig) -> str:
 def _effective_leverage(strategy: StrategyConfig, market_type: str, requested: float | None = None) -> float:
     if market_type != "futures":
         return 1.0
-    raw = float(strategy.leverage if requested is None else requested)
+    try:
+        raw = float(strategy.leverage if requested is None else requested)
+    except (TypeError, ValueError, OverflowError):
+        return 1.0
     if not math.isfinite(raw):
         return 1.0
     return max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, raw))
@@ -358,12 +361,13 @@ def build_risk_policy_report(
             limit=0.02,
         )
     )
+    portfolio_risk_budget = _finite(strategy.max_portfolio_risk_pct)
     checks.append(
         _check(
-            "ok" if strategy.max_portfolio_risk_pct <= 0.05 else ("warn" if dry_run else "block"),
+            "ok" if portfolio_risk_budget <= 0.05 else ("warn" if dry_run else "block"),
             "portfolio risk budget",
-            f"{strategy.max_portfolio_risk_pct:.2%}",
-            metric=strategy.max_portfolio_risk_pct,
+            f"{portfolio_risk_budget:.2%}",
+            metric=portfolio_risk_budget,
             limit="<=5%",
         )
     )
@@ -391,6 +395,30 @@ def build_risk_policy_report(
                 f"{session_loss_budget:.2%} of reference equity",
                 metric=session_loss_budget,
                 limit="<=10% hard",
+            )
+        )
+    active_hard_budgets = [
+        (label, value)
+        for label, value in (
+            ("daily loss budget", daily_loss_budget),
+            ("session loss budget", session_loss_budget),
+            ("portfolio risk budget", portfolio_risk_budget),
+        )
+        if value > 0.0
+    ]
+    if active_hard_budgets:
+        binding_label, binding_budget = min(active_hard_budgets, key=lambda item: item[1])
+        coherent = max_loss_per_trade_pct <= binding_budget + 1e-12
+        checks.append(
+            _check(
+                "ok" if coherent else ("warn" if dry_run else "block"),
+                "loss budget coherence",
+                (
+                    f"stop-loss estimate {max_loss_per_trade_pct:.2%} vs "
+                    f"{binding_label} {binding_budget:.2%}"
+                ),
+                metric=max_loss_per_trade_pct,
+                limit=f"<={binding_label} {binding_budget:.2%}",
             )
         )
     max_losses = int(getattr(strategy, "max_consecutive_losses", 0) or 0)
