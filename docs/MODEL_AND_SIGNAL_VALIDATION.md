@@ -38,6 +38,8 @@ The gate enforces:
 - complete data-coverage metadata with no failed integrity status,
 - generated backtest accounting identities for cash, fees, trade P&L, exit
   reasons, and net-P&L win rate,
+- objective path quality, including profit factor, expectancy, loss streaks,
+  and single-trade profit concentration,
 - accepted stress, temporal robustness, and portfolio-risk reports,
 - bounded drawdown, CVaR, deployed weight, correlation, and cluster exposure
   metrics.
