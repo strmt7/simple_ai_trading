@@ -211,7 +211,9 @@ live loop, risk report, backtester, optimization evidence generator, and Windows
 app command surface all use the same stop-loss-sized notional calculation.
 Backtests preserve candle high/low bounds in model rows; stop-loss, take-profit,
 drawdown, and liquidation checks use those intrabar bounds when available, and
-an ambiguous bar that touches both stop and take exits at the stop. Futures
+an ambiguous bar that touches both stop and take exits at the stop. When the
+intrabar adverse mark breaches the drawdown limit, the backtest closes the
+position at that same adverse mark instead of a recovered candle close. Futures
 backtests apply an isolated-margin liquidation proxy: if margin balance falls
 below the configured `liquidation_buffer_pct` maintenance-plus-buffer
 requirement, the isolated margin is treated as lost, the position is cleared,
