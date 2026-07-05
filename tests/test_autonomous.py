@@ -660,6 +660,47 @@ def test_close_tracked_live_verified_position_uses_reduce_only_order(tmp_path: P
     assert trade.exchange_status == "FILLED"
 
 
+def test_close_tracked_live_partial_fill_preserves_open_remainder(tmp_path: Path) -> None:
+    class PartialCloseClient(FakeClient):
+        def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
+            order = super().place_order(symbol, side, quantity / 2.0, **kwargs)
+            order["status"] = "PARTIALLY_FILLED"
+            return order
+
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("LONG", entry=100.0)
+    position.qty = 2.0
+    position.notional = 200.0
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+    client = PartialCloseClient(price=110.0)
+
+    report = close_tracked_open_positions(
+        store,
+        110.0,
+        "operator-stop",
+        client=client,
+        reduce_only=True,
+        clock=lambda: 10.0,
+    )
+
+    assert report.closed == 1
+    assert report.partial == 1
+    assert report.ok is False
+    assert "partial-close" in report.failures[0]
+    ledger = store.load_ledger()
+    assert len(ledger) == 1
+    assert ledger[0].qty == pytest.approx(1.0)
+    assert ledger[0].exchange_status == "PARTIALLY_FILLED"
+    opens = store.load_open()
+    assert len(opens) == 1
+    assert opens[0].qty == pytest.approx(1.0)
+    assert opens[0].notional == pytest.approx(100.0)
+    assert opens[0].exchange_status == "PARTIALLY_FILLED"
+
+
 def test_close_tracked_live_unverified_position_is_not_touched(tmp_path: Path) -> None:
     store = PositionsStore(root=tmp_path / "positions")
     position = _make_position("SHORT", entry=100.0)

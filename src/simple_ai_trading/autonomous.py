@@ -218,11 +218,12 @@ class CloseAllReport:
     closed: int
     skipped: int
     failed: int
+    partial: int = 0
     failures: tuple[str, ...] = ()
 
     @property
     def ok(self) -> bool:
-        return self.failed == 0
+        return self.failed == 0 and self.partial == 0
 
 
 def _default_reconcile(
@@ -556,6 +557,7 @@ def close_tracked_open_positions(
     closed = 0
     skipped = 0
     failed = 0
+    partial = 0
     failures: list[str] = []
     for position in list(store.load_open()):
         ownership_rejection = bot_ownership_rejection_reason(position)
@@ -581,9 +583,13 @@ def close_tracked_open_positions(
             failed += 1
             failures.append(f"{position.id}:{exc}")
             continue
-        store.record_close(trade)
+        store.record_close_result(position, trade)
         closed += 1
-    return CloseAllReport(closed=closed, skipped=skipped, failed=failed, failures=tuple(failures))
+        tolerance = max(1e-12, float(position.qty) * 1e-8)
+        if max(0.0, float(trade.qty)) < max(0.0, float(position.qty)) - tolerance:
+            partial += 1
+            failures.append(f"{position.id}:partial-close {trade.qty:.12g}/{position.qty:.12g}")
+    return CloseAllReport(closed=closed, skipped=skipped, failed=failed, partial=partial, failures=tuple(failures))
 
 
 
@@ -1066,7 +1072,7 @@ def run_loop(
                         logger.error("autonomous iter=%d close-order-failed id=%s error=%s", iteration, position.id, exc)
                         exit_reason = "close-order-failed"
                         break
-                    store.record_close(trade)
+                    store.record_close_result(position, trade)
                     closed += 1
                     logger.info(
                         "autonomous iter=%d close id=%s reason=%s pnl=%+.2f (%+.2%%)",

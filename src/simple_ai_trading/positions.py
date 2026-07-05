@@ -21,7 +21,7 @@ import json
 import time
 import uuid
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -213,6 +213,32 @@ class PositionsStore:
         self._write(self.ledger_path, [asdict(t) for t in existing])
         # also drop the matching open entry if present
         opens = [p for p in self.load_open() if p.id != trade.id]
+        self._write(self.open_path, [asdict(p) for p in opens])
+        write_learning_feedback(self)
+        return trade
+
+    def record_close_result(self, position: OpenPosition, trade: ClosedTrade) -> ClosedTrade:
+        """Record a close fill while preserving any unfilled open remainder."""
+
+        open_qty = max(0.0, float(position.qty))
+        close_qty = max(0.0, float(trade.qty))
+        tolerance = max(1e-12, open_qty * 1e-8)
+        if open_qty <= 0.0 or close_qty >= open_qty - tolerance:
+            return self.record_close(trade)
+
+        existing = self.load_ledger()
+        existing.append(trade)
+        self._write(self.ledger_path, [asdict(t) for t in existing])
+
+        remaining_qty = max(0.0, open_qty - close_qty)
+        remaining = replace(
+            position,
+            qty=remaining_qty,
+            notional=max(0.0, remaining_qty * float(position.entry_price)),
+            exchange_status="PARTIALLY_FILLED",
+        )
+        opens = [p for p in self.load_open() if p.id != position.id]
+        opens.append(remaining)
         self._write(self.open_path, [asdict(p) for p in opens])
         write_learning_feedback(self)
         return trade
