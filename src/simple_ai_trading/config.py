@@ -8,7 +8,15 @@ from getpass import getpass
 from pathlib import Path
 from typing import Any, Callable
 
-from .assets import DEFAULT_SYMBOL, DEFAULT_SYMBOLS, normalize_symbol, normalize_symbols
+from .assets import (
+    DEFAULT_QUOTE_ASSET,
+    DEFAULT_SYMBOL,
+    DEFAULT_SYMBOLS,
+    is_supported_major_symbol,
+    major_symbols_for_quote,
+    normalize_symbol,
+    normalize_symbols,
+)
 from .features import normalize_enabled_features
 from .storage import write_json_atomic
 from .types import RuntimeConfig, StrategyConfig, config_paths
@@ -38,10 +46,21 @@ def _known_payload(payload: dict[str, Any], allowed_fields: frozenset[str]) -> d
 
 def _normalize_runtime_payload(payload: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(payload)
-    symbol = normalize_symbol(normalized.get("symbol") or SUPPORTED_SYMBOL)
-    symbols = normalize_symbols(normalized.get("symbols") or DEFAULT_SYMBOLS)
+    quote_asset = str(normalized.get("quote_asset") or DEFAULT_QUOTE_ASSET).strip().upper() or DEFAULT_QUOTE_ASSET
+    defaults = major_symbols_for_quote(quote_asset)
+    symbol = normalize_symbol(normalized.get("symbol") or SUPPORTED_SYMBOL, default=defaults[0])
+    if not is_supported_major_symbol(symbol, quote_asset):
+        symbol = defaults[0]
+    symbols = tuple(
+        item
+        for item in normalize_symbols(normalized.get("symbols") or DEFAULT_SYMBOLS, default=defaults)
+        if is_supported_major_symbol(item, quote_asset)
+    )
+    if not symbols:
+        symbols = defaults
     if symbol not in symbols:
         symbols = (symbol, *symbols)
+    normalized["quote_asset"] = quote_asset
     normalized["symbol"] = symbol
     normalized["symbols"] = symbols
     return normalized
@@ -123,7 +142,14 @@ def prompt_runtime(current: RuntimeConfig, key_getter: Callable[[str], str] = in
         current.symbol,
     )
     symbol = normalize_symbol(symbol, default=current.symbol)
-    symbols = normalize_symbols(current.symbols)
+    if not is_supported_major_symbol(symbol, current.quote_asset):
+        symbol = current.symbol if is_supported_major_symbol(current.symbol, current.quote_asset) else major_symbols_for_quote(current.quote_asset)[0]
+    symbols = tuple(
+        item for item in normalize_symbols(current.symbols, default=major_symbols_for_quote(current.quote_asset))
+        if is_supported_major_symbol(item, current.quote_asset)
+    )
+    if not symbols:
+        symbols = major_symbols_for_quote(current.quote_asset)
     if symbol not in symbols:
         symbols = (symbol, *symbols)
 

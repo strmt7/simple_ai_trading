@@ -1,4 +1,4 @@
-"""Entry point for the Simple AI Trading multi-asset day-trading CLI."""
+"""Entry point for the Simple AI Trading BTC/ETH/SOL day-trading CLI."""
 
 from __future__ import annotations
 
@@ -37,6 +37,7 @@ from .assets import (
     DEFAULT_CONSERVATIVE_LEVERAGE,
     DEFAULT_REGULAR_LEVERAGE,
     MAX_AUTONOMOUS_LEVERAGE,
+    is_supported_major_symbol,
 )
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
 from .binance_archive import ingest_archive_urls, list_archive_urls
@@ -245,7 +246,7 @@ _STRATEGY_PROFILES["active"] = dict(_STRATEGY_PROFILES["aggressive"])
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="simple-ai-trading",
-        description="Autonomous multi-asset non-mainnet trading CLI for Binance (spot + futures).",
+        description="Autonomous BTC/ETH/SOL non-mainnet trading CLI for Binance (spot + futures).",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -300,7 +301,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_reconcile.add_argument("--quantity-tolerance", type=float, default=1e-8)
     parser_reconcile.set_defaults(func=command_reconcile)
 
-    parser_universe = subparsers.add_parser("universe", help="measure automatic high-liquidity multi-asset eligibility")
+    parser_universe = subparsers.add_parser("universe", help="measure BTC/ETH/SOL high-liquidity eligibility")
     parser_universe.add_argument("--symbols", default=None, help="comma-separated symbols; default uses runtime.symbols")
     parser_universe.add_argument("--json", action="store_true")
     parser_universe.set_defaults(func=command_universe)
@@ -2212,7 +2213,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                     "Operator help - simple-ai-trading",
                     "==================================",
                     "",
-                    "Scope: multi-asset spot/futures trading on Binance testnet or Demo Trading only.",
+                    "Scope: BTC/ETH/SOL spot/futures trading on Binance testnet or Demo Trading only.",
                     "",
                     "First-time setup",
                     "----------------",
@@ -4593,6 +4594,8 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     interval = str(getattr(args, "interval", None) or runtime.interval)
     market_type = str(getattr(args, "market", "spot") or "spot")
     cadence = str(getattr(args, "cadence", "monthly") or "monthly")
+    quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
+    quote_gate = quote_asset if getattr(args, "quote_asset", None) else None
     raw_symbols = str(getattr(args, "symbols", "") or "").strip()
     symbols = [item.strip().upper() for item in raw_symbols.split(",") if item.strip()]
     requested_top_symbols = 0
@@ -4601,7 +4604,6 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     if not symbols and int(getattr(args, "top_symbols", 0) or 0) > 0:
         top_symbols = max(1, int(getattr(args, "top_symbols", 0) or 0))
         requested_top_symbols = top_symbols
-        quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
         max_scan = max(top_symbols, int(getattr(args, "max_scan", 250) or 250))
         try:
             ranking_client = BinanceClient(
@@ -4628,6 +4630,9 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         for item in selection:
             if len(symbols) >= top_symbols:
                 break
+            if not is_supported_major_symbol(item.symbol, quote_asset):
+                history_rejections.append({"symbol": item.symbol, "error": "unsupported_non_major_asset"})
+                continue
             try:
                 urls = list_archive_urls(symbol=item.symbol, interval=interval, market_type=market_type, cadence=cadence)
             except (OSError, ValueError) as exc:
@@ -4648,6 +4653,14 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             return 2
     if not symbols:
         symbols = [str(getattr(args, "symbol", None) or runtime.symbol).upper()]
+    invalid_symbols = [symbol for symbol in symbols if not is_supported_major_symbol(symbol, quote_gate)]
+    if invalid_symbols:
+        print(
+            "archive-sync supports only BTC, ETH, and SOL symbols quoted in USDC or USDT: "
+            + ",".join(invalid_symbols),
+            file=sys.stderr,
+        )
+        return 2
     max_files = getattr(args, "max_files", None)
     max_files_int = None if max_files is None else max(0, int(max_files))
     all_results = []

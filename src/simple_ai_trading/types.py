@@ -16,6 +16,8 @@ from .assets import (
     DEFAULT_SYMBOL,
     DEFAULT_SYMBOLS,
     MAX_AUTONOMOUS_LEVERAGE,
+    is_supported_major_symbol,
+    major_symbols_for_quote,
     normalize_symbol,
     normalize_symbols,
 )
@@ -87,11 +89,23 @@ class RuntimeConfig:
     managed_btc: float = 0.0
 
     def __post_init__(self) -> None:
-        self.symbol = normalize_symbol(self.symbol)
-        self.symbols = normalize_symbols((*normalize_symbols(self.symbols), self.symbol))
+        self.quote_asset = str(self.quote_asset or DEFAULT_QUOTE_ASSET).strip().upper() or DEFAULT_QUOTE_ASSET
+        default_symbols = major_symbols_for_quote(self.quote_asset)
+        self.symbol = normalize_symbol(self.symbol, default=default_symbols[0])
+        if not is_supported_major_symbol(self.symbol, self.quote_asset):
+            self.symbol = default_symbols[0]
+        requested_symbols = normalize_symbols(self.symbols, default=default_symbols)
+        self.symbols = tuple(
+            dict.fromkeys(
+                symbol
+                for symbol in requested_symbols
+                if is_supported_major_symbol(symbol, self.quote_asset)
+            )
+        )
+        if not self.symbols:
+            self.symbols = default_symbols
         if self.symbol not in self.symbols:
             self.symbols = (self.symbol, *self.symbols)
-        self.quote_asset = str(self.quote_asset or DEFAULT_QUOTE_ASSET).strip().upper() or DEFAULT_QUOTE_ASSET
         self.interval = _normal_interval(self.interval)
         self.market_type = str(self.market_type or "spot").lower()
         self.testnet = _coerce_bool(self.testnet, True)

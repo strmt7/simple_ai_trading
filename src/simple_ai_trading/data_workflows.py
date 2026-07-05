@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .api import BinanceAPIError, BinanceClient
-from .assets import normalize_symbol
+from .assets import is_supported_major_symbol, normalize_symbol
 from .data_downloader import MarketDataSyncConfig, MarketDataSyncResult, render_sync_result, sync_market_data
 from .intervals import interval_milliseconds
 from .market_data import clean_candles
@@ -31,8 +31,11 @@ def runtime_with_market(runtime: RuntimeConfig, market_type: str) -> RuntimeConf
 
 def data_sync_config_from_args(args: argparse.Namespace, runtime: RuntimeConfig) -> MarketDataSyncConfig:
     market_type = getattr(args, "market", None) or runtime.market_type
+    symbol = normalize_symbol(getattr(args, "symbol", None) or runtime.symbol)
+    if not is_supported_major_symbol(symbol):
+        raise ValueError(f"unsupported symbol {symbol}; only BTC, ETH, and SOL quoted in USDC/USDT are supported")
     return MarketDataSyncConfig(
-        symbol=(getattr(args, "symbol", None) or runtime.symbol).upper(),
+        symbol=symbol,
         interval=getattr(args, "interval", None) or runtime.interval,
         market_type=market_type,
         db_path=getattr(args, "db", "data/market_data.sqlite"),
@@ -49,6 +52,14 @@ def start_background_data_sync(
     python_executable: str = sys.executable,
     popen: Callable[..., BackgroundProcess] = subprocess.Popen,
 ) -> int:
+    requested_symbol = getattr(args, "symbol", None)
+    if requested_symbol and not is_supported_major_symbol(normalize_symbol(requested_symbol)):
+        print(
+            f"Market data sync failed: unsupported symbol {normalize_symbol(requested_symbol)}; "
+            "only BTC, ETH, and SOL quoted in USDC/USDT are supported",
+            file=sys.stderr,
+        )
+        return 2
     pid_file = Path(getattr(args, "pid_file", "data/market_data_sync.pid"))
     log_file = Path(getattr(args, "log_file", "data/market_data_sync.log"))
     pid_file.parent.mkdir(parents=True, exist_ok=True)
@@ -104,7 +115,11 @@ def command_data_sync(
     if getattr(args, "background", False):
         return start_background_data_sync(args, python_executable=python_executable, popen=popen)
     runtime = load_runtime_fn()
-    config = data_sync_config_from_args(args, runtime)
+    try:
+        config = data_sync_config_from_args(args, runtime)
+    except ValueError as exc:
+        print(f"Market data sync failed: {exc}", file=sys.stderr)
+        return 2
     client = build_client_fn(runtime_with_market(runtime, config.market_type))
     futures_client = None
     if config.include_futures_metrics and config.market_type != "futures":
@@ -141,6 +156,9 @@ def command_fetch(
 ) -> int:
     runtime = load_runtime_fn()
     symbol = normalize_symbol(args.symbol or runtime.symbol)
+    if not is_supported_major_symbol(symbol):
+        print(f"Error: unsupported symbol {symbol}; only BTC, ETH, and SOL quoted in USDC/USDT are supported", file=sys.stderr)
+        return 2
     interval = args.interval or runtime.interval
     output = Path(args.output)
     limit = max(1, int(args.limit))

@@ -43,6 +43,16 @@ def test_clean_candles_sorts_dedupes_invalid_and_unclosed() -> None:
     assert cleaned[-1].close == 101.0
 
 
+def test_sync_market_data_rejects_non_major_symbol_before_io(tmp_path) -> None:
+    with pytest.raises(ValueError, match="only BTC, ETH, and SOL"):
+        sync_market_data(
+            object(),
+            MarketDataSyncConfig(symbol="BNBUSDC", db_path=tmp_path / "m.sqlite"),
+        )
+
+    assert not (tmp_path / "m.sqlite").exists()
+
+
 def test_clean_candles_ignores_non_candles_and_can_keep_unclosed_rows() -> None:
     future = _candle(120_000, close=102.0, close_time=10_000_000)
 

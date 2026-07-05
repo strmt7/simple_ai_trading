@@ -264,11 +264,21 @@ def test_select_top_liquidity_symbols_defaults_to_strict_live_eligible() -> None
 
     assert [item.symbol for item in strict] == ["BTCUSDT"]
     assert all(item.strict_default_eligible for item in strict)
-    assert [item.symbol for item in research] == ["BTCUSDT", "SMALLUSDT"]
-    small = research[1]
-    assert small.tier == "research-high-liquidity"
-    assert "quote_volume_below_default_live_gate" in small.reasons
-    assert "trade_count_below_default_live_gate" in small.reasons
+    assert [item.symbol for item in research] == ["BTCUSDT"]
+
+
+def test_select_named_symbols_rejects_non_major_assets_even_when_liquid() -> None:
+    selected = oe.select_named_symbols(
+        _MixedLiquidityClient(),
+        StrategyConfig(),
+        ["BTCUSDT", "SMALLUSDT"],
+        quote_asset="USDT",
+    )
+
+    by_symbol = {item.symbol: item for item in selected}
+    assert by_symbol["BTCUSDT"].strict_default_eligible is True
+    assert by_symbol["SMALLUSDT"].strict_default_eligible is False
+    assert "unsupported_non_major_asset" in by_symbol["SMALLUSDT"].reasons
 
 
 def test_build_round_evidence_blocks_strict_liquidity_shortfall_before_training(

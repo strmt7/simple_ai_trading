@@ -19,23 +19,23 @@ class _Client:
     def get_exchange_info(self):
         return {
             "symbols": [
-                {"symbol": "AAAUSDC", "status": "TRADING"},
-                {"symbol": "BBBUSDC", "status": "TRADING"},
+                {"symbol": "BTCUSDC", "status": "TRADING"},
+                {"symbol": "ETHUSDC", "status": "TRADING"},
                 {"symbol": "LOWUSDC", "status": "TRADING"},
             ]
         }
 
     def get_all_tickers_24h(self):
         return [
-            {"symbol": "AAAUSDC", "quoteVolume": "1000000", "count": "10000"},
-            {"symbol": "BBBUSDC", "quoteVolume": "900000", "count": "9000"},
+            {"symbol": "BTCUSDC", "quoteVolume": "1000000", "count": "10000"},
+            {"symbol": "ETHUSDC", "quoteVolume": "900000", "count": "9000"},
             {"symbol": "LOWUSDC", "quoteVolume": "1", "count": "1"},
         ]
 
     def get_all_book_tickers(self):
         return [
-            {"symbol": "AAAUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
-            {"symbol": "BBBUSDC", "bidPrice": "49.99", "askPrice": "50.01"},
+            {"symbol": "BTCUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+            {"symbol": "ETHUSDC", "bidPrice": "49.99", "askPrice": "50.01"},
             {"symbol": "LOWUSDC", "bidPrice": "1", "askPrice": "2"},
         ]
 
@@ -58,24 +58,24 @@ class _ThreeLiquidClient(_Client):
     def get_exchange_info(self):
         return {
             "symbols": [
-                {"symbol": "AAAUSDC", "status": "TRADING"},
-                {"symbol": "BBBUSDC", "status": "TRADING"},
-                {"symbol": "CCCUSDC", "status": "TRADING"},
+                {"symbol": "BTCUSDC", "status": "TRADING"},
+                {"symbol": "ETHUSDC", "status": "TRADING"},
+                {"symbol": "SOLUSDC", "status": "TRADING"},
             ]
         }
 
     def get_all_tickers_24h(self):
         return [
-            {"symbol": "AAAUSDC", "quoteVolume": "1000000", "count": "10000"},
-            {"symbol": "BBBUSDC", "quoteVolume": "900000", "count": "9000"},
-            {"symbol": "CCCUSDC", "quoteVolume": "800000", "count": "8000"},
+            {"symbol": "BTCUSDC", "quoteVolume": "1000000", "count": "10000"},
+            {"symbol": "ETHUSDC", "quoteVolume": "900000", "count": "9000"},
+            {"symbol": "SOLUSDC", "quoteVolume": "800000", "count": "8000"},
         ]
 
     def get_all_book_tickers(self):
         return [
-            {"symbol": "AAAUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
-            {"symbol": "BBBUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
-            {"symbol": "CCCUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+            {"symbol": "BTCUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+            {"symbol": "ETHUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
+            {"symbol": "SOLUSDC", "bidPrice": "99.99", "askPrice": "100.01"},
         ]
 
 
@@ -212,7 +212,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
             SimpleNamespace(objective="regular", model_path=valid_path),
         ]
     )
-    liquidity = model_lab.MarketEligibility("AAAUSDC", True, "TRADING", 1_000_000.0, 10_000, 2.0, 0.95, ())
+    liquidity = model_lab.MarketEligibility("BTCUSDC", True, "TRADING", 1_000_000.0, 10_000, 2.0, 0.95, ())
     candles = [
         Candle(
             open_time=index * 60_000,
@@ -226,7 +226,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
         for index in range(5)
     ]
     data_coverage = describe_candle_coverage(
-        symbol="AAAUSDC",
+        symbol="BTCUSDC",
         market_type="spot",
         interval="1m",
         available_candles=candles,
@@ -237,7 +237,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
 
     model_lab._stamp_model_execution_validation(
         suite,
-        symbol="AAAUSDC",
+        symbol="BTCUSDC",
         market_type="spot",
         interval="1m",
         liquidity=liquidity,
@@ -249,7 +249,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
         portfolio_report=SimpleNamespace(
             accepted=True,
             reason=None,
-            accepted_symbols=["AAAUSDC"],
+            accepted_symbols=["BTCUSDC"],
             effective_symbol_count=1.0,
             portfolio_cvar_95=0.01,
             portfolio_max_drawdown=0.02,
@@ -316,7 +316,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
-    runtime = RuntimeConfig(symbols=("AAAUSDC", "BBBUSDC"), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC", "ETHUSDC"), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -337,10 +337,10 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
         max_candidates=5,
     )
 
-    assert report.accepted_symbols == ["AAAUSDC", "BBBUSDC"]
+    assert report.accepted_symbols == ["BTCUSDC", "ETHUSDC"]
     assert (tmp_path / "model_lab_report.json").exists()
-    assert (tmp_path / "AAAUSDC" / "stress_validation.json").exists()
-    assert (tmp_path / "AAAUSDC" / "temporal_robustness.json").exists()
+    assert (tmp_path / "BTCUSDC" / "stress_validation.json").exists()
+    assert (tmp_path / "BTCUSDC" / "temporal_robustness.json").exists()
     assert (tmp_path / "portfolio_risk.json").exists()
     assert report.portfolio_risk is not None
     assert report.portfolio_risk["accepted"] is True
@@ -353,13 +353,13 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
     assert report.outcomes[0].robustness_validation["accepted"] is True
     assert report.outcomes[0].regime_validation["dominant_regime"] == "trend_up"
     assert report.outcomes[0].data_coverage is not None
-    assert report.outcomes[0].data_coverage["symbol"] == "AAAUSDC"
+    assert report.outcomes[0].data_coverage["symbol"] == "BTCUSDC"
     assert report.outcomes[0].data_coverage["interval"] == "1m"
     assert report.outcomes[0].data_coverage["candles_used"] == 120
     assert "used_duration_years" in report.outcomes[0].data_coverage
-    stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
+    stamped = load_model(tmp_path / "BTCUSDC" / "model_regular.json", expected_feature_dim=1)
     assert stamped.execution_validation["passed"] is True
-    assert stamped.execution_validation["symbol"] == "AAAUSDC"
+    assert stamped.execution_validation["symbol"] == "BTCUSDC"
     assert stamped.execution_validation["stress"]["accepted"] is True
     assert stamped.execution_validation["temporal_robustness"]["accepted"] is True
 
@@ -380,7 +380,7 @@ def test_run_model_lab_full_history_paginates_and_labels_data_scope(tmp_path: Pa
 
     report = run_model_lab(
         client,
-        RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m"),
+        RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m"),
         StrategyConfig(
             min_quote_volume_usdc=1000.0,
             min_trade_count_24h=100,
@@ -414,7 +414,7 @@ def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, mon
         )
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", rejected_suite)
-    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -453,7 +453,7 @@ def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(False))
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
-    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -503,7 +503,7 @@ def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
-    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -542,7 +542,7 @@ def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(False))
-    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -606,11 +606,11 @@ def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
             "max_consecutive_losses": 3,
             "worst_trade_pnl": -4.0,
             "recurring_loss_reasons": {"auto-stop-loss": 3},
-            "loss_by_symbol": {"AAAUSDC": 3},
+            "loss_by_symbol": {"BTCUSDC": 3},
             "loss_by_side": {"LONG": 3},
             "recommendations": [
                 "trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion",
-                "review_symbol_specific_edge:AAAUSDC",
+                "review_symbol_specific_edge:BTCUSDC",
             ],
             "promotion_safe": False,
             "notes": [],
@@ -624,7 +624,7 @@ def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
         "simple_ai_trading.model_lab.validate_suite_temporal_robustness",
         lambda *_a, **_k: _WeakAcceptedRobustness(),
     )
-    runtime = RuntimeConfig(symbols=("AAAUSDC",), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -654,7 +654,7 @@ def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
     assert report.outcomes[0].learning_feedback is not None
     assert report.outcomes[0].learning_feedback["blocks_promotion"] is True
     assert report.outcomes[0].diagnostics["learning_feedback_symbol_loss_count"] == 3
-    stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
+    stamped = load_model(tmp_path / "BTCUSDC" / "model_regular.json", expected_feature_dim=1)
     assert stamped.execution_validation["passed"] is False
     assert stamped.execution_validation["learning_feedback"]["blocks_promotion"] is True
 
@@ -695,7 +695,7 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
     monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
-    runtime = RuntimeConfig(symbols=("AAAUSDC", "BBBUSDC", "CCCUSDC"), quote_asset="USDC", interval="1m")
+    runtime = RuntimeConfig(symbols=("BTCUSDC", "ETHUSDC", "SOLUSDC"), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
         min_trade_count_24h=100,
@@ -723,7 +723,7 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
     assert "cluster_weight>" in str(report.portfolio_risk["reason"])
     assert {outcome.error for outcome in report.outcomes} == {"portfolio_risk_failed"}
     assert all(outcome.diagnostics and "portfolio_risk_reason" in outcome.diagnostics for outcome in report.outcomes)
-    stamped = load_model(tmp_path / "AAAUSDC" / "model_regular.json", expected_feature_dim=1)
+    stamped = load_model(tmp_path / "BTCUSDC" / "model_regular.json", expected_feature_dim=1)
     assert stamped.execution_validation["passed"] is False
     assert stamped.execution_validation["stress"]["accepted"] is True
     assert stamped.execution_validation["temporal_robustness"]["accepted"] is True

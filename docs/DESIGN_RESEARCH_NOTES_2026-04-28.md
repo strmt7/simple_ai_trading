@@ -1,6 +1,6 @@
 ﻿# Design Research Notes - 2026-04-28
 
-Current scope update: Simple AI Trading is now a multi-asset, Binance testnet-first day-trading app. The older BTCUSDC notes below are retained as historical research context, not as an active symbol restriction. These notes summarize
+Current scope update: Simple AI Trading is now a BTC/ETH/SOL-only, Binance testnet-first day-trading app. The older BTCUSDC notes below are retained as historical research context, not as the only active symbol restriction. These notes summarize
 the source-backed design pass used for the 2026-04-28 hardening work.
 
 ## High-confidence Findings

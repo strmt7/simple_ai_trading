@@ -86,8 +86,10 @@ def test_liquidity_gate_rejects_illiquid_and_structurally_dangerous_symbols() ->
     dangerous = assess_symbol_liquidity(_Client(), "BADUPUSDC", strategy)
 
     assert low.eligible is False
+    assert "unsupported_non_major_asset" in low.reasons
     assert "quote_volume_below_threshold" in low.reasons
     assert dangerous.eligible is False
+    assert "unsupported_non_major_asset" in dangerous.reasons
     assert "leveraged_or_inverse_token_pattern" in dangerous.reasons
 
 
@@ -107,6 +109,7 @@ def test_auto_rank_uses_relative_liquidity_without_admitting_illiquid_pairs() ->
     assert selection.allowed is True
     assert selection.symbols == ("BTCUSDC", "ETHUSDC", "SOLUSDC")
     rejected = {item.symbol: item for item in selection.rejected}
+    assert "unsupported_non_major_asset" in rejected["BNBUSDC"].reasons
     assert "stable_or_pegged_pair_pattern" in rejected["FDUSDUSDC"].reasons
     assert "quote_volume_below_threshold" in rejected["BNBUSDC"].reasons
     assert "quote_volume_below_threshold" in rejected["MICROUSDC"].reasons

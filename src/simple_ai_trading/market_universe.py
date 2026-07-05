@@ -6,7 +6,13 @@ from dataclasses import asdict, dataclass
 from typing import Iterable, Mapping
 
 from .api import BinanceAPIError, BinanceClient
-from .assets import DEFAULT_QUOTE_ASSET, DEFAULT_SYMBOL, normalize_symbol, normalize_symbols
+from .assets import (
+    DEFAULT_QUOTE_ASSET,
+    DEFAULT_SYMBOL,
+    is_supported_major_symbol,
+    normalize_symbol,
+    normalize_symbols,
+)
 from .execution_simulation import SymbolExecutionProfile
 from .types import StrategyConfig
 
@@ -223,6 +229,8 @@ def assess_symbol_liquidity(
         reasons.append(f"status_{status.lower()}")
     if not normalized.endswith(quote_asset):
         reasons.append(f"quote_not_{quote_asset}")
+    if not is_supported_major_symbol(normalized, quote_asset):
+        reasons.append("unsupported_non_major_asset")
     if _looks_structurally_dangerous(normalized, quote_asset):
         reasons.append("leveraged_or_inverse_token_pattern")
 
@@ -330,7 +338,11 @@ def rank_high_liquidity_universe(
         if ticker is None:
             continue
         status = str(symbol_info.get("status") if symbol_info else "MISSING")
-        if status != "TRADING" or _looks_structurally_dangerous(symbol, quote_asset):
+        if (
+            status != "TRADING"
+            or not is_supported_major_symbol(symbol, quote_asset)
+            or _looks_structurally_dangerous(symbol, quote_asset)
+        ):
             continue
         if _looks_price_pegged(ticker):
             continue
@@ -355,6 +367,8 @@ def rank_high_liquidity_universe(
         reasons: list[str] = []
         if status != "TRADING":
             reasons.append(f"status_{status.lower()}")
+        if not is_supported_major_symbol(symbol, quote_asset):
+            reasons.append("unsupported_non_major_asset")
         if _looks_structurally_dangerous(symbol, quote_asset):
             reasons.append("leveraged_or_inverse_token_pattern")
         if _looks_price_pegged(ticker):
