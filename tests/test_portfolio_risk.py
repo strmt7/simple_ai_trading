@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import math
 
+import pytest
+
 from simple_ai_trading.api import Candle
 from simple_ai_trading.portfolio_risk import build_portfolio_risk_report, policy_for_strategy
 from simple_ai_trading.types import StrategyConfig
@@ -115,3 +117,38 @@ def test_portfolio_risk_rejects_tail_loss_breach() -> None:
     assert "cvar95>" in str(report.reason)
     assert report.portfolio_cvar_95 > report.policy.max_portfolio_cvar_95
 
+
+def test_portfolio_risk_uses_actual_capped_weights_for_tail_risk() -> None:
+    candles = {
+        "AAAUSDC": _candles(0.0, shock=0.16),
+        "BBBUSDC": _candles(2.0, shock=0.14),
+        "CCCUSDC": _candles(4.0, shock=0.12),
+    }
+    full = build_portfolio_risk_report(
+        candles,
+        StrategyConfig(
+            risk_level="aggressive",
+            min_diversified_assets=3,
+            max_asset_allocation_pct=0.34,
+            max_portfolio_risk_pct=1.0,
+            max_drawdown_limit=1.0,
+        ),
+        min_symbols=3,
+    )
+    reserve = build_portfolio_risk_report(
+        candles,
+        StrategyConfig(
+            risk_level="aggressive",
+            min_diversified_assets=3,
+            max_asset_allocation_pct=0.20,
+            max_portfolio_risk_pct=1.0,
+            max_drawdown_limit=1.0,
+        ),
+        min_symbols=3,
+    )
+
+    assert reserve.deployed_weight == pytest.approx(0.60)
+    assert reserve.reserve_weight == pytest.approx(0.40)
+    assert all(weight <= reserve.policy.max_symbol_weight + 1e-12 for weight in reserve.weights.values())
+    assert reserve.portfolio_cvar_95 < full.portfolio_cvar_95 * 0.75
+    assert reserve.portfolio_max_drawdown < full.portfolio_max_drawdown * 0.75
