@@ -213,11 +213,14 @@ Backtests preserve candle high/low bounds in model rows; stop-loss, take-profit,
 drawdown, and liquidation checks use those intrabar bounds when available, and
 an ambiguous bar that touches both stop and take exits at the stop. When the
 intrabar adverse mark breaches the drawdown limit, the backtest closes the
-position at that same adverse mark instead of a recovered candle close. Futures
-backtests apply an isolated-margin liquidation proxy: if margin balance falls
-below the configured `liquidation_buffer_pct` maintenance-plus-buffer
-requirement, the isolated margin is treated as lost, the position is cleared,
-and the run is rejected from promotion.
+position at that same adverse mark instead of a recovered candle close. Entries
+filled at a candle close do not reuse that candle's earlier high/low range for
+post-entry risk, avoiding impossible same-bar stops from prices that occurred
+before the simulated position existed. Futures backtests apply an
+isolated-margin liquidation proxy: if margin balance falls below the configured
+`liquidation_buffer_pct` maintenance-plus-buffer requirement, the isolated
+margin is treated as lost, the position is cleared, and the run is rejected from
+promotion.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 

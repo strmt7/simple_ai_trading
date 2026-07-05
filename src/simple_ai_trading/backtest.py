@@ -1186,6 +1186,7 @@ def run_backtest(
         liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, cfg)
 
     for row_index, (row, raw_score) in enumerate(zip(rows, probabilities, strict=True)):
+        entry_opened_this_bar = False
         execution_signal = pending_signal
         execution_meta = pending_meta
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
@@ -1289,6 +1290,7 @@ def run_backtest(
             margin_used = effective_margin
             daily_trade_count[day] = daily_trade_count.get(day, 0) + 1
             entry_meta = execution_meta
+            entry_opened_this_bar = True
 
             max_exposure = max(max_exposure, abs(notional))
 
@@ -1425,7 +1427,8 @@ def run_backtest(
 
         # mark-to-market drawdown control with unrealized exposure
         if position_side != 0:
-            drawdown_mark_price = _adverse_mark_price(position_side, price, bar_high, bar_low)
+            drawdown_high, drawdown_low = (price, price) if entry_opened_this_bar else (bar_high, bar_low)
+            drawdown_mark_price = _adverse_mark_price(position_side, price, drawdown_high, drawdown_low)
             unrealized = position_side * (drawdown_mark_price - entry_price) * qty
             equity = cash + margin_used + unrealized
         else:
