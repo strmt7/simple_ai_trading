@@ -14,6 +14,19 @@ _PREFERRED_PROBABILITY_BRIER_MAX = 0.30
 _HARD_PROBABILITY_BRIER_MAX = 0.35
 _PREFERRED_PROBABILITY_ECE_MAX = 0.15
 _HARD_PROBABILITY_ECE_MAX = 0.20
+_AI_UPLIFT_REQUIRED_METRICS = (
+    "realized_pnl",
+    "roi_pct",
+    "max_drawdown",
+    "expectancy",
+    "profit_factor",
+    "closed_trades",
+    "win_rate",
+    "liquidation_events",
+    "max_consecutive_losses",
+    "downside_return_risk_ratio",
+)
+_AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B = 2.0
 
 
 @dataclass(frozen=True)
@@ -408,6 +421,41 @@ def _duplicate_symbols(symbols: Sequence[str]) -> list[str]:
     return duplicates
 
 
+def _required_metric_checks(
+    payload: object,
+    *,
+    keys: Sequence[str],
+    path: str,
+    label: str,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    if not isinstance(payload, Mapping):
+        return [
+            _check(
+                "block",
+                label,
+                "missing accepted metric group",
+                path=path,
+                metric="missing",
+                limit="mapping",
+            )
+        ]
+    for key in keys:
+        parsed = _finite(payload.get(key))
+        if parsed is None:
+            checks.append(
+                _check(
+                    "block",
+                    label,
+                    "missing or non-finite accepted metric",
+                    path=f"{path}.{key}",
+                    metric="missing",
+                    limit="finite",
+                )
+            )
+    return checks
+
+
 def _iter_market_edge_reports(payload: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
     reports: list[tuple[str, Mapping[str, Any]]] = []
     direct = payload.get("market_edge")
@@ -765,6 +813,34 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                         path=f"{prefix}.ai_uplift.reasons",
                     )
                 )
+            if ai_uplift_accepted:
+                policy = ai_uplift.get("policy")
+                min_parameters_b = _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B
+                if isinstance(policy, Mapping):
+                    parsed_min = _finite(policy.get("min_model_parameters_b"))
+                    if parsed_min is not None:
+                        min_parameters_b = max(0.0, parsed_min)
+                model_parameters_b = _finite(ai_uplift.get("model_parameters_b"))
+                if model_parameters_b is None or model_parameters_b < min_parameters_b:
+                    checks.append(
+                        _check(
+                            "block",
+                            "AI uplift evidence",
+                            "accepted AI uplift is missing required model-size evidence",
+                            path=f"{prefix}.ai_uplift.model_parameters_b",
+                            metric=model_parameters_b if model_parameters_b is not None else "missing",
+                            limit=f">={min_parameters_b:g}",
+                        )
+                    )
+                for group_name in ("baseline", "ai", "deltas"):
+                    checks.extend(
+                        _required_metric_checks(
+                            ai_uplift.get(group_name),
+                            keys=_AI_UPLIFT_REQUIRED_METRICS,
+                            path=f"{prefix}.ai_uplift.{group_name}",
+                            label="AI uplift evidence",
+                        )
+                    )
             deltas = ai_uplift.get("deltas")
             if isinstance(deltas, Mapping):
                 for key, value in deltas.items():

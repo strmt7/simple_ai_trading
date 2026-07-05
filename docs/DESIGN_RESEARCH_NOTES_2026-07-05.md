@@ -18,11 +18,11 @@ risk-gate hardening work.
    worsening drawdown, liquidation, loss-streak, profit-factor, win-rate, or
    downside return/risk evidence when those metrics exist.
 
-3. **Optional evidence cannot be treated as favorable when present and bad.**
-   Some AI-uplift artifacts may not include every metric, but an accepted
-   artifact that includes liquidation events, worse loss streaks, lower profit
-   factor, lower win rate, or degraded downside return/risk must fail before
-   model-lab promotion or AI review.
+3. **Accepted AI-uplift evidence must be complete, not selectively reported.**
+   Accepted AI-uplift artifacts must include finite baseline, AI, and delta
+   metrics for return, drawdown, expectancy, trade count, profit factor, win
+   rate, liquidation events, loss streaks, and downside return/risk. Missing
+   contract fields now fail before model-lab promotion or AI review.
 
 ## Implemented In This Pass
 
@@ -32,6 +32,8 @@ risk-gate hardening work.
 - Extended model-lab financial sanity checks so a stale or hand-written report
   cannot claim `ai_uplift.accepted=true` while still carrying rejection reasons
   or bad accepted AI tail-risk deltas.
+- Extended model-lab financial sanity checks so accepted AI uplift also requires
+  complete baseline, AI, and delta metric groups plus model-size evidence.
 - Updated README and model research docs to state that AI remains
   advisory/review-only unless risk-adjusted uplift evidence passes.
 

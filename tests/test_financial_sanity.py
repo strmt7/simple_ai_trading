@@ -214,6 +214,45 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
     }
 
 
+def _accepted_ai_uplift() -> dict[str, object]:
+    baseline = {
+        "realized_pnl": 10.0,
+        "roi_pct": 0.10,
+        "max_drawdown": 0.04,
+        "expectancy": 0.50,
+        "profit_factor": 1.45,
+        "closed_trades": 12,
+        "win_rate": 0.58,
+        "liquidation_events": 0,
+        "max_consecutive_losses": 2,
+        "downside_return_risk_ratio": 1.20,
+    }
+    ai = {
+        "realized_pnl": 13.0,
+        "roi_pct": 0.13,
+        "max_drawdown": 0.035,
+        "expectancy": 0.70,
+        "profit_factor": 1.70,
+        "closed_trades": 13,
+        "win_rate": 0.62,
+        "liquidation_events": 0,
+        "max_consecutive_losses": 1,
+        "downside_return_risk_ratio": 1.45,
+    }
+    deltas = {key: float(ai[key]) - float(baseline[key]) for key in baseline}
+    return {
+        "accepted": True,
+        "advisory_only": False,
+        "model_name": "qwen2.5:7b",
+        "model_parameters_b": 7.0,
+        "baseline": baseline,
+        "ai": ai,
+        "deltas": deltas,
+        "reasons": [],
+        "policy": {"min_model_parameters_b": 2.0},
+    }
+
+
 def test_model_lab_financial_sanity_accepts_consistent_portfolio_symbol_evidence() -> None:
     report = build_model_lab_financial_sanity_report(_model_lab_payload_with_symbols())
 
@@ -311,6 +350,51 @@ def test_model_lab_financial_sanity_blocks_top_level_symbols_without_accepted_ou
     assert report.allowed is False
     assert any(
         check.label == "accepted symbols" and "no accepted outcome" in check.detail and check.status == "block"
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_accepts_complete_ai_uplift_contract() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    payload["outcomes"][0]["ai_uplift"] = _accepted_ai_uplift()  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is True
+    assert not any(check.label == "AI uplift evidence" and check.status == "block" for check in report.checks)
+
+
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_missing_contract_metrics() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    del uplift["baseline"]["profit_factor"]  # type: ignore[index]
+    del uplift["deltas"]["downside_return_risk_ratio"]  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift evidence" and check.path.endswith(".baseline.profit_factor")
+        for check in report.checks
+    )
+    assert any(
+        check.label == "AI uplift evidence" and check.path.endswith(".deltas.downside_return_risk_ratio")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_model_size_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    uplift["model_parameters_b"] = 1.0
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift evidence" and check.path.endswith(".model_parameters_b")
         for check in report.checks
     )
 

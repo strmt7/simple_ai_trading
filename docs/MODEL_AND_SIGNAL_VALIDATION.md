@@ -45,6 +45,10 @@ The gate enforces:
   portfolio evidence blocks the artifact,
 - accepted portfolio symbol evidence with non-empty, unique, internally
   consistent top-level, portfolio, and outcome symbol sets,
+- accepted AI uplift evidence must include finite baseline, AI, and delta
+  metrics for realized P&L, ROI, drawdown, expectancy, profit factor, trade
+  count, win rate, liquidation count, loss streak, and downside return/risk,
+  plus model-size evidence that satisfies the uplift policy,
 - bounded drawdown, CVaR, deployed weight, plain effective symbol count,
   correlation-adjusted effective symbol count, correlation, and cluster
   exposure metrics.
