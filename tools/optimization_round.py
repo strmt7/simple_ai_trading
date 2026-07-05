@@ -32,6 +32,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--starting-cash", type=float, default=1000.0)
     parser.add_argument("--compute-backend", choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"), default="auto")
     parser.add_argument("--batch-size", type=int, default=8192)
+    parser.add_argument(
+        "--model-candidates",
+        type=int,
+        default=3,
+        help="number of bounded model/label candidates evaluated per symbol before the final holdout",
+    )
     parser.add_argument("--data-root", type=Path, default=Path("data/optimization"))
     parser.add_argument("--docs-root", type=Path, default=Path("docs/optimization"))
     parser.add_argument("--db", type=Path, default=Path("data/market_data.sqlite"))
@@ -97,6 +103,7 @@ def main(argv: list[str] | None = None) -> int:
             starting_cash=args.starting_cash,
             compute_backend=args.compute_backend,
             batch_size=args.batch_size,
+            model_candidate_count=max(1, int(args.model_candidates)),
             data_root=args.data_root,
             docs_root=args.docs_root,
             db_path=args.db,

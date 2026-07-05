@@ -593,6 +593,96 @@ def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
     assert "round_selection_gate_failed_no_final_holdout_entries" in selected_model.quality_warnings
 
 
+def test_train_round_model_selects_best_scored_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=index % 2)
+        for index in range(100)
+    ]
+    calls = {"train": 0}
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+
+    def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
+        calls["train"] += 1
+        model = TrainedModel(
+            weights=[1.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            model_family=f"candidate_{calls['train']}",
+        )
+        return model, SimpleNamespace(row_count=len(train_rows), positive_rate=0.5)
+
+    monkeypatch.setattr(oe, "train_advanced", fake_train_advanced)
+    monkeypatch.setattr(
+        oe,
+        "calibrate_probability_temperature",
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+    )
+    monkeypatch.setattr(
+        oe,
+        "calibrate_threshold_for_backtest",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            accepted=False,
+            threshold=0.66,
+            score=-1.0,
+            realized_pnl=-1.0,
+            closed_trades=0,
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+            scoring_backend_reason="",
+        ),
+    )
+
+    def fake_run_backtest(_rows, candidate_model, *_args, **_kwargs):
+        realized = 25.0 if str(candidate_model.model_family).startswith("candidate_2") else 5.0
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + realized,
+            realized_pnl=realized,
+            win_rate=0.75,
+            trades=8,
+            max_drawdown=0.01,
+            closed_trades=8,
+            gross_exposure=100.0,
+            total_fees=1.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            buy_hold_pnl=0.0,
+            edge_vs_buy_hold=realized,
+            gross_profit=realized + 1.0,
+            gross_loss=1.0,
+            profit_factor=2.0,
+            expectancy=realized / 8.0,
+            max_consecutive_losses=1,
+        )
+
+    monkeypatch.setattr(oe, "run_backtest", fake_run_backtest)
+
+    selected_model, report, _all_rows, holdout_rows = oe.train_round_model(
+        [_candle(index) for index in range(100)],
+        StrategyConfig(),
+        get_objective("conservative"),
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+        model_candidate_count=2,
+    )
+
+    assert calls["train"] == 2
+    assert selected_model.model_family.startswith("candidate_2")
+    assert selected_model.model_candidate_count == 2
+    assert selected_model.model_selected_candidate == "lower_lr_more_l2"
+    assert selected_model.model_selection_score > 0.0
+    assert report.row_count == 60
+    assert len(holdout_rows) == 25
+
+
 def test_train_round_model_require_gpu_rejects_training_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
