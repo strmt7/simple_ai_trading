@@ -549,6 +549,26 @@ def _result_payload(result: BacktestResult) -> dict[str, float | int]:
     }
 
 
+def precompute_backtest_regime_scores(rows: Sequence[ModelRow], cfg: StrategyConfig) -> list[float]:
+    row_list = list(rows)
+    if not row_list:
+        return []
+    regime_gate_min_rows = max(8, min(len(row_list), int(cfg.liquidity_lookback_bars)))
+    lookback = max(8, int(cfg.liquidity_lookback_bars))
+    scores: list[float] = [0.0] * len(row_list)
+    for row_index in range(len(row_list)):
+        if row_index + 1 < regime_gate_min_rows:
+            continue
+        regime_window_start = max(0, row_index + 1 - lookback)
+        regime_evidence = classify_market_regime(row_list[regime_window_start:row_index + 1])
+        scores[row_index] = market_regime_unpredictability(
+            regime_evidence.dominant_regime,
+            regime_evidence.confidence,
+            regime_evidence.notes,
+        )
+    return scores
+
+
 def calibrate_threshold_for_backtest(
     rows: List[ModelRow],
     model: TrainedModel,
@@ -578,6 +598,7 @@ def calibrate_threshold_for_backtest(
         compute_backend=compute_backend,
         batch_size=score_batch_size,
     )
+    regime_scores = precompute_backtest_regime_scores(rows, cfg)
     baseline_model = replace(model, decision_threshold=baseline_threshold)
     baseline_result = run_backtest(
         rows,
@@ -589,6 +610,7 @@ def calibrate_threshold_for_backtest(
         score_batch_size=score_batch_size,
         precomputed_probabilities=probabilities,
         precomputed_score_backend=score_backend,
+        precomputed_regime_scores=regime_scores,
     )
     baseline_score = risk_adjusted_backtest_score(baseline_result, starting_cash=starting_cash)
     best_threshold = baseline_threshold
@@ -608,6 +630,7 @@ def calibrate_threshold_for_backtest(
             score_batch_size=score_batch_size,
             precomputed_probabilities=probabilities,
             precomputed_score_backend=score_backend,
+            precomputed_regime_scores=regime_scores,
         )
         score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
         if (
@@ -667,6 +690,7 @@ def run_backtest(
     symbol_profile: SymbolExecutionProfile | None = None,
     precomputed_probabilities: Sequence[float] | None = None,
     precomputed_score_backend: BackendInfo | None = None,
+    precomputed_regime_scores: Sequence[float] | None = None,
 ) -> BacktestResult:
     score_backend = resolve_backend(effective_training_backend_name(compute_backend))
     if not rows:
@@ -752,6 +776,14 @@ def run_backtest(
             compute_backend=compute_backend,
             batch_size=score_batch_size,
         )
+    if precomputed_regime_scores is not None:
+        regime_scores = precomputed_regime_scores
+        if len(regime_scores) != len(rows):
+            raise ValueError(
+                f"precomputed_regime_scores length mismatch: {len(regime_scores)}/{len(rows)}"
+            )
+    else:
+        regime_scores = None
 
     for row_index, (row, raw_score) in enumerate(zip(rows, probabilities, strict=True)):
         execution_signal = pending_signal
@@ -775,7 +807,9 @@ def run_backtest(
         price = row.close
         final_mark_price = price
         regime_gate_ready = row_index + 1 >= regime_gate_min_rows
-        if regime_gate_ready:
+        if regime_scores is not None:
+            regime_score = float(regime_scores[row_index])
+        elif regime_gate_ready:
             regime_window_start = max(0, row_index + 1 - max(8, int(cfg.liquidity_lookback_bars)))
             regime_evidence = classify_market_regime(rows[regime_window_start:row_index + 1])
             regime_score = market_regime_unpredictability(
