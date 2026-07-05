@@ -566,12 +566,64 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 )
         ai_uplift = outcome.get("ai_uplift")
         if isinstance(ai_uplift, Mapping):
+            ai_uplift_accepted = ai_uplift.get("accepted") is True
+            reasons = ai_uplift.get("reasons")
+            if ai_uplift_accepted and isinstance(reasons, list) and reasons:
+                checks.append(
+                    _check(
+                        "block",
+                        "AI uplift",
+                        "accepted AI uplift contains rejection reasons",
+                        path=f"{prefix}.ai_uplift.reasons",
+                    )
+                )
             deltas = ai_uplift.get("deltas")
             if isinstance(deltas, Mapping):
                 for key, value in deltas.items():
                     parsed = _finite(value)
                     if parsed is None:
                         checks.append(_check("block", "AI uplift delta", "non-finite delta", path=f"{prefix}.ai_uplift.deltas.{key}"))
+                if ai_uplift_accepted:
+                    for key in ("max_consecutive_losses",):
+                        parsed = _finite(deltas.get(key))
+                        if parsed is not None and parsed > 0.0:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift tail risk",
+                                    "accepted AI uplift worsens loss-streak risk",
+                                    path=f"{prefix}.ai_uplift.deltas.{key}",
+                                    metric=parsed,
+                                    limit="<=0",
+                                )
+                            )
+                    for key in ("profit_factor", "win_rate", "downside_return_risk_ratio"):
+                        parsed = _finite(deltas.get(key))
+                        if parsed is not None and parsed < 0.0:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift tail risk",
+                                    "accepted AI uplift degrades risk-adjusted quality",
+                                    path=f"{prefix}.ai_uplift.deltas.{key}",
+                                    metric=parsed,
+                                    limit=">=0",
+                                )
+                            )
+            ai_metrics = ai_uplift.get("ai")
+            if ai_uplift_accepted and isinstance(ai_metrics, Mapping):
+                liquidations = _finite(ai_metrics.get("liquidation_events"))
+                if liquidations is not None and liquidations > 0.0:
+                    checks.append(
+                        _check(
+                            "block",
+                            "AI uplift liquidation risk",
+                            "accepted AI uplift contains liquidation events",
+                            path=f"{prefix}.ai_uplift.ai.liquidation_events",
+                            metric=liquidations,
+                            limit=0,
+                        )
+                    )
     return FinancialSanityReport(tuple(checks), source=source)
 
 

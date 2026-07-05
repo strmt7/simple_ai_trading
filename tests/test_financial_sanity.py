@@ -330,3 +330,73 @@ def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downsid
         check.label == "market edge downside risk" and check.status == "block"
         for check in report.checks
     )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> None:
+    payload = {
+        "accepted_symbols": ["BTCUSDT"],
+        "portfolio_risk": {
+            "accepted": True,
+            "portfolio_cvar_95": 0.01,
+            "portfolio_max_drawdown": 0.02,
+            "deployed_weight": 0.4,
+            "max_pairwise_correlation": 0.1,
+            "max_cluster_weight": 0.4,
+        },
+        "outcomes": [
+            {
+                "symbol": "BTCUSDT",
+                "accepted": True,
+                "rows": 500,
+                "objective_scores": {"conservative": 0.15},
+                "data_coverage": {
+                    "integrity_status": "ok",
+                    "coverage_ratio": 1.0,
+                    "gap_count": 0,
+                },
+                "ai_uplift": {
+                    "accepted": True,
+                    "reasons": ["should_not_be_accepted"],
+                    "ai": {"liquidation_events": 1},
+                    "deltas": {
+                        "realized_pnl": 5.0,
+                        "profit_factor": -0.2,
+                        "win_rate": -0.05,
+                        "max_consecutive_losses": 2,
+                        "downside_return_risk_ratio": -0.1,
+                    },
+                },
+                "stress_validation": {
+                    "accepted": True,
+                    "worst_max_drawdown": 0.01,
+                    "market_edge": {
+                        "accepted": True,
+                        "reason": None,
+                        "net_edge_pct": 0.01,
+                        "min_net_edge_pct": 0.002,
+                        "downside_return_risk_ratio": 0.60,
+                        "min_downside_return_risk_ratio": 0.45,
+                    },
+                },
+                "robustness_validation": {
+                    "accepted": True,
+                    "worst_max_drawdown": 0.02,
+                    "statistical_edge_accepted": True,
+                    "market_edge": {
+                        "accepted": True,
+                        "reason": None,
+                        "net_edge_pct": 0.008,
+                        "min_net_edge_pct": 0.002,
+                    },
+                },
+            }
+        ],
+    }
+
+    report = build_model_lab_financial_sanity_report(payload)
+    labels = {check.label for check in report.checks if check.status == "block"}
+
+    assert report.allowed is False
+    assert "AI uplift" in labels
+    assert "AI uplift tail risk" in labels
+    assert "AI uplift liquidation risk" in labels
