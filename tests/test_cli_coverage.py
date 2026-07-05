@@ -3813,7 +3813,7 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
     assert cli.command_live(_live_args(tmp_path, steps=3, sleep=0)) == 0
 
     assert client.kline_calls == 3
-    assert client.orders == [("BTCUSDC", "BUY", pytest.approx(0.8))]
+    assert client.orders == [("BTCUSDC", "BUY", pytest.approx(0.616, rel=1e-4))]
     statuses = [event.get("status") for event in captured[0]["events"] if isinstance(event, dict)]
     assert "market_error_retry" in statuses
     assert "skip_risk_recovery_pending" in statuses

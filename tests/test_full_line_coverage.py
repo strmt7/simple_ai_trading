@@ -1181,7 +1181,9 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: [ModelRow(2, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.99]))
     assert cli.command_live(_live_args(steps=1)) == 0
-    assert "insufficient cash after fill adjustment" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "enter long" in out
+    assert "cash=-" not in out
 
     save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(

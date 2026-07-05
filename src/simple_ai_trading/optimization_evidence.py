@@ -45,6 +45,7 @@ from .model import calibrate_probability_temperature
 from .model import effective_training_backend_name
 from .objective import ObjectiveSpec, get_objective
 from .performance_charts import EquityPoint
+from .risk_controls import stop_loss_sized_notional_pct
 from .storage import write_json_atomic
 from .types import StrategyConfig
 
@@ -717,9 +718,7 @@ def _baseline_equity_series(rows: Sequence[object], starting_cash: float, cfg: S
     if first <= 0.0:
         return []
     # Use the same conservative risk notional convention as backtest._buy_hold_pnl.
-    notional_pct = max(0.0, min(1.0, float(cfg.risk_per_trade) / max(1e-9, float(cfg.stop_loss_pct))))
-    if market_type == "spot":
-        notional_pct = min(notional_pct, float(cfg.max_position_pct))
+    notional_pct = stop_loss_sized_notional_pct(cfg, market_type)
     baseline_cash = float(starting_cash)
     notional = baseline_cash * notional_pct
     fee_rate = max(0.0, float(cfg.taker_fee_bps)) / 10_000.0

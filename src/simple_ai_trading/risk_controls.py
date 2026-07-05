@@ -9,6 +9,7 @@ from typing import Any, Sequence
 
 from .types import RuntimeConfig, StrategyConfig
 from .assets import MAX_AUTONOMOUS_LEVERAGE
+from .execution_simulation import execution_assumptions_from_strategy
 from .model import ModelLoadError
 from .model_readiness import load_model_readiness_report
 
@@ -159,12 +160,33 @@ def stop_loss_sized_notional_pct(
 
     effective_leverage = _effective_leverage(strategy, market_type, leverage)
     risk_budget_pct = max(0.0, _finite(strategy.risk_per_trade))
-    stop_loss_pct = max(0.0, _finite(strategy.stop_loss_pct))
-    risk_sized_notional_pct = risk_budget_pct / stop_loss_pct if stop_loss_pct > 0.0 else risk_budget_pct
+    loss_at_stop_pct = stop_loss_effective_loss_pct(strategy)
+    risk_sized_notional_pct = (
+        risk_budget_pct / loss_at_stop_pct
+        if loss_at_stop_pct > 0.0
+        else risk_budget_pct
+    )
     max_position_pct = max(0.0, _finite(strategy.max_position_pct))
     if market_type == "futures":
         return max(0.0, min(risk_sized_notional_pct, max_position_pct * effective_leverage, effective_leverage))
     return max(0.0, min(risk_sized_notional_pct, max_position_pct, 1.0))
+
+
+def stop_loss_effective_loss_pct(strategy: StrategyConfig) -> float:
+    """Return estimated equity loss per dollar notional when a stop is hit."""
+
+    stop_loss_pct = max(0.0, _finite(strategy.stop_loss_pct))
+    fee_rate = max(0.0, _finite(strategy.taker_fee_bps)) / 10_000.0
+    assumptions = execution_assumptions_from_strategy(strategy)
+    latency_seconds = min(10.0, max(0.0, float(assumptions.latency_ms)) / 1000.0)
+    fill_cost_bps = (
+        max(0.0, _finite(assumptions.spread_bps)) / 2.0
+        + max(0.0, _finite(assumptions.volatility_buffer_bps)) * latency_seconds
+        + max(0.0, _finite(assumptions.impact_coefficient))
+        + max(0.0, _finite(assumptions.testnet_to_live_buffer_bps))
+    )
+    adverse_exit_fill_rate = fill_cost_bps / 10_000.0
+    return max(0.0, stop_loss_pct + fee_rate + fee_rate + adverse_exit_fill_rate)
 
 
 def build_risk_policy_report(
@@ -181,13 +203,13 @@ def build_risk_policy_report(
 
     dry_run = bool(runtime.dry_run if effective_dry_run is None else effective_dry_run)
     effective_leverage = _effective_leverage(strategy, runtime.market_type, leverage)
-    stop_loss_pct = max(0.0, _finite(strategy.stop_loss_pct))
     notional_cap_pct = stop_loss_sized_notional_pct(
         strategy,
         runtime.market_type,
         leverage=effective_leverage,
     )
-    max_loss_per_trade_pct = notional_cap_pct * stop_loss_pct
+    loss_at_stop_pct = stop_loss_effective_loss_pct(strategy)
+    max_loss_per_trade_pct = notional_cap_pct * loss_at_stop_pct
     checks: list[RiskCheck] = []
 
     symbols = tuple(getattr(runtime, "symbols", ()) or (runtime.symbol,))

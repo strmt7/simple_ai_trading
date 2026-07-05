@@ -3,6 +3,8 @@
 import argparse
 import asyncio
 
+import pytest
+
 from simple_ai_trading.cli import (
     _artifact_summary,
     _filter_candles_for_time_window,
@@ -21,6 +23,7 @@ from simple_ai_trading.cli import (
 )
 from simple_ai_trading.config import load_strategy
 from simple_ai_trading.api import Candle, SymbolConstraints
+from simple_ai_trading.risk_controls import stop_loss_sized_notional_pct
 from simple_ai_trading.tui import OperatorApp
 from simple_ai_trading.types import StrategyConfig
 
@@ -91,7 +94,8 @@ def test_target_notional_scales_with_futures_leverage() -> None:
     spot_notional = _target_notional(1000.0, cfg, "spot")
     futures_notional = _target_notional(1000.0, cfg, "futures")
     assert spot_notional == 200.0
-    assert futures_notional == 1000.0
+    assert futures_notional == pytest.approx(1000.0 * stop_loss_sized_notional_pct(cfg, "futures"))
+    assert futures_notional < 1000.0
     assert _target_notional(float("nan"), cfg, "futures") == 0.0
     assert _target_notional(1000.0, cfg, "futures", leverage=float("nan")) == 0.0
 

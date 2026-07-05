@@ -101,15 +101,15 @@ def test_backtest_futures_liquidation_wipes_isolated_margin_and_stops() -> None:
 
     assert result.stopped_by_liquidation is True
     assert result.liquidation_events == 1
-    assert result.liquidation_loss == pytest.approx(25.0)
     assert result.closed_trades == 1
-    assert result.ending_cash == pytest.approx(975.0)
-    assert result.realized_pnl == pytest.approx(-25.0)
+    assert result.liquidation_loss == pytest.approx(-float(result.trade_log[0]["realized_pnl"]))
+    assert result.ending_cash == pytest.approx(1000.0 - result.liquidation_loss)
     assert result.trade_log[0]["exit_reason"] == "liquidation"
     assert result.trade_log[0]["liquidated"] is True
     entry_price = float(result.trade_log[0]["entry_price"])
-    qty = 500.0 / entry_price
-    expected_margin_balance = 25.0 + (97.0 - entry_price) * qty
+    gross_notional = float(result.trade_log[0]["gross_notional"])
+    qty = gross_notional / entry_price
+    expected_margin_balance = result.liquidation_loss + (97.0 - entry_price) * qty
     expected_maintenance = 97.0 * qty * 0.03
     assert result.trade_log[0]["liquidation_margin_balance"] == pytest.approx(expected_margin_balance)
     assert result.trade_log[0]["liquidation_maintenance_margin"] == pytest.approx(expected_maintenance)
@@ -151,7 +151,7 @@ def test_backtest_drawdown_stop_closes_at_trigger_row_not_future_final_price() -
     assert result.realized_pnl == pytest.approx(-251.1409644277595)
 
 
-def test_backtest_skips_entry_when_fee_makes_total_cost_too_large() -> None:
+def test_backtest_downsizes_entry_when_fee_would_make_raw_cost_too_large() -> None:
     rows = [
         _flat_row(0, close=100.0, score=10.0, label=1),
         _flat_row(60_000, close=100.0, score=10.0, label=1),
@@ -163,8 +163,9 @@ def test_backtest_skips_entry_when_fee_makes_total_cost_too_large() -> None:
         signal_threshold=0.55,
     )
     result = run_backtest(rows, _simple_model(10.0), cfg, starting_cash=100.0, market_type="spot")
-    assert result.trades == 0
-    assert result.ending_cash == 100.0
+    assert result.trades == 1
+    assert 0.0 < result.max_exposure < 60.0
+    assert result.ending_cash >= 0.0
 
 
 def test_backtest_futures_threshold_calibration_clamps_low_search_start() -> None:
@@ -618,7 +619,9 @@ def test_backtest_rejects_entries_with_zero_gross_or_insufficient_cash() -> None
         stop_loss_pct=0.5,
     )
     result2 = run_backtest(rows, model, cfg2, starting_cash=1000.0, market_type="spot")
-    assert result2.closed_trades == 0
+    assert result2.closed_trades == 1
+    assert result2.ending_cash >= 0.0
+    assert result2.max_exposure < 1000.0
 
 
 def test_backtest_trade_cap_prevents_entry_when_position_flat() -> None:
