@@ -194,6 +194,8 @@ Signed live-style startup requires a promoted model artifact. A model must carry
 
 Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, backtester, optimization evidence generator, and Windows app command surface all use the same stop-loss-sized notional calculation.
 
+Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
+
 Day-trading objectives require enough activity to prove a repeatable edge, but the closed-trade minimum and trades/day target are evidence targets, not quotas that force entries. Sparse historical activity fails model or threshold promotion when there is no risk explanation. If regime or meta-label risk gates explicitly skipped entries during unpredictable markets, low activity can still pass the activity gate so the bot is allowed to wait rather than trade into noise.
 
 Hard capital controls are separate from ROI goals. The conservative profile defaults to a `0.60%` daily loss budget, `1.20%` session loss budget, two-loss streak lockout, three consecutive network errors before recovery-halt messaging, and a 60 second post-reconnect observation cooldown. Regular and aggressive raise those limits gradually, but risk reporting blocks live operation when these controls are disabled or dangerously loose.
