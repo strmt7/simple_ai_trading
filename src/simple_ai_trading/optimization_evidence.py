@@ -648,6 +648,13 @@ def _write_round_status(paths: EvidencePaths, **payload: object) -> None:
     write_json_atomic(paths.status_path, status, indent=2, sort_keys=True)
 
 
+def _require_non_cpu_backend(kind: object, reason: object, stage: str) -> None:
+    if str(kind or "").lower() != "cpu":
+        return
+    suffix = f": {reason}" if reason else ""
+    raise RuntimeError(f"gpu_required_but_{stage}_fell_back_to_cpu{suffix}")
+
+
 def _decimate_equity_points(points: Sequence[EquityPoint], *, max_points: int = 6000) -> list[EquityPoint]:
     """Return a deterministic visual summary while preserving raw CSV evidence."""
 
@@ -796,6 +803,7 @@ def train_round_model(
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
+    require_gpu: bool = False,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[object, object, list[object], list[object]]:
     feature_cfg = default_config_for(objective.name, strategy.enabled_features)
@@ -832,6 +840,12 @@ def train_round_model(
         compute_backend=compute_backend,
         batch_size=batch_size,
     )
+    if require_gpu:
+        _require_non_cpu_backend(
+            getattr(model, "training_backend_kind", ""),
+            getattr(model, "training_backend_reason", ""),
+            "training",
+        )
     if status_callback is not None:
         status_callback(
             "training_complete",
@@ -869,7 +883,15 @@ def train_round_model(
                 "threshold_accepted": bool(threshold_report.accepted),
                 "threshold": float(threshold_report.threshold),
                 "closed_trades": int(threshold_report.closed_trades),
+                "scoring_backend_kind": threshold_report.scoring_backend_kind,
+                "scoring_backend_device": threshold_report.scoring_backend_device,
             },
+        )
+    if require_gpu:
+        _require_non_cpu_backend(
+            threshold_report.scoring_backend_kind,
+            threshold_report.scoring_backend_reason,
+            "threshold_scoring",
         )
     if threshold_report.accepted:
         model.decision_threshold = float(threshold_report.threshold)
@@ -886,6 +908,12 @@ def train_round_model(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
+    if require_gpu:
+        _require_non_cpu_backend(
+            base_result.scoring_backend_kind,
+            base_result.scoring_backend_reason,
+            "selection_scoring",
+        )
     if status_callback is not None:
         status_callback(
             "selection_backtest_complete",
@@ -913,6 +941,12 @@ def train_round_model(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
+    if require_gpu:
+        _require_non_cpu_backend(
+            inverted_result.scoring_backend_kind,
+            inverted_result.scoring_backend_reason,
+            "inversion_scoring",
+        )
     if status_callback is not None:
         status_callback(
             "inversion_backtest_complete",
@@ -1136,6 +1170,7 @@ def build_round_evidence(
                 starting_cash=starting_cash,
                 compute_backend=compute_backend,
                 batch_size=batch_size,
+                require_gpu=require_gpu,
                 status_callback=symbol_train_status,
             )
             write_status(
@@ -1164,6 +1199,12 @@ def build_round_evidence(
                     liquidity_haircut=evidence_strategy.testnet_liquidity_haircut,
                 ),
             )
+            if require_gpu:
+                _require_non_cpu_backend(
+                    result.scoring_backend_kind,
+                    result.scoring_backend_reason,
+                    "holdout_scoring",
+                )
             write_status(
                 "holdout_backtest_complete",
                 symbol_count_requested=len(selected),
