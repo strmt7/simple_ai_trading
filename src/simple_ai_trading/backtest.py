@@ -9,6 +9,7 @@ from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
 from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
+from .financial_sanity import blocking_reasons, build_backtest_financial_sanity_report
 from .liquidity_session import LiquiditySessionAdjustment, apply_liquidity_session_meta, liquidity_session_adjustment
 from .meta_label import MetaLabelDecision, apply_meta_label_policy
 from .model import (
@@ -1572,7 +1573,7 @@ def run_backtest(
     )
     path_quality = _path_quality_metrics(trade_pnls, trade_returns)
 
-    return BacktestResult(
+    result = BacktestResult(
         starting_cash=starting_cash,
         ending_cash=cash,
         realized_pnl=realized_pnl,
@@ -1606,3 +1607,8 @@ def run_backtest(
         liquidation_loss=float(liquidation_loss),
         **_score_backend_payload(score_backend),
     )
+    sanity = build_backtest_financial_sanity_report(result)
+    blocks = blocking_reasons(sanity)
+    if blocks:
+        raise ValueError(f"backtest financial sanity failed: {'; '.join(blocks[:5])}")
+    return result

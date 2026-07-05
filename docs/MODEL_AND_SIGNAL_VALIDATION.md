@@ -36,6 +36,8 @@ The gate enforces:
   evidence blocks execution-validated artifacts,
 - positive accepted row counts and finite objective scores,
 - complete data-coverage metadata with no failed integrity status,
+- generated backtest accounting identities for cash, fees, trade P&L, exit
+  reasons, and net-P&L win rate,
 - accepted stress, temporal robustness, and portfolio-risk reports,
 - bounded drawdown, CVaR, deployed weight, correlation, and cluster exposure
   metrics.
