@@ -349,6 +349,9 @@ analytically incoherent artifacts before they reach an operator:
   above `0.20`, or worsened calibrated loss blocks readiness,
 - accepted model-lab outcomes must have positive rows and positive objective
   scores,
+- accepted outcomes must include passed selection-risk evidence for every
+  accepted objective; missing reports, nonpositive deflated scores, rejection
+  reasons, failed PBO diagnostics, or unknown overfit status block promotion,
 - accepted coverage cannot have failed integrity, detected gaps, or impossible
   coverage ratios,
 - accepted outcomes cannot bypass portfolio risk; missing or failed

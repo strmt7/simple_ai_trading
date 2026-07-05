@@ -378,9 +378,20 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
         if not isinstance(raw, Mapping):
             continue
         raw_passed = raw.get("passed")
+        overfit = raw.get("overfit_diagnostics")
+        compact_overfit = None
+        if isinstance(overfit, Mapping):
+            compact_overfit = {
+                "status": _bounded_text(overfit.get("status")),
+                "passed": bool(overfit.get("passed")) if "passed" in overfit else None,
+                "reason": _bounded_text(overfit.get("reason")),
+                "probability_backtest_overfit": _optional_finite(overfit.get("probability_backtest_overfit")),
+                "max_probability_backtest_overfit": _optional_finite(overfit.get("max_probability_backtest_overfit")),
+            }
         compact[str(objective)] = {
             "passed": raw_passed if isinstance(raw_passed, bool) else None,
             "reason": _bounded_text(raw.get("reason")),
+            "reasons": list(raw.get("reasons") or [])[:_MAX_CONCERNS] if isinstance(raw.get("reasons"), list) else [],
             "effective_trials": int(_finite(raw.get("effective_trials"))),
             "finite_candidate_scores": int(_finite(raw.get("finite_candidate_scores"))),
             "selected_score": _optional_finite(raw.get("selected_score")),
@@ -390,6 +401,7 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
             "trial_penalty": _optional_finite(raw.get("trial_penalty")),
             "deflated_score": _optional_finite(raw.get("deflated_score")),
             "score_margin_to_runner_up": _optional_finite(raw.get("score_margin_to_runner_up")),
+            "overfit_diagnostics": compact_overfit,
         }
     return compact
 

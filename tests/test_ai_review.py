@@ -152,6 +152,11 @@ def _write_report(
                             if harmful_selection_risk
                             else None
                         ),
+                        "reasons": (
+                            ["selection_risk_deflated_score<=0"]
+                            if harmful_selection_risk
+                            else []
+                        ),
                         "effective_trials": 900,
                         "finite_candidate_scores": 18,
                         "selected_score": 0.15,
@@ -161,6 +166,17 @@ def _write_report(
                         "trial_penalty": 0.17 if harmful_selection_risk else 0.04,
                         "deflated_score": deflated_score,
                         "score_margin_to_runner_up": 0.03,
+                        "overfit_diagnostics": {
+                            "status": "available",
+                            "passed": not harmful_selection_risk,
+                            "reason": (
+                                "selection_risk_pbo>0.50"
+                                if harmful_selection_risk
+                                else None
+                            ),
+                            "probability_backtest_overfit": 0.75 if harmful_selection_risk else 0.0,
+                            "max_probability_backtest_overfit": 0.50,
+                        },
                     }
                 },
                 "hybrid_ablation": {

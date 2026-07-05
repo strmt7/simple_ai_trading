@@ -183,6 +183,7 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "accepted": True,
             "rows": 500,
             "objective_scores": {"regular": 0.15},
+            "selection_risk": {"regular": _accepted_selection_risk()},
             "data_coverage": {
                 "integrity_status": "ok",
                 "coverage_ratio": 1.0,
@@ -211,6 +212,24 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "max_cluster_weight": 0.40,
         },
         "outcomes": outcomes,
+    }
+
+
+def _accepted_selection_risk() -> dict[str, object]:
+    return {
+        "passed": True,
+        "reason": None,
+        "reasons": [],
+        "effective_trials": 24,
+        "finite_candidate_scores": 12,
+        "selected_score": 0.15,
+        "trial_penalty": 0.04,
+        "deflated_score": 0.11,
+        "overfit_diagnostics": {
+            "status": "skipped",
+            "reason": "requires_selection_and_validation_scores",
+            "passed": True,
+        },
     }
 
 
@@ -258,6 +277,57 @@ def test_model_lab_financial_sanity_accepts_consistent_portfolio_symbol_evidence
 
     assert report.allowed is True
     assert all(check.status != "block" for check in report.checks)
+
+
+def test_model_lab_financial_sanity_blocks_missing_selection_risk_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    del payload["outcomes"][0]["selection_risk"]  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "selection risk" and check.path.endswith(".selection_risk")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_failed_selection_risk_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    risk = _accepted_selection_risk()
+    risk["passed"] = False
+    risk["reason"] = "selection_risk_deflated_score<=0"
+    risk["reasons"] = ["selection_risk_deflated_score<=0"]
+    risk["deflated_score"] = -0.01
+    payload["outcomes"][0]["selection_risk"] = {"regular": risk}  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "selection risk" and check.path.endswith(".deflated_score")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_failed_selection_overfit_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    risk = _accepted_selection_risk()
+    risk["overfit_diagnostics"] = {
+        "status": "available",
+        "passed": False,
+        "probability_backtest_overfit": 0.75,
+        "max_probability_backtest_overfit": 0.50,
+    }
+    payload["outcomes"][0]["selection_risk"] = {"regular": risk}  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "selection risk" and "PBO" in check.detail
+        for check in report.checks
+    )
 
 
 def test_model_lab_financial_sanity_blocks_missing_portfolio_symbol_evidence() -> None:
@@ -416,6 +486,7 @@ def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
                 "accepted": True,
                 "rows": 0,
                 "objective_scores": {"regular": 0.15},
+                "selection_risk": {"regular": _accepted_selection_risk()},
                 "data_coverage": {
                     "integrity_status": "ok",
                     "coverage_ratio": 1.0,
@@ -450,6 +521,7 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
                 "accepted": True,
                 "rows": 500,
                 "objective_scores": {"regular": 0.15},
+                "selection_risk": {"regular": _accepted_selection_risk()},
                 "data_coverage": {
                     "integrity_status": "ok",
                     "coverage_ratio": 1.0,
@@ -509,6 +581,7 @@ def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downsid
                 "accepted": True,
                 "rows": 500,
                 "objective_scores": {"conservative": 0.15},
+                "selection_risk": {"conservative": _accepted_selection_risk()},
                 "data_coverage": {
                     "integrity_status": "ok",
                     "coverage_ratio": 1.0,
@@ -573,6 +646,7 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> Non
                 "accepted": True,
                 "rows": 500,
                 "objective_scores": {"conservative": 0.15},
+                "selection_risk": {"conservative": _accepted_selection_risk()},
                 "data_coverage": {
                     "integrity_status": "ok",
                     "coverage_ratio": 1.0,
