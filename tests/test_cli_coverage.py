@@ -48,6 +48,25 @@ def _exchange_account(usdc: str = "1000") -> dict[str, object]:
     }
 
 
+def _promoted_execution_validation(symbol: str = "BTCUSDC") -> dict[str, object]:
+    return {
+        "passed": True,
+        "symbol": symbol,
+        "walk_forward_gate": {
+            "passed": True,
+            "reason": None,
+            "fold_count": 3,
+            "accepted_folds": 3,
+            "worst_score": 0.08,
+            "worst_realized_pnl": 1.2,
+            "worst_max_drawdown": 0.025,
+        },
+        "stress": {"accepted": True},
+        "temporal_robustness": {"accepted": True},
+        "portfolio": {"accepted": True},
+    }
+
+
 class _FakeClient:
     def __init__(self) -> None:
         self.base_url = "https://api.testnet.binance.vision"
@@ -1561,13 +1580,7 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
             "trial_penalty": 0.01,
             "deflated_score": 0.11,
         },
-        execution_validation={
-            "passed": True,
-            "symbol": "BTCUSDC",
-            "stress": {"accepted": True},
-            "temporal_robustness": {"accepted": True},
-            "portfolio": {"accepted": True},
-        },
+        execution_validation=_promoted_execution_validation(),
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
         probability_log_loss_after=0.58,
@@ -1823,13 +1836,7 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
                 "trial_penalty": 0.03,
                 "deflated_score": 0.09,
             },
-            execution_validation={
-                "passed": True,
-                "symbol": "BTCUSDC",
-                "stress": {"accepted": True},
-                "temporal_robustness": {"accepted": True},
-                "portfolio": {"accepted": True},
-            },
+            execution_validation=_promoted_execution_validation(),
             probability_calibration_size=128,
             probability_log_loss_before=0.62,
             probability_log_loss_after=0.58,
@@ -4105,13 +4112,7 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
                 "trial_penalty": 0.03,
                 "deflated_score": 0.09,
             },
-            execution_validation={
-                "passed": True,
-                "symbol": "BTCUSDC",
-                "stress": {"accepted": True},
-                "temporal_robustness": {"accepted": True},
-                "portfolio": {"accepted": True},
-            },
+            execution_validation=_promoted_execution_validation(),
             probability_calibration_size=128,
             probability_log_loss_before=0.62,
             probability_log_loss_after=0.58,
@@ -4395,13 +4396,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
             "trial_penalty": 0.03,
             "deflated_score": 0.09,
         },
-        execution_validation={
-            "passed": True,
-            "symbol": "BTCUSDC",
-            "stress": {"accepted": True},
-            "temporal_robustness": {"accepted": True},
-            "portfolio": {"accepted": True},
-        },
+        execution_validation=_promoted_execution_validation(),
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
         probability_log_loss_after=0.58,

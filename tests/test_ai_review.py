@@ -165,6 +165,17 @@ def _write_report(
                 },
                 "objective_scores": {"regular": 0.15},
                 "hybrid_profiles": {"regular": "balanced_neighbors"},
+                "walk_forward_gate": {
+                    "regular": {
+                        "passed": True,
+                        "reason": None,
+                        "fold_count": 3,
+                        "accepted_folds": 3,
+                        "worst_score": 0.08,
+                        "worst_realized_pnl": 1.2,
+                        "worst_max_drawdown": 0.025,
+                    }
+                },
                 "selection_risk": {
                     "regular": {
                         "passed": not harmful_selection_risk,
@@ -316,6 +327,7 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert "regime_validation" in prompt
     assert "meta_label_validation" in prompt
     assert "selection_risk" in prompt
+    assert "walk_forward_gate" in prompt
     assert "hybrid_ablation" in prompt
     assert "feature_ablation" in prompt
     assert "ai_uplift" in prompt

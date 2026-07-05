@@ -373,6 +373,15 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         execution_validation={
             "passed": True,
             "symbol": "BTCUSDC",
+            "walk_forward_gate": {
+                "passed": True,
+                "reason": None,
+                "fold_count": 3,
+                "accepted_folds": 3,
+                "worst_score": 0.08,
+                "worst_realized_pnl": 1.2,
+                "worst_max_drawdown": 0.025,
+            },
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
@@ -435,6 +444,7 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     assert loaded.selection_risk["deflated_score"] == pytest.approx(0.11)
     assert loaded.execution_validation["passed"] is True
     assert loaded.execution_validation["symbol"] == "BTCUSDC"
+    assert loaded.execution_validation["walk_forward_gate"]["fold_count"] == 3
     assert len(loaded.ensemble_members) == 2
     assert loaded.ensemble_members[0].seed == 7
     assert loaded.ensemble_members[0].training_loss == 0.4

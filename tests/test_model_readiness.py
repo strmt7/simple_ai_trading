@@ -29,6 +29,15 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
         execution_validation={
             "passed": True,
             "symbol": "BTCUSDC",
+            "walk_forward_gate": {
+                "passed": True,
+                "reason": None,
+                "fold_count": 3,
+                "accepted_folds": 3,
+                "worst_score": 0.08,
+                "worst_realized_pnl": 1.2,
+                "worst_max_drawdown": 0.025,
+            },
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
@@ -180,6 +189,15 @@ def test_model_readiness_blocks_missing_or_failed_execution_validation() -> None
     failed.execution_validation = {
         "passed": True,
         "symbol": "BTCUSDC",
+        "walk_forward_gate": {
+            "passed": True,
+            "reason": None,
+            "fold_count": 3,
+            "accepted_folds": 3,
+            "worst_score": 0.08,
+            "worst_realized_pnl": 1.2,
+            "worst_max_drawdown": 0.025,
+        },
         "stress": {"accepted": True},
         "temporal_robustness": {"accepted": False},
         "portfolio": {"accepted": True},
@@ -191,12 +209,41 @@ def test_model_readiness_blocks_missing_or_failed_execution_validation() -> None
     failed_portfolio.execution_validation = {
         "passed": True,
         "symbol": "BTCUSDC",
+        "walk_forward_gate": {
+            "passed": True,
+            "reason": None,
+            "fold_count": 3,
+            "accepted_folds": 3,
+            "worst_score": 0.08,
+            "worst_realized_pnl": 1.2,
+            "worst_max_drawdown": 0.025,
+        },
         "stress": {"accepted": True},
         "temporal_robustness": {"accepted": True},
         "portfolio": {"accepted": False},
     }
     report = build_model_readiness_report(failed_portfolio)
     assert any("portfolio=False" in check.detail for check in report.checks if check.label == "execution validation")
+
+
+def test_model_readiness_blocks_missing_or_skipped_walk_forward_validation() -> None:
+    missing = _model()
+    del missing.execution_validation["walk_forward_gate"]
+    report = build_model_readiness_report(missing)
+    assert report.allowed is False
+    assert any("walk_forward=False" in check.detail for check in report.checks)
+
+    skipped = _model()
+    skipped.execution_validation["walk_forward_gate"] = {
+        "passed": True,
+        "reason": "insufficient_rows_for_purged_walk_forward",
+        "fold_count": 0,
+        "accepted_folds": 0,
+        "worst_score": None,
+        "worst_realized_pnl": None,
+    }
+    with pytest.raises(ModelPromotionError, match="walk_forward=False"):
+        assert_model_promoted(skipped)
 
 
 def test_model_readiness_reports_quality_warning_variants() -> None:

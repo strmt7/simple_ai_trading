@@ -339,6 +339,7 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "accepted": True,
             "rows": 500,
             "objective_scores": {"regular": 0.15},
+            "walk_forward_gate": {"regular": _accepted_walk_forward_gate()},
             "selection_risk": {"regular": _accepted_selection_risk()},
             "data_coverage": _accepted_data_coverage(symbol),
             "stress_validation": _accepted_stress_validation(),
@@ -360,6 +361,23 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "max_cluster_weight": 0.40,
         },
         "outcomes": outcomes,
+    }
+
+
+def _accepted_walk_forward_gate() -> dict[str, object]:
+    return {
+        "passed": True,
+        "reason": None,
+        "fold_count": 3,
+        "accepted_folds": 3,
+        "worst_score": 0.08,
+        "worst_realized_pnl": 1.25,
+        "worst_max_drawdown": 0.025,
+        "folds": [
+            {"index": 0, "accepted": True, "score": 0.11},
+            {"index": 1, "accepted": True, "score": 0.08},
+            {"index": 2, "accepted": True, "score": 0.10},
+        ],
     }
 
 
@@ -580,6 +598,59 @@ def test_model_lab_financial_sanity_blocks_missing_selection_risk_evidence() -> 
         check.label == "selection risk" and check.path.endswith(".selection_risk")
         for check in report.checks
     )
+
+
+def test_model_lab_financial_sanity_blocks_missing_walk_forward_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    del payload["outcomes"][0]["walk_forward_gate"]  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "purged walk-forward" and check.path.endswith(".walk_forward_gate")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_skipped_walk_forward_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    payload["outcomes"][0]["walk_forward_gate"] = {  # type: ignore[index]
+        "regular": {
+            "passed": True,
+            "reason": "insufficient_rows_for_purged_walk_forward",
+            "fold_count": 0,
+            "accepted_folds": 0,
+            "worst_score": None,
+            "worst_realized_pnl": None,
+            "worst_max_drawdown": None,
+        }
+    }
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    blocked_paths = {check.path for check in report.checks if check.status == "block"}
+    assert "outcomes[0].walk_forward_gate.regular.reason" in blocked_paths
+    assert "outcomes[0].walk_forward_gate.regular.fold_count" in blocked_paths
+
+
+def test_model_lab_financial_sanity_blocks_failed_walk_forward_fold_counts() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    gate = _accepted_walk_forward_gate()
+    gate["passed"] = False
+    gate["reason"] = "purged_walk_forward_fold_failed"
+    gate["accepted_folds"] = 2
+    gate["worst_realized_pnl"] = -1.0
+    payload["outcomes"][0]["walk_forward_gate"] = {"regular": gate}  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    blocked_paths = {check.path for check in report.checks if check.status == "block"}
+    assert "outcomes[0].walk_forward_gate.regular.passed" in blocked_paths
+    assert "outcomes[0].walk_forward_gate.regular.accepted_folds" in blocked_paths
+    assert "outcomes[0].walk_forward_gate.regular.worst_realized_pnl" in blocked_paths
 
 
 def test_model_lab_financial_sanity_blocks_failed_selection_risk_evidence() -> None:
@@ -874,6 +945,7 @@ def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
                 "accepted": True,
                 "rows": 0,
                 "objective_scores": {"regular": 0.15},
+                "walk_forward_gate": {"regular": _accepted_walk_forward_gate()},
                 "selection_risk": {"regular": _accepted_selection_risk()},
                 "data_coverage": _accepted_data_coverage("AAAUSDC"),
                 "stress_validation": _accepted_stress_validation(),
@@ -905,6 +977,7 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
                 "accepted": True,
                 "rows": 500,
                 "objective_scores": {"regular": 0.15},
+                "walk_forward_gate": {"regular": _accepted_walk_forward_gate()},
                 "selection_risk": {"regular": _accepted_selection_risk()},
                 "data_coverage": _accepted_data_coverage("AAAUSDC"),
                 "stress_validation": {
@@ -956,6 +1029,7 @@ def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downsid
                 "accepted": True,
                 "rows": 500,
                 "objective_scores": {"conservative": 0.15},
+                "walk_forward_gate": {"conservative": _accepted_walk_forward_gate()},
                 "selection_risk": {"conservative": _accepted_selection_risk()},
                 "data_coverage": _accepted_data_coverage("BTCUSDT"),
                 "stress_validation": {
@@ -1012,6 +1086,7 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> Non
                 "accepted": True,
                 "rows": 500,
                 "objective_scores": {"conservative": 0.15},
+                "walk_forward_gate": {"conservative": _accepted_walk_forward_gate()},
                 "selection_risk": {"conservative": _accepted_selection_risk()},
                 "data_coverage": _accepted_data_coverage("BTCUSDT"),
                 "ai_uplift": {

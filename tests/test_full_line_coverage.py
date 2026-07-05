@@ -158,6 +158,15 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
         execution_validation={
             "passed": True,
             "symbol": "BTCUSDC",
+            "walk_forward_gate": {
+                "passed": True,
+                "reason": None,
+                "fold_count": 3,
+                "accepted_folds": 3,
+                "worst_score": 0.08,
+                "worst_realized_pnl": 1.2,
+                "worst_max_drawdown": 0.025,
+            },
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},

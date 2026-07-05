@@ -494,6 +494,144 @@ def _selection_risk_report_for_objective(
     return None
 
 
+def _walk_forward_report_for_objective(
+    raw: Mapping[str, Any],
+    objective: str,
+) -> Mapping[str, Any] | None:
+    candidate = raw.get(objective)
+    if isinstance(candidate, Mapping):
+        return candidate
+    if len(raw) == 1:
+        only_value = next(iter(raw.values()))
+        if isinstance(only_value, Mapping):
+            return only_value
+    if "passed" in raw or "fold_count" in raw:
+        return raw
+    return None
+
+
+def _walk_forward_gate_checks(
+    outcome: Mapping[str, Any],
+    *,
+    objectives: Sequence[str],
+    prefix: str,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    raw = outcome.get("walk_forward_gate")
+    if not isinstance(raw, Mapping) or not raw:
+        return [
+            _check(
+                "block",
+                "purged walk-forward",
+                "accepted outcome is missing purged walk-forward evidence",
+                path=f"{prefix}.walk_forward_gate",
+                metric="missing",
+                limit="passed purged folds",
+            )
+        ]
+    for objective in objectives:
+        report = _walk_forward_report_for_objective(raw, str(objective))
+        report_path = f"{prefix}.walk_forward_gate.{objective}"
+        if not isinstance(report, Mapping):
+            checks.append(
+                _check(
+                    "block",
+                    "purged walk-forward",
+                    "missing accepted objective purged walk-forward report",
+                    path=report_path,
+                    metric="missing",
+                    limit="passed purged folds",
+                )
+            )
+            continue
+        if report.get("passed") is not True:
+            checks.append(
+                _check(
+                    "block",
+                    "purged walk-forward",
+                    "accepted objective failed purged walk-forward evidence",
+                    path=f"{report_path}.passed",
+                    metric=report.get("passed"),
+                    limit=True,
+                )
+            )
+        reason = report.get("reason")
+        if reason not in (None, ""):
+            checks.append(
+                _check(
+                    "block",
+                    "purged walk-forward",
+                    "accepted purged walk-forward report contains rejection reason",
+                    path=f"{report_path}.reason",
+                    metric=str(reason),
+                    limit="empty",
+                )
+            )
+        fold_count = _finite(report.get("fold_count"))
+        accepted_folds = _finite(report.get("accepted_folds"))
+        if fold_count is None or fold_count <= 0.0 or not float(fold_count).is_integer():
+            checks.append(
+                _check(
+                    "block",
+                    "purged walk-forward",
+                    "accepted purged walk-forward report has no real folds",
+                    path=f"{report_path}.fold_count",
+                    metric=fold_count if fold_count is not None else "missing",
+                    limit="positive integer",
+                )
+            )
+        if (
+            accepted_folds is None
+            or accepted_folds < 0.0
+            or not float(accepted_folds).is_integer()
+            or (fold_count is not None and accepted_folds != fold_count)
+        ):
+            checks.append(
+                _check(
+                    "block",
+                    "purged walk-forward",
+                    "accepted purged walk-forward fold count is inconsistent",
+                    path=f"{report_path}.accepted_folds",
+                    metric=accepted_folds if accepted_folds is not None else "missing",
+                    limit="accepted_folds==fold_count",
+                )
+            )
+        worst_score = _finite(report.get("worst_score"))
+        checks.append(
+            _check(
+                "ok" if worst_score is not None and worst_score > 0.0 else "block",
+                "purged walk-forward",
+                "accepted purged walk-forward worst score",
+                path=f"{report_path}.worst_score",
+                metric=worst_score if worst_score is not None else "missing",
+                limit=">0",
+            )
+        )
+        worst_pnl = _finite(report.get("worst_realized_pnl"))
+        checks.append(
+            _check(
+                "ok" if worst_pnl is not None and worst_pnl > 0.0 else "block",
+                "purged walk-forward",
+                "accepted purged walk-forward worst realized P&L",
+                path=f"{report_path}.worst_realized_pnl",
+                metric=worst_pnl if worst_pnl is not None else "missing",
+                limit=">0",
+            )
+        )
+        checks.append(
+            _range_check(
+                report.get("worst_max_drawdown"),
+                path=f"{report_path}.worst_max_drawdown",
+                label="purged walk-forward",
+                low=0.0,
+                high=1.0,
+                hard_low=0.0,
+                hard_high=1.0,
+            )
+        )
+    return checks
+
+
 def _selection_risk_checks(
     outcome: Mapping[str, Any],
     *,
@@ -1209,6 +1347,13 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     )
                 )
         if accepted_objectives:
+            checks.extend(
+                _walk_forward_gate_checks(
+                    outcome,
+                    objectives=accepted_objectives,
+                    prefix=prefix,
+                )
+            )
             checks.extend(
                 _selection_risk_checks(
                     outcome,

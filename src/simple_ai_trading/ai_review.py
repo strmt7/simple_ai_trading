@@ -275,6 +275,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 group_key="removed_group",
                 delta_key="delta_vs_selected",
             )
+            walk_forward_gate = _compact_walk_forward_map(item.get("walk_forward_gate"))
             selection_risk = _compact_selection_risk_map(item.get("selection_risk"))
             ai_uplift = _compact_ai_uplift(item.get("ai_uplift"))
             learning_feedback = _compact_learning_feedback(item.get("learning_feedback"))
@@ -286,6 +287,7 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
                 "error": _bounded_text(item.get("error")),
                 "objective_scores": item.get("objective_scores") if isinstance(item.get("objective_scores"), Mapping) else {},
                 "hybrid_profiles": item.get("hybrid_profiles") if isinstance(item.get("hybrid_profiles"), Mapping) else {},
+                "walk_forward_gate": walk_forward_gate,
                 "selection_risk": selection_risk,
                 "stress_validation": stress_summary,
                 "robustness_validation": robustness_summary,
@@ -402,6 +404,26 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
             "deflated_score": _optional_finite(raw.get("deflated_score")),
             "score_margin_to_runner_up": _optional_finite(raw.get("score_margin_to_runner_up")),
             "overfit_diagnostics": compact_overfit,
+        }
+    return compact
+
+
+def _compact_walk_forward_map(raw_map: object) -> dict[str, dict[str, object]]:
+    if not isinstance(raw_map, Mapping):
+        return {}
+    compact: dict[str, dict[str, object]] = {}
+    for objective, raw in list(raw_map.items())[:4]:
+        if not isinstance(raw, Mapping):
+            continue
+        raw_passed = raw.get("passed")
+        compact[str(objective)] = {
+            "passed": raw_passed if isinstance(raw_passed, bool) else None,
+            "reason": _bounded_text(raw.get("reason")),
+            "fold_count": int(_finite(raw.get("fold_count"))),
+            "accepted_folds": int(_finite(raw.get("accepted_folds"))),
+            "worst_score": _optional_finite(raw.get("worst_score")),
+            "worst_realized_pnl": _optional_finite(raw.get("worst_realized_pnl")),
+            "worst_max_drawdown": _optional_finite(raw.get("worst_max_drawdown")),
         }
     return compact
 
@@ -711,7 +733,8 @@ def _prompt(compact: Mapping[str, object]) -> str:
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
         "Approve only when deterministic gates passed, stress scenarios are coherent, meta-label evidence does not "
         "show fragile take/skip behavior, temporal robustness and statistical edge evidence are coherent, regime "
-        "concentration is not hiding a fragile one-state edge, selection-risk evidence shows the selected score "
+        "concentration is not hiding a fragile one-state edge, purged walk-forward evidence used real accepted folds, "
+        "selection-risk evidence shows the selected score "
         "survived the number of tried models, hybrid and feature ablation evidence does not show "
         "that removing a model component improves the accepted score, any AI-assisted signal has explicit holdout "
         "uplift over the non-AI ML baseline without worse drawdown, learning feedback from closed trades does "

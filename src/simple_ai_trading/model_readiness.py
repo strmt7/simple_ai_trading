@@ -86,6 +86,28 @@ def _is_accelerated_backend(kind: object, device: object) -> bool:
     return backend_kind in _ACCELERATOR_BACKENDS and backend_device not in {"", "cpu"}
 
 
+def _walk_forward_gate_passed(raw: object) -> bool:
+    if not isinstance(raw, dict) or raw.get("passed") is not True:
+        return False
+    if raw.get("reason") not in (None, ""):
+        return False
+    try:
+        fold_count = int(raw.get("fold_count", 0) or 0)
+        accepted_folds = int(raw.get("accepted_folds", 0) or 0)
+        worst_score = float(raw.get("worst_score", 0.0) or 0.0)
+        worst_pnl = float(raw.get("worst_realized_pnl", 0.0) or 0.0)
+        worst_drawdown = float(raw.get("worst_max_drawdown", 1.0) or 1.0)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return (
+        fold_count > 0
+        and accepted_folds == fold_count
+        and worst_score > 0.0
+        and worst_pnl > 0.0
+        and 0.0 <= worst_drawdown <= 1.0
+    )
+
+
 def _accelerator_check(
     model: TrainedModel,
     *,
@@ -245,12 +267,14 @@ def build_model_readiness_report(
             stress = execution_validation.get("stress")
             temporal = execution_validation.get("temporal_robustness")
             portfolio = execution_validation.get("portfolio")
+            walk_forward = execution_validation.get("walk_forward_gate")
             stress_passed = isinstance(stress, dict) and stress.get("accepted") is True
             temporal_passed = isinstance(temporal, dict) and temporal.get("accepted") is True
             portfolio_passed = isinstance(portfolio, dict) and portfolio.get("accepted") is True
+            walk_forward_passed = _walk_forward_gate_passed(walk_forward)
             symbol = str(execution_validation.get("symbol") or "").strip().upper()
-            if passed and stress_passed and temporal_passed and portfolio_passed and symbol:
-                checks.append(_check("ok", "execution validation", f"{symbol} stress+temporal+portfolio accepted"))
+            if passed and stress_passed and temporal_passed and portfolio_passed and walk_forward_passed and symbol:
+                checks.append(_check("ok", "execution validation", f"{symbol} walk-forward+stress+temporal+portfolio accepted"))
             else:
                 checks.append(
                     _check(
@@ -259,7 +283,8 @@ def build_model_readiness_report(
                         (
                             "failed symbol-specific execution evidence "
                             f"passed={passed} stress={stress_passed} temporal={temporal_passed} "
-                            f"portfolio={portfolio_passed} symbol={symbol or 'missing'}"
+                            f"portfolio={portfolio_passed} walk_forward={walk_forward_passed} "
+                            f"symbol={symbol or 'missing'}"
                         ),
                     )
                 )

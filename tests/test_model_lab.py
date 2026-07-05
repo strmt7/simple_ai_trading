@@ -213,6 +213,18 @@ def _selection_risk(*, passed: bool = True) -> dict[str, object]:
     }
 
 
+def _walk_forward_gate(*, passed: bool = True) -> dict[str, object]:
+    return {
+        "passed": bool(passed),
+        "reason": None if passed else "purged_walk_forward_fold_failed",
+        "fold_count": 3,
+        "accepted_folds": 3 if passed else 2,
+        "worst_score": 0.08 if passed else float("-inf"),
+        "worst_realized_pnl": 1.2 if passed else -1.0,
+        "worst_max_drawdown": 0.025,
+    }
+
+
 def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
     assert model_lab._objective_report({"objectives": [{"objective": "regular", "accepted": True}]}, "regular") == {
         "objective": "regular",
@@ -239,7 +251,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
             SimpleNamespace(objective="", model_path=valid_path),
             SimpleNamespace(objective="regular", model_path=tmp_path / "missing.json"),
             SimpleNamespace(objective="regular", model_path=invalid_path),
-            SimpleNamespace(objective="regular", model_path=valid_path),
+            SimpleNamespace(objective="regular", model_path=valid_path, walk_forward_gate=_walk_forward_gate()),
         ]
     )
     liquidity = model_lab.MarketEligibility("BTCUSDC", True, "TRADING", 1_000_000.0, 10_000, 2.0, 0.95, ())
@@ -322,6 +334,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
                 model_path=model_path,
                 best_score=0.12,
                 hybrid_profile="balanced_neighbors",
+                walk_forward_gate=_walk_forward_gate(),
                 selection_risk=_selection_risk(),
                 hybrid_ablation=[{"removed_expert_kind": "lorentzian_knn", "delta_vs_best": -0.03}],
                 feature_ablation=[{"removed_group": "technical_confluence", "delta_vs_selected": -0.04}],
@@ -386,7 +399,12 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
 def test_run_model_lab_full_history_paginates_and_labels_data_scope(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                best_score=0.12,
+                hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
+            )],
             total_rows=len(candles),
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
@@ -463,7 +481,12 @@ def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, mon
 def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                best_score=0.12,
+                hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
+            )],
             total_rows=123,
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
@@ -498,6 +521,57 @@ def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, 
     assert report.outcomes[0].error == "stress_validation_failed"
 
 
+def test_run_model_lab_rejects_positive_suite_when_walk_forward_skipped(tmp_path: Path, monkeypatch) -> None:
+    def fake_suite(candles, strategy, **kwargs):
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                best_score=0.12,
+                hybrid_profile="base_only",
+                walk_forward_gate={
+                    "passed": True,
+                    "reason": "insufficient_rows_for_purged_walk_forward",
+                    "fold_count": 0,
+                    "accepted_folds": 0,
+                    "worst_score": None,
+                    "worst_realized_pnl": None,
+                    "worst_max_drawdown": None,
+                },
+            )],
+            total_rows=123,
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
+    runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
+    strategy = StrategyConfig(
+        min_quote_volume_usdc=1000.0,
+        min_trade_count_24h=100,
+        max_spread_bps=10.0,
+        min_liquidity_score=0.1,
+        min_diversified_assets=1,
+    )
+
+    report = run_model_lab(
+        _Client(),
+        runtime,
+        strategy,
+        objectives=("regular",),
+        output_dir=tmp_path,
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=120,
+        compute_backend="cpu",
+    )
+
+    assert report.accepted_symbols == []
+    assert report.outcomes[0].accepted is False
+    assert report.outcomes[0].error == "purged_walk_forward_failed"
+
+
 def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
@@ -505,6 +579,7 @@ def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path
                 objective="regular",
                 best_score=0.12,
                 hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
                 selection_risk=_selection_risk(passed=False),
             )],
             total_rows=123,
@@ -545,7 +620,12 @@ def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path
 def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(objective="regular", best_score=0.12, hybrid_profile="base_only")],
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                best_score=0.12,
+                hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
+            )],
             total_rows=123,
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
@@ -599,7 +679,13 @@ def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
             model_path,
         )
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(objective="regular", model_path=model_path, best_score=0.12, hybrid_profile="base_only")],
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                model_path=model_path,
+                best_score=0.12,
+                hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
+            )],
             total_rows=123,
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
@@ -692,6 +778,7 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
                 model_path=model_path,
                 best_score=0.12,
                 hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
             )],
             total_rows=len(candles),
             objectives_run=["regular"],
