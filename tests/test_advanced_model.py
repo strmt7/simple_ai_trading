@@ -126,6 +126,60 @@ def test_market_quality_features_are_finite_and_live_inference_safe():
     assert len(inference_rows[-1].features) == am.advanced_feature_dimension(cfg)
 
 
+def test_market_quality_prefix_features_match_naive_reference() -> None:
+    candles = _candles(240)
+    cache = am._build_confluence_cache(candles)
+    end = 200
+    windows = (20, 60, 120)
+
+    def naive(window: int) -> list[float]:
+        start = end + 1 - window
+        closes = cache.closes[start:end + 1]
+        volumes = cache.volumes[start:end + 1]
+        returns = am._window_returns(closes)
+        abs_returns = [abs(value) for value in returns]
+        path = sum(abs_returns)
+        net_return = am._safe_ratio(closes[-1] - closes[0], closes[0])
+        efficiency = am._safe_ratio(abs(net_return), path)
+        downside_pressure = am._safe_ratio(sum(abs(value) for value in returns if value < 0.0), path)
+        autocorr = am._correlation(returns[:-1], returns[1:]) if len(returns) >= 3 else 0.0
+        mean_abs_return = sum(abs_returns) / len(abs_returns) if abs_returns else 0.0
+        abs_return_stdev = 0.0
+        if len(abs_returns) >= 2:
+            abs_return_stdev = math.sqrt(
+                max(0.0, sum((value - mean_abs_return) ** 2 for value in abs_returns) / (len(abs_returns) - 1))
+            )
+        tail_ratio = am._safe_ratio(max(abs_returns) if abs_returns else 0.0, mean_abs_return)
+        return_volumes = volumes[1:] if len(volumes) > 1 else []
+        total_return_volume = sum(max(0.0, value) for value in return_volumes)
+        volume_return_pressure = am._safe_ratio(
+            sum(ret * max(0.0, vol) for ret, vol in zip(returns, return_volumes, strict=True)),
+            total_return_volume,
+        )
+        volume_abs_return_corr = am._correlation(return_volumes, abs_returns) if return_volumes else 0.0
+        avg_true_range = am._window_mean(cache.true_range_prefix, start, end)
+        avg_volume = sum(max(0.0, value) for value in volumes) / len(volumes)
+        current_volume = cache.volumes[end]
+        close = cache.closes[end]
+        return [
+            am._safe(math.copysign(efficiency, net_return)),
+            am._safe(efficiency),
+            am._safe(downside_pressure),
+            am._safe(autocorr),
+            am._safe_ratio(abs_return_stdev, mean_abs_return),
+            am._safe(math.tanh(tail_ratio / 5.0)),
+            am._safe(math.tanh(volume_return_pressure * 120.0)),
+            am._safe(volume_abs_return_corr),
+            am._safe_ratio(avg_true_range, close),
+            am._safe(math.tanh(am._safe_ratio(current_volume - avg_volume, avg_volume))),
+        ]
+
+    expected = [value for window in windows for value in naive(window)]
+    actual = am._market_quality_features_at(cache, end, windows)
+
+    assert actual == pytest.approx(expected, abs=1e-12)
+
+
 def test_nonlinear_expand_unknown_raises():
     with pytest.raises(ValueError):
         am._nonlinear_expand([0.1], ["unknown"])
