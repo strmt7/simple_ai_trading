@@ -230,6 +230,8 @@ isolated-margin liquidation proxy: if margin balance falls below the configured
 `liquidation_buffer_pct` maintenance-plus-buffer requirement, the isolated
 margin is treated as lost, the position is cleared, and the run is rejected from
 promotion.
+Backtest win rate is classified by net trade P&L after entry and exit fees, not
+by gross price movement, so a fee-eroded trade is not reported as a win.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 

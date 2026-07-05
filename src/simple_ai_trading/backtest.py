@@ -1412,7 +1412,7 @@ def run_backtest(
                         "meta_label_signal_strength": float(entry_meta.signal_strength),
                         "meta_label_reason": str(entry_meta.reason),
                     })
-                    if realized > 0:
+                    if net_pnl > 0:
                         wins += 1
 
                     position_side = 0
@@ -1486,7 +1486,7 @@ def run_backtest(
                     "meta_label_signal_strength": float(entry_meta.signal_strength),
                     "meta_label_reason": str(entry_meta.reason),
                 })
-                if drawdown_realized > 0:
+                if net_pnl > 0:
                     wins += 1
                 position_side = 0
                 notional = 0.0
@@ -1537,12 +1537,13 @@ def run_backtest(
             "return_pct": float(return_pct),
             "entry_fee": float(entry_fee_paid),
             "exit_fee": float(final_fee),
+            "exit_reason": "final_mark",
             "meta_label_action": str(entry_meta.action),
             "meta_label_size_multiplier": float(entry_meta.size_multiplier),
             "meta_label_signal_strength": float(entry_meta.signal_strength),
             "meta_label_reason": str(entry_meta.reason),
         })
-        if final_realized > 0:
+        if net_pnl > 0:
             wins += 1
         position_side = 0
         notional = 0.0
