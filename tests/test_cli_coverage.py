@@ -1978,7 +1978,8 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
     assert cli._asset_free_balance(account, "USDC") == 12.5
     assert cli._asset_free_balance([], "USDC") == 0.0
     assert cli._order_executed_qty({"executedQty": "0.01"}) == 0.01
-    assert cli._order_executed_qty({"origQty": "0.02"}) == 0.02
+    assert cli._order_executed_qty({"origQty": "0.02"}) == 0.0
+    assert cli._order_executed_qty({"fills": [{"qty": "0.01"}, {"qty": "0.02"}]}) == pytest.approx(0.03)
     assert cli._order_executed_qty([]) == 0.0
     qty, average, notional = cli._order_fill_details(
         {"fills": [{"qty": "0.01", "price": "50000"}, {"qty": "0.02", "price": "51000"}]},
@@ -2248,6 +2249,20 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
     assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
     assert persisted[-1]["status"] == "partial_failed"
     assert persisted[-1]["first_order"]["side"] == "BUY"
+    assert persisted[-1]["second_order"]["status"] == "not_completed"
+
+    class _AckOnlyFirstLegClient(_RoundtripClient):
+        def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
+            assert dry_run is False
+            self.orders.append(side)
+            return {"status": "NEW", "orderId": len(self.orders), "origQty": f"{quantity:.8f}"}
+
+    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, output_dir, payload: persisted.append(payload) or output_dir / "roundtrip.json")
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _AckOnlyFirstLegClient(usdc=20.0, btc=0.0))
+    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
+    assert "First roundtrip order response did not include executed quantity" in capsys.readouterr().err
+    assert persisted[-1]["status"] == "partial_failed"
+    assert persisted[-1]["first_order"]["fill_source"] == "unresolved_no_order_query"
     assert persisted[-1]["second_order"]["status"] == "not_completed"
 
     def raise_persist(*_args, **_kwargs):

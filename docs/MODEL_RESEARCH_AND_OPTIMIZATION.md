@@ -612,6 +612,7 @@ assert that every CLI command appears in the Windows app.
   protective stop price for long exposure.
 - No live ledger update from ACK-only order responses; `origQty`, requested
   size, and local fallback prices are not executed-fill evidence.
+- No signed spot-roundtrip second leg from an ACK-only first-leg response.
 - No score-improving model refinement if the validation/full-sample risk
   snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
 - No autonomous post-outage resume until signed exchange exposure reconciles

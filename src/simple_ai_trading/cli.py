@@ -3655,7 +3655,16 @@ def _asset_free_balance(account: object, asset: str) -> float:
 def _order_executed_qty(order: object) -> float:
     if not isinstance(order, dict):
         return 0.0
-    return _safe_float(order.get("executedQty") or order.get("origQty"))
+    fills = order.get("fills")
+    if isinstance(fills, list):
+        filled = 0.0
+        for fill in fills:
+            if not isinstance(fill, dict):
+                continue
+            filled += max(0.0, _safe_float(fill.get("qty")))
+        if filled > 0.0:
+            return filled
+    return _safe_float(order.get("executedQty"))
 
 
 def _roundtrip_quantity(client, symbol: str, requested: float, price: float) -> tuple[float, SymbolConstraints, float]:
@@ -3731,6 +3740,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     first: object | None = None
     first_side = ""
     second_side = ""
+    first_fill_source = ""
     try:
         _ensure_runtime_symbol(runtime, client)
         price, _timestamp = client.get_symbol_price(runtime.symbol)
@@ -3761,7 +3771,16 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             raise ValueError(f"Unsupported roundtrip mode: {mode}")
 
         first = client.place_order(runtime.symbol, first_side, quantity, dry_run=False)
-        executed = _order_executed_qty(first) or quantity
+        executed, _first_fill_price, _first_notional, first_fill_source = _resolved_order_fill_details(
+            client,
+            runtime,
+            first,
+            fallback_qty=0.0,
+            fallback_price=float(price),
+            dry_run=False,
+        )
+        if executed <= 0.0:
+            raise BinanceAPIError("First roundtrip order response did not include executed quantity")
         mid = client.get_account()
         second_quantity = _roundtrip_second_quantity(
             client,
@@ -3813,6 +3832,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "status": first.get("status") if isinstance(first, dict) else None,
                     "orderId": first.get("orderId") if isinstance(first, dict) else None,
                     "executedQty": first.get("executedQty") if isinstance(first, dict) else None,
+                    "fill_source": first_fill_source,
                 },
                 "second_order": {"side": second_side, "status": "not_completed"},
             }
@@ -3848,6 +3868,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             "status": first.get("status") if isinstance(first, dict) else None,
             "orderId": first.get("orderId") if isinstance(first, dict) else None,
             "executedQty": first.get("executedQty") if isinstance(first, dict) else None,
+            "fill_source": first_fill_source,
         },
         "second_order": {
             "side": second_side,
