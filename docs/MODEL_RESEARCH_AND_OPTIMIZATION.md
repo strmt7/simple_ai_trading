@@ -297,7 +297,10 @@ those verdicts so automation cannot accidentally treat a failed research round
 as a successful optimization. Per-symbol metrics include threshold source,
 decision threshold, model quality warnings, and meta-label policy reason so a
 future no-trade round can distinguish ordinary low confidence from an explicit
-fail-closed selection guard.
+fail-closed selection guard. Rejected selection gates are not promoted, but the
+optimizer now keeps their final holdout diagnostic rather than installing an
+impossible meta-label threshold that forces a flat equity line. This preserves
+the real P&L/trade-count evidence while still marking the symbol as rejected.
 
 ## Financial Sanity Gates
 

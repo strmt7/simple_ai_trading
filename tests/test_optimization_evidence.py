@@ -76,6 +76,8 @@ def _evidence(
         threshold_calibration_pnl=pnl,
         threshold_calibration_trades=max(0, closed_trades),
         decision_threshold=0.66,
+        round_selection_gate_passed=accepted,
+        round_selection_reject_reason=None if accepted else "test selection rejection",
         model_quality_warnings="",
         meta_label_policy_reason=None,
         starting_cash=1000.0,
@@ -606,7 +608,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     ]
 
 
-def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
+def test_train_round_model_keeps_rejected_selection_diagnostic_holdout_active(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rows = [
@@ -684,11 +686,11 @@ def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
     )
 
     assert len(holdout_rows) == 25
-    assert selected_model.threshold_source == "round_selection_fail_closed"
-    assert selected_model.meta_label_policy["enabled"] is True
-    assert selected_model.meta_label_policy["mode"] == "take_downsize_skip"
-    assert selected_model.meta_label_policy["take_threshold"] == pytest.approx(1_000_000_000.0)
-    assert "round_selection_gate_failed_no_final_holdout_entries" in selected_model.quality_warnings
+    assert selected_model.threshold_source == "round_selection_rejected_diagnostic_holdout"
+    assert selected_model.round_selection_gate_passed is False
+    assert "closed_trades<5" in selected_model.round_selection_reject_reason
+    assert "round_selection_gate_failed_diagnostic_holdout_only" in selected_model.quality_warnings
+    assert getattr(selected_model, "meta_label_policy", {}) == {}
 
 
 def test_train_round_model_selects_best_scored_candidate(
@@ -1080,6 +1082,83 @@ def test_build_round_evidence_records_data_health_block_before_training(
     assert metrics_path.exists()
     assert str(data_health_path).replace("\\", "/") in report["tracked_artifacts"]
     assert json.loads(data_health_path.read_text(encoding="utf-8")) == report["data_health"]
+
+
+def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_trades(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=1) for index in range(40)]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    model.round_selection_gate_passed = False
+    model.round_selection_reject_reason = "closed_trades<5; profit_factor<1.1"
+    model.threshold_source = "round_selection_rejected_diagnostic_holdout"
+    model.quality_warnings = ["round_selection_gate_failed_diagnostic_holdout_only"]
+
+    monkeypatch.setattr(oe, "fetch_full_history", lambda *_args, **_kwargs: [_candle(index) for index in range(80)])
+    monkeypatch.setattr(
+        oe,
+        "train_round_model",
+        lambda *_args, **_kwargs: (model, SimpleNamespace(row_count=32, positive_rate=0.5), rows, rows),
+    )
+    monkeypatch.setattr(
+        oe,
+        "run_backtest",
+        lambda *_args, **_kwargs: BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1025.0,
+            realized_pnl=25.0,
+            win_rate=0.75,
+            trades=8,
+            max_drawdown=0.02,
+            closed_trades=8,
+            gross_exposure=100.0,
+            total_fees=1.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            buy_hold_pnl=2.0,
+            edge_vs_buy_hold=23.0,
+            profit_factor=1.5,
+            expectancy=3.125,
+            max_consecutive_losses=1,
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+        ),
+    )
+
+    report = oe.build_round_evidence(
+        round_id="round-test-selection-diagnostic",
+        client=_SelectionClient(),
+        strategy=StrategyConfig(),
+        quote_asset="USDT",
+        symbols=["BTCUSDT"],
+        interval="1m",
+        market_type="futures",
+        objective_name="conservative",
+        data_root=tmp_path / "data" / "optimization",
+        docs_root=tmp_path / "docs" / "optimization",
+        db_path=tmp_path / "market.sqlite",
+    )
+
+    metric = report["metrics"][0]
+    assert metric["closed_trades"] == 8
+    assert metric["roi_pct"] == pytest.approx(2.5)
+    assert metric["accepted"] is False
+    assert "selection_gate_failed" in str(metric["reason"])
+    assert metric["round_selection_gate_passed"] is False
+    assert metric["round_selection_reject_reason"] == "closed_trades<5; profit_factor<1.1"
+    assert metric["threshold_source"] == "round_selection_rejected_diagnostic_holdout"
+    assert report["critical_analysis"]["total_closed_trades"] == 8
+    assert "no_closed_trades" not in report["critical_analysis"]["failures"]
+    assert "no_accepted_symbols" in report["critical_analysis"]["failures"]
 
 
 def test_build_round_evidence_blocks_explicit_low_liquidity_symbol_before_training(
