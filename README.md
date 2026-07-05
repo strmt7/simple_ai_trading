@@ -158,7 +158,7 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 
 For quick host checks, `model-lab` and `train-suite` accept `--max-candidates N`. This is a smoke/research limiter only; omit it for a full optimization run.
 
-Financial-sanity checks now run on promoted model artifacts, model-lab reports, and AI-review prechecks. They block impossible model dimensions, non-finite parameters, nonsensical probability settings, impossible coverage/drawdown values, accepted reports with zero rows, and failed data coverage. These checks are intentionally conservative and do not turn a backtest into an investment recommendation.
+Financial-sanity checks now run on promoted model artifacts, model-lab reports, and AI-review prechecks. They block impossible model dimensions, non-finite parameters, nonsensical probability settings, missing or poor promoted-model probability calibration evidence, impossible coverage/drawdown values, accepted reports with zero rows, and failed data coverage. Promoted models must carry calibrated probability evidence with Brier score `<=0.35` and expected calibration error `<=0.20`. These checks are intentionally conservative and do not turn a backtest into an investment recommendation.
 
 ## Autonomous Control
 

@@ -10,6 +10,11 @@ from typing import Any
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .model import TrainedModel
 
+_PREFERRED_PROBABILITY_BRIER_MAX = 0.30
+_HARD_PROBABILITY_BRIER_MAX = 0.35
+_PREFERRED_PROBABILITY_ECE_MAX = 0.15
+_HARD_PROBABILITY_ECE_MAX = 0.20
+
 
 @dataclass(frozen=True)
 class FinancialSanityCheck:
@@ -104,6 +109,146 @@ def _range_check(
     return _check("ok", label, "within financial bounds", path=path, metric=parsed, limit=f"{low:g}-{high:g}")
 
 
+def _has_promotion_evidence(model: TrainedModel) -> bool:
+    selection_risk = getattr(model, "selection_risk", None)
+    execution_validation = getattr(model, "execution_validation", None)
+    return (
+        (isinstance(selection_risk, Mapping) and bool(selection_risk))
+        or (isinstance(execution_validation, Mapping) and bool(execution_validation))
+    )
+
+
+def _probability_calibration_checks(model: TrainedModel) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    promoted = _has_promotion_evidence(model)
+    calibration_size = _finite(getattr(model, "probability_calibration_size", 0))
+    brier_before = _finite(getattr(model, "probability_brier_before", None))
+    brier_after = _finite(getattr(model, "probability_brier_after", None))
+    ece_before = _finite(getattr(model, "probability_ece_before", None))
+    ece_after = _finite(getattr(model, "probability_ece_after", None))
+    log_loss_before = _finite(getattr(model, "probability_log_loss_before", None))
+    log_loss_after = _finite(getattr(model, "probability_log_loss_after", None))
+    any_metric = any(
+        value is not None
+        for value in (brier_before, brier_after, ece_before, ece_after, log_loss_before, log_loss_after)
+    )
+
+    if promoted and (calibration_size is None or calibration_size <= 0):
+        checks.append(
+            _check(
+                "block",
+                "probability calibration evidence",
+                "promoted model is missing calibration sample evidence",
+                path="probability_calibration_size",
+                metric=calibration_size if calibration_size is not None else "missing",
+                limit=">0",
+            )
+        )
+    elif calibration_size is not None and calibration_size > 0:
+        checks.append(
+            _check(
+                "ok",
+                "probability calibration evidence",
+                f"rows={int(calibration_size)}",
+                path="probability_calibration_size",
+                metric=int(calibration_size),
+                limit=">0",
+            )
+        )
+
+    if promoted and brier_after is None:
+        checks.append(
+            _check(
+                "block",
+                "probability Brier score",
+                "promoted model is missing calibrated Brier score",
+                path="probability_brier_after",
+                metric="missing",
+                limit=f"<={_HARD_PROBABILITY_BRIER_MAX:g}",
+            )
+        )
+    elif brier_after is not None:
+        checks.append(
+            _range_check(
+                brier_after,
+                path="probability_brier_after",
+                label="probability Brier score",
+                low=0.0,
+                high=_PREFERRED_PROBABILITY_BRIER_MAX,
+                hard_low=0.0,
+                hard_high=_HARD_PROBABILITY_BRIER_MAX,
+            )
+        )
+
+    if promoted and ece_after is None:
+        checks.append(
+            _check(
+                "block",
+                "probability calibration error",
+                "promoted model is missing expected calibration error",
+                path="probability_ece_after",
+                metric="missing",
+                limit=f"<={_HARD_PROBABILITY_ECE_MAX:g}",
+            )
+        )
+    elif ece_after is not None:
+        checks.append(
+            _range_check(
+                ece_after,
+                path="probability_ece_after",
+                label="probability calibration error",
+                low=0.0,
+                high=_PREFERRED_PROBABILITY_ECE_MAX,
+                hard_low=0.0,
+                hard_high=_HARD_PROBABILITY_ECE_MAX,
+            )
+        )
+
+    if brier_before is not None and brier_after is not None and brier_after > brier_before + 1e-9:
+        checks.append(
+            _check(
+                "block" if promoted else "warn",
+                "probability Brier score",
+                "calibration worsened Brier score",
+                path="probability_brier_after",
+                metric=brier_after,
+                limit=f"<={brier_before:g}",
+            )
+        )
+    if log_loss_before is not None and log_loss_after is not None and log_loss_after > log_loss_before + 1e-9:
+        checks.append(
+            _check(
+                "block" if promoted else "warn",
+                "probability log loss",
+                "calibration worsened log loss",
+                path="probability_log_loss_after",
+                metric=log_loss_after,
+                limit=f"<={log_loss_before:g}",
+            )
+        )
+    if any_metric and not promoted and brier_after is None and ece_after is None:
+        checks.append(
+            _check(
+                "warn",
+                "probability calibration evidence",
+                "partial calibration metrics are present without calibrated Brier or ECE",
+                path="probability_brier_after",
+            )
+        )
+    if ece_before is not None and ece_after is not None and ece_after > ece_before + 1e-9:
+        checks.append(
+            _check(
+                "block" if promoted else "warn",
+                "probability calibration error",
+                "calibration increased expected calibration error",
+                path="probability_ece_after",
+                metric=ece_after,
+                limit=f"<={ece_before:g}",
+            )
+        )
+    return checks
+
+
 def build_model_financial_sanity_report(model: TrainedModel, *, source: str = "model") -> FinancialSanityReport:
     checks: list[FinancialSanityCheck] = []
     feature_dim = int(getattr(model, "feature_dim", 0) or 0)
@@ -164,6 +309,7 @@ def build_model_financial_sanity_report(model: TrainedModel, *, source: str = "m
             hard_high=10.0,
         )
     )
+    checks.extend(_probability_calibration_checks(model))
     threshold = getattr(model, "decision_threshold", None)
     if threshold is not None:
         checks.append(

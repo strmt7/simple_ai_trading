@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from simple_ai_trading.financial_sanity import (
     build_model_financial_sanity_report,
     build_model_lab_financial_sanity_report,
@@ -25,6 +27,72 @@ def test_model_financial_sanity_blocks_malformed_parameters() -> None:
     assert report.block_count >= 3
     assert any(check.path == "weights" and check.status == "block" for check in report.checks)
     assert any(check.path == "learning_rate" and check.status == "block" for check in report.checks)
+
+
+def test_model_financial_sanity_gates_promoted_probability_calibration() -> None:
+    good = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        selection_risk={"passed": True},
+        execution_validation={"passed": True},
+        probability_calibration_size=128,
+        probability_log_loss_before=0.62,
+        probability_log_loss_after=0.58,
+        probability_brier_before=0.24,
+        probability_brier_after=0.22,
+        probability_ece_before=0.10,
+        probability_ece_after=0.08,
+    )
+    missing = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        selection_risk={"passed": True},
+        execution_validation={"passed": True},
+    )
+    bad = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        selection_risk={"passed": True},
+        execution_validation={"passed": True},
+        probability_calibration_size=64,
+        probability_log_loss_before=0.61,
+        probability_log_loss_after=0.90,
+        probability_brier_before=0.22,
+        probability_brier_after=0.42,
+        probability_ece_before=0.09,
+        probability_ece_after=0.24,
+    )
+
+    good_report = build_model_financial_sanity_report(good)
+    missing_report = build_model_financial_sanity_report(missing)
+    bad_report = build_model_financial_sanity_report(bad)
+    worse_ece_report = build_model_financial_sanity_report(
+        replace(good, probability_ece_before=0.08, probability_ece_after=0.12)
+    )
+
+    assert good_report.allowed is True
+    assert any(check.path == "probability_brier_after" and check.status == "ok" for check in good_report.checks)
+    assert missing_report.allowed is False
+    assert any(check.path == "probability_brier_after" and check.status == "block" for check in missing_report.checks)
+    assert any(check.path == "probability_ece_after" and check.status == "block" for check in missing_report.checks)
+    assert bad_report.allowed is False
+    assert any(check.path == "probability_brier_after" and check.status == "block" for check in bad_report.checks)
+    assert any(check.path == "probability_ece_after" and check.status == "block" for check in bad_report.checks)
+    assert any(check.path == "probability_log_loss_after" and check.status == "block" for check in bad_report.checks)
+    assert worse_ece_report.allowed is False
+    assert any(check.detail == "calibration increased expected calibration error" for check in worse_ece_report.checks)
 
 
 def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
