@@ -36,10 +36,12 @@ The gate enforces:
   evidence blocks execution-validated artifacts,
 - positive accepted row counts and finite objective scores,
 - complete data-coverage metadata with no failed integrity status,
-- generated backtest accounting identities for cash, fees, trade P&L, exit
-  reasons, and net-P&L win rate,
-- objective path quality, including profit factor, expectancy, loss streaks,
-  and single-trade profit concentration,
+- generated backtest accounting identities for cash, fees, trade count,
+  exposure, trade P&L, exit reasons, net-P&L win rate, trade-level timestamps,
+  prices, returns, and equity-curve drawdown,
+- objective path quality, including gross profit/loss, profit factor,
+  expectancy, average trade return, return dispersion, loss streaks, and
+  single-trade profit concentration,
 - accepted stress, temporal robustness, and portfolio-risk reports,
 - accepted outcomes require passed selection-risk evidence for each accepted
   objective, including positive deflated score, positive trial count, no

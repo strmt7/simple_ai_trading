@@ -1322,6 +1322,61 @@ def _approx_equal(left: float, right: float, *, scale: float = 1.0) -> bool:
     return abs(left - right) <= tolerance
 
 
+def _sample_stdev(values: Sequence[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    average = sum(values) / len(values)
+    variance = sum((value - average) ** 2 for value in values) / (len(values) - 1)
+    return math.sqrt(max(0.0, variance))
+
+
+def _max_consecutive_losses(values: Sequence[float]) -> int:
+    longest = 0
+    current = 0
+    for value in values:
+        if value < 0.0:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
+
+
+def _expected_profit_factor(gross_profit: float, gross_loss: float) -> float:
+    if gross_loss > 0.0:
+        return min(999.0, max(0.0, gross_profit / gross_loss))
+    if gross_profit > 0.0:
+        return 999.0
+    return 0.0
+
+
+def _integer_count_check(
+    checks: list[FinancialSanityCheck],
+    value: float | None,
+    *,
+    path: str,
+    label: str,
+) -> int | None:
+    if value is None:
+        checks.append(_check("block", label, "missing or non-finite count", path=path))
+        return None
+    if value < 0.0:
+        checks.append(_check("block", label, "negative count", path=path, metric=value, limit=">=0"))
+        return None
+    count = int(value)
+    checks.append(
+        _check(
+            "ok" if abs(value - count) <= 1e-9 else "block",
+            label,
+            "integer count",
+            path=path,
+            metric=value,
+            limit=count,
+        )
+    )
+    return count if abs(value - count) <= 1e-9 else None
+
+
 def build_backtest_financial_sanity_report(
     result: object,
     *,
@@ -1339,10 +1394,21 @@ def build_backtest_financial_sanity_report(
     edge_vs_buy_hold = _finite(getattr(result, "edge_vs_buy_hold", 0.0))
     win_rate = _finite(getattr(result, "win_rate", None))
     max_drawdown = _finite(getattr(result, "max_drawdown", None))
+    trades = _finite(getattr(result, "trades", None))
     closed_trades = _finite(getattr(result, "closed_trades", None))
+    gross_exposure = _finite(getattr(result, "gross_exposure", None))
+    max_exposure = _finite(getattr(result, "max_exposure", None))
+    gross_profit = _finite(getattr(result, "gross_profit", 0.0))
+    gross_loss = _finite(getattr(result, "gross_loss", 0.0))
+    profit_factor = _finite(getattr(result, "profit_factor", 0.0))
+    expectancy = _finite(getattr(result, "expectancy", 0.0))
+    average_trade_return = _finite(getattr(result, "average_trade_return", 0.0))
+    trade_return_stdev = _finite(getattr(result, "trade_return_stdev", 0.0))
+    max_consecutive_losses = _finite(getattr(result, "max_consecutive_losses", 0))
     stopped_by_liquidation = bool(getattr(result, "stopped_by_liquidation", False))
     liquidation_events = _finite(getattr(result, "liquidation_events", 0))
     liquidation_loss = _finite(getattr(result, "liquidation_loss", 0.0))
+    equity_curve = getattr(result, "equity_curve", ())
     trade_log = getattr(result, "trade_log", ())
     trade_pnls = _numeric_sequence(getattr(result, "trade_pnls", ()))
     trade_returns = _numeric_sequence(getattr(result, "trade_returns", ()))
@@ -1356,7 +1422,17 @@ def build_backtest_financial_sanity_report(
         ("edge_vs_buy_hold", edge_vs_buy_hold, None, None),
         ("win_rate", win_rate, 0.0, 1.0),
         ("max_drawdown", max_drawdown, 0.0, 1.0),
+        ("trades", trades, 0.0, None),
         ("closed_trades", closed_trades, 0.0, None),
+        ("gross_exposure", gross_exposure, 0.0, None),
+        ("max_exposure", max_exposure, 0.0, None),
+        ("gross_profit", gross_profit, 0.0, None),
+        ("gross_loss", gross_loss, 0.0, None),
+        ("profit_factor", profit_factor, 0.0, 999.0),
+        ("expectancy", expectancy, None, None),
+        ("average_trade_return", average_trade_return, None, None),
+        ("trade_return_stdev", trade_return_stdev, 0.0, None),
+        ("max_consecutive_losses", max_consecutive_losses, 0.0, None),
     ):
         if value is None:
             checks.append(_check("block", "backtest accounting", "missing or non-finite value", path=name))
@@ -1461,9 +1537,36 @@ def build_backtest_financial_sanity_report(
             )
         )
 
-    closed_count = int(closed_trades) if closed_trades is not None and closed_trades >= 0 else None
-    if closed_count is not None and closed_trades is not None and abs(closed_trades - closed_count) > 1e-9:
-        checks.append(_check("block", "closed trade count", "closed_trades is not an integer count", path="closed_trades", metric=closed_trades))
+    closed_count = _integer_count_check(checks, closed_trades, path="closed_trades", label="closed trade count")
+    trade_count = _integer_count_check(checks, trades, path="trades", label="trade count")
+    loss_streak_count = _integer_count_check(
+        checks,
+        max_consecutive_losses,
+        path="max_consecutive_losses",
+        label="loss streak count",
+    )
+    if closed_count is not None and trade_count is not None:
+        checks.append(
+            _check(
+                "ok" if trade_count == closed_count else "block",
+                "trade count identity",
+                "trades equals closed_trades",
+                path="trades",
+                metric=trade_count,
+                limit=closed_count,
+            )
+        )
+    if gross_exposure is not None and max_exposure is not None:
+        checks.append(
+            _check(
+                "ok" if _approx_equal(gross_exposure, max_exposure, scale=max(1.0, gross_exposure, max_exposure)) else "block",
+                "exposure identity",
+                "gross_exposure equals max_exposure for single-position backtests",
+                path="gross_exposure",
+                metric=gross_exposure,
+                limit=max_exposure,
+            )
+        )
     if isinstance(trade_log, (tuple, list)):
         if closed_count is not None:
             checks.append(
@@ -1513,10 +1616,54 @@ def build_backtest_financial_sanity_report(
 
     fee_sum = 0.0
     net_log_values: list[float] = []
+    return_log_values: list[float] = []
     for index, trade in enumerate(trade_log):
         if not isinstance(trade, Mapping):
             checks.append(_check("block", "trade log entry", "trade entry is not a mapping", path=f"trade_log[{index}]"))
             continue
+        opened_at = _finite(trade.get("opened_at"))
+        closed_at = _finite(trade.get("closed_at"))
+        side = _finite(trade.get("side"))
+        gross_notional = _finite(trade.get("gross_notional"))
+        entry_price = _finite(trade.get("entry_price"))
+        exit_mark_price = _finite(trade.get("exit_mark_price"))
+        return_pct = _finite(trade.get("return_pct"))
+        if opened_at is None or closed_at is None:
+            checks.append(_check("block", "trade timestamp", "missing or non-finite timestamp", path=f"trade_log[{index}]"))
+        else:
+            checks.append(
+                _check(
+                    "ok" if opened_at <= closed_at else "block",
+                    "trade timestamp",
+                    "opened_at is not after closed_at",
+                    path=f"trade_log[{index}].opened_at",
+                    metric=opened_at,
+                    limit=f"<={closed_at:g}",
+                )
+            )
+        checks.append(
+            _check(
+                "ok" if side in {-1.0, 1.0} else "block",
+                "trade side",
+                "side is long or short",
+                path=f"trade_log[{index}].side",
+                metric=side if side is not None else "missing",
+                limit="-1|1",
+            )
+        )
+        for name, value, low in (
+            ("gross_notional", gross_notional, 0.0),
+            ("entry_price", entry_price, 0.0),
+            ("exit_mark_price", exit_mark_price, -1e-12),
+        ):
+            if value is None:
+                checks.append(_check("block", "trade notional/price", "missing or non-finite value", path=f"trade_log[{index}].{name}"))
+            elif value <= low:
+                checks.append(_check("block", "trade notional/price", "non-positive value", path=f"trade_log[{index}].{name}", metric=value, limit=f">{low:g}"))
+        if return_pct is None:
+            checks.append(_check("block", "trade return", "missing or non-finite value", path=f"trade_log[{index}].return_pct"))
+        else:
+            return_log_values.append(return_pct)
         reason = str(trade.get("exit_reason") or "").strip()
         checks.append(
             _check(
@@ -1562,6 +1709,30 @@ def build_backtest_financial_sanity_report(
             )
             net_log_values.append(net)
 
+    if trade_pnls is not None and len(net_log_values) == len(trade_pnls):
+        for index, (pnl, net) in enumerate(zip(trade_pnls, net_log_values, strict=True)):
+            checks.append(
+                _check(
+                    "ok" if _approx_equal(pnl, net, scale=cash_scale) else "block",
+                    "trade PnL log identity",
+                    "trade_pnls entry equals trade_log net_pnl",
+                    path=f"trade_pnls[{index}]",
+                    metric=pnl,
+                    limit=net,
+                )
+            )
+    if trade_returns is not None and len(return_log_values) == len(trade_returns):
+        for index, (stored, logged) in enumerate(zip(trade_returns, return_log_values, strict=True)):
+            checks.append(
+                _check(
+                    "ok" if _approx_equal(stored, logged, scale=1.0) else "block",
+                    "trade return log identity",
+                    "trade_returns entry equals trade_log return_pct",
+                    path=f"trade_returns[{index}]",
+                    metric=stored,
+                    limit=logged,
+                )
+            )
     if total_fees is not None and isinstance(trade_log, (tuple, list)):
         checks.append(
             _check(
@@ -1585,6 +1756,128 @@ def build_backtest_financial_sanity_report(
                 limit=expected_win_rate,
             )
         )
+    if trade_pnls is not None:
+        expected_gross_profit = sum(value for value in trade_pnls if value > 0.0)
+        expected_gross_loss = abs(sum(value for value in trade_pnls if value < 0.0))
+        expected_profit_factor = _expected_profit_factor(expected_gross_profit, expected_gross_loss)
+        expected_expectancy = sum(trade_pnls) / len(trade_pnls) if trade_pnls else 0.0
+        expected_loss_streak = _max_consecutive_losses(trade_pnls)
+        for label, path, metric, expected in (
+            ("gross profit identity", "gross_profit", gross_profit, expected_gross_profit),
+            ("gross loss identity", "gross_loss", gross_loss, expected_gross_loss),
+            ("profit factor identity", "profit_factor", profit_factor, expected_profit_factor),
+            ("expectancy identity", "expectancy", expectancy, expected_expectancy),
+        ):
+            if metric is not None:
+                checks.append(
+                    _check(
+                        "ok" if _approx_equal(metric, expected, scale=cash_scale) else "block",
+                        label,
+                        f"{path} matches trade_pnls",
+                        path=path,
+                        metric=metric,
+                        limit=expected,
+                    )
+                )
+        if loss_streak_count is not None:
+            checks.append(
+                _check(
+                    "ok" if loss_streak_count == expected_loss_streak else "block",
+                    "loss streak identity",
+                    "max_consecutive_losses matches trade_pnls",
+                    path="max_consecutive_losses",
+                    metric=loss_streak_count,
+                    limit=expected_loss_streak,
+                )
+            )
+    if trade_returns is not None:
+        expected_average_return = sum(trade_returns) / len(trade_returns) if trade_returns else 0.0
+        expected_return_stdev = _sample_stdev(trade_returns)
+        for label, path, metric, expected in (
+            ("average return identity", "average_trade_return", average_trade_return, expected_average_return),
+            ("return stdev identity", "trade_return_stdev", trade_return_stdev, expected_return_stdev),
+        ):
+            if metric is not None:
+                checks.append(
+                    _check(
+                        "ok" if _approx_equal(metric, expected, scale=1.0) else "block",
+                        label,
+                        f"{path} matches trade_returns",
+                        path=path,
+                        metric=metric,
+                        limit=expected,
+                    )
+                )
+    if not isinstance(equity_curve, (tuple, list)):
+        checks.append(_check("block", "equity curve", "equity_curve is not a sequence", path="equity_curve"))
+    elif equity_curve:
+        curve_peak: float | None = None
+        curve_drawdowns: list[float] = []
+        final_equity: float | None = None
+        final_side: float | None = None
+        previous_timestamp: float | None = None
+        for index, point in enumerate(equity_curve):
+            if not isinstance(point, Mapping):
+                checks.append(_check("block", "equity curve point", "point is not a mapping", path=f"equity_curve[{index}]"))
+                continue
+            timestamp = _finite(point.get("timestamp"))
+            equity = _finite(point.get("equity"))
+            drawdown = _finite(point.get("drawdown"))
+            side = _finite(point.get("position_side"))
+            if timestamp is None or equity is None or drawdown is None or side is None:
+                checks.append(_check("block", "equity curve point", "missing or non-finite point value", path=f"equity_curve[{index}]"))
+                continue
+            if previous_timestamp is not None and timestamp < previous_timestamp:
+                checks.append(_check("block", "equity curve chronology", "timestamps must be non-decreasing", path=f"equity_curve[{index}].timestamp", metric=timestamp, limit=f">={previous_timestamp:g}"))
+            previous_timestamp = timestamp
+            checks.append(
+                _check(
+                    "ok" if 0.0 <= drawdown <= 1.0 else "block",
+                    "equity curve drawdown",
+                    "drawdown is normalized 0-1",
+                    path=f"equity_curve[{index}].drawdown",
+                    metric=drawdown,
+                    limit="0-1",
+                )
+            )
+            curve_peak = equity if curve_peak is None else max(curve_peak, equity)
+            expected_drawdown = 1.0 if equity <= 0.0 and curve_peak > 0.0 else ((curve_peak - equity) / curve_peak if curve_peak else 0.0)
+            checks.append(
+                _check(
+                    "ok" if _approx_equal(drawdown, expected_drawdown, scale=1.0) else "block",
+                    "equity curve drawdown identity",
+                    "point drawdown matches running equity peak",
+                    path=f"equity_curve[{index}].drawdown",
+                    metric=drawdown,
+                    limit=expected_drawdown,
+                )
+            )
+            curve_drawdowns.append(drawdown)
+            final_equity = equity
+            final_side = side
+        if curve_drawdowns and max_drawdown is not None:
+            expected_max_drawdown = max(curve_drawdowns)
+            checks.append(
+                _check(
+                    "ok" if _approx_equal(max_drawdown, expected_max_drawdown, scale=1.0) else "block",
+                    "max drawdown identity",
+                    "max_drawdown matches equity_curve",
+                    path="max_drawdown",
+                    metric=max_drawdown,
+                    limit=expected_max_drawdown,
+                )
+            )
+        if final_equity is not None and final_side == 0.0 and ending_cash is not None:
+            checks.append(
+                _check(
+                    "ok" if _approx_equal(final_equity, ending_cash, scale=cash_scale) else "block",
+                    "ending equity identity",
+                    "final flat equity equals ending_cash",
+                    path="equity_curve[-1].equity",
+                    metric=final_equity,
+                    limit=ending_cash,
+                )
+            )
     return FinancialSanityReport(tuple(checks), source=source)
 
 
