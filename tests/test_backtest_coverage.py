@@ -543,8 +543,12 @@ def test_backtest_records_drawdown_after_same_day_capped_close() -> None:
     result = run_backtest(rows, _simple_model(10.0), cfg, starting_cash=1000.0, market_type="spot")
 
     assert result.closed_trades == 1
-    assert result.realized_pnl == pytest.approx(-452.0537359699672)
-    assert result.max_drawdown == pytest.approx(0.4520537359699672)
+    assert result.trade_log[0]["exit_reason"] == "intrabar_stop_loss"
+    assert result.trade_log[0]["exit_mark_price"] == pytest.approx(
+        float(result.trade_log[0]["entry_price"]) * (1.0 - cfg.stop_loss_pct)
+    )
+    assert result.realized_pnl == pytest.approx(-91.28789371111941)
+    assert result.max_drawdown == pytest.approx(0.09128789371111941)
 
 
 def test_threshold_calibration_passes_gpu_scoring_options(monkeypatch) -> None:

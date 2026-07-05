@@ -101,6 +101,13 @@ Backtest fill price uses:
 - volatility buffer,
 - taker fees.
 
+When model rows carry candle high/low data, backtests use those intrabar bounds
+for stop-loss, take-profit, liquidation, and drawdown checks. If a single bar
+touches both stop-loss and take-profit, the simulation records the stop-loss
+exit because the OHLC row does not prove the favorable sequence. Futures
+liquidation uses the adverse intrabar mark (`low` for long exposure, `high` for
+short exposure) before a stop fill is assumed.
+
 Every backtest now keeps path evidence, not only a final P&L scalar:
 
 - a `data_coverage` record with symbol, market type, interval, UTC date span,

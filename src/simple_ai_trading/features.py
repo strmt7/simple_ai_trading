@@ -102,6 +102,8 @@ class ModelRow:
     features: Tuple[float, ...]
     label: int
     volume: float = 0.0
+    high: float | None = None
+    low: float | None = None
 
 
 class FeatureAccelerationError(RuntimeError):
@@ -420,6 +422,8 @@ def _make_rows_tensor(
                 features=tuple(float(value) for value in selected_cpu[offset]),
                 label=labels_cpu[offset],
                 volume=cache.candles[index].volume,
+                high=cache.candles[index].high,
+                low=cache.candles[index].low,
             )
         )
     return rows
@@ -589,6 +593,8 @@ def make_rows(
                 features=features,
                 label=label,
                 volume=cache.candles[i].volume,
+                high=cache.candles[i].high,
+                low=cache.candles[i].low,
             )
         )
 
@@ -641,6 +647,8 @@ def make_inference_rows(
                 features=features,
                 label=0,
                 volume=cache.candles[i].volume,
+                high=cache.candles[i].high,
+                low=cache.candles[i].low,
             )
         )
 

@@ -529,6 +529,76 @@ def test_backtest_exit_fee_uses_exit_notional() -> None:
     assert result.total_fees == pytest.approx(4.389046741493509)
 
 
+def test_backtest_uses_intrabar_stop_when_stop_and_take_both_touch() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1, high=100.0, low=100.0),
+        ModelRow(timestamp=60_000, close=100.0, features=(1.0,), label=1, high=100.0, low=100.0),
+        ModelRow(timestamp=120_000, close=100.0, features=(1.0,), label=1, high=103.0, low=98.0),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=10.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.01,
+        max_position_pct=0.5,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        signal_threshold=0.55,
+        stop_loss_pct=0.01,
+        take_profit_pct=0.02,
+    )
+
+    result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
+
+    assert result.closed_trades == 1
+    assert result.trade_log[0]["exit_reason"] == "intrabar_stop_loss_ambiguous"
+    assert result.trade_log[0]["exit_mark_price"] == pytest.approx(
+        float(result.trade_log[0]["entry_price"]) * (1.0 - cfg.stop_loss_pct)
+    )
+    assert result.realized_pnl < 0.0
+
+
+def test_backtest_futures_liquidates_on_intrabar_adverse_mark() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(-1.0,), label=0, high=100.0, low=100.0),
+        ModelRow(timestamp=60_000, close=100.0, features=(-1.0,), label=0, high=100.0, low=100.0),
+        ModelRow(timestamp=120_000, close=100.0, features=(-1.0,), label=0, high=200.0, low=100.0),
+    ]
+    model = TrainedModel(
+        weights=[10.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    cfg = StrategyConfig(
+        leverage=10.0,
+        risk_per_trade=0.02,
+        max_position_pct=1.0,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.50,
+        liquidation_buffer_pct=0.01,
+    )
+
+    result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="futures")
+
+    assert result.stopped_by_liquidation is True
+    assert result.liquidation_events == 1
+    assert result.trade_log[0]["exit_mark_price"] == pytest.approx(200.0)
+    assert result.trade_log[0]["exit_reason"] == "liquidation"
+
+
 def test_backtest_signal_enters_on_next_bar_close() -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(10.0, *[0.0] * 12), label=1),

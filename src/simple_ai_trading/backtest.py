@@ -326,6 +326,52 @@ def _futures_liquidation_state(
     return margin_balance <= maintenance_margin, float(margin_balance), float(maintenance_margin)
 
 
+def _bar_bounds(row: ModelRow, close: float) -> tuple[float, float]:
+    high = _finite_float(getattr(row, "high", close), close)
+    low = _finite_float(getattr(row, "low", close), close)
+    return max(close, high, low), min(close, high, low)
+
+
+def _adverse_mark_price(position_side: int, close: float, high: float, low: float) -> float:
+    if position_side > 0:
+        return low
+    if position_side < 0:
+        return high
+    return close
+
+
+def _intrabar_exit(
+    *,
+    position_side: int,
+    entry_price: float,
+    high: float,
+    low: float,
+    cfg: StrategyConfig,
+) -> tuple[bool, float, str]:
+    if position_side == 0 or entry_price <= 0.0:
+        return False, entry_price, ""
+    stop_pct = max(0.0, _finite_float(cfg.stop_loss_pct, 0.0))
+    take_pct = max(0.0, _finite_float(cfg.take_profit_pct, 0.0))
+    if position_side > 0:
+        stop_price = entry_price * (1.0 - stop_pct)
+        take_price = entry_price * (1.0 + take_pct)
+        stop_hit = low <= stop_price
+        take_hit = high >= take_price
+    else:
+        stop_price = entry_price * (1.0 + stop_pct)
+        take_price = max(0.0, entry_price * (1.0 - take_pct))
+        stop_hit = high >= stop_price
+        take_hit = low <= take_price
+    if stop_hit:
+        reason = "intrabar_stop_loss"
+        if take_hit:
+            reason = "intrabar_stop_loss_ambiguous"
+        return True, stop_price, reason
+    if take_hit:
+        return True, take_price, "intrabar_take_profit"
+    return False, entry_price, ""
+
+
 def _safe_day(ts_ms: int) -> int:
     return int(ts_ms // (24 * 60 * 60 * 1000))
 
@@ -1161,6 +1207,7 @@ def run_backtest(
         pending_meta = apply_liquidity_session_meta(base_pending_meta, liquidity_adjustment) if pending_signal != 0 else base_pending_meta
         price = row.close
         final_mark_price = price
+        bar_high, bar_low = _bar_bounds(row, price)
         regime_gate_ready = row_index + 1 >= regime_gate_min_rows
         regime_score = float(regime_scores[row_index]) if regime_gate_ready else 0.0
         regime_limit = float(cfg.max_regime_unpredictability)
@@ -1246,10 +1293,11 @@ def run_backtest(
             max_exposure = max(max_exposure, abs(notional))
 
         elif position_side != 0:
+            adverse_mark_price = _adverse_mark_price(position_side, price, bar_high, bar_low)
             liquidated, margin_balance, maintenance_margin = _futures_liquidation_state(
                 market_type=market_type,
                 position_side=position_side,
-                price=price,
+                price=adverse_mark_price,
                 entry_price=entry_price,
                 qty=qty,
                 margin_used=margin_used,
@@ -1275,7 +1323,7 @@ def run_backtest(
                     "side": int(closed_side),
                     "gross_notional": float(closed_notional),
                     "entry_price": float(closed_entry_price),
-                    "exit_mark_price": float(price),
+                    "exit_mark_price": float(adverse_mark_price),
                     "realized_pnl": float(realized),
                     "net_pnl": float(net_pnl),
                     "return_pct": float(return_pct),
@@ -1303,12 +1351,25 @@ def run_backtest(
                 last_close_timestamp = row.timestamp
             else:
                 current_pnl_pct = (price - entry_price) / entry_price if position_side > 0 else (entry_price - price) / entry_price
-                should_close = (
-                    current_pnl_pct >= cfg.take_profit_pct
-                    or current_pnl_pct <= -cfg.stop_loss_pct
-                    or execution_signal == 0
-                    or execution_signal == (-position_side)
+                intrabar_close, close_mark_price, close_reason = _intrabar_exit(
+                    position_side=position_side,
+                    entry_price=entry_price,
+                    high=bar_high,
+                    low=bar_low,
+                    cfg=cfg,
                 )
+                close_signal_exit = execution_signal == 0 or execution_signal == (-position_side)
+                if not intrabar_close:
+                    close_mark_price = price
+                    if current_pnl_pct >= cfg.take_profit_pct:
+                        close_reason = "take_profit_close"
+                    elif current_pnl_pct <= -cfg.stop_loss_pct:
+                        close_reason = "stop_loss_close"
+                    elif execution_signal == 0:
+                        close_reason = "signal_flat"
+                    elif execution_signal == (-position_side):
+                        close_reason = "signal_reverse"
+                should_close = bool(intrabar_close or close_reason or close_signal_exit)
 
                 if should_close:
                     closed_side = position_side
@@ -1316,7 +1377,7 @@ def run_backtest(
                     closed_entry_price = entry_price
                     cash_delta, realized, exit_fee = _close_position(
                         position_side=position_side,
-                        price=price,
+                        price=close_mark_price,
                         entry_price=entry_price,
                         qty=qty,
                         notional=notional,
@@ -1337,12 +1398,13 @@ def run_backtest(
                         "side": int(closed_side),
                         "gross_notional": float(closed_notional),
                         "entry_price": float(closed_entry_price),
-                        "exit_mark_price": float(price),
+                        "exit_mark_price": float(close_mark_price),
                         "realized_pnl": float(realized),
                         "net_pnl": float(net_pnl),
                         "return_pct": float(return_pct),
                         "entry_fee": float(entry_fee_paid),
                         "exit_fee": float(exit_fee),
+                        "exit_reason": str(close_reason or "signal_exit"),
                         "meta_label_action": str(entry_meta.action),
                         "meta_label_size_multiplier": float(entry_meta.size_multiplier),
                         "meta_label_signal_strength": float(entry_meta.signal_strength),
@@ -1363,7 +1425,8 @@ def run_backtest(
 
         # mark-to-market drawdown control with unrealized exposure
         if position_side != 0:
-            unrealized = position_side * (price - entry_price) * qty
+            drawdown_mark_price = _adverse_mark_price(position_side, price, bar_high, bar_low)
+            unrealized = position_side * (drawdown_mark_price - entry_price) * qty
             equity = cash + margin_used + unrealized
         else:
             equity = cash
