@@ -680,6 +680,42 @@ def test_backtest_drawdown_stop_closes_at_adverse_intrabar_mark() -> None:
     assert result.equity_curve[-1]["equity"] == pytest.approx(result.ending_cash)
 
 
+def test_backtest_entry_bar_does_not_use_pre_entry_intrabar_extreme() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(10.0,), label=1, high=100.0, low=100.0),
+        ModelRow(timestamp=60_000, close=100.0, features=(10.0,), label=1, high=100.0, low=40.0),
+    ]
+    model = TrainedModel(
+        weights=[10.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.50,
+        max_position_pct=1.0,
+        max_asset_allocation_pct=1.0,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        signal_threshold=0.55,
+        stop_loss_pct=0.90,
+        take_profit_pct=0.90,
+        max_drawdown_limit=0.05,
+    )
+
+    result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
+
+    assert result.stopped_by_drawdown is False
+    assert result.closed_trades == 1
+    assert result.ending_cash == pytest.approx(result.starting_cash + float(result.trade_log[0]["net_pnl"]))
+    assert result.ending_cash > 990.0
+    assert result.trade_log[0]["opened_at"] == 60_000
+    assert result.trade_log[0]["closed_at"] == 60_000
+
+
 def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
