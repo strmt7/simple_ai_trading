@@ -9,7 +9,7 @@ from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
 from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
 from .features import ModelRow
-from .liquidity_session import apply_liquidity_session_meta, liquidity_session_adjustment
+from .liquidity_session import LiquiditySessionAdjustment, apply_liquidity_session_meta, liquidity_session_adjustment
 from .meta_label import MetaLabelDecision, apply_meta_label_policy
 from .model import (
     TrainedModel,
@@ -693,6 +693,27 @@ def _precompute_backtest_regime_scores_slow(rows: Sequence[ModelRow], cfg: Strat
     return scores
 
 
+def precompute_backtest_liquidity_adjustments(
+    rows: Sequence[ModelRow],
+    cfg: StrategyConfig,
+) -> list[tuple[float, float, bool, bool]]:
+    """Cache threshold-neutral liquidity/session flags for repeated replays."""
+
+    row_list = list(rows)
+    base_threshold = 0.5
+    adjustments: list[tuple[float, float, bool, bool]] = []
+    for row_index in range(len(row_list)):
+        adjustment = liquidity_session_adjustment(row_list, row_index, cfg, base_threshold)
+        threshold_add = max(-1.0, min(1.0, float(adjustment.threshold) - base_threshold))
+        adjustments.append((
+            threshold_add,
+            float(adjustment.size_multiplier),
+            bool(adjustment.low_liquidity),
+            bool(adjustment.low_dynamic_session),
+        ))
+    return adjustments
+
+
 def calibrate_threshold_for_backtest(
     rows: List[ModelRow],
     model: TrainedModel,
@@ -723,6 +744,7 @@ def calibrate_threshold_for_backtest(
         batch_size=score_batch_size,
     )
     regime_scores = precompute_backtest_regime_scores(rows, cfg)
+    liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, cfg)
     baseline_model = replace(model, decision_threshold=baseline_threshold)
     baseline_result = run_backtest(
         rows,
@@ -735,6 +757,7 @@ def calibrate_threshold_for_backtest(
         precomputed_probabilities=probabilities,
         precomputed_score_backend=score_backend,
         precomputed_regime_scores=regime_scores,
+        precomputed_liquidity_adjustments=liquidity_adjustments,
     )
     baseline_score = risk_adjusted_backtest_score(baseline_result, starting_cash=starting_cash)
     best_threshold = baseline_threshold
@@ -755,6 +778,7 @@ def calibrate_threshold_for_backtest(
             precomputed_probabilities=probabilities,
             precomputed_score_backend=score_backend,
             precomputed_regime_scores=regime_scores,
+            precomputed_liquidity_adjustments=liquidity_adjustments,
         )
         score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
         if (
@@ -815,6 +839,7 @@ def run_backtest(
     precomputed_probabilities: Sequence[float] | None = None,
     precomputed_score_backend: BackendInfo | None = None,
     precomputed_regime_scores: Sequence[float] | None = None,
+    precomputed_liquidity_adjustments: Sequence[tuple[float, float, bool, bool]] | None = None,
 ) -> BacktestResult:
     score_backend = resolve_backend(effective_training_backend_name(compute_backend))
     if not rows:
@@ -908,17 +933,34 @@ def run_backtest(
             )
     else:
         regime_scores = None
+    if precomputed_liquidity_adjustments is not None:
+        liquidity_adjustments = precomputed_liquidity_adjustments
+        if len(liquidity_adjustments) != len(rows):
+            raise ValueError(
+                f"precomputed_liquidity_adjustments length mismatch: {len(liquidity_adjustments)}/{len(rows)}"
+            )
+    else:
+        liquidity_adjustments = None
 
     for row_index, (row, raw_score) in enumerate(zip(rows, probabilities, strict=True)):
         execution_signal = pending_signal
         execution_meta = pending_meta
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
-        liquidity_adjustment = liquidity_session_adjustment(
-            rows,
-            row_index,
-            cfg,
-            decision_threshold,
-        )
+        if liquidity_adjustments is not None:
+            threshold_add, size_multiplier, low_liquidity, low_dynamic_session = liquidity_adjustments[row_index]
+            liquidity_adjustment = LiquiditySessionAdjustment(
+                threshold=max(0.0, min(1.0, float(decision_threshold) + float(threshold_add))),
+                size_multiplier=max(0.0, min(1.0, float(size_multiplier))),
+                low_liquidity=bool(low_liquidity),
+                low_dynamic_session=bool(low_dynamic_session),
+            )
+        else:
+            liquidity_adjustment = liquidity_session_adjustment(
+                rows,
+                row_index,
+                cfg,
+                decision_threshold,
+            )
         pending_signal = _normalize_market_direction(score, liquidity_adjustment.threshold, market_type)
         base_pending_meta = apply_meta_label_policy(
             getattr(model, "meta_label_policy", {}),

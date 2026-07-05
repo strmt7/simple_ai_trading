@@ -44,6 +44,7 @@ from .backtest import (
     BacktestResult,
     _backtest_probabilities,
     calibrate_threshold_for_backtest,
+    precompute_backtest_liquidity_adjustments,
     precompute_backtest_regime_scores,
     run_backtest,
 )
@@ -457,6 +458,7 @@ def _refine_threshold_on_selection_rows(
         batch_size=score_batch_size,
     )
     regime_scores = precompute_backtest_regime_scores(row_list, strategy)
+    liquidity_adjustments = precompute_backtest_liquidity_adjustments(row_list, strategy)
     try:
         threshold_start = 0.5 if str(market_type).lower() == "futures" else 0.05
         for threshold in _threshold_values(threshold_start, 0.95, 121, baseline_threshold):
@@ -473,6 +475,7 @@ def _refine_threshold_on_selection_rows(
                 precomputed_probabilities=probabilities,
                 precomputed_score_backend=score_backend,
                 precomputed_regime_scores=regime_scores,
+                precomputed_liquidity_adjustments=liquidity_adjustments,
             )
             if result.realized_pnl <= 0.0 or result.closed_trades <= 0:
                 continue

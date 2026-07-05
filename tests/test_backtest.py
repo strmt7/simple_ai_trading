@@ -954,6 +954,7 @@ def test_threshold_calibration_reuses_one_probability_pass(monkeypatch: pytest.M
     )
     calls = {"count": 0}
     regime_calls = {"count": 0}
+    liquidity_calls = {"count": 0}
 
     def fake_probabilities(scored_rows, *_args, **_kwargs):
         calls["count"] += 1
@@ -969,8 +970,13 @@ def test_threshold_calibration_reuses_one_probability_pass(monkeypatch: pytest.M
         regime_calls["count"] += 1
         return [0.0 for _ in scored_rows]
 
+    def fake_liquidity_adjustments(scored_rows, _cfg):
+        liquidity_calls["count"] += 1
+        return [(0.0, 1.0, False, False) for _ in scored_rows]
+
     monkeypatch.setattr(backtest_module, "_backtest_probabilities", fake_probabilities)
     monkeypatch.setattr(backtest_module, "precompute_backtest_regime_scores", fake_regime_scores)
+    monkeypatch.setattr(backtest_module, "precompute_backtest_liquidity_adjustments", fake_liquidity_adjustments)
 
     report = calibrate_threshold_for_backtest(
         rows,
@@ -985,6 +991,7 @@ def test_threshold_calibration_reuses_one_probability_pass(monkeypatch: pytest.M
 
     assert calls["count"] == 1
     assert regime_calls["count"] == 1
+    assert liquidity_calls["count"] == 1
     assert report.evaluated_thresholds == 7
 
 
@@ -1022,6 +1029,24 @@ def test_run_backtest_rejects_bad_precomputed_regime_score_length() -> None:
 
     with pytest.raises(ValueError, match="precomputed_regime_scores length mismatch"):
         run_backtest(rows, model, StrategyConfig(), precomputed_regime_scores=[0.0])
+
+
+def test_run_backtest_rejects_bad_precomputed_liquidity_adjustment_length() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=101.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+
+    with pytest.raises(ValueError, match="precomputed_liquidity_adjustments length mismatch"):
+        run_backtest(rows, model, StrategyConfig(), precomputed_liquidity_adjustments=[(0.0, 1.0, False, False)])
 
 
 def test_precomputed_regime_scores_match_slice_classifier() -> None:
