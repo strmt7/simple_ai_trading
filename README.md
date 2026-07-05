@@ -78,7 +78,7 @@ The universe gate first enforces the hard BTC/ETH/SOL product scope, then measur
 
 Out-of-market and low-liquidity handling is also data-probed, not a fixed clock rule. Backtests, `live`, and `autonomous start` compare each bar's volume against trailing per-symbol history and same UTC weekday/hour/minute-bucket history from prior bars. That means holidays, partial sessions, unusually thin periods, and changing market participation are detected from the actual exchange data available for that symbol and timestamp, then translated into stricter signal thresholds and smaller position sizes.
 
-Live entry risk also includes a deterministic market-regime unpredictability gate. Conservative, regular, and aggressive profiles set different `max_regime_unpredictability` thresholds and cooldown durations; volatile chop, mixed/low-separation regimes, short windows, or insufficient data can block fresh entries and force the bot to wait instead of trading into noise.
+Live entry risk also includes a deterministic market-regime unpredictability gate. Conservative, regular, and aggressive profiles set different `max_regime_unpredictability` thresholds and cooldown durations; volatile chop, mixed/low-separation regimes, short windows, insufficient data, or malformed/non-normalized regime scores can block fresh entries and force the bot to wait instead of trading into noise.
 
 ## Windows App
 

@@ -398,6 +398,10 @@ def test_entry_risk_decision_explains_each_block() -> None:
         (dict(drawdown=0.2, drawdown_limit=0.2), "drawdown"),
         (dict(price=float("nan")), "nonfinite"),
         (dict(cash=object()), "nonfinite"),
+        (dict(regime_unpredictability_score=float("nan")), "nonfinite"),
+        (dict(max_regime_unpredictability=float("inf")), "nonfinite"),
+        (dict(regime_unpredictability_score=1.2), "invalid_regime_score"),
+        (dict(max_regime_unpredictability=1.2), "invalid_regime_limit"),
     ]
     base = dict(
         direction=1,

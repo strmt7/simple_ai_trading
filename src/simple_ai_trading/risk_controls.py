@@ -655,20 +655,22 @@ def assess_entry_risk(
         "daily_loss_limit",
         "session_loss",
         "session_loss_limit",
+        "regime_unpredictability_score",
+        "max_regime_unpredictability",
     )
     if not all(math.isfinite(float(metrics[key])) for key in finite_keys):
         return EntryRiskDecision(False, "nonfinite", "non-finite risk input", metrics)
+    regime_score = float(metrics["regime_unpredictability_score"])
+    max_regime_score = float(metrics["max_regime_unpredictability"])
+    if not 0.0 <= regime_score <= 1.0:
+        return EntryRiskDecision(False, "invalid_regime_score", "market-regime score must be normalized 0-1", metrics)
+    if not 0.0 <= max_regime_score <= 1.0:
+        return EntryRiskDecision(False, "invalid_regime_limit", "market-regime limit must be normalized 0-1", metrics)
     if recovery_pending:
         return EntryRiskDecision(False, "recovery_pending", "post-interruption recovery must finish before entry", metrics)
-    max_regime_score = _metric_float(max_regime_unpredictability)
     if regime_cooldown_active:
         return EntryRiskDecision(False, "regime_cooldown", "market-regime unpredictability cooldown is active", metrics)
-    if (
-        math.isfinite(float(metrics["regime_unpredictability_score"]))
-        and math.isfinite(max_regime_score)
-        and max_regime_score >= 0.0
-        and float(metrics["regime_unpredictability_score"]) > max_regime_score
-    ):
+    if regime_score > max_regime_score:
         return EntryRiskDecision(False, "unpredictable_regime", "market regime is too unpredictable for a new entry", metrics)
     if max_network_errors > 0 and network_errors >= max_network_errors:
         return EntryRiskDecision(False, "network_halt", "network interruption halt is active", metrics)

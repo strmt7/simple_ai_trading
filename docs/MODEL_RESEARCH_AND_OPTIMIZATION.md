@@ -571,6 +571,8 @@ assert that every CLI command appears in the Windows app.
 - No fresh live or autonomous entry when rolling market-regime evidence exceeds
   the selected risk profile's `max_regime_unpredictability` threshold, or when
   the live cooldown is still active.
+- No fresh live entry from malformed, non-finite, or out-of-range normalized
+  market-regime risk scores.
 - No model-lab symbol acceptance when the selected score does not remain
   positive after the multiple-trials selection-risk haircut.
 - No model-lab symbol acceptance when closed-trade learning feedback shows
