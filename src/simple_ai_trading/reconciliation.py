@@ -52,6 +52,7 @@ class ReconciliationReport:
     external_exchange_exposure_count: int = 0
     stale_local_position_count: int = 0
     unverified_local_position_count: int = 0
+    invalid_account_payload_count: int = 0
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -68,6 +69,7 @@ class ReconciliationReport:
             "external_exchange_exposure_count": self.external_exchange_exposure_count,
             "stale_local_position_count": self.stale_local_position_count,
             "unverified_local_position_count": self.unverified_local_position_count,
+            "invalid_account_payload_count": self.invalid_account_payload_count,
         }
 
 
@@ -185,8 +187,16 @@ def _aggregate_exchange(exposures: Sequence[ExchangeExposure]) -> dict[tuple[str
     return totals
 
 
+def _account_payload_rejection(account: object, runtime: RuntimeConfig) -> str | None:
+    if not isinstance(account, Mapping):
+        return "account_payload_not_mapping"
+    if runtime.market_type == "futures":
+        return None if isinstance(account.get("positions"), list) else "futures_positions_missing_or_not_list"
+    return None if isinstance(account.get("balances"), list) else "spot_balances_missing_or_not_list"
+
+
 def reconcile_account_positions(
-    account: Mapping[str, object],
+    account: object,
     runtime: RuntimeConfig,
     store: PositionsStore,
     *,
@@ -205,11 +215,22 @@ def reconcile_account_positions(
         for position in live_positions
         if bot_ownership_rejection_reason(position) is None
     ]
-    exposures = exchange_exposures_from_account(account, runtime, open_positions)
+    account_rejection = _account_payload_rejection(account, runtime)
+    account_mapping: Mapping[str, object] = account if isinstance(account, Mapping) else {}
+    exposures = exchange_exposures_from_account(account_mapping, runtime, open_positions)
     local = _aggregate_local(verified_live_positions)
     exchange = _aggregate_exchange(exposures)
     keys = sorted(set(local) | set(exchange))
     mismatches: list[ReconciliationMismatch] = []
+    if account_rejection is not None:
+        mismatches.append(ReconciliationMismatch(
+            symbol=str(runtime.symbol).upper(),
+            side="UNKNOWN",
+            local_qty=0.0,
+            exchange_qty=0.0,
+            difference=0.0,
+            reason=f"account_payload_invalid:{account_rejection}",
+        ))
     for symbol, side in keys:
         local_qty = local.get((symbol, side), 0.0)
         exchange_qty = exchange.get((symbol, side), 0.0)
@@ -246,8 +267,8 @@ def reconcile_account_positions(
     warnings: list[str] = []
     if paper_positions:
         warnings.append(f"paper_positions_ignored={len(paper_positions)}")
-    if not isinstance(account, Mapping):
-        warnings.append("account_payload_not_mapping")
+    if account_rejection is not None:
+        warnings.append(account_rejection)
     external_exposure_count = sum(
         1
         for mismatch in mismatches
@@ -273,4 +294,5 @@ def reconcile_account_positions(
         external_exchange_exposure_count=external_exposure_count,
         stale_local_position_count=stale_local_count,
         unverified_local_position_count=len(unverified_live_positions),
+        invalid_account_payload_count=1 if account_rejection is not None else 0,
     )
