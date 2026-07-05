@@ -750,6 +750,54 @@ def test_command_archive_sync_rejects_invalid_period_window_before_listing(tmp_p
     assert "invalid period window" in capsys.readouterr().err
 
 
+def test_command_archive_sync_blocks_oversized_non_plan_backfill(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+    listed = [
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-02.zip",
+    ]
+    sizes = {url: 40_000_000 for url in listed}
+    monkeypatch.setattr(cli, "list_archive_urls", lambda **_kwargs: listed)
+    monkeypatch.setattr(
+        cli,
+        "archive_listing_items_by_url",
+        lambda urls: {url: SimpleNamespace(size_bytes=sizes[url]) for url in urls if url in sizes},
+    )
+    monkeypatch.setattr(
+        cli,
+        "ingest_archive_urls",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("oversized plan should not ingest")),
+    )
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols=None,
+        top_symbols=0,
+        quote_asset=None,
+        max_scan=250,
+        interval=None,
+        market="futures",
+        cadence="daily",
+        data_type=None,
+        max_files=None,
+        start_period="2024-06-01",
+        end_period="2024-06-02",
+        plan_only=False,
+        max_planned_gb=0.05,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 2
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["planned_bytes"] == 80_000_000
+    assert payload["files"] == 0
+    assert payload["errors"] == [
+        {"symbol": "*", "error": "planned_bytes_exceeds_max:80000000/50000000"}
+    ]
+
+
 def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatch, capsys) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
     list_calls: list[str] = []
