@@ -307,6 +307,12 @@ produces losing trades and is rejected, `best_closed_trades`,
 `best_realized_pnl`, and the exported
 `threshold_diagnostic_best_*` fields must still be reviewed; rejected evidence
 is evidence of failure, not missing data and not a promotable strategy.
+Round model search also includes controlled signal-threshold diversity:
+lower-threshold frequency probes and higher-threshold conviction probes are
+searched beside label-horizon and triple-barrier variants. These probes are not
+lower safety standards; they only broaden the search surface before the same
+closed-trade, positive-P&L, edge, drawdown, profit-factor, and expectancy gates
+decide whether evidence can be accepted.
 
 ## Financial Sanity Gates
 

@@ -997,17 +997,26 @@ def _round_model_candidates(
     base_threshold = float(training.signal_threshold if training else strategy.signal_threshold)
     base_label_threshold = max(1e-8, float(base_feature_cfg.label_threshold))
     base_label_lookahead = max(1, int(base_feature_cfg.label_lookahead))
-    raw: list[tuple[str, float, float, float, float, float, str]] = [
-        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode)),
-        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode)),
-        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return"),
-        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier"),
-        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier"),
-        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return"),
+    min_signal_threshold = {
+        "conservative": 0.56,
+        "regular": 0.52,
+        "aggressive": 0.50,
+    }.get(objective.name, 0.52)
+    raw: list[tuple[str, float, float, float, float, float, str, float]] = [
+        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0),
+        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0),
+        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0),
+        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0),
+        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06),
+        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06),
+        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10),
+        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04),
     ]
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
-    for name, epoch_mult, lr_mult, l2_mult, threshold_mult, lookahead_mult, label_mode in raw:
+    for name, epoch_mult, lr_mult, l2_mult, threshold_mult, lookahead_mult, label_mode, signal_offset in raw:
         feature_cfg = replace(
             base_feature_cfg,
             label_threshold=max(1e-8, base_label_threshold * float(threshold_mult)),
@@ -1025,7 +1034,7 @@ def _round_model_candidates(
             epochs=max(1, int(round(base_epochs * float(epoch_mult)))),
             learning_rate=max(1e-6, base_lr * float(lr_mult)),
             l2_penalty=max(0.0, base_l2 * float(l2_mult)),
-            signal_threshold=base_threshold,
+            signal_threshold=min(0.95, max(min_signal_threshold, base_threshold + float(signal_offset))),
         )
         key = (
             candidate.epochs,
@@ -1154,7 +1163,7 @@ def _evaluate_round_model_candidate(
         baseline_threshold=model.decision_threshold,
         start=0.50 if market_type == "futures" else 0.05,
         end=0.95,
-        steps=19,
+        steps=37,
         min_score_delta=0.0,
         compute_backend=compute_backend,
         score_batch_size=batch_size,

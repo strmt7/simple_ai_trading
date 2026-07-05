@@ -792,6 +792,23 @@ def test_train_round_model_uses_rejected_best_threshold_for_diagnostics(
     assert selected_model.threshold_diagnostic_best_pnl == pytest.approx(-8.0)
 
 
+def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
+    strategy = StrategyConfig(signal_threshold=0.66)
+    objective = get_objective("conservative")
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=10)
+
+    assert [candidate.name for candidate in candidates[:2]] == ["default", "lower_lr_more_l2"]
+    assert len(candidates) == 10
+    thresholds = [candidate.signal_threshold for candidate in candidates]
+    assert min(thresholds) == pytest.approx(0.56)
+    assert max(thresholds) == pytest.approx(0.70)
+    assert any(candidate.name.startswith("lower_signal") for candidate in candidates)
+    assert any(candidate.name == "frequency_probe_forward" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_mode == "triple_barrier" for candidate in candidates)
+
+
 def test_train_round_model_selects_best_scored_candidate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
