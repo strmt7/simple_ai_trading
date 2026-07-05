@@ -77,8 +77,12 @@ class ThresholdBacktestCalibration:
     best_score: float
     evaluated_thresholds: int
     rows: int
+    scoring_backend_requested: str = "cpu"
+    scoring_backend_kind: str = "cpu"
+    scoring_backend_device: str = "cpu"
+    scoring_backend_reason: str = ""
 
-    def asdict(self) -> dict[str, float | int | bool]:
+    def asdict(self) -> dict[str, float | int | bool | str]:
         return asdict(self)
 
 
@@ -644,6 +648,10 @@ def calibrate_threshold_for_backtest(
         best_score=float(best_score),
         evaluated_thresholds=len(thresholds),
         rows=len(rows),
+        scoring_backend_requested=str(score_backend.requested),
+        scoring_backend_kind=str(score_backend.kind),
+        scoring_backend_device=str(score_backend.device),
+        scoring_backend_reason=str(score_backend.reason),
     )
 
 

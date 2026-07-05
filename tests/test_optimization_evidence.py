@@ -338,6 +338,9 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
             score=2.0,
             realized_pnl=12.0,
             closed_trades=7,
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+            scoring_backend_reason="",
         )
 
     monkeypatch.setattr(oe, "calibrate_threshold_for_backtest", fake_threshold)
@@ -442,6 +445,9 @@ def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
             score=-1.0,
             realized_pnl=-1.0,
             closed_trades=0,
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+            scoring_backend_reason="",
         ),
     )
     monkeypatch.setattr(
@@ -484,6 +490,174 @@ def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
     assert selected_model.meta_label_policy["mode"] == "take_downsize_skip"
     assert selected_model.meta_label_policy["take_threshold"] == pytest.approx(1_000_000_000.0)
     assert "round_selection_gate_failed_no_final_holdout_entries" in selected_model.quality_warnings
+
+
+def test_train_round_model_require_gpu_rejects_training_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=1) for index in range(100)]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        training_backend_requested="directml",
+        training_backend_kind="cpu",
+        training_backend_device="cpu",
+        training_backend_reason="DirectML training failed in test",
+    )
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(
+        oe,
+        "train_advanced",
+        lambda *_args, **_kwargs: (model, SimpleNamespace(row_count=60, positive_rate=1.0)),
+    )
+
+    with pytest.raises(RuntimeError, match="gpu_required_but_training_fell_back_to_cpu"):
+        oe.train_round_model(
+            [_candle(index) for index in range(100)],
+            StrategyConfig(),
+            get_objective("conservative"),
+            market_type="futures",
+            starting_cash=1000.0,
+            compute_backend="directml",
+            batch_size=1024,
+            require_gpu=True,
+        )
+
+
+def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=1) for index in range(100)]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+    )
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(
+        oe,
+        "train_advanced",
+        lambda *_args, **_kwargs: (model, SimpleNamespace(row_count=60, positive_rate=1.0)),
+    )
+    monkeypatch.setattr(
+        oe,
+        "calibrate_probability_temperature",
+        lambda calibration_rows, _model: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+    )
+    monkeypatch.setattr(
+        oe,
+        "calibrate_threshold_for_backtest",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            accepted=False,
+            threshold=0.66,
+            score=-1.0,
+            realized_pnl=-1.0,
+            closed_trades=0,
+            scoring_backend_kind="cpu",
+            scoring_backend_device="cpu",
+            scoring_backend_reason="DirectML scoring failed in test",
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="gpu_required_but_threshold_scoring_fell_back_to_cpu"):
+        oe.train_round_model(
+            [_candle(index) for index in range(100)],
+            StrategyConfig(),
+            get_objective("conservative"),
+            market_type="futures",
+            starting_cash=1000.0,
+            compute_backend="directml",
+            batch_size=1024,
+            require_gpu=True,
+        )
+
+
+def test_build_round_evidence_require_gpu_rejects_holdout_scoring_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=1) for index in range(30)]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+    )
+    monkeypatch.setattr(
+        oe,
+        "resolve_backend",
+        lambda _requested: SimpleNamespace(
+            requested="directml",
+            kind="directml",
+            device="privateuseone:0",
+            vendor="DirectML",
+            reason="",
+        ),
+    )
+    monkeypatch.setattr(oe, "fetch_full_history", lambda *_args, **_kwargs: [_candle(index) for index in range(30)])
+
+    def fake_train_round_model(*_args, **kwargs):
+        assert kwargs["require_gpu"] is True
+        return model, SimpleNamespace(row_count=20), list(rows), list(rows[-10:])
+
+    monkeypatch.setattr(oe, "train_round_model", fake_train_round_model)
+    monkeypatch.setattr(
+        oe,
+        "run_backtest",
+        lambda *_args, **_kwargs: BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1001.0,
+            realized_pnl=1.0,
+            win_rate=1.0,
+            trades=1,
+            max_drawdown=0.0,
+            closed_trades=1,
+            gross_exposure=100.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            buy_hold_pnl=0.0,
+            edge_vs_buy_hold=1.0,
+            scoring_backend_requested="directml",
+            scoring_backend_kind="cpu",
+            scoring_backend_device="cpu",
+            scoring_backend_reason="DirectML scoring failed in test",
+        ),
+    )
+
+    report = oe.build_round_evidence(
+        round_id="round-test-require-gpu-holdout",
+        client=_SelectionClient(),
+        strategy=StrategyConfig(),
+        quote_asset="USDT",
+        symbols=["BTCUSDT"],
+        interval="1m",
+        market_type="futures",
+        objective_name="conservative",
+        data_root=tmp_path / "data" / "optimization",
+        docs_root=tmp_path / "docs" / "optimization",
+        db_path=tmp_path / "market.sqlite",
+        require_gpu=True,
+    )
+
+    assert report["metrics"][0]["accepted"] is False
+    assert "gpu_required_but_holdout_scoring_fell_back_to_cpu" in str(report["metrics"][0]["reason"])
 
 
 def test_build_round_evidence_records_data_health_block_before_training(
