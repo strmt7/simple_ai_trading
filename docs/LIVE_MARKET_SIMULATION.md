@@ -34,7 +34,10 @@ Execution cost is symbol-specific where market data exists:
   Operators can pass `--symbols` for an explicit batch or `--top-symbols N`
   with `--quote-asset` to auto-rank liquid symbols from current exchange
   metadata before archive ingestion. This keeps the BTC/ETH/SOL research path
-  automatic without relying on stale liquidity assumptions.
+  automatic without relying on stale liquidity assumptions. Large second-level
+  backfills should use `--start-period`, `--end-period`, and `--plan-only`
+  first; the plan reports listed, filtered, selected, first, and last archive
+  periods before any ZIP download starts.
 - Archive downloads compute SHA-256 locally and, by default, verify Binance's
   `.CHECKSUM` sidecar when it is available. A checksum mismatch fails before
   any candle rows are written. `--require-checksum` makes missing sidecars a
