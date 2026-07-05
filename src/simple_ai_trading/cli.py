@@ -6291,24 +6291,6 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if not risk_policy.allowed:
         print(render_risk_policy_report(risk_policy), file=sys.stderr)
         return 2
-    if runtime.market_type == "futures" and not effective_dry_run:
-        try:
-            set_response = client.set_leverage(runtime.symbol, int(leverage))
-            leverage_value = set_response.get("leverage") if isinstance(set_response, dict) else None
-            if leverage_value is not None:
-                leverage = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _safe_float(leverage_value) or leverage))
-                post_set_risk_policy = build_risk_policy_report(
-                    runtime,
-                    cfg,
-                    effective_dry_run=effective_dry_run,
-                    leverage=leverage,
-                )
-                if not post_set_risk_policy.allowed:
-                    print(render_risk_policy_report(post_set_risk_policy), file=sys.stderr)
-                    return 2
-        except BinanceAPIError as exc:
-            print(f"Failed to set leverage: {exc}", file=sys.stderr)
-            return 2
 
     mode_label = "paper" if effective_dry_run else "live"
     print(f"Starting {mode_label} loop for {args.steps} steps on {runtime.symbol} {runtime.interval} [{runtime.market_type}]")

@@ -510,6 +510,8 @@ assert that every CLI command appears in the Windows app.
 - No leverage above 20x.
 - No signed futures open order may set leverage above the active Binance
   notional bracket for that order's intended gross notional.
+- No live startup or reduce-only close may mutate exchange leverage; leverage
+  changes are allowed only immediately before a fresh bot-owned futures open.
 - No CLI, live, backtest, or optimization sizing path may let leverage raise
   gross exposure above the configured per-asset allocation cap.
 - No model, threshold, stress, temporal, market-edge, or optimization acceptance

@@ -4043,10 +4043,10 @@ def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, mo
     assert captured["require_accelerator_evidence"] is True
 
 
-def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeypatch, capsys) -> None:
-    class _FailLeverageClient(_FakeClient):
+def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monkeypatch, capsys) -> None:
+    class _NoStartupLeverageClient(_FakeClient):
         def set_leverage(self, symbol: str, leverage: int):
-            raise BinanceAPIError("bad leverage")
+            raise AssertionError("startup must not mutate futures leverage")
 
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
@@ -4096,10 +4096,10 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
         ),
         model_file,
     )
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FailLeverageClient())
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoStartupLeverageClient())
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 5.0)
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, model=str(model_file), leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 2
-    assert "Failed to set leverage" in capsys.readouterr().err
+    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, model=str(model_file), leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
+    assert "Failed to set leverage" not in capsys.readouterr().err
 
 
 def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, capsys) -> None:
@@ -6829,14 +6829,14 @@ def test_command_live_allows_demo_environment(tmp_path, monkeypatch) -> None:
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, live=False, leverage=None)) == 2
 
 
-def test_command_live_futures_set_leverage_failure_exits(tmp_path, monkeypatch) -> None:
+def test_command_live_futures_does_not_set_leverage_before_market_data(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
     save_strategy(StrategyConfig(leverage=5.0))
 
-    class _FailLeverageClient:
+    class _NoStartupLeverageClient:
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
-            raise AssertionError("should not fetch klines if leverage fails")
+            raise BinanceAPIError("market data unavailable")
 
         def get_symbol_constraints(self, symbol: str):
             return SimpleNamespace(
@@ -6852,7 +6852,7 @@ def test_command_live_futures_set_leverage_failure_exits(tmp_path, monkeypatch) 
             raise AssertionError("should not normalize if leverage fails")
 
         def set_leverage(self, _symbol: str, _leverage: int):
-            raise BinanceAPIError("leverage unavailable")
+            raise AssertionError("startup must not mutate futures leverage")
 
         def get_max_leverage(self, symbol: str) -> int:
             return 10
@@ -6860,7 +6860,7 @@ def test_command_live_futures_set_leverage_failure_exits(tmp_path, monkeypatch) 
         def get_account(self):
             return {"assets": [{"asset": "USDC", "availableBalance": "1000"}]}
 
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FailLeverageClient())
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoStartupLeverageClient())
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 2
 
 
@@ -6994,7 +6994,7 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2, max_trades_per_day=1, training_epochs=40, cooldown_minutes=1))
     assert cli.command_live(argparse.Namespace(steps=3, sleep=5, paper=False, model=str(tmp_path / "missing-model.json"))) == 0
 
-    # futures path should attempt leverage and fail fast when API key missing, because live futures requires credentials
+    # futures startup should not mutate leverage before a fresh entry exists.
     save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0, max_rate_calls_per_minute=1))
 
     class _SetLeverageErrorClient(_FlowClient):
@@ -7005,7 +7005,7 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
             return {"assets": [{"asset": "USDC", "availableBalance": "1000"}]}
 
         def set_leverage(self, symbol: str, leverage: int):
-            raise BinanceAPIError("fail")
+            raise AssertionError("startup must not mutate futures leverage")
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _SetLeverageErrorClient())
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 2
@@ -7089,7 +7089,7 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
         cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, model=str(model_file), leverage=12.0))
         == 0
     )
-    assert client.set_calls == [12]
+    assert client.set_calls == []
     assert client.orders
     assert client.orders[0][3] == 12.0
     assert "effective leverage" in capsys.readouterr().out

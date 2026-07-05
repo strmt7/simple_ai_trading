@@ -827,8 +827,8 @@ def test_place_order_futures_reduce_only_requests_result(monkeypatch) -> None:
 
     def request(method: str, path: str, params=None, signed: bool = False):
         calls.append((method, path, params or {}, signed))
-        if path == "/fapi/v1/leverageBracket":
-            return [{"symbol": "BTCUSDC", "brackets": [{"initialLeverage": 5}]}]
+        if path == "/fapi/v1/leverage":
+            raise AssertionError("reduce-only close must not change leverage")
         return {"ok": True}
 
     monkeypatch.setattr(client, "_request", request)
@@ -856,6 +856,7 @@ def test_place_order_futures_reduce_only_requests_result(monkeypatch) -> None:
         },
         True,
     )
+    assert all(call[1] != "/fapi/v1/leverage" for call in calls)
 
 
 def test_set_leverage_low_and_high_clamp(monkeypatch) -> None:
