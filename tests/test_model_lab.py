@@ -189,6 +189,24 @@ class _ObjectiveReport:
         }
 
 
+def _selection_risk(*, passed: bool = True) -> dict[str, object]:
+    return {
+        "passed": bool(passed),
+        "reason": None if passed else "selection_risk_deflated_score<=0",
+        "reasons": [] if passed else ["selection_risk_deflated_score<=0"],
+        "effective_trials": 24 if passed else 900,
+        "finite_candidate_scores": 12,
+        "selected_score": 0.12,
+        "trial_penalty": 0.01 if passed else 0.14,
+        "deflated_score": 0.11 if passed else -0.02,
+        "overfit_diagnostics": {
+            "status": "skipped",
+            "reason": "requires_selection_and_validation_scores",
+            "passed": True,
+        },
+    }
+
+
 def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
     assert model_lab._objective_report({"objectives": [{"objective": "regular", "accepted": True}]}, "regular") == {
         "objective": "regular",
@@ -288,13 +306,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
                 epochs=1,
                 feature_means=[0.0],
                 feature_stds=[1.0],
-                selection_risk={
-                    "passed": True,
-                    "effective_trials": 24,
-                    "selected_score": 0.12,
-                    "trial_penalty": 0.01,
-                    "deflated_score": 0.11,
-                },
+                selection_risk=_selection_risk(),
             ),
             model_path,
         )
@@ -304,13 +316,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
                 model_path=model_path,
                 best_score=0.12,
                 hybrid_profile="balanced_neighbors",
-                selection_risk={
-                    "passed": True,
-                    "effective_trials": 24,
-                    "selected_score": 0.12,
-                    "trial_penalty": 0.01,
-                    "deflated_score": 0.11,
-                },
+                selection_risk=_selection_risk(),
                 hybrid_ablation=[{"removed_expert_kind": "lorentzian_knn", "delta_vs_best": -0.03}],
                 feature_ablation=[{"removed_group": "technical_confluence", "delta_vs_selected": -0.04}],
                 meta_label_report={"status": "trained", "take_precision": 0.75},
@@ -493,14 +499,7 @@ def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path
                 objective="regular",
                 best_score=0.12,
                 hybrid_profile="base_only",
-                selection_risk={
-                    "passed": False,
-                    "reason": "selection_risk_deflated_score<=0",
-                    "effective_trials": 900,
-                    "selected_score": 0.12,
-                    "trial_penalty": 0.14,
-                    "deflated_score": -0.02,
-                },
+                selection_risk=_selection_risk(passed=False),
             )],
             total_rows=123,
             objectives_run=["regular"],
@@ -677,13 +676,7 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
                 epochs=1,
                 feature_means=[0.0],
                 feature_stds=[1.0],
-                selection_risk={
-                    "passed": True,
-                    "effective_trials": 24,
-                    "selected_score": 0.12,
-                    "trial_penalty": 0.01,
-                    "deflated_score": 0.11,
-                },
+                selection_risk=_selection_risk(),
             ),
             model_path,
         )

@@ -41,6 +41,9 @@ The gate enforces:
 - objective path quality, including profit factor, expectancy, loss streaks,
   and single-trade profit concentration,
 - accepted stress, temporal robustness, and portfolio-risk reports,
+- accepted outcomes require passed selection-risk evidence for each accepted
+  objective, including positive deflated score, positive trial count, no
+  rejection reasons, and passed/skipped overfit diagnostics,
 - accepted outcomes require an accepted portfolio-risk report; missing or failed
   portfolio evidence blocks the artifact,
 - accepted portfolio symbol evidence with non-empty, unique, internally

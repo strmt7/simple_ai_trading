@@ -456,6 +456,166 @@ def _required_metric_checks(
     return checks
 
 
+def _selection_risk_report_for_objective(
+    raw: Mapping[str, Any],
+    objective: str,
+) -> Mapping[str, Any] | None:
+    candidate = raw.get(objective)
+    if isinstance(candidate, Mapping):
+        return candidate
+    if len(raw) == 1:
+        only_value = next(iter(raw.values()))
+        if isinstance(only_value, Mapping):
+            return only_value
+    if "passed" in raw or "deflated_score" in raw:
+        return raw
+    return None
+
+
+def _selection_risk_checks(
+    outcome: Mapping[str, Any],
+    *,
+    objectives: Sequence[str],
+    prefix: str,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    raw = outcome.get("selection_risk")
+    if not isinstance(raw, Mapping) or not raw:
+        return [
+            _check(
+                "block",
+                "selection risk",
+                "accepted outcome is missing selection-risk evidence",
+                path=f"{prefix}.selection_risk",
+                metric="missing",
+                limit="passed selection-risk report",
+            )
+        ]
+    for objective in objectives:
+        report = _selection_risk_report_for_objective(raw, str(objective))
+        report_path = f"{prefix}.selection_risk.{objective}"
+        if not isinstance(report, Mapping):
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "missing accepted objective selection-risk report",
+                    path=report_path,
+                    metric="missing",
+                    limit="passed selection-risk report",
+                )
+            )
+            continue
+        if report.get("passed") is not True:
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "accepted objective failed selection-risk evidence",
+                    path=f"{report_path}.passed",
+                    metric=report.get("passed"),
+                    limit=True,
+                )
+            )
+        reasons = report.get("reasons")
+        if isinstance(reasons, Sequence) and not isinstance(reasons, (str, bytes)) and reasons:
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "accepted selection-risk report contains rejection reasons",
+                    path=f"{report_path}.reasons",
+                    metric=len(reasons),
+                    limit=0,
+                )
+            )
+        reason = report.get("reason")
+        if reason not in (None, ""):
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "accepted selection-risk report contains rejection reason",
+                    path=f"{report_path}.reason",
+                    metric=str(reason),
+                    limit="empty",
+                )
+            )
+        deflated_score = _finite(report.get("deflated_score"))
+        checks.append(
+            _check(
+                "ok" if deflated_score is not None and deflated_score > 0.0 else "block",
+                "selection risk",
+                "accepted selection-risk deflated score",
+                path=f"{report_path}.deflated_score",
+                metric=deflated_score if deflated_score is not None else "missing",
+                limit=">0",
+            )
+        )
+        effective_trials = _finite(report.get("effective_trials"))
+        checks.append(
+            _check(
+                "ok" if effective_trials is not None and effective_trials >= 1.0 else "block",
+                "selection risk",
+                "accepted selection-risk effective trial count",
+                path=f"{report_path}.effective_trials",
+                metric=effective_trials if effective_trials is not None else "missing",
+                limit=">=1",
+            )
+        )
+        overfit = report.get("overfit_diagnostics")
+        if not isinstance(overfit, Mapping):
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "accepted selection-risk report is missing overfit diagnostics",
+                    path=f"{report_path}.overfit_diagnostics",
+                    metric="missing",
+                    limit="passed diagnostics",
+                )
+            )
+            continue
+        if overfit.get("passed") is not True:
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "accepted selection-risk overfit diagnostics failed",
+                    path=f"{report_path}.overfit_diagnostics.passed",
+                    metric=overfit.get("passed"),
+                    limit=True,
+                )
+            )
+        status = str(overfit.get("status") or "")
+        if status == "available":
+            probability = _finite(overfit.get("probability_backtest_overfit"))
+            max_probability = _finite(overfit.get("max_probability_backtest_overfit"))
+            if probability is None or max_probability is None or probability > max_probability:
+                checks.append(
+                    _check(
+                        "block",
+                        "selection risk",
+                        "accepted selection-risk PBO exceeds limit",
+                        path=f"{report_path}.overfit_diagnostics.probability_backtest_overfit",
+                        metric=probability if probability is not None else "missing",
+                        limit=max_probability if max_probability is not None else "missing",
+                    )
+                )
+        elif status != "skipped":
+            checks.append(
+                _check(
+                    "block",
+                    "selection risk",
+                    "accepted selection-risk overfit diagnostics has unknown status",
+                    path=f"{report_path}.overfit_diagnostics.status",
+                    metric=status or "missing",
+                    limit="available|skipped",
+                )
+            )
+    return checks
+
+
 def _iter_market_edge_reports(payload: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
     reports: list[tuple[str, Mapping[str, Any]]] = []
     direct = payload.get("market_edge")
@@ -735,10 +895,12 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
             )
         )
         scores = outcome.get("objective_scores")
+        accepted_objectives: list[str] = []
         if not isinstance(scores, Mapping) or not scores:
             checks.append(_check("block", "objective scores", "missing accepted objective scores", path=f"{prefix}.objective_scores"))
         else:
             for objective, value in scores.items():
+                accepted_objectives.append(str(objective))
                 parsed = _finite(value)
                 checks.append(
                     _check(
@@ -750,6 +912,14 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                         limit=">0",
                     )
                 )
+        if accepted_objectives:
+            checks.extend(
+                _selection_risk_checks(
+                    outcome,
+                    objectives=accepted_objectives,
+                    prefix=prefix,
+                )
+            )
         coverage = outcome.get("data_coverage")
         if isinstance(coverage, Mapping):
             if coverage.get("integrity_status") == "fail":
