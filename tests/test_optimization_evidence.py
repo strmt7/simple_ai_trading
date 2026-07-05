@@ -417,7 +417,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
         feature_stds=[1.0],
     )
     observed: dict[str, object] = {"run_lengths": [], "phases": []}
-    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
 
     def fake_train_advanced(train_rows, _feature_cfg, **kwargs):
         observed["train_rows"] = len(train_rows)
@@ -523,7 +523,7 @@ def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
         feature_means=[0.0],
         feature_stds=[1.0],
     )
-    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -601,7 +601,7 @@ def test_train_round_model_selects_best_scored_candidate(
         for index in range(100)
     ]
     calls = {"train": 0}
-    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
 
     def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
         calls["train"] += 1
@@ -700,7 +700,7 @@ def test_train_round_model_require_gpu_rejects_training_fallback(
         training_backend_device="cpu",
         training_backend_reason="DirectML training failed in test",
     )
-    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -735,7 +735,7 @@ def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
         training_backend_kind="directml",
         training_backend_device="privateuseone:0",
     )
-    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -789,7 +789,7 @@ def test_train_round_model_require_gpu_rejects_probability_calibration_fallback(
         training_backend_kind="directml",
         training_backend_device="privateuseone:0",
     )
-    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",

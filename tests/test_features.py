@@ -22,6 +22,7 @@ from simple_ai_trading.features import (
     _true_range,
     _valid_ohlcv,
 )
+from simple_ai_trading.compute import resolve_backend
 from simple_ai_trading import features as features_mod
 from simple_ai_trading.features import _safe_features
 
@@ -47,6 +48,27 @@ def _fake_candles() -> list[Candle]:
     return rows
 
 
+def _volatile_candles(n: int = 1000) -> list[Candle]:
+    rows: list[Candle] = []
+    close = 100.0
+    for i in range(n):
+        close *= 1.0 + math.sin(i * 0.37) * 0.004 + math.cos(i * 0.11) * 0.002
+        high = close * (1.001 + (i % 7) * 0.0001)
+        low = close * (0.999 - (i % 5) * 0.0001)
+        rows.append(
+            Candle(
+                open_time=i * 60_000,
+                open=close,
+                high=high,
+                low=low,
+                close=close,
+                volume=1000.0 + (i % 31) * 17.0,
+                close_time=i * 60_000 + 60_000,
+            )
+        )
+    return rows
+
+
 def test_make_rows_shapes() -> None:
     rows = make_rows(_fake_candles(), short_window=10, long_window=30)
     assert rows
@@ -60,6 +82,71 @@ def test_make_rows_respects_enabled_feature_subset() -> None:
     rows = make_rows(_fake_candles(), short_window=10, long_window=30, enabled_features=selected)
     assert rows
     assert len(rows[0].features) == 3
+
+
+def test_make_rows_directml_matches_cpu_when_available() -> None:
+    if resolve_backend("directml").kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+
+    candles = _fake_candles()
+    cpu_rows = make_rows(candles, short_window=10, long_window=30, lookahead=3)
+    gpu_rows = make_rows(candles, short_window=10, long_window=30, lookahead=3, compute_backend="directml")
+    cpu_inference = make_inference_rows(candles, short_window=10, long_window=30)
+    gpu_inference = make_inference_rows(candles, short_window=10, long_window=30, compute_backend="directml")
+
+    assert len(gpu_rows) == len(cpu_rows)
+    assert len(gpu_inference) == len(cpu_inference)
+    for left, right in zip(cpu_rows, gpu_rows, strict=True):
+        assert right.timestamp == left.timestamp
+        assert right.label == left.label
+        assert right.features == pytest.approx(left.features, abs=1e-5)
+    for left, right in zip(cpu_inference, gpu_inference, strict=True):
+        assert right.timestamp == left.timestamp
+        assert right.label == left.label
+        assert right.features == pytest.approx(left.features, abs=1e-5)
+
+
+def test_make_rows_directml_matches_cpu_on_long_series_when_available() -> None:
+    if resolve_backend("directml").kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+
+    candles = _volatile_candles()
+    cpu_rows = make_rows(candles, short_window=10, long_window=40, lookahead=3)
+    gpu_rows = make_rows(candles, short_window=10, long_window=40, lookahead=3, compute_backend="directml")
+    cpu_inference = make_inference_rows(candles, short_window=10, long_window=40)
+    gpu_inference = make_inference_rows(candles, short_window=10, long_window=40, compute_backend="directml")
+
+    assert len(gpu_rows) == len(cpu_rows)
+    assert len(gpu_inference) == len(cpu_inference)
+    for left, right in zip(cpu_rows, gpu_rows, strict=True):
+        assert right.timestamp == left.timestamp
+        assert right.label == left.label
+        assert right.features == pytest.approx(left.features, abs=5e-5)
+    assert gpu_inference[-1].features == pytest.approx(cpu_inference[-1].features, abs=5e-5)
+
+
+def test_make_rows_directml_matches_cpu_for_small_windows_when_available() -> None:
+    if resolve_backend("directml").kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+
+    candles = _fake_candles()
+    cpu_rows = make_rows(candles, short_window=2, long_window=5, lookahead=1)
+    gpu_rows = make_rows(candles, short_window=2, long_window=5, lookahead=1, compute_backend="directml")
+
+    assert len(gpu_rows) == len(cpu_rows)
+    assert gpu_rows[0].timestamp == cpu_rows[0].timestamp
+    assert gpu_rows[0].features == pytest.approx(cpu_rows[0].features, abs=1e-5)
+
+
+def test_make_rows_accelerated_path_falls_back_to_cpu(monkeypatch) -> None:
+    def fail_tensor(*_args, **_kwargs):
+        raise RuntimeError("accelerator unavailable in test")
+
+    monkeypatch.setattr(features_mod, "_make_rows_tensor", fail_tensor)
+    cpu_rows = make_rows(_fake_candles(), short_window=10, long_window=30)
+    fallback_rows = make_rows(_fake_candles(), short_window=10, long_window=30, compute_backend="directml")
+
+    assert fallback_rows == cpu_rows
 
 
 def test_make_rows_preserves_candle_volume_for_execution_simulation() -> None:

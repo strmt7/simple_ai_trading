@@ -860,6 +860,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest_panel.add_argument("--notes", default="")
     parser_backtest_panel.add_argument("--starting-cash", type=float, default=1000.0)
     parser_backtest_panel.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default=None,
+        help="feature/scoring backend override; default uses saved runtime compute_backend",
+    )
+    parser_backtest_panel.add_argument(
         "--execution-db",
         default=None,
         help="optional SQLite market-data DB for symbol-specific top-of-book fill stress",
@@ -2967,7 +2973,12 @@ def _public_runtime_payload(runtime) -> dict[str, object]:
     return runtime.public_dict()
 
 
-def _build_model_rows(candles: Sequence[Candle], strategy: StrategyConfig) -> list[ModelRow]:
+def _build_model_rows(
+    candles: Sequence[Candle],
+    strategy: StrategyConfig,
+    *,
+    compute_backend: str | None = None,
+) -> list[ModelRow]:
     candles = clean_candles(candles)
     return make_rows(
         candles,
@@ -2976,6 +2987,7 @@ def _build_model_rows(candles: Sequence[Candle], strategy: StrategyConfig) -> li
         lookahead=1,
         label_threshold=strategy.label_threshold,
         enabled_features=strategy.enabled_features,
+        compute_backend=compute_backend,
     )
 
 
@@ -3059,37 +3071,44 @@ def _readiness_model_rows(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
     model: TrainedModel,
+    *,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     advanced = _advanced_objective_for_model(model, strategy)
     if advanced is not None:
         _objective_name, feature_cfg = advanced
-        return make_advanced_rows(candles, feature_cfg)
-    return _build_model_rows(candles, strategy)
+        return make_advanced_rows(candles, feature_cfg, compute_backend=compute_backend)
+    return _build_model_rows(candles, strategy, compute_backend=compute_backend)
 
 
 def _backtest_rows_for_model(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
     model: TrainedModel,
+    *,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     advanced = _advanced_objective_for_model(model, strategy)
     if advanced is not None:
         _objective_name, feature_cfg = advanced
-        rows = make_advanced_inference_rows(candles, feature_cfg)
-        return rows if rows else _readiness_model_rows(candles, strategy, model)
+        rows = make_advanced_inference_rows(candles, feature_cfg, compute_backend=compute_backend)
+        return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
     rows = make_inference_rows(
         candles,
         strategy.feature_windows[0],
         strategy.feature_windows[1],
         enabled_features=strategy.enabled_features,
+        compute_backend=compute_backend,
     )
-    return rows if rows else _readiness_model_rows(candles, strategy, model)
+    return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
 
 
 def _live_rows_for_model(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
     model: TrainedModel | None,
+    *,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     if model is None:
         rows = make_inference_rows(
@@ -3097,20 +3116,22 @@ def _live_rows_for_model(
             strategy.feature_windows[0],
             strategy.feature_windows[1],
             enabled_features=strategy.enabled_features,
+            compute_backend=compute_backend,
         )
-        return rows if rows else _build_model_rows(candles, strategy)
+        return rows if rows else _build_model_rows(candles, strategy, compute_backend=compute_backend)
     advanced = _advanced_objective_for_model(model, strategy)
     if advanced is not None:
         _objective_name, feature_cfg = advanced
-        rows = make_advanced_inference_rows(candles, feature_cfg)
-        return rows if rows else _readiness_model_rows(candles, strategy, model)
+        rows = make_advanced_inference_rows(candles, feature_cfg, compute_backend=compute_backend)
+        return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
     rows = make_inference_rows(
         candles,
         strategy.feature_windows[0],
         strategy.feature_windows[1],
         enabled_features=strategy.enabled_features,
+        compute_backend=compute_backend,
     )
-    return rows if rows else _readiness_model_rows(candles, strategy, model)
+    return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
 
 
 def _live_model_feature_signature(model: TrainedModel | None, strategy: StrategyConfig) -> str:
@@ -4856,7 +4877,17 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     candles, training_source = _load_training_candles(args, runtime)
     if candles is None:
         return 2
-    rows = _build_model_rows(candles, cfg)
+    try:
+        compute_backend, _requested_backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="training",
+        )
+    except ValueError as exc:
+        print(f"Training settings invalid: {exc}.", file=sys.stderr)
+        return 2
+    batch_size = max(1, int(getattr(args, "batch_size", 8192) or 8192))
+    rows = _build_model_rows(candles, cfg, compute_backend=compute_backend)
     if not rows:
         print("No rows produced. Fetch more data or increase lookback.")
         return 2
@@ -4871,17 +4902,6 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if l2_penalty < 0.0:
         print("Training settings invalid: l2_penalty must be >= 0.", file=sys.stderr)
         return 2
-    try:
-        compute_backend, _requested_backend_info = _workflow_compute_backend(
-            runtime,
-            getattr(args, "compute_backend", None),
-            workflow="training",
-        )
-    except ValueError as exc:
-        print(f"Training settings invalid: {exc}.", file=sys.stderr)
-        return 2
-    batch_size = max(1, int(getattr(args, "batch_size", 8192) or 8192))
-
     if args.walk_forward:
         try:
             wf = walk_forward_report(
@@ -5196,10 +5216,6 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     except ValueError as exc:
         print(f"Tune window invalid: {exc}", file=sys.stderr)
         return 2
-    rows = _build_model_rows(candles, cfg)
-    if len(rows) < 40:
-        print("Need more data rows to run tuning")
-        return 2
     try:
         compute_backend, _backend_info = _workflow_compute_backend(
             runtime,
@@ -5210,6 +5226,10 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print(f"Tune settings invalid: {exc}.", file=sys.stderr)
         return 2
     batch_size = max(1, int(getattr(args, "batch_size", 8192) or 8192))
+    rows = _build_model_rows(candles, cfg, compute_backend=compute_backend)
+    if len(rows) < 40:
+        print("Need more data rows to run tuning")
+        return 2
 
     split = max(10, int(len(rows) * 0.7))
     train_rows = rows[:split]
@@ -5309,8 +5329,17 @@ def command_backtest(args: argparse.Namespace) -> int:
     except (OSError, json.JSONDecodeError, ModelLoadError) as exc:
         print(f"Model load failed: {exc}", file=sys.stderr)
         return 2
+    try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="backtest scoring",
+        )
+    except ValueError as exc:
+        print(f"Backtest settings invalid: {exc}.", file=sys.stderr)
+        return 2
     cfg = apply_model_strategy_overrides(cfg, model)
-    rows = _backtest_rows_for_model(candles, cfg, model)
+    rows = _backtest_rows_for_model(candles, cfg, model, compute_backend=compute_backend)
     data_coverage = describe_candle_coverage(
         symbol=runtime.symbol,
         market_type=runtime.market_type,
@@ -5321,15 +5350,6 @@ def command_backtest(args: argparse.Namespace) -> int:
         source_scope="json_file_loaded_candles",
     )
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
-    try:
-        compute_backend, _backend_info = _workflow_compute_backend(
-            runtime,
-            getattr(args, "compute_backend", None),
-            workflow="backtest scoring",
-        )
-    except ValueError as exc:
-        print(f"Backtest settings invalid: {exc}.", file=sys.stderr)
-        return 2
     score_batch_size = max(1, int(getattr(args, "score_batch_size", 8192) or 8192))
     execution_profile = _load_cli_execution_profile(args, runtime, cfg, workflow="backtest execution profile")
     result = run_backtest(
@@ -5440,8 +5460,17 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
     except (OSError, json.JSONDecodeError, ModelLoadError) as exc:
         print(f"Model load failed: {exc}", file=sys.stderr)
         return 2
+    try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="backtest chart scoring",
+        )
+    except ValueError as exc:
+        print(f"Backtest chart settings invalid: {exc}.", file=sys.stderr)
+        return 2
     cfg = apply_model_strategy_overrides(cfg, model)
-    rows = _backtest_rows_for_model(candles, cfg, model)
+    rows = _backtest_rows_for_model(candles, cfg, model, compute_backend=compute_backend)
     data_coverage = describe_candle_coverage(
         symbol=runtime.symbol,
         market_type=runtime.market_type,
@@ -5453,15 +5482,6 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
     )
     if not rows:
         print("Backtest chart failed: no rows available.", file=sys.stderr)
-        return 2
-    try:
-        compute_backend, _backend_info = _workflow_compute_backend(
-            runtime,
-            getattr(args, "compute_backend", None),
-            workflow="backtest chart scoring",
-        )
-    except ValueError as exc:
-        print(f"Backtest chart settings invalid: {exc}.", file=sys.stderr)
         return 2
     execution_profile = _load_cli_execution_profile(args, runtime, cfg, workflow="backtest chart execution profile")
     result = run_backtest(
@@ -5516,7 +5536,7 @@ def command_evaluate(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     candles = _load_rows_for_command(args.input, label="Evaluation data load failed")
     if candles is None:
         return 2
-    base_rows = _build_model_rows(candles, cfg)
+    base_rows = _build_model_rows(candles, cfg, compute_backend=runtime.compute_backend)
     if not base_rows:
         print("No rows available for evaluation. Fetch more data first.")
         return 2
@@ -5532,7 +5552,7 @@ def command_evaluate(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print(f"Model load failed: {exc}", file=sys.stderr)
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
-    rows = _readiness_model_rows(candles, cfg, model)
+    rows = _readiness_model_rows(candles, cfg, model, compute_backend=runtime.compute_backend)
     if not rows:
         print("No rows available for evaluation. Fetch more data first.")
         return 2
@@ -6474,8 +6494,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         steps_executed += 1
         recovery_observation_active = bool(recovery_pending)
 
-        rows = _live_rows_for_model(candles, cfg, model)
-        training_rows = _readiness_model_rows(candles, cfg, model) if model is not None else _build_model_rows(candles, cfg)
+        rows = _live_rows_for_model(candles, cfg, model, compute_backend=compute_backend)
+        training_rows = (
+            _readiness_model_rows(candles, cfg, model, compute_backend=compute_backend)
+            if model is not None
+            else _build_model_rows(candles, cfg, compute_backend=compute_backend)
+        )
         if not rows:
             print("not enough historical data for live signal")
             live_events.append({"step": i + 1, "status": "no_rows"})
@@ -7540,6 +7564,11 @@ def command_backtest_panel(args: argparse.Namespace) -> int:
     strategy = load_strategy()
     market = args.market or runtime.market_type
     try:
+        compute_backend, _backend_info = _workflow_compute_backend(
+            runtime,
+            getattr(args, "compute_backend", None),
+            workflow="backtest panel",
+        )
         request = BacktestRequest(
             interval=args.interval,
             market_type=market,
@@ -7549,6 +7578,7 @@ def command_backtest_panel(args: argparse.Namespace) -> int:
             model_path=args.model,
             data_path=args.input,
             execution_db=getattr(args, "execution_db", None),
+            compute_backend=compute_backend,
             starting_cash=args.starting_cash,
             objective=args.objective,
             tag=args.tag,
@@ -7604,11 +7634,11 @@ def _build_autonomous_decision_fn(
         state["step"] = int(state["step"]) + 1
         current_model = cast(TrainedModel | None, state["model"])
         candles = client.get_klines(runtime.symbol, runtime.interval, limit=max(current_strategy.model_lookback, 300))
-        rows = _live_rows_for_model(candles, current_strategy, current_model)
+        rows = _live_rows_for_model(candles, current_strategy, current_model, compute_backend=runtime.compute_backend)
         training_rows = (
-            _readiness_model_rows(candles, current_strategy, current_model)
+            _readiness_model_rows(candles, current_strategy, current_model, compute_backend=runtime.compute_backend)
             if current_model is not None
-            else _build_model_rows(candles, current_strategy)
+            else _build_model_rows(candles, current_strategy, compute_backend=runtime.compute_backend)
         )
         if not rows:
             price, _ts = client.get_symbol_price(runtime.symbol)

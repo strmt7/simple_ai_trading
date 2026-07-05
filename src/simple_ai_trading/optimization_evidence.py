@@ -980,7 +980,7 @@ def _evaluate_round_model_candidate(
 ) -> RoundModelCandidateResult:
     if status_callback is not None:
         status_callback("feature_generation_started", {"candle_count": len(candles)})
-    rows = make_advanced_rows(candles, candidate.feature_cfg)
+    rows = make_advanced_rows(candles, candidate.feature_cfg, compute_backend=compute_backend)
     if status_callback is not None:
         status_callback(
             "feature_generation_complete",

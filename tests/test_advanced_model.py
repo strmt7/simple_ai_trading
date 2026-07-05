@@ -8,6 +8,7 @@ import pytest
 
 from simple_ai_trading import advanced_model as am
 from simple_ai_trading.api import Candle
+from simple_ai_trading.compute import resolve_backend
 from simple_ai_trading.features import FEATURE_NAMES, ModelRow
 
 
@@ -124,6 +125,32 @@ def test_market_quality_features_are_finite_and_live_inference_safe():
     assert inference_rows
     assert len(train_rows[0].features) == am.advanced_feature_dimension(cfg)
     assert len(inference_rows[-1].features) == am.advanced_feature_dimension(cfg)
+
+
+def test_make_advanced_rows_directml_matches_cpu_when_available() -> None:
+    if resolve_backend("directml").kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:8]),
+        polynomial_top_features=4,
+        extra_lookback_windows=(5, 20),
+        confluence_windows=(5,),
+        market_quality_windows=(10,),
+    )
+    candles = _candles(180)
+
+    cpu_rows = am.make_advanced_rows(candles, cfg)
+    gpu_rows = am.make_advanced_rows(candles, cfg, compute_backend="directml")
+    cpu_inference = am.make_advanced_inference_rows(candles, cfg)
+    gpu_inference = am.make_advanced_inference_rows(candles, cfg, compute_backend="directml")
+
+    assert len(gpu_rows) == len(cpu_rows)
+    assert len(gpu_inference) == len(cpu_inference)
+    for left, right in zip(cpu_rows[:5], gpu_rows[:5], strict=True):
+        assert right.timestamp == left.timestamp
+        assert right.label == left.label
+        assert right.features == pytest.approx(left.features, abs=1e-5)
+    assert gpu_inference[-1].features == pytest.approx(cpu_inference[-1].features, abs=1e-5)
 
 
 def test_market_quality_prefix_features_match_naive_reference() -> None:

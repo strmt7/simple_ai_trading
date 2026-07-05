@@ -44,6 +44,16 @@ resolution per-minute graph data stays in CSV; SVG charts render deterministic
 downsampled visual summaries so artifact generation does not dominate
 GPU-backed training/scoring time.
 
+Feature generation is now part of the accelerated path. Base row construction
+uses tensorized prefix/window math for momentum, trend, RSI, EMA, ATR,
+volatility, and volume features on the resolved backend, and advanced
+objective rows inherit those backend-built base features. The training suite,
+optimization evidence generator, model-lab candidate evaluation, robust
+validation, live/autonomous readiness rows, and ad-hoc `backtest-panel` all
+pass the active compute backend into row construction. If the backend cannot
+execute the required tensor operations, the builder falls back to the original
+CPU feature path instead of emitting partial rows.
+
 Signed live startup and `risk --live --model` use the same promotion evidence
 instead of trusting a model file by name. They block promoted `TrainedModel`
 artifacts that do not record bounded multi-candidate selection, and they also
