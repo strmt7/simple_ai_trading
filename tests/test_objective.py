@@ -161,6 +161,42 @@ def test_path_quality_gates_reject_fragile_profitable_models():
     assert "max_consecutive_losses>5" in obj.REGULAR.rejection_reasons(long_loss_streak)
 
 
+def test_path_quality_rejects_single_outlier_profit_concentration():
+    outlier_path = _result(
+        realized_pnl=103.0,
+        ending_cash=1103.0,
+        trade_pnls=(80.0, -1.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0),
+        gross_profit=104.0,
+        gross_loss=1.0,
+        profit_factor=104.0,
+        expectancy=10.3,
+        max_consecutive_losses=1,
+        buy_hold_pnl=80.0,
+        edge_vs_buy_hold=23.0,
+    )
+
+    assert "single_trade_profit_share>0.55" in obj.CONSERVATIVE.rejection_reasons(outlier_path)
+    assert "single_trade_profit_share>0.65" in obj.REGULAR.rejection_reasons(outlier_path)
+    assert "single_trade_profit_share>0.75" in obj.AGGRESSIVE.rejection_reasons(outlier_path)
+
+
+def test_path_quality_concentration_gate_requires_complete_trade_pnl_evidence():
+    incomplete_path = _result(
+        closed_trades=6,
+        trade_pnls=(80.0,),
+        gross_profit=80.0,
+        gross_loss=0.0,
+        profit_factor=999.0,
+        expectancy=13.0,
+        max_consecutive_losses=0,
+    )
+
+    assert all(
+        not reason.startswith("single_trade_profit_share>")
+        for reason in obj.AGGRESSIVE.rejection_reasons(incomplete_path)
+    )
+
+
 def test_path_quality_gates_skip_legacy_payloads_without_trade_evidence():
     legacy = _result(
         trade_pnls=(),

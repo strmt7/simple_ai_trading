@@ -43,6 +43,7 @@ class ObjectiveSpec:
     min_profit_factor: float | None = None
     min_expectancy: float | None = None
     max_consecutive_losses_allowed: int | None = None
+    max_single_trade_profit_share_allowed: float | None = None
     training: "ObjectiveTraining | None" = None
 
     def score(self, result: BacktestResult) -> float:
@@ -82,7 +83,9 @@ class ObjectiveSpec:
             reasons.append("stopped_by_drawdown")
         path_quality = _path_quality_evidence(result)
         if path_quality is not None:
-            profit_factor, expectancy, max_consecutive_losses = path_quality
+            profit_factor = path_quality.profit_factor
+            expectancy = path_quality.expectancy
+            max_consecutive_losses = path_quality.max_consecutive_losses
             if self.min_profit_factor is not None and profit_factor < self.min_profit_factor:
                 reasons.append(f"profit_factor<{self.min_profit_factor}")
             if self.min_expectancy is not None and expectancy <= self.min_expectancy:
@@ -92,6 +95,13 @@ class ObjectiveSpec:
                 and max_consecutive_losses > self.max_consecutive_losses_allowed
             ):
                 reasons.append(f"max_consecutive_losses>{self.max_consecutive_losses_allowed}")
+            if (
+                self.max_single_trade_profit_share_allowed is not None
+                and path_quality.max_single_trade_profit_share > self.max_single_trade_profit_share_allowed
+            ):
+                reasons.append(
+                    f"single_trade_profit_share>{self.max_single_trade_profit_share_allowed}"
+                )
         return reasons
 
     def reject_reason(self, result: BacktestResult) -> str | None:
@@ -148,12 +158,37 @@ def _loss_streak(values: list[float]) -> int:
     return longest
 
 
-def _path_quality_evidence(result: BacktestResult) -> tuple[float, float, int] | None:
+@dataclass(frozen=True)
+class _PathQualityEvidence:
+    profit_factor: float
+    expectancy: float
+    max_consecutive_losses: int
+    max_single_trade_profit_share: float
+
+
+def _single_trade_profit_share(trade_pnls: object, gross_profit: float, closed_trades: int) -> float:
+    if gross_profit <= 0.0 or not isinstance(trade_pnls, (tuple, list)):
+        return 0.0
+    if int(closed_trades) > 0 and len(trade_pnls) != int(closed_trades):
+        return 0.0
+    positive = [
+        float(value)
+        for value in trade_pnls
+        if isinstance(value, (int, float)) and math.isfinite(float(value)) and float(value) > 0.0
+    ]
+    if not positive:
+        return 0.0
+    return max(positive) / gross_profit
+
+
+def _path_quality_evidence(result: BacktestResult) -> _PathQualityEvidence | None:
     gross_profit = _safe(float(getattr(result, "gross_profit", 0.0)))
     gross_loss = _safe(float(getattr(result, "gross_loss", 0.0)))
     profit_factor = _safe(float(getattr(result, "profit_factor", 0.0)))
     expectancy = _safe(float(getattr(result, "expectancy", 0.0)))
     max_consecutive_losses = int(getattr(result, "max_consecutive_losses", 0))
+    trade_pnls = getattr(result, "trade_pnls", ())
+    closed_trades = int(getattr(result, "closed_trades", 0))
     if (
         gross_profit > 0.0
         or gross_loss > 0.0
@@ -161,9 +196,17 @@ def _path_quality_evidence(result: BacktestResult) -> tuple[float, float, int] |
         or expectancy != 0.0
         or max_consecutive_losses > 0
     ):
-        return profit_factor, expectancy, max_consecutive_losses
+        return _PathQualityEvidence(
+            profit_factor=profit_factor,
+            expectancy=expectancy,
+            max_consecutive_losses=max_consecutive_losses,
+            max_single_trade_profit_share=_single_trade_profit_share(
+                trade_pnls,
+                gross_profit,
+                closed_trades,
+            ),
+        )
 
-    trade_pnls = getattr(result, "trade_pnls", ())
     if not isinstance(trade_pnls, (tuple, list)) or len(trade_pnls) == 0:
         return None
     clean_pnls = [float(value) for value in trade_pnls if math.isfinite(float(value))]
@@ -178,7 +221,17 @@ def _path_quality_evidence(result: BacktestResult) -> tuple[float, float, int] |
     else:
         profit_factor = 0.0
     expectancy = sum(clean_pnls) / len(clean_pnls)
-    return min(999.0, max(0.0, profit_factor)), expectancy, _loss_streak(clean_pnls)
+    profit_factor = min(999.0, max(0.0, profit_factor))
+    return _PathQualityEvidence(
+        profit_factor=profit_factor,
+        expectancy=expectancy,
+        max_consecutive_losses=_loss_streak(clean_pnls),
+        max_single_trade_profit_share=_single_trade_profit_share(
+            clean_pnls,
+            gross_profit,
+            closed_trades,
+        ),
+    )
 
 
 def _return_ratio(result: BacktestResult) -> float:
@@ -285,6 +338,7 @@ CONSERVATIVE = ObjectiveSpec(
     min_profit_factor=1.10,
     min_expectancy=0.0,
     max_consecutive_losses_allowed=3,
+    max_single_trade_profit_share_allowed=0.55,
     training=ObjectiveTraining(
         epochs=400,
         learning_rate=0.02,
@@ -325,6 +379,7 @@ REGULAR = ObjectiveSpec(
     min_profit_factor=1.05,
     min_expectancy=0.0,
     max_consecutive_losses_allowed=5,
+    max_single_trade_profit_share_allowed=0.65,
     training=ObjectiveTraining(
         epochs=600,
         learning_rate=0.03,
@@ -367,6 +422,7 @@ AGGRESSIVE = ObjectiveSpec(
     min_profit_factor=1.00,
     min_expectancy=0.0,
     max_consecutive_losses_allowed=8,
+    max_single_trade_profit_share_allowed=0.75,
     training=ObjectiveTraining(
         epochs=720,
         learning_rate=0.04,
