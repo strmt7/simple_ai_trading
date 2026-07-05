@@ -13,6 +13,7 @@ from simple_ai_trading.positions import (
     OpenPosition,
     PositionsStore,
     bot_client_order_id,
+    bot_ownership_rejection_reason,
     build_learning_feedback,
     compute_stats,
     is_bot_owned_position,
@@ -68,9 +69,37 @@ def test_bot_client_order_id_and_ownership() -> None:
     pos = _long(id_="abc123")
     pos.dry_run = False
     assert is_bot_owned_position(pos) is False
+    assert bot_ownership_rejection_reason(pos) == "open-client-order-unverified"
     pos.open_client_order_id = bot_client_order_id(pos.id, "open")
     assert pos.open_client_order_id.startswith(f"{BOT_CLIENT_ORDER_PREFIX}-o-")
+    assert bot_ownership_rejection_reason(pos) == "exchange-fill-unverified"
+    assert is_bot_owned_position(pos) is False
+    pos.exchange_status = "FILLED"
+    assert bot_ownership_rejection_reason(pos) is None
     assert is_bot_owned_position(pos) is True
+
+
+def test_live_ownership_requires_exchange_fill_or_safe_futures_ack() -> None:
+    spot = _long(id_="spot-live")
+    spot.dry_run = False
+    spot.market_type = "spot"
+    spot.open_client_order_id = bot_client_order_id(spot.id, "open")
+    spot.exchange_status = "accepted"
+    spot.open_exchange_order_id = "123"
+
+    assert bot_ownership_rejection_reason(spot) == "exchange-status-unverified:accepted"
+    assert is_bot_owned_position(spot) is False
+
+    futures = _long(id_="futures-live")
+    futures.dry_run = False
+    futures.market_type = "futures"
+    futures.open_client_order_id = bot_client_order_id(futures.id, "open")
+    futures.exchange_status = "NEW"
+    assert bot_ownership_rejection_reason(futures) == "exchange-status-unverified:new"
+
+    futures.open_exchange_order_id = "987"
+    assert bot_ownership_rejection_reason(futures) is None
+    assert is_bot_owned_position(futures) is True
 
 
 def test_store_record_load_and_remove(tmp_path):

@@ -45,8 +45,8 @@ from .positions import (
     OpenPosition,
     PositionsStore,
     bot_client_order_id,
+    bot_ownership_rejection_reason,
     compute_stats,
-    is_bot_owned_position,
     new_position_id,
     now_ms,
 )
@@ -405,6 +405,24 @@ def _order_fill_details(
     return qty, avg
 
 
+def _order_has_fill_evidence(order: Mapping[str, object]) -> bool:
+    if _order_float(order, "executedQty") > 0.0:
+        return True
+    fills = order.get("fills")
+    if not isinstance(fills, list):
+        return False
+    for fill in fills:
+        if not isinstance(fill, Mapping):
+            continue
+        if _order_float(fill, "qty") > 0.0:
+            return True
+    return False
+
+
+def _order_exchange_status(order: Mapping[str, object]) -> str:
+    return _order_text(order, "status") or ("FILLED" if _order_has_fill_evidence(order) else "accepted")
+
+
 def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> OpenPosition:
     qty, entry_price = _order_fill_details(
         order,
@@ -418,7 +436,7 @@ def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> Op
         notional=qty * entry_price,
         open_exchange_order_id=_order_text(order, "orderId"),
         open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or position.open_client_order_id,
-        exchange_status=_order_text(order, "status") or "accepted",
+        exchange_status=_order_exchange_status(order),
     )
 
 
@@ -442,7 +460,7 @@ def _apply_close_order(trade: ClosedTrade, order: Mapping[str, object], close_cl
         realized_pnl=realized,
         close_exchange_order_id=_order_text(order, "orderId"),
         close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or close_client_order_id,
-        exchange_status=_order_text(order, "status") or "accepted",
+        exchange_status=_order_exchange_status(order),
     )
 
 
@@ -535,9 +553,10 @@ def close_tracked_open_positions(
     failed = 0
     failures: list[str] = []
     for position in list(store.load_open()):
-        if not is_bot_owned_position(position):
+        ownership_rejection = bot_ownership_rejection_reason(position)
+        if ownership_rejection is not None:
             skipped += 1
-            failures.append(f"{position.id}:ownership-unverified")
+            failures.append(f"{position.id}:{ownership_rejection}")
             continue
         close_price = float(mark_price) if mark_price and mark_price > 0 else float(position.entry_price)
         trade = _close_to_trade(position, close_price, reason, clock=clock)
