@@ -15,6 +15,7 @@ from .advanced_model import default_config_for, make_advanced_rows, train_advanc
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
+from .compute import resolve_backend
 from .data_coverage import describe_candle_coverage, iso_utc
 from .data_downloader import MarketDataSyncConfig, sync_market_data
 from .execution_simulation import SymbolExecutionProfile
@@ -31,6 +32,7 @@ from .market_universe import (
     _spread_bps,
 )
 from .model import calibrate_probability_temperature
+from .model import effective_training_backend_name
 from .objective import ObjectiveSpec, get_objective
 from .performance_charts import EquityPoint
 from .storage import write_json_atomic
@@ -46,6 +48,7 @@ class EvidencePaths:
     docs_charts_dir: Path
     report_path: Path
     data_health_path: Path
+    status_path: Path
     progress_csv_path: Path
     metrics_csv_path: Path
     timeline_csv_path: Path
@@ -135,6 +138,7 @@ def make_evidence_paths(
         docs_charts_dir=docs_charts_dir,
         report_path=docs_data_dir / "report.json",
         data_health_path=docs_data_dir / "data-health.json",
+        status_path=docs_data_dir / "round-status.json",
         progress_csv_path=docs_data_dir / "round-progress.csv",
         metrics_csv_path=docs_data_dir / "backtest-metrics.csv",
         timeline_csv_path=docs_data_dir / "portfolio-timeline.csv",
@@ -634,6 +638,40 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, object]], fieldnames: Seq
             writer.writerow({field: row.get(field, "") for field in fieldnames})
 
 
+def _write_round_status(paths: EvidencePaths, **payload: object) -> None:
+    status = {
+        "generated_at_utc": _utc_now(),
+        "round_id": paths.docs_dir.name,
+        **payload,
+    }
+    write_json_atomic(paths.status_path, status, indent=2, sort_keys=True)
+
+
+def _decimate_equity_points(points: Sequence[EquityPoint], *, max_points: int = 6000) -> list[EquityPoint]:
+    """Return a deterministic visual summary while preserving raw CSV evidence."""
+
+    ordered = list(points)
+    limit = max(16, int(max_points))
+    if len(ordered) <= limit:
+        return ordered
+    bucket_size = max(1, math.ceil(len(ordered) / max(1, limit // 4)))
+    keep: dict[int, EquityPoint] = {0: ordered[0], len(ordered) - 1: ordered[-1]}
+    for start in range(0, len(ordered), bucket_size):
+        bucket = ordered[start:start + bucket_size]
+        if not bucket:
+            continue
+        candidates = (
+            bucket[0],
+            bucket[-1],
+            min(bucket, key=lambda point: point.equity),
+            max(bucket, key=lambda point: point.equity),
+            max(bucket, key=lambda point: point.drawdown),
+        )
+        for point in candidates:
+            keep[start + bucket.index(point)] = point
+    return [point for _index, point in sorted(keep.items())]
+
+
 def render_comparison_svg(
     strategy_points: Sequence[EquityPoint],
     baseline_points: Sequence[EquityPoint],
@@ -642,23 +680,25 @@ def render_comparison_svg(
     width: int = 1120,
     height: int = 660,
 ) -> str:
-    points = list(strategy_points)
-    baseline = list(baseline_points)
-    if not points:
-        points = [EquityPoint(0, 0.0, 0.0)]
-    if not baseline:
-        baseline = [EquityPoint(point.index, points[0].equity, 0.0, point.timestamp_ms) for point in points]
+    raw_points = list(strategy_points)
+    raw_baseline = list(baseline_points)
+    if not raw_points:
+        raw_points = [EquityPoint(0, 0.0, 0.0)]
+    if not raw_baseline:
+        raw_baseline = [EquityPoint(point.index, raw_points[0].equity, 0.0, point.timestamp_ms) for point in raw_points]
     left, right, top, bottom = 72, 34, 62, 82
     chart_w = width - left - right
     chart_h = height - top - bottom
-    all_equity = [point.equity for point in points] + [point.equity for point in baseline]
+    all_equity = [point.equity for point in raw_points] + [point.equity for point in raw_baseline]
     min_equity = min(all_equity)
     max_equity = max(all_equity)
-    max_drawdown = max(0.01, *(point.drawdown for point in points))
-    count = max(1, len(points) - 1)
+    max_drawdown = max(0.01, *(point.drawdown for point in raw_points))
+    points = _decimate_equity_points(raw_points)
+    baseline = _decimate_equity_points(raw_baseline)
+    max_index = max(1, *(point.index for point in [*points, *baseline]))
 
     def sx(index: int) -> float:
-        return left + (index / count) * chart_w
+        return left + (index / max_index) * chart_w
 
     def sy(value: float) -> float:
         if max_equity <= min_equity:
@@ -668,12 +708,13 @@ def render_comparison_svg(
     def dy(value: float) -> float:
         return top + chart_h - (value / max_drawdown) * chart_h * 0.32
 
-    strategy_poly = " ".join(f"{sx(i):.2f},{sy(point.equity):.2f}" for i, point in enumerate(points))
-    baseline_poly = " ".join(f"{sx(i):.2f},{sy(point.equity):.2f}" for i, point in enumerate(baseline[:len(points)]))
-    drawdown_poly = " ".join(f"{sx(i):.2f},{dy(point.drawdown):.2f}" for i, point in enumerate(points))
-    timestamps = [point.timestamp_ms for point in points if point.timestamp_ms is not None]
+    strategy_poly = " ".join(f"{sx(point.index):.2f},{sy(point.equity):.2f}" for point in points)
+    baseline_poly = " ".join(f"{sx(point.index):.2f},{sy(point.equity):.2f}" for point in baseline)
+    drawdown_poly = " ".join(f"{sx(point.index):.2f},{dy(point.drawdown):.2f}" for point in points)
+    timestamps = [point.timestamp_ms for point in raw_points if point.timestamp_ms is not None]
     start = iso_utc(min(timestamps))[:10] if timestamps else "sample"
     end = iso_utc(max(timestamps))[:10] if timestamps else "index"
+    chart_note = f"Rendered {len(points):,}/{len(raw_points):,} strategy points; full-resolution graph data is in CSV."
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="{title}">
   <rect width="100%" height="100%" fill="#f8fafc"/>
   <text x="{left}" y="36" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">{title}</text>
@@ -688,41 +729,61 @@ def render_comparison_svg(
   <text x="{left + 198}" y="{height - 58}" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#111827">passive baseline</text>
   <line x1="{left + 360}" y1="{height - 62}" x2="{left + 382}" y2="{height - 62}" stroke="#dc2626" stroke-width="2"/>
   <text x="{left + 390}" y="{height - 58}" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#111827">drawdown</text>
-  <text x="{left}" y="{height - 28}" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">UTC span: {start} to {end}. Chart source: committed CSV graph data.</text>
+  <text x="{left}" y="{height - 28}" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">UTC span: {start} to {end}. {chart_note}</text>
   <text x="{left}" y="{top + chart_h + 18}" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">{start}</text>
   <text x="{left + chart_w - 84}" y="{top + chart_h + 18}" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">{end}</text>
 </svg>
 """
 
 
-def _portfolio_timeline(rows_by_symbol: Sequence[Sequence[Mapping[str, object]]]) -> list[dict[str, object]]:
-    by_timestamp: dict[int, list[Mapping[str, object]]] = {}
-    for rows in rows_by_symbol:
-        for row in rows:
-            try:
-                timestamp = int(row.get("timestamp_ms", 0))
-            except (TypeError, ValueError):
-                continue
-            if timestamp <= 0:
-                continue
-            by_timestamp.setdefault(timestamp, []).append(row)
+def _update_portfolio_aggregate(aggregate: dict[int, dict[str, float]], row: Mapping[str, object]) -> None:
+    try:
+        timestamp = int(row.get("timestamp_ms", 0))
+    except (TypeError, ValueError):
+        return
+    if timestamp <= 0:
+        return
+    item = aggregate.setdefault(
+        timestamp,
+        {
+            "strategy_sum": 0.0,
+            "baseline_sum": 0.0,
+            "drawdown_sum": 0.0,
+            "count": 0.0,
+            "low_liquidity_count": 0.0,
+        },
+    )
+    item["strategy_sum"] += _finite(row.get("strategy_equity"))
+    item["baseline_sum"] += _finite(row.get("baseline_equity"))
+    item["drawdown_sum"] += _finite(row.get("strategy_drawdown"))
+    item["count"] += 1.0
+    if str(row.get("low_liquidity_flag")).lower() == "true":
+        item["low_liquidity_count"] += 1.0
+
+
+def _portfolio_timeline_from_aggregate(aggregate: Mapping[int, Mapping[str, float]]) -> list[dict[str, object]]:
     output: list[dict[str, object]] = []
-    for timestamp in sorted(by_timestamp):
-        items = by_timestamp[timestamp]
-        strategy_values = [_finite(item.get("strategy_equity")) for item in items]
-        baseline_values = [_finite(item.get("baseline_equity")) for item in items]
-        drawdowns = [_finite(item.get("strategy_drawdown")) for item in items]
-        low_liquidity = sum(1 for item in items if str(item.get("low_liquidity_flag")).lower() == "true")
+    for timestamp in sorted(aggregate):
+        item = aggregate[timestamp]
+        count = max(1.0, _finite(item.get("count")))
         output.append({
             "timestamp_ms": timestamp,
             "timestamp_utc": iso_utc(timestamp),
-            "symbols_reporting": len(items),
-            "mean_strategy_equity": sum(strategy_values) / len(strategy_values) if strategy_values else 0.0,
-            "mean_baseline_equity": sum(baseline_values) / len(baseline_values) if baseline_values else 0.0,
-            "mean_drawdown": sum(drawdowns) / len(drawdowns) if drawdowns else 0.0,
-            "low_liquidity_symbol_count": low_liquidity,
+            "symbols_reporting": int(count),
+            "mean_strategy_equity": _finite(item.get("strategy_sum")) / count,
+            "mean_baseline_equity": _finite(item.get("baseline_sum")) / count,
+            "mean_drawdown": _finite(item.get("drawdown_sum")) / count,
+            "low_liquidity_symbol_count": int(_finite(item.get("low_liquidity_count"))),
         })
     return output
+
+
+def _portfolio_timeline(rows_by_symbol: Sequence[Sequence[Mapping[str, object]]]) -> list[dict[str, object]]:
+    aggregate: dict[int, dict[str, float]] = {}
+    for rows in rows_by_symbol:
+        for row in rows:
+            _update_portfolio_aggregate(aggregate, row)
+    return _portfolio_timeline_from_aggregate(aggregate)
 
 
 def train_round_model(
@@ -849,6 +910,7 @@ def build_round_evidence(
     min_coverage_ratio: float = 0.995,
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
+    require_gpu: bool = False,
     use_objective_strategy_defaults: bool = False,
 ) -> dict[str, object]:
     interval = validate_interval(interval, market_type)
@@ -863,6 +925,9 @@ def build_round_evidence(
     )
     effective_leverage = effective_leverage_for_market(evidence_strategy, market_type)
     leverage_applies = market_type == "futures"
+    backend_info = resolve_backend(effective_training_backend_name(compute_backend))
+    if require_gpu and backend_info.kind == "cpu":
+        raise ValueError(f"gpu_required_but_unavailable: {backend_info.reason or 'resolved to CPU'}")
     health_required = bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum)
     selection_health_rejections: list[dict[str, object]] = []
     if symbols:
@@ -884,10 +949,41 @@ def build_round_evidence(
     else:
         selected = select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
     write_json_atomic(paths.docs_data_dir / "selected-universe.json", [item.asdict() for item in selected], indent=2, sort_keys=True)
+    _write_round_status(
+        paths,
+        status="running",
+        phase="selection_complete",
+        symbol_count_requested=len(selected),
+        symbols=[item.symbol for item in selected],
+        completed_symbol_count=0,
+        current_symbol="",
+        compute_backend_requested=backend_info.requested,
+        compute_backend_kind=backend_info.kind,
+        compute_backend_device=backend_info.device,
+        compute_backend_reason=backend_info.reason,
+        require_gpu=bool(require_gpu),
+    )
     metrics: list[BacktestEvidence] = []
     data_health: list[dict[str, object]] = []
-    timeline_rows_all: list[list[dict[str, object]]] = []
-    for item in selected:
+    portfolio_aggregate: dict[int, dict[str, float]] = {}
+    timeline_fieldnames = (
+        "round_id", "symbol", "objective", "timestamp_ms", "timestamp_utc",
+        "strategy_equity", "baseline_equity", "strategy_drawdown", "baseline_drawdown",
+        "quote_volume", "trade_count", "rolling_quote_volume_median",
+        "rolling_trade_count_median", "clock_bucket", "clock_bucket_quote_volume_median",
+        "clock_bucket_trade_count_median", "data_probed_low_session_flag",
+        "low_liquidity_flag", "weekend_flag", "utc_hour", "utc_weekday",
+    )
+    for selected_index, item in enumerate(selected, start=1):
+        _write_round_status(
+            paths,
+            status="running",
+            phase="symbol_started",
+            symbol_count_requested=len(selected),
+            completed_symbol_count=len(metrics),
+            current_symbol=item.symbol,
+            current_symbol_index=selected_index,
+        )
         candles: list[Candle] = []
         coverage = None
         try:
@@ -964,64 +1060,58 @@ def build_round_evidence(
                 if "timestamp" in point
             ]
             liquidity_by_close = _rolling_liquidity_flags(candles)
-            timeline_rows: list[dict[str, object]] = []
             point_by_timestamp = {int(point.timestamp_ms or 0): point for point in strategy_points}
             baseline_by_timestamp = {int(point.timestamp_ms or 0): point for point in baseline_points}
-            for timestamp, point in sorted(point_by_timestamp.items()):
-                if timestamp <= 0:
-                    continue
-                baseline = baseline_by_timestamp.get(timestamp)
-                liquidity = liquidity_by_close.get(timestamp, {})
-                timeline_rows.append({
-                    "round_id": round_id,
-                    "symbol": item.symbol,
-                    "objective": objective.name,
-                    "timestamp_ms": timestamp,
-                    "timestamp_utc": iso_utc(timestamp),
-                    "strategy_equity": point.equity,
-                    "baseline_equity": baseline.equity if baseline else "",
-                    "strategy_drawdown": point.drawdown,
-                    "baseline_drawdown": baseline.drawdown if baseline else "",
-                    "quote_volume": liquidity.get("quote_volume", ""),
-                    "trade_count": liquidity.get("trade_count", ""),
-                    "rolling_quote_volume_median": liquidity.get("rolling_quote_volume_median", ""),
-                    "rolling_trade_count_median": liquidity.get("rolling_trade_count_median", ""),
-                    "clock_bucket": liquidity.get("clock_bucket", ""),
-                    "clock_bucket_quote_volume_median": liquidity.get("clock_bucket_quote_volume_median", ""),
-                    "clock_bucket_trade_count_median": liquidity.get("clock_bucket_trade_count_median", ""),
-                    "data_probed_low_session_flag": liquidity.get("data_probed_low_session_flag", ""),
-                    "low_liquidity_flag": liquidity.get("low_liquidity_flag", ""),
-                    "weekend_flag": liquidity.get("weekend_flag", ""),
-                    "utc_hour": liquidity.get("utc_hour", ""),
-                    "utc_weekday": liquidity.get("utc_weekday", ""),
-                })
             symbol_timeline_path = paths.docs_data_dir / f"{item.rank:02d}-{item.symbol}-{objective.name}-timeline.csv"
-            _write_csv(
-                symbol_timeline_path,
-                timeline_rows,
-                (
-                    "round_id", "symbol", "objective", "timestamp_ms", "timestamp_utc",
-                    "strategy_equity", "baseline_equity", "strategy_drawdown", "baseline_drawdown",
-                    "quote_volume", "trade_count", "rolling_quote_volume_median",
-                    "rolling_trade_count_median", "clock_bucket", "clock_bucket_quote_volume_median",
-                    "clock_bucket_trade_count_median", "data_probed_low_session_flag",
-                    "low_liquidity_flag", "weekend_flag", "utc_hour", "utc_weekday",
-                ),
-            )
-            timeline_rows_all.append(timeline_rows)
+            symbol_timeline_path.parent.mkdir(parents=True, exist_ok=True)
+            timeline_count = 0
+            low_liquidity_count = 0
+            weekend_count = 0
+            with symbol_timeline_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(timeline_fieldnames))
+                writer.writeheader()
+                for timestamp, point in sorted(point_by_timestamp.items()):
+                    if timestamp <= 0:
+                        continue
+                    baseline = baseline_by_timestamp.get(timestamp)
+                    liquidity = liquidity_by_close.get(timestamp, {})
+                    row = {
+                        "round_id": round_id,
+                        "symbol": item.symbol,
+                        "objective": objective.name,
+                        "timestamp_ms": timestamp,
+                        "timestamp_utc": iso_utc(timestamp),
+                        "strategy_equity": point.equity,
+                        "baseline_equity": baseline.equity if baseline else "",
+                        "strategy_drawdown": point.drawdown,
+                        "baseline_drawdown": baseline.drawdown if baseline else "",
+                        "quote_volume": liquidity.get("quote_volume", ""),
+                        "trade_count": liquidity.get("trade_count", ""),
+                        "rolling_quote_volume_median": liquidity.get("rolling_quote_volume_median", ""),
+                        "rolling_trade_count_median": liquidity.get("rolling_trade_count_median", ""),
+                        "clock_bucket": liquidity.get("clock_bucket", ""),
+                        "clock_bucket_quote_volume_median": liquidity.get("clock_bucket_quote_volume_median", ""),
+                        "clock_bucket_trade_count_median": liquidity.get("clock_bucket_trade_count_median", ""),
+                        "data_probed_low_session_flag": liquidity.get("data_probed_low_session_flag", ""),
+                        "low_liquidity_flag": liquidity.get("low_liquidity_flag", ""),
+                        "weekend_flag": liquidity.get("weekend_flag", ""),
+                        "utc_hour": liquidity.get("utc_hour", ""),
+                        "utc_weekday": liquidity.get("utc_weekday", ""),
+                    }
+                    writer.writerow(row)
+                    _update_portfolio_aggregate(portfolio_aggregate, row)
+                    timeline_count += 1
+                    if str(row.get("low_liquidity_flag")).lower() == "true":
+                        low_liquidity_count += 1
+                    if str(row.get("weekend_flag")).lower() == "true":
+                        weekend_count += 1
             chart_path = paths.docs_charts_dir / f"{item.rank:02d}-{item.symbol}-{objective.name}.svg"
             chart_path.write_text(
                 render_comparison_svg(strategy_points, baseline_points, title=f"{item.symbol} {objective.label} Backtest vs Passive Baseline"),
                 encoding="utf-8",
             )
-            low_rate = (
-                sum(1 for row in timeline_rows if str(row.get("low_liquidity_flag")).lower() == "true") / len(timeline_rows)
-                if timeline_rows else 0.0
-            )
-            weekend_rate = (
-                sum(1 for row in timeline_rows if str(row.get("weekend_flag")).lower() == "true") / len(timeline_rows)
-                if timeline_rows else 0.0
-            )
+            low_rate = low_liquidity_count / timeline_count if timeline_count else 0.0
+            weekend_rate = weekend_count / timeline_count if timeline_count else 0.0
             metric = BacktestEvidence(
                 round_id=round_id,
                 symbol=item.symbol,
@@ -1111,13 +1201,24 @@ def build_round_evidence(
                 timeline_csv_path="",
             )
         metrics.append(metric)
+        _write_round_status(
+            paths,
+            status="running",
+            phase="symbol_completed",
+            symbol_count_requested=len(selected),
+            completed_symbol_count=len(metrics),
+            current_symbol="",
+            last_symbol=item.symbol,
+            last_symbol_accepted=metric.accepted,
+            last_symbol_reason=metric.reason,
+        )
     metric_rows = [metric.asdict() for metric in metrics]
     _write_csv(
         paths.metrics_csv_path,
         metric_rows,
         tuple(metric_rows[0].keys()) if metric_rows else ("round_id", "symbol", "objective"),
     )
-    portfolio_rows = _portfolio_timeline(timeline_rows_all)
+    portfolio_rows = _portfolio_timeline_from_aggregate(portfolio_aggregate)
     _write_csv(
         paths.timeline_csv_path,
         portfolio_rows,
@@ -1133,6 +1234,7 @@ def build_round_evidence(
         str(paths.timeline_csv_path).replace("\\", "/"),
         str(paths.report_path).replace("\\", "/"),
         str(paths.data_health_path).replace("\\", "/"),
+        str(paths.status_path).replace("\\", "/"),
         str(paths.docs_data_dir / "selected-universe.json").replace("\\", "/"),
     ]
     for metric in metrics:
@@ -1172,6 +1274,11 @@ def build_round_evidence(
         "configured_leverage": float(evidence_strategy.leverage),
         "effective_leverage": float(effective_leverage),
         "leverage_applies": bool(leverage_applies),
+        "compute_backend_requested": backend_info.requested,
+        "compute_backend_kind": backend_info.kind,
+        "compute_backend_device": backend_info.device,
+        "compute_backend_reason": backend_info.reason,
+        "require_gpu": bool(require_gpu),
         "starting_cash": float(starting_cash),
         "symbol_count_requested": len([str(symbol).strip() for symbol in (symbols or []) if str(symbol).strip()]) if symbols else int(symbol_count),
         "symbol_count_completed": len(metrics),
@@ -1184,6 +1291,7 @@ def build_round_evidence(
         "health_filtered_symbol_selection": bool(not symbols and health_required),
         "selection_health_rejections": selection_health_rejections,
         "data_health_path": str(paths.data_health_path).replace("\\", "/"),
+        "status_path": str(paths.status_path).replace("\\", "/"),
         "data_health": data_health,
         "selected_universe_path": str(paths.docs_data_dir / "selected-universe.json").replace("\\", "/"),
         "metrics_csv_path": str(paths.metrics_csv_path).replace("\\", "/"),
@@ -1194,6 +1302,16 @@ def build_round_evidence(
         "tracked_artifacts": sorted(dict.fromkeys(tracked_artifacts)),
     }
     write_json_atomic(paths.report_path, report, indent=2, sort_keys=True)
+    _write_round_status(
+        paths,
+        status="complete",
+        phase="round_complete",
+        symbol_count_requested=len(selected),
+        completed_symbol_count=len(metrics),
+        accepted_symbol_count=len(accepted_metrics),
+        metrics_csv_path=str(paths.metrics_csv_path).replace("\\", "/"),
+        report_path=str(paths.report_path).replace("\\", "/"),
+    )
     return report
 
 

@@ -210,6 +210,65 @@ def test_select_data_healthy_top_liquidity_symbols_skips_unhealthy_candidates(
     ]
 
 
+def test_render_comparison_svg_decimates_visual_points_without_losing_span() -> None:
+    points = [
+        oe.EquityPoint(index, 1000.0 + (index % 17) - index * 0.001, (index % 31) / 1000.0, index * 60_000)
+        for index in range(20_000)
+    ]
+    baseline = [
+        oe.EquityPoint(index, 1000.0 + index * 0.0005, 0.0, index * 60_000)
+        for index in range(20_000)
+    ]
+
+    svg = oe.render_comparison_svg(points, baseline, title="Large Round")
+
+    assert len(svg) < 1_500_000
+    assert "Rendered" in svg
+    assert "full-resolution graph data is in CSV" in svg
+    assert "1970-01-01" in svg
+    assert "1970-01-14" in svg
+
+
+def test_portfolio_timeline_streaming_aggregate_matches_row_inputs() -> None:
+    rows = [
+        [
+            {
+                "timestamp_ms": 1_700_000_000_000,
+                "strategy_equity": 1000.0,
+                "baseline_equity": 990.0,
+                "strategy_drawdown": 0.01,
+                "low_liquidity_flag": "false",
+            },
+            {
+                "timestamp_ms": 1_700_000_060_000,
+                "strategy_equity": 1010.0,
+                "baseline_equity": 991.0,
+                "strategy_drawdown": 0.0,
+                "low_liquidity_flag": "true",
+            },
+        ],
+        [
+            {
+                "timestamp_ms": 1_700_000_000_000,
+                "strategy_equity": 980.0,
+                "baseline_equity": 995.0,
+                "strategy_drawdown": 0.02,
+                "low_liquidity_flag": "true",
+            }
+        ],
+    ]
+
+    timeline = oe._portfolio_timeline(rows)
+
+    assert timeline[0]["symbols_reporting"] == 2
+    assert timeline[0]["mean_strategy_equity"] == pytest.approx(990.0)
+    assert timeline[0]["mean_baseline_equity"] == pytest.approx(992.5)
+    assert timeline[0]["mean_drawdown"] == pytest.approx(0.015)
+    assert timeline[0]["low_liquidity_symbol_count"] == 1
+    assert timeline[1]["symbols_reporting"] == 1
+    assert timeline[1]["low_liquidity_symbol_count"] == 1
+
+
 def test_fetch_full_history_refuses_network_backfill_when_prefill_required(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -552,6 +611,39 @@ def test_build_round_evidence_records_futures_effective_leverage(
     assert report["metrics"][0]["leverage"] == pytest.approx(12.0)
     assert report["metrics"][0]["effective_leverage"] == pytest.approx(12.0)
     assert report["metrics"][0]["leverage_applies"] is True
+
+
+def test_build_round_evidence_can_require_non_cpu_backend(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        oe,
+        "resolve_backend",
+        lambda _requested: SimpleNamespace(
+            requested="directml",
+            kind="cpu",
+            device="cpu",
+            vendor="Python stdlib",
+            reason="DirectML unavailable in test",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="gpu_required_but_unavailable"):
+        oe.build_round_evidence(
+            round_id="round-test-require-gpu",
+            client=_SelectionClient(),
+            strategy=StrategyConfig(),
+            quote_asset="USDT",
+            symbols=["BTCUSDT"],
+            interval="1m",
+            market_type="futures",
+            objective_name="conservative",
+            data_root=tmp_path / "data" / "optimization",
+            docs_root=tmp_path / "docs" / "optimization",
+            db_path=tmp_path / "market.sqlite",
+            require_gpu=True,
+        )
 
 
 def test_build_round_evidence_rejects_unsupported_market_interval(tmp_path: Path) -> None:
