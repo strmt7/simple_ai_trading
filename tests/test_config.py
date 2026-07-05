@@ -268,6 +268,13 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
         max_position_pct=float("inf"),
         feature_windows=("bad", "worse", "extra"),
         signal_threshold=float("-inf"),
+        max_prediction_entropy=float("nan"),
+        stop_loss_pct=-0.50,
+        take_profit_pct=-0.25,
+        max_drawdown_limit=-1.0,
+        taker_fee_bps=-5.0,
+        slippage_bps=-3.0,
+        label_threshold=-0.10,
         max_open_positions="bad",
         cooldown_minutes=-5,
         confidence_beta=float("nan"),
@@ -289,6 +296,13 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
     assert strategy.max_position_pct == 0.08
     assert strategy.feature_windows == (10, 40)
     assert strategy.signal_threshold == 0.66
+    assert strategy.max_prediction_entropy == 0.88
+    assert strategy.stop_loss_pct == 0.010
+    assert strategy.take_profit_pct == 0.018
+    assert strategy.max_drawdown_limit == 0.10
+    assert strategy.taker_fee_bps == 1.0
+    assert strategy.slippage_bps == 5.0
+    assert strategy.label_threshold == 0.001
     assert strategy.max_open_positions == 3
     assert strategy.cooldown_minutes == 0
     assert strategy.confidence_beta == 0.90

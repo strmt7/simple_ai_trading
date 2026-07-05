@@ -69,6 +69,22 @@ def test_stop_loss_sized_notional_pct_caps_gross_asset_allocation() -> None:
     assert stop_loss_sized_notional_pct(high_leverage, "futures") == pytest.approx(0.12)
 
 
+def test_stop_loss_sizing_never_exceeds_per_trade_risk_budget() -> None:
+    strategies = [
+        StrategyConfig(risk_per_trade=0.003, max_position_pct=0.08, stop_loss_pct=0.010, leverage=5.0),
+        StrategyConfig(risk_per_trade=0.006, max_position_pct=0.14, stop_loss_pct=0.020, leverage=10.0),
+        StrategyConfig(risk_per_trade=0.010, max_position_pct=0.20, stop_loss_pct=0.025, leverage=15.0),
+        StrategyConfig(risk_per_trade=0.020, max_position_pct=0.35, stop_loss_pct=0.015, leverage=20.0),
+    ]
+
+    for strategy in strategies:
+        for market_type in ("spot", "futures"):
+            notional_pct = stop_loss_sized_notional_pct(strategy, market_type, leverage=strategy.leverage)
+            estimated_loss_pct = notional_pct * stop_loss_effective_loss_pct(strategy)
+
+            assert estimated_loss_pct <= strategy.risk_per_trade + 1e-12
+
+
 def test_risk_policy_blocks_mainnet_live_missing_credentials_and_zero_cash(tmp_path) -> None:
     report = build_risk_policy_report(
         RuntimeConfig(testnet=False, dry_run=False, managed_usdc=0.0),

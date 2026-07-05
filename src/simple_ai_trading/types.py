@@ -54,6 +54,11 @@ def _finite_float(value: Any, default: float) -> float:
     return parsed if math.isfinite(parsed) else default
 
 
+def _finite_nonnegative(value: Any, default: float) -> float:
+    parsed = _finite_float(value, default)
+    return parsed if parsed >= 0.0 else default
+
+
 def _normal_interval(value: object, default: str = "15m") -> str:
     candidate = str(value or "").strip()
     return candidate or default
@@ -263,18 +268,18 @@ class StrategyConfig:
         self.min_liquidity_score = min(1.0, max(0.0, _finite_float(self.min_liquidity_score, 0.80)))
         self.unpredictability_cooldown_minutes = max(0, _coerce_int(self.unpredictability_cooldown_minutes, 90))
         self.max_regime_unpredictability = min(1.0, max(0.0, _finite_float(self.max_regime_unpredictability, 0.60)))
-        self.max_prediction_entropy = min(1.0, max(0.0, _finite_float(self.max_prediction_entropy, 0.97)))
+        self.max_prediction_entropy = min(1.0, max(0.0, _finite_float(self.max_prediction_entropy, 0.88)))
         self.min_model_confidence = min(1.0, max(0.0, _finite_float(self.min_model_confidence, 0.66)))
         self.liquidation_buffer_pct = min(1.0, max(0.0, _finite_float(self.liquidation_buffer_pct, 0.03)))
         self.testnet_liquidity_haircut = min(1.0, max(0.0, _finite_float(self.testnet_liquidity_haircut, 0.50)))
         self.latency_buffer_ms = max(0, _coerce_int(self.latency_buffer_ms, 750))
-        self.stop_loss_pct = _finite_float(self.stop_loss_pct, 0.010)
-        self.take_profit_pct = _finite_float(self.take_profit_pct, 0.018)
+        self.stop_loss_pct = _finite_nonnegative(self.stop_loss_pct, 0.010)
+        self.take_profit_pct = _finite_nonnegative(self.take_profit_pct, 0.018)
         self.signal_threshold = min(0.99, max(0.01, _finite_float(self.signal_threshold, 0.66)))
         self.model_lookback = max(1, _coerce_int(self.model_lookback, 250))
         self.cooldown_minutes = max(0, _coerce_int(self.cooldown_minutes, 20))
         self.max_trades_per_day = max(0, _coerce_int(self.max_trades_per_day, 6))
-        self.max_drawdown_limit = _finite_float(self.max_drawdown_limit, 0.10)
+        self.max_drawdown_limit = _finite_nonnegative(self.max_drawdown_limit, 0.10)
         self.max_daily_loss_pct = min(0.25, max(0.0, _finite_float(self.max_daily_loss_pct, 0.006)))
         self.max_session_loss_pct = min(0.50, max(0.0, _finite_float(self.max_session_loss_pct, 0.012)))
         self.max_consecutive_losses = max(0, min(100, _coerce_int(self.max_consecutive_losses, 2)))
@@ -282,8 +287,8 @@ class StrategyConfig:
         self.recovery_cooldown_seconds = max(0, min(3600, _coerce_int(self.recovery_cooldown_seconds, 60)))
         self.training_epochs = max(1, _coerce_int(self.training_epochs, 180))
         self.confidence_beta = min(1.0, max(0.0, _finite_float(self.confidence_beta, 0.90)))
-        self.taker_fee_bps = _finite_float(self.taker_fee_bps, 1.0)
-        self.slippage_bps = _finite_float(self.slippage_bps, 5.0)
+        self.taker_fee_bps = _finite_nonnegative(self.taker_fee_bps, 1.0)
+        self.slippage_bps = _finite_nonnegative(self.slippage_bps, 5.0)
         self.liquidity_risk_enabled = _coerce_bool(self.liquidity_risk_enabled, True)
         self.liquidity_lookback_bars = max(8, min(10_000, _coerce_int(self.liquidity_lookback_bars, 96)))
         self.low_liquidity_volume_ratio = min(1.0, max(0.01, _finite_float(self.low_liquidity_volume_ratio, 0.35)))
@@ -299,7 +304,7 @@ class StrategyConfig:
         self.preferred_utc_session_end_hour = max(0, min(24, _coerce_int(self.preferred_utc_session_end_hour, 21)))
         self.off_session_signal_threshold_add = min(0.10, max(0.0, _finite_float(self.off_session_signal_threshold_add, 0.0)))
         self.off_session_size_multiplier = min(1.0, max(0.10, _finite_float(self.off_session_size_multiplier, 1.0)))
-        self.label_threshold = _finite_float(self.label_threshold, 0.001)
+        self.label_threshold = _finite_nonnegative(self.label_threshold, 0.001)
         self.feature_version = str(self.feature_version or FEATURE_VERSION)
         self.order_type = str(self.order_type or "MARKET").upper()
         self.time_in_force = str(self.time_in_force or "GTC").upper()
