@@ -218,7 +218,9 @@ operator-visible, while invalid negative or non-finite values fall back to
 conservative defaults instead of becoming optimistic assumptions. The CLI, live
 loop, risk report, backtester, optimization evidence generator, and Windows app
 command surface all use the same stop-loss-sized notional calculation. Signed
-non-dry operation is blocked when stop-loss protection is disabled. Signed
+non-dry operation is blocked when stop-loss protection is disabled or when one
+estimated stop-loss would exceed the tightest active daily, session, or
+portfolio risk budget. Signed
 futures operation is also blocked when `liquidation_buffer_pct` is disabled, so
 leverage cannot run without the maintenance-plus-buffer liquidation proxy.
 Backtests preserve candle high/low bounds in model rows; stop-loss, take-profit,

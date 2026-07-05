@@ -145,7 +145,10 @@ per-asset allocation, exchange constraints, and available cash. Futures
 leverage may reduce the required isolated margin, but it cannot raise gross
 order exposure above `max_asset_allocation_pct`. This same notional calculation
 is used by risk reporting, backtesting, live/testnet order sizing, and the
-buy-and-hold edge baseline.
+buy-and-hold edge baseline. Signed live-style startup also checks budget
+coherence: the estimated stop-loss equity hit must fit inside the tightest
+active daily loss, session loss, or portfolio risk budget before any entry loop
+can start.
 
 Autonomous live/testnet orders use bot-owned client-order IDs. Live stop/close
 paths only submit exchange closes for positions that are still present in the
