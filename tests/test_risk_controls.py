@@ -164,6 +164,19 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
     )
     assert any(check.label == "model promotion evidence" and check.status == "ok" for check in promoted.checks)
 
+    strict = build_risk_policy_report(
+        runtime,
+        StrategyConfig(),
+        effective_dry_run=False,
+        model_path=promoted_path,
+        require_model_candidate_search=True,
+        require_accelerator_evidence=True,
+    )
+    assert strict.allowed is False
+    strict_detail = "; ".join(check.detail for check in strict.checks if check.label == "model promotion evidence")
+    assert "model candidate search" in strict_detail
+    assert "training accelerator" in strict_detail
+
     stale_path = tmp_path / "stale.json"
     serialize_model(
         TrainedModel(
