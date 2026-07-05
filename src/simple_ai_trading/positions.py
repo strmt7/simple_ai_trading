@@ -18,10 +18,11 @@ the file loads fine with ``python -m json.tool``.
 from __future__ import annotations
 
 import json
+import math
 import time
 import uuid
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -109,6 +110,48 @@ class ClosedTrade:
     close_client_order_id: str = ""
     close_exchange_order_id: str = ""
     exchange_status: str = "local"
+
+
+_OPEN_REQUIRED_FIELDS = frozenset({
+    "id",
+    "symbol",
+    "market_type",
+    "side",
+    "qty",
+    "entry_price",
+    "leverage",
+    "opened_at_ms",
+    "notional",
+})
+_CLOSED_REQUIRED_FIELDS = frozenset({
+    "id",
+    "symbol",
+    "market_type",
+    "side",
+    "qty",
+    "entry_price",
+    "exit_price",
+    "leverage",
+    "opened_at_ms",
+    "closed_at_ms",
+    "realized_pnl",
+    "realized_pnl_pct",
+})
+_OPEN_KNOWN_FIELDS = frozenset(item.name for item in fields(OpenPosition))
+_OPEN_REQUIRED_TEXT_FIELDS = frozenset({"id", "symbol", "market_type", "side"})
+_OPEN_OPTIONAL_TEXT_FIELDS = frozenset({
+    "strategy_profile",
+    "objective",
+    "owner",
+    "open_client_order_id",
+    "open_exchange_order_id",
+    "exchange_status",
+})
+_OPEN_REQUIRED_FINITE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
+_OPEN_OPTIONAL_FINITE_FIELDS = frozenset({"stop_loss_pct", "take_profit_pct"})
+_OPEN_POSITIVE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
+_OPEN_MARKET_TYPES = frozenset({"spot", "futures"})
+_OPEN_SIDES = frozenset({"LONG", "SHORT"})
 
 
 @dataclass
@@ -200,6 +243,9 @@ class PositionsStore:
         return [ClosedTrade(**entry) for entry in self._load(self.ledger_path)
                 if self._valid_closed_entry(entry)]
 
+    def open_integrity_errors(self) -> tuple[str, ...]:
+        return self._open_file_integrity_errors(self.open_path)
+
     def record_open(self, position: OpenPosition) -> OpenPosition:
         existing = self.load_open()
         existing = [p for p in existing if p.id != position.id]
@@ -261,16 +307,96 @@ class PositionsStore:
 
     @staticmethod
     def _valid_open_entry(entry: dict[str, Any]) -> bool:
-        required = {"id", "symbol", "market_type", "side", "qty", "entry_price",
-                    "leverage", "opened_at_ms", "notional"}
-        return required.issubset(entry.keys())
+        return _OPEN_REQUIRED_FIELDS.issubset(entry.keys())
 
     @staticmethod
     def _valid_closed_entry(entry: dict[str, Any]) -> bool:
-        required = {"id", "symbol", "market_type", "side", "qty", "entry_price",
-                    "exit_price", "leverage", "opened_at_ms", "closed_at_ms",
-                    "realized_pnl", "realized_pnl_pct"}
-        return required.issubset(entry.keys())
+        return _CLOSED_REQUIRED_FIELDS.issubset(entry.keys())
+
+    @classmethod
+    def _open_file_integrity_errors(cls, path: Path) -> tuple[str, ...]:
+        if not path.exists():
+            return ()
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            return (f"open_positions_json_invalid:line={exc.lineno}:column={exc.colno}",)
+        except OSError as exc:
+            return (f"open_positions_unreadable:{exc.__class__.__name__}",)
+        if not isinstance(payload, list):
+            return ("open_positions_payload_not_list",)
+
+        errors: list[str] = []
+        for index, entry in enumerate(payload):
+            if not isinstance(entry, dict):
+                errors.append(f"open_positions_entry_{index}_not_object")
+                continue
+            errors.extend(cls._open_entry_integrity_errors(index, entry))
+        return tuple(errors)
+
+    @staticmethod
+    def _open_entry_integrity_errors(index: int, entry: dict[str, Any]) -> list[str]:
+        errors: list[str] = []
+        keys = set(entry)
+        missing = sorted(_OPEN_REQUIRED_FIELDS - keys)
+        if missing:
+            errors.append(f"open_positions_entry_{index}_missing_fields={','.join(missing)}")
+        unknown = sorted(keys - _OPEN_KNOWN_FIELDS)
+        if unknown:
+            errors.append(f"open_positions_entry_{index}_unknown_fields={','.join(unknown)}")
+
+        for name in sorted(_OPEN_REQUIRED_TEXT_FIELDS):
+            if name not in entry:
+                continue
+            value = entry.get(name)
+            if not isinstance(value, str):
+                errors.append(f"open_positions_entry_{index}_non_string_field={name}")
+                continue
+            if not value.strip():
+                errors.append(f"open_positions_entry_{index}_empty_text_field={name}")
+        for name in sorted(_OPEN_OPTIONAL_TEXT_FIELDS):
+            if name in entry and not isinstance(entry.get(name), str):
+                errors.append(f"open_positions_entry_{index}_non_string_field={name}")
+
+        market_type = str(entry.get("market_type") or "").lower()
+        if "market_type" in entry and market_type not in _OPEN_MARKET_TYPES:
+            errors.append(f"open_positions_entry_{index}_invalid_market_type={market_type}")
+        side = str(entry.get("side") or "").upper()
+        if "side" in entry and side not in _OPEN_SIDES:
+            errors.append(f"open_positions_entry_{index}_invalid_side={side}")
+
+        for name in sorted(_OPEN_REQUIRED_FINITE_FIELDS | _OPEN_OPTIONAL_FINITE_FIELDS):
+            if name not in entry:
+                continue
+            value = entry.get(name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+            ):
+                errors.append(f"open_positions_entry_{index}_non_finite_number={name}")
+                continue
+            if name in _OPEN_POSITIVE_FIELDS and float(value) <= 0.0:
+                errors.append(f"open_positions_entry_{index}_non_positive_number={name}")
+
+        opened_at_ms = entry.get("opened_at_ms")
+        if (
+            "opened_at_ms" in entry
+            and (
+                isinstance(opened_at_ms, bool)
+                or not isinstance(opened_at_ms, int)
+                or opened_at_ms < 0
+            )
+        ):
+            errors.append(f"open_positions_entry_{index}_invalid_opened_at_ms")
+        if "dry_run" in entry and not isinstance(entry.get("dry_run"), bool):
+            errors.append(f"open_positions_entry_{index}_non_boolean_field=dry_run")
+        if not errors:
+            try:
+                OpenPosition(**entry)
+            except TypeError as exc:
+                errors.append(f"open_positions_entry_{index}_constructor_failed:{exc.__class__.__name__}")
+        return errors
 
     @property
     def learning_feedback_path(self) -> Path:

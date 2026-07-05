@@ -53,6 +53,7 @@ class ReconciliationReport:
     stale_local_position_count: int = 0
     unverified_local_position_count: int = 0
     invalid_account_payload_count: int = 0
+    ledger_integrity_error_count: int = 0
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -70,6 +71,7 @@ class ReconciliationReport:
             "stale_local_position_count": self.stale_local_position_count,
             "unverified_local_position_count": self.unverified_local_position_count,
             "invalid_account_payload_count": self.invalid_account_payload_count,
+            "ledger_integrity_error_count": self.ledger_integrity_error_count,
         }
 
 
@@ -202,7 +204,8 @@ def reconcile_account_positions(
     *,
     quantity_tolerance: float = 1e-8,
 ) -> ReconciliationReport:
-    open_positions = store.load_open()
+    ledger_integrity_errors = store.open_integrity_errors()
+    open_positions = [] if ledger_integrity_errors else store.load_open()
     live_positions = [position for position in open_positions if not position.dry_run]
     paper_positions = [position for position in open_positions if position.dry_run]
     unverified_live_positions = [
@@ -222,6 +225,15 @@ def reconcile_account_positions(
     exchange = _aggregate_exchange(exposures)
     keys = sorted(set(local) | set(exchange))
     mismatches: list[ReconciliationMismatch] = []
+    for error in ledger_integrity_errors:
+        mismatches.append(ReconciliationMismatch(
+            symbol=str(runtime.symbol).upper(),
+            side="UNKNOWN",
+            local_qty=0.0,
+            exchange_qty=0.0,
+            difference=0.0,
+            reason=f"local_ledger_integrity_failed:{error}",
+        ))
     if account_rejection is not None:
         mismatches.append(ReconciliationMismatch(
             symbol=str(runtime.symbol).upper(),
@@ -267,6 +279,10 @@ def reconcile_account_positions(
     warnings: list[str] = []
     if paper_positions:
         warnings.append(f"paper_positions_ignored={len(paper_positions)}")
+    warnings.extend(
+        f"local_ledger_integrity_failed:{error}"
+        for error in ledger_integrity_errors
+    )
     if account_rejection is not None:
         warnings.append(account_rejection)
     external_exposure_count = sum(
@@ -295,4 +311,5 @@ def reconcile_account_positions(
         stale_local_position_count=stale_local_count,
         unverified_local_position_count=len(unverified_live_positions),
         invalid_account_payload_count=1 if account_rejection is not None else 0,
+        ledger_integrity_error_count=len(ledger_integrity_errors),
     )

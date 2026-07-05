@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from dataclasses import asdict
 from pathlib import Path
 
 from simple_ai_trading.positions import OpenPosition, PositionsStore
@@ -170,6 +172,47 @@ def test_reconcile_rejects_non_mapping_account_payload(tmp_path: Path) -> None:
     assert report.invalid_account_payload_count == 1
     assert report.warnings == ["account_payload_not_mapping"]
     assert report.mismatches[0].reason == "account_payload_invalid:account_payload_not_mapping"
+
+
+def test_reconcile_rejects_corrupt_open_position_ledger(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+    store.open_path.parent.mkdir(parents=True, exist_ok=True)
+    store.open_path.write_text("{", encoding="utf-8")
+
+    report = reconcile_account_positions(
+        {"positions": []},
+        RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="futures"),
+        store,
+    )
+
+    assert report.ok is False
+    assert report.local_open_count == 0
+    assert report.ledger_integrity_error_count == 1
+    assert report.warnings[0].startswith(
+        "local_ledger_integrity_failed:open_positions_json_invalid"
+    )
+    assert report.mismatches[0].reason.startswith(
+        "local_ledger_integrity_failed:open_positions_json_invalid"
+    )
+
+
+def test_reconcile_rejects_unknown_open_position_ledger_fields(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+    store.open_path.parent.mkdir(parents=True, exist_ok=True)
+    entry = asdict(_position(qty=0.5))
+    entry["manual_qty_override"] = 0.5
+    store.open_path.write_text(json.dumps([entry]), encoding="utf-8")
+
+    report = reconcile_account_positions(
+        {"positions": []},
+        RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="futures"),
+        store,
+    )
+
+    assert report.ok is False
+    assert report.local_open_count == 0
+    assert report.ledger_integrity_error_count == 1
+    assert "unknown_fields=manual_qty_override" in report.mismatches[0].reason
 
 
 def test_spot_account_exposure_uses_base_asset_for_runtime_symbols() -> None:
