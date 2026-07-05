@@ -7,11 +7,13 @@ from simple_ai_trading import binance_archive
 from simple_ai_trading.binance_archive import (
     archive_directory_url,
     archive_file_url,
+    archive_listing_items_by_url,
     archive_listing_url,
     archive_period_in_range,
     archive_url_period,
     filter_archive_urls_by_period,
     ingest_archive_url,
+    list_archive_items,
     list_archive_urls,
     validate_archive_period_window,
 )
@@ -55,13 +57,18 @@ def test_archive_url_builders_and_listing_parser() -> None:
     html = """<?xml version="1.0" encoding="UTF-8"?>
     <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
       <IsTruncated>false</IsTruncated>
-      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip</Key></Contents>
-      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip.CHECKSUM</Key></Contents>
+      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip</Key><LastModified>2026-02-01T00:00:00.000Z</LastModified><Size>12345</Size></Contents>
+      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip.CHECKSUM</Key><Size>100</Size></Contents>
     </ListBucketResult>"""
     seen_listing_urls: list[str] = []
     assert list_archive_urls(symbol="BTCUSDC", interval="1s", html_loader=lambda url: seen_listing_urls.append(url) or html) == [
         "https://data.binance.vision/data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip"
     ]
+    item = list_archive_items(symbol="BTCUSDC", interval="1s", html_loader=lambda _url: html)[0]
+    assert item.period == "2026-01"
+    assert item.size_bytes == 12345
+    assert item.last_modified == "2026-02-01T00:00:00.000Z"
+    assert archive_listing_items_by_url([item.url])[item.url].size_bytes == 12345
     assert seen_listing_urls == [
         "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Fspot%2Fmonthly%2Fklines%2FBTCUSDC%2F1s%2F"
     ]

@@ -671,7 +671,13 @@ def test_command_archive_sync_plan_only_filters_period_window(tmp_path, monkeypa
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-02.zip",
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-07-01.zip",
     ]
+    sizes = {url: (index + 1) * 100 for index, url in enumerate(listed)}
     monkeypatch.setattr(cli, "list_archive_urls", lambda **_kwargs: listed)
+    monkeypatch.setattr(
+        cli,
+        "archive_listing_items_by_url",
+        lambda urls: {url: SimpleNamespace(size_bytes=sizes[url]) for url in urls if url in sizes},
+    )
     monkeypatch.setattr(
         cli,
         "ingest_archive_urls",
@@ -701,9 +707,14 @@ def test_command_archive_sync_plan_only_filters_period_window(tmp_path, monkeypa
     payload = json.loads(capsys.readouterr().out)
     assert payload["plan_only"] is True
     assert payload["planned_files"] == 2
+    assert payload["planned_bytes"] == 500
     assert payload["files"] == 0
     assert payload["archive_plans"][0]["listed_files"] == 4
+    assert payload["archive_plans"][0]["listed_bytes"] == 1000
     assert payload["archive_plans"][0]["filtered_files"] == 2
+    assert payload["archive_plans"][0]["filtered_bytes"] == 500
+    assert payload["archive_plans"][0]["selected_bytes"] == 500
+    assert payload["archive_plans"][0]["size_metadata_available"] is True
     assert payload["archive_plans"][0]["first_period"] == "2024-06-01"
     assert payload["archive_plans"][0]["last_period"] == "2024-06-02"
 
