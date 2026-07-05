@@ -685,18 +685,21 @@ def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, mon
         def asdict(self):
             return {"status": self.status, "symbol": self.symbol, "url": self.url}
 
-    def fake_rank(client, strategy, *, quote_asset, max_symbols, max_scan):
+    def fake_select(client, strategy, *, quote_asset, count, max_scan, strict_only):
+        assert client.testnet is False
+        assert client.market_type == "spot"
         ranked.update({
             "client": client,
             "risk_level": strategy.risk_level,
             "quote_asset": quote_asset,
-            "max_symbols": max_symbols,
+            "count": count,
             "max_scan": max_scan,
+            "strict_only": strict_only,
         })
-        return SimpleNamespace(eligible=[SimpleNamespace(symbol="BTCUSDT"), SimpleNamespace(symbol="ETHUSDT")])
+        return [SimpleNamespace(symbol="BTCUSDT"), SimpleNamespace(symbol="ETHUSDT")]
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
-    monkeypatch.setattr(cli, "rank_high_liquidity_universe", fake_rank)
+    monkeypatch.setattr(cli, "select_top_liquidity_symbols", fake_select)
     monkeypatch.setattr(cli, "list_archive_urls", lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"])
     monkeypatch.setattr(cli, "ingest_archive_urls", lambda **kwargs: [Result(str(kwargs["symbol"]))])
 
@@ -720,8 +723,9 @@ def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, mon
     assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
     assert payload["files"] == 2
     assert ranked["quote_asset"] == "USDT"
-    assert ranked["max_symbols"] == 50
+    assert ranked["count"] == 50
     assert ranked["max_scan"] == 50
+    assert ranked["strict_only"] is True
 
 
 def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
@@ -746,17 +750,18 @@ def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
         def asdict(self):
             return {"status": self.status, "symbol": self.symbol, "url": self.url}
 
-    def fake_rank(_client, _strategy, *, quote_asset, max_symbols, max_scan):
+    def fake_select(client, _strategy, *, quote_asset, count, max_scan, strict_only):
+        assert client.testnet is False
+        assert client.market_type == "futures"
         assert quote_asset == "USDT"
-        assert max_symbols == 10
+        assert count == 10
         assert max_scan == 10
-        return SimpleNamespace(
-            eligible=[
-                SimpleNamespace(symbol="BTCUSDT"),
-                SimpleNamespace(symbol="NEWUSDT"),
-                SimpleNamespace(symbol="ETHUSDT"),
-            ]
-        )
+        assert strict_only is True
+        return [
+            SimpleNamespace(symbol="BTCUSDT"),
+            SimpleNamespace(symbol="NEWUSDT"),
+            SimpleNamespace(symbol="ETHUSDT"),
+        ]
 
     def fake_list(**kwargs):
         symbol = str(kwargs["symbol"])
@@ -769,7 +774,7 @@ def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
         return [Result(symbol)]
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
-    monkeypatch.setattr(cli, "rank_high_liquidity_universe", fake_rank)
+    monkeypatch.setattr(cli, "select_top_liquidity_symbols", fake_select)
     monkeypatch.setattr(cli, "list_archive_urls", fake_list)
     monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
 
@@ -806,19 +811,20 @@ def test_command_archive_sync_max_files_zero_dry_runs_ranked_symbols(
 ) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1m", market_type="futures"))
 
-    def fake_rank(_client, _strategy, *, quote_asset, max_symbols, max_scan):
+    def fake_select(client, _strategy, *, quote_asset, count, max_scan, strict_only):
+        assert client.testnet is False
+        assert client.market_type == "futures"
         assert quote_asset == "USDT"
-        assert max_symbols == 2
+        assert count == 2
         assert max_scan == 2
-        return SimpleNamespace(
-            eligible=[
-                SimpleNamespace(symbol="BTCUSDT"),
-                SimpleNamespace(symbol="ETHUSDT"),
-            ]
-        )
+        assert strict_only is True
+        return [
+            SimpleNamespace(symbol="BTCUSDT"),
+            SimpleNamespace(symbol="ETHUSDT"),
+        ]
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
-    monkeypatch.setattr(cli, "rank_high_liquidity_universe", fake_rank)
+    monkeypatch.setattr(cli, "select_top_liquidity_symbols", fake_select)
     monkeypatch.setattr(cli, "list_archive_urls", lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"])
     monkeypatch.setattr(
         cli,
