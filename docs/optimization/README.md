@@ -69,6 +69,14 @@ futures-supported interval such as `1m`. Reports and `backtest-metrics.csv`
 record both configured profile leverage and effective leverage so a spot round
 with an aggressive profile cannot be mistaken for a 15x futures test.
 
+`tools/optimization_round.py` defaults to `--model-candidates 3` for promotion
+rounds. Each symbol evaluates a bounded set of label target/horizon and model
+regularization candidates on the training/selection slice, then uses only the
+selected candidate on the final holdout. `report.json` and
+`backtest-metrics.csv` record `model_candidate_count`,
+`model_selected_candidate`, and `model_selection_score` so future agents can
+audit whether a graph came from a single default model or a candidate search.
+
 For promotion claims, run `tools/optimization_round.py` with
 `--require-prefilled-data`, `--min-data-rows`, `--min-coverage-ratio`,
 `--max-gap-count`, and `--require-verified-checksum` after `archive-sync` has

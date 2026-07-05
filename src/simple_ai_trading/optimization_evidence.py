@@ -15,7 +15,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Mapping, Sequence
 
-from .advanced_model import advanced_feature_dimension, default_config_for, make_advanced_rows, train_advanced
+from .advanced_model import (
+    AdvancedFeatureConfig,
+    advanced_feature_dimension,
+    default_config_for,
+    make_advanced_rows,
+    train_advanced,
+)
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
@@ -96,6 +102,9 @@ class BacktestEvidence:
     rows: int
     training_rows: int
     training_positive_rate_pct: float
+    model_candidate_count: int
+    model_selected_candidate: str
+    model_selection_score: float | None
     model_training_backend_kind: str
     model_training_backend_device: str
     probability_calibration_backend_kind: str
@@ -130,6 +139,26 @@ class BacktestEvidence:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class RoundModelCandidate:
+    name: str
+    feature_cfg: AdvancedFeatureConfig
+    epochs: int
+    learning_rate: float
+    l2_penalty: float
+    signal_threshold: float
+
+
+@dataclass(frozen=True)
+class RoundModelCandidateResult:
+    candidate: RoundModelCandidate
+    score: float
+    model: object
+    report: object
+    rows: list[object]
+    validation_rows: list[object]
 
 
 def make_evidence_paths(
@@ -857,26 +886,105 @@ def _portfolio_timeline(rows_by_symbol: Sequence[Sequence[Mapping[str, object]]]
     return _portfolio_timeline_from_aggregate(aggregate)
 
 
-def train_round_model(
+def _round_model_candidates(
+    objective: ObjectiveSpec,
+    strategy: StrategyConfig,
+    base_feature_cfg: AdvancedFeatureConfig,
+    requested: int,
+) -> list[RoundModelCandidate]:
+    training = objective.training
+    base_epochs = max(1, int(training.epochs if training else 100))
+    base_lr = float(training.learning_rate if training else 0.03)
+    base_l2 = float(training.l2_penalty if training else 1e-3)
+    base_threshold = float(training.signal_threshold if training else strategy.signal_threshold)
+    base_label_threshold = max(1e-8, float(base_feature_cfg.label_threshold))
+    base_label_lookahead = max(1, int(base_feature_cfg.label_lookahead))
+    raw: list[tuple[str, float, float, float, float, float, str]] = [
+        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode)),
+        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode)),
+        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return"),
+        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier"),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier"),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return"),
+    ]
+    output: list[RoundModelCandidate] = []
+    seen: set[tuple[object, ...]] = set()
+    for name, epoch_mult, lr_mult, l2_mult, threshold_mult, lookahead_mult, label_mode in raw:
+        feature_cfg = replace(
+            base_feature_cfg,
+            label_threshold=max(1e-8, base_label_threshold * float(threshold_mult)),
+            label_lookahead=max(1, int(round(base_label_lookahead * float(lookahead_mult)))),
+            label_mode=str(label_mode),
+            label_stop_threshold=(
+                max(1e-8, float(base_feature_cfg.label_stop_threshold) * float(threshold_mult))
+                if base_feature_cfg.label_stop_threshold is not None
+                else None
+            ),
+        )
+        candidate = RoundModelCandidate(
+            name=name,
+            feature_cfg=feature_cfg,
+            epochs=max(1, int(round(base_epochs * float(epoch_mult)))),
+            learning_rate=max(1e-6, base_lr * float(lr_mult)),
+            l2_penalty=max(0.0, base_l2 * float(l2_mult)),
+            signal_threshold=base_threshold,
+        )
+        key = (
+            candidate.epochs,
+            round(candidate.learning_rate, 12),
+            round(candidate.l2_penalty, 12),
+            round(candidate.signal_threshold, 12),
+            advanced_feature_dimension(candidate.feature_cfg),
+            candidate.feature_cfg.label_threshold,
+            candidate.feature_cfg.label_lookahead,
+            candidate.feature_cfg.label_mode,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        output.append(candidate)
+        if len(output) >= max(1, int(requested)):
+            break
+    return output
+
+
+def _apply_probability_calibration(model: object, calibration: object) -> None:
+    if getattr(calibration, "status", "fail") == "fail":
+        return
+    model.probability_temperature = float(getattr(calibration, "temperature"))
+    model.probability_calibration_size = int(getattr(calibration, "rows"))
+    model.probability_log_loss_before = float(getattr(calibration, "log_loss_before"))
+    model.probability_log_loss_after = float(getattr(calibration, "log_loss_after"))
+    model.probability_brier_before = float(getattr(calibration, "brier_before"))
+    model.probability_brier_after = float(getattr(calibration, "brier_after"))
+    model.probability_ece_before = float(getattr(calibration, "expected_calibration_error_before"))
+    model.probability_ece_after = float(getattr(calibration, "expected_calibration_error_after"))
+    model.probability_calibration_backend_requested = str(getattr(calibration, "calibration_backend_requested", ""))
+    model.probability_calibration_backend_kind = str(getattr(calibration, "calibration_backend_kind", ""))
+    model.probability_calibration_backend_device = str(getattr(calibration, "calibration_backend_device", ""))
+    model.probability_calibration_backend_reason = str(getattr(calibration, "calibration_backend_reason", ""))
+
+
+def _evaluate_round_model_candidate(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
     objective: ObjectiveSpec,
+    candidate: RoundModelCandidate,
     *,
     market_type: str,
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
-    require_gpu: bool = False,
+    require_gpu: bool,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
-) -> tuple[object, object, list[object], list[object]]:
-    feature_cfg = default_config_for(objective.name, strategy.enabled_features)
+) -> RoundModelCandidateResult:
     if status_callback is not None:
         status_callback("feature_generation_started", {"candle_count": len(candles)})
-    rows = make_advanced_rows(candles, feature_cfg)
+    rows = make_advanced_rows(candles, candidate.feature_cfg)
     if status_callback is not None:
         status_callback(
             "feature_generation_complete",
-            {"row_count": len(rows), "feature_dim": advanced_feature_dimension(feature_cfg)},
+            {"row_count": len(rows), "feature_dim": advanced_feature_dimension(candidate.feature_cfg)},
         )
     train_selection_rows, validation_rows = _split_train_validation(rows, validation_fraction=0.25)
     train_rows, selection_rows = _split_train_validation(train_selection_rows, validation_fraction=0.20)
@@ -894,10 +1002,10 @@ def train_round_model(
         )
     model, report = train_advanced(
         train_rows,
-        feature_cfg,
-        epochs=max(1, int(objective.training.epochs if objective.training else 100)),
-        learning_rate=float(objective.training.learning_rate if objective.training else 0.03),
-        l2_penalty=float(objective.training.l2_penalty if objective.training else 1e-3),
+        candidate.feature_cfg,
+        epochs=candidate.epochs,
+        learning_rate=candidate.learning_rate,
+        l2_penalty=candidate.l2_penalty,
         validation_rows=selection_rows[: max(1, min(len(selection_rows), 5000))],
         early_stopping_rounds=30,
         compute_backend=compute_backend,
@@ -925,26 +1033,14 @@ def train_round_model(
         compute_backend=compute_backend,
         batch_size=batch_size,
     )
-    if require_gpu and calibration.status != "fail":
+    if require_gpu and getattr(calibration, "status", "fail") != "fail":
         _require_non_cpu_backend(
             calibration.calibration_backend_kind,
             calibration.calibration_backend_reason,
             "probability_calibration",
         )
-    if calibration.status != "fail":
-        model.probability_temperature = float(calibration.temperature)
-        model.probability_calibration_size = int(calibration.rows)
-        model.probability_log_loss_before = float(calibration.log_loss_before)
-        model.probability_log_loss_after = float(calibration.log_loss_after)
-        model.probability_brier_before = float(calibration.brier_before)
-        model.probability_brier_after = float(calibration.brier_after)
-        model.probability_ece_before = float(calibration.expected_calibration_error_before)
-        model.probability_ece_after = float(calibration.expected_calibration_error_after)
-        model.probability_calibration_backend_requested = str(calibration.calibration_backend_requested)
-        model.probability_calibration_backend_kind = str(calibration.calibration_backend_kind)
-        model.probability_calibration_backend_device = str(calibration.calibration_backend_device)
-        model.probability_calibration_backend_reason = str(calibration.calibration_backend_reason)
-    model.decision_threshold = float(objective.training.signal_threshold if objective.training else strategy.signal_threshold)
+    _apply_probability_calibration(model, calibration)
+    model.decision_threshold = float(candidate.signal_threshold)
     model.threshold_source = "objective_round_evidence_default"
     threshold_report = calibrate_threshold_for_backtest(
         selection_rows,
@@ -1044,8 +1140,10 @@ def train_round_model(
             },
         )
     inverted_score = objective.score(inverted_result) if objective.accepts(inverted_result) else float("-inf")
+    score = base_score
     if inverted_score > base_score + 1e-12:
         model = inverted_model
+        score = inverted_score
     elif not math.isfinite(base_score):
         model.meta_label_policy = {
             "enabled": True,
@@ -1063,7 +1161,80 @@ def train_round_model(
             *list(getattr(model, "quality_warnings", [])),
             "round_selection_gate_failed_no_final_holdout_entries",
         ]
-    return model, report, list(rows), list(validation_rows)
+    return RoundModelCandidateResult(
+        candidate=candidate,
+        score=float(score),
+        model=model,
+        report=report,
+        rows=list(rows),
+        validation_rows=list(validation_rows),
+    )
+
+
+def train_round_model(
+    candles: Sequence[Candle],
+    strategy: StrategyConfig,
+    objective: ObjectiveSpec,
+    *,
+    market_type: str,
+    starting_cash: float,
+    compute_backend: str,
+    batch_size: int,
+    require_gpu: bool = False,
+    model_candidate_count: int = 1,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
+) -> tuple[object, object, list[object], list[object]]:
+    base_feature_cfg = default_config_for(objective.name, strategy.enabled_features)
+    candidates = _round_model_candidates(objective, strategy, base_feature_cfg, model_candidate_count)
+    if len(candidates) > 1 and status_callback is not None:
+        status_callback("model_candidate_search_started", {"candidate_count": len(candidates)})
+    best: RoundModelCandidateResult | None = None
+    for index, candidate in enumerate(candidates, start=1):
+        callback = status_callback if index == 1 else None
+        if len(candidates) > 1 and status_callback is not None:
+            status_callback(
+                "model_candidate_started",
+                {"candidate_index": index, "candidate_count": len(candidates), "candidate": candidate.name},
+            )
+        result = _evaluate_round_model_candidate(
+            candles,
+            strategy,
+            objective,
+            candidate,
+            market_type=market_type,
+            starting_cash=starting_cash,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
+            require_gpu=require_gpu,
+            status_callback=callback,
+        )
+        if len(candidates) > 1 and status_callback is not None:
+            status_callback(
+                "model_candidate_complete",
+                {
+                    "candidate_index": index,
+                    "candidate_count": len(candidates),
+                    "candidate": candidate.name,
+                    "score": float(result.score),
+                },
+            )
+        if best is None or result.score > best.score + 1e-12:
+            best = result
+    if best is None:
+        raise ValueError("no model candidates were evaluated")
+    best.model.model_candidate_count = len(candidates)
+    best.model.model_selected_candidate = best.candidate.name
+    best.model.model_selection_score = float(best.score)
+    if len(candidates) > 1 and status_callback is not None:
+        status_callback(
+            "model_candidate_search_complete",
+            {
+                "candidate_count": len(candidates),
+                "selected_candidate": best.candidate.name,
+                "selection_score": float(best.score),
+            },
+        )
+    return best.model, best.report, list(best.rows), list(best.validation_rows)
 
 
 def build_round_evidence(
@@ -1090,6 +1261,7 @@ def build_round_evidence(
     require_verified_checksum: bool = False,
     require_gpu: bool = False,
     use_objective_strategy_defaults: bool = False,
+    model_candidate_count: int = 1,
 ) -> dict[str, object]:
     interval = validate_interval(interval, market_type)
     paths = make_evidence_paths(round_id, data_root=data_root, docs_root=docs_root, market_db_path=db_path)
@@ -1257,6 +1429,7 @@ def build_round_evidence(
                 compute_backend=compute_backend,
                 batch_size=batch_size,
                 require_gpu=require_gpu,
+                model_candidate_count=model_candidate_count,
                 status_callback=symbol_train_status,
             )
             write_status(
@@ -1413,6 +1586,13 @@ def build_round_evidence(
                 rows=len(validation_rows),
                 training_rows=int(getattr(train_report, "row_count", 0) or 0),
                 training_positive_rate_pct=float(getattr(train_report, "positive_rate", 0.0) or 0.0) * 100.0,
+                model_candidate_count=int(getattr(model, "model_candidate_count", 1) or 1),
+                model_selected_candidate=str(getattr(model, "model_selected_candidate", "default") or "default"),
+                model_selection_score=(
+                    float(getattr(model, "model_selection_score"))
+                    if getattr(model, "model_selection_score", None) is not None
+                    else None
+                ),
                 model_training_backend_kind=str(getattr(model, "training_backend_kind", "")),
                 model_training_backend_device=str(getattr(model, "training_backend_device", "")),
                 probability_calibration_backend_kind=str(
@@ -1482,6 +1662,9 @@ def build_round_evidence(
                 rows=0,
                 training_rows=0,
                 training_positive_rate_pct=0.0,
+                model_candidate_count=int(max(1, model_candidate_count)),
+                model_selected_candidate="",
+                model_selection_score=None,
                 model_training_backend_kind="error",
                 model_training_backend_device="error",
                 probability_calibration_backend_kind="error",
@@ -1595,6 +1778,7 @@ def build_round_evidence(
         "compute_backend_device": backend_info.device,
         "compute_backend_reason": backend_info.reason,
         "require_gpu": bool(require_gpu),
+        "model_candidate_count": int(max(1, model_candidate_count)),
         "starting_cash": float(starting_cash),
         "symbol_count_requested": len([str(symbol).strip() for symbol in (symbols or []) if str(symbol).strip()]) if symbols else int(symbol_count),
         "symbol_count_completed": len(metrics),
