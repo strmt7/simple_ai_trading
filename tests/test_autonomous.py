@@ -25,6 +25,7 @@ from simple_ai_trading.autonomous import (
     _directional_confidence,
     _entry_gate,
     _evaluate_auto_close,
+    _apply_close_order,
     _loss_budget_guard,
     _apply_open_order,
     _open_position_from_decision,
@@ -427,6 +428,42 @@ def test_apply_open_order_infers_filled_status_from_execution() -> None:
     assert opened.open_exchange_order_id == "42"
 
 
+def test_apply_open_order_rejects_ack_without_execution() -> None:
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+
+    with pytest.raises(BinanceAPIError, match="open order response did not include resolved execution fill"):
+        _apply_open_order(
+            position,
+            {
+                "orderId": 42,
+                "clientOrderId": position.open_client_order_id,
+                "status": "NEW",
+                "origQty": str(position.qty),
+                "price": "100",
+            },
+        )
+
+
+def test_apply_close_order_rejects_ack_without_execution() -> None:
+    position = _make_position("LONG", entry=100.0)
+    trade = _close_to_trade(position, 99.0, "risk-close", clock=lambda: 3.0)
+
+    with pytest.raises(BinanceAPIError, match="close order response did not include resolved execution fill"):
+        _apply_close_order(
+            trade,
+            {
+                "orderId": 43,
+                "clientOrderId": bot_client_order_id(position.id, "close"),
+                "status": "NEW",
+                "origQty": str(trade.qty),
+                "price": "99",
+            },
+            bot_client_order_id(position.id, "close"),
+        )
+
+
 # ----- _close_to_trade ------------------------------------------------------
 
 
@@ -658,6 +695,40 @@ def test_close_tracked_live_verified_position_uses_reduce_only_order(tmp_path: P
     trade = store.load_ledger()[0]
     assert trade.close_client_order_id == bot_client_order_id(position.id, "close")
     assert trade.exchange_status == "FILLED"
+
+
+def test_close_tracked_live_ack_without_execution_preserves_open_position(tmp_path: Path) -> None:
+    class AckOnlyCloseClient(FakeClient):
+        def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
+            order = super().place_order(symbol, side, quantity, **kwargs)
+            order.pop("executedQty", None)
+            order.pop("avgPrice", None)
+            order["origQty"] = str(quantity)
+            order["status"] = "NEW"
+            return order
+
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+
+    report = close_tracked_open_positions(
+        store,
+        111.0,
+        "operator-stop",
+        client=AckOnlyCloseClient(price=111.0),
+        reduce_only=True,
+        clock=lambda: 10.0,
+    )
+
+    assert report.closed == 0
+    assert report.failed == 1
+    assert report.ok is False
+    assert "close order response did not include resolved execution fill" in report.failures[0]
+    assert len(store.load_open()) == 1
+    assert store.load_ledger() == []
 
 
 def test_close_tracked_live_partial_fill_preserves_open_remainder(tmp_path: Path) -> None:

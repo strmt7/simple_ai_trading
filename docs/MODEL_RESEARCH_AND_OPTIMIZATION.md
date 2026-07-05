@@ -610,6 +610,8 @@ assert that every CLI command appears in the Windows app.
   tightest active daily, session, or portfolio risk budget.
 - No signed live startup with stop-loss geometry that cannot produce a positive
   protective stop price for long exposure.
+- No live ledger update from ACK-only order responses; `origQty`, requested
+  size, and local fallback prices are not executed-fill evidence.
 - No score-improving model refinement if the validation/full-sample risk
   snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
 - No autonomous post-outage resume until signed exchange exposure reconciles
