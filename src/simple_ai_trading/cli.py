@@ -4483,18 +4483,30 @@ def command_data_health(args: argparse.Namespace) -> int:
             archive_status_counts = _count_by(archives, "status")
             checksum_status_counts = _count_by(archives, "checksum_status")
             reasons: list[str] = []
+            warnings: list[str] = []
             if quality.coverage.count < min_rows:
                 reasons.append(f"rows_below_min:{quality.coverage.count}/{min_rows}")
             if quality.gap_count > max_gap_count:
                 reasons.append(f"gap_count_above_max:{quality.gap_count}/{max_gap_count}")
             if quality.coverage_ratio < min_coverage_ratio:
                 reasons.append(f"coverage_ratio_below_min:{quality.coverage_ratio:.6f}/{min_coverage_ratio:.6f}")
-            if archive_status_counts.get("error", 0) > 0:
-                reasons.append(f"archive_errors:{archive_status_counts['error']}")
             if checksum_status_counts.get("mismatch", 0) > 0:
                 reasons.append(f"checksum_mismatches:{checksum_status_counts['mismatch']}")
             if require_verified_checksum and checksum_status_counts.get("verified", 0) <= 0:
                 reasons.append("no_verified_archive_checksum")
+            archive_error_count = archive_status_counts.get("error", 0)
+            if archive_error_count > 0:
+                superseded_by_verified_coverage = (
+                    quality.coverage.count >= min_rows
+                    and quality.gap_count <= max_gap_count
+                    and quality.coverage_ratio >= min_coverage_ratio
+                    and checksum_status_counts.get("mismatch", 0) <= 0
+                    and (not require_verified_checksum or checksum_status_counts.get("verified", 0) > 0)
+                )
+                if superseded_by_verified_coverage:
+                    warnings.append(f"superseded_archive_errors:{archive_error_count}")
+                else:
+                    reasons.append(f"archive_errors:{archive_error_count}")
             item_status = "ok" if not reasons else "block"
             items.append(
                 {
@@ -4513,6 +4525,7 @@ def command_data_health(args: argparse.Namespace) -> int:
                     "archive_status_counts": archive_status_counts,
                     "checksum_status_counts": checksum_status_counts,
                     "reasons": reasons,
+                    "warnings": warnings,
                 }
             )
 
@@ -4545,6 +4558,8 @@ def command_data_health(args: argparse.Namespace) -> int:
             )
             for reason in item["reasons"]:
                 print(f"warning: {item['symbol']} {reason}", file=sys.stderr)
+            for warning in item.get("warnings", []):
+                print(f"warning: {item['symbol']} {warning}", file=sys.stderr)
     return 0 if overall_status == "ok" else 2
 
 
