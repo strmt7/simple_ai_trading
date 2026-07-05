@@ -305,6 +305,9 @@ def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]
             "accepted": bool(portfolio.get("accepted")),
             "reason": _bounded_text(portfolio.get("reason")),
             "effective_symbol_count": _finite(portfolio.get("effective_symbol_count")),
+            "correlation_adjusted_effective_symbol_count": _finite(
+                portfolio.get("correlation_adjusted_effective_symbol_count")
+            ),
             "max_pairwise_correlation": _finite(portfolio.get("max_pairwise_correlation")),
             "max_cluster_weight": _finite(portfolio.get("max_cluster_weight")),
             "portfolio_cvar_95": _finite(portfolio.get("portfolio_cvar_95")),

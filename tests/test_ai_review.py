@@ -75,6 +75,7 @@ def _write_report(
             "accepted": accepted,
             "reason": None if accepted else "symbols<2",
             "effective_symbol_count": 2.0 if accepted else 0.0,
+            "correlation_adjusted_effective_symbol_count": 1.7 if accepted else 0.0,
             "max_pairwise_correlation": 0.42,
             "max_cluster_weight": 0.40,
             "portfolio_cvar_95": 0.002,
