@@ -111,6 +111,35 @@ def test_train_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None
     assert "training failed" in trained.training_backend_reason
 
 
+def test_torch_training_normalization_matches_population_stats() -> None:
+    pytest.importorskip("torch")
+    from simple_ai_trading import model as model_mod
+
+    rows = _rows()
+    expected_means, expected_stds = model_mod._collect_feature_stats(rows)
+    backend = model_mod.resolve_backend("directml")
+    if backend.kind != "directml":
+        backend = BackendInfo("cpu", "cpu", "cpu", "Torch CPU", "")
+
+    trained = model_mod._train_torch(
+        rows,
+        epochs=2,
+        learning_rate=0.01,
+        seed=7,
+        l2_penalty=1e-4,
+        feature_signature="test",
+        validation_rows=rows[:12],
+        early_stopping_rounds=None,
+        min_delta=1e-6,
+        batch_size=32,
+        backend=backend,
+    )
+
+    assert trained.feature_means == pytest.approx(expected_means, abs=1e-5)
+    assert trained.feature_stds == pytest.approx(expected_stds, abs=1e-5)
+    assert trained.training_loss is not None
+
+
 def test_load_model_backwards_compatibility(tmp_path: Path) -> None:
     model_path = tmp_path / "legacy_model.json"
     model_path.write_text(

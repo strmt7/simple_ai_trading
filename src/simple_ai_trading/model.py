@@ -1091,13 +1091,19 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
     import torch  # type: ignore
 
     feature_dim = len(rows[0].features)
-    means, stds = _collect_feature_stats(rows)
-    normalized = _normalize_rows(rows, means, stds)
     device = _torch_device_for_backend(backend)
-    x_train = torch.tensor(normalized, dtype=torch.float32, device=device)
+    x_train = torch.tensor([row.features for row in rows], dtype=torch.float32, device=device)
+    means_t = x_train.mean(dim=0)
+    centered_train = x_train - means_t
+    stds_t = torch.sqrt(torch.mean(centered_train * centered_train, dim=0))
+    stds_t = torch.where(torch.abs(stds_t) > 1e-6, stds_t, torch.ones_like(stds_t))
+    x_train = centered_train / stds_t
+    means = [float(value) for value in means_t.detach().cpu().tolist()]
+    stds = [float(value) for value in stds_t.detach().cpu().tolist()]
     y_train = torch.tensor([float(row.label) for row in rows], dtype=torch.float32, device=device)
     if validation_rows:
-        x_validation = torch.tensor(_normalize_rows(validation_rows, means, stds), dtype=torch.float32, device=device)
+        x_validation_raw = torch.tensor([row.features for row in validation_rows], dtype=torch.float32, device=device)
+        x_validation = (x_validation_raw - means_t) / stds_t
         y_validation = torch.tensor([float(row.label) for row in validation_rows], dtype=torch.float32, device=device)
     else:
         x_validation = None
@@ -1113,8 +1119,8 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
         class_weight_pos = 1.0
         class_weight_neg = 1.0
 
-    best_weights = list(initial_weights)
-    best_bias = 0.0
+    best_weights_t = weights.detach().clone()
+    best_bias_t = bias.detach().clone()
     best_epoch: int | None = None
     best_validation_loss = float("inf")
     rounds_without_improvement = 0
@@ -1162,8 +1168,8 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
             )
             if current_loss < best_validation_loss - float(min_delta):
                 best_validation_loss = current_loss
-                best_weights = [float(value) for value in current_weights_t.cpu().tolist()]
-                best_bias = float(current_bias_t.cpu().item())
+                best_weights_t = current_weights_t.clone()
+                best_bias_t = current_bias_t.clone()
                 best_epoch = epoch_index
                 rounds_without_improvement = 0
             else:
@@ -1172,28 +1178,24 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
                     break
 
     if x_validation is not None and best_epoch is not None:
-        final_weights = best_weights
-        final_bias = best_bias
+        final_weights_t = best_weights_t
+        final_bias_t = best_bias_t
     else:
-        final_weights = [float(value) for value in weights.detach().cpu().tolist()]
-        final_bias = float(bias.detach().cpu().item())
-    averaged_weights = [float(value) for value in averaged_weights_t.detach().cpu().tolist()]
-    averaged_bias = float(averaged_bias_t.detach().cpu().item())
-    final_weights, final_bias = _maybe_promote_averaged_params(
-        rows,
-        validation_rows,
-        final_weights,
-        final_bias,
-        means,
-        stds,
-        averaged_weights,
-        averaged_bias,
-        averaged_count,
-        min_delta=min_delta,
-    )
+        final_weights_t = weights.detach().clone()
+        final_bias_t = bias.detach().clone()
+    if averaged_count > 0:
+        candidate_weights_t = averaged_weights_t / float(averaged_count)
+        candidate_bias_t = averaged_bias_t / float(averaged_count)
+        selector_x = x_validation if x_validation is not None else x_train
+        selector_y = y_validation if y_validation is not None else y_train
+        current_selector_loss = tensor_log_loss(selector_x, selector_y, final_weights_t, final_bias_t)
+        candidate_selector_loss = tensor_log_loss(selector_x, selector_y, candidate_weights_t, candidate_bias_t)
+        if float(candidate_selector_loss.detach().cpu().item()) < float(current_selector_loss.detach().cpu().item()) - float(min_delta):
+            final_weights_t = candidate_weights_t.detach().clone()
+            final_bias_t = candidate_bias_t.detach().clone()
 
-    final_weights_t = torch.tensor(final_weights, dtype=torch.float32, device=device)
-    final_bias_t = torch.tensor(float(final_bias), dtype=torch.float32, device=device)
+    final_weights = [float(value) for value in final_weights_t.detach().cpu().tolist()]
+    final_bias = float(final_bias_t.detach().cpu().item())
     training_loss = float(tensor_log_loss(x_train, y_train, final_weights_t, final_bias_t).detach().cpu().item())
     validation_loss = (
         float(tensor_log_loss(x_validation, y_validation, final_weights_t, final_bias_t).detach().cpu().item())
