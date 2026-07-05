@@ -427,6 +427,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_archive_sync.add_argument("--start-period", default=None, help="inclusive archive period start, YYYY-MM or YYYY-MM-DD")
     parser_archive_sync.add_argument("--end-period", default=None, help="inclusive archive period end, YYYY-MM or YYYY-MM-DD")
     parser_archive_sync.add_argument("--plan-only", action="store_true", help="list the bounded archive plan without downloading files")
+    parser_archive_sync.add_argument(
+        "--max-planned-gb",
+        type=float,
+        default=50.0,
+        help="block non-plan archive downloads above this planned S3 ZIP size; use 0 to disable",
+    )
     parser_archive_sync.add_argument("--timeout", type=int, default=120)
     parser_archive_sync.add_argument("--force", action="store_true")
     parser_archive_sync.add_argument("--no-verify-checksum", action="store_true", help="skip Binance .CHECKSUM sidecar verification")
@@ -4716,6 +4722,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     all_results = []
     errors: list[dict[str, str]] = []
     archive_plans: list[dict[str, object]] = []
+    selected_archive_urls: dict[str, list[str]] = {}
     for symbol in symbols:
         try:
             urls = prelisted_archive_urls.get(symbol)
@@ -4764,23 +4771,37 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             window_suffix = "_in_period_window" if start_period or end_period else ""
             errors.append({"symbol": symbol, "error": f"no_{cadence}_archive_files{window_suffix}"})
             continue
-        if plan_only:
-            continue
-        all_results.extend(
-            ingest_archive_urls(
-                db_path=Path(getattr(args, "db", "data/market_data.sqlite")),
-                symbol=symbol,
-                interval=interval,
-                urls=urls,
-                market_type=market_type,
-                data_type=data_type,
-                timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
-                force=bool(getattr(args, "force", False)),
-                verify_checksum=not bool(getattr(args, "no_verify_checksum", False)),
-                require_checksum=bool(getattr(args, "require_checksum", False)),
-            )
-        )
+        selected_archive_urls[symbol] = list(urls)
     shortfall = requested_top_symbols > 0 and len(symbols) < requested_top_symbols
+    planned_files = sum(int(item["selected_files"]) for item in archive_plans)
+    planned_bytes = sum(int(item["selected_bytes"]) for item in archive_plans)
+    max_planned_gb = max(0.0, float(getattr(args, "max_planned_gb", 50.0) or 0.0))
+    max_planned_bytes = int(max_planned_gb * 1_000_000_000)
+    if (
+        not plan_only
+        and max_planned_bytes > 0
+        and planned_bytes > max_planned_bytes
+    ):
+        errors.append({
+            "symbol": "*",
+            "error": f"planned_bytes_exceeds_max:{planned_bytes}/{max_planned_bytes}",
+        })
+    if not plan_only and not errors and not shortfall:
+        for symbol, urls in selected_archive_urls.items():
+            all_results.extend(
+                ingest_archive_urls(
+                    db_path=Path(getattr(args, "db", "data/market_data.sqlite")),
+                    symbol=symbol,
+                    interval=interval,
+                    urls=urls,
+                    market_type=market_type,
+                    data_type=data_type,
+                    timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
+                    force=bool(getattr(args, "force", False)),
+                    verify_checksum=not bool(getattr(args, "no_verify_checksum", False)),
+                    require_checksum=bool(getattr(args, "require_checksum", False)),
+                )
+            )
     payload = {
         "status": (
             "ok"
@@ -4798,9 +4819,11 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         "plan_only": bool(plan_only),
         "start_period": start_period or "",
         "end_period": end_period or "",
+        "max_planned_gb": float(max_planned_gb),
+        "max_planned_bytes": int(max_planned_bytes),
         "files": len(all_results),
-        "planned_files": sum(int(item["selected_files"]) for item in archive_plans),
-        "planned_bytes": sum(int(item["selected_bytes"]) for item in archive_plans),
+        "planned_files": int(planned_files),
+        "planned_bytes": int(planned_bytes),
         "rows_read": sum(item.rows_read for item in all_results),
         "rows_inserted": sum(item.rows_inserted for item in all_results),
         "bytes_downloaded": sum(item.bytes_downloaded for item in all_results),

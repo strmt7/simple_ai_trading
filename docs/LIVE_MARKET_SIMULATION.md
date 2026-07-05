@@ -38,7 +38,9 @@ Execution cost is symbol-specific where market data exists:
   backfills should use `--start-period`, `--end-period`, and `--plan-only`
   first; the plan reports listed, filtered, selected, first, and last archive
   periods plus official S3 byte estimates when available before any ZIP
-  download starts.
+  download starts. Non-plan archive downloads are blocked above
+  `--max-planned-gb` (`50` by default) unless the operator deliberately narrows
+  the period window or raises the cap.
 - Archive downloads compute SHA-256 locally and, by default, verify Binance's
   `.CHECKSUM` sidecar when it is available. A checksum mismatch fails before
   any candle rows are written. `--require-checksum` makes missing sidecars a
