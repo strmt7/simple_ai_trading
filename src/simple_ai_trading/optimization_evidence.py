@@ -925,6 +925,12 @@ def train_round_model(
         compute_backend=compute_backend,
         batch_size=batch_size,
     )
+    if require_gpu and calibration.status != "fail":
+        _require_non_cpu_backend(
+            calibration.calibration_backend_kind,
+            calibration.calibration_backend_reason,
+            "probability_calibration",
+        )
     if calibration.status != "fail":
         model.probability_temperature = float(calibration.temperature)
         model.probability_calibration_size = int(calibration.rows)
