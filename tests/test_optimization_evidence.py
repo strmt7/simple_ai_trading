@@ -75,6 +75,10 @@ def _evidence(
         threshold_calibration_score=1.0,
         threshold_calibration_pnl=pnl,
         threshold_calibration_trades=max(0, closed_trades),
+        threshold_diagnostic_best_threshold=0.66,
+        threshold_diagnostic_best_score=1.0,
+        threshold_diagnostic_best_pnl=pnl,
+        threshold_diagnostic_best_trades=max(0, closed_trades),
         decision_threshold=0.66,
         round_selection_gate_passed=accepted,
         round_selection_reject_reason=None if accepted else "test selection rejection",
@@ -691,6 +695,101 @@ def test_train_round_model_keeps_rejected_selection_diagnostic_holdout_active(
     assert "closed_trades<5" in selected_model.round_selection_reject_reason
     assert "round_selection_gate_failed_diagnostic_holdout_only" in selected_model.quality_warnings
     assert getattr(selected_model, "meta_label_policy", {}) == {}
+
+
+def test_train_round_model_uses_rejected_best_threshold_for_diagnostics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=1)
+        for index in range(100)
+    ]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(
+        oe,
+        "train_advanced",
+        lambda train_rows, _feature_cfg, **_kwargs: (
+            model,
+            SimpleNamespace(row_count=len(train_rows), positive_rate=1.0),
+        ),
+    )
+    monkeypatch.setattr(
+        oe,
+        "calibrate_probability_temperature",
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+    )
+    monkeypatch.setattr(
+        oe,
+        "calibrate_threshold_for_backtest",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            accepted=False,
+            threshold=0.50,
+            score=-50.0,
+            realized_pnl=0.0,
+            closed_trades=0,
+            best_threshold=0.61,
+            best_score=-9.0,
+            best_realized_pnl=-8.0,
+            best_closed_trades=4,
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+            scoring_backend_reason="",
+        ),
+    )
+
+    def fake_run_backtest(_rows, candidate_model, *_args, **_kwargs):
+        uses_diagnostic_threshold = abs(float(candidate_model.decision_threshold or 0.0) - 0.61) <= 1e-12
+        realized = -8.0 if uses_diagnostic_threshold else 0.0
+        closed = 4 if uses_diagnostic_threshold else 0
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + realized,
+            realized_pnl=realized,
+            win_rate=0.25 if closed else 0.0,
+            trades=closed,
+            max_drawdown=0.01,
+            closed_trades=closed,
+            gross_exposure=100.0 if closed else 0.0,
+            total_fees=1.0 if closed else 0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0 if closed else 0.0,
+            trades_per_day_cap_hit=0,
+            buy_hold_pnl=0.0,
+            edge_vs_buy_hold=realized,
+            profit_factor=0.5 if closed else 0.0,
+            expectancy=realized / closed if closed else 0.0,
+            max_consecutive_losses=2 if closed else 0,
+        )
+
+    monkeypatch.setattr(oe, "run_backtest", fake_run_backtest)
+
+    selected_model, _report, _all_rows, holdout_rows = oe.train_round_model(
+        [_candle(index) for index in range(100)],
+        StrategyConfig(),
+        get_objective("conservative"),
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+    )
+
+    assert len(holdout_rows) == 25
+    assert selected_model.round_selection_gate_passed is False
+    assert selected_model.threshold_source == "round_selection_rejected_best_threshold_diagnostic"
+    assert selected_model.decision_threshold == pytest.approx(0.61)
+    assert selected_model.threshold_calibration_trades == 4
+    assert selected_model.threshold_calibration_pnl == pytest.approx(-8.0)
+    assert selected_model.threshold_diagnostic_best_threshold == pytest.approx(0.61)
+    assert selected_model.threshold_diagnostic_best_trades == 4
+    assert selected_model.threshold_diagnostic_best_pnl == pytest.approx(-8.0)
 
 
 def test_train_round_model_selects_best_scored_candidate(

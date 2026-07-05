@@ -301,6 +301,12 @@ fail-closed selection guard. Rejected selection gates are not promoted, but the
 optimizer now keeps their final holdout diagnostic rather than installing an
 impossible meta-label threshold that forces a flat equity line. This preserves
 the real P&L/trade-count evidence while still marking the symbol as rejected.
+Threshold calibration also records the best searched diagnostic threshold
+separately from the selected safe threshold. When the best searched threshold
+produces losing trades and is rejected, `best_closed_trades`,
+`best_realized_pnl`, and the exported
+`threshold_diagnostic_best_*` fields must still be reviewed; rejected evidence
+is evidence of failure, not missing data and not a promotable strategy.
 
 ## Financial Sanity Gates
 

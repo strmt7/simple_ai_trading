@@ -5029,6 +5029,18 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         model.threshold_calibration_score = float(threshold_score)
         model.threshold_calibration_pnl = float(threshold_pnl)
         model.threshold_calibration_trades = int(threshold_trades)
+        model.threshold_diagnostic_best_threshold = float(
+            cast(float | int | str, profit_backtest.get("best_threshold", threshold))
+        )
+        model.threshold_diagnostic_best_score = float(
+            cast(float | int | str, profit_backtest.get("best_score", threshold_score))
+        )
+        model.threshold_diagnostic_best_pnl = float(
+            cast(float | int | str, profit_backtest.get("best_realized_pnl", threshold_pnl))
+        )
+        model.threshold_diagnostic_best_trades = int(
+            cast(float | int | str, profit_backtest.get("best_closed_trades", threshold_trades))
+        )
     train_score = evaluate(train_rows, model, threshold=threshold)
     calibration_score = evaluate(calibration_rows, model, threshold=threshold) if calibration_rows else 0.0
     validation_score = evaluate(validation_rows, model, threshold=threshold) if validation_rows else 0.0
