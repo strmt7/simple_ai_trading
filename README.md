@@ -211,9 +211,13 @@ intended to be lost if the configured stop-loss is hit, including taker fees and
 the adverse exit-fill buffer from the execution simulator, then caps gross
 notional by max position size, per-asset allocation, leverage, exchange
 constraints, and available cash. Futures leverage may reduce required margin,
-but it cannot push gross exposure above `max_asset_allocation_pct`. The CLI,
-live loop, risk report, backtester, optimization evidence generator, and Windows
-app command surface all use the same stop-loss-sized notional calculation.
+but it cannot push gross exposure above `max_asset_allocation_pct`. Core risk
+percentages and execution-cost inputs are normalized in `StrategyConfig` before
+any CLI, app, live, or backtest path consumes them; explicit zero remains
+operator-visible, while invalid negative or non-finite values fall back to
+conservative defaults instead of becoming optimistic assumptions. The CLI, live
+loop, risk report, backtester, optimization evidence generator, and Windows app
+command surface all use the same stop-loss-sized notional calculation.
 Backtests preserve candle high/low bounds in model rows; stop-loss, take-profit,
 drawdown, and liquidation checks use those intrabar bounds when available, and
 an ambiguous bar that touches both stop and take exits at the stop. When the
