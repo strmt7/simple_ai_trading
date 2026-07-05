@@ -173,11 +173,11 @@ simple-ai-trading positions --stats --learning
 ```
 
 `stop` is fail-closed for the local autonomous ledger: it writes `STOPPING` and closes locally tracked open positions at the latest available mark price, falling back to entry price if no quote is available, only when live ownership evidence is complete. `reconcile` reads the signed spot/futures account state, compares exchange exposure against non-paper local open positions, writes `data/autonomous/reconciliation.json`, and exits nonzero on exchange-only, local-only, or quantity-mismatched exposure. Signed `live --live` startup also uses that reconciliation gate; it refuses to manage pre-existing exchange exposure unless it matches a bot-owned ledger position with a bot client order id and exchange fill/acknowledgement evidence. Spot closes require filled or partially filled exchange status; futures reduce-only closes may also use a bot-owned exchange-acknowledged order ID. Signed CLI opens now use deterministic `sait-o-*` client order ids and signed closes use `sait-c-*`, so a restarted session can prove which exchange exposure is bot-owned before touching it.
-Autonomous stop and risk-close paths preserve partially filled exchange closes:
-the filled quantity is appended to the closed-trade ledger, the unfilled
-quantity remains in `open_positions.json` with `PARTIALLY_FILLED` evidence, and
-the close report is marked incomplete until the remainder is closed or
-reconciled.
+Autonomous stop, risk-close, and auto-close-threshold paths preserve partially
+filled exchange closes: the filled quantity is appended to the closed-trade
+ledger, the unfilled quantity remains in `open_positions.json` with
+`PARTIALLY_FILLED` evidence, and the close/run report is marked incomplete until
+the remainder is closed or reconciled.
 
 Network interruptions are treated as a recovery state, not as a normal trading iteration. The `live` loop keeps retrying market-data reads and records `market_error_retry` events instead of entering on stale data. After connectivity returns, it records a clean recovery observation, waits through `recovery_cooldown_seconds` when configured, and skips fresh entries for that observation step. The autonomous loop adds signed reconciliation before resume: it records a heartbeat that says reconciliation is required, reconciles exchange exposure, checks daily/session loss budgets, checks loss streaks, writes an observation heartbeat, and skips that iteration before allowing any new entry. If reconciliation finds exchange-only exposure, local-only exposure, or a quantity mismatch, the autonomous loop exits fail-closed and does not touch positions that are not represented in the bot ledger.
 

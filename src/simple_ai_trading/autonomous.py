@@ -226,6 +226,13 @@ class CloseAllReport:
         return self.failed == 0 and self.partial == 0
 
 
+def _is_partial_close(position: OpenPosition, trade: ClosedTrade) -> bool:
+    open_qty = max(0.0, float(position.qty))
+    close_qty = max(0.0, float(trade.qty))
+    tolerance = max(1e-12, open_qty * 1e-8)
+    return open_qty > 0.0 and close_qty < open_qty - tolerance
+
+
 def _default_reconcile(
     client: BinanceClient,
     runtime: RuntimeConfig,
@@ -585,8 +592,7 @@ def close_tracked_open_positions(
             continue
         store.record_close_result(position, trade)
         closed += 1
-        tolerance = max(1e-12, float(position.qty) * 1e-8)
-        if max(0.0, float(trade.qty)) < max(0.0, float(position.qty)) - tolerance:
+        if _is_partial_close(position, trade):
             partial += 1
             failures.append(f"{position.id}:partial-close {trade.qty:.12g}/{position.qty:.12g}")
     return CloseAllReport(closed=closed, skipped=skipped, failed=failed, partial=partial, failures=tuple(failures))
@@ -1075,10 +1081,20 @@ def run_loop(
                     store.record_close_result(position, trade)
                     closed += 1
                     logger.info(
-                        "autonomous iter=%d close id=%s reason=%s pnl=%+.2f (%+.2%%)",
+                        "autonomous iter=%d close id=%s reason=%s pnl=%+.2f (%+.2f%%)",
                         iteration, trade.id, reason, trade.realized_pnl, trade.realized_pnl_pct,
                     )
-            if exit_reason == "close-order-failed":
+                    if _is_partial_close(position, trade):
+                        logger.error(
+                            "autonomous iter=%d close-incomplete id=%s qty=%s/%s",
+                            iteration,
+                            position.id,
+                            trade.qty,
+                            position.qty,
+                        )
+                        exit_reason = f"{reason}:close-incomplete"
+                        break
+            if exit_reason == "close-order-failed" or exit_reason.endswith(":close-incomplete"):
                 break
 
             # Open new position only after the same risk gates used in operator

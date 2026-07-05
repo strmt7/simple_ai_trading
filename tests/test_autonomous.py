@@ -944,6 +944,59 @@ def test_run_loop_closes_position_via_auto_close(tmp_path: Path) -> None:
     assert result.iterations == 1
 
 
+def test_run_loop_partial_auto_close_exits_incomplete(tmp_path: Path) -> None:
+    class PartialCloseClient(FakeClient):
+        def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
+            order = super().place_order(symbol, side, quantity / 2.0, **kwargs)
+            order["status"] = "PARTIALLY_FILLED"
+            return order
+
+    cfg = _make_config(
+        tmp_path,
+        stop_after_iterations=3,
+        dry_run=False,
+        max_unrealized_close_pct=0.01,
+    )
+    store = PositionsStore(root=cfg.positions_root)
+    position = _make_position("LONG", entry=100.0)
+    position.qty = 2.0
+    position.notional = 200.0
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+
+    def dec(_c, _r, _s, _o):
+        return Decision(side="LONG", confidence=0.9, mark_price=110.0)
+
+    result = run_loop(
+        PartialCloseClient(price=110.0),
+        _runtime(),
+        replace(_strategy(), max_open_positions=1),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+        reconcile_fn=lambda _c, runtime, _store: ReconciliationReport(
+            ok=True,
+            market_type=runtime.market_type,
+            symbols_checked=[runtime.symbol],
+            local_open_count=1,
+            local_live_open_count=1,
+            local_paper_open_count=0,
+            exchange_exposure_count=1,
+        ),
+    )
+
+    assert result.exit_reason == "auto-take-profit@+1.00%:close-incomplete"
+    assert result.closed_trades == 1
+    assert result.opened_trades == 0
+    opens = store.load_open()
+    assert len(opens) == 1
+    assert opens[0].qty == pytest.approx(1.0)
+    assert store.load_ledger()[0].qty == pytest.approx(1.0)
+
+
 def test_run_loop_opens_position_when_flat_and_long_signal(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=1)
 
