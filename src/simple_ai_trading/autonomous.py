@@ -386,7 +386,9 @@ def _order_fill_details(
     fallback_qty: float,
     fallback_price: float,
 ) -> tuple[float, float]:
-    qty = _order_float(order, "executedQty", "origQty")
+    del fallback_qty, fallback_price
+
+    qty = _order_float(order, "executedQty")
     quote = _order_float(order, "cummulativeQuoteQty", "cumQuote", "cumBase")
     avg = _order_float(order, "avgPrice", "averagePrice", "price")
     fills = order.get("fills")
@@ -406,10 +408,6 @@ def _order_fill_details(
             quote = fill_quote
     if avg <= 0.0 and qty > 0.0 and quote > 0.0:
         avg = quote / qty
-    if qty <= 0.0:
-        qty = max(0.0, float(fallback_qty))
-    if avg <= 0.0:
-        avg = max(0.01, float(fallback_price))
     return qty, avg
 
 
@@ -437,6 +435,8 @@ def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> Op
         fallback_qty=position.qty,
         fallback_price=position.entry_price,
     )
+    if qty <= 0.0 or entry_price <= 0.0:
+        raise BinanceAPIError("open order response did not include resolved execution fill")
     return replace(
         position,
         qty=qty,
@@ -454,6 +454,8 @@ def _apply_close_order(trade: ClosedTrade, order: Mapping[str, object], close_cl
         fallback_qty=trade.qty,
         fallback_price=trade.exit_price,
     )
+    if qty <= 0.0 or exit_price <= 0.0:
+        raise BinanceAPIError("close order response did not include resolved execution fill")
     if qty > 0.0 and abs(qty - trade.qty) > max(1e-12, trade.qty * 1e-8):
         # Market reduce-only partials are possible. Keep the realized ledger
         # tied to the actually executed close size when the venue reports one.
