@@ -274,6 +274,47 @@ def test_model_lab_financial_sanity_blocks_accepted_portfolio_without_accepted_o
     )
 
 
+def test_model_lab_financial_sanity_blocks_accepted_outcome_without_portfolio_risk() -> None:
+    payload = _model_lab_payload_with_symbols()
+    del payload["portfolio_risk"]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "portfolio risk" and check.path == "portfolio_risk" and check.status == "block"
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_outcome_with_failed_portfolio_risk() -> None:
+    payload = _model_lab_payload_with_symbols()
+    payload["portfolio_risk"]["accepted"] = False  # type: ignore[index]
+    payload["portfolio_risk"]["reason"] = "cvar95>0.0100"  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "portfolio risk" and check.path == "portfolio_risk.accepted" and check.status == "block"
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_top_level_symbols_without_accepted_outcomes() -> None:
+    payload = _model_lab_payload_with_symbols()
+    payload["portfolio_risk"]["accepted"] = False  # type: ignore[index]
+    payload["outcomes"] = []
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "accepted symbols" and "no accepted outcome" in check.detail and check.status == "block"
+        for check in report.checks
+    )
+
+
 def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
     payload = {
         "accepted_symbols": ["AAAUSDC"],
