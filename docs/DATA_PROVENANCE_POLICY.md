@@ -16,6 +16,10 @@ results, or generated performance charts as optimization evidence.
 - Backtest and model-lab reports must identify symbol, market, interval, UTC
   span, row count, source scope, gap count, coverage ratio, and whether fills
   are simulated or exchange-confirmed.
+- Futures `1s` candle evidence must identify the Binance `aggTrades` archive
+  source used to aggregate real trades into one-second OHLCV candles; it must
+  not be described as USD-M futures kline evidence. No-trade seconds may only
+  be represented as carry-forward candles with zero volume and zero trade count.
 - Real local run artifacts belong under ignored `data/` and must be regenerated
   from source APIs, not committed as authoritative repo data.
 - Tests may use deterministic test doubles to exercise edge cases, but those

@@ -39,7 +39,7 @@ they are high-signal, cheap, and fit the current repo shape.
 | P0 | FRED | Free key required | rates, DXY proxies, liquidity, stress spreads | daily/hourly per series | Macro regime features for BTC risk appetite. |
 | P0 | mempool.space | No key | fee pressure, mempool size, difficulty adjustment | 1-5 min | Bitcoin-native congestion and volatility proxy. |
 | P0 | Alternative.me Fear and Greed | No key | sentiment regime | hourly/daily | Cheap, simple regime gate. |
-| P1 | DexScreener | No key; 60 or 300 req/min endpoint limits | DEX liquidity and risk-on/off activity | 5-15 min | Useful altcoin/DEX froth proxy without execution scope creep. |
+| P1 | DexScreener | No key; 60 or 300 req/min endpoint limits | DEX liquidity and risk-on/off activity | 5-15 min | Useful broad-crypto liquidity proxy without expanding execution scope. |
 | P1 | Etherscan V2 | Free key; 3 calls/sec and 100k/day on selected chains | USDC/USDT transfer bursts, exchange wallet flow proxy | 5-30 min | On-chain stablecoin movement can predate volatility. |
 | P1 | SEC EDGAR | No key; 10 req/sec with declared UA | ETF/issuer filings and enforcement headlines | 5-30 min | Regulatory event and spot ETF issuer activity. |
 | P1 | Hacker News Firebase API | No key; official docs say no current rate limit | crypto/dev attention | 15-60 min | Lightweight tech/community attention proxy. |

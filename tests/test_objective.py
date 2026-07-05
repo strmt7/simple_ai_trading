@@ -175,9 +175,9 @@ def test_path_quality_gates_can_derive_metrics_from_trade_pnls():
         max_consecutive_losses=0,
     )
     clean_winner = _result(
-        closed_trades=3,
-        trade_pnls=(6.0, 7.0, 8.0),
-        trade_returns=(0.006, 0.007, 0.008),
+        closed_trades=4,
+        trade_pnls=(6.0, 7.0, 8.0, 9.0),
+        trade_returns=(0.006, 0.007, 0.008, 0.009),
         gross_profit=0.0,
         gross_loss=0.0,
         profit_factor=0.0,
@@ -190,6 +190,35 @@ def test_path_quality_gates_can_derive_metrics_from_trade_pnls():
     assert "profit_factor<1.05" in reasons
     assert "expectancy<=0.0" in reasons
     assert obj.REGULAR.accepts(clean_winner) is True
+
+
+def test_trade_frequency_gate_allows_risk_gated_inactivity_without_forcing_trades() -> None:
+    days = 5
+    sparse_safe = _result(
+        closed_trades=5,
+        equity_curve=(
+            {"timestamp": 0, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
+            {"timestamp": days * 86_400_000, "equity": 1100.0, "drawdown": 0.0, "position_side": 0},
+        ),
+        trade_log=tuple(
+            {
+                "opened_at": day * 86_400_000,
+                "closed_at": day * 86_400_000 + 60_000,
+                "net_pnl": 20.0,
+            }
+            for day in range(days)
+        ),
+        regime_entry_skips=20,
+    )
+    sparse_unexplained = _result(
+        closed_trades=5,
+        equity_curve=sparse_safe.equity_curve,
+        trade_log=sparse_safe.trade_log,
+        regime_entry_skips=0,
+    )
+
+    assert obj.CONSERVATIVE.accepts(sparse_safe) is True
+    assert "trades_per_day<2.0" in obj.CONSERVATIVE.rejection_reasons(sparse_unexplained)
 
 
 def test_safe_and_return_ratio_non_finite():

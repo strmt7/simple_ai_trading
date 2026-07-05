@@ -47,7 +47,7 @@ def test_sync_market_data_rejects_non_major_symbol_before_io(tmp_path) -> None:
     with pytest.raises(ValueError, match="only BTC, ETH, and SOL"):
         sync_market_data(
             object(),
-            MarketDataSyncConfig(symbol="BNBUSDC", db_path=tmp_path / "m.sqlite"),
+            MarketDataSyncConfig(symbol="ALTUSDC", db_path=tmp_path / "m.sqlite"),
         )
 
     assert not (tmp_path / "m.sqlite").exists()

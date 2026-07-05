@@ -40,7 +40,7 @@ class _AutoRankClient:
                 {"symbol": "ETHUSDC", "status": "TRADING"},
                 {"symbol": "SOLUSDC", "status": "TRADING"},
                 {"symbol": "FDUSDUSDC", "status": "TRADING"},
-                {"symbol": "BNBUSDC", "status": "TRADING"},
+                {"symbol": "ALTUSDC", "status": "TRADING"},
                 {"symbol": "MICROUSDC", "status": "TRADING"},
                 {"symbol": "BADUPUSDC", "status": "TRADING"},
             ]
@@ -52,7 +52,7 @@ class _AutoRankClient:
             {"symbol": "ETHUSDC", "quoteVolume": "16000000", "count": "22000"},
             {"symbol": "SOLUSDC", "quoteVolume": "14000000", "count": "7000"},
             {"symbol": "FDUSDUSDC", "quoteVolume": "30000000", "count": "30000", "lastPrice": "1.0001", "highPrice": "1.0008", "lowPrice": "0.9994"},
-            {"symbol": "BNBUSDC", "quoteVolume": "2000000", "count": "2500"},
+            {"symbol": "ALTUSDC", "quoteVolume": "2000000", "count": "2500"},
             {"symbol": "MICROUSDC", "quoteVolume": "90000", "count": "300"},
             {"symbol": "BADUPUSDC", "quoteVolume": "40000000", "count": "90000"},
         ]
@@ -63,7 +63,7 @@ class _AutoRankClient:
             {"symbol": "ETHUSDC", "bidPrice": "90.00", "askPrice": "90.01"},
             {"symbol": "SOLUSDC", "bidPrice": "80.00", "askPrice": "80.02"},
             {"symbol": "FDUSDUSDC", "bidPrice": "1.0000", "askPrice": "1.0001"},
-            {"symbol": "BNBUSDC", "bidPrice": "70.00", "askPrice": "70.02"},
+            {"symbol": "ALTUSDC", "bidPrice": "70.00", "askPrice": "70.02"},
             {"symbol": "MICROUSDC", "bidPrice": "1.00", "askPrice": "1.10"},
             {"symbol": "BADUPUSDC", "bidPrice": "50.00", "askPrice": "50.01"},
         ]
@@ -109,8 +109,8 @@ def test_auto_rank_uses_relative_liquidity_without_admitting_illiquid_pairs() ->
     assert selection.allowed is True
     assert selection.symbols == ("BTCUSDC", "ETHUSDC", "SOLUSDC")
     rejected = {item.symbol: item for item in selection.rejected}
-    assert "unsupported_non_major_asset" in rejected["BNBUSDC"].reasons
+    assert "unsupported_non_major_asset" in rejected["ALTUSDC"].reasons
     assert "stable_or_pegged_pair_pattern" in rejected["FDUSDUSDC"].reasons
-    assert "quote_volume_below_threshold" in rejected["BNBUSDC"].reasons
+    assert "quote_volume_below_threshold" in rejected["ALTUSDC"].reasons
     assert "quote_volume_below_threshold" in rejected["MICROUSDC"].reasons
     assert "leveraged_or_inverse_token_pattern" in rejected["BADUPUSDC"].reasons

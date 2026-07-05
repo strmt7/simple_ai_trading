@@ -34,6 +34,7 @@ class ArchiveIngestResult:
     symbol: str
     market_type: str
     interval: str
+    data_type: str
     period: str
     status: str
     rows_inserted: int
@@ -57,18 +58,31 @@ def _archive_market_segment(market_type: str) -> str:
     raise ValueError("market_type must be 'spot' or 'futures'")
 
 
+def _normalize_archive_data_type(data_type: str = "klines") -> str:
+    value = str(data_type or "klines").strip()
+    if value == "klines":
+        return "klines"
+    if value == "aggTrades":
+        return "aggTrades"
+    raise ValueError("data_type must be 'klines' or 'aggTrades'")
+
+
 def archive_directory_url(
     *,
     symbol: str,
     interval: str,
     market_type: str = "spot",
     cadence: str = "monthly",
+    data_type: str = "klines",
     base_url: str = BINANCE_ARCHIVE_BASE_URL,
 ) -> str:
     cadence = str(cadence or "monthly").lower()
     if cadence not in {"daily", "monthly"}:
         raise ValueError("cadence must be 'daily' or 'monthly'")
     segment = _archive_market_segment(market_type)
+    kind = _normalize_archive_data_type(data_type)
+    if kind == "aggTrades":
+        return f"{base_url.rstrip('/')}/{segment}/{cadence}/aggTrades/{symbol.upper()}/"
     return f"{base_url.rstrip('/')}/{segment}/{cadence}/klines/{symbol.upper()}/{interval}/"
 
 
@@ -78,6 +92,7 @@ def archive_listing_url(
     interval: str,
     market_type: str = "spot",
     cadence: str = "monthly",
+    data_type: str = "klines",
     base_url: str = BINANCE_ARCHIVE_BASE_URL,
     marker: str | None = None,
 ) -> str:
@@ -85,7 +100,11 @@ def archive_listing_url(
     if cadence not in {"daily", "monthly"}:
         raise ValueError("cadence must be 'daily' or 'monthly'")
     segment = _archive_market_segment(market_type)
-    prefix = f"data/{segment}/{cadence}/klines/{symbol.upper()}/{interval}/"
+    kind = _normalize_archive_data_type(data_type)
+    if kind == "aggTrades":
+        prefix = f"data/{segment}/{cadence}/aggTrades/{symbol.upper()}/"
+    else:
+        prefix = f"data/{segment}/{cadence}/klines/{symbol.upper()}/{interval}/"
     params = {"delimiter": "/", "prefix": prefix}
     if marker:
         params["marker"] = marker
@@ -99,6 +118,7 @@ def archive_file_url(
     period: str,
     market_type: str = "spot",
     cadence: str = "monthly",
+    data_type: str = "klines",
     base_url: str = BINANCE_ARCHIVE_BASE_URL,
 ) -> str:
     directory = archive_directory_url(
@@ -106,8 +126,11 @@ def archive_file_url(
         interval=interval,
         market_type=market_type,
         cadence=cadence,
+        data_type=data_type,
         base_url=base_url,
     )
+    if _normalize_archive_data_type(data_type) == "aggTrades":
+        return f"{directory}{symbol.upper()}-aggTrades-{period}.zip"
     return f"{directory}{symbol.upper()}-{interval}-{period}.zip"
 
 
@@ -117,6 +140,7 @@ def list_archive_urls(
     interval: str,
     market_type: str = "spot",
     cadence: str = "monthly",
+    data_type: str = "klines",
     base_url: str = BINANCE_ARCHIVE_BASE_URL,
     timeout: int = 20,
     html_loader: Callable[[str], str] | None = None,
@@ -130,6 +154,7 @@ def list_archive_urls(
             interval=interval,
             market_type=market_type,
             cadence=cadence,
+            data_type=data_type,
             base_url=base_url,
             marker=marker,
         )
@@ -216,6 +241,128 @@ def _iter_zip_candles(path: Path) -> Iterable[Candle]:
                         yield candle
 
 
+@dataclass
+class _AggTradeSecond:
+    open_time: int
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+    quote_volume: float
+    trade_count: int
+    taker_buy_base_volume: float
+    taker_buy_quote_volume: float
+
+
+def _parse_bool(value: str) -> bool:
+    return str(value).strip().lower() in {"true", "1", "yes"}
+
+
+def _parse_agg_trade_row(row: Sequence[str]) -> tuple[int, float, float, int, bool] | None:
+    if len(row) < 6:
+        return None
+    try:
+        price = float(row[1])
+        quantity = float(row[2])
+        first_id = int(float(row[3])) if len(row) > 3 and row[3] != "" else 0
+        last_id = int(float(row[4])) if len(row) > 4 and row[4] != "" else first_id
+        timestamp = _normalize_archive_timestamp(row[5])
+        buyer_is_maker = _parse_bool(row[6]) if len(row) > 6 else False
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if price <= 0.0 or quantity <= 0.0 or timestamp <= 0:
+        return None
+    trade_count = max(1, last_id - first_id + 1)
+    return timestamp, price, quantity, trade_count, buyer_is_maker
+
+
+def _agg_second_to_candle(second: _AggTradeSecond) -> Candle:
+    return Candle(
+        open_time=second.open_time,
+        open=second.open,
+        high=second.high,
+        low=second.low,
+        close=second.close,
+        volume=second.volume,
+        close_time=second.open_time + 999,
+        quote_volume=second.quote_volume,
+        trade_count=second.trade_count,
+        taker_buy_base_volume=second.taker_buy_base_volume,
+        taker_buy_quote_volume=second.taker_buy_quote_volume,
+    )
+
+
+def _no_trade_candle(open_time: int, price: float) -> Candle:
+    return Candle(
+        open_time=open_time,
+        open=price,
+        high=price,
+        low=price,
+        close=price,
+        volume=0.0,
+        close_time=open_time + 999,
+        quote_volume=0.0,
+        trade_count=0,
+        taker_buy_base_volume=0.0,
+        taker_buy_quote_volume=0.0,
+    )
+
+
+def _iter_zip_agg_trade_candles(path: Path) -> Iterable[Candle]:
+    """Stream aggregate trades and emit deterministic 1-second OHLCV candles."""
+
+    with zipfile.ZipFile(path) as archive:
+        names = [name for name in archive.namelist() if name.lower().endswith(".csv")]
+        for name in sorted(names):
+            current: _AggTradeSecond | None = None
+            with archive.open(name) as raw:
+                text = io.TextIOWrapper(raw, encoding="utf-8", newline="")
+                reader = csv.reader(text)
+                for row in reader:
+                    parsed = _parse_agg_trade_row(row)
+                    if parsed is None:
+                        continue
+                    timestamp, price, quantity, trade_count, buyer_is_maker = parsed
+                    open_time = (timestamp // 1000) * 1000
+                    quote_volume = price * quantity
+                    taker_buy_base = 0.0 if buyer_is_maker else quantity
+                    taker_buy_quote = 0.0 if buyer_is_maker else quote_volume
+                    if current is not None and open_time != current.open_time:
+                        previous_close = current.close
+                        previous_open_time = current.open_time
+                        yield _agg_second_to_candle(current)
+                        gap_time = previous_open_time + 1000
+                        while gap_time < open_time:
+                            yield _no_trade_candle(gap_time, previous_close)
+                            gap_time += 1000
+                        current = None
+                    if current is None:
+                        current = _AggTradeSecond(
+                            open_time=open_time,
+                            open=price,
+                            high=price,
+                            low=price,
+                            close=price,
+                            volume=quantity,
+                            quote_volume=quote_volume,
+                            trade_count=trade_count,
+                            taker_buy_base_volume=taker_buy_base,
+                            taker_buy_quote_volume=taker_buy_quote,
+                        )
+                    else:
+                        current.high = max(current.high, price)
+                        current.low = min(current.low, price)
+                        current.close = price
+                        current.volume += quantity
+                        current.quote_volume += quote_volume
+                        current.trade_count += trade_count
+                        current.taker_buy_base_volume += taker_buy_base
+                        current.taker_buy_quote_volume += taker_buy_quote
+            if current is not None:
+                yield _agg_second_to_candle(current)
+
+
 def _download_to_temp(url: str, *, timeout: int, chunk_size: int = 1024 * 1024) -> tuple[Path, int, str]:
     digest = hashlib.sha256()
     handle = tempfile.NamedTemporaryFile(prefix="simple-ai-trading-binance-", suffix=".zip", delete=False)
@@ -268,6 +415,7 @@ def ingest_archive_url(
     symbol: str,
     interval: str,
     market_type: str = "spot",
+    data_type: str = "klines",
     period: str = "",
     timeout: int = 120,
     chunk_size: int = 10_000,
@@ -276,12 +424,16 @@ def ingest_archive_url(
     require_checksum: bool = False,
 ) -> ArchiveIngestResult:
     symbol = symbol.upper()
+    kind = _normalize_archive_data_type(data_type)
+    if kind == "aggTrades" and str(interval) != "1s":
+        raise ValueError("aggTrades archive ingestion currently emits 1s candles; interval must be '1s'")
     if not force and store.archive_file_status(url) == "complete":
         return ArchiveIngestResult(
             url=url,
             symbol=symbol,
             market_type=market_type,
             interval=interval,
+            data_type=kind,
             period=period,
             status="skipped",
             rows_inserted=0,
@@ -318,7 +470,9 @@ def ingest_archive_url(
                 checksum_status = "unavailable"
         batch: list[Candle] = []
         ingested_at_ms = int(time.time() * 1000)
-        for candle in _iter_zip_candles(zip_path):
+        candle_iterable = _iter_zip_agg_trade_candles(zip_path) if kind == "aggTrades" else _iter_zip_candles(zip_path)
+        source = "binance_public_archive_aggTrades" if kind == "aggTrades" else "binance_public_archive"
+        for candle in candle_iterable:
             rows_read += 1
             batch.append(candle)
             if len(batch) >= max(1, int(chunk_size)):
@@ -328,7 +482,7 @@ def ingest_archive_url(
                     market_type,
                     interval,
                     cleaned,
-                    source="binance_public_archive",
+                    source=source,
                     ingested_at_ms=ingested_at_ms,
                 )
                 batch.clear()
@@ -339,7 +493,7 @@ def ingest_archive_url(
                 market_type,
                 interval,
                 cleaned,
-                source="binance_public_archive",
+                source=source,
                 ingested_at_ms=ingested_at_ms,
             )
         store.complete_archive_file(
@@ -356,6 +510,7 @@ def ingest_archive_url(
             symbol=symbol,
             market_type=market_type,
             interval=interval,
+            data_type=kind,
             period=period,
             status="complete",
             rows_inserted=rows_inserted,
@@ -381,6 +536,7 @@ def ingest_archive_url(
             symbol=symbol,
             market_type=market_type,
             interval=interval,
+            data_type=kind,
             period=period,
             status="error",
             rows_inserted=rows_inserted,
@@ -406,16 +562,18 @@ def ingest_archive_urls(
     interval: str,
     urls: Sequence[str],
     market_type: str = "spot",
+    data_type: str = "klines",
     timeout: int = 120,
     force: bool = False,
     verify_checksum: bool = True,
     require_checksum: bool = False,
 ) -> list[ArchiveIngestResult]:
     results: list[ArchiveIngestResult] = []
+    kind = _normalize_archive_data_type(data_type)
     with MarketDataStore(db_path) as store:
         for url in urls:
             stem = Path(url).stem
-            prefix = f"{symbol.upper()}-{interval}-"
+            prefix = f"{symbol.upper()}-aggTrades-" if kind == "aggTrades" else f"{symbol.upper()}-{interval}-"
             period = stem[len(prefix):] if stem.startswith(prefix) else stem.rsplit("-", 1)[-1]
             results.append(
                 ingest_archive_url(
@@ -424,6 +582,7 @@ def ingest_archive_urls(
                     symbol=symbol,
                     interval=interval,
                     market_type=market_type,
+                    data_type=kind,
                     period=period,
                     timeout=timeout,
                     force=force,

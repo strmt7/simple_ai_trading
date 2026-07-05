@@ -17,42 +17,12 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-| Round | Objective | Configured futures default | Market data used | Symbols | Validation span UTC | Accepted symbols | Mean ROI | Worst drawdown | Tables and charts |
-| --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- |
-| [005](round-005-conservative-5x-spot-1s-realdata/data/report.json) | conservative | 5x | Binance spot 1s | BTCUSDT, ETHUSDT | 2017-08-17 19:00:13 to 23:59:51 | 0/2 | -0.0238% | 0.0476% | [metrics](round-005-conservative-5x-spot-1s-realdata/data/backtest-metrics.csv), [portfolio](round-005-conservative-5x-spot-1s-realdata/data/portfolio-timeline.csv), [BTC chart](round-005-conservative-5x-spot-1s-realdata/charts/01-BTCUSDT-conservative.svg), [ETH chart](round-005-conservative-5x-spot-1s-realdata/charts/02-ETHUSDT-conservative.svg) |
-| [006](round-006-regular-10x-spot-1s-realdata/data/report.json) | regular | 10x | Binance spot 1s | BTCUSDT, ETHUSDT | 2017-08-17 19:00:15 to 23:59:55 | 0/2 | -0.0476% | 0.0953% | [metrics](round-006-regular-10x-spot-1s-realdata/data/backtest-metrics.csv), [portfolio](round-006-regular-10x-spot-1s-realdata/data/portfolio-timeline.csv), [BTC chart](round-006-regular-10x-spot-1s-realdata/charts/01-BTCUSDT-regular.svg), [ETH chart](round-006-regular-10x-spot-1s-realdata/charts/02-ETHUSDT-regular.svg) |
-| [007](round-007-aggressive-15x-spot-1s-realdata/data/report.json) | aggressive | 15x | Binance spot 1s | BTCUSDT, ETHUSDT | 2017-08-17 19:00:16 to 23:59:57 | 0/2 | -0.1191% | 0.1191% | [metrics](round-007-aggressive-15x-spot-1s-realdata/data/backtest-metrics.csv), [portfolio](round-007-aggressive-15x-spot-1s-realdata/data/portfolio-timeline.csv), [BTC chart](round-007-aggressive-15x-spot-1s-realdata/charts/01-BTCUSDT-aggressive.svg), [ETH chart](round-007-aggressive-15x-spot-1s-realdata/charts/02-ETHUSDT-aggressive.svg) |
-| [008](round-008-futures-conservative-5x-data-health/data/report.json) | conservative | 5x effective futures | Binance USD-M futures 1m | BTCUSDT, ETHUSDT | no prefilled futures rows | 0/2 | 0.0000% | 0.0000% | [metrics](round-008-futures-conservative-5x-data-health/data/backtest-metrics.csv), [data health](round-008-futures-conservative-5x-data-health/data/data-health.json) |
-| [009](round-009-futures-conservative-5x-realdata/data/report.json) | conservative | 5x effective futures | Binance USD-M futures 1m | BTCUSDT, ETHUSDT | 2020-10-01 12:06:59 to 2020-12-31 23:51:59 | 0/2 | -10.0584% | 10.0859% | [metrics](round-009-futures-conservative-5x-realdata/data/backtest-metrics.csv), [portfolio](round-009-futures-conservative-5x-realdata/data/portfolio-timeline.csv), [BTC chart](round-009-futures-conservative-5x-realdata/charts/01-BTCUSDT-conservative.svg), [ETH chart](round-009-futures-conservative-5x-realdata/charts/02-ETHUSDT-conservative.svg) |
-| [010](round-010-futures-selection-guard-conservative-5x-realdata/data/report.json) | conservative | 5x effective futures | Binance USD-M futures 1m | BTCUSDT, ETHUSDT | 2020-10-01 12:06:59 to 2020-12-31 23:51:59 | 0/2 | -5.4485% | 10.1227% | [metrics](round-010-futures-selection-guard-conservative-5x-realdata/data/backtest-metrics.csv), [portfolio](round-010-futures-selection-guard-conservative-5x-realdata/data/portfolio-timeline.csv), [BTC chart](round-010-futures-selection-guard-conservative-5x-realdata/charts/01-BTCUSDT-conservative.svg), [ETH chart](round-010-futures-selection-guard-conservative-5x-realdata/charts/02-ETHUSDT-conservative.svg) |
-
-Rounds 005-007 are not promotion-grade successes. They are deliberately
-committed as failed real-data checkpoints: the local SQLite database currently
-contains only `BTCUSDT` and `ETHUSDT` spot `1s` archives for one UTC day in
-August 2017, so these runs cannot satisfy the 50-pair, many-year, futures
-leverage benchmark. Spot execution still resolves to 1x effective leverage;
-the `5x`/`10x`/`15x` values above are the configured futures defaults recorded
-in the strategy payloads, not proof that futures leverage improved returns.
-The data-health reports show contiguous 1s coverage with zero gaps for both
-symbols; the ETHUSDT archive has a verified checksum, while the BTCUSDT archive
-is recorded as unverified and must be replaced before a promotion claim.
-Round 008 is a futures-specific fail-closed checkpoint: it proves the evidence
-tool now records effective futures leverage, but the local SQLite database has
-no prefilled `BTCUSDT` or `ETHUSDT` futures `1m` rows, so training and
-backtesting are blocked before any result can be promoted.
-Round 009 replaces that blocked futures checkpoint with verified Binance USD-M
-monthly archives for all of 2020 on `BTCUSDT` and `ETHUSDT`. The evidence still
-fails promotion: both symbols hit the conservative drawdown stop near 10%, had
-negative realized P&L, negative market edge versus buy-and-hold, zero win rate,
-and rejected profit factor/expectancy gates. The scoring backend recorded in
-the metrics is DirectML on `privateuseone:0`, so this is a real GPU-backed
-failure result, not a CPU-only placeholder.
-Round 010 adds a selection slice before the final holdout, uses that selection
-slice for threshold calibration and guarded probability inversion, and keeps the
-same final holdout span for comparison. It improves the two-symbol mean ROI
-from Round 009, mostly by reducing ETHUSDT losses, but it is still rejected:
-BTCUSDT remains a drawdown-stop failure and the combined market edge remains
-strongly negative versus the passive baseline.
+No current performance graph checkpoint is committed after the BTC/ETH/SOL-only
+cleanup. Earlier stale BTC/ETH-only and broader-symbol artifacts were removed
+because they no longer matched the active scope, data standard, or model
+selection rules. The next checkpoint must be generated from the current
+BTCUSDT/ETHUSDT/SOLUSDT database state and must commit its CSV/JSON graph data
+beside any SVG charts.
 
 Promotion-grade optimization rounds generated by `tools/optimization_round.py`
 must write both graph images and the CSV/JSON data used to render them under a
@@ -64,10 +34,19 @@ the exact tracked artifacts. Future agents must replot from the committed CSV
 tables, not visually edit SVGs.
 
 The evidence tool supports `--market spot|futures`. Spot `1s` evidence uses the
-Binance Spot kline interval; standard USD-M futures optimization must use a
-futures-supported interval such as `1m`. Reports and `backtest-metrics.csv`
-record both configured profile leverage and effective leverage so a spot round
-with an aggressive profile cannot be mistaken for a 15x futures test.
+Binance Spot kline archive. USD-M futures `1s` evidence must be prefilled from
+official Binance `aggTrades` archives aggregated into one-second candles;
+without `--require-prefilled-data`, futures `1s` optimization fails before any
+network fetch because the futures kline endpoint does not publish `1s` klines.
+Reports and `backtest-metrics.csv` record both configured profile leverage and
+effective leverage so a spot round with an aggressive profile cannot be
+mistaken for a 15x futures test.
+
+Day-trading trade-frequency gates are evidence gates, not quotas. A threshold or
+model with too few trades over a long historical span is rejected when there is
+no risk explanation. If regime or meta-label gates explicitly skipped entries in
+unpredictable markets, low activity can still pass so the system is allowed to
+wait instead of manufacturing trades.
 
 `tools/optimization_round.py` defaults to `--model-candidates 3` for promotion
 rounds. Each symbol evaluates a bounded set of label target/horizon and model

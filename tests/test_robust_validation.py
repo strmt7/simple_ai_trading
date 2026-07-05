@@ -184,7 +184,7 @@ def test_validate_model_temporal_robustness_rejects_weak_statistical_edge(
         return _result(
             realized_pnl=pnl,
             ending_cash=1000.0 + pnl,
-            closed_trades=5,
+            closed_trades=6,
             edge_vs_buy_hold=pnl,
             max_drawdown=0.02 if pnl > 0 else 0.08,
         )
@@ -234,7 +234,7 @@ def test_temporal_robustness_prefers_trade_return_evidence(
         return _result(
             realized_pnl=10.0,
             ending_cash=1010.0,
-            closed_trades=3,
+            closed_trades=6,
             edge_vs_buy_hold=10.0,
             gross_profit=50.0,
             gross_loss=5.0,

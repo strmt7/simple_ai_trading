@@ -213,6 +213,76 @@ def test_threshold_calibration_preserves_rejected_trade_diagnostics(monkeypatch)
     assert report.asdict()["best_closed_trades"] == 2
 
 
+def test_threshold_calibration_trade_density_is_softened_by_risk_gate_skips(monkeypatch) -> None:
+    rows = [_flat_row(day * 86_400_000, close=100.0 + day, score=10.0, label=1) for day in range(8)]
+
+    def result(realized_pnl: float, closed_trades: int, *, risk_skips: int = 0) -> backtest_mod.BacktestResult:
+        return backtest_mod.BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + realized_pnl,
+            realized_pnl=realized_pnl,
+            win_rate=0.75 if closed_trades else 0.0,
+            trades=closed_trades,
+            max_drawdown=0.01,
+            closed_trades=closed_trades,
+            gross_exposure=100.0 if closed_trades else 0.0,
+            total_fees=1.0 if closed_trades else 0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0 if closed_trades else 0.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=realized_pnl,
+            regime_entry_skips=risk_skips,
+        )
+
+    def fake_probabilities(scored_rows, *_args, **_kwargs):
+        return [0.90 for _ in scored_rows], backtest_mod.BackendInfo(
+            requested="cpu",
+            kind="cpu",
+            device="cpu",
+            vendor="CPU",
+            reason="test",
+        )
+
+    monkeypatch.setattr(backtest_mod, "_backtest_probabilities", fake_probabilities)
+
+    calls = {"count": 0, "risk_skips": 0}
+
+    def fake_run_backtest(*_args, **_kwargs):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return result(0.0, 0)
+        return result(25.0, 2, risk_skips=int(calls["risk_skips"]))
+
+    monkeypatch.setattr(backtest_mod, "run_backtest", fake_run_backtest)
+    sparse = calibrate_threshold_for_backtest(
+        rows,
+        _simple_model(10.0),
+        StrategyConfig(signal_threshold=0.5),
+        min_closed_trades=2,
+        min_trades_per_day=1.0,
+        baseline_threshold=0.5,
+        steps=3,
+    )
+
+    calls["count"] = 0
+    calls["risk_skips"] = 12
+    risk_gated = calibrate_threshold_for_backtest(
+        rows,
+        _simple_model(10.0),
+        StrategyConfig(signal_threshold=0.5),
+        min_closed_trades=2,
+        min_trades_per_day=1.0,
+        baseline_threshold=0.5,
+        steps=3,
+    )
+
+    assert sparse.accepted is False
+    assert sparse.best_closed_trades == 2
+    assert sparse.best_trades_per_day < 1.0
+    assert risk_gated.accepted is True
+    assert risk_gated.closed_trades == 2
+
+
 def test_backtest_enforces_entry_filters_and_cap_hits() -> None:
     rows = [
         _flat_row(0, close=100.0, score=1.0, label=1),

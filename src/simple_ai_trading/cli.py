@@ -410,6 +410,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_archive_sync.add_argument("--interval", default=None)
     parser_archive_sync.add_argument("--market", choices=["spot", "futures"], default="spot")
     parser_archive_sync.add_argument("--cadence", choices=["monthly", "daily"], default="monthly")
+    parser_archive_sync.add_argument(
+        "--data-type",
+        choices=["klines", "aggTrades"],
+        default=None,
+        help="official archive data type; futures 1s defaults to aggTrades and aggregates real trades to 1s candles",
+    )
     parser_archive_sync.add_argument("--max-files", type=int, default=None, help="optional safety cap for smoke runs")
     parser_archive_sync.add_argument("--timeout", type=int, default=120)
     parser_archive_sync.add_argument("--force", action="store_true")
@@ -4609,6 +4615,11 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     interval = str(getattr(args, "interval", None) or runtime.interval)
     market_type = str(getattr(args, "market", "spot") or "spot")
     cadence = str(getattr(args, "cadence", "monthly") or "monthly")
+    data_type_arg = getattr(args, "data_type", None)
+    data_type = str(data_type_arg or ("aggTrades" if market_type == "futures" and interval == "1s" else "klines"))
+    if data_type == "aggTrades" and interval != "1s":
+        print("archive-sync aggTrades ingestion emits 1s candles; use --interval 1s", file=sys.stderr)
+        return 2
     quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
     quote_gate = quote_asset if getattr(args, "quote_asset", None) else None
     raw_symbols = str(getattr(args, "symbols", "") or "").strip()
@@ -4649,7 +4660,13 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 history_rejections.append({"symbol": item.symbol, "error": "unsupported_non_major_asset"})
                 continue
             try:
-                urls = list_archive_urls(symbol=item.symbol, interval=interval, market_type=market_type, cadence=cadence)
+                urls = list_archive_urls(
+                    symbol=item.symbol,
+                    interval=interval,
+                    market_type=market_type,
+                    cadence=cadence,
+                    data_type=data_type,
+                )
             except (OSError, ValueError) as exc:
                 history_rejections.append({"symbol": item.symbol, "error": f"list_failed:{exc}"})
                 continue
@@ -4684,7 +4701,13 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         try:
             urls = prelisted_archive_urls.get(symbol)
             if urls is None:
-                urls = list_archive_urls(symbol=symbol, interval=interval, market_type=market_type, cadence=cadence)
+                urls = list_archive_urls(
+                    symbol=symbol,
+                    interval=interval,
+                    market_type=market_type,
+                    cadence=cadence,
+                    data_type=data_type,
+                )
         except (OSError, ValueError) as exc:
             errors.append({"symbol": symbol, "error": f"list_failed:{exc}"})
             continue
@@ -4702,6 +4725,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 interval=interval,
                 urls=urls,
                 market_type=market_type,
+                data_type=data_type,
                 timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
                 force=bool(getattr(args, "force", False)),
                 verify_checksum=not bool(getattr(args, "no_verify_checksum", False)),
@@ -4720,6 +4744,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         "symbol_count": len(symbols),
         "requested_top_symbols": int(requested_top_symbols),
         "interval": interval,
+        "data_type": data_type,
         "market_type": market_type,
         "cadence": cadence,
         "files": len(all_results),
@@ -4735,7 +4760,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     else:
         print(
             "archive-sync: "
-            f"status={payload['status']} symbols={payload['symbol_count']} interval={interval} market={market_type} "
+            f"status={payload['status']} symbols={payload['symbol_count']} interval={interval} data_type={data_type} market={market_type} "
             f"files={payload['files']} rows_read={payload['rows_read']} "
             f"rows_inserted={payload['rows_inserted']} bytes={payload['bytes_downloaded']}"
         )

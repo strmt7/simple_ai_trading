@@ -1185,6 +1185,8 @@ def _evaluate_round_model_candidate(
         end=0.95,
         steps=37,
         min_score_delta=0.0,
+        min_closed_trades=objective.min_closed_trades,
+        min_trades_per_day=objective.min_trades_per_day,
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
@@ -1428,7 +1430,12 @@ def build_round_evidence(
     use_objective_strategy_defaults: bool = False,
     model_candidate_count: int = 1,
 ) -> dict[str, object]:
-    interval = validate_interval(interval, market_type)
+    if market_type == "futures" and str(interval) == "1s":
+        if not require_prefilled_data:
+            raise ValueError("futures 1s optimization requires prefilled aggTrades-derived candles")
+        interval = "1s"
+    else:
+        interval = validate_interval(interval, market_type)
     paths = make_evidence_paths(round_id, data_root=data_root, docs_root=docs_root, market_db_path=db_path)
     for directory in (paths.output_dir, paths.docs_dir, paths.docs_data_dir, paths.docs_charts_dir):
         directory.mkdir(parents=True, exist_ok=True)

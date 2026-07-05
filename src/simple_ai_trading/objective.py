@@ -21,7 +21,7 @@ from .assets import (
     DEFAULT_CONSERVATIVE_LEVERAGE,
     DEFAULT_REGULAR_LEVERAGE,
 )
-from .backtest import BacktestResult
+from .backtest import BacktestResult, closed_trades_per_day, trade_activity_satisfies
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,8 @@ class ObjectiveSpec:
     long_description: str
     scorer: Callable[[BacktestResult], float]
     min_closed_trades: int = 3
+    min_trades_per_day: float = 0.0
+    target_trades_per_day: float = 0.0
     min_realized_pnl: float | None = None
     min_edge_vs_buy_hold: float | None = 0.0
     min_market_edge_pct: float | None = 0.001
@@ -57,6 +59,12 @@ class ObjectiveSpec:
         reasons: list[str] = []
         if result.closed_trades < max(0, int(self.min_closed_trades)):
             reasons.append(f"closed_trades<{self.min_closed_trades}")
+        elif self.min_trades_per_day > 0.0 and not trade_activity_satisfies(
+            result,
+            min_closed_trades=self.min_closed_trades,
+            min_trades_per_day=self.min_trades_per_day,
+        ):
+            reasons.append(f"trades_per_day<{self.min_trades_per_day}")
         if self.min_realized_pnl is not None and result.realized_pnl <= self.min_realized_pnl:
             reasons.append(f"realized_pnl<={self.min_realized_pnl}")
         if self.min_edge_vs_buy_hold is not None and result.edge_vs_buy_hold < self.min_edge_vs_buy_hold:
@@ -175,6 +183,19 @@ def _return_ratio(result: BacktestResult) -> float:
     return _safe(result.realized_pnl / result.starting_cash)
 
 
+def _trade_frequency_fit(result: BacktestResult, target_trades_per_day: float) -> float:
+    target = max(0.0, _safe(target_trades_per_day))
+    if target <= 0.0:
+        return 0.0
+    trades_per_day = closed_trades_per_day(result)
+    return max(0.0, min(1.0, trades_per_day / target))
+
+
+def _cap_hit_penalty(result: BacktestResult, weight: float) -> float:
+    cap_hits = max(0.0, _safe(float(getattr(result, "trades_per_day_cap_hit", 0))))
+    return min(0.10, cap_hits * max(0.0, weight))
+
+
 def _market_edge_ratio(result: BacktestResult) -> float:
     """Return net edge over the same-notional buy/hold baseline as capital pct."""
 
@@ -196,8 +217,9 @@ def _conservative_scorer(result: BacktestResult) -> float:
     return (
         _return_ratio(result)
         - 3.0 * _safe(result.max_drawdown)
-        - 0.005 * float(result.closed_trades)
         + 0.10 * _safe(result.win_rate)
+        + 0.04 * _trade_frequency_fit(result, CONSERVATIVE.target_trades_per_day)
+        - _cap_hit_penalty(result, 0.0015)
         - penalty
     )
 
@@ -213,8 +235,9 @@ def _default_scorer(result: BacktestResult) -> float:
     return (
         _return_ratio(result)
         - 1.5 * _safe(result.max_drawdown)
-        - 0.0005 * float(result.closed_trades)
         + 0.15 * _safe(result.win_rate)
+        + 0.04 * _trade_frequency_fit(result, REGULAR.target_trades_per_day)
+        - _cap_hit_penalty(result, 0.0010)
         - penalty
     )
 
@@ -227,6 +250,8 @@ def _risky_scorer(result: BacktestResult) -> float:
         1.25 * _return_ratio(result)
         - 0.8 * _safe(result.max_drawdown)
         + 0.05 * _safe(result.win_rate)
+        + 0.03 * _trade_frequency_fit(result, AGGRESSIVE.target_trades_per_day)
+        - _cap_hit_penalty(result, 0.0008)
         - penalty
     )
 
@@ -234,7 +259,7 @@ def _risky_scorer(result: BacktestResult) -> float:
 CONSERVATIVE = ObjectiveSpec(
     name="conservative",
     label="Conservative",
-    summary="Prioritize capital preservation, reject high drawdown, prefer few high-quality trades.",
+    summary="Prioritize capital preservation while requiring enough risk-gated day trades.",
     long_description=(
         "Training uses extra regularization and calibrated thresholds. Strategy "
         "defaults favor small position sizes, longer cooldowns, and a higher signal "
@@ -242,6 +267,8 @@ CONSERVATIVE = ObjectiveSpec(
     ),
     scorer=_conservative_scorer,
     min_closed_trades=5,
+    min_trades_per_day=2.0,
+    target_trades_per_day=12.0,
     min_realized_pnl=0.0,
     min_market_edge_pct=0.0020,
     max_drawdown_rejection=0.15,
@@ -257,7 +284,7 @@ CONSERVATIVE = ObjectiveSpec(
         take_profit_pct=0.022,
         risk_per_trade=0.005,
         max_position_pct=0.10,
-        max_trades_per_day=8,
+        max_trades_per_day=24,
         leverage=DEFAULT_CONSERVATIVE_LEVERAGE,
         cooldown_minutes=15,
         calibrate_threshold=True,
@@ -280,6 +307,8 @@ REGULAR = ObjectiveSpec(
     ),
     scorer=_default_scorer,
     min_closed_trades=3,
+    min_trades_per_day=4.0,
+    target_trades_per_day=20.0,
     min_realized_pnl=0.0,
     min_market_edge_pct=0.0030,
     max_drawdown_rejection=0.25,
@@ -295,7 +324,7 @@ REGULAR = ObjectiveSpec(
         take_profit_pct=0.030,
         risk_per_trade=0.010,
         max_position_pct=0.20,
-        max_trades_per_day=16,
+        max_trades_per_day=48,
         leverage=DEFAULT_REGULAR_LEVERAGE,
         cooldown_minutes=7,
         calibrate_threshold=True,
@@ -320,6 +349,8 @@ AGGRESSIVE = ObjectiveSpec(
     ),
     scorer=_risky_scorer,
     min_closed_trades=2,
+    min_trades_per_day=6.0,
+    target_trades_per_day=30.0,
     min_realized_pnl=0.0,
     min_market_edge_pct=0.0050,
     max_drawdown_rejection=0.30,
@@ -335,7 +366,7 @@ AGGRESSIVE = ObjectiveSpec(
         take_profit_pct=0.040,
         risk_per_trade=0.012,
         max_position_pct=0.25,
-        max_trades_per_day=24,
+        max_trades_per_day=72,
         leverage=DEFAULT_AGGRESSIVE_LEVERAGE,
         cooldown_minutes=4,
         calibrate_threshold=True,

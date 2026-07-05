@@ -23,14 +23,18 @@ Execution cost is symbol-specific where market data exists:
 - `data-sync` now persists a typed top-of-book history with bid/ask price,
   bid/ask quantity, mid price, spread bps, and top-level notional depth in
   SQLite, while still retaining the raw exchange payload for audit.
-- `archive-sync` ingests official Binance public archive kline ZIPs directly
-  into the same SQLite store. This is the preferred path for 1-second spot
-  history because Binance REST klines support `1s` but paging years of
-  second-bars through 1,000-row REST pages is unnecessarily expensive.
+- `archive-sync` ingests official Binance public archive ZIPs directly into
+  the same SQLite store. This is the preferred path for 1-second spot history
+  because Binance REST klines support `1s` but paging years of second-bars
+  through 1,000-row REST pages is unnecessarily expensive. USD-M futures `1s`
+  evidence uses official Binance `aggTrades` archives aggregated into
+  one-second candles because USD-M futures kline archives do not publish `1s`.
+  No-trade seconds are carry-forward candles with zero volume and zero trade
+  count; they preserve time continuity without inventing traded liquidity.
   Operators can pass `--symbols` for an explicit batch or `--top-symbols N`
   with `--quote-asset` to auto-rank liquid symbols from current exchange
-  metadata before archive ingestion. This keeps the 50-pair research path
-  automatic rather than relying on a static list.
+  metadata before archive ingestion. This keeps the BTC/ETH/SOL research path
+  automatic without relying on stale liquidity assumptions.
 - Archive downloads compute SHA-256 locally and, by default, verify Binance's
   `.CHECKSUM` sidecar when it is available. A checksum mismatch fails before
   any candle rows are written. `--require-checksum` makes missing sidecars a

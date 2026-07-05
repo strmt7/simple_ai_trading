@@ -14,8 +14,8 @@ def test_major_symbol_helpers_accept_only_btc_eth_sol_usdc_usdt() -> None:
     assert symbol_base_for_supported_quote("eth/usdt") == "ETH"
     assert is_supported_major_symbol("BTCUSDC")
     assert is_supported_major_symbol("SOL-USDT")
-    assert not is_supported_major_symbol("BNBUSDT")
-    assert not is_supported_major_symbol("DOGEUSDT")
+    assert not is_supported_major_symbol("ALTUSDT")
+    assert not is_supported_major_symbol("MEMEUSDT")
     assert not is_supported_major_symbol("ETHWUSDT")
     assert not is_supported_major_symbol("BTCBUSD")
-    assert not is_supported_major_symbol("1000PEPEUSDT")
+    assert not is_supported_major_symbol("1000ALTUSDT")
