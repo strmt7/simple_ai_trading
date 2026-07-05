@@ -28,6 +28,7 @@ from simple_ai_trading.autonomous import (
     _loss_budget_guard,
     _apply_open_order,
     _open_position_from_decision,
+    _submit_open_position,
     close_all_open_positions,
     close_tracked_open_positions,
     ensure_api_budget_headroom,
@@ -100,6 +101,37 @@ class FakeClient:
             if orig_client_order_id is not None and order.get("clientOrderId") == orig_client_order_id:
                 return order
         raise BinanceAPIError("order not found")
+
+
+def test_submit_open_position_passes_notional_to_bracket_aware_client() -> None:
+    class BracketAwareClient(FakeClient):
+        def get_max_leverage_for_notional(self, _symbol: str, _notional: float) -> int:
+            return 5
+
+        def place_order(self, *args, notional: float | None = None, **kwargs):
+            order = super().place_order(*args, **kwargs)
+            order["notional"] = notional
+            return order
+
+    position = OpenPosition(
+        id="pos-1",
+        symbol="BTCUSDC",
+        market_type="futures",
+        side="LONG",
+        qty=0.05,
+        entry_price=50_000.0,
+        leverage=10.0,
+        opened_at_ms=0,
+        notional=2_500.0,
+        dry_run=False,
+        open_client_order_id="sait-o-test",
+    )
+    client = BracketAwareClient(price=50_000.0)
+
+    submitted = _submit_open_position(client, position)
+
+    assert client.orders[0]["notional"] == pytest.approx(2_500.0)
+    assert submitted.exchange_status == "FILLED"
 
 
 def _make_config(tmp_path: Path, **overrides) -> AutonomousConfig:

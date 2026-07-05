@@ -3477,12 +3477,15 @@ def _paper_or_live_order(
     size: float,
     dry_run: bool,
     leverage: float | None = None,
+    notional: float | None = None,
     reduce_only: bool = False,
     client_order_id: str | None = None,
 ) -> dict[str, object]:
     if leverage is None:
         leverage = _effective_leverage(strategy, runtime.market_type)
     kwargs = {"dry_run": dry_run, "leverage": leverage}
+    if notional is not None and not reduce_only and hasattr(client, "get_max_leverage_for_notional"):
+        kwargs["notional"] = float(notional)
     if reduce_only and not dry_run:
         kwargs["reduce_only"] = True
     if client_order_id:
@@ -7138,6 +7141,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     size=qty,
                     dry_run=effective_dry_run,
                     leverage=leverage,
+                    notional=abs(notional),
                     client_order_id=open_client_order_id,
                 )
             except BinanceAPIError as exc:

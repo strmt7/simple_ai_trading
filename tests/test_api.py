@@ -31,6 +31,35 @@ def test_futures_leverage_bracket_parsing(monkeypatch) -> None:
     ]
 
 
+def test_futures_leverage_brackets_are_notional_aware(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
+    leverage_posts: list[int] = []
+
+    def fake_request(method: str, path: str, params=None, signed: bool = False):
+        if path == "/fapi/v1/leverageBracket":
+            assert params["symbol"] == "BTCUSDC"
+            return {
+                "symbol": "BTCUSDC",
+                "brackets": [
+                    {"initialLeverage": "50", "notionalFloor": "0", "notionalCap": "1000"},
+                    {"initialLeverage": "10", "notionalFloor": "1000", "notionalCap": "5000"},
+                    {"initialLeverage": "5", "notionalFloor": "5000", "notionalCap": "10000"},
+                ],
+            }
+        if path == "/fapi/v1/leverage":
+            leverage_posts.append(params["leverage"])
+            return {"symbol": params["symbol"], "leverage": params["leverage"]}
+        raise AssertionError(f"unexpected endpoint: {path}")
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    assert client.get_max_leverage_for_notional("BTCUSDC", 500.0) == 20
+    assert client.get_max_leverage_for_notional("BTCUSDC", 2_500.0) == 10
+    assert client.get_max_leverage_for_notional("BTCUSDC", 15_000.0) == 5
+    assert client.set_leverage("BTCUSDC", 20, notional=2_500.0)["leverage"] == 10
+    assert leverage_posts == [10]
+
+
 def test_spot_leverage_methods_rejected() -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
     assert client.get_max_leverage("BTCUSDC") == 1
@@ -275,3 +304,37 @@ def test_place_order_branches_and_leverage_clamping(monkeypatch) -> None:
     assert result_live["ok"] is True
     assert call_log[-1][0] == "POST"
     assert "/fapi/v1/order" in call_log[-1][1]
+
+
+def test_place_order_clamps_futures_leverage_by_notional_bracket(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
+    leverage_posts: list[int] = []
+    order_posts = 0
+
+    def fake_request(method: str, path: str, params=None, signed: bool = False):
+        nonlocal order_posts
+        if path == "/fapi/v1/leverageBracket":
+            return [
+                {
+                    "symbol": "BTCUSDC",
+                    "brackets": [
+                        {"initialLeverage": "20", "notionalFloor": "0", "notionalCap": "1000"},
+                        {"initialLeverage": "8", "notionalFloor": "1000", "notionalCap": "10000"},
+                    ],
+                }
+            ]
+        if path == "/fapi/v1/leverage":
+            leverage_posts.append(params["leverage"])
+            return {"symbol": params["symbol"], "leverage": params["leverage"]}
+        if path == "/fapi/v1/order":
+            order_posts += 1
+            return {"status": "FILLED", "executedQty": params["quantity"]}
+        raise AssertionError(f"unexpected endpoint: {path}")
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    response = client.place_order("BTCUSDC", "BUY", 0.1, dry_run=False, leverage=20.0, notional=2_500.0)
+
+    assert response["status"] == "FILLED"
+    assert leverage_posts == [8]
+    assert order_posts == 1

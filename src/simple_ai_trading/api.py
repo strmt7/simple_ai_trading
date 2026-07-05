@@ -540,14 +540,34 @@ class BinanceClient:
         if self.market_type != "futures":
             raise BinanceAPIError("Leverage brackets are available only in futures mode")
 
-        payload = self._request_list(
+        payload = self._request(
             "GET",
             "/fapi/v1/leverageBracket",
             {"symbol": symbol.upper()},
             signed=True,
-            label="leverage bracket",
         )
-        return [dict(item) for item in payload if isinstance(item, dict)]
+        if isinstance(payload, dict):
+            payload_items = [payload]
+        elif isinstance(payload, list):
+            payload_items = payload
+        else:
+            raise BinanceAPIError("Unexpected leverage bracket payload")
+        return [dict(item) for item in payload_items if isinstance(item, dict)]
+
+    @staticmethod
+    def _bracket_leverage(bracket: Dict[str, object]) -> int:
+        values: list[int] = []
+        for key in ("maxLeverage", "initialLeverage"):
+            value = bracket.get(key)
+            if value is None:
+                continue
+            try:
+                parsed = int(float(value))
+            except (TypeError, ValueError):
+                continue
+            if parsed > 0:
+                values.append(parsed)
+        return max(values) if values else 0
 
     def get_max_leverage(self, symbol: str) -> int:
         if self.market_type != "futures":
@@ -564,18 +584,53 @@ class BinanceClient:
             for bracket in brackets:
                 if not isinstance(bracket, dict):
                     continue
-                for key in ("maxLeverage", "initialLeverage"):
-                    value = bracket.get(key)
-                    if value is None:
-                        continue
-                    try:
-                        parsed = int(float(value))
-                    except (TypeError, ValueError):
-                        continue
-                    if parsed > max_leverage:
-                        max_leverage = parsed
+                parsed = self._bracket_leverage(bracket)
+                if parsed > max_leverage:
+                    max_leverage = parsed
             if max_leverage > 0:
                 return min(max_leverage, _MAX_FUTURES_LEVERAGE)
+        return _MAX_FUTURES_LEVERAGE
+
+    def get_max_leverage_for_notional(self, symbol: str, notional: float | int | None) -> int:
+        if self.market_type != "futures":
+            return 1
+        try:
+            notional_value = float(notional) if notional is not None else 0.0
+        except (TypeError, ValueError, OverflowError):
+            notional_value = 0.0
+        if not math.isfinite(notional_value) or notional_value <= 0.0:
+            return self.get_max_leverage(symbol)
+
+        payload = self.get_leverage_brackets(symbol)
+        symbol = symbol.upper()
+        fallback_max = 0
+        largest_floor_leverage: int | None = None
+        largest_floor = float("-inf")
+        for item in payload:
+            if not isinstance(item, dict) or item.get("symbol") != symbol:
+                continue
+            brackets = item.get("brackets")
+            if not isinstance(brackets, list) or not brackets:
+                continue
+            for bracket in brackets:
+                if not isinstance(bracket, dict):
+                    continue
+                leverage = self._bracket_leverage(bracket)
+                if leverage <= 0:
+                    continue
+                fallback_max = max(fallback_max, leverage)
+                floor = max(0.0, self._parse_float(bracket.get("notionalFloor")))
+                cap = self._parse_float(bracket.get("notionalCap"))
+                cap = float("inf") if cap <= 0.0 else cap
+                if floor <= notional_value <= cap:
+                    return min(leverage, _MAX_FUTURES_LEVERAGE)
+                if floor <= notional_value and floor >= largest_floor:
+                    largest_floor = floor
+                    largest_floor_leverage = leverage
+        if largest_floor_leverage is not None:
+            return min(largest_floor_leverage, _MAX_FUTURES_LEVERAGE)
+        if fallback_max > 0:
+            return min(fallback_max, _MAX_FUTURES_LEVERAGE)
         return _MAX_FUTURES_LEVERAGE
 
     def ensure_symbol(self, symbol: str) -> Dict[str, object]:
@@ -692,13 +747,13 @@ class BinanceClient:
         data = self._request_dict("GET", endpoint, {"symbol": symbol}, label="symbol price")
         return self._parse_required_float(data.get("price"), "symbol price"), int(time.time() * 1000)
 
-    def set_leverage(self, symbol: str, leverage: int) -> Dict[str, object]:
+    def set_leverage(self, symbol: str, leverage: int, *, notional: float | int | None = None) -> Dict[str, object]:
         if self.market_type != "futures":
             raise BinanceAPIError("Leverage is available only in futures mode")
         leverage = int(leverage)
         if leverage < 1:
             leverage = 1
-        max_leverage = self.get_max_leverage(symbol)
+        max_leverage = self.get_max_leverage_for_notional(symbol, notional)
         if leverage > max_leverage:
             leverage = max_leverage
         payload = {"symbol": symbol, "leverage": leverage}
@@ -712,6 +767,7 @@ class BinanceClient:
         *,
         dry_run: bool,
         leverage: float = 1.0,
+        notional: float | None = None,
         reduce_only: bool = False,
         client_order_id: str | None = None,
     ) -> Dict[str, object]:
@@ -721,6 +777,12 @@ class BinanceClient:
             quantity_value = float(quantity)
         except (TypeError, ValueError):
             quantity_value = float("nan")
+        try:
+            notional_value = float(notional) if notional is not None else None
+        except (TypeError, ValueError, OverflowError):
+            notional_value = None
+        if notional_value is not None and not math.isfinite(notional_value):
+            notional_value = None
         if not symbol:
             raise BinanceAPIError("Order symbol is required")
         if side not in {"BUY", "SELL"}:
@@ -744,6 +806,7 @@ class BinanceClient:
                 "type": "MARKET",
                 "quantity": payload["quantity"],
                 "leverage": leverage,
+                "notional": notional_value if notional_value is not None else 0.0,
                 "reduceOnly": bool(reduce_only),
                 "clientOrderId": payload.get("newClientOrderId", ""),
             }
@@ -757,7 +820,7 @@ class BinanceClient:
         if reduce_only:
             payload["reduceOnly"] = "true"
         # futures: configure leverage before market order submission
-        self.set_leverage(symbol, int(max(1, round(leverage))))
+        self.set_leverage(symbol, int(max(1, round(leverage))), notional=notional_value)
         return self._request_dict("POST", "/fapi/v1/order", payload, signed=True, label="order")
 
     def get_order(

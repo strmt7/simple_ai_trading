@@ -508,6 +508,8 @@ assert that every CLI command appears in the Windows app.
   current exchange/archive data before any symbol is eligible.
 - No mainnet trading by default.
 - No leverage above 20x.
+- No signed futures open order may set leverage above the active Binance
+  notional bracket for that order's intended gross notional.
 - No CLI, live, backtest, or optimization sizing path may let leverage raise
   gross exposure above the configured per-asset allocation cap.
 - No model, threshold, stress, temporal, market-edge, or optimization acceptance

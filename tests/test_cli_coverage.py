@@ -1918,6 +1918,40 @@ def test_paper_order_is_logged(tmp_path, monkeypatch) -> None:
     assert client.orders[0][0] == "BTCUSDC"
 
 
+def test_live_order_forwards_entry_notional_to_bracket_aware_client() -> None:
+    class _BracketAwareClient(_FakeClient):
+        def get_max_leverage_for_notional(self, _symbol: str, _notional: float) -> int:
+            return 5
+
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            notional: float | None = None,
+        ):
+            self.orders.append((symbol, side, size, dry_run, leverage, notional))
+            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run, "notional": notional}
+
+    client = _BracketAwareClient()
+
+    cli._paper_or_live_order(
+        client,
+        RuntimeConfig(market_type="futures"),
+        StrategyConfig(),
+        side="BUY",
+        size=0.2,
+        dry_run=False,
+        leverage=10.0,
+        notional=2_500.0,
+    )
+
+    assert client.orders[-1][-1] == pytest.approx(2_500.0)
+
+
 def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
     account = {"balances": [{"asset": "USDC", "free": "10"}, {"asset": "USDC", "free": "2.5"}, {"asset": "BTC", "free": "bad"}]}
     assert cli._asset_free_balance(account, "USDC") == 12.5
