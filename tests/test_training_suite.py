@@ -406,6 +406,7 @@ def test_refine_threshold_on_selection_rows_promotes_positive_profit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: list[tuple[str | None, int]] = []
+    probability_calls: list[tuple[int, str | None, int]] = []
 
     def fake_evaluate(*_args, **kwargs):
         threshold = float(kwargs.get("threshold", 0.5))
@@ -419,7 +420,12 @@ def test_refine_threshold_on_selection_rows_promotes_positive_profit(
             return SimpleNamespace(realized_pnl=1.75, closed_trades=3, max_drawdown=0.01)
         return SimpleNamespace(realized_pnl=-0.05, closed_trades=2, max_drawdown=0.02)
 
+    def fake_probabilities(rows, *_args, **kwargs):
+        probability_calls.append((len(rows), kwargs.get("compute_backend"), kwargs.get("batch_size")))
+        return [0.90 for _ in rows], SimpleNamespace(kind="directml")
+
     monkeypatch.setattr(training_suite, "evaluate_classification", fake_evaluate)
+    monkeypatch.setattr(training_suite, "_backtest_probabilities", fake_probabilities)
     monkeypatch.setattr(training_suite, "run_backtest", fake_run_backtest)
 
     refined = _refine_threshold_on_selection_rows(
@@ -437,6 +443,7 @@ def test_refine_threshold_on_selection_rows_promotes_positive_profit(
     assert threshold == pytest.approx(0.05)
     assert source == "selection_profit_backtest"
     assert score == pytest.approx(1.75)
+    assert probability_calls == [(40, "directml", 64)]
     assert observed
     assert all(item == ("directml", 64) for item in observed)
 
@@ -456,6 +463,11 @@ def test_refine_threshold_on_selection_rows_clamps_futures_threshold(
             true_positive=3,
             false_negative=0,
         ),
+    )
+    monkeypatch.setattr(
+        training_suite,
+        "_backtest_probabilities",
+        lambda rows, *_a, **_k: ([0.90 for _ in rows], SimpleNamespace(kind="cpu")),
     )
 
     def fake_run_backtest(_rows, model, *_args, **_kwargs):
@@ -484,6 +496,11 @@ def test_refine_threshold_on_selection_rows_clamps_futures_threshold(
 def test_refine_threshold_on_selection_rows_rejects_losing_profit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(
+        training_suite,
+        "_backtest_probabilities",
+        lambda rows, *_a, **_k: ([0.90 for _ in rows], SimpleNamespace(kind="cpu")),
+    )
     monkeypatch.setattr(
         training_suite,
         "run_backtest",
@@ -571,6 +588,7 @@ def test_purged_walk_forward_gate_rejects_failed_fold(monkeypatch: pytest.Monkey
         "_calibrate_candidate_threshold",
         lambda *a, **k: (0.60, "test", 1.0),
     )
+    monkeypatch.setattr(training_suite, "_refine_threshold_on_selection_rows", lambda *a, **k: None)
     results = iter([
         _make_result(realized_pnl=20.0, closed_trades=5, edge_vs_buy_hold=5.0),
         _make_result(realized_pnl=-5.0, ending_cash=995.0, closed_trades=5, edge_vs_buy_hold=-10.0),

@@ -40,7 +40,7 @@ from .advanced_model import (
     train_advanced,
 )
 from .api import Candle
-from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
+from .backtest import BacktestResult, _backtest_probabilities, calibrate_threshold_for_backtest, run_backtest
 from .assets import DEFAULT_CONSERVATIVE_LEVERAGE
 from .features import ModelRow
 from .hybrid_models import optimize_hybrid_model_zoo
@@ -444,6 +444,12 @@ def _refine_threshold_on_selection_rows(
     best_threshold: float | None = None
     best_score = float("-inf")
     best_rank = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
+    probabilities, score_backend = _backtest_probabilities(
+        row_list,
+        model,
+        compute_backend=compute_backend,
+        batch_size=score_batch_size,
+    )
     try:
         threshold_start = 0.5 if str(market_type).lower() == "futures" else 0.05
         for threshold in _threshold_values(threshold_start, 0.95, 121, baseline_threshold):
@@ -457,6 +463,8 @@ def _refine_threshold_on_selection_rows(
                 market_type=market_type,
                 compute_backend=compute_backend,
                 score_batch_size=score_batch_size,
+                precomputed_probabilities=probabilities,
+                precomputed_score_backend=score_backend,
             )
             if result.realized_pnl <= 0.0 or result.closed_trades <= 0:
                 continue
