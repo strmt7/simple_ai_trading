@@ -40,6 +40,12 @@ The gate enforces:
 - bounded drawdown, CVaR, deployed weight, correlation, and cluster exposure
   metrics.
 
+Portfolio VaR/CVaR and drawdown use actual cap-constrained equity weights.
+When the single-asset allocation cap prevents full deployment, the undeployed
+portion remains explicit cash reserve with zero return; it is not normalized
+away into the risky sleeve. Effective symbol count is still measured on the
+deployed sleeve so diversification quality remains visible.
+
 These checks are intentionally conservative. They follow the practical model
 risk themes in the April 17, 2026 interagency revised model-risk guidance:
 sound model development and use, validation and monitoring, conceptual

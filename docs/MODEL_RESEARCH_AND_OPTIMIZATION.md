@@ -125,7 +125,9 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678>
 - The Basel market-risk backtesting framework influenced the tail-risk gate:
   the portfolio report measures VaR/CVaR-style losses and drawdown from the
-  same aligned returns used for model-lab acceptance:
+  same aligned returns used for model-lab acceptance. Portfolio weights are
+  actual cap-constrained equity weights, so any undeployed allocation remains
+  cash reserve instead of being normalized into risky exposure:
   <https://www.bis.org/publ/bcbs22.pdf>
 - NIST AI RMF's govern/map/measure/manage structure influenced the decision to
   make AI/model risk explicit in reports instead of hiding it behind a single
@@ -377,9 +379,10 @@ finance evidence.
    promotion, but it cannot mutate a live model, loosen risk, or alter open
    positions.
 10. Builds a portfolio-level risk report from aligned symbol returns. This gate
-   computes inverse-volatility capped weights, effective symbol count,
-   pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
-   and portfolio drawdown.
+   computes inverse-volatility capped equity weights, reserve weight, effective
+   symbol count, pairwise correlations, high-correlation clusters, portfolio
+   95% VaR/CVaR, and portfolio drawdown. Cash reserve is carried as zero-return
+   exposure during VaR/CVaR and drawdown calculations.
 11. Writes a JSON report plus per-symbol `stress_validation.json`,
    `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
    accepted only when all objective scores are positive, selection-risk

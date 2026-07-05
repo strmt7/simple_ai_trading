@@ -201,6 +201,9 @@ def _inverse_vol_weights(aligned: Mapping[str, Sequence[float]], max_symbol_weig
     symbols = list(aligned)
     if not symbols:
         return {}
+    cap = min(1.0, max(0.0, float(max_symbol_weight)))
+    if cap <= 0.0:
+        return {symbol: 0.0 for symbol in symbols}
     inv: dict[str, float] = {}
     for symbol in symbols:
         vol = _std(aligned[symbol])
@@ -210,7 +213,30 @@ def _inverse_vol_weights(aligned: Mapping[str, Sequence[float]], max_symbol_weig
         raw = {symbol: 1.0 / len(symbols) for symbol in symbols}
     else:
         raw = {symbol: value / total for symbol, value in inv.items()}
-    return {symbol: min(max_symbol_weight, max(0.0, weight)) for symbol, weight in raw.items()}
+    target_deployed = min(1.0, cap * len(symbols))
+    weights = {symbol: 0.0 for symbol in symbols}
+    remaining = list(symbols)
+    remaining_budget = target_deployed
+    while remaining and remaining_budget > 1e-12:
+        raw_total = sum(max(0.0, raw[symbol]) for symbol in remaining)
+        if raw_total <= 0.0:
+            provisional = {symbol: remaining_budget / len(remaining) for symbol in remaining}
+        else:
+            provisional = {
+                symbol: remaining_budget * max(0.0, raw[symbol]) / raw_total
+                for symbol in remaining
+            }
+        capped = [symbol for symbol, weight in provisional.items() if weight > cap + 1e-12]
+        if not capped:
+            for symbol, weight in provisional.items():
+                weights[symbol] = min(cap, max(0.0, weight))
+            break
+        capped_set = set(capped)
+        for symbol in capped:
+            weights[symbol] = cap
+            remaining_budget = max(0.0, remaining_budget - cap)
+        remaining = [symbol for symbol in remaining if symbol not in capped_set]
+    return weights
 
 
 def _normalised_weights(weights: Mapping[str, float]) -> dict[str, float]:
@@ -296,7 +322,7 @@ def build_portfolio_risk_report(
     aligned = _align_returns({symbol: candles_by_symbol[symbol] for symbol in preliminary})
     observations = min((len(values) for values in aligned.values()), default=0)
     weights = _inverse_vol_weights(aligned, policy.max_symbol_weight)
-    invested_weights = _normalised_weights(weights)
+    relative_weights = _normalised_weights(weights)
     symbols = list(aligned)
     correlations: dict[tuple[str, str], float] = {}
     max_corr = 0.0
@@ -307,7 +333,7 @@ def build_portfolio_risk_report(
             corr = _correlation(aligned[left], aligned[right])
             correlations[(left, right)] = corr
             max_corr = max(max_corr, corr)
-            pair_weight = invested_weights.get(left, 0.0) * invested_weights.get(right, 0.0)
+            pair_weight = relative_weights.get(left, 0.0) * relative_weights.get(right, 0.0)
             weighted_corr_num += corr * pair_weight
             weighted_corr_den += pair_weight
     clusters = _clusters(symbols, correlations, policy.max_pairwise_correlation)
@@ -318,10 +344,10 @@ def build_portfolio_risk_report(
     max_cluster_weight = max(cluster_weights, default=0.0)
     portfolio_returns: list[float] = []
     for index in range(observations):
-        portfolio_returns.append(sum(invested_weights.get(symbol, 0.0) * aligned[symbol][index] for symbol in symbols))
+        portfolio_returns.append(sum(weights.get(symbol, 0.0) * aligned[symbol][index] for symbol in symbols))
     var_95, cvar_95 = _tail_risk(portfolio_returns)
     effective_symbols = 0.0
-    weight_square_sum = sum(weight * weight for weight in invested_weights.values())
+    weight_square_sum = sum(weight * weight for weight in relative_weights.values())
     if weight_square_sum > 0.0:
         effective_symbols = 1.0 / weight_square_sum
     metrics = [_symbol_metrics(symbol, aligned[symbol], weights.get(symbol, 0.0)) for symbol in symbols]
