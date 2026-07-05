@@ -610,6 +610,8 @@ assert that every CLI command appears in the Windows app.
   cleanly against verified bot-owned local ledger positions, hard daily/session
   loss budgets remain intact, and the reconnect observation cooldown has
   elapsed.
+- No clean reconciliation from a malformed signed account payload; futures
+  payloads must include `positions`, and spot payloads must include `balances`.
 - No coordinator state may allow entries when required risk, execution,
   reconciliation, market-data, machine-learning, or AI heartbeats are stale or
   failed.

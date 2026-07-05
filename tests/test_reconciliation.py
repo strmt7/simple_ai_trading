@@ -127,6 +127,51 @@ def test_reconcile_ignores_paper_positions_but_warns(tmp_path: Path) -> None:
     assert report.warnings == ["paper_positions_ignored=1"]
 
 
+def test_reconcile_rejects_malformed_futures_account_payload(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+
+    report = reconcile_account_positions(
+        {"assets": [{"asset": "USDC", "availableBalance": "1000"}]},
+        RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="futures"),
+        store,
+    )
+
+    assert report.ok is False
+    assert report.invalid_account_payload_count == 1
+    assert report.warnings == ["futures_positions_missing_or_not_list"]
+    assert report.mismatches[0].reason == "account_payload_invalid:futures_positions_missing_or_not_list"
+
+
+def test_reconcile_rejects_malformed_spot_account_payload(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+
+    report = reconcile_account_positions(
+        {"positions": []},
+        RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="spot", quote_asset="USDC"),
+        store,
+    )
+
+    assert report.ok is False
+    assert report.invalid_account_payload_count == 1
+    assert report.warnings == ["spot_balances_missing_or_not_list"]
+    assert report.mismatches[0].reason == "account_payload_invalid:spot_balances_missing_or_not_list"
+
+
+def test_reconcile_rejects_non_mapping_account_payload(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+
+    report = reconcile_account_positions(
+        ["not", "an", "account"],
+        RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="futures"),
+        store,
+    )
+
+    assert report.ok is False
+    assert report.invalid_account_payload_count == 1
+    assert report.warnings == ["account_payload_not_mapping"]
+    assert report.mismatches[0].reason == "account_payload_invalid:account_payload_not_mapping"
+
+
 def test_spot_account_exposure_uses_base_asset_for_runtime_symbols() -> None:
     exposures = exchange_exposures_from_account(
         {
