@@ -473,6 +473,24 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
     checks: list[FinancialSanityCheck] = []
     portfolio = payload.get("portfolio_risk")
     if isinstance(portfolio, Mapping) and portfolio.get("accepted") is True:
+        accepted_symbols = portfolio.get("accepted_symbols")
+        accepted_symbol_limit = (
+            float(len(accepted_symbols))
+            if isinstance(accepted_symbols, Sequence) and not isinstance(accepted_symbols, (str, bytes))
+            else 100.0
+        )
+        for key in ("effective_symbol_count", "correlation_adjusted_effective_symbol_count"):
+            checks.append(
+                _range_check(
+                    portfolio.get(key),
+                    path=f"portfolio_risk.{key}",
+                    label=key,
+                    low=0.0,
+                    high=max(1.0, accepted_symbol_limit),
+                    hard_low=0.0,
+                    hard_high=max(1.0, accepted_symbol_limit),
+                )
+            )
         for key in ("portfolio_cvar_95", "portfolio_max_drawdown", "deployed_weight", "max_pairwise_correlation", "max_cluster_weight"):
             checks.append(
                 _range_check(

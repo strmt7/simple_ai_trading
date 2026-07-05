@@ -7743,6 +7743,7 @@ def command_model_lab(args: argparse.Namespace) -> int:
             "portfolio risk: "
             f"{status} deployed={float(portfolio_risk.get('deployed_weight', 0.0)):.1%} "
             f"effective_symbols={float(portfolio_risk.get('effective_symbol_count', 0.0)):.2f} "
+            f"corr_effective={float(portfolio_risk.get('correlation_adjusted_effective_symbol_count', 0.0)):.2f} "
             f"cvar95={float(portfolio_risk.get('portfolio_cvar_95', 0.0)):.2%} "
             f"max_corr={float(portfolio_risk.get('max_pairwise_correlation', 0.0)):.2f} "
             f"reason={reason}"

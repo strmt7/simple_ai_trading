@@ -41,8 +41,9 @@ The gate enforces:
 - objective path quality, including profit factor, expectancy, loss streaks,
   and single-trade profit concentration,
 - accepted stress, temporal robustness, and portfolio-risk reports,
-- bounded drawdown, CVaR, deployed weight, correlation, and cluster exposure
-  metrics.
+- bounded drawdown, CVaR, deployed weight, plain effective symbol count,
+  correlation-adjusted effective symbol count, correlation, and cluster
+  exposure metrics.
 
 Live/readiness feature-drift evidence is also part of this standard. It compares
 current rows with the model's fitted feature means and standard deviations, then

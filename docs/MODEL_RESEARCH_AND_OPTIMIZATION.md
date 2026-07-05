@@ -123,6 +123,13 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   acceptance layer: individual profitable symbols are not enough if the
   accepted set is concentrated in one high-correlation cluster:
   <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678>
+- Basel market-risk and expected-shortfall guidance influenced the current
+  portfolio gate: diversification is treated as weak evidence when positive
+  correlations make several symbols behave like one risk factor. The report
+  therefore stores both plain and correlation-adjusted effective symbol counts,
+  and the risk-level policy can reject a portfolio whose nominal symbol count
+  is diversified but whose correlation-adjusted count is not:
+  <https://www.bis.org/bcbs/publ/d352.pdf>
 - The Basel market-risk backtesting framework influenced the tail-risk gate:
   the portfolio report measures VaR/CVaR-style losses and drawdown from the
   same aligned returns used for model-lab acceptance. Portfolio weights are
@@ -385,10 +392,11 @@ finance evidence.
    promotion, but it cannot mutate a live model, loosen risk, or alter open
    positions.
 10. Builds a portfolio-level risk report from aligned symbol returns. This gate
-   computes inverse-volatility capped equity weights, reserve weight, effective
-   symbol count, pairwise correlations, high-correlation clusters, portfolio
-   95% VaR/CVaR, and portfolio drawdown. Cash reserve is carried as zero-return
-   exposure during VaR/CVaR and drawdown calculations.
+   computes inverse-volatility capped equity weights, reserve weight, plain
+   effective symbol count, correlation-adjusted effective symbol count,
+   pairwise correlations, high-correlation clusters, portfolio 95% VaR/CVaR,
+   and portfolio drawdown. Cash reserve is carried as zero-return exposure
+   during VaR/CVaR and drawdown calculations.
 11. Writes a JSON report plus per-symbol `stress_validation.json`,
    `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
    accepted only when all objective scores are positive, selection-risk
@@ -437,8 +445,9 @@ symbol-specific stress validation and final-model temporal robustness against
 the selected liquid symbol, then after the portfolio risk gate is known. The
 stamp records the symbol, market type, liquidity measurements, data-coverage
 integrity, stress report path, temporal-robustness report path, portfolio report
-path, accepted scenario/window counts, portfolio CVaR/drawdown/correlation
-metrics, and worst realized/drawdown metrics, plus any learning-feedback
+path, accepted scenario/window counts, portfolio effective-symbol,
+correlation-adjusted effective-symbol, CVaR/drawdown/correlation metrics, and
+worst realized/drawdown metrics, plus any learning-feedback
 recovery decision. A plain `train-suite` model may be useful for research, but
 it is not signed-live ready until this execution, data-coverage,
 learning-feedback, and portfolio evidence is accepted and persisted into the

@@ -302,6 +302,7 @@ def test_command_model_lab_market_override_is_temporary(monkeypatch, capsys, tmp
                 "accepted": True,
                 "deployed_weight": 0.4,
                 "effective_symbol_count": 2.0,
+                "correlation_adjusted_effective_symbol_count": 1.8,
                 "portfolio_cvar_95": 0.001,
                 "max_pairwise_correlation": 0.25,
                 "reason": None,

@@ -40,18 +40,24 @@ class _Client:
         ]
 
     def get_klines(self, symbol: str, interval: str, *, limit: int = 500):
-        return [
-            Candle(
-                open_time=index * 60_000,
-                open=100.0,
-                high=101.0,
-                low=99.0,
-                close=100.0 + index * 0.01,
-                volume=10.0,
-                close_time=index * 60_000 + 59_000,
+        rows: list[Candle] = []
+        for index in range(limit):
+            if symbol == "BTCUSDC":
+                close = 100.0 + index * 0.01
+            else:
+                close = 50.0 + index * 0.006 + (((index * 7) % 17) - 8) * 0.002
+            rows.append(
+                Candle(
+                    open_time=index * 60_000,
+                    open=close * 0.999,
+                    high=close * 1.002,
+                    low=close * 0.998,
+                    close=close,
+                    volume=10.0,
+                    close_time=index * 60_000 + 59_000,
+                )
             )
-            for index in range(limit)
-        ]
+        return rows
 
 
 class _ThreeLiquidClient(_Client):
@@ -251,6 +257,7 @@ def test_model_lab_execution_stamp_helper_handles_edges(tmp_path: Path) -> None:
             reason=None,
             accepted_symbols=["BTCUSDC"],
             effective_symbol_count=1.0,
+            correlation_adjusted_effective_symbol_count=1.0,
             portfolio_cvar_95=0.01,
             portfolio_max_drawdown=0.02,
             max_pairwise_correlation=0.0,
@@ -720,7 +727,8 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
     assert report.accepted_symbols == []
     assert report.portfolio_risk is not None
     assert report.portfolio_risk["accepted"] is False
-    assert "cluster_weight>" in str(report.portfolio_risk["reason"])
+    assert "corr_adjusted_effective_symbols<" in str(report.portfolio_risk["reason"])
+    assert report.portfolio_risk["correlation_adjusted_effective_symbol_count"] < 2.25
     assert {outcome.error for outcome in report.outcomes} == {"portfolio_risk_failed"}
     assert all(outcome.diagnostics and "portfolio_risk_reason" in outcome.diagnostics for outcome in report.outcomes)
     stamped = load_model(tmp_path / "BTCUSDC" / "model_regular.json", expected_feature_dim=1)
@@ -728,4 +736,4 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
     assert stamped.execution_validation["stress"]["accepted"] is True
     assert stamped.execution_validation["temporal_robustness"]["accepted"] is True
     assert stamped.execution_validation["portfolio"]["accepted"] is False
-    assert "cluster_weight>" in str(stamped.execution_validation["portfolio"]["reason"])
+    assert "corr_adjusted_effective_symbols<" in str(stamped.execution_validation["portfolio"]["reason"])

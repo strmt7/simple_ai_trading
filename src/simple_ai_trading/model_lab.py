@@ -455,6 +455,9 @@ def _stamp_model_execution_validation(
                     "reason": portfolio_report.reason,
                     "accepted_symbols": list(portfolio_report.accepted_symbols),
                     "effective_symbol_count": float(portfolio_report.effective_symbol_count),
+                    "correlation_adjusted_effective_symbol_count": float(
+                        portfolio_report.correlation_adjusted_effective_symbol_count
+                    ),
                     "portfolio_cvar_95": float(portfolio_report.portfolio_cvar_95),
                     "portfolio_max_drawdown": float(portfolio_report.portfolio_max_drawdown),
                     "max_pairwise_correlation": float(portfolio_report.max_pairwise_correlation),
@@ -493,6 +496,7 @@ def _apply_portfolio_risk_gate(
             "portfolio_cvar_95": report.portfolio_cvar_95,
             "portfolio_max_drawdown": report.portfolio_max_drawdown,
             "effective_symbol_count": report.effective_symbol_count,
+            "correlation_adjusted_effective_symbol_count": report.correlation_adjusted_effective_symbol_count,
             "max_pairwise_correlation": report.max_pairwise_correlation,
             "max_cluster_weight": report.max_cluster_weight,
         }

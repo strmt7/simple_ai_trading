@@ -20,6 +20,7 @@ class PortfolioRiskPolicy:
     max_portfolio_drawdown: float
     max_symbol_weight: float
     min_effective_symbols: float
+    min_correlation_adjusted_effective_symbols: float
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -51,6 +52,7 @@ class PortfolioRiskReport:
     deployed_weight: float
     reserve_weight: float
     effective_symbol_count: float
+    correlation_adjusted_effective_symbol_count: float
     max_pairwise_correlation: float
     weighted_average_correlation: float
     portfolio_var_95: float
@@ -78,16 +80,19 @@ def policy_for_strategy(strategy: StrategyConfig, *, min_symbols: int | None = N
         max_cluster = 0.85
         cvar_multiplier = 2.50
         min_effective = max(1.0, configured_min * 0.60)
+        min_corr_adjusted_effective = max(1.0, configured_min * 0.40)
     elif risk_level == "regular":
         max_corr = 0.93
         max_cluster = 0.70
         cvar_multiplier = 1.75
         min_effective = max(1.0, configured_min * 0.75)
+        min_corr_adjusted_effective = max(1.0, configured_min * 0.55)
     else:
         max_corr = 0.90
         max_cluster = 0.55
         cvar_multiplier = 1.25
         min_effective = float(configured_min)
+        min_corr_adjusted_effective = max(1.0, configured_min * 0.75)
     return PortfolioRiskPolicy(
         min_symbols=configured_min,
         min_observations=40,
@@ -97,6 +102,7 @@ def policy_for_strategy(strategy: StrategyConfig, *, min_symbols: int | None = N
         max_portfolio_drawdown=max(0.001, float(strategy.max_drawdown_limit)),
         max_symbol_weight=min(1.0, max(0.01, float(strategy.max_asset_allocation_pct))),
         min_effective_symbols=min_effective,
+        min_correlation_adjusted_effective_symbols=min_corr_adjusted_effective,
     )
 
 
@@ -306,6 +312,7 @@ def build_portfolio_risk_report(
             deployed_weight=0.0,
             reserve_weight=1.0,
             effective_symbol_count=0.0,
+            correlation_adjusted_effective_symbol_count=0.0,
             max_pairwise_correlation=0.0,
             weighted_average_correlation=0.0,
             portfolio_var_95=0.0,
@@ -350,6 +357,17 @@ def build_portfolio_risk_report(
     weight_square_sum = sum(weight * weight for weight in relative_weights.values())
     if weight_square_sum > 0.0:
         effective_symbols = 1.0 / weight_square_sum
+    corr_adjusted_concentration = weight_square_sum
+    for (left, right), corr in correlations.items():
+        corr_adjusted_concentration += (
+            2.0
+            * max(0.0, corr)
+            * relative_weights.get(left, 0.0)
+            * relative_weights.get(right, 0.0)
+        )
+    corr_adjusted_effective_symbols = 0.0
+    if corr_adjusted_concentration > 0.0:
+        corr_adjusted_effective_symbols = 1.0 / corr_adjusted_concentration
     metrics = [_symbol_metrics(symbol, aligned[symbol], weights.get(symbol, 0.0)) for symbol in symbols]
     reasons: list[str] = []
     if len(symbols) < policy.min_symbols:
@@ -358,6 +376,11 @@ def build_portfolio_risk_report(
         reasons.append(f"observations<{policy.min_observations}")
     if effective_symbols + 1e-3 < policy.min_effective_symbols:
         reasons.append(f"effective_symbols<{policy.min_effective_symbols:.2f}")
+    if corr_adjusted_effective_symbols + 1e-3 < policy.min_correlation_adjusted_effective_symbols:
+        reasons.append(
+            "corr_adjusted_effective_symbols<"
+            f"{policy.min_correlation_adjusted_effective_symbols:.2f}"
+        )
     if max_cluster_weight > policy.max_cluster_weight:
         reasons.append(f"cluster_weight>{policy.max_cluster_weight:.2f}")
     if cvar_95 > policy.max_portfolio_cvar_95:
@@ -375,6 +398,7 @@ def build_portfolio_risk_report(
         deployed_weight=_finite(sum(weights.values())),
         reserve_weight=_finite(max(0.0, 1.0 - sum(weights.values()))),
         effective_symbol_count=_finite(effective_symbols),
+        correlation_adjusted_effective_symbol_count=_finite(corr_adjusted_effective_symbols),
         max_pairwise_correlation=_finite(max_corr),
         weighted_average_correlation=_finite(weighted_corr_num / weighted_corr_den if weighted_corr_den > 0 else 0.0),
         portfolio_var_95=_finite(var_95),

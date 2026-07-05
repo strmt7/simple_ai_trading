@@ -36,6 +36,7 @@ def test_policy_for_strategy_is_stricter_for_conservative() -> None:
     assert conservative.max_cluster_weight < aggressive.max_cluster_weight
     assert conservative.max_portfolio_cvar_95 < aggressive.max_portfolio_cvar_95
     assert conservative.min_effective_symbols > aggressive.min_effective_symbols
+    assert conservative.min_correlation_adjusted_effective_symbols > aggressive.min_correlation_adjusted_effective_symbols
 
 
 def test_portfolio_risk_accepts_diversified_low_tail_risk_set() -> None:
@@ -60,6 +61,9 @@ def test_portfolio_risk_accepts_diversified_low_tail_risk_set() -> None:
     assert report.reason is None
     assert report.observations >= 100
     assert report.effective_symbol_count >= 2.9
+    assert report.correlation_adjusted_effective_symbol_count >= (
+        report.policy.min_correlation_adjusted_effective_symbols - 1e-3
+    )
     assert report.portfolio_cvar_95 <= report.policy.max_portfolio_cvar_95
     assert set(report.weights) == {"AAAUSDC", "BBBUSDC", "CCCUSDC"}
 
@@ -92,6 +96,30 @@ def test_portfolio_risk_rejects_high_correlation_cluster_weight() -> None:
     assert "cluster_weight>" in str(report.reason)
     assert report.max_pairwise_correlation >= 0.99
     assert report.max_cluster_weight > report.policy.max_cluster_weight
+
+
+def test_portfolio_risk_rejects_fake_diversification_from_high_correlation() -> None:
+    shared = _candles(0.0)
+    report = build_portfolio_risk_report(
+        {
+            "AAAUSDC": shared,
+            "BBBUSDC": list(shared),
+            "CCCUSDC": list(shared),
+        },
+        StrategyConfig(
+            risk_level="aggressive",
+            min_diversified_assets=3,
+            max_asset_allocation_pct=0.20,
+            max_portfolio_risk_pct=1.0,
+            max_drawdown_limit=1.0,
+        ),
+        min_symbols=3,
+    )
+
+    assert report.accepted is False
+    assert "corr_adjusted_effective_symbols<" in str(report.reason)
+    assert report.effective_symbol_count >= 2.9
+    assert report.correlation_adjusted_effective_symbol_count == pytest.approx(1.0)
 
 
 def test_portfolio_risk_rejects_tail_loss_breach() -> None:
