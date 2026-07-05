@@ -313,6 +313,10 @@ searched beside label-horizon and triple-barrier variants. These probes are not
 lower safety standards; they only broaden the search surface before the same
 closed-trade, positive-P&L, edge, drawdown, profit-factor, and expectancy gates
 decide whether evidence can be accepted.
+Automatic optimization universe selection is strict by default: symbols must
+pass the strategy's live liquidity gates at selection time. Research-tier
+symbols can be inspected only through an explicit opt-in code path and must not
+silently fill a live-style optimization universe.
 
 ## Financial Sanity Gates
 

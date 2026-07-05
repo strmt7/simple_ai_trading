@@ -414,6 +414,7 @@ def select_top_liquidity_symbols(
     quote_asset: str = "USDT",
     count: int = 50,
     max_scan: int = 1000,
+    strict_only: bool = True,
 ) -> list[SelectedSymbol]:
     quote_asset = str(quote_asset or "USDT").upper()
     exchange_symbols = _exchange_symbol_map(client)
@@ -493,7 +494,8 @@ def select_top_liquidity_symbols(
                 reasons=tuple(strict_reasons),
             ),
         ))
-    ranked = [item for _score, item in sorted(candidates, key=lambda row: row[0], reverse=True)]
+    ranked_all = [item for _score, item in sorted(candidates, key=lambda row: row[0], reverse=True)]
+    ranked = [item for item in ranked_all if item.strict_default_eligible] if strict_only else ranked_all
     return [
         SelectedSymbol(
             rank=index,
@@ -536,6 +538,7 @@ def select_data_healthy_top_liquidity_symbols(
         quote_asset=quote_asset,
         count=candidate_count,
         max_scan=max_scan,
+        strict_only=True,
     )
     selected: list[SelectedSymbol] = []
     health_rejections: list[dict[str, object]] = []
@@ -1457,6 +1460,12 @@ def build_round_evidence(
         )
     else:
         selected = select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
+        if len(selected) < max(1, int(symbol_count)):
+            raise ValueError(
+                "strict_liquidity_selection_shortfall: "
+                f"selected {len(selected)}/{max(1, int(symbol_count))} strict live-eligible symbols; "
+                "lower symbol_count or improve liquidity gates explicitly instead of filling with research-tier assets"
+            )
     write_json_atomic(paths.docs_data_dir / "selected-universe.json", [item.asdict() for item in selected], indent=2, sort_keys=True)
     write_status(
         "selection_complete",
