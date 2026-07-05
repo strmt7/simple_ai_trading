@@ -607,8 +607,9 @@ assert that every CLI command appears in the Windows app.
 - No score-improving model refinement if the validation/full-sample risk
   snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
 - No autonomous post-outage resume until signed exchange exposure reconciles
-  cleanly, hard daily/session loss budgets remain intact, and the reconnect
-  observation cooldown has elapsed.
+  cleanly against verified bot-owned local ledger positions, hard daily/session
+  loss budgets remain intact, and the reconnect observation cooldown has
+  elapsed.
 - No coordinator state may allow entries when required risk, execution,
   reconciliation, market-data, machine-learning, or AI heartbeats are stale or
   failed.

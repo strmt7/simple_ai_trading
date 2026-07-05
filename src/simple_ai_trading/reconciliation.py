@@ -6,7 +6,7 @@ import math
 from dataclasses import asdict, dataclass, field
 from typing import Mapping, Sequence
 
-from .positions import OpenPosition, PositionsStore
+from .positions import OpenPosition, PositionsStore, bot_ownership_rejection_reason
 from .types import RuntimeConfig
 
 
@@ -51,6 +51,7 @@ class ReconciliationReport:
     warnings: list[str] = field(default_factory=list)
     external_exchange_exposure_count: int = 0
     stale_local_position_count: int = 0
+    unverified_local_position_count: int = 0
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -66,6 +67,7 @@ class ReconciliationReport:
             "warnings": list(self.warnings),
             "external_exchange_exposure_count": self.external_exchange_exposure_count,
             "stale_local_position_count": self.stale_local_position_count,
+            "unverified_local_position_count": self.unverified_local_position_count,
         }
 
 
@@ -193,8 +195,18 @@ def reconcile_account_positions(
     open_positions = store.load_open()
     live_positions = [position for position in open_positions if not position.dry_run]
     paper_positions = [position for position in open_positions if position.dry_run]
+    unverified_live_positions = [
+        (position, reason)
+        for position in live_positions
+        if (reason := bot_ownership_rejection_reason(position)) is not None
+    ]
+    verified_live_positions = [
+        position
+        for position in live_positions
+        if bot_ownership_rejection_reason(position) is None
+    ]
     exposures = exchange_exposures_from_account(account, runtime, open_positions)
-    local = _aggregate_local(live_positions)
+    local = _aggregate_local(verified_live_positions)
     exchange = _aggregate_exchange(exposures)
     keys = sorted(set(local) | set(exchange))
     mismatches: list[ReconciliationMismatch] = []
@@ -218,6 +230,19 @@ def reconcile_account_positions(
             difference=difference,
             reason=reason,
         ))
+    for position, rejection in unverified_live_positions:
+        symbol = str(position.symbol).upper()
+        side = str(position.side).upper()
+        local_qty = max(0.0, float(position.qty))
+        exchange_qty = exchange.get((symbol, side), 0.0)
+        mismatches.append(ReconciliationMismatch(
+            symbol=symbol,
+            side=side,
+            local_qty=local_qty,
+            exchange_qty=exchange_qty,
+            difference=exchange_qty - local_qty,
+            reason=f"local_position_without_bot_ownership:{rejection}",
+        ))
     warnings: list[str] = []
     if paper_positions:
         warnings.append(f"paper_positions_ignored={len(paper_positions)}")
@@ -232,7 +257,7 @@ def reconcile_account_positions(
         1
         for mismatch in mismatches
         if mismatch.reason == "local_position_without_exchange_exposure"
-    )
+    ) + len(unverified_live_positions)
     symbols_checked = sorted(_symbol_set(runtime, open_positions))
     return ReconciliationReport(
         ok=not mismatches,
@@ -247,4 +272,5 @@ def reconcile_account_positions(
         warnings=warnings,
         external_exchange_exposure_count=external_exposure_count,
         stale_local_position_count=stale_local_count,
+        unverified_local_position_count=len(unverified_live_positions),
     )

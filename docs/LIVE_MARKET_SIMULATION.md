@@ -241,8 +241,8 @@ Authenticated order reconciliation:
 - A placement ACK that contains `origQty` but no executed quantity is treated as unresolved, not filled.
 - If an order response has an `orderId` or client order id but no fill, the app queries the spot `/api/v3/order` or futures `/fapi/v1/order` status endpoint before updating the local ledger.
 - If the fill is still unresolved, the loop records an order error and stops instead of silently assuming exposure changed.
-- `simple-ai-trading reconcile` compares signed account exposure with the local autonomous ledger. Paper positions are reported but ignored for exchange mismatch math; non-paper local positions must match spot balances or futures positions for the active symbol set.
-- Reconciliation writes `data/autonomous/reconciliation.json` and exits nonzero on exchange-only exposure, local-only exposure, or quantity mismatches.
+- `simple-ai-trading reconcile` compares signed account exposure with the local autonomous ledger. Paper positions are reported but ignored for exchange mismatch math; non-paper local positions must have bot-owned client-order and exchange fill/acknowledgement proof before they can match spot balances or futures positions for the active symbol set.
+- Reconciliation writes `data/autonomous/reconciliation.json` and exits nonzero on exchange-only exposure, local-only exposure, unverified local live exposure, or quantity mismatches.
 - Signed `live --live` startup runs the same reconciliation check before it is allowed
   to resume exposure. A pre-existing exchange position without a matching
   bot-owned ledger position is a startup block, not an implicit adoption. This
@@ -273,9 +273,10 @@ Autonomous network-interruption recovery:
 - After connectivity returns, the first successful market read is treated as a
   recovery transition. If the run is authenticated, signed account exposure is
   reconciled against the local autonomous ledger before any entry logic runs.
-- If reconciliation finds exchange-only exposure, local-only exposure, or a
-  quantity mismatch, the loop exits fail-closed. It does not close exposure
-  that is not represented in the bot ledger.
+- If reconciliation finds exchange-only exposure, local-only exposure,
+  unverified local live exposure, or a quantity mismatch, the loop exits
+  fail-closed. It does not close exposure that is not represented in a verified
+  bot-owned ledger row.
 - If reconciliation is clean, the loop checks hard daily loss, session loss,
   and consecutive-loss budgets. Breached daily/session budgets close locally
   tracked bot positions at the latest mark and stop the loop; loss-streak
