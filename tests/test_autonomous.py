@@ -26,6 +26,7 @@ from simple_ai_trading.autonomous import (
     _entry_gate,
     _evaluate_auto_close,
     _loss_budget_guard,
+    _apply_open_order,
     _open_position_from_decision,
     close_all_open_positions,
     close_tracked_open_positions,
@@ -375,6 +376,25 @@ def test_open_position_from_decision_live_sets_dry_run_false(tmp_path: Path) -> 
     assert position.opened_at_ms == 2000
 
 
+def test_apply_open_order_infers_filled_status_from_execution() -> None:
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+
+    opened = _apply_open_order(
+        position,
+        {
+            "orderId": 42,
+            "clientOrderId": position.open_client_order_id,
+            "executedQty": "0.5",
+            "avgPrice": "101",
+        },
+    )
+
+    assert opened.exchange_status == "FILLED"
+    assert opened.open_exchange_order_id == "42"
+
+
 # ----- _close_to_trade ------------------------------------------------------
 
 
@@ -628,7 +648,35 @@ def test_close_tracked_live_unverified_position_is_not_touched(tmp_path: Path) -
     assert report.closed == 0
     assert report.skipped == 1
     assert report.ok is True
-    assert "ownership-unverified" in report.failures[0]
+    assert "open-client-order-unverified" in report.failures[0]
+    assert client.orders == []
+    assert len(store.load_open()) == 1
+    assert store.load_ledger() == []
+
+
+def test_close_tracked_live_pending_open_position_is_not_touched(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "pending_open"
+    position.open_exchange_order_id = ""
+    store.record_open(position)
+    client = FakeClient(price=90.0)
+
+    report = close_tracked_open_positions(
+        store,
+        90.0,
+        "operator-stop",
+        client=client,
+        reduce_only=True,
+        clock=lambda: 10.0,
+    )
+
+    assert report.closed == 0
+    assert report.skipped == 1
+    assert report.ok is True
+    assert "exchange-fill-unverified" in report.failures[0]
     assert client.orders == []
     assert len(store.load_open()) == 1
     assert store.load_ledger() == []

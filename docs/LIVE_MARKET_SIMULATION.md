@@ -129,8 +129,15 @@ and available cash. This same notional calculation is used by risk reporting,
 backtesting, live/testnet order sizing, and the buy-and-hold edge baseline.
 
 Autonomous live/testnet orders use bot-owned client-order IDs. Live stop/close
-paths only submit reduce-only closes for positions that are still present in
-the local ledger and carry this bot ownership proof. Manual or external
+paths only submit exchange closes for positions that are still present in the
+local ledger, carry this bot ownership proof, and include exchange fill or
+acknowledgement evidence. Spot positions require `FILLED` or
+`PARTIALLY_FILLED` exchange status before the bot will submit a close, because
+spot has no reduce-only protection. Futures positions allow the same filled
+statuses and may also close a bot-owned `NEW` or `accepted` order only when an
+exchange order ID is present, because the close is sent reduce-only. Pending,
+local, canceled, rejected, expired, or hand-edited live ledger entries are
+preserved and reported with a concrete rejection reason. Manual or external
 exchange exposure is reported by reconciliation and is not touched by the bot.
 CLI and shell local-close commands refuse to erase live ledger entries because
 that would make exchange exposure stale or untracked.

@@ -29,6 +29,21 @@ from .storage import write_json_atomic
 
 BOT_OWNER = "simple_ai_trading"
 BOT_CLIENT_ORDER_PREFIX = "sait"
+_LIVE_FILLED_STATUSES = {"FILLED", "PARTIALLY_FILLED"}
+_LIVE_UNSAFE_STATUSES = {
+    "",
+    "LOCAL",
+    "PAPER",
+    "PENDING_OPEN",
+    "PENDING_CLOSE",
+    "PENDING_CANCEL",
+    "CANCELED",
+    "CANCELLED",
+    "REJECTED",
+    "EXPIRED",
+    "EXPIRED_IN_MATCH",
+}
+_LIVE_FUTURES_ACK_STATUSES = {"ACCEPTED", "NEW"}
 
 
 @dataclass
@@ -255,15 +270,38 @@ def bot_client_order_id(position_id: str, action: str) -> str:
     return f"{BOT_CLIENT_ORDER_PREFIX}-{clean_action}-{clean_id}"[:36]
 
 
+def _normalized_exchange_status(status: object) -> str:
+    return str(status or "").strip().upper().replace("-", "_").replace(" ", "_")
+
+
+def bot_ownership_rejection_reason(position: OpenPosition) -> str | None:
+    """Return why a position lacks enough proof for bot-managed live closing."""
+
+    if position.dry_run:
+        return None
+    if str(position.owner or "") != BOT_OWNER:
+        return "owner-unverified"
+    client_id = str(position.open_client_order_id or "")
+    if not client_id.startswith(f"{BOT_CLIENT_ORDER_PREFIX}-o-"):
+        return "open-client-order-unverified"
+
+    status = _normalized_exchange_status(position.exchange_status)
+    if status in _LIVE_FILLED_STATUSES:
+        return None
+    if status in _LIVE_UNSAFE_STATUSES:
+        return "exchange-fill-unverified"
+
+    exchange_order_id = str(position.open_exchange_order_id or "").strip()
+    market_type = str(position.market_type or "").strip().lower()
+    if market_type == "futures" and exchange_order_id and status in _LIVE_FUTURES_ACK_STATUSES:
+        return None
+    return f"exchange-status-unverified:{status.lower() or 'missing'}"
+
+
 def is_bot_owned_position(position: OpenPosition) -> bool:
     """Return whether a live position has enough proof to be exchange-closed."""
 
-    if position.dry_run:
-        return True
-    if str(position.owner or "") != BOT_OWNER:
-        return False
-    client_id = str(position.open_client_order_id or "")
-    return client_id.startswith(f"{BOT_CLIENT_ORDER_PREFIX}-o-")
+    return bot_ownership_rejection_reason(position) is None
 
 
 def now_ms(clock=time.time) -> int:

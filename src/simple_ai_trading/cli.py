@@ -90,7 +90,7 @@ from .positions import (
     OpenPosition,
     PositionsStore,
     bot_client_order_id,
-    is_bot_owned_position,
+    bot_ownership_rejection_reason,
     new_position_id,
 )
 from .reconciliation import reconcile_account_positions
@@ -6362,8 +6362,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             return 2
         if ledger_positions:
             ledger_position = ledger_positions[0]
-            if not is_bot_owned_position(ledger_position):
-                reason = f"ledger position {ledger_position.id} lacks bot order ownership proof"
+            ownership_rejection = bot_ownership_rejection_reason(ledger_position)
+            if ownership_rejection is not None:
+                reason = (
+                    f"ledger position {ledger_position.id} lacks bot order ownership proof "
+                    f"({ownership_rejection})"
+                )
                 print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
                 persist_live_startup_block("startup_reconciliation_mismatch", reason, reconciliation_report.asdict())
                 return 2
@@ -6502,7 +6506,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 take_profit_pct=float(cfg.take_profit_pct),
                 open_client_order_id=current_open_client_order_id,
                 open_exchange_order_id=current_open_exchange_order_id,
-                exchange_status=_order_response_text(order_response, "status") or "accepted",
+                exchange_status=_order_response_text(order_response, "status") or ("FILLED" if filled_qty > 0.0 else "accepted"),
             )
         )
 
@@ -6561,7 +6565,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     open_exchange_order_id=open_position.open_exchange_order_id,
                     close_client_order_id=close_client,
                     close_exchange_order_id=close_exchange,
-                    exchange_status=_order_response_text(order_response, "status") or "accepted",
+                    exchange_status=_order_response_text(order_response, "status") or ("FILLED" if closed_qty > 0.0 else "accepted"),
                 )
             )
             current_position_id = ""
@@ -8046,7 +8050,7 @@ def command_positions(args: argparse.Namespace) -> int:
 
 
 def command_close(args: argparse.Namespace) -> int:
-    from .positions import PositionsStore, is_bot_owned_position
+    from .positions import PositionsStore, bot_ownership_rejection_reason
 
     store = PositionsStore()
     target = args.position_id
@@ -8068,7 +8072,8 @@ def command_close(args: argparse.Namespace) -> int:
         print(f"no open position with id {target!r}", file=sys.stderr)
         return 1
     if not position.dry_run:
-        ownership = "verified" if is_bot_owned_position(position) else "unverified"
+        ownership_rejection = bot_ownership_rejection_reason(position)
+        ownership = "verified" if ownership_rejection is None else f"unverified ({ownership_rejection})"
         print(
             f"refusing local-only close for live {ownership} position {target}; use autonomous stop",
             file=sys.stderr,

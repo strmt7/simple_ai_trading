@@ -37,8 +37,8 @@ from .backtest_panel import describe_supported_intervals, list_reports
 from .objective import available_objectives, describe_objectives, get_objective
 from .positions import (
     PositionsStore,
+    bot_ownership_rejection_reason,
     compute_stats,
-    is_bot_owned_position,
     render_positions_table,
     render_stats_lines,
 )
@@ -403,7 +403,8 @@ def _cmd_close(shell: Shell, args: list[str]) -> int:
                            enabled=shell.state.color_enabled, palette=shell.palette))
         return 1
     if not position.dry_run:
-        ownership = "verified" if is_bot_owned_position(position) else "unverified"
+        ownership_rejection = bot_ownership_rejection_reason(position)
+        ownership = "verified" if ownership_rejection is None else f"unverified ({ownership_rejection})"
         shell.println(bad(
             f"refusing local-only close for live {ownership} position {target}; use /auto stop or CLI autonomous stop",
             enabled=shell.state.color_enabled,
