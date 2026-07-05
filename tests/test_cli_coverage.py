@@ -1936,8 +1936,32 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
     assert parsed == constraints
     assert quantity >= 0.00008
     assert notional >= 5.0
-    assert cli._roundtrip_second_quantity(_Client(), "BTCUSDC", "SELL", 0.0002, {"balances": [{"asset": "BTC", "free": "0.0001"}]}, 76000.0) == 0.0001
-    assert cli._roundtrip_second_quantity(_Client(), "BTCUSDC", "BUY", 0.0002, {"balances": [{"asset": "USDC", "free": "5"}]}, 76000.0) > 0
+    assert (
+        cli._roundtrip_second_quantity(
+            _Client(),
+            "BTCUSDC",
+            "USDC",
+            "BTC",
+            "SELL",
+            0.0002,
+            {"balances": [{"asset": "BTC", "free": "0.0001"}]},
+            76000.0,
+        )
+        == 0.0001
+    )
+    assert (
+        cli._roundtrip_second_quantity(
+            _Client(),
+            "BTCUSDC",
+            "USDC",
+            "BTC",
+            "BUY",
+            0.0002,
+            {"balances": [{"asset": "USDC", "free": "5"}]},
+            76000.0,
+        )
+        > 0
+    )
 
     with pytest.raises(ValueError):
         cli._roundtrip_quantity(_Client(), "BTCUSDC", 0.0, 76000.0)
@@ -2079,6 +2103,49 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
     assert persisted[-1]["mode"] == "buy-sell"
     assert persisted[-1]["runtime"]["api_key"] == "<redacted>"
 
+    class _EthRoundtripClient:
+        def __init__(self) -> None:
+            self.usdt = 100.0
+            self.eth = 1.0
+            self.orders: list[str] = []
+
+        def ensure_symbol(self, symbol: str):
+            return {"symbol": symbol}
+
+        def get_symbol_price(self, _symbol: str):
+            return 3000.0, 1
+
+        def normalize_quantity(self, _symbol: str, quantity: float):
+            rounded = math.floor(quantity * 1000) / 1000
+            return rounded, SymbolConstraints("ETHUSDT", 0.001, 10.0, 0.001, 5.0, 1000.0)
+
+        def get_account(self):
+            return {
+                "balances": [
+                    {"asset": "USDT", "free": str(self.usdt), "locked": "0"},
+                    {"asset": "ETH", "free": str(self.eth), "locked": "0"},
+                ]
+            }
+
+        def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
+            assert dry_run is False
+            self.orders.append(side)
+            if side == "BUY":
+                self.eth += quantity
+                self.usdt -= quantity * 3000.0
+            else:
+                self.eth -= quantity
+                self.usdt += quantity * 3000.0
+            return {"status": "FILLED", "orderId": len(self.orders), "executedQty": f"{quantity:.8f}"}
+
+    save_runtime(RuntimeConfig(symbol="ETHUSDT", quote_asset="USDT", market_type="spot", testnet=True, api_key="k", api_secret="s"))
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EthRoundtripClient())
+    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.01, mode="auto", yes=True)) == 0
+    assert "ETH" in persisted[-1]["balances_before"]
+    assert "USDT" in persisted[-1]["balances_before"]
+    assert persisted[-1]["mode"] == "buy-sell"
+
+    save_runtime(RuntimeConfig(market_type="spot", testnet=True, api_key="k", api_secret="s"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=0.0, btc=0.5))
     assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="auto", yes=True)) == 0
     assert persisted[-1]["mode"] == "sell-buy"
@@ -4680,6 +4747,55 @@ def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatc
     assert "Authenticated live cash capped to exchange free USDC=25.00" in capsys.readouterr().out
 
 
+def test_command_live_uses_runtime_quote_asset_for_cash_cap(tmp_path, monkeypatch, capsys) -> None:
+    class _SignedModel:
+        feature_signature = "runtime-signature"
+
+        def predict_proba(self, _features):
+            return 0.5
+
+    class _UsdtBalanceClient(_FakeClient):
+        def set_leverage(self, symbol: str, leverage: int):
+            return {"leverage": leverage}
+
+        def get_account(self):
+            return {"positions": [], "assets": [{"asset": "USDT", "availableBalance": "30"}]}
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    model_file = tmp_path / "model.json"
+    model_file.write_text("{}", encoding="utf-8")
+    save_runtime(
+        RuntimeConfig(
+            symbol="ETHUSDT",
+            quote_asset="USDT",
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=100.0,
+        )
+    )
+    save_strategy(StrategyConfig())
+    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _UsdtBalanceClient())
+    args = argparse.Namespace(
+        steps=0,
+        sleep=1,
+        paper=False,
+        live=True,
+        model=str(model_file),
+        leverage=None,
+        retrain_interval=0,
+        retrain_window=300,
+        retrain_min_rows=240,
+        external_signals=None,
+    )
+
+    assert cli.command_live(args) == 0
+    assert "Authenticated live cash capped to exchange free USDT=30.00" in capsys.readouterr().out
+
+
 def test_command_live_blocks_when_exchange_has_no_available_usdc(tmp_path, monkeypatch, capsys) -> None:
     class _SignedModel:
         feature_signature = "runtime-signature"
@@ -5239,6 +5355,14 @@ def test_existing_position_detection_helpers() -> None:
         cli._detect_existing_position(RuntimeConfig(market_type="spot", managed_btc=0.01), SpotAccount(), leverage=1.0)["entry_price"]
         == 60000.0
     )
+    eth_spot = cli._detect_existing_position(
+        RuntimeConfig(market_type="spot", symbol="ETHUSDT", quote_asset="USDT", managed_btc=0.5),
+        SpotAccount(),
+        leverage=1.0,
+        reference_price=3000.0,
+    )
+    assert eth_spot["qty"] == 0.5
+    assert eth_spot["entry_price"] == 3000.0
 
     assert (
         cli._detect_existing_position(

@@ -37,7 +37,9 @@ from .assets import (
     DEFAULT_CONSERVATIVE_LEVERAGE,
     DEFAULT_REGULAR_LEVERAGE,
     MAX_AUTONOMOUS_LEVERAGE,
+    SUPPORTED_MAJOR_QUOTE_ASSETS,
     is_supported_major_symbol,
+    symbol_base_for_supported_quote,
 )
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
 from .binance_archive import (
@@ -267,12 +269,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "spot-roundtrip",
         help="place a tiny signed spot testnet/demo roundtrip order with balance and filter prechecks",
     )
-    parser_roundtrip.add_argument("--quantity", type=float, default=0.00008, help="BTC quantity to test")
+    parser_roundtrip.add_argument("--quantity", type=float, default=0.00008, help="base-asset quantity to test")
     parser_roundtrip.add_argument(
         "--mode",
         choices=["auto", "buy-sell", "sell-buy"],
         default="auto",
-        help="order sequence; auto uses buy-sell when USDC is available, otherwise sell-buy when BTC is available",
+        help="order sequence; auto buys first when quote balance is available, otherwise sells first when base balance is available",
     )
     parser_roundtrip.add_argument("--yes", action="store_true", help="confirm signed testnet/demo order placement")
     parser_roundtrip.set_defaults(func=command_spot_roundtrip)
@@ -976,13 +978,17 @@ def _credential_fingerprint(runtime) -> str:
     return hashlib.sha256(f"{key}\0{secret}".encode("utf-8")).hexdigest()
 
 
-def _validate_runtime_connection(runtime, client) -> None:
-    client.ping()
+def _ensure_runtime_symbol(runtime, client) -> None:
     ensure_symbol = getattr(client, "ensure_symbol", None)
     if callable(ensure_symbol):
         ensure_symbol(runtime.symbol)
     else:
         client.ensure_btcusdc()
+
+
+def _validate_runtime_connection(runtime, client) -> None:
+    client.ping()
+    _ensure_runtime_symbol(runtime, client)
     if _has_api_credentials(runtime):
         client.get_account()
 
@@ -1598,6 +1604,8 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
     balances = balances_payload if isinstance(balances_payload, list) else []
     assets = assets_payload if isinstance(assets_payload, list) else []
     positions = positions_payload if isinstance(positions_payload, list) else []
+    quote_asset, base_asset = _fund_asset_labels(runtime)
+    important_assets = {quote_asset, base_asset, "USDC", "USDT"}
     interesting = []
     for item in balances:
         if not isinstance(item, dict):
@@ -1605,7 +1613,7 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
         asset = str(item.get("asset", ""))
         free = str(item.get("free", "0"))
         locked = str(item.get("locked", "0"))
-        if asset in {"BTC", "USDC"} or free not in {"0", "0.0", "0.00000000"} or locked not in {"0", "0.0", "0.00000000"}:
+        if asset in important_assets or free not in {"0", "0.0", "0.00000000"} or locked not in {"0", "0.0", "0.00000000"}:
             interesting.append(f"{asset}: free={free} locked={locked}")
     for item in assets:
         if not isinstance(item, dict):
@@ -1614,7 +1622,7 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
         wallet = str(item.get("walletBalance", item.get("availableBalance", "0")))
         available = str(item.get("availableBalance", "0"))
         unrealized = str(item.get("unrealizedProfit", "0"))
-        if asset in {"BTC", "USDC", "USDT"} or wallet not in {"0", "0.0", "0.00000000"} or unrealized not in {"0", "0.0", "0.00000000"}:
+        if asset in important_assets or wallet not in {"0", "0.0", "0.00000000"} or unrealized not in {"0", "0.0", "0.00000000"}:
             interesting.append(f"{asset}: wallet={wallet} available={available} unrealized={unrealized}")
     for item in positions:
         if not isinstance(item, dict):
@@ -1803,6 +1811,23 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
 _COMPUTE_BACKEND_CHOICES = ("cpu", "cuda", "rocm", "directml", "mps", "auto")
 
 
+def _runtime_quote_asset(runtime: RuntimeConfig) -> str:
+    configured = str(getattr(runtime, "quote_asset", "") or "").strip().upper()
+    symbol = str(getattr(runtime, "symbol", "") or "").strip().upper()
+    if configured in SUPPORTED_MAJOR_QUOTE_ASSETS and symbol.endswith(configured):
+        return configured
+    for quote in sorted(SUPPORTED_MAJOR_QUOTE_ASSETS, key=len, reverse=True):
+        if symbol.endswith(quote):
+            return quote
+    return "USDC"
+
+
+def _fund_asset_labels(runtime: RuntimeConfig) -> tuple[str, str]:
+    quote_asset = _runtime_quote_asset(runtime)
+    base_asset = symbol_base_for_supported_quote(getattr(runtime, "symbol", ""), quote_asset=quote_asset)
+    return quote_asset, base_asset or "BTC"
+
+
 def _workflow_compute_backend(
     runtime: RuntimeConfig,
     requested: object,
@@ -1823,8 +1848,9 @@ def _workflow_compute_backend(
     return backend_name, info
 
 
-def _account_free_balances(account: object) -> dict[str, float]:
-    balances = {"USDC": 0.0, "BTC": 0.0}
+def _account_free_balances(account: object, tracked_assets: Iterable[str] | None = None) -> dict[str, float]:
+    asset_names = tuple(dict.fromkeys(str(asset or "").strip().upper() for asset in (tracked_assets or ("USDC", "BTC"))))
+    balances = {asset: 0.0 for asset in asset_names if asset}
     if not isinstance(account, dict):
         return balances
     spot_balances = account.get("balances", [])
@@ -1851,18 +1877,19 @@ def _load_exchange_funds(runtime) -> dict[str, float]:
     if not _has_api_credentials(runtime):
         raise BinanceAPIError(_credential_required_message("Funds"))
     account = _build_client(runtime).get_account()
-    return _account_free_balances(account)
+    return _account_free_balances(account, _fund_asset_labels(runtime))
 
 
 def _funds_summary(runtime, balances: Mapping[str, float] | None = None) -> str:
-    caps = f"Trading caps: USDC={runtime.managed_usdc:.4f} BTC={runtime.managed_btc:.8f}"
+    quote_asset, base_asset = _fund_asset_labels(runtime)
+    caps = f"Trading caps: {quote_asset}={runtime.managed_usdc:.4f} {base_asset}={runtime.managed_btc:.8f}"
     if not _has_api_credentials(runtime):
         return f"API credentials missing. Exchange-backed Funds disabled. {caps}"
     if balances is None:
         return f"Exchange balance not loaded. {caps}"
-    usdc = max(0.0, _safe_float(balances.get("USDC", 0.0)))
-    btc = max(0.0, _safe_float(balances.get("BTC", 0.0)))
-    return f"Exchange free: USDC={usdc:.4f} BTC={btc:.8f}. {caps}"
+    quote_free = max(0.0, _safe_float(balances.get(quote_asset, 0.0)))
+    base_free = max(0.0, _safe_float(balances.get(base_asset, 0.0)))
+    return f"Exchange free: {quote_asset}={quote_free:.4f} {base_asset}={base_free:.8f}. {caps}"
 
 
 def _apply_funds_change(
@@ -1873,6 +1900,7 @@ def _apply_funds_change(
 ) -> tuple[object, str]:
     """Apply an exchange-backed Funds-menu allocation cap mutation."""
     runtime = load_runtime()
+    quote_asset, base_asset = _fund_asset_labels(runtime)
     if action == "clear":
         runtime.managed_usdc = 0.0
         runtime.managed_btc = 0.0
@@ -1885,20 +1913,20 @@ def _apply_funds_change(
     if balances is None:
         return runtime, _credential_required_message("Funds")
     if action == "sync":
-        runtime.managed_usdc = max(0.0, _safe_float(balances.get("USDC", 0.0)))
-        runtime.managed_btc = max(0.0, _safe_float(balances.get("BTC", 0.0)))
+        runtime.managed_usdc = max(0.0, _safe_float(balances.get(quote_asset, 0.0)))
+        runtime.managed_btc = max(0.0, _safe_float(balances.get(base_asset, 0.0)))
         msg = "Synced trading caps from exchange free balances."
     else:
-        asset = "USDC" if action == "set_usdc" else "BTC"
+        asset = quote_asset if action == "set_usdc" else base_asset
         available = max(0.0, _safe_float(balances.get(asset, 0.0)))
         requested = max(0.0, float(amount))
         cap = min(requested, available)
-        if asset == "USDC":
+        if action == "set_usdc":
             runtime.managed_usdc = cap
-            msg = f"Set USDC trading cap to {cap:.4f}."
+            msg = f"Set {quote_asset} trading cap to {cap:.4f}."
         else:
             runtime.managed_btc = cap
-            msg = f"Set BTC trading cap to {cap:.8f}."
+            msg = f"Set {base_asset} trading cap to {cap:.8f}."
         if requested > available:
             msg += f" Requested amount was capped to exchange free balance {available:.8f} {asset}."
     save_runtime(runtime)
@@ -1911,11 +1939,12 @@ async def _ui_funds_menu(ui) -> int:
     while True:
         runtime = load_runtime()
         has_credentials = _has_api_credentials(runtime)
+        quote_asset, base_asset = _fund_asset_labels(runtime)
         options = (
             [
                 ("sync", "Use exchange free balances as caps"),
-                ("set_usdc", "Set USDC trading cap"),
-                ("set_btc", "Set BTC trading cap"),
+                ("set_usdc", f"Set {quote_asset} trading cap"),
+                ("set_btc", f"Set {base_asset} trading cap"),
                 ("clear", "Clear trading caps"),
                 ("show", "Refresh exchange-backed allocation"),
                 ("close", "Close"),
@@ -1930,8 +1959,8 @@ async def _ui_funds_menu(ui) -> int:
             "Trading caps - exchange-backed asset limits",
             options,
             help_text=(
-                f"{_funds_summary(runtime)}. Trading caps reads Binance balances and stores maximum "
-                "strategy allocation caps; it never deposits, withdraws, or simulates money."
+                f"{_funds_summary(runtime)}. Trading caps reads Binance {quote_asset}/{base_asset} balances "
+                "and stores maximum strategy allocation caps; it never deposits, withdraws, or simulates money."
             ),
         )
         if choice in (None, "close"):
@@ -1955,16 +1984,16 @@ async def _ui_funds_menu(ui) -> int:
             _, msg = _apply_funds_change("sync", 0.0, balances=balances)
             ui.append_log(msg)
             continue
-        is_btc = choice == "set_btc"
-        unit = "BTC" if is_btc else "USDC"
-        current_cap = runtime.managed_btc if is_btc else runtime.managed_usdc
+        is_base_asset = choice == "set_btc"
+        unit = base_asset if is_base_asset else quote_asset
+        current_cap = runtime.managed_btc if is_base_asset else runtime.managed_usdc
         payload = await ui.form(
             f"Set {unit} trading cap",
             [
                 FormField(
                     "amount",
                     f"Maximum {unit} the strategy may use",
-                    f"{current_cap:.8f}" if is_btc else f"{current_cap:.4f}",
+                    f"{current_cap:.8f}" if is_base_asset else f"{current_cap:.4f}",
                 ),
             ],
         )
@@ -2241,7 +2270,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                     "----------------",
                     "  1. Connection settings: paste your Binance testnet API key and secret.",
                     "  2. Connect: validate those credentials.",
-                    "  3. Trading caps: choose how much BTC / USDC the strategy may use.",
+                    f"  3. Trading caps: choose how much {base_asset} / {quote_asset} the strategy may use.",
                     "  4. Safety check: confirm safety flags, data, model, and connectivity.",
                     "",
                     "End-to-end paper run",
@@ -2815,13 +2844,14 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
     async def _settings(ui):
         return await _ui_settings_menu(ui, mark_credentials=_mark_credentials)
 
+    quote_asset, base_asset = _fund_asset_labels(load_runtime())
     return [
         _make_action("1", "Connect", "Validate the saved Binance testnet credentials and unlock account-only actions.", _connect, credentials=True),
         _make_action("2", "Dashboard", "Show the current setup, strategy, model, and recent run artifacts in the activity log.", _overview, aliases=("Overview",)),
-        _make_action("3", "Account balances", "Read authenticated BTC and USDC balances from Binance.", _account, credentials=True, aliases=("Account",)),
+        _make_action("3", "Account balances", f"Read authenticated {base_asset} and {quote_asset} balances from Binance.", _account, credentials=True, aliases=("Account",)),
         _make_action("4", "Safety check", "Verify safety flags, training data, model compatibility, and optional exchange reachability.", _doctor, aliases=("Readiness check",)),
         _make_action("5", "Data/model audit", "Check candle quality, feature stability, model metadata, and risk posture without network calls.", _audit, aliases=("Local audit",)),
-        _make_action("6", "Trading caps", "Read exchange balances and set the maximum BTC / USDC the strategy may use.", _funds, credentials=True, aliases=("Funds",)),
+        _make_action("6", "Trading caps", f"Read exchange balances and set the maximum {base_asset} / {quote_asset} the strategy may use.", _funds, credentials=True, aliases=("Funds",)),
         _make_action("7", "Download market data", "Download fresh market candles into the local dataset.", _fetch, aliases=("Fetch candles",)),
         _make_action("8", "Train AI model", "Train or retrain the prediction model on cached market data.", _train, aliases=("Train model",)),
         _make_action("9", "Evaluate model", "Score the saved model on cached candles and inspect threshold quality.", _evaluate, aliases=("Evaluate",)),
@@ -3411,9 +3441,9 @@ def _detect_existing_position(
             }
         return None
 
-    base_asset = runtime.symbol.removesuffix("USDC")
-    managed_btc = max(0.0, _safe_float(getattr(runtime, "managed_btc", 0.0)))
-    if managed_btc <= 0.0:
+    _quote_asset, base_asset = _fund_asset_labels(runtime)
+    managed_base = max(0.0, _safe_float(getattr(runtime, "managed_btc", 0.0)))
+    if managed_base <= 0.0:
         return None
     for item in account.get("balances", []) or []:
         if not isinstance(item, dict) or item.get("asset") != base_asset:
@@ -3421,7 +3451,7 @@ def _detect_existing_position(
         qty = _safe_float(item.get("free")) + _safe_float(item.get("locked"))
         if qty <= 0.0:
             continue
-        qty = min(qty, managed_btc)
+        qty = min(qty, managed_base)
         price = reference_price
         if price is None:
             price, _timestamp = client.get_symbol_price(runtime.symbol)
@@ -3616,13 +3646,21 @@ def _roundtrip_quantity(client, symbol: str, requested: float, price: float) -> 
     return quantity, constraints, notional
 
 
-def _roundtrip_second_quantity(client, symbol: str, side: str, executed_qty: float, account: object, price: float) -> float:
-    base_asset = symbol.removesuffix("USDC")
+def _roundtrip_second_quantity(
+    client,
+    symbol: str,
+    quote_asset: str,
+    base_asset: str,
+    side: str,
+    executed_qty: float,
+    account: object,
+    price: float,
+) -> float:
     if side == "SELL":
         available = _asset_free_balance(account, base_asset)
         target = min(max(0.0, executed_qty), available)
     else:
-        available_quote = _asset_free_balance(account, "USDC")
+        available_quote = _asset_free_balance(account, quote_asset)
         target = min(max(0.0, executed_qty), (available_quote / price) * 0.995 if price > 0.0 else 0.0)
     quantity, _constraints = client.normalize_quantity(symbol, target)
     return quantity
@@ -3643,6 +3681,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print(_credential_required_message("Test order"), file=sys.stderr)
         return 2
 
+    quote_asset, base_asset = _fund_asset_labels(runtime)
     mode = str(getattr(args, "mode", "auto"))
     quantity_requested = float(getattr(args, "quantity", 0.0))
     client = _build_client(runtime)
@@ -3656,7 +3695,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     first_side = ""
     second_side = ""
     try:
-        client.ensure_btcusdc()
+        _ensure_runtime_symbol(runtime, client)
         price, _timestamp = client.get_symbol_price(runtime.symbol)
         quantity, _constraints, notional = _roundtrip_quantity(
             client,
@@ -3665,17 +3704,21 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             float(price),
         )
         before = client.get_account()
-        btc_free = _asset_free_balance(before, "BTC")
-        usdc_free = _asset_free_balance(before, "USDC")
+        base_free = _asset_free_balance(before, base_asset)
+        quote_free = _asset_free_balance(before, quote_asset)
         if mode == "auto":
-            mode = "buy-sell" if usdc_free >= notional * 1.01 else "sell-buy"
+            mode = "buy-sell" if quote_free >= notional * 1.01 else "sell-buy"
         if mode == "buy-sell":
-            if usdc_free < notional * 1.01:
-                raise BinanceAPIError(f"Insufficient USDC for BUY leg: need about {notional:.2f}, have {usdc_free:.2f}")
+            if quote_free < notional * 1.01:
+                raise BinanceAPIError(
+                    f"Insufficient {quote_asset} for BUY leg: need about {notional:.2f}, have {quote_free:.2f}"
+                )
             first_side, second_side = "BUY", "SELL"
         elif mode == "sell-buy":
-            if btc_free < quantity:
-                raise BinanceAPIError(f"Insufficient BTC for SELL leg: need {quantity:.8f}, have {btc_free:.8f}")
+            if base_free < quantity:
+                raise BinanceAPIError(
+                    f"Insufficient {base_asset} for SELL leg: need {quantity:.8f}, have {base_free:.8f}"
+                )
             first_side, second_side = "SELL", "BUY"
         else:
             raise ValueError(f"Unsupported roundtrip mode: {mode}")
@@ -3683,7 +3726,16 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         first = client.place_order(runtime.symbol, first_side, quantity, dry_run=False)
         executed = _order_executed_qty(first) or quantity
         mid = client.get_account()
-        second_quantity = _roundtrip_second_quantity(client, runtime.symbol, second_side, executed, mid, float(price))
+        second_quantity = _roundtrip_second_quantity(
+            client,
+            runtime.symbol,
+            quote_asset,
+            base_asset,
+            second_side,
+            executed,
+            mid,
+            float(price),
+        )
         if second_quantity <= 0.0:
             raise BinanceAPIError(f"Could not size {second_side} leg from post-{first_side} balances")
         second = client.place_order(runtime.symbol, second_side, second_quantity, dry_run=False)
@@ -3705,16 +3757,16 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 "notional_reference": float(notional),
                 "balances_before": (
                     {
-                        "BTC": _asset_free_balance(before, "BTC"),
-                        "USDC": _asset_free_balance(before, "USDC"),
+                        base_asset: _asset_free_balance(before, base_asset),
+                        quote_asset: _asset_free_balance(before, quote_asset),
                     }
                     if before is not None
                     else None
                 ),
                 "balances_after_first": (
                     {
-                        "BTC": _asset_free_balance(mid, "BTC"),
-                        "USDC": _asset_free_balance(mid, "USDC"),
+                        base_asset: _asset_free_balance(mid, base_asset),
+                        quote_asset: _asset_free_balance(mid, quote_asset),
                     }
                     if mid is not None
                     else None
@@ -3747,12 +3799,12 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         "quantity_second": float(second_quantity),
         "notional_reference": float(notional),
         "balances_before": {
-            "BTC": _asset_free_balance(before, "BTC"),
-            "USDC": _asset_free_balance(before, "USDC"),
+            base_asset: _asset_free_balance(before, base_asset),
+            quote_asset: _asset_free_balance(before, quote_asset),
         },
         "balances_after": {
-            "BTC": _asset_free_balance(after, "BTC"),
-            "USDC": _asset_free_balance(after, "USDC"),
+            base_asset: _asset_free_balance(after, base_asset),
+            quote_asset: _asset_free_balance(after, quote_asset),
         },
         "first_order": {
             "side": first_side,
@@ -3811,7 +3863,7 @@ def command_connect(_: argparse.Namespace) -> int:
     try:
         client = _build_client(runtime)
         server_time = client.get_exchange_time()
-        client.ensure_btcusdc()
+        _ensure_runtime_symbol(runtime, client)
     except BinanceAPIError as exc:
         print(f"Connection failed: {exc}", file=sys.stderr)
         return 2
@@ -6170,6 +6222,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         delay = _jittered_seconds(sleep_seconds, cfg.external_signal_poll_jitter_seconds) if sleep_seconds > 0 else 0.0
         time.sleep(delay)
 
+    quote_asset, base_asset = _fund_asset_labels(runtime)
     cash = max(0.0, _safe_float(getattr(runtime, "managed_usdc", 0.0)))
     exchange_account_snapshot: object | None = None
     if not effective_dry_run:
@@ -6178,17 +6231,17 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         except BinanceAPIError as exc:
             print(f"Account balance check failed: {exc}", file=sys.stderr)
             return 2
-        balances = _account_free_balances(exchange_account_snapshot)
-        available_usdc = max(0.0, _safe_float(balances.get("USDC", 0.0)))
+        balances = _account_free_balances(exchange_account_snapshot, (quote_asset, base_asset))
+        available_quote = max(0.0, _safe_float(balances.get(quote_asset, 0.0)))
         if cash <= 0.0:
-            print("Authenticated live mode requires a positive USDC trading cap from Funds.", file=sys.stderr)
+            print(f"Authenticated live mode requires a positive {quote_asset} trading cap from Funds.", file=sys.stderr)
             return 2
-        if available_usdc <= 0.0:
-            print("Authenticated live mode requires available USDC on the exchange account.", file=sys.stderr)
+        if available_quote <= 0.0:
+            print(f"Authenticated live mode requires available {quote_asset} on the exchange account.", file=sys.stderr)
             return 2
-        if cash > available_usdc:
-            cash = available_usdc
-            print(f"Authenticated live cash capped to exchange free USDC={cash:.2f}.")
+        if cash > available_quote:
+            cash = available_quote
+            print(f"Authenticated live cash capped to exchange free {quote_asset}={cash:.2f}.")
 
     model, model_error, model_notice = _load_live_start_model(
         model_path,

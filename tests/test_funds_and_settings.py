@@ -129,6 +129,13 @@ def test_account_free_balances_reads_spot_and_futures_payloads() -> None:
         }
     )
     assert balances == {"USDC": 20.0, "BTC": 0.01}
+    assert _account_free_balances(
+        {
+            "balances": [{"asset": "ETH", "free": "1.25"}],
+            "assets": [{"asset": "USDT", "availableBalance": "40.0"}],
+        },
+        ("USDT", "ETH"),
+    ) == {"USDT": 40.0, "ETH": 1.25}
     assert _account_free_balances("bad") == {"USDC": 0.0, "BTC": 0.0}
     assert _account_free_balances({"balances": "bad", "assets": "bad"}) == {"USDC": 0.0, "BTC": 0.0}
 
@@ -144,6 +151,18 @@ def test_funds_summary_describes_exchange_backed_caps() -> None:
     summary = _funds_summary(cfg, {"USDC": 50.0, "BTC": 0.25})
     assert "Exchange free: USDC=50.0000 BTC=0.25000000" in summary
     assert "Trading caps: USDC=5.0000 BTC=0.20000000" in summary
+
+    eth_cfg = RuntimeConfig(
+        symbol="ETHUSDT",
+        quote_asset="USDT",
+        api_key="fake-api-key",
+        api_secret="fake-secret",
+        managed_usdc=7.5,
+        managed_btc=0.3,
+    )
+    summary = _funds_summary(eth_cfg, {"USDT": 100.0, "ETH": 2.0})
+    assert "Exchange free: USDT=100.0000 ETH=2.00000000" in summary
+    assert "Trading caps: USDT=7.5000 ETH=0.30000000" in summary
 
 
 def test_load_exchange_funds_requires_credentials(isolated_home) -> None:
@@ -161,6 +180,14 @@ def test_load_exchange_funds_reads_authenticated_balances(isolated_home, monkeyp
         lambda _runtime: _FundsClient({"balances": [{"asset": "USDC", "free": "15"}, {"asset": "BTC", "free": "0.02"}]}),
     )
     assert _load_exchange_funds(load_runtime()) == {"USDC": 15.0, "BTC": 0.02}
+
+    save_runtime(RuntimeConfig(symbol="SOLUSDT", quote_asset="USDT", api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDT", "free": "25"}, {"asset": "SOL", "free": "4.5"}]}),
+    )
+    assert _load_exchange_funds(load_runtime()) == {"USDT": 25.0, "SOL": 4.5}
 
 
 def test_apply_funds_change_uses_exchange_balances(isolated_home) -> None:
@@ -182,6 +209,15 @@ def test_apply_funds_change_uses_exchange_balances(isolated_home) -> None:
     after, msg = _apply_funds_change("set_btc", 0.25, balances={"USDC": 300.0, "BTC": 0.5})
     assert after.managed_btc == 0.25
     assert "Set BTC" in msg
+
+    save_runtime(RuntimeConfig(symbol="ETHUSDT", quote_asset="USDT", api_key="fake-api-key", api_secret="fake-secret"))
+    after, msg = _apply_funds_change("sync", 0.0, balances={"USDT": 75.0, "ETH": 1.5})
+    assert after.managed_usdc == 75.0
+    assert after.managed_btc == 1.5
+    assert "Synced" in msg
+    after, msg = _apply_funds_change("set_btc", 0.75, balances={"USDT": 75.0, "ETH": 1.5})
+    assert after.managed_btc == 0.75
+    assert "Set ETH" in msg
 
     after, msg = _apply_funds_change("clear", 0.0)
     assert after.managed_usdc == 0.0
@@ -229,6 +265,25 @@ def test_funds_menu_sync_persists_exchange_balances(isolated_home, monkeypatch) 
     runtime = load_runtime()
     assert runtime.managed_usdc == 250.0
     assert runtime.managed_btc == 0.125
+
+
+def test_funds_menu_labels_follow_runtime_symbol(isolated_home, monkeypatch) -> None:
+    from simple_ai_trading import cli as cli_mod
+
+    save_runtime(RuntimeConfig(symbol="SOLUSDT", quote_asset="USDT", api_key="fake-api-key", api_secret="fake-secret"))
+    monkeypatch.setattr(
+        cli_mod,
+        "_build_client",
+        lambda _runtime: _FundsClient({"balances": [{"asset": "USDT", "free": "100"}, {"asset": "SOL", "free": "5"}]}),
+    )
+    ui = _ScriptedUI(menu_choices=["show", "close"])
+
+    asyncio.run(_ui_funds_menu(ui))
+
+    labels = [label for _key, label in ui.menu_calls[0][1]]
+    assert "Set USDT trading cap" in labels
+    assert "Set SOL trading cap" in labels
+    assert any("USDT=100.0000 SOL=5.00000000" in line for line in ui.logs)
 
 
 def test_funds_menu_set_usdc_cap_is_capped_to_exchange_free(isolated_home, monkeypatch) -> None:
