@@ -7,6 +7,7 @@ import random
 from dataclasses import asdict, dataclass
 
 from .backtest import BacktestResult, closed_trades_per_day, risk_gate_skip_count, trade_activity_satisfies
+from .financial_sanity import blocking_reasons, build_backtest_financial_sanity_report
 from .objective import ObjectiveSpec, get_objective
 
 
@@ -60,6 +61,9 @@ class MarketEdgeReport:
     bootstrap_samples: int
     bootstrap_lower_mean_return: float
     min_bootstrap_lower_mean_return: float
+    financial_sanity_allowed: bool
+    financial_sanity_block_count: int
+    financial_sanity_blocking_reasons: tuple[str, ...]
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -228,8 +232,12 @@ def build_market_edge_report(
     sign_p = _binomial_upper_tail(len(samples), positive_count)
     profit_factor = _finite(getattr(result, "profit_factor", 0.0))
     expectancy = _finite(getattr(result, "expectancy", 0.0))
+    financial_sanity = build_backtest_financial_sanity_report(result)
+    financial_sanity_blocks = tuple(blocking_reasons(financial_sanity)[:8])
 
     failed: list[str] = []
+    if financial_sanity_blocks:
+        failed.append("financial_sanity_failed")
     if stopped_by_liquidation or liquidation_events > 0:
         failed.append("liquidation_events>0")
     if realized_pnl <= 0.0:
@@ -300,6 +308,9 @@ def build_market_edge_report(
         bootstrap_samples=max(1, int(bootstrap_samples)),
         bootstrap_lower_mean_return=float(lower_mean),
         min_bootstrap_lower_mean_return=float(min_bootstrap_lower_mean_return),
+        financial_sanity_allowed=financial_sanity.allowed,
+        financial_sanity_block_count=financial_sanity.block_count,
+        financial_sanity_blocking_reasons=financial_sanity_blocks,
     )
 
 
