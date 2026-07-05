@@ -497,9 +497,55 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
     checks: list[FinancialSanityCheck] = []
     portfolio = payload.get("portfolio_risk")
     accepted_outcomes = _accepted_outcomes(payload)
+    top_level_symbols = _symbol_sequence(payload.get("accepted_symbols"))
+    if accepted_outcomes and not isinstance(portfolio, Mapping):
+        checks.append(
+            _check(
+                "block",
+                "portfolio risk",
+                "accepted outcomes require a portfolio-risk report",
+                path="portfolio_risk",
+                metric="missing",
+                limit="accepted portfolio-risk report",
+            )
+        )
+    elif accepted_outcomes and portfolio.get("accepted") is not True:
+        checks.append(
+            _check(
+                "block",
+                "portfolio risk",
+                "accepted outcomes require accepted portfolio-risk evidence",
+                path="portfolio_risk.accepted",
+                metric=portfolio.get("accepted"),
+                limit=True,
+            )
+        )
+    if top_level_symbols:
+        duplicates = _duplicate_symbols(top_level_symbols)
+        if duplicates:
+            checks.append(
+                _check(
+                    "block",
+                    "accepted symbols",
+                    "top-level accepted symbols contain duplicates",
+                    path="accepted_symbols",
+                    metric=",".join(duplicates),
+                    limit="unique symbols",
+                )
+            )
+        if not accepted_outcomes:
+            checks.append(
+                _check(
+                    "block",
+                    "accepted symbols",
+                    "top-level accepted symbols have no accepted outcome records",
+                    path="accepted_symbols",
+                    metric=",".join(top_level_symbols),
+                    limit="matching accepted outcomes",
+                )
+            )
     if isinstance(portfolio, Mapping) and portfolio.get("accepted") is True:
         portfolio_symbols = _symbol_sequence(portfolio.get("accepted_symbols"))
-        top_level_symbols = _symbol_sequence(payload.get("accepted_symbols"))
         outcome_symbols = [
             str(outcome.get("symbol")).strip().upper()
             for outcome in accepted_outcomes
@@ -564,19 +610,6 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 )
             )
             top_level_symbols = []
-        else:
-            duplicates = _duplicate_symbols(top_level_symbols)
-            if duplicates:
-                checks.append(
-                    _check(
-                        "block",
-                        "accepted symbols",
-                        "top-level accepted symbols contain duplicates",
-                        path="accepted_symbols",
-                        metric=",".join(duplicates),
-                        limit="unique symbols",
-                    )
-                )
         if portfolio_symbols and top_level_symbols and set(portfolio_symbols) != set(top_level_symbols):
             checks.append(
                 _check(

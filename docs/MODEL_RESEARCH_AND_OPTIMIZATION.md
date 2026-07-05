@@ -351,6 +351,8 @@ analytically incoherent artifacts before they reach an operator:
   scores,
 - accepted coverage cannot have failed integrity, detected gaps, or impossible
   coverage ratios,
+- accepted outcomes cannot bypass portfolio risk; missing or failed
+  portfolio-risk evidence blocks the model-lab artifact,
 - accepted portfolio symbol evidence must be non-empty, unique, and consistent
   across top-level accepted symbols, accepted outcomes, and the portfolio-risk
   report,
