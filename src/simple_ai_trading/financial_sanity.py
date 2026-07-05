@@ -1322,7 +1322,12 @@ def _approx_equal(left: float, right: float, *, scale: float = 1.0) -> bool:
     return abs(left - right) <= tolerance
 
 
-def build_backtest_financial_sanity_report(result: object, *, source: str = "backtest") -> FinancialSanityReport:
+def build_backtest_financial_sanity_report(
+    result: object,
+    *,
+    source: str = "backtest",
+    reject_liquidation: bool = True,
+) -> FinancialSanityReport:
     """Validate internal accounting consistency for a generated backtest result."""
 
     checks: list[FinancialSanityCheck] = []
@@ -1335,6 +1340,9 @@ def build_backtest_financial_sanity_report(result: object, *, source: str = "bac
     win_rate = _finite(getattr(result, "win_rate", None))
     max_drawdown = _finite(getattr(result, "max_drawdown", None))
     closed_trades = _finite(getattr(result, "closed_trades", None))
+    stopped_by_liquidation = bool(getattr(result, "stopped_by_liquidation", False))
+    liquidation_events = _finite(getattr(result, "liquidation_events", 0))
+    liquidation_loss = _finite(getattr(result, "liquidation_loss", 0.0))
     trade_log = getattr(result, "trade_log", ())
     trade_pnls = _numeric_sequence(getattr(result, "trade_pnls", ()))
     trade_returns = _numeric_sequence(getattr(result, "trade_returns", ()))
@@ -1359,6 +1367,73 @@ def build_backtest_financial_sanity_report(result: object, *, source: str = "bac
             checks.append(_check("block", "backtest accounting", "value above financial bound", path=name, metric=value, limit=f"<={maximum:g}"))
         else:
             checks.append(_check("ok", "backtest accounting", "finite bounded value", path=name, metric=value))
+
+    liquidation_status = "block" if reject_liquidation else "warn"
+    if stopped_by_liquidation:
+        checks.append(
+            _check(
+                liquidation_status,
+                "liquidation evidence",
+                "backtest stopped by liquidation",
+                path="stopped_by_liquidation",
+                metric="true",
+                limit="false",
+            )
+        )
+    else:
+        checks.append(_check("ok", "liquidation evidence", "not stopped by liquidation", path="stopped_by_liquidation"))
+    if liquidation_events is None:
+        checks.append(_check("block", "liquidation events", "missing or non-finite value", path="liquidation_events"))
+    elif liquidation_events < 0.0:
+        checks.append(
+            _check(
+                "block",
+                "liquidation events",
+                "liquidation event count is negative",
+                path="liquidation_events",
+                metric=liquidation_events,
+                limit=">=0",
+            )
+        )
+    elif liquidation_events > 0.0:
+        checks.append(
+            _check(
+                liquidation_status,
+                "liquidation evidence",
+                "backtest contains liquidation events",
+                path="liquidation_events",
+                metric=liquidation_events,
+                limit=0,
+            )
+        )
+    else:
+        checks.append(_check("ok", "liquidation evidence", "no liquidation events", path="liquidation_events", metric=0))
+    if liquidation_loss is None:
+        checks.append(_check("block", "liquidation loss", "missing or non-finite value", path="liquidation_loss"))
+    elif liquidation_loss < 0.0:
+        checks.append(
+            _check(
+                "block",
+                "liquidation loss",
+                "liquidation loss is negative",
+                path="liquidation_loss",
+                metric=liquidation_loss,
+                limit=">=0",
+            )
+        )
+    elif liquidation_loss > 0.0:
+        checks.append(
+            _check(
+                liquidation_status,
+                "liquidation evidence",
+                "backtest contains liquidation loss",
+                path="liquidation_loss",
+                metric=liquidation_loss,
+                limit=0,
+            )
+        )
+    else:
+        checks.append(_check("ok", "liquidation evidence", "no liquidation loss", path="liquidation_loss", metric=0.0))
 
     cash_scale = max(1.0, abs(starting_cash or 0.0), abs(ending_cash or 0.0))
     if starting_cash is not None and ending_cash is not None and realized_pnl is not None:
@@ -1451,6 +1526,17 @@ def build_backtest_financial_sanity_report(result: object, *, source: str = "bac
                 path=f"trade_log[{index}].exit_reason",
             )
         )
+        if reason.lower() == "liquidation":
+            checks.append(
+                _check(
+                    liquidation_status,
+                    "liquidation evidence",
+                    "trade log contains liquidation exit",
+                    path=f"trade_log[{index}].exit_reason",
+                    metric=reason,
+                    limit="not liquidation",
+                )
+            )
         realized = _finite(trade.get("realized_pnl"))
         net = _finite(trade.get("net_pnl"))
         entry_fee = _finite(trade.get("entry_fee"))

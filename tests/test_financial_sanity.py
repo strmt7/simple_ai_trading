@@ -89,6 +89,56 @@ def test_backtest_financial_sanity_blocks_inconsistent_accounting() -> None:
     assert "fee identity" in labels
 
 
+def test_backtest_financial_sanity_blocks_liquidation_evidence() -> None:
+    result = _backtest_result(
+        ending_cash=995.0,
+        realized_pnl=-5.0,
+        win_rate=0.0,
+        closed_trades=1,
+        total_fees=1.0,
+        buy_hold_pnl=-1.0,
+        edge_vs_buy_hold=-4.0,
+        stopped_by_liquidation=True,
+        liquidation_events=1,
+        liquidation_loss=20.0,
+        trade_pnls=(-5.0,),
+        trade_returns=(-0.005,),
+        trade_log=(
+            {
+                "realized_pnl": -4.0,
+                "net_pnl": -5.0,
+                "entry_fee": 0.5,
+                "exit_fee": 0.5,
+                "exit_reason": "liquidation",
+            },
+        )
+    )
+    report = build_backtest_financial_sanity_report(result)
+
+    assert report.allowed is False
+    blocked = {(check.label, check.path) for check in report.checks if check.status == "block"}
+    assert ("liquidation evidence", "stopped_by_liquidation") in blocked
+    assert ("liquidation evidence", "liquidation_events") in blocked
+    assert ("liquidation evidence", "liquidation_loss") in blocked
+    assert ("liquidation evidence", "trade_log[0].exit_reason") in blocked
+    assert not any(check.label == "backtest cash identity" and check.status == "block" for check in report.checks)
+    assert not any(check.label == "trade PnL identity" and check.status == "block" for check in report.checks)
+
+    accounting_only = build_backtest_financial_sanity_report(result, reject_liquidation=False)
+    assert accounting_only.allowed is True
+    assert any(check.label == "liquidation evidence" and check.status == "warn" for check in accounting_only.checks)
+
+
+def test_backtest_financial_sanity_blocks_inconsistent_liquidation_counters() -> None:
+    bad_events = build_backtest_financial_sanity_report(_backtest_result(liquidation_events=-1))
+    bad_loss = build_backtest_financial_sanity_report(_backtest_result(liquidation_loss=-1.0))
+
+    assert bad_events.allowed is False
+    assert any(check.label == "liquidation events" and check.status == "block" for check in bad_events.checks)
+    assert bad_loss.allowed is False
+    assert any(check.label == "liquidation loss" and check.status == "block" for check in bad_loss.checks)
+
+
 def test_model_financial_sanity_blocks_malformed_parameters() -> None:
     model = TrainedModel(
         weights=[0.0, float("inf")],

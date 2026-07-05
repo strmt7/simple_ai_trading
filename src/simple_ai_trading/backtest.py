@@ -1607,7 +1607,7 @@ def run_backtest(
         liquidation_loss=float(liquidation_loss),
         **_score_backend_payload(score_backend),
     )
-    sanity = build_backtest_financial_sanity_report(result)
+    sanity = build_backtest_financial_sanity_report(result, reject_liquidation=False)
     blocks = blocking_reasons(sanity)
     if blocks:
         raise ValueError(f"backtest financial sanity failed: {'; '.join(blocks[:5])}")
