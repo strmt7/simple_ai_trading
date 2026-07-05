@@ -1944,6 +1944,39 @@ def test_command_risk_reports_json_text_and_conflicting_modes(tmp_path, monkeypa
     assert payload["block_count"] >= 1
 
 
+def test_command_risk_live_requests_strict_model_evidence(tmp_path, monkeypatch, capsys) -> None:
+    from simple_ai_trading import risk_workflows
+
+    captured: dict[str, object] = {}
+
+    class _Report:
+        allowed = True
+
+        def asdict(self):
+            return {"allowed": True}
+
+    def fake_report(*_args, **kwargs):
+        captured.update(kwargs)
+        return _Report()
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(testnet=True, dry_run=False, api_key="k", api_secret="s", compute_backend="directml"))
+    save_strategy(StrategyConfig())
+    monkeypatch.setattr(
+        risk_workflows,
+        "resolve_backend",
+        lambda _backend: cli.BackendInfo("directml", "directml", "privateuseone:0", "DirectML", ""),
+    )
+    monkeypatch.setattr(risk_workflows, "build_risk_policy_report", fake_report)
+
+    assert cli.command_risk(
+        argparse.Namespace(model=str(tmp_path / "model.json"), paper=False, live=True, leverage=None, json=True)
+    ) == 0
+    assert json.loads(capsys.readouterr().out)["allowed"] is True
+    assert captured["require_model_candidate_search"] is True
+    assert captured["require_accelerator_evidence"] is True
+
+
 def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)

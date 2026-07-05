@@ -44,11 +44,11 @@ resolution per-minute graph data stays in CSV; SVG charts render deterministic
 downsampled visual summaries so artifact generation does not dominate
 GPU-backed training/scoring time.
 
-Signed live startup uses the same promotion evidence instead of trusting a
-model file by name. It blocks promoted `TrainedModel` artifacts that do not
-record bounded multi-candidate selection, and it also blocks missing/CPU
-training or probability-calibration evidence whenever the resolved live runtime
-backend is DirectML/CUDA/ROCm/MPS.
+Signed live startup and `risk --live --model` use the same promotion evidence
+instead of trusting a model file by name. They block promoted `TrainedModel`
+artifacts that do not record bounded multi-candidate selection, and they also
+block missing/CPU training or probability-calibration evidence whenever the
+resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
 
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,

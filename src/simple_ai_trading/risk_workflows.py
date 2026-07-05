@@ -6,6 +6,7 @@ import argparse
 import json
 from collections.abc import Callable
 
+from .compute import resolve_backend
 from .risk_controls import build_risk_policy_report, render_risk_policy_report
 from .types import RuntimeConfig, StrategyConfig
 
@@ -30,12 +31,16 @@ def command_risk(
     leverage = getattr(args, "leverage", None)
     if leverage is not None and runtime.market_type != "futures":
         leverage = 1.0
+    backend = resolve_backend(runtime.compute_backend)
+    strict_model_evidence = not effective_dry_run and getattr(args, "model", None) is not None
     report = build_risk_policy_report(
         runtime,
         strategy,
         effective_dry_run=effective_dry_run,
         leverage=leverage,
         model_path=getattr(args, "model", None),
+        require_model_candidate_search=strict_model_evidence,
+        require_accelerator_evidence=strict_model_evidence and backend.kind != "cpu",
     )
     if getattr(args, "json", False):
         print(json.dumps(report.asdict(), indent=2, sort_keys=True))

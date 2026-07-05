@@ -174,6 +174,8 @@ def build_risk_policy_report(
     effective_dry_run: bool | None = None,
     leverage: float | None = None,
     model_path: str | Path | None = None,
+    require_model_candidate_search: bool = False,
+    require_accelerator_evidence: bool = False,
 ) -> RiskPolicyReport:
     """Return deterministic local risk checks without network access."""
 
@@ -460,7 +462,11 @@ def build_risk_policy_report(
         )
         if exists:
             try:
-                readiness = load_model_readiness_report(path)
+                readiness = load_model_readiness_report(
+                    path,
+                    require_model_candidate_search=require_model_candidate_search,
+                    require_accelerator_evidence=require_accelerator_evidence,
+                )
                 status = "ok" if readiness.allowed else ("warn" if dry_run else "block")
                 detail = "passed" if readiness.allowed else "; ".join(
                     f"{check.label}: {check.detail}"
