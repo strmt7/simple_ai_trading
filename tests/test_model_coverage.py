@@ -263,6 +263,8 @@ def test_feature_drift_report_statuses_and_edges() -> None:
     ok = feature_drift_report([SimpleNamespace(features=(1.0, 2.0), label=1)], model)
     assert ok.status == "ok"
     assert ok.rows == 1
+    assert ok.mean_warn_threshold == pytest.approx(2.4)
+    assert ok.mean_fail_threshold == pytest.approx(4.0)
 
     warn = feature_drift_report(
         [SimpleNamespace(features=(5.0, 0.0), label=1)],
@@ -275,6 +277,26 @@ def test_feature_drift_report_statuses_and_edges() -> None:
     fail = feature_drift_report([SimpleNamespace(features=(9.0, 0.0), label=1)], model)
     assert fail.status == "fail"
     assert "hard threshold" in fail.warnings[0]
+
+    broad_warn = feature_drift_report(
+        [SimpleNamespace(features=(3.0, 3.0), label=1)],
+        model,
+    )
+    assert broad_warn.status == "warn"
+    assert broad_warn.max_abs_z < broad_warn.warn_threshold
+    assert broad_warn.mean_abs_z >= broad_warn.mean_warn_threshold
+    assert any("mean warning" in warning for warning in broad_warn.warnings)
+
+    broad_fail = feature_drift_report(
+        [SimpleNamespace(features=(3.6, 3.6), label=1)],
+        model,
+        mean_warn_z=2.0,
+        mean_fail_z=3.5,
+    )
+    assert broad_fail.status == "fail"
+    assert broad_fail.max_abs_z < broad_fail.warn_threshold
+    assert broad_fail.mean_abs_z >= broad_fail.mean_fail_threshold
+    assert any("mean hard" in warning for warning in broad_fail.warnings)
 
     sparse_hard_model = TrainedModel(
         weights=[0.0] * 10,
