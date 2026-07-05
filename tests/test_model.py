@@ -3,6 +3,7 @@
 import json
 import pytest
 
+import simple_ai_trading.model as model_module
 from simple_ai_trading.features import ModelRow
 from pathlib import Path
 
@@ -572,3 +573,112 @@ def test_temperature_calibration_uses_ensemble_predictions() -> None:
     assert report.log_loss_before > 1.0
     assert report.log_loss_after < report.log_loss_before
     assert abs(after - 0.5) < abs(before - 0.5)
+
+
+def test_temperature_calibration_uses_requested_gpu_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index, close=1.0, features=(1.0,), label=index % 2)
+        for index in range(40)
+    ]
+    model = TrainedModel(
+        weights=[8.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    captured: dict[str, object] = {}
+
+    def fake_resolve_backend(requested: str) -> BackendInfo:
+        captured["requested"] = requested
+        return BackendInfo(
+            requested=requested,
+            kind="directml",
+            device="privateuseone:0",
+            vendor="DirectML",
+            reason="",
+        )
+
+    def fake_temperature_scan(rows_arg, model_arg, candidates, *, backend, batch_size):
+        captured["rows"] = len(rows_arg)
+        captured["candidate_count"] = len(candidates)
+        captured["backend_kind"] = backend.kind
+        captured["batch_size"] = batch_size
+        return 2.0, 0.2, 0.15
+
+    monkeypatch.setattr(model_module, "resolve_backend", fake_resolve_backend)
+    monkeypatch.setattr(model_module, "_temperature_scan_torch", fake_temperature_scan)
+
+    report = calibrate_probability_temperature(
+        rows,
+        model,
+        min_temperature=1.0,
+        max_temperature=3.0,
+        steps=3,
+        compute_backend="directml",
+        batch_size=64,
+    )
+
+    assert report.improved is True
+    assert report.temperature == pytest.approx(2.0)
+    assert report.calibration_backend_requested == "directml"
+    assert report.calibration_backend_kind == "directml"
+    assert report.calibration_backend_device == "privateuseone:0"
+    assert captured == {
+        "requested": "directml",
+        "rows": 40,
+        "candidate_count": 3,
+        "backend_kind": "directml",
+        "batch_size": 64,
+    }
+
+
+def test_temperature_calibration_records_cpu_fallback_when_gpu_scan_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index, close=1.0, features=(1.0,), label=index % 2)
+        for index in range(40)
+    ]
+    model = TrainedModel(
+        weights=[8.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+
+    monkeypatch.setattr(
+        model_module,
+        "resolve_backend",
+        lambda requested: BackendInfo(
+            requested=requested,
+            kind="directml",
+            device="privateuseone:0",
+            vendor="DirectML",
+            reason="",
+        ),
+    )
+
+    def fail_temperature_scan(*_args, **_kwargs):
+        raise RuntimeError("device unavailable")
+
+    monkeypatch.setattr(model_module, "_temperature_scan_torch", fail_temperature_scan)
+
+    report = calibrate_probability_temperature(
+        rows,
+        model,
+        min_temperature=1.0,
+        max_temperature=6.0,
+        steps=26,
+        compute_backend="directml",
+        batch_size=64,
+    )
+
+    assert report.calibration_backend_requested == "directml"
+    assert report.calibration_backend_kind == "cpu"
+    assert "temperature calibration failed" in report.calibration_backend_reason

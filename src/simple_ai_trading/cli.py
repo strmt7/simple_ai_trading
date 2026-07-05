@@ -4930,7 +4930,12 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         reason=model.training_backend_reason,
     )
     probability_calibration = (
-        calibrate_probability_temperature(calibration_rows, model)
+        calibrate_probability_temperature(
+            calibration_rows,
+            model,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
+        )
         if calibration_rows
         else assess_probability_calibration([], model)
     )
