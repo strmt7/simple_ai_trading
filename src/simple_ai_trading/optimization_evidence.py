@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import copy
 import gc
+import gzip
 import math
 import statistics
 from bisect import bisect_left, insort
@@ -144,7 +145,7 @@ def make_evidence_paths(
         status_path=docs_data_dir / "round-status.json",
         progress_csv_path=docs_data_dir / "round-progress.csv",
         metrics_csv_path=docs_data_dir / "backtest-metrics.csv",
-        timeline_csv_path=docs_data_dir / "portfolio-timeline.csv",
+        timeline_csv_path=docs_data_dir / "portfolio-timeline.csv.gz",
     )
 
 
@@ -678,11 +679,17 @@ def _result_points(result: BacktestResult) -> list[EquityPoint]:
 
 def _write_csv(path: Path, rows: Sequence[Mapping[str, object]], fieldnames: Sequence[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as handle:
+    with _open_text_writer(path) as handle:
         writer = csv.DictWriter(handle, fieldnames=list(fieldnames))
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in fieldnames})
+
+
+def _open_text_writer(path: Path):
+    if path.name.endswith(".gz"):
+        return gzip.open(path, "wt", encoding="utf-8", newline="")
+    return path.open("w", encoding="utf-8", newline="")
 
 
 def _write_round_status(paths: EvidencePaths, **payload: object) -> None:
@@ -1289,12 +1296,12 @@ def build_round_evidence(
             liquidity_by_close = _rolling_liquidity_flags(candles, timestamps=validation_timestamps)
             point_by_timestamp = {int(point.timestamp_ms or 0): point for point in strategy_points}
             baseline_by_timestamp = {int(point.timestamp_ms or 0): point for point in baseline_points}
-            symbol_timeline_path = paths.docs_data_dir / f"{item.rank:02d}-{item.symbol}-{objective.name}-timeline.csv"
+            symbol_timeline_path = paths.docs_data_dir / f"{item.rank:02d}-{item.symbol}-{objective.name}-timeline.csv.gz"
             symbol_timeline_path.parent.mkdir(parents=True, exist_ok=True)
             timeline_count = 0
             low_liquidity_count = 0
             weekend_count = 0
-            with symbol_timeline_path.open("w", encoding="utf-8", newline="") as handle:
+            with _open_text_writer(symbol_timeline_path) as handle:
                 writer = csv.DictWriter(handle, fieldnames=list(timeline_fieldnames))
                 writer.writeheader()
                 for timestamp, point in sorted(point_by_timestamp.items()):
