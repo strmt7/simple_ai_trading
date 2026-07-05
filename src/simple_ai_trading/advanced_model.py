@@ -217,9 +217,22 @@ class _ConfluenceCache:
     lows: list[float]
     closes: list[float]
     volumes: list[float]
+    nonnegative_volumes: list[float]
+    returns: list[float]
+    abs_returns: list[float]
     close_prefix: list[float]
     volume_prefix: list[float]
+    nonnegative_volume_prefix: list[float]
     true_range_prefix: list[float]
+    return_prefix: list[float]
+    return_square_prefix: list[float]
+    abs_return_prefix: list[float]
+    abs_return_square_prefix: list[float]
+    downside_abs_return_prefix: list[float]
+    return_lag_product_prefix: list[float]
+    return_volume_product_prefix: list[float]
+    volume_square_prefix: list[float]
+    volume_abs_return_product_prefix: list[float]
 
 
 def _build_window_cache(closes: Sequence[float]) -> _AdvancedWindowCache:
@@ -246,6 +259,33 @@ def _window_mean(prefix: Sequence[float], start: int, end: int) -> float:
     if end < start:
         return float("nan")
     return _window_sum(prefix, start, end) / float(end - start + 1)
+
+
+def _bounded_window_sum(prefix: Sequence[float], start: int, end: int) -> float:
+    if end < start:
+        return 0.0
+    start = max(0, int(start))
+    end = min(len(prefix) - 2, int(end))
+    if end < start:
+        return 0.0
+    return _window_sum(prefix, start, end)
+
+
+def _correlation_from_sums(
+    count: int,
+    sum_left: float,
+    sum_right: float,
+    sum_left_sq: float,
+    sum_right_sq: float,
+    sum_product: float,
+) -> float:
+    if count < 2:
+        return 0.0
+    n = float(count)
+    covariance = sum_product - (sum_left * sum_right / n)
+    var_left = sum_left_sq - (sum_left * sum_left / n)
+    var_right = sum_right_sq - (sum_right * sum_right / n)
+    return _safe_ratio(covariance, math.sqrt(max(0.0, var_left * var_right)))
 
 
 def _rsi_at(cache: _AdvancedWindowCache, end: int, window: int) -> float:
@@ -317,12 +357,28 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
     lows = [float(candle.low) for candle in values]
     closes = [float(candle.close) for candle in values]
     volumes = [float(candle.volume) for candle in values]
+    nonnegative_volumes = [max(0.0, value) for value in volumes]
     true_ranges = [0.0]
+    returns = [0.0]
     for index in range(1, len(values)):
         previous_close = closes[index - 1]
         high = highs[index]
         low = lows[index]
         true_ranges.append(max(high - low, abs(high - previous_close), abs(low - previous_close)))
+        returns.append(_safe_ratio(closes[index] - previous_close, previous_close))
+    abs_returns = [abs(value) for value in returns]
+    downside_abs_returns = [abs(value) if value < 0.0 else 0.0 for value in returns]
+    return_lag_products = [0.0]
+    for index in range(1, len(returns)):
+        return_lag_products.append(returns[index - 1] * returns[index])
+    return_volume_products = [
+        returns[index] * nonnegative_volumes[index]
+        for index in range(len(values))
+    ]
+    volume_abs_return_products = [
+        nonnegative_volumes[index] * abs_returns[index]
+        for index in range(len(values))
+    ]
     return _ConfluenceCache(
         candles=values,
         opens=opens,
@@ -330,9 +386,22 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         lows=lows,
         closes=closes,
         volumes=volumes,
+        nonnegative_volumes=nonnegative_volumes,
+        returns=returns,
+        abs_returns=abs_returns,
         close_prefix=_prefix_sum(closes),
         volume_prefix=_prefix_sum(volumes),
+        nonnegative_volume_prefix=_prefix_sum(nonnegative_volumes),
         true_range_prefix=_prefix_sum(true_ranges),
+        return_prefix=_prefix_sum(returns),
+        return_square_prefix=_prefix_sum([value * value for value in returns]),
+        abs_return_prefix=_prefix_sum(abs_returns),
+        abs_return_square_prefix=_prefix_sum([value * value for value in abs_returns]),
+        downside_abs_return_prefix=_prefix_sum(downside_abs_returns),
+        return_lag_product_prefix=_prefix_sum(return_lag_products),
+        return_volume_product_prefix=_prefix_sum(return_volume_products),
+        volume_square_prefix=_prefix_sum([value * value for value in nonnegative_volumes]),
+        volume_abs_return_product_prefix=_prefix_sum(volume_abs_return_products),
     )
 
 
@@ -423,31 +492,54 @@ def _market_quality_features_at(cache: _ConfluenceCache, end: int, windows: Sequ
             features.extend([0.0] * _MARKET_QUALITY_FEATURES_PER_WINDOW)
             continue
         start = end + 1 - window
-        closes = cache.closes[start:end + 1]
-        volumes = cache.volumes[start:end + 1]
-        returns = _window_returns(closes)
-        abs_returns = [abs(value) for value in returns]
-        path = sum(abs_returns)
-        net_return = _safe_ratio(closes[-1] - closes[0], closes[0])
+        return_start = start + 1
+        return_end = end
+        return_count = max(0, return_end - return_start + 1)
+        path = _bounded_window_sum(cache.abs_return_prefix, return_start, return_end)
+        net_return = _safe_ratio(cache.closes[end] - cache.closes[start], cache.closes[start])
         efficiency = _safe_ratio(abs(net_return), path)
-        downside_pressure = _safe_ratio(sum(abs(value) for value in returns if value < 0.0), path)
-        autocorr = _correlation(returns[:-1], returns[1:]) if len(returns) >= 3 else 0.0
-        mean_abs_return = sum(abs_returns) / len(abs_returns) if abs_returns else 0.0
-        abs_return_stdev = 0.0
-        if len(abs_returns) >= 2:
-            abs_return_stdev = math.sqrt(
-                max(0.0, sum((value - mean_abs_return) ** 2 for value in abs_returns) / (len(abs_returns) - 1))
+        downside_pressure = _safe_ratio(
+            _bounded_window_sum(cache.downside_abs_return_prefix, return_start, return_end),
+            path,
+        )
+        autocorr = 0.0
+        if return_count >= 3:
+            left_start = return_start
+            left_end = return_end - 1
+            right_start = return_start + 1
+            right_end = return_end
+            pair_count = max(0, left_end - left_start + 1)
+            autocorr = _correlation_from_sums(
+                pair_count,
+                _bounded_window_sum(cache.return_prefix, left_start, left_end),
+                _bounded_window_sum(cache.return_prefix, right_start, right_end),
+                _bounded_window_sum(cache.return_square_prefix, left_start, left_end),
+                _bounded_window_sum(cache.return_square_prefix, right_start, right_end),
+                _bounded_window_sum(cache.return_lag_product_prefix, right_start, right_end),
             )
-        tail_ratio = _safe_ratio(max(abs_returns) if abs_returns else 0.0, mean_abs_return)
-        return_volumes = volumes[1:] if len(volumes) > 1 else []
-        total_return_volume = sum(max(0.0, value) for value in return_volumes)
+        mean_abs_return = _safe_ratio(path, float(return_count))
+        abs_return_stdev = 0.0
+        if return_count >= 2:
+            abs_return_sq_sum = _bounded_window_sum(cache.abs_return_square_prefix, return_start, return_end)
+            abs_return_stdev = math.sqrt(
+                max(0.0, (abs_return_sq_sum - (path * path / return_count)) / (return_count - 1))
+            )
+        tail_ratio = _safe_ratio(max(cache.abs_returns[return_start:return_end + 1]) if return_count else 0.0, mean_abs_return)
+        total_return_volume = _bounded_window_sum(cache.nonnegative_volume_prefix, return_start, return_end)
         volume_return_pressure = _safe_ratio(
-            sum(ret * max(0.0, vol) for ret, vol in zip(returns, return_volumes, strict=True)),
+            _bounded_window_sum(cache.return_volume_product_prefix, return_start, return_end),
             total_return_volume,
         )
-        volume_abs_return_corr = _correlation(return_volumes, abs_returns) if return_volumes else 0.0
+        volume_abs_return_corr = _correlation_from_sums(
+            return_count,
+            _bounded_window_sum(cache.nonnegative_volume_prefix, return_start, return_end),
+            path,
+            _bounded_window_sum(cache.volume_square_prefix, return_start, return_end),
+            _bounded_window_sum(cache.abs_return_square_prefix, return_start, return_end),
+            _bounded_window_sum(cache.volume_abs_return_product_prefix, return_start, return_end),
+        )
         avg_true_range = _window_mean(cache.true_range_prefix, start, end)
-        avg_volume = sum(max(0.0, value) for value in volumes) / len(volumes)
+        avg_volume = _window_mean(cache.nonnegative_volume_prefix, start, end)
         features.extend([
             _safe(math.copysign(efficiency, net_return)),
             _safe(efficiency),
