@@ -37,6 +37,7 @@ class SymbolResearchOutcome:
     liquidity: dict[str, object] | None = None
     objective_scores: dict[str, float] = field(default_factory=dict)
     hybrid_profiles: dict[str, str] = field(default_factory=dict)
+    walk_forward_gate: dict[str, object] = field(default_factory=dict)
     selection_risk: dict[str, object] = field(default_factory=dict)
     hybrid_ablation: dict[str, list[dict[str, object]]] = field(default_factory=dict)
     feature_ablation: dict[str, list[dict[str, object]]] = field(default_factory=dict)
@@ -165,6 +166,30 @@ def _report_metric(report: object, field: str) -> float:
         return 0.0
 
 
+def _walk_forward_gate_passed(report: object) -> bool:
+    """Return True only for real, fully accepted purged walk-forward folds."""
+
+    if not isinstance(report, dict) or report.get("passed") is not True:
+        return False
+    if report.get("reason") not in (None, ""):
+        return False
+    try:
+        fold_count = int(report.get("fold_count", 0) or 0)
+        accepted_folds = int(report.get("accepted_folds", 0) or 0)
+        worst_score = float(report.get("worst_score", 0.0) or 0.0)
+        worst_pnl = float(report.get("worst_realized_pnl", 0.0) or 0.0)
+        worst_drawdown = float(report.get("worst_max_drawdown", 1.0) or 1.0)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return (
+        fold_count > 0
+        and accepted_folds == fold_count
+        and worst_score > 0.0
+        and worst_pnl > 0.0
+        and 0.0 <= worst_drawdown <= 1.0
+    )
+
+
 def _symbol_loss_count(report: LearningFeedbackReport, symbol: str) -> int:
     target = symbol.upper()
     total = 0
@@ -251,6 +276,11 @@ def _outcome_from_suite(
 ) -> SymbolResearchOutcome:
     scores = {outcome.objective: float(outcome.best_score) for outcome in suite.outcomes}
     hybrid_profiles = {outcome.objective: str(outcome.hybrid_profile) for outcome in suite.outcomes}
+    walk_forward_gate = {
+        outcome.objective: dict(getattr(outcome, "walk_forward_gate", {}) or {})
+        for outcome in suite.outcomes
+        if getattr(outcome, "walk_forward_gate", None)
+    }
     selection_risk = {
         outcome.objective: dict(getattr(outcome, "selection_risk", {}) or {})
         for outcome in suite.outcomes
@@ -274,6 +304,10 @@ def _outcome_from_suite(
     robustness_payload = robustness_report.asdict()
     regime_payload = robustness_payload.get("regime_summary") if isinstance(robustness_payload, dict) else None
     score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
+    walk_forward_accepted = all(
+        _walk_forward_gate_passed(walk_forward_gate.get(str(outcome.objective)))
+        for outcome in suite.outcomes
+    )
     selection_risk_accepted = all(
         not isinstance(report, dict) or report.get("passed") is not False
         for report in selection_risk.values()
@@ -284,6 +318,7 @@ def _outcome_from_suite(
     data_coverage_accepted = not _data_coverage_blocks_promotion(data_coverage)
     accepted = (
         score_accepted
+        and walk_forward_accepted
         and selection_risk_accepted
         and stress_accepted
         and robustness_accepted
@@ -291,13 +326,29 @@ def _outcome_from_suite(
         and data_coverage_accepted
     )
     error = None
-    if not accepted and score_accepted and not selection_risk_accepted:
+    if not accepted and score_accepted and not walk_forward_accepted:
+        error = "purged_walk_forward_failed"
+    elif not accepted and score_accepted and walk_forward_accepted and not selection_risk_accepted:
         error = "selection_risk_failed"
-    elif not accepted and score_accepted and selection_risk_accepted and not stress_accepted:
+    elif not accepted and score_accepted and walk_forward_accepted and selection_risk_accepted and not stress_accepted:
         error = "stress_validation_failed"
-    elif not accepted and score_accepted and selection_risk_accepted and stress_accepted and not robustness_accepted:
+    elif (
+        not accepted
+        and score_accepted
+        and walk_forward_accepted
+        and selection_risk_accepted
+        and stress_accepted
+        and not robustness_accepted
+    ):
         error = "temporal_robustness_failed"
-    elif not accepted and score_accepted and selection_risk_accepted and stress_accepted and robustness_accepted:
+    elif (
+        not accepted
+        and score_accepted
+        and walk_forward_accepted
+        and selection_risk_accepted
+        and stress_accepted
+        and robustness_accepted
+    ):
         error = "learning_feedback_failed" if not learning_feedback_accepted else "data_coverage_failed"
     diagnostics = None
     if learning_feedback and learning_feedback.get("blocks_promotion"):
@@ -321,6 +372,7 @@ def _outcome_from_suite(
         liquidity=liquidity.asdict(),
         objective_scores=scores,
         hybrid_profiles=hybrid_profiles,
+        walk_forward_gate=walk_forward_gate,
         selection_risk=selection_risk,
         hybrid_ablation=hybrid_ablation,
         feature_ablation=feature_ablation,
@@ -405,6 +457,9 @@ def _stamp_model_execution_validation(
         )
         learning_blocked = bool(learning_feedback and learning_feedback.get("blocks_promotion"))
         data_coverage_passed = not _data_coverage_blocks_promotion(data_coverage)
+        walk_forward_gate = getattr(outcome, "walk_forward_gate", None)
+        walk_forward_payload = dict(walk_forward_gate) if isinstance(walk_forward_gate, dict) else {}
+        walk_forward_accepted = _walk_forward_gate_passed(walk_forward_payload)
         try:
             model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
             model.execution_validation = {
@@ -412,6 +467,7 @@ def _stamp_model_execution_validation(
                     stress_accepted
                     and robustness_accepted
                     and portfolio_accepted
+                    and walk_forward_accepted
                     and not learning_blocked
                     and data_coverage_passed
                 ),
@@ -420,6 +476,7 @@ def _stamp_model_execution_validation(
                 "market_type": market_type,
                 "interval": interval,
                 "objective": objective,
+                "walk_forward_gate": walk_forward_payload,
                 "liquidity": liquidity.asdict(),
                 "symbol_execution_profile": (
                     stress_profile.asdict()

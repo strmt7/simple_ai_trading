@@ -49,6 +49,11 @@ The gate enforces:
 - accepted outcomes require passed selection-risk evidence for each accepted
   objective, including positive deflated score, positive trial count, no
   rejection reasons, and passed/skipped overfit diagnostics,
+- accepted outcomes require real purged walk-forward evidence for each accepted
+  objective. A skipped report such as `insufficient_rows_for_purged_walk_forward`
+  is not promotion evidence; accepted reports must contain positive fold count,
+  all folds accepted, positive worst score, positive worst realized P&L, and
+  bounded worst drawdown,
 - market-edge acceptance fails closed when the underlying generated backtest
   fails financial sanity; positive edge, profit factor, or bootstrap evidence
   cannot override incoherent cash, trade, exposure, or equity-curve math,

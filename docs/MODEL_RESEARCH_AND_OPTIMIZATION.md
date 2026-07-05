@@ -322,6 +322,11 @@ fail-closed selection guard. Rejected selection gates are not promoted, but the
 optimizer now keeps their final holdout diagnostic rather than installing an
 impossible meta-label threshold that forces a flat equity line. This preserves
 the real P&L/trade-count evidence while still marking the symbol as rejected.
+Promotion-grade model-lab reports also preserve per-objective
+`walk_forward_gate` evidence. A skipped purged walk-forward gate is treated as
+missing promotion evidence, not as a pass; accepted outcomes and stamped model
+execution-validation records require a positive fold count, every fold accepted,
+positive worst score, positive worst realized P&L, and bounded worst drawdown.
 Threshold calibration also records the best searched diagnostic threshold
 separately from the selected safe threshold. When the best searched threshold
 produces losing trades and is rejected, `best_closed_trades`,
@@ -363,6 +368,8 @@ analytically incoherent artifacts before they reach an operator:
 - accepted outcomes must include passed selection-risk evidence for every
   accepted objective; missing reports, nonpositive deflated scores, rejection
   reasons, failed PBO diagnostics, or unknown overfit status block promotion,
+- accepted outcomes must include real purged walk-forward evidence for every
+  accepted objective; skipped or failed fold evidence blocks promotion,
 - accepted stress and temporal robustness reports must carry measured
   scenario/window/statistical-edge evidence; an accepted flag without those
   measurements blocks promotion,
