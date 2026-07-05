@@ -177,19 +177,23 @@ def test_make_rows_require_accelerated_rejects_tensor_failure(monkeypatch) -> No
         )
 
 
-def test_make_rows_preserves_candle_volume_for_execution_simulation() -> None:
+def test_make_rows_preserves_candle_execution_bounds() -> None:
     candles = [
-        replace(candle, volume=10.0 + index)
+        replace(candle, high=candle.close * 1.01, low=candle.close * 0.99, volume=10.0 + index)
         for index, candle in enumerate(_fake_candles())
     ]
     rows = make_rows(candles, short_window=10, long_window=30)
     inference_rows = make_inference_rows(candles, short_window=10, long_window=30)
-    volume_by_timestamp = {candle.close_time: candle.volume for candle in candles}
+    candle_by_timestamp = {candle.close_time: candle for candle in candles}
 
     assert rows
     assert inference_rows
-    assert rows[0].volume == pytest.approx(volume_by_timestamp[rows[0].timestamp])
-    assert inference_rows[-1].volume == pytest.approx(volume_by_timestamp[inference_rows[-1].timestamp])
+    assert rows[0].volume == pytest.approx(candle_by_timestamp[rows[0].timestamp].volume)
+    assert rows[0].high == pytest.approx(candle_by_timestamp[rows[0].timestamp].high)
+    assert rows[0].low == pytest.approx(candle_by_timestamp[rows[0].timestamp].low)
+    assert inference_rows[-1].volume == pytest.approx(candle_by_timestamp[inference_rows[-1].timestamp].volume)
+    assert inference_rows[-1].high == pytest.approx(candle_by_timestamp[inference_rows[-1].timestamp].high)
+    assert inference_rows[-1].low == pytest.approx(candle_by_timestamp[inference_rows[-1].timestamp].low)
 
 
 def test_normalize_enabled_features_validates_input() -> None:

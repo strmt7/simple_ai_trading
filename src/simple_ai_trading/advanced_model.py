@@ -658,6 +658,8 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
         features=expanded,
         label=row.label,
         volume=float(getattr(row, "volume", 0.0) or 0.0),
+        high=getattr(row, "high", None),
+        low=getattr(row, "low", None),
     )
 
 
@@ -723,6 +725,8 @@ def make_advanced_rows(
                 features=tuple(_safe(value) for value in base + extras + confluence + market_quality + transforms + pairs),
                 label=label,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
+                high=getattr(row, "high", None),
+                low=getattr(row, "low", None),
             )
         )
     return expanded
@@ -770,6 +774,8 @@ def make_advanced_inference_rows(
                 features=tuple(_safe(value) for value in base + extras + confluence + market_quality + transforms + pairs),
                 label=0,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
+                high=getattr(row, "high", None),
+                low=getattr(row, "low", None),
             )
         )
     return expanded
