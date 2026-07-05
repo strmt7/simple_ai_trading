@@ -317,7 +317,9 @@ deterministic `regime_unpredictability_score`, and compare that score with
 threshold, notes, and cooldown remaining. Conservative defaults block at a
 lower score than regular or aggressive profiles. An active cooldown blocks new
 live entries before order sizing, while existing bot-owned positions still
-follow their normal stop/take/close logic.
+follow their normal stop/take/close logic. Malformed, non-finite, or
+out-of-range 0-1 regime scores and thresholds are treated as entry-risk
+failures rather than permission to trade.
 
 Signed live startup also checks the final model artifact. `model-lab` must stamp
 `execution_validation` into the serialized model after the symbol passes
