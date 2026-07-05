@@ -819,8 +819,10 @@ class BinanceClient:
         payload["newOrderRespType"] = "RESULT"
         if reduce_only:
             payload["reduceOnly"] = "true"
-        # futures: configure leverage before market order submission
-        self.set_leverage(symbol, int(max(1, round(leverage))), notional=notional_value)
+        # Fresh futures opens configure leverage immediately before order submission.
+        # Reduce-only closes must not mutate account leverage state.
+        if not reduce_only:
+            self.set_leverage(symbol, int(max(1, round(leverage))), notional=notional_value)
         return self._request_dict("POST", "/fapi/v1/order", payload, signed=True, label="order")
 
     def get_order(

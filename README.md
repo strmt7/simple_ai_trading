@@ -195,6 +195,9 @@ Signed live-style startup requires a promoted model artifact. A model must carry
 Signed futures opens also clamp leverage to the active Binance notional bracket
 for the intended gross order notional before submitting the market order, so a
 small-order leverage ceiling is not applied blindly to larger orders.
+The live loop does not change futures leverage at startup, and reduce-only
+closes do not change leverage; exchange-side leverage is mutated only as part of
+a fresh bot-owned futures open.
 
 Position sizing treats `risk_per_trade` as the maximum estimated equity budget
 intended to be lost if the configured stop-loss is hit, including taker fees and

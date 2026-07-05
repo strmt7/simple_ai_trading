@@ -338,3 +338,26 @@ def test_place_order_clamps_futures_leverage_by_notional_bracket(monkeypatch) ->
     assert response["status"] == "FILLED"
     assert leverage_posts == [8]
     assert order_posts == 1
+
+
+def test_place_order_futures_open_fails_before_order_when_leverage_setup_fails(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
+    order_posts = 0
+
+    def fake_request(method: str, path: str, params=None, signed: bool = False):
+        nonlocal order_posts
+        if path == "/fapi/v1/leverageBracket":
+            return [{"symbol": "BTCUSDC", "brackets": [{"initialLeverage": "20"}]}]
+        if path == "/fapi/v1/leverage":
+            raise BinanceAPIError("leverage setup failed")
+        if path == "/fapi/v1/order":
+            order_posts += 1
+            raise AssertionError("order must not submit after leverage setup fails")
+        raise AssertionError(f"unexpected endpoint: {path}")
+
+    monkeypatch.setattr(client, "_request", fake_request)
+
+    with pytest.raises(BinanceAPIError, match="leverage setup failed"):
+        client.place_order("BTCUSDC", "BUY", 0.1, dry_run=False, leverage=20.0, notional=2_500.0)
+
+    assert order_posts == 0
