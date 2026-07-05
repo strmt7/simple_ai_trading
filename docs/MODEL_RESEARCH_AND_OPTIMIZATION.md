@@ -428,6 +428,16 @@ coverage gaps, or coverage below `99.5%` fail promotion. Recent-limit API runs
 are not hard failures by themselves, but they are labeled `binance_recent_limit`
 and must not be presented as full-history optimization evidence.
 
+Financial sanity re-checks that contract after model-lab writes the report.
+An accepted outcome is blocked if `data_coverage` is absent, if the source
+scope is missing or marked synthetic/fake/mock/demo/sample, if the source scope
+does not identify Binance market data, if required truth-basis entries are
+missing, if `candles_used` or `rows_used` is nonpositive, if coverage is below
+`99.5%`, or if any measured gap remains. This is deliberate: ROI, drawdown,
+selection-risk, stress, and robustness math are not considered financially
+usable unless the underlying data evidence is complete and internally
+traceable.
+
 After model-lab writes a report, `simple-ai-trading ai-review --report ...`
 can run a local structured-output model over a compact artifact summary. The
 review is intentionally bounded and non-executing: it receives no credentials,

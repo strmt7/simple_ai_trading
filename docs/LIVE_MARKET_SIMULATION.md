@@ -124,6 +124,14 @@ Every backtest now keeps path evidence, not only a final P&L scalar:
   down-sized because trailing liquidity or a data-probed same-bucket session
   was below history.
 
+Accepted model-lab reports are sanity-checked against the same provenance
+contract. A result cannot pass as financially usable when the data coverage
+object is missing, the Binance market-data source scope is absent, truth-basis
+entries are incomplete, candle/model-row counts are nonpositive, coverage is
+below `99.5%`, or gaps remain. That gate prevents backtest math from being
+treated as reliable when the underlying market-data record is incomplete or
+ambiguous.
+
 `backtest-chart` renders this actual equity path instead of a three-point
 display fallback. When equity timestamps are present, the SVG labels the
 simulation start/end dates and duration in days/years. Model-lab robustness
