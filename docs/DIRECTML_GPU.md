@@ -38,6 +38,10 @@ CPU-only mode is allowed. When selected or when GPU probing fails:
   `calibration_backend_reason`. Promotion evidence should treat those fields as
   the proof of whether the calibration scan ran on DirectML/CUDA/ROCm/MPS or
   fell back to CPU.
+- Signed live startup requires promoted `TrainedModel` artifacts to prove
+  bounded multi-candidate model selection. When the resolved runtime backend is
+  DirectML/CUDA/ROCm/MPS, the same gate also requires non-CPU training and
+  probability-calibration backend evidence before orders can be submitted.
 - Hybrid model-zoo backtest scoring keeps Lorentzian nearest-neighbor,
   rational-quadratic kernel, and technical-confluence expert math on the tensor
   backend when the backend supports the required operations.

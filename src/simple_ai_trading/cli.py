@@ -3134,12 +3134,19 @@ def _load_live_start_model(
     strategy: StrategyConfig,
     *,
     effective_dry_run: bool,
+    require_model_candidate_search: bool = False,
+    require_accelerator_evidence: bool = False,
 ) -> tuple[TrainedModel | None, str | None, str | None]:
     if model_path.exists():
         try:
             model = _load_readiness_model(model_path, strategy)[0]
             if isinstance(model, TrainedModel):
-                assert_model_promoted(model, model_path=model_path)
+                assert_model_promoted(
+                    model,
+                    model_path=model_path,
+                    require_model_candidate_search=require_model_candidate_search,
+                    require_accelerator_evidence=require_accelerator_evidence,
+                )
             return model, None, None
         except ModelPromotionError as exc:
             if not effective_dry_run:
@@ -6012,7 +6019,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             cash = available_usdc
             print(f"Authenticated live cash capped to exchange free USDC={cash:.2f}.")
 
-    model, model_error, model_notice = _load_live_start_model(model_path, cfg, effective_dry_run=effective_dry_run)
+    model, model_error, model_notice = _load_live_start_model(
+        model_path,
+        cfg,
+        effective_dry_run=effective_dry_run,
+        require_model_candidate_search=not effective_dry_run,
+        require_accelerator_evidence=not effective_dry_run and _backend_info.kind != "cpu",
+    )
     if model_error is not None:
         print(model_error, file=sys.stderr)
         return 2
@@ -7569,10 +7582,18 @@ def _build_autonomous_decision_fn(
     model_path: Path,
     strategy: StrategyConfig,
     effective_dry_run: bool,
+    require_model_candidate_search: bool = False,
+    require_accelerator_evidence: bool = False,
 ):
     from .autonomous import Decision
 
-    model, model_error, model_notice = _load_live_start_model(model_path, strategy, effective_dry_run=effective_dry_run)
+    model, model_error, model_notice = _load_live_start_model(
+        model_path,
+        strategy,
+        effective_dry_run=effective_dry_run,
+        require_model_candidate_search=require_model_candidate_search,
+        require_accelerator_evidence=require_accelerator_evidence,
+    )
     if model_error is not None:
         return None, model_error, model_notice
     if model is None and not effective_dry_run:
@@ -7730,6 +7751,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
             model_path=model_path,
             strategy=strategy,
             effective_dry_run=effective_dry_run,
+            require_model_candidate_search=not effective_dry_run,
         )
         if model_error is not None or decision_fn is None:
             print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)

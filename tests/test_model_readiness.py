@@ -40,6 +40,14 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
             "downsize_threshold": 0.01,
             "downsize_fraction": 0.5,
         },
+        probability_calibration_size=128,
+        probability_calibration_backend_requested="directml",
+        probability_calibration_backend_kind="directml",
+        probability_calibration_backend_device="privateuseone:0",
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+        training_backend_vendor="DirectML",
         model_candidate_count=3,
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
@@ -48,17 +56,28 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
 
 def test_model_readiness_allows_promoted_model_and_round_trips_from_path(tmp_path) -> None:
     model = _model()
-    report = build_model_readiness_report(model, model_path=tmp_path / "model.json")
+    report = build_model_readiness_report(
+        model,
+        model_path=tmp_path / "model.json",
+        require_model_candidate_search=True,
+        require_accelerator_evidence=True,
+    )
 
     assert report.allowed is True
     assert report.block_count == 0
     assert any(check.label == "selection risk" and check.status == "ok" for check in report.checks)
     assert any(check.label == "model candidate search" and check.status == "ok" for check in report.checks)
+    assert any(check.label == "training accelerator" and check.status == "ok" for check in report.checks)
+    assert any(check.label == "probability calibration accelerator" and check.status == "ok" for check in report.checks)
     assert report.asdict()["allowed"] is True
 
     path = tmp_path / "model.json"
     serialize_model(model, path)
-    loaded_report = load_model_readiness_report(path)
+    loaded_report = load_model_readiness_report(
+        path,
+        require_model_candidate_search=True,
+        require_accelerator_evidence=True,
+    )
 
     assert loaded_report.allowed is True
     assert loaded_report.model_path == str(path)
@@ -78,6 +97,48 @@ def test_model_readiness_warns_on_single_candidate_evidence() -> None:
         check.label == "model candidate search" and check.status == "warn"
         for check in report.checks
     )
+
+
+def test_model_readiness_can_require_multi_candidate_evidence() -> None:
+    model = _model()
+    model.model_candidate_count = 1
+    model.model_selected_candidate = "default"
+    model.model_selection_score = None
+
+    report = build_model_readiness_report(
+        model,
+        require_model_candidate_search=True,
+        min_model_candidates=2,
+    )
+
+    assert report.allowed is False
+    assert any(
+        check.label == "model candidate search" and check.status == "block"
+        for check in report.checks
+    )
+    with pytest.raises(ModelPromotionError, match="model candidate search"):
+        assert_model_promoted(model, require_model_candidate_search=True, min_model_candidates=2)
+
+
+def test_model_readiness_can_require_accelerator_evidence() -> None:
+    model = _model()
+    model.training_backend_kind = "cpu"
+    model.training_backend_device = "cpu"
+    model.training_backend_reason = "DirectML unavailable in test"
+    model.probability_calibration_backend_kind = "cpu"
+    model.probability_calibration_backend_device = "cpu"
+    model.probability_calibration_backend_reason = "calibration fell back in test"
+
+    report = build_model_readiness_report(model, require_accelerator_evidence=True)
+
+    assert report.allowed is False
+    assert any(check.label == "training accelerator" and check.status == "block" for check in report.checks)
+    assert any(
+        check.label == "probability calibration accelerator" and check.status == "block"
+        for check in report.checks
+    )
+    with pytest.raises(ModelPromotionError, match="training accelerator"):
+        assert_model_promoted(model, require_accelerator_evidence=True)
 
 
 def test_model_readiness_blocks_missing_or_failed_selection_risk() -> None:

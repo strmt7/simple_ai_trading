@@ -1253,6 +1253,17 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
         },
+        probability_calibration_size=128,
+        probability_calibration_backend_requested="directml",
+        probability_calibration_backend_kind="directml",
+        probability_calibration_backend_device="privateuseone:0",
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+        training_backend_vendor="DirectML",
+        model_candidate_count=3,
+        model_selected_candidate="triple_barrier_base",
+        model_selection_score=0.42,
     )
     model_file = tmp_path / "model_default.json"
     serialize_model(model, model_file)
@@ -1470,6 +1481,50 @@ def test_load_live_start_model_rejects_unpromoted_model_for_signed_mode(tmp_path
     assert model is not None
     assert error is None
     assert "promotion warning" in str(notice)
+
+
+def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence(tmp_path) -> None:
+    strategy = StrategyConfig(enabled_features=("momentum_1",))
+    model_file = tmp_path / "model.json"
+    serialize_model(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            feature_signature=cli._strategy_feature_signature(strategy),
+            selection_risk={
+                "passed": True,
+                "effective_trials": 12,
+                "selected_score": 0.12,
+                "trial_penalty": 0.03,
+                "deflated_score": 0.09,
+            },
+            execution_validation={
+                "passed": True,
+                "symbol": "BTCUSDC",
+                "stress": {"accepted": True},
+                "temporal_robustness": {"accepted": True},
+                "portfolio": {"accepted": True},
+            },
+        ),
+        model_file,
+    )
+
+    model, error, notice = cli._load_live_start_model(
+        model_file,
+        strategy,
+        effective_dry_run=False,
+        require_model_candidate_search=True,
+        require_accelerator_evidence=True,
+    )
+
+    assert model is None
+    assert "model candidate search" in str(error)
+    assert "training accelerator" in str(error)
+    assert notice is None
 
 
 def test_build_order_notional_paths() -> None:
@@ -3491,6 +3546,42 @@ def test_command_live_rejects_missing_credentials_for_live_mode(tmp_path, monkey
     assert "Authenticated live mode requires Binance API key" in capsys.readouterr().err
 
 
+def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_load_live_start_model(model_path, strategy, **kwargs):
+        captured.update(kwargs)
+        return None, "captured strict readiness", None
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
+    save_strategy(StrategyConfig())
+    monkeypatch.setattr(
+        cli,
+        "_workflow_compute_backend",
+        lambda *_args, **_kwargs: (
+            "directml",
+            cli.BackendInfo("directml", "directml", "privateuseone:0", "DirectML", ""),
+        ),
+    )
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
+    monkeypatch.setattr(cli, "_load_live_start_model", fake_load_live_start_model)
+
+    assert cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True)) == 2
+    assert captured["effective_dry_run"] is False
+    assert captured["require_model_candidate_search"] is True
+    assert captured["require_accelerator_evidence"] is True
+
+
 def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeypatch, capsys) -> None:
     class _FailLeverageClient(_FakeClient):
         def set_leverage(self, symbol: str, leverage: int):
@@ -3524,6 +3615,17 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
                 "temporal_robustness": {"accepted": True},
                 "portfolio": {"accepted": True},
             },
+            probability_calibration_size=128,
+            probability_calibration_backend_requested="directml",
+            probability_calibration_backend_kind="directml",
+            probability_calibration_backend_device="privateuseone:0",
+            training_backend_requested="directml",
+            training_backend_kind="directml",
+            training_backend_device="privateuseone:0",
+            training_backend_vendor="DirectML",
+            model_candidate_count=3,
+            model_selected_candidate="triple_barrier_base",
+            model_selection_score=0.42,
         ),
         model_file,
     )
@@ -3797,6 +3899,17 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
         },
+        probability_calibration_size=128,
+        probability_calibration_backend_requested="directml",
+        probability_calibration_backend_kind="directml",
+        probability_calibration_backend_device="privateuseone:0",
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+        training_backend_vendor="DirectML",
+        model_candidate_count=3,
+        model_selected_candidate="triple_barrier_base",
+        model_selection_score=0.42,
     )
 
     def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
