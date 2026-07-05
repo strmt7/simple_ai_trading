@@ -75,6 +75,12 @@ class ThresholdBacktestCalibration:
     baseline_closed_trades: int
     best_threshold: float
     best_score: float
+    best_realized_pnl: float
+    best_total_fees: float
+    best_max_drawdown: float
+    best_win_rate: float
+    best_closed_trades: int
+    best_edge_vs_buy_hold: float
     evaluated_thresholds: int
     rows: int
     scoring_backend_requested: str = "cpu"
@@ -801,6 +807,7 @@ def calibrate_threshold_for_backtest(
     selected_score = best_score if accepted else baseline_score
     selected_result = best_result if accepted else baseline_result
     payload = _result_payload(selected_result)
+    best_payload = _result_payload(best_result)
     return ThresholdBacktestCalibration(
         threshold=float(selected_threshold),
         accepted=bool(accepted),
@@ -817,6 +824,12 @@ def calibrate_threshold_for_backtest(
         baseline_closed_trades=int(baseline_result.closed_trades),
         best_threshold=float(best_threshold),
         best_score=float(best_score),
+        best_realized_pnl=float(best_payload["realized_pnl"]),
+        best_total_fees=float(best_payload["total_fees"]),
+        best_max_drawdown=float(best_payload["max_drawdown"]),
+        best_win_rate=float(best_payload["win_rate"]),
+        best_closed_trades=int(best_payload["closed_trades"]),
+        best_edge_vs_buy_hold=float(best_payload["edge_vs_buy_hold"]),
         evaluated_thresholds=len(thresholds),
         rows=len(rows),
         scoring_backend_requested=str(score_backend.requested),

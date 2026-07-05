@@ -108,6 +108,10 @@ class TrainedModel:
     threshold_calibration_score: float | None = None
     threshold_calibration_pnl: float | None = None
     threshold_calibration_trades: int = 0
+    threshold_diagnostic_best_threshold: float | None = None
+    threshold_diagnostic_best_score: float | None = None
+    threshold_diagnostic_best_pnl: float | None = None
+    threshold_diagnostic_best_trades: int = 0
     strategy_overrides: dict[str, StrategyOverrideValue] = field(default_factory=dict)
     ensemble_members: List[EnsembleMember] = field(default_factory=list)
     training_backend_requested: str = "cpu"
@@ -1878,6 +1882,22 @@ def load_model(
             else None
         ),
         threshold_calibration_trades=int(payload.get("threshold_calibration_trades", 0) or 0),
+        threshold_diagnostic_best_threshold=(
+            float(payload["threshold_diagnostic_best_threshold"])
+            if payload.get("threshold_diagnostic_best_threshold") is not None
+            else None
+        ),
+        threshold_diagnostic_best_score=(
+            float(payload["threshold_diagnostic_best_score"])
+            if payload.get("threshold_diagnostic_best_score") is not None
+            else None
+        ),
+        threshold_diagnostic_best_pnl=(
+            float(payload["threshold_diagnostic_best_pnl"])
+            if payload.get("threshold_diagnostic_best_pnl") is not None
+            else None
+        ),
+        threshold_diagnostic_best_trades=int(payload.get("threshold_diagnostic_best_trades", 0) or 0),
         strategy_overrides=clean_strategy_overrides(payload.get("strategy_overrides", {})),
         ensemble_members=_load_ensemble_members(payload.get("ensemble_members"), dim),
         training_backend_requested=str(payload.get("training_backend_requested", "cpu") or "cpu"),

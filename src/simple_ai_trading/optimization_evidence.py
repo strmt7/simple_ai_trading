@@ -113,6 +113,10 @@ class BacktestEvidence:
     threshold_calibration_score: float | None
     threshold_calibration_pnl: float | None
     threshold_calibration_trades: int
+    threshold_diagnostic_best_threshold: float | None
+    threshold_diagnostic_best_score: float | None
+    threshold_diagnostic_best_pnl: float | None
+    threshold_diagnostic_best_trades: int
     decision_threshold: float | None
     round_selection_gate_passed: bool
     round_selection_reject_reason: str | None
@@ -162,6 +166,15 @@ def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, ob
     zero_trade_symbols = [metric.symbol for metric in metrics if int(metric.closed_trades) <= 0]
     nonpositive_roi_symbols = [metric.symbol for metric in metrics if float(metric.roi_pct) <= 0.0]
     negative_roi_symbols = [metric.symbol for metric in metrics if float(metric.roi_pct) < 0.0]
+    selection_gate_failed_symbols = [
+        metric.symbol for metric in metrics if not bool(metric.round_selection_gate_passed)
+    ]
+    rejected_diagnostic_trade_symbols = [
+        metric.symbol
+        for metric in metrics
+        if not bool(metric.round_selection_gate_passed)
+        and int(metric.threshold_diagnostic_best_trades) > 0
+    ]
     failures: list[str] = []
     warnings: list[str] = []
     if symbol_count <= 0:
@@ -180,6 +193,10 @@ def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, ob
         warnings.append("some_symbols_negative_roi")
     if zero_trade_symbols:
         warnings.append("some_symbols_zero_closed_trades")
+    if selection_gate_failed_symbols:
+        warnings.append("some_symbols_failed_selection_gate")
+    if rejected_diagnostic_trade_symbols:
+        warnings.append("rejected_symbols_have_trade_diagnostics")
     if failures:
         verdict = "fail"
         if total_closed_trades <= 0:
@@ -204,14 +221,21 @@ def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, ob
         "zero_trade_symbol_count": len(zero_trade_symbols),
         "nonpositive_roi_symbol_count": len(nonpositive_roi_symbols),
         "negative_roi_symbol_count": len(negative_roi_symbols),
+        "selection_gate_failed_symbol_count": len(selection_gate_failed_symbols),
+        "rejected_diagnostic_trade_symbol_count": len(rejected_diagnostic_trade_symbols),
         "total_trades": total_trades,
         "total_closed_trades": total_closed_trades,
+        "total_threshold_diagnostic_best_trades": sum(
+            int(metric.threshold_diagnostic_best_trades) for metric in metrics
+        ),
         "mean_roi_pct": statistics.mean([metric.roi_pct for metric in metrics]) if metrics else 0.0,
         "median_roi_pct": statistics.median([metric.roi_pct for metric in metrics]) if metrics else 0.0,
         "mean_baseline_roi_pct": statistics.mean([metric.buy_hold_roi_pct for metric in metrics]) if metrics else 0.0,
         "zero_trade_symbols": zero_trade_symbols,
         "nonpositive_roi_symbols": nonpositive_roi_symbols,
         "negative_roi_symbols": negative_roi_symbols,
+        "selection_gate_failed_symbols": selection_gate_failed_symbols,
+        "rejected_diagnostic_trade_symbols": rejected_diagnostic_trade_symbols,
     }
 
 
@@ -1135,6 +1159,20 @@ def _evaluate_round_model_candidate(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
+    diagnostic_threshold = float(
+        getattr(threshold_report, "best_threshold", getattr(threshold_report, "threshold", candidate.signal_threshold))
+    )
+    diagnostic_score = float(getattr(threshold_report, "best_score", getattr(threshold_report, "score", 0.0)))
+    diagnostic_pnl = float(
+        getattr(threshold_report, "best_realized_pnl", getattr(threshold_report, "realized_pnl", 0.0))
+    )
+    diagnostic_trades = int(
+        getattr(threshold_report, "best_closed_trades", getattr(threshold_report, "closed_trades", 0)) or 0
+    )
+    model.threshold_diagnostic_best_threshold = diagnostic_threshold
+    model.threshold_diagnostic_best_score = diagnostic_score
+    model.threshold_diagnostic_best_pnl = diagnostic_pnl
+    model.threshold_diagnostic_best_trades = diagnostic_trades
     if status_callback is not None:
         status_callback(
             "threshold_calibration_complete",
@@ -1142,6 +1180,9 @@ def _evaluate_round_model_candidate(
                 "threshold_accepted": bool(threshold_report.accepted),
                 "threshold": float(threshold_report.threshold),
                 "closed_trades": int(threshold_report.closed_trades),
+                "best_threshold": diagnostic_threshold,
+                "best_realized_pnl": diagnostic_pnl,
+                "best_closed_trades": diagnostic_trades,
                 "probability_calibration_backend_kind": getattr(calibration, "calibration_backend_kind", ""),
                 "probability_calibration_backend_device": getattr(calibration, "calibration_backend_device", ""),
                 "scoring_backend_kind": threshold_report.scoring_backend_kind,
@@ -1244,12 +1285,12 @@ def _evaluate_round_model_candidate(
             chosen_reject_reason = base_reject_reason
         model.round_selection_gate_passed = False
         model.round_selection_reject_reason = str(chosen_reject_reason or "selection_gate_failed")
-        if int(getattr(threshold_report, "closed_trades", 0) or 0) > 0:
-            model.decision_threshold = float(threshold_report.threshold)
-            model.threshold_source = "round_selection_rejected_threshold_diagnostic"
-            model.threshold_calibration_score = float(threshold_report.score)
-            model.threshold_calibration_pnl = float(threshold_report.realized_pnl)
-            model.threshold_calibration_trades = int(threshold_report.closed_trades)
+        if diagnostic_trades > 0:
+            model.decision_threshold = diagnostic_threshold
+            model.threshold_source = "round_selection_rejected_best_threshold_diagnostic"
+            model.threshold_calibration_score = diagnostic_score
+            model.threshold_calibration_pnl = diagnostic_pnl
+            model.threshold_calibration_trades = diagnostic_trades
         else:
             model.threshold_source = "round_selection_rejected_diagnostic_holdout"
         model.quality_warnings = [
@@ -1725,6 +1766,24 @@ def build_round_evidence(
                     else None
                 ),
                 threshold_calibration_trades=int(getattr(model, "threshold_calibration_trades", 0) or 0),
+                threshold_diagnostic_best_threshold=(
+                    float(getattr(model, "threshold_diagnostic_best_threshold"))
+                    if getattr(model, "threshold_diagnostic_best_threshold", None) is not None
+                    else None
+                ),
+                threshold_diagnostic_best_score=(
+                    float(getattr(model, "threshold_diagnostic_best_score"))
+                    if getattr(model, "threshold_diagnostic_best_score", None) is not None
+                    else None
+                ),
+                threshold_diagnostic_best_pnl=(
+                    float(getattr(model, "threshold_diagnostic_best_pnl"))
+                    if getattr(model, "threshold_diagnostic_best_pnl", None) is not None
+                    else None
+                ),
+                threshold_diagnostic_best_trades=int(
+                    getattr(model, "threshold_diagnostic_best_trades", 0) or 0
+                ),
                 decision_threshold=(
                     float(getattr(model, "decision_threshold"))
                     if getattr(model, "decision_threshold", None) is not None
@@ -1799,6 +1858,10 @@ def build_round_evidence(
                 threshold_calibration_score=None,
                 threshold_calibration_pnl=None,
                 threshold_calibration_trades=0,
+                threshold_diagnostic_best_threshold=None,
+                threshold_diagnostic_best_score=None,
+                threshold_diagnostic_best_pnl=None,
+                threshold_diagnostic_best_trades=0,
                 decision_threshold=None,
                 round_selection_gate_passed=False,
                 round_selection_reject_reason=str(exc)[:240],
