@@ -54,7 +54,7 @@ from .liquidity_session import apply_liquidity_session_meta, liquidity_session_a
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
 from .market_store import MarketDataStore
-from .market_universe import rank_high_liquidity_universe
+from .optimization_evidence import select_top_liquidity_symbols
 from .meta_label import apply_meta_label_policy
 from .model import (
     assess_probability_calibration,
@@ -4604,13 +4604,20 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
         max_scan = max(top_symbols, int(getattr(args, "max_scan", 250) or 250))
         try:
-            ranked_runtime = _runtime_with_market(runtime, market_type)
-            selection = rank_high_liquidity_universe(
-                _build_client(ranked_runtime),
+            ranking_client = BinanceClient(
+                "",
+                "",
+                testnet=False,
+                market_type=market_type,
+                max_calls_per_minute=max(1, int(runtime.max_rate_calls_per_minute)),
+            )
+            selection = select_top_liquidity_symbols(
+                ranking_client,
                 load_strategy(),
                 quote_asset=quote_asset,
-                max_symbols=max_scan,
+                count=max_scan,
                 max_scan=max_scan,
+                strict_only=True,
             )
         except (BinanceAPIError, OSError, ValueError) as exc:
             print(f"archive-sync failed to rank high-liquidity symbols: {exc}", file=sys.stderr)
@@ -4618,7 +4625,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         min_history_months = max(0, int(getattr(args, "min_history_months", 0) or 0))
         symbols = []
         history_rejections: list[dict[str, str]] = []
-        for item in selection.eligible:
+        for item in selection:
             if len(symbols) >= top_symbols:
                 break
             try:
