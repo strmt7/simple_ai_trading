@@ -730,7 +730,7 @@ def run_backtest(
     max_open_positions = int(cfg.max_open_positions)
     regime_gate_min_rows = max(8, min(len(rows), int(cfg.liquidity_lookback_bars)))
     if precomputed_probabilities is not None:
-        probabilities = [float(value) for value in precomputed_probabilities]
+        probabilities = precomputed_probabilities
         if len(probabilities) != len(rows):
             raise ValueError(
                 f"precomputed_probabilities length mismatch: {len(probabilities)}/{len(rows)}"
