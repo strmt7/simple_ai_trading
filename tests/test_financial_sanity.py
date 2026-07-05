@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import math
 
 from simple_ai_trading.financial_sanity import (
     build_backtest_financial_sanity_report,
@@ -27,19 +28,40 @@ def _backtest_result(**overrides) -> BacktestResult:
         trades_per_day_cap_hit=0,
         buy_hold_pnl=2.0,
         edge_vs_buy_hold=3.0,
+        gross_profit=10.0,
+        gross_loss=5.0,
+        profit_factor=2.0,
+        expectancy=2.5,
+        average_trade_return=0.0025,
+        trade_return_stdev=math.sqrt(0.0001125),
+        max_consecutive_losses=1,
         trade_pnls=(10.0, -5.0),
         trade_returns=(0.01, -0.005),
         trade_log=(
             {
+                "opened_at": 1000,
+                "closed_at": 2000,
+                "side": 1,
+                "gross_notional": 500.0,
+                "entry_price": 100.0,
+                "exit_mark_price": 102.4,
                 "realized_pnl": 12.0,
                 "net_pnl": 10.0,
+                "return_pct": 0.01,
                 "entry_fee": 1.0,
                 "exit_fee": 1.0,
                 "exit_reason": "take_profit_close",
             },
             {
+                "opened_at": 3000,
+                "closed_at": 4000,
+                "side": -1,
+                "gross_notional": 500.0,
+                "entry_price": 100.0,
+                "exit_mark_price": 100.8,
                 "realized_pnl": -4.0,
                 "net_pnl": -5.0,
+                "return_pct": -0.005,
                 "entry_fee": 0.5,
                 "exit_fee": 0.5,
                 "exit_reason": "stop_loss_close",
@@ -94,6 +116,7 @@ def test_backtest_financial_sanity_blocks_liquidation_evidence() -> None:
         ending_cash=995.0,
         realized_pnl=-5.0,
         win_rate=0.0,
+        trades=1,
         closed_trades=1,
         total_fees=1.0,
         buy_hold_pnl=-1.0,
@@ -101,12 +124,26 @@ def test_backtest_financial_sanity_blocks_liquidation_evidence() -> None:
         stopped_by_liquidation=True,
         liquidation_events=1,
         liquidation_loss=20.0,
+        gross_profit=0.0,
+        gross_loss=5.0,
+        profit_factor=0.0,
+        expectancy=-5.0,
+        average_trade_return=-0.005,
+        trade_return_stdev=0.0,
+        max_consecutive_losses=1,
         trade_pnls=(-5.0,),
         trade_returns=(-0.005,),
         trade_log=(
             {
+                "opened_at": 1000,
+                "closed_at": 2000,
+                "side": 1,
+                "gross_notional": 500.0,
+                "entry_price": 100.0,
+                "exit_mark_price": 99.0,
                 "realized_pnl": -4.0,
                 "net_pnl": -5.0,
+                "return_pct": -0.005,
                 "entry_fee": 0.5,
                 "exit_fee": 0.5,
                 "exit_reason": "liquidation",
@@ -137,6 +174,75 @@ def test_backtest_financial_sanity_blocks_inconsistent_liquidation_counters() ->
     assert any(check.label == "liquidation events" and check.status == "block" for check in bad_events.checks)
     assert bad_loss.allowed is False
     assert any(check.label == "liquidation loss" and check.status == "block" for check in bad_loss.checks)
+
+
+def test_backtest_financial_sanity_blocks_path_metric_drift() -> None:
+    report = build_backtest_financial_sanity_report(
+        _backtest_result(
+            gross_profit=999.0,
+            gross_loss=0.0,
+            profit_factor=999.0,
+            expectancy=999.0,
+            average_trade_return=999.0,
+            trade_return_stdev=999.0,
+            max_consecutive_losses=0,
+        )
+    )
+
+    labels = {check.label for check in report.checks if check.status == "block"}
+    assert "gross profit identity" in labels
+    assert "gross loss identity" in labels
+    assert "profit factor identity" in labels
+    assert "expectancy identity" in labels
+    assert "average return identity" in labels
+    assert "return stdev identity" in labels
+    assert "loss streak identity" in labels
+
+
+def test_backtest_financial_sanity_blocks_equity_curve_drift() -> None:
+    report = build_backtest_financial_sanity_report(
+        _backtest_result(
+            max_drawdown=0.02,
+            equity_curve=(
+                {"timestamp": 1000, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
+                {"timestamp": 2000, "equity": 1010.0, "drawdown": 0.0, "position_side": 0},
+                {"timestamp": 3000, "equity": 1005.0, "drawdown": 0.01, "position_side": 0},
+            ),
+        )
+    )
+
+    labels = {check.label for check in report.checks if check.status == "block"}
+    assert "equity curve drawdown identity" in labels
+    assert "max drawdown identity" in labels
+
+
+def test_backtest_financial_sanity_blocks_trade_level_math_omissions() -> None:
+    report = build_backtest_financial_sanity_report(
+        _backtest_result(
+            trade_log=(
+                {
+                    "realized_pnl": 12.0,
+                    "net_pnl": 10.0,
+                    "entry_fee": 1.0,
+                    "exit_fee": 1.0,
+                    "exit_reason": "take_profit_close",
+                },
+                {
+                    "realized_pnl": -4.0,
+                    "net_pnl": -5.0,
+                    "entry_fee": 0.5,
+                    "exit_fee": 0.5,
+                    "exit_reason": "stop_loss_close",
+                },
+            ),
+        )
+    )
+
+    labels = {check.label for check in report.checks if check.status == "block"}
+    assert "trade timestamp" in labels
+    assert "trade side" in labels
+    assert "trade notional/price" in labels
+    assert "trade return" in labels
 
 
 def test_model_financial_sanity_blocks_malformed_parameters() -> None:

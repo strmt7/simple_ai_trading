@@ -124,6 +124,12 @@ Every backtest now keeps path evidence, not only a final P&L scalar:
   down-sized because trailing liquidity or a data-probed same-bucket session
   was below history.
 
+Generated backtest results must pass an internal accounting audit before they
+are returned to optimization. The audit checks cash identity, trade-count
+identity, exposure identity, fee sums, trade-log net P&L, trade-return evidence,
+path-quality summaries, liquidation counters, equity-curve chronology,
+point-level drawdown, max drawdown, and final flat equity.
+
 Accepted model-lab reports are sanity-checked against the same provenance
 contract. A result cannot pass as financially usable when the data coverage
 object is missing, the Binance market-data source scope is absent, truth-basis
