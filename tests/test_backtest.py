@@ -641,6 +641,45 @@ def test_backtest_signal_enters_on_next_bar_close() -> None:
     assert result.max_consecutive_losses == 1
 
 
+def test_backtest_drawdown_stop_closes_at_adverse_intrabar_mark() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(10.0,), label=1, high=100.0, low=100.0),
+        ModelRow(timestamp=60_000, close=100.0, features=(10.0,), label=1, high=100.0, low=100.0),
+        ModelRow(timestamp=120_000, close=100.0, features=(10.0,), label=1, high=100.0, low=80.0),
+    ]
+    model = TrainedModel(
+        weights=[10.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.50,
+        max_position_pct=1.0,
+        max_asset_allocation_pct=1.0,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        signal_threshold=0.55,
+        stop_loss_pct=0.90,
+        take_profit_pct=0.90,
+        max_drawdown_limit=0.05,
+    )
+
+    result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
+
+    assert result.stopped_by_drawdown is True
+    assert result.closed_trades == 1
+    trade = result.trade_log[0]
+    assert trade["exit_reason"] == "drawdown_limit"
+    assert trade["exit_mark_price"] == pytest.approx(80.0)
+    assert result.ending_cash == pytest.approx(result.starting_cash + float(trade["net_pnl"]))
+    assert result.ending_cash < 900.0
+    assert result.equity_curve[-1]["equity"] == pytest.approx(result.ending_cash)
+
+
 def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),

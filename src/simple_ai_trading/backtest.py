@@ -1443,6 +1443,61 @@ def run_backtest(
 
         if cfg.max_drawdown_limit > 0.0 and dd >= cfg.max_drawdown_limit:
             stopped_by_drawdown = True
+            if position_side != 0:
+                closed_side = position_side
+                closed_notional = abs(notional)
+                closed_entry_price = entry_price
+                drawdown_delta, drawdown_realized, drawdown_fee = _close_position(
+                    position_side=position_side,
+                    price=drawdown_mark_price,
+                    entry_price=entry_price,
+                    qty=qty,
+                    notional=notional,
+                    margin_used=margin_used,
+                    cfg=cfg,
+                    symbol_profile=symbol_profile,
+                )
+                cash += drawdown_delta
+                total_fees += drawdown_fee
+                closed_trades += 1
+                net_pnl = drawdown_realized - entry_fee_paid - drawdown_fee
+                return_pct = _trade_return(net_pnl, entry_equity_reference)
+                trade_pnls.append(float(net_pnl))
+                trade_returns.append(float(return_pct))
+                trade_log.append({
+                    "opened_at": int(entry_timestamp),
+                    "closed_at": int(row.timestamp),
+                    "side": int(closed_side),
+                    "gross_notional": float(closed_notional),
+                    "entry_price": float(closed_entry_price),
+                    "exit_mark_price": float(drawdown_mark_price),
+                    "realized_pnl": float(drawdown_realized),
+                    "net_pnl": float(net_pnl),
+                    "return_pct": float(return_pct),
+                    "entry_fee": float(entry_fee_paid),
+                    "exit_fee": float(drawdown_fee),
+                    "exit_reason": "drawdown_limit",
+                    "drawdown": float(dd),
+                    "meta_label_action": str(entry_meta.action),
+                    "meta_label_size_multiplier": float(entry_meta.size_multiplier),
+                    "meta_label_signal_strength": float(entry_meta.signal_strength),
+                    "meta_label_reason": str(entry_meta.reason),
+                })
+                if drawdown_realized > 0:
+                    wins += 1
+                position_side = 0
+                notional = 0.0
+                qty = 0.0
+                entry_price = 0.0
+                margin_used = 0.0
+                entry_fee_paid = 0.0
+                entry_equity_reference = cash
+                entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "drawdown_limit")
+                last_close_timestamp = row.timestamp
+                close_dd = 1.0 if cash <= 0.0 and equity_peak > 0.0 else ((equity_peak - cash) / equity_peak if equity_peak else 0.0)
+                if close_dd > max_drawdown:
+                    max_drawdown = close_dd
+                equity_curve.append(_equity_point(int(row.timestamp), cash, close_dd, position_side))
             break
 
     # force close residual position at final mark
