@@ -679,6 +679,7 @@ def test_train_round_model_selects_best_scored_candidate(
     assert selected_model.model_candidate_count == 2
     assert selected_model.model_selected_candidate == "lower_lr_more_l2"
     assert selected_model.model_selection_score > 0.0
+    assert "model_selected_candidate" in selected_model.__dataclass_fields__
     assert report.row_count == 60
     assert len(holdout_rows) == 25
 
