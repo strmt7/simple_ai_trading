@@ -795,6 +795,10 @@ def test_build_round_evidence_records_data_health_block_before_training(
     assert "no_verified_archive_checksum" in report["data_health"][0]["reasons"]
     assert report["metrics"][0]["accepted"] is False
     assert "data_health_failed" in str(report["metrics"][0]["reason"])
+    assert report["metrics"][0]["training_rows"] == 0
+    assert report["metrics"][0]["model_training_backend_kind"] == "error"
+    assert report["metrics"][0]["probability_calibration_backend_kind"] == "error"
+    assert report["metrics"][0]["threshold_source"] is None
 
     report_path = tmp_path / "docs" / "optimization" / "round-test-health-gate" / "data" / "report.json"
     data_health_path = tmp_path / "docs" / "optimization" / "round-test-health-gate" / "data" / "data-health.json"

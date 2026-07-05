@@ -1412,6 +1412,10 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             model.probability_brier_after = float(probability_calibration.brier_after)
             model.probability_ece_before = float(probability_calibration.expected_calibration_error_before)
             model.probability_ece_after = float(probability_calibration.expected_calibration_error_after)
+            model.probability_calibration_backend_requested = str(probability_calibration.calibration_backend_requested)
+            model.probability_calibration_backend_kind = str(probability_calibration.calibration_backend_kind)
+            model.probability_calibration_backend_device = str(probability_calibration.calibration_backend_device)
+            model.probability_calibration_backend_reason = str(probability_calibration.calibration_backend_reason)
     if training.calibrate_threshold and calibration_rows:
         threshold, threshold_source, threshold_score = _calibrate_candidate_threshold(
             model,

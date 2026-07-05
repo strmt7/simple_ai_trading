@@ -100,6 +100,10 @@ class TrainedModel:
     probability_brier_after: float | None = None
     probability_ece_before: float | None = None
     probability_ece_after: float | None = None
+    probability_calibration_backend_requested: str = "cpu"
+    probability_calibration_backend_kind: str = "cpu"
+    probability_calibration_backend_device: str = "cpu"
+    probability_calibration_backend_reason: str = ""
     threshold_source: str | None = None
     threshold_calibration_score: float | None = None
     threshold_calibration_pnl: float | None = None
@@ -1842,6 +1846,18 @@ def load_model(
             float(payload["probability_ece_after"])
             if payload.get("probability_ece_after") is not None
             else None
+        ),
+        probability_calibration_backend_requested=str(
+            payload.get("probability_calibration_backend_requested", "cpu") or "cpu"
+        ),
+        probability_calibration_backend_kind=str(
+            payload.get("probability_calibration_backend_kind", "cpu") or "cpu"
+        ),
+        probability_calibration_backend_device=str(
+            payload.get("probability_calibration_backend_device", "cpu") or "cpu"
+        ),
+        probability_calibration_backend_reason=str(
+            payload.get("probability_calibration_backend_reason", "") or ""
         ),
         threshold_source=(
             str(payload["threshold_source"])
