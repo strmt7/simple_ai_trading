@@ -189,12 +189,8 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
                 "coverage_ratio": 1.0,
                 "gap_count": 0,
             },
-            "stress_validation": {"accepted": True, "worst_max_drawdown": 0.01},
-            "robustness_validation": {
-                "accepted": True,
-                "worst_max_drawdown": 0.02,
-                "statistical_edge_accepted": True,
-            },
+            "stress_validation": _accepted_stress_validation(),
+            "robustness_validation": _accepted_robustness_validation(),
         }
         for symbol in accepted_symbols
     ]
@@ -230,6 +226,33 @@ def _accepted_selection_risk() -> dict[str, object]:
             "reason": "requires_selection_and_validation_scores",
             "passed": True,
         },
+    }
+
+
+def _accepted_stress_validation() -> dict[str, object]:
+    return {
+        "accepted": True,
+        "objective_count": 1,
+        "accepted_objectives": 1,
+        "scenario_count": 4,
+        "worst_realized_pnl": 2.0,
+        "worst_max_drawdown": 0.01,
+    }
+
+
+def _accepted_robustness_validation() -> dict[str, object]:
+    return {
+        "accepted": True,
+        "objective_count": 1,
+        "accepted_objectives": 1,
+        "window_count": 5,
+        "accepted_windows": 5,
+        "accepted_window_rate": 1.0,
+        "worst_realized_pnl": 1.0,
+        "worst_max_drawdown": 0.02,
+        "statistical_edge_accepted": True,
+        "worst_sign_test_p_value": 0.03125,
+        "worst_bootstrap_lower_mean_return": 0.002,
     }
 
 
@@ -326,6 +349,54 @@ def test_model_lab_financial_sanity_blocks_failed_selection_overfit_evidence() -
     assert report.allowed is False
     assert any(
         check.label == "selection risk" and "PBO" in check.detail
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_stress_without_scenarios() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    payload["outcomes"][0]["stress_validation"] = {  # type: ignore[index]
+        "accepted": True,
+        "worst_realized_pnl": 1.0,
+        "worst_max_drawdown": 0.01,
+    }
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "stress validation" and check.path.endswith(".scenario_count")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_temporal_without_statistical_edge() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    robustness = _accepted_robustness_validation()
+    del robustness["statistical_edge_accepted"]
+    payload["outcomes"][0]["robustness_validation"] = robustness  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "temporal robustness" and check.path.endswith(".statistical_edge_accepted")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_inconsistent_temporal_window_counts() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    robustness = _accepted_robustness_validation()
+    robustness["accepted_windows"] = 6
+    robustness["window_count"] = 5
+    payload["outcomes"][0]["robustness_validation"] = robustness  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "temporal robustness" and "within window count" in check.detail
         for check in report.checks
     )
 
@@ -492,8 +563,8 @@ def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
                     "coverage_ratio": 1.0,
                     "gap_count": 0,
                 },
-                "stress_validation": {"accepted": True, "worst_max_drawdown": 0.01},
-                "robustness_validation": {"accepted": True, "worst_max_drawdown": 0.02},
+                "stress_validation": _accepted_stress_validation(),
+                "robustness_validation": _accepted_robustness_validation(),
             }
         ],
     }
@@ -528,8 +599,7 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
                     "gap_count": 0,
                 },
                 "stress_validation": {
-                    "accepted": True,
-                    "worst_max_drawdown": 0.01,
+                    **_accepted_stress_validation(),
                     "objectives": [
                         {
                             "objective": "regular",
@@ -549,11 +619,7 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
                         }
                     ],
                 },
-                "robustness_validation": {
-                    "accepted": True,
-                    "worst_max_drawdown": 0.02,
-                    "statistical_edge_accepted": True,
-                },
+                "robustness_validation": _accepted_robustness_validation(),
             }
         ],
     }
@@ -588,8 +654,7 @@ def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downsid
                     "gap_count": 0,
                 },
                 "stress_validation": {
-                    "accepted": True,
-                    "worst_max_drawdown": 0.01,
+                    **_accepted_stress_validation(),
                     "objectives": [
                         {
                             "objective": "conservative",
@@ -611,11 +676,7 @@ def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downsid
                         }
                     ],
                 },
-                "robustness_validation": {
-                    "accepted": True,
-                    "worst_max_drawdown": 0.02,
-                    "statistical_edge_accepted": True,
-                },
+                "robustness_validation": _accepted_robustness_validation(),
             }
         ],
     }
@@ -665,8 +726,7 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> Non
                     },
                 },
                 "stress_validation": {
-                    "accepted": True,
-                    "worst_max_drawdown": 0.01,
+                    **_accepted_stress_validation(),
                     "market_edge": {
                         "accepted": True,
                         "reason": None,
@@ -677,9 +737,7 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> Non
                     },
                 },
                 "robustness_validation": {
-                    "accepted": True,
-                    "worst_max_drawdown": 0.02,
-                    "statistical_edge_accepted": True,
+                    **_accepted_robustness_validation(),
                     "market_edge": {
                         "accepted": True,
                         "reason": None,

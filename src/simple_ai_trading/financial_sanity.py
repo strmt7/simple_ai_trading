@@ -616,6 +616,154 @@ def _selection_risk_checks(
     return checks
 
 
+def _positive_numeric_check(
+    payload: Mapping[str, Any],
+    *,
+    key: str,
+    path: str,
+    label: str,
+) -> FinancialSanityCheck:
+    parsed = _finite(payload.get(key))
+    return _check(
+        "ok" if parsed is not None and parsed > 0.0 else "block",
+        label,
+        f"{key}={parsed}",
+        path=f"{path}.{key}",
+        metric=parsed if parsed is not None else "missing",
+        limit=">0",
+    )
+
+
+def _nonnegative_numeric_check(
+    payload: Mapping[str, Any],
+    *,
+    key: str,
+    path: str,
+    label: str,
+) -> FinancialSanityCheck:
+    parsed = _finite(payload.get(key))
+    return _check(
+        "ok" if parsed is not None and parsed >= 0.0 else "block",
+        label,
+        f"{key}={parsed}",
+        path=f"{path}.{key}",
+        metric=parsed if parsed is not None else "missing",
+        limit=">=0",
+    )
+
+
+def _stress_validation_checks(payload: Mapping[str, Any], *, path: str) -> list[FinancialSanityCheck]:
+    checks = [
+        _positive_numeric_check(payload, key="scenario_count", path=path, label="stress validation"),
+        _nonnegative_numeric_check(payload, key="worst_realized_pnl", path=path, label="stress validation"),
+        _range_check(
+            payload.get("worst_max_drawdown"),
+            path=f"{path}.worst_max_drawdown",
+            label="worst_max_drawdown",
+            low=0.0,
+            high=1.0,
+            hard_low=0.0,
+            hard_high=1.0,
+        ),
+    ]
+    accepted_objectives = _finite(payload.get("accepted_objectives"))
+    objective_count = _finite(payload.get("objective_count"))
+    if accepted_objectives is not None:
+        checks.append(
+            _check(
+                "ok" if accepted_objectives > 0.0 else "block",
+                "stress validation",
+                f"accepted_objectives={accepted_objectives}",
+                path=f"{path}.accepted_objectives",
+                metric=accepted_objectives,
+                limit=">0",
+            )
+        )
+    if accepted_objectives is not None and objective_count is not None:
+        checks.append(
+            _check(
+                "ok" if 0.0 <= accepted_objectives <= objective_count else "block",
+                "stress validation",
+                "accepted objectives within objective count",
+                path=f"{path}.accepted_objectives",
+                metric=accepted_objectives,
+                limit=f"0-{objective_count:g}",
+            )
+        )
+    return checks
+
+
+def _robustness_validation_checks(payload: Mapping[str, Any], *, path: str) -> list[FinancialSanityCheck]:
+    checks = [
+        _positive_numeric_check(payload, key="window_count", path=path, label="temporal robustness"),
+        _positive_numeric_check(payload, key="accepted_windows", path=path, label="temporal robustness"),
+        _range_check(
+            payload.get("accepted_window_rate"),
+            path=f"{path}.accepted_window_rate",
+            label="accepted_window_rate",
+            low=0.0,
+            high=1.0,
+            hard_low=0.0,
+            hard_high=1.0,
+        ),
+        _range_check(
+            payload.get("worst_max_drawdown"),
+            path=f"{path}.worst_max_drawdown",
+            label="worst_max_drawdown",
+            low=0.0,
+            high=1.0,
+            hard_low=0.0,
+            hard_high=1.0,
+        ),
+        _range_check(
+            payload.get("worst_sign_test_p_value"),
+            path=f"{path}.worst_sign_test_p_value",
+            label="worst_sign_test_p_value",
+            low=0.0,
+            high=1.0,
+            hard_low=0.0,
+            hard_high=1.0,
+        ),
+    ]
+    if payload.get("statistical_edge_accepted") is not True:
+        checks.append(
+            _check(
+                "block",
+                "temporal robustness",
+                "accepted outcome lacks accepted statistical-edge evidence",
+                path=f"{path}.statistical_edge_accepted",
+                metric=payload.get("statistical_edge_accepted"),
+                limit=True,
+            )
+        )
+    checks.append(_nonnegative_numeric_check(payload, key="worst_realized_pnl", path=path, label="temporal robustness"))
+    bootstrap_lower = _finite(payload.get("worst_bootstrap_lower_mean_return"))
+    checks.append(
+        _check(
+            "ok" if bootstrap_lower is not None else "block",
+            "temporal robustness",
+            f"worst_bootstrap_lower_mean_return={bootstrap_lower}",
+            path=f"{path}.worst_bootstrap_lower_mean_return",
+            metric=bootstrap_lower if bootstrap_lower is not None else "missing",
+            limit="finite",
+        )
+    )
+    window_count = _finite(payload.get("window_count"))
+    accepted_windows = _finite(payload.get("accepted_windows"))
+    if window_count is not None and accepted_windows is not None:
+        checks.append(
+            _check(
+                "ok" if 0.0 <= accepted_windows <= window_count else "block",
+                "temporal robustness",
+                "accepted windows within window count",
+                path=f"{path}.accepted_windows",
+                metric=accepted_windows,
+                limit=f"0-{window_count:g}",
+            )
+        )
+    return checks
+
+
 def _iter_market_edge_reports(payload: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
     reports: list[tuple[str, Mapping[str, Any]]] = []
     direct = payload.get("market_edge")
@@ -954,22 +1102,11 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 continue
             if field_value.get("accepted") is not True:
                 checks.append(_check("block", field_name, "accepted outcome has failed validation", path=f"{prefix}.{field_name}.accepted"))
-            if field_name == "robustness_validation" and field_value.get("statistical_edge_accepted") is False:
-                checks.append(_check("block", field_name, "accepted outcome failed statistical-edge evidence", path=f"{prefix}.{field_name}.statistical_edge_accepted"))
+            if field_name == "stress_validation":
+                checks.extend(_stress_validation_checks(field_value, path=f"{prefix}.{field_name}"))
+            if field_name == "robustness_validation":
+                checks.extend(_robustness_validation_checks(field_value, path=f"{prefix}.{field_name}"))
             checks.extend(_market_edge_checks(field_value, path=f"{prefix}.{field_name}"))
-            drawdown_key = "worst_max_drawdown"
-            if drawdown_key in field_value:
-                checks.append(
-                    _range_check(
-                        field_value.get(drawdown_key),
-                        path=f"{prefix}.{field_name}.{drawdown_key}",
-                        label=drawdown_key,
-                        low=0.0,
-                        high=1.0,
-                        hard_low=0.0,
-                        hard_high=1.0,
-                    )
-                )
         ai_uplift = outcome.get("ai_uplift")
         if isinstance(ai_uplift, Mapping):
             ai_uplift_accepted = ai_uplift.get("accepted") is True

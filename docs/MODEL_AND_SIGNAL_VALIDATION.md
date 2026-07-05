@@ -44,6 +44,11 @@ The gate enforces:
 - accepted outcomes require passed selection-risk evidence for each accepted
   objective, including positive deflated score, positive trial count, no
   rejection reasons, and passed/skipped overfit diagnostics,
+- accepted stress validation must include nonzero scenario evidence, finite
+  nonnegative worst P&L, and bounded drawdown; accepted temporal robustness must
+  include nonzero window evidence, consistent accepted-window counts, bounded
+  accepted-window rate and sign-test p-value, finite bootstrap lower mean
+  return, and explicit statistical-edge acceptance,
 - accepted outcomes require an accepted portfolio-risk report; missing or failed
   portfolio evidence blocks the artifact,
 - accepted portfolio symbol evidence with non-empty, unique, internally

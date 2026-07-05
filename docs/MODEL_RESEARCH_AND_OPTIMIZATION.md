@@ -352,6 +352,9 @@ analytically incoherent artifacts before they reach an operator:
 - accepted outcomes must include passed selection-risk evidence for every
   accepted objective; missing reports, nonpositive deflated scores, rejection
   reasons, failed PBO diagnostics, or unknown overfit status block promotion,
+- accepted stress and temporal robustness reports must carry measured
+  scenario/window/statistical-edge evidence; an accepted flag without those
+  measurements blocks promotion,
 - accepted coverage cannot have failed integrity, detected gaps, or impossible
   coverage ratios,
 - accepted outcomes cannot bypass portfolio risk; missing or failed
