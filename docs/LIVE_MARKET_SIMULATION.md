@@ -223,6 +223,11 @@ Futures safety:
   Signed non-dry operation also blocks when the stop-loss percentage is disabled;
   paper mode keeps these as explicit warnings for research only.
 - Futures backtests use a conservative isolated-margin liquidation proxy derived from the same maintenance-margin concept used by Binance futures: `margin_balance = isolated_margin + unrealized_pnl`; if that balance is less than or equal to `current_notional * liquidation_buffer_pct`, the isolated margin is treated as lost, the position is cleared, `liquidation_events` is incremented, and no threshold, objective, market-edge, stress, temporal, or optimization report can be accepted.
+- Default backtest financial sanity also blocks any liquidation summary flag,
+  positive liquidation event count, positive liquidation loss, or liquidation
+  exit reason before higher-level model or optimization promotion is considered.
+  The simulator's internal accounting audit records liquidation scenarios as
+  warning-level failure evidence so tests and reports can inspect the loss path.
 - The proxy deliberately fails closed when historical rows gap through a liquidation boundary. It does not assume a favorable stop-loss fill after the maintenance-plus-buffer condition has already been breached.
 - Leverage is subordinate to stop-loss-sized position sizing, position caps, daily/session loss budgets, exchange brackets, and reconciliation gates. A higher default does not authorize larger loss-at-stop budgets.
 - Leverage is also subordinate to the per-asset allocation cap; a 5x, 10x, 15x,
