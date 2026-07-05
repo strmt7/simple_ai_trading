@@ -96,6 +96,8 @@ failed market-edge evidence. The report captures:
 - profit-factor and expectancy evidence when available,
 - sign-test p-value over trade/window samples,
 - bootstrap lower mean return,
+- downside-return risk ratio using downside deviation, so a profitable result
+  with one dominating loss cannot pass only because average P&L is positive,
 - failed checks as stable machine-readable strings.
 
 This makes "edge over the average market" explicit: a model must show audited
