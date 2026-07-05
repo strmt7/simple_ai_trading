@@ -5,6 +5,63 @@
   "compute_backend_reason": "",
   "compute_backend_requested": "auto",
   "configured_leverage": 5.0,
+  "critical_analysis": {
+    "accepted_symbol_count": 0,
+    "failures": [
+      "no_accepted_symbols",
+      "no_closed_trades",
+      "all_symbols_zero_closed_trades",
+      "all_symbols_nonpositive_roi",
+      "no_profitable_symbols"
+    ],
+    "interpretation": "invalid_no_trade_abstention: strategy ROI is flat because no holdout trades closed; this is not evidence of profitability even when the passive baseline lost money.",
+    "mean_baseline_roi_pct": -30.21657312914595,
+    "mean_roi_pct": 0.0,
+    "median_roi_pct": 0.0,
+    "negative_roi_symbol_count": 0,
+    "negative_roi_symbols": [],
+    "nonpositive_roi_symbol_count": 13,
+    "nonpositive_roi_symbols": [
+      "ETHUSDT",
+      "1000PEPEUSDT",
+      "1000BONKUSDT",
+      "JTOUSDT",
+      "INJUSDT",
+      "IDUSDT",
+      "CRVUSDT",
+      "EGLDUSDT",
+      "1000LUNCUSDT",
+      "ARUSDT",
+      "TURBOUSDT",
+      "JASMYUSDT",
+      "ETHWUSDT"
+    ],
+    "positive_roi_symbol_count": 0,
+    "profitable_symbol_count": 0,
+    "symbol_count": 13,
+    "total_closed_trades": 0,
+    "total_trades": 0,
+    "verdict": "fail",
+    "warnings": [
+      "some_symbols_zero_closed_trades"
+    ],
+    "zero_trade_symbol_count": 13,
+    "zero_trade_symbols": [
+      "ETHUSDT",
+      "1000PEPEUSDT",
+      "1000BONKUSDT",
+      "JTOUSDT",
+      "INJUSDT",
+      "IDUSDT",
+      "CRVUSDT",
+      "EGLDUSDT",
+      "1000LUNCUSDT",
+      "ARUSDT",
+      "TURBOUSDT",
+      "JASMYUSDT",
+      "ETHWUSDT"
+    ]
+  },
   "data_health": [
     {
       "archive_status_counts": {
@@ -257,6 +314,7 @@
   "data_health_path": "docs/optimization/round-012-futures-13-symbol-health-gated-conservative-5x-realdata/data/data-health.json",
   "data_source": "Binance public market data stored in SQLite",
   "effective_leverage": 5.0,
+  "evidence_verdict": "fail",
   "explicit_symbols": [],
   "generated_at_utc": "2026-07-05T04:43:23.470408Z",
   "health_filtered_symbol_selection": true,
@@ -820,6 +878,7 @@
   "portfolio_timeline_csv_path": "docs/optimization/round-012-futures-13-symbol-health-gated-conservative-5x-realdata/data/portfolio-timeline.csv.gz",
   "progress": {
     "accepted_symbol_count": 0,
+    "critical_verdict": "fail",
     "generated_at_utc": "2026-07-05T04:43:23.467411Z",
     "mean_baseline_roi_pct": -30.21657312914595,
     "mean_low_liquidity_sample_rate_pct": 20.915164976023753,
@@ -827,10 +886,13 @@
     "mean_roi_pct": 0.0,
     "median_market_edge_pct": 33.22084727030542,
     "median_roi_pct": 0.0,
+    "profitable_symbol_count": 0,
     "round_id": "round-012-futures-13-symbol-health-gated-conservative-5x-realdata",
     "symbol_count": 13,
+    "total_closed_trades": 0,
     "total_trades": 0,
-    "worst_max_drawdown_pct": 0.0
+    "worst_max_drawdown_pct": 0.0,
+    "zero_trade_symbol_count": 13
   },
   "progress_csv_path": "docs/optimization/round-012-futures-13-symbol-health-gated-conservative-5x-realdata/data/round-progress.csv",
   "quote_asset": "USDT",

@@ -113,6 +113,9 @@ class BacktestEvidence:
     threshold_calibration_score: float | None
     threshold_calibration_pnl: float | None
     threshold_calibration_trades: int
+    decision_threshold: float | None
+    model_quality_warnings: str
+    meta_label_policy_reason: str | None
     starting_cash: float
     ending_cash: float
     realized_pnl: float
@@ -139,6 +142,75 @@ class BacktestEvidence:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+
+def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, object]:
+    """Return a fail-closed interpretation of an optimization round.
+
+    A round is not useful trading evidence merely because it completed. It must
+    actually trade, produce accepted symbols, and show positive net outcomes.
+    """
+
+    symbol_count = len(metrics)
+    accepted = [metric for metric in metrics if metric.accepted]
+    total_trades = sum(int(metric.trades) for metric in metrics)
+    total_closed_trades = sum(int(metric.closed_trades) for metric in metrics)
+    profitable_symbols = [metric for metric in metrics if float(metric.realized_pnl) > 0.0]
+    positive_roi_symbols = [metric for metric in metrics if float(metric.roi_pct) > 0.0]
+    zero_trade_symbols = [metric.symbol for metric in metrics if int(metric.closed_trades) <= 0]
+    nonpositive_roi_symbols = [metric.symbol for metric in metrics if float(metric.roi_pct) <= 0.0]
+    negative_roi_symbols = [metric.symbol for metric in metrics if float(metric.roi_pct) < 0.0]
+    failures: list[str] = []
+    warnings: list[str] = []
+    if symbol_count <= 0:
+        failures.append("no_symbols_completed")
+    if not accepted:
+        failures.append("no_accepted_symbols")
+    if total_closed_trades <= 0:
+        failures.append("no_closed_trades")
+    if symbol_count > 0 and len(zero_trade_symbols) == symbol_count:
+        failures.append("all_symbols_zero_closed_trades")
+    if symbol_count > 0 and len(nonpositive_roi_symbols) == symbol_count:
+        failures.append("all_symbols_nonpositive_roi")
+    if not profitable_symbols:
+        failures.append("no_profitable_symbols")
+    if negative_roi_symbols:
+        warnings.append("some_symbols_negative_roi")
+    if zero_trade_symbols:
+        warnings.append("some_symbols_zero_closed_trades")
+    if failures:
+        verdict = "fail"
+        if total_closed_trades <= 0:
+            interpretation = (
+                "invalid_no_trade_abstention: strategy ROI is flat because no holdout trades closed; "
+                "this is not evidence of profitability even when the passive baseline lost money."
+            )
+        else:
+            interpretation = "failed_optimization_round: completed backtests did not satisfy trading evidence gates."
+    else:
+        verdict = "pass"
+        interpretation = "promotion_candidate: round has accepted symbols, closed trades, and positive net outcomes."
+    return {
+        "verdict": verdict,
+        "interpretation": interpretation,
+        "failures": failures,
+        "warnings": warnings,
+        "symbol_count": symbol_count,
+        "accepted_symbol_count": len(accepted),
+        "profitable_symbol_count": len(profitable_symbols),
+        "positive_roi_symbol_count": len(positive_roi_symbols),
+        "zero_trade_symbol_count": len(zero_trade_symbols),
+        "nonpositive_roi_symbol_count": len(nonpositive_roi_symbols),
+        "negative_roi_symbol_count": len(negative_roi_symbols),
+        "total_trades": total_trades,
+        "total_closed_trades": total_closed_trades,
+        "mean_roi_pct": statistics.mean([metric.roi_pct for metric in metrics]) if metrics else 0.0,
+        "median_roi_pct": statistics.median([metric.roi_pct for metric in metrics]) if metrics else 0.0,
+        "mean_baseline_roi_pct": statistics.mean([metric.buy_hold_roi_pct for metric in metrics]) if metrics else 0.0,
+        "zero_trade_symbols": zero_trade_symbols,
+        "nonpositive_roi_symbols": nonpositive_roi_symbols,
+        "negative_roi_symbols": negative_roi_symbols,
+    }
 
 
 @dataclass(frozen=True)
@@ -980,7 +1052,12 @@ def _evaluate_round_model_candidate(
 ) -> RoundModelCandidateResult:
     if status_callback is not None:
         status_callback("feature_generation_started", {"candle_count": len(candles)})
-    rows = make_advanced_rows(candles, candidate.feature_cfg, compute_backend=compute_backend)
+    rows = make_advanced_rows(
+        candles,
+        candidate.feature_cfg,
+        compute_backend=compute_backend,
+        require_accelerated=require_gpu,
+    )
     if status_callback is not None:
         status_callback(
             "feature_generation_complete",
@@ -1617,6 +1694,18 @@ def build_round_evidence(
                     else None
                 ),
                 threshold_calibration_trades=int(getattr(model, "threshold_calibration_trades", 0) or 0),
+                decision_threshold=(
+                    float(getattr(model, "decision_threshold"))
+                    if getattr(model, "decision_threshold", None) is not None
+                    else None
+                ),
+                model_quality_warnings="; ".join(str(item) for item in getattr(model, "quality_warnings", []) or []),
+                meta_label_policy_reason=(
+                    str(getattr(model, "meta_label_policy", {}).get("reason"))
+                    if isinstance(getattr(model, "meta_label_policy", None), dict)
+                    and getattr(model, "meta_label_policy", {}).get("reason")
+                    else None
+                ),
                 starting_cash=float(result.starting_cash),
                 ending_cash=float(result.ending_cash),
                 realized_pnl=float(result.realized_pnl),
@@ -1673,6 +1762,9 @@ def build_round_evidence(
                 threshold_calibration_score=None,
                 threshold_calibration_pnl=None,
                 threshold_calibration_trades=0,
+                decision_threshold=None,
+                model_quality_warnings="",
+                meta_label_policy_reason=None,
                 starting_cash=float(starting_cash),
                 ending_cash=float(starting_cash),
                 realized_pnl=0.0,
@@ -1727,6 +1819,7 @@ def build_round_evidence(
         ),
     )
     accepted_metrics = [metric for metric in metrics if metric.accepted]
+    critical_analysis = critical_round_analysis(metrics)
     tracked_artifacts = [
         str(paths.progress_csv_path).replace("\\", "/"),
         str(paths.metrics_csv_path).replace("\\", "/"),
@@ -1753,6 +1846,10 @@ def build_round_evidence(
         "median_market_edge_pct": statistics.median([metric.market_edge_pct for metric in metrics]) if metrics else 0.0,
         "worst_max_drawdown_pct": max([metric.max_drawdown_pct for metric in metrics], default=0.0),
         "total_trades": sum(metric.trades for metric in metrics),
+        "total_closed_trades": sum(metric.closed_trades for metric in metrics),
+        "zero_trade_symbol_count": int(critical_analysis["zero_trade_symbol_count"]),
+        "profitable_symbol_count": int(critical_analysis["profitable_symbol_count"]),
+        "critical_verdict": str(critical_analysis["verdict"]),
         "mean_low_liquidity_sample_rate_pct": statistics.mean([metric.low_liquidity_sample_rate_pct for metric in metrics]) if metrics else 0.0,
     }
     _write_csv(paths.progress_csv_path, [progress], tuple(progress.keys()))
@@ -1761,6 +1858,8 @@ def build_round_evidence(
         "round_id": round_id,
         "generated_at_utc": _utc_now(),
         "artifact_class": "exchange_sourced_backtest_graph_data",
+        "evidence_verdict": str(critical_analysis["verdict"]),
+        "critical_analysis": critical_analysis,
         "tracked_repo_artifact": True,
         "data_source": "Binance public market data stored in SQLite",
         "market_db_path": str(paths.market_db_path).replace("\\", "/"),
@@ -1819,6 +1918,7 @@ __all__ = [
     "EvidencePaths",
     "SelectedSymbol",
     "build_round_evidence",
+    "critical_round_analysis",
     "fetch_full_history",
     "effective_leverage_for_market",
     "make_evidence_paths",

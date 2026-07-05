@@ -287,6 +287,18 @@ regular requires profit factor above 1.05 with no loss streak above 5, and
 aggressive requires profit factor at least 1.00 with no loss streak above 8.
 All three require positive expectancy.
 
+Optimization-round reports must also pass a critical-analysis layer. A round
+that completes but closes zero trades is classified as
+`invalid_no_trade_abstention`; a flat strategy equity line is not profitability
+evidence, even when the passive baseline is negative. Reports also fail when
+there are no accepted symbols, no profitable symbols, or all strategy ROI values
+are nonpositive. `tools/optimization_round.py` returns a nonzero exit code for
+those verdicts so automation cannot accidentally treat a failed research round
+as a successful optimization. Per-symbol metrics include threshold source,
+decision threshold, model quality warnings, and meta-label policy reason so a
+future no-trade round can distinguish ordinary low confidence from an explicit
+fail-closed selection guard.
+
 ## Financial Sanity Gates
 
 The repo now applies a separate financial-sanity layer before live-style model

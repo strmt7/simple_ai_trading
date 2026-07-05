@@ -196,7 +196,7 @@ Hard capital controls are separate from ROI goals. The conservative profile defa
 
 ## Optimization Evidence
 
-Round-level implementation notes live under `docs/optimization/`. This repo no longer publishes ROI, P&L, drawdown, or chart claims unless they come from exchange-sourced backtests or signed testnet/paper artifacts with the provenance required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md). Round 001 adds market-quality regime features and risk-aware promotion checks, Round 002 turns closed-trade learning feedback into a promotion gate, and Round 003 adds full-history/data-coverage truth controls plus API-efficiency telemetry. Performance claims must be regenerated from real source data before being documented.
+Round-level implementation notes live under `docs/optimization/`. This repo no longer publishes ROI, P&L, drawdown, or chart claims unless they come from exchange-sourced backtests or signed testnet/paper artifacts with the provenance required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md). Optimization reports now include `critical_analysis`; zero-trade abstention, no accepted symbols, all nonpositive strategy ROI, or no profitable symbols are failed evidence even when the passive baseline lost money. The manual optimization tool exits nonzero for those verdicts. Round 001 adds market-quality regime features and risk-aware promotion checks, Round 002 turns closed-trade learning feedback into a promotion gate, and Round 003 adds full-history/data-coverage truth controls plus API-efficiency telemetry. Performance claims must be regenerated from real source data before being documented.
 
 ## Live-Market Simulation
 

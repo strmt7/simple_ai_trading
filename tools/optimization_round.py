@@ -124,7 +124,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"metrics: {report['metrics_csv_path']}")
     print(f"portfolio timeline: {report['portfolio_timeline_csv_path']}")
     print(f"progress: {report['progress_csv_path']}")
-    return 0
+    critical = report.get("critical_analysis")
+    if isinstance(critical, dict):
+        print(f"critical verdict: {critical.get('verdict')}")
+        failures = critical.get("failures")
+        if failures:
+            print(f"critical failures: {', '.join(str(item) for item in failures)}", file=sys.stderr)
+        if critical.get("verdict") != "pass":
+            return 2
+    accepted_count = int(report.get("progress", {}).get("accepted_symbol_count", 0)) if isinstance(report.get("progress"), dict) else 0
+    return 0 if accepted_count > 0 else 2
 
 
 if __name__ == "__main__":

@@ -4,9 +4,9 @@ Generated on 2026-07-05 from the local exchange-sourced market database. This ro
 
 ## Result
 
-Round 012 is a failed optimization round. It completed all 13 symbols without CPU fallback, but accepted 0 symbols because every holdout produced fewer than 5 closed trades and no realized profit.
+Round 012 is a failed optimization round. It completed all 13 symbols without CPU fallback, but accepted 0 symbols because every holdout produced zero closed trades and no realized profit.
 
-This is intentionally fail-closed evidence. The no-trade result must not be represented as a profitable strategy or used for live trading.
+This is intentionally fail-closed evidence. The no-trade result must not be represented as a profitable strategy or used for live trading. The correct interpretation is `invalid_no_trade_abstention`: strategy ROI is flat only because the bot never entered and closed a trade, even though the passive baseline lost money.
 
 ## Portfolio Summary
 
@@ -46,4 +46,3 @@ This is intentionally fail-closed evidence. The no-trade result must not be repr
 | TURBOUSDT | 2025-12-22T15:58:59Z | 2026-06-30T23:51:59Z | 0.52 | 274,074 | 0.00% | -27.09% | 0 | `closed_trades<5; realized_pnl<=0.0` |
 | JASMYUSDT | 2025-06-12T18:58:59Z | 2026-06-30T23:51:59Z | 1.05 | 551,814 | 0.00% | -34.86% | 0 | `closed_trades<5; realized_pnl<=0.0` |
 | ETHWUSDT | 2025-11-06T15:14:59Z | 2026-06-30T23:51:59Z | 0.65 | 340,358 | 0.00% | -34.57% | 0 | `closed_trades<5; realized_pnl<=0.0` |
-
