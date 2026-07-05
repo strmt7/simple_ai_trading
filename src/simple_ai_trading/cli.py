@@ -41,6 +41,7 @@ from .assets import (
 )
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
 from .binance_archive import (
+    archive_listing_items_by_url,
     archive_url_period,
     filter_archive_urls_by_period,
     ingest_archive_urls,
@@ -4730,20 +4731,28 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             errors.append({"symbol": symbol, "error": f"list_failed:{exc}"})
             continue
         listed_count = len(urls)
+        metadata_by_url = archive_listing_items_by_url(urls)
+        listed_bytes = sum(int(item.size_bytes) for item in metadata_by_url.values())
         try:
             urls = filter_archive_urls_by_period(urls, start_period=start_period, end_period=end_period)
         except ValueError as exc:
             errors.append({"symbol": symbol, "error": f"period_filter_failed:{exc}"})
             continue
         filtered_count = len(urls)
+        filtered_bytes = sum(int(metadata_by_url[url].size_bytes) for url in urls if url in metadata_by_url)
         if max_files_int is not None:
             urls = urls[:max_files_int]
+        selected_bytes = sum(int(metadata_by_url[url].size_bytes) for url in urls if url in metadata_by_url)
         periods = [archive_url_period(url) for url in urls]
         archive_plans.append({
             "symbol": symbol,
             "listed_files": int(listed_count),
+            "listed_bytes": int(listed_bytes),
             "filtered_files": int(filtered_count),
+            "filtered_bytes": int(filtered_bytes),
             "selected_files": int(len(urls)),
+            "selected_bytes": int(selected_bytes),
+            "size_metadata_available": bool(metadata_by_url),
             "first_period": next((period for period in periods if period), ""),
             "last_period": next((period for period in reversed(periods) if period), ""),
             "first_url": urls[0] if urls else "",
@@ -4791,6 +4800,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         "end_period": end_period or "",
         "files": len(all_results),
         "planned_files": sum(int(item["selected_files"]) for item in archive_plans),
+        "planned_bytes": sum(int(item["selected_bytes"]) for item in archive_plans),
         "rows_read": sum(item.rows_read for item in all_results),
         "rows_inserted": sum(item.rows_inserted for item in all_results),
         "bytes_downloaded": sum(item.bytes_downloaded for item in all_results),
@@ -4805,7 +4815,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         print(
             "archive-sync: "
             f"status={payload['status']} symbols={payload['symbol_count']} interval={interval} data_type={data_type} market={market_type} "
-            f"planned_files={payload['planned_files']} files={payload['files']} rows_read={payload['rows_read']} "
+            f"planned_files={payload['planned_files']} planned_bytes={payload['planned_bytes']} files={payload['files']} rows_read={payload['rows_read']} "
             f"rows_inserted={payload['rows_inserted']} bytes={payload['bytes_downloaded']}"
         )
         if plan_only:

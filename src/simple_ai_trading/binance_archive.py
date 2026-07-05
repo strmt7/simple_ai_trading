@@ -52,6 +52,28 @@ class ArchiveIngestResult:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class ArchiveListingItem:
+    url: str
+    key: str
+    period: str
+    size_bytes: int = 0
+    last_modified: str = ""
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class _ListingEntry:
+    key: str
+    size_bytes: int = 0
+    last_modified: str = ""
+
+
+_ARCHIVE_LISTING_ITEM_CACHE: dict[str, ArchiveListingItem] = {}
+
+
 def _archive_market_segment(market_type: str) -> str:
     market = str(market_type or "spot").lower()
     if market == "spot":
@@ -148,8 +170,51 @@ def list_archive_urls(
     timeout: int = 20,
     html_loader: Callable[[str], str] | None = None,
 ) -> list[str]:
+    return [
+        item.url
+        for item in list_archive_items(
+            symbol=symbol,
+            interval=interval,
+            market_type=market_type,
+            cadence=cadence,
+            data_type=data_type,
+            base_url=base_url,
+            timeout=timeout,
+            html_loader=html_loader,
+        )
+    ]
+
+
+def _archive_url_from_key(origin: str, key: str) -> str:
+    if key.startswith("http://") or key.startswith("https://"):
+        return key
+    return f"{origin}/{key.lstrip('/')}"
+
+
+def _remember_archive_listing_items(items: Sequence[ArchiveListingItem]) -> None:
+    for item in items:
+        _ARCHIVE_LISTING_ITEM_CACHE[item.url] = item
+
+
+def archive_listing_items_by_url(urls: Sequence[str]) -> dict[str, ArchiveListingItem]:
+    """Return cached official listing metadata for URLs from recent listings."""
+
+    return {url: _ARCHIVE_LISTING_ITEM_CACHE[url] for url in urls if url in _ARCHIVE_LISTING_ITEM_CACHE}
+
+
+def list_archive_items(
+    *,
+    symbol: str,
+    interval: str,
+    market_type: str = "spot",
+    cadence: str = "monthly",
+    data_type: str = "klines",
+    base_url: str = BINANCE_ARCHIVE_BASE_URL,
+    timeout: int = 20,
+    html_loader: Callable[[str], str] | None = None,
+) -> list[ArchiveListingItem]:
     origin = base_url.rstrip("/").removesuffix("/data")
-    urls: list[str] = []
+    items: list[ArchiveListingItem] = []
     marker: str | None = None
     while True:
         listing = archive_listing_url(
@@ -166,16 +231,30 @@ def list_archive_urls(
                 listing_text = response.read().decode("utf-8", errors="ignore")
         else:
             listing_text = html_loader(listing)
-        keys, next_marker, truncated = _parse_listing_keys(listing_text)
-        for key in keys:
+        entries, next_marker, truncated = _parse_listing_entries(listing_text)
+        keys = [entry.key for entry in entries]
+        for entry in entries:
+            key = entry.key
             if key.endswith(".zip") and not key.endswith(".zip.CHECKSUM"):
-                urls.append(f"{origin}/{key}")
+                url = _archive_url_from_key(origin, key)
+                items.append(
+                    ArchiveListingItem(
+                        url=url,
+                        key=key,
+                        period=archive_url_period(url),
+                        size_bytes=max(0, int(entry.size_bytes)),
+                        last_modified=entry.last_modified,
+                    )
+                )
         if not truncated:
             break
         marker = next_marker or (keys[-1] if keys else None)
         if marker is None:
             break
-    return sorted(dict.fromkeys(urls))
+    unique = {item.url: item for item in items}
+    selected = [unique[url] for url in sorted(unique)]
+    _remember_archive_listing_items(selected)
+    return selected
 
 
 def archive_url_period(url: str) -> str:
@@ -272,19 +351,39 @@ def _xml_text(element: object, tag: str) -> str:
     return str(found.text or "") if found is not None else ""
 
 
-def _parse_listing_keys(listing_text: str) -> tuple[list[str], str | None, bool]:
+def _parse_int(value: object, default: int = 0) -> int:
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return parsed if parsed >= 0 else default
+
+
+def _parse_listing_entries(listing_text: str) -> tuple[list[_ListingEntry], str | None, bool]:
     try:
         root = ElementTree.fromstring(listing_text)
     except ElementTree.ParseError:
         links = [match.group("href") for match in _ZIP_LINK_PATTERN.finditer(listing_text)]
-        return links, None, False
-    keys: list[str] = []
+        return [_ListingEntry(key=link) for link in links], None, False
+    entries: list[_ListingEntry] = []
     for contents in root.findall(".//{*}Contents"):
         key = _xml_text(contents, "Key")
         if key:
-            keys.append(key)
+            entries.append(
+                _ListingEntry(
+                    key=key,
+                    size_bytes=_parse_int(_xml_text(contents, "Size")),
+                    last_modified=_xml_text(contents, "LastModified"),
+                )
+            )
     next_marker = _xml_text(root, "NextMarker") or None
     truncated = _xml_text(root, "IsTruncated").strip().lower() == "true"
+    return entries, next_marker, truncated
+
+
+def _parse_listing_keys(listing_text: str) -> tuple[list[str], str | None, bool]:
+    entries, next_marker, truncated = _parse_listing_entries(listing_text)
+    keys = [entry.key for entry in entries]
     return keys, next_marker, truncated
 
 
@@ -685,7 +784,9 @@ def ingest_archive_urls(
 
 __all__ = [
     "ArchiveIngestResult",
+    "ArchiveListingItem",
     "BINANCE_ARCHIVE_BASE_URL",
+    "archive_listing_items_by_url",
     "archive_directory_url",
     "archive_file_url",
     "archive_listing_url",
@@ -695,6 +796,7 @@ __all__ = [
     "filter_archive_urls_by_period",
     "ingest_archive_url",
     "ingest_archive_urls",
+    "list_archive_items",
     "list_archive_urls",
     "validate_archive_period_window",
 ]

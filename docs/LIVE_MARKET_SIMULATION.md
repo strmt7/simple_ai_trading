@@ -37,7 +37,8 @@ Execution cost is symbol-specific where market data exists:
   automatic without relying on stale liquidity assumptions. Large second-level
   backfills should use `--start-period`, `--end-period`, and `--plan-only`
   first; the plan reports listed, filtered, selected, first, and last archive
-  periods before any ZIP download starts.
+  periods plus official S3 byte estimates when available before any ZIP
+  download starts.
 - Archive downloads compute SHA-256 locally and, by default, verify Binance's
   `.CHECKSUM` sidecar when it is available. A checksum mismatch fails before
   any candle rows are written. `--require-checksum` makes missing sidecars a
