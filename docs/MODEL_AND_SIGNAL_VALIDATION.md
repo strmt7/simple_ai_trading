@@ -65,6 +65,11 @@ The gate enforces:
   metrics for realized P&L, ROI, drawdown, expectancy, profit factor, trade
   count, win rate, liquidation count, loss streak, and downside return/risk,
   plus model-size evidence that satisfies the uplift policy,
+- accepted AI uplift evidence must also include paired holdout statistical
+  evidence: sample count, positive paired-delta count/rate, one-sided sign-test
+  p-value, and positive mean paired delta. Missing, weak, or nonpositive
+  paired evidence blocks the artifact even when aggregate AI P&L is higher.
+  Counts, rates, and sign-test p-values must be internally consistent,
 - bounded drawdown, CVaR, deployed weight, plain effective symbol count,
   correlation-adjusted effective symbol count, correlation, and cluster
   exposure metrics.

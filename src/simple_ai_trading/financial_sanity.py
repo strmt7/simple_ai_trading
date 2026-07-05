@@ -27,6 +27,10 @@ _AI_UPLIFT_REQUIRED_METRICS = (
     "downside_return_risk_ratio",
 )
 _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B = 2.0
+_AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES = 8
+_AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P = 0.40
+_AI_UPLIFT_DEFAULT_MIN_POSITIVE_DELTA_RATE = 0.55
+_AI_UPLIFT_DEFAULT_MIN_MEAN_SAMPLE_DELTA = 0.0
 _REQUIRED_DATA_COVERAGE_TRUTH_BASIS = (
     "prices_from_timestamped_closed_candles",
     "coverage_measured_from_candle_close_time",
@@ -91,6 +95,18 @@ def _finite(value: object) -> float | None:
     except (TypeError, ValueError, OverflowError):
         return None
     return parsed if math.isfinite(parsed) else None
+
+
+def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
+    n = max(0, int(trials))
+    k = max(0, min(n, int(successes)))
+    probability = max(0.0, min(1.0, float(p)))
+    if n <= 0:
+        return 1.0
+    total = 0.0
+    for hits in range(k, n + 1):
+        total += math.comb(n, hits) * (probability ** hits) * ((1.0 - probability) ** (n - hits))
+    return max(0.0, min(1.0, total))
 
 
 def _finite_sequence(values: Sequence[object], *, path: str, label: str) -> list[FinancialSanityCheck]:
@@ -1230,10 +1246,26 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
             if ai_uplift_accepted:
                 policy = ai_uplift.get("policy")
                 min_parameters_b = _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B
+                min_paired_samples = _AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES
+                max_sign_test_p = _AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P
+                min_positive_delta_rate = _AI_UPLIFT_DEFAULT_MIN_POSITIVE_DELTA_RATE
+                min_mean_sample_delta = _AI_UPLIFT_DEFAULT_MIN_MEAN_SAMPLE_DELTA
                 if isinstance(policy, Mapping):
                     parsed_min = _finite(policy.get("min_model_parameters_b"))
                     if parsed_min is not None:
                         min_parameters_b = max(0.0, parsed_min)
+                    parsed_samples = _finite(policy.get("min_paired_samples"))
+                    if parsed_samples is not None:
+                        min_paired_samples = max(0, int(parsed_samples))
+                    parsed_sign_p = _finite(policy.get("max_sign_test_p_value"))
+                    if parsed_sign_p is not None:
+                        max_sign_test_p = max(0.0, min(1.0, parsed_sign_p))
+                    parsed_rate = _finite(policy.get("min_positive_delta_rate"))
+                    if parsed_rate is not None:
+                        min_positive_delta_rate = max(0.0, min(1.0, parsed_rate))
+                    parsed_mean_delta = _finite(policy.get("min_mean_sample_delta"))
+                    if parsed_mean_delta is not None:
+                        min_mean_sample_delta = parsed_mean_delta
                 model_parameters_b = _finite(ai_uplift.get("model_parameters_b"))
                 if model_parameters_b is None or model_parameters_b < min_parameters_b:
                     checks.append(
@@ -1255,6 +1287,168 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             label="AI uplift evidence",
                         )
                     )
+                statistical = ai_uplift.get("statistical_evidence")
+                if not isinstance(statistical, Mapping):
+                    checks.append(
+                        _check(
+                            "block",
+                            "AI uplift statistical evidence",
+                            "accepted AI uplift is missing paired holdout statistical evidence",
+                            path=f"{prefix}.ai_uplift.statistical_evidence",
+                            metric="missing",
+                            limit="accepted paired-sample evidence",
+                        )
+                    )
+                else:
+                    if statistical.get("accepted") is not True:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift has failed paired-sample evidence",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.accepted",
+                                metric=statistical.get("accepted"),
+                                limit=True,
+                            )
+                        )
+                    if statistical.get("paired_sample_length_mismatch") is True:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift has unpaired sample lengths",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.paired_sample_length_mismatch",
+                                metric=True,
+                                limit=False,
+                            )
+                        )
+                    sample_count = _finite(statistical.get("sample_count"))
+                    if sample_count is None or sample_count < min_paired_samples:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift has too few paired holdout samples",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.sample_count",
+                                metric=sample_count if sample_count is not None else "missing",
+                                limit=f">={min_paired_samples}",
+                            )
+                        )
+                    sample_count_is_integer = (
+                        sample_count is not None
+                        and sample_count >= 0.0
+                        and float(sample_count).is_integer()
+                    )
+                    if sample_count is not None and not sample_count_is_integer:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift sample count must be a nonnegative integer",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.sample_count",
+                                metric=sample_count,
+                                limit="nonnegative integer",
+                            )
+                        )
+                    positive_count = _finite(statistical.get("positive_delta_count"))
+                    positive_count_is_integer = (
+                        positive_count is not None
+                        and positive_count >= 0.0
+                        and float(positive_count).is_integer()
+                    )
+                    if (
+                        positive_count is None
+                        or positive_count < 0.0
+                        or (sample_count is not None and positive_count > sample_count)
+                        or not positive_count_is_integer
+                    ):
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift positive-delta count is inconsistent",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.positive_delta_count",
+                                metric=positive_count if positive_count is not None else "missing",
+                                limit="integer and 0<=positive_delta_count<=sample_count",
+                            )
+                        )
+                    positive_rate = _finite(statistical.get("positive_delta_rate"))
+                    if positive_rate is None or positive_rate < min_positive_delta_rate:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift positive-delta rate is too weak",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.positive_delta_rate",
+                                metric=positive_rate if positive_rate is not None else "missing",
+                                limit=f">={min_positive_delta_rate:g}",
+                            )
+                        )
+                    if (
+                        sample_count is not None
+                        and sample_count > 0.0
+                        and positive_count is not None
+                        and sample_count_is_integer
+                        and positive_count_is_integer
+                        and positive_count <= sample_count
+                        and positive_rate is not None
+                    ):
+                        expected_rate = positive_count / sample_count
+                        if abs(positive_rate - expected_rate) > 1e-6:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift statistical evidence",
+                                    "accepted AI uplift positive-delta rate does not match counts",
+                                    path=f"{prefix}.ai_uplift.statistical_evidence.positive_delta_rate",
+                                    metric=positive_rate,
+                                    limit=f"{expected_rate:g}",
+                                )
+                            )
+                    sign_p = _finite(statistical.get("sign_test_p_value"))
+                    if sign_p is None or sign_p > max_sign_test_p:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift sign test is too weak",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.sign_test_p_value",
+                                metric=sign_p if sign_p is not None else "missing",
+                                limit=f"<={max_sign_test_p:g}",
+                            )
+                        )
+                    if (
+                        sample_count is not None
+                        and positive_count is not None
+                        and sample_count_is_integer
+                        and positive_count_is_integer
+                        and positive_count <= sample_count
+                        and sign_p is not None
+                    ):
+                        expected_sign_p = _binomial_upper_tail(int(sample_count), int(positive_count))
+                        if abs(sign_p - expected_sign_p) > 1e-9:
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift statistical evidence",
+                                    "accepted AI uplift sign-test p-value does not match counts",
+                                    path=f"{prefix}.ai_uplift.statistical_evidence.sign_test_p_value",
+                                    metric=sign_p,
+                                    limit=f"{expected_sign_p:g}",
+                                )
+                            )
+                    mean_delta = _finite(statistical.get("mean_delta"))
+                    if mean_delta is None or mean_delta <= min_mean_sample_delta:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift mean paired delta is too weak",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.mean_delta",
+                                metric=mean_delta if mean_delta is not None else "missing",
+                                limit=f">{min_mean_sample_delta:g}",
+                            )
+                        )
             deltas = ai_uplift.get("deltas")
             if isinstance(deltas, Mapping):
                 for key, value in deltas.items():

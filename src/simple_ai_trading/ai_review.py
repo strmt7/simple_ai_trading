@@ -445,6 +445,8 @@ def _compact_ai_uplift(raw: object) -> dict[str, object] | None:
     baseline = raw.get("baseline")
     ai_metrics = raw.get("ai")
     deltas = raw.get("deltas")
+    statistical = raw.get("statistical_evidence")
+    policy = raw.get("policy")
     return {
         "accepted": bool(raw.get("accepted")),
         "advisory_only": bool(raw.get("advisory_only")),
@@ -453,6 +455,8 @@ def _compact_ai_uplift(raw: object) -> dict[str, object] | None:
         "baseline": baseline if isinstance(baseline, Mapping) else {},
         "ai": ai_metrics if isinstance(ai_metrics, Mapping) else {},
         "deltas": deltas if isinstance(deltas, Mapping) else {},
+        "statistical_evidence": statistical if isinstance(statistical, Mapping) else {},
+        "policy": policy if isinstance(policy, Mapping) else {},
         "reasons": _bounded_list(reasons, limit=_MAX_CONCERNS),
     }
 
