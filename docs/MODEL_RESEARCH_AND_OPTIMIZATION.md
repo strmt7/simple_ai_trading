@@ -219,7 +219,9 @@ AI-assisted alpha has a separate deterministic uplift gate. When AI is enabled,
 `ai-review` will not call the local LLM unless every accepted AI-assisted symbol
 includes an `ai_uplift` artifact showing the AI-assisted holdout beats the
 non-AI ML baseline on realized P&L and expectancy, does not worsen max
-drawdown, has enough closed trades, and was produced by a multibillion model.
+drawdown, does not introduce liquidations, does not worsen loss-streak,
+profit-factor, win-rate, or downside return/risk evidence when those metrics are
+available, has enough closed trades, and was produced by a multibillion model.
 Missing or failed uplift evidence leaves AI in advisory/review-only mode.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy

@@ -16,6 +16,14 @@ _EXPECTANCY_KEYS = ("expectancy", "edge", "mean_trade_pnl")
 _PROFIT_FACTOR_KEYS = ("profit_factor",)
 _TRADES_KEYS = ("closed_trades", "trade_count", "trades")
 _WIN_RATE_KEYS = ("win_rate", "win_rate_pct")
+_LIQUIDATION_KEYS = ("liquidation_events", "liquidations")
+_LOSS_STREAK_KEYS = ("max_consecutive_losses", "loss_streak", "consecutive_losses")
+_DOWNSIDE_RETURN_RISK_KEYS = (
+    "downside_return_risk_ratio",
+    "return_risk_ratio",
+    "profit_drawdown_ratio",
+    "calmar_ratio",
+)
 
 
 @dataclass(frozen=True)
@@ -27,6 +35,11 @@ class AIUpliftPolicy:
     min_pnl_delta: float = 0.0
     min_expectancy_delta: float = 0.0
     max_drawdown_delta: float = 0.0
+    min_downside_return_risk_delta: float = 0.0
+    max_loss_streak_delta: float = 0.0
+    max_ai_liquidation_events: int = 0
+    require_non_degrading_profit_factor: bool = True
+    require_non_degrading_win_rate: bool = True
     require_positive_ai_pnl: bool = True
 
     def asdict(self) -> dict[str, object]:
@@ -77,6 +90,9 @@ def normalize_uplift_metrics(metrics: Mapping[str, object]) -> dict[str, float]:
         "profit_factor": _first_metric(metrics, _PROFIT_FACTOR_KEYS),
         "closed_trades": max(0.0, _first_metric(metrics, _TRADES_KEYS)),
         "win_rate": _first_metric(metrics, _WIN_RATE_KEYS),
+        "liquidation_events": max(0.0, _first_metric(metrics, _LIQUIDATION_KEYS)),
+        "max_consecutive_losses": max(0.0, _first_metric(metrics, _LOSS_STREAK_KEYS)),
+        "downside_return_risk_ratio": _first_metric(metrics, _DOWNSIDE_RETURN_RISK_KEYS),
     }
 
 
@@ -104,6 +120,9 @@ def assess_ai_uplift(
         "profit_factor": ai["profit_factor"] - baseline["profit_factor"],
         "closed_trades": ai["closed_trades"] - baseline["closed_trades"],
         "win_rate": ai["win_rate"] - baseline["win_rate"],
+        "liquidation_events": ai["liquidation_events"] - baseline["liquidation_events"],
+        "max_consecutive_losses": ai["max_consecutive_losses"] - baseline["max_consecutive_losses"],
+        "downside_return_risk_ratio": ai["downside_return_risk_ratio"] - baseline["downside_return_risk_ratio"],
     }
     reasons: list[str] = []
     if parameters_b is None:
@@ -122,6 +141,27 @@ def assess_ai_uplift(
         reasons.append("ai_expectancy_not_above_baseline")
     if deltas["max_drawdown"] > float(cfg.max_drawdown_delta):
         reasons.append("ai_drawdown_worse_than_baseline")
+    if ai["liquidation_events"] > max(0, int(cfg.max_ai_liquidation_events)):
+        reasons.append("ai_liquidation_events>0")
+    if deltas["max_consecutive_losses"] > float(cfg.max_loss_streak_delta):
+        reasons.append("ai_loss_streak_worse_than_baseline")
+    if (
+        cfg.require_non_degrading_profit_factor
+        and (baseline["profit_factor"] > 0.0 or ai["profit_factor"] > 0.0)
+        and deltas["profit_factor"] < 0.0
+    ):
+        reasons.append("ai_profit_factor_worse_than_baseline")
+    if (
+        cfg.require_non_degrading_win_rate
+        and (baseline["win_rate"] > 0.0 or ai["win_rate"] > 0.0)
+        and deltas["win_rate"] < 0.0
+    ):
+        reasons.append("ai_win_rate_worse_than_baseline")
+    if (
+        (baseline["downside_return_risk_ratio"] > 0.0 or ai["downside_return_risk_ratio"] > 0.0)
+        and deltas["downside_return_risk_ratio"] < float(cfg.min_downside_return_risk_delta)
+    ):
+        reasons.append("ai_downside_return_risk_not_above_baseline")
     accepted = not reasons
     return AIUpliftReport(
         accepted=accepted,

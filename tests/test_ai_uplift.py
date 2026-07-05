@@ -50,6 +50,41 @@ def test_ai_uplift_rejects_small_or_non_improving_models() -> None:
     assert "ai_closed_trades<5" in report.reasons
 
 
+def test_ai_uplift_rejects_tail_risk_deterioration() -> None:
+    report = assess_ai_uplift(
+        {
+            "realized_pnl": 20.0,
+            "max_drawdown": 0.04,
+            "expectancy": 0.8,
+            "profit_factor": 1.8,
+            "win_rate": 0.62,
+            "closed_trades": 20,
+            "max_consecutive_losses": 2,
+            "downside_return_risk_ratio": 0.70,
+            "liquidation_events": 0,
+        },
+        {
+            "realized_pnl": 25.0,
+            "max_drawdown": 0.04,
+            "expectancy": 1.0,
+            "profit_factor": 1.4,
+            "win_rate": 0.55,
+            "closed_trades": 22,
+            "max_consecutive_losses": 4,
+            "downside_return_risk_ratio": 0.60,
+            "liquidation_events": 1,
+        },
+        model_name="qwen2.5:7b",
+    )
+
+    assert report.accepted is False
+    assert "ai_liquidation_events>0" in report.reasons
+    assert "ai_loss_streak_worse_than_baseline" in report.reasons
+    assert "ai_profit_factor_worse_than_baseline" in report.reasons
+    assert "ai_win_rate_worse_than_baseline" in report.reasons
+    assert "ai_downside_return_risk_not_above_baseline" in report.reasons
+
+
 def test_ai_uplift_policy_can_require_stricter_model_size() -> None:
     report = assess_ai_uplift(
         {"realized_pnl": 10.0, "max_drawdown": 0.04, "expectancy": 0.5, "closed_trades": 8},
