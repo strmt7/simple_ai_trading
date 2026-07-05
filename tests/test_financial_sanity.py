@@ -3,10 +3,90 @@ from __future__ import annotations
 from dataclasses import replace
 
 from simple_ai_trading.financial_sanity import (
+    build_backtest_financial_sanity_report,
     build_model_financial_sanity_report,
     build_model_lab_financial_sanity_report,
 )
+from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading.model import TrainedModel
+
+
+def _backtest_result(**overrides) -> BacktestResult:
+    payload = dict(
+        starting_cash=1000.0,
+        ending_cash=1005.0,
+        realized_pnl=5.0,
+        win_rate=0.5,
+        trades=2,
+        max_drawdown=0.02,
+        closed_trades=2,
+        gross_exposure=500.0,
+        total_fees=3.0,
+        stopped_by_drawdown=False,
+        max_exposure=500.0,
+        trades_per_day_cap_hit=0,
+        buy_hold_pnl=2.0,
+        edge_vs_buy_hold=3.0,
+        trade_pnls=(10.0, -5.0),
+        trade_returns=(0.01, -0.005),
+        trade_log=(
+            {
+                "realized_pnl": 12.0,
+                "net_pnl": 10.0,
+                "entry_fee": 1.0,
+                "exit_fee": 1.0,
+                "exit_reason": "take_profit_close",
+            },
+            {
+                "realized_pnl": -4.0,
+                "net_pnl": -5.0,
+                "entry_fee": 0.5,
+                "exit_fee": 0.5,
+                "exit_reason": "stop_loss_close",
+            },
+        ),
+    )
+    payload.update(overrides)
+    return BacktestResult(**payload)
+
+
+def test_backtest_financial_sanity_accepts_consistent_accounting() -> None:
+    report = build_backtest_financial_sanity_report(_backtest_result())
+
+    assert report.allowed is True
+    assert report.block_count == 0
+    assert any(check.label == "backtest cash identity" and check.status == "ok" for check in report.checks)
+    assert any(check.label == "win rate identity" and check.status == "ok" for check in report.checks)
+
+
+def test_backtest_financial_sanity_blocks_inconsistent_accounting() -> None:
+    bad_trade_log = (
+        {
+            "realized_pnl": 12.0,
+            "net_pnl": 9.0,
+            "entry_fee": 1.0,
+            "exit_fee": 1.0,
+            "exit_reason": "",
+        },
+    )
+    report = build_backtest_financial_sanity_report(
+        _backtest_result(
+            ending_cash=1007.0,
+            win_rate=1.0,
+            total_fees=0.0,
+            trade_log=bad_trade_log,
+            trade_pnls=(10.0,),
+            trade_returns=(0.01,),
+        )
+    )
+
+    labels = {check.label for check in report.checks if check.status == "block"}
+    assert report.allowed is False
+    assert "backtest cash identity" in labels
+    assert "trade log length" in labels
+    assert "trade exit reason" in labels
+    assert "trade net PnL identity" in labels
+    assert "fee identity" in labels
 
 
 def test_model_financial_sanity_blocks_malformed_parameters() -> None:

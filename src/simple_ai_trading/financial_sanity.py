@@ -575,6 +575,203 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
     return FinancialSanityReport(tuple(checks), source=source)
 
 
+def _numeric_sequence(value: object) -> list[float] | None:
+    if not isinstance(value, (tuple, list)):
+        return None
+    output: list[float] = []
+    for item in value:
+        parsed = _finite(item)
+        if parsed is None:
+            return None
+        output.append(parsed)
+    return output
+
+
+def _approx_equal(left: float, right: float, *, scale: float = 1.0) -> bool:
+    tolerance = max(1e-6, abs(scale) * 1e-9, abs(left) * 1e-9, abs(right) * 1e-9)
+    return abs(left - right) <= tolerance
+
+
+def build_backtest_financial_sanity_report(result: object, *, source: str = "backtest") -> FinancialSanityReport:
+    """Validate internal accounting consistency for a generated backtest result."""
+
+    checks: list[FinancialSanityCheck] = []
+    starting_cash = _finite(getattr(result, "starting_cash", None))
+    ending_cash = _finite(getattr(result, "ending_cash", None))
+    realized_pnl = _finite(getattr(result, "realized_pnl", None))
+    total_fees = _finite(getattr(result, "total_fees", None))
+    buy_hold_pnl = _finite(getattr(result, "buy_hold_pnl", 0.0))
+    edge_vs_buy_hold = _finite(getattr(result, "edge_vs_buy_hold", 0.0))
+    win_rate = _finite(getattr(result, "win_rate", None))
+    max_drawdown = _finite(getattr(result, "max_drawdown", None))
+    closed_trades = _finite(getattr(result, "closed_trades", None))
+    trade_log = getattr(result, "trade_log", ())
+    trade_pnls = _numeric_sequence(getattr(result, "trade_pnls", ()))
+    trade_returns = _numeric_sequence(getattr(result, "trade_returns", ()))
+
+    for name, value, minimum, maximum in (
+        ("starting_cash", starting_cash, 0.0, None),
+        ("ending_cash", ending_cash, 0.0, None),
+        ("realized_pnl", realized_pnl, None, None),
+        ("total_fees", total_fees, 0.0, None),
+        ("buy_hold_pnl", buy_hold_pnl, None, None),
+        ("edge_vs_buy_hold", edge_vs_buy_hold, None, None),
+        ("win_rate", win_rate, 0.0, 1.0),
+        ("max_drawdown", max_drawdown, 0.0, 1.0),
+        ("closed_trades", closed_trades, 0.0, None),
+    ):
+        if value is None:
+            checks.append(_check("block", "backtest accounting", "missing or non-finite value", path=name))
+            continue
+        if minimum is not None and value < minimum:
+            checks.append(_check("block", "backtest accounting", "value below financial bound", path=name, metric=value, limit=f">={minimum:g}"))
+        elif maximum is not None and value > maximum:
+            checks.append(_check("block", "backtest accounting", "value above financial bound", path=name, metric=value, limit=f"<={maximum:g}"))
+        else:
+            checks.append(_check("ok", "backtest accounting", "finite bounded value", path=name, metric=value))
+
+    cash_scale = max(1.0, abs(starting_cash or 0.0), abs(ending_cash or 0.0))
+    if starting_cash is not None and ending_cash is not None and realized_pnl is not None:
+        expected_realized = ending_cash - starting_cash
+        checks.append(
+            _check(
+                "ok" if _approx_equal(realized_pnl, expected_realized, scale=cash_scale) else "block",
+                "backtest cash identity",
+                "realized_pnl equals ending_cash - starting_cash",
+                path="realized_pnl",
+                metric=realized_pnl,
+                limit=expected_realized,
+            )
+        )
+    if realized_pnl is not None and buy_hold_pnl is not None and edge_vs_buy_hold is not None:
+        expected_edge = realized_pnl - buy_hold_pnl
+        checks.append(
+            _check(
+                "ok" if _approx_equal(edge_vs_buy_hold, expected_edge, scale=cash_scale) else "block",
+                "backtest edge identity",
+                "edge_vs_buy_hold equals realized_pnl - buy_hold_pnl",
+                path="edge_vs_buy_hold",
+                metric=edge_vs_buy_hold,
+                limit=expected_edge,
+            )
+        )
+
+    closed_count = int(closed_trades) if closed_trades is not None and closed_trades >= 0 else None
+    if closed_count is not None and closed_trades is not None and abs(closed_trades - closed_count) > 1e-9:
+        checks.append(_check("block", "closed trade count", "closed_trades is not an integer count", path="closed_trades", metric=closed_trades))
+    if isinstance(trade_log, (tuple, list)):
+        if closed_count is not None:
+            checks.append(
+                _check(
+                    "ok" if len(trade_log) == closed_count else "block",
+                    "trade log length",
+                    f"trade_log={len(trade_log)} closed_trades={closed_count}",
+                    path="trade_log",
+                    metric=len(trade_log),
+                    limit=closed_count,
+                )
+            )
+    else:
+        checks.append(_check("block", "trade log", "trade_log is not a sequence", path="trade_log"))
+        trade_log = ()
+
+    for label, values in (("trade_pnls", trade_pnls), ("trade_returns", trade_returns)):
+        raw = getattr(result, label, ())
+        if values is None:
+            checks.append(_check("block", label, "missing or non-finite sequence", path=label))
+        elif closed_count is not None:
+            checks.append(
+                _check(
+                    "ok" if len(values) == closed_count else "block",
+                    label,
+                    f"{label}={len(values)} closed_trades={closed_count}",
+                    path=label,
+                    metric=len(values),
+                    limit=closed_count,
+                )
+            )
+        elif not isinstance(raw, (tuple, list)):
+            checks.append(_check("block", label, "not a sequence", path=label))
+
+    if trade_pnls is not None and realized_pnl is not None:
+        pnl_sum = sum(trade_pnls)
+        checks.append(
+            _check(
+                "ok" if _approx_equal(pnl_sum, realized_pnl, scale=cash_scale) else "block",
+                "trade PnL identity",
+                "sum(trade_pnls) equals realized_pnl",
+                path="trade_pnls",
+                metric=pnl_sum,
+                limit=realized_pnl,
+            )
+        )
+
+    fee_sum = 0.0
+    net_log_values: list[float] = []
+    for index, trade in enumerate(trade_log):
+        if not isinstance(trade, Mapping):
+            checks.append(_check("block", "trade log entry", "trade entry is not a mapping", path=f"trade_log[{index}]"))
+            continue
+        reason = str(trade.get("exit_reason") or "").strip()
+        checks.append(
+            _check(
+                "ok" if reason else "block",
+                "trade exit reason",
+                reason or "missing exit reason",
+                path=f"trade_log[{index}].exit_reason",
+            )
+        )
+        realized = _finite(trade.get("realized_pnl"))
+        net = _finite(trade.get("net_pnl"))
+        entry_fee = _finite(trade.get("entry_fee"))
+        exit_fee = _finite(trade.get("exit_fee"))
+        for name, value in (("realized_pnl", realized), ("net_pnl", net), ("entry_fee", entry_fee), ("exit_fee", exit_fee)):
+            if value is None:
+                checks.append(_check("block", "trade log numeric", "missing or non-finite value", path=f"trade_log[{index}].{name}"))
+            elif name.endswith("fee") and value < 0.0:
+                checks.append(_check("block", "trade fee", "fee is negative", path=f"trade_log[{index}].{name}", metric=value, limit=">=0"))
+        if entry_fee is not None and exit_fee is not None:
+            fee_sum += entry_fee + exit_fee
+        if realized is not None and net is not None and entry_fee is not None and exit_fee is not None:
+            expected_net = realized - entry_fee - exit_fee
+            checks.append(
+                _check(
+                    "ok" if _approx_equal(net, expected_net, scale=cash_scale) else "block",
+                    "trade net PnL identity",
+                    "net_pnl equals realized_pnl - entry_fee - exit_fee",
+                    path=f"trade_log[{index}].net_pnl",
+                    metric=net,
+                    limit=expected_net,
+                )
+            )
+            net_log_values.append(net)
+
+    if total_fees is not None and isinstance(trade_log, (tuple, list)):
+        checks.append(
+            _check(
+                "ok" if _approx_equal(fee_sum, total_fees, scale=cash_scale) else "block",
+                "fee identity",
+                "sum(entry_fee + exit_fee) equals total_fees",
+                path="total_fees",
+                metric=fee_sum,
+                limit=total_fees,
+            )
+        )
+    if closed_count is not None and closed_count > 0 and win_rate is not None and len(net_log_values) == closed_count:
+        expected_win_rate = sum(1 for value in net_log_values if value > 0.0) / closed_count
+        checks.append(
+            _check(
+                "ok" if _approx_equal(win_rate, expected_win_rate, scale=1.0) else "block",
+                "win rate identity",
+                "win_rate equals positive net-PnL trades divided by closed_trades",
+                path="win_rate",
+                metric=win_rate,
+                limit=expected_win_rate,
+            )
+        )
+    return FinancialSanityReport(tuple(checks), source=source)
+
+
 def blocking_reasons(report: FinancialSanityReport) -> list[str]:
     return [
         f"{check.path or check.label}: {check.detail}"
