@@ -716,7 +716,7 @@ def validate_suite_temporal_robustness(
         model_path = Path(outcome.model_path)
         try:
             model, feature_cfg = _load_objective_model(model_path, objective_name, strategy)
-            rows = make_advanced_rows(candles, feature_cfg)
+            rows = make_advanced_rows(candles, feature_cfg, compute_backend=compute_backend)
             if not rows:
                 raise ValueError("temporal robustness could not build feature rows")
             report = validate_model_temporal_robustness(
@@ -852,7 +852,7 @@ def validate_suite_under_stress(
         model_path = Path(outcome.model_path)
         try:
             model, feature_cfg = _load_objective_model(model_path, objective_name, strategy)
-            rows = make_advanced_rows(candles, feature_cfg)
+            rows = make_advanced_rows(candles, feature_cfg, compute_backend=compute_backend)
             if not rows:
                 raise ValueError("stress validation could not build feature rows")
             report = validate_model_under_stress(

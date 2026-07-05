@@ -518,6 +518,67 @@ def test_run_panel_rejects_mismatched_model_dimension(tmp_path: Path) -> None:
         )
 
 
+def test_run_panel_passes_compute_backend_to_standard_rows(tmp_path: Path, monkeypatch) -> None:
+    req = BacktestRequest(
+        interval="5m",
+        market_type="spot",
+        data_path="ignored",
+        compute_backend="directml",
+        tag="gpu-standard",
+    )
+    captured: dict[str, object] = {}
+    row = ModelRow(timestamp=1, close=100.0, features=(0.1,), label=1)
+
+    def fake_make_rows(_candles, *_args, **kwargs):
+        captured["backend"] = kwargs.get("compute_backend")
+        return [row]
+
+    monkeypatch.setattr("simple_ai_trading.backtest_panel.make_rows", fake_make_rows)
+
+    report = run_panel(
+        req,
+        StrategyConfig(),
+        candles_loader=lambda _path: _synthetic_candles(n=100),
+        model_loader=lambda _path: _zero_model(1),
+        report_dir=tmp_path / "reports",
+        clock=lambda: 1_700_000_000.5,
+    )
+
+    assert captured["backend"] == "directml"
+    assert report.rows_used == 1
+
+
+def test_run_panel_passes_compute_backend_to_objective_rows(tmp_path: Path, monkeypatch) -> None:
+    req = BacktestRequest(
+        interval="5m",
+        market_type="spot",
+        data_path="ignored",
+        objective="default",
+        compute_backend="directml",
+        tag="gpu-objective",
+    )
+    captured: dict[str, object] = {}
+    row = ModelRow(timestamp=1, close=100.0, features=(0.1,), label=1)
+
+    def fake_make_advanced_rows(_candles, _cfg, **kwargs):
+        captured["backend"] = kwargs.get("compute_backend")
+        return [row]
+
+    monkeypatch.setattr("simple_ai_trading.backtest_panel.make_advanced_rows", fake_make_advanced_rows)
+
+    report = run_panel(
+        req,
+        StrategyConfig(),
+        candles_loader=lambda _path: _synthetic_candles(n=100),
+        model_loader=lambda _path: _zero_model(1),
+        report_dir=tmp_path / "reports",
+        clock=lambda: 1_700_000_000.5,
+    )
+
+    assert captured["backend"] == "directml"
+    assert report.rows_used == 1
+
+
 # ----- list_reports --------------------------------------------------------
 
 

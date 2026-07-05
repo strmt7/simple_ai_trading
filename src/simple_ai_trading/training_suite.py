@@ -264,13 +264,15 @@ def _rows_for_candidate(
     base_rows: Sequence[ModelRow],
     base_feature_cfg: AdvancedFeatureConfig,
     candidate: CandidateParams,
+    *,
+    compute_backend: str | None = None,
 ) -> tuple[list[ModelRow], AdvancedFeatureConfig]:
     """Return candidate-specific rows while preserving the legacy row payload path."""
 
     feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
     if candles is None:
         return list(base_rows), feature_cfg
-    return make_advanced_rows(candles, feature_cfg), feature_cfg
+    return make_advanced_rows(candles, feature_cfg, compute_backend=compute_backend), feature_cfg
 
 
 def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
@@ -1358,15 +1360,6 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     base_rows_eval: list[ModelRow] = payload["rows_eval"]
     base_feature_cfg: AdvancedFeatureConfig = payload["feature_cfg"]
     candle_payload: Sequence[Candle] | None = payload.get("candles")
-    if candle_payload is not None:
-        all_rows, feature_cfg = _rows_for_candidate(candle_payload, [], base_feature_cfg, candidate)
-        if not all_rows:
-            raise ValueError("Candidate label profile produced zero advanced training rows")
-        rows_train, rows_eval = _walk_forward_split(all_rows)
-    else:
-        rows_train = list(base_rows_train)
-        rows_eval = list(base_rows_eval)
-        feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
     base_strategy: StrategyConfig = payload["base_strategy"]
     objective_name: str = payload["objective"]
     market_type: str = payload["market_type"]
@@ -1376,6 +1369,21 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     batch_size = int(payload.get("batch_size") or 8192)
     score_batch_size = int(payload.get("score_batch_size") or batch_size)
     include_full_fit_fallback = bool(payload.get("include_full_fit_fallback", True))
+    if candle_payload is not None:
+        all_rows, feature_cfg = _rows_for_candidate(
+            candle_payload,
+            [],
+            base_feature_cfg,
+            candidate,
+            compute_backend=compute_backend,
+        )
+        if not all_rows:
+            raise ValueError("Candidate label profile produced zero advanced training rows")
+        rows_train, rows_eval = _walk_forward_split(all_rows)
+    else:
+        rows_train = list(base_rows_train)
+        rows_eval = list(base_rows_eval)
+        feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
 
     objective = get_objective(objective_name)
     training = _default_training(objective)
@@ -1704,7 +1712,8 @@ def train_for_objective(
 
     candle_list = list(candles)
     feature_cfg = default_config_for(objective.name, base_strategy.enabled_features)
-    rows = make_advanced_rows(candle_list, feature_cfg)
+    effective_compute_backend = effective_training_backend_name(compute_backend)
+    rows = make_advanced_rows(candle_list, feature_cfg, compute_backend=effective_compute_backend)
     if not rows:
         raise ValueError("Insufficient candles to build advanced training rows")
     training = _default_training(objective)
@@ -1715,7 +1724,6 @@ def train_for_objective(
         raise ValueError("Candidate grid produced zero evaluable entries")
     train_rows, eval_rows = _walk_forward_split(rows)
     effective_score_batch_size = int(score_batch_size if score_batch_size is not None else batch_size)
-    effective_compute_backend = effective_training_backend_name(compute_backend)
 
     if runner is not None:
         results: list[dict[str, Any]] = []
@@ -1840,6 +1848,7 @@ def train_for_objective(
                 rows,
                 feature_cfg,
                 candidate_result["candidate"],
+                compute_backend=effective_compute_backend,
             )
             if not gate_rows:
                 candidate_result["walk_forward_gate"] = {
@@ -1883,6 +1892,7 @@ def train_for_objective(
                     rows,
                     feature_cfg,
                     candidate_result["candidate"],
+                    compute_backend=effective_compute_backend,
                 )
                 rescue_train_rows, rescue_eval_rows = _walk_forward_split(rescue_rows)
                 rescue_model_train_rows, rescue_selection_rows = _walk_forward_split(rescue_train_rows)
@@ -2005,6 +2015,7 @@ def train_for_objective(
             rows,
             feature_cfg,
             best["candidate"],
+            compute_backend=effective_compute_backend,
         )
         best_train_rows, best_eval_rows = _walk_forward_split(best_rows)
         model_train_rows, selection_rows = _walk_forward_split(best_train_rows)
@@ -2116,6 +2127,7 @@ def train_for_objective(
                 rows,
                 feature_cfg,
                 best["candidate"],
+                compute_backend=effective_compute_backend,
             )
             if meta_rows:
                 meta_result = run_backtest(
@@ -2160,6 +2172,7 @@ def train_for_objective(
                 rows,
                 feature_cfg,
                 best["candidate"],
+                compute_backend=effective_compute_backend,
             )
             feature_ablation = _feature_ablation_report(
                 ablation_rows,

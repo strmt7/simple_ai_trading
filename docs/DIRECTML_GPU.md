@@ -13,7 +13,7 @@ Current caveat:
 
 - `torch-directml` is the selected backend for this repo's PyTorch training/scoring path.
 - ONNX Runtime's DirectML execution provider remains useful for inference research, but its docs now describe it as sustained engineering and point Windows ONNX deployments toward WinML for future provider selection.
-- If the project adds packaged ONNX inference, evaluate WinML first and keep DirectML as the compatibility baseline.
+- Windows ML now publishes dynamically selected execution providers such as AMD MIGraphX, NVIDIA TensorRT RTX, Intel OpenVINO, and Qualcomm QNN for Windows 11 24H2+ systems. If the project adds packaged ONNX inference, evaluate WinML first and keep DirectML as the broad compatibility baseline.
 
 Commands:
 
@@ -28,11 +28,14 @@ simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 CPU-only mode is allowed. When selected or when GPU probing fails:
 
 - AI features are disabled.
-- Training, retraining, tuning, external-signal scoring, probability-temperature
-  calibration, threshold calibration, and backtest scoring use GPU-first `auto`
-  when no explicit backend is passed. They continue on CPU only when the user
-  selects CPU or every GPU probe fails, and artifacts record the requested
-  backend, resolved backend, device, and fallback reason.
+- Training, retraining, tuning, base/advanced feature matrix generation,
+  external-signal scoring, probability-temperature calibration, threshold
+  calibration, backtest scoring, model-lab candidate generation, robust
+  validation, and backtest-panel row generation use GPU-first `auto` when no
+  explicit backend is passed. They continue on CPU only when the user selects
+  CPU or every GPU probe fails, and artifacts record the requested backend,
+  resolved backend, device, and fallback reason where that workflow has a
+  persisted backend-evidence contract.
 - Probability calibration reports include `calibration_backend_requested`,
   `calibration_backend_kind`, `calibration_backend_device`, and
   `calibration_backend_reason`. Promotion evidence should treat those fields as
@@ -46,6 +49,11 @@ CPU-only mode is allowed. When selected or when GPU probing fails:
 - Hybrid model-zoo backtest scoring keeps Lorentzian nearest-neighbor,
   rational-quadratic kernel, and technical-confluence expert math on the tensor
   backend when the backend supports the required operations.
+- Feature generation uses tensor prefix/window operations on the resolved
+  backend for the 13 base features, then advanced rows expand from those
+  backend-built base rows. If a backend lacks a required tensor operation, the
+  workflow falls back to the original CPU feature builder rather than producing
+  partial or divergent rows.
 - CLI and Windows app warn that the run is slower.
 - Structured local AI review cannot approve a model-lab artifact until the AI
   capability preflight passes again.
@@ -56,3 +64,4 @@ References:
 - https://learn.microsoft.com/en-us/windows/ai/directml/dml-get-started
 - https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows
 - https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html
+- https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/supported-execution-providers

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Sequence, Tuple
 
 from .api import Candle
+from .compute import BackendInfo, resolve_backend
 from .market_data import clean_candles
 
 
@@ -184,6 +185,14 @@ def _safe_features(values: Sequence[float]) -> list[float]:
     return [0.0 if not math.isfinite(v) else float(v) for v in values]
 
 
+def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
+    if backend.kind == "directml":
+        import torch_directml  # type: ignore
+
+        return torch_directml.device()
+    return backend.device
+
+
 @dataclass(frozen=True)
 class _FeatureCache:
     candles: list[Candle]
@@ -224,6 +233,223 @@ def _build_feature_cache(candles: Sequence[Candle]) -> _FeatureCache:
         gain_prefix=_prefix_sum(gains),
         loss_prefix=_prefix_sum(losses),
     )
+
+
+def _tensor_prefix(torch, values):
+    return torch.cat([torch.zeros((1,), dtype=values.dtype, device=values.device), torch.cumsum(values, dim=0)])
+
+
+def _tensor_window_mean(torch, prefix, start, end):
+    return (prefix[end + 1] - prefix[start]) / (end - start + 1).to(dtype=prefix.dtype)
+
+
+def _tensor_lagged_pct(torch, closes, indices, close, lag: int):
+    valid = indices >= int(lag)
+    safe_index = torch.where(valid, indices - int(lag), torch.zeros_like(indices))
+    previous = closes[safe_index]
+    return torch.where(valid, (close - previous) / previous, torch.zeros_like(close))
+
+
+def _tensor_fixed_ema(torch, closes, indices, long_window: int):
+    k = 2.0 / float(long_window + 1)
+    decay = 1.0 - k
+    fixed_len = max(1, int(2 * long_window))
+    device = closes.device
+    ema = torch.zeros((indices.shape[0],), dtype=closes.dtype, device=device)
+    fixed_mask = indices >= fixed_len - 1
+    if bool(torch.any(fixed_mask).detach().cpu().item()):
+        windows = closes.unfold(0, fixed_len, 1)
+        selected = windows[indices[fixed_mask] - fixed_len + 1]
+        weights = [decay ** (fixed_len - 1)]
+        weights.extend(k * (decay ** (fixed_len - 1 - offset)) for offset in range(1, fixed_len))
+        weight_t = torch.tensor(weights, dtype=closes.dtype, device=device)
+        ema[fixed_mask] = torch.sum(selected * weight_t, dim=1)
+    if bool(torch.any(~fixed_mask).detach().cpu().item()):
+        early_positions = torch.nonzero(~fixed_mask).flatten().detach().cpu().tolist()
+        for position in early_positions:
+            index = int(indices[position].detach().cpu().item())
+            length = index + 1
+            values = closes[:length]
+            weights = [decay ** (length - 1)]
+            weights.extend(k * (decay ** (length - 1 - offset)) for offset in range(1, length))
+            weight_t = torch.tensor(weights, dtype=closes.dtype, device=device)
+            ema[position] = torch.sum(values * weight_t)
+    return ema
+
+
+def _make_rows_tensor(
+    cache: _FeatureCache,
+    selected_indices: tuple[int, ...],
+    short_window: int,
+    long_window: int,
+    *,
+    lookahead: int,
+    label_threshold: float,
+    include_labels: bool,
+    backend: BackendInfo,
+) -> list[ModelRow]:  # pragma: no cover - host GPU coverage exercises this path
+    import torch  # type: ignore
+
+    device = _torch_device_for_backend(backend)
+    dtype = torch.float32
+    n = len(cache.candles)
+    start_index = int(long_window + lookahead) if include_labels else int(long_window)
+    end_index = int(n - lookahead) if include_labels else int(n)
+    if end_index <= start_index:
+        return []
+
+    closes = torch.tensor(cache.closes, dtype=dtype, device=device)
+    volumes = torch.tensor(cache.volumes, dtype=dtype, device=device)
+    highs = torch.tensor([candle.high for candle in cache.candles], dtype=dtype, device=device)
+    lows = torch.tensor([candle.low for candle in cache.candles], dtype=dtype, device=device)
+    indices = torch.arange(start_index, end_index, dtype=torch.long, device=device)
+
+    prev_closes = torch.cat([closes[:1], closes[:-1]])
+    deltas = closes - prev_closes
+    gains = torch.where(deltas > 0.0, deltas, torch.zeros_like(deltas))
+    losses = torch.where(deltas < 0.0, -deltas, torch.zeros_like(deltas))
+    abs_changes = torch.abs((closes - prev_closes) / prev_closes)
+    abs_changes[0] = 0.0
+    tr_values = torch.maximum(
+        highs - lows,
+        torch.maximum(torch.abs(highs - prev_closes), torch.abs(lows - prev_closes)),
+    )
+    tr_values[0] = 0.0
+
+    close_prefix = _tensor_prefix(torch, closes)
+    volume_prefix = _tensor_prefix(torch, volumes)
+    abs_change_prefix = _tensor_prefix(torch, abs_changes)
+    true_range_prefix = _tensor_prefix(torch, tr_values)
+    gain_prefix = _tensor_prefix(torch, gains)
+    loss_prefix = _tensor_prefix(torch, losses)
+
+    close = closes[indices]
+    short = _tensor_window_mean(torch, close_prefix, indices - short_window + 1, indices)
+    long = _tensor_window_mean(torch, close_prefix, indices - long_window + 1, indices)
+    ema = _tensor_fixed_ema(torch, closes, indices, long_window)
+
+    rsi_window = 14
+    rsi_valid = indices >= rsi_window
+    rsi_start = torch.where(rsi_valid, indices + 1 - rsi_window, torch.zeros_like(indices))
+    rsi_end = torch.where(rsi_valid, indices, torch.zeros_like(indices))
+    avg_gain = _tensor_window_mean(torch, gain_prefix, rsi_start, rsi_end)
+    avg_loss = _tensor_window_mean(torch, loss_prefix, rsi_start, rsi_end)
+    rsi_value = torch.where(avg_loss == 0.0, torch.full_like(avg_loss, 100.0), 100.0 - 100.0 / (1.0 + avg_gain / avg_loss))
+    rsi = torch.where(rsi_valid, rsi_value, torch.full_like(avg_loss, float("nan")))
+
+    momentum = _tensor_lagged_pct(torch, closes, indices, close, 1)
+    momentum_3 = _tensor_lagged_pct(torch, closes, indices, close, 3)
+    momentum_10 = _tensor_lagged_pct(torch, closes, indices, close, 10)
+    momentum_20 = _tensor_lagged_pct(torch, closes, indices, close, 20)
+    spread = (short - long) / long
+
+    vol_moment_valid = indices >= 20
+    vol_moment_start = torch.where(vol_moment_valid, indices - 19, torch.zeros_like(indices))
+    vol_moment_end = torch.where(vol_moment_valid, indices, torch.zeros_like(indices))
+    vol_moment_value = _tensor_window_mean(torch, abs_change_prefix, vol_moment_start, vol_moment_end)
+    vol_moment = torch.where(vol_moment_valid, vol_moment_value, torch.full_like(close, float("nan")))
+    atr_count = torch.minimum(indices, torch.full_like(indices, 14))
+    atr = _tensor_window_mean(torch, true_range_prefix, indices - atr_count + 1, indices)
+    rel_atr = atr / close
+    ema_spread = (ema - close) / close
+
+    prev_volume_window = torch.minimum(torch.full_like(indices, 20), torch.maximum(torch.ones_like(indices), indices))
+    prev_vol = _tensor_window_mean(torch, volume_prefix, indices - prev_volume_window, indices - 1)
+    vol_ratio = (volumes[indices] - prev_vol) / prev_vol
+
+    prev_short_valid = indices - 2 >= short_window - 1
+    prev_short_start = torch.where(prev_short_valid, indices - short_window - 1, torch.zeros_like(indices))
+    prev_short_end = torch.where(prev_short_valid, indices - 2, torch.zeros_like(indices))
+    prev_short_value = _tensor_window_mean(torch, close_prefix, prev_short_start, prev_short_end)
+    prev_short = torch.where(prev_short_valid, prev_short_value, torch.full_like(short, float("nan")))
+    trend_accel = torch.where(prev_short != 0.0, (short - prev_short) / prev_short, torch.zeros_like(short))
+    gap_window = torch.minimum(torch.full_like(indices, 5), indices + 1)
+    gap_average = _tensor_window_mean(torch, close_prefix, indices - gap_window + 1, indices)
+    gap_to_vwap = (close - gap_average) / close
+    vol_short_window = torch.minimum(torch.full_like(indices, short_window), indices + 1)
+    vol_long_window = torch.minimum(torch.full_like(indices, long_window), indices + 1)
+    vol_short = _tensor_window_mean(torch, volume_prefix, indices - vol_short_window + 1, indices)
+    vol_long = _tensor_window_mean(torch, volume_prefix, indices - vol_long_window + 1, indices)
+    volume_trend = (vol_short - vol_long) / vol_long
+
+    full = torch.stack(
+        [
+            momentum,
+            momentum_3,
+            momentum_10,
+            momentum_20,
+            spread,
+            rsi / 100.0,
+            ema_spread,
+            rel_atr,
+            vol_moment,
+            vol_ratio,
+            trend_accel,
+            gap_to_vwap,
+            volume_trend,
+        ],
+        dim=1,
+    )
+    finite_core = torch.isfinite(short) & torch.isfinite(long) & torch.isfinite(ema) & torch.isfinite(rsi)
+    full = torch.where(torch.isfinite(full), full, torch.zeros_like(full))
+    selected = full[:, list(selected_indices)]
+
+    if include_labels:
+        future = closes[indices + lookahead]
+        labels_t = ((future - close) / close >= float(label_threshold)).to(dtype=torch.int64)
+    else:
+        labels_t = torch.zeros((indices.shape[0],), dtype=torch.int64, device=device)
+
+    selected_cpu = selected.detach().cpu().tolist()
+    labels_cpu = [int(value) for value in labels_t.detach().cpu().tolist()]
+    valid_cpu = [bool(value) for value in finite_core.detach().cpu().tolist()]
+    index_cpu = [int(value) for value in indices.detach().cpu().tolist()]
+    rows: list[ModelRow] = []
+    for offset, valid in enumerate(valid_cpu):
+        if not valid:
+            continue
+        index = index_cpu[offset]
+        rows.append(
+            ModelRow(
+                timestamp=cache.candles[index].close_time,
+                close=cache.closes[index],
+                features=tuple(float(value) for value in selected_cpu[offset]),
+                label=labels_cpu[offset],
+                volume=cache.candles[index].volume,
+            )
+        )
+    return rows
+
+
+def _make_rows_with_backend(
+    cache: _FeatureCache,
+    selected_indices: tuple[int, ...],
+    short_window: int,
+    long_window: int,
+    *,
+    lookahead: int,
+    label_threshold: float,
+    include_labels: bool,
+    compute_backend: str | None,
+) -> list[ModelRow] | None:
+    if not compute_backend:
+        return None
+    backend = resolve_backend(compute_backend)
+    if backend.kind == "cpu":
+        return None
+    try:
+        return _make_rows_tensor(
+            cache,
+            selected_indices,
+            short_window,
+            long_window,
+            lookahead=lookahead,
+            label_threshold=label_threshold,
+            include_labels=include_labels,
+            backend=backend,
+        )
+    except Exception:
+        return None
 
 
 def _rsi_at(cache: _FeatureCache, end: int, window: int) -> float:
@@ -304,6 +530,7 @@ def make_rows(
     lookahead: int = 1,
     label_threshold: float = 0.001,
     enabled_features: Sequence[str] | None = None,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     if short_window <= 0 or long_window <= 0 or lookahead <= 0:
         raise ValueError("short_window, long_window, and lookahead must be positive")
@@ -316,6 +543,18 @@ def make_rows(
     min_window = max(long_window, short_window, lookahead + 2, 2 * long_window)
     if len(cache.candles) < min_window:
         return rows
+    accelerated = _make_rows_with_backend(
+        cache,
+        selected_indices,
+        short_window,
+        long_window,
+        lookahead=lookahead,
+        label_threshold=label_threshold,
+        include_labels=True,
+        compute_backend=compute_backend,
+    )
+    if accelerated is not None:
+        return accelerated
 
     for i in range(long_window + lookahead, len(cache.candles) - lookahead):
         full_features = _build_full_features(cache, i, short_window, long_window)
@@ -345,6 +584,7 @@ def make_inference_rows(
     long_window: int,
     *,
     enabled_features: Sequence[str] | None = None,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     if short_window <= 0 or long_window <= 0:
         raise ValueError("short_window and long_window must be positive")
@@ -357,6 +597,18 @@ def make_inference_rows(
     min_window = max(long_window, short_window, 2, 2 * long_window)
     if len(cache.candles) < min_window:
         return rows
+    accelerated = _make_rows_with_backend(
+        cache,
+        selected_indices,
+        short_window,
+        long_window,
+        lookahead=1,
+        label_threshold=0.0,
+        include_labels=False,
+        compute_backend=compute_backend,
+    )
+    if accelerated is not None:
+        return accelerated
 
     for i in range(long_window, len(cache.candles)):
         full_features = _build_full_features(cache, i, short_window, long_window)

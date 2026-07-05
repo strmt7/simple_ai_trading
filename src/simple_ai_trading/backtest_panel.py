@@ -52,6 +52,7 @@ class BacktestRequest:
     model_path: str | None = None
     data_path: str = "data/historical_btcusdc.json"
     execution_db: str | None = None
+    compute_backend: str | None = None
     starting_cash: float = 1000.0
     objective: str | None = None
     tag: str = ""
@@ -245,7 +246,7 @@ def run_panel(
     # base-feature path is preserved for operators backtesting the legacy model.
     if objective is not None:
         feature_cfg = default_config_for(objective.name, strategy.enabled_features)
-        rows = make_advanced_rows(filtered, feature_cfg)
+        rows = make_advanced_rows(filtered, feature_cfg, compute_backend=request.compute_backend)
     else:
         rows = make_rows(
             filtered,
@@ -254,6 +255,7 @@ def run_panel(
             lookahead=1,
             label_threshold=strategy.label_threshold,
             enabled_features=strategy.enabled_features,
+            compute_backend=request.compute_backend,
         )
     model, loaded, resolved = _load_model_or_baseline(request.model_path, rows, model_loader)
     effective_strategy = apply_model_strategy_overrides(strategy, model) if loaded else strategy

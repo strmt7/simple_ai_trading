@@ -666,6 +666,7 @@ def make_advanced_rows(
     cfg: AdvancedFeatureConfig,
     *,
     lookahead: int | None = None,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     """Build expanded ``ModelRow`` objects for ``candles`` using ``cfg``."""
 
@@ -678,6 +679,7 @@ def make_advanced_rows(
         lookahead=label_lookahead,
         label_threshold=cfg.label_threshold,
         enabled_features=enabled,
+        compute_backend=compute_backend,
     )
     if not base_rows:
         return []
@@ -727,6 +729,8 @@ def make_advanced_rows(
 def make_advanced_inference_rows(
     candles: Sequence[Candle],
     cfg: AdvancedFeatureConfig,
+    *,
+    compute_backend: str | None = None,
 ) -> list[ModelRow]:
     """Build expanded rows for live inference without future-label lookahead."""
 
@@ -736,6 +740,7 @@ def make_advanced_inference_rows(
         cfg.short_window,
         cfg.long_window,
         enabled_features=enabled,
+        compute_backend=compute_backend,
     )
     if not base_rows:
         return []

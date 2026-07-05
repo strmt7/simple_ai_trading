@@ -888,13 +888,13 @@ def test_cli_strategy_tune_evaluate_and_live_remaining_edges(tmp_path, monkeypat
     assert cli.command_tune(bad_window) == 2
 
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [])
     assert cli.command_evaluate(argparse.Namespace(input="x", model="missing", threshold=None, calibrate_threshold=False)) == 2
     assert "No rows available" in capsys.readouterr().out
 
     row = ModelRow(1, 1.0, (0.0,), 1)
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [row])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [row])
     assert cli.command_evaluate(argparse.Namespace(input="x", model=str(tmp_path / "missing-model.json"), threshold=None, calibrate_threshold=False)) == 2
     assert "Model file not found" in capsys.readouterr().out
 
@@ -976,7 +976,7 @@ def test_cli_tune_and_evaluate_remaining_paths(tmp_path, monkeypatch, capsys) ->
 
     rows = [ModelRow(index, 100.0 + index, (float(index),), index % 2) for index in range(45)]
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: rows)
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: rows)
     monkeypatch.setattr(cli, "train", lambda *_args, **_kwargs: _flat_model(0.99))
     assert cli.command_tune(_tune_args(steps=0)) == 2
     assert "No valid candidates evaluated." in capsys.readouterr().out
@@ -1006,7 +1006,7 @@ def test_cli_tune_and_evaluate_remaining_paths(tmp_path, monkeypatch, capsys) ->
     assert "threshold:" in output
     assert "test_accuracy:" in output
 
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(1, 100.0, (0.0,), 1)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(1, 100.0, (0.0,), 1)])
     assert cli.command_evaluate(
         argparse.Namespace(input="x", model=str(model_path), threshold=None, calibrate_threshold=False)
     ) == 0
@@ -1019,7 +1019,7 @@ def test_cli_train_walk_forward_without_fold_scores(tmp_path, monkeypatch, capsy
     save_strategy(StrategyConfig(enabled_features=("momentum_1",)))
     rows = [ModelRow(index, 100.0 + index, (float(index),), index % 2) for index in range(8)]
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: rows)
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: rows)
     monkeypatch.setattr(
         cli,
         "walk_forward_report",
@@ -1098,7 +1098,7 @@ def test_cli_live_guards_leverage_clamps_and_no_rows(tmp_path, monkeypatch, caps
     (tmp_path / "data" / "model.json").write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, cfg: cli._effective_leverage(cfg, _runtime.market_type))
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("corrupt")))
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: [])
     assert cli.command_live(_live_args(steps=1, paper=True, live=False, retrain_interval=-1, retrain_window=0, retrain_min_rows=0)) == 0
     assert "not enough historical data" in capsys.readouterr().out
@@ -1133,7 +1133,7 @@ def test_cli_live_spot_close_cooldown_trade_cap_and_signal_artifact(tmp_path, mo
         [ModelRow(4, 112.0, (0.0,), 1)],
     ]
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(0, 100.0, (0.0,), 1)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(0, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: row_sequences.pop(0))
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or model)
 
@@ -1155,7 +1155,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
 
     save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(StrategyConfig(slippage_bps=20_000, enabled_features=("momentum_1",), max_regime_unpredictability=1.0))
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(1, 100.0, (0.0,), 0)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(1, 100.0, (0.0,), 0)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: [ModelRow(1, 100.0, (0.0,), 0)])
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.01]))
     assert cli.command_live(_live_args(steps=1)) == 0
@@ -1171,7 +1171,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
             max_regime_unpredictability=1.0,
         )
     )
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(2, 100.0, (0.0,), 1)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(2, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: [ModelRow(2, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or _SequenceModel([0.99]))
     assert cli.command_live(_live_args(steps=1)) == 0
@@ -1199,7 +1199,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
         [ModelRow(2, 120.0, (0.0,), 1)],
         [ModelRow(3, 110.0, (0.0,), 1)],
     ]
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(0, 100.0, (0.0,), 1)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(0, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: hold_rows.pop(0))
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or hold_model)
     assert cli.command_live(_live_args(steps=3)) == 0
@@ -1224,7 +1224,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
         [ModelRow(1, 100.0, (0.0,), 1)],
         [ModelRow(2, 50.0, (0.0,), 1)],
     ]
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(0, 100.0, (0.0,), 1)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(0, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: emergency_rows.pop(0))
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or emergency_model)
     assert cli.command_live(_live_args(steps=2)) == 0
@@ -1249,7 +1249,7 @@ def test_cli_live_entry_rejection_and_drawdown_paths(tmp_path, monkeypatch, caps
         [ModelRow(1, 100.0, (0.0,), 1)],
         [ModelRow(2, 50.0, (0.0,), 1)],
     ]
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [ModelRow(0, 100.0, (0.0,), 1)])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [ModelRow(0, 100.0, (0.0,), 1)])
     monkeypatch.setattr(cli, "make_inference_rows", lambda *_args, **_kwargs: spot_loss_rows.pop(0))
     monkeypatch.setattr(cli, "_build_live_model", lambda _rows, **kwargs: kwargs.get("model") or spot_loss_model)
     assert cli.command_live(_live_args(steps=2)) == 0

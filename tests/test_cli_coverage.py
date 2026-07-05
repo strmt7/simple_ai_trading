@@ -2647,7 +2647,7 @@ def test_command_evaluate_prints_zero_train_metrics_when_split_has_no_train_rows
         encoding="utf-8",
     )
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg: [row])
+    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [row])
     monkeypatch.setattr(cli, "temporal_validation_split", lambda _rows: TemporalValidationSplit([], [], [row]))
 
     assert cli.command_evaluate(
