@@ -40,6 +40,14 @@ The gate enforces:
 - bounded drawdown, CVaR, deployed weight, correlation, and cluster exposure
   metrics.
 
+Live/readiness feature-drift evidence is also part of this standard. It compares
+current rows with the model's fitted feature means and standard deviations, then
+tracks maximum absolute z-score, mean absolute z-score, and the fraction of
+feature values past the warning threshold. A broad mean shift is treated as
+model-risk evidence even when no single feature is an extreme outlier, because a
+calibrated classifier is no longer operating on the distribution it was fitted
+to.
+
 Portfolio VaR/CVaR and drawdown use actual cap-constrained equity weights.
 When the single-asset allocation cap prevents full deployment, the undeployed
 portion remains explicit cash reserve with zero return; it is not normalized
@@ -70,6 +78,12 @@ References:
   combines calibration and discriminatory power and should not be treated as a
   stand-alone calibration proof:
   <https://scikit-learn.org/stable/modules/calibration.html>
+- NIST AI RMF Measure guidance and NIST AI 800-4 deployed-monitoring guidance,
+  which treat data drift, model drift, performance degradation, and ongoing
+  monitoring controls as lifecycle risks:
+  <https://airc.nist.gov/airmf-resources/playbook/measure/>
+  and
+  <https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.800-4.pdf>
 
 ## Market Edge Requirement
 

@@ -395,6 +395,8 @@ class FeatureDriftReport:
     outlier_fraction: float
     warn_threshold: float
     fail_threshold: float
+    mean_warn_threshold: float
+    mean_fail_threshold: float
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -957,6 +959,8 @@ def feature_drift_report(
     *,
     warn_z: float = 4.0,
     fail_z: float = 8.0,
+    mean_warn_z: float | None = None,
+    mean_fail_z: float | None = None,
     outlier_warn_fraction: float = 0.10,
     outlier_fail_fraction: float = 0.25,
 ) -> FeatureDriftReport:
@@ -964,6 +968,14 @@ def feature_drift_report(
 
     warn_z = max(0.1, float(warn_z))
     fail_z = max(warn_z, float(fail_z))
+    mean_warn_threshold = max(
+        0.1,
+        float(mean_warn_z if mean_warn_z is not None else warn_z * 0.60),
+    )
+    mean_fail_threshold = max(
+        mean_warn_threshold,
+        float(mean_fail_z if mean_fail_z is not None else fail_z * 0.50),
+    )
     outlier_warn_fraction = _clamp(float(outlier_warn_fraction), 0.0, 1.0)
     outlier_fail_fraction = _clamp(float(outlier_fail_fraction), outlier_warn_fraction, 1.0)
     feature_dim = int(getattr(model, "feature_dim", 0) or 0)
@@ -979,6 +991,8 @@ def feature_drift_report(
             outlier_fraction=0.0,
             warn_threshold=warn_z,
             fail_threshold=fail_z,
+            mean_warn_threshold=mean_warn_threshold,
+            mean_fail_threshold=mean_fail_threshold,
         )
 
     validate_model_rows(rows, label="drift rows", expected_feature_dim=feature_dim)
@@ -995,6 +1009,8 @@ def feature_drift_report(
             outlier_fraction=1.0,
             warn_threshold=warn_z,
             fail_threshold=fail_z,
+            mean_warn_threshold=mean_warn_threshold,
+            mean_fail_threshold=mean_fail_threshold,
         )
 
     z_values: List[float] = []
@@ -1027,6 +1043,13 @@ def feature_drift_report(
         warnings.append("elevated out-of-distribution feature fraction")
         if status != "fail":
             status = "warn"
+    if mean_abs_z >= mean_fail_threshold:
+        warnings.append("broad feature drift exceeds mean hard threshold")
+        status = "fail"
+    elif mean_abs_z >= mean_warn_threshold:
+        warnings.append("broad feature drift exceeds mean warning threshold")
+        if status != "fail":
+            status = "warn"
 
     return FeatureDriftReport(
         status=status,
@@ -1038,6 +1061,8 @@ def feature_drift_report(
         outlier_fraction=float(outlier_fraction),
         warn_threshold=warn_z,
         fail_threshold=fail_z,
+        mean_warn_threshold=mean_warn_threshold,
+        mean_fail_threshold=mean_fail_threshold,
     )
 
 

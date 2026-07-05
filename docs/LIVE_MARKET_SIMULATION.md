@@ -179,6 +179,13 @@ The same report summarizes realized P&L, accepted windows, profit factor, and
 expectancy by detected regime so operators can see when an apparent edge is
 concentrated in one market state.
 
+Live/readiness feature-drift checks compare the latest rows with the fitted
+training distribution before a promoted model is trusted. The report records
+maximum absolute z-score, mean absolute z-score, and the fraction of values
+outside the warning band. It fails closed for broad mean shifts as well as hard
+outlier clusters, so a market-regime move that shifts many inputs moderately is
+not treated as safe merely because no one feature tripped the extreme threshold.
+
 The training suite also gates selected candidates with purged chronological
 walk-forward folds when enough rows are available. The purge gap is at least the
 model label lookahead, so rows whose labels can see into a test fold are not
