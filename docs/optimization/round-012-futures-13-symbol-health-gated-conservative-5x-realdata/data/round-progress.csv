@@ -1,2 +1,2 @@
-round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct
-round-012-futures-13-symbol-health-gated-conservative-5x-realdata,2026-07-05T04:43:23.467411Z,13,0,0.0,0.0,-30.21657312914595,30.21657312914595,33.22084727030542,0.0,0,20.915164976023753
+round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct,critical_verdict,total_closed_trades,zero_trade_symbol_count,profitable_symbol_count
+round-012-futures-13-symbol-health-gated-conservative-5x-realdata,2026-07-05T04:43:23.467411Z,13,0,0.0,0.0,-30.21657312914595,30.21657312914595,33.22084727030542,0.0,0,20.915164976023753,fail,0,13,0

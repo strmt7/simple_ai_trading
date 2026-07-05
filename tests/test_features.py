@@ -7,6 +7,7 @@ import pytest
 from simple_ai_trading.api import Candle
 from simple_ai_trading.features import (
     FEATURE_NAMES,
+    FeatureAccelerationError,
     feature_signature,
     make_inference_rows,
     make_rows,
@@ -147,6 +148,33 @@ def test_make_rows_accelerated_path_falls_back_to_cpu(monkeypatch) -> None:
     fallback_rows = make_rows(_fake_candles(), short_window=10, long_window=30, compute_backend="directml")
 
     assert fallback_rows == cpu_rows
+
+
+def test_make_rows_require_accelerated_rejects_cpu_backend() -> None:
+    with pytest.raises(FeatureAccelerationError, match="backend_resolved_to_cpu"):
+        make_rows(
+            _fake_candles(),
+            short_window=10,
+            long_window=30,
+            compute_backend="cpu",
+            require_accelerated=True,
+        )
+
+
+def test_make_rows_require_accelerated_rejects_tensor_failure(monkeypatch) -> None:
+    def fail_tensor(*_args, **_kwargs):
+        raise RuntimeError("accelerator unavailable in test")
+
+    monkeypatch.setattr(features_mod, "_make_rows_tensor", fail_tensor)
+
+    with pytest.raises(FeatureAccelerationError, match="feature_generation_failed"):
+        make_rows(
+            _fake_candles(),
+            short_window=10,
+            long_window=30,
+            compute_backend="directml",
+            require_accelerated=True,
+        )
 
 
 def test_make_rows_preserves_candle_volume_for_execution_simulation() -> None:

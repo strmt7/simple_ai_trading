@@ -12,7 +12,7 @@ import pytest
 from simple_ai_trading.api import Candle
 from simple_ai_trading.assets import DEFAULT_REGULAR_LEVERAGE
 from simple_ai_trading.backtest import BacktestResult
-from simple_ai_trading.features import ModelRow
+from simple_ai_trading.features import FeatureAccelerationError, ModelRow
 from simple_ai_trading import optimization_evidence as oe
 from simple_ai_trading.market_store import MarketDataStore
 from simple_ai_trading.model import TrainedModel
@@ -33,6 +33,104 @@ def _candle(index: int, *, interval_ms: int = 1000, close: float = 100.0) -> Can
         quote_volume=close * 10.0,
         trade_count=100,
     )
+
+
+def _evidence(
+    symbol: str,
+    *,
+    accepted: bool,
+    roi_pct: float,
+    closed_trades: int,
+    realized_pnl: float | None = None,
+) -> oe.BacktestEvidence:
+    pnl = roi_pct * 10.0 if realized_pnl is None else realized_pnl
+    return oe.BacktestEvidence(
+        round_id="round-test",
+        symbol=symbol,
+        objective="conservative",
+        risk_level="conservative",
+        leverage=5.0,
+        effective_leverage=5.0,
+        leverage_applies=True,
+        risk_per_trade=0.005,
+        max_position_pct=0.1,
+        max_drawdown_limit_pct=10.0,
+        accepted=accepted,
+        reason=None if accepted else "test rejection",
+        start_utc="2026-01-01T00:00:00Z",
+        end_utc="2026-01-02T00:00:00Z",
+        duration_years=1.0 / 365.25,
+        candles=1000,
+        rows=500,
+        training_rows=400,
+        training_positive_rate_pct=50.0,
+        model_candidate_count=3,
+        model_selected_candidate="default",
+        model_selection_score=1.0,
+        model_training_backend_kind="directml",
+        model_training_backend_device="privateuseone:0",
+        probability_calibration_backend_kind="directml",
+        probability_calibration_backend_device="privateuseone:0",
+        threshold_source="round_selection_backtest",
+        threshold_calibration_score=1.0,
+        threshold_calibration_pnl=pnl,
+        threshold_calibration_trades=max(0, closed_trades),
+        decision_threshold=0.66,
+        model_quality_warnings="",
+        meta_label_policy_reason=None,
+        starting_cash=1000.0,
+        ending_cash=1000.0 + pnl,
+        realized_pnl=pnl,
+        roi_pct=roi_pct,
+        buy_hold_pnl=-50.0,
+        buy_hold_roi_pct=-5.0,
+        edge_vs_buy_hold=pnl + 50.0,
+        market_edge_pct=max(0.0, roi_pct),
+        max_drawdown_pct=1.0,
+        trades=closed_trades,
+        closed_trades=closed_trades,
+        win_rate_pct=60.0 if closed_trades else 0.0,
+        total_fees=1.0 if closed_trades else 0.0,
+        profit_factor=1.4 if accepted else 0.0,
+        expectancy=pnl / closed_trades if closed_trades else 0.0,
+        avg_trade_return_pct=roi_pct / closed_trades if closed_trades else 0.0,
+        max_consecutive_losses=1 if closed_trades else 0,
+        low_liquidity_sample_rate_pct=0.0,
+        weekend_sample_rate_pct=0.0,
+        scoring_backend_kind="directml",
+        scoring_backend_device="privateuseone:0",
+        chart_path="chart.svg",
+        timeline_csv_path="timeline.csv",
+    )
+
+
+def test_critical_round_analysis_rejects_zero_trade_abstention() -> None:
+    analysis = oe.critical_round_analysis(
+        [
+            _evidence("ETHUSDT", accepted=False, roi_pct=0.0, closed_trades=0),
+            _evidence("BTCUSDT", accepted=False, roi_pct=0.0, closed_trades=0),
+        ]
+    )
+
+    assert analysis["verdict"] == "fail"
+    assert "all_symbols_zero_closed_trades" in analysis["failures"]
+    assert "all_symbols_nonpositive_roi" in analysis["failures"]
+    assert "invalid_no_trade_abstention" in str(analysis["interpretation"])
+    assert analysis["total_closed_trades"] == 0
+
+
+def test_critical_round_analysis_accepts_traded_positive_round() -> None:
+    analysis = oe.critical_round_analysis(
+        [
+            _evidence("ETHUSDT", accepted=True, roi_pct=2.5, closed_trades=12),
+            _evidence("BTCUSDT", accepted=True, roi_pct=1.0, closed_trades=8),
+        ]
+    )
+
+    assert analysis["verdict"] == "pass"
+    assert analysis["failures"] == []
+    assert analysis["accepted_symbol_count"] == 2
+    assert analysis["total_closed_trades"] == 20
 
 
 class _SelectionClient:
@@ -720,6 +818,32 @@ def test_train_round_model_require_gpu_rejects_training_fallback(
         )
 
 
+def test_train_round_model_require_gpu_rejects_feature_generation_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: dict[str, object] = {}
+
+    def fail_feature_generation(_candles, _cfg, **kwargs):
+        observed["require_accelerated"] = kwargs.get("require_accelerated")
+        raise FeatureAccelerationError("feature_acceleration_required_but_directml_feature_generation_failed")
+
+    monkeypatch.setattr(oe, "make_advanced_rows", fail_feature_generation)
+
+    with pytest.raises(FeatureAccelerationError, match="feature_generation_failed"):
+        oe.train_round_model(
+            [_candle(index) for index in range(100)],
+            StrategyConfig(),
+            get_objective("conservative"),
+            market_type="futures",
+            starting_cash=1000.0,
+            compute_backend="directml",
+            batch_size=1024,
+            require_gpu=True,
+        )
+
+    assert observed["require_accelerated"] is True
+
+
 def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -942,6 +1066,11 @@ def test_build_round_evidence_records_data_health_block_before_training(
     assert report["metrics"][0]["model_training_backend_kind"] == "error"
     assert report["metrics"][0]["probability_calibration_backend_kind"] == "error"
     assert report["metrics"][0]["threshold_source"] is None
+    assert report["evidence_verdict"] == "fail"
+    assert report["critical_analysis"]["verdict"] == "fail"
+    assert "no_closed_trades" in report["critical_analysis"]["failures"]
+    assert report["progress"]["critical_verdict"] == "fail"
+    assert report["progress"]["total_closed_trades"] == 0
 
     report_path = tmp_path / "docs" / "optimization" / "round-test-health-gate" / "data" / "report.json"
     data_health_path = tmp_path / "docs" / "optimization" / "round-test-health-gate" / "data" / "data-health.json"

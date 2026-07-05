@@ -104,6 +104,10 @@ class ModelRow:
     volume: float = 0.0
 
 
+class FeatureAccelerationError(RuntimeError):
+    """Raised when a workflow explicitly requires accelerated feature rows."""
+
+
 def feature_dimension(enabled_features: Sequence[str] | None = None) -> int:
     return len(normalize_enabled_features(enabled_features))
 
@@ -431,11 +435,17 @@ def _make_rows_with_backend(
     label_threshold: float,
     include_labels: bool,
     compute_backend: str | None,
+    require_accelerated: bool = False,
 ) -> list[ModelRow] | None:
     if not compute_backend:
+        if require_accelerated:
+            raise FeatureAccelerationError("feature_acceleration_required_but_no_backend_was_provided")
         return None
     backend = resolve_backend(compute_backend)
     if backend.kind == "cpu":
+        if require_accelerated:
+            reason = f": {backend.reason}" if backend.reason else ""
+            raise FeatureAccelerationError(f"feature_acceleration_required_but_backend_resolved_to_cpu{reason}")
         return None
     try:
         return _make_rows_tensor(
@@ -448,7 +458,12 @@ def _make_rows_with_backend(
             include_labels=include_labels,
             backend=backend,
         )
-    except Exception:
+    except Exception as exc:
+        if require_accelerated:
+            raise FeatureAccelerationError(
+                f"feature_acceleration_required_but_{backend.kind}_feature_generation_failed: "
+                f"{exc.__class__.__name__}"
+            ) from exc
         return None
 
 
@@ -531,6 +546,7 @@ def make_rows(
     label_threshold: float = 0.001,
     enabled_features: Sequence[str] | None = None,
     compute_backend: str | None = None,
+    require_accelerated: bool = False,
 ) -> list[ModelRow]:
     if short_window <= 0 or long_window <= 0 or lookahead <= 0:
         raise ValueError("short_window, long_window, and lookahead must be positive")
@@ -552,6 +568,7 @@ def make_rows(
         label_threshold=label_threshold,
         include_labels=True,
         compute_backend=compute_backend,
+        require_accelerated=require_accelerated,
     )
     if accelerated is not None:
         return accelerated
@@ -585,6 +602,7 @@ def make_inference_rows(
     *,
     enabled_features: Sequence[str] | None = None,
     compute_backend: str | None = None,
+    require_accelerated: bool = False,
 ) -> list[ModelRow]:
     if short_window <= 0 or long_window <= 0:
         raise ValueError("short_window and long_window must be positive")
@@ -606,6 +624,7 @@ def make_inference_rows(
         label_threshold=0.0,
         include_labels=False,
         compute_backend=compute_backend,
+        require_accelerated=require_accelerated,
     )
     if accelerated is not None:
         return accelerated
