@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import statistics
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -227,6 +229,89 @@ def test_render_comparison_svg_decimates_visual_points_without_losing_span() -> 
     assert "full-resolution graph data is in CSV" in svg
     assert "1970-01-01" in svg
     assert "1970-01-14" in svg
+
+
+def test_rolling_liquidity_flags_filtered_matches_bruteforce() -> None:
+    start = 1_704_067_200_000
+    candles = []
+    for index in range(240):
+        close = 100.0 + index * 0.02
+        open_time = start + index * 60_000
+        volume = 15.0 + (index % 11)
+        quote_volume = close * volume
+        trades = 120 + (index % 17)
+        if index in {111, 137, 201}:
+            quote_volume *= 0.1
+            trades = 4
+        candles.append(
+            Candle(
+                open_time=open_time,
+                open=close,
+                high=close + 0.5,
+                low=close - 0.5,
+                close=close,
+                volume=volume,
+                close_time=open_time + 59_999,
+                quote_volume=quote_volume,
+                trade_count=trades,
+            )
+        )
+
+    def bucket(timestamp_ms: int) -> tuple[int, int, int]:
+        dt = datetime.fromtimestamp(timestamp_ms / 1000.0, tz=timezone.utc)
+        return dt.weekday(), dt.hour, dt.minute // 15
+
+    def brute_force(window: int) -> dict[int, dict[str, float | int | bool | str]]:
+        quote_volumes = [max(0.0, float(candle.quote_volume)) for candle in candles]
+        trade_counts = [max(0, int(candle.trade_count)) for candle in candles]
+        output: dict[int, dict[str, float | int | bool | str]] = {}
+        for index, candle in enumerate(candles):
+            start_index = max(0, index - window)
+            window_volumes = quote_volumes[start_index:index]
+            window_trades = trade_counts[start_index:index]
+            current_bucket = bucket(int(candle.close_time))
+            bucket_volumes = [
+                quote_volumes[prior]
+                for prior in range(start_index, index)
+                if bucket(int(candles[prior].close_time)) == current_bucket
+            ]
+            bucket_trades = [
+                trade_counts[prior]
+                for prior in range(start_index, index)
+                if bucket(int(candles[prior].close_time)) == current_bucket
+            ]
+            median_volume = statistics.median(window_volumes) if window_volumes else 0.0
+            median_trades = statistics.median(window_trades) if window_trades else 0.0
+            bucket_median_volume = statistics.median(bucket_volumes) if len(bucket_volumes) >= 8 else 0.0
+            bucket_median_trades = statistics.median(bucket_trades) if len(bucket_trades) >= 8 else 0.0
+            close_time = int(candle.close_time)
+            dt = datetime.fromtimestamp(close_time / 1000.0, tz=timezone.utc)
+            low_volume = bool(median_volume > 0 and quote_volumes[index] < median_volume * 0.35)
+            low_trades = bool(median_trades > 0 and trade_counts[index] < median_trades * 0.35)
+            low_bucket_volume = bool(bucket_median_volume > 0 and quote_volumes[index] < bucket_median_volume * 0.45)
+            low_bucket_trades = bool(bucket_median_trades > 0 and trade_counts[index] < bucket_median_trades * 0.45)
+            output[close_time] = {
+                "quote_volume": float(quote_volumes[index]),
+                "trade_count": int(trade_counts[index]),
+                "rolling_quote_volume_median": float(median_volume),
+                "rolling_trade_count_median": float(median_trades),
+                "clock_bucket": f"{current_bucket[0]}:{current_bucket[1]:02d}:{current_bucket[2]:02d}",
+                "clock_bucket_quote_volume_median": float(bucket_median_volume),
+                "clock_bucket_trade_count_median": float(bucket_median_trades),
+                "data_probed_low_session_flag": bool(low_bucket_volume or low_bucket_trades),
+                "low_liquidity_flag": bool(low_volume or low_trades or low_bucket_volume or low_bucket_trades),
+                "weekend_flag": bool(dt.weekday() >= 5),
+                "utc_hour": int(dt.hour),
+                "utc_weekday": int(dt.weekday()),
+            }
+        return output
+
+    wanted = {candles[index].close_time for index in (32, 111, 137, 201, 239)}
+    expected = brute_force(32)
+    actual = oe._rolling_liquidity_flags(candles, window=32, timestamps=wanted)
+
+    assert set(actual) == wanted
+    assert actual == {timestamp: expected[timestamp] for timestamp in sorted(wanted)}
 
 
 def test_portfolio_timeline_streaming_aggregate_matches_row_inputs() -> None:

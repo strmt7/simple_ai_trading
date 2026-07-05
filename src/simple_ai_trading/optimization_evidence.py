@@ -7,6 +7,8 @@ import copy
 import gc
 import math
 import statistics
+from bisect import bisect_left, insort
+from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -569,50 +571,94 @@ def _liquidity_clock_bucket(timestamp_ms: int, bucket_minutes: int = 15) -> tupl
     return dt.weekday(), dt.hour, dt.minute // bucket
 
 
-def _rolling_liquidity_flags(candles: Sequence[Candle], *, window: int = 96) -> dict[int, dict[str, float | int | bool | str]]:
+def _median_sorted(values: Sequence[float]) -> float:
+    count = len(values)
+    if count <= 0:
+        return 0.0
+    mid = count // 2
+    if count % 2:
+        return float(values[mid])
+    return float(values[mid - 1] + values[mid]) / 2.0
+
+
+def _discard_sorted_value(values: list[float], value: float) -> None:
+    index = bisect_left(values, value)
+    if index < len(values):
+        values.pop(index)
+
+
+def _rolling_liquidity_flags(
+    candles: Sequence[Candle],
+    *,
+    window: int = 96,
+    timestamps: Iterable[int] | None = None,
+) -> dict[int, dict[str, float | int | bool | str]]:
     flags: dict[int, dict[str, float | int | bool | str]] = {}
-    quote_volumes = [max(0.0, float(candle.quote_volume)) for candle in candles]
-    trade_counts = [max(0, int(candle.trade_count)) for candle in candles]
-    for index, candle in enumerate(candles):
-        start = max(0, index - max(1, int(window)))
-        window_volumes = quote_volumes[start:index]
-        window_trades = trade_counts[start:index]
-        volume = quote_volumes[index]
-        trades = trade_counts[index]
-        median_volume = statistics.median(window_volumes) if window_volumes else 0.0
-        median_trades = statistics.median(window_trades) if window_trades else 0.0
-        dt = datetime.fromtimestamp(int(candle.close_time) / 1000.0, tz=timezone.utc)
-        bucket = _liquidity_clock_bucket(int(candle.close_time))
-        bucket_volumes = [
-            quote_volumes[prior]
-            for prior in range(start, index)
-            if _liquidity_clock_bucket(int(candles[prior].close_time)) == bucket
-        ]
-        bucket_trades = [
-            trade_counts[prior]
-            for prior in range(start, index)
-            if _liquidity_clock_bucket(int(candles[prior].close_time)) == bucket
-        ]
-        bucket_median_volume = statistics.median(bucket_volumes) if len(bucket_volumes) >= 8 else 0.0
-        bucket_median_trades = statistics.median(bucket_trades) if len(bucket_trades) >= 8 else 0.0
-        low_volume = bool(median_volume > 0 and volume < median_volume * 0.35)
-        low_trades = bool(median_trades > 0 and trades < median_trades * 0.35)
-        low_bucket_volume = bool(bucket_median_volume > 0 and volume < bucket_median_volume * 0.45)
-        low_bucket_trades = bool(bucket_median_trades > 0 and trades < bucket_median_trades * 0.45)
-        flags[int(candle.close_time)] = {
-            "quote_volume": float(volume),
-            "trade_count": int(trades),
-            "rolling_quote_volume_median": float(median_volume),
-            "rolling_trade_count_median": float(median_trades),
-            "clock_bucket": f"{bucket[0]}:{bucket[1]:02d}:{bucket[2]:02d}",
-            "clock_bucket_quote_volume_median": float(bucket_median_volume),
-            "clock_bucket_trade_count_median": float(bucket_median_trades),
-            "data_probed_low_session_flag": bool(low_bucket_volume or low_bucket_trades),
-            "low_liquidity_flag": bool(low_volume or low_trades or low_bucket_volume or low_bucket_trades),
-            "weekend_flag": bool(dt.weekday() >= 5),
-            "utc_hour": int(dt.hour),
-            "utc_weekday": int(dt.weekday()),
-        }
+    wanted: set[int] | None = None
+    max_wanted: int | None = None
+    if timestamps is not None:
+        wanted = {int(timestamp) for timestamp in timestamps if int(timestamp) > 0}
+        if not wanted:
+            return flags
+        max_wanted = max(wanted)
+
+    lookback = max(1, int(window))
+    sorted_volumes: list[float] = []
+    sorted_trades: list[float] = []
+    prior_window: deque[tuple[tuple[int, int, int], float, float]] = deque()
+    bucket_volumes: defaultdict[tuple[int, int, int], list[float]] = defaultdict(list)
+    bucket_trades: defaultdict[tuple[int, int, int], list[float]] = defaultdict(list)
+
+    for candle in candles:
+        close_time = int(candle.close_time)
+        if max_wanted is not None and close_time > max_wanted:
+            break
+        volume = max(0.0, float(candle.quote_volume))
+        trades = float(max(0, int(candle.trade_count)))
+        median_volume = _median_sorted(sorted_volumes)
+        median_trades = _median_sorted(sorted_trades)
+        dt = datetime.fromtimestamp(close_time / 1000.0, tz=timezone.utc)
+        bucket = (dt.weekday(), dt.hour, dt.minute // 15)
+        same_bucket_volumes = bucket_volumes.get(bucket, [])
+        same_bucket_trades = bucket_trades.get(bucket, [])
+        bucket_median_volume = _median_sorted(same_bucket_volumes) if len(same_bucket_volumes) >= 8 else 0.0
+        bucket_median_trades = _median_sorted(same_bucket_trades) if len(same_bucket_trades) >= 8 else 0.0
+        if wanted is None or close_time in wanted:
+            low_volume = bool(median_volume > 0 and volume < median_volume * 0.35)
+            low_trades = bool(median_trades > 0 and trades < median_trades * 0.35)
+            low_bucket_volume = bool(bucket_median_volume > 0 and volume < bucket_median_volume * 0.45)
+            low_bucket_trades = bool(bucket_median_trades > 0 and trades < bucket_median_trades * 0.45)
+            flags[close_time] = {
+                "quote_volume": float(volume),
+                "trade_count": int(trades),
+                "rolling_quote_volume_median": float(median_volume),
+                "rolling_trade_count_median": float(median_trades),
+                "clock_bucket": f"{bucket[0]}:{bucket[1]:02d}:{bucket[2]:02d}",
+                "clock_bucket_quote_volume_median": float(bucket_median_volume),
+                "clock_bucket_trade_count_median": float(bucket_median_trades),
+                "data_probed_low_session_flag": bool(low_bucket_volume or low_bucket_trades),
+                "low_liquidity_flag": bool(low_volume or low_trades or low_bucket_volume or low_bucket_trades),
+                "weekend_flag": bool(dt.weekday() >= 5),
+                "utc_hour": int(dt.hour),
+                "utc_weekday": int(dt.weekday()),
+            }
+        prior_window.append((bucket, volume, trades))
+        insort(sorted_volumes, volume)
+        insort(sorted_trades, trades)
+        insort(bucket_volumes[bucket], volume)
+        insort(bucket_trades[bucket], trades)
+        if len(prior_window) > lookback:
+            old_bucket, old_volume, old_trades = prior_window.popleft()
+            _discard_sorted_value(sorted_volumes, old_volume)
+            _discard_sorted_value(sorted_trades, old_trades)
+            old_bucket_volumes = bucket_volumes.get(old_bucket, [])
+            old_bucket_trades = bucket_trades.get(old_bucket, [])
+            _discard_sorted_value(old_bucket_volumes, old_volume)
+            _discard_sorted_value(old_bucket_trades, old_trades)
+            if not old_bucket_volumes:
+                bucket_volumes.pop(old_bucket, None)
+            if not old_bucket_trades:
+                bucket_trades.pop(old_bucket, None)
     return flags
 
 
@@ -1235,7 +1281,12 @@ def build_round_evidence(
                 current_symbol_index=selected_index,
                 validation_rows=len(validation_rows),
             )
-            liquidity_by_close = _rolling_liquidity_flags(candles)
+            validation_timestamps = {
+                int(getattr(row, "timestamp", 0))
+                for row in validation_rows
+                if int(getattr(row, "timestamp", 0)) > 0
+            }
+            liquidity_by_close = _rolling_liquidity_flags(candles, timestamps=validation_timestamps)
             point_by_timestamp = {int(point.timestamp_ms or 0): point for point in strategy_points}
             baseline_by_timestamp = {int(point.timestamp_ms or 0): point for point in baseline_points}
             symbol_timeline_path = paths.docs_data_dir / f"{item.rank:02d}-{item.symbol}-{objective.name}-timeline.csv"
