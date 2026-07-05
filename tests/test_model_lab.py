@@ -112,12 +112,18 @@ class _PagedHistoryClient(_Client):
 class _Stress:
     def __init__(self, accepted: bool) -> None:
         self.accepted = accepted
+        self.objective_count = 1
+        self.accepted_objectives = 1 if self.accepted else 0
+        self.scenario_count = 4
         self.worst_realized_pnl = 10.0 if self.accepted else -5.0
         self.worst_max_drawdown = 0.01 if self.accepted else 0.20
 
     def asdict(self) -> dict[str, object]:
         return {
             "accepted": self.accepted,
+            "objective_count": self.objective_count,
+            "accepted_objectives": self.accepted_objectives,
+            "scenario_count": self.scenario_count,
             "worst_realized_pnl": self.worst_realized_pnl,
             "worst_max_drawdown": self.worst_max_drawdown,
         }
