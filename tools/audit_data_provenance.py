@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FORBIDDEN_REPO_DATA_PREFIXES = ("data/", "data\\")
-FORBIDDEN_OPTIMIZATION_ARTIFACT_SUFFIXES = (".json", ".svg", ".png", ".csv", ".sqlite")
+FORBIDDEN_OPTIMIZATION_ARTIFACT_SUFFIXES = (".json", ".svg", ".png", ".csv", ".csv.gz", ".sqlite")
 FORBIDDEN_DOC_PHRASES = (
     "deterministic_synthetic",
     "synthetic benchmark",

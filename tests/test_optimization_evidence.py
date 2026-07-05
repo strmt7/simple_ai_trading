@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import gzip
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
@@ -352,6 +353,21 @@ def test_portfolio_timeline_streaming_aggregate_matches_row_inputs() -> None:
     assert timeline[0]["low_liquidity_symbol_count"] == 1
     assert timeline[1]["symbols_reporting"] == 1
     assert timeline[1]["low_liquidity_symbol_count"] == 1
+
+
+def test_write_csv_supports_compressed_graph_data(tmp_path: Path) -> None:
+    output = tmp_path / "timeline.csv.gz"
+
+    oe._write_csv(
+        output,
+        [{"timestamp_ms": 1, "strategy_equity": 1000.0}],
+        ("timestamp_ms", "strategy_equity"),
+    )
+
+    with gzip.open(output, "rt", encoding="utf-8", newline="") as handle:
+        payload = handle.read()
+    assert "timestamp_ms,strategy_equity" in payload
+    assert "1,1000.0" in payload
 
 
 def test_fetch_full_history_refuses_network_backfill_when_prefill_required(
