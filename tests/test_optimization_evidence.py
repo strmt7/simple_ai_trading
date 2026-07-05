@@ -428,7 +428,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     monkeypatch.setattr(
         oe,
         "calibrate_probability_temperature",
-        lambda calibration_rows, _model: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
     )
 
     def fake_threshold(selection_rows, _model, _strategy, **_kwargs):
@@ -535,7 +535,7 @@ def test_train_round_model_fails_closed_when_selection_rejects_all_variants(
     monkeypatch.setattr(
         oe,
         "calibrate_probability_temperature",
-        lambda calibration_rows, _model: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
     )
     monkeypatch.setattr(
         oe,
@@ -653,7 +653,7 @@ def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
     monkeypatch.setattr(
         oe,
         "calibrate_probability_temperature",
-        lambda calibration_rows, _model: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
     )
     monkeypatch.setattr(
         oe,

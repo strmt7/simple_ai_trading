@@ -28,11 +28,16 @@ simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 CPU-only mode is allowed. When selected or when GPU probing fails:
 
 - AI features are disabled.
-- Training, retraining, tuning, external-signal scoring, threshold calibration,
-  and backtest scoring use GPU-first `auto` when no explicit backend is passed.
-  They continue on CPU only when the user selects CPU or every GPU probe fails,
-  and artifacts record the requested backend, resolved backend, device, and
-  fallback reason.
+- Training, retraining, tuning, external-signal scoring, probability-temperature
+  calibration, threshold calibration, and backtest scoring use GPU-first `auto`
+  when no explicit backend is passed. They continue on CPU only when the user
+  selects CPU or every GPU probe fails, and artifacts record the requested
+  backend, resolved backend, device, and fallback reason.
+- Probability calibration reports include `calibration_backend_requested`,
+  `calibration_backend_kind`, `calibration_backend_device`, and
+  `calibration_backend_reason`. Promotion evidence should treat those fields as
+  the proof of whether the calibration scan ran on DirectML/CUDA/ROCm/MPS or
+  fell back to CPU.
 - Hybrid model-zoo backtest scoring keeps Lorentzian nearest-neighbor,
   rational-quadratic kernel, and technical-confluence expert math on the tensor
   backend when the backend supports the required operations.

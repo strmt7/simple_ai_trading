@@ -1397,7 +1397,12 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     strategy = _strategy_for_candidate(base_strategy, candidate, training)
     threshold_score = None
     if calibration_rows:
-        probability_calibration = calibrate_probability_temperature(calibration_rows, model)
+        probability_calibration = calibrate_probability_temperature(
+            calibration_rows,
+            model,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
+        )
         if probability_calibration.status != "fail":
             model.probability_temperature = float(probability_calibration.temperature)
             model.probability_calibration_size = int(probability_calibration.rows)

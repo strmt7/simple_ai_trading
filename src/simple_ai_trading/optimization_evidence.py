@@ -909,7 +909,12 @@ def train_round_model(
             },
         )
         status_callback("threshold_calibration_started", {"selection_rows": len(selection_rows)})
-    calibration = calibrate_probability_temperature(list(selection_rows[: max(1, min(len(selection_rows), 5000))]), model)
+    calibration = calibrate_probability_temperature(
+        list(selection_rows[: max(1, min(len(selection_rows), 5000))]),
+        model,
+        compute_backend=compute_backend,
+        batch_size=batch_size,
+    )
     if calibration.status != "fail":
         model.probability_temperature = float(calibration.temperature)
         model.probability_calibration_size = int(calibration.rows)
@@ -936,6 +941,8 @@ def train_round_model(
                 "threshold_accepted": bool(threshold_report.accepted),
                 "threshold": float(threshold_report.threshold),
                 "closed_trades": int(threshold_report.closed_trades),
+                "probability_calibration_backend_kind": getattr(calibration, "calibration_backend_kind", ""),
+                "probability_calibration_backend_device": getattr(calibration, "calibration_backend_device", ""),
                 "scoring_backend_kind": threshold_report.scoring_backend_kind,
                 "scoring_backend_device": threshold_report.scoring_backend_device,
             },

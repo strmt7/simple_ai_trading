@@ -364,6 +364,10 @@ class ProbabilityCalibrationReport:
     expected_calibration_error_before: float
     expected_calibration_error_after: float
     improved: bool
+    calibration_backend_requested: str = "cpu"
+    calibration_backend_kind: str = "cpu"
+    calibration_backend_device: str = "cpu"
+    calibration_backend_reason: str = ""
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -625,6 +629,10 @@ def assess_probability_calibration(rows: List[ModelRow], model: TrainedModel) ->
             expected_calibration_error_before=0.0,
             expected_calibration_error_after=0.0,
             improved=False,
+            calibration_backend_requested="cpu",
+            calibration_backend_kind="cpu",
+            calibration_backend_device="cpu",
+            calibration_backend_reason="no calibration rows",
         )
     validate_model_rows(rows, label="probability calibration rows", expected_feature_dim=model.feature_dim)
     temperature = _coerce_temperature(getattr(model, "probability_temperature", 1.0))
@@ -658,7 +666,86 @@ def assess_probability_calibration(rows: List[ModelRow], model: TrainedModel) ->
         expected_calibration_error_before=float(ece_before),
         expected_calibration_error_after=float(ece_after),
         improved=bool(improved),
+        calibration_backend_requested="cpu",
+        calibration_backend_kind="cpu",
+        calibration_backend_device="cpu",
+        calibration_backend_reason="stdlib probability calibration assessment",
     )
+
+
+def _temperature_scan_torch(  # pragma: no cover - exercised by host GPU smoke verification
+    rows: List[ModelRow],
+    model: TrainedModel,
+    candidates: Sequence[float],
+    *,
+    backend: BackendInfo,
+    batch_size: int,
+) -> tuple[float, float, float]:
+    import torch  # type: ignore
+
+    if not candidates:
+        raise ValueError("No temperature candidates to scan")
+    device = _torch_device_for_backend(backend)
+    batch = max(1, int(batch_size or 8192))
+    temperatures = torch.tensor([float(value) for value in candidates], dtype=torch.float32, device=device)
+    log_loss_sums = torch.zeros((len(candidates),), dtype=torch.float32, device=device)
+    brier_sums = torch.zeros((len(candidates),), dtype=torch.float32, device=device)
+
+    members = list(model.ensemble_members)
+    model_specs = []
+    if members:
+        for member in members:
+            model_specs.append((member.weights, member.bias, member.feature_means, member.feature_stds))
+    else:
+        model_specs.append((model.weights, model.bias, model.feature_means, model.feature_stds))
+
+    model_tensors = []
+    for weights, bias, means, stds in model_specs:
+        weight_t = torch.tensor(list(weights), dtype=torch.float32, device=device)
+        bias_t = torch.tensor(float(bias), dtype=torch.float32, device=device)
+        mean_t = torch.tensor(list(means), dtype=torch.float32, device=device)
+        std_t = torch.tensor(list(stds), dtype=torch.float32, device=device)
+        std_t = torch.where(torch.abs(std_t) > 0.0, std_t, torch.ones_like(std_t))
+        model_tensors.append((weight_t, bias_t, mean_t, std_t))
+
+    for start in range(0, len(rows), batch):
+        chunk = rows[start:start + batch]
+        features = torch.tensor([row.features for row in chunk], dtype=torch.float32, device=device)
+        labels = torch.tensor(
+            [float(1 if int(row.label) else 0) for row in chunk],
+            dtype=torch.float32,
+            device=device,
+        ).reshape(-1, 1)
+        probabilities = None
+        for weight_t, bias_t, mean_t, std_t in model_tensors:
+            normalized = (features - mean_t) / std_t
+            logits = normalized.matmul(weight_t.reshape(-1, 1)).reshape(-1) + bias_t
+            logits_by_temperature = torch.clamp(
+                logits.reshape(-1, 1) / temperatures.reshape(1, -1),
+                min=-50.0,
+                max=50.0,
+            )
+            member_probabilities = torch.sigmoid(logits_by_temperature)
+            probabilities = (
+                member_probabilities
+                if probabilities is None
+                else probabilities + member_probabilities
+            )
+        if probabilities is None:  # pragma: no cover - model_tensors is always populated above
+            raise RuntimeError("No probabilities were produced for temperature calibration")
+        if len(model_tensors) > 1:
+            probabilities = probabilities / float(len(model_tensors))
+        probabilities = torch.clamp(probabilities, min=1e-6, max=1.0 - 1e-6)
+        log_loss_sums = log_loss_sums + (
+            -(labels * torch.log(probabilities) + (1.0 - labels) * torch.log(1.0 - probabilities))
+        ).sum(dim=0)
+        brier_sums = brier_sums + ((probabilities - labels) * (probabilities - labels)).sum(dim=0)
+
+    row_count = max(1, len(rows))
+    log_losses = [float(value) for value in (log_loss_sums / float(row_count)).detach().cpu().tolist()]
+    briers = [float(value) for value in (brier_sums / float(row_count)).detach().cpu().tolist()]
+    best_index = min(range(len(candidates)), key=lambda index: (log_losses[index], briers[index]))
+    return float(candidates[best_index]), float(log_losses[best_index]), float(briers[best_index])
 
 
 def calibrate_probability_temperature(
@@ -668,6 +755,8 @@ def calibrate_probability_temperature(
     min_temperature: float = 0.5,
     max_temperature: float = 5.0,
     steps: int = 46,
+    compute_backend: str | None = None,
+    batch_size: int = 8192,
 ) -> ProbabilityCalibrationReport:
     """Fit a one-parameter temperature calibrator on held-out rows."""
 
@@ -688,6 +777,10 @@ def calibrate_probability_temperature(
             expected_calibration_error_before=base.expected_calibration_error_before,
             expected_calibration_error_after=base.expected_calibration_error_after,
             improved=False,
+            calibration_backend_requested=base.calibration_backend_requested,
+            calibration_backend_kind=base.calibration_backend_kind,
+            calibration_backend_device=base.calibration_backend_device,
+            calibration_backend_reason=base.calibration_backend_reason,
         )
 
     low = max(0.05, float(min_temperature))
@@ -701,14 +794,32 @@ def calibrate_probability_temperature(
     best_log_loss = base.log_loss_before
     best_brier = base.brier_before
     best_ece = base.expected_calibration_error_before
-    for temperature in candidates:
-        log_loss = _model_log_loss(rows, model, temperature=temperature)
-        brier = _brier_score(rows, model, temperature=temperature)
-        if log_loss < best_log_loss - 1e-12 or (abs(log_loss - best_log_loss) <= 1e-12 and brier < best_brier):
-            best_temperature = float(temperature)
-            best_log_loss = float(log_loss)
-            best_brier = float(brier)
-            best_ece = _expected_calibration_error(rows, model, temperature=temperature)
+    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    if backend.kind != "cpu":
+        try:
+            best_temperature, best_log_loss, best_brier = _temperature_scan_torch(
+                rows,
+                model,
+                candidates,
+                backend=backend,
+                batch_size=batch_size,
+            )
+            best_ece = _expected_calibration_error(rows, model, temperature=best_temperature)
+        except Exception as exc:
+            backend = _fallback_backend(
+                backend,
+                f"{backend.kind} temperature calibration failed ({exc.__class__.__name__}); fell back to CPU",
+            )
+
+    if backend.kind == "cpu":
+        for temperature in candidates:
+            log_loss = _model_log_loss(rows, model, temperature=temperature)
+            brier = _brier_score(rows, model, temperature=temperature)
+            if log_loss < best_log_loss - 1e-12 or (abs(log_loss - best_log_loss) <= 1e-12 and brier < best_brier):
+                best_temperature = float(temperature)
+                best_log_loss = float(log_loss)
+                best_brier = float(brier)
+                best_ece = _expected_calibration_error(rows, model, temperature=temperature)
 
     improved = best_log_loss < base.log_loss_before - 1e-6 or best_brier < base.brier_before - 1e-6
     if not improved:
@@ -717,6 +828,8 @@ def calibrate_probability_temperature(
         best_log_loss = base.log_loss_before
         best_brier = base.brier_before
         best_ece = base.expected_calibration_error_before
+        if backend.kind != "cpu":
+            best_ece = _expected_calibration_error(rows, model, temperature=best_temperature)
     return ProbabilityCalibrationReport(
         status="warn" if warnings else "ok",
         warnings=warnings,
@@ -729,6 +842,10 @@ def calibrate_probability_temperature(
         expected_calibration_error_before=base.expected_calibration_error_before,
         expected_calibration_error_after=float(best_ece),
         improved=bool(improved),
+        calibration_backend_requested=backend.requested,
+        calibration_backend_kind=backend.kind,
+        calibration_backend_device=backend.device,
+        calibration_backend_reason=backend.reason,
     )
 
 
