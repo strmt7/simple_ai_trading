@@ -192,6 +192,10 @@ Signed live-style startup requires a promoted model artifact. A model must carry
 
 `regular` and `aggressive` default to `10x` and `15x` futures leverage respectively, but still keep leverage capped at `20x`, require diversification, and preserve exchange/testnet safeguards. Leverage is not treated as an ROI target; it only scales permitted futures notional after stop-loss sizing, position caps, loss budgets, exchange brackets, liquidation-buffer checks, and reconciliation gates pass.
 
+Signed futures opens also clamp leverage to the active Binance notional bracket
+for the intended gross order notional before submitting the market order, so a
+small-order leverage ceiling is not applied blindly to larger orders.
+
 Position sizing treats `risk_per_trade` as the maximum estimated equity budget
 intended to be lost if the configured stop-loss is hit, including taker fees and
 the adverse exit-fill buffer from the execution simulator, then caps gross

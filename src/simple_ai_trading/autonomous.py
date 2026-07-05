@@ -467,15 +467,20 @@ def _apply_close_order(trade: ClosedTrade, order: Mapping[str, object], close_cl
 def _submit_open_position(client: BinanceClient, position: OpenPosition) -> OpenPosition:
     if position.dry_run:
         return position
+    order_kwargs = {
+        "dry_run": False,
+        "leverage": position.leverage,
+        "reduce_only": False,
+        "client_order_id": position.open_client_order_id,
+    }
+    if hasattr(client, "get_max_leverage_for_notional"):
+        order_kwargs["notional"] = abs(float(position.notional))
     try:
         order = client.place_order(
             position.symbol,
             _position_order_side(position, close=False),
             position.qty,
-            dry_run=False,
-            leverage=position.leverage,
-            reduce_only=False,
-            client_order_id=position.open_client_order_id,
+            **order_kwargs,
         )
     except BinanceAPIError:
         # The request may have reached the exchange before the network failed.

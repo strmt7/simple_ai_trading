@@ -198,6 +198,13 @@ Futures safety:
 - Binance can support larger initial leverage values, but this app hard-caps autonomous leverage at `20x`.
 - Risk-profile defaults are `5x` conservative, `10x` regular, and `15x` aggressive in futures mode. Spot mode still resolves to `1x` because spot orders cannot use futures leverage.
 - Shorting is only available on futures mode.
+- Signed futures opens clamp requested leverage against the active symbol's
+  Binance notional bracket for the intended gross order notional before the
+  market order is submitted. The parser accepts Binance's documented
+  object-shaped symbol response and list-shaped fallback response, then uses
+  bracket `notionalFloor`, `notionalCap`, and `initialLeverage`/`maxLeverage`
+  evidence instead of assuming the symbol-wide maximum applies to every order
+  size.
 - Liquidation buffer is part of strategy config, risk reporting, backtest evidence, and promotion gates.
 - Futures backtests use a conservative isolated-margin liquidation proxy derived from the same maintenance-margin concept used by Binance futures: `margin_balance = isolated_margin + unrealized_pnl`; if that balance is less than or equal to `current_notional * liquidation_buffer_pct`, the isolated margin is treated as lost, the position is cleared, `liquidation_events` is incremented, and no threshold, objective, market-edge, stress, temporal, or optimization report can be accepted.
 - The proxy deliberately fails closed when historical rows gap through a liquidation boundary. It does not assume a favorable stop-loss fill after the maintenance-plus-buffer condition has already been breached.
