@@ -184,11 +184,7 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "rows": 500,
             "objective_scores": {"regular": 0.15},
             "selection_risk": {"regular": _accepted_selection_risk()},
-            "data_coverage": {
-                "integrity_status": "ok",
-                "coverage_ratio": 1.0,
-                "gap_count": 0,
-            },
+            "data_coverage": _accepted_data_coverage(symbol),
             "stress_validation": _accepted_stress_validation(),
             "robustness_validation": _accepted_robustness_validation(),
         }
@@ -208,6 +204,39 @@ def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[st
             "max_cluster_weight": 0.40,
         },
         "outcomes": outcomes,
+    }
+
+
+def _accepted_data_coverage(symbol: str = "BTCUSDT") -> dict[str, object]:
+    return {
+        "symbol": symbol,
+        "market_type": "spot",
+        "interval": "1m",
+        "source_scope": "binance_full_history",
+        "expected_interval_ms": 60_000,
+        "integrity_status": "ok",
+        "integrity_warnings": [],
+        "truth_basis": [
+            "prices_from_timestamped_closed_candles",
+            "coverage_measured_from_candle_close_time",
+            "execution_results_are_simulated_not_exchange_fills",
+        ],
+        "full_history_requested": True,
+        "full_available_history_used": True,
+        "candles_available": 70080,
+        "candles_used": 70080,
+        "rows_used": 500,
+        "available_start_utc": "2024-01-01T00:00:00Z",
+        "available_end_utc": "2024-02-18T16:00:00Z",
+        "used_start_utc": "2024-01-01T00:00:00Z",
+        "used_end_utc": "2024-02-18T16:00:00Z",
+        "used_duration_days": 48.67,
+        "used_duration_years": 0.13,
+        "gap_count": 0,
+        "largest_gap_ms": 60_000,
+        "largest_gap_intervals": 1.0,
+        "coverage_ratio": 1.0,
+        "notes": [],
     }
 
 
@@ -300,6 +329,67 @@ def test_model_lab_financial_sanity_accepts_consistent_portfolio_symbol_evidence
 
     assert report.allowed is True
     assert all(check.status != "block" for check in report.checks)
+
+
+def test_model_lab_financial_sanity_blocks_missing_data_coverage_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    del payload["outcomes"][0]["data_coverage"]  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "data coverage" and check.path.endswith(".data_coverage")
+        for check in report.checks
+        if check.status == "block"
+    )
+
+
+def test_model_lab_financial_sanity_blocks_unproven_data_source_scope() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    coverage = _accepted_data_coverage("BTCUSDT")
+    coverage["source_scope"] = "synthetic_fixture"
+    payload["outcomes"][0]["data_coverage"] = coverage  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "data source" and check.path.endswith(".source_scope")
+        for check in report.checks
+        if check.status == "block"
+    )
+
+
+def test_model_lab_financial_sanity_blocks_missing_truth_basis() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    coverage = _accepted_data_coverage("BTCUSDT")
+    coverage["truth_basis"] = ["prices_from_timestamped_closed_candles"]
+    payload["outcomes"][0]["data_coverage"] = coverage  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "data truth basis" and check.path.endswith(".truth_basis")
+        for check in report.checks
+        if check.status == "block"
+    )
+
+
+def test_model_lab_financial_sanity_blocks_nonpositive_data_row_counts() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    coverage = _accepted_data_coverage("BTCUSDT")
+    coverage["candles_used"] = 0
+    coverage["rows_used"] = 0
+    payload["outcomes"][0]["data_coverage"] = coverage  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    blocked_paths = {check.path for check in report.checks if check.status == "block"}
+    assert "outcomes[0].data_coverage.candles_used" in blocked_paths
+    assert "outcomes[0].data_coverage.rows_used" in blocked_paths
 
 
 def test_model_lab_financial_sanity_blocks_missing_selection_risk_evidence() -> None:
@@ -558,11 +648,7 @@ def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
                 "rows": 0,
                 "objective_scores": {"regular": 0.15},
                 "selection_risk": {"regular": _accepted_selection_risk()},
-                "data_coverage": {
-                    "integrity_status": "ok",
-                    "coverage_ratio": 1.0,
-                    "gap_count": 0,
-                },
+                "data_coverage": _accepted_data_coverage("AAAUSDC"),
                 "stress_validation": _accepted_stress_validation(),
                 "robustness_validation": _accepted_robustness_validation(),
             }
@@ -593,11 +679,7 @@ def test_model_lab_financial_sanity_blocks_failed_market_edge_evidence() -> None
                 "rows": 500,
                 "objective_scores": {"regular": 0.15},
                 "selection_risk": {"regular": _accepted_selection_risk()},
-                "data_coverage": {
-                    "integrity_status": "ok",
-                    "coverage_ratio": 1.0,
-                    "gap_count": 0,
-                },
+                "data_coverage": _accepted_data_coverage("AAAUSDC"),
                 "stress_validation": {
                     **_accepted_stress_validation(),
                     "objectives": [
@@ -648,11 +730,7 @@ def test_model_lab_financial_sanity_blocks_accepted_market_edge_with_bad_downsid
                 "rows": 500,
                 "objective_scores": {"conservative": 0.15},
                 "selection_risk": {"conservative": _accepted_selection_risk()},
-                "data_coverage": {
-                    "integrity_status": "ok",
-                    "coverage_ratio": 1.0,
-                    "gap_count": 0,
-                },
+                "data_coverage": _accepted_data_coverage("BTCUSDT"),
                 "stress_validation": {
                     **_accepted_stress_validation(),
                     "objectives": [
@@ -708,11 +786,7 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_tail_risk() -> Non
                 "rows": 500,
                 "objective_scores": {"conservative": 0.15},
                 "selection_risk": {"conservative": _accepted_selection_risk()},
-                "data_coverage": {
-                    "integrity_status": "ok",
-                    "coverage_ratio": 1.0,
-                    "gap_count": 0,
-                },
+                "data_coverage": _accepted_data_coverage("BTCUSDT"),
                 "ai_uplift": {
                     "accepted": True,
                     "reasons": ["should_not_be_accepted"],

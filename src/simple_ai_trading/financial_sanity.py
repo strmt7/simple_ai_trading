@@ -27,6 +27,12 @@ _AI_UPLIFT_REQUIRED_METRICS = (
     "downside_return_risk_ratio",
 )
 _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B = 2.0
+_REQUIRED_DATA_COVERAGE_TRUTH_BASIS = (
+    "prices_from_timestamped_closed_candles",
+    "coverage_measured_from_candle_close_time",
+    "execution_results_are_simulated_not_exchange_fills",
+)
+_BLOCKED_DATA_SOURCE_TOKENS = ("synthetic", "fake", "mock", "demo", "sample", "placeholder", "generated")
 
 
 @dataclass(frozen=True)
@@ -849,6 +855,132 @@ def _market_edge_checks(payload: Mapping[str, Any], *, path: str) -> list[Financ
     return checks
 
 
+def _truth_basis_values(value: object) -> set[str]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        return set()
+    return {str(item).strip() for item in value if str(item).strip()}
+
+
+def _positive_count_check(value: object, *, path: str, label: str) -> FinancialSanityCheck:
+    parsed = _finite(value)
+    metric: float | int | str
+    if parsed is None:
+        metric = "missing"
+    elif parsed.is_integer():
+        metric = int(parsed)
+    else:
+        metric = parsed
+    return _check(
+        "ok" if parsed is not None and parsed > 0 else "block",
+        label,
+        f"{label}={parsed}",
+        path=path,
+        metric=metric,
+        limit=">0",
+    )
+
+
+def _data_coverage_checks(coverage: object, *, path: str) -> list[FinancialSanityCheck]:
+    if not isinstance(coverage, Mapping):
+        return [
+            _check(
+                "block",
+                "data coverage",
+                "accepted outcome is missing data-coverage evidence",
+                path=path,
+                metric="missing",
+                limit="complete data_coverage object",
+            )
+        ]
+
+    checks: list[FinancialSanityCheck] = []
+    integrity_status = str(coverage.get("integrity_status") or "").strip().lower()
+    if integrity_status == "fail":
+        checks.append(_check("block", "data coverage", "coverage integrity failed", path=path))
+    elif integrity_status in {"ok", "warn"}:
+        checks.append(_check("ok", "data coverage", f"integrity_status={integrity_status}", path=f"{path}.integrity_status"))
+    else:
+        checks.append(
+            _check(
+                "block",
+                "data coverage",
+                "missing or unknown coverage integrity status",
+                path=f"{path}.integrity_status",
+                metric=integrity_status or "missing",
+                limit="ok|warn",
+            )
+        )
+
+    source_scope = str(coverage.get("source_scope") or "").strip()
+    source_scope_lc = source_scope.lower()
+    if not source_scope:
+        checks.append(
+            _check(
+                "block",
+                "data source",
+                "accepted model-lab result is missing source scope evidence",
+                path=f"{path}.source_scope",
+                metric="missing",
+                limit="Binance market-data source scope",
+            )
+        )
+    elif any(token in source_scope_lc for token in _BLOCKED_DATA_SOURCE_TOKENS) or "binance" not in source_scope_lc:
+        checks.append(
+            _check(
+                "block",
+                "data source",
+                "accepted model-lab result must name a real Binance market-data source scope",
+                path=f"{path}.source_scope",
+                metric=source_scope,
+                limit="source scope containing binance and no synthetic/fake/mock markers",
+            )
+        )
+    else:
+        checks.append(_check("ok", "data source", f"source_scope={source_scope}", path=f"{path}.source_scope"))
+
+    truth_basis = _truth_basis_values(coverage.get("truth_basis"))
+    missing_basis = [item for item in _REQUIRED_DATA_COVERAGE_TRUTH_BASIS if item not in truth_basis]
+    if missing_basis:
+        checks.append(
+            _check(
+                "block",
+                "data truth basis",
+                "accepted outcome is missing required truth-basis evidence",
+                path=f"{path}.truth_basis",
+                metric=",".join(missing_basis),
+                limit=",".join(_REQUIRED_DATA_COVERAGE_TRUTH_BASIS),
+            )
+        )
+    else:
+        checks.append(_check("ok", "data truth basis", "required truth basis present", path=f"{path}.truth_basis"))
+
+    checks.append(_positive_count_check(coverage.get("candles_used"), path=f"{path}.candles_used", label="coverage candles"))
+    checks.append(_positive_count_check(coverage.get("rows_used"), path=f"{path}.rows_used", label="coverage rows"))
+    checks.append(
+        _range_check(
+            coverage.get("coverage_ratio"),
+            path=f"{path}.coverage_ratio",
+            label="coverage ratio",
+            low=0.995,
+            high=1.0,
+            hard_low=0.0,
+            hard_high=1.0,
+        )
+    )
+    gap_count = _finite(coverage.get("gap_count"))
+    checks.append(
+        _check(
+            "ok" if gap_count == 0 else "block",
+            "coverage gaps",
+            f"gap_count={gap_count}",
+            path=f"{path}.gap_count",
+            metric=gap_count if gap_count is not None else "missing",
+            limit=0,
+        )
+    )
+    return checks
+
+
 def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, source: str = "model_lab") -> FinancialSanityReport:
     checks: list[FinancialSanityCheck] = []
     portfolio = payload.get("portfolio_risk")
@@ -1068,32 +1200,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     prefix=prefix,
                 )
             )
-        coverage = outcome.get("data_coverage")
-        if isinstance(coverage, Mapping):
-            if coverage.get("integrity_status") == "fail":
-                checks.append(_check("block", "data coverage", "coverage integrity failed", path=f"{prefix}.data_coverage"))
-            checks.append(
-                _range_check(
-                    coverage.get("coverage_ratio"),
-                    path=f"{prefix}.data_coverage.coverage_ratio",
-                    label="coverage ratio",
-                    low=0.995,
-                    high=1.0,
-                    hard_low=0.0,
-                    hard_high=1.0,
-                )
-            )
-            gap_count = _finite(coverage.get("gap_count"))
-            checks.append(
-                _check(
-                    "ok" if gap_count == 0 else "block",
-                    "coverage gaps",
-                    f"gap_count={gap_count}",
-                    path=f"{prefix}.data_coverage.gap_count",
-                    metric=gap_count if gap_count is not None else "missing",
-                    limit=0,
-                )
-            )
+        checks.extend(_data_coverage_checks(outcome.get("data_coverage"), path=f"{prefix}.data_coverage"))
         stress = outcome.get("stress_validation")
         robustness = outcome.get("robustness_validation")
         for field_name, field_value in (("stress_validation", stress), ("robustness_validation", robustness)):
