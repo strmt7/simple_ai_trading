@@ -937,3 +937,63 @@ def test_profit_threshold_calibration_rejects_non_improvement_and_score_edges() 
     )
     assert risk_adjusted_backtest_score(SimpleNamespace(realized_pnl="bad"), starting_cash=float("nan")) < 0.0
     assert risk_adjusted_backtest_score(SimpleNamespace(realized_pnl=object()), starting_cash=1000.0) < 0.0
+
+
+def test_threshold_calibration_reuses_one_probability_pass(monkeypatch: pytest.MonkeyPatch) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=1)
+        for index in range(12)
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=3.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    calls = {"count": 0}
+
+    def fake_probabilities(scored_rows, *_args, **_kwargs):
+        calls["count"] += 1
+        return [0.95 for _ in scored_rows], BackendInfo(
+            requested="directml",
+            kind="directml",
+            device="privateuseone:0",
+            vendor="DirectML",
+            reason="",
+        )
+
+    monkeypatch.setattr(backtest_module, "_backtest_probabilities", fake_probabilities)
+
+    report = calibrate_threshold_for_backtest(
+        rows,
+        model,
+        StrategyConfig(risk_per_trade=0.1, signal_threshold=0.5),
+        baseline_threshold=0.5,
+        start=0.5,
+        end=0.9,
+        steps=7,
+        compute_backend="directml",
+    )
+
+    assert calls["count"] == 1
+    assert report.evaluated_thresholds == 7
+
+
+def test_run_backtest_rejects_bad_precomputed_probability_length() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=101.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+
+    with pytest.raises(ValueError, match="precomputed_probabilities length mismatch"):
+        run_backtest(rows, model, StrategyConfig(), precomputed_probabilities=[0.5])
