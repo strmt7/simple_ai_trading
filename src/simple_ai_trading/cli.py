@@ -3071,6 +3071,39 @@ def _resolve_futures_leverage(runtime, cfg: StrategyConfig) -> float:
     return requested
 
 
+def _entry_leverage_for_notional(
+    client,
+    runtime,
+    requested_leverage: float,
+    notional: float,
+    *,
+    effective_dry_run: bool,
+) -> float:
+    """Return the futures entry leverage that matches the order's notional bracket."""
+    if runtime.market_type != "futures":
+        return 1.0
+    requested = _safe_float(requested_leverage)
+    if not math.isfinite(requested) or requested <= 0.0:
+        requested = 1.0
+    requested = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, requested))
+    if effective_dry_run:
+        return requested
+    clean_notional = abs(_safe_float(notional))
+    if not math.isfinite(clean_notional) or clean_notional <= 0.0:
+        raise BinanceAPIError("Unable to resolve futures leverage bracket without a positive entry notional")
+    if not hasattr(client, "get_max_leverage_for_notional"):
+        return requested
+    try:
+        bracket_leverage = _safe_float(client.get_max_leverage_for_notional(runtime.symbol, clean_notional))
+    except BinanceAPIError:
+        raise
+    except Exception as exc:
+        raise BinanceAPIError(f"Unable to resolve futures leverage bracket for entry notional: {exc}") from exc
+    if not math.isfinite(bracket_leverage) or bracket_leverage <= 0.0:
+        raise BinanceAPIError("Invalid futures leverage bracket for entry notional")
+    return max(1.0, min(requested, MAX_AUTONOMOUS_LEVERAGE, bracket_leverage))
+
+
 def _resolve_symbol_constraints(runtime, client) -> SymbolConstraints | None:
     try:
         return client.get_symbol_constraints(runtime.symbol)
@@ -6280,6 +6313,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         leverage = MAX_AUTONOMOUS_LEVERAGE
     elif leverage < 1.0:
         leverage = 1.0
+    position_leverage = leverage
     equity_peak = cash
     max_drawdown_seen = 0.0
     risk_policy = build_risk_policy_report(
@@ -6414,10 +6448,17 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             qty = max(0.0, float(ledger_position.qty))
             entry_price = max(0.0, float(ledger_position.entry_price))
             position_notional = position_side * max(0.0, float(ledger_position.notional or qty * entry_price))
+            ledger_leverage = _safe_float(getattr(ledger_position, "leverage", leverage))
+            if runtime.market_type == "spot":
+                position_leverage = 1.0
+            elif math.isfinite(ledger_leverage) and ledger_leverage > 0.0:
+                position_leverage = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, ledger_leverage))
+            else:
+                position_leverage = leverage
             margin_used = (
                 min(cash, abs(position_notional))
                 if runtime.market_type == "spot"
-                else min(cash, abs(position_notional) / max(1.0, leverage))
+                else min(cash, abs(position_notional) / max(1.0, position_leverage))
             )
             cash = max(0.0, cash - margin_used)
             print(
@@ -6435,6 +6476,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "entry_price": float(entry_price),
                     "notional": float(position_notional),
                     "margin": float(margin_used),
+                    "leverage": float(position_leverage),
                     "cash_after_resume": float(cash),
                     "open_client_order_id": ledger_position.open_client_order_id,
                 }
@@ -6517,6 +6559,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         filled_qty: float,
         fill_price: float,
         notional: float,
+        leverage_used: float,
         order_response: object,
         open_client_order_id: str,
     ) -> None:
@@ -6535,7 +6578,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 side="LONG" if side_sign > 0 else "SHORT",
                 qty=max(0.0, float(filled_qty)),
                 entry_price=max(0.0, float(fill_price)),
-                leverage=float(leverage),
+                leverage=float(leverage_used),
                 opened_at_ms=current_opened_at_ms,
                 notional=abs(float(notional)),
                 strategy_profile="live-cli",
@@ -7068,10 +7111,29 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 live_sleep()
                 continue
 
+            side_sign = 1 if direction > 0 else -1
+            side = "BUY" if side_sign > 0 else "SELL"
+            fill = price * (1.0 + side_sign * slippage)
+            if fill <= 0:
+                live_sleep()
+                continue
+            notional = qty * fill
+            try:
+                entry_leverage = _entry_leverage_for_notional(
+                    client,
+                    runtime,
+                    leverage,
+                    abs(notional),
+                    effective_dry_run=effective_dry_run,
+                )
+            except BinanceAPIError as exc:
+                record_order_error(i + 1, side, qty, exc)
+                break
+
             if runtime.market_type == "spot":
                 margin = min(cash, abs(notional))
             else:
-                margin = min(cash, abs(notional) / leverage)
+                margin = min(cash, abs(notional) / entry_leverage)
 
             fee = abs(notional) * fee_rate
             total = margin + fee
@@ -7088,30 +7150,6 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 live_sleep()
                 continue
 
-            side_sign = 1 if direction > 0 else -1
-            fill = price * (1.0 + side_sign * slippage)
-            if fill <= 0:
-                live_sleep()
-                continue
-
-            notional = qty * fill
-            fee = abs(notional) * fee_rate
-            total = margin + fee
-            if total > cash:
-                print(f"step {i + 1:>2}: insufficient cash after fill adjustment")
-                skipped_entries += 1
-                live_events.append(
-                    {
-                        "step": i + 1,
-                        "status": "skip_insufficient_cash_after_fill",
-                        "score": float(score),
-                        "fill": float(fill),
-                    }
-                )
-                live_sleep()
-                continue
-
-            side = "BUY" if side_sign > 0 else "SELL"
             live_position_id = new_position_id() if not effective_dry_run else ""
             open_client_order_id = bot_client_order_id(live_position_id, "open") if live_position_id else None
             try:
@@ -7122,7 +7160,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     side=side,
                     size=qty,
                     dry_run=effective_dry_run,
-                    leverage=leverage,
+                    leverage=entry_leverage,
                     notional=abs(notional),
                     client_order_id=open_client_order_id,
                 )
@@ -7144,7 +7182,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             qty = abs(filled_qty)
             notional = filled_notional if filled_notional > 0.0 else qty * fill
             fee = abs(notional) * fee_rate
-            margin = min(cash, abs(notional)) if runtime.market_type == "spot" else min(cash, abs(notional) / leverage)
+            margin = min(cash, abs(notional)) if runtime.market_type == "spot" else min(cash, abs(notional) / entry_leverage)
             total = margin + fee
 
             cash = max(0.0, cash - total)
@@ -7152,6 +7190,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             position_notional = direction * notional
             qty = abs(qty)
             entry_price = fill
+            position_leverage = entry_leverage
             margin_used = margin
             entry_fee_paid = fee
             daily_trade_count[day] = daily_trade_count.get(day, 0) + 1
@@ -7161,6 +7200,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 filled_qty=qty,
                 fill_price=fill,
                 notional=notional,
+                leverage_used=position_leverage,
                 order_response=order_response,
                 open_client_order_id=str(open_client_order_id or ""),
             )
@@ -7176,6 +7216,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "price": float(fill),
                     "qty": float(qty),
                     "notional": float(notional),
+                    "leverage": float(position_leverage),
                     "cash_after_entry": float(cash),
                     "fill_source": fill_source,
                     "meta_label": meta_decision.asdict(),
@@ -7210,7 +7251,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         side=side_to_close,
                         size=abs(qty),
                         dry_run=effective_dry_run,
-                        leverage=leverage,
+                        leverage=position_leverage,
                         reduce_only=runtime.market_type == "futures",
                         client_order_id=close_client_order_id,
                     )
@@ -7257,6 +7298,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "price": float(fill),
                         "pnl": float(realized),
                         "qty_closed": float(closed_qty),
+                        "leverage": float(position_leverage),
                         "cash_after": float(cash),
                         "fill_source": fill_source,
                         "position_id": close_position_id,
@@ -7271,6 +7313,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     qty = 0.0
                     margin_used = 0.0
                     entry_price = 0.0
+                    position_leverage = leverage
                     cooldown_left = max(0, wait_ticks)
                 else:
                     qty = max(0.0, abs(qty) - closed_qty)
@@ -7288,6 +7331,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "score": float(score),
                         "price": float(price),
                         "pnl": float(pnl),
+                        "leverage": float(position_leverage),
                     }
                 )
 
@@ -7307,6 +7351,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             if cfg.max_drawdown_limit > 0.0 and drawdown >= cfg.max_drawdown_limit:
                 emergency_position_id = ""
                 emergency_close_client_order_id: str | None = None
+                emergency_leverage = position_leverage
                 fill_source = "not_applicable"
                 if position_side != 0:
                     fill = price * (1.0 - position_side * slippage)
@@ -7326,7 +7371,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                             side=side_to_close,
                             size=abs(qty),
                             dry_run=effective_dry_run,
-                            leverage=leverage,
+                            leverage=position_leverage,
                             reduce_only=runtime.market_type == "futures",
                             client_order_id=emergency_close_client_order_id,
                         )
@@ -7369,6 +7414,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         qty = 0.0
                         margin_used = 0.0
                         entry_price = 0.0
+                        position_leverage = leverage
                     else:
                         qty = max(0.0, abs(qty) - closed_qty)
                         margin_used = max(0.0, margin_used * (1.0 - close_ratio))
@@ -7379,6 +7425,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "status": "emergency_close",
                         "score": float(score),
                         "drawdown": float(drawdown),
+                        "leverage": float(emergency_leverage),
                         "cash_after": float(cash),
                         "fill_source": fill_source,
                         "position_id": emergency_position_id,

@@ -199,12 +199,13 @@ Futures safety:
 - Risk-profile defaults are `5x` conservative, `10x` regular, and `15x` aggressive in futures mode. Spot mode still resolves to `1x` because spot orders cannot use futures leverage.
 - Shorting is only available on futures mode.
 - Signed futures opens clamp requested leverage against the active symbol's
-  Binance notional bracket for the intended gross order notional before the
-  market order is submitted. The parser accepts Binance's documented
-  object-shaped symbol response and list-shaped fallback response, then uses
-  bracket `notionalFloor`, `notionalCap`, and `initialLeverage`/`maxLeverage`
-  evidence instead of assuming the symbol-wide maximum applies to every order
-  size.
+  Binance notional bracket for the intended gross order notional before local
+  margin is reserved and before the market order is submitted. The parser
+  accepts Binance's documented object-shaped symbol response and list-shaped
+  fallback response, then uses bracket `notionalFloor`, `notionalCap`, and
+  `initialLeverage`/`maxLeverage` evidence instead of assuming the symbol-wide
+  maximum applies to every order size. The live ledger stores that effective
+  position leverage and resumes/reduces the position with the stored value.
 - Live startup does not mutate exchange leverage. Reduce-only futures closes
   also skip leverage mutation. The only automatic exchange-side leverage change
   in the live/autonomous path is the notional-aware setup immediately before a

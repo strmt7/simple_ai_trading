@@ -510,6 +510,27 @@ def test_resolve_futures_leverage(monkeypatch) -> None:
     assert cli._resolve_futures_leverage(runtime_spot, cfg) == 1.0
 
 
+def test_entry_leverage_for_notional_uses_live_notional_bracket() -> None:
+    class _BracketClient:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, float]] = []
+
+        def get_max_leverage_for_notional(self, symbol: str, notional: float) -> int:
+            self.calls.append((symbol, notional))
+            return 8
+
+    client = _BracketClient()
+    runtime = RuntimeConfig(market_type="futures", symbol="BTCUSDC")
+
+    assert cli._entry_leverage_for_notional(client, runtime, 20.0, 2_500.0, effective_dry_run=False) == 8.0
+    assert client.calls == [("BTCUSDC", 2_500.0)]
+    assert cli._entry_leverage_for_notional(client, runtime, 20.0, 2_500.0, effective_dry_run=True) == 20.0
+    assert client.calls == [("BTCUSDC", 2_500.0)]
+    assert cli._entry_leverage_for_notional(client, RuntimeConfig(market_type="spot"), 20.0, 2_500.0, effective_dry_run=False) == 1.0
+    with pytest.raises(BinanceAPIError, match="positive entry notional"):
+        cli._entry_leverage_for_notional(client, runtime, 20.0, 0.0, effective_dry_run=False)
+
+
 def test_build_client_forwards_runtime_request_window(monkeypatch) -> None:
     captured: dict[str, object] = {}
 
@@ -7015,7 +7036,8 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
     class _LeverageClient:
         def __init__(self) -> None:
             self.set_calls: list[int] = []
-            self.orders: list[tuple[str, float, bool, float]] = []
+            self.bracket_queries: list[tuple[str, float]] = []
+            self.orders: list[tuple[str, float, bool, float, float | None]] = []
 
         def get_account(self):
             return _exchange_account()
@@ -7051,6 +7073,10 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
         def get_max_leverage(self, symbol: str) -> int:
             return 20
 
+        def get_max_leverage_for_notional(self, symbol: str, notional: float) -> int:
+            self.bracket_queries.append((symbol, notional))
+            return 8
+
         def set_leverage(self, symbol: str, leverage: int):
             self.set_calls.append(leverage)
             return {"symbol": symbol, "leverage": leverage}
@@ -7063,10 +7089,11 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
             *,
             dry_run: bool,
             leverage: float = 1.0,
+            notional: float | None = None,
             reduce_only: bool = False,
             client_order_id: str | None = None,
         ):
-            self.orders.append((side, size, dry_run, leverage))
+            self.orders.append((side, size, dry_run, leverage, notional))
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
     class _AlwaysLongModel:
@@ -7091,7 +7118,12 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
     )
     assert client.set_calls == []
     assert client.orders
-    assert client.orders[0][3] == 12.0
+    assert client.bracket_queries
+    assert client.orders[0][3] == 8.0
+    assert client.orders[0][4] == pytest.approx(client.bracket_queries[0][1])
+    open_positions = PositionsStore().load_open()
+    assert open_positions
+    assert open_positions[0].leverage == pytest.approx(8.0)
     assert "effective leverage" in capsys.readouterr().out
 
 
