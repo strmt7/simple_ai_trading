@@ -683,6 +683,58 @@ def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
         )
 
 
+def test_train_round_model_require_gpu_rejects_probability_calibration_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=index % 2) for index in range(100)]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+    )
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
+    monkeypatch.setattr(
+        oe,
+        "train_advanced",
+        lambda *_args, **_kwargs: (model, SimpleNamespace(row_count=60, positive_rate=0.5)),
+    )
+    monkeypatch.setattr(
+        oe,
+        "calibrate_probability_temperature",
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(
+            status="ok",
+            rows=len(calibration_rows),
+            temperature=1.0,
+            log_loss_before=0.7,
+            log_loss_after=0.7,
+            brier_before=0.25,
+            brier_after=0.25,
+            expected_calibration_error_before=0.1,
+            expected_calibration_error_after=0.1,
+            calibration_backend_kind="cpu",
+            calibration_backend_reason="DirectML calibration failed in test",
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="gpu_required_but_probability_calibration_fell_back_to_cpu"):
+        oe.train_round_model(
+            [_candle(index) for index in range(100)],
+            StrategyConfig(),
+            get_objective("conservative"),
+            market_type="futures",
+            starting_cash=1000.0,
+            compute_backend="directml",
+            batch_size=1024,
+            require_gpu=True,
+        )
+
+
 def test_build_round_evidence_require_gpu_rejects_holdout_scoring_fallback(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
