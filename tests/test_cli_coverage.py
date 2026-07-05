@@ -932,6 +932,69 @@ def test_command_data_health_reports_verified_archive_coverage(tmp_path, monkeyp
     assert payload["items"][0]["coverage_ratio"] == 1.0
 
 
+def test_command_data_health_warns_when_archive_error_is_superseded_by_verified_coverage(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    db = tmp_path / "market.sqlite"
+    candles = [
+        Candle(
+            open_time=index * 1000,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.0,
+            volume=1.0,
+            close_time=index * 1000 + 999,
+        )
+        for index in range(3)
+    ]
+    with MarketDataStore(db) as store:
+        store.upsert_candles("BTCUSDC", "spot", "1s", candles, source="binance_public_archive")
+        good_url = "https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip"
+        bad_url = "https://data.binance.vision/data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip"
+        store.begin_archive_file(url=good_url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01-01")
+        store.complete_archive_file(
+            url=good_url,
+            status="complete",
+            rows_inserted=3,
+            bytes_downloaded=123,
+            sha256="a" * 64,
+            checksum_sha256="a" * 64,
+            checksum_status="verified",
+        )
+        store.begin_archive_file(url=bad_url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01")
+        store.complete_archive_file(
+            url=bad_url,
+            status="error",
+            rows_inserted=0,
+            bytes_downloaded=0,
+            sha256="",
+            checksum_status="missing",
+            error="missing checksum sidecar",
+        )
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+
+    assert cli.command_data_health(argparse.Namespace(
+        db=str(db),
+        symbol="BTCUSDC",
+        symbols=None,
+        interval="1s",
+        market="spot",
+        min_rows=3,
+        min_coverage_ratio=1.0,
+        max_gap_count=0,
+        require_verified_checksum=True,
+        json=True,
+    )) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["items"][0]["reasons"] == []
+    assert payload["items"][0]["warnings"] == ["superseded_archive_errors:1"]
+
+
 def test_command_data_health_blocks_missing_rows_gaps_and_checksum(tmp_path, monkeypatch, capsys) -> None:
     db = tmp_path / "market.sqlite"
     candles = [

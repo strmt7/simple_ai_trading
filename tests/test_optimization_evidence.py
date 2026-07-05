@@ -349,6 +349,60 @@ def test_market_data_health_accepts_verified_contiguous_archive(tmp_path: Path) 
     assert health["reasons"] == []
 
 
+def test_market_data_health_warns_when_archive_error_is_superseded(tmp_path: Path) -> None:
+    db_path = tmp_path / "market.sqlite"
+    good_url = "https://data.binance.vision/data/spot/daily/klines/ETHUSDT/1s/ETHUSDT-1s-2026-01-01.zip"
+    bad_url = "https://data.binance.vision/data/spot/monthly/klines/ETHUSDT/1s/ETHUSDT-1s-2026-01.zip"
+    with MarketDataStore(db_path) as store:
+        store.upsert_candles("ETHUSDT", "spot", "1s", [_candle(0), _candle(1), _candle(2)], source="binance_archive")
+        store.begin_archive_file(
+            url=good_url,
+            symbol="ETHUSDT",
+            market_type="spot",
+            interval="1s",
+            period="2026-01-01",
+        )
+        store.complete_archive_file(
+            url=good_url,
+            status="complete",
+            rows_inserted=3,
+            bytes_downloaded=1234,
+            sha256="abc",
+            checksum_sha256="def",
+            checksum_status="verified",
+        )
+        store.begin_archive_file(
+            url=bad_url,
+            symbol="ETHUSDT",
+            market_type="spot",
+            interval="1s",
+            period="2026-01",
+        )
+        store.complete_archive_file(
+            url=bad_url,
+            status="error",
+            rows_inserted=0,
+            bytes_downloaded=0,
+            sha256="",
+            checksum_status="missing",
+            error="missing checksum sidecar",
+        )
+
+    health = oe.market_data_health_for_symbol(
+        db_path=db_path,
+        symbol="ethusdt",
+        market_type="spot",
+        interval="1s",
+        min_rows=3,
+        min_coverage_ratio=1.0,
+        require_verified_checksum=True,
+    )
+
+    assert health["status"] == "ok"
+    assert health["reasons"] == []
+    assert health["warnings"] == ["superseded_archive_errors:1"]
+
+
 def test_select_data_healthy_top_liquidity_symbols_skips_unhealthy_candidates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
