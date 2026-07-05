@@ -167,9 +167,24 @@ def stop_loss_sized_notional_pct(
         else risk_budget_pct
     )
     max_position_pct = max(0.0, _finite(strategy.max_position_pct))
+    max_asset_allocation_pct = max(
+        0.0,
+        min(1.0, _finite(strategy.max_asset_allocation_pct, 1.0)),
+    )
     if market_type == "futures":
-        return max(0.0, min(risk_sized_notional_pct, max_position_pct * effective_leverage, effective_leverage))
-    return max(0.0, min(risk_sized_notional_pct, max_position_pct, 1.0))
+        return max(
+            0.0,
+            min(
+                risk_sized_notional_pct,
+                max_position_pct * effective_leverage,
+                max_asset_allocation_pct,
+                effective_leverage,
+            ),
+        )
+    return max(
+        0.0,
+        min(risk_sized_notional_pct, max_position_pct, max_asset_allocation_pct, 1.0),
+    )
 
 
 def stop_loss_effective_loss_pct(strategy: StrategyConfig) -> float:
