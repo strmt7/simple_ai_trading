@@ -554,6 +554,9 @@ assert that every CLI command appears in the Windows app.
   changes are allowed only immediately before a fresh bot-owned futures open.
 - No CLI, live, backtest, or optimization sizing path may let leverage raise
   gross exposure above the configured per-asset allocation cap.
+- No signed non-dry operation may run with stop-loss protection disabled.
+- No signed non-dry futures operation may run with the liquidation buffer
+  disabled.
 - No model, threshold, stress, temporal, market-edge, or optimization acceptance
   when a futures backtest records any liquidation event.
 - No AI in CPU-only mode.
