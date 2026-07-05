@@ -384,6 +384,30 @@ def _accepted_outcomes(payload: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return [item for item in outcomes if isinstance(item, Mapping) and item.get("accepted") is True]
 
 
+def _symbol_sequence(value: object) -> list[str] | None:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        return None
+    symbols: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            return None
+        symbol = item.strip().upper()
+        if not symbol:
+            return None
+        symbols.append(symbol)
+    return symbols
+
+
+def _duplicate_symbols(symbols: Sequence[str]) -> list[str]:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for symbol in symbols:
+        if symbol in seen and symbol not in duplicates:
+            duplicates.append(symbol)
+        seen.add(symbol)
+    return duplicates
+
+
 def _iter_market_edge_reports(payload: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]:
     reports: list[tuple[str, Mapping[str, Any]]] = []
     direct = payload.get("market_edge")
@@ -472,11 +496,124 @@ def _market_edge_checks(payload: Mapping[str, Any], *, path: str) -> list[Financ
 def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, source: str = "model_lab") -> FinancialSanityReport:
     checks: list[FinancialSanityCheck] = []
     portfolio = payload.get("portfolio_risk")
+    accepted_outcomes = _accepted_outcomes(payload)
     if isinstance(portfolio, Mapping) and portfolio.get("accepted") is True:
-        accepted_symbols = portfolio.get("accepted_symbols")
+        portfolio_symbols = _symbol_sequence(portfolio.get("accepted_symbols"))
+        top_level_symbols = _symbol_sequence(payload.get("accepted_symbols"))
+        outcome_symbols = [
+            str(outcome.get("symbol")).strip().upper()
+            for outcome in accepted_outcomes
+            if isinstance(outcome.get("symbol"), str) and str(outcome.get("symbol")).strip()
+        ]
+        if not accepted_outcomes:
+            checks.append(
+                _check(
+                    "block",
+                    "accepted outcomes",
+                    "accepted portfolio has no accepted outcome records",
+                    path="outcomes",
+                    metric=0,
+                    limit=">=1 accepted outcome",
+                )
+            )
+        elif len(outcome_symbols) != len(accepted_outcomes):
+            checks.append(
+                _check(
+                    "block",
+                    "accepted outcomes",
+                    "accepted outcome is missing symbol evidence",
+                    path="outcomes",
+                    metric=len(outcome_symbols),
+                    limit=len(accepted_outcomes),
+                )
+            )
+        if portfolio_symbols is None or not portfolio_symbols:
+            checks.append(
+                _check(
+                    "block",
+                    "portfolio symbols",
+                    "accepted portfolio is missing accepted symbol evidence",
+                    path="portfolio_risk.accepted_symbols",
+                    metric="missing",
+                    limit="non-empty symbol list",
+                )
+            )
+            portfolio_symbols = []
+        else:
+            duplicates = _duplicate_symbols(portfolio_symbols)
+            if duplicates:
+                checks.append(
+                    _check(
+                        "block",
+                        "portfolio symbols",
+                        "accepted portfolio contains duplicate symbols",
+                        path="portfolio_risk.accepted_symbols",
+                        metric=",".join(duplicates),
+                        limit="unique symbols",
+                    )
+                )
+        if top_level_symbols is None or not top_level_symbols:
+            checks.append(
+                _check(
+                    "block",
+                    "accepted symbols",
+                    "accepted report is missing top-level accepted symbol evidence",
+                    path="accepted_symbols",
+                    metric="missing",
+                    limit="non-empty symbol list",
+                )
+            )
+            top_level_symbols = []
+        else:
+            duplicates = _duplicate_symbols(top_level_symbols)
+            if duplicates:
+                checks.append(
+                    _check(
+                        "block",
+                        "accepted symbols",
+                        "top-level accepted symbols contain duplicates",
+                        path="accepted_symbols",
+                        metric=",".join(duplicates),
+                        limit="unique symbols",
+                    )
+                )
+        if portfolio_symbols and top_level_symbols and set(portfolio_symbols) != set(top_level_symbols):
+            checks.append(
+                _check(
+                    "block",
+                    "portfolio symbols",
+                    "portfolio symbols differ from top-level accepted symbols",
+                    path="portfolio_risk.accepted_symbols",
+                    metric=",".join(portfolio_symbols),
+                    limit=",".join(top_level_symbols),
+                )
+            )
+        if portfolio_symbols and outcome_symbols and set(portfolio_symbols) != set(outcome_symbols):
+            checks.append(
+                _check(
+                    "block",
+                    "portfolio symbols",
+                    "portfolio symbols differ from accepted outcome symbols",
+                    path="portfolio_risk.accepted_symbols",
+                    metric=",".join(portfolio_symbols),
+                    limit=",".join(outcome_symbols),
+                )
+            )
+        if top_level_symbols and outcome_symbols and set(top_level_symbols) != set(outcome_symbols):
+            checks.append(
+                _check(
+                    "block",
+                    "accepted symbols",
+                    "top-level accepted symbols differ from accepted outcome symbols",
+                    path="accepted_symbols",
+                    metric=",".join(top_level_symbols),
+                    limit=",".join(outcome_symbols),
+                )
+            )
+        accepted_symbols = portfolio_symbols or top_level_symbols or outcome_symbols
         accepted_symbol_limit = (
             float(len(accepted_symbols))
-            if isinstance(accepted_symbols, Sequence) and not isinstance(accepted_symbols, (str, bytes))
+            if accepted_symbols
             else 100.0
         )
         for key in ("effective_symbol_count", "correlation_adjusted_effective_symbol_count"):
@@ -485,9 +622,9 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     portfolio.get(key),
                     path=f"portfolio_risk.{key}",
                     label=key,
-                    low=0.0,
+                    low=1.0,
                     high=max(1.0, accepted_symbol_limit),
-                    hard_low=0.0,
+                    hard_low=1.0,
                     hard_high=max(1.0, accepted_symbol_limit),
                 )
             )
@@ -503,7 +640,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     hard_high=1.0,
                 )
             )
-    for outcome_index, outcome in enumerate(_accepted_outcomes(payload)):
+    for outcome_index, outcome in enumerate(accepted_outcomes):
         prefix = f"outcomes[{outcome_index}]"
         rows = _finite(outcome.get("rows"))
         checks.append(

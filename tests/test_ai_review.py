@@ -70,18 +70,18 @@ def _write_report(
         "interval": "15m",
         "market_type": "futures",
         "requested_objectives": ["regular"],
-        "accepted_symbols": ["AAAUSDC", "BBBUSDC"] if accepted else [],
+        "accepted_symbols": ["AAAUSDC"] if accepted else [],
         "portfolio_risk": {
             "accepted": accepted,
             "reason": None if accepted else "symbols<2",
-            "effective_symbol_count": 2.0 if accepted else 0.0,
-            "correlation_adjusted_effective_symbol_count": 1.7 if accepted else 0.0,
+            "effective_symbol_count": 1.0 if accepted else 0.0,
+            "correlation_adjusted_effective_symbol_count": 1.0 if accepted else 0.0,
             "max_pairwise_correlation": 0.42,
             "max_cluster_weight": 0.40,
             "portfolio_cvar_95": 0.002,
             "portfolio_max_drawdown": 0.01,
-            "deployed_weight": 0.40,
-            "accepted_symbols": ["AAAUSDC", "BBBUSDC"] if accepted else [],
+            "deployed_weight": 0.20,
+            "accepted_symbols": ["AAAUSDC"] if accepted else [],
         },
         "outcomes": [
             {

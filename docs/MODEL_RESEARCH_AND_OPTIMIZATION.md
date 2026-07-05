@@ -351,6 +351,9 @@ analytically incoherent artifacts before they reach an operator:
   scores,
 - accepted coverage cannot have failed integrity, detected gaps, or impossible
   coverage ratios,
+- accepted portfolio symbol evidence must be non-empty, unique, and consistent
+  across top-level accepted symbols, accepted outcomes, and the portfolio-risk
+  report,
 - accepted stress, temporal robustness, and portfolio metrics must remain in
   financial ranges such as drawdown/CVaR/deployed-weight between 0 and 1.
 
