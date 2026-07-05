@@ -8,8 +8,12 @@ from simple_ai_trading.binance_archive import (
     archive_directory_url,
     archive_file_url,
     archive_listing_url,
+    archive_period_in_range,
+    archive_url_period,
+    filter_archive_urls_by_period,
     ingest_archive_url,
     list_archive_urls,
+    validate_archive_period_window,
 )
 from simple_ai_trading.market_store import MarketDataStore
 
@@ -61,6 +65,44 @@ def test_archive_url_builders_and_listing_parser() -> None:
     assert seen_listing_urls == [
         "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Fspot%2Fmonthly%2Fklines%2FBTCUSDC%2F1s%2F"
     ]
+
+
+def test_archive_period_filtering_supports_daily_and_monthly_windows() -> None:
+    urls = [
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-05-31.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-02.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-07-01.zip",
+        "https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/1s/BTCUSDT-1s-2024-06.zip",
+    ]
+
+    assert archive_url_period(urls[1]) == "2024-06-01"
+    assert archive_url_period(urls[-1]) == "2024-06"
+    assert archive_period_in_range("2024-06-01", start_period="2024-06", end_period="2024-06")
+    assert archive_period_in_range("2024-06", start_period="2024-06-15", end_period="2024-06-15")
+    assert filter_archive_urls_by_period(urls, start_period="2024-06-01", end_period="2024-06-30") == [
+        urls[1],
+        urls[2],
+        urls[4],
+    ]
+
+
+def test_archive_period_window_validation_rejects_bad_bounds() -> None:
+    validate_archive_period_window(start_period="2024-06", end_period="2024-06-30")
+
+    try:
+        validate_archive_period_window(start_period="2024/06", end_period=None)
+    except ValueError as exc:
+        assert "start_period" in str(exc)
+    else:  # pragma: no cover - defensive
+        raise AssertionError("invalid start period should fail")
+
+    try:
+        validate_archive_period_window(start_period="2024-07-01", end_period="2024-06-30")
+    except ValueError as exc:
+        assert "earlier than or equal" in str(exc)
+    else:  # pragma: no cover - defensive
+        raise AssertionError("reversed period window should fail")
 
 
 def test_ingest_archive_url_streams_zip_into_market_store(tmp_path, monkeypatch) -> None:

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import calendar
 import csv
+from datetime import date
 import hashlib
 import io
 import re
@@ -13,7 +15,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import urlopen
 
 from defusedxml import ElementTree
@@ -26,6 +28,7 @@ from .market_store import MarketDataStore
 BINANCE_ARCHIVE_BASE_URL = "https://data.binance.vision/data"
 _ZIP_LINK_PATTERN = re.compile(r'href=["\'](?P<href>[^"\']+\.zip)["\']', re.IGNORECASE)
 _CHECKSUM_PATTERN = re.compile(r"\b(?P<sha256>[a-fA-F0-9]{64})\b")
+_ARCHIVE_PERIOD_PATTERN = re.compile(r"-(?P<period>\d{4}-\d{2}(?:-\d{2})?)$")
 
 
 @dataclass(frozen=True)
@@ -173,6 +176,93 @@ def list_archive_urls(
         if marker is None:
             break
     return sorted(dict.fromkeys(urls))
+
+
+def archive_url_period(url: str) -> str:
+    """Extract the official archive period from a Binance archive URL."""
+
+    filename = Path(urlparse(str(url)).path).stem
+    match = _ARCHIVE_PERIOD_PATTERN.search(filename)
+    return match.group("period") if match else ""
+
+
+def _period_date_bounds(period: str) -> tuple[date, date] | None:
+    value = str(period or "").strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        year, month, day = (int(part) for part in value.split("-"))
+        parsed = date(year, month, day)
+        return parsed, parsed
+    if re.fullmatch(r"\d{4}-\d{2}", value):
+        year, month = (int(part) for part in value.split("-"))
+        last_day = calendar.monthrange(year, month)[1]
+        return date(year, month, 1), date(year, month, last_day)
+    return None
+
+
+def archive_period_in_range(
+    period: str,
+    *,
+    start_period: str | None = None,
+    end_period: str | None = None,
+) -> bool:
+    """Return whether an archive period overlaps the inclusive period window."""
+
+    bounds = _period_date_bounds(period)
+    if bounds is None:
+        return False
+    period_start, period_end = bounds
+    if start_period:
+        start_bounds = _period_date_bounds(start_period)
+        if start_bounds is None:
+            raise ValueError("start_period must be YYYY-MM or YYYY-MM-DD")
+        if period_end < start_bounds[0]:
+            return False
+    if end_period:
+        end_bounds = _period_date_bounds(end_period)
+        if end_bounds is None:
+            raise ValueError("end_period must be YYYY-MM or YYYY-MM-DD")
+        if period_start > end_bounds[1]:
+            return False
+    return True
+
+
+def validate_archive_period_window(
+    *,
+    start_period: str | None = None,
+    end_period: str | None = None,
+) -> None:
+    """Validate an inclusive archive period window."""
+
+    start_bounds = None
+    end_bounds = None
+    if start_period:
+        start_bounds = _period_date_bounds(start_period)
+        if start_bounds is None:
+            raise ValueError("start_period must be YYYY-MM or YYYY-MM-DD")
+    if end_period:
+        end_bounds = _period_date_bounds(end_period)
+        if end_bounds is None:
+            raise ValueError("end_period must be YYYY-MM or YYYY-MM-DD")
+    if start_bounds is not None and end_bounds is not None and start_bounds[0] > end_bounds[1]:
+        raise ValueError("start_period must be earlier than or equal to end_period")
+
+
+def filter_archive_urls_by_period(
+    urls: Sequence[str],
+    *,
+    start_period: str | None = None,
+    end_period: str | None = None,
+) -> list[str]:
+    """Filter official Binance archive URLs by inclusive daily/monthly period."""
+
+    if not start_period and not end_period:
+        return list(urls)
+    selected: list[str] = []
+    for url in urls:
+        period = archive_url_period(url)
+        if period and archive_period_in_range(period, start_period=start_period, end_period=end_period):
+            selected.append(url)
+    return selected
 
 
 def _xml_text(element: object, tag: str) -> str:
@@ -599,8 +689,12 @@ __all__ = [
     "archive_directory_url",
     "archive_file_url",
     "archive_listing_url",
+    "archive_period_in_range",
+    "archive_url_period",
     "_checksum_url",
+    "filter_archive_urls_by_period",
     "ingest_archive_url",
     "ingest_archive_urls",
     "list_archive_urls",
+    "validate_archive_period_window",
 ]

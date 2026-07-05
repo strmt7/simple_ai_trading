@@ -40,7 +40,13 @@ from .assets import (
     is_supported_major_symbol,
 )
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
-from .binance_archive import ingest_archive_urls, list_archive_urls
+from .binance_archive import (
+    archive_url_period,
+    filter_archive_urls_by_period,
+    ingest_archive_urls,
+    list_archive_urls,
+    validate_archive_period_window,
+)
 from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
@@ -393,7 +399,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser_archive_sync = subparsers.add_parser(
         "archive-sync",
-        help="ingest official Binance public kline archive ZIPs into SQLite",
+        help="plan or ingest official Binance public archive ZIPs into SQLite",
     )
     parser_archive_sync.add_argument("--db", default="data/market_data.sqlite")
     parser_archive_sync.add_argument("--symbol", default=None)
@@ -417,6 +423,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="official archive data type; futures 1s defaults to aggTrades and aggregates real trades to 1s candles",
     )
     parser_archive_sync.add_argument("--max-files", type=int, default=None, help="optional safety cap for smoke runs")
+    parser_archive_sync.add_argument("--start-period", default=None, help="inclusive archive period start, YYYY-MM or YYYY-MM-DD")
+    parser_archive_sync.add_argument("--end-period", default=None, help="inclusive archive period end, YYYY-MM or YYYY-MM-DD")
+    parser_archive_sync.add_argument("--plan-only", action="store_true", help="list the bounded archive plan without downloading files")
     parser_archive_sync.add_argument("--timeout", type=int, default=120)
     parser_archive_sync.add_argument("--force", action="store_true")
     parser_archive_sync.add_argument("--no-verify-checksum", action="store_true", help="skip Binance .CHECKSUM sidecar verification")
@@ -4620,6 +4629,14 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     if data_type == "aggTrades" and interval != "1s":
         print("archive-sync aggTrades ingestion emits 1s candles; use --interval 1s", file=sys.stderr)
         return 2
+    start_period = str(getattr(args, "start_period", "") or "").strip() or None
+    end_period = str(getattr(args, "end_period", "") or "").strip() or None
+    try:
+        validate_archive_period_window(start_period=start_period, end_period=end_period)
+    except ValueError as exc:
+        print(f"archive-sync invalid period window: {exc}", file=sys.stderr)
+        return 2
+    plan_only = bool(getattr(args, "plan_only", False))
     quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
     quote_gate = quote_asset if getattr(args, "quote_asset", None) else None
     raw_symbols = str(getattr(args, "symbols", "") or "").strip()
@@ -4697,6 +4714,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     max_files_int = None if max_files is None else max(0, int(max_files))
     all_results = []
     errors: list[dict[str, str]] = []
+    archive_plans: list[dict[str, object]] = []
     for symbol in symbols:
         try:
             urls = prelisted_archive_urls.get(symbol)
@@ -4711,12 +4729,33 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         except (OSError, ValueError) as exc:
             errors.append({"symbol": symbol, "error": f"list_failed:{exc}"})
             continue
+        listed_count = len(urls)
+        try:
+            urls = filter_archive_urls_by_period(urls, start_period=start_period, end_period=end_period)
+        except ValueError as exc:
+            errors.append({"symbol": symbol, "error": f"period_filter_failed:{exc}"})
+            continue
+        filtered_count = len(urls)
         if max_files_int is not None:
-            if max_files_int == 0 and urls:
-                continue
             urls = urls[:max_files_int]
+        periods = [archive_url_period(url) for url in urls]
+        archive_plans.append({
+            "symbol": symbol,
+            "listed_files": int(listed_count),
+            "filtered_files": int(filtered_count),
+            "selected_files": int(len(urls)),
+            "first_period": next((period for period in periods if period), ""),
+            "last_period": next((period for period in reversed(periods) if period), ""),
+            "first_url": urls[0] if urls else "",
+            "last_url": urls[-1] if urls else "",
+        })
+        if max_files_int == 0 and filtered_count > 0:
+            continue
         if not urls:
-            errors.append({"symbol": symbol, "error": f"no_{cadence}_archive_files"})
+            window_suffix = "_in_period_window" if start_period or end_period else ""
+            errors.append({"symbol": symbol, "error": f"no_{cadence}_archive_files{window_suffix}"})
+            continue
+        if plan_only:
             continue
         all_results.extend(
             ingest_archive_urls(
@@ -4747,10 +4786,15 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         "data_type": data_type,
         "market_type": market_type,
         "cadence": cadence,
+        "plan_only": bool(plan_only),
+        "start_period": start_period or "",
+        "end_period": end_period or "",
         "files": len(all_results),
+        "planned_files": sum(int(item["selected_files"]) for item in archive_plans),
         "rows_read": sum(item.rows_read for item in all_results),
         "rows_inserted": sum(item.rows_inserted for item in all_results),
         "bytes_downloaded": sum(item.bytes_downloaded for item in all_results),
+        "archive_plans": archive_plans,
         "history_rejections": history_rejections,
         "errors": errors,
         "results": [item.asdict() for item in all_results],
@@ -4761,9 +4805,11 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         print(
             "archive-sync: "
             f"status={payload['status']} symbols={payload['symbol_count']} interval={interval} data_type={data_type} market={market_type} "
-            f"files={payload['files']} rows_read={payload['rows_read']} "
+            f"planned_files={payload['planned_files']} files={payload['files']} rows_read={payload['rows_read']} "
             f"rows_inserted={payload['rows_inserted']} bytes={payload['bytes_downloaded']}"
         )
+        if plan_only:
+            print("archive-sync plan-only: no files downloaded or ingested")
         if shortfall:
             print(
                 f"warning: archive-sync selected {len(symbols)}/{requested_top_symbols} symbols after history-depth gates",

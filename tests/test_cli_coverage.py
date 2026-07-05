@@ -663,6 +663,82 @@ def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path
     assert "data_type=aggTrades" in capsys.readouterr().out
 
 
+def test_command_archive_sync_plan_only_filters_period_window(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+    listed = [
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-05-31.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-02.zip",
+        "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-07-01.zip",
+    ]
+    monkeypatch.setattr(cli, "list_archive_urls", lambda **_kwargs: listed)
+    monkeypatch.setattr(
+        cli,
+        "ingest_archive_urls",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("plan-only should not ingest")),
+    )
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols=None,
+        top_symbols=0,
+        quote_asset=None,
+        max_scan=250,
+        interval=None,
+        market="futures",
+        cadence="daily",
+        data_type=None,
+        max_files=None,
+        start_period="2024-06-01",
+        end_period="2024-06-30",
+        plan_only=True,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["plan_only"] is True
+    assert payload["planned_files"] == 2
+    assert payload["files"] == 0
+    assert payload["archive_plans"][0]["listed_files"] == 4
+    assert payload["archive_plans"][0]["filtered_files"] == 2
+    assert payload["archive_plans"][0]["first_period"] == "2024-06-01"
+    assert payload["archive_plans"][0]["last_period"] == "2024-06-02"
+
+
+def test_command_archive_sync_rejects_invalid_period_window_before_listing(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+    monkeypatch.setattr(
+        cli,
+        "list_archive_urls",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("invalid window should not list")),
+    )
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols=None,
+        top_symbols=0,
+        quote_asset=None,
+        max_scan=250,
+        interval=None,
+        market="futures",
+        cadence="daily",
+        data_type=None,
+        max_files=None,
+        start_period="2024/06/01",
+        end_period="2024-06-30",
+        plan_only=True,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 2
+
+    assert "invalid period window" in capsys.readouterr().err
+
+
 def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatch, capsys) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
     list_calls: list[str] = []
