@@ -114,6 +114,8 @@ class BacktestEvidence:
     threshold_calibration_pnl: float | None
     threshold_calibration_trades: int
     decision_threshold: float | None
+    round_selection_gate_passed: bool
+    round_selection_reject_reason: str | None
     model_quality_warnings: str
     meta_label_policy_reason: str | None
     starting_cash: float
@@ -1183,7 +1185,10 @@ def _evaluate_round_model_candidate(
                 "scoring_backend_device": base_result.scoring_backend_device,
             },
         )
-    base_score = objective.score(base_result) if objective.accepts(base_result) else float("-inf")
+    base_reject_reason = objective.reject_reason(base_result)
+    base_accepts = base_reject_reason is None
+    base_raw_score = objective.score(base_result)
+    base_score = base_raw_score if base_accepts else float("-inf")
     inverted_model = copy.deepcopy(model)
     inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
     inverted_model.model_family = f"{inverted_model.model_family}:round_selection_inverted"
@@ -1216,27 +1221,40 @@ def _evaluate_round_model_candidate(
                 "scoring_backend_device": inverted_result.scoring_backend_device,
             },
         )
-    inverted_score = objective.score(inverted_result) if objective.accepts(inverted_result) else float("-inf")
+    inverted_reject_reason = objective.reject_reason(inverted_result)
+    inverted_accepts = inverted_reject_reason is None
+    inverted_raw_score = objective.score(inverted_result)
+    inverted_score = inverted_raw_score if inverted_accepts else float("-inf")
     score = base_score
     if inverted_score > base_score + 1e-12:
         model = inverted_model
         score = inverted_score
+        model.round_selection_gate_passed = True
+        model.round_selection_reject_reason = ""
+    elif base_accepts:
+        model.round_selection_gate_passed = True
+        model.round_selection_reject_reason = ""
     elif not math.isfinite(base_score):
-        model.meta_label_policy = {
-            "enabled": True,
-            "mode": "take_downsize_skip",
-            "reason": "round_selection_gate_failed",
-            "objective": objective.name,
-            "target_precision": 1.0,
-            "take_threshold": 1_000_000_000.0,
-            "downsize_threshold": 1_000_000_000.0,
-            "downsize_fraction": 0.05,
-            "sample_count": 0,
-        }
-        model.threshold_source = "round_selection_fail_closed"
+        if inverted_raw_score > base_raw_score + 1e-12:
+            model = inverted_model
+            score = inverted_raw_score
+            chosen_reject_reason = inverted_reject_reason
+        else:
+            score = base_raw_score
+            chosen_reject_reason = base_reject_reason
+        model.round_selection_gate_passed = False
+        model.round_selection_reject_reason = str(chosen_reject_reason or "selection_gate_failed")
+        if int(getattr(threshold_report, "closed_trades", 0) or 0) > 0:
+            model.decision_threshold = float(threshold_report.threshold)
+            model.threshold_source = "round_selection_rejected_threshold_diagnostic"
+            model.threshold_calibration_score = float(threshold_report.score)
+            model.threshold_calibration_pnl = float(threshold_report.realized_pnl)
+            model.threshold_calibration_trades = int(threshold_report.closed_trades)
+        else:
+            model.threshold_source = "round_selection_rejected_diagnostic_holdout"
         model.quality_warnings = [
             *list(getattr(model, "quality_warnings", [])),
-            "round_selection_gate_failed_no_final_holdout_entries",
+            "round_selection_gate_failed_diagnostic_holdout_only",
         ]
     return RoundModelCandidateResult(
         candidate=candidate,
@@ -1554,8 +1572,21 @@ def build_round_evidence(
                 scoring_backend_device=result.scoring_backend_device,
             )
             market_edge = build_market_edge_report(result, objective)
-            accepted = bool(objective.accepts(result) and market_edge.accepted and not result.stopped_by_drawdown)
-            reason = objective.reject_reason(result) or market_edge.reason
+            selection_gate_passed = bool(getattr(model, "round_selection_gate_passed", True))
+            accepted = bool(
+                selection_gate_passed
+                and objective.accepts(result)
+                and market_edge.accepted
+                and not result.stopped_by_drawdown
+            )
+            base_reason = objective.reject_reason(result) or market_edge.reason
+            if not selection_gate_passed:
+                selection_reason = str(getattr(model, "round_selection_reject_reason", "") or "selection_gate_failed")
+                reason = f"selection_gate_failed: {selection_reason}"
+                if base_reason:
+                    reason = f"{reason}; {base_reason}"
+            else:
+                reason = base_reason
             strategy_points = _result_points(result)
             baseline_series = _baseline_equity_series(validation_rows, starting_cash, evidence_strategy, market_type=market_type)
             baseline_points = [
@@ -1699,6 +1730,12 @@ def build_round_evidence(
                     if getattr(model, "decision_threshold", None) is not None
                     else None
                 ),
+                round_selection_gate_passed=bool(getattr(model, "round_selection_gate_passed", True)),
+                round_selection_reject_reason=(
+                    str(getattr(model, "round_selection_reject_reason"))
+                    if getattr(model, "round_selection_reject_reason", None)
+                    else None
+                ),
                 model_quality_warnings="; ".join(str(item) for item in getattr(model, "quality_warnings", []) or []),
                 meta_label_policy_reason=(
                     str(getattr(model, "meta_label_policy", {}).get("reason"))
@@ -1763,6 +1800,8 @@ def build_round_evidence(
                 threshold_calibration_pnl=None,
                 threshold_calibration_trades=0,
                 decision_threshold=None,
+                round_selection_gate_passed=False,
+                round_selection_reject_reason=str(exc)[:240],
                 model_quality_warnings="",
                 meta_label_policy_reason=None,
                 starting_cash=float(starting_cash),
