@@ -40,6 +40,9 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
             "downsize_threshold": 0.01,
             "downsize_fraction": 0.5,
         },
+        model_candidate_count=3,
+        model_selected_candidate="triple_barrier_base",
+        model_selection_score=0.42,
     )
 
 
@@ -50,6 +53,7 @@ def test_model_readiness_allows_promoted_model_and_round_trips_from_path(tmp_pat
     assert report.allowed is True
     assert report.block_count == 0
     assert any(check.label == "selection risk" and check.status == "ok" for check in report.checks)
+    assert any(check.label == "model candidate search" and check.status == "ok" for check in report.checks)
     assert report.asdict()["allowed"] is True
 
     path = tmp_path / "model.json"
@@ -58,6 +62,22 @@ def test_model_readiness_allows_promoted_model_and_round_trips_from_path(tmp_pat
 
     assert loaded_report.allowed is True
     assert loaded_report.model_path == str(path)
+    assert any("triple_barrier_base" in check.detail for check in loaded_report.checks)
+
+
+def test_model_readiness_warns_on_single_candidate_evidence() -> None:
+    model = _model()
+    model.model_candidate_count = 1
+    model.model_selected_candidate = "default"
+    model.model_selection_score = None
+
+    report = build_model_readiness_report(model)
+
+    assert report.allowed is True
+    assert any(
+        check.label == "model candidate search" and check.status == "warn"
+        for check in report.checks
+    )
 
 
 def test_model_readiness_blocks_missing_or_failed_selection_risk() -> None:

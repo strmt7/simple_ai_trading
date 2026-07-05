@@ -116,6 +116,9 @@ class TrainedModel:
     training_backend_vendor: str = "Python stdlib"
     training_backend_reason: str = ""
     model_family: str = "advanced_logistic"
+    model_candidate_count: int = 1
+    model_selected_candidate: str = "default"
+    model_selection_score: float | None = None
     hybrid_base_weight: float = 1.0
     hybrid_experts: List[HybridExpert] = field(default_factory=list)
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
@@ -1883,6 +1886,13 @@ def load_model(
         training_backend_vendor=str(payload.get("training_backend_vendor", "Python stdlib") or "Python stdlib"),
         training_backend_reason=str(payload.get("training_backend_reason", "") or ""),
         model_family=str(payload.get("model_family", "advanced_logistic") or "advanced_logistic"),
+        model_candidate_count=max(1, int(payload.get("model_candidate_count", 1) or 1)),
+        model_selected_candidate=str(payload.get("model_selected_candidate", "default") or "default"),
+        model_selection_score=(
+            float(payload["model_selection_score"])
+            if payload.get("model_selection_score") is not None
+            else None
+        ),
         hybrid_base_weight=max(0.0, float(payload.get("hybrid_base_weight", 1.0) or 1.0)),
         hybrid_experts=_load_hybrid_experts(payload.get("hybrid_experts", []), dim),
         meta_label_policy=(

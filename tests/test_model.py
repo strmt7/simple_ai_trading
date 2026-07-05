@@ -349,6 +349,9 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         training_backend_device="privateuseone:0",
         training_backend_vendor="DirectML",
         training_backend_reason="",
+        model_candidate_count=3,
+        model_selected_candidate="triple_barrier_base",
+        model_selection_score=0.42,
         strategy_overrides={
             "risk_per_trade": 0.005,
             "signal_threshold": 0.63,
@@ -418,6 +421,9 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     assert loaded.training_backend_kind == "directml"
     assert loaded.training_backend_device == "privateuseone:0"
     assert loaded.training_backend_vendor == "DirectML"
+    assert loaded.model_candidate_count == 3
+    assert loaded.model_selected_candidate == "triple_barrier_base"
+    assert loaded.model_selection_score == pytest.approx(0.42)
     assert loaded.strategy_overrides == {
         "risk_per_trade": 0.005,
         "signal_threshold": 0.63,

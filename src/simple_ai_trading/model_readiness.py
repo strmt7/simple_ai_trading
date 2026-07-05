@@ -122,6 +122,29 @@ def build_model_readiness_report(
                     )
                 )
 
+    candidate_count = int(_finite(getattr(model, "model_candidate_count", 1)) or 1)
+    selected_candidate = str(getattr(model, "model_selected_candidate", "") or "").strip()
+    selection_score = _finite(getattr(model, "model_selection_score", None))
+    if candidate_count > 1 and selected_candidate and selection_score is not None:
+        checks.append(
+            _check(
+                "ok",
+                "model candidate search",
+                f"selected {selected_candidate} from {candidate_count} candidates score={selection_score:+.4f}",
+                metric=selection_score,
+            )
+        )
+    else:
+        checks.append(
+            _check(
+                "warn",
+                "model candidate search",
+                "single/default candidate evidence only",
+                metric=candidate_count,
+                limit=">1",
+            )
+        )
+
     execution_validation = getattr(model, "execution_validation", None)
     if require_execution_validation:
         if not isinstance(execution_validation, dict) or not execution_validation:
