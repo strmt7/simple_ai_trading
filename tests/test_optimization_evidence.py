@@ -1414,6 +1414,17 @@ def test_build_round_evidence_records_data_health_block_before_training(
     assert metrics_path.exists()
     assert str(data_health_path).replace("\\", "/") in report["tracked_artifacts"]
     assert json.loads(data_health_path.read_text(encoding="utf-8")) == report["data_health"]
+    integrity = {entry["path"]: entry for entry in report["artifact_integrity"]}
+    metrics_key = str(metrics_path).replace("\\", "/")
+    data_health_key = str(data_health_path).replace("\\", "/")
+    assert metrics_key in integrity
+    assert data_health_key in integrity
+    assert integrity[metrics_key]["row_count"] == 1
+    assert "symbol" in integrity[metrics_key]["columns"]
+    assert integrity[metrics_key]["sha256"] == oe._artifact_integrity(metrics_key)["sha256"]
+    assert integrity[data_health_key]["bytes"] == data_health_path.stat().st_size
+    persisted_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert persisted_report["artifact_integrity"] == report["artifact_integrity"]
 
 
 def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_trades(

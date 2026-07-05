@@ -10,7 +10,9 @@ results, or generated performance charts as optimization evidence.
   exchange-sourced candles or signed exchange/account evidence and includes
   machine-readable provenance. The round `report.json` must declare
   `artifact_class: exchange_sourced_backtest_graph_data`,
-  `tracked_repo_artifact: true`, and list every tracked graph/data artifact.
+  `tracked_repo_artifact: true`, list every tracked graph/data artifact, and
+  include an `artifact_integrity` manifest with SHA-256 hashes, byte counts, and
+  CSV row/column counts for every tracked artifact other than the report itself.
 - No docs may present test-double output, unit-test candles, or generated
   regression scenarios as financial performance.
 - Backtest and model-lab reports must identify symbol, market, interval, UTC
@@ -45,6 +47,7 @@ profit factor must include:
 - fees, spread, latency, liquidity, and slippage assumptions,
 - generated artifact path,
 - committed CSV/table source for each graph,
+- SHA-256/byte/row-count manifest entry for each committed graph/table artifact,
 - command used to regenerate it.
 
 If that evidence is missing, the report must say that no performance claim is

@@ -6,6 +6,7 @@ import csv
 import copy
 import gc
 import gzip
+import hashlib
 import math
 import statistics
 from bisect import bisect_left, insort
@@ -860,6 +861,63 @@ def _open_text_writer(path: Path):
     if path.name.endswith(".gz"):
         return gzip.open(path, "wt", encoding="utf-8", newline="")
     return path.open("w", encoding="utf-8", newline="")
+
+
+def _open_text_reader(path: Path):
+    if path.name.endswith(".gz"):
+        return gzip.open(path, "rt", encoding="utf-8", newline="")
+    return path.open("r", encoding="utf-8", newline="")
+
+
+def _artifact_path(raw: str | Path) -> Path:
+    path = Path(str(raw))
+    return path if path.is_absolute() else Path.cwd() / path
+
+
+def _csv_shape(path: Path) -> tuple[int, tuple[str, ...]]:
+    try:
+        with _open_text_reader(path) as handle:
+            reader = csv.reader(handle)
+            header = next(reader, None)
+            rows = sum(1 for _row in reader)
+    except (OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError, csv.Error):
+        return 0, ()
+    return max(0, int(rows)), tuple(str(column) for column in (header or ()))
+
+
+def _artifact_integrity(raw: str | Path) -> dict[str, object]:
+    normalized = str(raw).replace("\\", "/")
+    path = _artifact_path(raw)
+    payload = path.read_bytes()
+    entry: dict[str, object] = {
+        "path": normalized,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "bytes": len(payload),
+    }
+    lower = normalized.lower()
+    if lower.endswith(".csv") or lower.endswith(".csv.gz"):
+        rows, columns = _csv_shape(path)
+        entry["row_count"] = rows
+        entry["columns"] = list(columns)
+    return entry
+
+
+def _artifact_integrity_manifest(
+    tracked_artifacts: Sequence[str],
+    *,
+    report_path: Path,
+) -> list[dict[str, object]]:
+    report = str(report_path).replace("\\", "/")
+    manifest: list[dict[str, object]] = []
+    for raw in sorted(dict.fromkeys(str(item).replace("\\", "/") for item in tracked_artifacts)):
+        if raw == report:
+            continue
+        path = _artifact_path(raw)
+        if not path.exists() or not path.is_file():
+            manifest.append({"path": raw, "missing": True})
+            continue
+        manifest.append(_artifact_integrity(raw))
+    return manifest
 
 
 def _write_round_status(paths: EvidencePaths, **payload: object) -> None:
@@ -2018,6 +2076,20 @@ def build_round_evidence(
     }
     _write_csv(paths.progress_csv_path, [progress], tuple(progress.keys()))
     write_json_atomic(paths.data_health_path, data_health, indent=2, sort_keys=True)
+    write_status(
+        "round_complete",
+        status="complete",
+        symbol_count_requested=len(selected),
+        completed_symbol_count=len(metrics),
+        accepted_symbol_count=len(accepted_metrics),
+        metrics_csv_path=str(paths.metrics_csv_path).replace("\\", "/"),
+        report_path=str(paths.report_path).replace("\\", "/"),
+    )
+    tracked_artifacts = sorted(dict.fromkeys(tracked_artifacts))
+    artifact_integrity = _artifact_integrity_manifest(
+        tracked_artifacts,
+        report_path=paths.report_path,
+    )
     report = {
         "round_id": round_id,
         "generated_at_utc": _utc_now(),
@@ -2062,18 +2134,10 @@ def build_round_evidence(
         "progress_csv_path": str(paths.progress_csv_path).replace("\\", "/"),
         "progress": progress,
         "metrics": metric_rows,
-        "tracked_artifacts": sorted(dict.fromkeys(tracked_artifacts)),
+        "tracked_artifacts": tracked_artifacts,
+        "artifact_integrity": artifact_integrity,
     }
     write_json_atomic(paths.report_path, report, indent=2, sort_keys=True)
-    write_status(
-        "round_complete",
-        status="complete",
-        symbol_count_requested=len(selected),
-        completed_symbol_count=len(metrics),
-        accepted_symbol_count=len(accepted_metrics),
-        metrics_csv_path=str(paths.metrics_csv_path).replace("\\", "/"),
-        report_path=str(paths.report_path).replace("\\", "/"),
-    )
     return report
 
 
