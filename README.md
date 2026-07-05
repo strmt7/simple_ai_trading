@@ -278,6 +278,7 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - Backtest and model-lab artifacts include data-coverage evidence with UTC date spans, interval, source scope, coverage ratio, gap count, and a truth basis that distinguishes simulated fills from exchange fills.
 - Recent-limit research artifacts are labeled and cannot silently claim full available history.
 - Model artifacts, generated backtests, and accepted model-lab reports must pass financial-sanity checks for finite parameters, coherent probabilities, valid row counts, valid coverage, internally consistent accounting/path metrics, and bounded risk metrics.
+- Market-edge reports cannot be accepted unless the underlying generated backtest also passes financial-sanity checks.
 - Repo-facing performance claims must come from real source data with the provenance required by `docs/DATA_PROVENANCE_POLICY.md`.
 - Authenticated live/testnet order loops do not trust requested quantity as filled quantity; they require execution fields or a signed order-status reconciliation. `spot-roundtrip` also refuses to size its second signed leg from an ACK-only first leg. `origQty`, local requested size, and local fallback price are not fill evidence for live ledgers.
 - Authenticated `live --live` startup refuses unverified exchange exposure; it will only resume an existing position if the local bot ledger proves ownership with bot client-order and exchange fill/acknowledgement evidence.

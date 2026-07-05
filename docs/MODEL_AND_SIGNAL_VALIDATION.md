@@ -46,6 +46,9 @@ The gate enforces:
 - accepted outcomes require passed selection-risk evidence for each accepted
   objective, including positive deflated score, positive trial count, no
   rejection reasons, and passed/skipped overfit diagnostics,
+- market-edge acceptance fails closed when the underlying generated backtest
+  fails financial sanity; positive edge, profit factor, or bootstrap evidence
+  cannot override incoherent cash, trade, exposure, or equity-curve math,
 - accepted stress validation must include nonzero scenario evidence, finite
   nonnegative worst P&L, and bounded drawdown; accepted temporal robustness must
   include nonzero window evidence, consistent accepted-window counts, bounded

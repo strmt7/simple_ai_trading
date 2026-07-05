@@ -617,6 +617,8 @@ assert that every CLI command appears in the Windows app.
   fees, trade counts, exposure, trade-level P&L/return fields, path-quality
   summaries, liquidation counters, or equity-curve drawdown fail the financial
   sanity audit.
+- No accepted market-edge report may bypass that generated-backtest financial
+  sanity audit.
 - No score-improving model refinement if the validation/full-sample risk
   snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
 - No autonomous post-outage resume until signed exchange exposure reconciles
