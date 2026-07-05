@@ -162,6 +162,17 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
         },
+        probability_calibration_size=128,
+        probability_calibration_backend_requested="directml",
+        probability_calibration_backend_kind="directml",
+        probability_calibration_backend_device="privateuseone:0",
+        training_backend_requested="directml",
+        training_backend_kind="directml",
+        training_backend_device="privateuseone:0",
+        training_backend_vendor="DirectML",
+        model_candidate_count=3,
+        model_selected_candidate="triple_barrier_base",
+        model_selection_score=0.42,
     )
 
 

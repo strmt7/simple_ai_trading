@@ -18,6 +18,8 @@ A validation report may be documented only when it includes:
 - coverage ratio and gap count,
 - execution assumptions,
 - compute backend and device,
+- model candidate count, selected candidate, and selection score,
+- training backend and probability-calibration backend evidence,
 - generated artifact path.
 
 ## Financial Sanity Standard

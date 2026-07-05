@@ -10,6 +10,8 @@ from typing import Any
 from .financial_sanity import build_model_financial_sanity_report
 from .model import ModelLoadError, TrainedModel, load_model
 
+_ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
+
 
 @dataclass(frozen=True)
 class ModelReadinessCheck:
@@ -71,12 +73,47 @@ def _finite(value: object) -> float | None:
     return parsed if math.isfinite(parsed) else None
 
 
+def _int_at_least(value: object, fallback: int, minimum: int) -> int:
+    parsed = _finite(value)
+    if parsed is None:
+        return max(minimum, fallback)
+    return max(minimum, int(parsed))
+
+
+def _is_accelerated_backend(kind: object, device: object) -> bool:
+    backend_kind = str(kind or "").strip().lower()
+    backend_device = str(device or "").strip().lower()
+    return backend_kind in _ACCELERATOR_BACKENDS and backend_device not in {"", "cpu"}
+
+
+def _accelerator_check(
+    model: TrainedModel,
+    *,
+    label: str,
+    kind_attr: str,
+    device_attr: str,
+    reason_attr: str,
+) -> ModelReadinessCheck:
+    kind = str(getattr(model, kind_attr, "") or "").strip().lower()
+    device = str(getattr(model, device_attr, "") or "").strip()
+    reason = str(getattr(model, reason_attr, "") or "").strip()
+    if _is_accelerated_backend(kind, device):
+        return _check("ok", label, f"{kind} device={device}", metric=kind)
+    detail = f"{kind or 'missing'} device={device or 'missing'}"
+    if reason:
+        detail = f"{detail}; {reason}"
+    return _check("block", label, detail, metric=kind or "missing", limit="gpu")
+
+
 def build_model_readiness_report(
     model: TrainedModel,
     *,
     model_path: str | Path | None = None,
     require_selection_risk: bool = True,
     require_execution_validation: bool = True,
+    require_model_candidate_search: bool = False,
+    min_model_candidates: int = 2,
+    require_accelerator_evidence: bool = False,
 ) -> ModelReadinessReport:
     checks: list[ModelReadinessCheck] = []
     selection_risk = getattr(model, "selection_risk", None)
@@ -122,28 +159,82 @@ def build_model_readiness_report(
                     )
                 )
 
-    candidate_count = int(_finite(getattr(model, "model_candidate_count", 1)) or 1)
+    required_candidates = _int_at_least(min_model_candidates, 2, 2)
+    candidate_count = _int_at_least(getattr(model, "model_candidate_count", 1), 1, 1)
     selected_candidate = str(getattr(model, "model_selected_candidate", "") or "").strip()
     selection_score = _finite(getattr(model, "model_selection_score", None))
-    if candidate_count > 1 and selected_candidate and selection_score is not None:
+    candidate_ok = (
+        candidate_count >= required_candidates
+        and selected_candidate
+        and selected_candidate.lower() not in {"default", "single"}
+        and selection_score is not None
+        and selection_score > 0.0
+    )
+    if candidate_ok:
         checks.append(
             _check(
                 "ok",
                 "model candidate search",
                 f"selected {selected_candidate} from {candidate_count} candidates score={selection_score:+.4f}",
                 metric=selection_score,
+                limit=f">={required_candidates}",
             )
         )
     else:
+        reasons: list[str] = []
+        if candidate_count < required_candidates:
+            reasons.append(f"candidates={candidate_count}<{required_candidates}")
+        if not selected_candidate or selected_candidate.lower() in {"default", "single"}:
+            reasons.append(f"selected={selected_candidate or 'missing'}")
+        if selection_score is None or selection_score <= 0.0:
+            reasons.append(f"score={selection_score if selection_score is not None else 'missing'}")
         checks.append(
             _check(
-                "warn",
+                "block" if require_model_candidate_search else "warn",
                 "model candidate search",
-                "single/default candidate evidence only",
+                "single/default candidate evidence only"
+                if not reasons
+                else "insufficient candidate search evidence: " + ", ".join(reasons),
                 metric=candidate_count,
-                limit=">1",
+                limit=f">={required_candidates}",
             )
         )
+
+    if require_accelerator_evidence:
+        checks.append(
+            _accelerator_check(
+                model,
+                label="training accelerator",
+                kind_attr="training_backend_kind",
+                device_attr="training_backend_device",
+                reason_attr="training_backend_reason",
+            )
+        )
+        probability_calibration_size = _int_at_least(
+            getattr(model, "probability_calibration_size", 0),
+            0,
+            0,
+        )
+        if probability_calibration_size <= 0:
+            checks.append(
+                _check(
+                    "block",
+                    "probability calibration accelerator",
+                    "missing probability calibration sample evidence",
+                    metric=probability_calibration_size,
+                    limit=">0",
+                )
+            )
+        else:
+            checks.append(
+                _accelerator_check(
+                    model,
+                    label="probability calibration accelerator",
+                    kind_attr="probability_calibration_backend_kind",
+                    device_attr="probability_calibration_backend_device",
+                    reason_attr="probability_calibration_backend_reason",
+                )
+            )
 
     execution_validation = getattr(model, "execution_validation", None)
     if require_execution_validation:
@@ -213,12 +304,18 @@ def assert_model_promoted(
     model_path: str | Path | None = None,
     require_selection_risk: bool = True,
     require_execution_validation: bool = True,
+    require_model_candidate_search: bool = False,
+    min_model_candidates: int = 2,
+    require_accelerator_evidence: bool = False,
 ) -> ModelReadinessReport:
     report = build_model_readiness_report(
         model,
         model_path=model_path,
         require_selection_risk=require_selection_risk,
         require_execution_validation=require_execution_validation,
+        require_model_candidate_search=require_model_candidate_search,
+        min_model_candidates=min_model_candidates,
+        require_accelerator_evidence=require_accelerator_evidence,
     )
     if not report.allowed:
         reasons = "; ".join(f"{check.label}: {check.detail}" for check in report.checks if check.status == "block")
@@ -231,6 +328,9 @@ def load_model_readiness_report(
     *,
     require_selection_risk: bool = True,
     require_execution_validation: bool = True,
+    require_model_candidate_search: bool = False,
+    min_model_candidates: int = 2,
+    require_accelerator_evidence: bool = False,
 ) -> ModelReadinessReport:
     path = Path(model_path)
     model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
@@ -239,4 +339,7 @@ def load_model_readiness_report(
         model_path=path,
         require_selection_risk=require_selection_risk,
         require_execution_validation=require_execution_validation,
+        require_model_candidate_search=require_model_candidate_search,
+        min_model_candidates=min_model_candidates,
+        require_accelerator_evidence=require_accelerator_evidence,
     )
