@@ -152,6 +152,13 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
                 "temporal_robustness": {"accepted": True},
                 "portfolio": {"accepted": True},
             },
+            probability_calibration_size=128,
+            probability_log_loss_before=0.62,
+            probability_log_loss_after=0.58,
+            probability_brier_before=0.24,
+            probability_brier_after=0.22,
+            probability_ece_before=0.10,
+            probability_ece_after=0.08,
         ),
         promoted_path,
     )

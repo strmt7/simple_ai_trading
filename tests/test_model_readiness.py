@@ -41,6 +41,12 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
             "downsize_fraction": 0.5,
         },
         probability_calibration_size=128,
+        probability_log_loss_before=0.62,
+        probability_log_loss_after=0.58,
+        probability_brier_before=0.24,
+        probability_brier_after=0.22,
+        probability_ece_before=0.10,
+        probability_ece_after=0.08,
         probability_calibration_backend_requested="directml",
         probability_calibration_backend_kind="directml",
         probability_calibration_backend_device="privateuseone:0",
@@ -214,3 +220,20 @@ def test_model_readiness_blocks_financially_unsound_artifact() -> None:
 
     assert report.allowed is False
     assert any(check.label.startswith("financial sanity") for check in report.checks)
+
+
+def test_model_readiness_blocks_promoted_bad_probability_calibration() -> None:
+    bad = _model()
+    bad.probability_log_loss_after = 0.90
+    bad.probability_brier_after = 0.42
+    bad.probability_ece_after = 0.24
+
+    report = build_model_readiness_report(bad)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "financial sanity: probability Brier score" and check.status == "block"
+        for check in report.checks
+    )
+    with pytest.raises(ModelPromotionError, match="probability Brier score"):
+        assert_model_promoted(bad)

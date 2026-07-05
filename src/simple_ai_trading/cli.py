@@ -1779,7 +1779,8 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
                 if probability_ece is not None:
                     probability_detail += f" ece={float(probability_ece):.3f}"
                 add(
-                    float(probability_brier) <= 0.35,
+                    float(probability_brier) <= 0.35
+                    and (probability_ece is None or float(probability_ece) <= 0.20),
                     "probability calibration",
                     probability_detail,
                 )

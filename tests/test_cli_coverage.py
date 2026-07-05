@@ -1410,6 +1410,12 @@ def test_readiness_report_includes_feature_drift(tmp_path, monkeypatch) -> None:
     assert ok is False
     assert any("[fix] probability calibration" in line and "brier=0.420" in line for line in lines)
 
+    model.probability_brier_after = 0.20
+    model.probability_ece_after = 0.24
+    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    assert ok is False
+    assert any("[fix] probability calibration" in line and "ece=0.240" in line for line in lines)
+
 
 def test_readiness_report_accepts_train_suite_advanced_model(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -1542,6 +1548,12 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
             "portfolio": {"accepted": True},
         },
         probability_calibration_size=128,
+        probability_log_loss_before=0.62,
+        probability_log_loss_after=0.58,
+        probability_brier_before=0.24,
+        probability_brier_after=0.22,
+        probability_ece_before=0.10,
+        probability_ece_after=0.08,
         probability_calibration_backend_requested="directml",
         probability_calibration_backend_kind="directml",
         probability_calibration_backend_device="privateuseone:0",
@@ -1797,6 +1809,13 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
                 "temporal_robustness": {"accepted": True},
                 "portfolio": {"accepted": True},
             },
+            probability_calibration_size=128,
+            probability_log_loss_before=0.62,
+            probability_log_loss_after=0.58,
+            probability_brier_before=0.24,
+            probability_brier_after=0.22,
+            probability_ece_before=0.10,
+            probability_ece_after=0.08,
         ),
         model_file,
     )
@@ -4019,6 +4038,12 @@ def test_command_live_futures_leverage_failure_returns_nonzero(tmp_path, monkeyp
                 "portfolio": {"accepted": True},
             },
             probability_calibration_size=128,
+            probability_log_loss_before=0.62,
+            probability_log_loss_after=0.58,
+            probability_brier_before=0.24,
+            probability_brier_after=0.22,
+            probability_ece_before=0.10,
+            probability_ece_after=0.08,
             probability_calibration_backend_requested="directml",
             probability_calibration_backend_kind="directml",
             probability_calibration_backend_device="privateuseone:0",
@@ -4303,6 +4328,12 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
             "portfolio": {"accepted": True},
         },
         probability_calibration_size=128,
+        probability_log_loss_before=0.62,
+        probability_log_loss_after=0.58,
+        probability_brier_before=0.24,
+        probability_brier_after=0.22,
+        probability_ece_before=0.10,
+        probability_ece_after=0.08,
         probability_calibration_backend_requested="directml",
         probability_calibration_backend_kind="directml",
         probability_calibration_backend_device="privateuseone:0",

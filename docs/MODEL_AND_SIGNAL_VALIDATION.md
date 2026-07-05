@@ -31,6 +31,9 @@ The gate enforces:
 - finite model parameters and matching feature dimensions,
 - bounded learning-rate, regularization, class-weight, threshold, and
   probability-temperature settings,
+- promoted-model probability calibration evidence with calibrated Brier score
+  `<=0.35` and expected calibration error `<=0.20`; missing calibration
+  evidence blocks execution-validated artifacts,
 - positive accepted row counts and finite objective scores,
 - complete data-coverage metadata with no failed integrity status,
 - accepted stress, temporal robustness, and portfolio-risk reports,
@@ -57,6 +60,10 @@ References:
   <https://www.finra.org/rules-guidance/key-topics/market-access>
   and
   <https://www.sec.gov/rules-regulations/staff-guidance/trading-markets-frequently-asked-questions/divisionsmarketregfaq-0>
+- scikit-learn probability calibration guide, which notes that Brier loss
+  combines calibration and discriminatory power and should not be treated as a
+  stand-alone calibration proof:
+  <https://scikit-learn.org/stable/modules/calibration.html>
 
 ## Market Edge Requirement
 

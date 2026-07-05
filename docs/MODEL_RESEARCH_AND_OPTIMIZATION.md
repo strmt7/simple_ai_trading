@@ -329,6 +329,9 @@ analytically incoherent artifacts before they reach an operator:
   and AI uplift deltas must be finite,
 - learning rate, L2 penalty, probability temperature, class weights, hybrid
   weights, and neighbor counts must stay inside hard numerical bounds,
+- promoted/execution-validated models must include probability calibration
+  evidence; calibrated Brier score above `0.35`, expected calibration error
+  above `0.20`, or worsened calibrated loss blocks readiness,
 - accepted model-lab outcomes must have positive rows and positive objective
   scores,
 - accepted coverage cannot have failed integrity, detected gaps, or impossible
