@@ -175,6 +175,105 @@ def test_model_financial_sanity_gates_promoted_probability_calibration() -> None
     assert any(check.detail == "calibration increased expected calibration error" for check in worse_ece_report.checks)
 
 
+def _model_lab_payload_with_symbols(symbols: list[str] | None = None) -> dict[str, object]:
+    accepted_symbols = list(symbols or ["AAAUSDC", "BBBUSDC"])
+    outcomes = [
+        {
+            "symbol": symbol,
+            "accepted": True,
+            "rows": 500,
+            "objective_scores": {"regular": 0.15},
+            "data_coverage": {
+                "integrity_status": "ok",
+                "coverage_ratio": 1.0,
+                "gap_count": 0,
+            },
+            "stress_validation": {"accepted": True, "worst_max_drawdown": 0.01},
+            "robustness_validation": {
+                "accepted": True,
+                "worst_max_drawdown": 0.02,
+                "statistical_edge_accepted": True,
+            },
+        }
+        for symbol in accepted_symbols
+    ]
+    return {
+        "accepted_symbols": accepted_symbols,
+        "portfolio_risk": {
+            "accepted": True,
+            "accepted_symbols": accepted_symbols,
+            "effective_symbol_count": float(len(accepted_symbols)),
+            "correlation_adjusted_effective_symbol_count": max(1.0, float(len(accepted_symbols)) - 0.25),
+            "portfolio_cvar_95": 0.01,
+            "portfolio_max_drawdown": 0.02,
+            "deployed_weight": min(1.0, 0.20 * len(accepted_symbols)),
+            "max_pairwise_correlation": 0.10,
+            "max_cluster_weight": 0.40,
+        },
+        "outcomes": outcomes,
+    }
+
+
+def test_model_lab_financial_sanity_accepts_consistent_portfolio_symbol_evidence() -> None:
+    report = build_model_lab_financial_sanity_report(_model_lab_payload_with_symbols())
+
+    assert report.allowed is True
+    assert all(check.status != "block" for check in report.checks)
+
+
+def test_model_lab_financial_sanity_blocks_missing_portfolio_symbol_evidence() -> None:
+    payload = _model_lab_payload_with_symbols()
+    del payload["portfolio_risk"]["accepted_symbols"]  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.path == "portfolio_risk.accepted_symbols" and check.status == "block"
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_mismatched_accepted_symbol_evidence() -> None:
+    payload = _model_lab_payload_with_symbols()
+    payload["portfolio_risk"]["accepted_symbols"] = ["AAAUSDC", "CCCUSDC"]  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "portfolio symbols" and "differ" in check.detail and check.status == "block"
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_duplicate_portfolio_symbols() -> None:
+    payload = _model_lab_payload_with_symbols()
+    payload["accepted_symbols"] = ["AAAUSDC", "AAAUSDC"]
+    payload["portfolio_risk"]["accepted_symbols"] = ["AAAUSDC", "AAAUSDC"]  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "portfolio symbols" and "duplicate" in check.detail and check.status == "block"
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_portfolio_without_accepted_outcomes() -> None:
+    payload = _model_lab_payload_with_symbols()
+    payload["outcomes"] = []
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "accepted outcomes" and check.status == "block"
+        for check in report.checks
+    )
+
+
 def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:
     payload = {
         "accepted_symbols": ["AAAUSDC"],
