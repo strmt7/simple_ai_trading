@@ -64,6 +64,11 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Require at least one verified Binance archive checksum for each selected symbol.",
     )
+    parser.add_argument(
+        "--require-gpu",
+        action="store_true",
+        help="Fail before optimization if the requested compute backend resolves to CPU.",
+    )
     return parser
 
 
@@ -100,6 +105,7 @@ def main(argv: list[str] | None = None) -> int:
             min_coverage_ratio=args.min_coverage_ratio,
             max_gap_count=args.max_gap_count,
             require_verified_checksum=args.require_verified_checksum,
+            require_gpu=args.require_gpu,
             use_objective_strategy_defaults=not args.no_objective_strategy_defaults,
         )
     except ValueError as exc:

@@ -34,6 +34,13 @@ are recorded in `selection_health_rejections`, so a report cannot hide that a
 popular or high-volume pair was skipped because the local evidence was too short,
 gappy, or unverified.
 
+For long promotion rounds, use `--require-gpu` unless intentionally profiling
+CPU-only behavior. The round resolves the compute backend before symbol work,
+records the backend in `round-status.json` and `report.json`, and refuses to run
+when the requested backend falls back to CPU. Full-resolution per-minute graph
+data stays in CSV; SVG charts render deterministic downsampled visual summaries
+so artifact generation does not dominate GPU-backed training/scoring time.
+
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,
   volume, trend, and volatility:
