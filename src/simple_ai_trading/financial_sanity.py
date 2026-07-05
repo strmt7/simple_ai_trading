@@ -294,6 +294,18 @@ def _market_edge_checks(payload: Mapping[str, Any], *, path: str) -> list[Financ
         )
         if net_edge_pct is None:
             checks.append(_check("block", "market edge pct", "missing or non-finite net edge", path=f"{full_path}.net_edge_pct"))
+        liquidation_events = _finite(report.get("liquidation_events"))
+        if accepted is True and liquidation_events is not None and liquidation_events > 0:
+            checks.append(
+                _check(
+                    "block",
+                    "liquidation evidence",
+                    "accepted market-edge report contains liquidation events",
+                    path=f"{full_path}.liquidation_events",
+                    metric=liquidation_events,
+                    limit=0,
+                )
+            )
         min_downside_ratio = _finite(report.get("min_downside_return_risk_ratio"))
         downside_ratio = _finite(report.get("downside_return_risk_ratio"))
         if accepted is True and min_downside_ratio is not None:

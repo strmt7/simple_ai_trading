@@ -502,6 +502,8 @@ assert that every CLI command appears in the Windows app.
   current exchange/archive data before any symbol is eligible.
 - No mainnet trading by default.
 - No leverage above 20x.
+- No model, threshold, stress, temporal, market-edge, or optimization acceptance
+  when a futures backtest records any liquidation event.
 - No AI in CPU-only mode.
 - No non-profitable accepted model-lab outcome.
 - No selected training-suite model without purged walk-forward evidence when

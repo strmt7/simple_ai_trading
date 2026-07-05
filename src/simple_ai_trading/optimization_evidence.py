@@ -145,6 +145,9 @@ class BacktestEvidence:
     scoring_backend_device: str
     chart_path: str
     timeline_csv_path: str
+    stopped_by_liquidation: bool = False
+    liquidation_events: int = 0
+    liquidation_loss: float = 0.0
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -166,6 +169,11 @@ def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, ob
     zero_trade_symbols = [metric.symbol for metric in metrics if int(metric.closed_trades) <= 0]
     nonpositive_roi_symbols = [metric.symbol for metric in metrics if float(metric.roi_pct) <= 0.0]
     negative_roi_symbols = [metric.symbol for metric in metrics if float(metric.roi_pct) < 0.0]
+    liquidation_symbols = [
+        metric.symbol
+        for metric in metrics
+        if bool(getattr(metric, "stopped_by_liquidation", False)) or int(getattr(metric, "liquidation_events", 0)) > 0
+    ]
     selection_gate_failed_symbols = [
         metric.symbol for metric in metrics if not bool(metric.round_selection_gate_passed)
     ]
@@ -189,10 +197,14 @@ def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, ob
         failures.append("all_symbols_nonpositive_roi")
     if not profitable_symbols:
         failures.append("no_profitable_symbols")
+    if liquidation_symbols:
+        failures.append("liquidation_events_detected")
     if negative_roi_symbols:
         warnings.append("some_symbols_negative_roi")
     if zero_trade_symbols:
         warnings.append("some_symbols_zero_closed_trades")
+    if liquidation_symbols:
+        warnings.append("liquidated_symbols_present")
     if selection_gate_failed_symbols:
         warnings.append("some_symbols_failed_selection_gate")
     if rejected_diagnostic_trade_symbols:
@@ -234,6 +246,8 @@ def critical_round_analysis(metrics: Sequence[BacktestEvidence]) -> dict[str, ob
         "zero_trade_symbols": zero_trade_symbols,
         "nonpositive_roi_symbols": nonpositive_roi_symbols,
         "negative_roi_symbols": negative_roi_symbols,
+        "liquidation_symbols": liquidation_symbols,
+        "total_liquidation_events": sum(int(getattr(metric, "liquidation_events", 0)) for metric in metrics),
         "selection_gate_failed_symbols": selection_gate_failed_symbols,
         "rejected_diagnostic_trade_symbols": rejected_diagnostic_trade_symbols,
     }
@@ -1651,6 +1665,8 @@ def build_round_evidence(
                 realized_pnl=float(result.realized_pnl),
                 max_drawdown=float(result.max_drawdown),
                 closed_trades=int(result.closed_trades),
+                stopped_by_liquidation=bool(getattr(result, "stopped_by_liquidation", False)),
+                liquidation_events=int(getattr(result, "liquidation_events", 0)),
                 scoring_backend_kind=result.scoring_backend_kind,
                 scoring_backend_device=result.scoring_backend_device,
             )
@@ -1661,6 +1677,8 @@ def build_round_evidence(
                 and objective.accepts(result)
                 and market_edge.accepted
                 and not result.stopped_by_drawdown
+                and not bool(getattr(result, "stopped_by_liquidation", False))
+                and int(getattr(result, "liquidation_events", 0)) <= 0
             )
             base_reason = objective.reject_reason(result) or market_edge.reason
             if not selection_gate_passed:
@@ -1856,6 +1874,9 @@ def build_round_evidence(
                 trades=int(result.trades),
                 closed_trades=int(result.closed_trades),
                 win_rate_pct=float(result.win_rate * 100.0),
+                stopped_by_liquidation=bool(getattr(result, "stopped_by_liquidation", False)),
+                liquidation_events=int(getattr(result, "liquidation_events", 0)),
+                liquidation_loss=float(getattr(result, "liquidation_loss", 0.0)),
                 total_fees=float(result.total_fees),
                 profit_factor=float(result.profit_factor),
                 expectancy=float(result.expectancy),

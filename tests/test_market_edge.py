@@ -52,6 +52,19 @@ def test_market_edge_report_rejects_tiny_edge_over_passive_market() -> None:
     assert "net_edge_pct<0.003000" in report.failed_checks
 
 
+def test_market_edge_report_rejects_liquidation_events() -> None:
+    report = build_market_edge_report(
+        _result(stopped_by_liquidation=True, liquidation_events=1, liquidation_loss=25.0),
+        "regular",
+    )
+
+    assert report.accepted is False
+    assert report.stopped_by_liquidation is True
+    assert report.liquidation_events == 1
+    assert report.liquidation_loss == 25.0
+    assert "liquidation_events>0" in report.failed_checks
+
+
 def test_market_edge_report_rejects_missing_trade_level_evidence() -> None:
     report = build_market_edge_report(_result(trade_returns=(), trade_pnls=()), "regular")
 
