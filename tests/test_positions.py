@@ -139,6 +139,33 @@ def test_store_record_close_removes_matching_open(tmp_path):
     assert store.learning_feedback_path.exists()
 
 
+def test_store_record_close_result_preserves_partial_open_remainder(tmp_path):
+    store = PositionsStore(root=tmp_path)
+    position = _long(qty=2.0, entry=100.0, id_="partial")
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+    trade = ClosedTrade(
+        id="partial", symbol="BTCUSDC", market_type="spot", side="LONG",
+        qty=0.75, entry_price=100.0, exit_price=110.0, leverage=1.0,
+        opened_at_ms=0, closed_at_ms=10, realized_pnl=7.5, realized_pnl_pct=0.075,
+        exchange_status="PARTIALLY_FILLED",
+    )
+
+    store.record_close_result(position, trade)
+
+    ledger = store.load_ledger()
+    assert len(ledger) == 1
+    assert ledger[0].qty == pytest.approx(0.75)
+    opens = store.load_open()
+    assert len(opens) == 1
+    assert opens[0].id == "partial"
+    assert opens[0].qty == pytest.approx(1.25)
+    assert opens[0].notional == pytest.approx(125.0)
+    assert bot_ownership_rejection_reason(opens[0]) is None
+
+
 def test_store_ignores_malformed_json(tmp_path):
     store = PositionsStore(root=tmp_path)
     store.open_path.parent.mkdir(parents=True, exist_ok=True)
