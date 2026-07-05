@@ -57,3 +57,22 @@ def test_market_edge_report_rejects_missing_trade_level_evidence() -> None:
     assert report.accepted is False
     assert "sample_count<3" in report.failed_checks
     assert report.evidence_unit == "none"
+
+
+def test_market_edge_allows_risk_explained_activity_shortfall() -> None:
+    report = build_market_edge_report(
+        _result(
+            closed_trades=3,
+            trades=3,
+            trade_returns=(0.010, 0.012, 0.011),
+            trade_pnls=(10.0, 12.0, 11.0),
+            regime_entry_skips=6,
+        ),
+        "conservative",
+    )
+
+    assert report.accepted is True
+    assert report.activity_gate_risk_explained is True
+    assert report.risk_gate_skip_count == 6
+    assert report.min_sample_count == 3
+    assert "closed_trades<5" not in report.failed_checks

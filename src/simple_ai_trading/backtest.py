@@ -155,6 +155,33 @@ def risk_gate_skip_count(result: object) -> int:
     )
 
 
+def risk_gated_activity_explains_shortfall(
+    result: object,
+    *,
+    min_closed_trades: int,
+    min_trades_per_day: float,
+    duration_days: float | None = None,
+) -> bool:
+    """Return True when explicit risk gates justify missing activity targets.
+
+    Trade-count targets prove a repeatable day-trading edge, but they must not
+    become forced-entry quotas. A sparse result can pass only when the backtest
+    records enough regime/meta-label vetoes to explain the missing trades.
+    """
+
+    closed_trades = max(0, int(_finite_float(getattr(result, "closed_trades", 0), 0.0)))
+    min_closed = max(0, int(min_closed_trades))
+    min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
+    days = max(1.0, _finite_float(duration_days, backtest_result_duration_days(result)))
+    required_for_daily = int(math.ceil(min_daily * days)) if min_daily > 0.0 else 0
+    required_closed = max(min_closed, required_for_daily)
+    missing = max(0, required_closed - closed_trades)
+    if missing <= 0:
+        return False
+    skip_count = risk_gate_skip_count(result)
+    return skip_count >= max(5, missing * 2, closed_trades * 2)
+
+
 def trade_activity_satisfies(
     result: object,
     *,
@@ -171,15 +198,20 @@ def trade_activity_satisfies(
     """
 
     closed_trades = max(0, int(_finite_float(getattr(result, "closed_trades", 0), 0.0)))
-    if closed_trades < max(0, int(min_closed_trades)):
-        return False
+    min_closed = max(0, int(min_closed_trades))
     min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
-    if min_daily <= 0.0 or closed_trades_per_day(result, duration_days=duration_days) >= min_daily:
+    closed_floor_met = closed_trades >= min_closed
+    daily_floor_met = min_daily <= 0.0 or closed_trades_per_day(result, duration_days=duration_days) >= min_daily
+    if closed_floor_met and daily_floor_met:
         return True
     if not allow_risk_gated_low_activity:
         return False
-    skip_count = risk_gate_skip_count(result)
-    return skip_count >= max(5, closed_trades * 2)
+    return risk_gated_activity_explains_shortfall(
+        result,
+        min_closed_trades=min_closed,
+        min_trades_per_day=min_daily,
+        duration_days=duration_days,
+    )
 
 
 def risk_adjusted_backtest_score(result: object, *, starting_cash: float = 1000.0) -> float:

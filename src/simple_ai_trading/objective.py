@@ -57,14 +57,16 @@ class ObjectiveSpec:
         """Return stable machine-readable reasons for hard-gate rejection."""
 
         reasons: list[str] = []
-        if result.closed_trades < max(0, int(self.min_closed_trades)):
-            reasons.append(f"closed_trades<{self.min_closed_trades}")
-        elif self.min_trades_per_day > 0.0 and not trade_activity_satisfies(
+        activity_targeted = self.min_closed_trades > 0 or self.min_trades_per_day > 0.0
+        if activity_targeted and not trade_activity_satisfies(
             result,
             min_closed_trades=self.min_closed_trades,
             min_trades_per_day=self.min_trades_per_day,
         ):
-            reasons.append(f"trades_per_day<{self.min_trades_per_day}")
+            if result.closed_trades < max(0, int(self.min_closed_trades)):
+                reasons.append(f"closed_trades<{self.min_closed_trades}")
+            elif self.min_trades_per_day > 0.0:
+                reasons.append(f"trades_per_day<{self.min_trades_per_day}")
         if self.min_realized_pnl is not None and result.realized_pnl <= self.min_realized_pnl:
             reasons.append(f"realized_pnl<={self.min_realized_pnl}")
         if self.min_edge_vs_buy_hold is not None and result.edge_vs_buy_hold < self.min_edge_vs_buy_hold:
