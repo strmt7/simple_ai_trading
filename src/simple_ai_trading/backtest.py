@@ -932,7 +932,7 @@ def run_backtest(
                 f"precomputed_regime_scores length mismatch: {len(regime_scores)}/{len(rows)}"
             )
     else:
-        regime_scores = None
+        regime_scores = precompute_backtest_regime_scores(rows, cfg)
     if precomputed_liquidity_adjustments is not None:
         liquidity_adjustments = precomputed_liquidity_adjustments
         if len(liquidity_adjustments) != len(rows):
@@ -940,27 +940,19 @@ def run_backtest(
                 f"precomputed_liquidity_adjustments length mismatch: {len(liquidity_adjustments)}/{len(rows)}"
             )
     else:
-        liquidity_adjustments = None
+        liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, cfg)
 
     for row_index, (row, raw_score) in enumerate(zip(rows, probabilities, strict=True)):
         execution_signal = pending_signal
         execution_meta = pending_meta
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
-        if liquidity_adjustments is not None:
-            threshold_add, size_multiplier, low_liquidity, low_dynamic_session = liquidity_adjustments[row_index]
-            liquidity_adjustment = LiquiditySessionAdjustment(
-                threshold=max(0.0, min(1.0, float(decision_threshold) + float(threshold_add))),
-                size_multiplier=max(0.0, min(1.0, float(size_multiplier))),
-                low_liquidity=bool(low_liquidity),
-                low_dynamic_session=bool(low_dynamic_session),
-            )
-        else:
-            liquidity_adjustment = liquidity_session_adjustment(
-                rows,
-                row_index,
-                cfg,
-                decision_threshold,
-            )
+        threshold_add, size_multiplier, low_liquidity, low_dynamic_session = liquidity_adjustments[row_index]
+        liquidity_adjustment = LiquiditySessionAdjustment(
+            threshold=max(0.0, min(1.0, float(decision_threshold) + float(threshold_add))),
+            size_multiplier=max(0.0, min(1.0, float(size_multiplier))),
+            low_liquidity=bool(low_liquidity),
+            low_dynamic_session=bool(low_dynamic_session),
+        )
         pending_signal = _normalize_market_direction(score, liquidity_adjustment.threshold, market_type)
         base_pending_meta = apply_meta_label_policy(
             getattr(model, "meta_label_policy", {}),
@@ -973,18 +965,7 @@ def run_backtest(
         price = row.close
         final_mark_price = price
         regime_gate_ready = row_index + 1 >= regime_gate_min_rows
-        if regime_scores is not None:
-            regime_score = float(regime_scores[row_index])
-        elif regime_gate_ready:
-            regime_window_start = max(0, row_index + 1 - max(8, int(cfg.liquidity_lookback_bars)))
-            regime_evidence = classify_market_regime(rows[regime_window_start:row_index + 1])
-            regime_score = market_regime_unpredictability(
-                regime_evidence.dominant_regime,
-                regime_evidence.confidence,
-                regime_evidence.notes,
-            )
-        else:
-            regime_score = 0.0
+        regime_score = float(regime_scores[row_index]) if regime_gate_ready else 0.0
         regime_limit = float(cfg.max_regime_unpredictability)
         regime_score_over_limit = regime_score > regime_limit
         if regime_score_over_limit and unpredictability_cooldown_ms > 0:
