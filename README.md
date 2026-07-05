@@ -220,7 +220,9 @@ loop, risk report, backtester, optimization evidence generator, and Windows app
 command surface all use the same stop-loss-sized notional calculation. Signed
 non-dry operation is blocked when stop-loss protection is disabled or when one
 estimated stop-loss would exceed the tightest active daily, session, or
-portfolio risk budget. Signed
+portfolio risk budget. It is also blocked when the configured stop-loss is
+`>=100%`, because that cannot produce a positive protective stop for long
+exposure. Signed
 futures operation is also blocked when `liquidation_buffer_pct` is disabled, so
 leverage cannot run without the maintenance-plus-buffer liquidation proxy.
 Backtests preserve candle high/low bounds in model rows; stop-loss, take-profit,
