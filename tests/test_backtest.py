@@ -532,6 +532,41 @@ def test_backtest_exit_fee_uses_exit_notional() -> None:
     assert float(trade["exit_fee"]) > float(trade["entry_fee"])
 
 
+def test_backtest_win_rate_uses_net_pnl_after_fees() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(10.0, *[0.0] * 12), label=1, volume=1_000_000.0),
+        ModelRow(timestamp=60_000, close=100.0, features=(0.0, *[0.0] * 12), label=0, volume=1_000_000.0),
+        ModelRow(timestamp=120_000, close=101.0, features=(0.0, *[0.0] * 12), label=0, volume=1_000_000.0),
+    ]
+    model = TrainedModel(
+        weights=[1.0] + [0.0] * 12,
+        bias=0.0,
+        feature_dim=13,
+        epochs=1,
+        feature_means=[0.0] * 13,
+        feature_stds=[1.0] * 13,
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.1,
+        max_position_pct=0.5,
+        taker_fee_bps=100.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+        signal_threshold=0.55,
+        take_profit_pct=0.5,
+        stop_loss_pct=0.5,
+    )
+
+    result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
+
+    assert result.closed_trades == 1
+    assert result.trade_log[0]["realized_pnl"] > 0.0
+    assert result.trade_log[0]["net_pnl"] < 0.0
+    assert result.win_rate == 0.0
+
+
 def test_backtest_uses_intrabar_stop_when_stop_and_take_both_touch() -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1, high=100.0, low=100.0),
@@ -633,6 +668,7 @@ def test_backtest_signal_enters_on_next_bar_close() -> None:
     assert result.trade_pnls[0] == pytest.approx(result.realized_pnl)
     assert result.trade_log[0]["opened_at"] == 60_000
     assert result.trade_log[0]["closed_at"] == 60_000
+    assert result.trade_log[0]["exit_reason"] == "final_mark"
     assert result.equity_curve[-1]["equity"] == pytest.approx(result.ending_cash)
     assert result.gross_loss == pytest.approx(abs(result.realized_pnl))
     assert result.profit_factor == pytest.approx(0.0)
