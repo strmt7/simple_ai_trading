@@ -111,6 +111,18 @@ def test_command_data_sync_foreground_json_loop_and_failure(tmp_path, monkeypatc
     assert "warning: empty" in capsys.readouterr().out
 
 
+def test_command_data_sync_rejects_non_major_symbols_before_client_build(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(market_type="spot"))
+    monkeypatch.setattr(
+        cli,
+        "_build_client",
+        lambda _runtime: (_ for _ in ()).throw(AssertionError("unsupported symbol should not build a client")),
+    )
+
+    assert cli.command_data_sync(_sync_args(db=str(tmp_path / "m.sqlite"), symbol="BNBUSDC")) == 2
+    assert "only BTC, ETH, and SOL" in capsys.readouterr().err
+
+
 def test_command_data_sync_background_builds_detached_process(tmp_path, monkeypatch, capsys) -> None:
     captured: dict[str, object] = {}
 
@@ -164,6 +176,18 @@ def test_command_data_sync_background_builds_detached_process(tmp_path, monkeypa
     )
     assert cli.command_data_sync(args) == 0
     assert "--full-history" in captured["command"]
+
+
+def test_command_data_sync_background_rejects_non_major_symbols(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        cli.subprocess,
+        "Popen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("unsupported background sync should not spawn")),
+    )
+
+    assert cli.command_data_sync(_sync_args(symbol="BNBUSDC", background=True, pid_file=str(tmp_path / "sync.pid"))) == 2
+    assert "only BTC, ETH, and SOL" in capsys.readouterr().err
+    assert not (tmp_path / "sync.pid").exists()
 
 
 def test_data_sync_compatibility_wrappers_delegate_to_structured_module(tmp_path, monkeypatch) -> None:

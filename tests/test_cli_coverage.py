@@ -667,6 +667,33 @@ def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatc
     assert ingest_calls == ["BTCUSDC", "ETHUSDC"]
 
 
+def test_command_archive_sync_rejects_non_major_symbols(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
+    monkeypatch.setattr(
+        cli,
+        "list_archive_urls",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("unsupported symbol should not be listed")),
+    )
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols="BNBUSDC",
+        top_symbols=0,
+        quote_asset=None,
+        max_scan=250,
+        interval="1s",
+        market="spot",
+        cadence="monthly",
+        max_files=1,
+        timeout=120,
+        force=False,
+        json=True,
+    )) == 2
+
+    assert "supports only BTC, ETH, and SOL" in capsys.readouterr().err
+
+
 def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, monkeypatch, capsys) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
     ranked: dict[str, object] = {}
@@ -759,13 +786,13 @@ def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
         assert strict_only is True
         return [
             SimpleNamespace(symbol="BTCUSDT"),
-            SimpleNamespace(symbol="NEWUSDT"),
+            SimpleNamespace(symbol="SOLUSDT"),
             SimpleNamespace(symbol="ETHUSDT"),
         ]
 
     def fake_list(**kwargs):
         symbol = str(kwargs["symbol"])
-        counts = {"BTCUSDT": 3, "NEWUSDT": 1, "ETHUSDT": 2}
+        counts = {"BTCUSDT": 3, "SOLUSDT": 1, "ETHUSDT": 2}
         return [f"https://data.binance.vision/x/{symbol}-{index}.zip" for index in range(counts[symbol])]
 
     def fake_ingest(**kwargs):
@@ -799,7 +826,7 @@ def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
     assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
     assert payload["requested_top_symbols"] == 2
     assert payload["history_rejections"] == [
-        {"symbol": "NEWUSDT", "error": "history_months_below_min:1/2"}
+        {"symbol": "SOLUSDT", "error": "history_months_below_min:1/2"}
     ]
     assert ingested == ["BTCUSDT", "ETHUSDT"]
 
@@ -2068,6 +2095,21 @@ def test_command_fetch_accepts_non_default_symbol(tmp_path, monkeypatch) -> None
     output = tmp_path / "candles.json"
     assert cli.command_fetch(argparse.Namespace(symbol="ETHUSDC", interval=None, limit=10, output=str(output))) == 0
     assert output.exists()
+
+
+def test_command_fetch_rejects_non_major_symbol_before_client_build(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    save_runtime(RuntimeConfig())
+    monkeypatch.setattr(
+        cli,
+        "_build_client",
+        lambda _runtime: (_ for _ in ()).throw(AssertionError("unsupported symbol should not build a client")),
+    )
+
+    output = tmp_path / "candles.json"
+    assert cli.command_fetch(argparse.Namespace(symbol="BNBUSDC", interval=None, limit=10, output=str(output))) == 2
+    assert "only BTC, ETH, and SOL" in capsys.readouterr().err
+    assert not output.exists()
 
 
 def test_command_train_workflow(tmp_path, monkeypatch) -> None:

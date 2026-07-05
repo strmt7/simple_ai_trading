@@ -2,7 +2,7 @@
 
 Last checked: 2026-04-29.
 
-This inventory is historical input for the current multi-asset testnet-first day-trading app. It
+This inventory is historical input for the current BTC/ETH/SOL-only testnet-first day-trading app. It
 intentionally separates exchange execution from external signal ingestion. A
 source appearing here is not a trading recommendation and does not mean it
 should be added to live order flow without caching, validation, and tests.
@@ -11,7 +11,7 @@ should be added to live order flow without caching, validation, and tests.
 
 1. Keep Binance execution isolated. External sources may enrich features,
    backtests, reports, and veto/risk flags, but they should not bypass the
-   multi-asset, high-liquidity, testnet-first contracts.
+   BTC/ETH/SOL-only, high-liquidity, testnet-first contracts.
 2. Prefer no-key or generous official APIs first. Keyed free tiers are allowed
    for offline enrichment, but runtime must keep missing keys non-fatal.
 3. Cache every external source. Recommended minimum TTLs are listed below; do

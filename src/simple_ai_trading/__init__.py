@@ -1,4 +1,4 @@
-"""Core package for Simple AI Trading's multi-asset day-trading CLI and Windows app."""
+"""Core package for Simple AI Trading's BTC/ETH/SOL day-trading CLI and Windows app."""
 
 from .types import RiskProfile, StrategyConfig, RuntimeConfig
 

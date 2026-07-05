@@ -8,7 +8,9 @@ from typing import Iterable
 
 DEFAULT_QUOTE_ASSET = "USDC"
 DEFAULT_SYMBOL = "BTCUSDC"
-DEFAULT_SYMBOLS = ("BTCUSDC", "ETHUSDC", "BNBUSDC")
+SUPPORTED_MAJOR_BASE_ASSETS = ("BTC", "ETH", "SOL")
+SUPPORTED_MAJOR_QUOTE_ASSETS = ("USDC", "USDT")
+DEFAULT_SYMBOLS = ("BTCUSDC", "ETHUSDC", "SOLUSDC")
 DEFAULT_MIN_DIVERSIFIED_ASSETS = 3
 MAX_AUTONOMOUS_LEVERAGE = 20.0
 DEFAULT_CONSERVATIVE_LEVERAGE = 5.0
@@ -30,6 +32,39 @@ def normalize_symbol(value: object, *, default: str = DEFAULT_SYMBOL) -> str:
     if not candidate or not _SYMBOL_RE.fullmatch(candidate):
         return default
     return candidate
+
+
+def symbol_base_for_supported_quote(symbol: object, quote_asset: object | None = None) -> str:
+    """Return the base asset when the symbol uses a supported quote asset."""
+
+    normalized = normalize_symbol(symbol, default="")
+    if not normalized:
+        return ""
+    if quote_asset is not None:
+        quote = str(quote_asset or "").strip().upper()
+        if quote not in SUPPORTED_MAJOR_QUOTE_ASSETS or not normalized.endswith(quote):
+            return ""
+        return normalized[: -len(quote)]
+    for quote in sorted(SUPPORTED_MAJOR_QUOTE_ASSETS, key=len, reverse=True):
+        if normalized.endswith(quote):
+            return normalized[: -len(quote)]
+    return ""
+
+
+def is_supported_major_symbol(symbol: object, quote_asset: object | None = None) -> bool:
+    """Return True only for BTC, ETH, or SOL quoted in USDC/USDT."""
+
+    base = symbol_base_for_supported_quote(symbol, quote_asset=quote_asset)
+    return base in SUPPORTED_MAJOR_BASE_ASSETS
+
+
+def major_symbols_for_quote(quote_asset: object = DEFAULT_QUOTE_ASSET) -> tuple[str, ...]:
+    """Return the supported BTC/ETH/SOL symbols for a quote asset."""
+
+    quote = str(quote_asset or DEFAULT_QUOTE_ASSET).strip().upper()
+    if quote not in SUPPORTED_MAJOR_QUOTE_ASSETS:
+        quote = DEFAULT_QUOTE_ASSET
+    return tuple(f"{base}{quote}" for base in SUPPORTED_MAJOR_BASE_ASSETS)
 
 
 def normalize_symbols(values: object, *, default: Iterable[str] = DEFAULT_SYMBOLS) -> tuple[str, ...]:

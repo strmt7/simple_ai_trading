@@ -8,7 +8,7 @@ from typing import Callable
 
 from .api import BinanceAPIError, BinanceClient, Candle
 from .api_budget import build_api_budget_report
-from .assets import DEFAULT_SYMBOL, normalize_symbol
+from .assets import DEFAULT_SYMBOL, is_supported_major_symbol, normalize_symbol
 from .intervals import interval_milliseconds, max_limit, validate_interval
 from .market_data import clean_candles
 from .market_store import MarketDataStore
@@ -238,6 +238,8 @@ def sync_market_data(
     futures_client: BinanceClient | None = None,
 ) -> MarketDataSyncResult:
     symbol = normalize_symbol(config.symbol)
+    if not is_supported_major_symbol(symbol):
+        raise ValueError(f"unsupported symbol {symbol}; only BTC, ETH, and SOL quoted in USDC/USDT are supported")
     interval = validate_interval(config.interval, config.market_type)
     step_ms = interval_milliseconds(interval)
     batch_size = max(1, min(max_limit(config.market_type), int(config.batch_size)))

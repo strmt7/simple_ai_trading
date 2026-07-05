@@ -1,7 +1,7 @@
 # Model Research and Optimization
 
 This document records the model direction implemented for the `0.1.0-beta.1`
-revamp. The goal is autonomous multi-asset day trading with fail-closed risk
+revamp. The goal is autonomous BTC/ETH/SOL day trading with fail-closed risk
 gates, not a promise of guaranteed profit.
 
 ## Research Inputs
@@ -31,8 +31,8 @@ requirements such as `--require-prefilled-data`, `--min-data-rows`, or
 universe and keeps only candidates whose local SQLite candles pass the requested
 row-count, coverage, gap, archive-status, and checksum gates. Rejected candidates
 are recorded in `selection_health_rejections`, so a report cannot hide that a
-popular or high-volume pair was skipped because the local evidence was too short,
-gappy, or unverified.
+supported major pair was skipped because the local evidence was too short,
+gappy, unverified, or outside the hard BTC/ETH/SOL scope.
 
 For long promotion rounds, use `--require-gpu` unless intentionally profiling
 CPU-only behavior. The round resolves the compute backend before symbol work,
@@ -497,8 +497,9 @@ assert that every CLI command appears in the Windows app.
 
 ## Non-Negotiable Gates
 
-- No static list of approved symbols. Liquidity must be measured from exchange
-  data.
+- Hard product scope is BTC, ETH, and SOL only. Liquidity, spread, exchange
+  status, data coverage, and archive integrity must still be measured from
+  current exchange/archive data before any symbol is eligible.
 - No mainnet trading by default.
 - No leverage above 20x.
 - No AI in CPU-only mode.

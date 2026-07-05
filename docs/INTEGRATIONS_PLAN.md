@@ -1,6 +1,6 @@
 # Integrations Plan
 
-Simple AI Trading now targets multi-asset, high-liquidity day trading on Binance testnet or Demo Trading. This replaces the old single-symbol spot-only integration plan.
+Simple AI Trading now targets BTC, ETH, and SOL high-liquidity day trading on Binance testnet or Demo Trading. This replaces the old single-symbol spot-only integration plan and rejects non-major assets before data sync, research, or execution.
 
 ## Active Integrations
 

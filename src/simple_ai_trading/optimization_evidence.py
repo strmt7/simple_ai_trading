@@ -23,7 +23,7 @@ from .advanced_model import (
     train_advanced,
 )
 from .api import BinanceAPIError, BinanceClient, Candle
-from .assets import MAX_AUTONOMOUS_LEVERAGE
+from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
 from .compute import resolve_backend
 from .data_coverage import describe_candle_coverage, iso_utc
@@ -434,6 +434,8 @@ def select_top_liquidity_symbols(
             break
         if not symbol.endswith(quote_asset):
             continue
+        if not is_supported_major_symbol(symbol, quote_asset):
+            continue
         if str(symbol_info.get("status") or "") != "TRADING":
             continue
         if _looks_structurally_dangerous(symbol, quote_asset):
@@ -616,6 +618,8 @@ def select_named_symbols(
         reasons: list[str] = []
         if not symbol.endswith(quote_asset):
             reasons.append("quote_asset_mismatch")
+        if not is_supported_major_symbol(symbol, quote_asset):
+            reasons.append("unsupported_non_major_asset")
         if not symbol_info:
             reasons.append("missing_exchange_metadata")
         elif str(symbol_info.get("status") or "") != "TRADING":
