@@ -228,7 +228,10 @@ includes an `ai_uplift` artifact showing the AI-assisted holdout beats the
 non-AI ML baseline on realized P&L and expectancy, does not worsen max
 drawdown, does not introduce liquidations, does not worsen loss-streak,
 profit-factor, win-rate, or downside return/risk evidence when those metrics are
-available, has enough closed trades, and was produced by a multibillion model.
+available, has enough closed trades, was produced by a multibillion model, and
+passes paired holdout statistical evidence. The paired gate requires enough
+trade/window return deltas, a positive-delta rate above policy, an exact
+one-sided sign-test p-value below policy, and a positive mean paired delta.
 Missing or failed uplift evidence leaves AI in advisory/review-only mode.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy
@@ -371,8 +374,8 @@ analytically incoherent artifacts before they reach an operator:
   across top-level accepted symbols, accepted outcomes, and the portfolio-risk
   report,
 - accepted AI uplift evidence must include complete finite baseline, AI, and
-  delta metrics plus model-size evidence; missing uplift contract fields block
-  the model-lab artifact,
+  delta metrics, model-size evidence, and paired holdout statistical evidence;
+  missing or weak uplift contract fields block the model-lab artifact,
 - accepted stress, temporal robustness, and portfolio metrics must remain in
   financial ranges such as drawdown/CVaR/deployed-weight between 0 and 1.
 

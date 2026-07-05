@@ -81,7 +81,28 @@ def _write_report(
                 "max_consecutive_losses": -1 if not failed_ai_uplift else 1,
                 "downside_return_risk_ratio": 0.2 if not failed_ai_uplift else -0.2,
             },
+            "statistical_evidence": {
+                "accepted": not failed_ai_uplift,
+                "reasons": [] if not failed_ai_uplift else ["ai_uplift_sign_test_p_value>0.4000"],
+                "evidence_unit": "paired_trade_return_delta",
+                "sample_count": 10,
+                "min_sample_count": 8,
+                "positive_delta_count": 9 if not failed_ai_uplift else 4,
+                "positive_delta_rate": 0.9 if not failed_ai_uplift else 0.4,
+                "min_positive_delta_rate": 0.55,
+                "sign_test_p_value": 0.0107421875 if not failed_ai_uplift else 0.828125,
+                "max_sign_test_p_value": 0.40,
+                "mean_delta": 0.002 if not failed_ai_uplift else -0.001,
+                "median_delta": 0.0018 if not failed_ai_uplift else -0.0005,
+                "min_mean_sample_delta": 0.0,
+            },
             "reasons": [] if not failed_ai_uplift else ["ai_pnl_not_above_baseline"],
+            "policy": {
+                "min_model_parameters_b": 2.0,
+                "min_paired_samples": 8,
+                "min_positive_delta_rate": 0.55,
+                "max_sign_test_p_value": 0.40,
+            },
         }
     payload = {
         "quote_asset": "USDC",

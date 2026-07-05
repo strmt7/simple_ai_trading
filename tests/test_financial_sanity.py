@@ -475,8 +475,29 @@ def _accepted_ai_uplift() -> dict[str, object]:
         "baseline": baseline,
         "ai": ai,
         "deltas": deltas,
+        "statistical_evidence": {
+            "accepted": True,
+            "reasons": [],
+            "evidence_unit": "paired_trade_return_delta",
+            "sample_count": 12,
+            "min_sample_count": 8,
+            "positive_delta_count": 10,
+            "positive_delta_rate": 10 / 12,
+            "min_positive_delta_rate": 0.55,
+            "sign_test_p_value": 0.019287109375,
+            "max_sign_test_p_value": 0.40,
+            "mean_delta": 0.0025,
+            "median_delta": 0.002,
+            "min_mean_sample_delta": 0.0,
+        },
         "reasons": [],
-        "policy": {"min_model_parameters_b": 2.0},
+        "policy": {
+            "min_model_parameters_b": 2.0,
+            "min_paired_samples": 8,
+            "min_positive_delta_rate": 0.55,
+            "max_sign_test_p_value": 0.40,
+            "min_mean_sample_delta": 0.0,
+        },
     }
 
 
@@ -784,6 +805,56 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_model_size
         check.label == "AI uplift evidence" and check.path.endswith(".model_parameters_b")
         for check in report.checks
     )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_statistical_evidence() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    del uplift["statistical_evidence"]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift statistical evidence"
+        and check.path.endswith(".statistical_evidence")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_weak_sign_test() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    uplift["statistical_evidence"]["positive_delta_rate"] = 0.50  # type: ignore[index]
+    uplift["statistical_evidence"]["sign_test_p_value"] = 0.62  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    blocked_paths = {check.path for check in report.checks if check.status == "block"}
+    assert "outcomes[0].ai_uplift.statistical_evidence.positive_delta_rate" in blocked_paths
+    assert "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+
+
+def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_inconsistent_statistics() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    statistical = uplift["statistical_evidence"]  # type: ignore[index]
+    statistical["paired_sample_length_mismatch"] = True  # type: ignore[index]
+    statistical["sign_test_p_value"] = 0.001  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    blocked_paths = {check.path for check in report.checks if check.status == "block"}
+    assert (
+        "outcomes[0].ai_uplift.statistical_evidence.paired_sample_length_mismatch"
+        in blocked_paths
+    )
+    assert "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
 
 
 def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:

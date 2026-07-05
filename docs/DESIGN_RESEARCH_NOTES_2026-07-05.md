@@ -24,6 +24,12 @@ risk-gate hardening work.
    rate, liquidation events, loss streaks, and downside return/risk. Missing
    contract fields now fail before model-lab promotion or AI review.
 
+4. **Aggregate AI uplift is not enough.**
+   A higher aggregate AI P&L can still be selection noise or one lucky trade.
+   Accepted uplift now needs paired holdout deltas with enough samples,
+   positive-delta breadth, an exact one-sided sign-test gate, and positive mean
+   paired improvement.
+
 ## Implemented In This Pass
 
 - Extended `AIUpliftPolicy` and `assess_ai_uplift` with tail-risk criteria for
@@ -34,6 +40,9 @@ risk-gate hardening work.
   or bad accepted AI tail-risk deltas.
 - Extended model-lab financial sanity checks so accepted AI uplift also requires
   complete baseline, AI, and delta metric groups plus model-size evidence.
+- Extended AI uplift and model-lab financial sanity checks with paired holdout
+  statistical evidence so aggregate AI improvement cannot pass without
+  sample-level breadth.
 - Updated README and model research docs to state that AI remains
   advisory/review-only unless risk-adjusted uplift evidence passes.
 
