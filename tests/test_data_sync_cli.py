@@ -119,7 +119,7 @@ def test_command_data_sync_rejects_non_major_symbols_before_client_build(tmp_pat
         lambda _runtime: (_ for _ in ()).throw(AssertionError("unsupported symbol should not build a client")),
     )
 
-    assert cli.command_data_sync(_sync_args(db=str(tmp_path / "m.sqlite"), symbol="BNBUSDC")) == 2
+    assert cli.command_data_sync(_sync_args(db=str(tmp_path / "m.sqlite"), symbol="ALTUSDC")) == 2
     assert "only BTC, ETH, and SOL" in capsys.readouterr().err
 
 
@@ -185,7 +185,7 @@ def test_command_data_sync_background_rejects_non_major_symbols(tmp_path, monkey
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("unsupported background sync should not spawn")),
     )
 
-    assert cli.command_data_sync(_sync_args(symbol="BNBUSDC", background=True, pid_file=str(tmp_path / "sync.pid"))) == 2
+    assert cli.command_data_sync(_sync_args(symbol="ALTUSDC", background=True, pid_file=str(tmp_path / "sync.pid"))) == 2
     assert "only BTC, ETH, and SOL" in capsys.readouterr().err
     assert not (tmp_path / "sync.pid").exists()
 

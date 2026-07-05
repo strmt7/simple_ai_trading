@@ -105,7 +105,7 @@ def test_spot_account_exposure_uses_base_asset_for_runtime_symbols() -> None:
             "balances": [
                 {"asset": "BTC", "free": "0.2", "locked": "0.1"},
                 {"asset": "USDC", "free": "1000", "locked": "0"},
-                {"asset": "DOGE", "free": "10", "locked": "0"},
+                {"asset": "ALT", "free": "10", "locked": "0"},
             ]
         },
         RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="spot", quote_asset="USDC"),

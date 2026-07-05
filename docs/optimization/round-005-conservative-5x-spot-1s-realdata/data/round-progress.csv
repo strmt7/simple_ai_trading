@@ -1,2 +1,0 @@
-round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct
-round-005-conservative-5x-spot-1s-realdata,2026-07-04T17:09:53.625890Z,2,0,-0.023817006626336477,-0.023817006626336477,-0.11531133823364091,0.09149433160730444,0.09149433160730444,0.047634013252672955,1,0.0

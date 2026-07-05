@@ -603,7 +603,64 @@ def test_command_archive_sync_delegates_archive_listing_and_ingestion(tmp_path, 
 
     assert captured["symbol"] == "BTCUSDC"
     assert captured["interval"] == "1s"
+    assert captured["data_type"] == "klines"
     assert "rows_inserted=2" in capsys.readouterr().out
+
+
+def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path, monkeypatch, capsys) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+    list_kwargs: dict[str, object] = {}
+    ingest_kwargs: dict[str, object] = {}
+
+    class Result:
+        status = "complete"
+        rows_read = 2
+        rows_inserted = 2
+        bytes_downloaded = 123
+        url = "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip"
+        error = ""
+
+        def asdict(self):
+            return {
+                "status": self.status,
+                "rows_read": self.rows_read,
+                "rows_inserted": self.rows_inserted,
+                "bytes_downloaded": self.bytes_downloaded,
+                "url": self.url,
+                "data_type": "aggTrades",
+            }
+
+    def fake_list(**kwargs):
+        list_kwargs.update(kwargs)
+        return [Result.url]
+
+    def fake_ingest(**kwargs):
+        ingest_kwargs.update(kwargs)
+        return [Result()]
+
+    monkeypatch.setattr(cli, "list_archive_urls", fake_list)
+    monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
+
+    assert cli.command_archive_sync(argparse.Namespace(
+        db=str(tmp_path / "m.sqlite"),
+        symbol=None,
+        symbols=None,
+        top_symbols=0,
+        quote_asset=None,
+        max_scan=250,
+        interval=None,
+        market="futures",
+        cadence="daily",
+        data_type=None,
+        max_files=1,
+        timeout=120,
+        force=False,
+        json=False,
+    )) == 0
+
+    assert list_kwargs["data_type"] == "aggTrades"
+    assert ingest_kwargs["data_type"] == "aggTrades"
+    assert "data_type=aggTrades" in capsys.readouterr().out
 
 
 def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatch, capsys) -> None:
@@ -678,7 +735,7 @@ def test_command_archive_sync_rejects_non_major_symbols(tmp_path, monkeypatch, c
     assert cli.command_archive_sync(argparse.Namespace(
         db=str(tmp_path / "m.sqlite"),
         symbol=None,
-        symbols="BNBUSDC",
+        symbols="ALTUSDC",
         top_symbols=0,
         quote_asset=None,
         max_scan=250,
@@ -2170,7 +2227,7 @@ def test_command_fetch_rejects_non_major_symbol_before_client_build(tmp_path, mo
     )
 
     output = tmp_path / "candles.json"
-    assert cli.command_fetch(argparse.Namespace(symbol="BNBUSDC", interval=None, limit=10, output=str(output))) == 2
+    assert cli.command_fetch(argparse.Namespace(symbol="ALTUSDC", interval=None, limit=10, output=str(output))) == 2
     assert "only BTC, ETH, and SOL" in capsys.readouterr().err
     assert not output.exists()
 

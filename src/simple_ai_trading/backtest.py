@@ -87,6 +87,10 @@ class ThresholdBacktestCalibration:
     scoring_backend_kind: str = "cpu"
     scoring_backend_device: str = "cpu"
     scoring_backend_reason: str = ""
+    min_closed_trades: int = 1
+    min_trades_per_day: float = 0.0
+    trades_per_day: float = 0.0
+    best_trades_per_day: float = 0.0
 
     def asdict(self) -> dict[str, float | int | bool | str]:
         return asdict(self)
@@ -100,6 +104,82 @@ def _finite_float(value: object, default: float = 0.0) -> float:
     except (TypeError, ValueError, OverflowError):
         return default
     return parsed if math.isfinite(parsed) else default
+
+
+def row_span_days(rows: Sequence[ModelRow]) -> float:
+    """Return the chronological span of model rows in calendar days."""
+
+    timestamps = [int(row.timestamp) for row in rows]
+    if len(timestamps) < 2:
+        return 1.0
+    span_ms = max(timestamps) - min(timestamps)
+    return max(1.0, float(span_ms) / 86_400_000.0)
+
+
+def backtest_result_duration_days(result: object) -> float:
+    """Return the observed result span in days from equity/trade timestamps."""
+
+    timestamps: list[int] = []
+    equity_curve = getattr(result, "equity_curve", ())
+    if isinstance(equity_curve, (tuple, list)):
+        for point in equity_curve:
+            if isinstance(point, dict) and "timestamp" in point:
+                timestamps.append(int(_finite_float(point.get("timestamp"), 0.0)))
+    trade_log = getattr(result, "trade_log", ())
+    if isinstance(trade_log, (tuple, list)):
+        for trade in trade_log:
+            if isinstance(trade, dict):
+                if "opened_at" in trade:
+                    timestamps.append(int(_finite_float(trade.get("opened_at"), 0.0)))
+                if "closed_at" in trade:
+                    timestamps.append(int(_finite_float(trade.get("closed_at"), 0.0)))
+    timestamps = [value for value in timestamps if value > 0]
+    if len(timestamps) < 2:
+        return 1.0
+    span_ms = max(timestamps) - min(timestamps)
+    return max(1.0, float(span_ms) / 86_400_000.0)
+
+
+def closed_trades_per_day(result: object, *, duration_days: float | None = None) -> float:
+    days = duration_days if duration_days is not None else backtest_result_duration_days(result)
+    days = max(1.0, _finite_float(days, 1.0))
+    return max(0.0, _finite_float(getattr(result, "closed_trades", 0), 0.0)) / days
+
+
+def risk_gate_skip_count(result: object) -> int:
+    """Return entries skipped or downsized by explicit risk/regime gates."""
+
+    return max(0, int(_finite_float(getattr(result, "regime_entry_skips", 0), 0.0))) + max(
+        0,
+        int(_finite_float(getattr(result, "meta_label_skips", 0), 0.0)),
+    )
+
+
+def trade_activity_satisfies(
+    result: object,
+    *,
+    min_closed_trades: int,
+    min_trades_per_day: float,
+    duration_days: float | None = None,
+    allow_risk_gated_low_activity: bool = True,
+) -> bool:
+    """Return whether a result has enough activity without forcing bad trades.
+
+    Sparse trading is only accepted when explicit risk/regime gates explain the
+    inactivity. That keeps optimization from promoting one random trade while
+    still allowing the bot to sit out genuinely unpredictable markets.
+    """
+
+    closed_trades = max(0, int(_finite_float(getattr(result, "closed_trades", 0), 0.0)))
+    if closed_trades < max(0, int(min_closed_trades)):
+        return False
+    min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
+    if min_daily <= 0.0 or closed_trades_per_day(result, duration_days=duration_days) >= min_daily:
+        return True
+    if not allow_risk_gated_low_activity:
+        return False
+    skip_count = risk_gate_skip_count(result)
+    return skip_count >= max(5, closed_trades * 2)
 
 
 def risk_adjusted_backtest_score(result: object, *, starting_cash: float = 1000.0) -> float:
@@ -732,6 +812,8 @@ def calibrate_threshold_for_backtest(
     end: float = 0.95,
     steps: int = 31,
     min_score_delta: float = 0.0,
+    min_closed_trades: int = 1,
+    min_trades_per_day: float = 0.0,
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
 ) -> ThresholdBacktestCalibration:
@@ -770,6 +852,9 @@ def calibrate_threshold_for_backtest(
     best_score = baseline_score
     best_result = baseline_result
     thresholds = _threshold_grid(start, end, steps, baseline_threshold)
+    span_days = row_span_days(rows)
+    min_closed = max(0, int(min_closed_trades))
+    min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
 
     for threshold in thresholds:
         candidate_model = replace(model, decision_threshold=threshold)
@@ -798,9 +883,17 @@ def calibrate_threshold_for_backtest(
             best_score = score
             best_result = result
 
+    best_trades_per_day = closed_trades_per_day(best_result, duration_days=span_days)
     has_profit_backed_result = best_result.closed_trades > 0 and best_result.realized_pnl > 0.0
+    has_trade_density = trade_activity_satisfies(
+        best_result,
+        min_closed_trades=min_closed,
+        min_trades_per_day=min_daily,
+        duration_days=span_days,
+    )
     accepted = (
         has_profit_backed_result
+        and has_trade_density
         and best_score > baseline_score + max(0.0, _finite_float(min_score_delta, 0.0))
     )
     selected_threshold = best_threshold if accepted else baseline_threshold
@@ -808,6 +901,7 @@ def calibrate_threshold_for_backtest(
     selected_result = best_result if accepted else baseline_result
     payload = _result_payload(selected_result)
     best_payload = _result_payload(best_result)
+    selected_trades_per_day = closed_trades_per_day(selected_result, duration_days=span_days)
     return ThresholdBacktestCalibration(
         threshold=float(selected_threshold),
         accepted=bool(accepted),
@@ -836,6 +930,10 @@ def calibrate_threshold_for_backtest(
         scoring_backend_kind=str(score_backend.kind),
         scoring_backend_device=str(score_backend.device),
         scoring_backend_reason=str(score_backend.reason),
+        min_closed_trades=int(min_closed),
+        min_trades_per_day=float(min_daily),
+        trades_per_day=float(selected_trades_per_day),
+        best_trades_per_day=float(best_trades_per_day),
     )
 
 

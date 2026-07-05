@@ -139,7 +139,7 @@ def test_load_runtime_accepts_normalized_trading_symbol(tmp_path: Path, monkeypa
 
 
 def test_runtime_rejects_non_major_symbols_and_restores_major_diversification() -> None:
-    runtime = RuntimeConfig(symbol="BNBUSDC", symbols=("BNBUSDC", "DOGEUSDC"), quote_asset="USDC")
+    runtime = RuntimeConfig(symbol="ALTUSDC", symbols=("ALTUSDC", "MEMEUSDC"), quote_asset="USDC")
 
     assert runtime.symbol == "BTCUSDC"
     assert runtime.symbols == ("BTCUSDC", "ETHUSDC", "SOLUSDC")
@@ -147,7 +147,7 @@ def test_runtime_rejects_non_major_symbols_and_restores_major_diversification() 
 
 def test_load_runtime_filters_stale_non_major_symbol_payloads(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    loaded = load_runtime({"symbol": "DOGEUSDT", "symbols": ["DOGEUSDT", "ETHUSDT", "SOLUSDT"], "quote_asset": "USDT"})
+    loaded = load_runtime({"symbol": "MEMEUSDT", "symbols": ["MEMEUSDT", "ETHUSDT", "SOLUSDT"], "quote_asset": "USDT"})
 
     assert loaded.symbol == "BTCUSDT"
     assert loaded.symbols == ("BTCUSDT", "ETHUSDT", "SOLUSDT")

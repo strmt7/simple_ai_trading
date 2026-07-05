@@ -1,2 +1,0 @@
-round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct
-round-009-futures-conservative-5x-realdata,2026-07-04T19:08:01.576842Z,2,0,-10.0584342723443,-10.0584342723443,66.27001211586007,-76.32844638820438,-76.32844638820438,10.085901213447618,132,13.177655310176995

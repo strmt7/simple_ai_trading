@@ -46,7 +46,9 @@ from .backtest import (
     calibrate_threshold_for_backtest,
     precompute_backtest_liquidity_adjustments,
     precompute_backtest_regime_scores,
+    row_span_days,
     run_backtest,
+    trade_activity_satisfies,
 )
 from .assets import DEFAULT_CONSERVATIVE_LEVERAGE
 from .features import ModelRow
@@ -386,6 +388,8 @@ def _calibrate_candidate_threshold(
     starting_cash: float,
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
+    min_closed_trades: int = 1,
+    min_trades_per_day: float = 0.0,
 ) -> tuple[float, str, float | None]:
     if not rows:
         return _effective_threshold_for_market(strategy.signal_threshold, market_type), "strategy", None
@@ -402,6 +406,8 @@ def _calibrate_candidate_threshold(
         start=0.05,
         end=0.95,
         steps=121,
+        min_closed_trades=min_closed_trades,
+        min_trades_per_day=min_trades_per_day,
         compute_backend=compute_backend,
         score_batch_size=score_batch_size,
     )
@@ -433,6 +439,9 @@ def _refine_threshold_on_selection_rows(
     starting_cash: float,
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
+    min_closed_trades: int = 1,
+    min_trades_per_day: float = 0.0,
+    target_trades_per_day: float = 0.0,
 ) -> tuple[float, str, float] | None:
     """Promote a selection-set profit threshold only when it remains directional.
 
@@ -444,6 +453,7 @@ def _refine_threshold_on_selection_rows(
     if len(rows) < 30:
         return None
     row_list = list(rows)
+    span_days = row_span_days(row_list)
     baseline_threshold = _effective_threshold_for_market(
         float(model.decision_threshold if model.decision_threshold is not None else strategy.signal_threshold),
         market_type,
@@ -479,8 +489,17 @@ def _refine_threshold_on_selection_rows(
                 precomputed_regime_scores=regime_scores,
                 precomputed_liquidity_adjustments=liquidity_adjustments,
             )
-            if result.realized_pnl <= 0.0 or result.closed_trades <= 0:
+            if (
+                result.realized_pnl <= 0.0
+                or not trade_activity_satisfies(
+                    result,
+                    min_closed_trades=max(1, int(min_closed_trades)),
+                    min_trades_per_day=max(0.0, float(min_trades_per_day)),
+                    duration_days=span_days,
+                )
+            ):
                 continue
+            trades_per_day = float(result.closed_trades) / max(1.0, span_days)
             candidate_report = evaluate_classification(row_list, model, threshold=threshold)
             if not _threshold_guard(baseline_report, candidate_report):
                 continue
@@ -488,7 +507,7 @@ def _refine_threshold_on_selection_rows(
                 float(result.realized_pnl),
                 float(candidate_report.f1),
                 -float(result.max_drawdown),
-                -float(result.closed_trades),
+                min(trades_per_day, max(0.0, float(target_trades_per_day)) or trades_per_day),
             )
             if rank > best_rank:
                 best_rank = rank
@@ -1182,6 +1201,8 @@ def _purged_walk_forward_gate(
                     starting_cash=starting_cash,
                     compute_backend=compute_backend,
                     score_batch_size=score_batch_size,
+                    min_closed_trades=objective.min_closed_trades,
+                    min_trades_per_day=objective.min_trades_per_day,
                 )
                 model.decision_threshold = float(threshold)
                 model.threshold_source = threshold_source
@@ -1433,6 +1454,8 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             starting_cash=starting_cash,
             compute_backend=compute_backend,
             score_batch_size=score_batch_size,
+            min_closed_trades=objective.min_closed_trades,
+            min_trades_per_day=objective.min_trades_per_day,
         )
         model.decision_threshold = float(threshold)
         model.threshold_source = threshold_source
@@ -1450,6 +1473,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         starting_cash=starting_cash,
         compute_backend=compute_backend,
         score_batch_size=score_batch_size,
+        min_closed_trades=objective.min_closed_trades,
+        min_trades_per_day=objective.min_trades_per_day,
+        target_trades_per_day=objective.target_trades_per_day,
     )
     if selection_threshold is not None:
         threshold, threshold_source, threshold_score = selection_threshold
@@ -1517,6 +1543,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             starting_cash=starting_cash,
             compute_backend=compute_backend,
             score_batch_size=score_batch_size,
+            min_closed_trades=objective.min_closed_trades,
+            min_trades_per_day=objective.min_trades_per_day,
+            target_trades_per_day=objective.target_trades_per_day,
         )
         fallback_threshold_score = None
         if fallback_threshold is not None:

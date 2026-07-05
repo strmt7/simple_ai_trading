@@ -1,2 +1,0 @@
-round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,mean_low_liquidity_sample_rate_pct
-round-010-futures-selection-guard-conservative-5x-realdata,2026-07-04T19:38:17.733581Z,2,0,-5.44852116375045,-5.44852116375045,66.27001211586007,-71.71853327961053,-71.71853327961053,10.122671358054253,70,13.012550517885662

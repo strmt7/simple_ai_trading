@@ -24,6 +24,30 @@ def test_archive_url_builders_and_listing_parser() -> None:
     assert archive_listing_url(symbol="btcusdc", interval="1s") == (
         "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Fspot%2Fmonthly%2Fklines%2FBTCUSDC%2F1s%2F"
     )
+    assert archive_directory_url(
+        symbol="btcusdt",
+        interval="1s",
+        market_type="futures",
+        cadence="daily",
+        data_type="aggTrades",
+    ) == "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/"
+    assert archive_file_url(
+        symbol="btcusdt",
+        interval="1s",
+        period="2024-06-01",
+        market_type="futures",
+        cadence="daily",
+        data_type="aggTrades",
+    ) == "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip"
+    assert archive_listing_url(
+        symbol="btcusdt",
+        interval="1s",
+        market_type="futures",
+        cadence="daily",
+        data_type="aggTrades",
+    ) == (
+        "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Ffutures%2Fum%2Fdaily%2FaggTrades%2FBTCUSDT%2F"
+    )
     html = """<?xml version="1.0" encoding="UTF-8"?>
     <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
       <IsTruncated>false</IsTruncated>
@@ -80,6 +104,68 @@ def test_ingest_archive_url_streams_zip_into_market_store(tmp_path, monkeypatch)
     assert candles[0].trade_count == 4
     assert archive_rows[0].sha256 == "sha"
     assert archive_rows[0].checksum_status == "unavailable"
+
+
+def test_ingest_agg_trades_archive_aggregates_real_trades_to_one_second_candles(tmp_path, monkeypatch) -> None:
+    zip_path = tmp_path / "BTCUSDT-aggTrades-2024-06-01.zip"
+    base_ts = 1_717_200_000_123
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr(
+            "BTCUSDT-aggTrades-2024-06-01.csv",
+            "\n".join(
+                [
+                    "agg_trade_id,price,quantity,first_trade_id,last_trade_id,transact_time,is_buyer_maker",
+                    f"1,100,0.5,10,12,{base_ts},false",
+                    f"2,101,0.25,13,13,{base_ts + 333},true",
+                    f"3,99,0.1,14,16,{base_ts + 3000},false",
+                ]
+            ),
+        )
+
+    monkeypatch.setattr(
+        binance_archive,
+        "_download_to_temp",
+        lambda *_args, **_kwargs: (zip_path, zip_path.stat().st_size, "sha"),
+    )
+    monkeypatch.setattr(binance_archive, "_fetch_archive_checksum", lambda _url, *, timeout: None)
+
+    with MarketDataStore(tmp_path / "market.sqlite") as store:
+        result = ingest_archive_url(
+            store,
+            url="https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip",
+            symbol="btcusdt",
+            interval="1s",
+            market_type="futures",
+            data_type="aggTrades",
+            period="2024-06-01",
+        )
+        candles = store.fetch_candles("BTCUSDT", "futures", "1s")
+        sources = [
+            row["source"]
+            for row in store.connect().execute("SELECT DISTINCT source FROM candles ORDER BY source").fetchall()
+        ]
+
+    assert result.status == "complete"
+    assert result.data_type == "aggTrades"
+    assert result.rows_read == 4
+    assert len(candles) == 4
+    assert candles[0].open == 100.0
+    assert candles[0].high == 101.0
+    assert candles[0].low == 100.0
+    assert candles[0].close == 101.0
+    assert candles[0].volume == 0.75
+    assert candles[0].quote_volume == 75.25
+    assert candles[0].trade_count == 4
+    assert candles[0].taker_buy_base_volume == 0.5
+    assert candles[1].open == 101.0
+    assert candles[1].volume == 0.0
+    assert candles[1].trade_count == 0
+    assert candles[2].open == 101.0
+    assert candles[2].volume == 0.0
+    assert candles[2].trade_count == 0
+    assert candles[3].open == 99.0
+    assert candles[3].trade_count == 3
+    assert sources == ["binance_public_archive_aggTrades"]
 
 
 def test_ingest_archive_url_rejects_checksum_mismatch_before_writing_rows(tmp_path, monkeypatch) -> None:

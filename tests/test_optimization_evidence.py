@@ -110,6 +110,23 @@ def _evidence(
     )
 
 
+def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="futures 1s optimization requires prefilled aggTrades-derived candles"):
+        oe.build_round_evidence(
+            round_id="round-test",
+            client=SimpleNamespace(),
+            strategy=StrategyConfig(),
+            quote_asset="USDT",
+            symbols=["BTCUSDT"],
+            interval="1s",
+            market_type="futures",
+            require_prefilled_data=False,
+            data_root=tmp_path / "data",
+            docs_root=tmp_path / "docs",
+            db_path=tmp_path / "market.sqlite",
+        )
+
+
 def test_critical_round_analysis_rejects_zero_trade_abstention() -> None:
     analysis = oe.critical_round_analysis(
         [
@@ -1565,7 +1582,7 @@ def test_build_round_evidence_can_require_non_cpu_backend(
 
 
 def test_build_round_evidence_rejects_unsupported_market_interval(tmp_path: Path) -> None:
-    with pytest.raises(ValueError, match="not supported on futures"):
+    with pytest.raises(ValueError, match="futures 1s optimization requires prefilled"):
         oe.build_round_evidence(
             round_id="round-test-bad-interval",
             client=_SelectionClient(),
@@ -1578,5 +1595,5 @@ def test_build_round_evidence_rejects_unsupported_market_interval(tmp_path: Path
             data_root=tmp_path / "data" / "optimization",
             docs_root=tmp_path / "docs" / "optimization",
             db_path=tmp_path / "market.sqlite",
-            require_prefilled_data=True,
+            require_prefilled_data=False,
         )
