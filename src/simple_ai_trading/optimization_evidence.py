@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import csv
 import copy
+import gc
 import math
 import statistics
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 
-from .advanced_model import default_config_for, make_advanced_rows, train_advanced
+from .advanced_model import advanced_feature_dimension, default_config_for, make_advanced_rows, train_advanced
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
@@ -795,13 +796,31 @@ def train_round_model(
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[object, object, list[object], list[object]]:
     feature_cfg = default_config_for(objective.name, strategy.enabled_features)
+    if status_callback is not None:
+        status_callback("feature_generation_started", {"candle_count": len(candles)})
     rows = make_advanced_rows(candles, feature_cfg)
+    if status_callback is not None:
+        status_callback(
+            "feature_generation_complete",
+            {"row_count": len(rows), "feature_dim": advanced_feature_dimension(feature_cfg)},
+        )
     train_selection_rows, validation_rows = _split_train_validation(rows, validation_fraction=0.25)
     train_rows, selection_rows = _split_train_validation(train_selection_rows, validation_fraction=0.20)
     if not train_rows or not selection_rows or not validation_rows:
         raise ValueError("insufficient rows for train/validation backtest evidence")
+    if status_callback is not None:
+        status_callback(
+            "training_started",
+            {
+                "train_rows": len(train_rows),
+                "selection_rows": len(selection_rows),
+                "validation_rows": len(validation_rows),
+                "batch_size": int(batch_size),
+            },
+        )
     model, report = train_advanced(
         train_rows,
         feature_cfg,
@@ -813,6 +832,16 @@ def train_round_model(
         compute_backend=compute_backend,
         batch_size=batch_size,
     )
+    if status_callback is not None:
+        status_callback(
+            "training_complete",
+            {
+                "training_backend_kind": getattr(model, "training_backend_kind", ""),
+                "training_backend_device": getattr(model, "training_backend_device", ""),
+                "best_epoch": getattr(model, "best_epoch", None),
+            },
+        )
+        status_callback("threshold_calibration_started", {"selection_rows": len(selection_rows)})
     calibration = calibrate_probability_temperature(list(selection_rows[: max(1, min(len(selection_rows), 5000))]), model)
     if calibration.status != "fail":
         model.probability_temperature = float(calibration.temperature)
@@ -833,6 +862,15 @@ def train_round_model(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
+    if status_callback is not None:
+        status_callback(
+            "threshold_calibration_complete",
+            {
+                "threshold_accepted": bool(threshold_report.accepted),
+                "threshold": float(threshold_report.threshold),
+                "closed_trades": int(threshold_report.closed_trades),
+            },
+        )
     if threshold_report.accepted:
         model.decision_threshold = float(threshold_report.threshold)
         model.threshold_source = "round_selection_backtest"
@@ -848,6 +886,16 @@ def train_round_model(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
+    if status_callback is not None:
+        status_callback(
+            "selection_backtest_complete",
+            {
+                "base_pnl": float(base_result.realized_pnl),
+                "base_drawdown": float(base_result.max_drawdown),
+                "scoring_backend_kind": base_result.scoring_backend_kind,
+                "scoring_backend_device": base_result.scoring_backend_device,
+            },
+        )
     base_score = objective.score(base_result) if objective.accepts(base_result) else float("-inf")
     inverted_model = copy.deepcopy(model)
     inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
@@ -865,6 +913,16 @@ def train_round_model(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
     )
+    if status_callback is not None:
+        status_callback(
+            "inversion_backtest_complete",
+            {
+                "inverted_pnl": float(inverted_result.realized_pnl),
+                "inverted_drawdown": float(inverted_result.max_drawdown),
+                "scoring_backend_kind": inverted_result.scoring_backend_kind,
+                "scoring_backend_device": inverted_result.scoring_backend_device,
+            },
+        )
     inverted_score = objective.score(inverted_result) if objective.accepts(inverted_result) else float("-inf")
     if inverted_score > base_score + 1e-12:
         model = inverted_model
@@ -928,6 +986,20 @@ def build_round_evidence(
     backend_info = resolve_backend(effective_training_backend_name(compute_backend))
     if require_gpu and backend_info.kind == "cpu":
         raise ValueError(f"gpu_required_but_unavailable: {backend_info.reason or 'resolved to CPU'}")
+
+    def write_status(phase: str, **payload: object) -> None:
+        _write_round_status(
+            paths,
+            status=str(payload.pop("status", "running")),
+            phase=phase,
+            compute_backend_requested=backend_info.requested,
+            compute_backend_kind=backend_info.kind,
+            compute_backend_device=backend_info.device,
+            compute_backend_reason=backend_info.reason,
+            require_gpu=bool(require_gpu),
+            **payload,
+        )
+
     health_required = bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum)
     selection_health_rejections: list[dict[str, object]] = []
     if symbols:
@@ -949,19 +1021,12 @@ def build_round_evidence(
     else:
         selected = select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
     write_json_atomic(paths.docs_data_dir / "selected-universe.json", [item.asdict() for item in selected], indent=2, sort_keys=True)
-    _write_round_status(
-        paths,
-        status="running",
-        phase="selection_complete",
+    write_status(
+        "selection_complete",
         symbol_count_requested=len(selected),
         symbols=[item.symbol for item in selected],
         completed_symbol_count=0,
         current_symbol="",
-        compute_backend_requested=backend_info.requested,
-        compute_backend_kind=backend_info.kind,
-        compute_backend_device=backend_info.device,
-        compute_backend_reason=backend_info.reason,
-        require_gpu=bool(require_gpu),
     )
     metrics: list[BacktestEvidence] = []
     data_health: list[dict[str, object]] = []
@@ -975,10 +1040,8 @@ def build_round_evidence(
         "low_liquidity_flag", "weekend_flag", "utc_hour", "utc_weekday",
     )
     for selected_index, item in enumerate(selected, start=1):
-        _write_round_status(
-            paths,
-            status="running",
-            phase="symbol_started",
+        write_status(
+            "symbol_started",
             symbol_count_requested=len(selected),
             completed_symbol_count=len(metrics),
             current_symbol=item.symbol,
@@ -990,6 +1053,13 @@ def build_round_evidence(
             if item.tier == "explicit-symbol" and item.reasons:
                 reasons = ", ".join(item.reasons)
                 raise ValueError(f"symbol_selection_failed: {reasons}")
+            write_status(
+                "data_health_started",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+            )
             health = market_data_health_for_symbol(
                 db_path=paths.market_db_path,
                 symbol=item.symbol,
@@ -1001,9 +1071,27 @@ def build_round_evidence(
                 require_verified_checksum=require_verified_checksum,
             )
             data_health.append(health)
+            write_status(
+                "data_health_complete",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+                health_status=health.get("status"),
+                rows=health.get("rows"),
+                coverage_ratio=health.get("coverage_ratio"),
+                gap_count=health.get("gap_count"),
+            )
             if health_required and health.get("status") != "ok":
                 reasons = ", ".join(str(reason) for reason in health.get("reasons", []) if reason)
                 raise ValueError(f"data_health_failed: {reasons or 'unknown'}")
+            write_status(
+                "load_candles_started",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+            )
             candles = fetch_full_history(
                 client,
                 item.symbol,
@@ -1012,6 +1100,14 @@ def build_round_evidence(
                 market_type=market_type,
                 batch_size=batch_size,
                 allow_network_backfill=not require_prefilled_data,
+            )
+            write_status(
+                "load_candles_complete",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+                candle_count=len(candles),
             )
             coverage = describe_candle_coverage(
                 symbol=item.symbol,
@@ -1022,6 +1118,16 @@ def build_round_evidence(
                 rows_used=max(0, len(candles) - 1),
                 source_scope="binance_full_history_public_market_data",
             )
+            def symbol_train_status(phase: str, payload: Mapping[str, object]) -> None:
+                write_status(
+                    phase,
+                    symbol_count_requested=len(selected),
+                    completed_symbol_count=len(metrics),
+                    current_symbol=item.symbol,
+                    current_symbol_index=selected_index,
+                    **dict(payload),
+                )
+
             model, train_report, rows, validation_rows = train_round_model(
                 candles,
                 evidence_strategy,
@@ -1030,6 +1136,15 @@ def build_round_evidence(
                 starting_cash=starting_cash,
                 compute_backend=compute_backend,
                 batch_size=batch_size,
+                status_callback=symbol_train_status,
+            )
+            write_status(
+                "holdout_backtest_started",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+                validation_rows=len(validation_rows),
             )
             result = run_backtest(
                 validation_rows,
@@ -1049,6 +1164,18 @@ def build_round_evidence(
                     liquidity_haircut=evidence_strategy.testnet_liquidity_haircut,
                 ),
             )
+            write_status(
+                "holdout_backtest_complete",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+                realized_pnl=float(result.realized_pnl),
+                max_drawdown=float(result.max_drawdown),
+                closed_trades=int(result.closed_trades),
+                scoring_backend_kind=result.scoring_backend_kind,
+                scoring_backend_device=result.scoring_backend_device,
+            )
             market_edge = build_market_edge_report(result, objective)
             accepted = bool(objective.accepts(result) and market_edge.accepted and not result.stopped_by_drawdown)
             reason = objective.reject_reason(result) or market_edge.reason
@@ -1059,6 +1186,14 @@ def build_round_evidence(
                 for index, point in enumerate(baseline_series)
                 if "timestamp" in point
             ]
+            write_status(
+                "artifact_stream_started",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+                validation_rows=len(validation_rows),
+            )
             liquidity_by_close = _rolling_liquidity_flags(candles)
             point_by_timestamp = {int(point.timestamp_ms or 0): point for point in strategy_points}
             baseline_by_timestamp = {int(point.timestamp_ms or 0): point for point in baseline_points}
@@ -1109,6 +1244,17 @@ def build_round_evidence(
             chart_path.write_text(
                 render_comparison_svg(strategy_points, baseline_points, title=f"{item.symbol} {objective.label} Backtest vs Passive Baseline"),
                 encoding="utf-8",
+            )
+            write_status(
+                "artifact_stream_complete",
+                symbol_count_requested=len(selected),
+                completed_symbol_count=len(metrics),
+                current_symbol=item.symbol,
+                current_symbol_index=selected_index,
+                timeline_rows=timeline_count,
+                timeline_csv_path=str(symbol_timeline_path).replace("\\", "/"),
+                chart_path=str(chart_path).replace("\\", "/"),
+                chart_bytes=chart_path.stat().st_size if chart_path.exists() else 0,
             )
             low_rate = low_liquidity_count / timeline_count if timeline_count else 0.0
             weekend_rate = weekend_count / timeline_count if timeline_count else 0.0
@@ -1201,10 +1347,8 @@ def build_round_evidence(
                 timeline_csv_path="",
             )
         metrics.append(metric)
-        _write_round_status(
-            paths,
-            status="running",
-            phase="symbol_completed",
+        write_status(
+            "symbol_completed",
             symbol_count_requested=len(selected),
             completed_symbol_count=len(metrics),
             current_symbol="",
@@ -1212,6 +1356,10 @@ def build_round_evidence(
             last_symbol_accepted=metric.accepted,
             last_symbol_reason=metric.reason,
         )
+        candles = []
+        rows = []
+        validation_rows = []
+        gc.collect()
     metric_rows = [metric.asdict() for metric in metrics]
     _write_csv(
         paths.metrics_csv_path,
@@ -1302,10 +1450,9 @@ def build_round_evidence(
         "tracked_artifacts": sorted(dict.fromkeys(tracked_artifacts)),
     }
     write_json_atomic(paths.report_path, report, indent=2, sort_keys=True)
-    _write_round_status(
-        paths,
+    write_status(
+        "round_complete",
         status="complete",
-        phase="round_complete",
         symbol_count_requested=len(selected),
         completed_symbol_count=len(metrics),
         accepted_symbol_count=len(accepted_metrics),

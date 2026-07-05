@@ -315,7 +315,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
         feature_means=[0.0],
         feature_stds=[1.0],
     )
-    observed: dict[str, object] = {"run_lengths": []}
+    observed: dict[str, object] = {"run_lengths": [], "phases": []}
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg: list(rows))
 
     def fake_train_advanced(train_rows, _feature_cfg, **kwargs):
@@ -369,6 +369,9 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
 
     monkeypatch.setattr(oe, "run_backtest", fake_run_backtest)
 
+    def status_callback(phase, payload):
+        observed["phases"].append((phase, dict(payload)))  # type: ignore[index]
+
     selected_model, _report, _all_rows, holdout_rows = oe.train_round_model(
         [_candle(index) for index in range(100)],
         StrategyConfig(),
@@ -377,6 +380,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
         starting_cash=1000.0,
         compute_backend="auto",
         batch_size=1024,
+        status_callback=status_callback,
     )
 
     assert observed["train_rows"] == 60
@@ -387,6 +391,17 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     assert selected_model.decision_threshold == pytest.approx(0.77)
     assert selected_model.threshold_source == "round_selection_backtest"
     assert selected_model.probability_inverted is True
+    phases = [item[0] for item in observed["phases"]]  # type: ignore[index]
+    assert phases == [
+        "feature_generation_started",
+        "feature_generation_complete",
+        "training_started",
+        "training_complete",
+        "threshold_calibration_started",
+        "threshold_calibration_complete",
+        "selection_backtest_complete",
+        "inversion_backtest_complete",
+    ]
 
 
 def test_train_round_model_fails_closed_when_selection_rejects_all_variants(

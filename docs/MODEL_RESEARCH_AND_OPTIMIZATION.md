@@ -37,9 +37,12 @@ gappy, or unverified.
 For long promotion rounds, use `--require-gpu` unless intentionally profiling
 CPU-only behavior. The round resolves the compute backend before symbol work,
 records the backend in `round-status.json` and `report.json`, and refuses to run
-when the requested backend falls back to CPU. Full-resolution per-minute graph
-data stays in CSV; SVG charts render deterministic downsampled visual summaries
-so artifact generation does not dominate GPU-backed training/scoring time.
+when the requested backend falls back to CPU. `round-status.json` is updated
+inside each symbol at data-health, load, feature-generation, training,
+threshold-calibration, holdout-scoring, and artifact-streaming phases. Full-
+resolution per-minute graph data stays in CSV; SVG charts render deterministic
+downsampled visual summaries so artifact generation does not dominate
+GPU-backed training/scoring time.
 
 - TradingView Pine built-ins and public indicator conventions were used as
   conceptual references for common technical features such as RSI, EMA, ATR,
