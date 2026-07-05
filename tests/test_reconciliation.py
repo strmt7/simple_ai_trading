@@ -13,9 +13,11 @@ def _position(
     side: str = "LONG",
     qty: float = 0.25,
     dry_run: bool = False,
+    verified: bool = True,
 ) -> OpenPosition:
+    position_id = f"{symbol}-{side}"
     return OpenPosition(
-        id=f"{symbol}-{side}",
+        id=position_id,
         symbol=symbol,
         market_type="futures",
         side=side,
@@ -25,6 +27,9 @@ def _position(
         opened_at_ms=1,
         notional=qty * 100.0,
         dry_run=dry_run,
+        open_client_order_id=f"sait-o-{position_id}" if verified and not dry_run else "",
+        open_exchange_order_id="12345" if verified and not dry_run else "",
+        exchange_status="FILLED" if verified and not dry_run else "local",
     )
 
 
@@ -82,6 +87,29 @@ def test_reconcile_detects_local_only_live_position(tmp_path: Path) -> None:
     assert report.ok is False
     assert report.mismatches[0].reason == "local_position_without_exchange_exposure"
     assert report.mismatches[0].local_qty == 0.1
+
+
+def test_reconcile_rejects_matching_live_position_without_bot_ownership(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+    store.record_open(_position(qty=0.5, verified=False))
+    account = {
+        "positions": [
+            {"symbol": "BTCUSDC", "positionAmt": "0.50000000", "entryPrice": "100", "notional": "50"},
+        ]
+    }
+
+    report = reconcile_account_positions(
+        account,
+        RuntimeConfig(symbol="BTCUSDC", symbols=("BTCUSDC",), market_type="futures"),
+        store,
+    )
+
+    reasons = [mismatch.reason for mismatch in report.mismatches]
+    assert report.ok is False
+    assert report.unverified_local_position_count == 1
+    assert report.stale_local_position_count == 1
+    assert "exchange_exposure_without_local_position" in reasons
+    assert any(reason.startswith("local_position_without_bot_ownership:") for reason in reasons)
 
 
 def test_reconcile_ignores_paper_positions_but_warns(tmp_path: Path) -> None:
