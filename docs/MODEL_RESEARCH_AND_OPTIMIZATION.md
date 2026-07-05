@@ -606,6 +606,8 @@ assert that every CLI command appears in the Windows app.
   or the exchange has returned `Retry-After`.
 - No signed live startup when one estimated stop-loss hit can exceed the
   tightest active daily, session, or portfolio risk budget.
+- No signed live startup with stop-loss geometry that cannot produce a positive
+  protective stop price for long exposure.
 - No score-improving model refinement if the validation/full-sample risk
   snapshot materially worsens drawdown, P&L, or edge versus buy-and-hold.
 - No autonomous post-outage resume until signed exchange exposure reconciles

@@ -257,6 +257,34 @@ def test_risk_policy_warns_paper_when_one_stop_can_breach_loss_budget() -> None:
     assert any(check.label == "loss budget coherence" and check.status == "warn" for check in report.checks)
 
 
+def test_risk_policy_blocks_live_impossible_stop_loss_geometry() -> None:
+    report = build_risk_policy_report(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        ),
+        StrategyConfig(stop_loss_pct=1.25),
+        effective_dry_run=False,
+    )
+
+    assert report.allowed is False
+    assert any(check.label == "stop-loss geometry" and check.status == "block" for check in report.checks)
+
+
+def test_risk_policy_warns_paper_impossible_stop_loss_geometry() -> None:
+    report = build_risk_policy_report(
+        RuntimeConfig(testnet=True, dry_run=True),
+        StrategyConfig(stop_loss_pct=1.25),
+        effective_dry_run=True,
+    )
+
+    assert report.allowed is True
+    assert any(check.label == "stop-loss geometry" and check.status == "warn" for check in report.checks)
+
+
 def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
     promoted_path = tmp_path / "promoted.json"
     serialize_model(

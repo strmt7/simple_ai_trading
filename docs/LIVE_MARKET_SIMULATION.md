@@ -148,7 +148,9 @@ is used by risk reporting, backtesting, live/testnet order sizing, and the
 buy-and-hold edge baseline. Signed live-style startup also checks budget
 coherence: the estimated stop-loss equity hit must fit inside the tightest
 active daily loss, session loss, or portfolio risk budget before any entry loop
-can start.
+can start. Stop-loss geometry is also validated for signed runs: a configured
+stop-loss of `>=100%` is rejected because it cannot map to a positive long-side
+protective stop price.
 
 Autonomous live/testnet orders use bot-owned client-order IDs. Live stop/close
 paths only submit exchange closes for positions that are still present in the

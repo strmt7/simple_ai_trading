@@ -343,6 +343,16 @@ def build_risk_policy_report(
             limit=">0",
         )
     )
+    if stop_loss >= 1.0:
+        checks.append(
+            _check(
+                "warn" if dry_run else "block",
+                "stop-loss geometry",
+                f"{stop_loss:.2%} would not produce a positive long-side stop price",
+                metric=stop_loss,
+                limit="<100%",
+            )
+        )
     checks.append(
         _check(
             "warn" if take_profit <= 0.0 else "ok",
