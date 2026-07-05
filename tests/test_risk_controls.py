@@ -53,6 +53,22 @@ def test_stop_loss_sized_notional_pct_respects_caps_and_leverage() -> None:
     assert futures_override == pytest.approx(futures_notional)
 
 
+def test_stop_loss_sized_notional_pct_caps_gross_asset_allocation() -> None:
+    high_leverage = StrategyConfig(
+        risk_per_trade=0.05,
+        max_position_pct=0.9,
+        max_asset_allocation_pct=0.12,
+        stop_loss_pct=0.01,
+        leverage=20.0,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        latency_buffer_ms=0,
+    )
+
+    assert stop_loss_sized_notional_pct(high_leverage, "spot") == pytest.approx(0.12)
+    assert stop_loss_sized_notional_pct(high_leverage, "futures") == pytest.approx(0.12)
+
+
 def test_risk_policy_blocks_mainnet_live_missing_credentials_and_zero_cash(tmp_path) -> None:
     report = build_risk_policy_report(
         RuntimeConfig(testnet=False, dry_run=False, managed_usdc=0.0),

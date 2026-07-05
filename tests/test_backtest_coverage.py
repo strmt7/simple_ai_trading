@@ -136,6 +136,7 @@ def test_backtest_drawdown_stop_closes_at_trigger_row_not_future_final_price() -
     cfg = StrategyConfig(
         risk_per_trade=0.5,
         max_position_pct=0.5,
+        max_asset_allocation_pct=0.5,
         signal_threshold=0.55,
         take_profit_pct=0.99,
         stop_loss_pct=0.99,
@@ -513,6 +514,7 @@ def test_backtest_flags_drawdown_stop() -> None:
         leverage=1.0,
         risk_per_trade=0.5,
         max_position_pct=1.0,
+        max_asset_allocation_pct=1.0,
         signal_threshold=0.55,
         stop_loss_pct=1.0,
         take_profit_pct=1.0,
@@ -534,6 +536,7 @@ def test_backtest_records_drawdown_after_same_day_capped_close() -> None:
         leverage=1.0,
         risk_per_trade=0.5,
         max_position_pct=0.9,
+        max_asset_allocation_pct=0.9,
         max_trades_per_day=1,
         signal_threshold=0.55,
         stop_loss_pct=0.1,
@@ -686,6 +689,7 @@ def test_backtest_skips_entry_when_margin_exceeds_cash() -> None:
     cfg = StrategyConfig(
         risk_per_trade=1.0,
         max_position_pct=1.0,
+        max_asset_allocation_pct=1.0,
         signal_threshold=0.55,
         leverage=1.0,
     )

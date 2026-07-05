@@ -133,8 +133,10 @@ Position sizing is stop-loss-budget based. `risk_per_trade` is interpreted as
 the estimated equity budget that may be lost if the configured stop-loss is
 hit, including taker fees and the adverse exit-fill buffer from the execution
 simulator. Gross notional is then capped by max position size, leverage,
-exchange constraints, and available cash. This same notional calculation is
-used by risk reporting, backtesting, live/testnet order sizing, and the
+per-asset allocation, exchange constraints, and available cash. Futures
+leverage may reduce the required isolated margin, but it cannot raise gross
+order exposure above `max_asset_allocation_pct`. This same notional calculation
+is used by risk reporting, backtesting, live/testnet order sizing, and the
 buy-and-hold edge baseline.
 
 Autonomous live/testnet orders use bot-owned client-order IDs. Live stop/close
@@ -200,6 +202,9 @@ Futures safety:
 - Futures backtests use a conservative isolated-margin liquidation proxy derived from the same maintenance-margin concept used by Binance futures: `margin_balance = isolated_margin + unrealized_pnl`; if that balance is less than or equal to `current_notional * liquidation_buffer_pct`, the isolated margin is treated as lost, the position is cleared, `liquidation_events` is incremented, and no threshold, objective, market-edge, stress, temporal, or optimization report can be accepted.
 - The proxy deliberately fails closed when historical rows gap through a liquidation boundary. It does not assume a favorable stop-loss fill after the maintenance-plus-buffer condition has already been breached.
 - Leverage is subordinate to stop-loss-sized position sizing, position caps, daily/session loss budgets, exchange brackets, and reconciliation gates. A higher default does not authorize larger loss-at-stop budgets.
+- Leverage is also subordinate to the per-asset allocation cap; a 5x, 10x, 15x,
+  or 20x setting must not make one symbol's gross exposure exceed
+  `max_asset_allocation_pct`.
 
 Authenticated order reconciliation:
 

@@ -1835,7 +1835,12 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
 
 
 def test_build_order_notional_paths() -> None:
-    cfg = StrategyConfig(risk_per_trade=0.1, max_position_pct=0.4, leverage=3.0)
+    cfg = StrategyConfig(
+        risk_per_trade=0.1,
+        max_position_pct=0.4,
+        max_asset_allocation_pct=1.0,
+        leverage=3.0,
+    )
     client = SimpleNamespace(
         normalize_quantity=lambda symbol, qty: (
             0.0 if qty < 0.001 else qty,
@@ -1847,8 +1852,8 @@ def test_build_order_notional_paths() -> None:
         ),
     )
     notional, qty = cli._build_order_notional(1000.0, 10_000.0, cfg, "futures", 3.0, client)
-    assert math.isclose(notional, 1200.0)
-    assert math.isclose(qty, 0.12)
+    assert math.isclose(notional, 1000.0)
+    assert math.isclose(qty, 0.10)
 
     bad_constraints = type(
         "C",
@@ -7111,6 +7116,7 @@ def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatc
         StrategyConfig(
             risk_per_trade=0.5,
             max_position_pct=1.0,
+            max_asset_allocation_pct=1.0,
             take_profit_pct=0.95,
             stop_loss_pct=0.99,
                 max_drawdown_limit=0.20,

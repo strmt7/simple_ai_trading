@@ -508,6 +508,8 @@ assert that every CLI command appears in the Windows app.
   current exchange/archive data before any symbol is eligible.
 - No mainnet trading by default.
 - No leverage above 20x.
+- No CLI, live, backtest, or optimization sizing path may let leverage raise
+  gross exposure above the configured per-asset allocation cap.
 - No model, threshold, stress, temporal, market-edge, or optimization acceptance
   when a futures backtest records any liquidation event.
 - No AI in CPU-only mode.

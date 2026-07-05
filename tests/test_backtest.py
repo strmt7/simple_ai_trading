@@ -618,6 +618,7 @@ def test_backtest_signal_enters_on_next_bar_close() -> None:
     cfg = StrategyConfig(
         risk_per_trade=0.1,
         max_position_pct=0.5,
+        max_asset_allocation_pct=0.5,
         taker_fee_bps=0.0,
         slippage_bps=0.0,
         signal_threshold=0.55,
