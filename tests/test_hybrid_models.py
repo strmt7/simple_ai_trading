@@ -43,6 +43,58 @@ def _rows(count: int = 80) -> list[ModelRow]:
     return rows
 
 
+def _coherent_backtest_result(pnl: float, *, closed_trades: int = 6) -> BacktestResult:
+    trade_pnls = tuple(float(pnl) / closed_trades for _ in range(closed_trades))
+    trade_returns = tuple(value / 1000.0 for value in trade_pnls)
+    trade_log = tuple(
+        {
+            "opened_at": int(index * 120_000),
+            "closed_at": int(index * 120_000 + 60_000),
+            "side": 1,
+            "gross_notional": 100.0,
+            "entry_price": 100.0,
+            "exit_mark_price": 100.0 + max(value, 0.01),
+            "realized_pnl": float(value),
+            "net_pnl": float(value),
+            "return_pct": float(return_pct),
+            "entry_fee": 0.0,
+            "exit_fee": 0.0,
+            "exit_reason": "take_profit_close",
+        }
+        for index, (value, return_pct) in enumerate(zip(trade_pnls, trade_returns, strict=True))
+    )
+    return BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=1000.0 + pnl,
+        realized_pnl=pnl,
+        win_rate=1.0,
+        trades=closed_trades,
+        max_drawdown=0.0,
+        closed_trades=closed_trades,
+        gross_exposure=100.0,
+        total_fees=0.0,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        buy_hold_pnl=0.0,
+        edge_vs_buy_hold=pnl,
+        equity_curve=(
+            {"timestamp": 0, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
+            {"timestamp": 60_000 * closed_trades, "equity": 1000.0 + pnl, "drawdown": 0.0, "position_side": 0},
+        ),
+        trade_pnls=trade_pnls,
+        trade_returns=trade_returns,
+        trade_log=trade_log,
+        gross_profit=pnl,
+        gross_loss=0.0,
+        profit_factor=999.0,
+        expectancy=pnl / closed_trades,
+        average_trade_return=sum(trade_returns) / len(trade_returns),
+        trade_return_stdev=0.0,
+        max_consecutive_losses=0,
+    )
+
+
 def test_hybrid_experts_roundtrip_and_affect_probability(tmp_path: Path) -> None:
     model = _model()
     base = model.predict_proba((1.0, -1.0))
@@ -108,28 +160,7 @@ def test_optimize_hybrid_model_zoo_records_expert_ablation(monkeypatch: pytest.M
         pnl += 3.0 if "lorentzian_knn" in kinds else 0.0
         pnl += 2.0 if "rational_quadratic_kernel" in kinds else 0.0
         pnl += 1.0 if "technical_confluence" in kinds else 0.0
-        return BacktestResult(
-            starting_cash=1000.0,
-            ending_cash=1000.0 + pnl,
-            realized_pnl=pnl,
-            win_rate=1.0,
-            trades=6,
-            max_drawdown=0.0,
-            closed_trades=6,
-            gross_exposure=100.0,
-            total_fees=0.0,
-            stopped_by_drawdown=False,
-            max_exposure=100.0,
-            trades_per_day_cap_hit=0,
-            buy_hold_pnl=0.0,
-            edge_vs_buy_hold=pnl,
-            gross_profit=pnl,
-            gross_loss=0.0,
-            profit_factor=999.0,
-            expectancy=pnl / 6.0,
-            trade_pnls=(pnl,),
-            trade_returns=(pnl / 1000.0,),
-        )
+        return _coherent_backtest_result(pnl)
 
     monkeypatch.setattr(hybrid_models, "run_backtest", fake_run_backtest)
 

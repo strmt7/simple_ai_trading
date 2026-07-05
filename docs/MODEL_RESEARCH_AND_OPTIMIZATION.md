@@ -277,13 +277,16 @@ exact saved model, including any hybrid expert overlay. Conservative models
 must satisfy the strictest window coverage, regular models use the middle
 threshold, and aggressive models allow more dispersion while still requiring
 positive, non-drawdown-stopped windows. The same artifact now includes a
-statistical edge gate: an exact one-sided sign test over positive windows plus a
-deterministic bootstrap-style lower confidence bound over mean window return.
-This implements the practical lesson from PBO/Deflated-Sharpe research: a high
-aggregate score is not enough when the distribution of tested windows still
-looks like selection luck. When the backtest produces enough closed trades, the
-statistical gate uses net trade returns; otherwise it falls back to
-chronological-window returns so sparse strategies are still screened.
+statistical edge gate: an exact one-sided sign test over the selected evidence
+sample plus a deterministic bootstrap-style lower confidence bound over mean
+sample return. This implements the practical lesson from
+PBO/Deflated-Sharpe research: a high aggregate score is not enough when the
+distribution of tested evidence still looks like selection luck. When the
+backtest produces enough closed trades, the statistical gate uses net trade
+returns; otherwise it falls back to chronological-window returns so sparse
+strategies are still screened. The report keeps `positive_windows` and
+`positive_window_rate` strictly window-level while `positive_samples` and
+`positive_sample_rate` describe the trade/window sample used by the sign test.
 Each temporal window is also tagged with deterministic market-regime evidence
 such as dominant regime, confidence, trend return, realized volatility,
 direction consistency, reversal rate, lag-1 autocorrelation, and optional volume
@@ -349,6 +352,11 @@ analytically incoherent artifacts before they reach an operator:
   above `0.20`, or worsened calibrated loss blocks readiness,
 - accepted model-lab outcomes must have positive rows and positive objective
   scores,
+- raw generated backtests must pass financial sanity before `ObjectiveSpec`
+  accepts them; malformed cash, fee, trade-count, trade-P&L, timestamp, return,
+  exposure, exit-reason, win-rate, path-quality, or equity-curve identities add
+  `financial_sanity_failed` to the rejection reason instead of letting positive
+  P&L promote the candidate,
 - accepted outcomes must include passed selection-risk evidence for every
   accepted objective; missing reports, nonpositive deflated scores, rejection
   reasons, failed PBO diagnostics, or unknown overfit status block promotion,

@@ -39,6 +39,9 @@ The gate enforces:
 - generated backtest accounting identities for cash, fees, trade count,
   exposure, trade P&L, exit reasons, net-P&L win rate, trade-level timestamps,
   prices, returns, and equity-curve drawdown,
+- objective acceptance fails closed when the generated backtest has any blocking
+  financial-sanity reason; positive P&L, market edge, or drawdown values are not
+  promotable when the underlying ledger is incoherent,
 - objective path quality, including gross profit/loss, profit factor,
   expectancy, average trade return, return dispersion, loss streaks, and
   single-trade profit concentration,

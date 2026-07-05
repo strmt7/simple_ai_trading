@@ -725,24 +725,66 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     monkeypatch.setattr(oe, "calibrate_threshold_for_backtest", fake_threshold)
 
     def result_for(realized_pnl: float) -> BacktestResult:
+        closed_trades = 8
+        if realized_pnl < 0.0:
+            trade_pnls = tuple(realized_pnl / closed_trades for _ in range(closed_trades))
+        else:
+            trade_pnls = tuple(realized_pnl / closed_trades for _ in range(closed_trades))
+        trade_returns = tuple(value / 1000.0 for value in trade_pnls)
+        gross_profit = sum(value for value in trade_pnls if value > 0.0)
+        gross_loss = abs(sum(value for value in trade_pnls if value < 0.0))
+        profit_factor = gross_profit / gross_loss if gross_loss > 0.0 else (999.0 if gross_profit > 0.0 else 0.0)
+        ending_cash = 1000.0 + realized_pnl
+        max_drawdown = 0.01 if realized_pnl >= 0.0 else max(0.01, abs(realized_pnl) / 1000.0)
+        final_drawdown = 0.0 if ending_cash >= 1000.0 else (1000.0 - ending_cash) / 1000.0
+        equity_curve = (
+            {"timestamp": 0, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
+            {"timestamp": 60_000, "equity": 1000.0 * (1.0 - max_drawdown), "drawdown": max_drawdown, "position_side": 0},
+            {"timestamp": 120_000, "equity": ending_cash, "drawdown": final_drawdown, "position_side": 0},
+        )
+        trade_log = tuple(
+            {
+                "opened_at": int(index * 120_000),
+                "closed_at": int(index * 120_000 + 60_000),
+                "side": 1,
+                "gross_notional": 100.0,
+                "entry_price": 100.0,
+                "exit_mark_price": max(0.01, 100.0 + pnl + 0.1),
+                "realized_pnl": float(pnl + 0.1),
+                "net_pnl": float(pnl),
+                "return_pct": float(ret),
+                "entry_fee": 0.05,
+                "exit_fee": 0.05,
+                "exit_reason": "take_profit_close" if pnl > 0.0 else "stop_loss_close",
+            }
+            for index, (pnl, ret) in enumerate(zip(trade_pnls, trade_returns, strict=True))
+        )
         return BacktestResult(
             starting_cash=1000.0,
-            ending_cash=1000.0 + realized_pnl,
+            ending_cash=ending_cash,
             realized_pnl=realized_pnl,
-            win_rate=0.75,
-            trades=8,
-            max_drawdown=0.01,
-            closed_trades=8,
+            win_rate=sum(1 for value in trade_pnls if value > 0.0) / closed_trades,
+            trades=closed_trades,
+            max_drawdown=max_drawdown,
+            closed_trades=closed_trades,
             gross_exposure=100.0,
-            total_fees=1.0,
+            total_fees=0.1 * closed_trades,
             stopped_by_drawdown=False,
             max_exposure=100.0,
             trades_per_day_cap_hit=0,
             buy_hold_pnl=1.0,
             edge_vs_buy_hold=realized_pnl - 1.0,
-            profit_factor=1.5,
+            equity_curve=equity_curve,
+            trade_pnls=trade_pnls,
+            trade_returns=trade_returns,
+            trade_log=trade_log,
+            gross_profit=gross_profit,
+            gross_loss=gross_loss,
+            profit_factor=profit_factor,
             expectancy=realized_pnl / 8.0,
-            max_consecutive_losses=1,
+            average_trade_return=sum(trade_returns) / len(trade_returns),
+            trade_return_stdev=0.0,
+            max_consecutive_losses=closed_trades if realized_pnl < 0.0 else 0,
         )
 
     def fake_run_backtest(selection_rows, candidate_model, *_args, **_kwargs):

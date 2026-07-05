@@ -17,23 +17,113 @@ from simple_ai_trading.types import StrategyConfig
 
 
 def _result(**overrides) -> BacktestResult:
+    starting_cash = float(overrides.get("starting_cash", 1000.0))
+    realized_pnl = float(overrides.get("realized_pnl", 20.0))
+    ending_cash = float(overrides.get("ending_cash", starting_cash + realized_pnl))
+    closed_trades = int(overrides.get("closed_trades", overrides.get("trades", 5)))
+    if "trade_pnls" in overrides:
+        trade_pnls = tuple(float(value) for value in overrides["trade_pnls"])
+    elif closed_trades <= 0:
+        trade_pnls = ()
+    elif realized_pnl < 0.0:
+        trade_pnls = tuple(realized_pnl / closed_trades for _ in range(closed_trades))
+    else:
+        weights = [float(index + 1) for index in range(closed_trades)]
+        values = [realized_pnl * weight / sum(weights) for weight in weights]
+        values[-1] += realized_pnl - sum(values)
+        trade_pnls = tuple(values)
+    trade_returns = tuple(float(value) for value in overrides.get("trade_returns", tuple(value / max(1.0, abs(starting_cash)) for value in trade_pnls)))
+    gross_profit = sum(value for value in trade_pnls if value > 0.0)
+    gross_loss = abs(sum(value for value in trade_pnls if value < 0.0))
+    profit_factor = gross_profit / gross_loss if gross_loss > 0.0 else (999.0 if gross_profit > 0.0 else 0.0)
+    average_return = sum(trade_returns) / len(trade_returns) if trade_returns else 0.0
+    stdev = 0.0
+    if len(trade_returns) >= 2:
+        stdev = math.sqrt(sum((value - average_return) ** 2 for value in trade_returns) / (len(trade_returns) - 1))
+    loss_streak = 0
+    current_streak = 0
+    for pnl in trade_pnls:
+        if pnl < 0.0:
+            current_streak += 1
+            loss_streak = max(loss_streak, current_streak)
+        else:
+            current_streak = 0
+    max_drawdown = float(overrides.get("max_drawdown", 0.02))
+    final_drawdown = 0.0 if ending_cash >= starting_cash else (starting_cash - ending_cash) / max(1.0, starting_cash)
+    equity_curve = (
+        {"timestamp": 0, "equity": starting_cash, "drawdown": 0.0, "position_side": 0},
+        {
+            "timestamp": 60_000,
+            "equity": max(0.0, starting_cash * (1.0 - max_drawdown)),
+            "drawdown": max_drawdown,
+            "position_side": 0,
+        },
+        {"timestamp": 120_000, "equity": ending_cash, "drawdown": final_drawdown, "position_side": 0},
+    )
+    trade_log = tuple(
+        {
+            "opened_at": int(index * 120_000),
+            "closed_at": int(index * 120_000 + 60_000),
+            "side": 1,
+            "gross_notional": 100.0,
+            "entry_price": 100.0,
+            "exit_mark_price": max(0.01, 100.0 + pnl + 0.1),
+            "realized_pnl": float(pnl + 0.1),
+            "net_pnl": float(pnl),
+            "return_pct": float(return_pct),
+            "entry_fee": 0.05,
+            "exit_fee": 0.05,
+            "exit_reason": "take_profit_close" if pnl > 0.0 else "stop_loss_close",
+        }
+        for index, (pnl, return_pct) in enumerate(zip(trade_pnls, trade_returns, strict=True))
+    )
+    if "buy_hold_pnl" in overrides:
+        buy_hold_pnl = float(overrides["buy_hold_pnl"])
+    elif "edge_vs_buy_hold" in overrides:
+        buy_hold_pnl = realized_pnl - float(overrides["edge_vs_buy_hold"])
+    else:
+        buy_hold_pnl = 5.0
     payload = dict(
-        starting_cash=1000.0,
-        ending_cash=1020.0,
-        realized_pnl=20.0,
-        win_rate=0.7,
-        trades=5,
-        max_drawdown=0.02,
-        closed_trades=5,
+        starting_cash=starting_cash,
+        ending_cash=ending_cash,
+        realized_pnl=realized_pnl,
+        win_rate=(sum(1 for value in trade_pnls if value > 0.0) / len(trade_pnls) if trade_pnls else 0.0),
+        trades=closed_trades,
+        max_drawdown=max_drawdown,
+        closed_trades=closed_trades,
         gross_exposure=100.0,
-        total_fees=1.0,
+        total_fees=0.1 * len(trade_pnls),
         stopped_by_drawdown=False,
         max_exposure=100.0,
         trades_per_day_cap_hit=0,
-        buy_hold_pnl=5.0,
-        edge_vs_buy_hold=15.0,
+        buy_hold_pnl=buy_hold_pnl,
+        edge_vs_buy_hold=float(overrides.get("edge_vs_buy_hold", realized_pnl - buy_hold_pnl)),
+        equity_curve=equity_curve,
+        trade_pnls=trade_pnls,
+        trade_returns=trade_returns,
+        trade_log=trade_log,
+        gross_profit=gross_profit,
+        gross_loss=gross_loss,
+        profit_factor=profit_factor,
+        expectancy=sum(trade_pnls) / len(trade_pnls) if trade_pnls else 0.0,
+        average_trade_return=average_return,
+        trade_return_stdev=stdev,
+        max_consecutive_losses=loss_streak,
     )
-    payload.update(overrides)
+    derived_fields = {
+        "win_rate",
+        "total_fees",
+        "equity_curve",
+        "trade_log",
+        "gross_profit",
+        "gross_loss",
+        "profit_factor",
+        "expectancy",
+        "average_trade_return",
+        "trade_return_stdev",
+        "max_consecutive_losses",
+    }
+    payload.update({key: value for key, value in overrides.items() if key not in derived_fields})
     return BacktestResult(**payload)
 
 
@@ -171,6 +261,9 @@ def test_validate_model_temporal_robustness_rejects_bad_latest_window(
     assert report.windows[-1].regime["dominant_regime"]
     assert report.regime_summary["window_count"] == 4
     assert "by_regime" in report.regime_summary
+    assert report.statistical_edge["evidence_unit"] == "trade"
+    assert report.statistical_edge["sample_count"] == 20
+    assert report.statistical_edge["positive_samples"] == 15
     assert report.statistical_edge["positive_windows"] == 3
 
 
@@ -215,7 +308,13 @@ def test_validate_model_temporal_robustness_rejects_weak_statistical_edge(
     assert str(report.reason).startswith("bootstrap_lower_mean_return<")
     assert report.accepted_windows == 3
     assert report.statistical_edge["accepted"] is False
-    assert report.statistical_edge["sign_test_p_value"] == pytest.approx(0.3125)
+    assert report.statistical_edge["evidence_unit"] == "trade"
+    assert report.statistical_edge["sample_count"] == 24
+    assert report.statistical_edge["positive_windows"] == 3
+    assert report.statistical_edge["positive_samples"] == 18
+    assert report.statistical_edge["sign_test_p_value"] == pytest.approx(
+        robust_validation._binomial_upper_tail(24, 18)
+    )
     assert float(report.statistical_edge["bootstrap_lower_mean_return"]) < 0.0
 
 
@@ -223,26 +322,23 @@ def test_temporal_robustness_prefers_trade_return_evidence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     trade_sets = [
-        (-0.02, -0.01, 0.03),
-        (-0.03, 0.01, -0.02),
-        (-0.01, -0.01, 0.02),
-        (-0.02, 0.01, -0.03),
+        (-0.010, -0.008, -0.006, 0.034, 0.040, 0.050),
+        (-0.012, -0.007, -0.005, 0.035, 0.041, 0.048),
+        (-0.009, -0.008, -0.006, 0.033, 0.042, 0.048),
+        (-0.011, -0.007, -0.004, 0.034, 0.039, 0.049),
     ]
 
     def fake_backtest(_rows, *_args, **_kwargs):
         returns = trade_sets.pop(0)
+        trade_pnls = tuple(value * 1000.0 for value in returns)
+        realized_pnl = sum(trade_pnls)
         return _result(
-            realized_pnl=10.0,
-            ending_cash=1010.0,
-            closed_trades=6,
-            edge_vs_buy_hold=10.0,
-            gross_profit=50.0,
-            gross_loss=5.0,
-            profit_factor=10.0,
-            expectancy=3.0,
-            max_consecutive_losses=1,
+            realized_pnl=realized_pnl,
+            ending_cash=1000.0 + realized_pnl,
+            closed_trades=len(returns),
+            edge_vs_buy_hold=realized_pnl,
             trade_returns=returns,
-            trade_pnls=tuple(value * 1000.0 for value in returns),
+            trade_pnls=trade_pnls,
         )
 
     monkeypatch.setattr(robust_validation, "run_backtest", fake_backtest)
@@ -268,9 +364,12 @@ def test_temporal_robustness_prefers_trade_return_evidence(
     )
 
     assert report.accepted is False
+    assert report.accepted_windows == 4
     assert report.statistical_edge["evidence_unit"] == "trade"
-    assert report.statistical_edge["sample_count"] == 12
-    assert report.statistical_edge["trade_return_count"] == 12
+    assert report.statistical_edge["sample_count"] == 24
+    assert report.statistical_edge["trade_return_count"] == 24
+    assert report.statistical_edge["positive_windows"] == 4
+    assert report.statistical_edge["positive_samples"] == 12
     assert str(report.reason).startswith("sign_test_p_value>")
 
 

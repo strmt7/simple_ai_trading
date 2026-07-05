@@ -678,25 +678,120 @@ def test_strategy_for_candidate_applies_overlays() -> None:
 # ----- train_for_objective: happy path with fake runner --------------------
 
 
-def _make_result(**overrides) -> BacktestResult:
-    defaults = dict(
-        starting_cash=1000.0, ending_cash=1050.0, realized_pnl=50.0,
-        win_rate=0.6, trades=5, max_drawdown=0.02, closed_trades=5,
-        gross_exposure=100.0, total_fees=0.1, stopped_by_drawdown=False,
-        max_exposure=100.0, trades_per_day_cap_hit=0,
-        buy_hold_pnl=25.0,
-        edge_vs_buy_hold=25.0,
-        trade_pnls=(20.0, -5.0, 15.0, 10.0, 10.0),
-        trade_returns=(0.020, -0.005, 0.015, 0.010, 0.010),
-        gross_profit=55.0,
-        gross_loss=5.0,
-        profit_factor=11.0,
-        expectancy=10.0,
-        average_trade_return=0.010,
-        trade_return_stdev=0.009,
-        max_consecutive_losses=1,
+def _fake_trade_pnls(realized_pnl: float, closed_trades: int) -> tuple[float, ...]:
+    count = max(0, int(closed_trades))
+    if count <= 0:
+        return ()
+    if realized_pnl < 0.0:
+        return tuple(float(realized_pnl) / count for _ in range(count))
+    weights = [float(index + 1) for index in range(count)]
+    pnls = [float(realized_pnl) * weight / sum(weights) for weight in weights]
+    pnls[-1] += float(realized_pnl) - sum(pnls)
+    return tuple(pnls)
+
+
+def _fake_equity_curve(starting_cash: float, ending_cash: float, max_drawdown: float) -> tuple[dict[str, float | int], ...]:
+    drawdown = max(0.0, min(1.0, float(max_drawdown)))
+    if drawdown <= 0.0:
+        return (
+            {"timestamp": 0, "equity": float(starting_cash), "drawdown": 0.0, "position_side": 0},
+            {"timestamp": 60_000, "equity": float(ending_cash), "drawdown": 0.0, "position_side": 0},
+        )
+    trough = max(0.0, float(starting_cash) * (1.0 - drawdown))
+    final_drawdown = 0.0 if ending_cash >= starting_cash else (starting_cash - ending_cash) / max(1.0, starting_cash)
+    return (
+        {"timestamp": 0, "equity": float(starting_cash), "drawdown": 0.0, "position_side": 0},
+        {"timestamp": 60_000, "equity": float(trough), "drawdown": drawdown, "position_side": 0},
+        {"timestamp": 120_000, "equity": float(ending_cash), "drawdown": float(final_drawdown), "position_side": 0},
     )
-    defaults.update(overrides)
+
+
+def _fake_trade_log(pnls: tuple[float, ...], returns: tuple[float, ...]) -> tuple[dict[str, object], ...]:
+    rows: list[dict[str, object]] = []
+    for index, (net_pnl, return_pct) in enumerate(zip(pnls, returns, strict=True)):
+        entry_fee = 0.05
+        exit_fee = 0.05
+        realized = net_pnl + entry_fee + exit_fee
+        rows.append({
+            "opened_at": int(index * 120_000),
+            "closed_at": int(index * 120_000 + 60_000),
+            "side": 1,
+            "gross_notional": 100.0,
+            "entry_price": 100.0,
+            "exit_mark_price": max(0.01, 100.0 + realized),
+            "realized_pnl": float(realized),
+            "net_pnl": float(net_pnl),
+            "return_pct": float(return_pct),
+            "entry_fee": entry_fee,
+            "exit_fee": exit_fee,
+            "exit_reason": "take_profit_close" if net_pnl > 0.0 else "stop_loss_close",
+        })
+    return tuple(rows)
+
+
+def _make_result(**overrides) -> BacktestResult:
+    starting_cash = float(overrides.get("starting_cash", 1000.0))
+    realized_pnl = float(overrides.get("realized_pnl", 50.0))
+    ending_cash = float(overrides.get("ending_cash", starting_cash + realized_pnl))
+    closed_trades = int(overrides.get("closed_trades", overrides.get("trades", 5)))
+    trade_pnls = tuple(float(value) for value in overrides.get("trade_pnls", _fake_trade_pnls(realized_pnl, closed_trades)))
+    trade_returns = tuple(float(value) for value in overrides.get("trade_returns", tuple(value / max(1.0, abs(starting_cash)) for value in trade_pnls)))
+    gross_profit = sum(value for value in trade_pnls if value > 0.0)
+    gross_loss = abs(sum(value for value in trade_pnls if value < 0.0))
+    profit_factor = gross_profit / gross_loss if gross_loss > 0.0 else (999.0 if gross_profit > 0.0 else 0.0)
+    average_return = sum(trade_returns) / len(trade_returns) if trade_returns else 0.0
+    stdev = 0.0
+    if len(trade_returns) >= 2:
+        stdev = math.sqrt(sum((value - average_return) ** 2 for value in trade_returns) / (len(trade_returns) - 1))
+    max_losses = 0
+    current_losses = 0
+    for pnl in trade_pnls:
+        if pnl < 0.0:
+            current_losses += 1
+            max_losses = max(max_losses, current_losses)
+        else:
+            current_losses = 0
+    if "buy_hold_pnl" in overrides:
+        buy_hold_pnl = float(overrides["buy_hold_pnl"])
+    elif "edge_vs_buy_hold" in overrides:
+        buy_hold_pnl = realized_pnl - float(overrides["edge_vs_buy_hold"])
+    else:
+        buy_hold_pnl = 25.0
+    max_drawdown = float(overrides.get("max_drawdown", 0.02))
+    defaults = dict(
+        starting_cash=starting_cash, ending_cash=ending_cash, realized_pnl=realized_pnl,
+        win_rate=(sum(1 for value in trade_pnls if value > 0.0) / len(trade_pnls) if trade_pnls else 0.0),
+        trades=closed_trades, max_drawdown=max_drawdown, closed_trades=closed_trades,
+        gross_exposure=100.0, total_fees=0.1 * len(trade_pnls), stopped_by_drawdown=False,
+        max_exposure=100.0, trades_per_day_cap_hit=0,
+        buy_hold_pnl=buy_hold_pnl,
+        edge_vs_buy_hold=float(overrides.get("edge_vs_buy_hold", realized_pnl - buy_hold_pnl)),
+        equity_curve=_fake_equity_curve(starting_cash, ending_cash, max_drawdown),
+        trade_pnls=trade_pnls,
+        trade_returns=trade_returns,
+        trade_log=_fake_trade_log(trade_pnls, trade_returns) if len(trade_pnls) == len(trade_returns) else (),
+        gross_profit=gross_profit,
+        gross_loss=gross_loss,
+        profit_factor=profit_factor,
+        expectancy=sum(trade_pnls) / len(trade_pnls) if trade_pnls else 0.0,
+        average_trade_return=average_return,
+        trade_return_stdev=stdev,
+        max_consecutive_losses=max_losses,
+    )
+    derived_fields = {
+        "win_rate",
+        "total_fees",
+        "equity_curve",
+        "trade_log",
+        "gross_profit",
+        "gross_loss",
+        "profit_factor",
+        "expectancy",
+        "average_trade_return",
+        "trade_return_stdev",
+        "max_consecutive_losses",
+    }
+    defaults.update({key: value for key, value in overrides.items() if key not in derived_fields})
     return BacktestResult(**defaults)
 
 
@@ -1945,26 +2040,12 @@ def test_feature_ablation_report_replays_masked_feature_groups(
 
     def fake_run_backtest(_rows, scored_model, _strategy, **_kwargs):
         pnl = pnl_by_group[getattr(scored_model, "ablated_feature_group", None)]
-        return BacktestResult(
-            starting_cash=1000.0,
-            ending_cash=1000.0 + pnl,
+        return _make_result(
             realized_pnl=pnl,
-            win_rate=1.0,
-            trades=6,
-            max_drawdown=0.0,
             closed_trades=6,
-            gross_exposure=100.0,
-            total_fees=0.0,
-            stopped_by_drawdown=False,
-            max_exposure=100.0,
-            trades_per_day_cap_hit=0,
+            buy_hold_pnl=0.0,
             edge_vs_buy_hold=pnl,
-            gross_profit=pnl,
-            gross_loss=0.0,
-            profit_factor=999.0,
-            expectancy=pnl / 6.0,
-            trade_pnls=(pnl,),
-            trade_returns=(pnl / 1000.0,),
+            max_drawdown=0.0,
         )
 
     monkeypatch.setattr(training_suite, "run_backtest", fake_run_backtest)
@@ -2156,7 +2237,9 @@ def test_rank_report_ranks_precomputed_backtests() -> None:
     assert ranked[0]["accepted"] is True
     assert ranked[-1]["params"] == {"name": "reject"}
     assert ranked[-1]["accepted"] is False
-    assert ranked[-1]["reject_reason"] == "closed_trades<3"
+    reject_reasons = str(ranked[-1]["reject_reason"]).split("; ")
+    assert "financial_sanity_failed" in reject_reasons
+    assert "closed_trades<3" in reject_reasons
 
 
 # ----- real-runner smoke test for train_for_objective ----------------------
