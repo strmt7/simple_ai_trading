@@ -14,6 +14,7 @@ from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.execution_simulation import SymbolExecutionProfile
 from simple_ai_trading.features import ModelRow
 from simple_ai_trading.model import HybridExpert, HybridPrototype, TrainedModel
+from simple_ai_trading.risk_controls import stop_loss_sized_notional_pct
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -526,7 +527,9 @@ def test_backtest_exit_fee_uses_exit_notional() -> None:
     )
     result = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="spot")
     assert result.closed_trades == 1
-    assert result.total_fees == pytest.approx(4.389046741493509)
+    trade = result.trade_log[0]
+    assert result.total_fees == pytest.approx(float(trade["entry_fee"]) + float(trade["exit_fee"]))
+    assert float(trade["exit_fee"]) > float(trade["entry_fee"])
 
 
 def test_backtest_uses_intrabar_stop_when_stop_and_take_both_touch() -> None:
@@ -668,8 +671,9 @@ def test_backtest_sizes_positions_from_stop_loss_risk_budget() -> None:
     spot = run_backtest(rows, model, spot_cfg, starting_cash=1000.0, market_type="spot")
     futures = run_backtest(rows, model, futures_cfg, starting_cash=1000.0, market_type="futures")
 
-    assert spot.max_exposure == pytest.approx(500.0)
-    assert futures.max_exposure == pytest.approx(500.0)
+    assert spot.max_exposure == pytest.approx(1000.0 * stop_loss_sized_notional_pct(spot_cfg, "spot"))
+    assert futures.max_exposure == pytest.approx(1000.0 * stop_loss_sized_notional_pct(futures_cfg, "futures"))
+    assert spot.max_exposure < 500.0
 
 
 def test_backtest_path_quality_metrics_cover_profit_factor_and_loss_streak() -> None:

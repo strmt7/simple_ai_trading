@@ -130,10 +130,12 @@ simulation start/end dates and duration in days/years. Model-lab robustness
 gates can use trade-return samples when enough trades exist.
 
 Position sizing is stop-loss-budget based. `risk_per_trade` is interpreted as
-the equity budget that may be lost if the configured stop-loss is hit; gross
-notional is then capped by max position size, leverage, exchange constraints,
-and available cash. This same notional calculation is used by risk reporting,
-backtesting, live/testnet order sizing, and the buy-and-hold edge baseline.
+the estimated equity budget that may be lost if the configured stop-loss is
+hit, including taker fees and the adverse exit-fill buffer from the execution
+simulator. Gross notional is then capped by max position size, leverage,
+exchange constraints, and available cash. This same notional calculation is
+used by risk reporting, backtesting, live/testnet order sizing, and the
+buy-and-hold edge baseline.
 
 Autonomous live/testnet orders use bot-owned client-order IDs. Live stop/close
 paths only submit exchange closes for positions that are still present in the

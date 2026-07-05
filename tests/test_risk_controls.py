@@ -1,10 +1,13 @@
 ﻿from __future__ import annotations
 
+import pytest
+
 from simple_ai_trading.risk_controls import (
     assess_entry_risk,
     build_risk_policy_report,
     market_regime_unpredictability,
     render_risk_policy_report,
+    stop_loss_effective_loss_pct,
     stop_loss_sized_notional_pct,
 )
 from simple_ai_trading.model import TrainedModel, serialize_model
@@ -18,7 +21,10 @@ def test_risk_policy_report_allows_default_paper_and_renders_summary() -> None:
     assert report.block_count == 0
     assert report.warning_count >= 1
     assert report.notional_cap_pct == 0.08
-    assert report.max_loss_per_trade_pct == 0.0008
+    assert report.max_loss_per_trade_pct == pytest.approx(
+        report.notional_cap_pct * stop_loss_effective_loss_pct(StrategyConfig())
+    )
+    assert report.max_loss_per_trade_pct > report.notional_cap_pct * StrategyConfig().stop_loss_pct
     assert report.checks[0].asdict()["label"] == "primary symbol"
     assert any(check.label == "regime unpredictability gate" for check in report.checks)
     rendered = render_risk_policy_report(report)
@@ -37,9 +43,14 @@ def test_stop_loss_sized_notional_pct_respects_caps_and_leverage() -> None:
     spot = StrategyConfig(risk_per_trade=0.01, max_position_pct=0.5, stop_loss_pct=0.02)
     futures = StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, stop_loss_pct=0.02, leverage=5.0)
 
-    assert stop_loss_sized_notional_pct(spot, "spot") == 0.5
-    assert stop_loss_sized_notional_pct(futures, "futures") == 0.5
-    assert stop_loss_sized_notional_pct(futures, "futures", leverage=20.0) == 0.5
+    spot_notional = stop_loss_sized_notional_pct(spot, "spot")
+    futures_notional = stop_loss_sized_notional_pct(futures, "futures")
+    futures_override = stop_loss_sized_notional_pct(futures, "futures", leverage=20.0)
+
+    assert 0.0 < spot_notional < 0.5
+    assert spot_notional * stop_loss_effective_loss_pct(spot) <= spot.risk_per_trade + 1e-12
+    assert futures_notional * stop_loss_effective_loss_pct(futures) <= futures.risk_per_trade + 1e-12
+    assert futures_override == pytest.approx(futures_notional)
 
 
 def test_risk_policy_blocks_mainnet_live_missing_credentials_and_zero_cash(tmp_path) -> None:
