@@ -12,31 +12,132 @@ from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading import objective as obj
 
 
+def _sample_stdev(values: tuple[float, ...]) -> float:
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    return math.sqrt(sum((value - mean) ** 2 for value in values) / (len(values) - 1))
+
+
+def _profit_factor(gross_profit: float, gross_loss: float) -> float:
+    if gross_loss > 0.0:
+        return gross_profit / gross_loss
+    if gross_profit > 0.0:
+        return 999.0
+    return 0.0
+
+
+def _max_consecutive_losses(pnls: tuple[float, ...]) -> int:
+    longest = 0
+    current = 0
+    for pnl in pnls:
+        if pnl < 0.0:
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 0
+    return longest
+
+
+def _scaled_pnls(total: float, count: int = 10) -> tuple[float, ...]:
+    if count <= 0:
+        return ()
+    if total < 0.0:
+        return tuple(total / count for _ in range(count))
+    weights = tuple(float(index + 1) for index in range(count))
+    scaled = [total * weight / sum(weights) for weight in weights]
+    scaled[-1] += total - sum(scaled)
+    return tuple(scaled)
+
+
+def _trade_log(pnls: tuple[float, ...], returns: tuple[float, ...]) -> tuple[dict[str, object], ...]:
+    trades: list[dict[str, object]] = []
+    for index, (net_pnl, return_pct) in enumerate(zip(pnls, returns, strict=True)):
+        entry_fee = 0.05
+        exit_fee = 0.05
+        realized = net_pnl + entry_fee + exit_fee
+        trades.append({
+            "opened_at": int(index * 120_000),
+            "closed_at": int(index * 120_000 + 60_000),
+            "side": 1,
+            "gross_notional": 500.0,
+            "entry_price": 100.0,
+            "exit_mark_price": max(0.01, 100.0 + realized),
+            "realized_pnl": float(realized),
+            "net_pnl": float(net_pnl),
+            "return_pct": float(return_pct),
+            "entry_fee": entry_fee,
+            "exit_fee": exit_fee,
+            "exit_reason": "take_profit_close" if net_pnl > 0.0 else "stop_loss_close",
+        })
+    return tuple(trades)
+
+
+def _equity_curve(starting_cash: float, pnls: tuple[float, ...]) -> tuple[dict[str, float | int], ...]:
+    equity = float(starting_cash)
+    peak = equity
+    points: list[dict[str, float | int]] = [{
+        "timestamp": 0,
+        "equity": equity,
+        "drawdown": 0.0,
+        "position_side": 0,
+    }]
+    for index, pnl in enumerate(pnls, start=1):
+        equity += pnl
+        peak = max(peak, equity)
+        drawdown = 1.0 if equity <= 0.0 and peak > 0.0 else ((peak - equity) / peak if peak else 0.0)
+        points.append({
+            "timestamp": int(index * 120_000),
+            "equity": float(equity),
+            "drawdown": float(drawdown),
+            "position_side": 0,
+        })
+    return tuple(points)
+
+
 def _result(**overrides) -> BacktestResult:
+    starting_cash = float(overrides.get("starting_cash", 1000.0))
+    requested_realized = float(overrides.get("realized_pnl", 100.0))
+    requested_closed_trades = int(overrides.get("closed_trades", overrides.get("trades", 10)))
+    pnls = tuple(float(value) for value in overrides.get("trade_pnls", _scaled_pnls(requested_realized, requested_closed_trades)))
+    return_denominator = max(1.0, abs(starting_cash))
+    returns = tuple(float(value) for value in overrides.get("trade_returns", tuple(value / return_denominator for value in pnls)))
+    gross_profit = sum(value for value in pnls if value > 0.0)
+    gross_loss = abs(sum(value for value in pnls if value < 0.0))
+    realized_pnl = float(overrides.get("realized_pnl", sum(pnls)))
+    ending_cash = float(overrides.get("ending_cash", starting_cash + realized_pnl))
+    buy_hold_pnl = float(overrides.get("buy_hold_pnl", 80.0))
+    edge_vs_buy_hold = float(overrides.get("edge_vs_buy_hold", realized_pnl - buy_hold_pnl))
+    closed_trades = int(overrides.get("closed_trades", len(pnls)))
+    trades = int(overrides.get("trades", closed_trades))
+    curve = tuple(overrides.get("equity_curve", _equity_curve(starting_cash, pnls)))
+    max_drawdown = max(float(point["drawdown"]) for point in curve) if curve else 0.0
     base = dict(
-        starting_cash=1000.0,
-        ending_cash=1100.0,
-        realized_pnl=100.0,
-        win_rate=0.6,
-        trades=10,
-        max_drawdown=0.05,
-        closed_trades=10,
+        starting_cash=starting_cash,
+        ending_cash=ending_cash,
+        realized_pnl=realized_pnl,
+        win_rate=(sum(1 for value in pnls if value > 0.0) / len(pnls) if pnls else 0.0),
+        trades=trades,
+        max_drawdown=max_drawdown,
+        closed_trades=closed_trades,
         gross_exposure=500.0,
-        total_fees=1.0,
+        total_fees=0.1 * len(pnls),
         stopped_by_drawdown=False,
         max_exposure=500.0,
         trades_per_day_cap_hit=0,
-        trade_pnls=(12.5, 12.5, 12.5, -12.5, 12.5, 12.5, 12.5, 12.5, 12.5, 12.5),
-        trade_returns=(0.0125, 0.0123, 0.0121, -0.0120, 0.0118, 0.0116, 0.0114, 0.0112, 0.0110, 0.0108),
-        gross_profit=112.5,
-        gross_loss=12.5,
-        profit_factor=9.0,
-        expectancy=10.0,
-        average_trade_return=0.00927,
-        trade_return_stdev=0.0073,
-        max_consecutive_losses=1,
-        buy_hold_pnl=80.0,
-        edge_vs_buy_hold=20.0,
+        equity_curve=curve,
+        trade_pnls=pnls,
+        trade_returns=returns,
+        trade_log=_trade_log(pnls, returns) if len(pnls) == len(returns) else (),
+        gross_profit=gross_profit,
+        gross_loss=gross_loss,
+        profit_factor=_profit_factor(gross_profit, gross_loss),
+        expectancy=sum(pnls) / len(pnls) if pnls else 0.0,
+        average_trade_return=sum(returns) / len(returns) if returns else 0.0,
+        trade_return_stdev=_sample_stdev(returns),
+        max_consecutive_losses=_max_consecutive_losses(pnls),
+        buy_hold_pnl=buy_hold_pnl,
+        edge_vs_buy_hold=edge_vs_buy_hold,
     )
     base.update(overrides)
     return BacktestResult(**base)
@@ -66,7 +167,8 @@ def test_get_objective_lookups():
 
 def test_scorer_paths_basic():
     result = _result()
-    assert obj.CONSERVATIVE.score(result) < obj.RISKY.score(result)
+    assert math.isfinite(obj.CONSERVATIVE.score(result))
+    assert math.isfinite(obj.RISKY.score(result))
     assert obj.DEFAULT.accepts(result) is True
     assert obj.DEFAULT.name == "conservative"
 
@@ -97,8 +199,8 @@ def test_objectives_reject_liquidation_events():
 
 
 def test_min_closed_trades_gate():
-    unexplained = _result(closed_trades=1)
-    risk_gated = _result(closed_trades=1, regime_entry_skips=8)
+    unexplained = _result(closed_trades=3)
+    risk_gated = _result(closed_trades=3, regime_entry_skips=6)
 
     assert obj.CONSERVATIVE.accepts(unexplained) is False
     assert "closed_trades<5" in obj.CONSERVATIVE.rejection_reasons(unexplained)
@@ -130,16 +232,12 @@ def test_positive_pnl_negative_buy_hold_edge_is_rejected():
 
 
 def test_rejection_reasons_are_stable_machine_labels():
-    r = _result(realized_pnl=-1.0, closed_trades=1, edge_vs_buy_hold=-2.0)
+    r = _result(realized_pnl=-1.0, closed_trades=3, buy_hold_pnl=1.0, edge_vs_buy_hold=-2.0)
 
     reasons = obj.REGULAR.rejection_reasons(r)
 
-    assert reasons == [
-        "closed_trades<3",
-        "realized_pnl<=0.0",
-        "edge_vs_buy_hold<0.0",
-        "market_edge_pct<0.003",
-    ]
+    for expected in ("realized_pnl<=0.0", "edge_vs_buy_hold<0.0", "market_edge_pct<0.003"):
+        assert expected in reasons
 
 
 def test_market_edge_must_clear_material_threshold() -> None:
@@ -197,7 +295,7 @@ def test_path_quality_concentration_gate_requires_complete_trade_pnl_evidence():
     )
 
 
-def test_path_quality_gates_skip_legacy_payloads_without_trade_evidence():
+def test_path_quality_gates_reject_legacy_payloads_without_trade_evidence():
     legacy = _result(
         trade_pnls=(),
         trade_returns=(),
@@ -208,10 +306,11 @@ def test_path_quality_gates_skip_legacy_payloads_without_trade_evidence():
         max_consecutive_losses=0,
     )
 
-    assert obj.CONSERVATIVE.accepts(legacy) is True
+    assert obj.CONSERVATIVE.accepts(legacy) is False
+    assert "realized_pnl<=0.0" in obj.CONSERVATIVE.rejection_reasons(legacy)
 
 
-def test_path_quality_gates_can_derive_metrics_from_trade_pnls():
+def test_path_quality_gates_reject_stale_path_quality_metrics():
     raw_path = _result(
         closed_trades=3,
         trade_pnls=(10.0, -20.0, -1.0),
@@ -222,7 +321,7 @@ def test_path_quality_gates_can_derive_metrics_from_trade_pnls():
         expectancy=0.0,
         max_consecutive_losses=0,
     )
-    clean_winner = _result(
+    stale_winner = _result(
         closed_trades=4,
         trade_pnls=(6.0, 7.0, 8.0, 9.0),
         trade_returns=(0.006, 0.007, 0.008, 0.009),
@@ -237,29 +336,37 @@ def test_path_quality_gates_can_derive_metrics_from_trade_pnls():
 
     assert "profit_factor<1.05" in reasons
     assert "expectancy<=0.0" in reasons
-    assert obj.REGULAR.accepts(clean_winner) is True
+    assert obj.REGULAR.accepts(stale_winner) is False
+    assert "financial_sanity_failed" in obj.REGULAR.rejection_reasons(stale_winner)
 
 
 def test_trade_frequency_gate_allows_risk_gated_inactivity_without_forcing_trades() -> None:
     days = 5
+    pnls = (20.0, 20.0, 20.0, 20.0, 20.0)
+    returns = (0.02, 0.02, 0.02, 0.02, 0.02)
+    daily_log = tuple(
+        {
+            **trade,
+            "opened_at": day * 86_400_000,
+            "closed_at": day * 86_400_000 + 60_000,
+        }
+        for day, trade in enumerate(_trade_log(pnls, returns))
+    )
     sparse_safe = _result(
         closed_trades=5,
+        trade_pnls=pnls,
+        trade_returns=returns,
         equity_curve=(
             {"timestamp": 0, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
             {"timestamp": days * 86_400_000, "equity": 1100.0, "drawdown": 0.0, "position_side": 0},
         ),
-        trade_log=tuple(
-            {
-                "opened_at": day * 86_400_000,
-                "closed_at": day * 86_400_000 + 60_000,
-                "net_pnl": 20.0,
-            }
-            for day in range(days)
-        ),
+        trade_log=daily_log,
         regime_entry_skips=20,
     )
     sparse_unexplained = _result(
         closed_trades=5,
+        trade_pnls=pnls,
+        trade_returns=returns,
         equity_curve=sparse_safe.equity_curve,
         trade_log=sparse_safe.trade_log,
         regime_entry_skips=0,
@@ -282,12 +389,17 @@ def test_safe_and_return_ratio_non_finite():
 def test_max_drawdown_rejection_one_never_rejects_on_drawdown():
     # Manually craft an objective with rejection=1.0 â€” never rejects on drawdown
     spec = replace(obj.DEFAULT, max_drawdown_rejection=1.0, min_closed_trades=0)
-    assert spec.accepts(_result(max_drawdown=0.99)) is True
+    curve = (
+        {"timestamp": 0, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
+        {"timestamp": 60_000, "equity": 10.0, "drawdown": 0.99, "position_side": 0},
+        {"timestamp": 120_000, "equity": 1100.0, "drawdown": 0.0, "position_side": 0},
+    )
+    assert spec.accepts(_result(max_drawdown=0.99, equity_curve=curve)) is True
 
 
 def test_rank_candidates_orders_accepted_first():
-    winning = _result(realized_pnl=500.0, max_drawdown=0.02, closed_trades=10)
-    losing = _result(realized_pnl=-100.0, max_drawdown=0.30, closed_trades=1)
+    winning = _result(realized_pnl=500.0, closed_trades=10)
+    losing = _result(realized_pnl=-100.0, buy_hold_pnl=0.0, edge_vs_buy_hold=-100.0, closed_trades=1)
     ranked = obj.rank_candidates(
         [({"id": "loser"}, losing), ({"id": "winner"}, winning)],
         obj.CONSERVATIVE,

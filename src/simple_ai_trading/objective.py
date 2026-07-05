@@ -22,6 +22,7 @@ from .assets import (
     DEFAULT_REGULAR_LEVERAGE,
 )
 from .backtest import BacktestResult, closed_trades_per_day, trade_activity_satisfies
+from .financial_sanity import blocking_reasons, build_backtest_financial_sanity_report
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,9 @@ class ObjectiveSpec:
         """Return stable machine-readable reasons for hard-gate rejection."""
 
         reasons: list[str] = []
+        financial_sanity = build_backtest_financial_sanity_report(result)
+        if blocking_reasons(financial_sanity):
+            reasons.append("financial_sanity_failed")
         if bool(getattr(result, "stopped_by_liquidation", False)) or int(getattr(result, "liquidation_events", 0)) > 0:
             reasons.append("liquidation_events>0")
         activity_targeted = self.min_closed_trades > 0 or self.min_trades_per_day > 0.0

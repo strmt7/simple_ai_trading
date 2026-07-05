@@ -548,18 +548,21 @@ def _statistical_edge_report(
         )
     returns = trade_returns if len(trade_returns) >= max(3, len(window_returns)) else window_returns
     evidence_unit = "trade" if returns is trade_returns else "window"
-    positive_windows = sum(1 for value in returns if value > 0.0)
-    window_count = len(returns)
-    sign_p_value = _binomial_upper_tail(window_count, positive_windows)
-    mean_return = sum(returns) / window_count if window_count else 0.0
+    positive_windows = sum(1 for value in window_returns if value > 0.0)
+    sample_count = len(returns)
+    positive_samples = sum(1 for value in returns if value > 0.0)
+    sign_p_value = _binomial_upper_tail(sample_count, positive_samples)
+    mean_return = sum(returns) / sample_count if sample_count else 0.0
     median_return = _quantile(returns, 0.5)
+    mean_window_return = sum(window_returns) / len(window_returns) if window_returns else 0.0
+    median_window_return = _quantile(window_returns, 0.5)
     lower_mean = _bootstrap_lower_mean_return(
         returns,
         confidence=policy.bootstrap_confidence,
         samples=policy.bootstrap_samples,
     )
     reason = None
-    if window_count <= 0:
+    if sample_count <= 0:
         reason = "no_windows_for_statistical_edge"
     elif sign_p_value > policy.max_sign_test_p_value:
         reason = f"sign_test_p_value>{policy.max_sign_test_p_value:.4f}"
@@ -569,17 +572,19 @@ def _statistical_edge_report(
         "accepted": reason is None,
         "reason": reason,
         "evidence_unit": evidence_unit,
-        "sample_count": window_count,
+        "sample_count": sample_count,
         "window_count": len(window_returns),
         "trade_return_count": len(trade_returns),
-        "positive_samples": positive_windows,
+        "positive_samples": positive_samples,
         "positive_windows": positive_windows,
-        "positive_sample_rate": (positive_windows / window_count if window_count else 0.0),
-        "positive_window_rate": (positive_windows / window_count if window_count else 0.0),
+        "positive_sample_rate": (positive_samples / sample_count if sample_count else 0.0),
+        "positive_window_rate": (positive_windows / len(window_returns) if window_returns else 0.0),
         "sign_test_p_value": float(sign_p_value),
         "max_sign_test_p_value": float(policy.max_sign_test_p_value),
-        "mean_window_return": float(mean_return),
-        "median_window_return": float(median_return),
+        "mean_sample_return": float(mean_return),
+        "median_sample_return": float(median_return),
+        "mean_window_return": float(mean_window_return),
+        "median_window_return": float(median_window_return),
         "bootstrap_confidence": float(policy.bootstrap_confidence),
         "bootstrap_samples": int(policy.bootstrap_samples),
         "bootstrap_lower_mean_return": float(lower_mean),
@@ -776,6 +781,8 @@ def validate_suite_temporal_robustness(
                     "positive_window_rate": 0.0,
                     "sign_test_p_value": 1.0,
                     "max_sign_test_p_value": float(policy.max_sign_test_p_value),
+                    "mean_sample_return": 0.0,
+                    "median_sample_return": 0.0,
                     "mean_window_return": 0.0,
                     "median_window_return": 0.0,
                     "bootstrap_confidence": float(policy.bootstrap_confidence),
