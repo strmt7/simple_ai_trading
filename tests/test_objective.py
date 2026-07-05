@@ -89,8 +89,12 @@ def test_conservative_rejects_on_stopped_by_drawdown():
 
 
 def test_min_closed_trades_gate():
-    r = _result(closed_trades=1)
-    assert obj.CONSERVATIVE.accepts(r) is False
+    unexplained = _result(closed_trades=1)
+    risk_gated = _result(closed_trades=1, regime_entry_skips=8)
+
+    assert obj.CONSERVATIVE.accepts(unexplained) is False
+    assert "closed_trades<5" in obj.CONSERVATIVE.rejection_reasons(unexplained)
+    assert obj.CONSERVATIVE.accepts(risk_gated) is True
 
 
 def test_min_realized_pnl_gate():

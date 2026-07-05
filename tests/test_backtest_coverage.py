@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from simple_ai_trading import backtest as backtest_mod
-from simple_ai_trading.backtest import calibrate_threshold_for_backtest, run_backtest
+from simple_ai_trading.backtest import calibrate_threshold_for_backtest, run_backtest, trade_activity_satisfies
 from simple_ai_trading.features import ModelRow
 from simple_ai_trading.model import TrainedModel
 from simple_ai_trading.types import StrategyConfig
@@ -28,6 +28,31 @@ def _simple_model(bias: float = 0.0) -> TrainedModel:
         epochs=1,
         feature_means=[0.0] * 13,
         feature_stds=[1.0] * 13,
+    )
+
+
+def test_trade_activity_target_is_not_a_forced_entry_quota() -> None:
+    risk_gated_sparse = SimpleNamespace(closed_trades=1, regime_entry_skips=8, meta_label_skips=0)
+    unexplained_sparse = SimpleNamespace(closed_trades=1, regime_entry_skips=0, meta_label_skips=0)
+
+    assert trade_activity_satisfies(
+        risk_gated_sparse,
+        min_closed_trades=5,
+        min_trades_per_day=2.0,
+        duration_days=1.0,
+    )
+    assert not trade_activity_satisfies(
+        risk_gated_sparse,
+        min_closed_trades=5,
+        min_trades_per_day=2.0,
+        duration_days=1.0,
+        allow_risk_gated_low_activity=False,
+    )
+    assert not trade_activity_satisfies(
+        unexplained_sparse,
+        min_closed_trades=5,
+        min_trades_per_day=2.0,
+        duration_days=1.0,
     )
 
 

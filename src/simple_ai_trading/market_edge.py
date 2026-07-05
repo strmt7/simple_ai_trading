@@ -6,7 +6,7 @@ import math
 import random
 from dataclasses import asdict, dataclass
 
-from .backtest import BacktestResult
+from .backtest import BacktestResult, closed_trades_per_day, risk_gate_skip_count, trade_activity_satisfies
 from .objective import ObjectiveSpec, get_objective
 
 
@@ -30,6 +30,10 @@ class MarketEdgeReport:
     min_net_edge_pct: float | None
     closed_trades: int
     min_closed_trades: int
+    trades_per_day: float
+    min_trades_per_day: float
+    risk_gate_skip_count: int
+    activity_gate_risk_explained: bool
     profit_factor: float
     min_profit_factor: float | None
     expectancy: float
@@ -156,7 +160,25 @@ def build_market_edge_report(
     net_edge_pct = net_edge / cash
     closed_trades = int(max(0.0, _finite(getattr(result, "closed_trades", 0), 0.0)))
     min_closed_trades = max(0, int(spec.min_closed_trades))
-    min_sample_count = max(3, min_closed_trades)
+    trades_per_day = closed_trades_per_day(result)
+    skip_count = risk_gate_skip_count(result)
+    activity_ok = trade_activity_satisfies(
+        result,
+        min_closed_trades=min_closed_trades,
+        min_trades_per_day=float(spec.min_trades_per_day),
+    )
+    activity_gate_risk_explained = bool(
+        activity_ok
+        and (
+            closed_trades < min_closed_trades
+            or (
+                float(spec.min_trades_per_day) > 0.0
+                and trades_per_day < float(spec.min_trades_per_day)
+            )
+        )
+        and skip_count > 0
+    )
+    min_sample_count = 3 if activity_gate_risk_explained else max(3, min_closed_trades)
     evidence_unit, samples, trade_return_count, trade_pnl_count = _sample_returns(result, cash=cash)
     positive_count = sum(1 for value in samples if value > 0.0)
     mean_return = sum(samples) / len(samples) if samples else 0.0
@@ -176,8 +198,10 @@ def build_market_edge_report(
         failed.append("realized_pnl<=0.0")
     if spec.min_market_edge_pct is not None and net_edge_pct < float(spec.min_market_edge_pct):
         failed.append(f"net_edge_pct<{float(spec.min_market_edge_pct):.6f}")
-    if closed_trades < min_closed_trades:
+    if not activity_ok and closed_trades < min_closed_trades:
         failed.append(f"closed_trades<{min_closed_trades}")
+    elif not activity_ok and float(spec.min_trades_per_day) > 0.0:
+        failed.append(f"trades_per_day<{float(spec.min_trades_per_day):.6f}")
     if len(samples) < min_sample_count:
         failed.append(f"sample_count<{min_sample_count}")
     if samples and sign_p > max_sign_p:
@@ -206,6 +230,10 @@ def build_market_edge_report(
         min_net_edge_pct=float(spec.min_market_edge_pct) if spec.min_market_edge_pct is not None else None,
         closed_trades=closed_trades,
         min_closed_trades=min_closed_trades,
+        trades_per_day=float(trades_per_day),
+        min_trades_per_day=float(spec.min_trades_per_day),
+        risk_gate_skip_count=int(skip_count),
+        activity_gate_risk_explained=bool(activity_gate_risk_explained),
         profit_factor=float(profit_factor),
         min_profit_factor=float(spec.min_profit_factor) if spec.min_profit_factor is not None else None,
         expectancy=float(expectancy),

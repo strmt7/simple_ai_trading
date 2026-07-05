@@ -42,9 +42,9 @@ Reports and `backtest-metrics.csv` record both configured profile leverage and
 effective leverage so a spot round with an aggressive profile cannot be
 mistaken for a 15x futures test.
 
-Day-trading trade-frequency gates are evidence gates, not quotas. A threshold or
-model with too few trades over a long historical span is rejected when there is
-no risk explanation. If regime or meta-label gates explicitly skipped entries in
+Day-trading activity gates are evidence gates, not quotas. The closed-trade
+minimum and trades/day target are rejected only when there is no risk
+explanation. If regime or meta-label gates explicitly skipped entries in
 unpredictable markets, low activity can still pass so the system is allowed to
 wait instead of manufacturing trades.
 
