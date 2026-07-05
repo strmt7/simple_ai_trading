@@ -51,8 +51,15 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    root = _repo_root()
+    src_path = str(root / "src")
     env = os.environ.copy()
     env.setdefault("SIMPLE_AI_TRADING_PYTHON", sys.executable)
+    env.setdefault("SIMPLE_AI_TRADING_REPO_ROOT", str(root))
+    current_pythonpath = env.get("PYTHONPATH", "")
+    pythonpath_parts = [part for part in current_pythonpath.split(os.pathsep) if part]
+    if src_path not in pythonpath_parts:
+        env["PYTHONPATH"] = os.pathsep.join([src_path, *pythonpath_parts])
     return subprocess.call([str(exe)], env=env)  # nosec B603 - repo-local executable, validated above
 
 

@@ -86,6 +86,8 @@ def test_windows_launcher_runs_native_executable(monkeypatch, tmp_path) -> None:
     assert windows_app.main() == 0
     assert calls["args"] == [str(exe)]
     assert calls["env"]["SIMPLE_AI_TRADING_PYTHON"] == sys.executable
+    assert calls["env"]["SIMPLE_AI_TRADING_REPO_ROOT"] == str(windows_app._repo_root())
+    assert str(windows_app._repo_root() / "src") in calls["env"]["PYTHONPATH"].split(windows_app.os.pathsep)
 
 
 def test_windows_launcher_help_exits_cleanly(monkeypatch, capsys) -> None:
