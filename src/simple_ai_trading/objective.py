@@ -57,6 +57,8 @@ class ObjectiveSpec:
         """Return stable machine-readable reasons for hard-gate rejection."""
 
         reasons: list[str] = []
+        if bool(getattr(result, "stopped_by_liquidation", False)) or int(getattr(result, "liquidation_events", 0)) > 0:
+            reasons.append("liquidation_events>0")
         activity_targeted = self.min_closed_trades > 0 or self.min_trades_per_day > 0.0
         if activity_targeted and not trade_activity_satisfies(
             result,
@@ -216,6 +218,8 @@ def _conservative_scorer(result: BacktestResult) -> float:
     """
 
     penalty = 0.25 if result.stopped_by_drawdown else 0.0
+    if bool(getattr(result, "stopped_by_liquidation", False)) or int(getattr(result, "liquidation_events", 0)) > 0:
+        penalty += 1.00
     return (
         _return_ratio(result)
         - 3.0 * _safe(result.max_drawdown)
@@ -234,6 +238,8 @@ def _default_scorer(result: BacktestResult) -> float:
     """
 
     penalty = 0.10 if result.stopped_by_drawdown else 0.0
+    if bool(getattr(result, "stopped_by_liquidation", False)) or int(getattr(result, "liquidation_events", 0)) > 0:
+        penalty += 0.75
     return (
         _return_ratio(result)
         - 1.5 * _safe(result.max_drawdown)
@@ -248,6 +254,8 @@ def _risky_scorer(result: BacktestResult) -> float:
     """Reward raw return more heavily and tolerate bigger drawdowns / more trades."""
 
     penalty = 0.05 if result.stopped_by_drawdown else 0.0
+    if bool(getattr(result, "stopped_by_liquidation", False)) or int(getattr(result, "liquidation_events", 0)) > 0:
+        penalty += 0.50
     return (
         1.25 * _return_ratio(result)
         - 0.8 * _safe(result.max_drawdown)

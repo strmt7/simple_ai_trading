@@ -375,6 +375,9 @@ def _result_payload(result: BacktestResult, *, objective_name: str | None = None
         "gross_exposure": float(result.gross_exposure),
         "total_fees": float(result.total_fees),
         "stopped_by_drawdown": bool(result.stopped_by_drawdown),
+        "stopped_by_liquidation": bool(getattr(result, "stopped_by_liquidation", False)),
+        "liquidation_events": int(getattr(result, "liquidation_events", 0)),
+        "liquidation_loss": float(getattr(result, "liquidation_loss", 0.0)),
         "max_exposure": float(result.max_exposure),
         "trades_per_day_cap_hit": int(result.trades_per_day_cap_hit),
         "buy_hold_pnl": float(result.buy_hold_pnl),
@@ -441,7 +444,13 @@ def validate_model_under_stress(
             score_batch_size=score_batch_size,
             symbol_profile=scenario_profile,
         )
-        accepted = spec.accepts(result) and result.realized_pnl > 0.0 and not result.stopped_by_drawdown
+        accepted = (
+            spec.accepts(result)
+            and result.realized_pnl > 0.0
+            and not result.stopped_by_drawdown
+            and not bool(getattr(result, "stopped_by_liquidation", False))
+            and int(getattr(result, "liquidation_events", 0)) <= 0
+        )
         score = spec.score(result) if accepted else float("-inf")
         worst_realized = min(worst_realized, float(result.realized_pnl))
         worst_drawdown = max(worst_drawdown, float(result.max_drawdown))
@@ -622,7 +631,13 @@ def validate_model_temporal_robustness(
             score_batch_size=score_batch_size,
             symbol_profile=symbol_profile,
         )
-        accepted = spec.accepts(result) and result.realized_pnl > 0.0 and not result.stopped_by_drawdown
+        accepted = (
+            spec.accepts(result)
+            and result.realized_pnl > 0.0
+            and not result.stopped_by_drawdown
+            and not bool(getattr(result, "stopped_by_liquidation", False))
+            and int(getattr(result, "liquidation_events", 0)) <= 0
+        )
         score = spec.score(result) if accepted else float("-inf")
         worst_score = min(worst_score, score)
         worst_realized = min(worst_realized, float(result.realized_pnl))

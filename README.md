@@ -190,9 +190,9 @@ Signed live-style startup requires a promoted model artifact. A model must carry
 - Stricter liquidity/spread thresholds.
 - Lower drawdown tolerance.
 
-`regular` and `aggressive` default to `10x` and `15x` futures leverage respectively, but still keep leverage capped at `20x`, require diversification, and preserve exchange/testnet safeguards. Leverage is not treated as an ROI target; it only scales permitted futures notional after stop-loss sizing, position caps, loss budgets, exchange brackets, and reconciliation gates pass.
+`regular` and `aggressive` default to `10x` and `15x` futures leverage respectively, but still keep leverage capped at `20x`, require diversification, and preserve exchange/testnet safeguards. Leverage is not treated as an ROI target; it only scales permitted futures notional after stop-loss sizing, position caps, loss budgets, exchange brackets, liquidation-buffer checks, and reconciliation gates pass.
 
-Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, backtester, optimization evidence generator, and Windows app command surface all use the same stop-loss-sized notional calculation.
+Position sizing treats `risk_per_trade` as the maximum equity budget intended to be lost at the configured stop-loss distance, then caps gross notional by max position size, leverage, exchange constraints, and available cash. The CLI, live loop, risk report, backtester, optimization evidence generator, and Windows app command surface all use the same stop-loss-sized notional calculation. Futures backtests apply an isolated-margin liquidation proxy: if margin balance falls below the configured `liquidation_buffer_pct` maintenance-plus-buffer requirement, the isolated margin is treated as lost, the position is cleared, and the run is rejected from promotion.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 
@@ -202,7 +202,7 @@ Hard capital controls are separate from ROI goals. The conservative profile defa
 
 ## Optimization Evidence
 
-Round-level implementation notes live under `docs/optimization/`. This repo no longer publishes ROI, P&L, drawdown, or chart claims unless they come from exchange-sourced backtests or signed testnet/paper artifacts with the provenance required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md). Optimization reports now include `critical_analysis`; zero-trade abstention, no accepted symbols, all nonpositive strategy ROI, or no profitable symbols are failed evidence even when the passive baseline lost money. Rejected threshold searches preserve `best_*` and `threshold_diagnostic_best_*` trade diagnostics so losing trade-producing candidates are reviewed as failure evidence instead of erased into flat no-trade output. The manual optimization tool exits nonzero for failed verdicts. Round 001 adds market-quality regime features and risk-aware promotion checks, Round 002 turns closed-trade learning feedback into a promotion gate, and Round 003 adds full-history/data-coverage truth controls plus API-efficiency telemetry. Performance claims must be regenerated from real source data before being documented.
+Round-level implementation notes live under `docs/optimization/`. This repo no longer publishes ROI, P&L, drawdown, or chart claims unless they come from exchange-sourced backtests or signed testnet/paper artifacts with the provenance required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md). Optimization reports now include `critical_analysis`; zero-trade abstention, no accepted symbols, all nonpositive strategy ROI, no profitable symbols, or any liquidation event are failed evidence even when the passive baseline lost money. Rejected threshold searches preserve `best_*` and `threshold_diagnostic_best_*` trade diagnostics so losing trade-producing candidates are reviewed as failure evidence instead of erased into flat no-trade output. The manual optimization tool exits nonzero for failed verdicts. Round 001 adds market-quality regime features and risk-aware promotion checks, Round 002 turns closed-trade learning feedback into a promotion gate, and Round 003 adds full-history/data-coverage truth controls plus API-efficiency telemetry. Performance claims must be regenerated from real source data before being documented.
 
 ## Live-Market Simulation
 
@@ -213,7 +213,7 @@ The backtester no longer assumes frictionless fills. It models:
 - liquidity haircuts for testnet-to-mainnet differences,
 - market impact from candle-volume participation,
 - taker fees,
-- liquidation buffer settings,
+- isolated-margin liquidation-buffer checks,
 - same-notional buy-and-hold comparison and risk-adjusted scoring.
 
 See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).

@@ -56,6 +56,9 @@ class BacktestResult:
     meta_label_skips: int = 0
     meta_label_downsizes: int = 0
     regime_entry_skips: int = 0
+    stopped_by_liquidation: bool = False
+    liquidation_events: int = 0
+    liquidation_loss: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -83,6 +86,12 @@ class ThresholdBacktestCalibration:
     best_edge_vs_buy_hold: float
     evaluated_thresholds: int
     rows: int
+    stopped_by_liquidation: bool = False
+    liquidation_events: int = 0
+    liquidation_loss: float = 0.0
+    best_stopped_by_liquidation: bool = False
+    best_liquidation_events: int = 0
+    best_liquidation_loss: float = 0.0
     scoring_backend_requested: str = "cpu"
     scoring_backend_kind: str = "cpu"
     scoring_backend_device: str = "cpu"
@@ -220,11 +229,15 @@ def risk_adjusted_backtest_score(result: object, *, starting_cash: float = 1000.
     max_drawdown = max(0.0, _finite_float(getattr(result, "max_drawdown", 0.0)))
     closed_trades = int(_finite_float(getattr(result, "closed_trades", 0), 0.0))
     stopped_by_drawdown = bool(getattr(result, "stopped_by_drawdown", False))
+    stopped_by_liquidation = bool(getattr(result, "stopped_by_liquidation", False))
+    liquidation_events = max(0, int(_finite_float(getattr(result, "liquidation_events", 0), 0.0)))
     cash = max(1.0, _finite_float(starting_cash, 1000.0))
 
     score = realized - total_fees - (max_drawdown * cash)
     if stopped_by_drawdown:
         score -= cash * 0.5
+    if stopped_by_liquidation or liquidation_events > 0:
+        score -= cash * max(1.0, float(liquidation_events))
     if closed_trades <= 0:
         score -= cash * 0.05
     return float(score)
@@ -287,6 +300,30 @@ def _close_position(
     realized = position_side * (exit_price - entry_price) * qty
     exit_fee = abs(exit_price * qty) * fee_rate
     return margin_used + realized - exit_fee, realized, exit_fee
+
+
+def _futures_liquidation_state(
+    *,
+    market_type: str,
+    position_side: int,
+    price: float,
+    entry_price: float,
+    qty: float,
+    margin_used: float,
+    cfg: StrategyConfig,
+) -> tuple[bool, float, float]:
+    """Return liquidation state using a conservative isolated-margin proxy."""
+
+    if market_type != "futures" or position_side == 0 or qty <= 0.0 or entry_price <= 0.0:
+        return False, 0.0, 0.0
+    mark = max(0.0, _finite_float(price, 0.0))
+    current_notional = abs(mark * qty)
+    if current_notional <= 0.0:
+        return True, 0.0, 0.0
+    unrealized = position_side * (mark - entry_price) * qty
+    margin_balance = margin_used + unrealized
+    maintenance_margin = current_notional * max(0.0, _finite_float(cfg.liquidation_buffer_pct, 0.0))
+    return margin_balance <= maintenance_margin, float(margin_balance), float(maintenance_margin)
 
 
 def _safe_day(ts_ms: int) -> int:
@@ -651,7 +688,7 @@ def _threshold_grid(start: float, end: float, steps: int, baseline: float) -> li
     return sorted(set(round(_clamp_threshold(value), 12) for value in values))
 
 
-def _result_payload(result: BacktestResult) -> dict[str, float | int]:
+def _result_payload(result: BacktestResult) -> dict[str, float | int | bool]:
     return {
         "realized_pnl": float(result.realized_pnl),
         "total_fees": float(result.total_fees),
@@ -659,6 +696,9 @@ def _result_payload(result: BacktestResult) -> dict[str, float | int]:
         "win_rate": float(result.win_rate),
         "closed_trades": int(result.closed_trades),
         "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
+        "stopped_by_liquidation": bool(getattr(result, "stopped_by_liquidation", False)),
+        "liquidation_events": int(getattr(result, "liquidation_events", 0)),
+        "liquidation_loss": float(getattr(result, "liquidation_loss", 0.0)),
         "profit_factor": float(getattr(result, "profit_factor", 0.0)),
         "expectancy": float(getattr(result, "expectancy", 0.0)),
         "average_trade_return": float(getattr(result, "average_trade_return", 0.0)),
@@ -923,9 +963,14 @@ def calibrate_threshold_for_backtest(
         min_trades_per_day=min_daily,
         duration_days=span_days,
     )
+    has_no_liquidation = (
+        not bool(getattr(best_result, "stopped_by_liquidation", False))
+        and int(getattr(best_result, "liquidation_events", 0)) <= 0
+    )
     accepted = (
         has_profit_backed_result
         and has_trade_density
+        and has_no_liquidation
         and best_score > baseline_score + max(0.0, _finite_float(min_score_delta, 0.0))
     )
     selected_threshold = best_threshold if accepted else baseline_threshold
@@ -958,6 +1003,12 @@ def calibrate_threshold_for_backtest(
         best_edge_vs_buy_hold=float(best_payload["edge_vs_buy_hold"]),
         evaluated_thresholds=len(thresholds),
         rows=len(rows),
+        stopped_by_liquidation=bool(payload["stopped_by_liquidation"]),
+        liquidation_events=int(payload["liquidation_events"]),
+        liquidation_loss=float(payload["liquidation_loss"]),
+        best_stopped_by_liquidation=bool(best_payload["stopped_by_liquidation"]),
+        best_liquidation_events=int(best_payload["liquidation_events"]),
+        best_liquidation_loss=float(best_payload["liquidation_loss"]),
         scoring_backend_requested=str(score_backend.requested),
         scoring_backend_kind=str(score_backend.kind),
         scoring_backend_device=str(score_backend.device),
@@ -1020,6 +1071,9 @@ def run_backtest(
     meta_label_skips = 0
     meta_label_downsizes = 0
     regime_entry_skips = 0
+    stopped_by_liquidation = False
+    liquidation_events = 0
+    liquidation_loss = 0.0
 
     position_side = 0
     notional = 0.0
@@ -1192,32 +1246,26 @@ def run_backtest(
             max_exposure = max(max_exposure, abs(notional))
 
         elif position_side != 0:
-            current_pnl_pct = (price - entry_price) / entry_price if position_side > 0 else (entry_price - price) / entry_price
-            should_close = (
-                current_pnl_pct >= cfg.take_profit_pct
-                or current_pnl_pct <= -cfg.stop_loss_pct
-                or execution_signal == 0
-                or execution_signal == (-position_side)
+            liquidated, margin_balance, maintenance_margin = _futures_liquidation_state(
+                market_type=market_type,
+                position_side=position_side,
+                price=price,
+                entry_price=entry_price,
+                qty=qty,
+                margin_used=margin_used,
+                cfg=cfg,
             )
 
-            if should_close:
+            if liquidated:
                 closed_side = position_side
                 closed_notional = abs(notional)
                 closed_entry_price = entry_price
-                cash_delta, realized, exit_fee = _close_position(
-                    position_side=position_side,
-                    price=price,
-                    entry_price=entry_price,
-                    qty=qty,
-                    notional=notional,
-                    margin_used=margin_used,
-                    cfg=cfg,
-                    symbol_profile=symbol_profile,
-                )
-                cash += cash_delta
-                total_fees += exit_fee
+                liquidation_events += 1
+                stopped_by_liquidation = True
+                liquidation_loss += margin_used
                 closed_trades += 1
-                net_pnl = realized - entry_fee_paid - exit_fee
+                realized = -margin_used
+                net_pnl = realized - entry_fee_paid
                 return_pct = _trade_return(net_pnl, entry_equity_reference)
                 trade_pnls.append(float(net_pnl))
                 trade_returns.append(float(return_pct))
@@ -1232,14 +1280,17 @@ def run_backtest(
                     "net_pnl": float(net_pnl),
                     "return_pct": float(return_pct),
                     "entry_fee": float(entry_fee_paid),
-                    "exit_fee": float(exit_fee),
+                    "exit_fee": 0.0,
+                    "exit_reason": "liquidation",
+                    "liquidated": True,
+                    "liquidation_margin_balance": float(margin_balance),
+                    "liquidation_maintenance_margin": float(maintenance_margin),
+                    "liquidation_buffer_pct": float(cfg.liquidation_buffer_pct),
                     "meta_label_action": str(entry_meta.action),
                     "meta_label_size_multiplier": float(entry_meta.size_multiplier),
                     "meta_label_signal_strength": float(entry_meta.signal_strength),
                     "meta_label_reason": str(entry_meta.reason),
                 })
-                if realized > 0:
-                    wins += 1
 
                 position_side = 0
                 notional = 0.0
@@ -1248,8 +1299,67 @@ def run_backtest(
                 margin_used = 0.0
                 entry_fee_paid = 0.0
                 entry_equity_reference = cash
-                entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "reset")
+                entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "liquidation")
                 last_close_timestamp = row.timestamp
+            else:
+                current_pnl_pct = (price - entry_price) / entry_price if position_side > 0 else (entry_price - price) / entry_price
+                should_close = (
+                    current_pnl_pct >= cfg.take_profit_pct
+                    or current_pnl_pct <= -cfg.stop_loss_pct
+                    or execution_signal == 0
+                    or execution_signal == (-position_side)
+                )
+
+                if should_close:
+                    closed_side = position_side
+                    closed_notional = abs(notional)
+                    closed_entry_price = entry_price
+                    cash_delta, realized, exit_fee = _close_position(
+                        position_side=position_side,
+                        price=price,
+                        entry_price=entry_price,
+                        qty=qty,
+                        notional=notional,
+                        margin_used=margin_used,
+                        cfg=cfg,
+                        symbol_profile=symbol_profile,
+                    )
+                    cash += cash_delta
+                    total_fees += exit_fee
+                    closed_trades += 1
+                    net_pnl = realized - entry_fee_paid - exit_fee
+                    return_pct = _trade_return(net_pnl, entry_equity_reference)
+                    trade_pnls.append(float(net_pnl))
+                    trade_returns.append(float(return_pct))
+                    trade_log.append({
+                        "opened_at": int(entry_timestamp),
+                        "closed_at": int(row.timestamp),
+                        "side": int(closed_side),
+                        "gross_notional": float(closed_notional),
+                        "entry_price": float(closed_entry_price),
+                        "exit_mark_price": float(price),
+                        "realized_pnl": float(realized),
+                        "net_pnl": float(net_pnl),
+                        "return_pct": float(return_pct),
+                        "entry_fee": float(entry_fee_paid),
+                        "exit_fee": float(exit_fee),
+                        "meta_label_action": str(entry_meta.action),
+                        "meta_label_size_multiplier": float(entry_meta.size_multiplier),
+                        "meta_label_signal_strength": float(entry_meta.signal_strength),
+                        "meta_label_reason": str(entry_meta.reason),
+                    })
+                    if realized > 0:
+                        wins += 1
+
+                    position_side = 0
+                    notional = 0.0
+                    qty = 0.0
+                    entry_price = 0.0
+                    margin_used = 0.0
+                    entry_fee_paid = 0.0
+                    entry_equity_reference = cash
+                    entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "reset")
+                    last_close_timestamp = row.timestamp
 
         # mark-to-market drawdown control with unrealized exposure
         if position_side != 0:
@@ -1264,6 +1374,9 @@ def run_backtest(
         if dd > max_drawdown:
             max_drawdown = dd
         equity_curve.append(_equity_point(int(row.timestamp), equity, dd, position_side))
+
+        if stopped_by_liquidation:
+            break
 
         if cfg.max_drawdown_limit > 0.0 and dd >= cfg.max_drawdown_limit:
             stopped_by_drawdown = True
@@ -1366,5 +1479,8 @@ def run_backtest(
         meta_label_skips=int(meta_label_skips),
         meta_label_downsizes=int(meta_label_downsizes),
         regime_entry_skips=int(regime_entry_skips),
+        stopped_by_liquidation=bool(stopped_by_liquidation),
+        liquidation_events=int(liquidation_events),
+        liquidation_loss=float(liquidation_loss),
         **_score_backend_payload(score_backend),
     )

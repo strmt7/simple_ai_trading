@@ -34,6 +34,9 @@ class MarketEdgeReport:
     min_trades_per_day: float
     risk_gate_skip_count: int
     activity_gate_risk_explained: bool
+    stopped_by_liquidation: bool
+    liquidation_events: int
+    liquidation_loss: float
     profit_factor: float
     min_profit_factor: float | None
     expectancy: float
@@ -187,6 +190,9 @@ def build_market_edge_report(
     net_edge = _finite(getattr(result, "edge_vs_buy_hold", realized_pnl - benchmark_pnl))
     net_edge_pct = net_edge / cash
     closed_trades = int(max(0.0, _finite(getattr(result, "closed_trades", 0), 0.0)))
+    stopped_by_liquidation = bool(getattr(result, "stopped_by_liquidation", False))
+    liquidation_events = int(max(0.0, _finite(getattr(result, "liquidation_events", 0), 0.0)))
+    liquidation_loss = max(0.0, _finite(getattr(result, "liquidation_loss", 0.0)))
     min_closed_trades = max(0, int(spec.min_closed_trades))
     trades_per_day = closed_trades_per_day(result)
     skip_count = risk_gate_skip_count(result)
@@ -224,6 +230,8 @@ def build_market_edge_report(
     expectancy = _finite(getattr(result, "expectancy", 0.0))
 
     failed: list[str] = []
+    if stopped_by_liquidation or liquidation_events > 0:
+        failed.append("liquidation_events>0")
     if realized_pnl <= 0.0:
         failed.append("realized_pnl<=0.0")
     if spec.min_market_edge_pct is not None and net_edge_pct < float(spec.min_market_edge_pct):
@@ -266,6 +274,9 @@ def build_market_edge_report(
         min_trades_per_day=float(spec.min_trades_per_day),
         risk_gate_skip_count=int(skip_count),
         activity_gate_risk_explained=bool(activity_gate_risk_explained),
+        stopped_by_liquidation=bool(stopped_by_liquidation),
+        liquidation_events=int(liquidation_events),
+        liquidation_loss=float(liquidation_loss),
         profit_factor=float(profit_factor),
         min_profit_factor=float(spec.min_profit_factor) if spec.min_profit_factor is not None else None,
         expectancy=float(expectancy),

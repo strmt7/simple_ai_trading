@@ -77,6 +77,44 @@ def test_backtest_clamps_futures_leverage_and_drawdown_breaks() -> None:
     assert result.closed_trades >= 1
 
 
+def test_backtest_futures_liquidation_wipes_isolated_margin_and_stops() -> None:
+    rows = [
+        _flat_row(0, close=100.0, score=10.0, label=1),
+        _flat_row(60_000, close=100.0, score=10.0, label=1),
+        _flat_row(120_000, close=97.0, score=10.0, label=1),
+        _flat_row(180_000, close=130.0, score=10.0, label=1),
+    ]
+    cfg = StrategyConfig(
+        leverage=20.0,
+        risk_per_trade=0.5,
+        max_position_pct=1.0,
+        signal_threshold=0.55,
+        take_profit_pct=10.0,
+        stop_loss_pct=1.0,
+        max_drawdown_limit=0.50,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        liquidation_buffer_pct=0.03,
+    )
+
+    result = run_backtest(rows, _simple_model(10.0), cfg, starting_cash=1000.0, market_type="futures")
+
+    assert result.stopped_by_liquidation is True
+    assert result.liquidation_events == 1
+    assert result.liquidation_loss == pytest.approx(25.0)
+    assert result.closed_trades == 1
+    assert result.ending_cash == pytest.approx(975.0)
+    assert result.realized_pnl == pytest.approx(-25.0)
+    assert result.trade_log[0]["exit_reason"] == "liquidation"
+    assert result.trade_log[0]["liquidated"] is True
+    entry_price = float(result.trade_log[0]["entry_price"])
+    qty = 500.0 / entry_price
+    expected_margin_balance = 25.0 + (97.0 - entry_price) * qty
+    expected_maintenance = 97.0 * qty * 0.03
+    assert result.trade_log[0]["liquidation_margin_balance"] == pytest.approx(expected_margin_balance)
+    assert result.trade_log[0]["liquidation_maintenance_margin"] == pytest.approx(expected_maintenance)
+
+
 def test_backtest_empty_rows_returns_identity_state() -> None:
     result = run_backtest([], _simple_model(), StrategyConfig(), starting_cash=750.0)
     assert result.starting_cash == 750.0
@@ -189,6 +227,52 @@ def test_threshold_calibration_rejects_no_trade_profit_label(monkeypatch) -> Non
     assert report.accepted is False
     assert report.threshold == 0.5
     assert report.realized_pnl == -100.0
+
+
+def test_threshold_calibration_rejects_liquidated_best_candidate(monkeypatch) -> None:
+    rows = [_flat_row(0, close=100.0, score=10.0, label=1)]
+    calls = {"count": 0}
+
+    def result(realized_pnl: float, closed_trades: int, *, liquidated: bool = False) -> backtest_mod.BacktestResult:
+        return backtest_mod.BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + realized_pnl,
+            realized_pnl=realized_pnl,
+            win_rate=1.0 if closed_trades else 0.0,
+            trades=closed_trades,
+            max_drawdown=0.05,
+            closed_trades=closed_trades,
+            gross_exposure=100.0 if closed_trades else 0.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0 if closed_trades else 0.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=realized_pnl,
+            stopped_by_liquidation=liquidated,
+            liquidation_events=1 if liquidated else 0,
+            liquidation_loss=25.0 if liquidated else 0.0,
+        )
+
+    def fake_run_backtest(*_args, **_kwargs):
+        calls["count"] += 1
+        return result(0.0, 0) if calls["count"] == 1 else result(2500.0, 8, liquidated=True)
+
+    monkeypatch.setattr(backtest_mod, "run_backtest", fake_run_backtest)
+    report = calibrate_threshold_for_backtest(
+        rows,
+        _simple_model(10.0),
+        StrategyConfig(signal_threshold=0.5),
+        starting_cash=1000.0,
+        baseline_threshold=0.5,
+        start=0.60,
+        end=0.60,
+        steps=2,
+    )
+
+    assert report.accepted is False
+    assert report.best_liquidation_events == 1
+    assert report.best_stopped_by_liquidation is True
+    assert report.liquidation_events == 0
 
 
 def test_threshold_calibration_preserves_rejected_trade_diagnostics(monkeypatch) -> None:

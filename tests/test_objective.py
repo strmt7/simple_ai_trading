@@ -88,6 +88,14 @@ def test_conservative_rejects_on_stopped_by_drawdown():
     assert obj.CONSERVATIVE.accepts(r) is False
 
 
+def test_objectives_reject_liquidation_events():
+    r = _result(stopped_by_liquidation=True, liquidation_events=1, liquidation_loss=25.0)
+
+    for spec in (obj.CONSERVATIVE, obj.REGULAR, obj.AGGRESSIVE):
+        assert spec.accepts(r) is False
+        assert "liquidation_events>0" in spec.rejection_reasons(r)
+
+
 def test_min_closed_trades_gate():
     unexplained = _result(closed_trades=1)
     risk_gated = _result(closed_trades=1, regime_entry_skips=8)

@@ -609,6 +609,11 @@ def _rejection_reasons(objective: ObjectiveSpec, result: BacktestResult) -> list
         reasons.append("realized_pnl<=0.0")
     if result.stopped_by_drawdown and "stopped_by_drawdown" not in reasons:
         reasons.append("stopped_by_drawdown")
+    if (
+        bool(getattr(result, "stopped_by_liquidation", False))
+        or int(getattr(result, "liquidation_events", 0)) > 0
+    ) and "liquidation_events>0" not in reasons:
+        reasons.append("liquidation_events>0")
     return reasons
 
 
@@ -621,6 +626,9 @@ def _gate_result_payload(result: BacktestResult, objective: ObjectiveSpec | None
         "total_fees": float(result.total_fees),
         "edge_vs_buy_hold": float(result.edge_vs_buy_hold),
         "stopped_by_drawdown": bool(result.stopped_by_drawdown),
+        "stopped_by_liquidation": bool(getattr(result, "stopped_by_liquidation", False)),
+        "liquidation_events": int(getattr(result, "liquidation_events", 0)),
+        "liquidation_loss": float(getattr(result, "liquidation_loss", 0.0)),
     }
     if objective is not None:
         reasons = _rejection_reasons(objective, result)
@@ -1222,7 +1230,13 @@ def _purged_walk_forward_gate(
                 compute_backend=compute_backend,
                 score_batch_size=score_batch_size,
             )
-            accepted = objective.accepts(result) and result.realized_pnl > 0.0 and not result.stopped_by_drawdown
+            accepted = (
+                objective.accepts(result)
+                and result.realized_pnl > 0.0
+                and not result.stopped_by_drawdown
+                and not bool(getattr(result, "stopped_by_liquidation", False))
+                and int(getattr(result, "liquidation_events", 0)) <= 0
+            )
             score = objective.score(result) if accepted else float("-inf")
             if accepted:
                 accepted_folds += 1
