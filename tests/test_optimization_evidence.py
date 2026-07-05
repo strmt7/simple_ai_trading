@@ -203,6 +203,99 @@ class _LowLiquidityClient(_SelectionClient):
         ]
 
 
+class _MixedLiquidityClient(_SelectionClient):
+    def get_exchange_info(self) -> dict[str, object]:
+        return {
+            "symbols": [
+                {"symbol": "BTCUSDT", "status": "TRADING", "baseAsset": "BTC", "quoteAsset": "USDT"},
+                {"symbol": "SMALLUSDT", "status": "TRADING", "baseAsset": "SMALL", "quoteAsset": "USDT"},
+            ]
+        }
+
+    def get_all_tickers_24h(self) -> list[dict[str, object]]:
+        return [
+            {
+                "symbol": "BTCUSDT",
+                "quoteVolume": "2500000000",
+                "count": "1200000",
+                "lastPrice": "60000",
+                "weightedAvgPrice": "59800",
+                "highPrice": "61200",
+                "lowPrice": "58500",
+            },
+            {
+                "symbol": "SMALLUSDT",
+                "quoteVolume": "12000000",
+                "count": "12000",
+                "lastPrice": "2.0",
+                "weightedAvgPrice": "2.0",
+                "highPrice": "2.4",
+                "lowPrice": "1.8",
+            },
+        ]
+
+    def get_all_book_tickers(self) -> list[dict[str, object]]:
+        return [
+            {
+                "symbol": "BTCUSDT",
+                "bidPrice": "60000.00",
+                "bidQty": "50",
+                "askPrice": "60001.00",
+                "askQty": "45",
+            },
+            {
+                "symbol": "SMALLUSDT",
+                "bidPrice": "2.00",
+                "bidQty": "50000",
+                "askPrice": "2.002",
+                "askQty": "50000",
+            },
+        ]
+
+
+def test_select_top_liquidity_symbols_defaults_to_strict_live_eligible() -> None:
+    strict = oe.select_top_liquidity_symbols(_MixedLiquidityClient(), StrategyConfig(), count=2)
+    research = oe.select_top_liquidity_symbols(
+        _MixedLiquidityClient(),
+        StrategyConfig(),
+        count=2,
+        strict_only=False,
+    )
+
+    assert [item.symbol for item in strict] == ["BTCUSDT"]
+    assert all(item.strict_default_eligible for item in strict)
+    assert [item.symbol for item in research] == ["BTCUSDT", "SMALLUSDT"]
+    small = research[1]
+    assert small.tier == "research-high-liquidity"
+    assert "quote_volume_below_default_live_gate" in small.reasons
+    assert "trade_count_below_default_live_gate" in small.reasons
+
+
+def test_build_round_evidence_blocks_strict_liquidity_shortfall_before_training(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_fetch(*_args, **_kwargs):
+        raise AssertionError("fetch should not start when strict liquidity selection is short")
+
+    monkeypatch.setattr(oe, "fetch_full_history", fail_fetch)
+
+    with pytest.raises(ValueError, match="strict_liquidity_selection_shortfall"):
+        oe.build_round_evidence(
+            round_id="round-test-strict-shortfall",
+            client=_MixedLiquidityClient(),
+            strategy=StrategyConfig(),
+            quote_asset="USDT",
+            symbol_count=2,
+            interval="1m",
+            market_type="futures",
+            objective_name="conservative",
+            data_root=tmp_path / "data" / "optimization",
+            docs_root=tmp_path / "docs" / "optimization",
+            db_path=tmp_path / "market.sqlite",
+        )
+
+
 def test_market_data_health_accepts_verified_contiguous_archive(tmp_path: Path) -> None:
     db_path = tmp_path / "market.sqlite"
     archive_url = "https://data.binance.vision/data/spot/daily/klines/ETHUSDT/1s/ETHUSDT-1s-2026-01-01.zip"
