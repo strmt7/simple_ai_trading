@@ -39,6 +39,7 @@ def test_market_edge_report_accepts_benchmark_outperformance_with_samples() -> N
     assert report.net_edge_pct > 0.03
     assert report.sample_count == 5
     assert report.sign_test_p_value <= report.max_sign_test_p_value
+    assert report.downside_return_risk_ratio == 999.0
 
 
 def test_market_edge_report_rejects_tiny_edge_over_passive_market() -> None:
@@ -57,6 +58,32 @@ def test_market_edge_report_rejects_missing_trade_level_evidence() -> None:
     assert report.accepted is False
     assert "sample_count<3" in report.failed_checks
     assert report.evidence_unit == "none"
+
+
+def test_market_edge_report_rejects_profit_with_bad_downside_tail() -> None:
+    trade_returns = tuple([0.006] * 19 + [-0.040])
+    report = build_market_edge_report(
+        _result(
+            realized_pnl=74.0,
+            ending_cash=1074.0,
+            buy_hold_pnl=5.0,
+            edge_vs_buy_hold=69.0,
+            closed_trades=20,
+            trades=20,
+            win_rate=0.95,
+            trade_returns=trade_returns,
+            trade_pnls=tuple(value * 1000.0 for value in trade_returns),
+            gross_profit=114.0,
+            gross_loss=40.0,
+            profit_factor=2.85,
+            expectancy=3.7,
+        ),
+        "conservative",
+    )
+
+    assert report.accepted is False
+    assert report.downside_return_risk_ratio < report.min_downside_return_risk_ratio
+    assert "downside_return_risk_ratio<0.4500" in report.failed_checks
 
 
 def test_market_edge_allows_risk_explained_activity_shortfall() -> None:

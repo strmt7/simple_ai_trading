@@ -48,6 +48,9 @@ class MarketEdgeReport:
     mean_sample_return: float
     median_sample_return: float
     sample_return_stdev: float
+    downside_sample_stdev: float
+    downside_return_risk_ratio: float
+    min_downside_return_risk_ratio: float
     sign_test_p_value: float
     max_sign_test_p_value: float
     bootstrap_confidence: float
@@ -101,6 +104,23 @@ def _stdev(values: list[float]) -> float:
     return math.sqrt(max(0.0, variance))
 
 
+def _downside_stdev(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    downside_squares = [min(0.0, value) ** 2 for value in values]
+    return math.sqrt(max(0.0, sum(downside_squares) / len(values)))
+
+
+def _downside_return_risk_ratio(values: list[float]) -> tuple[float, float]:
+    if not values:
+        return 0.0, 0.0
+    mean_return = sum(values) / len(values)
+    downside = _downside_stdev(values)
+    if downside <= 0.0:
+        return downside, 999.0 if mean_return > 0.0 else 0.0
+    return downside, mean_return / downside
+
+
 def _binomial_upper_tail(trials: int, successes: int) -> float:
     if trials <= 0 or successes <= 0:
         return 1.0
@@ -129,6 +149,14 @@ def _max_sign_test_p_value(objective: ObjectiveSpec) -> float:
     if objective.name == "aggressive":
         return 0.40
     return 0.35
+
+
+def _min_downside_return_risk_ratio(objective: ObjectiveSpec) -> float:
+    if objective.name == "conservative":
+        return 0.45
+    if objective.name == "aggressive":
+        return 0.20
+    return 0.30
 
 
 def _sample_returns(result: BacktestResult, *, cash: float) -> tuple[str, list[float], int, int]:
@@ -183,6 +211,8 @@ def build_market_edge_report(
     positive_count = sum(1 for value in samples if value > 0.0)
     mean_return = sum(samples) / len(samples) if samples else 0.0
     median_return = _quantile(samples, 0.5)
+    downside_stdev, downside_risk_ratio = _downside_return_risk_ratio(samples)
+    min_downside_risk_ratio = _min_downside_return_risk_ratio(spec)
     lower_mean = _bootstrap_lower_mean_return(
         samples,
         confidence=bootstrap_confidence,
@@ -208,6 +238,8 @@ def build_market_edge_report(
         failed.append(f"sign_test_p_value>{max_sign_p:.4f}")
     if samples and lower_mean < min_bootstrap_lower_mean_return:
         failed.append(f"bootstrap_lower_mean_return<{min_bootstrap_lower_mean_return:.4f}")
+    if samples and downside_risk_ratio < min_downside_risk_ratio:
+        failed.append(f"downside_return_risk_ratio<{min_downside_risk_ratio:.4f}")
     if spec.min_profit_factor is not None and profit_factor > 0.0 and profit_factor < float(spec.min_profit_factor):
         failed.append(f"profit_factor<{float(spec.min_profit_factor):.6f}")
     if spec.min_expectancy is not None and expectancy != 0.0 and expectancy <= float(spec.min_expectancy):
@@ -248,6 +280,9 @@ def build_market_edge_report(
         mean_sample_return=float(mean_return),
         median_sample_return=float(median_return),
         sample_return_stdev=float(_stdev(samples)),
+        downside_sample_stdev=float(downside_stdev),
+        downside_return_risk_ratio=float(downside_risk_ratio),
+        min_downside_return_risk_ratio=float(min_downside_risk_ratio),
         sign_test_p_value=float(sign_p),
         max_sign_test_p_value=float(max_sign_p),
         bootstrap_confidence=float(bootstrap_confidence),
