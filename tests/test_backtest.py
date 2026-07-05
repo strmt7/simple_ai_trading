@@ -1022,3 +1022,30 @@ def test_run_backtest_rejects_bad_precomputed_regime_score_length() -> None:
 
     with pytest.raises(ValueError, match="precomputed_regime_scores length mismatch"):
         run_backtest(rows, model, StrategyConfig(), precomputed_regime_scores=[0.0])
+
+
+def test_precomputed_regime_scores_match_slice_classifier() -> None:
+    closes = [
+        100.0,
+        101.0,
+        99.0,
+        102.0,
+        98.0,
+        103.0,
+        97.0,
+        104.0,
+        103.5,
+        104.5,
+        105.2,
+        104.8,
+    ]
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=close, features=(1.0,), label=1)
+        for index, close in enumerate(closes)
+    ]
+    cfg = StrategyConfig(liquidity_lookback_bars=8)
+
+    fast = backtest_module.precompute_backtest_regime_scores(rows, cfg)
+    slow = backtest_module._precompute_backtest_regime_scores_slow(rows, cfg)
+
+    assert fast == pytest.approx(slow)
