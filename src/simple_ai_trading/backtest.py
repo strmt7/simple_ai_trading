@@ -553,6 +553,130 @@ def precompute_backtest_regime_scores(rows: Sequence[ModelRow], cfg: StrategyCon
     row_list = list(rows)
     if not row_list:
         return []
+    closes = [_finite_float(getattr(row, "close", float("nan")), float("nan")) for row in row_list]
+    if any(not math.isfinite(value) or value <= 0.0 for value in closes):
+        return _precompute_backtest_regime_scores_slow(row_list, cfg)
+    regime_gate_min_rows = max(8, min(len(row_list), int(cfg.liquidity_lookback_bars)))
+    lookback = max(8, int(cfg.liquidity_lookback_bars))
+    scores: list[float] = [0.0] * len(row_list)
+    returns = [0.0] * len(row_list)
+    for index in range(1, len(closes)):
+        returns[index] = (closes[index] / closes[index - 1]) - 1.0 if closes[index - 1] > 0.0 else 0.0
+
+    def prefix(values: Sequence[float]) -> list[float]:
+        total = 0.0
+        output = [0.0]
+        for value in values:
+            total += float(value)
+            output.append(total)
+        return output
+
+    def range_sum(values: Sequence[float], start: int, end: int) -> float:
+        if end < start:
+            return 0.0
+        return values[end + 1] - values[start]
+
+    return_prefix = prefix(returns)
+    return_square_prefix = prefix([value * value for value in returns])
+    abs_return_prefix = prefix([abs(value) for value in returns])
+    adjacent_product_prefix = prefix([
+        returns[index] * returns[index + 1] if 1 <= index < len(returns) - 1 else 0.0
+        for index in range(len(returns))
+    ])
+
+    for row_index in range(len(row_list)):
+        if row_index + 1 < regime_gate_min_rows:
+            continue
+        regime_window_start = max(0, row_index + 1 - lookback)
+        return_start = regime_window_start + 1
+        return_end = row_index
+        return_count = max(0, return_end - return_start + 1)
+        if return_count <= 0:
+            scores[row_index] = market_regime_unpredictability("insufficient_data", 0.0, ("no_valid_returns",))
+            continue
+        return_sum = range_sum(return_prefix, return_start, return_end)
+        return_square_sum = range_sum(return_square_prefix, return_start, return_end)
+        abs_return_sum = range_sum(abs_return_prefix, return_start, return_end)
+        trend_return = (closes[row_index] / closes[regime_window_start]) - 1.0
+        if return_count < 2:
+            volatility = 0.0
+        else:
+            variance = (return_square_sum - (return_sum * return_sum / return_count)) / max(1, return_count - 1)
+            volatility = math.sqrt(max(0.0, variance))
+        mean_abs = abs_return_sum / return_count
+
+        positive = 0
+        negative = 0
+        reversals = 0
+        previous_sign = 0
+        for return_index in range(return_start, return_end + 1):
+            sign = 1 if returns[return_index] > 0.0 else (-1 if returns[return_index] < 0.0 else 0)
+            if sign == 0:
+                continue
+            if sign > 0:
+                positive += 1
+            else:
+                negative += 1
+            if previous_sign and sign != previous_sign:
+                reversals += 1
+            previous_sign = sign
+        sign_count = positive + negative
+        direction_consistency = max(positive, negative) / sign_count if sign_count else 0.0
+        reversal_rate = reversals / max(1, sign_count - 1) if sign_count else 0.0
+
+        if return_count < 3:
+            autocorrelation = 0.0
+        else:
+            pair_count = return_count - 1
+            left_start = return_start
+            left_end = return_end - 1
+            right_start = return_start + 1
+            right_end = return_end
+            left_sum = range_sum(return_prefix, left_start, left_end)
+            right_sum = range_sum(return_prefix, right_start, right_end)
+            left_square_sum = range_sum(return_square_prefix, left_start, left_end)
+            right_square_sum = range_sum(return_square_prefix, right_start, right_end)
+            pair_sum = range_sum(adjacent_product_prefix, left_start, left_end)
+            left_mean = left_sum / pair_count
+            right_mean = right_sum / pair_count
+            covariance = pair_sum - left_mean * right_sum - right_mean * left_sum + pair_count * left_mean * right_mean
+            left_var = left_square_sum - 2.0 * left_mean * left_sum + pair_count * left_mean * left_mean
+            right_var = right_square_sum - 2.0 * right_mean * right_sum + pair_count * right_mean * right_mean
+            denominator = math.sqrt(max(0.0, left_var * right_var))
+            autocorrelation = 0.0 if denominator <= 1e-12 else max(-1.0, min(1.0, covariance / denominator))
+
+        noise_floor = max(1e-9, mean_abs * math.sqrt(return_count), volatility * math.sqrt(return_count))
+        trend_strength = abs(trend_return) / noise_floor
+        volatility_floor = max(0.0005, mean_abs * 1.8)
+        notes: list[str] = []
+        if volatility >= volatility_floor and reversal_rate >= 0.55:
+            regime = "volatile_chop"
+            confidence = min(1.0, 0.45 + 0.35 * reversal_rate + 0.20 * min(2.0, volatility / volatility_floor) / 2.0)
+        elif trend_strength >= 1.15 and direction_consistency >= 0.55:
+            regime = "trend_up" if trend_return > 0.0 else "trend_down"
+            confidence = min(1.0, 0.40 + 0.35 * min(2.0, trend_strength) / 2.0 + 0.25 * direction_consistency)
+        elif reversal_rate >= 0.50 and trend_strength < 0.85:
+            regime = "range_bound"
+            confidence = min(1.0, 0.45 + 0.35 * reversal_rate + 0.20 * (1.0 - min(1.0, trend_strength)))
+        elif abs(autocorrelation) >= 0.35:
+            regime = "serial_correlation"
+            confidence = min(1.0, 0.50 + 0.50 * abs(autocorrelation))
+        else:
+            regime = "mixed"
+            confidence = max(0.20, min(0.70, 0.35 + 0.20 * direction_consistency + 0.15 * min(1.0, trend_strength)))
+            notes.append("low_regime_separation")
+        if mean_abs <= 1e-9:
+            notes.append("flat_returns")
+        if return_count < 10:
+            notes.append("short_window")
+        scores[row_index] = market_regime_unpredictability(regime, confidence, notes)
+    return scores
+
+
+def _precompute_backtest_regime_scores_slow(rows: Sequence[ModelRow], cfg: StrategyConfig) -> list[float]:
+    row_list = list(rows)
+    if not row_list:
+        return []
     regime_gate_min_rows = max(8, min(len(row_list), int(cfg.liquidity_lookback_bars)))
     lookback = max(8, int(cfg.liquidity_lookback_bars))
     scores: list[float] = [0.0] * len(row_list)
