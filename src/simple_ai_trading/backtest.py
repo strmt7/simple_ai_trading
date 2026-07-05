@@ -3,7 +3,7 @@
 from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass, replace
-from typing import Dict, List
+from typing import Dict, List, Sequence
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
@@ -568,6 +568,12 @@ def calibrate_threshold_for_backtest(
     if market_type == "futures":
         baseline_threshold = max(0.5, baseline_threshold)
         start = max(0.5, float(start))
+    probabilities, score_backend = _backtest_probabilities(
+        rows,
+        model,
+        compute_backend=compute_backend,
+        batch_size=score_batch_size,
+    )
     baseline_model = replace(model, decision_threshold=baseline_threshold)
     baseline_result = run_backtest(
         rows,
@@ -577,6 +583,8 @@ def calibrate_threshold_for_backtest(
         market_type=market_type,
         compute_backend=compute_backend,
         score_batch_size=score_batch_size,
+        precomputed_probabilities=probabilities,
+        precomputed_score_backend=score_backend,
     )
     baseline_score = risk_adjusted_backtest_score(baseline_result, starting_cash=starting_cash)
     best_threshold = baseline_threshold
@@ -594,6 +602,8 @@ def calibrate_threshold_for_backtest(
             market_type=market_type,
             compute_backend=compute_backend,
             score_batch_size=score_batch_size,
+            precomputed_probabilities=probabilities,
+            precomputed_score_backend=score_backend,
         )
         score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
         if (
@@ -647,6 +657,8 @@ def run_backtest(
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
     symbol_profile: SymbolExecutionProfile | None = None,
+    precomputed_probabilities: Sequence[float] | None = None,
+    precomputed_score_backend: BackendInfo | None = None,
 ) -> BacktestResult:
     score_backend = resolve_backend(effective_training_backend_name(compute_backend))
     if not rows:
@@ -717,12 +729,21 @@ def run_backtest(
 
     max_open_positions = int(cfg.max_open_positions)
     regime_gate_min_rows = max(8, min(len(rows), int(cfg.liquidity_lookback_bars)))
-    probabilities, score_backend = _backtest_probabilities(
-        rows,
-        model,
-        compute_backend=compute_backend,
-        batch_size=score_batch_size,
-    )
+    if precomputed_probabilities is not None:
+        probabilities = [float(value) for value in precomputed_probabilities]
+        if len(probabilities) != len(rows):
+            raise ValueError(
+                f"precomputed_probabilities length mismatch: {len(probabilities)}/{len(rows)}"
+            )
+        if precomputed_score_backend is not None:
+            score_backend = precomputed_score_backend
+    else:
+        probabilities, score_backend = _backtest_probabilities(
+            rows,
+            model,
+            compute_backend=compute_backend,
+            batch_size=score_batch_size,
+        )
 
     for row_index, (row, raw_score) in enumerate(zip(rows, probabilities, strict=True)):
         execution_signal = pending_signal
