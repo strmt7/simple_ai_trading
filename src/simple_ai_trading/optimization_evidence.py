@@ -94,6 +94,16 @@ class BacktestEvidence:
     duration_years: float
     candles: int
     rows: int
+    training_rows: int
+    training_positive_rate_pct: float
+    model_training_backend_kind: str
+    model_training_backend_device: str
+    probability_calibration_backend_kind: str
+    probability_calibration_backend_device: str
+    threshold_source: str | None
+    threshold_calibration_score: float | None
+    threshold_calibration_pnl: float | None
+    threshold_calibration_trades: int
     starting_cash: float
     ending_cash: float
     realized_pnl: float
@@ -918,6 +928,16 @@ def train_round_model(
     if calibration.status != "fail":
         model.probability_temperature = float(calibration.temperature)
         model.probability_calibration_size = int(calibration.rows)
+        model.probability_log_loss_before = float(calibration.log_loss_before)
+        model.probability_log_loss_after = float(calibration.log_loss_after)
+        model.probability_brier_before = float(calibration.brier_before)
+        model.probability_brier_after = float(calibration.brier_after)
+        model.probability_ece_before = float(calibration.expected_calibration_error_before)
+        model.probability_ece_after = float(calibration.expected_calibration_error_after)
+        model.probability_calibration_backend_requested = str(calibration.calibration_backend_requested)
+        model.probability_calibration_backend_kind = str(calibration.calibration_backend_kind)
+        model.probability_calibration_backend_device = str(calibration.calibration_backend_device)
+        model.probability_calibration_backend_reason = str(calibration.calibration_backend_reason)
     model.decision_threshold = float(objective.training.signal_threshold if objective.training else strategy.signal_threshold)
     model.threshold_source = "objective_round_evidence_default"
     threshold_report = calibrate_threshold_for_backtest(
@@ -1385,6 +1405,32 @@ def build_round_evidence(
                 ),
                 candles=len(candles),
                 rows=len(validation_rows),
+                training_rows=int(getattr(train_report, "row_count", 0) or 0),
+                training_positive_rate_pct=float(getattr(train_report, "positive_rate", 0.0) or 0.0) * 100.0,
+                model_training_backend_kind=str(getattr(model, "training_backend_kind", "")),
+                model_training_backend_device=str(getattr(model, "training_backend_device", "")),
+                probability_calibration_backend_kind=str(
+                    getattr(model, "probability_calibration_backend_kind", "")
+                ),
+                probability_calibration_backend_device=str(
+                    getattr(model, "probability_calibration_backend_device", "")
+                ),
+                threshold_source=(
+                    str(getattr(model, "threshold_source"))
+                    if getattr(model, "threshold_source", None) is not None
+                    else None
+                ),
+                threshold_calibration_score=(
+                    float(getattr(model, "threshold_calibration_score"))
+                    if getattr(model, "threshold_calibration_score", None) is not None
+                    else None
+                ),
+                threshold_calibration_pnl=(
+                    float(getattr(model, "threshold_calibration_pnl"))
+                    if getattr(model, "threshold_calibration_pnl", None) is not None
+                    else None
+                ),
+                threshold_calibration_trades=int(getattr(model, "threshold_calibration_trades", 0) or 0),
                 starting_cash=float(result.starting_cash),
                 ending_cash=float(result.ending_cash),
                 realized_pnl=float(result.realized_pnl),
@@ -1428,6 +1474,16 @@ def build_round_evidence(
                 duration_years=float(coverage.used_duration_years if coverage is not None else 0.0),
                 candles=len(candles),
                 rows=0,
+                training_rows=0,
+                training_positive_rate_pct=0.0,
+                model_training_backend_kind="error",
+                model_training_backend_device="error",
+                probability_calibration_backend_kind="error",
+                probability_calibration_backend_device="error",
+                threshold_source=None,
+                threshold_calibration_score=None,
+                threshold_calibration_pnl=None,
+                threshold_calibration_trades=0,
                 starting_cash=float(starting_cash),
                 ending_cash=float(starting_cash),
                 realized_pnl=0.0,

@@ -336,6 +336,10 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         probability_brier_after=0.22,
         probability_ece_before=0.20,
         probability_ece_after=0.15,
+        probability_calibration_backend_requested="directml",
+        probability_calibration_backend_kind="directml",
+        probability_calibration_backend_device="privateuseone:0",
+        probability_calibration_backend_reason="",
         threshold_source="profit_backtest",
         threshold_calibration_score=12.3,
         threshold_calibration_pnl=4.5,
@@ -403,6 +407,9 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     assert loaded.probability_temperature == 2.0
     assert loaded.probability_calibration_size == 6
     assert loaded.probability_brier_after == 0.22
+    assert loaded.probability_calibration_backend_requested == "directml"
+    assert loaded.probability_calibration_backend_kind == "directml"
+    assert loaded.probability_calibration_backend_device == "privateuseone:0"
     assert loaded.threshold_source == "profit_backtest"
     assert loaded.threshold_calibration_score == 12.3
     assert loaded.threshold_calibration_pnl == 4.5
