@@ -219,6 +219,9 @@ Futures safety:
   in the live/autonomous path is the notional-aware setup immediately before a
   fresh bot-owned futures open.
 - Liquidation buffer is part of strategy config, risk reporting, backtest evidence, and promotion gates.
+- Signed non-dry futures preflight blocks when the liquidation buffer is disabled.
+  Signed non-dry operation also blocks when the stop-loss percentage is disabled;
+  paper mode keeps these as explicit warnings for research only.
 - Futures backtests use a conservative isolated-margin liquidation proxy derived from the same maintenance-margin concept used by Binance futures: `margin_balance = isolated_margin + unrealized_pnl`; if that balance is less than or equal to `current_notional * liquidation_buffer_pct`, the isolated margin is treated as lost, the position is cleared, `liquidation_events` is incremented, and no threshold, objective, market-edge, stress, temporal, or optimization report can be accepted.
 - The proxy deliberately fails closed when historical rows gap through a liquidation boundary. It does not assume a favorable stop-loss fill after the maintenance-plus-buffer condition has already been breached.
 - Leverage is subordinate to stop-loss-sized position sizing, position caps, daily/session loss budgets, exchange brackets, and reconciliation gates. A higher default does not authorize larger loss-at-stop budgets.

@@ -278,6 +278,28 @@ def build_risk_policy_report(
             limit=f"<={MAX_AUTONOMOUS_LEVERAGE:.0f} hard",
         )
     )
+    if runtime.market_type == "futures":
+        liquidation_buffer = _finite(strategy.liquidation_buffer_pct)
+        if liquidation_buffer <= 0.0:
+            checks.append(
+                _check(
+                    "warn" if dry_run else "block",
+                    "liquidation buffer",
+                    "disabled",
+                    metric=liquidation_buffer,
+                    limit=">0 futures maintenance-plus-buffer proxy",
+                )
+            )
+        else:
+            checks.append(
+                _check(
+                    "ok" if liquidation_buffer >= 0.01 else "warn",
+                    "liquidation buffer",
+                    f"{liquidation_buffer:.2%}",
+                    metric=liquidation_buffer,
+                    limit=">=1% preferred",
+                )
+            )
     risk_per_trade = _finite(strategy.risk_per_trade)
     checks.append(
         _check(
@@ -311,9 +333,9 @@ def build_risk_policy_report(
     take_profit = _finite(strategy.take_profit_pct)
     checks.append(
         _check(
-            "warn" if stop_loss <= 0.0 else "ok",
+            ("ok" if stop_loss > 0.0 else ("warn" if dry_run else "block")),
             "stop loss",
-            f"{stop_loss:.2%}",
+            f"{stop_loss:.2%}" if stop_loss > 0.0 else "disabled",
             metric=stop_loss,
             limit=">0",
         )

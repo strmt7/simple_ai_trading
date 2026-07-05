@@ -85,6 +85,33 @@ def test_stop_loss_sizing_never_exceeds_per_trade_risk_budget() -> None:
             assert estimated_loss_pct <= strategy.risk_per_trade + 1e-12
 
 
+def test_signed_futures_policy_blocks_disabled_stop_loss_and_liquidation_buffer() -> None:
+    report = build_risk_policy_report(
+        RuntimeConfig(
+            market_type="futures",
+            testnet=True,
+            dry_run=False,
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        ),
+        StrategyConfig(stop_loss_pct=0.0, liquidation_buffer_pct=0.0),
+        effective_dry_run=False,
+    )
+
+    assert report.allowed is False
+    assert any(check.label == "stop loss" and check.status == "block" for check in report.checks)
+    assert any(check.label == "liquidation buffer" and check.status == "block" for check in report.checks)
+
+    paper = build_risk_policy_report(
+        RuntimeConfig(market_type="futures", dry_run=True),
+        StrategyConfig(stop_loss_pct=0.0, liquidation_buffer_pct=0.0),
+        effective_dry_run=True,
+    )
+    assert any(check.label == "stop loss" and check.status == "warn" for check in paper.checks)
+    assert any(check.label == "liquidation buffer" and check.status == "warn" for check in paper.checks)
+
+
 def test_risk_policy_blocks_mainnet_live_missing_credentials_and_zero_cash(tmp_path) -> None:
     report = build_risk_policy_report(
         RuntimeConfig(testnet=False, dry_run=False, managed_usdc=0.0),
