@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1495,
+      "bytes": 1521,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "0c5b2d4d4d0c3a79e5aa3d132f3792ef6b54ec7d273f5e8cd50520b10612ed48"
+      "sha256": "17f3c06b78b5680aa9a417326c9e5e08b48e50df483aeb37e60cb7125eed96b6"
     },
     {
-      "bytes": 642,
+      "bytes": 847,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 2,
-      "sha256": "26e4f28cec1816883cfa5e9574adbb3da61c6edfe35e7ad944898dc02c7ee8ae"
+      "row_count": 3,
+      "sha256": "830c3acc7519ea68abfc45d6f67b57c98448f022f1ecbcabd99c269c9cdd3480"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T16:45:49.759919Z",
-  "latest_round_id": "round-side-threshold-window-smoke",
+  "generated_at_utc": "2026-07-06T21:22:53.922709Z",
+  "latest_round_id": "round-hybrid-zoo-window-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 2,
+  "source_report_count": 3,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",

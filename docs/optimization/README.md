@@ -17,12 +17,14 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-side-threshold-window-smoke`, a failed
+The current retained checkpoint is `round-hybrid-zoo-window-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local `1s`
 SQLite market data. It is kept because it is truthful negative evidence: the
 candidate search trained on real second-level data, used DirectML, added v6
-order-flow features, tested side-aware futures threshold calibration, closed two
-losing trades across the final holdout, and failed the critical-analysis gate.
+order-flow features, tested side-aware futures threshold calibration, oriented
+downside-positive labels to short-side execution, evaluated the adaptive hybrid
+model-zoo gate in code, closed nine losing trades across the final holdout, and
+failed the critical-analysis gate.
 Earlier BTC-only, stale BTC/ETH-only, broader-symbol, and prior per-round smoke
 artifacts were removed because they no longer matched the active scope, data
 standard, or model selection rules. Future checkpoints must be generated from
@@ -75,8 +77,8 @@ audit whether a graph came from a single default model or a candidate search.
 Current promotion-count search starts with:
 
 - `default`,
-- `intraday_micro_triple_barrier`,
-- `intraday_activity_triple_barrier`.
+- `intraday_activity_triple_barrier`,
+- `intraday_downside_triple_barrier`.
 
 The intraday candidates also test tighter stop/take-profit and shorter
 cooldown execution profiles. Candidate labels are floored at the estimated
@@ -90,57 +92,60 @@ two-bar minimum hold and two-bar neutral-signal exit grace, while
 are only neutral-signal debounce controls; stop-loss, take-profit, reversal,
 drawdown, liquidation, liquidity, max-trades, and objective gates remain
 immediate.
-`intraday_breakout_forward` and `intraday_downside_triple_barrier` remain in
-the expanded candidate set when more than three candidates are requested. The
-downside candidate trains a short-side triple-barrier label, but it is not in
-the default three-candidate set because the 2026-07-06 smoke test made ROI
-worse. The expanded full set now contains 14 candidates. Round artifacts now
-write
+Downside-positive labels represent profitable short-side events. The optimizer
+therefore orients those model probabilities to the runtime futures convention
+after probability calibration and before threshold/backtest scoring, so short
+labels are not silently treated as high-score long signals. With
+`--model-candidates 6`, the bounded research prefix additionally includes:
+
+- `order_flow_pressure_triple_barrier`,
+- `downside_order_flow_pressure`,
+- `frequency_probe_forward`.
+
+`intraday_micro_triple_barrier`, `intraday_breakout_forward`, high-conviction,
+lower-signal, and longer-horizon probes remain in the expanded candidate set
+when more candidates are requested. The expanded full set now contains 16
+candidates. Round artifacts now write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
 model artifacts persist `round_candidate_diagnostics`, so future agents can
 audit each candidate's threshold, trade-count, P&L, and selection-gate result
 instead of only seeing the final selected candidate. Candidate diagnostics also
-record neutral-signal hold/grace settings, selection-slice realized P&L, closed
-trades, drawdown, fees, profit factor, expectancy, edge vs buy-hold, cap hits,
-regime skips, meta-label skips, liquidation events, and reject reason. When
-every candidate fails hard gates, selection is still rejected for promotion/live
-use, but the optimizer now breaks equal-score ties toward the least-bad
-diagnostic candidate so the final holdout produces more useful failure
-evidence.
+record model family, hybrid profile/score evidence, neutral-signal hold/grace
+settings, selection-slice realized P&L, closed trades, drawdown, fees, profit
+factor, expectancy, edge vs buy-hold, cap hits, regime skips, meta-label skips,
+liquidation events, and reject reason. When every candidate fails hard gates,
+selection is still rejected for promotion/live use, but the optimizer now
+breaks equal-score ties toward the least-bad diagnostic candidate so the final
+holdout produces more useful failure evidence. The hybrid model-zoo overlay is
+allowed to replace the selected base model only when its chronological
+selection replay passes the same objective gates; rejected hybrid attempts are
+recorded as rejected diagnostics and do not alter executable thresholds.
 
 Latest retained local smoke evidence from 2026-07-06 is
-`round-side-threshold-window-smoke`. It uses the verified UTC window
+`round-hybrid-zoo-window-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-07T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 604,800 expected rows, zero
 missing-second gaps, 1.0 coverage, and seven verified Binance archive
 checksums. The run used DirectML with `--require-gpu`, conservative 5x futures
 settings, cost-aware labels, flat-signal hold/grace candidate settings, the
-default three-candidate search, v6 order-flow features built from real quote
-volume, trade count, taker-buy volume, signed flow, no-trade ratio, and
-flow/return alignment, plus side-aware futures thresholds that can disable the
-long or short side when selection evidence justifies it. It failed the critical
-gate: zero accepted symbols, two total closed trades, mean ROI
-`-0.04869541446409661%`, median ROI `-0.06019871112706596%`, mean buy-and-hold
-ROI `-0.8918786806126517%`, worst drawdown `0.08588753226522386%`, and no
-liquidations. BTCUSDT selected
-`default`, closed one losing trade, and ended at `-0.06019871112706596%` ROI.
-ETHUSDT selected `intraday_activity_triple_barrier`, abstained on the final
-holdout, and ended at `0.0%` ROI. SOLUSDT selected
-`intraday_micro_triple_barrier`, closed one losing trade, and ended at
-`-0.08588753226522386%` ROI. The best side-aware diagnostics were still
-symmetric (`long=T`, `short=1-T`) for all three selected candidates, so this
-iteration did not find a one-sided BTC/ETH/SOL edge. It is not promotion
-evidence because the window is one verified week, not years, and no symbol is
-profitable.
-
-The next attempted iteration, `round-downside-order-flow-window-smoke`, added
-the downside triple-barrier candidate to the default three. It completed with
-DirectML after candidate-row memory cleanup, but worsened the evidence: mean ROI
-`-0.07008053565532464%`, median ROI `-0.0641553635736841%`, three losing
-trades, zero accepted symbols, and no liquidations. The downside candidate
-therefore remains available for expanded research only, not default promotion
-search. The next model iteration needs better edge discovery and thresholding,
-not weaker gates or manufactured trading activity.
+six-candidate diverse research prefix, v6 order-flow features built from real
+quote volume, trade count, taker-buy volume, signed flow, no-trade ratio, and
+flow/return alignment, downside-label short-side orientation, plus side-aware
+futures thresholds that can disable the long or short side when selection
+evidence justifies it. The adaptive hybrid model-zoo gate was wired into the
+round-selection path before this run, but no hybrid profile passed selection,
+so final holdouts used the base advanced-logistic candidates. It failed the
+critical gate: zero accepted symbols, nine total closed trades, mean ROI
+`-0.20266697116533502%`, median ROI `-0.06019871112706596%`, mean buy-and-hold
+ROI `-0.892736678662348%`, worst drawdown `0.4882866561730907%`, and no
+liquidations. BTCUSDT selected `default`, closed one losing trade, and ended at
+`-0.06019871112706596%` ROI. ETHUSDT selected `frequency_probe_forward`, closed
+one losing trade, and ended at `-0.0595155461958484%` ROI. SOLUSDT selected
+`order_flow_pressure_triple_barrier`, closed seven losing trades, and ended at
+`-0.4882866561730907%` ROI. This is truthful negative evidence, not promotion
+evidence: the window is one verified week, not years, every symbol failed
+selection gates, every final holdout ROI was negative, and neither the base nor
+hybrid path showed a durable after-cost edge.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That

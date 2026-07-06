@@ -30,6 +30,7 @@ from .compute import resolve_backend
 from .data_coverage import describe_candle_coverage, iso_utc
 from .data_downloader import MarketDataSyncConfig, sync_market_data
 from .execution_simulation import SymbolExecutionProfile
+from .hybrid_models import optimize_hybrid_model_zoo
 from .intervals import interval_milliseconds, validate_interval
 from .market_edge import build_market_edge_report
 from .market_store import MarketDataStore
@@ -286,6 +287,8 @@ class RoundModelCandidateResult:
     report: object
     selection_result: BacktestResult
     selection_reject_reason: str | None
+    training_rows: list[object]
+    selection_rows: list[object]
     rows: list[object]
     validation_rows: list[object]
 
@@ -1347,21 +1350,26 @@ def _round_model_candidates(
         "regular": 0.52,
         "aggressive": 0.50,
     }.get(objective.name, 0.52)
+    # Keep the first few candidates intentionally diverse. The default smoke
+    # budget is small, so the prefix must cover baseline, long-biased,
+    # short-biased, and order-flow hypotheses instead of walking one family.
     raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int]] = [
         ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
-        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
         ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1),
         ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.55, 0.35, "downside_triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
+        ("order_flow_pressure_triple_barrier", 0.85, 1.00, 1.75, 0.45, 0.25, "triple_barrier", -0.04, 0.18, 0.12, 0.0, 1, 1),
+        ("downside_order_flow_pressure", 0.85, 1.00, 1.75, 0.45, 0.25, "downside_triple_barrier", -0.04, 0.18, 0.12, 0.0, 1, 1),
+        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1),
+        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
         ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1),
         ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
         ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1),
         ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0),
         ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0),
-        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0),
-        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1),
-        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1),
-        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1),
         ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0),
+        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0),
+        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1),
     ]
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
@@ -1461,6 +1469,26 @@ def _apply_probability_calibration(model: object, calibration: object) -> None:
     model.probability_calibration_backend_reason = str(getattr(calibration, "calibration_backend_reason", ""))
 
 
+def _candidate_has_downside_positive_label(candidate: RoundModelCandidate) -> bool:
+    """Return True when label=1 represents a profitable short-side event."""
+
+    mode = str(candidate.feature_cfg.label_mode or "").strip().lower().replace("-", "_")
+    return mode in {"downside_forward_return", "downside_triple_barrier"}
+
+
+def _orient_candidate_model_for_market_side(model: object, candidate: RoundModelCandidate) -> None:
+    """Map candidate label semantics onto the runtime long/high, short/low convention."""
+
+    if not _candidate_has_downside_positive_label(candidate):
+        return
+    model.probability_inverted = True
+    warning = "downside_positive_label_oriented_to_short_side"
+    warnings = list(getattr(model, "quality_warnings", []) or [])
+    if warning not in warnings:
+        warnings.append(warning)
+    model.quality_warnings = warnings
+
+
 def _evaluate_round_model_candidate(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
@@ -1550,6 +1578,7 @@ def _evaluate_round_model_candidate(
             "probability_calibration",
         )
     _apply_probability_calibration(model, calibration)
+    _orient_candidate_model_for_market_side(model, candidate)
     model.decision_threshold = float(candidate.signal_threshold)
     model.threshold_source = "objective_round_evidence_default"
     threshold_report = calibrate_threshold_for_backtest(
@@ -1643,42 +1672,54 @@ def _evaluate_round_model_candidate(
     base_accepts = base_reject_reason is None
     base_raw_score = objective.score(base_result)
     base_score = base_raw_score if base_accepts else float("-inf")
-    inverted_model = copy.deepcopy(model)
-    inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
-    inverted_model.model_family = f"{inverted_model.model_family}:round_selection_inverted"
-    inverted_model.quality_warnings = [
-        *list(getattr(inverted_model, "quality_warnings", [])),
-        "round_selection_probability_inversion_variant",
-    ]
-    inverted_result = run_backtest(
-        selection_rows,
-        inverted_model,
-        candidate_strategy,
-        starting_cash=starting_cash,
-        market_type=market_type,
-        compute_backend=compute_backend,
-        score_batch_size=batch_size,
-    )
-    if require_gpu:
-        _require_non_cpu_backend(
-            inverted_result.scoring_backend_kind,
-            inverted_result.scoring_backend_reason,
-            "inversion_scoring",
+    inverted_model = model
+    inverted_result = base_result
+    inverted_reject_reason = "downside_label_orientation_locked"
+    inverted_raw_score = float("-inf")
+    inverted_score = float("-inf")
+    if _candidate_has_downside_positive_label(candidate):
+        if status_callback is not None:
+            status_callback(
+                "inversion_backtest_skipped",
+                {"reason": "downside_label_orientation_locked"},
+            )
+    else:
+        inverted_model = copy.deepcopy(model)
+        inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
+        inverted_model.model_family = f"{inverted_model.model_family}:round_selection_inverted"
+        inverted_model.quality_warnings = [
+            *list(getattr(inverted_model, "quality_warnings", [])),
+            "round_selection_probability_inversion_variant",
+        ]
+        inverted_result = run_backtest(
+            selection_rows,
+            inverted_model,
+            candidate_strategy,
+            starting_cash=starting_cash,
+            market_type=market_type,
+            compute_backend=compute_backend,
+            score_batch_size=batch_size,
         )
-    if status_callback is not None:
-        status_callback(
-            "inversion_backtest_complete",
-            {
-                "inverted_pnl": float(inverted_result.realized_pnl),
-                "inverted_drawdown": float(inverted_result.max_drawdown),
-                "scoring_backend_kind": inverted_result.scoring_backend_kind,
-                "scoring_backend_device": inverted_result.scoring_backend_device,
-            },
-        )
-    inverted_reject_reason = objective.reject_reason(inverted_result)
-    inverted_accepts = inverted_reject_reason is None
-    inverted_raw_score = objective.score(inverted_result)
-    inverted_score = inverted_raw_score if inverted_accepts else float("-inf")
+        if require_gpu:
+            _require_non_cpu_backend(
+                inverted_result.scoring_backend_kind,
+                inverted_result.scoring_backend_reason,
+                "inversion_scoring",
+            )
+        if status_callback is not None:
+            status_callback(
+                "inversion_backtest_complete",
+                {
+                    "inverted_pnl": float(inverted_result.realized_pnl),
+                    "inverted_drawdown": float(inverted_result.max_drawdown),
+                    "scoring_backend_kind": inverted_result.scoring_backend_kind,
+                    "scoring_backend_device": inverted_result.scoring_backend_device,
+                },
+            )
+        inverted_reject_reason = objective.reject_reason(inverted_result)
+        inverted_accepts = inverted_reject_reason is None
+        inverted_raw_score = objective.score(inverted_result)
+        inverted_score = inverted_raw_score if inverted_accepts else float("-inf")
     score = base_score
     selection_result = base_result
     selection_reject_reason = base_reject_reason
@@ -1730,6 +1771,8 @@ def _evaluate_round_model_candidate(
         report=report,
         selection_result=selection_result,
         selection_reject_reason=selection_reject_reason,
+        training_rows=list(train_rows),
+        selection_rows=list(selection_rows),
         rows=list(rows),
         validation_rows=list(validation_rows),
     )
@@ -1770,6 +1813,116 @@ def _round_candidate_rank_key(result: RoundModelCandidateResult) -> tuple[float,
     )
 
 
+def _append_unique_warning(model: object, warning: str) -> None:
+    warnings = list(getattr(model, "quality_warnings", []) or [])
+    if warning not in warnings:
+        warnings.append(warning)
+    model.quality_warnings = warnings
+
+
+def _finite_or_none(value: object) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _select_hybrid_model_zoo_if_accepted(
+    result: RoundModelCandidateResult,
+    strategy: StrategyConfig,
+    objective: ObjectiveSpec,
+    *,
+    market_type: str,
+    starting_cash: float,
+    compute_backend: str,
+    batch_size: int,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
+) -> RoundModelCandidateResult:
+    """Attach the adaptive hybrid expert pack only when selection evidence passes."""
+
+    model = result.model
+    feature_dim = int(getattr(model, "feature_dim", 0) or 0)
+    if feature_dim <= 1 or not result.training_rows or not result.selection_rows:
+        if status_callback is not None:
+            status_callback(
+                "hybrid_model_zoo_skipped",
+                {
+                    "reason": "insufficient_feature_or_split_evidence",
+                    "feature_dim": int(feature_dim),
+                    "training_rows": len(result.training_rows),
+                    "selection_rows": len(result.selection_rows),
+                },
+            )
+        return result
+    if status_callback is not None:
+        status_callback(
+            "hybrid_model_zoo_started",
+            {
+                "feature_dim": int(feature_dim),
+                "training_rows": len(result.training_rows),
+                "selection_rows": len(result.selection_rows),
+            },
+        )
+    hybrid_report = optimize_hybrid_model_zoo(
+        model,
+        result.training_rows,
+        result.selection_rows,
+        strategy,
+        objective_name=objective.name,
+        market_type=market_type,
+        starting_cash=starting_cash,
+        compute_backend=compute_backend,
+        score_batch_size=batch_size,
+        feature_count=min(13, feature_dim),
+    )
+    model.hybrid_profile = str(hybrid_report.best_profile)
+    model.hybrid_base_score = _finite_or_none(hybrid_report.base_score)
+    model.hybrid_best_score = _finite_or_none(hybrid_report.best_score)
+    model.hybrid_evaluated_profiles = int(hybrid_report.evaluated_profiles)
+    selected_result = getattr(hybrid_report, "best_result", None)
+    if not bool(getattr(hybrid_report, "accepted", False)) or selected_result is None:
+        _append_unique_warning(model, "round_hybrid_model_zoo_rejected")
+        if status_callback is not None:
+            status_callback(
+                "hybrid_model_zoo_complete",
+                {
+                    "accepted": False,
+                    "profile": str(hybrid_report.best_profile),
+                    "base_score": model.hybrid_base_score,
+                    "best_score": model.hybrid_best_score,
+                    "evaluated_profiles": int(hybrid_report.evaluated_profiles),
+                },
+            )
+        return replace(result, model=model)
+    if status_callback is not None:
+        status_callback(
+            "hybrid_model_zoo_complete",
+            {
+                "accepted": True,
+                "profile": str(hybrid_report.best_profile),
+                "base_score": _finite_or_none(hybrid_report.base_score),
+                "best_score": _finite_or_none(hybrid_report.best_score),
+                "evaluated_profiles": int(hybrid_report.evaluated_profiles),
+            },
+        )
+    hybrid_model = hybrid_report.model
+    hybrid_model.hybrid_profile = str(hybrid_report.best_profile)
+    hybrid_model.hybrid_base_score = _finite_or_none(hybrid_report.base_score)
+    hybrid_model.hybrid_best_score = _finite_or_none(hybrid_report.best_score)
+    hybrid_model.hybrid_evaluated_profiles = int(hybrid_report.evaluated_profiles)
+    hybrid_model.round_selection_gate_passed = True
+    hybrid_model.round_selection_reject_reason = ""
+    _append_unique_warning(hybrid_model, "round_hybrid_model_zoo_selected")
+    return replace(
+        result,
+        score=float(hybrid_report.best_score),
+        model=hybrid_model,
+        selection_result=selected_result,
+        selection_reject_reason=None,
+    )
+
+
 def _round_candidate_diagnostic(
     result: RoundModelCandidateResult,
     *,
@@ -1792,7 +1945,21 @@ def _round_candidate_diagnostic(
         "label_threshold": float(result.candidate.feature_cfg.label_threshold),
         "label_lookahead": int(result.candidate.feature_cfg.label_lookahead),
         "label_mode": str(result.candidate.feature_cfg.label_mode),
+        "model_family": str(getattr(model, "model_family", "") or ""),
         "probability_inverted": bool(getattr(model, "probability_inverted", False)),
+        "hybrid_profile": str(getattr(model, "hybrid_profile", "") or ""),
+        "hybrid_base_score": (
+            float(getattr(model, "hybrid_base_score"))
+            if getattr(model, "hybrid_base_score", None) is not None
+            else None
+        ),
+        "hybrid_best_score": (
+            float(getattr(model, "hybrid_best_score"))
+            if getattr(model, "hybrid_best_score", None) is not None
+            else None
+        ),
+        "hybrid_evaluated_profiles": int(getattr(model, "hybrid_evaluated_profiles", 0) or 0),
+        "hybrid_expert_count": len(getattr(model, "hybrid_experts", []) or []),
         "round_selection_gate_passed": bool(getattr(model, "round_selection_gate_passed", False)),
         "round_selection_reject_reason": str(getattr(model, "round_selection_reject_reason", "") or ""),
         "threshold_source": str(getattr(model, "threshold_source", "") or ""),
@@ -1887,7 +2054,13 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "label_threshold": _finite(item.get("label_threshold")),
             "label_lookahead": int(_finite(item.get("label_lookahead"))),
             "label_mode": str(item.get("label_mode", "")),
+            "model_family": str(item.get("model_family", "")),
             "probability_inverted": bool(item.get("probability_inverted") is True),
+            "hybrid_profile": str(item.get("hybrid_profile", "")),
+            "hybrid_base_score": item.get("hybrid_base_score"),
+            "hybrid_best_score": item.get("hybrid_best_score"),
+            "hybrid_evaluated_profiles": int(_finite(item.get("hybrid_evaluated_profiles"))),
+            "hybrid_expert_count": int(_finite(item.get("hybrid_expert_count"))),
             "round_selection_gate_passed": bool(item.get("round_selection_gate_passed") is True),
             "round_selection_reject_reason": str(item.get("round_selection_reject_reason", "")),
             "threshold_source": str(item.get("threshold_source", "")),
@@ -1967,22 +2140,38 @@ def train_round_model(
                     "candidate": candidate.name,
                     "score": float(result.score),
                 },
-            )
+        )
         if best is None or _round_candidate_rank_key(result) > _round_candidate_rank_key(best):
             best = result
-        evaluated.append(replace(result, rows=[], validation_rows=[]))
+        evaluated.append(replace(result, training_rows=[], selection_rows=[], rows=[], validation_rows=[]))
         gc.collect()
     if best is None:
         raise ValueError("no model candidates were evaluated")
+    best_strategy = _strategy_for_round_candidate(strategy, best.candidate)
+    best = _select_hybrid_model_zoo_if_accepted(
+        best,
+        best_strategy,
+        objective,
+        market_type=market_type,
+        starting_cash=starting_cash,
+        compute_backend=compute_backend,
+        batch_size=batch_size,
+        status_callback=status_callback,
+    )
     best.model.model_candidate_count = len(candidates)
     best.model.model_selected_candidate = best.candidate.name
     best.model.model_selection_score = float(best.score)
-    best.model.round_candidate_diagnostics = [
-        _round_candidate_diagnostic(result, strategy=strategy, selected=result.candidate == best.candidate)
+    diagnostic_results = [
+        replace(best, training_rows=[], selection_rows=[], rows=[], validation_rows=[])
+        if result.candidate == best.candidate
+        else result
         for result in evaluated
     ]
+    best.model.round_candidate_diagnostics = [
+        _round_candidate_diagnostic(result, strategy=strategy, selected=result.candidate == best.candidate)
+        for result in diagnostic_results
+    ]
     if len(candidates) > 1 and status_callback is not None:
-        best_strategy = _strategy_for_round_candidate(strategy, best.candidate)
         status_callback(
             "model_candidate_search_complete",
             {
@@ -2628,7 +2817,9 @@ def build_round_evidence(
         "symbol", "candidate_index", "name", "selected", "score", "signal_threshold",
         "stop_loss_pct", "take_profit_pct", "cooldown_minutes", "min_position_hold_bars",
         "flat_signal_exit_grace_bars", "label_threshold", "label_lookahead", "label_mode",
-        "probability_inverted", "round_selection_gate_passed",
+        "model_family", "probability_inverted", "hybrid_profile", "hybrid_base_score",
+        "hybrid_best_score", "hybrid_evaluated_profiles", "hybrid_expert_count",
+        "round_selection_gate_passed",
         "round_selection_reject_reason", "threshold_source", "decision_threshold",
         "long_decision_threshold", "short_decision_threshold",
         "threshold_calibration_score", "threshold_calibration_pnl", "threshold_calibration_trades",
