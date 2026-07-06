@@ -6409,6 +6409,10 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     margin_used = 0.0
     qty = 0.0
     wait_ticks = cfg.cooldown_minutes
+    min_position_hold_bars = max(0, int(getattr(cfg, "min_position_hold_bars", 0) or 0))
+    flat_signal_exit_grace_bars = max(0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0))
+    entry_step_index = 0
+    flat_signal_streak = 0
     cooldown_left = 0
     unpredictability_cooldown_left = 0
     if leverage > MAX_AUTONOMOUS_LEVERAGE:
@@ -7292,6 +7296,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             position_notional = direction * notional
             qty = abs(qty)
             entry_price = fill
+            entry_step_index = int(i)
+            flat_signal_streak = 0
             position_leverage = entry_leverage
             margin_used = margin
             entry_fee_paid = fee
@@ -7332,7 +7338,16 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             pnl = position_side * (price - entry_price) * qty
             pnl_pct = ((price - entry_price) / entry_price) if position_side > 0 else ((entry_price - price) / entry_price)
 
-            opposite_signal = direction not in (0, position_side) if runtime.market_type == "futures" else direction == 0
+            flat_signal = direction == 0
+            reverse_signal = direction not in (0, position_side) if runtime.market_type == "futures" else False
+            flat_signal_streak = flat_signal_streak + 1 if flat_signal else 0
+            bars_held = max(0, int(i) - int(entry_step_index))
+            flat_exit_allowed = (
+                flat_signal
+                and bars_held >= min_position_hold_bars
+                and flat_signal_streak > flat_signal_exit_grace_bars
+            )
+            opposite_signal = reverse_signal or flat_exit_allowed
             should_close = opposite_signal or pnl_pct >= cfg.take_profit_pct or pnl_pct <= -cfg.stop_loss_pct
 
             if should_close:
@@ -7403,6 +7418,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "leverage": float(position_leverage),
                         "cash_after": float(cash),
                         "fill_source": fill_source,
+                        "bars_held": int(bars_held),
+                        "flat_signal_streak": int(flat_signal_streak),
                         "position_id": close_position_id,
                         "close_client_order_id": str(close_client_order_id or ""),
                     }
@@ -7416,6 +7433,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     margin_used = 0.0
                     entry_price = 0.0
                     position_leverage = leverage
+                    flat_signal_streak = 0
                     cooldown_left = max(0, wait_ticks)
                 else:
                     qty = max(0.0, abs(qty) - closed_qty)
@@ -7434,6 +7452,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "price": float(price),
                         "pnl": float(pnl),
                         "leverage": float(position_leverage),
+                        "bars_held": int(bars_held),
+                        "flat_signal_streak": int(flat_signal_streak),
                     }
                 )
 

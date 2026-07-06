@@ -277,6 +277,8 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
         label_threshold=-0.10,
         max_open_positions="bad",
         cooldown_minutes=-5,
+        min_position_hold_bars=-10,
+        flat_signal_exit_grace_bars=-2,
         confidence_beta=float("nan"),
         external_signals_enabled="yes",
         external_signal_timeout_seconds=float("inf"),
@@ -305,6 +307,8 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
     assert strategy.label_threshold == 0.001
     assert strategy.max_open_positions == 3
     assert strategy.cooldown_minutes == 0
+    assert strategy.min_position_hold_bars == 0
+    assert strategy.flat_signal_exit_grace_bars == 0
     assert strategy.confidence_beta == 0.90
     assert strategy.external_signals_enabled is True
     assert strategy.external_signal_timeout_seconds == 3.0

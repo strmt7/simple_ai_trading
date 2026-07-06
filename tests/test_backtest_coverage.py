@@ -681,6 +681,89 @@ def test_backtest_profitable_exit_and_win_rate() -> None:
     assert result.win_rate == 1.0
 
 
+def test_backtest_flat_signal_grace_delays_exit_without_delaying_stop() -> None:
+    class _StepModel:
+        def __init__(self, scores: list[float]) -> None:
+            self.scores = scores
+            self.calls = 0
+
+        def predict_proba(self, _features: tuple[float, ...]) -> float:
+            score = self.scores[min(self.calls, len(self.scores) - 1)]
+            self.calls += 1
+            return score
+
+    base_cfg = StrategyConfig(
+        leverage=1.0,
+        risk_per_trade=0.1,
+        max_position_pct=0.5,
+        signal_threshold=0.55,
+        take_profit_pct=0.50,
+        stop_loss_pct=0.05,
+        cooldown_minutes=0,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+    )
+    flat_rows = [
+        _flat_row(0, 100.0, 10.0, 1),
+        _flat_row(60_000, 100.0, 0.0, 0),
+        _flat_row(120_000, 101.0, 0.0, 0),
+        _flat_row(180_000, 102.0, 0.0, 0),
+        _flat_row(240_000, 103.0, 0.0, 0),
+    ]
+
+    immediate = run_backtest(
+        flat_rows,
+        _StepModel([0.99, 0.0, 0.0, 0.0, 0.0]),
+        base_cfg,
+        starting_cash=1000.0,
+        market_type="spot",
+    )
+    delayed = run_backtest(
+        flat_rows,
+        _StepModel([0.99, 0.0, 0.0, 0.0, 0.0]),
+        StrategyConfig(
+            **{
+                **base_cfg.asdict(),
+                "min_position_hold_bars": 2,
+                "flat_signal_exit_grace_bars": 2,
+            }
+        ),
+        starting_cash=1000.0,
+        market_type="spot",
+    )
+
+    assert immediate.closed_trades == 1
+    assert delayed.closed_trades == 1
+    assert immediate.trade_log[0]["closed_at"] == 120_000
+    assert delayed.trade_log[0]["closed_at"] == 240_000
+    assert delayed.trade_log[0]["bars_held"] == 3
+    assert delayed.trade_log[0]["flat_signal_streak"] == 3
+
+    stop_rows = [
+        _flat_row(0, 100.0, 10.0, 1),
+        _flat_row(60_000, 100.0, 0.0, 0),
+        _flat_row(120_000, 94.0, 0.0, 0),
+        _flat_row(180_000, 94.0, 0.0, 0),
+    ]
+    stopped = run_backtest(
+        stop_rows,
+        _StepModel([0.99, 0.0, 0.0, 0.0]),
+        StrategyConfig(
+            **{
+                **base_cfg.asdict(),
+                "min_position_hold_bars": 10,
+                "flat_signal_exit_grace_bars": 10,
+            }
+        ),
+        starting_cash=1000.0,
+        market_type="spot",
+    )
+
+    assert stopped.closed_trades == 1
+    assert stopped.trade_log[0]["closed_at"] == 120_000
+    assert stopped.trade_log[0]["exit_reason"] == "intrabar_stop_loss"
+
+
 def test_backtest_skips_entry_when_margin_exceeds_cash() -> None:
     rows = [
         _flat_row(0, 100.0, 10.0, 1),

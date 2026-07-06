@@ -18,6 +18,8 @@ EXECUTION_STRATEGY_OVERRIDE_KEYS: tuple[str, ...] = (
     "take_profit_pct",
     "signal_threshold",
     "cooldown_minutes",
+    "min_position_hold_bars",
+    "flat_signal_exit_grace_bars",
     "max_trades_per_day",
     "max_drawdown_limit",
     "confidence_beta",

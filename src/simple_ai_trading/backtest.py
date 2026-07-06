@@ -1130,11 +1130,15 @@ def run_backtest(
     entry_fee_paid = 0.0
     entry_equity_reference = cash
     entry_timestamp = int(rows[0].timestamp)
+    entry_row_index = 0
+    flat_signal_streak = 0
     entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "initial")
     pending_signal = 0
     pending_meta = MetaLabelDecision(False, "no_signal", 0.0, 0.0, "initial")
     last_close_timestamp: int | None = None
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
+    min_position_hold_bars = max(0, int(getattr(cfg, "min_position_hold_bars", 0) or 0))
+    flat_signal_exit_grace_bars = max(0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0))
     unpredictability_cooldown_ms = max(0, int(cfg.unpredictability_cooldown_minutes)) * 60 * 1000
     regime_cooldown_until: int | None = None
     final_mark_price = rows[-1].close
@@ -1281,6 +1285,8 @@ def run_backtest(
 
             entry_equity_reference = cash
             entry_timestamp = int(row.timestamp)
+            entry_row_index = int(row_index)
+            flat_signal_streak = 0
             entry_fee_paid = fee
             cash -= total_cost
             total_fees += fee
@@ -1350,6 +1356,7 @@ def run_backtest(
                 margin_used = 0.0
                 entry_fee_paid = 0.0
                 entry_equity_reference = cash
+                flat_signal_streak = 0
                 entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "liquidation")
                 last_close_timestamp = row.timestamp
             else:
@@ -1361,16 +1368,25 @@ def run_backtest(
                     low=bar_low,
                     cfg=cfg,
                 )
-                close_signal_exit = execution_signal == 0 or execution_signal == (-position_side)
+                flat_signal = execution_signal == 0
+                reverse_signal = execution_signal == (-position_side)
+                flat_signal_streak = flat_signal_streak + 1 if flat_signal else 0
+                bars_held = max(0, int(row_index) - int(entry_row_index))
+                flat_exit_allowed = (
+                    flat_signal
+                    and bars_held >= min_position_hold_bars
+                    and flat_signal_streak > flat_signal_exit_grace_bars
+                )
+                close_signal_exit = flat_exit_allowed or reverse_signal
                 if not intrabar_close:
                     close_mark_price = price
                     if current_pnl_pct >= cfg.take_profit_pct:
                         close_reason = "take_profit_close"
                     elif current_pnl_pct <= -cfg.stop_loss_pct:
                         close_reason = "stop_loss_close"
-                    elif execution_signal == 0:
+                    elif flat_exit_allowed:
                         close_reason = "signal_flat"
-                    elif execution_signal == (-position_side):
+                    elif reverse_signal:
                         close_reason = "signal_reverse"
                 should_close = bool(intrabar_close or close_reason or close_signal_exit)
 
@@ -1408,6 +1424,8 @@ def run_backtest(
                         "entry_fee": float(entry_fee_paid),
                         "exit_fee": float(exit_fee),
                         "exit_reason": str(close_reason or "signal_exit"),
+                        "bars_held": int(bars_held),
+                        "flat_signal_streak": int(flat_signal_streak),
                         "meta_label_action": str(entry_meta.action),
                         "meta_label_size_multiplier": float(entry_meta.size_multiplier),
                         "meta_label_signal_strength": float(entry_meta.signal_strength),
@@ -1423,6 +1441,7 @@ def run_backtest(
                     margin_used = 0.0
                     entry_fee_paid = 0.0
                     entry_equity_reference = cash
+                    flat_signal_streak = 0
                     entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "reset")
                     last_close_timestamp = row.timestamp
 
@@ -1496,6 +1515,7 @@ def run_backtest(
                 margin_used = 0.0
                 entry_fee_paid = 0.0
                 entry_equity_reference = cash
+                flat_signal_streak = 0
                 entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "drawdown_limit")
                 last_close_timestamp = row.timestamp
                 close_dd = 1.0 if cash <= 0.0 and equity_peak > 0.0 else ((equity_peak - cash) / equity_peak if equity_peak else 0.0)
@@ -1551,6 +1571,7 @@ def run_backtest(
         qty = 0.0
         entry_price = 0.0
         margin_used = 0.0
+        flat_signal_streak = 0
         if cash > equity_peak:
             equity_peak = cash
         final_dd = 1.0 if cash <= 0.0 and equity_peak > 0.0 else ((equity_peak - cash) / equity_peak if equity_peak else 0.0)

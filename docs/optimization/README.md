@@ -78,33 +78,43 @@ round-trip taker-fee plus slippage hurdle with a safety margin, so micro
 profiles cannot train on moves that would be unprofitable after execution
 costs. `intraday_activity_triple_barrier` is a second-level day-trading
 activity probe with a shorter lookahead, fee-aware stop/take settings, and
-zero diagnostic cooldown; it does not bypass max-trades, drawdown, liquidity,
-liquidation, or objective gates.
+zero diagnostic cooldown. `intraday_micro_triple_barrier` also tests a
+two-bar minimum hold and two-bar neutral-signal exit grace, while
+`intraday_activity_triple_barrier` tests a one-bar version. These grace windows
+are only neutral-signal debounce controls; stop-loss, take-profit, reversal,
+drawdown, liquidation, liquidity, max-trades, and objective gates remain
+immediate.
 `intraday_breakout_forward` remains in the expanded candidate set when more
 than three candidates are requested. Round artifacts now write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
 model artifacts persist `round_candidate_diagnostics`, so future agents can
 audit each candidate's threshold, trade-count, P&L, and selection-gate result
 instead of only seeing the final selected candidate. Candidate diagnostics also
-record selection-slice realized P&L, closed trades, drawdown, fees, profit
-factor, expectancy, edge vs buy-hold, cap hits, regime skips, meta-label skips,
-liquidation events, and reject reason. When every candidate fails hard gates,
-selection is still rejected for promotion/live use, but the optimizer now
-breaks equal-score ties toward the least-bad diagnostic candidate so the final
-holdout produces more useful failure evidence.
+record neutral-signal hold/grace settings, selection-slice realized P&L, closed
+trades, drawdown, fees, profit factor, expectancy, edge vs buy-hold, cap hits,
+regime skips, meta-label skips, liquidation events, and reject reason. When
+every candidate fails hard gates, selection is still rejected for promotion/live
+use, but the optimizer now breaks equal-score ties toward the least-bad
+diagnostic candidate so the final holdout produces more useful failure
+evidence.
 
 Latest local smoke evidence from 2026-07-06, using verified one-day `1s`
 futures data for BTCUSDT/ETHUSDT/SOLUSDT, DirectML with `--require-gpu`,
-conservative 5x futures settings, cost-aware labels, and three model
-candidates, still failed the critical gate: zero accepted symbols, four total
-closed trades, mean ROI `-0.07061402037552397%`, median ROI
-`-0.07469716949051416%`, worst drawdown `0.13650287742915454%`, and no
-liquidations. This is not promotion evidence because the stored span is about
-one day per symbol, not years; it is retained here only as truthful engineering
-feedback that the current strategy is not yet profitable on available
-second-level data. Compared with the immediately previous activity-probe smoke,
-the cost-aware label floor reduced fee-negative churn and drawdown, but all
-symbols still failed the same risk/edge gates.
+conservative 5x futures settings, cost-aware labels, flat-signal hold/grace
+candidate settings, and the expanded 13-candidate search, still failed the
+critical gate: zero accepted symbols, two total closed trades, mean ROI
+`-0.05778156766116733%`, median ROI `-0.08588753226522386%`, worst drawdown
+`0.08745717071827812%`, and no liquidations. BTCUSDT selected
+`intraday_breakout_forward` and produced no held-out trades; ETHUSDT selected
+`intraday_micro_triple_barrier`; SOLUSDT selected
+`lower_signal_triple_barrier`. This is not promotion evidence because the
+stored span is about one day per symbol, not years; it is retained here only as
+truthful engineering feedback that the current strategy is not yet profitable
+on available second-level data. Compared with the immediately previous
+flat-grace smoke, the expanded search improved mean ROI and worst drawdown by
+sitting out BTCUSDT, but it still failed all critical edge gates. The next model
+iteration needs a stronger positive-edge entry filter, not weaker gates or
+manufactured trading activity.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That
