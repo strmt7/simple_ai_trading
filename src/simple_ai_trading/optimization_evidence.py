@@ -48,6 +48,7 @@ from .objective import ObjectiveSpec, get_objective
 from .performance_charts import EquityPoint
 from .risk_controls import stop_loss_sized_notional_pct
 from .storage import write_json_atomic
+from .strategy_overrides import apply_model_strategy_overrides, strategy_overrides_from_config
 from .types import StrategyConfig
 
 
@@ -263,6 +264,9 @@ class RoundModelCandidate:
     learning_rate: float
     l2_penalty: float
     signal_threshold: float
+    stop_loss_multiplier: float = 1.0
+    take_profit_multiplier: float = 1.0
+    cooldown_multiplier: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -838,6 +842,15 @@ def strategy_with_objective_defaults(strategy: StrategyConfig, objective: Object
     )
 
 
+def _strategy_for_round_candidate(strategy: StrategyConfig, candidate: RoundModelCandidate) -> StrategyConfig:
+    return replace(
+        strategy,
+        stop_loss_pct=max(0.001, float(strategy.stop_loss_pct) * max(0.05, float(candidate.stop_loss_multiplier))),
+        take_profit_pct=max(0.001, float(strategy.take_profit_pct) * max(0.05, float(candidate.take_profit_multiplier))),
+        cooldown_minutes=max(0, int(round(float(strategy.cooldown_minutes) * max(0.0, float(candidate.cooldown_multiplier))))),
+    )
+
+
 def _baseline_equity_series(rows: Sequence[object], starting_cash: float, cfg: StrategyConfig, *, market_type: str) -> list[dict[str, float | int]]:
     if not rows:
         return []
@@ -1219,21 +1232,35 @@ def _round_model_candidates(
         "regular": 0.52,
         "aggressive": 0.50,
     }.get(objective.name, 0.52)
-    raw: list[tuple[str, float, float, float, float, float, str, float]] = [
-        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0),
-        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0),
-        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0),
-        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0),
-        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0),
-        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0),
-        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06),
-        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06),
-        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10),
-        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04),
+    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float]] = [
+        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0),
+        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10),
+        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15),
+        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0),
+        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50),
+        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0),
+        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35),
+        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50),
+        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25),
+        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0),
     ]
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
-    for name, epoch_mult, lr_mult, l2_mult, threshold_mult, lookahead_mult, label_mode, signal_offset in raw:
+    for (
+        name,
+        epoch_mult,
+        lr_mult,
+        l2_mult,
+        threshold_mult,
+        lookahead_mult,
+        label_mode,
+        signal_offset,
+        stop_loss_multiplier,
+        take_profit_multiplier,
+        cooldown_multiplier,
+    ) in raw:
         feature_cfg = replace(
             base_feature_cfg,
             label_threshold=max(1e-8, base_label_threshold * float(threshold_mult)),
@@ -1252,12 +1279,18 @@ def _round_model_candidates(
             learning_rate=max(1e-6, base_lr * float(lr_mult)),
             l2_penalty=max(0.0, base_l2 * float(l2_mult)),
             signal_threshold=min(0.95, max(min_signal_threshold, base_threshold + float(signal_offset))),
+            stop_loss_multiplier=max(0.05, float(stop_loss_multiplier)),
+            take_profit_multiplier=max(0.05, float(take_profit_multiplier)),
+            cooldown_multiplier=max(0.0, float(cooldown_multiplier)),
         )
         key = (
             candidate.epochs,
             round(candidate.learning_rate, 12),
             round(candidate.l2_penalty, 12),
             round(candidate.signal_threshold, 12),
+            round(candidate.stop_loss_multiplier, 12),
+            round(candidate.take_profit_multiplier, 12),
+            round(candidate.cooldown_multiplier, 12),
             advanced_feature_dimension(candidate.feature_cfg),
             candidate.feature_cfg.label_threshold,
             candidate.feature_cfg.label_lookahead,
@@ -1302,8 +1335,17 @@ def _evaluate_round_model_candidate(
     require_gpu: bool,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> RoundModelCandidateResult:
+    candidate_strategy = _strategy_for_round_candidate(strategy, candidate)
     if status_callback is not None:
-        status_callback("feature_generation_started", {"candle_count": len(candles)})
+        status_callback(
+            "feature_generation_started",
+            {
+                "candle_count": len(candles),
+                "candidate_stop_loss_pct": float(candidate_strategy.stop_loss_pct),
+                "candidate_take_profit_pct": float(candidate_strategy.take_profit_pct),
+                "candidate_cooldown_minutes": int(candidate_strategy.cooldown_minutes),
+            },
+        )
     rows = make_advanced_rows(
         candles,
         candidate.feature_cfg,
@@ -1374,7 +1416,7 @@ def _evaluate_round_model_candidate(
     threshold_report = calibrate_threshold_for_backtest(
         selection_rows,
         model,
-        strategy,
+        candidate_strategy,
         starting_cash=starting_cash,
         market_type=market_type,
         baseline_threshold=model.decision_threshold,
@@ -1432,7 +1474,7 @@ def _evaluate_round_model_candidate(
     base_result = run_backtest(
         selection_rows,
         model,
-        strategy,
+        candidate_strategy,
         starting_cash=starting_cash,
         market_type=market_type,
         compute_backend=compute_backend,
@@ -1468,7 +1510,7 @@ def _evaluate_round_model_candidate(
     inverted_result = run_backtest(
         selection_rows,
         inverted_model,
-        strategy,
+        candidate_strategy,
         starting_cash=starting_cash,
         market_type=market_type,
         compute_backend=compute_backend,
@@ -1525,6 +1567,7 @@ def _evaluate_round_model_candidate(
             *list(getattr(model, "quality_warnings", [])),
             "round_selection_gate_failed_diagnostic_holdout_only",
         ]
+    model.strategy_overrides = strategy_overrides_from_config(candidate_strategy)
     return RoundModelCandidateResult(
         candidate=candidate,
         score=float(score),
@@ -1533,6 +1576,64 @@ def _evaluate_round_model_candidate(
         rows=list(rows),
         validation_rows=list(validation_rows),
     )
+
+
+def _round_candidate_diagnostic(
+    result: RoundModelCandidateResult,
+    *,
+    strategy: StrategyConfig,
+    selected: bool,
+) -> dict[str, object]:
+    candidate_strategy = _strategy_for_round_candidate(strategy, result.candidate)
+    model = result.model
+    return {
+        "name": result.candidate.name,
+        "selected": bool(selected),
+        "score": float(result.score),
+        "signal_threshold": float(result.candidate.signal_threshold),
+        "stop_loss_pct": float(candidate_strategy.stop_loss_pct),
+        "take_profit_pct": float(candidate_strategy.take_profit_pct),
+        "cooldown_minutes": int(candidate_strategy.cooldown_minutes),
+        "label_threshold": float(result.candidate.feature_cfg.label_threshold),
+        "label_lookahead": int(result.candidate.feature_cfg.label_lookahead),
+        "label_mode": str(result.candidate.feature_cfg.label_mode),
+        "probability_inverted": bool(getattr(model, "probability_inverted", False)),
+        "round_selection_gate_passed": bool(getattr(model, "round_selection_gate_passed", False)),
+        "round_selection_reject_reason": str(getattr(model, "round_selection_reject_reason", "") or ""),
+        "threshold_source": str(getattr(model, "threshold_source", "") or ""),
+        "decision_threshold": (
+            float(getattr(model, "decision_threshold"))
+            if getattr(model, "decision_threshold", None) is not None
+            else None
+        ),
+        "threshold_calibration_score": (
+            float(getattr(model, "threshold_calibration_score"))
+            if getattr(model, "threshold_calibration_score", None) is not None
+            else None
+        ),
+        "threshold_calibration_pnl": (
+            float(getattr(model, "threshold_calibration_pnl"))
+            if getattr(model, "threshold_calibration_pnl", None) is not None
+            else None
+        ),
+        "threshold_calibration_trades": int(getattr(model, "threshold_calibration_trades", 0) or 0),
+        "threshold_diagnostic_best_threshold": (
+            float(getattr(model, "threshold_diagnostic_best_threshold"))
+            if getattr(model, "threshold_diagnostic_best_threshold", None) is not None
+            else None
+        ),
+        "threshold_diagnostic_best_score": (
+            float(getattr(model, "threshold_diagnostic_best_score"))
+            if getattr(model, "threshold_diagnostic_best_score", None) is not None
+            else None
+        ),
+        "threshold_diagnostic_best_pnl": (
+            float(getattr(model, "threshold_diagnostic_best_pnl"))
+            if getattr(model, "threshold_diagnostic_best_pnl", None) is not None
+            else None
+        ),
+        "threshold_diagnostic_best_trades": int(getattr(model, "threshold_diagnostic_best_trades", 0) or 0),
+    }
 
 
 def train_round_model(
@@ -1553,6 +1654,7 @@ def train_round_model(
     if len(candidates) > 1 and status_callback is not None:
         status_callback("model_candidate_search_started", {"candidate_count": len(candidates)})
     best: RoundModelCandidateResult | None = None
+    evaluated: list[RoundModelCandidateResult] = []
     for index, candidate in enumerate(candidates, start=1):
         callback = status_callback if index == 1 else None
         if len(candidates) > 1 and status_callback is not None:
@@ -1572,6 +1674,7 @@ def train_round_model(
             require_gpu=require_gpu,
             status_callback=callback,
         )
+        evaluated.append(result)
         if len(candidates) > 1 and status_callback is not None:
             status_callback(
                 "model_candidate_complete",
@@ -1589,13 +1692,21 @@ def train_round_model(
     best.model.model_candidate_count = len(candidates)
     best.model.model_selected_candidate = best.candidate.name
     best.model.model_selection_score = float(best.score)
+    best.model.round_candidate_diagnostics = [
+        _round_candidate_diagnostic(result, strategy=strategy, selected=result is best)
+        for result in evaluated
+    ]
     if len(candidates) > 1 and status_callback is not None:
+        best_strategy = _strategy_for_round_candidate(strategy, best.candidate)
         status_callback(
             "model_candidate_search_complete",
             {
                 "candidate_count": len(candidates),
                 "selected_candidate": best.candidate.name,
                 "selection_score": float(best.score),
+                "selected_stop_loss_pct": float(best_strategy.stop_loss_pct),
+                "selected_take_profit_pct": float(best_strategy.take_profit_pct),
+                "selected_cooldown_minutes": int(best_strategy.cooldown_minutes),
             },
         )
     return best.model, best.report, list(best.rows), list(best.validation_rows)
@@ -1828,6 +1939,8 @@ def build_round_evidence(
                 model_candidate_count=model_candidate_count,
                 status_callback=symbol_train_status,
             )
+            selected_strategy = apply_model_strategy_overrides(evidence_strategy, model)
+            selected_effective_leverage = effective_leverage_for_market(selected_strategy, market_type)
             write_status(
                 "holdout_backtest_started",
                 symbol_count_requested=len(selected),
@@ -1835,11 +1948,14 @@ def build_round_evidence(
                 current_symbol=item.symbol,
                 current_symbol_index=selected_index,
                 validation_rows=len(validation_rows),
+                selected_stop_loss_pct=float(selected_strategy.stop_loss_pct),
+                selected_take_profit_pct=float(selected_strategy.take_profit_pct),
+                selected_cooldown_minutes=int(selected_strategy.cooldown_minutes),
             )
             result = run_backtest(
                 validation_rows,
                 model,
-                evidence_strategy,
+                selected_strategy,
                 starting_cash=starting_cash,
                 market_type=market_type,
                 compute_backend=compute_backend,
@@ -1850,8 +1966,8 @@ def build_round_evidence(
                     item.quote_volume,
                     item.trade_count,
                     item.liquidity_score,
-                    latency_ms=evidence_strategy.latency_buffer_ms,
-                    liquidity_haircut=evidence_strategy.testnet_liquidity_haircut,
+                    latency_ms=selected_strategy.latency_buffer_ms,
+                    liquidity_haircut=selected_strategy.testnet_liquidity_haircut,
                 ),
             )
             if require_gpu:
@@ -1893,7 +2009,7 @@ def build_round_evidence(
             else:
                 reason = base_reason
             strategy_points = _result_points(result)
-            baseline_series = _baseline_equity_series(validation_rows, starting_cash, evidence_strategy, market_type=market_type)
+            baseline_series = _baseline_equity_series(validation_rows, starting_cash, selected_strategy, market_type=market_type)
             baseline_points = [
                 EquityPoint(index=index, equity=_finite(point.get("equity")), drawdown=_finite(point.get("drawdown")), timestamp_ms=int(point["timestamp"]))
                 for index, point in enumerate(baseline_series)
@@ -1980,13 +2096,13 @@ def build_round_evidence(
                 round_id=round_id,
                 symbol=item.symbol,
                 objective=objective.name,
-                risk_level=str(evidence_strategy.risk_level),
-                leverage=float(evidence_strategy.leverage),
-                effective_leverage=float(effective_leverage),
+                risk_level=str(selected_strategy.risk_level),
+                leverage=float(selected_strategy.leverage),
+                effective_leverage=float(selected_effective_leverage),
                 leverage_applies=bool(leverage_applies),
-                risk_per_trade=float(evidence_strategy.risk_per_trade),
-                max_position_pct=float(evidence_strategy.max_position_pct),
-                max_drawdown_limit_pct=float(evidence_strategy.max_drawdown_limit * 100.0),
+                risk_per_trade=float(selected_strategy.risk_per_trade),
+                max_position_pct=float(selected_strategy.max_position_pct),
+                max_drawdown_limit_pct=float(selected_strategy.max_drawdown_limit * 100.0),
                 accepted=accepted,
                 reason=reason,
                 start_utc=iso_utc(int(validation_rows[0].timestamp)) if validation_rows else coverage.used_start_utc,

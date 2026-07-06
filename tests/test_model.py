@@ -352,6 +352,20 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         model_candidate_count=3,
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
+        round_candidate_diagnostics=[
+            {
+                "name": "default",
+                "selected": False,
+                "score": -1.0,
+                "closed_trades": 0,
+            },
+            {
+                "name": "triple_barrier_base",
+                "selected": True,
+                "score": 0.42,
+                "closed_trades": 6,
+            },
+        ],
         strategy_overrides={
             "risk_per_trade": 0.005,
             "signal_threshold": 0.63,
@@ -433,6 +447,8 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     assert loaded.model_candidate_count == 3
     assert loaded.model_selected_candidate == "triple_barrier_base"
     assert loaded.model_selection_score == pytest.approx(0.42)
+    assert loaded.round_candidate_diagnostics[1]["selected"] is True
+    assert loaded.round_candidate_diagnostics[1]["closed_trades"] == 6
     assert loaded.strategy_overrides == {
         "risk_per_trade": 0.005,
         "signal_threshold": 0.63,

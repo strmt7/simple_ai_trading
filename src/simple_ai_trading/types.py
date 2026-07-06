@@ -84,7 +84,7 @@ class RuntimeConfig:
     compute_backend: str = field(default_factory=default_compute_backend)
     ai_enabled: bool = True
     ai_provider: str = "auto"
-    ai_model: str = "qwen2.5:7b"
+    ai_model: str = "qwen3:8b"
     ai_require_gpu: bool = True
     ai_min_free_vram_gb: float = 8.0
     ai_min_free_ram_gb: float = 16.0
@@ -124,7 +124,7 @@ class RuntimeConfig:
         self.compute_backend = str(self.compute_backend or default_compute_backend()).strip().lower()
         self.ai_enabled = _coerce_bool(self.ai_enabled, True)
         self.ai_provider = str(self.ai_provider or "auto")
-        self.ai_model = str(self.ai_model or "qwen2.5:7b")
+        self.ai_model = str(self.ai_model or "qwen3:8b")
         self.ai_require_gpu = _coerce_bool(self.ai_require_gpu, True)
         self.ai_min_free_vram_gb = max(0.0, _finite_float(self.ai_min_free_vram_gb, 8.0))
         self.ai_min_free_ram_gb = max(0.0, _finite_float(self.ai_min_free_ram_gb, 16.0))

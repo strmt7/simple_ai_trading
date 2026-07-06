@@ -123,6 +123,7 @@ class TrainedModel:
     model_candidate_count: int = 1
     model_selected_candidate: str = "default"
     model_selection_score: float | None = None
+    round_candidate_diagnostics: list[dict[str, Any]] = field(default_factory=list)
     hybrid_base_weight: float = 1.0
     hybrid_experts: List[HybridExpert] = field(default_factory=list)
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
@@ -1938,6 +1939,11 @@ def load_model(
             if payload.get("model_selection_score") is not None
             else None
         ),
+        round_candidate_diagnostics=[
+            dict(item)
+            for item in payload.get("round_candidate_diagnostics", [])
+            if isinstance(item, dict)
+        ],
         hybrid_base_weight=max(0.0, float(payload.get("hybrid_base_weight", 1.0) or 1.0)),
         hybrid_experts=_load_hybrid_experts(payload.get("hybrid_experts", []), dim),
         meta_label_policy=(

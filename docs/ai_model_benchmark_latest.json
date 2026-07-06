@@ -1,0 +1,48 @@
+{
+  "artifact": "latest_local_ai_model_benchmark_summary",
+  "generated_at_utc": "2026-07-06T10:00:26.2090000Z",
+  "command": "simple-ai-trading ai-benchmark --models qwen3:8b,deepseek-r1:8b --timeout 35 --output data/ai_model_benchmark.local.json",
+  "base_url": "http://127.0.0.1:11434",
+  "minimum_score": 0.78,
+  "selected_model": "qwen3:8b",
+  "passed": true,
+  "notes": [
+    "Ollama chat benchmark used think=false so Qwen/DeepSeek thinking traces cannot consume the final JSON response budget.",
+    "This benchmark selects an AI risk reviewer only; it is not trading-model promotion evidence."
+  ],
+  "results": [
+    {
+      "model": "qwen3:8b",
+      "installed": true,
+      "model_parameters_b": 8.0,
+      "passed": true,
+      "score": 0.9924999999999999,
+      "valid_json_cases": 4,
+      "action_match_cases": 4,
+      "average_latency_seconds": 3.015750000005937,
+      "case_actions": {
+        "veto_failed_ai_uplift": "veto",
+        "cooldown_unpredictable_low_liquidity": "cooldown",
+        "approve_clean_positive_uplift": "approve",
+        "veto_missing_data_integrity": "veto"
+      }
+    },
+    {
+      "model": "deepseek-r1:8b",
+      "installed": true,
+      "model_parameters_b": 8.0,
+      "passed": false,
+      "score": 0.0,
+      "valid_json_cases": 0,
+      "action_match_cases": 0,
+      "average_latency_seconds": 29.277249999999185,
+      "failures": [
+        "veto_failed_ai_uplift: provider_error=timed out",
+        "veto_failed_ai_uplift: invalid_json",
+        "cooldown_unpredictable_low_liquidity: invalid_json",
+        "approve_clean_positive_uplift: invalid_json",
+        "veto_missing_data_integrity: invalid_json"
+      ]
+    }
+  ]
+}

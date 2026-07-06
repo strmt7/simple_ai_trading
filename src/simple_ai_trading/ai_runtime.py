@@ -16,7 +16,7 @@ from .compute import BackendInfo, default_compute_backend, resolve_backend
 class AIRuntimeConfig:
     enabled: bool = True
     provider: str = "auto"
-    model: str = "qwen2.5:7b"
+    model: str = "qwen3:8b"
     require_gpu: bool = True
     compute_backend: str = ""
     min_free_vram_gb: float = 8.0
@@ -62,7 +62,7 @@ def estimate_model_parameters_b(model: str) -> float | None:
     text = str(model or "").lower()
     if not text or text in {"auto", "operator-selected-local-llm"}:
         return None
-    matches = list(re.finditer(r"(?<![a-z0-9])(\d+(?:\.\d+)?)([bm])(?![a-z0-9])", text))
+    matches = list(re.finditer(r"(?<![a-z0-9])e?(\d+(?:\.\d+)?)([bm])(?![a-z0-9])", text))
     values: list[float] = []
     for match in matches:
         number = _safe_float(match.group(1))
@@ -232,7 +232,7 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
         if model_parameters_b is None:
             warnings.append(
                 "AI model parameter count could not be inferred from the model name; "
-                "use a name like qwen2.5:7b for an enforceable multibillion check"
+                "use a name like qwen3:8b for an enforceable multibillion check"
             )
         elif model_parameters_b < minimum_parameters_b:
             messages.append(

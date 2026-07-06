@@ -703,6 +703,18 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai.add_argument("--json", action="store_true")
     parser_ai.set_defaults(func=command_ai)
 
+    parser_ai_benchmark = subparsers.add_parser(
+        "ai-benchmark",
+        help="compare local AI models on structured finance-risk review cases",
+    )
+    parser_ai_benchmark.add_argument("--models", default="", help="comma-separated Ollama model names; defaults to installed curated candidates")
+    parser_ai_benchmark.add_argument("--url", default="http://127.0.0.1:11434")
+    parser_ai_benchmark.add_argument("--timeout", type=float, default=20.0)
+    parser_ai_benchmark.add_argument("--minimum-score", type=float, default=0.78)
+    parser_ai_benchmark.add_argument("--output", default="data/ai_model_benchmark.json")
+    parser_ai_benchmark.add_argument("--json", action="store_true")
+    parser_ai_benchmark.set_defaults(func=command_ai_benchmark)
+
     parser_ai_review = subparsers.add_parser(
         "ai-review",
         help="run a structured local-AI risk review over a model-lab report",
@@ -4359,6 +4371,45 @@ def command_ai(args: argparse.Namespace) -> int:
     if enable_requested and enable_blocked:
         return 2
     return 0 if (report.ok or not runtime.ai_enabled or runtime.ai_allow_paper_fallback) else 2
+
+
+def command_ai_benchmark(args: argparse.Namespace) -> int:
+    from .ai_model_benchmark import benchmark_finance_ai_models, write_benchmark_report
+
+    raw_models = str(getattr(args, "models", "") or "")
+    models = [item.strip() for item in raw_models.split(",") if item.strip()]
+    try:
+        report = benchmark_finance_ai_models(
+            models=models,
+            base_url=str(getattr(args, "url", None) or "http://127.0.0.1:11434"),
+            timeout_seconds=max(0.1, float(getattr(args, "timeout", 20.0))),
+            minimum_score=max(0.0, min(1.0, float(getattr(args, "minimum_score", 0.78)))),
+        )
+        output = write_benchmark_report(report, Path(getattr(args, "output", "data/ai_model_benchmark.json")))
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"ai-benchmark failed: {exc}", file=sys.stderr)
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(report.asdict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "ai-benchmark: "
+            f"passed={report.passed} selected={report.selected_model or 'none'} "
+            f"models={len(report.results)}"
+        )
+        for result in report.results:
+            status = "pass" if result.passed else "fail"
+            params = f"{result.model_parameters_b:.1f}B" if result.model_parameters_b is not None else "unknown"
+            print(
+                f"  {status:<4} {result.model:<24} score={result.score:.3f} "
+                f"actions={result.action_match_cases}/{len(report.tests)} "
+                f"json={result.valid_json_cases}/{len(report.tests)} "
+                f"params={params} avg_latency={result.average_latency_seconds:.2f}s"
+            )
+            if result.failures:
+                print(f"       first_failure={result.failures[0]}")
+        print(f"  benchmark -> {output}")
+    return 0 if report.passed else 2
 
 
 def command_ai_review(args: argparse.Namespace) -> int:
