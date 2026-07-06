@@ -67,6 +67,7 @@ def _evidence(
         model_candidate_count=3,
         model_selected_candidate="default",
         model_selection_score=1.0,
+        candidate_diagnostics_path="candidate-diagnostics.csv",
         model_training_backend_kind="directml",
         model_training_backend_device="privateuseone:0",
         probability_calibration_backend_kind="directml",
@@ -1621,6 +1622,44 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
     model.round_selection_reject_reason = "closed_trades<5; profit_factor<1.1"
     model.threshold_source = "round_selection_rejected_diagnostic_holdout"
     model.quality_warnings = ["round_selection_gate_failed_diagnostic_holdout_only"]
+    model.round_candidate_diagnostics = [
+        {
+            "name": "default",
+            "selected": False,
+            "score": -1.0,
+            "signal_threshold": 0.66,
+            "stop_loss_pct": 0.01,
+            "take_profit_pct": 0.022,
+            "cooldown_minutes": 15,
+            "label_threshold": 0.001,
+            "label_lookahead": 8,
+            "label_mode": "forward_return",
+            "probability_inverted": False,
+            "round_selection_gate_passed": False,
+            "round_selection_reject_reason": "closed_trades<5",
+            "threshold_source": "diagnostic",
+            "decision_threshold": 0.66,
+            "threshold_diagnostic_best_trades": 0,
+        },
+        {
+            "name": "intraday_micro_triple_barrier",
+            "selected": True,
+            "score": 0.25,
+            "signal_threshold": 0.58,
+            "stop_loss_pct": 0.0025,
+            "take_profit_pct": 0.00352,
+            "cooldown_minutes": 2,
+            "label_threshold": 0.00055,
+            "label_lookahead": 3,
+            "label_mode": "triple_barrier",
+            "probability_inverted": False,
+            "round_selection_gate_passed": False,
+            "round_selection_reject_reason": "profit_factor<1.1",
+            "threshold_source": "diagnostic",
+            "decision_threshold": 0.58,
+            "threshold_diagnostic_best_trades": 8,
+        },
+    ]
 
     monkeypatch.setattr(oe, "fetch_full_history", lambda *_args, **_kwargs: [_candle(index) for index in range(80)])
     monkeypatch.setattr(
@@ -1676,6 +1715,18 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
     assert metric["round_selection_gate_passed"] is False
     assert metric["round_selection_reject_reason"] == "closed_trades<5; profit_factor<1.1"
     assert metric["threshold_source"] == "round_selection_rejected_diagnostic_holdout"
+    assert metric["candidate_diagnostics_path"].endswith("candidate-diagnostics.csv")
+    assert report["candidate_diagnostics_csv_path"].endswith("candidate-diagnostics.csv")
+    assert report["candidate_diagnostics_json_path"].endswith("candidate-diagnostics.json")
+    assert report["candidate_diagnostics"][1]["name"] == "intraday_micro_triple_barrier"
+    assert report["candidate_diagnostics"][1]["selected"] is True
+    assert report["candidate_diagnostics"][1]["threshold_diagnostic_best_trades"] == 8
+    assert report["candidate_diagnostics_csv_path"] in report["tracked_artifacts"]
+    assert report["candidate_diagnostics_json_path"] in report["tracked_artifacts"]
+    diagnostics_csv = tmp_path / "docs" / "optimization" / "round-test-selection-diagnostic" / "data" / "candidate-diagnostics.csv"
+    diagnostics_json = tmp_path / "docs" / "optimization" / "round-test-selection-diagnostic" / "data" / "candidate-diagnostics.json"
+    assert diagnostics_csv.exists()
+    assert diagnostics_json.exists()
     assert report["critical_analysis"]["total_closed_trades"] == 8
     assert "no_closed_trades" not in report["critical_analysis"]["failures"]
     assert "no_accepted_symbols" in report["critical_analysis"]["failures"]

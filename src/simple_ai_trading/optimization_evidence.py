@@ -64,6 +64,8 @@ class EvidencePaths:
     status_path: Path
     progress_csv_path: Path
     metrics_csv_path: Path
+    candidate_diagnostics_csv_path: Path
+    candidate_diagnostics_json_path: Path
     timeline_csv_path: Path
 
 
@@ -108,6 +110,7 @@ class BacktestEvidence:
     model_candidate_count: int
     model_selected_candidate: str
     model_selection_score: float | None
+    candidate_diagnostics_path: str
     model_training_backend_kind: str
     model_training_backend_device: str
     probability_calibration_backend_kind: str
@@ -302,6 +305,8 @@ def make_evidence_paths(
         status_path=docs_data_dir / "round-status.json",
         progress_csv_path=docs_data_dir / "round-progress.csv",
         metrics_csv_path=docs_data_dir / "backtest-metrics.csv",
+        candidate_diagnostics_csv_path=docs_data_dir / "candidate-diagnostics.csv",
+        candidate_diagnostics_json_path=docs_data_dir / "candidate-diagnostics.json",
         timeline_csv_path=docs_data_dir / "portfolio-timeline.csv.gz",
     )
 
@@ -1636,6 +1641,43 @@ def _round_candidate_diagnostic(
     }
 
 
+def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    diagnostics = getattr(model, "round_candidate_diagnostics", []) or []
+    if not isinstance(diagnostics, list):
+        return rows
+    for index, item in enumerate(diagnostics, start=1):
+        if not isinstance(item, Mapping):
+            continue
+        rows.append({
+            "symbol": str(symbol),
+            "candidate_index": int(index),
+            "name": str(item.get("name", "")),
+            "selected": bool(item.get("selected") is True),
+            "score": _finite(item.get("score")),
+            "signal_threshold": _finite(item.get("signal_threshold")),
+            "stop_loss_pct": _finite(item.get("stop_loss_pct")),
+            "take_profit_pct": _finite(item.get("take_profit_pct")),
+            "cooldown_minutes": int(_finite(item.get("cooldown_minutes"))),
+            "label_threshold": _finite(item.get("label_threshold")),
+            "label_lookahead": int(_finite(item.get("label_lookahead"))),
+            "label_mode": str(item.get("label_mode", "")),
+            "probability_inverted": bool(item.get("probability_inverted") is True),
+            "round_selection_gate_passed": bool(item.get("round_selection_gate_passed") is True),
+            "round_selection_reject_reason": str(item.get("round_selection_reject_reason", "")),
+            "threshold_source": str(item.get("threshold_source", "")),
+            "decision_threshold": item.get("decision_threshold"),
+            "threshold_calibration_score": item.get("threshold_calibration_score"),
+            "threshold_calibration_pnl": item.get("threshold_calibration_pnl"),
+            "threshold_calibration_trades": int(_finite(item.get("threshold_calibration_trades"))),
+            "threshold_diagnostic_best_threshold": item.get("threshold_diagnostic_best_threshold"),
+            "threshold_diagnostic_best_score": item.get("threshold_diagnostic_best_score"),
+            "threshold_diagnostic_best_pnl": item.get("threshold_diagnostic_best_pnl"),
+            "threshold_diagnostic_best_trades": int(_finite(item.get("threshold_diagnostic_best_trades"))),
+        })
+    return rows
+
+
 def train_round_model(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
@@ -1828,6 +1870,7 @@ def build_round_evidence(
     )
     metrics: list[BacktestEvidence] = []
     data_health: list[dict[str, object]] = []
+    candidate_diagnostic_rows: list[dict[str, object]] = []
     portfolio_aggregate: dict[int, dict[str, float]] = {}
     timeline_fieldnames = (
         "round_id", "symbol", "objective", "timestamp_ms", "timestamp_utc",
@@ -1939,6 +1982,8 @@ def build_round_evidence(
                 model_candidate_count=model_candidate_count,
                 status_callback=symbol_train_status,
             )
+            symbol_candidate_diagnostics = _candidate_diagnostic_rows(item.symbol, model)
+            candidate_diagnostic_rows.extend(symbol_candidate_diagnostics)
             selected_strategy = apply_model_strategy_overrides(evidence_strategy, model)
             selected_effective_leverage = effective_leverage_for_market(selected_strategy, market_type)
             write_status(
@@ -2122,6 +2167,7 @@ def build_round_evidence(
                     if getattr(model, "model_selection_score", None) is not None
                     else None
                 ),
+                candidate_diagnostics_path=str(paths.candidate_diagnostics_csv_path).replace("\\", "/"),
                 model_training_backend_kind=str(getattr(model, "training_backend_kind", "")),
                 model_training_backend_device=str(getattr(model, "training_backend_device", "")),
                 probability_calibration_backend_kind=str(
@@ -2233,6 +2279,7 @@ def build_round_evidence(
                 model_candidate_count=int(max(1, model_candidate_count)),
                 model_selected_candidate="",
                 model_selection_score=None,
+                candidate_diagnostics_path="",
                 model_training_backend_kind="error",
                 model_training_backend_device="error",
                 probability_calibration_backend_kind="error",
@@ -2294,6 +2341,26 @@ def build_round_evidence(
         metric_rows,
         tuple(metric_rows[0].keys()) if metric_rows else ("round_id", "symbol", "objective"),
     )
+    candidate_diagnostic_fieldnames = (
+        "symbol", "candidate_index", "name", "selected", "score", "signal_threshold",
+        "stop_loss_pct", "take_profit_pct", "cooldown_minutes", "label_threshold",
+        "label_lookahead", "label_mode", "probability_inverted", "round_selection_gate_passed",
+        "round_selection_reject_reason", "threshold_source", "decision_threshold",
+        "threshold_calibration_score", "threshold_calibration_pnl", "threshold_calibration_trades",
+        "threshold_diagnostic_best_threshold", "threshold_diagnostic_best_score",
+        "threshold_diagnostic_best_pnl", "threshold_diagnostic_best_trades",
+    )
+    _write_csv(
+        paths.candidate_diagnostics_csv_path,
+        candidate_diagnostic_rows,
+        candidate_diagnostic_fieldnames,
+    )
+    write_json_atomic(
+        paths.candidate_diagnostics_json_path,
+        candidate_diagnostic_rows,
+        indent=2,
+        sort_keys=True,
+    )
     portfolio_rows = _portfolio_timeline_from_aggregate(portfolio_aggregate)
     _write_csv(
         paths.timeline_csv_path,
@@ -2308,6 +2375,8 @@ def build_round_evidence(
     tracked_artifacts = [
         str(paths.progress_csv_path).replace("\\", "/"),
         str(paths.metrics_csv_path).replace("\\", "/"),
+        str(paths.candidate_diagnostics_csv_path).replace("\\", "/"),
+        str(paths.candidate_diagnostics_json_path).replace("\\", "/"),
         str(paths.timeline_csv_path).replace("\\", "/"),
         str(paths.report_path).replace("\\", "/"),
         str(paths.data_health_path).replace("\\", "/"),
@@ -2421,10 +2490,13 @@ def build_round_evidence(
         "data_health": data_health,
         "selected_universe_path": str(paths.docs_data_dir / "selected-universe.json").replace("\\", "/"),
         "metrics_csv_path": str(paths.metrics_csv_path).replace("\\", "/"),
+        "candidate_diagnostics_csv_path": str(paths.candidate_diagnostics_csv_path).replace("\\", "/"),
+        "candidate_diagnostics_json_path": str(paths.candidate_diagnostics_json_path).replace("\\", "/"),
         "portfolio_timeline_csv_path": str(paths.timeline_csv_path).replace("\\", "/"),
         "progress_csv_path": str(paths.progress_csv_path).replace("\\", "/"),
         "progress": progress,
         "metrics": metric_rows,
+        "candidate_diagnostics": candidate_diagnostic_rows,
         "tracked_artifacts": tracked_artifacts,
         "artifact_integrity": artifact_integrity,
     }
