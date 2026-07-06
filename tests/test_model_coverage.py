@@ -176,7 +176,7 @@ def test_probability_and_quality_helpers_cover_edges() -> None:
     assert no_validation.validation_rows == 0
 
     one_class_calibration = calibrate_probability_temperature(validation, model)
-    assert one_class_calibration.status == "warn"
+    assert one_class_calibration.status == "fail"
     assert "only one class" in one_class_calibration.warnings[-1]
 
     strong_model = TrainedModel(

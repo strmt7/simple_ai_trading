@@ -73,10 +73,13 @@ Current promotion-count search starts with:
 - `intraday_activity_triple_barrier`.
 
 The intraday candidates also test tighter stop/take-profit and shorter
-cooldown execution profiles. `intraday_activity_triple_barrier` is a
-second-level day-trading activity probe with a smaller label target, shorter
-lookahead, fee-aware stop/take settings, and zero diagnostic cooldown; it does
-not bypass max-trades, drawdown, liquidity, liquidation, or objective gates.
+cooldown execution profiles. Candidate labels are floored at the estimated
+round-trip taker-fee plus slippage hurdle with a safety margin, so micro
+profiles cannot train on moves that would be unprofitable after execution
+costs. `intraday_activity_triple_barrier` is a second-level day-trading
+activity probe with a shorter lookahead, fee-aware stop/take settings, and
+zero diagnostic cooldown; it does not bypass max-trades, drawdown, liquidity,
+liquidation, or objective gates.
 `intraday_breakout_forward` remains in the expanded candidate set when more
 than three candidates are requested. Round artifacts now write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
@@ -92,17 +95,16 @@ holdout produces more useful failure evidence.
 
 Latest local smoke evidence from 2026-07-06, using verified one-day `1s`
 futures data for BTCUSDT/ETHUSDT/SOLUSDT, DirectML with `--require-gpu`,
-conservative 5x futures settings, and three model candidates, still failed the
-critical gate: zero accepted symbols, six total closed trades, mean ROI
-`-0.13159433849626415%`, median ROI `-0.08118825039811099%`, worst drawdown
-`0.2407102604171314%`, and no liquidations. This is not promotion evidence
-because the stored span is about one day per symbol, not years; it is retained
-here only as truthful engineering feedback that the current strategy is not yet
-profitable on available second-level data. The activity probe increased holdout
-activity for ETHUSDT to four closed trades and produced 24 losing selection
-trades for SOLUSDT, proving it can surface churn risk instead of hiding it.
-All added activity remained net negative after execution costs and failed the
-same risk/edge gates.
+conservative 5x futures settings, cost-aware labels, and three model
+candidates, still failed the critical gate: zero accepted symbols, four total
+closed trades, mean ROI `-0.07061402037552397%`, median ROI
+`-0.07469716949051416%`, worst drawdown `0.13650287742915454%`, and no
+liquidations. This is not promotion evidence because the stored span is about
+one day per symbol, not years; it is retained here only as truthful engineering
+feedback that the current strategy is not yet profitable on available
+second-level data. Compared with the immediately previous activity-probe smoke,
+the cost-aware label floor reduced fee-negative churn and drawdown, but all
+symbols still failed the same risk/edge gates.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That

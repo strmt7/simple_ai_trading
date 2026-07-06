@@ -1,2 +1,2 @@
 round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,total_closed_trades,zero_trade_symbol_count,profitable_symbol_count,critical_verdict,mean_low_liquidity_sample_rate_pct
-round-activity-probe-smoke,2026-07-06T11:23:53.418231Z,3,0,-0.13159433849626415,-0.08118825039811099,-0.1505522596320275,0.01895792113576338,-0.08605282665625213,0.2407102604171314,6,6,0,0,fail,4.610357096727149
+round-cost-floor-smoke,2026-07-06T11:55:33.516753Z,3,0,-0.07061402037552397,-0.07469716949051416,-0.1505522596320275,0.07993823925650355,0.018603389628147626,0.13650287742915454,4,4,0,0,fail,25.307546504255264
