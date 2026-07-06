@@ -3256,6 +3256,13 @@ def _load_live_start_model(
     effective_dry_run: bool,
     require_model_candidate_search: bool = False,
     require_accelerator_evidence: bool = False,
+    require_live_data_evidence: bool = False,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_interval: str | None = None,
+    min_live_data_years: float = 1.0,
+    min_live_coverage_ratio: float = 0.995,
+    max_live_gap_count: int = 0,
 ) -> tuple[TrainedModel | None, str | None, str | None]:
     if model_path.exists():
         try:
@@ -3266,6 +3273,13 @@ def _load_live_start_model(
                     model_path=model_path,
                     require_model_candidate_search=require_model_candidate_search,
                     require_accelerator_evidence=require_accelerator_evidence,
+                    require_live_data_evidence=require_live_data_evidence,
+                    expected_symbol=expected_symbol,
+                    expected_market_type=expected_market_type,
+                    expected_interval=expected_interval,
+                    min_live_data_years=min_live_data_years,
+                    min_live_coverage_ratio=min_live_coverage_ratio,
+                    max_live_gap_count=max_live_gap_count,
                 )
             return model, None, None
         except ModelPromotionError as exc:
@@ -6319,6 +6333,10 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         effective_dry_run=effective_dry_run,
         require_model_candidate_search=not effective_dry_run,
         require_accelerator_evidence=not effective_dry_run and _backend_info.kind != "cpu",
+        require_live_data_evidence=not effective_dry_run,
+        expected_symbol=runtime.symbol,
+        expected_market_type=runtime.market_type,
+        expected_interval=runtime.interval,
     )
     if model_error is not None:
         print(model_error, file=sys.stderr)
@@ -7902,6 +7920,10 @@ def _build_autonomous_decision_fn(
     effective_dry_run: bool,
     require_model_candidate_search: bool = False,
     require_accelerator_evidence: bool = False,
+    require_live_data_evidence: bool = False,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_interval: str | None = None,
 ):
     from .autonomous import Decision
 
@@ -7911,6 +7933,10 @@ def _build_autonomous_decision_fn(
         effective_dry_run=effective_dry_run,
         require_model_candidate_search=require_model_candidate_search,
         require_accelerator_evidence=require_accelerator_evidence,
+        require_live_data_evidence=require_live_data_evidence,
+        expected_symbol=expected_symbol,
+        expected_market_type=expected_market_type,
+        expected_interval=expected_interval,
     )
     if model_error is not None:
         return None, model_error, model_notice
@@ -8070,6 +8096,10 @@ def command_autonomous(args: argparse.Namespace) -> int:
             strategy=strategy,
             effective_dry_run=effective_dry_run,
             require_model_candidate_search=not effective_dry_run,
+            require_live_data_evidence=not effective_dry_run,
+            expected_symbol=runtime.symbol,
+            expected_market_type=runtime.market_type,
+            expected_interval=runtime.interval,
         )
         if model_error is not None or decision_fn is None:
             print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)

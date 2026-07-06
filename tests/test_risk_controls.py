@@ -350,6 +350,22 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
     assert "model candidate search" in strict_detail
     assert "training accelerator" in strict_detail
 
+    live_data_strict = build_risk_policy_report(
+        runtime,
+        StrategyConfig(),
+        effective_dry_run=False,
+        model_path=promoted_path,
+        require_live_data_evidence=True,
+        expected_symbol="BTCUSDC",
+        expected_market_type="spot",
+        expected_interval="1s",
+    )
+    assert live_data_strict.allowed is False
+    live_data_detail = "; ".join(
+        check.detail for check in live_data_strict.checks if check.label == "model promotion evidence"
+    )
+    assert "live data evidence" in live_data_detail
+
     stale_path = tmp_path / "stale.json"
     serialize_model(
         TrainedModel(

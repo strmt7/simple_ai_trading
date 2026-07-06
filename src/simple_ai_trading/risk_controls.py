@@ -216,6 +216,13 @@ def build_risk_policy_report(
     model_path: str | Path | None = None,
     require_model_candidate_search: bool = False,
     require_accelerator_evidence: bool = False,
+    require_live_data_evidence: bool = False,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_interval: str | None = None,
+    min_live_data_years: float = 1.0,
+    min_live_coverage_ratio: float = 0.995,
+    max_live_gap_count: int = 0,
 ) -> RiskPolicyReport:
     """Return deterministic local risk checks without network access."""
 
@@ -563,6 +570,13 @@ def build_risk_policy_report(
                     path,
                     require_model_candidate_search=require_model_candidate_search,
                     require_accelerator_evidence=require_accelerator_evidence,
+                    require_live_data_evidence=require_live_data_evidence,
+                    expected_symbol=expected_symbol,
+                    expected_market_type=expected_market_type,
+                    expected_interval=expected_interval,
+                    min_live_data_years=min_live_data_years,
+                    min_live_coverage_ratio=min_live_coverage_ratio,
+                    max_live_gap_count=max_live_gap_count,
                 )
                 status = "ok" if readiness.allowed else ("warn" if dry_run else "block")
                 detail = "passed" if readiness.allowed else "; ".join(

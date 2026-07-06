@@ -5,12 +5,13 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from .financial_sanity import build_model_financial_sanity_report
 from .model import ModelLoadError, TrainedModel, load_model
 
 _ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
+_LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,107 @@ def _accelerator_check(
     return _check("block", label, detail, metric=kind or "missing", limit="gpu")
 
 
+def _string_or_none(value: object) -> str | None:
+    text = str(value or "").strip()
+    return text or None
+
+
+def _live_data_evidence_check(
+    execution_validation: Mapping[str, object] | None,
+    *,
+    expected_symbol: str | None,
+    expected_market_type: str | None,
+    expected_interval: str | None,
+    min_live_data_years: float,
+    min_live_coverage_ratio: float,
+    max_live_gap_count: int,
+) -> ModelReadinessCheck:
+    if not isinstance(execution_validation, dict):
+        return _check("block", "live data evidence", "missing execution validation")
+    raw = execution_validation.get("data_coverage")
+    if not isinstance(raw, dict) or not raw:
+        return _check("block", "live data evidence", "missing data_coverage evidence")
+
+    source = _string_or_none(raw.get("source_scope"))
+    symbol = str(raw.get("symbol") or "").strip().upper()
+    market_type = str(raw.get("market_type") or "").strip().lower()
+    interval = str(raw.get("interval") or "").strip()
+    integrity_status = str(raw.get("integrity_status") or "").strip().lower()
+    expected_interval_ms = _finite(raw.get("expected_interval_ms"))
+    rows_used = _finite(raw.get("rows_used"))
+    candles_used = _finite(raw.get("candles_used"))
+    coverage_ratio = _finite(raw.get("coverage_ratio"))
+    gap_count = _finite(raw.get("gap_count"))
+    years = _finite(raw.get("used_duration_years"))
+    full_available_history_used = raw.get("full_available_history_used") is True
+    warnings = tuple(str(item) for item in raw.get("integrity_warnings") or () if str(item))
+
+    reasons: list[str] = []
+    if source not in _LIVE_DATA_SOURCES:
+        reasons.append(f"source={source or 'missing'}")
+    if expected_symbol and symbol != expected_symbol.strip().upper():
+        reasons.append(f"symbol={symbol or 'missing'}!={expected_symbol.strip().upper()}")
+    elif not symbol:
+        reasons.append("symbol=missing")
+    if expected_market_type and market_type != expected_market_type.strip().lower():
+        reasons.append(f"market={market_type or 'missing'}!={expected_market_type.strip().lower()}")
+    elif not market_type:
+        reasons.append("market=missing")
+    required_interval = "1s"
+    runtime_interval = str(expected_interval or "").strip()
+    if runtime_interval and runtime_interval != required_interval:
+        reasons.append(f"runtime_interval={runtime_interval}!={required_interval}")
+    if interval != required_interval:
+        reasons.append(f"interval={interval or 'missing'}!={required_interval}")
+    if expected_interval_ms is None or expected_interval_ms != 1000.0:
+        reasons.append(f"expected_interval_ms={expected_interval_ms if expected_interval_ms is not None else 'missing'}")
+    if integrity_status != "ok":
+        reasons.append(f"integrity_status={integrity_status or 'missing'}")
+    if rows_used is None or rows_used <= 0.0:
+        reasons.append(f"rows_used={rows_used if rows_used is not None else 'missing'}")
+    if candles_used is None or candles_used <= 0.0:
+        reasons.append(f"candles_used={candles_used if candles_used is not None else 'missing'}")
+    coverage_floor = max(0.0, min(1.0, float(min_live_coverage_ratio)))
+    if coverage_ratio is None or coverage_ratio < coverage_floor:
+        reasons.append(
+            f"coverage_ratio={coverage_ratio if coverage_ratio is not None else 'missing'}<{coverage_floor:.4f}"
+        )
+    gap_limit = max(0, int(max_live_gap_count))
+    if gap_count is None or int(gap_count) > gap_limit:
+        reasons.append(f"gap_count={gap_count if gap_count is not None else 'missing'}>{gap_limit}")
+    min_years = max(0.0, float(min_live_data_years))
+    if years is None or years < min_years:
+        reasons.append(f"used_duration_years={years if years is not None else 'missing'}<{min_years:.2f}")
+    if not full_available_history_used:
+        reasons.append("full_available_history_used=false")
+    hard_warnings = {
+        "no_candles_used",
+        "no_model_rows_used",
+        "coverage_gaps_detected",
+        "coverage_ratio_below_99_5_percent",
+        "recent_api_limit_not_full_history",
+    }
+    warning_hits = sorted(set(warnings).intersection(hard_warnings))
+    if warning_hits:
+        reasons.append("integrity_warnings=" + ",".join(warning_hits))
+
+    if reasons:
+        return _check(
+            "block",
+            "live data evidence",
+            "failed live data contract: " + "; ".join(reasons),
+            metric=coverage_ratio if coverage_ratio is not None else "missing",
+            limit=f">={coverage_floor:.4f}, gaps<={gap_limit}, years>={min_years:.2f}",
+        )
+    return _check(
+        "ok",
+        "live data evidence",
+        f"{symbol} {market_type} {interval} sqlite coverage={coverage_ratio:.4f} years={years:.2f}",
+        metric=coverage_ratio,
+        limit=f">={coverage_floor:.4f}",
+    )
+
+
 def build_model_readiness_report(
     model: TrainedModel,
     *,
@@ -136,6 +238,13 @@ def build_model_readiness_report(
     require_model_candidate_search: bool = False,
     min_model_candidates: int = 2,
     require_accelerator_evidence: bool = False,
+    require_live_data_evidence: bool = False,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_interval: str | None = None,
+    min_live_data_years: float = 1.0,
+    min_live_coverage_ratio: float = 0.995,
+    max_live_gap_count: int = 0,
 ) -> ModelReadinessReport:
     checks: list[ModelReadinessCheck] = []
     selection_risk = getattr(model, "selection_risk", None)
@@ -289,6 +398,19 @@ def build_model_readiness_report(
                     )
                 )
 
+    if require_live_data_evidence:
+        checks.append(
+            _live_data_evidence_check(
+                execution_validation if isinstance(execution_validation, dict) else None,
+                expected_symbol=expected_symbol,
+                expected_market_type=expected_market_type,
+                expected_interval=expected_interval,
+                min_live_data_years=min_live_data_years,
+                min_live_coverage_ratio=min_live_coverage_ratio,
+                max_live_gap_count=max_live_gap_count,
+            )
+        )
+
     policy = getattr(model, "meta_label_policy", None)
     if isinstance(policy, dict) and policy.get("enabled") is True:
         checks.append(_check("ok", "meta-label policy", str(policy.get("mode") or "enabled")))
@@ -332,6 +454,13 @@ def assert_model_promoted(
     require_model_candidate_search: bool = False,
     min_model_candidates: int = 2,
     require_accelerator_evidence: bool = False,
+    require_live_data_evidence: bool = False,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_interval: str | None = None,
+    min_live_data_years: float = 1.0,
+    min_live_coverage_ratio: float = 0.995,
+    max_live_gap_count: int = 0,
 ) -> ModelReadinessReport:
     report = build_model_readiness_report(
         model,
@@ -341,6 +470,13 @@ def assert_model_promoted(
         require_model_candidate_search=require_model_candidate_search,
         min_model_candidates=min_model_candidates,
         require_accelerator_evidence=require_accelerator_evidence,
+        require_live_data_evidence=require_live_data_evidence,
+        expected_symbol=expected_symbol,
+        expected_market_type=expected_market_type,
+        expected_interval=expected_interval,
+        min_live_data_years=min_live_data_years,
+        min_live_coverage_ratio=min_live_coverage_ratio,
+        max_live_gap_count=max_live_gap_count,
     )
     if not report.allowed:
         reasons = "; ".join(f"{check.label}: {check.detail}" for check in report.checks if check.status == "block")
@@ -356,6 +492,13 @@ def load_model_readiness_report(
     require_model_candidate_search: bool = False,
     min_model_candidates: int = 2,
     require_accelerator_evidence: bool = False,
+    require_live_data_evidence: bool = False,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_interval: str | None = None,
+    min_live_data_years: float = 1.0,
+    min_live_coverage_ratio: float = 0.995,
+    max_live_gap_count: int = 0,
 ) -> ModelReadinessReport:
     path = Path(model_path)
     model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
@@ -367,4 +510,11 @@ def load_model_readiness_report(
         require_model_candidate_search=require_model_candidate_search,
         min_model_candidates=min_model_candidates,
         require_accelerator_evidence=require_accelerator_evidence,
+        require_live_data_evidence=require_live_data_evidence,
+        expected_symbol=expected_symbol,
+        expected_market_type=expected_market_type,
+        expected_interval=expected_interval,
+        min_live_data_years=min_live_data_years,
+        min_live_coverage_ratio=min_live_coverage_ratio,
+        max_live_gap_count=max_live_gap_count,
     )

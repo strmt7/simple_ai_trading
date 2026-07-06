@@ -11,6 +11,46 @@ from simple_ai_trading.model_readiness import (
 )
 
 
+def _live_data_coverage(symbol: str = "BTCUSDC", *, interval: str = "1s", years: float = 2.0) -> dict[str, object]:
+    rows = int(365.25 * 24 * 60 * 60 * max(0.1, years))
+    return {
+        "symbol": symbol,
+        "market_type": "futures",
+        "interval": interval,
+        "source_scope": "sqlite_market_data",
+        "expected_interval_ms": 1000 if interval == "1s" else 60_000,
+        "integrity_status": "ok",
+        "integrity_warnings": [],
+        "truth_basis": [
+            "prices_from_timestamped_closed_candles",
+            "coverage_measured_from_candle_close_time",
+            "execution_results_are_simulated_not_exchange_fills",
+        ],
+        "full_history_requested": True,
+        "full_available_history_used": True,
+        "candles_available": rows,
+        "candles_used": rows,
+        "rows_used": rows - 100,
+        "requested_start_ms": None,
+        "requested_end_ms": None,
+        "available_start_ms": 0,
+        "available_end_ms": rows * 1000,
+        "used_start_ms": 0,
+        "used_end_ms": rows * 1000,
+        "available_start_utc": "2024-01-01T00:00:00Z",
+        "available_end_utc": "2026-01-01T00:00:00Z",
+        "used_start_utc": "2024-01-01T00:00:00Z",
+        "used_end_utc": "2026-01-01T00:00:00Z",
+        "used_duration_days": years * 365.25,
+        "used_duration_years": years,
+        "gap_count": 0,
+        "largest_gap_ms": 1000,
+        "largest_gap_intervals": 1.0,
+        "coverage_ratio": 1.0,
+        "notes": [],
+    }
+
+
 def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedModel:
     return TrainedModel(
         weights=[0.0],
@@ -41,6 +81,7 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
+            "data_coverage": _live_data_coverage(),
         } if promoted else {},
         meta_label_policy={
             "enabled": True,
@@ -154,6 +195,68 @@ def test_model_readiness_can_require_accelerator_evidence() -> None:
     )
     with pytest.raises(ModelPromotionError, match="training accelerator"):
         assert_model_promoted(model, require_accelerator_evidence=True)
+
+
+def test_model_readiness_can_require_live_data_evidence() -> None:
+    model = _model()
+
+    report = build_model_readiness_report(
+        model,
+        require_live_data_evidence=True,
+        expected_symbol="BTCUSDC",
+        expected_market_type="futures",
+        expected_interval="1s",
+        min_live_data_years=1.0,
+    )
+
+    assert report.allowed is True
+    assert any(check.label == "live data evidence" and check.status == "ok" for check in report.checks)
+
+
+@pytest.mark.parametrize(
+    ("mutator", "match_text"),
+    [
+        (lambda payload: payload.pop("data_coverage"), "missing data_coverage"),
+        (lambda payload: payload.__setitem__("data_coverage", _live_data_coverage(interval="1m")), "interval=1m"),
+        (lambda payload: payload.__setitem__("data_coverage", _live_data_coverage(years=0.5)), "used_duration_years=0.5<1.00"),
+        (lambda payload: payload.__setitem__("data_coverage", _live_data_coverage(symbol="ETHUSDC")), "symbol=ETHUSDC!=BTCUSDC"),
+    ],
+)
+def test_model_readiness_blocks_failed_live_data_evidence(mutator, match_text: str) -> None:
+    model = _model()
+    mutator(model.execution_validation)
+
+    report = build_model_readiness_report(
+        model,
+        require_live_data_evidence=True,
+        expected_symbol="BTCUSDC",
+        expected_market_type="futures",
+        expected_interval="1s",
+    )
+
+    assert report.allowed is False
+    assert any(check.label == "live data evidence" and match_text in check.detail for check in report.checks)
+    with pytest.raises(ModelPromotionError, match="live data evidence"):
+        assert_model_promoted(
+            model,
+            require_live_data_evidence=True,
+            expected_symbol="BTCUSDC",
+            expected_market_type="futures",
+            expected_interval="1s",
+        )
+
+
+def test_model_readiness_blocks_non_second_runtime_interval() -> None:
+    report = build_model_readiness_report(
+        _model(),
+        require_live_data_evidence=True,
+        expected_symbol="BTCUSDC",
+        expected_market_type="futures",
+        expected_interval="15m",
+    )
+
+    assert report.allowed is False
+    assert any("runtime_interval=15m!=1s" in check.detail for check in report.checks)
 
 
 def test_model_readiness_blocks_missing_or_failed_selection_risk() -> None:
