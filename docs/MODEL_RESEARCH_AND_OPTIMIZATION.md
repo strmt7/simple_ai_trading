@@ -186,6 +186,13 @@ used by the CLI. The advanced feature vector now includes:
   long-only, or short-only thresholds only when the selection fold improves
   risk-adjusted evidence; the final holdout still has to pass profitability,
   drawdown, liquidation, trade-quality, and market-edge gates.
+- a diverse bounded candidate prefix that covers default, high-activity long
+  triple-barrier, downside triple-barrier, long/short order-flow pressure, and
+  frequency probes before wider sweeps.
+- downside-positive label orientation: after probability calibration, models
+  trained on short-success labels are inverted into the runtime convention so
+  short evidence cannot be accidentally scored as a high-probability long
+  signal.
 
 The revamp also adds a hybrid expert layer stored directly inside the serialized
 model:
@@ -205,6 +212,16 @@ The optimizer evaluates risk-level-specific weight profiles:
   smoothness, and confluence.
 - `aggressive`: allows stronger expert contribution, but still has to pass
   backtest gates and drawdown limits.
+
+The optimization-round evidence path now runs the same adaptive hybrid model-zoo
+as a post-base-candidate selection step. It uses the existing chronological
+training/selection split, records hybrid profile and score diagnostics, emits
+status updates during long hybrid checks, and keeps the base model unless the
+hybrid replay passes `ObjectiveSpec.accepts`. This prevents a sophisticated
+ensemble overlay from becoming executable just because it exists in code. The
+2026-07-06 `round-hybrid-zoo-window-smoke` BTCUSDT/ETHUSDT/SOLUSDT futures
+window still failed with zero accepted symbols and no hybrid-selected final
+holdouts, so it is negative research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple
 label target/horizon profiles, and both forward-return and stop/take-aware

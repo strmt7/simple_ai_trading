@@ -130,6 +130,10 @@ class TrainedModel:
     round_candidate_diagnostics: list[dict[str, Any]] = field(default_factory=list)
     hybrid_base_weight: float = 1.0
     hybrid_experts: List[HybridExpert] = field(default_factory=list)
+    hybrid_profile: str = ""
+    hybrid_base_score: float | None = None
+    hybrid_best_score: float | None = None
+    hybrid_evaluated_profiles: int = 0
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
     selection_risk: dict[str, Any] = field(default_factory=dict)
     execution_validation: dict[str, Any] = field(default_factory=dict)
@@ -2017,6 +2021,18 @@ def load_model(
         ],
         hybrid_base_weight=max(0.0, float(payload.get("hybrid_base_weight", 1.0) or 1.0)),
         hybrid_experts=_load_hybrid_experts(payload.get("hybrid_experts", []), dim),
+        hybrid_profile=str(payload.get("hybrid_profile", "") or ""),
+        hybrid_base_score=(
+            float(payload["hybrid_base_score"])
+            if payload.get("hybrid_base_score") is not None
+            else None
+        ),
+        hybrid_best_score=(
+            float(payload["hybrid_best_score"])
+            if payload.get("hybrid_best_score") is not None
+            else None
+        ),
+        hybrid_evaluated_profiles=max(0, int(payload.get("hybrid_evaluated_profiles", 0) or 0)),
         meta_label_policy=(
             dict(payload["meta_label_policy"])
             if isinstance(payload.get("meta_label_policy"), dict)
