@@ -1347,6 +1347,7 @@ def _round_model_candidates(
         ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
         ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
         ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1),
+        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.55, 0.35, "downside_triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
         ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1),
         ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
         ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1),
@@ -1923,7 +1924,6 @@ def train_round_model(
             require_gpu=require_gpu,
             status_callback=callback,
         )
-        evaluated.append(result)
         if len(candidates) > 1 and status_callback is not None:
             status_callback(
                 "model_candidate_complete",
@@ -1936,13 +1936,15 @@ def train_round_model(
             )
         if best is None or _round_candidate_rank_key(result) > _round_candidate_rank_key(best):
             best = result
+        evaluated.append(replace(result, rows=[], validation_rows=[]))
+        gc.collect()
     if best is None:
         raise ValueError("no model candidates were evaluated")
     best.model.model_candidate_count = len(candidates)
     best.model.model_selected_candidate = best.candidate.name
     best.model.model_selection_score = float(best.score)
     best.model.round_candidate_diagnostics = [
-        _round_candidate_diagnostic(result, strategy=strategy, selected=result is best)
+        _round_candidate_diagnostic(result, strategy=strategy, selected=result.candidate == best.candidate)
         for result in evaluated
     ]
     if len(candidates) > 1 and status_callback is not None:

@@ -14,6 +14,11 @@ component, not as authority to override deterministic risk controls.
   models for risk assessment, sentiment, retrieval-augmented workflows, and
   financial reporting tasks:
   https://huggingface.co/blog/DragonLLM/llm-open-finance-models
+- Fin-R1 and Fin-o1 are finance-reasoning 7B/8B model families that are small
+  enough for local benchmark experiments, but they still require the same
+  structured risk benchmark and AI-vs-ML uplift proof before any autonomous
+  effect:
+  https://arxiv.org/abs/2503.16252 and https://arxiv.org/abs/2502.08127
 - The CFA Institute practical LLM guide reports that finance-tuned models such
   as FinMA/FinGPT can be stronger for sentiment and headline classification,
   while broad general models may be stronger for numerical reasoning:
@@ -49,11 +54,11 @@ Latest committed local benchmark summary:
 
 Current local priority order favors `qwen3:8b` as the installed structured
 risk-review baseline, `deepseek-r1:8b` as a reasoning second opinion, and
-smaller models only when they pass the same benchmark. Finance-specialized
-DragonLLM, FinGPT, and FinMA models remain preferred candidates for future
-local serving tests, especially for risk text, sentiment, and headline
-classification, but they still must pass the same benchmark and uplift gates
-before they can affect autonomous trading.
+smaller models only when they pass the same benchmark. The candidate registry
+also includes local aliases `fin-r1:7b` and `fin-o1:8b` for finance-reasoning
+experiments, plus finance-specialized DragonLLM, FinGPT, and FinMA candidates
+for future local serving tests. They still must pass the same benchmark and
+uplift gates before they can affect autonomous trading.
 
 ## Why AI Stays Gated
 

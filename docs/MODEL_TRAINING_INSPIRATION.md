@@ -1,6 +1,6 @@
 # Model and Training Inspiration
 
-Research snapshot: 2026-07-04
+Research snapshot: 2026-07-06
 
 This dossier translates current model and training research into implementation
 direction for Simple AI Trading. It is not a profitability claim. The purpose is
@@ -142,6 +142,12 @@ weakening risk controls.
   trade; the implemented AI-uplift gate now fails closed when the local model
   is too small or when the AI-assisted holdout does not beat the non-AI ML
   baseline.
+- Fin-R1, Fin-o1, and LLM Open Finance reinforce the near-term AI direction:
+  small finance-reasoning models in the 7B/8B class are realistic local
+  benchmark candidates, but they are still advisory/uplift components. They
+  must be served locally, pass structured finance-risk benchmark cases, and
+  prove realized AI-vs-ML holdout uplift after costs before affecting
+  autonomous decisions.
 - HMM and regime-switching literature supports the abstention design: detect
   volatility/chop/range/trend phases and reduce exposure or cool down when the
   current state is not where the strategy has demonstrated edge.
@@ -182,6 +188,12 @@ weakening risk controls.
   promote an order-book model until it can reconstruct local books, prove depth
   continuity, replay quote-time walk-forward windows, and simulate queue/fill
   uncertainty per symbol.
+- Implemented update: v6 advanced features now add order-flow microstructure
+  proxies from real second-level quote volume, trade count, taker-buy
+  base/quote volume, signed flow imbalance, no-trade seconds, and
+  signed-flow/return alignment. This is not a substitute for true order-book
+  tensors, but it gives the current BTC/ETH/SOL second-level database a more
+  defensible microstructure signal source than OHLCV alone.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time
@@ -215,6 +227,9 @@ Sources:
 - <https://arxiv.org/abs/2402.02592>
 - <https://arxiv.org/abs/2303.17564>
 - <https://arxiv.org/abs/2306.06031>
+- <https://arxiv.org/abs/2503.16252>
+- <https://arxiv.org/abs/2502.08127>
+- <https://huggingface.co/DragonLLM/Qwen-Open-Finance-R-8B>
 - <https://arxiv.org/abs/2007.14874>
 - <https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html>
 - <https://lightgbm.readthedocs.io/en/latest/GPU-Targets.html>

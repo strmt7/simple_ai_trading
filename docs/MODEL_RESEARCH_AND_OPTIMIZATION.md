@@ -95,9 +95,11 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
 - MLFinPy's triple-barrier docs reinforce the same principle: barriers should
   reflect volatility/risk, not a single fixed close-to-close horizon:
   <https://mlfinpy.readthedocs.io/en/latest/Labelling.html>
-- DeepLOB influenced the roadmap for true order-book models; until depth
-  snapshots are persisted, this repo uses candle microstructure proxies such as
-  body, wick, close-location, ATR, breakout, and volume-surge features:
+- DeepLOB influenced the roadmap for true order-book models. Until full depth
+  snapshots are persisted, this repo uses candle microstructure proxies plus
+  second-level aggTrade-derived order-flow features such as taker-buy ratios,
+  signed-flow imbalance, trade-count shocks, quote-volume shocks, no-trade
+  ratios, and flow/return alignment:
   <https://arxiv.org/abs/1808.03668>
 - FinRL influenced the training-environment boundary: transaction cost,
   liquidity, and risk aversion must live inside the evaluation loop before any
@@ -173,10 +175,13 @@ used by the CLI. The advanced feature vector now includes:
 - candle microstructure proxies inspired by order-book literature when only
   OHLCV candles are available,
 - ATR-normalized trend and breakout features,
-- volume-surge confirmation for high-frequency day-trading entries.
+- volume-surge confirmation for high-frequency day-trading entries,
 - market-quality regime features for trend efficiency, downside pressure,
   lagged return autocorrelation, volatility-of-volatility, volume pressure,
-  volume/return correlation, ATR pressure, and current volume z-score.
+  volume/return correlation, ATR pressure, and current volume z-score,
+- v6 order-flow microstructure features from real quote volume, trade count,
+  taker-buy base/quote volume, signed flow imbalance, no-trade seconds, and
+  signed-flow/return alignment.
 
 The revamp also adds a hybrid expert layer stored directly inside the serialized
 model:
@@ -210,8 +215,8 @@ buy-and-hold edge failure, drawdown failure, and stopped-by-drawdown failures.
 Selected training-suite models also receive feature-group ablation replays.
 The selected advanced feature vector is replayed with base features, extra
 lookback windows, technical-confluence features, market-quality regime
-features, nonlinear transforms, and polynomial interactions zeroed out one
-group at a time. The report records
+features, order-flow microstructure features, nonlinear transforms, and
+polynomial interactions zeroed out one group at a time. The report records
 acceptance, score, P&L, drawdown, trade count, and delta versus the selected
 model. This remains attribution evidence for model selection, and it is also
 carried into `ai-review`: if the compact accepted report shows that removing a

@@ -17,15 +17,16 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current checkpoint is `round-1s-db-btc-research`, a failed BTCUSDT futures
-research run generated from verified local `1s` SQLite market data. It is kept
-because it is truthful negative evidence: the candidate trained on real
-second-level data, used DirectML, closed one losing trade, and failed the
-critical-analysis gate. Earlier stale BTC/ETH-only and broader-symbol artifacts
-were removed because they no longer matched the active scope, data standard, or
-model selection rules. Future checkpoints must be generated from the current
-BTCUSDT/ETHUSDT/SOLUSDT database state and must commit their CSV/JSON graph data
-beside any SVG charts.
+The current retained checkpoint is `round-order-flow-window-smoke`, a failed
+BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local `1s`
+SQLite market data. It is kept because it is truthful negative evidence: the
+candidate search trained on real second-level data, used DirectML, added v6
+order-flow features, closed two losing trades across the final holdout, and
+failed the critical-analysis gate. Earlier BTC-only, stale BTC/ETH-only, and
+broader-symbol artifacts were removed because they no longer matched the active
+scope, data standard, or model selection rules. Future checkpoints must be
+generated from the current BTCUSDT/ETHUSDT/SOLUSDT database state and must
+commit their CSV/JSON graph data beside any SVG charts.
 
 GitHub retention is latest-only for per-round result graphs. `tools/optimization_round.py`
 refreshes `docs/optimization/iteration-progress/data/progress.csv` and
@@ -88,8 +89,12 @@ two-bar minimum hold and two-bar neutral-signal exit grace, while
 are only neutral-signal debounce controls; stop-loss, take-profit, reversal,
 drawdown, liquidation, liquidity, max-trades, and objective gates remain
 immediate.
-`intraday_breakout_forward` remains in the expanded candidate set when more
-than three candidates are requested. Round artifacts now write
+`intraday_breakout_forward` and `intraday_downside_triple_barrier` remain in
+the expanded candidate set when more than three candidates are requested. The
+downside candidate trains a short-side triple-barrier label, but it is not in
+the default three-candidate set because the 2026-07-06 smoke test made ROI
+worse. The expanded full set now contains 14 candidates. Round artifacts now
+write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
 model artifacts persist `round_candidate_diagnostics`, so future agents can
 audit each candidate's threshold, trade-count, P&L, and selection-gate result
@@ -102,27 +107,36 @@ use, but the optimizer now breaks equal-score ties toward the least-bad
 diagnostic candidate so the final holdout produces more useful failure
 evidence.
 
-Latest local smoke evidence from 2026-07-06 is
-`round-2024w1-window-smoke`. It uses the verified UTC window
+Latest retained local smoke evidence from 2026-07-06 is
+`round-order-flow-window-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-07T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 604,800 expected rows, zero
 missing-second gaps, 1.0 coverage, and seven verified Binance archive
 checksums. The run used DirectML with `--require-gpu`, conservative 5x futures
-settings, cost-aware labels, flat-signal hold/grace candidate settings, and the
-default three-candidate search. It failed the critical gate: zero accepted
-symbols, two total closed trades, mean ROI `-0.04914839522769323%`, median ROI
-`-0.06155765341785582%`, mean buy-and-hold ROI `-0.8918614182497557%`, worst
+settings, cost-aware labels, flat-signal hold/grace candidate settings, the
+default three-candidate search, and v6 order-flow features built from real
+quote volume, trade count, taker-buy volume, signed flow, no-trade ratio, and
+flow/return alignment. It failed the critical gate: zero accepted symbols, two
+total closed trades, mean ROI `-0.04869541446409661%`, median ROI
+`-0.06019871112706596%`, mean buy-and-hold ROI `-0.8918786806126517%`, worst
 drawdown `0.08588753226522386%`, and no liquidations. BTCUSDT selected
-`default`, closed one losing trade, and ended at `-0.06155765341785582%` ROI.
-ETHUSDT selected `intraday_micro_triple_barrier`, abstained on the final
+`default`, closed one losing trade, and ended at `-0.06019871112706596%` ROI.
+ETHUSDT selected `intraday_activity_triple_barrier`, abstained on the final
 holdout, and ended at `0.0%` ROI. SOLUSDT selected
 `intraday_micro_triple_barrier`, closed one losing trade, and ended at
-`-0.08588753226522386%` ROI. This is not promotion evidence because the window
-is one verified week, not years; it is retained as truthful engineering
-feedback that the current strategy is still not profitable on available
-second-level data. The next model iteration needs a stronger positive-edge
-entry filter and more robust thresholding, not weaker gates or manufactured
-trading activity.
+`-0.08588753226522386%` ROI. This improved mean ROI slightly versus
+`round-2024w1-window-smoke` (`-0.04914839522769323%`) but still is not
+promotion evidence because the window is one verified week, not years, and no
+symbol is profitable.
+
+The next attempted iteration, `round-downside-order-flow-window-smoke`, added
+the downside triple-barrier candidate to the default three. It completed with
+DirectML after candidate-row memory cleanup, but worsened the evidence: mean ROI
+`-0.07008053565532464%`, median ROI `-0.0641553635736841%`, three losing
+trades, zero accepted symbols, and no liquidations. The downside candidate
+therefore remains available for expanded research only, not default promotion
+search. The next model iteration needs better edge discovery and thresholding,
+not weaker gates or manufactured trading activity.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That

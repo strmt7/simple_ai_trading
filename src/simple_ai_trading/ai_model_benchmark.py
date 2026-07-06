@@ -139,6 +139,22 @@ def finance_ai_candidates() -> tuple[FinanceAIModelCandidate, ...]:
             notes="general local fallback; must prove structured risk decisions",
         ),
         FinanceAIModelCandidate(
+            model="fin-r1:7b",
+            family="fin-r1",
+            local_priority=58,
+            finance_specialized=True,
+            reasoning_or_risk_review=True,
+            notes="finance-reasoning local alias candidate; must be locally served, benchmarked, and prove uplift",
+        ),
+        FinanceAIModelCandidate(
+            model="fin-o1:8b",
+            family="fin-o1",
+            local_priority=56,
+            finance_specialized=True,
+            reasoning_or_risk_review=True,
+            notes="finance-reasoning local alias candidate; must be locally served, benchmarked, and prove uplift",
+        ),
+        FinanceAIModelCandidate(
             model="qwen3:4b",
             family="qwen",
             local_priority=50,
