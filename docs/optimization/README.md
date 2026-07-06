@@ -49,9 +49,13 @@ Binance Spot kline archive. USD-M futures `1s` evidence must be prefilled from
 official Binance `aggTrades` archives aggregated into one-second candles;
 without `--require-prefilled-data`, futures `1s` optimization fails before any
 network fetch because the futures kline endpoint does not publish `1s` klines.
-Reports and `backtest-metrics.csv` record both configured profile leverage and
-effective leverage so a spot round with an aggressive profile cannot be
-mistaken for a 15x futures test.
+Bounded research windows can be set with `--data-start` and `--data-end`.
+Windowed data-health checks count missing bars at the requested start and end
+edges, not only gaps between stored rows, so a symbol cannot pass a one-second
+contract by omitting the first or last second. Reports and
+`backtest-metrics.csv` record both configured profile leverage and effective
+leverage so a spot round with an aggressive profile cannot be mistaken for a
+15x futures test.
 
 Day-trading activity gates are evidence gates, not quotas. The closed-trade
 minimum and trades/day target are rejected only when there is no risk
@@ -98,23 +102,27 @@ use, but the optimizer now breaks equal-score ties toward the least-bad
 diagnostic candidate so the final holdout produces more useful failure
 evidence.
 
-Latest local smoke evidence from 2026-07-06, using verified one-day `1s`
-futures data for BTCUSDT/ETHUSDT/SOLUSDT, DirectML with `--require-gpu`,
-conservative 5x futures settings, cost-aware labels, flat-signal hold/grace
-candidate settings, and the expanded 13-candidate search, still failed the
-critical gate: zero accepted symbols, two total closed trades, mean ROI
-`-0.05778156766116733%`, median ROI `-0.08588753226522386%`, worst drawdown
-`0.08745717071827812%`, and no liquidations. BTCUSDT selected
-`intraday_breakout_forward` and produced no held-out trades; ETHUSDT selected
-`intraday_micro_triple_barrier`; SOLUSDT selected
-`lower_signal_triple_barrier`. This is not promotion evidence because the
-stored span is about one day per symbol, not years; it is retained here only as
-truthful engineering feedback that the current strategy is not yet profitable
-on available second-level data. Compared with the immediately previous
-flat-grace smoke, the expanded search improved mean ROI and worst drawdown by
-sitting out BTCUSDT, but it still failed all critical edge gates. The next model
-iteration needs a stronger positive-edge entry filter, not weaker gates or
-manufactured trading activity.
+Latest local smoke evidence from 2026-07-06 is
+`round-2024w1-window-smoke`. It uses the verified UTC window
+2024-06-01T00:00:00Z through 2024-06-07T23:59:59Z for BTCUSDT, ETHUSDT, and
+SOLUSDT futures `1s` data. Each symbol has 604,800 expected rows, zero
+missing-second gaps, 1.0 coverage, and seven verified Binance archive
+checksums. The run used DirectML with `--require-gpu`, conservative 5x futures
+settings, cost-aware labels, flat-signal hold/grace candidate settings, and the
+default three-candidate search. It failed the critical gate: zero accepted
+symbols, two total closed trades, mean ROI `-0.04914839522769323%`, median ROI
+`-0.06155765341785582%`, mean buy-and-hold ROI `-0.8918614182497557%`, worst
+drawdown `0.08588753226522386%`, and no liquidations. BTCUSDT selected
+`default`, closed one losing trade, and ended at `-0.06155765341785582%` ROI.
+ETHUSDT selected `intraday_micro_triple_barrier`, abstained on the final
+holdout, and ended at `0.0%` ROI. SOLUSDT selected
+`intraday_micro_triple_barrier`, closed one losing trade, and ended at
+`-0.08588753226522386%` ROI. This is not promotion evidence because the window
+is one verified week, not years; it is retained as truthful engineering
+feedback that the current strategy is still not profitable on available
+second-level data. The next model iteration needs a stronger positive-edge
+entry filter and more robust thresholding, not weaker gates or manufactured
+trading activity.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That

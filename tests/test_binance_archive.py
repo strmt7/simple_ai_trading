@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 from simple_ai_trading import binance_archive
+from simple_ai_trading.api import Candle
 from simple_ai_trading.binance_archive import (
     archive_directory_url,
     archive_file_url,
@@ -187,6 +188,7 @@ def test_ingest_agg_trades_archive_aggregates_real_trades_to_one_second_candles(
             market_type="futures",
             data_type="aggTrades",
             period="2024-06-01",
+            fill_period_edges=False,
         )
         candles = store.fetch_candles("BTCUSDT", "futures", "1s")
         sources = [
@@ -215,6 +217,68 @@ def test_ingest_agg_trades_archive_aggregates_real_trades_to_one_second_candles(
     assert candles[3].open == 99.0
     assert candles[3].trade_count == 3
     assert sources == ["binance_public_archive_aggTrades"]
+
+
+def test_ingest_agg_trades_archive_fills_period_edges_from_known_close(tmp_path, monkeypatch) -> None:
+    zip_path = tmp_path / "SOLUSDT-aggTrades-2024-06-03.zip"
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr(
+            "SOLUSDT-aggTrades-2024-06-03.csv",
+            "\n".join(
+                [
+                    "agg_trade_id,price,quantity,first_trade_id,last_trade_id,transact_time,is_buyer_maker",
+                    "1,100,0.5,10,10,3000,false",
+                ]
+            ),
+        )
+
+    monkeypatch.setattr(
+        binance_archive,
+        "_download_to_temp",
+        lambda *_args, **_kwargs: (zip_path, zip_path.stat().st_size, "sha"),
+    )
+    monkeypatch.setattr(binance_archive, "_fetch_archive_checksum", lambda _url, *, timeout: None)
+    monkeypatch.setattr(binance_archive, "_period_ms_bounds", lambda _period: (1000, 5000))
+
+    with MarketDataStore(tmp_path / "market.sqlite") as store:
+        store.upsert_candles(
+            "SOLUSDT",
+            "futures",
+            "1s",
+            [
+                Candle(
+                    open_time=0,
+                    open=99,
+                    high=99,
+                    low=99,
+                    close=99,
+                    volume=1,
+                    close_time=999,
+                    quote_volume=99,
+                    trade_count=1,
+                    taker_buy_base_volume=1,
+                    taker_buy_quote_volume=99,
+                )
+            ],
+            source="seed",
+        )
+        result = ingest_archive_url(
+            store,
+            url="https://data.binance.vision/data/futures/um/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-06-03.zip",
+            symbol="solusdt",
+            interval="1s",
+            market_type="futures",
+            data_type="aggTrades",
+            period="2024-06-03",
+        )
+        candles = store.fetch_candles("SOLUSDT", "futures", "1s", start_ms=1000, end_ms=5000)
+
+    assert result.status == "complete"
+    assert result.rows_read == 5
+    assert [candle.open_time for candle in candles] == [1000, 2000, 3000, 4000, 5000]
+    assert [candle.close for candle in candles] == [99.0, 99.0, 100.0, 100.0, 100.0]
+    assert [candle.volume for candle in candles] == [0.0, 0.0, 0.5, 0.0, 0.0]
+    assert [candle.trade_count for candle in candles] == [0, 0, 1, 0, 0]
 
 
 def test_ingest_archive_url_rejects_checksum_mismatch_before_writing_rows(tmp_path, monkeypatch) -> None:

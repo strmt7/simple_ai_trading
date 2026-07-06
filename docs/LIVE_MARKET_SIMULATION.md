@@ -51,6 +51,8 @@ Execution cost is symbol-specific where market data exists:
   archive-status counts, and checksum-status counts, and it exits nonzero when
   configured minimum rows, maximum gaps, coverage ratio, archive errors,
   checksum mismatches, or required verified checksums are not satisfied.
+  Bounded windows count missing bars at the requested start and end timestamps,
+  not only gaps between stored candles.
 - Promotion-grade `tools/optimization_round.py` runs can use the same checks
   with `--require-prefilled-data`, `--min-data-rows`,
   `--min-coverage-ratio`, `--max-gap-count`, and

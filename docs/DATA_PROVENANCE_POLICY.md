@@ -27,6 +27,8 @@ results, or generated performance charts as optimization evidence.
   source used to aggregate real trades into one-second OHLCV candles; it must
   not be described as USD-M futures kline evidence. No-trade seconds may only
   be represented as carry-forward candles with zero volume and zero trade count.
+- Bounded evidence windows must count missing bars at the requested UTC start
+  and end boundaries, not only gaps between stored rows.
 - Promotion-grade day-trading optimization evidence must be generated with
   `tools/optimization_round.py --promotion-grade`. That contract is limited to
   the exact BTC/ETH/SOL trio for the selected quote asset, `1s` data, prefilled

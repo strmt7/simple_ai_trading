@@ -186,6 +186,74 @@ def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_
         )
 
 
+def test_market_data_health_supports_bounded_verified_window(tmp_path: Path) -> None:
+    db_path = tmp_path / "market.sqlite"
+    start_ms = oe.parse_evidence_timestamp_ms("2024-06-01")
+    end_ms = oe.parse_evidence_timestamp_ms("2024-06-01", end_of_day=True)
+    assert start_ms is not None
+    assert end_ms is not None
+    with MarketDataStore(db_path) as store:
+        store.upsert_candles(
+            "BTCUSDT",
+            "futures",
+            "1s",
+            [
+                Candle(0, 100, 100, 100, 100, 1, 999, quote_volume=100, trade_count=1),
+                Candle(start_ms, 100, 101, 99, 100, 1, start_ms + 999, quote_volume=100, trade_count=1),
+                Candle(start_ms + 1000, 100, 101, 99, 100, 1, start_ms + 1999, quote_volume=100, trade_count=1),
+            ],
+        )
+        url = "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip"
+        store.begin_archive_file(
+            url=url,
+            symbol="BTCUSDT",
+            market_type="futures",
+            interval="1s",
+            period="2024-06-01",
+        )
+        store.complete_archive_file(
+            url=url,
+            status="complete",
+            rows_inserted=2,
+            bytes_downloaded=123,
+            sha256="abc",
+            checksum_sha256="abc",
+            checksum_status="verified",
+        )
+
+    full = oe.market_data_health_for_symbol(
+        db_path=db_path,
+        symbol="BTCUSDT",
+        market_type="futures",
+        interval="1s",
+        min_rows=2,
+        min_coverage_ratio=0.995,
+        max_gap_count=0,
+        require_verified_checksum=True,
+    )
+    bounded = oe.market_data_health_for_symbol(
+        db_path=db_path,
+        symbol="BTCUSDT",
+        market_type="futures",
+        interval="1s",
+        min_rows=2,
+        min_coverage_ratio=0.995,
+        max_gap_count=0,
+        require_verified_checksum=True,
+        start_ms=start_ms,
+        end_ms=start_ms + 1000,
+    )
+
+    assert full["status"] == "block"
+    assert "gap_count_above_max" in ";".join(str(item) for item in full["reasons"])
+    assert bounded["status"] == "ok"
+    assert bounded["rows"] == 2
+    assert bounded["gap_count"] == 0
+    assert bounded["coverage_ratio"] == pytest.approx(1.0)
+    assert bounded["checksum_status_counts"]["verified"] == 1
+    assert bounded["requested_start_utc"] == "2024-06-01T00:00:00Z"
+
+
 def test_critical_round_analysis_rejects_zero_trade_abstention() -> None:
     analysis = oe.critical_round_analysis(
         [

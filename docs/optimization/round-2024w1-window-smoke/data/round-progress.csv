@@ -1,2 +1,2 @@
 round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,total_closed_trades,zero_trade_symbol_count,profitable_symbol_count,critical_verdict,mean_low_liquidity_sample_rate_pct
-round-expanded-candidate-smoke,2026-07-06T12:49:25.895560Z,3,0,-0.05778156766116733,-0.08588753226522386,-0.15051795740212404,0.09273638974095674,0.018603389628147626,0.08745717071827812,2,2,1,0,fail,22.89952791662389
+round-2024w1-window-smoke,2026-07-06T14:22:43.412938Z,3,0,-0.04914839522769323,-0.06155765341785582,-0.8918614182497557,0.8427130230220625,0.9452835303470597,0.08588753226522386,2,2,1,0,fail,40.835281026248744

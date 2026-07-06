@@ -1,3 +1,4 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-flat-grace-smoke,2026-07-06T12:37:49.796804Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.07061402037552397,-0.07469716949051416,-0.1505522596320275,0.13650287742915454,4
 round-expanded-candidate-smoke,2026-07-06T12:49:26.057477Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.05778156766116733,-0.08588753226522386,-0.15051795740212404,0.08745717071827812,2
+round-2024w1-data-smoke,2026-07-06T13:25:23.079847Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,0.0,0.0,0
+round-2024w1-window-smoke,2026-07-06T14:22:44.225542Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.04914839522769323,-0.06155765341785582,-0.8918614182497557,0.08588753226522386,2
