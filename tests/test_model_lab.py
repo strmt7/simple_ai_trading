@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from simple_ai_trading.api import Candle
+from simple_ai_trading.market_store import MarketDataStore
 from simple_ai_trading.model import TrainedModel, load_model, serialize_model
 from simple_ai_trading import model_lab
 from simple_ai_trading.data_coverage import describe_candle_coverage
@@ -107,6 +108,11 @@ class _PagedHistoryClient(_Client):
             )
             for index in indexes[:limit]
         ]
+
+
+class _NoKlinesClient(_Client):
+    def get_klines(self, *_args, **_kwargs):
+        raise AssertionError("model-lab should use SQLite market data")
 
 
 class _Stress:
@@ -439,6 +445,80 @@ def test_run_model_lab_full_history_paginates_and_labels_data_scope(tmp_path: Pa
     assert report.outcomes[0].data_coverage["source_scope"] == "binance_full_history"
     assert report.outcomes[0].data_coverage["candles_used"] == 4
     assert report.outcomes[0].data_coverage["full_available_history_used"] is True
+
+
+def test_run_model_lab_can_train_from_sqlite_second_level_data(tmp_path: Path, monkeypatch) -> None:
+    seen: dict[str, object] = {}
+
+    def fake_suite(candles, strategy, **kwargs):
+        seen["candles"] = len(candles)
+        seen["first_open_time"] = int(candles[0].open_time)
+        seen["interval_ms"] = int(candles[1].open_time) - int(candles[0].open_time)
+        return SimpleNamespace(
+            outcomes=[SimpleNamespace(
+                objective="regular",
+                best_score=0.12,
+                hybrid_profile="base_only",
+                walk_forward_gate=_walk_forward_gate(),
+            )],
+            total_rows=len(candles) - 1,
+            objectives_run=["regular"],
+            summary_path=kwargs["summary_path"],
+        )
+
+    db_path = tmp_path / "market.sqlite"
+    with MarketDataStore(db_path) as store:
+        store.upsert_candles(
+            "BTCUSDC",
+            "spot",
+            "1s",
+            [
+                Candle(
+                    open_time=index * 1000,
+                    open=100.0 + index * 0.01,
+                    high=101.0 + index * 0.01,
+                    low=99.0 + index * 0.01,
+                    close=100.0 + index * 0.01,
+                    volume=10.0,
+                    close_time=index * 1000 + 999,
+                )
+                for index in range(120)
+            ],
+            source="binance_public_archive",
+        )
+
+    monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
+    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
+
+    report = run_model_lab(
+        _NoKlinesClient(),
+        RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1s"),
+        StrategyConfig(
+            min_quote_volume_usdc=1000.0,
+            min_trade_count_24h=100,
+            max_spread_bps=10.0,
+            min_liquidity_score=0.1,
+            min_diversified_assets=1,
+        ),
+        objectives=("regular",),
+        output_dir=tmp_path / "lab",
+        starting_cash=1000.0,
+        max_symbols=1,
+        limit=2,
+        compute_backend="cpu",
+        market_db_path=db_path,
+        require_db_data=True,
+    )
+
+    assert seen == {"candles": 120, "first_open_time": 0, "interval_ms": 1000}
+    assert report.data_source == "sqlite_market_data"
+    assert report.market_db_path == str(db_path)
+    assert report.require_db_data is True
+    assert report.outcomes[0].data_coverage is not None
+    assert report.outcomes[0].data_coverage["source_scope"] == "sqlite_market_data"
+    assert report.outcomes[0].data_coverage["interval"] == "1s"
+    assert report.outcomes[0].data_coverage["candles_used"] == 120
 
 
 def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, monkeypatch) -> None:

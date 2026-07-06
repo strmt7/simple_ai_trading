@@ -9,6 +9,7 @@ import sys
 from simple_ai_trading.api import BinanceClient
 from simple_ai_trading.config import load_strategy
 from simple_ai_trading.optimization_evidence import build_round_evidence
+from simple_ai_trading.optimization_progress import build_optimization_progress_artifacts
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -75,6 +76,20 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fail before optimization if the requested compute backend resolves to CPU.",
     )
+    parser.add_argument(
+        "--promotion-grade",
+        action="store_true",
+        help=(
+            "Run the fail-closed BTC/ETH/SOL day-trading evidence contract: exact major trio, "
+            "1s interval, prefilled SQLite data, verified archive checksums, zero gaps, and critical-analysis pass."
+        ),
+    )
+    parser.add_argument(
+        "--min-promotion-data-years",
+        type=float,
+        default=2.0,
+        help="Minimum stored 1s history span per BTC/ETH/SOL symbol required by --promotion-grade.",
+    )
     return parser
 
 
@@ -113,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
             max_gap_count=args.max_gap_count,
             require_verified_checksum=args.require_verified_checksum,
             require_gpu=args.require_gpu,
+            promotion_grade=args.promotion_grade,
+            min_promotion_data_years=args.min_promotion_data_years,
             use_objective_strategy_defaults=not args.no_objective_strategy_defaults,
         )
     except ValueError as exc:
@@ -124,6 +141,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"metrics: {report['metrics_csv_path']}")
     print(f"portfolio timeline: {report['portfolio_timeline_csv_path']}")
     print(f"progress: {report['progress_csv_path']}")
+    progress_report = build_optimization_progress_artifacts(args.docs_root)
+    print(f"iteration progress: {progress_report['tracked_artifacts'][1]}")
     critical = report.get("critical_analysis")
     if isinstance(critical, dict):
         print(f"critical verdict: {critical.get('verdict')}")
@@ -131,6 +150,14 @@ def main(argv: list[str] | None = None) -> int:
         if failures:
             print(f"critical failures: {', '.join(str(item) for item in failures)}", file=sys.stderr)
         if critical.get("verdict") != "pass":
+            return 2
+    promotion_contract = report.get("promotion_grade_contract")
+    if args.promotion_grade and isinstance(promotion_contract, dict):
+        print(f"promotion-grade contract: {promotion_contract.get('status')}")
+        reasons = promotion_contract.get("reasons")
+        if reasons:
+            print(f"promotion-grade failures: {', '.join(str(item) for item in reasons)}", file=sys.stderr)
+        if promotion_contract.get("status") != "pass":
             return 2
     accepted_count = int(report.get("progress", {}).get("accepted_symbol_count", 0)) if isinstance(report.get("progress"), dict) else 0
     return 0 if accepted_count > 0 else 2

@@ -224,7 +224,11 @@ inline constexpr CommandOptionSpec kOptions_model_lab[] = {
     {L"--max-symbols", L"max_symbols", L"", L"6", L"", false, true},
     {L"--max-scan", L"max_scan", L"", L"250", L"", false, true},
     {L"--limit", L"limit", L"", L"1000", L"candles per selected symbol", false, true},
+    {L"--quote-asset", L"quote_asset", L"", L"", L"override runtime quote asset for this lab run", false, true},
+    {L"--interval", L"interval", L"", L"", L"override runtime interval for this lab run", false, true},
     {L"--full-history", L"full_history", L"", L"false", L"page klines backward for each selected symbol until no older closed candles are returned", false, false},
+    {L"--market-db", L"market_db", L"", L"", L"SQLite market-data database to train from instead of exchange API klines", false, true},
+    {L"--require-db-data", L"require_db_data", L"", L"false", L"force model-lab to train from SQLite market data; defaults to data/market_data.sqlite when --market-db is omitted", false, false},
     {L"--market", L"market", L"spot, futures", L"", L"override runtime market type for this lab run", false, true},
     {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"", L"", false, true},
     {L"--batch-size", L"batch_size", L"", L"8192", L"", false, true},
@@ -339,8 +343,8 @@ inline constexpr CommandOptionSpec kOptions_source_grades[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_spot_roundtrip[] = {
-    {L"--quantity", L"quantity", L"", L"8e-05", L"BTC quantity to test", false, true},
-    {L"--mode", L"mode", L"auto, buy-sell, sell-buy", L"auto", L"order sequence; auto uses buy-sell when USDC is available, otherwise sell-buy when BTC is available", false, true},
+    {L"--quantity", L"quantity", L"", L"8e-05", L"base-asset quantity to test", false, true},
+    {L"--mode", L"mode", L"auto, buy-sell, sell-buy", L"auto", L"order sequence; auto buys first when quote balance is available, otherwise sells first when base balance is available", false, true},
     {L"--yes", L"yes", L"", L"false", L"confirm signed testnet/demo order placement", false, false},
 };
 
@@ -493,7 +497,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"model-blueprint", L"usage: simple-ai-trading model-blueprint [-h]                                          [--risk-level {conservative,regular,aggressive,default,balanced,risky}]                                          [--implemented-only] [--json]", kOptions_model_blueprint, 3},
-    {L"model-lab", L"usage: simple-ai-trading model-lab [-h] [--output-dir OUTPUT_DIR]                                    [--starting-cash STARTING_CASH]                                    [--objective OBJECTIVE]                                    [--max-symbols MAX_SYMBOLS]                                    [--max-scan MAX_SCAN] [--limit LIMIT]                                    [--full-history] [--market {spot,futures}]                                    [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                    [--batch-size BATCH_SIZE]                                    [--score-batch-size SCORE_BATCH_SIZE]                                    [--max-candidates MAX_CANDIDATES]                                    [--learning-feedback LEARNING_FEEDBACK]", kOptions_model_lab, 13},
+    {L"model-lab", L"usage: simple-ai-trading model-lab [-h] [--output-dir OUTPUT_DIR]                                    [--starting-cash STARTING_CASH]                                    [--objective OBJECTIVE]                                    [--max-symbols MAX_SYMBOLS]                                    [--max-scan MAX_SCAN] [--limit LIMIT]                                    [--quote-asset QUOTE_ASSET]                                    [--interval INTERVAL] [--full-history]                                    [--market-db MARKET_DB] [--require-db-data]                                    [--market {spot,futures}]                                    [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                    [--batch-size BATCH_SIZE]                                    [--score-batch-size SCORE_BATCH_SIZE]                                    [--max-candidates MAX_CANDIDATES]                                    [--learning-feedback LEARNING_FEEDBACK]", kOptions_model_lab, 17},
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},

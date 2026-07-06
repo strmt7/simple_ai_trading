@@ -7,6 +7,7 @@ import json
 
 from tools import audit_data_provenance
 from tools.audit_data_provenance import audit
+from simple_ai_trading.optimization_progress import build_optimization_progress_artifacts
 
 
 def _artifact_entry(root, relative: str) -> dict[str, object]:
@@ -80,3 +81,78 @@ def test_audit_allows_declared_exchange_sourced_optimization_artifacts(tmp_path,
     report.write_text('{"artifact_class":"exchange_sourced_backtest_graph_data"}', encoding="utf-8")
     failures = audit_data_provenance.audit()
     assert any("requires real-data provenance" in item for item in failures)
+
+
+def test_audit_rejects_multiple_historical_optimization_graph_sets(tmp_path, monkeypatch) -> None:
+    tracked: list[str] = []
+    for round_id in ("round-001", "round-002"):
+        report = tmp_path / "docs" / "optimization" / round_id / "data" / "report.json"
+        metrics = tmp_path / "docs" / "optimization" / round_id / "data" / "backtest-metrics.csv"
+        chart = tmp_path / "docs" / "optimization" / round_id / "charts" / "BTCUSDT.svg"
+        report.parent.mkdir(parents=True)
+        chart.parent.mkdir(parents=True)
+        metrics.write_text("round_id,symbol\n%s,BTCUSDT\n" % round_id, encoding="utf-8")
+        chart.write_text("<svg></svg>\n", encoding="utf-8")
+        report_rel = f"docs/optimization/{round_id}/data/report.json"
+        metrics_rel = f"docs/optimization/{round_id}/data/backtest-metrics.csv"
+        chart_rel = f"docs/optimization/{round_id}/charts/BTCUSDT.svg"
+        payload = {
+            "artifact_class": "exchange_sourced_backtest_graph_data",
+            "tracked_repo_artifact": True,
+            "tracked_artifacts": [report_rel, metrics_rel, chart_rel],
+            "artifact_integrity": [
+                _artifact_entry(tmp_path, metrics_rel),
+                _artifact_entry(tmp_path, chart_rel),
+            ],
+        }
+        report.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        tracked.extend([report_rel, metrics_rel, chart_rel])
+
+    monkeypatch.setattr(audit_data_provenance, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(audit_data_provenance, "_tracked_files", lambda: tracked)
+
+    failures = audit_data_provenance.audit()
+
+    assert any("latest-only" in item and "round-001" in item and "round-002" in item for item in failures)
+
+
+def test_iteration_progress_artifact_is_manifested_and_auditable(tmp_path, monkeypatch) -> None:
+    source_report = tmp_path / "docs" / "optimization" / "round-005" / "data" / "report.json"
+    source_report.parent.mkdir(parents=True)
+    source_report.write_text(
+        json.dumps(
+            {
+                "round_id": "round-005",
+                "generated_at_utc": "2026-07-06T00:00:00Z",
+                "artifact_class": "exchange_sourced_backtest_graph_data",
+                "tracked_repo_artifact": True,
+                "market_type": "futures",
+                "interval": "1s",
+                "objective": "conservative",
+                "symbol_count_completed": 3,
+                "critical_analysis": {"verdict": "fail"},
+                "promotion_grade": False,
+                "promotion_grade_contract": {"status": "not_requested"},
+                "progress": {
+                    "accepted_symbol_count": 0,
+                    "mean_roi_pct": -0.5,
+                    "median_roi_pct": -0.4,
+                    "mean_baseline_roi_pct": 0.2,
+                    "worst_max_drawdown_pct": 1.7,
+                    "total_closed_trades": 12,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_optimization_progress_artifacts(tmp_path / "docs" / "optimization")
+    tracked = [str(item).replace("\\", "/") for item in report["tracked_artifacts"]]
+
+    monkeypatch.setattr(audit_data_provenance, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(audit_data_provenance, "_tracked_files", lambda: tracked)
+
+    assert report["latest_round_id"] == "round-005"
+    assert (tmp_path / "docs" / "optimization" / "iteration-progress" / "data" / "progress.csv").exists()
+    assert (tmp_path / "docs" / "optimization" / "iteration-progress" / "charts" / "progress.svg").exists()
+    assert audit_data_provenance.audit() == []

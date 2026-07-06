@@ -1,0 +1,24 @@
+[
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 86393,
+    "first_open_time": 1577750402000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1577836794000,
+    "market_type": "futures",
+    "reasons": [],
+    "rows": 86393,
+    "span_days": 0.9999074074074074,
+    "span_years": 0.002737597282429589,
+    "status": "ok",
+    "symbol": "BTCUSDT",
+    "warnings": []
+  }
+]

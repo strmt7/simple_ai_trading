@@ -397,9 +397,13 @@ finance evidence.
 1. Pulls exchange metadata, 24h tickers, and book tickers.
 2. Automatically ranks high-liquidity symbols using quote volume, trade count,
    bid/ask spread, exchange status, and quote-asset policy.
-3. Fetches klines for each ranked symbol. Default runs are recent-limit
-   research/smoke runs; `--full-history` pages backward through venue maximum
-   kline batches until the exchange returns no older rows.
+3. Fetches or loads candles for each ranked symbol. Default runs are
+   recent-limit research/smoke API runs; `--full-history` pages backward
+   through venue maximum kline batches until the exchange returns no older
+   rows. `--market futures --quote-asset USDT --interval 1s --market-db
+   data/market_data.sqlite --require-db-data` trains from the local SQLite
+   archive and fails instead of silently falling back to API klines when
+   second-level rows are missing.
 4. Runs the training suite and hybrid optimizer for one or more objectives.
 5. Records and serializes meta-label take/downsize/skip policy evidence from
    simulated trade outcomes for every selected objective model.
@@ -444,7 +448,9 @@ flags, and a `truth_basis` list that explicitly says the execution results are
 simulated rather than exchange fills. Missing candles, missing model rows,
 coverage gaps, or coverage below `99.5%` fail promotion. Recent-limit API runs
 are not hard failures by themselves, but they are labeled `binance_recent_limit`
-and must not be presented as full-history optimization evidence.
+and must not be presented as full-history optimization evidence. SQLite-backed
+second-level runs are labeled `sqlite_market_data` and include `market_db_path`
+in the report; no second-level model-lab claim may be made without those fields.
 
 Financial sanity re-checks that contract after model-lab writes the report.
 An accepted outcome is blocked if `data_coverage` is absent, if the source
@@ -604,6 +610,14 @@ assert that every CLI command appears in the Windows app.
 - No optimization report may claim full-history evidence unless its artifacts
   name the source scope, UTC date span, interval, symbol, row count, coverage
   ratio, and gap count.
+- No optimization report may be presented as promotion-grade day-trading
+  evidence unless `tools/optimization_round.py --promotion-grade` wrote a
+  `promotion_grade_contract` with `status: pass` for exact BTC/ETH/SOL `1s`
+  data, verified checksums, zero gaps, and the configured minimum stored
+  history span.
+- No second-level model-lab result may be described as DB-trained unless the
+  report declares `data_source: sqlite_market_data`, `interval: 1s`, and the
+  matching `market_db_path`.
 - No model-lab acceptance when the individually passing symbols fail the
   portfolio-level correlation, concentration, CVaR, or drawdown gate.
 - No AI review approval unless deterministic model-lab/portfolio gates passed,

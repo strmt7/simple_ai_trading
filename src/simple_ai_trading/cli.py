@@ -846,10 +846,22 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_model_lab.add_argument("--max-symbols", type=int, default=6)
     parser_model_lab.add_argument("--max-scan", type=int, default=250)
     parser_model_lab.add_argument("--limit", type=int, default=1000, help="candles per selected symbol")
+    parser_model_lab.add_argument("--quote-asset", default=None, help="override runtime quote asset for this lab run")
+    parser_model_lab.add_argument("--interval", default=None, help="override runtime interval for this lab run")
     parser_model_lab.add_argument(
         "--full-history",
         action="store_true",
         help="page klines backward for each selected symbol until no older closed candles are returned",
+    )
+    parser_model_lab.add_argument(
+        "--market-db",
+        default=None,
+        help="SQLite market-data database to train from instead of exchange API klines",
+    )
+    parser_model_lab.add_argument(
+        "--require-db-data",
+        action="store_true",
+        help="force model-lab to train from SQLite market data; defaults to data/market_data.sqlite when --market-db is omitted",
     )
     parser_model_lab.add_argument("--market", choices=["spot", "futures"], default=None, help="override runtime market type for this lab run")
     parser_model_lab.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
@@ -7703,7 +7715,12 @@ def command_model_lab(args: argparse.Namespace) -> int:
     strategy = load_strategy()
     try:
         market_override = getattr(args, "market", None)
-        lab_runtime = replace(runtime, market_type=str(market_override or runtime.market_type).lower())
+        lab_runtime = replace(
+            runtime,
+            market_type=str(market_override or runtime.market_type).lower(),
+            quote_asset=str(getattr(args, "quote_asset", None) or runtime.quote_asset).upper(),
+            interval=str(getattr(args, "interval", None) or runtime.interval),
+        )
         objectives = (
             tuple(get_objective(name).name for name in args.objective)
             if args.objective
@@ -7747,6 +7764,12 @@ def command_model_lab(args: argparse.Namespace) -> int:
                 else None
             ),
             full_history=bool(getattr(args, "full_history", False)),
+            market_db_path=(
+                Path(getattr(args, "market_db", None))
+                if getattr(args, "market_db", None)
+                else (Path("data/market_data.sqlite") if getattr(args, "require_db_data", False) else None)
+            ),
+            require_db_data=bool(getattr(args, "require_db_data", False)),
         )
     except (BinanceAPIError, ValueError) as exc:
         print(f"model lab failed: {exc}", file=sys.stderr)
@@ -7754,7 +7777,8 @@ def command_model_lab(args: argparse.Namespace) -> int:
 
     print(
         f"model lab complete: accepted={len(report.accepted_symbols)}/{len(report.outcomes)} "
-        f"symbols market={report.market_type} objectives={','.join(objectives)}"
+        f"symbols market={report.market_type} interval={getattr(report, 'interval', lab_runtime.interval)} "
+        f"source={getattr(report, 'data_source', 'unknown')} objectives={','.join(objectives)}"
     )
     portfolio_risk = getattr(report, "portfolio_risk", None) or {}
     if portfolio_risk:
