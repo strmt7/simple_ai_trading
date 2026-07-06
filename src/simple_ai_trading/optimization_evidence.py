@@ -270,6 +270,8 @@ class RoundModelCandidate:
     stop_loss_multiplier: float = 1.0
     take_profit_multiplier: float = 1.0
     cooldown_multiplier: float = 1.0
+    min_position_hold_bars: int = 0
+    flat_signal_exit_grace_bars: int = 0
 
 
 @dataclass(frozen=True)
@@ -855,6 +857,8 @@ def _strategy_for_round_candidate(strategy: StrategyConfig, candidate: RoundMode
         stop_loss_pct=max(0.001, float(strategy.stop_loss_pct) * max(0.05, float(candidate.stop_loss_multiplier))),
         take_profit_pct=max(0.001, float(strategy.take_profit_pct) * max(0.05, float(candidate.take_profit_multiplier))),
         cooldown_minutes=max(0, int(round(float(strategy.cooldown_minutes) * max(0.0, float(candidate.cooldown_multiplier))))),
+        min_position_hold_bars=max(0, int(candidate.min_position_hold_bars)),
+        flat_signal_exit_grace_bars=max(0, int(candidate.flat_signal_exit_grace_bars)),
     )
 
 
@@ -1240,20 +1244,20 @@ def _round_model_candidates(
         "regular": 0.52,
         "aggressive": 0.50,
     }.get(objective.name, 0.52)
-    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float]] = [
-        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0),
-        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10),
-        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0),
-        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15),
-        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0),
-        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50),
-        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0),
-        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0),
-        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0),
-        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35),
-        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50),
-        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25),
-        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0),
+    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int]] = [
+        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
+        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
+        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1),
+        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1),
+        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
+        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1),
+        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0),
+        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1),
+        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1),
+        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1),
+        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0),
     ]
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
@@ -1269,6 +1273,8 @@ def _round_model_candidates(
         stop_loss_multiplier,
         take_profit_multiplier,
         cooldown_multiplier,
+        min_position_hold_bars,
+        flat_signal_exit_grace_bars,
     ) in raw:
         feature_cfg = replace(
             base_feature_cfg,
@@ -1291,6 +1297,8 @@ def _round_model_candidates(
             stop_loss_multiplier=max(0.05, float(stop_loss_multiplier)),
             take_profit_multiplier=max(0.05, float(take_profit_multiplier)),
             cooldown_multiplier=max(0.0, float(cooldown_multiplier)),
+            min_position_hold_bars=max(0, int(min_position_hold_bars)),
+            flat_signal_exit_grace_bars=max(0, int(flat_signal_exit_grace_bars)),
         )
         key = (
             candidate.epochs,
@@ -1300,6 +1308,8 @@ def _round_model_candidates(
             round(candidate.stop_loss_multiplier, 12),
             round(candidate.take_profit_multiplier, 12),
             round(candidate.cooldown_multiplier, 12),
+            candidate.min_position_hold_bars,
+            candidate.flat_signal_exit_grace_bars,
             advanced_feature_dimension(candidate.feature_cfg),
             candidate.feature_cfg.label_threshold,
             candidate.feature_cfg.label_lookahead,
@@ -1667,6 +1677,8 @@ def _round_candidate_diagnostic(
         "stop_loss_pct": float(candidate_strategy.stop_loss_pct),
         "take_profit_pct": float(candidate_strategy.take_profit_pct),
         "cooldown_minutes": int(candidate_strategy.cooldown_minutes),
+        "min_position_hold_bars": int(candidate_strategy.min_position_hold_bars),
+        "flat_signal_exit_grace_bars": int(candidate_strategy.flat_signal_exit_grace_bars),
         "label_threshold": float(result.candidate.feature_cfg.label_threshold),
         "label_lookahead": int(result.candidate.feature_cfg.label_lookahead),
         "label_mode": str(result.candidate.feature_cfg.label_mode),
@@ -1740,6 +1752,8 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "stop_loss_pct": _finite(item.get("stop_loss_pct")),
             "take_profit_pct": _finite(item.get("take_profit_pct")),
             "cooldown_minutes": int(_finite(item.get("cooldown_minutes"))),
+            "min_position_hold_bars": int(_finite(item.get("min_position_hold_bars"))),
+            "flat_signal_exit_grace_bars": int(_finite(item.get("flat_signal_exit_grace_bars"))),
             "label_threshold": _finite(item.get("label_threshold")),
             "label_lookahead": int(_finite(item.get("label_lookahead"))),
             "label_mode": str(item.get("label_mode", "")),
@@ -2437,8 +2451,9 @@ def build_round_evidence(
     )
     candidate_diagnostic_fieldnames = (
         "symbol", "candidate_index", "name", "selected", "score", "signal_threshold",
-        "stop_loss_pct", "take_profit_pct", "cooldown_minutes", "label_threshold",
-        "label_lookahead", "label_mode", "probability_inverted", "round_selection_gate_passed",
+        "stop_loss_pct", "take_profit_pct", "cooldown_minutes", "min_position_hold_bars",
+        "flat_signal_exit_grace_bars", "label_threshold", "label_lookahead", "label_mode",
+        "probability_inverted", "round_selection_gate_passed",
         "round_selection_reject_reason", "threshold_source", "decision_threshold",
         "threshold_calibration_score", "threshold_calibration_pnl", "threshold_calibration_trades",
         "threshold_diagnostic_best_threshold", "threshold_diagnostic_best_score",

@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1468,
+      "bytes": 1480,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "914cc97a7f4fbc28c3b779bca71f9ee963f8efd3d309957e64620244e2530d78"
+      "sha256": "6ada0a15546bb8859f0822d3e355dddb0154fde5992cb647159cd1118142f388"
     },
     {
-      "bytes": 627,
+      "bytes": 633,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 2,
-      "sha256": "b8cc5cd20dce888c8a7dba4893ec59afa2af8faf54c55fec42a78a5910f00266"
+      "sha256": "a37d9d98caf8d7578f4ad90d83a4304c3a89bb909e1b2338ffe71047da934682"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T11:55:33.652011Z",
-  "latest_round_id": "round-cost-floor-smoke",
+  "generated_at_utc": "2026-07-06T12:49:26.095694Z",
+  "latest_round_id": "round-expanded-candidate-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 2,
   "tracked_artifacts": [

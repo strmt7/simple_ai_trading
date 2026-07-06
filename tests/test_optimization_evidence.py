@@ -127,15 +127,23 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
     assert candidates[1].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].cooldown_multiplier == 0.0
+    assert candidates[1].min_position_hold_bars == 2
+    assert candidates[1].flat_signal_exit_grace_bars == 2
+    assert candidates[2].min_position_hold_bars == 1
+    assert candidates[2].flat_signal_exit_grace_bars == 1
     assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
     micro_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
     activity_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
     assert micro_strategy.stop_loss_pct < strategy.stop_loss_pct
     assert micro_strategy.take_profit_pct < strategy.take_profit_pct
     assert micro_strategy.cooldown_minutes < strategy.cooldown_minutes
+    assert micro_strategy.min_position_hold_bars == 2
+    assert micro_strategy.flat_signal_exit_grace_bars == 2
     assert activity_strategy.stop_loss_pct < micro_strategy.stop_loss_pct
     assert activity_strategy.take_profit_pct < micro_strategy.take_profit_pct
     assert activity_strategy.cooldown_minutes == 0
+    assert activity_strategy.min_position_hold_bars == 1
+    assert activity_strategy.flat_signal_exit_grace_bars == 1
 
 
 def test_round_model_candidates_do_not_train_on_sub_cost_intraday_labels() -> None:
@@ -1751,6 +1759,8 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
             "stop_loss_pct": 0.01,
             "take_profit_pct": 0.022,
             "cooldown_minutes": 15,
+            "min_position_hold_bars": 0,
+            "flat_signal_exit_grace_bars": 0,
             "label_threshold": 0.001,
             "label_lookahead": 8,
             "label_mode": "forward_return",
@@ -1769,6 +1779,8 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
             "stop_loss_pct": 0.0025,
             "take_profit_pct": 0.00352,
             "cooldown_minutes": 2,
+            "min_position_hold_bars": 2,
+            "flat_signal_exit_grace_bars": 2,
             "label_threshold": 0.00055,
             "label_lookahead": 3,
             "label_mode": "triple_barrier",
@@ -1841,6 +1853,8 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
     assert report["candidate_diagnostics"][1]["name"] == "intraday_micro_triple_barrier"
     assert report["candidate_diagnostics"][1]["selected"] is True
     assert report["candidate_diagnostics"][1]["threshold_diagnostic_best_trades"] == 8
+    assert report["candidate_diagnostics"][1]["min_position_hold_bars"] == 2
+    assert report["candidate_diagnostics"][1]["flat_signal_exit_grace_bars"] == 2
     assert report["candidate_diagnostics_csv_path"] in report["tracked_artifacts"]
     assert report["candidate_diagnostics_json_path"] in report["tracked_artifacts"]
     diagnostics_csv = tmp_path / "docs" / "optimization" / "round-test-selection-diagnostic" / "data" / "candidate-diagnostics.csv"

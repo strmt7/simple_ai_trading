@@ -497,6 +497,8 @@ def test_load_model_sanitizes_strategy_overrides(tmp_path: Path) -> None:
             "feature_windows": [1, 2],
             "take_profit_pct": float("nan"),
             "cooldown_minutes": 3,
+            "min_position_hold_bars": 4,
+            "flat_signal_exit_grace_bars": 2,
             "max_trades_per_day": True,
         },
     }
@@ -507,6 +509,8 @@ def test_load_model_sanitizes_strategy_overrides(tmp_path: Path) -> None:
     assert loaded.strategy_overrides == {
         "risk_per_trade": 0.004,
         "cooldown_minutes": 3,
+        "min_position_hold_bars": 4,
+        "flat_signal_exit_grace_bars": 2,
     }
     assert clean_strategy_overrides(["not", "a", "dict"]) == {}
 

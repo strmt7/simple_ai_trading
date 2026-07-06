@@ -5,12 +5,12 @@
   "compute_backend_kind": "directml",
   "compute_backend_reason": "",
   "compute_backend_requested": "directml",
-  "generated_at_utc": "2026-07-06T11:55:33.519757Z",
-  "metrics_csv_path": "docs/optimization/round-cost-floor-smoke/data/backtest-metrics.csv",
+  "generated_at_utc": "2026-07-06T12:49:25.897560Z",
+  "metrics_csv_path": "docs/optimization/round-expanded-candidate-smoke/data/backtest-metrics.csv",
   "phase": "round_complete",
-  "report_path": "docs/optimization/round-cost-floor-smoke/data/report.json",
+  "report_path": "docs/optimization/round-expanded-candidate-smoke/data/report.json",
   "require_gpu": true,
-  "round_id": "round-cost-floor-smoke",
+  "round_id": "round-expanded-candidate-smoke",
   "status": "complete",
   "symbol_count_requested": 3
 }
