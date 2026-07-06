@@ -119,19 +119,21 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
     candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 3)
     names = [candidate.name for candidate in candidates]
 
-    assert names == ["default", "intraday_micro_triple_barrier", "intraday_breakout_forward"]
+    assert names == ["default", "intraday_micro_triple_barrier", "intraday_activity_triple_barrier"]
     assert candidates[1].feature_cfg.label_mode == "triple_barrier"
     assert candidates[1].feature_cfg.label_lookahead < feature_cfg.label_lookahead
-    assert candidates[2].feature_cfg.label_mode == "forward_return"
+    assert candidates[2].feature_cfg.label_mode == "triple_barrier"
     assert candidates[2].feature_cfg.label_threshold < feature_cfg.label_threshold
+    assert candidates[2].cooldown_multiplier == 0.0
     assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
     micro_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
-    breakout_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
+    activity_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
     assert micro_strategy.stop_loss_pct < strategy.stop_loss_pct
     assert micro_strategy.take_profit_pct < strategy.take_profit_pct
     assert micro_strategy.cooldown_minutes < strategy.cooldown_minutes
-    assert breakout_strategy.stop_loss_pct < strategy.stop_loss_pct
-    assert breakout_strategy.take_profit_pct < strategy.take_profit_pct
+    assert activity_strategy.stop_loss_pct < micro_strategy.stop_loss_pct
+    assert activity_strategy.take_profit_pct < micro_strategy.take_profit_pct
+    assert activity_strategy.cooldown_minutes == 0
 
 
 def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:
@@ -1116,17 +1118,18 @@ def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
     objective = get_objective("conservative")
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=12)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=13)
 
     assert [candidate.name for candidate in candidates[:3]] == [
         "default",
         "intraday_micro_triple_barrier",
-        "intraday_breakout_forward",
+        "intraday_activity_triple_barrier",
     ]
-    assert len(candidates) == 12
+    assert len(candidates) == 13
     assert candidates[1].stop_loss_multiplier < 1.0
     assert candidates[1].take_profit_multiplier < 1.0
     assert candidates[1].cooldown_multiplier < 1.0
+    assert any(candidate.name == "intraday_breakout_forward" for candidate in candidates)
     thresholds = [candidate.signal_threshold for candidate in candidates]
     assert min(thresholds) == pytest.approx(0.56)
     assert max(thresholds) == pytest.approx(0.70)
@@ -1230,6 +1233,98 @@ def test_train_round_model_selects_best_scored_candidate(
     assert selected_model.round_candidate_diagnostics[1]["threshold_diagnostic_best_trades"] == 0
     assert report.row_count == 60
     assert len(holdout_rows) == 25
+
+
+def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=index % 2)
+        for index in range(100)
+    ]
+    calls = {"train": 0}
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+
+    def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
+        calls["train"] += 1
+        model = TrainedModel(
+            weights=[1.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            model_family=f"candidate_{calls['train']}",
+        )
+        return model, SimpleNamespace(row_count=len(train_rows), positive_rate=0.5)
+
+    monkeypatch.setattr(oe, "train_advanced", fake_train_advanced)
+    monkeypatch.setattr(
+        oe,
+        "calibrate_probability_temperature",
+        lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
+    )
+
+    def fake_threshold(_rows, model, *_args, **_kwargs):
+        diagnostic_pnl = -2.0 if str(model.model_family).startswith("candidate_2") else -10.0
+        return SimpleNamespace(
+            accepted=False,
+            threshold=0.56,
+            score=0.0,
+            realized_pnl=diagnostic_pnl,
+            closed_trades=1,
+            best_threshold=0.56,
+            best_score=0.0,
+            best_realized_pnl=diagnostic_pnl,
+            best_closed_trades=1,
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+            scoring_backend_reason="",
+        )
+
+    monkeypatch.setattr(oe, "calibrate_threshold_for_backtest", fake_threshold)
+
+    def flat_rejected_backtest(_rows, _candidate_model, *_args, **_kwargs):
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0,
+            realized_pnl=0.0,
+            win_rate=0.0,
+            trades=1,
+            max_drawdown=0.01,
+            closed_trades=1,
+            gross_exposure=100.0,
+            total_fees=1.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            buy_hold_pnl=0.0,
+            edge_vs_buy_hold=0.0,
+            profit_factor=0.0,
+            expectancy=0.0,
+            max_consecutive_losses=1,
+        )
+
+    monkeypatch.setattr(oe, "run_backtest", flat_rejected_backtest)
+
+    selected_model, _report, _all_rows, _holdout_rows = oe.train_round_model(
+        [_candle(index) for index in range(100)],
+        StrategyConfig(),
+        get_objective("conservative"),
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+        model_candidate_count=2,
+    )
+
+    assert selected_model.model_selected_candidate == "intraday_micro_triple_barrier"
+    assert selected_model.round_selection_gate_passed is False
+    assert selected_model.threshold_diagnostic_best_pnl == pytest.approx(-2.0)
+    assert selected_model.round_candidate_diagnostics[0]["selected"] is False
+    assert selected_model.round_candidate_diagnostics[1]["selected"] is True
+    assert selected_model.round_candidate_diagnostics[1]["selection_closed_trades"] == 1
+    assert selected_model.round_candidate_diagnostics[1]["selection_reject_reason"]
 
 
 def test_train_round_model_require_gpu_rejects_training_fallback(

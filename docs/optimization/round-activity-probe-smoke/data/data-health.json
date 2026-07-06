@@ -1,0 +1,68 @@
+[
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 86393,
+    "first_open_time": 1577750402000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1577836794000,
+    "market_type": "futures",
+    "reasons": [],
+    "rows": 86393,
+    "span_days": 0.9999074074074074,
+    "span_years": 0.002737597282429589,
+    "status": "ok",
+    "symbol": "BTCUSDT",
+    "warnings": []
+  },
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 86398,
+    "first_open_time": 1577750402000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1577836799000,
+    "market_type": "futures",
+    "reasons": [],
+    "rows": 86398,
+    "span_days": 0.9999652777777778,
+    "span_years": 0.002737755722868659,
+    "status": "ok",
+    "symbol": "ETHUSDT",
+    "warnings": []
+  },
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 61191,
+    "first_open_time": 1600066809000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1600127999000,
+    "market_type": "futures",
+    "reasons": [],
+    "rows": 61191,
+    "span_days": 0.7082175925925925,
+    "span_years": 0.0019389940933404314,
+    "status": "ok",
+    "symbol": "SOLUSDT",
+    "warnings": []
+  }
+]

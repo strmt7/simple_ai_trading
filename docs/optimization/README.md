@@ -70,26 +70,39 @@ Current promotion-count search starts with:
 
 - `default`,
 - `intraday_micro_triple_barrier`,
-- `intraday_breakout_forward`.
+- `intraday_activity_triple_barrier`.
 
 The intraday candidates also test tighter stop/take-profit and shorter
-cooldown execution profiles. Round artifacts now write
+cooldown execution profiles. `intraday_activity_triple_barrier` is a
+second-level day-trading activity probe with a smaller label target, shorter
+lookahead, fee-aware stop/take settings, and zero diagnostic cooldown; it does
+not bypass max-trades, drawdown, liquidity, liquidation, or objective gates.
+`intraday_breakout_forward` remains in the expanded candidate set when more
+than three candidates are requested. Round artifacts now write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
 model artifacts persist `round_candidate_diagnostics`, so future agents can
 audit each candidate's threshold, trade-count, P&L, and selection-gate result
-instead of only seeing the final selected candidate.
+instead of only seeing the final selected candidate. Candidate diagnostics also
+record selection-slice realized P&L, closed trades, drawdown, fees, profit
+factor, expectancy, edge vs buy-hold, cap hits, regime skips, meta-label skips,
+liquidation events, and reject reason. When every candidate fails hard gates,
+selection is still rejected for promotion/live use, but the optimizer now
+breaks equal-score ties toward the least-bad diagnostic candidate so the final
+holdout produces more useful failure evidence.
 
-Local smoke evidence from 2026-07-06, using verified one-day `1s` futures data
-for BTCUSDT/ETHUSDT/SOLUSDT, DirectML, conservative 5x futures settings, and
-three model candidates, still failed the critical gate: zero accepted symbols,
-three total closed trades, mean ROI `-0.0753937992237373%`, worst drawdown
-`0.08495586104766062%`, and no liquidations. This is not promotion evidence
+Latest local smoke evidence from 2026-07-06, using verified one-day `1s`
+futures data for BTCUSDT/ETHUSDT/SOLUSDT, DirectML with `--require-gpu`,
+conservative 5x futures settings, and three model candidates, still failed the
+critical gate: zero accepted symbols, six total closed trades, mean ROI
+`-0.13159433849626415%`, median ROI `-0.08118825039811099%`, worst drawdown
+`0.2407102604171314%`, and no liquidations. This is not promotion evidence
 because the stored span is about one day per symbol, not years; it is retained
 here only as truthful engineering feedback that the current strategy is not yet
-profitable on available second-level data. A follow-up diagnostics smoke wrote
-9 candidate rows across BTCUSDT/ETHUSDT/SOLUSDT and confirmed that the two
-intraday candidates were evaluated but did not beat the default candidate under
-the current risk-adjusted selection score.
+profitable on available second-level data. The activity probe increased holdout
+activity for ETHUSDT to four closed trades and produced 24 losing selection
+trades for SOLUSDT, proving it can surface churn risk instead of hiding it.
+All added activity remained net negative after execution costs and failed the
+same risk/edge gates.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That
