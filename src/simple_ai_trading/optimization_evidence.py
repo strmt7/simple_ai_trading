@@ -1234,6 +1234,7 @@ def _round_model_candidates(
     base_threshold = float(training.signal_threshold if training else strategy.signal_threshold)
     base_label_threshold = max(1e-8, float(base_feature_cfg.label_threshold))
     base_label_lookahead = max(1, int(base_feature_cfg.label_lookahead))
+    cost_label_floor = _round_trip_cost_label_floor(strategy)
     min_signal_threshold = {
         "conservative": 0.56,
         "regular": 0.52,
@@ -1271,7 +1272,7 @@ def _round_model_candidates(
     ) in raw:
         feature_cfg = replace(
             base_feature_cfg,
-            label_threshold=max(1e-8, base_label_threshold * float(threshold_mult)),
+            label_threshold=max(1e-8, cost_label_floor, base_label_threshold * float(threshold_mult)),
             label_lookahead=max(1, int(round(base_label_lookahead * float(lookahead_mult)))),
             label_mode=str(label_mode),
             label_stop_threshold=(
@@ -1311,6 +1312,22 @@ def _round_model_candidates(
         if len(output) >= max(1, int(requested)):
             break
     return output
+
+
+def _round_trip_cost_label_floor(strategy: StrategyConfig, *, multiplier: float = 1.25) -> float:
+    """Minimum price move a training label must clear after estimated round-trip friction."""
+
+    def nonnegative_bps(value: object) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return 0.0
+        return parsed if math.isfinite(parsed) and parsed > 0.0 else 0.0
+
+    taker_fee_bps = nonnegative_bps(getattr(strategy, "taker_fee_bps", 0.0))
+    slippage_bps = nonnegative_bps(getattr(strategy, "slippage_bps", 0.0))
+    round_trip_bps = 2.0 * (taker_fee_bps + slippage_bps)
+    return max(0.0, float(multiplier)) * round_trip_bps / 10_000.0
 
 
 def _apply_probability_calibration(model: object, calibration: object) -> None:

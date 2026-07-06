@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1450,
+      "bytes": 1468,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "557ca2ad4e24a7d374bb0a898334af952ceaf7afec7598cf33a43f54b68621f9"
+      "sha256": "914cc97a7f4fbc28c3b779bca71f9ee963f8efd3d309957e64620244e2530d78"
     },
     {
-      "bytes": 438,
+      "bytes": 627,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 1,
-      "sha256": "7e722499e3067dd5de3be20a209c3f3c1dc3a6bdf24cab02a4c97471d1f6704b"
+      "row_count": 2,
+      "sha256": "b8cc5cd20dce888c8a7dba4893ec59afa2af8faf54c55fec42a78a5910f00266"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T11:32:23.374152Z",
-  "latest_round_id": "round-activity-probe-smoke",
+  "generated_at_utc": "2026-07-06T11:55:33.652011Z",
+  "latest_round_id": "round-cost-floor-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 1,
+  "source_report_count": 2,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",

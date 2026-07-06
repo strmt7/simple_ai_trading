@@ -123,7 +123,9 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
     assert candidates[1].feature_cfg.label_mode == "triple_barrier"
     assert candidates[1].feature_cfg.label_lookahead < feature_cfg.label_lookahead
     assert candidates[2].feature_cfg.label_mode == "triple_barrier"
-    assert candidates[2].feature_cfg.label_threshold < feature_cfg.label_threshold
+    cost_floor = oe._round_trip_cost_label_floor(strategy)
+    assert candidates[1].feature_cfg.label_threshold >= cost_floor
+    assert candidates[2].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].cooldown_multiplier == 0.0
     assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
     micro_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
@@ -134,6 +136,29 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
     assert activity_strategy.stop_loss_pct < micro_strategy.stop_loss_pct
     assert activity_strategy.take_profit_pct < micro_strategy.take_profit_pct
     assert activity_strategy.cooldown_minutes == 0
+
+
+def test_round_model_candidates_do_not_train_on_sub_cost_intraday_labels() -> None:
+    objective = get_objective("conservative")
+    strategy = StrategyConfig(
+        signal_threshold=0.66,
+        taker_fee_bps=1.0,
+        slippage_bps=5.0,
+    )
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 3)
+    cost_floor = oe._round_trip_cost_label_floor(strategy)
+
+    assert cost_floor == pytest.approx(0.0015)
+    assert [candidate.name for candidate in candidates] == [
+        "default",
+        "intraday_micro_triple_barrier",
+        "intraday_activity_triple_barrier",
+    ]
+    assert all(candidate.feature_cfg.label_threshold >= cost_floor for candidate in candidates)
+    assert candidates[1].feature_cfg.label_threshold == pytest.approx(cost_floor)
+    assert candidates[2].feature_cfg.label_threshold == pytest.approx(cost_floor)
 
 
 def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:

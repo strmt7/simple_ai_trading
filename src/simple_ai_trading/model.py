@@ -780,7 +780,7 @@ def calibrate_probability_temperature(
     warnings = list(base.warnings)
     if _positive_rate(rows) in {0.0, 1.0}:
         return ProbabilityCalibrationReport(
-            status="warn",
+            status="fail",
             warnings=warnings,
             rows=base.rows,
             temperature=base.temperature,
