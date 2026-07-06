@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import sys
+from types import SimpleNamespace
 
-from simple_ai_trading.ai_runtime import AIRuntimeConfig, detect_ai_capabilities
+from simple_ai_trading import cli
+from simple_ai_trading.ai_model_benchmark import benchmark_finance_ai_models, finance_ai_candidates
+from simple_ai_trading.ai_runtime import AIRuntimeConfig, detect_ai_capabilities, estimate_model_parameters_b
 from simple_ai_trading.command_contract import command_names, command_specs
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading import windows_app
@@ -38,7 +42,7 @@ def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
 
     assert report.ok is True
     assert report.gpu_vendor == "nvidia"
-    assert report.model_parameters_b == 7.0
+    assert report.model_parameters_b == 8.0
 
 
 def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
@@ -56,6 +60,119 @@ def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
 
     assert report.ok is False
     assert any("below required" in message for message in report.messages)
+
+
+def test_ai_runtime_parses_e_size_model_names() -> None:
+    assert estimate_model_parameters_b("gemma4:e4b") == 4.0
+    assert estimate_model_parameters_b("qwen3:8b") == 8.0
+    assert estimate_model_parameters_b("tiny-560m") == 0.56
+
+
+def _benchmark_response(action: str, risk: float, rationale: str = "risk reviewed") -> dict[str, object]:
+    return {
+        "message": {
+            "content": (
+                "{"
+                f'"action":"{action}",'
+                f'"risk_score":{risk},'
+                '"confidence":0.82,'
+                f'"rationale":"{rationale}",'
+                '"concerns":["risk data liquidity uplift drawdown cooldown gap"],'
+                '"required_actions":["keep risk controls active"]'
+                "}"
+            )
+        }
+    }
+
+
+def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() -> None:
+    actions = {
+        "veto_failed_ai_uplift": ("veto", 0.90),
+        "cooldown_unpredictable_low_liquidity": ("cooldown", 0.70),
+        "approve_clean_positive_uplift": ("approve", 0.20),
+        "veto_missing_data_integrity": ("veto", 0.92),
+    }
+
+    def fake_post(_url, payload, _timeout):
+        text = payload["messages"][1]["content"]
+        for name, (action, risk) in actions.items():
+            if name in text:
+                return _benchmark_response(action, risk)
+        return _benchmark_response("human_review", 0.50)
+
+    report = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=fake_post,
+    )
+
+    assert report.passed is True
+    assert report.selected_model == "qwen3:8b"
+    assert report.results[0].passed is True
+    assert report.results[0].action_match_cases == len(report.tests)
+
+
+def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() -> None:
+    candidates = {candidate.model: candidate for candidate in finance_ai_candidates()}
+
+    assert candidates["qwen3:8b"].reasoning_or_risk_review is True
+    assert candidates["DragonLLM/Qwen-Open-Finance-R-8B"].finance_specialized is True
+    assert candidates["DragonLLM/Qwen-Open-Finance-R-8B"].model_parameters_b == 8.0
+    assert candidates["FinGPT/fingpt-mt_llama2-7b_lora"].finance_specialized is True
+
+
+def test_finance_ai_benchmark_fails_wrong_actions() -> None:
+    def fake_post(_url, _payload, _timeout):
+        return _benchmark_response("approve", 0.10)
+
+    report = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=fake_post,
+    )
+
+    assert report.passed is False
+    assert report.selected_model is None
+    assert report.results[0].passed is False
+    assert report.results[0].action_match_cases < len(report.tests)
+
+
+def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> None:
+    class _Report:
+        passed = True
+        selected_model = "qwen3:8b"
+        tests = ({"name": "case"},)
+        results = (
+            SimpleNamespace(
+                model="qwen3:8b",
+                passed=True,
+                score=0.91,
+                action_match_cases=1,
+                valid_json_cases=1,
+                model_parameters_b=8.0,
+                average_latency_seconds=0.5,
+                failures=(),
+            ),
+        )
+
+        def asdict(self):
+            return {"passed": True, "selected_model": self.selected_model}
+
+    monkeypatch.setattr("simple_ai_trading.ai_model_benchmark.benchmark_finance_ai_models", lambda **_kwargs: _Report())
+
+    output = tmp_path / "ai_benchmark.json"
+    assert cli.command_ai_benchmark(
+        argparse.Namespace(
+            models="qwen3:8b",
+            url="http://127.0.0.1:11434",
+            timeout=1.0,
+            minimum_score=0.78,
+            output=str(output),
+            json=False,
+        )
+    ) == 0
+    assert output.exists()
+    assert "selected=qwen3:8b" in capsys.readouterr().out
 
 
 def test_windows_app_commands_match_cli_contract() -> None:
@@ -167,7 +284,7 @@ def test_runtime_ai_defaults_enabled_and_strategy_defaults_conservative() -> Non
     strategy = StrategyConfig(leverage=999.0)
 
     assert runtime.ai_enabled is True
-    assert runtime.ai_model == "qwen2.5:7b"
+    assert runtime.ai_model == "qwen3:8b"
     assert runtime.ai_require_gpu is True
     assert runtime.ai_min_free_vram_gb == 8.0
     assert runtime.ai_min_model_parameters_b == 2.0

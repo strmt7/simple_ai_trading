@@ -110,6 +110,29 @@ def _evidence(
     )
 
 
+def test_round_model_candidates_prioritize_intraday_search_for_default_promotion_count() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 3)
+    names = [candidate.name for candidate in candidates]
+
+    assert names == ["default", "intraday_micro_triple_barrier", "intraday_breakout_forward"]
+    assert candidates[1].feature_cfg.label_mode == "triple_barrier"
+    assert candidates[1].feature_cfg.label_lookahead < feature_cfg.label_lookahead
+    assert candidates[2].feature_cfg.label_mode == "forward_return"
+    assert candidates[2].feature_cfg.label_threshold < feature_cfg.label_threshold
+    assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
+    micro_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
+    breakout_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
+    assert micro_strategy.stop_loss_pct < strategy.stop_loss_pct
+    assert micro_strategy.take_profit_pct < strategy.take_profit_pct
+    assert micro_strategy.cooldown_minutes < strategy.cooldown_minutes
+    assert breakout_strategy.stop_loss_pct < strategy.stop_loss_pct
+    assert breakout_strategy.take_profit_pct < strategy.take_profit_pct
+
+
 def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="futures 1s optimization requires prefilled aggTrades-derived candles"):
         oe.build_round_evidence(
@@ -1092,10 +1115,17 @@ def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
     objective = get_objective("conservative")
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=10)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=12)
 
-    assert [candidate.name for candidate in candidates[:2]] == ["default", "lower_lr_more_l2"]
-    assert len(candidates) == 10
+    assert [candidate.name for candidate in candidates[:3]] == [
+        "default",
+        "intraday_micro_triple_barrier",
+        "intraday_breakout_forward",
+    ]
+    assert len(candidates) == 12
+    assert candidates[1].stop_loss_multiplier < 1.0
+    assert candidates[1].take_profit_multiplier < 1.0
+    assert candidates[1].cooldown_multiplier < 1.0
     thresholds = [candidate.signal_threshold for candidate in candidates]
     assert min(thresholds) == pytest.approx(0.56)
     assert max(thresholds) == pytest.approx(0.70)
@@ -1188,9 +1218,15 @@ def test_train_round_model_selects_best_scored_candidate(
     assert calls["train"] == 2
     assert selected_model.model_family.startswith("candidate_2")
     assert selected_model.model_candidate_count == 2
-    assert selected_model.model_selected_candidate == "lower_lr_more_l2"
+    assert selected_model.model_selected_candidate == "intraday_micro_triple_barrier"
     assert selected_model.model_selection_score > 0.0
     assert "model_selected_candidate" in selected_model.__dataclass_fields__
+    assert len(selected_model.round_candidate_diagnostics) == 2
+    assert selected_model.round_candidate_diagnostics[0]["name"] == "default"
+    assert selected_model.round_candidate_diagnostics[0]["selected"] is False
+    assert selected_model.round_candidate_diagnostics[1]["name"] == "intraday_micro_triple_barrier"
+    assert selected_model.round_candidate_diagnostics[1]["selected"] is True
+    assert selected_model.round_candidate_diagnostics[1]["threshold_diagnostic_best_trades"] == 0
     assert report.row_count == 60
     assert len(holdout_rows) == 25
 

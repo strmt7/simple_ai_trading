@@ -71,6 +71,27 @@ def test_write_json_atomic_replaces_payload_and_applies_mode(tmp_path) -> None:
         assert target.stat().st_mode & 0o777 == 0o600
 
 
+def test_write_json_atomic_retries_transient_replace_permission_error(tmp_path, monkeypatch) -> None:
+    target = tmp_path / "payload.json"
+    original_replace = storage.os.replace
+    calls = {"count": 0}
+
+    def flaky_replace(src, dst) -> None:
+        calls["count"] += 1
+        if calls["count"] < 3:
+            raise PermissionError("temporarily locked")
+        original_replace(src, dst)
+
+    monkeypatch.setattr(storage.os, "replace", flaky_replace)
+    monkeypatch.setattr(storage.time, "sleep", lambda _seconds: None)
+
+    write_json_atomic(target, {"ok": True})
+
+    assert calls["count"] == 3
+    assert json.loads(target.read_text(encoding="utf-8")) == {"ok": True}
+    assert list(tmp_path.glob(".payload.json.*.tmp")) == []
+
+
 def test_write_json_atomic_removes_temp_file_on_failed_write(tmp_path, monkeypatch) -> None:
     def fail_dump(*_args, **_kwargs) -> None:
         raise ValueError("boom")

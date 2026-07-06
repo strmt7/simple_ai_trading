@@ -34,6 +34,15 @@ inline constexpr CommandOptionSpec kOptions_ai[] = {
     {L"--json", L"json", L"", L"false", L"", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_ai_benchmark[] = {
+    {L"--models", L"models", L"", L"", L"comma-separated Ollama model names; defaults to installed curated candidates", false, true},
+    {L"--url", L"url", L"", L"http://127.0.0.1:11434", L"", false, true},
+    {L"--timeout", L"timeout", L"", L"20.0", L"", false, true},
+    {L"--minimum-score", L"minimum_score", L"", L"0.78", L"", false, true},
+    {L"--output", L"output", L"", L"data/ai_model_benchmark.json", L"", false, true},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_ai_review[] = {
     {L"--report", L"report", L"", L"data/model_lab/model_lab_report.json", L"", false, true},
     {L"--output", L"output", L"", L"", L"", false, true},
@@ -476,6 +485,7 @@ inline constexpr CommandOptionSpec kOptions_universe[] = {
 
 inline constexpr CommandSpec kCommands[] = {
     {L"ai", L"usage: simple-ai-trading ai [-h] [--enable] [--disable] [--provider PROVIDER]                             [--model MODEL] [--require-gpu] [--no-require-gpu]                             [--min-free-vram-gb MIN_FREE_VRAM_GB]                             [--min-free-ram-gb MIN_FREE_RAM_GB]                             [--min-model-parameters-b MIN_MODEL_PARAMETERS_B]                             [--allow-paper-fallback] [--no-paper-fallback]                             [--json]", kOptions_ai, 12},
+    {L"ai-benchmark", L"usage: simple-ai-trading ai-benchmark [-h] [--models MODELS] [--url URL]                                       [--timeout TIMEOUT]                                       [--minimum-score MINIMUM_SCORE]                                       [--output OUTPUT] [--json]", kOptions_ai_benchmark, 6},
     {L"ai-review", L"usage: simple-ai-trading ai-review [-h] [--report REPORT] [--output OUTPUT]                                    [--model MODEL] [--url URL]                                    [--timeout TIMEOUT] [--json]", kOptions_ai_review, 6},
     {L"api-budget", L"usage: simple-ai-trading api-budget [-h] [--db DB] [--market {spot,futures}]                                     [--refresh] [--cached-only]                                     [--max-age-seconds MAX_AGE_SECONDS]                                     [--compact] [--json]", kOptions_api_budget, 7},
     {L"archive-sync", L"usage: simple-ai-trading archive-sync [-h] [--db DB] [--symbol SYMBOL]                                       [--symbols SYMBOLS]                                       [--top-symbols TOP_SYMBOLS]                                       [--quote-asset QUOTE_ASSET]                                       [--max-scan MAX_SCAN]                                       [--min-history-months MIN_HISTORY_MONTHS]                                       [--interval INTERVAL]                                       [--market {spot,futures}]                                       [--cadence {monthly,daily}]                                       [--data-type {klines,aggTrades}]                                       [--max-files MAX_FILES]                                       [--start-period START_PERIOD]                                       [--end-period END_PERIOD] [--plan-only]                                       [--max-planned-gb MAX_PLANNED_GB]                                       [--timeout TIMEOUT] [--force]                                       [--no-verify-checksum]                                       [--require-checksum] [--json]", kOptions_archive_sync, 21},

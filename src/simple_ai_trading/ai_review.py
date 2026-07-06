@@ -16,7 +16,7 @@ from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity
 from .storage import write_json_atomic
 from .types import RuntimeConfig
 
-DEFAULT_AI_REVIEW_MODEL = "qwen2.5:7b"
+DEFAULT_AI_REVIEW_MODEL = "qwen3:8b"
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 _MAX_OUTCOMES = 8
 _MAX_CONCERNS = 8
