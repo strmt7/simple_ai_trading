@@ -83,6 +83,8 @@ class TrainedModel:
     class_weight_pos: float = 1.0
     class_weight_neg: float = 1.0
     decision_threshold: float | None = None
+    long_decision_threshold: float | None = None
+    short_decision_threshold: float | None = None
     calibration_size: int = 0
     validation_size: int = 0
     training_cutoff_timestamp: int | None = None
@@ -112,6 +114,8 @@ class TrainedModel:
     threshold_diagnostic_best_score: float | None = None
     threshold_diagnostic_best_pnl: float | None = None
     threshold_diagnostic_best_trades: int = 0
+    threshold_diagnostic_best_long_threshold: float | None = None
+    threshold_diagnostic_best_short_threshold: float | None = None
     strategy_overrides: dict[str, StrategyOverrideValue] = field(default_factory=dict)
     ensemble_members: List[EnsembleMember] = field(default_factory=list)
     training_backend_requested: str = "cpu"
@@ -1104,6 +1108,53 @@ def model_decision_threshold(model: TrainedModel, fallback: float) -> float:
     return _clamp(parsed, 0.0, 1.0)
 
 
+def _optional_decision_threshold(value: object, *, low: float, high: float) -> float | None:
+    if value is None:
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not math.isfinite(parsed):
+        return None
+    return _clamp(parsed, low, high)
+
+
+def model_direction_thresholds(
+    model: TrainedModel,
+    fallback: float,
+    *,
+    market_type: str = "spot",
+) -> tuple[float | None, float | None]:
+    """Return long and short probability cutoffs for the current market.
+
+    Futures models may persist asymmetric side thresholds. If neither side
+    threshold is present, the legacy symmetric threshold is used: long when
+    probability >= T and short when probability <= 1 - T. If either side
+    threshold is present, missing sides are disabled so calibration can choose
+    long-only or short-only behavior without relaxing the opposite side.
+    """
+
+    base = model_decision_threshold(model, fallback)
+    if str(market_type).lower() != "futures":
+        long_threshold = _optional_decision_threshold(
+            getattr(model, "long_decision_threshold", None),
+            low=0.0,
+            high=1.0,
+        )
+        return (long_threshold if long_threshold is not None else base), None
+
+    long_raw = getattr(model, "long_decision_threshold", None)
+    short_raw = getattr(model, "short_decision_threshold", None)
+    if long_raw is None and short_raw is None:
+        long_threshold = max(0.5, base)
+        return long_threshold, min(0.5, 1.0 - long_threshold)
+    return (
+        _optional_decision_threshold(long_raw, low=0.5, high=1.0),
+        _optional_decision_threshold(short_raw, low=0.0, high=0.5),
+    )
+
+
 def temporal_validation_split(
     rows: List[ModelRow],
     *,
@@ -1815,6 +1866,16 @@ def load_model(
             if payload.get("decision_threshold") is not None
             else None
         ),
+        long_decision_threshold=(
+            float(payload["long_decision_threshold"])
+            if payload.get("long_decision_threshold") is not None
+            else None
+        ),
+        short_decision_threshold=(
+            float(payload["short_decision_threshold"])
+            if payload.get("short_decision_threshold") is not None
+            else None
+        ),
         calibration_size=int(payload.get("calibration_size", 0)),
         validation_size=int(payload.get("validation_size", 0)),
         training_cutoff_timestamp=(
@@ -1924,6 +1985,16 @@ def load_model(
             else None
         ),
         threshold_diagnostic_best_trades=int(payload.get("threshold_diagnostic_best_trades", 0) or 0),
+        threshold_diagnostic_best_long_threshold=(
+            float(payload["threshold_diagnostic_best_long_threshold"])
+            if payload.get("threshold_diagnostic_best_long_threshold") is not None
+            else None
+        ),
+        threshold_diagnostic_best_short_threshold=(
+            float(payload["threshold_diagnostic_best_short_threshold"])
+            if payload.get("threshold_diagnostic_best_short_threshold") is not None
+            else None
+        ),
         strategy_overrides=clean_strategy_overrides(payload.get("strategy_overrides", {})),
         ensemble_members=_load_ensemble_members(payload.get("ensemble_members"), dim),
         training_backend_requested=str(payload.get("training_backend_requested", "cpu") or "cpu"),

@@ -5,12 +5,12 @@
   "compute_backend_kind": "directml",
   "compute_backend_reason": "",
   "compute_backend_requested": "directml",
-  "generated_at_utc": "2026-07-06T14:54:24.586998Z",
-  "metrics_csv_path": "docs/optimization/round-order-flow-window-smoke/data/backtest-metrics.csv",
+  "generated_at_utc": "2026-07-06T16:45:48.616892Z",
+  "metrics_csv_path": "docs/optimization/round-side-threshold-window-smoke/data/backtest-metrics.csv",
   "phase": "round_complete",
-  "report_path": "docs/optimization/round-order-flow-window-smoke/data/report.json",
+  "report_path": "docs/optimization/round-side-threshold-window-smoke/data/report.json",
   "require_gpu": true,
-  "round_id": "round-order-flow-window-smoke",
+  "round_id": "round-side-threshold-window-smoke",
   "status": "complete",
   "symbol_count_requested": 3
 }

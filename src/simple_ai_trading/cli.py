@@ -79,6 +79,7 @@ from .model import (
     ModelLoadError,
     load_model,
     model_decision_threshold,
+    model_direction_thresholds,
     serialize_model,
     temporal_validation_split,
     train,
@@ -3430,13 +3431,50 @@ def _build_live_model(
     )
 
 
-def _score_to_direction(score: float, cfg: StrategyConfig, market_type: str, threshold: float | None = None) -> int:
+def _directional_threshold_confidence(
+    long_threshold: float | None,
+    short_threshold: float | None,
+    fallback: float,
+) -> float:
+    values: list[float] = []
+    if long_threshold is not None:
+        values.append(float(long_threshold))
+    if short_threshold is not None:
+        values.append(1.0 - float(short_threshold))
+    if not values:
+        values.append(float(fallback))
+    return _clamp(max(values), 0.0, 1.0)
+
+
+def _adjust_directional_thresholds(
+    long_threshold: float | None,
+    short_threshold: float | None,
+    threshold_add: float,
+) -> tuple[float | None, float | None]:
+    add = _clamp(float(threshold_add), -1.0, 1.0)
+    adjusted_long = _clamp(float(long_threshold) + add, 0.0, 1.0) if long_threshold is not None else None
+    adjusted_short = _clamp(float(short_threshold) - add, 0.0, 1.0) if short_threshold is not None else None
+    return adjusted_long, adjusted_short
+
+
+def _score_to_direction(
+    score: float,
+    cfg: StrategyConfig,
+    market_type: str,
+    threshold: float | None = None,
+    *,
+    short_threshold: float | None = None,
+    side_thresholds_explicit: bool = False,
+) -> int:
     threshold = cfg.signal_threshold if threshold is None else _clamp(float(threshold), 0.0, 1.0)
     if market_type == "futures":
-        threshold = max(0.5, threshold)
-        if score >= threshold:
+        long_threshold = max(0.5, threshold) if threshold is not None else None
+        short_cutoff = min(0.5, float(short_threshold)) if short_threshold is not None else None
+        if short_cutoff is None and not side_thresholds_explicit and long_threshold is not None:
+            short_cutoff = min(0.5, 1.0 - long_threshold)
+        if long_threshold is not None and score >= long_threshold:
             return 1
-        if score <= (1.0 - threshold):
+        if short_cutoff is not None and score <= short_cutoff:
             return -1
         return 0
     return 1 if score >= threshold else 0
@@ -7062,8 +7100,28 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     }
                 )
                 print(f"step {i + 1:>2}: external signals unavailable: {exc}", file=sys.stderr)
-        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_cfg, threshold)
-        effective_threshold = liquidity_adjustment.threshold
+        base_long_threshold, base_short_threshold = model_direction_thresholds(
+            model,
+            decision_cfg.signal_threshold,
+            market_type=runtime.market_type,
+        )
+        side_thresholds_explicit = (
+            getattr(model, "long_decision_threshold", None) is not None
+            or getattr(model, "short_decision_threshold", None) is not None
+        )
+        base_threshold = _directional_threshold_confidence(base_long_threshold, base_short_threshold, threshold)
+        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_cfg, base_threshold)
+        threshold_add = float(liquidity_adjustment.threshold) - float(base_threshold)
+        effective_long_threshold, effective_short_threshold = _adjust_directional_thresholds(
+            base_long_threshold,
+            base_short_threshold,
+            threshold_add,
+        )
+        effective_threshold = _directional_threshold_confidence(
+            effective_long_threshold,
+            effective_short_threshold,
+            threshold,
+        )
         _record_model_telemetry(
             cfg,
             step=i + 1,
@@ -7074,11 +7132,23 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             model=model,
             runtime=runtime,
         )
-        direction = _score_to_direction(score, decision_cfg, runtime.market_type, effective_threshold)
+        direction = _score_to_direction(
+            score,
+            decision_cfg,
+            runtime.market_type,
+            effective_long_threshold,
+            short_threshold=effective_short_threshold,
+            side_thresholds_explicit=side_thresholds_explicit,
+        )
+        meta_threshold = (
+            1.0 - effective_short_threshold
+            if runtime.market_type == "futures" and direction < 0 and effective_short_threshold is not None
+            else effective_threshold
+        )
         base_meta_decision = apply_meta_label_policy(
             getattr(model, "meta_label_policy", {}),
             adjusted_probability=score,
-            threshold=effective_threshold,
+            threshold=meta_threshold,
             side=direction,
             market_type=runtime.market_type,
         )
@@ -8076,8 +8146,28 @@ def _build_autonomous_decision_fn(
             regime_evidence.confidence,
             regime_evidence.notes,
         )
-        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_strategy, threshold)
-        effective_threshold = liquidity_adjustment.threshold
+        base_long_threshold, base_short_threshold = model_direction_thresholds(
+            current_model,
+            decision_strategy.signal_threshold,
+            market_type=runtime.market_type,
+        )
+        side_thresholds_explicit = (
+            getattr(current_model, "long_decision_threshold", None) is not None
+            or getattr(current_model, "short_decision_threshold", None) is not None
+        )
+        base_threshold = _directional_threshold_confidence(base_long_threshold, base_short_threshold, threshold)
+        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_strategy, base_threshold)
+        threshold_add = float(liquidity_adjustment.threshold) - float(base_threshold)
+        effective_long_threshold, effective_short_threshold = _adjust_directional_thresholds(
+            base_long_threshold,
+            base_short_threshold,
+            threshold_add,
+        )
+        effective_threshold = _directional_threshold_confidence(
+            effective_long_threshold,
+            effective_short_threshold,
+            threshold,
+        )
         _record_model_telemetry(
             current_strategy,
             step=int(state["step"]),
@@ -8088,11 +8178,23 @@ def _build_autonomous_decision_fn(
             model=current_model,
             runtime=runtime,
         )
-        direction = _score_to_direction(score, decision_strategy, runtime.market_type, effective_threshold)
+        direction = _score_to_direction(
+            score,
+            decision_strategy,
+            runtime.market_type,
+            effective_long_threshold,
+            short_threshold=effective_short_threshold,
+            side_thresholds_explicit=side_thresholds_explicit,
+        )
+        meta_threshold = (
+            1.0 - effective_short_threshold
+            if runtime.market_type == "futures" and direction < 0 and effective_short_threshold is not None
+            else effective_threshold
+        )
         base_meta_decision = apply_meta_label_policy(
             getattr(current_model, "meta_label_policy", {}),
             adjusted_probability=score,
-            threshold=effective_threshold,
+            threshold=meta_threshold,
             side=direction,
             market_type=runtime.market_type,
         )

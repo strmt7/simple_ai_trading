@@ -154,6 +154,10 @@ class BacktestEvidence:
     stopped_by_liquidation: bool = False
     liquidation_events: int = 0
     liquidation_loss: float = 0.0
+    long_decision_threshold: float | None = None
+    short_decision_threshold: float | None = None
+    threshold_diagnostic_best_long_threshold: float | None = None
+    threshold_diagnostic_best_short_threshold: float | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -1578,6 +1582,8 @@ def _evaluate_round_model_candidate(
     model.threshold_diagnostic_best_score = diagnostic_score
     model.threshold_diagnostic_best_pnl = diagnostic_pnl
     model.threshold_diagnostic_best_trades = diagnostic_trades
+    model.threshold_diagnostic_best_long_threshold = getattr(threshold_report, "best_long_threshold", None)
+    model.threshold_diagnostic_best_short_threshold = getattr(threshold_report, "best_short_threshold", None)
     if status_callback is not None:
         status_callback(
             "threshold_calibration_complete",
@@ -1602,6 +1608,8 @@ def _evaluate_round_model_candidate(
         )
     if threshold_report.accepted:
         model.decision_threshold = float(threshold_report.threshold)
+        model.long_decision_threshold = getattr(threshold_report, "long_threshold", None)
+        model.short_decision_threshold = getattr(threshold_report, "short_threshold", None)
         model.threshold_source = "round_selection_backtest"
         model.threshold_calibration_score = float(threshold_report.score)
         model.threshold_calibration_pnl = float(threshold_report.realized_pnl)
@@ -1702,6 +1710,8 @@ def _evaluate_round_model_candidate(
         model.round_selection_reject_reason = str(chosen_reject_reason or "selection_gate_failed")
         if diagnostic_trades > 0:
             model.decision_threshold = diagnostic_threshold
+            model.long_decision_threshold = getattr(threshold_report, "best_long_threshold", None)
+            model.short_decision_threshold = getattr(threshold_report, "best_short_threshold", None)
             model.threshold_source = "round_selection_rejected_best_threshold_diagnostic"
             model.threshold_calibration_score = diagnostic_score
             model.threshold_calibration_pnl = diagnostic_pnl
@@ -1791,6 +1801,26 @@ def _round_candidate_diagnostic(
             if getattr(model, "decision_threshold", None) is not None
             else None
         ),
+        "long_decision_threshold": (
+            float(getattr(model, "long_decision_threshold"))
+            if getattr(model, "long_decision_threshold", None) is not None
+            else None
+        ),
+        "short_decision_threshold": (
+            float(getattr(model, "short_decision_threshold"))
+            if getattr(model, "short_decision_threshold", None) is not None
+            else None
+        ),
+        "threshold_diagnostic_best_long_threshold": (
+            float(getattr(model, "threshold_diagnostic_best_long_threshold"))
+            if getattr(model, "threshold_diagnostic_best_long_threshold", None) is not None
+            else None
+        ),
+        "threshold_diagnostic_best_short_threshold": (
+            float(getattr(model, "threshold_diagnostic_best_short_threshold"))
+            if getattr(model, "threshold_diagnostic_best_short_threshold", None) is not None
+            else None
+        ),
         "threshold_calibration_score": (
             float(getattr(model, "threshold_calibration_score"))
             if getattr(model, "threshold_calibration_score", None) is not None
@@ -1862,10 +1892,14 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "round_selection_reject_reason": str(item.get("round_selection_reject_reason", "")),
             "threshold_source": str(item.get("threshold_source", "")),
             "decision_threshold": item.get("decision_threshold"),
+            "long_decision_threshold": item.get("long_decision_threshold"),
+            "short_decision_threshold": item.get("short_decision_threshold"),
             "threshold_calibration_score": item.get("threshold_calibration_score"),
             "threshold_calibration_pnl": item.get("threshold_calibration_pnl"),
             "threshold_calibration_trades": int(_finite(item.get("threshold_calibration_trades"))),
             "threshold_diagnostic_best_threshold": item.get("threshold_diagnostic_best_threshold"),
+            "threshold_diagnostic_best_long_threshold": item.get("threshold_diagnostic_best_long_threshold"),
+            "threshold_diagnostic_best_short_threshold": item.get("threshold_diagnostic_best_short_threshold"),
             "threshold_diagnostic_best_score": item.get("threshold_diagnostic_best_score"),
             "threshold_diagnostic_best_pnl": item.get("threshold_diagnostic_best_pnl"),
             "threshold_diagnostic_best_trades": int(_finite(item.get("threshold_diagnostic_best_trades"))),
@@ -2440,6 +2474,26 @@ def build_round_evidence(
                     if getattr(model, "decision_threshold", None) is not None
                     else None
                 ),
+                long_decision_threshold=(
+                    float(getattr(model, "long_decision_threshold"))
+                    if getattr(model, "long_decision_threshold", None) is not None
+                    else None
+                ),
+                short_decision_threshold=(
+                    float(getattr(model, "short_decision_threshold"))
+                    if getattr(model, "short_decision_threshold", None) is not None
+                    else None
+                ),
+                threshold_diagnostic_best_long_threshold=(
+                    float(getattr(model, "threshold_diagnostic_best_long_threshold"))
+                    if getattr(model, "threshold_diagnostic_best_long_threshold", None) is not None
+                    else None
+                ),
+                threshold_diagnostic_best_short_threshold=(
+                    float(getattr(model, "threshold_diagnostic_best_short_threshold"))
+                    if getattr(model, "threshold_diagnostic_best_short_threshold", None) is not None
+                    else None
+                ),
                 round_selection_gate_passed=bool(getattr(model, "round_selection_gate_passed", True)),
                 round_selection_reject_reason=(
                     str(getattr(model, "round_selection_reject_reason"))
@@ -2518,6 +2572,10 @@ def build_round_evidence(
                 threshold_diagnostic_best_pnl=None,
                 threshold_diagnostic_best_trades=0,
                 decision_threshold=None,
+                long_decision_threshold=None,
+                short_decision_threshold=None,
+                threshold_diagnostic_best_long_threshold=None,
+                threshold_diagnostic_best_short_threshold=None,
                 round_selection_gate_passed=False,
                 round_selection_reject_reason=str(exc)[:240],
                 model_quality_warnings="",
@@ -2572,8 +2630,10 @@ def build_round_evidence(
         "flat_signal_exit_grace_bars", "label_threshold", "label_lookahead", "label_mode",
         "probability_inverted", "round_selection_gate_passed",
         "round_selection_reject_reason", "threshold_source", "decision_threshold",
+        "long_decision_threshold", "short_decision_threshold",
         "threshold_calibration_score", "threshold_calibration_pnl", "threshold_calibration_trades",
-        "threshold_diagnostic_best_threshold", "threshold_diagnostic_best_score",
+        "threshold_diagnostic_best_threshold", "threshold_diagnostic_best_long_threshold",
+        "threshold_diagnostic_best_short_threshold", "threshold_diagnostic_best_score",
         "threshold_diagnostic_best_pnl", "threshold_diagnostic_best_trades",
         "selection_realized_pnl", "selection_closed_trades", "selection_max_drawdown",
         "selection_win_rate", "selection_total_fees", "selection_profit_factor",

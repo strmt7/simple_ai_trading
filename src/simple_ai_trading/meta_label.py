@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Sequence
 
 from .features import ModelRow
-from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold
+from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold, model_direction_thresholds
 from .types import StrategyConfig
 
 if TYPE_CHECKING:
@@ -164,6 +164,7 @@ def extract_meta_label_samples(
 
     rows_by_time = {int(row.timestamp): row for row in rows}
     threshold = model_decision_threshold(model, strategy.signal_threshold)
+    long_threshold, short_threshold = model_direction_thresholds(model, strategy.signal_threshold, market_type=market_type)
     samples: list[MetaLabelSample] = []
     for trade in getattr(result, "trade_log", ()) or ():
         if not isinstance(trade, dict):
@@ -177,6 +178,12 @@ def extract_meta_label_samples(
             continue
         probability = _finite(model.predict_proba(row.features), 0.5)
         adjusted = confidence_adjusted_probability(probability, strategy.confidence_beta)
+        side_threshold = threshold
+        if str(market_type).lower() == "futures":
+            if side > 0 and long_threshold is not None:
+                side_threshold = long_threshold
+            elif side < 0 and short_threshold is not None:
+                side_threshold = 1.0 - short_threshold
         net_pnl = _finite(trade.get("net_pnl"))
         return_pct = _finite(trade.get("return_pct"))
         samples.append(MetaLabelSample(
@@ -184,7 +191,7 @@ def extract_meta_label_samples(
             side=1 if side > 0 else -1,
             probability=float(probability),
             adjusted_probability=float(adjusted),
-            signal_strength=float(_signal_strength(adjusted, threshold, side, market_type)),
+            signal_strength=float(_signal_strength(adjusted, side_threshold, side, market_type)),
             net_pnl=float(net_pnl),
             return_pct=float(return_pct),
             profitable=bool(net_pnl > 0.0 and return_pct > 0.0),

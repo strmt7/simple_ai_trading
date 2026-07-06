@@ -182,6 +182,10 @@ used by the CLI. The advanced feature vector now includes:
 - v6 order-flow microstructure features from real quote volume, trade count,
   taker-buy base/quote volume, signed flow imbalance, no-trade seconds, and
   signed-flow/return alignment.
+- side-aware futures threshold calibration that can promote symmetric,
+  long-only, or short-only thresholds only when the selection fold improves
+  risk-adjusted evidence; the final holdout still has to pass profitability,
+  drawdown, liquidation, trade-quality, and market-edge gates.
 
 The revamp also adds a hybrid expert layer stored directly inside the serialized
 model:

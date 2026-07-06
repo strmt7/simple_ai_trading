@@ -562,6 +562,14 @@ def test_clamp_and_direction_helpers() -> None:
     assert cli._score_to_direction(0.40, cfg, "futures") == -1
     assert cli._score_to_direction(0.50, cfg, "futures") == 0
     assert cli._score_to_direction(0.10, cfg, "futures") == -1
+    assert cli._score_to_direction(
+        0.10,
+        cfg,
+        "futures",
+        threshold=0.55,
+        short_threshold=None,
+        side_thresholds_explicit=True,
+    ) == 0
 
 
 def test_resolve_futures_leverage(monkeypatch) -> None:
