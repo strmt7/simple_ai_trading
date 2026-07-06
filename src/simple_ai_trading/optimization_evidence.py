@@ -278,6 +278,8 @@ class RoundModelCandidateResult:
     score: float
     model: object
     report: object
+    selection_result: BacktestResult
+    selection_reject_reason: str | None
     rows: list[object]
     validation_rows: list[object]
 
@@ -1240,6 +1242,7 @@ def _round_model_candidates(
     raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float]] = [
         ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0),
         ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10),
+        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0),
         ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15),
         ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0),
         ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50),
@@ -1542,12 +1545,18 @@ def _evaluate_round_model_candidate(
     inverted_raw_score = objective.score(inverted_result)
     inverted_score = inverted_raw_score if inverted_accepts else float("-inf")
     score = base_score
+    selection_result = base_result
+    selection_reject_reason = base_reject_reason
     if inverted_score > base_score + 1e-12:
         model = inverted_model
         score = inverted_score
+        selection_result = inverted_result
+        selection_reject_reason = inverted_reject_reason
         model.round_selection_gate_passed = True
         model.round_selection_reject_reason = ""
     elif base_accepts:
+        selection_result = base_result
+        selection_reject_reason = base_reject_reason
         model.round_selection_gate_passed = True
         model.round_selection_reject_reason = ""
     elif not math.isfinite(base_score):
@@ -1555,9 +1564,13 @@ def _evaluate_round_model_candidate(
             model = inverted_model
             score = inverted_raw_score
             chosen_reject_reason = inverted_reject_reason
+            selection_result = inverted_result
+            selection_reject_reason = inverted_reject_reason
         else:
             score = base_raw_score
             chosen_reject_reason = base_reject_reason
+            selection_result = base_result
+            selection_reject_reason = base_reject_reason
         model.round_selection_gate_passed = False
         model.round_selection_reject_reason = str(chosen_reject_reason or "selection_gate_failed")
         if diagnostic_trades > 0:
@@ -1578,8 +1591,45 @@ def _evaluate_round_model_candidate(
         score=float(score),
         model=model,
         report=report,
+        selection_result=selection_result,
+        selection_reject_reason=selection_reject_reason,
         rows=list(rows),
         validation_rows=list(validation_rows),
+    )
+
+
+def _round_candidate_rank_key(result: RoundModelCandidateResult) -> tuple[float, ...]:
+    """Rank candidates without allowing failed risk gates to masquerade as live evidence."""
+
+    model = result.model
+    selection = result.selection_result
+
+    def finite(value: object, default: float = 0.0) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return default
+        return parsed if math.isfinite(parsed) else default
+
+    gate_passed = 1.0 if bool(getattr(model, "round_selection_gate_passed", False)) else 0.0
+    score = finite(result.score, float("-inf"))
+    diagnostic_pnl = finite(getattr(model, "threshold_diagnostic_best_pnl", None), float("-inf"))
+    diagnostic_trades = finite(getattr(model, "threshold_diagnostic_best_trades", 0), 0.0)
+    selection_pnl = finite(getattr(selection, "realized_pnl", 0.0), 0.0)
+    closed_trades = finite(getattr(selection, "closed_trades", 0), 0.0)
+    liquidation_events = finite(getattr(selection, "liquidation_events", 0), 0.0)
+    drawdown = finite(getattr(selection, "max_drawdown", 1.0), 1.0)
+    fees = finite(getattr(selection, "total_fees", 0.0), 0.0)
+    return (
+        gate_passed,
+        score,
+        diagnostic_pnl,
+        selection_pnl,
+        diagnostic_trades,
+        closed_trades,
+        -liquidation_events,
+        -drawdown,
+        -fees,
     )
 
 
@@ -1591,6 +1641,7 @@ def _round_candidate_diagnostic(
 ) -> dict[str, object]:
     candidate_strategy = _strategy_for_round_candidate(strategy, result.candidate)
     model = result.model
+    selection = result.selection_result
     return {
         "name": result.candidate.name,
         "selected": bool(selected),
@@ -1638,6 +1689,19 @@ def _round_candidate_diagnostic(
             else None
         ),
         "threshold_diagnostic_best_trades": int(getattr(model, "threshold_diagnostic_best_trades", 0) or 0),
+        "selection_realized_pnl": float(getattr(selection, "realized_pnl", 0.0)),
+        "selection_closed_trades": int(getattr(selection, "closed_trades", 0) or 0),
+        "selection_max_drawdown": float(getattr(selection, "max_drawdown", 0.0)),
+        "selection_win_rate": float(getattr(selection, "win_rate", 0.0)),
+        "selection_total_fees": float(getattr(selection, "total_fees", 0.0)),
+        "selection_profit_factor": float(getattr(selection, "profit_factor", 0.0)),
+        "selection_expectancy": float(getattr(selection, "expectancy", 0.0)),
+        "selection_edge_vs_buy_hold": float(getattr(selection, "edge_vs_buy_hold", 0.0)),
+        "selection_trades_per_day_cap_hit": int(getattr(selection, "trades_per_day_cap_hit", 0) or 0),
+        "selection_regime_entry_skips": int(getattr(selection, "regime_entry_skips", 0) or 0),
+        "selection_meta_label_skips": int(getattr(selection, "meta_label_skips", 0) or 0),
+        "selection_liquidation_events": int(getattr(selection, "liquidation_events", 0) or 0),
+        "selection_reject_reason": str(result.selection_reject_reason or ""),
     }
 
 
@@ -1674,6 +1738,19 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "threshold_diagnostic_best_score": item.get("threshold_diagnostic_best_score"),
             "threshold_diagnostic_best_pnl": item.get("threshold_diagnostic_best_pnl"),
             "threshold_diagnostic_best_trades": int(_finite(item.get("threshold_diagnostic_best_trades"))),
+            "selection_realized_pnl": _finite(item.get("selection_realized_pnl")),
+            "selection_closed_trades": int(_finite(item.get("selection_closed_trades"))),
+            "selection_max_drawdown": _finite(item.get("selection_max_drawdown")),
+            "selection_win_rate": _finite(item.get("selection_win_rate")),
+            "selection_total_fees": _finite(item.get("selection_total_fees")),
+            "selection_profit_factor": _finite(item.get("selection_profit_factor")),
+            "selection_expectancy": _finite(item.get("selection_expectancy")),
+            "selection_edge_vs_buy_hold": _finite(item.get("selection_edge_vs_buy_hold")),
+            "selection_trades_per_day_cap_hit": int(_finite(item.get("selection_trades_per_day_cap_hit"))),
+            "selection_regime_entry_skips": int(_finite(item.get("selection_regime_entry_skips"))),
+            "selection_meta_label_skips": int(_finite(item.get("selection_meta_label_skips"))),
+            "selection_liquidation_events": int(_finite(item.get("selection_liquidation_events"))),
+            "selection_reject_reason": str(item.get("selection_reject_reason", "")),
         })
     return rows
 
@@ -1727,7 +1804,7 @@ def train_round_model(
                     "score": float(result.score),
                 },
             )
-        if best is None or result.score > best.score + 1e-12:
+        if best is None or _round_candidate_rank_key(result) > _round_candidate_rank_key(best):
             best = result
     if best is None:
         raise ValueError("no model candidates were evaluated")
@@ -2349,6 +2426,11 @@ def build_round_evidence(
         "threshold_calibration_score", "threshold_calibration_pnl", "threshold_calibration_trades",
         "threshold_diagnostic_best_threshold", "threshold_diagnostic_best_score",
         "threshold_diagnostic_best_pnl", "threshold_diagnostic_best_trades",
+        "selection_realized_pnl", "selection_closed_trades", "selection_max_drawdown",
+        "selection_win_rate", "selection_total_fees", "selection_profit_factor",
+        "selection_expectancy", "selection_edge_vs_buy_hold", "selection_trades_per_day_cap_hit",
+        "selection_regime_entry_skips", "selection_meta_label_skips", "selection_liquidation_events",
+        "selection_reject_reason",
     )
     _write_csv(
         paths.candidate_diagnostics_csv_path,

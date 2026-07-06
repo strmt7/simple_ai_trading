@@ -2,9 +2,9 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1444,
+      "bytes": 1450,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "5d405442a0bc5f4798fe835a90b64ff0174d62993b2566aac3aa34a1e573a178"
+      "sha256": "557ca2ad4e24a7d374bb0a898334af952ceaf7afec7598cf33a43f54b68621f9"
     },
     {
       "bytes": 438,
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 1,
-      "sha256": "1e1276bcd223741f2a4311d9bfd03dafee9a95743c13ce4aa6587e8e87dff376"
+      "sha256": "7e722499e3067dd5de3be20a209c3f3c1dc3a6bdf24cab02a4c97471d1f6704b"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T06:02:47.387297Z",
-  "latest_round_id": "round-1s-db-btc-research",
+  "generated_at_utc": "2026-07-06T11:32:23.374152Z",
+  "latest_round_id": "round-activity-probe-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 1,
   "tracked_artifacts": [

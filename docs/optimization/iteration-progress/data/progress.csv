@@ -1,2 +1,2 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-1s-db-btc-research,2026-07-06T06:02:47.366298Z,futures,1s,conservative,fail,False,not_requested,1,0,-0.06652836713303714,-0.06652836713303714,0.004580444476637126,0.06652836713303714,1
+round-activity-probe-smoke,2026-07-06T11:23:53.591150Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.13159433849626415,-0.08118825039811099,-0.1505522596320275,0.2407102604171314,6
