@@ -73,10 +73,11 @@ Current promotion-count search starts with:
 - `intraday_breakout_forward`.
 
 The intraday candidates also test tighter stop/take-profit and shorter
-cooldown execution profiles. Serialized model artifacts persist
-`round_candidate_diagnostics` so future agents can audit each candidate's
-threshold, trade-count, P&L, and selection-gate result instead of only seeing
-the final selected candidate.
+cooldown execution profiles. Round artifacts now write
+`candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
+model artifacts persist `round_candidate_diagnostics`, so future agents can
+audit each candidate's threshold, trade-count, P&L, and selection-gate result
+instead of only seeing the final selected candidate.
 
 Local smoke evidence from 2026-07-06, using verified one-day `1s` futures data
 for BTCUSDT/ETHUSDT/SOLUSDT, DirectML, conservative 5x futures settings, and
@@ -85,7 +86,10 @@ three total closed trades, mean ROI `-0.0753937992237373%`, worst drawdown
 `0.08495586104766062%`, and no liquidations. This is not promotion evidence
 because the stored span is about one day per symbol, not years; it is retained
 here only as truthful engineering feedback that the current strategy is not yet
-profitable on available second-level data.
+profitable on available second-level data. A follow-up diagnostics smoke wrote
+9 candidate rows across BTCUSDT/ETHUSDT/SOLUSDT and confirmed that the two
+intraday candidates were evaluated but did not beat the default candidate under
+the current risk-adjusted selection score.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That
