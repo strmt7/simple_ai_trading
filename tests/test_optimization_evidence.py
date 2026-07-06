@@ -126,7 +126,6 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
     cost_floor = oe._round_trip_cost_label_floor(strategy)
     assert candidates[1].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].feature_cfg.label_threshold >= cost_floor
-    assert candidates[2].cooldown_multiplier == 0.0
     assert candidates[1].min_position_hold_bars == 2
     assert candidates[1].flat_signal_exit_grace_bars == 2
     assert candidates[2].min_position_hold_bars == 1
@@ -1219,24 +1218,27 @@ def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
     objective = get_objective("conservative")
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=13)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=14)
 
     assert [candidate.name for candidate in candidates[:3]] == [
         "default",
         "intraday_micro_triple_barrier",
         "intraday_activity_triple_barrier",
     ]
-    assert len(candidates) == 13
+    assert len(candidates) == 14
     assert candidates[1].stop_loss_multiplier < 1.0
     assert candidates[1].take_profit_multiplier < 1.0
     assert candidates[1].cooldown_multiplier < 1.0
     assert any(candidate.name == "intraday_breakout_forward" for candidate in candidates)
+    assert any(candidate.name == "intraday_activity_triple_barrier" for candidate in candidates)
+    assert any(candidate.name == "intraday_downside_triple_barrier" for candidate in candidates)
     thresholds = [candidate.signal_threshold for candidate in candidates]
     assert min(thresholds) == pytest.approx(0.56)
     assert max(thresholds) == pytest.approx(0.70)
     assert any(candidate.name.startswith("lower_signal") for candidate in candidates)
     assert any(candidate.name == "frequency_probe_forward" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "triple_barrier" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_mode == "downside_triple_barrier" for candidate in candidates)
 
 
 def test_train_round_model_selects_best_scored_candidate(

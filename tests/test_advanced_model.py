@@ -16,14 +16,22 @@ def _candles(n: int = 220) -> list[Candle]:
     out = []
     for i in range(n):
         price = 100.0 + (i % 7) * 0.5 + (i * 0.01)
+        volume = 1.0 + (i % 3)
+        close = price + 0.1
+        trade_count = 4 + (i % 5)
+        taker_buy_base = volume * (0.35 + 0.1 * (i % 4))
         out.append(Candle(
             open_time=i * 60_000,
             open=price,
             high=price + 0.5,
             low=price - 0.5,
-            close=price + 0.1,
-            volume=1.0 + (i % 3),
+            close=close,
+            volume=volume,
             close_time=i * 60_000 + 59_000,
+            quote_volume=close * volume,
+            trade_count=trade_count,
+            taker_buy_base_volume=taker_buy_base,
+            taker_buy_quote_volume=close * taker_buy_base,
         ))
     return out
 
@@ -207,6 +215,63 @@ def test_market_quality_prefix_features_match_naive_reference() -> None:
     assert actual == pytest.approx(expected, abs=1e-12)
 
 
+def test_order_flow_features_match_naive_reference_and_dimensioned() -> None:
+    candles = _candles(240)
+    cache = am._build_confluence_cache(candles)
+    end = 200
+    windows = (20, 60)
+
+    def naive(window: int) -> list[float]:
+        start = end + 1 - window
+        sum_volume = sum(cache.nonnegative_volumes[start:end + 1])
+        sum_quote_volume = sum(cache.quote_volumes[start:end + 1])
+        sum_trade_count = sum(cache.trade_counts[start:end + 1])
+        sum_taker_base = sum(cache.taker_buy_base_volumes[start:end + 1])
+        sum_taker_quote = sum(cache.taker_buy_quote_volumes[start:end + 1])
+        signed_base = sum(cache.signed_base_flows[start:end + 1])
+        avg_trade_count = sum_trade_count / float(window)
+        avg_quote_volume = sum_quote_volume / float(window)
+        current_quote_volume = cache.quote_volumes[end]
+        current_trade_count = cache.trade_counts[end]
+        avg_quote_per_trade = am._safe_ratio(sum_quote_volume, sum_trade_count)
+        current_quote_per_trade = am._safe_ratio(current_quote_volume, current_trade_count)
+        signed_ratios = cache.signed_flow_ratios[start:end + 1]
+        returns = cache.returns[start:end + 1]
+        return [
+            am._safe_ratio(sum_taker_base, sum_volume),
+            am._safe_ratio(signed_base, sum_volume),
+            am._safe_ratio((2.0 * sum_taker_quote) - sum_quote_volume, sum_quote_volume),
+            am._safe(math.tanh(am._safe_ratio(current_trade_count - avg_trade_count, avg_trade_count))),
+            am._safe(math.tanh(am._safe_ratio(current_quote_volume - avg_quote_volume, avg_quote_volume))),
+            am._safe(math.tanh(math.log1p(current_quote_per_trade) - math.log1p(avg_quote_per_trade))),
+            am._safe_ratio(sum(cache.no_trade_flags[start:end + 1]), float(window)),
+            am._safe(am._correlation(signed_ratios, returns)),
+            am._safe(cache.signed_flow_ratios[end] - (sum(signed_ratios) / float(window))),
+        ]
+
+    expected = [value for window in windows for value in naive(window)]
+    actual = am._order_flow_features_at(cache, end, windows)
+
+    assert len(actual) == 18
+    assert actual == pytest.approx(expected, abs=1e-12)
+    assert all(math.isfinite(value) for value in actual)
+    assert am._order_flow_features_at(cache, -1, (20,)) == [0.0] * 9
+
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(),
+        confluence_windows=(),
+        market_quality_windows=(),
+        order_flow_windows=windows,
+    )
+    rows = am.make_advanced_rows(candles, cfg)
+    assert rows
+    assert len(rows[0].features) == am.advanced_feature_dimension(cfg)
+    assert am.advanced_feature_dimension(cfg) == 4 + 18 + 8
+
+
 def test_nonlinear_expand_unknown_raises():
     with pytest.raises(ValueError):
         am._nonlinear_expand([0.1], ["unknown"])
@@ -269,6 +334,7 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
         extra_lookback_windows=(5, 20),
         confluence_windows=(8,),
         market_quality_windows=(13,),
+        order_flow_windows=(21,),
         nonlinear_transforms=("tanh", "log1p"),
     )
 
@@ -279,6 +345,7 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
         "extra_lookback_windows",
         "technical_confluence",
         "market_quality_regime",
+        "order_flow_microstructure",
         "nonlinear_transforms",
         "polynomial_interactions",
     ]
@@ -307,6 +374,7 @@ def test_advanced_config_from_signature_round_trips_candidate_specific_fields() 
         extra_lookback_windows=(4, 12, 48),
         confluence_windows=(5, 13, 34),
         market_quality_windows=(10, 30),
+        order_flow_windows=(6, 18),
         nonlinear_transforms=("tanh", "log1p"),
         short_window=8,
         long_window=34,
@@ -332,14 +400,17 @@ def test_default_config_for_branches():
     assert a.polynomial_top_features == 5
     assert a.confluence_windows == (12, 36, 96)
     assert a.market_quality_windows == (30, 90, 180)
+    assert a.order_flow_windows == (15, 45, 120)
     assert a.label_lookahead == 8
     assert b.polynomial_degree == 3
     assert b.confluence_windows == (5, 13, 34, 89)
     assert b.market_quality_windows == (10, 30, 90)
+    assert b.order_flow_windows == (5, 15, 45, 90)
     assert b.label_threshold == pytest.approx(0.0005)
     assert c.polynomial_top_features == len(FEATURE_NAMES)
     assert c.confluence_windows == (8, 21, 55)
     assert c.market_quality_windows == (20, 60, 120)
+    assert c.order_flow_windows == (10, 30, 90)
     assert c.label_lookahead == 4
     assert d.polynomial_top_features == len(FEATURE_NAMES)
 
@@ -371,6 +442,54 @@ def test_make_advanced_rows_can_use_triple_barrier_labels() -> None:
     assert rows
     assert {row.label for row in rows} <= {0, 1}
     assert "label_mode=triple_barrier" in am.advanced_feature_signature(cfg)
+
+
+def test_make_advanced_rows_can_use_downside_labels() -> None:
+    candles = []
+    for index in range(80):
+        close = 120.0 - index * 0.08
+        candles.append(Candle(
+            open_time=index * 1000,
+            open=close + 0.02,
+            high=close + 0.04,
+            low=close - 0.12,
+            close=close,
+            volume=2.0,
+            close_time=index * 1000 + 999,
+            quote_volume=close * 2.0,
+            trade_count=5,
+            taker_buy_base_volume=0.6,
+            taker_buy_quote_volume=close * 0.6,
+        ))
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        label_threshold=0.0005,
+        label_lookahead=4,
+        label_mode="downside_forward_return",
+    )
+    barrier_cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        label_threshold=0.0005,
+        label_lookahead=4,
+        label_mode="downside_triple_barrier",
+        label_stop_threshold=0.002,
+    )
+
+    forward_rows = am.make_advanced_rows(candles, cfg)
+    barrier_rows = am.make_advanced_rows(candles, barrier_cfg)
+
+    assert forward_rows
+    assert barrier_rows
+    assert sum(row.label for row in forward_rows) > 0
+    assert sum(row.label for row in barrier_rows) > 0
+    assert "label_mode=downside_forward_return" in am.advanced_feature_signature(cfg)
+    assert "label_mode=downside_triple_barrier" in am.advanced_feature_signature(barrier_cfg)
 
 
 def test_make_advanced_rows_handles_missing_index(monkeypatch):

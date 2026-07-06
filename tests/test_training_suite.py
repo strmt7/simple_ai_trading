@@ -2034,6 +2034,7 @@ def test_feature_ablation_report_replays_masked_feature_groups(
         "extra_lookback_windows": 9.0,
         "technical_confluence": 5.0,
         "market_quality_regime": 8.5,
+        "order_flow_microstructure": 8.25,
         "nonlinear_transforms": 8.0,
         "polynomial_interactions": 6.0,
     }

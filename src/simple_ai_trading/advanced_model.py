@@ -33,10 +33,11 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v5-regime-quality"
+ADVANCED_FEATURE_VERSION = "v6-order-flow"
 _EXTRA_FEATURES_PER_WINDOW = 7
 _CONFLUENCE_FEATURES_PER_WINDOW = 9
 _MARKET_QUALITY_FEATURES_PER_WINDOW = 10
+_ORDER_FLOW_FEATURES_PER_WINDOW = 9
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,7 @@ class AdvancedFeatureConfig:
     extra_lookback_windows: tuple[int, ...] = (5, 20, 60)
     confluence_windows: tuple[int, ...] = ()
     market_quality_windows: tuple[int, ...] = ()
+    order_flow_windows: tuple[int, ...] = ()
     nonlinear_transforms: tuple[str, ...] = ("tanh", "log1p")
     short_window: int = 10
     long_window: int = 40
@@ -147,6 +149,10 @@ def _normalized_label_mode(value: str) -> str:
     mode = str(value or "forward_return").strip().lower().replace("-", "_")
     if mode in {"triple", "triple_barrier", "barrier"}:
         return "triple_barrier"
+    if mode in {"downside", "downside_forward", "downside_forward_return", "short_forward"}:
+        return "downside_forward_return"
+    if mode in {"downside_triple", "downside_triple_barrier", "short_triple_barrier"}:
+        return "downside_triple_barrier"
     return "forward_return"
 
 
@@ -186,6 +192,42 @@ def _triple_barrier_label(
     return 1 if final_return >= take else 0
 
 
+def _downside_triple_barrier_label(
+    candles: Sequence[Candle],
+    index: int,
+    *,
+    horizon: int,
+    take_profit_pct: float,
+    stop_loss_pct: float,
+) -> int:
+    """Return 1 only when a short take-profit is hit before short stop-loss."""
+
+    if index < 0 or index >= len(candles):
+        return 0
+    entry = float(candles[index].close)
+    if entry <= 0.0 or not math.isfinite(entry):
+        return 0
+    take = max(0.0, float(take_profit_pct))
+    stop = max(0.0, float(stop_loss_pct))
+    if take <= 0.0:
+        return 0
+    end = min(len(candles) - 1, index + max(1, int(horizon)))
+    for next_index in range(index + 1, end + 1):
+        candle = candles[next_index]
+        high_return = _safe((float(candle.high) - entry) / entry)
+        low_return = _safe((float(candle.low) - entry) / entry)
+        hit_stop = stop > 0.0 and high_return >= stop
+        hit_take = low_return <= -take
+        if hit_stop and hit_take:
+            return 0
+        if hit_stop:
+            return 0
+        if hit_take:
+            return 1
+    final_return = _safe((entry - float(candles[end].close)) / entry)
+    return 1 if final_return >= take else 0
+
+
 def _prefix_sum(values: Sequence[float]) -> list[float]:
     total = 0.0
     prefix = [0.0]
@@ -217,6 +259,14 @@ class _ConfluenceCache:
     lows: list[float]
     closes: list[float]
     volumes: list[float]
+    quote_volumes: list[float]
+    trade_counts: list[float]
+    taker_buy_base_volumes: list[float]
+    taker_buy_quote_volumes: list[float]
+    signed_base_flows: list[float]
+    signed_quote_flows: list[float]
+    signed_flow_ratios: list[float]
+    no_trade_flags: list[float]
     nonnegative_volumes: list[float]
     returns: list[float]
     abs_returns: list[float]
@@ -233,6 +283,16 @@ class _ConfluenceCache:
     return_volume_product_prefix: list[float]
     volume_square_prefix: list[float]
     volume_abs_return_product_prefix: list[float]
+    quote_volume_prefix: list[float]
+    trade_count_prefix: list[float]
+    taker_buy_base_prefix: list[float]
+    taker_buy_quote_prefix: list[float]
+    signed_base_flow_prefix: list[float]
+    signed_quote_flow_prefix: list[float]
+    signed_flow_ratio_prefix: list[float]
+    signed_flow_ratio_square_prefix: list[float]
+    signed_flow_return_product_prefix: list[float]
+    no_trade_prefix: list[float]
 
 
 def _build_window_cache(closes: Sequence[float]) -> _AdvancedWindowCache:
@@ -357,7 +417,33 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
     lows = [float(candle.low) for candle in values]
     closes = [float(candle.close) for candle in values]
     volumes = [float(candle.volume) for candle in values]
+    quote_volumes = [max(0.0, float(getattr(candle, "quote_volume", 0.0) or 0.0)) for candle in values]
+    trade_counts = [float(max(0, int(getattr(candle, "trade_count", 0) or 0))) for candle in values]
+    taker_buy_base_volumes = [
+        max(0.0, float(getattr(candle, "taker_buy_base_volume", 0.0) or 0.0))
+        for candle in values
+    ]
+    taker_buy_quote_volumes = [
+        max(0.0, float(getattr(candle, "taker_buy_quote_volume", 0.0) or 0.0))
+        for candle in values
+    ]
     nonnegative_volumes = [max(0.0, value) for value in volumes]
+    signed_base_flows = [
+        (2.0 * taker_buy_base_volumes[index]) - nonnegative_volumes[index]
+        for index in range(len(values))
+    ]
+    signed_quote_flows = [
+        (2.0 * taker_buy_quote_volumes[index]) - quote_volumes[index]
+        for index in range(len(values))
+    ]
+    signed_flow_ratios = [
+        _safe_ratio(signed_base_flows[index], nonnegative_volumes[index])
+        for index in range(len(values))
+    ]
+    no_trade_flags = [
+        1.0 if nonnegative_volumes[index] <= 0.0 or trade_counts[index] <= 0.0 else 0.0
+        for index in range(len(values))
+    ]
     true_ranges = [0.0]
     returns = [0.0]
     for index in range(1, len(values)):
@@ -375,6 +461,10 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         returns[index] * nonnegative_volumes[index]
         for index in range(len(values))
     ]
+    signed_flow_return_products = [
+        returns[index] * signed_flow_ratios[index]
+        for index in range(len(values))
+    ]
     volume_abs_return_products = [
         nonnegative_volumes[index] * abs_returns[index]
         for index in range(len(values))
@@ -386,6 +476,14 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         lows=lows,
         closes=closes,
         volumes=volumes,
+        quote_volumes=quote_volumes,
+        trade_counts=trade_counts,
+        taker_buy_base_volumes=taker_buy_base_volumes,
+        taker_buy_quote_volumes=taker_buy_quote_volumes,
+        signed_base_flows=signed_base_flows,
+        signed_quote_flows=signed_quote_flows,
+        signed_flow_ratios=signed_flow_ratios,
+        no_trade_flags=no_trade_flags,
         nonnegative_volumes=nonnegative_volumes,
         returns=returns,
         abs_returns=abs_returns,
@@ -402,6 +500,16 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         return_volume_product_prefix=_prefix_sum(return_volume_products),
         volume_square_prefix=_prefix_sum([value * value for value in nonnegative_volumes]),
         volume_abs_return_product_prefix=_prefix_sum(volume_abs_return_products),
+        quote_volume_prefix=_prefix_sum(quote_volumes),
+        trade_count_prefix=_prefix_sum(trade_counts),
+        taker_buy_base_prefix=_prefix_sum(taker_buy_base_volumes),
+        taker_buy_quote_prefix=_prefix_sum(taker_buy_quote_volumes),
+        signed_base_flow_prefix=_prefix_sum(signed_base_flows),
+        signed_quote_flow_prefix=_prefix_sum(signed_quote_flows),
+        signed_flow_ratio_prefix=_prefix_sum(signed_flow_ratios),
+        signed_flow_ratio_square_prefix=_prefix_sum([value * value for value in signed_flow_ratios]),
+        signed_flow_return_product_prefix=_prefix_sum(signed_flow_return_products),
+        no_trade_prefix=_prefix_sum(no_trade_flags),
     )
 
 
@@ -555,6 +663,57 @@ def _market_quality_features_at(cache: _ConfluenceCache, end: int, windows: Sequ
     return features
 
 
+def _order_flow_features_at(cache: _ConfluenceCache, end: int, windows: Sequence[int]) -> list[float]:
+    """Return trade-flow imbalance features from real aggTrade-derived candle fields."""
+
+    features: list[float] = []
+    if not windows:
+        return features
+    if end < 0 or end >= len(cache.closes):
+        return [0.0 for _ in range(_ORDER_FLOW_FEATURES_PER_WINDOW * len(windows))]
+    current_quote_volume = max(0.0, cache.quote_volumes[end])
+    current_trade_count = max(0.0, cache.trade_counts[end])
+    current_signed_ratio = cache.signed_flow_ratios[end]
+    for window in windows:
+        window = max(2, int(window))
+        if end < window - 1:
+            features.extend([0.0] * _ORDER_FLOW_FEATURES_PER_WINDOW)
+            continue
+        start = end + 1 - window
+        sum_volume = _bounded_window_sum(cache.nonnegative_volume_prefix, start, end)
+        sum_quote_volume = _bounded_window_sum(cache.quote_volume_prefix, start, end)
+        sum_trade_count = _bounded_window_sum(cache.trade_count_prefix, start, end)
+        sum_taker_base = _bounded_window_sum(cache.taker_buy_base_prefix, start, end)
+        sum_taker_quote = _bounded_window_sum(cache.taker_buy_quote_prefix, start, end)
+        signed_base = _bounded_window_sum(cache.signed_base_flow_prefix, start, end)
+        avg_trade_count = sum_trade_count / float(window)
+        avg_quote_volume = sum_quote_volume / float(window)
+        avg_quote_per_trade = _safe_ratio(sum_quote_volume, sum_trade_count)
+        current_quote_per_trade = _safe_ratio(current_quote_volume, current_trade_count)
+        no_trade_ratio = _safe_ratio(_bounded_window_sum(cache.no_trade_prefix, start, end), float(window))
+        flow_return_alignment = _correlation_from_sums(
+            window,
+            _bounded_window_sum(cache.signed_flow_ratio_prefix, start, end),
+            _bounded_window_sum(cache.return_prefix, start, end),
+            _bounded_window_sum(cache.signed_flow_ratio_square_prefix, start, end),
+            _bounded_window_sum(cache.return_square_prefix, start, end),
+            _bounded_window_sum(cache.signed_flow_return_product_prefix, start, end),
+        )
+        mean_signed_ratio = _safe_ratio(_bounded_window_sum(cache.signed_flow_ratio_prefix, start, end), float(window))
+        features.extend([
+            _safe_ratio(sum_taker_base, sum_volume),
+            _safe_ratio(signed_base, sum_volume),
+            _safe_ratio((2.0 * sum_taker_quote) - sum_quote_volume, sum_quote_volume),
+            _safe(math.tanh(_safe_ratio(current_trade_count - avg_trade_count, avg_trade_count))),
+            _safe(math.tanh(_safe_ratio(current_quote_volume - avg_quote_volume, avg_quote_volume))),
+            _safe(math.tanh(math.log1p(max(0.0, current_quote_per_trade)) - math.log1p(max(0.0, avg_quote_per_trade)))),
+            _safe(no_trade_ratio),
+            _safe(flow_return_alignment),
+            _safe(current_signed_ratio - mean_signed_ratio),
+        ])
+    return features
+
+
 def _nonlinear_expand(values: Sequence[float], transforms: Sequence[str]) -> list[float]:
     out: list[float] = []
     for name in transforms:
@@ -595,6 +754,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
     extras = _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows)
     confluence = _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows)
     market_quality = _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows)
+    order_flow = _ORDER_FLOW_FEATURES_PER_WINDOW * len(cfg.order_flow_windows)
     transforms = base * len(cfg.nonlinear_transforms)
     pairs = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -602,7 +762,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
         pairs = k * (k + 1) // 2
         if cfg.polynomial_degree >= 3 and k >= 3:
             pairs += 1 + 3
-    return base + extras + confluence + market_quality + transforms + pairs
+    return base + extras + confluence + market_quality + order_flow + transforms + pairs
 
 
 def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGroupSpan, ...]:
@@ -624,6 +784,7 @@ def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGro
     add("extra_lookback_windows", _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows))
     add("technical_confluence", _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows))
     add("market_quality_regime", _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows))
+    add("order_flow_microstructure", _ORDER_FLOW_FEATURES_PER_WINDOW * len(cfg.order_flow_windows))
     add("nonlinear_transforms", base * len(cfg.nonlinear_transforms))
     pair_count = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -649,9 +810,10 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
     confluence_cache = _build_confluence_cache(candles[: at_index + 1])
     confluence = _confluence_features_at(confluence_cache, at_index, cfg.confluence_windows)
     market_quality = _market_quality_features_at(confluence_cache, at_index, cfg.market_quality_windows)
+    order_flow = _order_flow_features_at(confluence_cache, at_index, cfg.order_flow_windows)
     transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
     pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
-    expanded = tuple(_safe(v) for v in base + extras + confluence + market_quality + transforms + pairs)
+    expanded = tuple(_safe(v) for v in base + extras + confluence + market_quality + order_flow + transforms + pairs)
     return ModelRow(
         timestamp=row.timestamp,
         close=row.close,
@@ -712,17 +874,35 @@ def make_advanced_rows(
                 take_profit_pct=cfg.label_threshold,
                 stop_loss_pct=stop_threshold,
             )
+        elif label_mode == "downside_triple_barrier":
+            label = _downside_triple_barrier_label(
+                valid_candles,
+                idx,
+                horizon=label_lookahead,
+                take_profit_pct=cfg.label_threshold,
+                stop_loss_pct=stop_threshold,
+            )
+        elif label_mode == "downside_forward_return":
+            future_index = min(len(valid_candles) - 1, idx + label_lookahead)
+            present = float(valid_candles[idx].close)
+            future = float(valid_candles[future_index].close)
+            downside_return = _safe_ratio(present - future, present)
+            label = 1 if downside_return >= float(cfg.label_threshold) else 0
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
+        order_flow = _order_flow_features_at(confluence_cache, idx, cfg.order_flow_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(_safe(value) for value in base + extras + confluence + market_quality + transforms + pairs),
+                features=tuple(
+                    _safe(value)
+                    for value in base + extras + confluence + market_quality + order_flow + transforms + pairs
+                ),
                 label=label,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
                 high=getattr(row, "high", None),
@@ -765,13 +945,17 @@ def make_advanced_inference_rows(
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
+        order_flow = _order_flow_features_at(confluence_cache, idx, cfg.order_flow_windows)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(_safe(value) for value in base + extras + confluence + market_quality + transforms + pairs),
+                features=tuple(
+                    _safe(value)
+                    for value in base + extras + confluence + market_quality + order_flow + transforms + pairs
+                ),
                 label=0,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
                 high=getattr(row, "high", None),
@@ -831,6 +1015,7 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"extra_lookback_windows={','.join(str(w) for w in cfg.extra_lookback_windows)}",
         f"confluence_windows={','.join(str(w) for w in cfg.confluence_windows)}",
         f"market_quality_windows={','.join(str(w) for w in cfg.market_quality_windows)}",
+        f"order_flow_windows={','.join(str(w) for w in cfg.order_flow_windows)}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
         f"label_lookahead={int(cfg.label_lookahead)}",
         f"label_mode={_normalized_label_mode(cfg.label_mode)}",
@@ -866,6 +1051,7 @@ def advanced_config_from_signature(
             extra_lookback_windows=_parse_int_tuple(fields.get("extra_lookback_windows")),
             confluence_windows=_parse_int_tuple(fields.get("confluence_windows")),
             market_quality_windows=_parse_int_tuple(fields.get("market_quality_windows")),
+            order_flow_windows=_parse_int_tuple(fields.get("order_flow_windows")),
             nonlinear_transforms=_parse_str_tuple(fields.get("nonlinear_transforms"), default=("tanh", "log1p")),
             short_window=max(1, int(fields.get("short_window", "10"))),
             long_window=max(1, int(fields.get("long_window", "40"))),
@@ -967,6 +1153,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             extra_lookback_windows=(10, 30, 90),
             confluence_windows=(12, 36, 96),
             market_quality_windows=(30, 90, 180),
+            order_flow_windows=(15, 45, 120),
             label_threshold=0.0010,
             label_lookahead=8,
         )
@@ -978,6 +1165,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             extra_lookback_windows=(3, 15, 45, 120),
             confluence_windows=(5, 13, 34, 89),
             market_quality_windows=(10, 30, 90),
+            order_flow_windows=(5, 15, 45, 90),
             label_threshold=0.0005,
             label_lookahead=2,
         )
@@ -988,6 +1176,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
         extra_lookback_windows=(5, 20, 60),
         confluence_windows=(8, 21, 55),
         market_quality_windows=(20, 60, 120),
+        order_flow_windows=(10, 30, 90),
         label_threshold=0.0010,
         label_lookahead=4,
     )
