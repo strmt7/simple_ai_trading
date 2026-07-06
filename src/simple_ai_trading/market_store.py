@@ -343,14 +343,30 @@ class MarketDataStore:
             for row in reversed(rows)
         ]
 
-    def coverage(self, symbol: str, market_type: str, interval: str) -> CandleCoverage:
+    def coverage(
+        self,
+        symbol: str,
+        market_type: str,
+        interval: str,
+        *,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+    ) -> CandleCoverage:
+        params: list[object] = [symbol.upper(), market_type, interval]
+        where = ["symbol = ?", "market_type = ?", "interval = ?"]
+        if start_ms is not None:
+            where.append("open_time >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("open_time <= ?")
+            params.append(int(end_ms))
         row = self.connect().execute(
-            """
+            f"""
             SELECT COUNT(*) AS count, MIN(open_time) AS first_open_time, MAX(open_time) AS last_open_time
             FROM candles
-            WHERE symbol = ? AND market_type = ? AND interval = ?
+            WHERE {' AND '.join(where)}
             """,
-            (symbol.upper(), market_type, interval),
+            params,
         ).fetchone()
         return CandleCoverage(
             symbol=symbol.upper(),
@@ -402,9 +418,20 @@ class MarketDataStore:
         market_type: str,
         interval: str,
         interval_ms: int,
+        *,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
     ) -> CandleCoverageQuality:
-        coverage = self.coverage(symbol, market_type, interval)
+        coverage = self.coverage(symbol, market_type, interval, start_ms=start_ms, end_ms=end_ms)
         if coverage.count == 0:
+            if interval_ms > 0 and start_ms is not None and end_ms is not None and int(end_ms) >= int(start_ms):
+                expected_count = ((int(end_ms) - int(start_ms)) // interval_ms) + 1
+                return CandleCoverageQuality(
+                    coverage,
+                    expected_count=expected_count,
+                    gap_count=expected_count,
+                    coverage_ratio=0.0,
+                )
             return CandleCoverageQuality(coverage, expected_count=0, gap_count=0, coverage_ratio=0.0)
         if interval_ms <= 0:
             return CandleCoverageQuality(
@@ -414,25 +441,39 @@ class MarketDataStore:
                 coverage_ratio=1.0,
             )
 
+        params: list[object] = [symbol.upper(), market_type, interval]
+        where = ["symbol = ?", "market_type = ?", "interval = ?"]
+        if start_ms is not None:
+            where.append("open_time >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("open_time <= ?")
+            params.append(int(end_ms))
         rows = self.connect().execute(
-            """
+            f"""
             SELECT open_time
             FROM candles
-            WHERE symbol = ? AND market_type = ? AND interval = ?
+            WHERE {' AND '.join(where)}
             ORDER BY open_time ASC
             """,
-            (symbol.upper(), market_type, interval),
+            params,
         ).fetchall()
         open_times = [int(row["open_time"]) for row in rows if row["open_time"] is not None]
+        first_open_time = cast(int, coverage.first_open_time)
+        last_open_time = cast(int, coverage.last_open_time)
+        span_start = int(start_ms) if start_ms is not None else first_open_time
+        span_end = int(end_ms) if end_ms is not None else last_open_time
         missing = 0
+        if first_open_time > span_start:
+            missing += max(0, (first_open_time - span_start) // interval_ms)
         for previous, current in pairwise(open_times):
             delta = current - previous
             if delta > interval_ms:
                 missing += max(0, (delta // interval_ms) - 1)
+        if last_open_time < span_end:
+            missing += max(0, (span_end - last_open_time) // interval_ms)
 
-        first_open_time = cast(int, coverage.first_open_time)
-        last_open_time = cast(int, coverage.last_open_time)
-        span = last_open_time - first_open_time
+        span = max(0, span_end - span_start)
         expected_count = max(coverage.count, (span // interval_ms) + 1)
         ratio = coverage.count / expected_count if expected_count else 0.0
         return CandleCoverageQuality(

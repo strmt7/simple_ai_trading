@@ -151,6 +151,23 @@ def test_market_data_store_roundtrip_snapshots_and_sync_runs(tmp_path) -> None:
     assert quality.coverage_ratio == 1.0
     assert quality.asdict()["coverage"]["count"] == 2
     assert store.coverage_quality("BTCUSDC", "spot", "15m", 0).coverage_ratio == 1.0
+    window_coverage = store.coverage("BTCUSDC", "spot", "15m", start_ms=60_000, end_ms=60_000)
+    assert window_coverage.count == 1
+    window_quality = store.coverage_quality("BTCUSDC", "spot", "15m", 60_000, start_ms=60_000, end_ms=60_000)
+    assert window_quality.expected_count == 1
+    assert window_quality.gap_count == 0
+    assert window_quality.coverage_ratio == 1.0
+    edge_gap_quality = store.coverage_quality(
+        "BTCUSDC",
+        "spot",
+        "15m",
+        60_000,
+        start_ms=0,
+        end_ms=120_000,
+    )
+    assert edge_gap_quality.expected_count == 3
+    assert edge_gap_quality.gap_count == 1
+    assert edge_gap_quality.coverage_ratio == pytest.approx(2 / 3)
     assert store.latest_open_time("BTCUSDC", "spot", "15m") == 60_000
     assert store.insert_snapshot("binance", "btcusdc", "spot", "ticker_24h", {"closeTime": 5}, ts_ms=5) == 1
     assert store.latest_snapshot("BTCUSDC", "spot", "ticker_24h") == {"closeTime": 5}

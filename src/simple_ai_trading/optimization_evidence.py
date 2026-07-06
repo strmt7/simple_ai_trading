@@ -12,7 +12,7 @@ import statistics
 from bisect import bisect_left, insort
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Mapping, Sequence
 
@@ -443,6 +443,75 @@ def effective_leverage_for_market(strategy: StrategyConfig, market_type: str) ->
     return max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _finite(strategy.leverage, 1.0)))
 
 
+def parse_evidence_timestamp_ms(value: object, *, end_of_day: bool = False) -> int | None:
+    """Parse an evidence-window boundary as UTC milliseconds."""
+
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return int(value)
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.isdigit():
+        return int(text)
+    date_only = len(text) == 10 and text[4] == "-" and text[7] == "-"
+    try:
+        if date_only:
+            parsed = datetime.strptime(text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            if end_of_day:
+                parsed = parsed + timedelta(days=1) - timedelta(milliseconds=1)
+        else:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            parsed = parsed.astimezone(timezone.utc)
+    except ValueError as exc:
+        raise ValueError(f"invalid evidence timestamp: {text}") from exc
+    return int(parsed.timestamp() * 1000)
+
+
+def _archive_period_bounds_ms(period: object) -> tuple[int, int] | None:
+    text = str(period or "").strip()
+    try:
+        if len(text) == 10 and text[4] == "-" and text[7] == "-":
+            start = datetime.strptime(text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            end = start + timedelta(days=1) - timedelta(milliseconds=1)
+            return int(start.timestamp() * 1000), int(end.timestamp() * 1000)
+        if len(text) == 7 and text[4] == "-":
+            start = datetime.strptime(text, "%Y-%m").replace(tzinfo=timezone.utc)
+            if start.month == 12:
+                next_month = start.replace(year=start.year + 1, month=1)
+            else:
+                next_month = start.replace(month=start.month + 1)
+            end = next_month - timedelta(milliseconds=1)
+            return int(start.timestamp() * 1000), int(end.timestamp() * 1000)
+    except ValueError:
+        return None
+    return None
+
+
+def _filter_archives_for_window(
+    archives: Sequence[object],
+    *,
+    start_ms: int | None,
+    end_ms: int | None,
+) -> list[object]:
+    if start_ms is None and end_ms is None:
+        return list(archives)
+    lower = -2**63 if start_ms is None else int(start_ms)
+    upper = 2**63 - 1 if end_ms is None else int(end_ms)
+    filtered: list[object] = []
+    for archive in archives:
+        bounds = _archive_period_bounds_ms(getattr(archive, "period", ""))
+        if bounds is None:
+            continue
+        period_start, period_end = bounds
+        if period_end >= lower and period_start <= upper:
+            filtered.append(archive)
+    return filtered
+
+
 def fetch_full_history(
     client: BinanceClient,
     symbol: str,
@@ -452,9 +521,11 @@ def fetch_full_history(
     market_type: str = "spot",
     batch_size: int = 1000,
     allow_network_backfill: bool = True,
+    start_ms: int | None = None,
+    end_ms: int | None = None,
 ) -> list[Candle]:
     with MarketDataStore(db_path) as store:
-        candles = store.fetch_candles(symbol, market_type, interval)
+        candles = store.fetch_candles(symbol, market_type, interval, start_ms=start_ms, end_ms=end_ms)
     if candles:
         return candles
     if not allow_network_backfill:
@@ -476,8 +547,15 @@ def fetch_full_history(
     if result.status == "fail":
         raise BinanceAPIError("; ".join(result.errors) or f"failed to backfill {symbol} {interval}")
     with MarketDataStore(db_path) as store:
-        candles = store.fetch_candles(symbol, market_type, interval)
-        quality = store.coverage_quality(symbol, market_type, interval, interval_milliseconds(interval))
+        candles = store.fetch_candles(symbol, market_type, interval, start_ms=start_ms, end_ms=end_ms)
+        quality = store.coverage_quality(
+            symbol,
+            market_type,
+            interval,
+            interval_milliseconds(interval),
+            start_ms=start_ms,
+            end_ms=end_ms,
+        )
     if not candles:
         raise ValueError(f"no candles available in market database for {symbol} {interval}")
     if quality.gap_count:
@@ -504,12 +582,25 @@ def market_data_health_for_symbol(
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
     min_span_years: float = 0.0,
+    start_ms: int | None = None,
+    end_ms: int | None = None,
 ) -> dict[str, object]:
     """Return a fail-closed health report for one optimization data series."""
 
     with MarketDataStore(db_path) as store:
-        quality = store.coverage_quality(symbol, market_type, interval, interval_milliseconds(interval))
-        archives = store.archive_files(symbol=symbol, market_type=market_type, interval=interval)
+        quality = store.coverage_quality(
+            symbol,
+            market_type,
+            interval,
+            interval_milliseconds(interval),
+            start_ms=start_ms,
+            end_ms=end_ms,
+        )
+        archives = _filter_archives_for_window(
+            store.archive_files(symbol=symbol, market_type=market_type, interval=interval),
+            start_ms=start_ms,
+            end_ms=end_ms,
+        )
     archive_status_counts = _count_by(archives, "status")
     checksum_status_counts = _count_by(archives, "checksum_status")
     min_rows = max(0, int(min_rows))
@@ -561,6 +652,10 @@ def market_data_health_for_symbol(
         "expected_rows": quality.expected_count,
         "first_open_time": quality.coverage.first_open_time,
         "last_open_time": quality.coverage.last_open_time,
+        "requested_start_ms": start_ms,
+        "requested_end_ms": end_ms,
+        "requested_start_utc": iso_utc(start_ms),
+        "requested_end_utc": iso_utc(end_ms),
         "span_days": span_days,
         "span_years": span_years,
         "coverage_ratio": quality.coverage_ratio,
@@ -694,6 +789,8 @@ def select_data_healthy_top_liquidity_symbols(
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
     min_span_years: float = 0.0,
+    start_ms: int | None = None,
+    end_ms: int | None = None,
     max_scan: int = 1000,
 ) -> tuple[list[SelectedSymbol], list[dict[str, object]]]:
     """Return live-ranked symbols that also pass local market-data health gates."""
@@ -721,6 +818,8 @@ def select_data_healthy_top_liquidity_symbols(
             max_gap_count=max_gap_count,
             require_verified_checksum=require_verified_checksum,
             min_span_years=min_span_years,
+            start_ms=start_ms,
+            end_ms=end_ms,
         )
         if health.get("status") == "ok":
             selected.append(replace(item, rank=len(selected) + 1))
@@ -1889,12 +1988,16 @@ def build_round_evidence(
     min_promotion_data_years: float = 2.0,
     use_objective_strategy_defaults: bool = False,
     model_candidate_count: int = 1,
+    data_start_ms: int | None = None,
+    data_end_ms: int | None = None,
 ) -> dict[str, object]:
     promotion_grade = bool(promotion_grade)
     min_promotion_data_years = max(0.0, _finite(min_promotion_data_years, 0.0))
     min_coverage_ratio = max(0.0, min(1.0, _finite(min_coverage_ratio, 0.995)))
     max_gap_count = max(0, int(max_gap_count))
     min_data_rows = max(0, int(min_data_rows))
+    if data_start_ms is not None and data_end_ms is not None and int(data_start_ms) > int(data_end_ms):
+        raise ValueError("data_start_ms must be earlier than or equal to data_end_ms")
     if promotion_grade:
         interval = "1s"
         required_symbols = _promotion_required_symbols(quote_asset)
@@ -1959,6 +2062,8 @@ def build_round_evidence(
             max_gap_count=max_gap_count,
             require_verified_checksum=require_verified_checksum,
             min_span_years=min_promotion_data_years if promotion_grade else 0.0,
+            start_ms=data_start_ms,
+            end_ms=data_end_ms,
         )
     else:
         selected = select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
@@ -2019,6 +2124,8 @@ def build_round_evidence(
                 max_gap_count=max_gap_count,
                 require_verified_checksum=require_verified_checksum,
                 min_span_years=min_promotion_data_years if promotion_grade else 0.0,
+                start_ms=data_start_ms,
+                end_ms=data_end_ms,
             )
             data_health.append(health)
             write_status(
@@ -2050,6 +2157,8 @@ def build_round_evidence(
                 market_type=market_type,
                 batch_size=batch_size,
                 allow_network_backfill=not require_prefilled_data,
+                start_ms=data_start_ms,
+                end_ms=data_end_ms,
             )
             write_status(
                 "load_candles_complete",
@@ -2066,7 +2175,13 @@ def build_round_evidence(
                 available_candles=candles,
                 used_candles=candles,
                 rows_used=max(0, len(candles) - 1),
-                source_scope="binance_full_history_public_market_data",
+                requested_start_ms=data_start_ms,
+                requested_end_ms=data_end_ms,
+                source_scope=(
+                    "binance_windowed_public_market_data"
+                    if data_start_ms is not None or data_end_ms is not None
+                    else "binance_full_history_public_market_data"
+                ),
             )
             def symbol_train_status(phase: str, payload: Mapping[str, object]) -> None:
                 write_status(
@@ -2597,6 +2712,10 @@ def build_round_evidence(
         "min_coverage_ratio": float(min_coverage_ratio),
         "max_gap_count": int(max_gap_count),
         "require_verified_checksum": bool(require_verified_checksum),
+        "data_start_ms": data_start_ms,
+        "data_end_ms": data_end_ms,
+        "data_start_utc": iso_utc(data_start_ms),
+        "data_end_utc": iso_utc(data_end_ms),
         "health_filtered_symbol_selection": bool(not symbols and health_required),
         "selection_health_rejections": selection_health_rejections,
         "data_health_path": str(paths.data_health_path).replace("\\", "/"),
@@ -2628,6 +2747,7 @@ __all__ = [
     "effective_leverage_for_market",
     "make_evidence_paths",
     "market_data_health_for_symbol",
+    "parse_evidence_timestamp_ms",
     "promotion_grade_contract",
     "render_comparison_svg",
     "select_data_healthy_top_liquidity_symbols",

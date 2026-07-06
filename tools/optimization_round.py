@@ -8,7 +8,7 @@ import sys
 
 from simple_ai_trading.api import BinanceClient
 from simple_ai_trading.config import load_strategy
-from simple_ai_trading.optimization_evidence import build_round_evidence
+from simple_ai_trading.optimization_evidence import build_round_evidence, parse_evidence_timestamp_ms
 from simple_ai_trading.optimization_progress import build_optimization_progress_artifacts
 
 
@@ -42,6 +42,16 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, default=Path("data/optimization"))
     parser.add_argument("--docs-root", type=Path, default=Path("docs/optimization"))
     parser.add_argument("--db", type=Path, default=Path("data/market_data.sqlite"))
+    parser.add_argument(
+        "--data-start",
+        default=None,
+        help="inclusive UTC evidence window start as epoch ms, YYYY-MM-DD, or ISO timestamp",
+    )
+    parser.add_argument(
+        "--data-end",
+        default=None,
+        help="inclusive UTC evidence window end as epoch ms, YYYY-MM-DD, or ISO timestamp",
+    )
     parser.add_argument("--max-calls-per-minute", type=int, default=1800)
     parser.add_argument(
         "--require-prefilled-data",
@@ -105,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     explicit_symbols = [symbol.strip().upper() for symbol in str(args.symbols or "").split(",") if symbol.strip()]
     try:
+        data_start_ms = parse_evidence_timestamp_ms(args.data_start, end_of_day=False)
+        data_end_ms = parse_evidence_timestamp_ms(args.data_end, end_of_day=True)
         report = build_round_evidence(
             round_id=args.round_id,
             client=client,
@@ -131,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
             promotion_grade=args.promotion_grade,
             min_promotion_data_years=args.min_promotion_data_years,
             use_objective_strategy_defaults=not args.no_objective_strategy_defaults,
+            data_start_ms=data_start_ms,
+            data_end_ms=data_end_ms,
         )
     except ValueError as exc:
         print(f"optimization round failed: {exc}", file=sys.stderr)

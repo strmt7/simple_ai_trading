@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import calendar
 import csv
-from datetime import date
+from datetime import date, datetime, timezone
 import hashlib
 import io
 import re
@@ -276,6 +276,18 @@ def _period_date_bounds(period: str) -> tuple[date, date] | None:
         last_day = calendar.monthrange(year, month)[1]
         return date(year, month, 1), date(year, month, last_day)
     return None
+
+
+def _period_ms_bounds(period: str) -> tuple[int, int] | None:
+    bounds = _period_date_bounds(period)
+    if bounds is None:
+        return None
+    start_date, end_date = bounds
+    start_dt = datetime(start_date.year, start_date.month, start_date.day, tzinfo=timezone.utc)
+    end_dt = datetime(end_date.year, end_date.month, end_date.day, tzinfo=timezone.utc)
+    start_ms = int(start_dt.timestamp() * 1000)
+    end_ms = int(end_dt.timestamp() * 1000) + 86_400_000 - 1000
+    return start_ms, end_ms
 
 
 def archive_period_in_range(
@@ -552,6 +564,38 @@ def _iter_zip_agg_trade_candles(path: Path) -> Iterable[Candle]:
                 yield _agg_second_to_candle(current)
 
 
+def _iter_period_bounded_agg_trade_candles(
+    candles: Iterable[Candle],
+    *,
+    start_ms: int,
+    end_ms: int,
+    prior_close: float | None = None,
+) -> Iterable[Candle]:
+    """Fill verified no-trade seconds at archive period edges without inventing unknown prices."""
+
+    expected_open_time = int(start_ms)
+    previous_close = prior_close
+    seen_trade_candle = False
+    for candle in candles:
+        open_time = int(candle.open_time)
+        if open_time < start_ms or open_time > end_ms:
+            continue
+        if open_time > expected_open_time and previous_close is not None:
+            gap_time = expected_open_time
+            while gap_time < open_time:
+                yield _no_trade_candle(gap_time, previous_close)
+                gap_time += 1000
+        yield candle
+        previous_close = float(candle.close)
+        expected_open_time = open_time + 1000
+        seen_trade_candle = True
+    if seen_trade_candle and previous_close is not None:
+        gap_time = expected_open_time
+        while gap_time <= end_ms:
+            yield _no_trade_candle(gap_time, previous_close)
+            gap_time += 1000
+
+
 def _download_to_temp(url: str, *, timeout: int, chunk_size: int = 1024 * 1024) -> tuple[Path, int, str]:
     digest = hashlib.sha256()
     handle = tempfile.NamedTemporaryFile(prefix="simple-ai-trading-binance-", suffix=".zip", delete=False)
@@ -611,6 +655,7 @@ def ingest_archive_url(
     force: bool = False,
     verify_checksum: bool = True,
     require_checksum: bool = False,
+    fill_period_edges: bool = True,
 ) -> ArchiveIngestResult:
     symbol = symbol.upper()
     kind = _normalize_archive_data_type(data_type)
@@ -659,7 +704,31 @@ def ingest_archive_url(
                 checksum_status = "unavailable"
         batch: list[Candle] = []
         ingested_at_ms = int(time.time() * 1000)
-        candle_iterable = _iter_zip_agg_trade_candles(zip_path) if kind == "aggTrades" else _iter_zip_candles(zip_path)
+        if kind == "aggTrades":
+            candle_iterable = _iter_zip_agg_trade_candles(zip_path)
+            period_bounds = _period_ms_bounds(period or archive_url_period(url)) if fill_period_edges else None
+            if period_bounds is not None:
+                period_start_ms, period_end_ms = period_bounds
+                prior_candles = store.fetch_candles(
+                    symbol,
+                    market_type,
+                    interval,
+                    end_ms=period_start_ms - 1000,
+                    limit=1,
+                )
+                prior_close = (
+                    prior_candles[-1].close
+                    if prior_candles and int(prior_candles[-1].open_time) == period_start_ms - 1000
+                    else None
+                )
+                candle_iterable = _iter_period_bounded_agg_trade_candles(
+                    candle_iterable,
+                    start_ms=period_start_ms,
+                    end_ms=period_end_ms,
+                    prior_close=prior_close,
+                )
+        else:
+            candle_iterable = _iter_zip_candles(zip_path)
         source = "binance_public_archive_aggTrades" if kind == "aggTrades" else "binance_public_archive"
         for candle in candle_iterable:
             rows_read += 1

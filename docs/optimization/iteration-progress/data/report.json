@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1480,
+      "bytes": 1505,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "6ada0a15546bb8859f0822d3e355dddb0154fde5992cb647159cd1118142f388"
+      "sha256": "326dc4b774e5b4370e5326604d0aa7556f38047d0552f7b375805ed19ad1561d"
     },
     {
-      "bytes": 633,
+      "bytes": 760,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 2,
-      "sha256": "a37d9d98caf8d7578f4ad90d83a4304c3a89bb909e1b2338ffe71047da934682"
+      "row_count": 3,
+      "sha256": "727b8476afddccccad2d522b0f32290863d9ea3a7a1a61f97ddb14c2d8e2a885"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T12:49:26.095694Z",
-  "latest_round_id": "round-expanded-candidate-smoke",
+  "generated_at_utc": "2026-07-06T14:22:44.417024Z",
+  "latest_round_id": "round-2024w1-window-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 2,
+  "source_report_count": 3,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",
