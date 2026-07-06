@@ -492,6 +492,101 @@ def test_make_advanced_rows_can_use_downside_labels() -> None:
     assert "label_mode=downside_triple_barrier" in am.advanced_feature_signature(barrier_cfg)
 
 
+def test_volatility_adjusted_threshold_uses_trailing_returns_only() -> None:
+    candles: list[Candle] = []
+    close = 100.0
+    for index in range(120):
+        if index < 60:
+            close *= 1.00001
+        else:
+            close *= 1.004 if index % 2 else 0.996
+        candles.append(Candle(
+            open_time=index * 1000,
+            open=close,
+            high=close * 1.0005,
+            low=close * 0.9995,
+            close=close,
+            volume=5.0,
+            close_time=index * 1000 + 999,
+            quote_volume=close * 5.0,
+            trade_count=20,
+            taker_buy_base_volume=2.5,
+            taker_buy_quote_volume=close * 2.5,
+        ))
+    cache = am._build_confluence_cache(candles)
+
+    calm = am._volatility_adjusted_label_threshold_pct(
+        cache,
+        50,
+        base_threshold=0.0005,
+        volatility_window=20,
+        volatility_multiplier=2.5,
+    )
+    noisy = am._volatility_adjusted_label_threshold_pct(
+        cache,
+        100,
+        base_threshold=0.0005,
+        volatility_window=20,
+        volatility_multiplier=2.5,
+    )
+    no_lookahead = am._volatility_adjusted_label_threshold_pct(
+        cache,
+        50,
+        base_threshold=0.0005,
+        volatility_window=20,
+        volatility_multiplier=2.5,
+    )
+
+    assert calm == pytest.approx(no_lookahead)
+    assert calm == pytest.approx(0.0005)
+    assert noisy > calm
+
+
+def test_make_advanced_rows_can_use_volatility_barrier_labels() -> None:
+    candles = _candles(180)
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        label_threshold=0.0005,
+        label_stop_threshold=0.0007,
+        label_lookahead=12,
+        label_mode="volatility_triple_barrier",
+        label_volatility_window=20,
+        label_volatility_multiplier=2.0,
+    )
+    downside_cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        label_threshold=0.0005,
+        label_stop_threshold=0.0007,
+        label_lookahead=12,
+        label_mode="downside_volatility_triple_barrier",
+        label_volatility_window=20,
+        label_volatility_multiplier=2.0,
+    )
+
+    rows = am.make_advanced_rows(candles, cfg)
+    downside_rows = am.make_advanced_rows(candles, downside_cfg)
+    signature = am.advanced_feature_signature(cfg)
+    restored = am.advanced_config_from_signature(signature)
+
+    assert rows
+    assert downside_rows
+    assert {row.label for row in rows} <= {0, 1}
+    assert {row.label for row in downside_rows} <= {0, 1}
+    assert "label_mode=volatility_triple_barrier" in signature
+    assert "label_volatility_window=20" in signature
+    assert "label_volatility_multiplier=2" in signature
+    assert restored is not None
+    assert restored.label_mode == "volatility_triple_barrier"
+    assert restored.label_volatility_window == 20
+    assert restored.label_volatility_multiplier == pytest.approx(2.0)
+
+
 def test_make_advanced_rows_handles_missing_index(monkeypatch):
     cfg = am.default_config_for("default", FEATURE_NAMES)
     # Force every base row to carry a timestamp not present in index_by_time
