@@ -358,6 +358,32 @@ def build_model_financial_sanity_report(model: TrainedModel, *, source: str = "m
                 hard_high=0.99,
             )
         )
+    long_threshold = getattr(model, "long_decision_threshold", None)
+    if long_threshold is not None:
+        checks.append(
+            _range_check(
+                long_threshold,
+                path="long_decision_threshold",
+                label="long decision threshold",
+                low=0.50,
+                high=0.99,
+                hard_low=0.01,
+                hard_high=0.99,
+            )
+        )
+    short_threshold = getattr(model, "short_decision_threshold", None)
+    if short_threshold is not None:
+        checks.append(
+            _range_check(
+                short_threshold,
+                path="short_decision_threshold",
+                label="short decision threshold",
+                low=0.01,
+                high=0.50,
+                hard_low=0.01,
+                hard_high=0.99,
+            )
+        )
     for attr in ("class_weight_pos", "class_weight_neg"):
         checks.append(
             _range_check(

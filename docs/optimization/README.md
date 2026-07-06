@@ -17,16 +17,17 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-order-flow-window-smoke`, a failed
+The current retained checkpoint is `round-side-threshold-window-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local `1s`
 SQLite market data. It is kept because it is truthful negative evidence: the
 candidate search trained on real second-level data, used DirectML, added v6
-order-flow features, closed two losing trades across the final holdout, and
-failed the critical-analysis gate. Earlier BTC-only, stale BTC/ETH-only, and
-broader-symbol artifacts were removed because they no longer matched the active
-scope, data standard, or model selection rules. Future checkpoints must be
-generated from the current BTCUSDT/ETHUSDT/SOLUSDT database state and must
-commit their CSV/JSON graph data beside any SVG charts.
+order-flow features, tested side-aware futures threshold calibration, closed two
+losing trades across the final holdout, and failed the critical-analysis gate.
+Earlier BTC-only, stale BTC/ETH-only, broader-symbol, and prior per-round smoke
+artifacts were removed because they no longer matched the active scope, data
+standard, or model selection rules. Future checkpoints must be generated from
+the current BTCUSDT/ETHUSDT/SOLUSDT database state and must commit their
+CSV/JSON graph data beside any SVG charts.
 
 GitHub retention is latest-only for per-round result graphs. `tools/optimization_round.py`
 refreshes `docs/optimization/iteration-progress/data/progress.csv` and
@@ -108,26 +109,29 @@ diagnostic candidate so the final holdout produces more useful failure
 evidence.
 
 Latest retained local smoke evidence from 2026-07-06 is
-`round-order-flow-window-smoke`. It uses the verified UTC window
+`round-side-threshold-window-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-07T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 604,800 expected rows, zero
 missing-second gaps, 1.0 coverage, and seven verified Binance archive
 checksums. The run used DirectML with `--require-gpu`, conservative 5x futures
 settings, cost-aware labels, flat-signal hold/grace candidate settings, the
-default three-candidate search, and v6 order-flow features built from real
-quote volume, trade count, taker-buy volume, signed flow, no-trade ratio, and
-flow/return alignment. It failed the critical gate: zero accepted symbols, two
-total closed trades, mean ROI `-0.04869541446409661%`, median ROI
-`-0.06019871112706596%`, mean buy-and-hold ROI `-0.8918786806126517%`, worst
-drawdown `0.08588753226522386%`, and no liquidations. BTCUSDT selected
+default three-candidate search, v6 order-flow features built from real quote
+volume, trade count, taker-buy volume, signed flow, no-trade ratio, and
+flow/return alignment, plus side-aware futures thresholds that can disable the
+long or short side when selection evidence justifies it. It failed the critical
+gate: zero accepted symbols, two total closed trades, mean ROI
+`-0.04869541446409661%`, median ROI `-0.06019871112706596%`, mean buy-and-hold
+ROI `-0.8918786806126517%`, worst drawdown `0.08588753226522386%`, and no
+liquidations. BTCUSDT selected
 `default`, closed one losing trade, and ended at `-0.06019871112706596%` ROI.
 ETHUSDT selected `intraday_activity_triple_barrier`, abstained on the final
 holdout, and ended at `0.0%` ROI. SOLUSDT selected
 `intraday_micro_triple_barrier`, closed one losing trade, and ended at
-`-0.08588753226522386%` ROI. This improved mean ROI slightly versus
-`round-2024w1-window-smoke` (`-0.04914839522769323%`) but still is not
-promotion evidence because the window is one verified week, not years, and no
-symbol is profitable.
+`-0.08588753226522386%` ROI. The best side-aware diagnostics were still
+symmetric (`long=T`, `short=1-T`) for all three selected candidates, so this
+iteration did not find a one-sided BTC/ETH/SOL edge. It is not promotion
+evidence because the window is one verified week, not years, and no symbol is
+profitable.
 
 The next attempted iteration, `round-downside-order-flow-window-smoke`, added
 the downside triple-barrier candidate to the default three. It completed with

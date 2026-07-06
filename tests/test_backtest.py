@@ -1054,6 +1054,77 @@ def test_profit_threshold_calibration_accepts_profitable_threshold() -> None:
     assert report.asdict()["evaluated_thresholds"] == 9
 
 
+def test_futures_threshold_calibration_can_disable_bad_short_side() -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=120_000, close=130.0, features=(-1.0,), label=0),
+        ModelRow(timestamp=180_000, close=130.0, features=(-1.0,), label=0),
+        ModelRow(timestamp=240_000, close=130.0, features=(0.0,), label=0),
+        ModelRow(timestamp=300_000, close=170.0, features=(0.0,), label=0),
+    ]
+    model = TrainedModel(
+        weights=[10.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.60,
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.5,
+        max_position_pct=0.5,
+        signal_threshold=0.60,
+        take_profit_pct=0.50,
+        stop_loss_pct=0.50,
+        cooldown_minutes=0,
+        max_trades_per_day=0,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        liquidity_risk_enabled=False,
+        max_regime_unpredictability=1.0,
+    )
+
+    symmetric = run_backtest(rows, model, cfg, starting_cash=1000.0, market_type="futures", compute_backend="cpu")
+    report = calibrate_threshold_for_backtest(
+        rows,
+        model,
+        cfg,
+        baseline_threshold=0.60,
+        start=0.55,
+        end=0.75,
+        steps=5,
+        starting_cash=1000.0,
+        market_type="futures",
+        min_closed_trades=1,
+        compute_backend="cpu",
+    )
+    selected = run_backtest(
+        rows,
+        TrainedModel(
+            **{
+                **model.__dict__,
+                "decision_threshold": report.best_threshold,
+                "long_decision_threshold": report.best_long_threshold,
+                "short_decision_threshold": report.best_short_threshold,
+            }
+        ),
+        cfg,
+        starting_cash=1000.0,
+        market_type="futures",
+        compute_backend="cpu",
+    )
+
+    assert symmetric.liquidation_events == 1
+    assert report.best_realized_pnl > symmetric.realized_pnl
+    assert report.best_long_threshold is not None
+    assert report.best_short_threshold is None
+    assert report.best_liquidation_events == 0
+    assert selected.trade_log
+    assert {int(trade["side"]) for trade in selected.trade_log} == {1}
+
+
 def test_profit_threshold_calibration_rejects_non_improvement_and_score_edges() -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),

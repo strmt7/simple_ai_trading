@@ -18,6 +18,7 @@ from simple_ai_trading.model import (
     ModelLoadError,
     load_model,
     model_decision_threshold,
+    model_direction_thresholds,
     evaluate_classification,
     evaluate,
     serialize_model,
@@ -325,6 +326,8 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         feature_means=[0.0],
         feature_stds=[1.0],
         decision_threshold=0.65,
+        long_decision_threshold=0.71,
+        short_decision_threshold=0.27,
         calibration_size=12,
         validation_size=8,
         training_cutoff_timestamp=123,
@@ -344,6 +347,8 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
         threshold_calibration_score=12.3,
         threshold_calibration_pnl=4.5,
         threshold_calibration_trades=6,
+        threshold_diagnostic_best_long_threshold=0.69,
+        threshold_diagnostic_best_short_threshold=0.31,
         training_backend_requested="directml",
         training_backend_kind="directml",
         training_backend_device="privateuseone:0",
@@ -427,6 +432,9 @@ def test_decision_threshold_metadata_and_confidence_adjustment(tmp_path: Path) -
     serialize_model(model, path)
     loaded = load_model(path, expected_feature_dim=1)
     assert model_decision_threshold(loaded, 0.55) == 0.65
+    assert model_direction_thresholds(loaded, 0.55, market_type="futures") == pytest.approx((0.71, 0.27))
+    assert loaded.threshold_diagnostic_best_long_threshold == pytest.approx(0.69)
+    assert loaded.threshold_diagnostic_best_short_threshold == pytest.approx(0.31)
     assert loaded.calibration_size == 12
     assert loaded.validation_size == 8
     assert loaded.training_cutoff_timestamp == 123

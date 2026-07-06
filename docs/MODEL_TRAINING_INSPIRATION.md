@@ -194,6 +194,11 @@ weakening risk controls.
   signed-flow/return alignment. This is not a substitute for true order-book
   tensors, but it gives the current BTC/ETH/SOL second-level database a more
   defensible microstructure signal source than OHLCV alone.
+- Implemented update: futures threshold calibration now tests symmetric,
+  long-only, and short-only threshold variants on the selection fold. This
+  allows the optimizer to disable a harmful side when evidence supports it,
+  while preserving fail-closed final holdout gates for P&L, drawdown,
+  liquidations, edge, and trade quality.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time

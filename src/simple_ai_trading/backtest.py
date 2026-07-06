@@ -16,6 +16,7 @@ from .model import (
     TrainedModel,
     confidence_adjusted_probability,
     effective_training_backend_name,
+    model_direction_thresholds,
     model_decision_threshold,
 )
 from .regime import classify_market_regime
@@ -101,6 +102,10 @@ class ThresholdBacktestCalibration:
     min_trades_per_day: float = 0.0
     trades_per_day: float = 0.0
     best_trades_per_day: float = 0.0
+    long_threshold: float | None = None
+    short_threshold: float | None = None
+    best_long_threshold: float | None = None
+    best_short_threshold: float | None = None
 
     def asdict(self) -> dict[str, float | int | bool | str]:
         return asdict(self)
@@ -267,15 +272,22 @@ def _fill_price(
     ).fill_price
 
 
-def _normalize_market_direction(signal_score: float, threshold: float, market_type: str) -> int:
+def _normalize_market_direction(
+    signal_score: float,
+    threshold: float | None,
+    market_type: str,
+    *,
+    short_threshold: float | None = None,
+) -> int:
     if market_type == "futures":
-        threshold = max(0.5, float(threshold))
-        if signal_score >= threshold:
+        long_threshold = max(0.5, float(threshold)) if threshold is not None else None
+        short_cutoff = min(0.5, float(short_threshold)) if short_threshold is not None else None
+        if long_threshold is not None and signal_score >= long_threshold:
             return 1
-        if signal_score <= (1.0 - threshold):
+        if short_cutoff is not None and signal_score <= short_cutoff:
             return -1
         return 0
-    return 1 if signal_score >= threshold else 0
+    return 1 if threshold is not None and signal_score >= threshold else 0
 
 
 def _close_position(
@@ -485,6 +497,32 @@ def _clamp_threshold(value: float) -> float:
     if not math.isfinite(value):
         return 0.5
     return max(0.0, min(1.0, value))
+
+
+def _threshold_confidence(long_threshold: float | None, short_threshold: float | None, fallback: float) -> float:
+    values: list[float] = []
+    if long_threshold is not None:
+        values.append(float(long_threshold))
+    if short_threshold is not None:
+        values.append(1.0 - float(short_threshold))
+    if not values:
+        values.append(float(fallback))
+    return _clamp_threshold(max(values))
+
+
+def _adjusted_side_thresholds(
+    long_threshold: float | None,
+    short_threshold: float | None,
+    threshold_add: float,
+) -> tuple[float | None, float | None]:
+    add = max(-1.0, min(1.0, _finite_float(threshold_add, 0.0)))
+    adjusted_long = None
+    adjusted_short = None
+    if long_threshold is not None:
+        adjusted_long = max(0.0, min(1.0, float(long_threshold) + add))
+    if short_threshold is not None:
+        adjusted_short = max(0.0, min(1.0, float(short_threshold) - add))
+    return adjusted_long, adjusted_short
 
 
 def _score_backend_payload(backend: BackendInfo) -> dict[str, str]:
@@ -952,7 +990,17 @@ def calibrate_threshold_for_backtest(
     )
     regime_scores = precompute_backtest_regime_scores(rows, cfg)
     liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, cfg)
-    baseline_model = replace(model, decision_threshold=baseline_threshold)
+    baseline_long, baseline_short = model_direction_thresholds(
+        replace(model, decision_threshold=baseline_threshold),
+        cfg.signal_threshold,
+        market_type=market_type,
+    )
+    baseline_model = replace(
+        model,
+        decision_threshold=baseline_threshold,
+        long_decision_threshold=getattr(model, "long_decision_threshold", None),
+        short_decision_threshold=getattr(model, "short_decision_threshold", None),
+    )
     baseline_result = run_backtest(
         rows,
         baseline_model,
@@ -967,7 +1015,9 @@ def calibrate_threshold_for_backtest(
         precomputed_liquidity_adjustments=liquidity_adjustments,
     )
     baseline_score = risk_adjusted_backtest_score(baseline_result, starting_cash=starting_cash)
-    best_threshold = baseline_threshold
+    best_threshold = _threshold_confidence(baseline_long, baseline_short, baseline_threshold)
+    best_long_threshold = baseline_long
+    best_short_threshold = baseline_short
     best_score = baseline_score
     best_result = baseline_result
     thresholds = _threshold_grid(start, end, steps, baseline_threshold)
@@ -975,32 +1025,57 @@ def calibrate_threshold_for_backtest(
     min_closed = max(0, int(min_closed_trades))
     min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
 
+    seen_variants: set[tuple[float | None, float | None]] = set()
     for threshold in thresholds:
-        candidate_model = replace(model, decision_threshold=threshold)
-        result = run_backtest(
-            rows,
-            candidate_model,
-            cfg,
-            starting_cash=starting_cash,
-            market_type=market_type,
-            compute_backend=compute_backend,
-            score_batch_size=score_batch_size,
-            precomputed_probabilities=probabilities,
-            precomputed_score_backend=score_backend,
-            precomputed_regime_scores=regime_scores,
-            precomputed_liquidity_adjustments=liquidity_adjustments,
-        )
-        score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
-        if (
-            score > best_score + 1e-12
-            or (
-                abs(score - best_score) <= 1e-12
-                and result.realized_pnl > best_result.realized_pnl
+        if market_type == "futures":
+            threshold = max(0.5, float(threshold))
+            variants = (
+                (threshold, 1.0 - threshold),
+                (threshold, None),
+                (None, 1.0 - threshold),
             )
-        ):
-            best_threshold = threshold
-            best_score = score
-            best_result = result
+        else:
+            variants = ((float(threshold), None),)
+        for long_threshold, short_threshold in variants:
+            key = (
+                round(long_threshold, 12) if long_threshold is not None else None,
+                round(short_threshold, 12) if short_threshold is not None else None,
+            )
+            if key in seen_variants:
+                continue
+            seen_variants.add(key)
+            candidate_model = replace(
+                model,
+                decision_threshold=_threshold_confidence(long_threshold, short_threshold, threshold),
+                long_decision_threshold=long_threshold if market_type == "futures" else None,
+                short_decision_threshold=short_threshold if market_type == "futures" else None,
+            )
+            result = run_backtest(
+                rows,
+                candidate_model,
+                cfg,
+                starting_cash=starting_cash,
+                market_type=market_type,
+                compute_backend=compute_backend,
+                score_batch_size=score_batch_size,
+                precomputed_probabilities=probabilities,
+                precomputed_score_backend=score_backend,
+                precomputed_regime_scores=regime_scores,
+                precomputed_liquidity_adjustments=liquidity_adjustments,
+            )
+            score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
+            if (
+                score > best_score + 1e-12
+                or (
+                    abs(score - best_score) <= 1e-12
+                    and result.realized_pnl > best_result.realized_pnl
+                )
+            ):
+                best_threshold = _threshold_confidence(long_threshold, short_threshold, threshold)
+                best_long_threshold = long_threshold if market_type == "futures" else None
+                best_short_threshold = short_threshold if market_type == "futures" else None
+                best_score = score
+                best_result = result
 
     best_trades_per_day = closed_trades_per_day(best_result, duration_days=span_days)
     has_profit_backed_result = best_result.closed_trades > 0 and best_result.realized_pnl > 0.0
@@ -1020,7 +1095,13 @@ def calibrate_threshold_for_backtest(
         and has_no_liquidation
         and best_score > baseline_score + max(0.0, _finite_float(min_score_delta, 0.0))
     )
-    selected_threshold = best_threshold if accepted else baseline_threshold
+    selected_threshold = best_threshold if accepted else _threshold_confidence(
+        baseline_long,
+        baseline_short,
+        baseline_threshold,
+    )
+    selected_long_threshold = best_long_threshold if accepted else baseline_long
+    selected_short_threshold = best_short_threshold if accepted else baseline_short
     selected_score = best_score if accepted else baseline_score
     selected_result = best_result if accepted else baseline_result
     payload = _result_payload(selected_result)
@@ -1048,7 +1129,7 @@ def calibrate_threshold_for_backtest(
         best_win_rate=float(best_payload["win_rate"]),
         best_closed_trades=int(best_payload["closed_trades"]),
         best_edge_vs_buy_hold=float(best_payload["edge_vs_buy_hold"]),
-        evaluated_thresholds=len(thresholds),
+        evaluated_thresholds=len(seen_variants),
         rows=len(rows),
         stopped_by_liquidation=bool(payload["stopped_by_liquidation"]),
         liquidation_events=int(payload["liquidation_events"]),
@@ -1064,6 +1145,10 @@ def calibrate_threshold_for_backtest(
         min_trades_per_day=float(min_daily),
         trades_per_day=float(selected_trades_per_day),
         best_trades_per_day=float(best_trades_per_day),
+        long_threshold=selected_long_threshold,
+        short_threshold=selected_short_threshold,
+        best_long_threshold=best_long_threshold,
+        best_short_threshold=best_short_threshold,
     )
 
 
@@ -1150,6 +1235,7 @@ def run_backtest(
     if market_type == "futures" and leverage > MAX_AUTONOMOUS_LEVERAGE:
         leverage = MAX_AUTONOMOUS_LEVERAGE
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
+    long_threshold, short_threshold = model_direction_thresholds(model, cfg.signal_threshold, market_type=market_type)
 
     daily_trade_count: Dict[int, int] = {}
     max_daily: int | None = int(cfg.max_trades_per_day)
@@ -1196,17 +1282,37 @@ def run_backtest(
         execution_meta = pending_meta
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
         threshold_add, size_multiplier, low_liquidity, low_dynamic_session = liquidity_adjustments[row_index]
+        adjusted_long_threshold, adjusted_short_threshold = _adjusted_side_thresholds(
+            long_threshold,
+            short_threshold,
+            threshold_add,
+        )
+        display_threshold = _threshold_confidence(
+            adjusted_long_threshold,
+            adjusted_short_threshold,
+            decision_threshold,
+        )
         liquidity_adjustment = LiquiditySessionAdjustment(
-            threshold=max(0.0, min(1.0, float(decision_threshold) + float(threshold_add))),
+            threshold=display_threshold,
             size_multiplier=max(0.0, min(1.0, float(size_multiplier))),
             low_liquidity=bool(low_liquidity),
             low_dynamic_session=bool(low_dynamic_session),
         )
-        pending_signal = _normalize_market_direction(score, liquidity_adjustment.threshold, market_type)
+        pending_signal = _normalize_market_direction(
+            score,
+            adjusted_long_threshold,
+            market_type,
+            short_threshold=adjusted_short_threshold,
+        )
+        meta_threshold = (
+            1.0 - adjusted_short_threshold
+            if market_type == "futures" and pending_signal < 0 and adjusted_short_threshold is not None
+            else display_threshold
+        )
         base_pending_meta = apply_meta_label_policy(
             getattr(model, "meta_label_policy", {}),
             adjusted_probability=score,
-            threshold=liquidity_adjustment.threshold,
+            threshold=meta_threshold,
             side=pending_signal,
             market_type=market_type,
         )

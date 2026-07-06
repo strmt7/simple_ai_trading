@@ -1,4 +1,3 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-2024w1-window-smoke,2026-07-06T14:22:44.225542Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.04914839522769323,-0.06155765341785582,-0.8918614182497557,0.08588753226522386,2
 round-order-flow-window-smoke,2026-07-06T14:54:25.515586Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.04869541446409661,-0.06019871112706596,-0.8918786806126517,0.08588753226522386,2
-round-downside-order-flow-window-smoke,2026-07-06T15:46:08.190434Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.07008053565532464,-0.0641553635736841,-0.8918614182497557,0.08588753226522386,3
+round-side-threshold-window-smoke,2026-07-06T16:45:49.570564Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.04869541446409661,-0.06019871112706596,-0.8918786806126517,0.08588753226522386,2
