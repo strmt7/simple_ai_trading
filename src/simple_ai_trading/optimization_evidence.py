@@ -1353,23 +1353,28 @@ def _round_model_candidates(
     # Keep the first few candidates intentionally diverse. The default smoke
     # budget is small, so the prefix must cover baseline, long-biased,
     # short-biased, and order-flow hypotheses instead of walking one family.
-    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int]] = [
-        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
-        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1),
-        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.55, 0.35, "downside_triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
-        ("order_flow_pressure_triple_barrier", 0.85, 1.00, 1.75, 0.45, 0.25, "triple_barrier", -0.04, 0.18, 0.12, 0.0, 1, 1),
-        ("downside_order_flow_pressure", 0.85, 1.00, 1.75, 0.45, 0.25, "downside_triple_barrier", -0.04, 0.18, 0.12, 0.0, 1, 1),
-        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1),
-        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2),
-        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1),
-        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0),
-        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1),
-        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0),
-        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0),
-        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0),
-        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1),
-        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0),
-        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1),
+    #
+    # Last three fields: minimum label horizon in bars, trailing volatility
+    # window in bars, and realized-volatility multiplier for dynamic barriers.
+    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int, int, int, float]] = [
+        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
+        ("session_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5),
+        ("session_downside_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "downside_volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5),
+        ("order_flow_pressure_volatility_barrier", 0.90, 1.00, 1.75, 1.00, 18.0, "volatility_triple_barrier", -0.06, 0.20, 0.14, 0.15, 8, 5, 90, 180, 2.0),
+        ("downside_order_flow_volatility_barrier", 0.90, 1.00, 1.75, 1.00, 18.0, "downside_volatility_triple_barrier", -0.06, 0.20, 0.14, 0.15, 8, 5, 90, 180, 2.0),
+        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1, 0, 0, 0.0),
+        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1, 0, 0, 0.0),
+        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.55, 0.35, "downside_triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0),
+        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0),
+        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1, 0, 0, 0.0),
+        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
+        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0),
+        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0, 0, 0, 0.0),
+        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
+        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1, 0, 0, 0.0),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0, 0, 0, 0.0),
+        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0),
     ]
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
@@ -1387,17 +1392,27 @@ def _round_model_candidates(
         cooldown_multiplier,
         min_position_hold_bars,
         flat_signal_exit_grace_bars,
+        min_label_lookahead,
+        label_volatility_window,
+        label_volatility_multiplier,
     ) in raw:
+        label_lookahead = max(
+            1,
+            int(min_label_lookahead),
+            int(round(base_label_lookahead * float(lookahead_mult))),
+        )
         feature_cfg = replace(
             base_feature_cfg,
             label_threshold=max(1e-8, cost_label_floor, base_label_threshold * float(threshold_mult)),
-            label_lookahead=max(1, int(round(base_label_lookahead * float(lookahead_mult)))),
+            label_lookahead=label_lookahead,
             label_mode=str(label_mode),
             label_stop_threshold=(
                 max(1e-8, float(base_feature_cfg.label_stop_threshold) * float(threshold_mult))
                 if base_feature_cfg.label_stop_threshold is not None
                 else None
             ),
+            label_volatility_window=max(0, int(label_volatility_window)),
+            label_volatility_multiplier=max(0.0, float(label_volatility_multiplier)),
         )
         candidate = RoundModelCandidate(
             name=name,
@@ -1426,6 +1441,8 @@ def _round_model_candidates(
             candidate.feature_cfg.label_threshold,
             candidate.feature_cfg.label_lookahead,
             candidate.feature_cfg.label_mode,
+            candidate.feature_cfg.label_volatility_window,
+            round(candidate.feature_cfg.label_volatility_multiplier, 12),
         )
         if key in seen:
             continue
@@ -1473,7 +1490,11 @@ def _candidate_has_downside_positive_label(candidate: RoundModelCandidate) -> bo
     """Return True when label=1 represents a profitable short-side event."""
 
     mode = str(candidate.feature_cfg.label_mode or "").strip().lower().replace("-", "_")
-    return mode in {"downside_forward_return", "downside_triple_barrier"}
+    return mode in {
+        "downside_forward_return",
+        "downside_triple_barrier",
+        "downside_volatility_triple_barrier",
+    }
 
 
 def _orient_candidate_model_for_market_side(model: object, candidate: RoundModelCandidate) -> None:
@@ -1750,18 +1771,19 @@ def _evaluate_round_model_candidate(
         model.round_selection_gate_passed = False
         model.round_selection_reject_reason = str(chosen_reject_reason or "selection_gate_failed")
         if diagnostic_trades > 0:
-            model.decision_threshold = diagnostic_threshold
-            model.long_decision_threshold = getattr(threshold_report, "best_long_threshold", None)
-            model.short_decision_threshold = getattr(threshold_report, "best_short_threshold", None)
-            model.threshold_source = "round_selection_rejected_best_threshold_diagnostic"
+            model.threshold_source = "round_selection_rejected_no_entry_diagnostic_recorded"
             model.threshold_calibration_score = diagnostic_score
             model.threshold_calibration_pnl = diagnostic_pnl
             model.threshold_calibration_trades = diagnostic_trades
         else:
-            model.threshold_source = "round_selection_rejected_diagnostic_holdout"
+            model.threshold_source = "round_selection_rejected_no_entry"
+        model.decision_threshold = 1.0
+        model.long_decision_threshold = 1.0
+        model.short_decision_threshold = None
         model.quality_warnings = [
             *list(getattr(model, "quality_warnings", [])),
             "round_selection_gate_failed_diagnostic_holdout_only",
+            "round_selection_failed_no_entry_enforced",
         ]
     model.strategy_overrides = strategy_overrides_from_config(candidate_strategy)
     return RoundModelCandidateResult(
@@ -1800,6 +1822,22 @@ def _round_candidate_rank_key(result: RoundModelCandidateResult) -> tuple[float,
     liquidation_events = finite(getattr(selection, "liquidation_events", 0), 0.0)
     drawdown = finite(getattr(selection, "max_drawdown", 1.0), 1.0)
     fees = finite(getattr(selection, "total_fees", 0.0), 0.0)
+    if gate_passed <= 0.0:
+        profitable_selection = 1.0 if selection_pnl > 0.0 else 0.0
+        nonnegative_selection = 1.0 if selection_pnl >= 0.0 and liquidation_events <= 0.0 else 0.0
+        return (
+            gate_passed,
+            profitable_selection,
+            nonnegative_selection,
+            selection_pnl,
+            -liquidation_events,
+            -drawdown,
+            -fees,
+            diagnostic_pnl,
+            score,
+            diagnostic_trades,
+            -closed_trades,
+        )
     return (
         gate_passed,
         score,
@@ -1843,6 +1881,22 @@ def _select_hybrid_model_zoo_if_accepted(
 
     model = result.model
     feature_dim = int(getattr(model, "feature_dim", 0) or 0)
+    if getattr(model, "round_selection_gate_passed", True) is False:
+        if status_callback is not None:
+            status_callback(
+                "hybrid_model_zoo_skipped",
+                {
+                    "reason": "base_selection_gate_failed",
+                    "feature_dim": int(feature_dim),
+                    "training_rows": len(result.training_rows),
+                    "selection_rows": len(result.selection_rows),
+                },
+            )
+        model.hybrid_profile = "base_selection_gate_failed"
+        model.hybrid_base_score = _finite_or_none(result.score)
+        model.hybrid_best_score = None
+        model.hybrid_evaluated_profiles = 0
+        return replace(result, model=model)
     if feature_dim <= 1 or not result.training_rows or not result.selection_rows:
         if status_callback is not None:
             status_callback(

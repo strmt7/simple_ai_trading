@@ -33,7 +33,8 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v6-order-flow"
+ADVANCED_FEATURE_VERSION = "v7-volatility-barrier"
+_SUPPORTED_ADVANCED_FEATURE_VERSIONS = {ADVANCED_FEATURE_VERSION, "v6-order-flow"}
 _EXTRA_FEATURES_PER_WINDOW = 7
 _CONFLUENCE_FEATURES_PER_WINDOW = 9
 _MARKET_QUALITY_FEATURES_PER_WINDOW = 10
@@ -63,6 +64,8 @@ class AdvancedFeatureConfig:
     label_lookahead: int = 4
     label_mode: str = "forward_return"
     label_stop_threshold: float | None = None
+    label_volatility_window: int = 0
+    label_volatility_multiplier: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -149,10 +152,18 @@ def _normalized_label_mode(value: str) -> str:
     mode = str(value or "forward_return").strip().lower().replace("-", "_")
     if mode in {"triple", "triple_barrier", "barrier"}:
         return "triple_barrier"
+    if mode in {"volatility_triple", "volatility_triple_barrier", "dynamic_triple_barrier"}:
+        return "volatility_triple_barrier"
     if mode in {"downside", "downside_forward", "downside_forward_return", "short_forward"}:
         return "downside_forward_return"
     if mode in {"downside_triple", "downside_triple_barrier", "short_triple_barrier"}:
         return "downside_triple_barrier"
+    if mode in {
+        "downside_volatility_triple",
+        "downside_volatility_triple_barrier",
+        "short_volatility_triple_barrier",
+    }:
+        return "downside_volatility_triple_barrier"
     return "forward_return"
 
 
@@ -226,6 +237,43 @@ def _downside_triple_barrier_label(
             return 1
     final_return = _safe((entry - float(candles[end].close)) / entry)
     return 1 if final_return >= take else 0
+
+
+def _rolling_return_volatility_pct(cache: "_ConfluenceCache", end: int, window: int) -> float:
+    """Return trailing realized return volatility known at ``end``."""
+
+    if window <= 1 or end <= 1:
+        return 0.0
+    bounded_end = min(max(1, int(end)), len(cache.returns) - 1)
+    start = max(1, bounded_end + 1 - int(window))
+    count = bounded_end - start + 1
+    if count < 2:
+        return 0.0
+    total = _window_sum(cache.return_prefix, start, bounded_end)
+    total_sq = _window_sum(cache.return_square_prefix, start, bounded_end)
+    variance = (total_sq - (total * total / float(count))) / max(1, count - 1)
+    return math.sqrt(max(0.0, variance))
+
+
+def _volatility_adjusted_label_threshold_pct(
+    cache: "_ConfluenceCache",
+    end: int,
+    *,
+    base_threshold: float,
+    volatility_window: int,
+    volatility_multiplier: float,
+) -> float:
+    """Keep the cost-aware floor while widening barriers in noisy regimes."""
+
+    base = max(0.0, float(base_threshold))
+    multiplier = max(0.0, float(volatility_multiplier))
+    window = max(0, int(volatility_window))
+    if window <= 1 or multiplier <= 0.0:
+        return base
+    realized_volatility = _rolling_return_volatility_pct(cache, end, window)
+    if not math.isfinite(realized_volatility) or realized_volatility <= 0.0:
+        return base
+    return max(base, realized_volatility * multiplier)
 
 
 def _prefix_sum(values: Sequence[float]) -> list[float]:
@@ -860,6 +908,8 @@ def make_advanced_rows(
         if cfg.label_stop_threshold is not None
         else float(cfg.label_threshold)
     )
+    volatility_window = max(0, int(cfg.label_volatility_window))
+    volatility_multiplier = max(0.0, float(cfg.label_volatility_multiplier))
     expanded: list[ModelRow] = []
     for row in base_rows:
         idx = index_by_time.get(row.timestamp)
@@ -874,6 +924,28 @@ def make_advanced_rows(
                 take_profit_pct=cfg.label_threshold,
                 stop_loss_pct=stop_threshold,
             )
+        elif label_mode == "volatility_triple_barrier":
+            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=cfg.label_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=stop_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            label = _triple_barrier_label(
+                valid_candles,
+                idx,
+                horizon=label_lookahead,
+                take_profit_pct=adjusted_take_profit,
+                stop_loss_pct=adjusted_stop_loss,
+            )
         elif label_mode == "downside_triple_barrier":
             label = _downside_triple_barrier_label(
                 valid_candles,
@@ -881,6 +953,28 @@ def make_advanced_rows(
                 horizon=label_lookahead,
                 take_profit_pct=cfg.label_threshold,
                 stop_loss_pct=stop_threshold,
+            )
+        elif label_mode == "downside_volatility_triple_barrier":
+            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=cfg.label_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=stop_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            label = _downside_triple_barrier_label(
+                valid_candles,
+                idx,
+                horizon=label_lookahead,
+                take_profit_pct=adjusted_take_profit,
+                stop_loss_pct=adjusted_stop_loss,
             )
         elif label_mode == "downside_forward_return":
             future_index = min(len(valid_candles) - 1, idx + label_lookahead)
@@ -1020,6 +1114,8 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"label_lookahead={int(cfg.label_lookahead)}",
         f"label_mode={_normalized_label_mode(cfg.label_mode)}",
         f"label_stop_threshold={float(cfg.label_stop_threshold if cfg.label_stop_threshold is not None else cfg.label_threshold):.10g}",
+        f"label_volatility_window={max(0, int(cfg.label_volatility_window))}",
+        f"label_volatility_multiplier={max(0.0, float(cfg.label_volatility_multiplier)):.10g}",
         base,
     ])
 
@@ -1036,7 +1132,7 @@ def advanced_config_from_signature(
     """
 
     fields = _signature_fields(str(signature or ""))
-    if fields.get("advanced_version") != ADVANCED_FEATURE_VERSION:
+    if fields.get("advanced_version") not in _SUPPORTED_ADVANCED_FEATURE_VERSIONS:
         return None
     try:
         feature_names_raw = fields.get("feature_names", "")
@@ -1059,6 +1155,8 @@ def advanced_config_from_signature(
             label_lookahead=max(1, int(fields.get("label_lookahead", "4"))),
             label_mode=_normalized_label_mode(fields.get("label_mode", "forward_return")),
             label_stop_threshold=stop_threshold,
+            label_volatility_window=max(0, int(fields.get("label_volatility_window", "0"))),
+            label_volatility_multiplier=max(0.0, float(fields.get("label_volatility_multiplier", "0"))),
         )
     except (TypeError, ValueError):
         return None

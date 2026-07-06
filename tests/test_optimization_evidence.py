@@ -120,28 +120,35 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
     candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 3)
     names = [candidate.name for candidate in candidates]
 
-    assert names == ["default", "intraday_activity_triple_barrier", "intraday_downside_triple_barrier"]
-    assert candidates[1].feature_cfg.label_mode == "triple_barrier"
-    assert candidates[1].feature_cfg.label_lookahead < feature_cfg.label_lookahead
-    assert candidates[2].feature_cfg.label_mode == "downside_triple_barrier"
+    assert names == [
+        "default",
+        "session_volatility_triple_barrier",
+        "session_downside_volatility_triple_barrier",
+    ]
+    assert candidates[1].feature_cfg.label_mode == "volatility_triple_barrier"
+    assert candidates[1].feature_cfg.label_lookahead >= 60
+    assert candidates[1].feature_cfg.label_volatility_window == 120
+    assert candidates[1].feature_cfg.label_volatility_multiplier == pytest.approx(2.5)
+    assert candidates[2].feature_cfg.label_mode == "downside_volatility_triple_barrier"
+    assert candidates[2].feature_cfg.label_lookahead >= 60
     cost_floor = oe._round_trip_cost_label_floor(strategy)
     assert candidates[1].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].feature_cfg.label_threshold >= cost_floor
-    assert candidates[1].min_position_hold_bars == 1
-    assert candidates[1].flat_signal_exit_grace_bars == 1
-    assert candidates[2].min_position_hold_bars == 2
-    assert candidates[2].flat_signal_exit_grace_bars == 2
+    assert candidates[1].min_position_hold_bars == 5
+    assert candidates[1].flat_signal_exit_grace_bars == 5
+    assert candidates[2].min_position_hold_bars == 5
+    assert candidates[2].flat_signal_exit_grace_bars == 5
     assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
     activity_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
     downside_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
-    assert activity_strategy.cooldown_minutes == 0
-    assert activity_strategy.min_position_hold_bars == 1
-    assert activity_strategy.flat_signal_exit_grace_bars == 1
+    assert activity_strategy.cooldown_minutes < strategy.cooldown_minutes
+    assert activity_strategy.min_position_hold_bars == 5
+    assert activity_strategy.flat_signal_exit_grace_bars == 5
     assert downside_strategy.stop_loss_pct < strategy.stop_loss_pct
     assert downside_strategy.take_profit_pct < strategy.take_profit_pct
     assert downside_strategy.cooldown_minutes < strategy.cooldown_minutes
-    assert downside_strategy.min_position_hold_bars == 2
-    assert downside_strategy.flat_signal_exit_grace_bars == 2
+    assert downside_strategy.min_position_hold_bars == 5
+    assert downside_strategy.flat_signal_exit_grace_bars == 5
 
 
 def test_round_model_candidates_cover_order_flow_before_micro_family() -> None:
@@ -154,14 +161,16 @@ def test_round_model_candidates_cover_order_flow_before_micro_family() -> None:
 
     assert names == [
         "default",
-        "intraday_activity_triple_barrier",
-        "intraday_downside_triple_barrier",
-        "order_flow_pressure_triple_barrier",
-        "downside_order_flow_pressure",
+        "session_volatility_triple_barrier",
+        "session_downside_volatility_triple_barrier",
+        "order_flow_pressure_volatility_barrier",
+        "downside_order_flow_volatility_barrier",
         "frequency_probe_forward",
     ]
-    assert candidates[3].feature_cfg.label_mode == "triple_barrier"
-    assert candidates[4].feature_cfg.label_mode == "downside_triple_barrier"
+    assert candidates[3].feature_cfg.label_mode == "volatility_triple_barrier"
+    assert candidates[4].feature_cfg.label_mode == "downside_volatility_triple_barrier"
+    assert candidates[3].feature_cfg.label_lookahead >= 90
+    assert candidates[4].feature_cfg.label_lookahead >= 90
     assert candidates[3].feature_cfg.order_flow_windows
     assert candidates[4].feature_cfg.order_flow_windows
 
@@ -172,7 +181,7 @@ def test_downside_positive_labels_are_oriented_to_short_side() -> None:
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
     downside = oe.RoundModelCandidate(
         name="downside-test",
-        feature_cfg=replace(feature_cfg, label_mode="downside_triple_barrier"),
+        feature_cfg=replace(feature_cfg, label_mode="downside_volatility_triple_barrier"),
         epochs=1,
         learning_rate=0.01,
         l2_penalty=0.0,
@@ -343,12 +352,14 @@ def test_round_model_candidates_do_not_train_on_sub_cost_intraday_labels() -> No
     assert cost_floor == pytest.approx(0.0015)
     assert [candidate.name for candidate in candidates] == [
         "default",
-        "intraday_activity_triple_barrier",
-        "intraday_downside_triple_barrier",
+        "session_volatility_triple_barrier",
+        "session_downside_volatility_triple_barrier",
     ]
     assert all(candidate.feature_cfg.label_threshold >= cost_floor for candidate in candidates)
     assert candidates[1].feature_cfg.label_threshold == pytest.approx(cost_floor)
     assert candidates[2].feature_cfg.label_threshold == pytest.approx(cost_floor)
+    assert candidates[1].feature_cfg.label_lookahead >= 60
+    assert candidates[2].feature_cfg.label_lookahead >= 60
 
 
 def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:
@@ -1217,7 +1228,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     ]
 
 
-def test_train_round_model_keeps_rejected_selection_diagnostic_holdout_active(
+def test_train_round_model_parks_rejected_selection_in_no_entry_state(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rows = [
@@ -1295,10 +1306,14 @@ def test_train_round_model_keeps_rejected_selection_diagnostic_holdout_active(
     )
 
     assert len(holdout_rows) == 25
-    assert selected_model.threshold_source == "round_selection_rejected_diagnostic_holdout"
+    assert selected_model.threshold_source == "round_selection_rejected_no_entry"
+    assert selected_model.decision_threshold == pytest.approx(1.0)
+    assert selected_model.long_decision_threshold == pytest.approx(1.0)
+    assert selected_model.short_decision_threshold is None
     assert selected_model.round_selection_gate_passed is False
     assert "closed_trades<5" in selected_model.round_selection_reject_reason
     assert "round_selection_gate_failed_diagnostic_holdout_only" in selected_model.quality_warnings
+    assert "round_selection_failed_no_entry_enforced" in selected_model.quality_warnings
     assert getattr(selected_model, "meta_label_policy", {}) == {}
 
 
@@ -1351,9 +1366,9 @@ def test_train_round_model_uses_rejected_best_threshold_for_diagnostics(
     )
 
     def fake_run_backtest(_rows, candidate_model, *_args, **_kwargs):
-        uses_diagnostic_threshold = abs(float(candidate_model.decision_threshold or 0.0) - 0.61) <= 1e-12
-        realized = -8.0 if uses_diagnostic_threshold else 0.0
-        closed = 4 if uses_diagnostic_threshold else 0
+        uses_no_entry_threshold = abs(float(candidate_model.decision_threshold or 0.0) - 1.0) <= 1e-12
+        realized = 0.0 if uses_no_entry_threshold else -8.0
+        closed = 0 if uses_no_entry_threshold else 4
         return BacktestResult(
             starting_cash=1000.0,
             ending_cash=1000.0 + realized,
@@ -1388,8 +1403,10 @@ def test_train_round_model_uses_rejected_best_threshold_for_diagnostics(
 
     assert len(holdout_rows) == 25
     assert selected_model.round_selection_gate_passed is False
-    assert selected_model.threshold_source == "round_selection_rejected_best_threshold_diagnostic"
-    assert selected_model.decision_threshold == pytest.approx(0.61)
+    assert selected_model.threshold_source == "round_selection_rejected_no_entry_diagnostic_recorded"
+    assert selected_model.decision_threshold == pytest.approx(1.0)
+    assert selected_model.long_decision_threshold == pytest.approx(1.0)
+    assert selected_model.short_decision_threshold is None
     assert selected_model.threshold_calibration_trades == 4
     assert selected_model.threshold_calibration_pnl == pytest.approx(-8.0)
     assert selected_model.threshold_diagnostic_best_threshold == pytest.approx(0.61)
@@ -1434,75 +1451,88 @@ def test_train_round_model_promotes_accepted_hybrid_model_zoo(
         lambda calibration_rows, _model, **_kwargs: SimpleNamespace(status="fail", rows=len(calibration_rows)),
     )
     monkeypatch.setattr(
-        oe,
-        "calibrate_threshold_for_backtest",
-        lambda *_args, **_kwargs: SimpleNamespace(
-            accepted=False,
-            threshold=0.66,
-            score=-1.0,
-            realized_pnl=-1.0,
-            closed_trades=0,
-            best_threshold=0.66,
-            best_score=-1.0,
-            best_realized_pnl=-1.0,
-            best_closed_trades=0,
-            best_long_threshold=0.66,
-            best_short_threshold=0.34,
-            scoring_backend_kind="directml",
+            oe,
+            "calibrate_threshold_for_backtest",
+            lambda *_args, **_kwargs: SimpleNamespace(
+                accepted=True,
+                threshold=0.66,
+                score=0.10,
+                realized_pnl=12.0,
+                closed_trades=6,
+                best_threshold=0.66,
+                best_score=0.10,
+                best_realized_pnl=12.0,
+                best_closed_trades=6,
+                best_long_threshold=0.66,
+                best_short_threshold=0.34,
+                scoring_backend_kind="directml",
             scoring_backend_device="privateuseone:0",
             scoring_backend_reason="",
-        ),
-    )
-
-    def rejected_base_backtest(_rows, _candidate_model, *_args, **_kwargs):
-        return BacktestResult(
-            starting_cash=1000.0,
-            ending_cash=999.0,
-            realized_pnl=-1.0,
-            win_rate=0.0,
-            trades=1,
-            max_drawdown=0.01,
-            closed_trades=1,
-            gross_exposure=100.0,
-            total_fees=1.0,
-            stopped_by_drawdown=False,
-            max_exposure=100.0,
-            trades_per_day_cap_hit=0,
-            buy_hold_pnl=0.0,
-            edge_vs_buy_hold=-1.0,
-            gross_profit=0.0,
-            gross_loss=1.0,
-            profit_factor=0.0,
-            expectancy=-1.0,
-            max_consecutive_losses=1,
+            ),
         )
 
-    def accepted_hybrid_backtest() -> BacktestResult:
-        trade_pnls = tuple([4.0] * 6)
+    def profitable_backtest(per_trade_pnl: float) -> BacktestResult:
+        closed_trades = 6
+        trade_pnls = tuple([per_trade_pnl] * closed_trades)
+        realized_pnl = sum(trade_pnls)
+        total_fees = 0.1 * closed_trades
+        trade_returns = tuple(value / 1000.0 for value in trade_pnls)
+        trade_log = tuple(
+            {
+                "opened_at": int(index * 120_000),
+                "closed_at": int(index * 120_000 + 60_000),
+                "side": 1,
+                "gross_notional": 100.0,
+                "entry_price": 100.0,
+                "exit_mark_price": 100.0 + per_trade_pnl + 0.1,
+                "realized_pnl": float(per_trade_pnl + 0.1),
+                "net_pnl": float(per_trade_pnl),
+                "return_pct": float(trade_returns[index]),
+                "entry_fee": 0.05,
+                "exit_fee": 0.05,
+                "exit_reason": "take_profit_close",
+            }
+            for index in range(closed_trades)
+        )
+        ending_cash = 1000.0 + realized_pnl
+        equity_curve = (
+            {"timestamp": 0, "equity": 1000.0, "drawdown": 0.0, "position_side": 0},
+            {"timestamp": 60_000, "equity": 999.0, "drawdown": 0.001, "position_side": 0},
+            {"timestamp": 120_000, "equity": ending_cash, "drawdown": 0.0, "position_side": 0},
+        )
         return BacktestResult(
             starting_cash=1000.0,
-            ending_cash=1024.0,
-            realized_pnl=24.0,
+            ending_cash=ending_cash,
+            realized_pnl=realized_pnl,
             win_rate=1.0,
-            trades=6,
-            max_drawdown=0.005,
-            closed_trades=6,
+            trades=closed_trades,
+            max_drawdown=0.001,
+            closed_trades=closed_trades,
             gross_exposure=100.0,
-            total_fees=1.0,
+            total_fees=total_fees,
             stopped_by_drawdown=False,
             max_exposure=100.0,
             trades_per_day_cap_hit=0,
             buy_hold_pnl=0.0,
-            edge_vs_buy_hold=24.0,
+            edge_vs_buy_hold=realized_pnl,
+            equity_curve=equity_curve,
             trade_pnls=trade_pnls,
-            trade_returns=tuple(value / 1000.0 for value in trade_pnls),
-            gross_profit=24.0,
+            trade_returns=trade_returns,
+            trade_log=trade_log,
+            gross_profit=realized_pnl,
             gross_loss=0.0,
             profit_factor=999.0,
-            expectancy=4.0,
-            average_trade_return=0.004,
+            expectancy=realized_pnl / closed_trades,
+            average_trade_return=sum(trade_returns) / len(trade_returns),
+            trade_return_stdev=0.0,
             max_consecutive_losses=0,
         )
+
+    def accepted_base_backtest(_rows, _candidate_model, *_args, **_kwargs):
+        return profitable_backtest(2.0)
+
+    def accepted_hybrid_backtest() -> BacktestResult:
+        return profitable_backtest(4.0)
 
     def fake_hybrid(model, training_rows, selection_rows, strategy, **kwargs):
         observed["training_rows"] = len(training_rows)
@@ -1523,7 +1553,7 @@ def test_train_round_model_promotes_accepted_hybrid_model_zoo(
             best_result=accepted_hybrid_backtest(),
         )
 
-    monkeypatch.setattr(oe, "run_backtest", rejected_base_backtest)
+    monkeypatch.setattr(oe, "run_backtest", accepted_base_backtest)
     monkeypatch.setattr(oe, "optimize_hybrid_model_zoo", fake_hybrid)
 
     selected_model, _report, _all_rows, holdout_rows = oe.train_round_model(
@@ -1651,34 +1681,193 @@ def test_hybrid_model_zoo_rejection_is_recorded(
     assert phases[-1][1]["accepted"] is False
 
 
+def test_hybrid_model_zoo_skips_rejected_base_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0, -1.0), label=index % 2)
+        for index in range(90)
+    ]
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    candidate = oe.RoundModelCandidate(
+        name="default",
+        feature_cfg=oe.default_config_for(objective.name, strategy.enabled_features),
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.66,
+    )
+    model = TrainedModel(
+        weights=[0.1, -0.1],
+        bias=0.0,
+        feature_dim=2,
+        epochs=1,
+        feature_means=[0.0, 0.0],
+        feature_stds=[1.0, 1.0],
+    )
+    model.round_selection_gate_passed = False
+    candidate_result = oe.RoundModelCandidateResult(
+        candidate=candidate,
+        score=-1.0,
+        model=model,
+        report=SimpleNamespace(),
+        selection_result=BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0,
+            realized_pnl=0.0,
+            win_rate=0.0,
+            trades=0,
+            max_drawdown=0.0,
+            closed_trades=0,
+            gross_exposure=0.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=0.0,
+            trades_per_day_cap_hit=0,
+        ),
+        selection_reject_reason="selection_gate_failed",
+        training_rows=rows[:60],
+        selection_rows=rows[60:80],
+        rows=[],
+        validation_rows=rows[80:],
+    )
+    phases: list[tuple[str, dict[str, object]]] = []
+
+    def fail_hybrid(*_args, **_kwargs):
+        raise AssertionError("hybrid optimizer should not run after base selection gate failure")
+
+    monkeypatch.setattr(oe, "optimize_hybrid_model_zoo", fail_hybrid)
+
+    updated = oe._select_hybrid_model_zoo_if_accepted(
+        candidate_result,
+        strategy,
+        objective,
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="directml",
+        batch_size=1024,
+        status_callback=lambda phase, payload: phases.append((phase, dict(payload))),
+    )
+
+    assert updated.selection_result is candidate_result.selection_result
+    assert updated.model.hybrid_profile == "base_selection_gate_failed"
+    assert updated.model.hybrid_base_score == pytest.approx(-1.0)
+    assert updated.model.hybrid_best_score is None
+    assert updated.model.hybrid_evaluated_profiles == 0
+    assert [phase for phase, _payload in phases] == ["hybrid_model_zoo_skipped"]
+    assert phases[0][1]["reason"] == "base_selection_gate_failed"
+
+
 def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
     strategy = StrategyConfig(signal_threshold=0.66)
     objective = get_objective("conservative")
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=14)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=16)
 
     assert [candidate.name for candidate in candidates[:3]] == [
         "default",
-        "intraday_activity_triple_barrier",
-        "intraday_downside_triple_barrier",
+        "session_volatility_triple_barrier",
+        "session_downside_volatility_triple_barrier",
     ]
-    assert len(candidates) == 14
+    assert len(candidates) == 16
     assert candidates[1].stop_loss_multiplier < 1.0
     assert candidates[1].take_profit_multiplier < 1.0
     assert candidates[1].cooldown_multiplier < 1.0
+    assert any(candidate.name == "session_volatility_triple_barrier" for candidate in candidates)
+    assert any(candidate.name == "session_downside_volatility_triple_barrier" for candidate in candidates)
+    assert any(candidate.name == "order_flow_pressure_volatility_barrier" for candidate in candidates)
+    assert any(candidate.name == "downside_order_flow_volatility_barrier" for candidate in candidates)
     assert any(candidate.name == "intraday_breakout_forward" for candidate in candidates)
     assert any(candidate.name == "intraday_activity_triple_barrier" for candidate in candidates)
     assert any(candidate.name == "intraday_downside_triple_barrier" for candidate in candidates)
-    assert any(candidate.name == "order_flow_pressure_triple_barrier" for candidate in candidates)
-    assert any(candidate.name == "downside_order_flow_pressure" for candidate in candidates)
     thresholds = [candidate.signal_threshold for candidate in candidates]
     assert min(thresholds) == pytest.approx(0.56)
     assert max(thresholds) == pytest.approx(0.70)
     assert any(candidate.name.startswith("lower_signal") for candidate in candidates)
     assert any(candidate.name == "frequency_probe_forward" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_mode == "volatility_triple_barrier" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_mode == "downside_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "downside_triple_barrier" for candidate in candidates)
+
+
+def test_failed_candidate_ranking_prefers_no_loss_over_losing_trade() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    safe_candidate, losing_candidate = oe._round_model_candidates(objective, strategy, feature_cfg, 2)
+
+    def rejected_model(name: str, diagnostic_pnl: float) -> TrainedModel:
+        model = TrainedModel(
+            weights=[1.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            model_family=name,
+        )
+        model.round_selection_gate_passed = False
+        model.threshold_diagnostic_best_pnl = diagnostic_pnl
+        model.threshold_diagnostic_best_trades = 1
+        return model
+
+    def result(
+        candidate: oe.RoundModelCandidate,
+        model: TrainedModel,
+        *,
+        realized_pnl: float,
+        closed_trades: int,
+        score: float,
+    ) -> oe.RoundModelCandidateResult:
+        return oe.RoundModelCandidateResult(
+            candidate=candidate,
+            score=score,
+            model=model,
+            report=SimpleNamespace(row_count=10, positive_rate=0.5),
+            selection_result=BacktestResult(
+                starting_cash=1000.0,
+                ending_cash=1000.0 + realized_pnl,
+                realized_pnl=realized_pnl,
+                win_rate=0.0,
+                trades=closed_trades,
+                max_drawdown=abs(realized_pnl) / 1000.0,
+                closed_trades=closed_trades,
+                gross_exposure=100.0 if closed_trades else 0.0,
+                total_fees=0.04 if closed_trades else 0.0,
+                stopped_by_drawdown=False,
+                max_exposure=100.0 if closed_trades else 0.0,
+                trades_per_day_cap_hit=0,
+                buy_hold_pnl=-1.0,
+                edge_vs_buy_hold=realized_pnl + 1.0,
+                profit_factor=0.0,
+                expectancy=realized_pnl / closed_trades if closed_trades else 0.0,
+            ),
+            selection_reject_reason="realized_pnl<=0.0",
+            training_rows=[],
+            selection_rows=[],
+            rows=[],
+            validation_rows=[],
+        )
+
+    no_loss = result(
+        safe_candidate,
+        rejected_model("safe", diagnostic_pnl=-1.0),
+        realized_pnl=0.0,
+        closed_trades=0,
+        score=0.0,
+    )
+    losing = result(
+        losing_candidate,
+        rejected_model("losing", diagnostic_pnl=-0.1),
+        realized_pnl=-0.5,
+        closed_trades=1,
+        score=0.1,
+    )
+
+    assert oe._round_candidate_rank_key(no_loss) > oe._round_candidate_rank_key(losing)
 
 
 def test_train_round_model_selects_best_scored_candidate(
@@ -1765,13 +1954,13 @@ def test_train_round_model_selects_best_scored_candidate(
     assert calls["train"] == 2
     assert selected_model.model_family.startswith("candidate_2")
     assert selected_model.model_candidate_count == 2
-    assert selected_model.model_selected_candidate == "intraday_activity_triple_barrier"
+    assert selected_model.model_selected_candidate == "session_volatility_triple_barrier"
     assert selected_model.model_selection_score > 0.0
     assert "model_selected_candidate" in selected_model.__dataclass_fields__
     assert len(selected_model.round_candidate_diagnostics) == 2
     assert selected_model.round_candidate_diagnostics[0]["name"] == "default"
     assert selected_model.round_candidate_diagnostics[0]["selected"] is False
-    assert selected_model.round_candidate_diagnostics[1]["name"] == "intraday_activity_triple_barrier"
+    assert selected_model.round_candidate_diagnostics[1]["name"] == "session_volatility_triple_barrier"
     assert selected_model.round_candidate_diagnostics[1]["selected"] is True
     assert selected_model.round_candidate_diagnostics[1]["threshold_diagnostic_best_trades"] == 0
     assert report.row_count == 60
@@ -1861,7 +2050,7 @@ def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
         model_candidate_count=2,
     )
 
-    assert selected_model.model_selected_candidate == "intraday_activity_triple_barrier"
+    assert selected_model.model_selected_candidate == "session_volatility_triple_barrier"
     assert selected_model.round_selection_gate_passed is False
     assert selected_model.threshold_diagnostic_best_pnl == pytest.approx(-2.0)
     assert selected_model.round_candidate_diagnostics[0]["selected"] is False
@@ -2258,8 +2447,11 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
     )
     model.round_selection_gate_passed = False
     model.round_selection_reject_reason = "closed_trades<5; profit_factor<1.1"
-    model.threshold_source = "round_selection_rejected_diagnostic_holdout"
-    model.quality_warnings = ["round_selection_gate_failed_diagnostic_holdout_only"]
+    model.threshold_source = "round_selection_rejected_no_entry_diagnostic_recorded"
+    model.quality_warnings = [
+        "round_selection_gate_failed_diagnostic_holdout_only",
+        "round_selection_failed_no_entry_enforced",
+    ]
     model.round_candidate_diagnostics = [
         {
             "name": "default",
@@ -2356,7 +2548,7 @@ def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_t
     assert "selection_gate_failed" in str(metric["reason"])
     assert metric["round_selection_gate_passed"] is False
     assert metric["round_selection_reject_reason"] == "closed_trades<5; profit_factor<1.1"
-    assert metric["threshold_source"] == "round_selection_rejected_diagnostic_holdout"
+    assert metric["threshold_source"] == "round_selection_rejected_no_entry_diagnostic_recorded"
     assert metric["candidate_diagnostics_path"].endswith("candidate-diagnostics.csv")
     assert report["candidate_diagnostics_csv_path"].endswith("candidate-diagnostics.csv")
     assert report["candidate_diagnostics_json_path"].endswith("candidate-diagnostics.json")

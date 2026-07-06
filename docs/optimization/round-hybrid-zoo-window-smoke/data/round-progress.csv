@@ -1,2 +1,0 @@
-round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,total_closed_trades,zero_trade_symbol_count,profitable_symbol_count,critical_verdict,mean_low_liquidity_sample_rate_pct
-round-hybrid-zoo-window-smoke,2026-07-06T21:22:52.791175Z,3,0,-0.20266697116533502,-0.06019871112706596,-0.892736678662348,0.6900697074970129,0.7335800392426325,0.4882866561730907,9,9,0,0,fail,40.543870722567874

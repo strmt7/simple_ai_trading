@@ -1,4 +1,3 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-oriented-diverse-window-smoke,2026-07-06T19:01:20.967836Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.20266697116533502,-0.06019871112706596,-0.892736678662348,0.4882866561730907,9
-round-locked-oriented-diverse-window-smoke,2026-07-06T20:16:44.020514Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.20266697116533502,-0.06019871112706596,-0.892736678662348,0.4882866561730907,9
 round-hybrid-zoo-window-smoke,2026-07-06T21:22:53.706241Z,futures,1s,conservative,fail,False,not_requested,3,0,-0.20266697116533502,-0.06019871112706596,-0.892736678662348,0.4882866561730907,9
+round-volatility-barrier-window-smoke,2026-07-06T23:34:47.096527Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.8883681696646504,0.0,0

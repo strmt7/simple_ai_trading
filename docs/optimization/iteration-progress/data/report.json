@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1521,
+      "bytes": 1501,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "17f3c06b78b5680aa9a417326c9e5e08b48e50df483aeb37e60cb7125eed96b6"
+      "sha256": "cb0aca806ad406bb7d3032cec73d9128b1b737f2a0e589dfbcf7cbaf167fe1ee"
     },
     {
-      "bytes": 847,
+      "bytes": 594,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 3,
-      "sha256": "830c3acc7519ea68abfc45d6f67b57c98448f022f1ecbcabd99c269c9cdd3480"
+      "row_count": 2,
+      "sha256": "386df4bb05a466f0ba019379a48e9bae6cd744ecf0d35188dce85425a420f1c8"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T21:22:53.922709Z",
-  "latest_round_id": "round-hybrid-zoo-window-smoke",
+  "generated_at_utc": "2026-07-06T23:34:47.295861Z",
+  "latest_round_id": "round-volatility-barrier-window-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 3,
+  "source_report_count": 2,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",
