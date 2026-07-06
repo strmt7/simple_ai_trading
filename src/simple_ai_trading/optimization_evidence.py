@@ -24,7 +24,7 @@ from .advanced_model import (
     train_advanced,
 )
 from .api import BinanceAPIError, BinanceClient, Candle
-from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol
+from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol, major_symbols_for_quote
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
 from .compute import resolve_backend
 from .data_coverage import describe_candle_coverage, iso_utc
@@ -314,6 +314,114 @@ def _finite(value: object, default: float = 0.0) -> float:
     return parsed if math.isfinite(parsed) else default
 
 
+def _promotion_min_rows(min_data_years: float, interval: str) -> int:
+    seconds = max(0.0, _finite(min_data_years, 0.0)) * 365.25 * 24 * 60 * 60
+    interval_ms = max(1, interval_milliseconds(interval))
+    return int(math.floor(seconds * 1000.0 / interval_ms))
+
+
+def _normalize_symbol_list(symbols: Sequence[str] | None) -> list[str]:
+    return [str(symbol).strip().upper() for symbol in (symbols or []) if str(symbol).strip()]
+
+
+def _promotion_required_symbols(quote_asset: str) -> list[str]:
+    return list(major_symbols_for_quote(quote_asset))
+
+
+def _validate_promotion_symbol_scope(symbols: Sequence[str], quote_asset: str) -> None:
+    required = _promotion_required_symbols(quote_asset)
+    requested = list(dict.fromkeys(_normalize_symbol_list(symbols)))
+    if sorted(requested) != sorted(required):
+        raise ValueError(
+            "promotion_grade_requires_exact_btc_eth_sol_scope: "
+            f"required={','.join(required)} requested={','.join(requested) or 'none'}"
+        )
+
+
+def promotion_grade_contract(
+    *,
+    market_type: str,
+    quote_asset: str,
+    interval: str,
+    selected_symbols: Sequence[str],
+    data_health: Sequence[Mapping[str, object]],
+    critical_analysis: Mapping[str, object],
+    require_prefilled_data: bool,
+    require_verified_checksum: bool,
+    min_data_rows: int,
+    min_data_years: float,
+    min_coverage_ratio: float,
+    max_gap_count: int,
+    require_gpu: bool,
+    backend_kind: str,
+) -> dict[str, object]:
+    """Return the fail-closed contract for publishable day-trading evidence."""
+
+    required = _promotion_required_symbols(quote_asset)
+    selected = list(dict.fromkeys(_normalize_symbol_list(selected_symbols)))
+    reasons: list[str] = []
+    if str(interval) != "1s":
+        reasons.append("interval_not_1s")
+    if sorted(selected) != sorted(required):
+        reasons.append("symbol_scope_not_exact_btc_eth_sol")
+    if not require_prefilled_data:
+        reasons.append("network_backfill_not_disabled")
+    if not require_verified_checksum:
+        reasons.append("verified_archive_checksum_not_required")
+    if min_data_rows < _promotion_min_rows(min_data_years, interval):
+        reasons.append("min_data_rows_below_promotion_year_requirement")
+    if min_coverage_ratio < 0.995:
+        reasons.append("coverage_ratio_gate_below_99_5_percent")
+    if max_gap_count != 0:
+        reasons.append("gap_gate_allows_missing_seconds")
+    if require_gpu and str(backend_kind).lower() == "cpu":
+        reasons.append("gpu_required_but_backend_cpu")
+
+    health_by_symbol = {str(item.get("symbol") or "").upper(): item for item in data_health if isinstance(item, Mapping)}
+    for symbol in required:
+        health = health_by_symbol.get(symbol)
+        if health is None:
+            reasons.append(f"missing_data_health:{symbol}")
+            continue
+        if health.get("status") != "ok":
+            reasons.append(f"data_health_failed:{symbol}")
+        if str(health.get("interval") or "") != "1s":
+            reasons.append(f"data_health_interval_not_1s:{symbol}")
+        if str(health.get("market_type") or "").lower() != str(market_type or "").lower():
+            reasons.append(f"data_health_market_mismatch:{symbol}")
+        if int(health.get("gap_count") or 0) != 0:
+            reasons.append(f"data_health_gaps:{symbol}")
+        if float(health.get("coverage_ratio") or 0.0) < min_coverage_ratio:
+            reasons.append(f"data_health_coverage_below_gate:{symbol}")
+        if float(health.get("span_years") or 0.0) < max(0.0, _finite(min_data_years, 0.0)):
+            reasons.append(f"data_health_span_years_below_gate:{symbol}")
+        checksum_counts = health.get("checksum_status_counts")
+        if not isinstance(checksum_counts, Mapping) or int(checksum_counts.get("verified", 0) or 0) <= 0:
+            reasons.append(f"data_health_missing_verified_checksum:{symbol}")
+
+    if critical_analysis.get("verdict") != "pass":
+        reasons.append("critical_analysis_not_pass")
+    status = "pass" if not reasons else "block"
+    return {
+        "status": status,
+        "reasons": sorted(dict.fromkeys(reasons)),
+        "required_symbols": required,
+        "selected_symbols": selected,
+        "required_interval": "1s",
+        "market_type": str(market_type or "").lower(),
+        "quote_asset": str(quote_asset or "").upper(),
+        "require_prefilled_data": bool(require_prefilled_data),
+        "require_verified_checksum": bool(require_verified_checksum),
+        "min_data_rows": int(min_data_rows),
+        "min_data_years": float(max(0.0, _finite(min_data_years, 0.0))),
+        "min_coverage_ratio": float(min_coverage_ratio),
+        "max_gap_count": int(max_gap_count),
+        "require_gpu": bool(require_gpu),
+        "backend_kind": str(backend_kind),
+        "critical_verdict": str(critical_analysis.get("verdict") or "unknown"),
+    }
+
+
 def effective_leverage_for_market(strategy: StrategyConfig, market_type: str) -> float:
     """Return the leverage that can actually affect fills for the market type."""
 
@@ -382,6 +490,7 @@ def market_data_health_for_symbol(
     min_coverage_ratio: float = 0.995,
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
+    min_span_years: float = 0.0,
 ) -> dict[str, object]:
     """Return a fail-closed health report for one optimization data series."""
 
@@ -393,10 +502,22 @@ def market_data_health_for_symbol(
     min_rows = max(0, int(min_rows))
     max_gap_count = max(0, int(max_gap_count))
     min_coverage_ratio = max(0.0, min(1.0, float(min_coverage_ratio)))
+    min_span_years = max(0.0, _finite(min_span_years, 0.0))
+    first_open_time = quality.coverage.first_open_time
+    last_open_time = quality.coverage.last_open_time
+    span_ms = (
+        max(0, int(last_open_time) - int(first_open_time))
+        if first_open_time is not None and last_open_time is not None
+        else 0
+    )
+    span_days = span_ms / (24 * 60 * 60 * 1000)
+    span_years = span_days / 365.25
     reasons: list[str] = []
     warnings: list[str] = []
     if quality.coverage.count < min_rows:
         reasons.append(f"rows_below_min:{quality.coverage.count}/{min_rows}")
+    if span_years < min_span_years:
+        reasons.append(f"span_years_below_min:{span_years:.6f}/{min_span_years:.6f}")
     if quality.gap_count > max_gap_count:
         reasons.append(f"gap_count_above_max:{quality.gap_count}/{max_gap_count}")
     if quality.coverage_ratio < min_coverage_ratio:
@@ -427,6 +548,8 @@ def market_data_health_for_symbol(
         "expected_rows": quality.expected_count,
         "first_open_time": quality.coverage.first_open_time,
         "last_open_time": quality.coverage.last_open_time,
+        "span_days": span_days,
+        "span_years": span_years,
         "coverage_ratio": quality.coverage_ratio,
         "gap_count": quality.gap_count,
         "archive_status_counts": archive_status_counts,
@@ -557,6 +680,7 @@ def select_data_healthy_top_liquidity_symbols(
     min_coverage_ratio: float = 0.995,
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
+    min_span_years: float = 0.0,
     max_scan: int = 1000,
 ) -> tuple[list[SelectedSymbol], list[dict[str, object]]]:
     """Return live-ranked symbols that also pass local market-data health gates."""
@@ -583,6 +707,7 @@ def select_data_healthy_top_liquidity_symbols(
             min_coverage_ratio=min_coverage_ratio,
             max_gap_count=max_gap_count,
             require_verified_checksum=require_verified_checksum,
+            min_span_years=min_span_years,
         )
         if health.get("status") == "ok":
             selected.append(replace(item, rank=len(selected) + 1))
@@ -592,6 +717,7 @@ def select_data_healthy_top_liquidity_symbols(
                 "symbol": item.symbol,
                 "tier": item.tier,
                 "rows": int(health.get("rows") or 0),
+                "span_years": float(health.get("span_years") or 0.0),
                 "coverage_ratio": float(health.get("coverage_ratio") or 0.0),
                 "gap_count": int(health.get("gap_count") or 0),
                 "reasons": list(health.get("reasons") or []),
@@ -1498,9 +1624,28 @@ def build_round_evidence(
     max_gap_count: int = 0,
     require_verified_checksum: bool = False,
     require_gpu: bool = False,
+    promotion_grade: bool = False,
+    min_promotion_data_years: float = 2.0,
     use_objective_strategy_defaults: bool = False,
     model_candidate_count: int = 1,
 ) -> dict[str, object]:
+    promotion_grade = bool(promotion_grade)
+    min_promotion_data_years = max(0.0, _finite(min_promotion_data_years, 0.0))
+    min_coverage_ratio = max(0.0, min(1.0, _finite(min_coverage_ratio, 0.995)))
+    max_gap_count = max(0, int(max_gap_count))
+    min_data_rows = max(0, int(min_data_rows))
+    if promotion_grade:
+        interval = "1s"
+        required_symbols = _promotion_required_symbols(quote_asset)
+        if symbols:
+            _validate_promotion_symbol_scope(symbols, quote_asset)
+        symbols = required_symbols
+        symbol_count = len(required_symbols)
+        require_prefilled_data = True
+        require_verified_checksum = True
+        min_coverage_ratio = max(min_coverage_ratio, 0.995)
+        max_gap_count = 0
+        min_data_rows = max(min_data_rows, _promotion_min_rows(min_promotion_data_years, interval))
     if market_type == "futures" and str(interval) == "1s":
         if not require_prefilled_data:
             raise ValueError("futures 1s optimization requires prefilled aggTrades-derived candles")
@@ -1552,6 +1697,7 @@ def build_round_evidence(
             min_coverage_ratio=min_coverage_ratio,
             max_gap_count=max_gap_count,
             require_verified_checksum=require_verified_checksum,
+            min_span_years=min_promotion_data_years if promotion_grade else 0.0,
         )
     else:
         selected = select_top_liquidity_symbols(client, evidence_strategy, quote_asset=quote_asset, count=symbol_count)
@@ -1610,6 +1756,7 @@ def build_round_evidence(
                 min_coverage_ratio=min_coverage_ratio,
                 max_gap_count=max_gap_count,
                 require_verified_checksum=require_verified_checksum,
+                min_span_years=min_promotion_data_years if promotion_grade else 0.0,
             )
             data_health.append(health)
             write_status(
@@ -2076,6 +2223,31 @@ def build_round_evidence(
     }
     _write_csv(paths.progress_csv_path, [progress], tuple(progress.keys()))
     write_json_atomic(paths.data_health_path, data_health, indent=2, sort_keys=True)
+    promotion_contract = (
+        promotion_grade_contract(
+            market_type=market_type,
+            quote_asset=quote_asset,
+            interval=interval,
+            selected_symbols=[item.symbol for item in selected],
+            data_health=data_health,
+            critical_analysis=critical_analysis,
+            require_prefilled_data=require_prefilled_data,
+            require_verified_checksum=require_verified_checksum,
+            min_data_rows=min_data_rows,
+            min_data_years=min_promotion_data_years,
+            min_coverage_ratio=min_coverage_ratio,
+            max_gap_count=max_gap_count,
+            require_gpu=require_gpu,
+            backend_kind=backend_info.kind,
+        )
+        if promotion_grade
+        else {
+            "status": "not_requested",
+            "reasons": [],
+            "required_symbols": _promotion_required_symbols(quote_asset),
+            "selected_symbols": [item.symbol for item in selected],
+        }
+    )
     write_status(
         "round_complete",
         status="complete",
@@ -2103,6 +2275,9 @@ def build_round_evidence(
         "quote_asset": quote_asset,
         "interval": interval,
         "objective": objective.name,
+        "promotion_grade": bool(promotion_grade),
+        "promotion_grade_contract": promotion_contract,
+        "min_promotion_data_years": float(min_promotion_data_years),
         "use_objective_strategy_defaults": bool(use_objective_strategy_defaults),
         "strategy": evidence_strategy.asdict(),
         "configured_leverage": float(evidence_strategy.leverage),
@@ -2151,6 +2326,7 @@ __all__ = [
     "effective_leverage_for_market",
     "make_evidence_paths",
     "market_data_health_for_symbol",
+    "promotion_grade_contract",
     "render_comparison_svg",
     "select_data_healthy_top_liquidity_symbols",
     "select_named_symbols",

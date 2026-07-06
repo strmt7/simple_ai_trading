@@ -13,6 +13,11 @@ results, or generated performance charts as optimization evidence.
   `tracked_repo_artifact: true`, list every tracked graph/data artifact, and
   include an `artifact_integrity` manifest with SHA-256 hashes, byte counts, and
   CSV row/column counts for every tracked artifact other than the report itself.
+- Per-round optimization result graphs are latest-only on GitHub. Historical
+  round CSV/JSON evidence may remain only when it is still valid and manifested,
+  but SVG/PNG result charts from older iterations must be removed. Cross-round
+  movement belongs in the single generated `docs/optimization/iteration-progress`
+  CSV/SVG artifact, which is rebuilt from machine-readable round reports.
 - No docs may present test-double output, unit-test candles, or generated
   regression scenarios as financial performance.
 - Backtest and model-lab reports must identify symbol, market, interval, UTC
@@ -22,6 +27,13 @@ results, or generated performance charts as optimization evidence.
   source used to aggregate real trades into one-second OHLCV candles; it must
   not be described as USD-M futures kline evidence. No-trade seconds may only
   be represented as carry-forward candles with zero volume and zero trade count.
+- Promotion-grade day-trading optimization evidence must be generated with
+  `tools/optimization_round.py --promotion-grade`. That contract is limited to
+  the exact BTC/ETH/SOL trio for the selected quote asset, `1s` data, prefilled
+  SQLite candles, verified archive checksums, zero missing-second gaps, and the
+  configured minimum stored history span. The generated `report.json` must
+  include `promotion_grade_contract.status: pass`; otherwise any ROI, P&L,
+  drawdown, win-rate, profit-factor, or chart output is research-only.
 - Real local run artifacts belong under ignored `data/` and must be regenerated
   from source APIs, not committed as authoritative repo data.
 - Tests may use deterministic test doubles to exercise edge cases, but those

@@ -10,6 +10,7 @@ from .api import BinanceAPIError, BinanceClient, Candle
 from .data_coverage import DataCoverageReport, describe_candle_coverage
 from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
 from .intervals import max_limit
+from .market_store import MarketDataStore
 from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
 from .market_data import clean_candles
 from .model import ModelLoadError, load_model, serialize_model
@@ -60,6 +61,9 @@ class ModelLabReport:
     quote_asset: str
     interval: str
     market_type: str
+    data_source: str
+    market_db_path: str | None
+    require_db_data: bool
     requested_objectives: list[str]
     universe: dict[str, object]
     outcomes: list[SymbolResearchOutcome]
@@ -78,6 +82,9 @@ class ModelLabReport:
             "quote_asset": self.quote_asset,
             "interval": self.interval,
             "market_type": self.market_type,
+            "data_source": self.data_source,
+            "market_db_path": self.market_db_path,
+            "require_db_data": self.require_db_data,
             "requested_objectives": list(self.requested_objectives),
             "universe": self.universe,
             "accepted_symbols": self.accepted_symbols,
@@ -124,6 +131,21 @@ def _candles_for_symbol_full_history(
             break
         end_time = next_end
     return clean_candles(candles_by_open_time.values())
+
+
+def _candles_for_symbol_from_db(
+    symbol: str,
+    *,
+    market_type: str,
+    interval: str,
+    db_path: Path,
+) -> list[Candle]:
+    with MarketDataStore(db_path) as store:
+        candles = store.fetch_candles(symbol, market_type, interval)
+    cleaned = clean_candles(candles)
+    if not cleaned:
+        raise ValueError(f"market database has no candles for {symbol} {market_type} {interval}")
+    return cleaned
 
 
 def _load_model_lab_learning_feedback(
@@ -578,10 +600,17 @@ def run_model_lab(
     max_candidates: int | None = None,
     learning_feedback_path: Path | None = None,
     full_history: bool = False,
+    market_db_path: Path | None = None,
+    require_db_data: bool = False,
 ) -> ModelLabReport:
     """Rank liquid symbols, train all risk objectives, and write a lab report."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    if require_db_data and market_db_path is None:
+        market_db_path = Path("data/market_data.sqlite")
+    if market_db_path is not None and full_history:
+        raise ValueError("--market-db and --full-history are mutually exclusive data sources")
+    data_source = "sqlite_market_data" if market_db_path is not None else ("binance_full_history" if full_history else "binance_recent_limit")
     learning_report, learning_source_path = _load_model_lab_learning_feedback(learning_feedback_path)
     learning_summary = _learning_feedback_summary(learning_report, learning_source_path)
     universe = rank_high_liquidity_universe(
@@ -602,7 +631,14 @@ def run_model_lab(
         candles: list[Candle] = []
         try:
             candles = (
-                _candles_for_symbol_full_history(
+                _candles_for_symbol_from_db(
+                    symbol,
+                    market_type=runtime.market_type,
+                    interval=runtime.interval,
+                    db_path=market_db_path,
+                )
+                if market_db_path is not None
+                else _candles_for_symbol_full_history(
                     client,
                     symbol,
                     runtime.interval,
@@ -664,7 +700,7 @@ def run_model_lab(
                 available_candles=candles,
                 used_candles=candles,
                 rows_used=int(getattr(suite, "total_rows", 0)),
-                source_scope="binance_full_history" if full_history else "binance_recent_limit",
+                source_scope=data_source,
             )
             learning_feedback = _symbol_learning_feedback(
                 learning_report,
@@ -706,7 +742,7 @@ def run_model_lab(
                     available_candles=candles,
                     used_candles=candles,
                     rows_used=int(exc.row_count),
-                    source_scope="binance_full_history" if full_history else "binance_recent_limit",
+                    source_scope=data_source,
                 ).asdict()
                 if candles
                 else None
@@ -730,7 +766,7 @@ def run_model_lab(
                     available_candles=candles,
                     used_candles=candles,
                     rows_used=0,
-                    source_scope="binance_full_history" if full_history else "binance_recent_limit",
+                    source_scope=data_source,
                 ).asdict()
                 if candles
                 else None
@@ -756,6 +792,9 @@ def run_model_lab(
         quote_asset=runtime.quote_asset,
         interval=runtime.interval,
         market_type=runtime.market_type,
+        data_source=data_source,
+        market_db_path=(str(market_db_path) if market_db_path is not None else None),
+        require_db_data=bool(require_db_data),
         requested_objectives=list(objectives),
         universe=universe.asdict(),
         outcomes=outcomes,
@@ -810,6 +849,9 @@ def run_model_lab(
         quote_asset=runtime.quote_asset,
         interval=runtime.interval,
         market_type=runtime.market_type,
+        data_source=data_source,
+        market_db_path=(str(market_db_path) if market_db_path is not None else None),
+        require_db_data=bool(require_db_data),
         requested_objectives=list(objectives),
         universe=universe.asdict(),
         outcomes=outcomes,

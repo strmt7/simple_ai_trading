@@ -194,6 +194,46 @@ class _SelectionClient:
         ]
 
 
+class _MajorSelectionClient(_SelectionClient):
+    def get_exchange_info(self) -> dict[str, object]:
+        return {
+            "symbols": [
+                {"symbol": "BTCUSDT", "status": "TRADING", "baseAsset": "BTC", "quoteAsset": "USDT"},
+                {"symbol": "ETHUSDT", "status": "TRADING", "baseAsset": "ETH", "quoteAsset": "USDT"},
+                {"symbol": "SOLUSDT", "status": "TRADING", "baseAsset": "SOL", "quoteAsset": "USDT"},
+            ]
+        }
+
+    def get_all_tickers_24h(self) -> list[dict[str, object]]:
+        return [
+            {
+                "symbol": symbol,
+                "quoteVolume": str(2_500_000_000 // index),
+                "count": str(1_200_000 // index),
+                "lastPrice": str(price),
+                "weightedAvgPrice": str(price),
+                "highPrice": str(price * 1.02),
+                "lowPrice": str(price * 0.98),
+            }
+            for index, (symbol, price) in enumerate(
+                (("BTCUSDT", 60000.0), ("ETHUSDT", 3000.0), ("SOLUSDT", 150.0)),
+                start=1,
+            )
+        ]
+
+    def get_all_book_tickers(self) -> list[dict[str, object]]:
+        return [
+            {
+                "symbol": symbol,
+                "bidPrice": str(price),
+                "bidQty": "1000",
+                "askPrice": str(price * 1.00001),
+                "askQty": "1000",
+            }
+            for symbol, price in (("BTCUSDT", 60000.0), ("ETHUSDT", 3000.0), ("SOLUSDT", 150.0))
+        ]
+
+
 class _LowLiquidityClient(_SelectionClient):
     def get_all_tickers_24h(self) -> list[dict[str, object]]:
         return [
@@ -420,6 +460,44 @@ def test_market_data_health_warns_when_archive_error_is_superseded(tmp_path: Pat
     assert health["warnings"] == ["superseded_archive_errors:1"]
 
 
+def test_market_data_health_blocks_span_below_min_years(tmp_path: Path) -> None:
+    db_path = tmp_path / "market.sqlite"
+    archive_url = "https://data.binance.vision/data/spot/daily/klines/ETHUSDT/1s/ETHUSDT-1s-2026-01-01.zip"
+    with MarketDataStore(db_path) as store:
+        store.upsert_candles("ETHUSDT", "spot", "1s", [_candle(0), _candle(1), _candle(2)], source="binance_archive")
+        store.begin_archive_file(
+            url=archive_url,
+            symbol="ETHUSDT",
+            market_type="spot",
+            interval="1s",
+            period="2026-01-01",
+        )
+        store.complete_archive_file(
+            url=archive_url,
+            status="complete",
+            rows_inserted=3,
+            bytes_downloaded=1234,
+            sha256="abc",
+            checksum_sha256="def",
+            checksum_status="verified",
+        )
+
+    health = oe.market_data_health_for_symbol(
+        db_path=db_path,
+        symbol="ethusdt",
+        market_type="spot",
+        interval="1s",
+        min_rows=3,
+        min_coverage_ratio=1.0,
+        require_verified_checksum=True,
+        min_span_years=0.001,
+    )
+
+    assert health["status"] == "block"
+    assert health["span_years"] < 0.001
+    assert any(str(reason).startswith("span_years_below_min:") for reason in health["reasons"])
+
+
 def test_select_data_healthy_top_liquidity_symbols_skips_unhealthy_candidates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -484,6 +562,7 @@ def test_select_data_healthy_top_liquidity_symbols_skips_unhealthy_candidates(
             "symbol": "BADUSDT",
             "tier": "strict-live-eligible-at-selection",
             "rows": 500,
+            "span_years": 0.0,
             "coverage_ratio": 0.5,
             "gap_count": 12,
             "reasons": ["rows_below_min:500/1000"],
@@ -1425,6 +1504,68 @@ def test_build_round_evidence_records_data_health_block_before_training(
     assert integrity[data_health_key]["bytes"] == data_health_path.stat().st_size
     persisted_report = json.loads(report_path.read_text(encoding="utf-8"))
     assert persisted_report["artifact_integrity"] == report["artifact_integrity"]
+
+
+def test_promotion_grade_round_forces_major_scope_and_blocks_unverified_data_before_training(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_training(*_args, **_kwargs):
+        raise AssertionError("training should not start without promotion-grade data")
+
+    monkeypatch.setattr(oe, "train_round_model", fail_training)
+
+    report = oe.build_round_evidence(
+        round_id="round-test-promotion-grade",
+        client=_MajorSelectionClient(),
+        strategy=StrategyConfig(),
+        quote_asset="USDT",
+        interval="5m",
+        market_type="futures",
+        objective_name="conservative",
+        data_root=tmp_path / "data" / "optimization",
+        docs_root=tmp_path / "docs" / "optimization",
+        db_path=tmp_path / "market.sqlite",
+        promotion_grade=True,
+        min_promotion_data_years=0.0,
+    )
+
+    assert report["promotion_grade"] is True
+    assert report["interval"] == "1s"
+    assert report["market_type"] == "futures"
+    assert report["require_prefilled_data"] is True
+    assert report["require_verified_checksum"] is True
+    assert report["min_coverage_ratio"] == pytest.approx(0.995)
+    assert report["max_gap_count"] == 0
+    assert report["symbol_count_requested"] == 3
+    assert report["explicit_symbols"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    assert [item["symbol"] for item in report["data_health"]] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    assert all(item["status"] == "block" for item in report["data_health"])
+    assert all(metric["training_rows"] == 0 for metric in report["metrics"])
+    contract = report["promotion_grade_contract"]
+    assert contract["status"] == "block"
+    assert contract["required_symbols"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    assert "critical_analysis_not_pass" in contract["reasons"]
+    assert "data_health_failed:BTCUSDT" in contract["reasons"]
+    assert "data_health_missing_verified_checksum:SOLUSDT" in contract["reasons"]
+
+
+def test_promotion_grade_rejects_incomplete_or_extra_symbol_scope(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="promotion_grade_requires_exact_btc_eth_sol_scope"):
+        oe.build_round_evidence(
+            round_id="round-test-promotion-scope",
+            client=_MajorSelectionClient(),
+            strategy=StrategyConfig(),
+            quote_asset="USDT",
+            symbols=["BTCUSDT", "ETHUSDT"],
+            interval="1s",
+            market_type="futures",
+            objective_name="conservative",
+            data_root=tmp_path / "data" / "optimization",
+            docs_root=tmp_path / "docs" / "optimization",
+            db_path=tmp_path / "market.sqlite",
+            promotion_grade=True,
+        )
 
 
 def test_build_round_evidence_blocks_rejected_selection_but_records_diagnostic_trades(

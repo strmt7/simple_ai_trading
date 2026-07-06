@@ -12,6 +12,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FORBIDDEN_REPO_DATA_PREFIXES = ("data/", "data\\")
 FORBIDDEN_OPTIMIZATION_ARTIFACT_SUFFIXES = (".json", ".svg", ".png", ".csv", ".csv.gz", ".sqlite")
+GRAPH_ARTIFACT_SUFFIXES = (".svg", ".png")
+PROGRESS_GRAPH_PREFIX = "docs/optimization/iteration-progress/"
 FORBIDDEN_DOC_PHRASES = (
     "deterministic_synthetic",
     "synthetic benchmark",
@@ -162,7 +164,21 @@ def _tracked_optimization_artifact_allowed(item: str) -> bool:
 
 def audit() -> list[str]:
     failures: list[str] = []
-    for item in _tracked_files():
+    tracked_files = _tracked_files()
+    optimization_chart_rounds = {
+        normalized.split("/")[2]
+        for normalized in (item.replace("\\", "/") for item in tracked_files)
+        if normalized.lower().startswith("docs/optimization/")
+        and "/charts/" in normalized.lower()
+        and normalized.lower().endswith(GRAPH_ARTIFACT_SUFFIXES)
+        and not normalized.lower().startswith(PROGRESS_GRAPH_PREFIX)
+    }
+    if len(optimization_chart_rounds) > 1:
+        failures.append(
+            "tracked optimization result graphs must be latest-only; "
+            f"found chart artifacts in {', '.join(sorted(optimization_chart_rounds))}"
+        )
+    for item in tracked_files:
         normalized = item.replace("\\", "/")
         lower = normalized.lower()
         path = REPO_ROOT / item

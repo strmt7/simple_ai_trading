@@ -1,0 +1,44 @@
+{
+  "artifact_class": "exchange_sourced_backtest_graph_data",
+  "artifact_integrity": [
+    {
+      "bytes": 1444,
+      "path": "docs/optimization/iteration-progress/charts/progress.svg",
+      "sha256": "5d405442a0bc5f4798fe835a90b64ff0174d62993b2566aac3aa34a1e573a178"
+    },
+    {
+      "bytes": 438,
+      "columns": [
+        "round_id",
+        "generated_at_utc",
+        "market_type",
+        "interval",
+        "objective",
+        "critical_verdict",
+        "promotion_grade",
+        "promotion_status",
+        "symbol_count_completed",
+        "accepted_symbol_count",
+        "mean_roi_pct",
+        "median_roi_pct",
+        "mean_baseline_roi_pct",
+        "worst_max_drawdown_pct",
+        "total_closed_trades"
+      ],
+      "path": "docs/optimization/iteration-progress/data/progress.csv",
+      "row_count": 1,
+      "sha256": "1e1276bcd223741f2a4311d9bfd03dafee9a95743c13ce4aa6587e8e87dff376"
+    }
+  ],
+  "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
+  "generated_at_utc": "2026-07-06T06:02:47.387297Z",
+  "latest_round_id": "round-1s-db-btc-research",
+  "round_id": "iteration-progress",
+  "source_report_count": 1,
+  "tracked_artifacts": [
+    "docs/optimization/iteration-progress/data/report.json",
+    "docs/optimization/iteration-progress/data/progress.csv",
+    "docs/optimization/iteration-progress/charts/progress.svg"
+  ],
+  "tracked_repo_artifact": true
+}
