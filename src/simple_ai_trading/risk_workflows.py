@@ -41,6 +41,10 @@ def command_risk(
         model_path=getattr(args, "model", None),
         require_model_candidate_search=strict_model_evidence,
         require_accelerator_evidence=strict_model_evidence and backend.kind != "cpu",
+        require_live_data_evidence=strict_model_evidence,
+        expected_symbol=runtime.symbol,
+        expected_market_type=runtime.market_type,
+        expected_interval=runtime.interval,
     )
     if getattr(args, "json", False):
         print(json.dumps(report.asdict(), indent=2, sort_keys=True))

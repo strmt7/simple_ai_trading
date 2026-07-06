@@ -42,6 +42,13 @@ results, or generated performance charts as optimization evidence.
   coherent dimensions, bounded probability settings, nonzero accepted rows,
   valid coverage, and bounded risk metrics before they can be presented as
   live-ready or AI-approved.
+- Signed live startup and `risk --live --model` additionally require
+  `execution_validation.data_coverage` in the selected model artifact. That
+  coverage must match the runtime symbol and market, use SQLite-backed `1s`
+  candles, use full available history, span at least one year, show at least
+  `99.5%` coverage, show zero missing-second gaps, and contain positive
+  candle/model-row counts. A runtime interval other than `1s` blocks signed
+  startup even if the model otherwise passes promotion checks.
 
 ## Required Evidence For Performance Claims
 

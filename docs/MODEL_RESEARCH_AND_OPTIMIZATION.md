@@ -487,6 +487,17 @@ in-loop retraining, because an ad hoc model trained during a live session has
 not passed model-lab promotion, stress, robustness, ablation, AI-review, or
 portfolio gates.
 
+Signed live-style startup and `risk --live --model` now also require live data
+evidence from the same model artifact. The serialized model must carry
+`execution_validation.data_coverage` for the selected runtime symbol and market,
+and that evidence must be SQLite-backed `1s` data, full available history, at
+least one year of used span, at least `99.5%` coverage, zero missing-second
+gaps, positive candle/model-row counts, and no hard data-integrity warning.
+If the runtime interval is not `1s`, startup fails before account reconciliation
+or any order loop. This keeps research/paper artifacts usable for experiments
+while preventing minute-level, recent-limit, hand-edited, or wrong-symbol models
+from reaching signed execution.
+
 The same readiness gate now requires `execution_validation` on signed live
 artifacts. `model-lab` stamps each serialized model after it runs
 symbol-specific stress validation and final-model temporal robustness against

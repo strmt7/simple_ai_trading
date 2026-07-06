@@ -48,10 +48,63 @@ def _exchange_account(usdc: str = "1000") -> dict[str, object]:
     }
 
 
-def _promoted_execution_validation(symbol: str = "BTCUSDC") -> dict[str, object]:
+def _live_data_coverage(
+    symbol: str = "BTCUSDC",
+    *,
+    market_type: str = "spot",
+    interval: str = "1s",
+    years: float = 2.0,
+) -> dict[str, object]:
+    rows = int(365.25 * 24 * 60 * 60 * max(0.1, years))
+    return {
+        "symbol": symbol,
+        "market_type": market_type,
+        "interval": interval,
+        "source_scope": "sqlite_market_data",
+        "expected_interval_ms": 1000 if interval == "1s" else 60_000,
+        "integrity_status": "ok",
+        "integrity_warnings": [],
+        "truth_basis": [
+            "prices_from_timestamped_closed_candles",
+            "coverage_measured_from_candle_close_time",
+            "execution_results_are_simulated_not_exchange_fills",
+        ],
+        "full_history_requested": True,
+        "full_available_history_used": True,
+        "candles_available": rows,
+        "candles_used": rows,
+        "rows_used": rows - 100,
+        "requested_start_ms": None,
+        "requested_end_ms": None,
+        "available_start_ms": 0,
+        "available_end_ms": rows * 1000,
+        "used_start_ms": 0,
+        "used_end_ms": rows * 1000,
+        "available_start_utc": "2024-01-01T00:00:00Z",
+        "available_end_utc": "2026-01-01T00:00:00Z",
+        "used_start_utc": "2024-01-01T00:00:00Z",
+        "used_end_utc": "2026-01-01T00:00:00Z",
+        "used_duration_days": years * 365.25,
+        "used_duration_years": years,
+        "gap_count": 0,
+        "largest_gap_ms": 1000,
+        "largest_gap_intervals": 1.0,
+        "coverage_ratio": 1.0,
+        "notes": [],
+    }
+
+
+def _promoted_execution_validation(
+    symbol: str = "BTCUSDC",
+    *,
+    market_type: str = "spot",
+    interval: str = "1s",
+) -> dict[str, object]:
     return {
         "passed": True,
         "symbol": symbol,
+        "market_type": market_type,
+        "interval": interval,
         "walk_forward_gate": {
             "passed": True,
             "reason": None,
@@ -64,6 +117,7 @@ def _promoted_execution_validation(symbol: str = "BTCUSDC") -> dict[str, object]
         "stress": {"accepted": True},
         "temporal_robustness": {"accepted": True},
         "portfolio": {"accepted": True},
+        "data_coverage": _live_data_coverage(symbol, market_type=market_type, interval=interval),
     }
 
 
@@ -1580,7 +1634,7 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
             "trial_penalty": 0.01,
             "deflated_score": 0.11,
         },
-        execution_validation=_promoted_execution_validation(),
+        execution_validation=_promoted_execution_validation(market_type="spot", interval="1s"),
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
         probability_log_loss_after=0.58,
@@ -1836,7 +1890,7 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
                 "trial_penalty": 0.03,
                 "deflated_score": 0.09,
             },
-            execution_validation=_promoted_execution_validation(),
+            execution_validation=_promoted_execution_validation(market_type="futures", interval="1s"),
             probability_calibration_size=128,
             probability_log_loss_before=0.62,
             probability_log_loss_after=0.58,
@@ -2431,6 +2485,10 @@ def test_command_risk_live_requests_strict_model_evidence(tmp_path, monkeypatch,
     assert json.loads(capsys.readouterr().out)["allowed"] is True
     assert captured["require_model_candidate_search"] is True
     assert captured["require_accelerator_evidence"] is True
+    assert captured["require_live_data_evidence"] is True
+    assert captured["expected_symbol"] == "BTCUSDC"
+    assert captured["expected_market_type"] == "spot"
+    assert captured["expected_interval"] == "15m"
 
 
 def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, capsys) -> None:
@@ -4084,6 +4142,10 @@ def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, mo
     assert captured["effective_dry_run"] is False
     assert captured["require_model_candidate_search"] is True
     assert captured["require_accelerator_evidence"] is True
+    assert captured["require_live_data_evidence"] is True
+    assert captured["expected_symbol"] == "BTCUSDC"
+    assert captured["expected_market_type"] == "spot"
+    assert captured["expected_interval"] == "15m"
 
 
 def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monkeypatch, capsys) -> None:
@@ -4092,7 +4154,17 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
             raise AssertionError("startup must not mutate futures leverage")
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            interval="1s",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     strategy = StrategyConfig(leverage=5.0)
     save_strategy(strategy)
     model_file = tmp_path / "model.json"
@@ -4112,7 +4184,7 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
                 "trial_penalty": 0.03,
                 "deflated_score": 0.09,
             },
-            execution_validation=_promoted_execution_validation(),
+            execution_validation=_promoted_execution_validation(market_type="futures", interval="1s"),
             probability_calibration_size=128,
             probability_log_loss_before=0.62,
             probability_log_loss_after=0.58,
@@ -4396,7 +4468,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
             "trial_penalty": 0.03,
             "deflated_score": 0.09,
         },
-        execution_validation=_promoted_execution_validation(),
+        execution_validation=_promoted_execution_validation(market_type="spot", interval="1s"),
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
         probability_log_loss_after=0.58,
@@ -4422,7 +4494,17 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            interval="1s",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -4670,7 +4752,17 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            interval="1s",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.001,
@@ -4782,7 +4874,17 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            interval="1s",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(
         StrategyConfig(
             take_profit_pct=0.01,
@@ -5976,7 +6078,17 @@ def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_p
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            interval="1s",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -6352,7 +6464,17 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            interval="1s",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,

@@ -139,8 +139,15 @@ def _base_candles(n: int = 80, *, start: float = 100.0) -> list[Candle]:
     return candles
 
 
-def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
+def _flat_model(
+    probability: float,
+    *,
+    feature_dim: int = 1,
+    market_type: str = "spot",
+    interval: str = "1s",
+) -> TrainedModel:
     bias = 0.0 if probability == 0.5 else 10.0 if probability > 0.5 else -10.0
+    rows = int(365.25 * 24 * 60 * 60 * 2)
     return TrainedModel(
         weights=[0.0] * feature_dim,
         bias=bias,
@@ -158,6 +165,8 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
         execution_validation={
             "passed": True,
             "symbol": "BTCUSDC",
+            "market_type": market_type,
+            "interval": interval,
             "walk_forward_gate": {
                 "passed": True,
                 "reason": None,
@@ -170,6 +179,25 @@ def _flat_model(probability: float, *, feature_dim: int = 1) -> TrainedModel:
             "stress": {"accepted": True},
             "temporal_robustness": {"accepted": True},
             "portfolio": {"accepted": True},
+            "data_coverage": {
+                "symbol": "BTCUSDC",
+                "market_type": market_type,
+                "interval": interval,
+                "source_scope": "sqlite_market_data",
+                "expected_interval_ms": 1000 if interval == "1s" else 60_000,
+                "integrity_status": "ok",
+                "integrity_warnings": [],
+                "full_history_requested": True,
+                "full_available_history_used": True,
+                "candles_available": rows,
+                "candles_used": rows,
+                "rows_used": rows - 100,
+                "used_duration_years": 2.0,
+                "gap_count": 0,
+                "largest_gap_ms": 1000,
+                "largest_gap_intervals": 1.0,
+                "coverage_ratio": 1.0,
+            },
         },
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
@@ -1077,11 +1105,25 @@ def test_cli_live_guards_leverage_clamps_and_no_rows(tmp_path, monkeypatch, caps
     assert "Authenticated live mode requires Binance API key" in capsys.readouterr().err
 
     client = _LiveClient(set_response={"leverage": "200"})
-    save_runtime(RuntimeConfig(market_type="futures", testnet=True, dry_run=False, api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            market_type="futures",
+            interval="1s",
+            testnet=True,
+            dry_run=False,
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig(max_trades_per_day=0))
     (tmp_path / "data").mkdir(exist_ok=True)
     (tmp_path / "data" / "model.json").write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: _flat_model(0.5))
+    monkeypatch.setattr(
+        cli,
+        "_load_runtime_model",
+        lambda *_args, **_kwargs: _flat_model(0.5, market_type="futures", interval="1s"),
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 200.0)
     monkeypatch.setattr(
