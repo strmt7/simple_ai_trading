@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1468,
+      "bytes": 1477,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "7a7a8d7c7580e290be076721f61f288ccbfeb6891eacc802931faaf07ca68ed4"
+      "sha256": "6045b2b0fa6b847a4b46f73b15e9068ccc0ed021047018230e7c7fa1f6c38bbd"
     },
     {
-      "bytes": 395,
+      "bytes": 398,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 1,
-      "sha256": "746d306302b2fb1e6362ecbb3b0085e16ca5d9ab5dd2b0660b325ae91dd7bcd3"
+      "sha256": "fa8bec3b4fecb753ba060b8599d5e70a026768efee13b31df33f46d142cf14fc"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T06:10:54.778859Z",
-  "latest_round_id": "round-alpha-event-study-1d-smoke",
+  "generated_at_utc": "2026-07-07T06:55:59.127903Z",
+  "latest_round_id": "round-empirical-edge-miner-1d-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 1,
   "tracked_artifacts": [

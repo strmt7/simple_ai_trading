@@ -5,12 +5,12 @@
   "compute_backend_kind": "directml",
   "compute_backend_reason": "",
   "compute_backend_requested": "directml",
-  "generated_at_utc": "2026-07-07T06:10:32.022992Z",
-  "metrics_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/backtest-metrics.csv",
+  "generated_at_utc": "2026-07-07T06:55:26.260457Z",
+  "metrics_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/backtest-metrics.csv",
   "phase": "round_complete",
-  "report_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/report.json",
+  "report_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/report.json",
   "require_gpu": true,
-  "round_id": "round-alpha-event-study-1d-smoke",
+  "round_id": "round-empirical-edge-miner-1d-smoke",
   "status": "complete",
   "symbol_count_requested": 3
 }

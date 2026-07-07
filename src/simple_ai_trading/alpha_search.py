@@ -30,9 +30,11 @@ from .types import StrategyConfig
 
 
 DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 135
+DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES = 18
 _RULE_ALPHA_COST_FLOOR_PARTICIPATION = 0.05
 _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS = 2.0
 _RULE_ALPHA_MIN_STOP_BUFFER_BPS = 1.0
+_EMPIRICAL_RULE_ALPHA_FAMILY = "empirical_feature_edge"
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,7 @@ class RuleAlphaCandidate:
     cooldown_multiplier: float
     min_position_hold_bars: int
     flat_signal_exit_grace_bars: int
+    params: dict[str, object] = field(default_factory=dict)
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -431,6 +434,244 @@ def rule_alpha_event_study(
     }
 
 
+def mine_empirical_rule_alpha_candidates(
+    rows: Sequence[ModelRow],
+    strategy: StrategyConfig,
+    *,
+    objective_name: str,
+    market_type: str,
+    max_candidates: int = DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES,
+) -> tuple[RuleAlphaCandidate, ...]:
+    """Mine simple one-feature edge rules with chronological validation.
+
+    This is a feature-screening layer, not a promotion shortcut.  A mined rule
+    must show positive net forward edge after the modeled cost floor on both the
+    earlier mining slice and later validation slice before it is even allowed
+    into the normal rule-alpha replay/objective gates.
+    """
+
+    row_list = list(rows)
+    limit = max(0, int(max_candidates))
+    if limit <= 0 or len(row_list) < 240:
+        return ()
+    feature_count = min(len(row_list[0].features), 512)
+    if feature_count <= 0:
+        return ()
+    split = max(120, min(len(row_list) - 80, int(len(row_list) * 0.60)))
+    training = row_list[:split]
+    validation = row_list[split:]
+    if len(training) < 120 or len(validation) < 80:
+        return ()
+
+    name = "aggressive" if objective_name == "risky" else str(objective_name or "conservative").lower()
+    threshold_by_risk = {
+        "conservative": 0.56,
+        "regular": 0.54,
+        "aggressive": 0.52,
+    }
+    probability_threshold = float(threshold_by_risk.get(name, 0.56))
+    profiles = (
+        ("empirical_8s", 0.10, 0.09, 8, 2),
+        ("empirical_30s", 0.18, 0.16, 30, 8),
+        ("empirical_90s", 0.26, 0.24, 90, 20),
+    )
+    quantiles = (
+        (0.08, -1.0, "low08"),
+        (0.12, -1.0, "low12"),
+        (0.20, -1.0, "low20"),
+        (0.80, 1.0, "high80"),
+        (0.88, 1.0, "high88"),
+        (0.92, 1.0, "high92"),
+    )
+    cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0)
+    candidates: list[tuple[tuple[float, float, int, float], RuleAlphaCandidate]] = []
+
+    for feature_index in range(feature_count):
+        feature_values = [
+            float(row.features[feature_index])
+            for row in training
+            if len(row.features) > feature_index and math.isfinite(float(row.features[feature_index]))
+        ]
+        if len(feature_values) < 120:
+            continue
+        feature_values.sort()
+        distinct_values = sorted(set(feature_values))
+        q10 = _quantile(feature_values, 0.10)
+        q90 = _quantile(feature_values, 0.90)
+        feature_scale = max(abs(q90 - q10), 1e-9)
+        if not math.isfinite(feature_scale) or feature_scale <= 1e-9:
+            continue
+        for profile, stop_mult, take_mult, horizon, grace_bars in profiles:
+            if len(training) <= horizon or len(validation) <= horizon:
+                continue
+            min_train_signals = max(40, int((len(training) - horizon) * 0.003))
+            min_validation_signals = max(25, int((len(validation) - horizon) * 0.003))
+            for quantile, tail_direction, tail_name in quantiles:
+                threshold_value = _quantile(feature_values, quantile)
+                if not math.isfinite(threshold_value):
+                    continue
+                if len(distinct_values) > 1:
+                    if tail_direction > 0.0 and threshold_value >= distinct_values[-1]:
+                        threshold_value = (distinct_values[-1] + distinct_values[-2]) / 2.0
+                    elif tail_direction < 0.0 and threshold_value <= distinct_values[0]:
+                        threshold_value = (distinct_values[0] + distinct_values[1]) / 2.0
+                for trade_side in ((1.0, -1.0) if market_type == "futures" else (1.0,)):
+                    train_stats = _empirical_edge_stats(
+                        training,
+                        feature_index=feature_index,
+                        threshold_value=threshold_value,
+                        feature_scale=feature_scale,
+                        tail_direction=tail_direction,
+                        trade_side=trade_side,
+                        horizon=horizon,
+                        cost_floor_bps=cost_floor_bps,
+                    )
+                    if (
+                        int(train_stats["signal_count"]) < min_train_signals
+                        or float(train_stats["net_mean_edge_bps"]) <= 0.0
+                        or float(train_stats["hit_rate"]) < 0.52
+                    ):
+                        continue
+                    validation_stats = _empirical_edge_stats(
+                        validation,
+                        feature_index=feature_index,
+                        threshold_value=threshold_value,
+                        feature_scale=feature_scale,
+                        tail_direction=tail_direction,
+                        trade_side=trade_side,
+                        horizon=horizon,
+                        cost_floor_bps=cost_floor_bps,
+                    )
+                    if (
+                        int(validation_stats["signal_count"]) < min_validation_signals
+                        or float(validation_stats["net_mean_edge_bps"]) <= 0.0
+                        or float(validation_stats["hit_rate"]) < 0.52
+                    ):
+                        continue
+                    trade_name = "long" if trade_side > 0.0 else "short"
+                    confidence = _clamp(
+                        min(float(train_stats["net_mean_edge_bps"]), float(validation_stats["net_mean_edge_bps"])) / max(cost_floor_bps, 1.0),
+                        0.15,
+                        1.0,
+                    )
+                    candidate = RuleAlphaCandidate(
+                        name=f"{_EMPIRICAL_RULE_ALPHA_FAMILY}:{profile}:f{feature_index}:{tail_name}:{trade_name}",
+                        family=_EMPIRICAL_RULE_ALPHA_FAMILY,
+                        threshold=probability_threshold,
+                        sensitivity=8.0,
+                        deadband=0.0,
+                        stop_loss_multiplier=float(stop_mult),
+                        take_profit_multiplier=float(take_mult),
+                        cooldown_multiplier=0.0,
+                        min_position_hold_bars=int(horizon),
+                        flat_signal_exit_grace_bars=int(grace_bars),
+                        params={
+                            "feature_index": int(feature_index),
+                            "feature_threshold": float(threshold_value),
+                            "feature_scale": float(feature_scale),
+                            "tail_direction": float(tail_direction),
+                            "trade_side": float(trade_side),
+                            "edge_confidence": float(confidence),
+                            "edge_slope": 1.0,
+                            "training_signal_count": int(train_stats["signal_count"]),
+                            "validation_signal_count": int(validation_stats["signal_count"]),
+                            "training_net_edge_bps": float(train_stats["net_mean_edge_bps"]),
+                            "validation_net_edge_bps": float(validation_stats["net_mean_edge_bps"]),
+                            "training_hit_rate": float(train_stats["hit_rate"]),
+                            "validation_hit_rate": float(validation_stats["hit_rate"]),
+                            "horizon_bars": int(horizon),
+                        },
+                    )
+                    score = (
+                        min(float(train_stats["net_mean_edge_bps"]), float(validation_stats["net_mean_edge_bps"])),
+                        min(float(train_stats["hit_rate"]), float(validation_stats["hit_rate"])),
+                        min(int(train_stats["signal_count"]), int(validation_stats["signal_count"])),
+                        -float(feature_index),
+                    )
+                    candidates.append((score, candidate))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    output: list[RuleAlphaCandidate] = []
+    seen: set[tuple[int, float, float, int]] = set()
+    for _score, candidate in candidates:
+        key = (
+            int(candidate.params.get("feature_index", -1)),
+            float(candidate.params.get("tail_direction", 0.0)),
+            float(candidate.params.get("trade_side", 0.0)),
+            int(candidate.params.get("horizon_bars", 0)),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        output.append(candidate)
+        if len(output) >= limit:
+            break
+    return tuple(output)
+
+
+def _empirical_edge_stats(
+    rows: Sequence[ModelRow],
+    *,
+    feature_index: int,
+    threshold_value: float,
+    feature_scale: float,
+    tail_direction: float,
+    trade_side: float,
+    horizon: int,
+    cost_floor_bps: float,
+) -> dict[str, object]:
+    edges: list[float] = []
+    side = 1.0 if trade_side >= 0.0 else -1.0
+    tail = 1.0 if tail_direction >= 0.0 else -1.0
+    scale = max(abs(float(feature_scale)), 1e-9)
+    for index in range(0, len(rows) - horizon):
+        current = rows[index]
+        future = rows[index + horizon]
+        if len(current.features) <= feature_index or current.close <= 0.0 or future.close <= 0.0:
+            continue
+        value = float(current.features[feature_index])
+        if not math.isfinite(value):
+            continue
+        if tail * (value - threshold_value) <= 0.0:
+            continue
+        strength = math.tanh(max(0.0, tail * (value - threshold_value) / scale))
+        if strength <= 0.0:
+            continue
+        edge_bps = side * ((float(future.close) - float(current.close)) / float(current.close)) * 10_000.0
+        if math.isfinite(edge_bps):
+            edges.append(edge_bps)
+    if not edges:
+        return {
+            "signal_count": 0,
+            "mean_edge_bps": 0.0,
+            "net_mean_edge_bps": -float(cost_floor_bps),
+            "hit_rate": 0.0,
+            "cost_floor_bps": float(cost_floor_bps),
+        }
+    mean_edge = sum(edges) / len(edges)
+    wins = sum(1 for edge in edges if edge > cost_floor_bps)
+    return {
+        "signal_count": int(len(edges)),
+        "mean_edge_bps": float(mean_edge),
+        "net_mean_edge_bps": float(mean_edge - cost_floor_bps),
+        "hit_rate": float(wins / len(edges)),
+        "cost_floor_bps": float(cost_floor_bps),
+    }
+
+
+def _quantile(sorted_values: Sequence[float], quantile: float) -> float:
+    if not sorted_values:
+        return 0.0
+    q = _clamp(float(quantile), 0.0, 1.0)
+    position = q * (len(sorted_values) - 1)
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return float(sorted_values[lower])
+    fraction = position - lower
+    return float(sorted_values[lower] * (1.0 - fraction) + sorted_values[upper] * fraction)
+
+
 def model_for_rule_alpha(
     rows: Sequence[ModelRow],
     candidate: RuleAlphaCandidate,
@@ -452,6 +693,7 @@ def model_for_rule_alpha(
         "sensitivity": candidate.sensitivity,
         "deadband": candidate.deadband,
         **dict(feature_params or {}),
+        **dict(candidate.params or {}),
     }
     model = TrainedModel(
         weights=[0.0] * feature_dim,
@@ -543,7 +785,15 @@ def optimize_rule_alpha_model_zoo(
     regime_scores = precompute_backtest_regime_scores(rows, strategy)
     liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, strategy)
     feature_params = rule_alpha_feature_params(feature_cfg)
-    for candidate in rule_alpha_candidates(objective.name, max_candidates=max_candidates):
+    template_candidates = rule_alpha_candidates(objective.name, max_candidates=max_candidates)
+    empirical_candidates = mine_empirical_rule_alpha_candidates(
+        rows,
+        strategy,
+        objective_name=objective.name,
+        market_type=market_type,
+        max_candidates=DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES,
+    )
+    for candidate in (*template_candidates, *empirical_candidates):
         candidate_strategy = _candidate_strategy(strategy, candidate)
         for inverted in (False, True):
             model = model_for_rule_alpha(
@@ -593,6 +843,9 @@ def optimize_rule_alpha_model_zoo(
                 best_diagnostic = candidate_result
 
     candidate_summary = summarize_rule_alpha_candidate_distribution(diagnostics)
+    candidate_summary["static_template_candidates"] = int(len(template_candidates))
+    candidate_summary["empirical_mined_candidates"] = int(len(empirical_candidates))
+    candidate_summary["empirical_candidate_limit"] = int(DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES)
     winner = best_accepted or best_diagnostic
     if winner is None:
         return RuleAlphaOptimizationReport(False, None, float("-inf"), None, False, None, len(diagnostics), None, tuple(diagnostics))
@@ -698,9 +951,11 @@ def _clamp(value: float, low: float, high: float) -> float:
 
 __all__ = [
     "DEFAULT_RULE_ALPHA_MAX_CANDIDATES",
+    "DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES",
     "RuleAlphaCandidate",
     "RuleAlphaCandidateResult",
     "RuleAlphaOptimizationReport",
+    "mine_empirical_rule_alpha_candidates",
     "model_for_rule_alpha",
     "optimize_rule_alpha_model_zoo",
     "rule_alpha_candidates",

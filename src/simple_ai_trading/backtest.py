@@ -760,6 +760,34 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     sensitivity = _clamp_float(params.get("sensitivity", 7.0), 0.1, 30.0, 7.0)
                     bias = _clamp_float(params.get("bias", 0.0), -5.0, 5.0, 0.0)
                     deadband = _clamp_float(params.get("deadband", 0.04), 0.0, 0.95, 0.04)
+                    if family == "empirical_feature_edge":
+                        max_feature_index = max(0, int(raw_values.shape[1]) - 1)
+                        feature_index = int(_clamp_float(params.get("feature_index", 0), 0, max_feature_index, 0))
+                        threshold_value = _clamp_float(params.get("feature_threshold", 0.0), -1e12, 1e12, 0.0)
+                        feature_scale = max(1e-9, abs(_clamp_float(params.get("feature_scale", 1.0), 1e-12, 1e12, 1.0)))
+                        tail_direction = 1.0 if _clamp_float(params.get("tail_direction", 1.0), -1.0, 1.0, 1.0) >= 0.0 else -1.0
+                        trade_side = 1.0 if _clamp_float(params.get("trade_side", 1.0), -1.0, 1.0, 1.0) >= 0.0 else -1.0
+                        confidence = _clamp_float(params.get("edge_confidence", 1.0), 0.0, 1.0, 1.0)
+                        slope = _clamp_float(params.get("edge_slope", 1.0), 0.1, 20.0, 1.0)
+                        feature_values = raw_values[:, feature_index]
+                        feature_values = torch.where(
+                            torch.isfinite(feature_values),
+                            feature_values,
+                            torch.full_like(feature_values, float(threshold_value)),
+                        )
+                        delta = float(tail_direction) * (feature_values - float(threshold_value)) / float(feature_scale)
+                        score = float(trade_side) * torch.clamp(torch.tanh(torch.clamp(delta, min=0.0) * float(slope)), min=0.0) * float(confidence)
+                        magnitude = torch.abs(score)
+                        adjusted = torch.where(
+                            magnitude <= float(deadband),
+                            torch.zeros_like(score),
+                            torch.sign(score) * ((magnitude - float(deadband)) / max(1e-9, 1.0 - float(deadband))),
+                        )
+                        adjusted = torch.clamp(adjusted, min=-1.0, max=1.0)
+                        expert_probs = torch.clamp(torch.sigmoid(adjusted * sensitivity + bias), min=0.0, max=1.0)
+                        weighted = weighted + float(expert_weight) * expert_probs
+                        total = total + float(expert_weight)
+                        continue
                     momentum_1 = values[:, 0]
                     momentum_3 = values[:, 1]
                     momentum_10 = values[:, 2]
