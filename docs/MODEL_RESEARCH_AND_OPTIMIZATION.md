@@ -217,6 +217,19 @@ The optimizer evaluates risk-level-specific weight profiles:
 - `aggressive`: allows stronger expert contribution, but still has to pass
   backtest gates and drawdown limits.
 
+After classifier and hybrid selection, the optimization evidence path now runs
+an interpretable rule-alpha template zoo. This implements the open-source
+pattern seen in stronger bots: broad, cheap entry/exit template sweeps happen
+before any template is promoted into the same serialized model path. The current
+templates are original momentum breakout, VWAP/RSI mean reversion,
+trend-pullback, volatility breakout, and volume-flow proxy families. Each is
+tested with normal and inverted probability orientation plus bounded
+threshold/stop/take/hold profiles. Rule-alpha models serialize as `rule_alpha`
+hybrid experts, so a promoted template is available to CLI, Windows app,
+backtest, and live/autonomous inference without a separate code path. Rejected
+searches record the best rejected profile, P&L, closed-trade count, reject
+reason, orientation, and candidate count.
+
 The optimization-round evidence path now runs the same adaptive hybrid model-zoo
 as a post-base-candidate selection step even when the selected base candidate
 failed, but only from a copied model reset to the best diagnostic threshold. It
@@ -225,12 +238,16 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-daytrade-frequency-hybrid-smoke` activity-probe
-run produced BTC/SOL selection trades but negative after-cost P&L, and the
-`round-hybrid-rescue-profile-smoke` run evaluated seven conservative hybrid
-profiles per symbol but still selected `base_only`. BTCUSDT/ETHUSDT/SOLUSDT
-all failed with zero accepted symbols, zero closed holdout trades, and mean ROI
-`0.0%`, so these are negative research evidence rather than promotion evidence.
+in code. The 2026-07-07 `round-rule-alpha-major-1d-smoke` run used verified
+BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
+scoring, conservative 5x futures settings, seven hybrid profiles, and 96
+normal/inverted rule-alpha replays per symbol. It failed with zero accepted
+symbols, zero closed holdout trades, mean ROI `0.0%`, and no liquidations. Best
+rejected alpha profiles were also negative after costs: BTCUSDT inverted
+trend-pullback lost `4.898503461525252`, ETHUSDT mean-reversion lost
+`6.797250193159016`, and SOLUSDT mean-reversion lost `6.851032639100595` on
+the chronological selection slice. This is negative research evidence rather
+than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple
 label target/horizon profiles, and both forward-return and stop/take-aware

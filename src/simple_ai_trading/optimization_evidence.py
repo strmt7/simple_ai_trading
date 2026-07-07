@@ -23,6 +23,7 @@ from .advanced_model import (
     make_advanced_rows,
     train_advanced,
 )
+from .alpha_search import optimize_rule_alpha_model_zoo
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol, major_symbols_for_quote
 from .backtest import (
@@ -2031,6 +2032,110 @@ def _select_hybrid_model_zoo_if_accepted(
     )
 
 
+def _select_rule_alpha_model_zoo_if_accepted(
+    result: RoundModelCandidateResult,
+    strategy: StrategyConfig,
+    objective: ObjectiveSpec,
+    *,
+    market_type: str,
+    starting_cash: float,
+    compute_backend: str,
+    batch_size: int,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
+) -> RoundModelCandidateResult:
+    """Promote an interpretable alpha template only if it passes selection gates."""
+
+    if not result.selection_rows:
+        return result
+    if status_callback is not None:
+        status_callback(
+            "rule_alpha_model_zoo_started",
+            {"selection_rows": len(result.selection_rows), "max_candidates": 48},
+        )
+    alpha_report = optimize_rule_alpha_model_zoo(
+        result.selection_rows,
+        strategy,
+        objective_name=objective.name,
+        market_type=market_type,
+        starting_cash=starting_cash,
+        compute_backend=compute_backend,
+        score_batch_size=batch_size,
+        max_candidates=48,
+    )
+    model = result.model
+    model.rule_alpha_evaluated_candidates = int(alpha_report.evaluated_candidates)
+    if alpha_report.best_candidate is not None:
+        model.rule_alpha_profile = str(alpha_report.best_candidate.name)
+        model.rule_alpha_family = str(alpha_report.best_candidate.family)
+        model.rule_alpha_best_score = float(alpha_report.best_score)
+        model.rule_alpha_probability_inverted = bool(alpha_report.best_probability_inverted)
+        model.rule_alpha_best_reject_reason = str(alpha_report.best_reject_reason or "")
+    if alpha_report.best_result is not None:
+        model.rule_alpha_best_pnl = float(alpha_report.best_result.realized_pnl)
+        model.rule_alpha_best_closed_trades = int(alpha_report.best_result.closed_trades)
+    if not alpha_report.accepted or alpha_report.model is None or alpha_report.best_result is None:
+        _append_unique_warning(model, "rule_alpha_model_zoo_rejected")
+        if status_callback is not None:
+            status_callback(
+                "rule_alpha_model_zoo_complete",
+                {
+                    "accepted": False,
+                    "evaluated_candidates": int(alpha_report.evaluated_candidates),
+                    "best_score": float(alpha_report.best_score),
+                    "best_candidate": (
+                        alpha_report.best_candidate.name
+                        if alpha_report.best_candidate is not None
+                        else ""
+                    ),
+                },
+            )
+        return result
+    if math.isfinite(result.score) and alpha_report.best_score <= result.score + 1e-12:
+        _append_unique_warning(model, "rule_alpha_model_zoo_not_better_than_selected_model")
+        if status_callback is not None:
+            status_callback(
+                "rule_alpha_model_zoo_complete",
+                {
+                    "accepted": True,
+                    "promoted": False,
+                    "evaluated_candidates": int(alpha_report.evaluated_candidates),
+                    "best_score": float(alpha_report.best_score),
+                    "selected_score": float(result.score),
+                    "best_candidate": alpha_report.best_candidate.name if alpha_report.best_candidate else "",
+                },
+            )
+        return result
+    alpha_model = alpha_report.model
+    alpha_model.model_candidate_count = int(getattr(model, "model_candidate_count", 1) or 1)
+    alpha_model.model_selected_candidate = f"{result.candidate.name}+rule_alpha:{alpha_model.rule_alpha_profile}"
+    alpha_model.model_selection_score = float(alpha_report.best_score)
+    alpha_model.round_candidate_diagnostics = list(getattr(model, "round_candidate_diagnostics", []) or [])
+    alpha_model.quality_warnings = [
+        *list(getattr(alpha_model, "quality_warnings", []) or []),
+        "rule_alpha_model_zoo_selected",
+    ]
+    if status_callback is not None:
+        status_callback(
+            "rule_alpha_model_zoo_complete",
+            {
+                "accepted": True,
+                "promoted": True,
+                "evaluated_candidates": int(alpha_report.evaluated_candidates),
+                "best_score": float(alpha_report.best_score),
+                "best_candidate": alpha_report.best_candidate.name if alpha_report.best_candidate else "",
+                "realized_pnl": float(alpha_report.best_result.realized_pnl),
+                "closed_trades": int(alpha_report.best_result.closed_trades),
+            },
+        )
+    return replace(
+        result,
+        score=float(alpha_report.best_score),
+        model=alpha_model,
+        selection_result=alpha_report.best_result,
+        selection_reject_reason=None,
+    )
+
+
 def _round_candidate_diagnostic(
     result: RoundModelCandidateResult,
     *,
@@ -2069,6 +2174,22 @@ def _round_candidate_diagnostic(
         ),
         "hybrid_evaluated_profiles": int(getattr(model, "hybrid_evaluated_profiles", 0) or 0),
         "hybrid_expert_count": len(getattr(model, "hybrid_experts", []) or []),
+        "rule_alpha_profile": str(getattr(model, "rule_alpha_profile", "") or ""),
+        "rule_alpha_family": str(getattr(model, "rule_alpha_family", "") or ""),
+        "rule_alpha_best_score": (
+            float(getattr(model, "rule_alpha_best_score"))
+            if getattr(model, "rule_alpha_best_score", None) is not None
+            else None
+        ),
+        "rule_alpha_best_pnl": (
+            float(getattr(model, "rule_alpha_best_pnl"))
+            if getattr(model, "rule_alpha_best_pnl", None) is not None
+            else None
+        ),
+        "rule_alpha_best_closed_trades": int(getattr(model, "rule_alpha_best_closed_trades", 0) or 0),
+        "rule_alpha_best_reject_reason": str(getattr(model, "rule_alpha_best_reject_reason", "") or ""),
+        "rule_alpha_probability_inverted": bool(getattr(model, "rule_alpha_probability_inverted", False)),
+        "rule_alpha_evaluated_candidates": int(getattr(model, "rule_alpha_evaluated_candidates", 0) or 0),
         "round_selection_gate_passed": bool(getattr(model, "round_selection_gate_passed", False)),
         "round_selection_reject_reason": str(getattr(model, "round_selection_reject_reason", "") or ""),
         "threshold_source": str(getattr(model, "threshold_source", "") or ""),
@@ -2189,6 +2310,14 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "hybrid_best_score": item.get("hybrid_best_score"),
             "hybrid_evaluated_profiles": int(_finite(item.get("hybrid_evaluated_profiles"))),
             "hybrid_expert_count": int(_finite(item.get("hybrid_expert_count"))),
+            "rule_alpha_profile": str(item.get("rule_alpha_profile", "")),
+            "rule_alpha_family": str(item.get("rule_alpha_family", "")),
+            "rule_alpha_best_score": item.get("rule_alpha_best_score"),
+            "rule_alpha_best_pnl": item.get("rule_alpha_best_pnl"),
+            "rule_alpha_best_closed_trades": int(_finite(item.get("rule_alpha_best_closed_trades"))),
+            "rule_alpha_best_reject_reason": str(item.get("rule_alpha_best_reject_reason", "")),
+            "rule_alpha_probability_inverted": bool(item.get("rule_alpha_probability_inverted") is True),
+            "rule_alpha_evaluated_candidates": int(_finite(item.get("rule_alpha_evaluated_candidates"))),
             "round_selection_gate_passed": bool(item.get("round_selection_gate_passed") is True),
             "round_selection_reject_reason": str(item.get("round_selection_reject_reason", "")),
             "threshold_source": str(item.get("threshold_source", "")),
@@ -2296,8 +2425,21 @@ def train_round_model(
         batch_size=batch_size,
         status_callback=status_callback,
     )
+    best = _select_rule_alpha_model_zoo_if_accepted(
+        best,
+        best_strategy,
+        objective,
+        market_type=market_type,
+        starting_cash=starting_cash,
+        compute_backend=compute_backend,
+        batch_size=batch_size,
+        status_callback=status_callback,
+    )
     best.model.model_candidate_count = len(candidates)
-    best.model.model_selected_candidate = best.candidate.name
+    selected_candidate_name = best.candidate.name
+    if str(getattr(best.model, "model_family", "") or "") == "rule_alpha_model_zoo" and getattr(best.model, "rule_alpha_profile", ""):
+        selected_candidate_name = f"{selected_candidate_name}+rule_alpha:{best.model.rule_alpha_profile}"
+    best.model.model_selected_candidate = selected_candidate_name
     best.model.model_selection_score = float(best.score)
     diagnostic_results = [
         replace(best, training_rows=[], selection_rows=[], rows=[], validation_rows=[])
@@ -2407,6 +2549,15 @@ def build_round_evidence(
             **payload,
         )
 
+    requested_symbols = [str(symbol).strip().upper() for symbol in symbols or () if str(symbol).strip()]
+    write_status(
+        "selection_started",
+        symbol_count_requested=(len(requested_symbols) if requested_symbols else int(symbol_count)),
+        completed_symbol_count=0,
+        symbols=requested_symbols,
+        explicit_symbol_mode=bool(requested_symbols),
+        health_required=bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum),
+    )
     health_required = bool(require_prefilled_data or min_data_rows > 0 or require_verified_checksum)
     selection_health_rejections: list[dict[str, object]] = []
     if symbols:
@@ -2957,6 +3108,10 @@ def build_round_evidence(
         "flat_signal_exit_grace_bars", "label_threshold", "label_lookahead", "label_mode",
         "focal_gamma", "model_family", "probability_inverted", "hybrid_profile", "hybrid_base_score",
         "hybrid_best_score", "hybrid_evaluated_profiles", "hybrid_expert_count",
+        "rule_alpha_profile", "rule_alpha_family", "rule_alpha_best_score",
+        "rule_alpha_best_pnl", "rule_alpha_best_closed_trades",
+        "rule_alpha_best_reject_reason", "rule_alpha_probability_inverted",
+        "rule_alpha_evaluated_candidates",
         "round_selection_gate_passed",
         "round_selection_reject_reason", "threshold_source", "decision_threshold",
         "long_decision_threshold", "short_decision_threshold",

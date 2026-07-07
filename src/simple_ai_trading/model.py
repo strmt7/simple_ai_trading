@@ -25,6 +25,99 @@ def _clamp(x: float, low: float, high: float) -> float:
     return low if x < low else (high if x > high else x)
 
 
+def _param_float(params: dict[str, Any] | None, key: str, default: float, *, low: float, high: float) -> float:
+    raw = params.get(key, default) if isinstance(params, dict) else default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError, OverflowError):
+        value = float(default)
+    if not math.isfinite(value):
+        value = float(default)
+    return _clamp(value, low, high)
+
+
+def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any] | None) -> float:
+    """Return an interpretable long/short alpha score from raw base features.
+
+    Positive scores express long pressure, negative scores express short
+    pressure.  The function uses only same-row/past-derived feature values, so
+    it can be used identically in live trading and backtests.
+    """
+
+    family = str((params or {}).get("family", "momentum_breakout")).strip().lower()
+    padded = list(values[:13])
+    while len(padded) < 13:
+        padded.append(0.0)
+    momentum_1, momentum_3, momentum_10, momentum_20 = padded[0], padded[1], padded[2], padded[3]
+    ema_spread = padded[4]
+    rsi = _clamp(padded[5], 0.0, 1.0)
+    ema_gap = padded[6]
+    relative_atr = abs(padded[7])
+    volatility_20 = abs(padded[8])
+    volume_ratio = padded[9]
+    trend_acceleration = padded[10]
+    gap_to_vwap = padded[11]
+    volume_trend = padded[12]
+
+    if family == "mean_reversion_vwap":
+        score = (
+            0.36 * math.tanh((0.42 - rsi) * 5.4)
+            - 0.30 * math.tanh(gap_to_vwap * 135.0)
+            - 0.16 * math.tanh(momentum_3 * 185.0)
+            + 0.10 * math.tanh(volume_ratio * 1.7)
+            - 0.08 * math.tanh(ema_gap * 110.0)
+        )
+    elif family == "trend_pullback":
+        trend = (
+            0.46 * math.tanh(momentum_20 * 95.0)
+            + 0.26 * math.tanh(momentum_10 * 115.0)
+            + 0.16 * math.tanh(ema_gap * 125.0)
+            + 0.12 * math.tanh(volume_trend * 4.0)
+        )
+        pullback = (
+            -0.34 * math.tanh(momentum_3 * 180.0)
+            -0.18 * math.tanh(momentum_1 * 240.0)
+        )
+        score = trend + pullback + 0.10 * math.tanh(trend_acceleration * 260.0)
+    elif family == "volatility_breakout":
+        direction = (
+            0.44 * math.tanh(momentum_1 * 320.0)
+            + 0.34 * math.tanh(momentum_3 * 190.0)
+            + 0.14 * math.tanh(momentum_10 * 120.0)
+            + 0.08 * math.tanh(trend_acceleration * 260.0)
+        )
+        expansion = 0.55 + 0.45 * math.tanh((relative_atr + volatility_20) * 95.0 + volume_ratio * 1.1)
+        score = direction * expansion
+    elif family == "volume_flow_proxy":
+        flow = (
+            0.34 * math.tanh(volume_ratio * 2.3)
+            + 0.28 * math.tanh(volume_trend * 4.5)
+            + 0.22 * math.tanh(trend_acceleration * 260.0)
+        )
+        direction = (
+            0.42 * math.tanh(momentum_1 * 300.0)
+            + 0.34 * math.tanh(momentum_3 * 180.0)
+            + 0.24 * math.tanh(momentum_10 * 120.0)
+        )
+        score = direction * (0.55 + 0.45 * math.tanh(flow))
+    else:
+        score = (
+            0.32 * math.tanh(momentum_20 * 90.0)
+            + 0.27 * math.tanh(momentum_10 * 115.0)
+            + 0.18 * math.tanh(momentum_3 * 165.0)
+            - 0.11 * math.tanh(ema_spread * 95.0)
+            + 0.08 * math.tanh(volume_ratio * 2.0)
+            + 0.04 * math.tanh((relative_atr + volatility_20) * 85.0)
+        )
+
+    deadband = _param_float(params, "deadband", 0.04, low=0.0, high=0.95)
+    magnitude = abs(score)
+    if magnitude <= deadband:
+        return 0.0
+    adjusted = (magnitude - deadband) / max(1e-9, 1.0 - deadband)
+    return _clamp(math.copysign(adjusted, score), -1.0, 1.0)
+
+
 class ModelLoadError(ValueError):
     """Raised when a model artifact is invalid or incompatible."""
 
@@ -65,6 +158,7 @@ class HybridExpert:
     alpha: float = 1.0
     feature_count: int = 13
     notes: str = ""
+    params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -135,6 +229,14 @@ class TrainedModel:
     hybrid_base_score: float | None = None
     hybrid_best_score: float | None = None
     hybrid_evaluated_profiles: int = 0
+    rule_alpha_profile: str = ""
+    rule_alpha_family: str = ""
+    rule_alpha_best_score: float | None = None
+    rule_alpha_best_pnl: float | None = None
+    rule_alpha_best_closed_trades: int = 0
+    rule_alpha_best_reject_reason: str = ""
+    rule_alpha_probability_inverted: bool = False
+    rule_alpha_evaluated_candidates: int = 0
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
     selection_risk: dict[str, Any] = field(default_factory=dict)
     execution_validation: dict[str, Any] = field(default_factory=dict)
@@ -260,6 +362,17 @@ class TrainedModel:
         score = trend + mean_reversion + breakout
         return _clamp(_sigmoid(score * 2.2), 0.0, 1.0)
 
+    def _rule_alpha_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        if not features:
+            return None
+        values = list(features[: max(1, min(int(expert.feature_count), len(features)))])
+        while len(values) < 13:
+            values.append(0.0)
+        score = _rule_alpha_score_from_values(values[:13], expert.params)
+        sensitivity = _param_float(expert.params, "sensitivity", 7.0, low=0.1, high=30.0)
+        bias = _param_float(expert.params, "bias", 0.0, low=-5.0, high=5.0)
+        return _clamp(_sigmoid(score * sensitivity + bias), 0.0, 1.0)
+
     def _expert_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
         if expert.kind == "lorentzian_knn":
             return self._lorentzian_probability(expert, features)
@@ -267,6 +380,8 @@ class TrainedModel:
             return self._kernel_probability(expert, features)
         if expert.kind == "technical_confluence":
             return self._technical_probability(expert, features)
+        if expert.kind == "rule_alpha":
+            return self._rule_alpha_probability(expert, features)
         return None
 
     def predict_proba(self, features: Tuple[float, ...]) -> float:
@@ -1823,6 +1938,7 @@ def _load_hybrid_experts(raw: Any, feature_dim: int) -> list[HybridExpert]:
                 alpha=max(1e-6, float(entry.get("alpha", 1.0) or 1.0)),
                 feature_count=max(1, int(entry.get("feature_count", feature_dim) or feature_dim)),
                 notes=str(entry.get("notes", "") or ""),
+                params=dict(entry.get("params", {})) if isinstance(entry.get("params", {}), dict) else {},
             ))
         except (KeyError, TypeError, ValueError) as exc:
             raise ModelLoadError(f"Model payload hybrid expert {index} is invalid") from exc
@@ -2049,7 +2165,14 @@ def load_model(
             for item in payload.get("round_candidate_diagnostics", [])
             if isinstance(item, dict)
         ],
-        hybrid_base_weight=max(0.0, float(payload.get("hybrid_base_weight", 1.0) or 1.0)),
+        hybrid_base_weight=max(
+            0.0,
+            float(
+                payload["hybrid_base_weight"]
+                if payload.get("hybrid_base_weight") is not None
+                else 1.0
+            ),
+        ),
         hybrid_experts=_load_hybrid_experts(payload.get("hybrid_experts", []), dim),
         hybrid_profile=str(payload.get("hybrid_profile", "") or ""),
         hybrid_base_score=(
@@ -2063,6 +2186,22 @@ def load_model(
             else None
         ),
         hybrid_evaluated_profiles=max(0, int(payload.get("hybrid_evaluated_profiles", 0) or 0)),
+        rule_alpha_profile=str(payload.get("rule_alpha_profile", "") or ""),
+        rule_alpha_family=str(payload.get("rule_alpha_family", "") or ""),
+        rule_alpha_best_score=(
+            float(payload["rule_alpha_best_score"])
+            if payload.get("rule_alpha_best_score") is not None
+            else None
+        ),
+        rule_alpha_best_pnl=(
+            float(payload["rule_alpha_best_pnl"])
+            if payload.get("rule_alpha_best_pnl") is not None
+            else None
+        ),
+        rule_alpha_best_closed_trades=max(0, int(payload.get("rule_alpha_best_closed_trades", 0) or 0)),
+        rule_alpha_best_reject_reason=str(payload.get("rule_alpha_best_reject_reason", "") or ""),
+        rule_alpha_probability_inverted=bool(payload.get("rule_alpha_probability_inverted") is True),
+        rule_alpha_evaluated_candidates=max(0, int(payload.get("rule_alpha_evaluated_candidates", 0) or 0)),
         meta_label_policy=(
             dict(payload["meta_label_policy"])
             if isinstance(payload.get("meta_label_policy"), dict)

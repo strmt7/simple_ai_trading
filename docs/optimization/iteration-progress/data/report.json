@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1558,
+      "bytes": 1579,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "f2d110d0acc601f1b8ef7616f9a37e43953622e297bc0d326f19faa529d19238"
+      "sha256": "0db5fbde2683e148c113c1a5b8fea79edefe53e4a51f36401d603d1f8a89a6c9"
     },
     {
-      "bytes": 848,
+      "bytes": 989,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 4,
-      "sha256": "f0ed275eba47d9b54a884466824722f9d69b7f7edf3462a2f992aa1749019d4b"
+      "row_count": 5,
+      "sha256": "8e7e526e315cd3abad967590b53e67530f6012aaa841062645d18e88d8185ee6"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T02:10:16.694181Z",
-  "latest_round_id": "round-hybrid-rescue-profile-smoke",
+  "generated_at_utc": "2026-07-07T03:19:12.705351Z",
+  "latest_round_id": "round-rule-alpha-major-1d-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 4,
+  "source_report_count": 5,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",

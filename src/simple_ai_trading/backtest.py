@@ -121,6 +121,11 @@ def _finite_float(value: object, default: float = 0.0) -> float:
     return parsed if math.isfinite(parsed) else default
 
 
+def _clamp_float(value: object, low: float, high: float, default: float) -> float:
+    parsed = _finite_float(value, default)
+    return low if parsed < low else (high if parsed > high else parsed)
+
+
 def row_span_days(rows: Sequence[ModelRow]) -> float:
     """Return the chronological span of model rows in calendar days."""
 
@@ -638,6 +643,7 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                 max(1e-6, float(expert.bandwidth)),
                 max(1e-6, float(expert.alpha)),
                 max(1, int(expert.feature_count)),
+                dict(getattr(expert, "params", {}) or {}),
             ))
         elif expert.kind == "technical_confluence":
             hybrid_specs.append((
@@ -649,6 +655,19 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                 1.0,
                 1.0,
                 max(1, int(expert.feature_count)),
+                dict(getattr(expert, "params", {}) or {}),
+            ))
+        elif expert.kind == "rule_alpha":
+            hybrid_specs.append((
+                expert.kind,
+                expert_weight,
+                None,
+                None,
+                0,
+                1.0,
+                1.0,
+                max(1, int(expert.feature_count)),
+                dict(getattr(expert, "params", {}) or {}),
             ))
 
     for start in range(0, len(rows), batch):
@@ -670,7 +689,7 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
             weighted = chunk_probs * base_weight
             total = torch.full_like(chunk_probs, base_weight)
             expert_features = (features - base_mean_t) / base_std_t
-            for kind, expert_weight, proto_features, proto_labels, k, bandwidth, alpha, feature_count in hybrid_specs:
+            for kind, expert_weight, proto_features, proto_labels, k, bandwidth, alpha, feature_count, params in hybrid_specs:
                 expert_probs = None
                 if kind == "lorentzian_knn" and proto_features is not None and proto_labels is not None:
                     distances = torch.log1p(torch.abs(expert_features[:, None, :] - proto_features[None, :, :]))
@@ -729,6 +748,91 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         - 0.04 * torch.tanh(torch.abs(ema_gap) * 150.0)
                     )
                     expert_probs = torch.clamp(torch.sigmoid((trend + mean_reversion + breakout) * 2.2), min=0.0, max=1.0)
+                elif kind == "rule_alpha":
+                    count = max(1, min(int(feature_count), int(features.shape[1]), 13))
+                    values = features[:, :count]
+                    if count < 13:
+                        padding = torch.zeros((features.shape[0], 13 - count), dtype=torch.float32, device=device)
+                        values = torch.cat((values, padding), dim=1)
+                    else:
+                        values = values[:, :13]
+                    family = str(params.get("family", "momentum_breakout")).strip().lower()
+                    sensitivity = _clamp_float(params.get("sensitivity", 7.0), 0.1, 30.0, 7.0)
+                    bias = _clamp_float(params.get("bias", 0.0), -5.0, 5.0, 0.0)
+                    deadband = _clamp_float(params.get("deadband", 0.04), 0.0, 0.95, 0.04)
+                    momentum_1 = values[:, 0]
+                    momentum_3 = values[:, 1]
+                    momentum_10 = values[:, 2]
+                    momentum_20 = values[:, 3]
+                    ema_spread = values[:, 4]
+                    rsi = torch.clamp(values[:, 5], min=0.0, max=1.0)
+                    ema_gap = values[:, 6]
+                    relative_atr = torch.abs(values[:, 7])
+                    volatility_20 = torch.abs(values[:, 8])
+                    volume_ratio = values[:, 9]
+                    trend_acceleration = values[:, 10]
+                    gap_to_vwap = values[:, 11]
+                    volume_trend = values[:, 12]
+                    if family == "mean_reversion_vwap":
+                        score = (
+                            0.36 * torch.tanh((0.42 - rsi) * 5.4)
+                            - 0.30 * torch.tanh(gap_to_vwap * 135.0)
+                            - 0.16 * torch.tanh(momentum_3 * 185.0)
+                            + 0.10 * torch.tanh(volume_ratio * 1.7)
+                            - 0.08 * torch.tanh(ema_gap * 110.0)
+                        )
+                    elif family == "trend_pullback":
+                        trend = (
+                            0.46 * torch.tanh(momentum_20 * 95.0)
+                            + 0.26 * torch.tanh(momentum_10 * 115.0)
+                            + 0.16 * torch.tanh(ema_gap * 125.0)
+                            + 0.12 * torch.tanh(volume_trend * 4.0)
+                        )
+                        pullback = (
+                            -0.34 * torch.tanh(momentum_3 * 180.0)
+                            -0.18 * torch.tanh(momentum_1 * 240.0)
+                        )
+                        score = trend + pullback + 0.10 * torch.tanh(trend_acceleration * 260.0)
+                    elif family == "volatility_breakout":
+                        direction = (
+                            0.44 * torch.tanh(momentum_1 * 320.0)
+                            + 0.34 * torch.tanh(momentum_3 * 190.0)
+                            + 0.14 * torch.tanh(momentum_10 * 120.0)
+                            + 0.08 * torch.tanh(trend_acceleration * 260.0)
+                        )
+                        expansion = 0.55 + 0.45 * torch.tanh(
+                            (relative_atr + volatility_20) * 95.0 + volume_ratio * 1.1
+                        )
+                        score = direction * expansion
+                    elif family == "volume_flow_proxy":
+                        flow = (
+                            0.34 * torch.tanh(volume_ratio * 2.3)
+                            + 0.28 * torch.tanh(volume_trend * 4.5)
+                            + 0.22 * torch.tanh(trend_acceleration * 260.0)
+                        )
+                        direction = (
+                            0.42 * torch.tanh(momentum_1 * 300.0)
+                            + 0.34 * torch.tanh(momentum_3 * 180.0)
+                            + 0.24 * torch.tanh(momentum_10 * 120.0)
+                        )
+                        score = direction * (0.55 + 0.45 * torch.tanh(flow))
+                    else:
+                        score = (
+                            0.32 * torch.tanh(momentum_20 * 90.0)
+                            + 0.27 * torch.tanh(momentum_10 * 115.0)
+                            + 0.18 * torch.tanh(momentum_3 * 165.0)
+                            - 0.11 * torch.tanh(ema_spread * 95.0)
+                            + 0.08 * torch.tanh(volume_ratio * 2.0)
+                            + 0.04 * torch.tanh((relative_atr + volatility_20) * 85.0)
+                        )
+                    magnitude = torch.abs(score)
+                    adjusted = torch.where(
+                        magnitude <= deadband,
+                        torch.zeros_like(score),
+                        torch.sign(score) * ((magnitude - deadband) / max(1e-9, 1.0 - deadband)),
+                    )
+                    adjusted = torch.clamp(adjusted, min=-1.0, max=1.0)
+                    expert_probs = torch.clamp(torch.sigmoid(adjusted * sensitivity + bias), min=0.0, max=1.0)
                 if expert_probs is None:
                     continue
                 weighted = weighted + float(expert_weight) * expert_probs
