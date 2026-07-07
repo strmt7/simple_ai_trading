@@ -225,16 +225,19 @@ weakening risk controls.
   implementation adds order-flow momentum, flow-reversion, flow-consensus
   breakout, and liquidity-absorption reversal families that use serialized
   offsets into the advanced aggTrade-derived order-flow feature block, plus
-  longer-hold profiles to reduce immediate fee churn. Regime and
-  liquidity-session arrays are cached across candidate replays without changing
-  risk gates. Rejected alpha searches record best active profile, family, score,
-  P&L, closed trades, win rate, profit factor, max drawdown, exit-reason counts,
-  side counts, reject reason, orientation, and evaluated candidate count. The
-  `round-v9-flow-state-1d-smoke` evidence run still produced zero
+  longer-hold profiles to reduce immediate fee churn. The rule-alpha prefix is
+  now stratified so each family and execution profile is represented before
+  nearby parameter variants are explored; the default 72 candidates cover all 54
+  base family/profile combinations. Regime and liquidity-session arrays are
+  cached across candidate replays without changing risk gates. Rejected alpha
+  searches record best active profile, family, score, P&L, closed trades, win
+  rate, profit factor, max drawdown, exit-reason counts, side counts, reject
+  reason, orientation, and evaluated candidate count. The
+  `round-stratified-alpha-search-1d-smoke` evidence run still produced zero
   accepted symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT; best
-  active alpha profiles lost money after costs on the selection slice. The
-  support is implemented and exercised by real-data smoke evidence, but it is
-  not profitable evidence.
+  active alpha profiles were less negative than the previous smoke but still
+  lost money after costs on the selection slice. The support is implemented and
+  exercised by real-data smoke evidence, but it is not profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time

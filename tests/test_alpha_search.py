@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from simple_ai_trading.alpha_search import (
+    DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
     RuleAlphaCandidate,
     RuleAlphaCandidateResult,
     _diagnostic_rank_key,
@@ -53,8 +54,46 @@ def test_rule_alpha_candidates_are_bounded_and_diverse() -> None:
     candidates = rule_alpha_candidates("conservative", max_candidates=12)
 
     assert len(candidates) == 12
-    assert {candidate.family for candidate in candidates} >= {"momentum_breakout"}
+    assert {candidate.family for candidate in candidates} >= {
+        "momentum_breakout",
+        "flow_consensus_breakout",
+        "liquidity_absorption_reversal",
+    }
+    assert {candidate.name.split(":")[1] for candidate in candidates} >= {
+        "micro",
+        "balanced",
+        "guarded",
+        "held_30s",
+        "held_90s",
+        "held_180s",
+    }
     assert all(0.5 <= candidate.threshold <= 0.95 for candidate in candidates)
+
+
+def test_rule_alpha_default_search_covers_base_family_profile_matrix() -> None:
+    candidates = rule_alpha_candidates("conservative")
+    families = {candidate.family for candidate in candidates}
+    profiles = {candidate.name.split(":")[1] for candidate in candidates}
+    base_pairs = {
+        (candidate.family, candidate.name.split(":")[1])
+        for candidate in candidates
+        if candidate.threshold == 0.54 and candidate.sensitivity == 6.0 and candidate.deadband == 0.02
+    }
+
+    assert len(candidates) == DEFAULT_RULE_ALPHA_MAX_CANDIDATES
+    assert families == {
+        "momentum_breakout",
+        "mean_reversion_vwap",
+        "trend_pullback",
+        "volatility_breakout",
+        "volume_flow_proxy",
+        "order_flow_momentum",
+        "flow_reversion",
+        "flow_consensus_breakout",
+        "liquidity_absorption_reversal",
+    }
+    assert profiles == {"micro", "balanced", "guarded", "held_30s", "held_90s", "held_180s"}
+    assert len(base_pairs) == len(families) * len(profiles)
 
 
 def test_rule_alpha_model_roundtrips_and_affects_probability(tmp_path) -> None:

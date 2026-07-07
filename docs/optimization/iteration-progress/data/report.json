@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1456,
+      "bytes": 1486,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "3a33dcfc2b55cece70de48f7d267e0db48596bc6442821aa433e2ffb68bea466"
+      "sha256": "02fe2053d4d2b5c8205a3d06d797367de67e689839e85bb787f96f347aaaf8f9"
     },
     {
-      "bytes": 391,
+      "bytes": 401,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 1,
-      "sha256": "8e7dba7f9709edbc29dd099ec63f9e7ce090a25b10be68643688b19ab12237d4"
+      "sha256": "808a87e71847ca449cd31b2e2004fee1d55ca7c3153cf1d981be54f0434d5163"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T04:11:59.871849Z",
-  "latest_round_id": "round-v9-flow-state-1d-smoke",
+  "generated_at_utc": "2026-07-07T04:23:52.956182Z",
+  "latest_round_id": "round-stratified-alpha-search-1d-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 1,
   "tracked_artifacts": [
