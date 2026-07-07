@@ -11,6 +11,7 @@ from simple_ai_trading.alpha_search import (
     optimize_rule_alpha_model_zoo,
     rule_alpha_feature_params,
     rule_alpha_candidates,
+    summarize_rule_alpha_candidate_distribution,
     summarize_rule_alpha_trade_path,
 )
 from simple_ai_trading.advanced_model import default_config_for
@@ -58,8 +59,14 @@ def test_rule_alpha_candidates_are_bounded_and_diverse() -> None:
         "momentum_breakout",
         "flow_consensus_breakout",
         "liquidity_absorption_reversal",
+        "micro_flow_scalp",
+        "vwap_snapback_scalp",
+        "liquidity_sweep_reversal",
     }
     assert {candidate.name.split(":")[1] for candidate in candidates} >= {
+        "scalp_3s",
+        "scalp_8s",
+        "scalp_20s",
         "micro",
         "balanced",
         "guarded",
@@ -91,8 +98,23 @@ def test_rule_alpha_default_search_covers_base_family_profile_matrix() -> None:
         "flow_reversion",
         "flow_consensus_breakout",
         "liquidity_absorption_reversal",
+        "micro_flow_scalp",
+        "vwap_snapback_scalp",
+        "liquidity_sweep_reversal",
+        "compression_breakout_scalp",
+        "adaptive_tape_regime",
     }
-    assert profiles == {"micro", "balanced", "guarded", "held_30s", "held_90s", "held_180s"}
+    assert profiles == {
+        "scalp_3s",
+        "scalp_8s",
+        "scalp_20s",
+        "micro",
+        "balanced",
+        "guarded",
+        "held_30s",
+        "held_90s",
+        "held_180s",
+    }
     assert len(base_pairs) == len(families) * len(profiles)
 
 
@@ -127,6 +149,36 @@ def test_rule_alpha_model_roundtrips_and_affects_probability(tmp_path) -> None:
     assert loaded.hybrid_experts[0].kind == "rule_alpha"
     assert loaded.hybrid_experts[0].params["deadband"] == 0.02
     assert loaded.predict_proba(rows[0].features) == long_probability
+
+
+def test_rule_alpha_candidate_summary_roundtrips_with_model(tmp_path) -> None:
+    rows = _rows()
+    candidate = RuleAlphaCandidate(
+        name="micro_flow_scalp:unit",
+        family="micro_flow_scalp",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.02,
+        stop_loss_multiplier=0.08,
+        take_profit_multiplier=0.07,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=2,
+        flat_signal_exit_grace_bars=0,
+    )
+    model = model_for_rule_alpha(rows, candidate, StrategyConfig(), market_type="futures")
+    model.rule_alpha_candidate_summary = {
+        "evaluated_candidates": 4,
+        "active_candidates": 3,
+        "profitable_candidates": 1,
+        "most_active_candidate": "micro_flow_scalp:unit",
+    }
+    path = tmp_path / "summary-model.json"
+
+    serialize_model(model, path)
+    loaded = load_model(path, expected_feature_dim=13)
+
+    assert loaded.rule_alpha_candidate_summary["evaluated_candidates"] == 4
+    assert loaded.rule_alpha_candidate_summary["most_active_candidate"] == "micro_flow_scalp:unit"
 
 
 def test_rule_alpha_can_use_advanced_order_flow_features(tmp_path) -> None:
@@ -249,6 +301,70 @@ def test_rule_alpha_new_flow_families_use_expanded_order_flow_state() -> None:
     assert absorption.predict_proba(row.features) < breakout.predict_proba(row.features)
 
 
+def test_rule_alpha_scalp_families_use_tape_and_price_state() -> None:
+    cfg = default_config_for("conservative", FEATURE_NAMES)
+    feature_params = rule_alpha_feature_params(cfg)
+    start = int(feature_params["order_flow_start"])
+    width = int(feature_params["order_flow_width"])
+    features = [0.0] * (start + (3 * width))
+    features[0] = 0.0018
+    features[1] = 0.0014
+    features[2] = 0.0008
+    features[3] = 0.0005
+    features[5] = 0.58
+    features[6] = 0.0008
+    features[7] = 0.0002
+    features[8] = 0.0002
+    features[9] = 1.2
+    features[10] = 0.0010
+    features[11] = 0.0004
+    for group_start in range(start, start + (3 * width), width):
+        features[group_start + 0] = 0.74
+        features[group_start + 1] = 0.66
+        features[group_start + 2] = 0.64
+        features[group_start + 3] = 0.42
+        features[group_start + 4] = 0.35
+        features[group_start + 6] = 0.00
+        features[group_start + 7] = 0.42
+        features[group_start + 8] = 0.30
+        features[group_start + 9] = 0.38
+        features[group_start + 10] = 0.44
+        features[group_start + 11] = 0.35
+        features[group_start + 12] = 0.16
+    long_row = ModelRow(timestamp=0, close=100.0, features=tuple(features), label=1, volume=1000.0)
+    short_features = list(features)
+    for index in (0, 1, 2, 3, 6, 10, 11):
+        short_features[index] = -short_features[index]
+    for group_start in range(start, start + (3 * width), width):
+        for offset in (1, 2, 7, 8, 10, 11, 12):
+            short_features[group_start + offset] = -short_features[group_start + offset]
+        short_features[group_start + 0] = 0.26
+    short_row = ModelRow(timestamp=1, close=99.0, features=tuple(short_features), label=0, volume=1000.0)
+
+    candidate = RuleAlphaCandidate(
+        name="micro_flow_scalp:unit",
+        family="micro_flow_scalp",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.01,
+        stop_loss_multiplier=0.08,
+        take_profit_multiplier=0.07,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=2,
+        flat_signal_exit_grace_bars=0,
+    )
+    model = model_for_rule_alpha(
+        [long_row, short_row],
+        candidate,
+        StrategyConfig(),
+        market_type="futures",
+        feature_params=feature_params,
+    )
+
+    assert model.predict_proba(long_row.features) > 0.54
+    assert model.predict_proba(short_row.features) < 0.46
+
+
 def test_summarize_rule_alpha_trade_path_counts_exits_and_sides() -> None:
     result = BacktestResult(
         starting_cash=1000.0,
@@ -352,6 +468,91 @@ def test_rejected_rule_alpha_diagnostic_prefers_less_negative_pnl_over_activity_
     assert _diagnostic_rank_key(better) > _diagnostic_rank_key(inactive)
 
 
+def test_rule_alpha_candidate_summary_tracks_active_and_profitable_candidates() -> None:
+    candidate = RuleAlphaCandidate(
+        name="micro_flow_scalp:scalp_3s:t0.54:s6.0:d0.02",
+        family="micro_flow_scalp",
+        threshold=0.54,
+        sensitivity=6.0,
+        deadband=0.02,
+        stop_loss_multiplier=0.06,
+        take_profit_multiplier=0.05,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=1,
+        flat_signal_exit_grace_bars=0,
+    )
+    active_loss = RuleAlphaCandidateResult(
+        candidate,
+        False,
+        False,
+        float("-inf"),
+        -0.1,
+        "loss",
+        BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=996.0,
+            realized_pnl=-4.0,
+            win_rate=0.0,
+            trades=8,
+            max_drawdown=0.004,
+            closed_trades=8,
+            gross_exposure=100.0,
+            total_fees=1.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=-3.0,
+            profit_factor=0.0,
+        ),
+    )
+    accepted_profit = RuleAlphaCandidateResult(
+        RuleAlphaCandidate(
+            name="vwap_snapback_scalp:scalp_8s:t0.54:s6.0:d0.02",
+            family="vwap_snapback_scalp",
+            threshold=0.54,
+            sensitivity=6.0,
+            deadband=0.02,
+            stop_loss_multiplier=0.08,
+            take_profit_multiplier=0.07,
+            cooldown_multiplier=0.0,
+            min_position_hold_bars=2,
+            flat_signal_exit_grace_bars=0,
+        ),
+        False,
+        True,
+        0.2,
+        0.2,
+        None,
+        BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1001.0,
+            realized_pnl=1.0,
+            win_rate=0.5,
+            trades=2,
+            max_drawdown=0.001,
+            closed_trades=2,
+            gross_exposure=100.0,
+            total_fees=0.2,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=2.0,
+            profit_factor=2.0,
+        ),
+    )
+
+    summary = summarize_rule_alpha_candidate_distribution([active_loss, accepted_profit])
+
+    assert summary["evaluated_candidates"] == 2
+    assert summary["active_candidates"] == 2
+    assert summary["profitable_candidates"] == 1
+    assert summary["accepted_candidates"] == 1
+    assert summary["max_closed_trades"] == 8
+    assert summary["most_active_candidate"] == "micro_flow_scalp:scalp_3s:t0.54:s6.0:d0.02"
+    assert summary["best_pnl_candidate"] == "vwap_snapback_scalp:scalp_8s:t0.54:s6.0:d0.02"
+    assert "micro_flow_scalp" in str(summary["families_with_trades"])
+
+
 def test_rule_alpha_search_promotes_only_objective_accepted_candidate(monkeypatch) -> None:
     rows = _rows(count=48)
     strategy = StrategyConfig(
@@ -376,12 +577,12 @@ def test_rule_alpha_search_promotes_only_objective_accepted_candidate(monkeypatc
         market_type="futures",
         starting_cash=1000.0,
         compute_backend="cpu",
-        max_candidates=3,
+        max_candidates=6,
     )
 
     assert report.accepted is True
     assert report.model is not None
-    assert report.model.rule_alpha_evaluated_candidates == 6
+    assert report.model.rule_alpha_evaluated_candidates == 12
     assert report.best_result is not None
     assert report.best_result.closed_trades > 0
 

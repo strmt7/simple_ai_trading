@@ -1,6 +1,6 @@
 # Similar Trading Repositories Review
 
-Snapshot date: 2026-04-17.
+Snapshot date: 2026-07-07.
 
 Scope: verified repositories and official documentation for the main matrix. GitHub stars, forks, primary language, descriptions, and URLs were checked with `gh repo view` from this workspace. Feature notes are limited to repository descriptions, README text, or official documentation pages reviewed during this pass. Additional forum checks were used only to discover recurring operational failure modes, not as authoritative API documentation.
 
@@ -26,6 +26,18 @@ The useful common pattern is not "AI decides to buy." Mature repos separate resp
 - LEAN-style reporting discipline: portfolio, margin, and execution assumptions need explicit reports instead of hidden defaults.
 
 Applied here on 2026-07-07: `simple_ai_trading.execution_lifecycle` now creates one deterministic capability plan for signed autonomous startup, stop, risk-close, threshold-close, and live open calls. It lets normal risk-policy failures block new entries without blocking verified bot-owned closes, while ledger corruption, missing reconciliation, external exposure, quantity mismatch, or unverified bot ownership block both opens and closes.
+
+## How Mature Repositories Actually Work
+
+The practical pattern from the strongest repos is a separated engine, not a giant indicator script:
+
+1. **Research and execution modes are explicit.** Freqtrade exposes strategy code through backtesting, hyperopt, dry-run, live, and FreqAI-style workflows, with historical data as a prerequisite for backtests and fees included in profit calculations. Applied here: every optimization round records data provenance, execution costs, candidate diagnostics, and final fail/pass gates instead of treating a chart as proof.
+2. **Order workflows are stateful components.** Hummingbot V2 separates market data, controllers, and executors. Controllers decide what should happen; executors own order lifecycle, refresh/cancel logic, and completion. Applied here: the Windows app and CLI must call shared lifecycle/execution modules, while future live order handling should continue moving toward self-contained executors rather than button-specific order code.
+3. **Backtest/live parity is an architectural constraint.** NautilusTrader documents a common core shared by backtest, sandbox, and live systems, and its live docs call out execution reconciliation and live/backtest differences. Applied here: signed startup and post-outage behavior now require reconciliation and ownership proof before opening, and verified bot-owned closes remain allowed when normal entry risk gates block new positions.
+4. **HFT backtests must model market microstructure, not just candles.** HftBacktest focuses on tick/order-book replay, feed/order latency, and queue-position fill simulation. Applied here: the current second-level Binance aggTrade data is useful but not a full L2 queue model, so any profitability claim must say exactly what was simulated; the current round remains research evidence, not promotion evidence.
+5. **Optimization telemetry must expose failure modes.** A mature repo makes it easy to see whether a strategy did not trade, traded badly, overfit one trade, or failed risk gates. Applied here on 2026-07-07: `candidate-diagnostics.csv` now includes full rule-alpha zoo summary fields for active candidates, profitable candidates, accepted candidates, max closed trades, most-active candidate, best-PnL candidate, and active family/profile coverage.
+
+Sources used for this pass: Freqtrade backtesting, strategy modes, hyperopt, FreqAI, and fee handling docs; Hummingbot strategy, controller, and executor docs; NautilusTrader architecture and live-trading docs; HftBacktest introduction and queue-position docs.
 
 ## Repository Matrix
 
@@ -88,12 +100,24 @@ Implemented in the current operator pass:
 
 - https://www.freqtrade.io/en/stable/
 - https://www.freqtrade.io/en/stable/bot-usage/
+- https://www.freqtrade.io/en/stable/backtesting/
+- https://www.freqtrade.io/en/stable/hyperopt/
+- https://www.freqtrade.io/en/stable/freqai/
+- https://www.freqtrade.io/en/stable/strategy-customization/
+- https://www.freqtrade.io/en/stable/bot-basics/
 - https://hummingbot.org/docs/
+- https://hummingbot.org/strategies/
+- https://hummingbot.org/strategies/v2-strategies/
+- https://hummingbot.org/strategies/v2-strategies/controllers/
+- https://hummingbot.org/strategies/v2-strategies/executors/
 - https://hummingbot.org/strategies/scripts/cheatsheet/
 - https://github.com/Drakkar-Software/OctoBot
 - https://github.com/ccxt/ccxt/wiki/manual
 - https://github.com/ccxt/binance-trade-bot
+- https://nautilustrader.io/docs/latest/concepts/architecture/
 - https://nautilustrader.io/docs/latest/concepts/live/
+- https://hftbacktest.readthedocs.io/
+- https://hftbacktest.readthedocs.io/en/v1.8.4/tutorials/Probability%20Queue%20Models.html
 - https://www.lean.io/cli/
 - https://github.com/jesse-ai/jesse
 - https://vectorbt.dev/getting-started/features/

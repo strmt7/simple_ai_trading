@@ -223,21 +223,26 @@ weakening risk controls.
   breakout, VWAP/RSI mean reversion, trend-pullback, volatility breakout, and
   volume-flow proxy families with normal and inverted orientation. The latest
   implementation adds order-flow momentum, flow-reversion, flow-consensus
-  breakout, and liquidity-absorption reversal families that use serialized
-  offsets into the advanced aggTrade-derived order-flow feature block, plus
-  longer-hold profiles to reduce immediate fee churn. The rule-alpha prefix is
+  breakout, liquidity-absorption reversal, micro-flow scalp, VWAP snapback
+  scalp, liquidity-sweep reversal, compression breakout scalp, and adaptive
+  tape-regime families that use serialized offsets into the advanced
+  aggTrade-derived order-flow feature block, plus short-hold and longer-hold
+  profiles to test activity without changing risk gates. The rule-alpha prefix is
   now stratified so each family and execution profile is represented before
-  nearby parameter variants are explored; the default 72 candidates cover all 54
+  nearby parameter variants are explored; the default 126 candidates cover all
   base family/profile combinations. Regime and liquidity-session arrays are
   cached across candidate replays without changing risk gates. Rejected alpha
   searches record best active profile, family, score, P&L, closed trades, win
   rate, profit factor, max drawdown, exit-reason counts, side counts, reject
-  reason, orientation, and evaluated candidate count. The
-  `round-stratified-alpha-search-1d-smoke` evidence run still produced zero
-  accepted symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT; best
-  active alpha profiles were less negative than the previous smoke but still
-  lost money after costs on the selection slice. The support is implemented and
-  exercised by real-data smoke evidence, but it is not profitable evidence.
+  reason, orientation, evaluated candidate count, active/profitable/accepted
+  candidate counts, most-active candidate, best-PnL candidate, and active
+  family/profile coverage. The
+  `round-microstructure-alpha-expanded-1d-smoke` evidence run still produced
+  zero accepted symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
+  It did prove the search is active: 216 BTCUSDT, 234 ETHUSDT, and 216 SOLUSDT
+  rule-alpha variants closed at least one trade, but none were profitable after
+  costs. The support is implemented and exercised by real-data smoke evidence,
+  but it is not profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time

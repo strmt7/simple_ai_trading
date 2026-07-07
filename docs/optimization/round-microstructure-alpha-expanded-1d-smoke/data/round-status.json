@@ -5,12 +5,12 @@
   "compute_backend_kind": "directml",
   "compute_backend_reason": "",
   "compute_backend_requested": "directml",
-  "generated_at_utc": "2026-07-07T04:23:30.037866Z",
-  "metrics_csv_path": "docs/optimization/round-stratified-alpha-search-1d-smoke/data/backtest-metrics.csv",
+  "generated_at_utc": "2026-07-07T05:14:34.664527Z",
+  "metrics_csv_path": "docs/optimization/round-microstructure-alpha-expanded-1d-smoke/data/backtest-metrics.csv",
   "phase": "round_complete",
-  "report_path": "docs/optimization/round-stratified-alpha-search-1d-smoke/data/report.json",
+  "report_path": "docs/optimization/round-microstructure-alpha-expanded-1d-smoke/data/report.json",
   "require_gpu": true,
-  "round_id": "round-stratified-alpha-search-1d-smoke",
+  "round_id": "round-microstructure-alpha-expanded-1d-smoke",
   "status": "complete",
   "symbol_count_requested": 3
 }

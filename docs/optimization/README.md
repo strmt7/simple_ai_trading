@@ -17,7 +17,7 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-stratified-alpha-search-1d-smoke`, a failed
+The current retained checkpoint is `round-microstructure-alpha-expanded-1d-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
 `1s` SQLite market data. It is kept because it is truthful negative evidence:
 the default model trained on real second-level data, used DirectML for training
@@ -26,7 +26,9 @@ conservative hybrid model-zoo from the rejected base model's diagnostic
 threshold, then searched an interpretable order-flow-aware rule-alpha template zoo across
 momentum breakout, VWAP/RSI mean reversion, trend-pullback, volatility
 breakout, volume-flow proxy, order-flow momentum, flow-reversion,
-flow-consensus breakout, and liquidity-absorption reversal families.
+flow-consensus breakout, liquidity-absorption reversal, micro-flow scalp,
+VWAP snapback scalp, liquidity-sweep reversal, compression breakout scalp, and
+adaptive tape-regime families.
 The alpha prefix is stratified so every family and execution profile is covered
 before nearby parameter variants are explored.
 Normal and inverted alpha variants were evaluated. None passed the objective gates. Rejected candidates keep
@@ -142,10 +144,12 @@ open-source trading systems: broad entry/exit template sweeps happen before any
 template is allowed into live execution. The current templates are original
 implementations of momentum breakout, VWAP/RSI mean reversion, trend-pullback,
 volatility breakout, volume-flow proxy, order-flow momentum, flow-reversion,
-flow-consensus breakout, and liquidity-absorption reversal ideas. Order-flow
+flow-consensus breakout, liquidity-absorption reversal, micro-flow scalp,
+VWAP snapback scalp, liquidity-sweep reversal, compression breakout scalp, and
+adaptive tape-regime ideas. Order-flow
 templates receive serialized offsets into the advanced aggTrade-derived
 order-flow feature block, so GPU and CPU inference use the same microstructure
-inputs. The default 72-candidate prefix covers every family/profile base
+inputs. The default 126-candidate prefix covers every family/profile base
 combination before testing nearby threshold/sensitivity/deadband variants. Each
 template is tested with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so
@@ -154,10 +158,14 @@ experts, so a promoted alpha uses the same CLI, Windows app, backtest, and live
 prediction path. Rejected alpha searches record best rejected profile, family,
 score, P&L, closed trades, win rate, profit factor, max drawdown, exit-reason
 counts, side counts, reject reason, orientation, and candidate count in
-`candidate-diagnostics.csv`.
+`candidate-diagnostics.csv`. They also record the full zoo's active candidate
+count, profitable candidate count, accepted candidate count, maximum closed
+trades, most-active candidate, best-PnL candidate, and active family/profile
+coverage so no round can hide a losing high-activity search behind a quiet
+no-entry final model.
 
 Latest retained local smoke evidence from 2026-07-07 is
-`round-stratified-alpha-search-1d-smoke`. It uses the verified UTC window
+`round-microstructure-alpha-expanded-1d-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
 missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
@@ -166,19 +174,23 @@ cost-aware labels, order-flow features built from real quote volume, trade
 count, taker-buy volume, signed flow, no-trade ratio, flow/return alignment,
 flow strength, flow persistence, flow acceleration, and price/flow divergence,
 hybrid rescue profiles, order-flow-aware rule-alpha experts serialized with the
-v9 171-feature advanced vector, and 144 rule-alpha normal/inverted replays per symbol.
+v9 171-feature advanced vector, and 252 rule-alpha normal/inverted replays per symbol.
 It failed the critical gate: zero accepted symbols, zero total closed holdout
 trades, mean ROI `0.0%`, median ROI `0.0%`, mean buy-and-hold ROI
 `-0.0990046820488913%`, worst drawdown `0.0%`, three rejected diagnostic
 threshold trades, and no liquidations. BTCUSDT, ETHUSDT, and SOLUSDT all stayed
 in no-entry state (`decision_threshold=1.0`, long threshold `1.0`, no executable
 short threshold). Best rejected alpha evidence was also negative: BTCUSDT's
-best active alpha was `momentum_breakout:guarded:t0.54:s6.0:d0.02` with
+least-bad active alpha was `momentum_breakout:guarded:t0.54:s6.0:d0.02` with
 `-0.6405880579098948` selection P&L over 1 closed short; ETHUSDT's least-bad
-active alpha was inverted `liquidity_absorption_reversal:guarded:t0.54:s6.0:d0.02`
-with `-0.5363706418223728` P&L over 1 closed long; SOLUSDT's best active alpha
+active alpha was `volatility_breakout:scalp_3s:t0.54:s6.0:d0.02` with
+`-0.4777638673568845` P&L over 1 closed long; SOLUSDT's least-bad active alpha
 was `flow_reversion:held_180s:t0.54:s6.0:d0.02` with `-0.5233335205740559`
-P&L over 1 closed long. This is truthful negative evidence, not promotion
+P&L over 1 closed long. The expanded alpha search did create activity before
+the final fail-closed no-entry model: BTCUSDT had 216 active candidates,
+ETHUSDT had 234, SOLUSDT had 216, and each symbol had a 24-closed-trade
+most-active candidate. None were profitable after modeled costs, so the
+software correctly refused promotion. This is truthful negative evidence, not promotion
 evidence: the window is one verified day, not years, every symbol failed
 selection gates, and no candidate, hybrid, or rule-alpha profile showed an
 after-cost edge that was safe to trade.
