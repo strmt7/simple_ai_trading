@@ -54,9 +54,9 @@ def _rows(*, rising: bool = True, count: int = 36) -> list[ModelRow]:
 
 
 def test_rule_alpha_candidates_are_bounded_and_diverse() -> None:
-    candidates = rule_alpha_candidates("conservative", max_candidates=12)
+    candidates = rule_alpha_candidates("conservative", max_candidates=15)
 
-    assert len(candidates) == 12
+    assert len(candidates) == 15
     assert {candidate.family for candidate in candidates} >= {
         "momentum_breakout",
         "flow_consensus_breakout",
@@ -64,6 +64,7 @@ def test_rule_alpha_candidates_are_bounded_and_diverse() -> None:
         "micro_flow_scalp",
         "vwap_snapback_scalp",
         "liquidity_sweep_reversal",
+        "volume_synchronized_flow",
     }
     assert {candidate.name.split(":")[1] for candidate in candidates} >= {
         "scalp_3s",
@@ -104,6 +105,7 @@ def test_rule_alpha_default_search_covers_base_family_profile_matrix() -> None:
         "vwap_snapback_scalp",
         "liquidity_sweep_reversal",
         "compression_breakout_scalp",
+        "volume_synchronized_flow",
         "adaptive_tape_regime",
     }
     assert profiles == {
@@ -397,6 +399,64 @@ def test_rule_alpha_scalp_families_use_tape_and_price_state() -> None:
 
     assert model.predict_proba(long_row.features) > 0.54
     assert model.predict_proba(short_row.features) < 0.46
+
+
+def test_rule_alpha_volume_synchronized_flow_uses_flow_price_agreement() -> None:
+    cfg = default_config_for("conservative", FEATURE_NAMES)
+    feature_params = rule_alpha_feature_params(cfg)
+    start = int(feature_params["order_flow_start"])
+    width = int(feature_params["order_flow_width"])
+    features = [0.0] * (start + (3 * width))
+    features[0] = 0.0014
+    features[1] = 0.0012
+    features[2] = 0.0007
+    features[6] = 0.0005
+    features[9] = 1.3
+    features[10] = 0.0008
+    for group_start in range(start, start + (3 * width), width):
+        features[group_start + 0] = 0.71
+        features[group_start + 1] = 0.58
+        features[group_start + 2] = 0.55
+        features[group_start + 3] = 0.36
+        features[group_start + 4] = 0.34
+        features[group_start + 5] = 0.22
+        features[group_start + 6] = 0.0
+        features[group_start + 7] = 0.62
+        features[group_start + 8] = 0.24
+        features[group_start + 9] = 0.44
+        features[group_start + 10] = 0.36
+        features[group_start + 11] = 0.28
+        features[group_start + 12] = 0.02
+    synchronized = ModelRow(timestamp=0, close=100.0, features=tuple(features), label=1, volume=1000.0)
+    noisy_features = list(features)
+    for group_start in range(start, start + (3 * width), width):
+        noisy_features[group_start + 6] = 0.85
+        noisy_features[group_start + 7] = -0.60
+        noisy_features[group_start + 12] = 0.80
+    noisy = ModelRow(timestamp=1, close=100.0, features=tuple(noisy_features), label=0, volume=1000.0)
+    candidate = RuleAlphaCandidate(
+        name="volume_synchronized_flow:unit",
+        family="volume_synchronized_flow",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.01,
+        stop_loss_multiplier=0.18,
+        take_profit_multiplier=0.16,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=4,
+        flat_signal_exit_grace_bars=1,
+    )
+
+    model = model_for_rule_alpha(
+        [synchronized, noisy],
+        candidate,
+        StrategyConfig(),
+        market_type="futures",
+        feature_params=feature_params,
+    )
+
+    assert model.predict_proba(synchronized.features) > 0.54
+    assert model.predict_proba(noisy.features) < model.predict_proba(synchronized.features)
 
 
 def test_summarize_rule_alpha_trade_path_counts_exits_and_sides() -> None:

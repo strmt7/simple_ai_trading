@@ -983,6 +983,41 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         )
                         liquidity_quality = 1.0 - 0.5 * torch.clamp(no_trade_ratio, min=0.0, max=1.0)
                         score = direction * (0.55 + 0.45 * compression) * participation * liquidity_quality
+                    elif family == "volume_synchronized_flow":
+                        flow_direction = (
+                            0.24 * torch.tanh(signed_base * 2.7)
+                            + 0.22 * torch.tanh(signed_quote * 2.7)
+                            + 0.16 * torch.tanh(signed_ratio_delta * 3.2)
+                            + 0.14 * torch.tanh(flow_acceleration * 2.8)
+                            + 0.10 * torch.tanh((taker_buy_ratio - 0.5) * 5.0)
+                            + 0.08 * torch.tanh(flow_persistence * 2.0)
+                            + 0.06 * torch.tanh(quote_per_trade_impulse * 1.8)
+                        )
+                        price_direction = (
+                            0.30 * torch.tanh(momentum_1 * 280.0)
+                            + 0.24 * torch.tanh(momentum_3 * 190.0)
+                            + 0.18 * torch.tanh(momentum_10 * 115.0)
+                            + 0.14 * torch.tanh(trend_acceleration * 240.0)
+                            + 0.08 * torch.tanh(ema_gap * 105.0)
+                            - 0.06 * torch.tanh(gap_to_vwap * 125.0)
+                        )
+                        participation = (
+                            0.42
+                            + 0.22 * torch.tanh(volume_ratio * 1.6)
+                            + 0.18 * torch.tanh(trade_impulse * 1.8)
+                            + 0.18 * torch.tanh(quote_impulse * 1.8)
+                        )
+                        synchronization = 0.50 + 0.50 * torch.tanh(flow_return_alignment * 2.4)
+                        flow_strength = 0.58 + 0.42 * torch.tanh(mean_abs_signed_ratio * 3.4)
+                        liquidity_quality = 1.0 - torch.clamp(no_trade_ratio, min=0.0, max=1.0)
+                        divergence_penalty = 0.18 * torch.tanh(torch.abs(price_flow_divergence) * 2.8)
+                        penalty_direction = torch.sign(torch.where(flow_direction != 0.0, flow_direction, price_direction))
+                        score = (
+                            liquidity_quality
+                            * flow_strength
+                            * (0.62 * synchronization * flow_direction + 0.38 * price_direction)
+                            * (0.72 + 0.28 * participation)
+                        ) - divergence_penalty * penalty_direction
                     elif family == "adaptive_tape_regime":
                         trend = (
                             0.30 * torch.tanh(momentum_1 * 310.0)

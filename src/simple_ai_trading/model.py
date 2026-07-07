@@ -295,6 +295,40 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
         )
         liquidity_quality = 1.0 - 0.5 * _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
         score = direction * (0.55 + 0.45 * compression) * participation * liquidity_quality
+    elif family == "volume_synchronized_flow":
+        flow_direction = (
+            0.24 * math.tanh(order_flow["signed_base"] * 2.7)
+            + 0.22 * math.tanh(order_flow["signed_quote"] * 2.7)
+            + 0.16 * math.tanh(order_flow["signed_ratio_delta"] * 3.2)
+            + 0.14 * math.tanh(order_flow["flow_acceleration"] * 2.8)
+            + 0.10 * math.tanh((order_flow["taker_buy_ratio"] - 0.5) * 5.0)
+            + 0.08 * math.tanh(order_flow["flow_persistence"] * 2.0)
+            + 0.06 * math.tanh(order_flow["quote_per_trade_impulse"] * 1.8)
+        )
+        price_direction = (
+            0.30 * math.tanh(momentum_1 * 280.0)
+            + 0.24 * math.tanh(momentum_3 * 190.0)
+            + 0.18 * math.tanh(momentum_10 * 115.0)
+            + 0.14 * math.tanh(trend_acceleration * 240.0)
+            + 0.08 * math.tanh(ema_gap * 105.0)
+            - 0.06 * math.tanh(gap_to_vwap * 125.0)
+        )
+        participation = (
+            0.42
+            + 0.22 * math.tanh(volume_ratio * 1.6)
+            + 0.18 * math.tanh(order_flow["trade_impulse"] * 1.8)
+            + 0.18 * math.tanh(order_flow["quote_impulse"] * 1.8)
+        )
+        synchronization = 0.50 + 0.50 * math.tanh(order_flow["flow_return_alignment"] * 2.4)
+        flow_strength = 0.58 + 0.42 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.4)
+        liquidity_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
+        divergence_penalty = 0.18 * math.tanh(abs(order_flow["price_flow_divergence"]) * 2.8)
+        score = (
+            liquidity_quality
+            * flow_strength
+            * (0.62 * synchronization * flow_direction + 0.38 * price_direction)
+            * (0.72 + 0.28 * participation)
+        ) - divergence_penalty * math.copysign(1.0, flow_direction if flow_direction != 0.0 else price_direction)
     elif family == "adaptive_tape_regime":
         trend = (
             0.30 * math.tanh(momentum_1 * 310.0)
@@ -586,7 +620,7 @@ class TrainedModel:
         values = list(features[: max(1, min(int(expert.feature_count), len(features)))])
         while len(values) < 13:
             values.append(0.0)
-        score = _rule_alpha_score_from_values(values[:13], expert.params)
+        score = _rule_alpha_score_from_values(values, expert.params)
         sensitivity = _param_float(expert.params, "sensitivity", 7.0, low=0.1, high=30.0)
         bias = _param_float(expert.params, "bias", 0.0, low=-5.0, high=5.0)
         return _clamp(_sigmoid(score * sensitivity + bias), 0.0, 1.0)
