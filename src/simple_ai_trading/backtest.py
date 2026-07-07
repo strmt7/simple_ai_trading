@@ -817,6 +817,9 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     order_start = int(_clamp_float(params.get("order_flow_start", -1), -1, 100000, -1))
                     order_width = int(_clamp_float(params.get("order_flow_width", 9), 1, 64, 9))
                     order_count = int(_clamp_float(params.get("order_flow_window_count", 0), 0, 32, 0))
+                    htf_start = int(_clamp_float(params.get("higher_timeframe_start", -1), -1, 100000, -1))
+                    htf_width = int(_clamp_float(params.get("higher_timeframe_width", 8), 1, 64, 8))
+                    htf_count = int(_clamp_float(params.get("higher_timeframe_window_count", 0), 0, 32, 0))
                     taker_buy_ratio = torch.full_like(momentum_1, 0.5)
                     signed_base = torch.zeros_like(momentum_1)
                     signed_quote = torch.zeros_like(momentum_1)
@@ -830,6 +833,14 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     flow_persistence = torch.zeros_like(momentum_1)
                     flow_acceleration = torch.zeros_like(momentum_1)
                     price_flow_divergence = torch.zeros_like(momentum_1)
+                    htf_return = torch.zeros_like(momentum_1)
+                    htf_mean_gap = torch.zeros_like(momentum_1)
+                    htf_realized_volatility = torch.zeros_like(momentum_1)
+                    htf_range = torch.zeros_like(momentum_1)
+                    htf_drawdown = torch.zeros_like(momentum_1)
+                    htf_bounce = torch.zeros_like(momentum_1)
+                    htf_volume_impulse = torch.zeros_like(momentum_1)
+                    htf_trade_impulse = torch.zeros_like(momentum_1)
                     flow_groups = []
                     if order_start >= 0 and order_count > 0:
                         for order_index in range(order_count):
@@ -853,6 +864,23 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         flow_persistence = torch.clamp(torch.mean(flow_stack[:, 10, :], dim=1), min=-1.0, max=1.0) if order_width > 10 else flow_persistence
                         flow_acceleration = torch.clamp(torch.mean(flow_stack[:, 11, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 11 else flow_acceleration
                         price_flow_divergence = torch.clamp(torch.mean(flow_stack[:, 12, :], dim=1), min=-1.0, max=1.0) if order_width > 12 else price_flow_divergence
+                    htf_groups = []
+                    if htf_start >= 0 and htf_count > 0:
+                        for htf_index in range(htf_count):
+                            group_start = htf_start + htf_index * htf_width
+                            group_end = group_start + htf_width
+                            if group_end <= raw_values.shape[1]:
+                                htf_groups.append(raw_values[:, group_start:group_end])
+                    if htf_groups:
+                        htf_stack = torch.stack(htf_groups, dim=2)
+                        htf_return = torch.clamp(torch.mean(htf_stack[:, 0, :], dim=1), min=-1.0, max=1.0)
+                        htf_mean_gap = torch.clamp(torch.mean(htf_stack[:, 1, :], dim=1), min=-1.0, max=1.0) if htf_width > 1 else htf_mean_gap
+                        htf_realized_volatility = torch.clamp(torch.abs(torch.mean(htf_stack[:, 2, :], dim=1)), min=0.0, max=1.0) if htf_width > 2 else htf_realized_volatility
+                        htf_range = torch.clamp(torch.abs(torch.mean(htf_stack[:, 3, :], dim=1)), min=0.0, max=2.0) if htf_width > 3 else htf_range
+                        htf_drawdown = torch.clamp(torch.mean(htf_stack[:, 4, :], dim=1), min=-1.0, max=0.0) if htf_width > 4 else htf_drawdown
+                        htf_bounce = torch.clamp(torch.mean(htf_stack[:, 5, :], dim=1), min=0.0, max=2.0) if htf_width > 5 else htf_bounce
+                        htf_volume_impulse = torch.clamp(torch.mean(htf_stack[:, 6, :], dim=1), min=-5.0, max=5.0) if htf_width > 6 else htf_volume_impulse
+                        htf_trade_impulse = torch.clamp(torch.mean(htf_stack[:, 7, :], dim=1), min=-5.0, max=5.0) if htf_width > 7 else htf_trade_impulse
                     if family == "mean_reversion_vwap":
                         score = (
                             0.36 * torch.tanh((0.42 - rsi) * 5.4)
@@ -1076,6 +1104,44 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         persistence = torch.tanh(flow_persistence * 2.4 + flow_return_alignment * 1.8)
                         trend_weight = 0.5 + 0.5 * persistence
                         score = trend_weight * trend + (1.0 - trend_weight) * reversion
+                    elif family == "higher_timeframe_alignment":
+                        if not htf_groups:
+                            score = torch.zeros_like(momentum_1)
+                        else:
+                            broad_direction = (
+                                0.30 * torch.tanh(htf_return * 105.0)
+                                + 0.22 * torch.tanh(htf_mean_gap * 125.0)
+                                + 0.14 * torch.tanh(htf_bounce * 32.0)
+                                + 0.14 * torch.tanh(htf_drawdown * 32.0)
+                                + 0.10 * torch.tanh(htf_volume_impulse * 1.5)
+                                + 0.10 * torch.tanh(htf_trade_impulse * 1.5)
+                            )
+                            local_direction = (
+                                0.24 * torch.tanh(momentum_1 * 300.0)
+                                + 0.22 * torch.tanh(momentum_3 * 210.0)
+                                + 0.18 * torch.tanh(momentum_10 * 130.0)
+                                + 0.14 * torch.tanh(ema_gap * 115.0)
+                                + 0.12 * torch.tanh(signed_base * 2.4)
+                                + 0.10 * torch.tanh(flow_acceleration * 2.4)
+                            )
+                            same_direction = broad_direction * local_direction
+                            alignment = 0.42 + 0.58 * (0.5 + 0.5 * torch.tanh(same_direction * 5.0))
+                            volatility_penalty = 0.35 * torch.tanh(
+                                htf_realized_volatility * 130.0 + htf_range * 32.0
+                            )
+                            participation = (
+                                0.64
+                                + 0.18 * torch.tanh(htf_volume_impulse * 1.4)
+                                + 0.18 * torch.tanh(volume_ratio * 1.8)
+                            )
+                            flow_quality = 1.0 - 0.5 * torch.clamp(no_trade_ratio, min=0.0, max=1.0)
+                            score = (
+                                alignment
+                                * torch.clamp(1.0 - volatility_penalty, min=0.20)
+                                * participation
+                                * flow_quality
+                                * (0.54 * local_direction + 0.46 * broad_direction)
+                            )
                     else:
                         score = (
                             0.32 * torch.tanh(momentum_20 * 90.0)

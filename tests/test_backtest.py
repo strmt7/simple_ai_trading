@@ -496,6 +496,94 @@ def test_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
     assert max(abs(left - right) for left, right in zip(gpu, cpu, strict=True)) < 1e-5
 
 
+def test_higher_timeframe_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
+    backend = backtest_module.resolve_backend("directml")
+    if backend.kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+    rows: list[ModelRow] = []
+    for index in range(18):
+        sign = 1.0 if index % 2 else -1.0
+        base = [
+            0.0015 * sign,
+            0.0012 * sign,
+            0.0009 * sign,
+            0.0004 * sign,
+            0.0,
+            0.55 if sign > 0 else 0.45,
+            0.0007 * sign,
+            0.0002,
+            0.0002,
+            1.2,
+            0.0007 * sign,
+            0.0001 * sign,
+            0.2,
+        ]
+        htf = [
+            0.004 * sign,
+            0.002 * sign,
+            0.0002,
+            0.006,
+            -0.002 if sign > 0 else -0.005,
+            0.005 if sign > 0 else 0.002,
+            0.30 * sign,
+            0.20 * sign,
+        ]
+        flow = [
+            0.70 if sign > 0 else 0.30,
+            0.42 * sign,
+            0.35 * sign,
+            0.12,
+            0.10,
+            0.05,
+            0.0,
+            0.25 * sign,
+            0.18 * sign,
+            0.30,
+            0.12 * sign,
+            0.22 * sign,
+            0.05 * sign,
+        ]
+        rows.append(ModelRow(
+            timestamp=index * 1000,
+            close=100.0 + index * sign,
+            features=tuple(base + htf + flow),
+            label=1 if sign > 0 else 0,
+        ))
+    model = TrainedModel(
+        weights=[0.0] * 34,
+        bias=0.0,
+        feature_dim=34,
+        epochs=0,
+        feature_means=[0.0] * 34,
+        feature_stds=[1.0] * 34,
+        hybrid_base_weight=0.0,
+        hybrid_experts=[
+            HybridExpert(
+                name="htf-rule-alpha",
+                kind="rule_alpha",
+                weight=1.0,
+                feature_count=34,
+                params={
+                    "family": "higher_timeframe_alignment",
+                    "sensitivity": 8.0,
+                    "deadband": 0.01,
+                    "higher_timeframe_start": 13,
+                    "higher_timeframe_width": 8,
+                    "higher_timeframe_window_count": 1,
+                    "order_flow_start": 21,
+                    "order_flow_width": 13,
+                    "order_flow_window_count": 1,
+                },
+            )
+        ],
+    )
+
+    gpu = backtest_module._batch_probabilities_torch(rows, model, backend=backend, batch_size=5)
+    cpu = [model.predict_proba(row.features) for row in rows]
+
+    assert max(abs(left - right) for left, right in zip(gpu, cpu, strict=True)) < 1e-5
+
+
 def test_empirical_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
     backend = backtest_module.resolve_backend("directml")
     if backend.kind != "directml":
