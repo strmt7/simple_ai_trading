@@ -2073,6 +2073,10 @@ def _select_rule_alpha_model_zoo_if_accepted(
     model = result.model
     model.rule_alpha_evaluated_candidates = int(alpha_report.evaluated_candidates)
     candidate_summary = summarize_rule_alpha_candidate_distribution(alpha_report.candidate_results)
+    if isinstance(getattr(alpha_report, "candidate_summary", None), dict):
+        for key, value in alpha_report.candidate_summary.items():
+            if str(key).startswith("event_rank_") or str(key) == "static_template_pool_candidates":
+                candidate_summary[str(key)] = value
     empirical_evaluations = sum(
         1
         for item in alpha_report.candidate_results
@@ -2246,6 +2250,16 @@ def _round_candidate_diagnostic(
         "rule_alpha_probability_inverted": bool(getattr(model, "rule_alpha_probability_inverted", False)),
         "rule_alpha_evaluated_candidates": int(getattr(model, "rule_alpha_evaluated_candidates", 0) or 0),
         "rule_alpha_static_template_candidates": int(_finite(rule_alpha_summary.get("static_template_candidates"))),
+        "rule_alpha_static_template_pool_candidates": int(_finite(rule_alpha_summary.get("static_template_pool_candidates"))),
+        "rule_alpha_event_rank_pool_candidates": int(_finite(rule_alpha_summary.get("event_rank_pool_candidates"))),
+        "rule_alpha_event_rank_selected_template_candidates": int(_finite(rule_alpha_summary.get("event_rank_selected_template_candidates"))),
+        "rule_alpha_event_rank_positive_pool_candidates": int(_finite(rule_alpha_summary.get("event_rank_positive_pool_candidates"))),
+        "rule_alpha_event_rank_signal_pool_candidates": int(_finite(rule_alpha_summary.get("event_rank_signal_pool_candidates"))),
+        "rule_alpha_event_rank_best_candidate": str(rule_alpha_summary.get("event_rank_best_candidate", "") or ""),
+        "rule_alpha_event_rank_best_net_edge_bps": _finite(rule_alpha_summary.get("event_rank_best_net_edge_bps")),
+        "rule_alpha_event_rank_best_signal_count": int(_finite(rule_alpha_summary.get("event_rank_best_signal_count"))),
+        "rule_alpha_event_rank_best_hit_rate": _finite(rule_alpha_summary.get("event_rank_best_hit_rate")),
+        "rule_alpha_event_rank_best_probability_inverted": bool(rule_alpha_summary.get("event_rank_best_probability_inverted") is True),
         "rule_alpha_empirical_mined_candidates": int(_finite(rule_alpha_summary.get("empirical_mined_candidates"))),
         "rule_alpha_empirical_interaction_candidates": int(_finite(rule_alpha_summary.get("empirical_interaction_candidates"))),
         "rule_alpha_empirical_candidate_limit": int(_finite(rule_alpha_summary.get("empirical_candidate_limit"))),
@@ -2412,6 +2426,16 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "rule_alpha_probability_inverted": bool(item.get("rule_alpha_probability_inverted") is True),
             "rule_alpha_evaluated_candidates": int(_finite(item.get("rule_alpha_evaluated_candidates"))),
             "rule_alpha_static_template_candidates": int(_finite(item.get("rule_alpha_static_template_candidates"))),
+            "rule_alpha_static_template_pool_candidates": int(_finite(item.get("rule_alpha_static_template_pool_candidates"))),
+            "rule_alpha_event_rank_pool_candidates": int(_finite(item.get("rule_alpha_event_rank_pool_candidates"))),
+            "rule_alpha_event_rank_selected_template_candidates": int(_finite(item.get("rule_alpha_event_rank_selected_template_candidates"))),
+            "rule_alpha_event_rank_positive_pool_candidates": int(_finite(item.get("rule_alpha_event_rank_positive_pool_candidates"))),
+            "rule_alpha_event_rank_signal_pool_candidates": int(_finite(item.get("rule_alpha_event_rank_signal_pool_candidates"))),
+            "rule_alpha_event_rank_best_candidate": str(item.get("rule_alpha_event_rank_best_candidate", "")),
+            "rule_alpha_event_rank_best_net_edge_bps": _finite(item.get("rule_alpha_event_rank_best_net_edge_bps")),
+            "rule_alpha_event_rank_best_signal_count": int(_finite(item.get("rule_alpha_event_rank_best_signal_count"))),
+            "rule_alpha_event_rank_best_hit_rate": _finite(item.get("rule_alpha_event_rank_best_hit_rate")),
+            "rule_alpha_event_rank_best_probability_inverted": bool(item.get("rule_alpha_event_rank_best_probability_inverted") is True),
             "rule_alpha_empirical_mined_candidates": int(_finite(item.get("rule_alpha_empirical_mined_candidates"))),
             "rule_alpha_empirical_interaction_candidates": int(_finite(item.get("rule_alpha_empirical_interaction_candidates"))),
             "rule_alpha_empirical_candidate_limit": int(_finite(item.get("rule_alpha_empirical_candidate_limit"))),
@@ -3233,7 +3257,13 @@ def build_round_evidence(
         "rule_alpha_best_side_counts",
         "rule_alpha_best_reject_reason", "rule_alpha_probability_inverted",
         "rule_alpha_evaluated_candidates",
-        "rule_alpha_static_template_candidates", "rule_alpha_empirical_mined_candidates",
+        "rule_alpha_static_template_candidates", "rule_alpha_static_template_pool_candidates",
+        "rule_alpha_event_rank_pool_candidates", "rule_alpha_event_rank_selected_template_candidates",
+        "rule_alpha_event_rank_positive_pool_candidates", "rule_alpha_event_rank_signal_pool_candidates",
+        "rule_alpha_event_rank_best_candidate", "rule_alpha_event_rank_best_net_edge_bps",
+        "rule_alpha_event_rank_best_signal_count", "rule_alpha_event_rank_best_hit_rate",
+        "rule_alpha_event_rank_best_probability_inverted",
+        "rule_alpha_empirical_mined_candidates",
         "rule_alpha_empirical_interaction_candidates", "rule_alpha_empirical_candidate_limit",
         "rule_alpha_active_candidates", "rule_alpha_profitable_candidates",
         "rule_alpha_accepted_candidates", "rule_alpha_max_closed_trades",

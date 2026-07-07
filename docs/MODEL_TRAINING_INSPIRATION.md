@@ -230,10 +230,10 @@ weakening risk controls.
   alignment families that use serialized offsets into the advanced order-flow
   and higher-timeframe context feature blocks, plus short-hold and longer-hold
   profiles to test activity without changing risk gates. The rule-alpha prefix is
-  now stratified so each family and execution profile is represented before
-  nearby parameter variants are explored; the default 225 candidates cover all
-  base family/profile combinations plus bounded threshold/sensitivity/deadband
-  variants. CPU/live scoring preserves the full
+  now stratified into a larger cheap event-rank pool before the bounded replay
+  set is chosen; the default path still runs 225 static-template lifecycle
+  replays, but picks them by after-cost forward-event edge, signal count, and
+  hit rate. CPU/live scoring preserves the full
   serialized feature vector for advanced rule-alpha templates, and DirectML
   batch scoring is tested for parity. Regime and liquidity-session arrays are
   cached across candidate replays without changing risk gates. Rejected alpha

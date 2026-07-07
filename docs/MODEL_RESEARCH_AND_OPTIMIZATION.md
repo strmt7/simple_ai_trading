@@ -228,10 +228,14 @@ trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
 flow-reversion, flow-consensus breakout, liquidity-absorption reversal,
 micro-flow scalp, VWAP snapback scalp, liquidity-sweep reversal, compression
 breakout scalp, volume-synchronized flow, adaptive tape-regime, and
-higher-timeframe alignment families. The default 225-candidate
-prefix is stratified: it covers every family
-and execution profile, then covers the full base family/profile matrix, before
-spending remaining slots on nearby threshold/sensitivity/deadband variants.
+higher-timeframe alignment families. The default full-replay budget stays at
+225 static templates, but those replays are now selected from a larger
+stratified event-rank pool. The cheap ranker scores both normal and inverted
+orientation by after-cost forward-event edge, signal count, and hit rate before
+choosing which templates deserve full lifecycle replay. This ranker is only an
+efficiency and search-quality layer: it cannot promote a template, and every
+selected template still has to pass the same backtest, activity, edge,
+drawdown, profit-factor, expectancy, and path-quality gates.
 Order-flow and higher-timeframe templates receive serialized offsets into the
 advanced feature vector, so CPU, DirectML, CLI, Windows app, backtest, and
 live/autonomous inference use the same microstructure and broad-regime inputs.
