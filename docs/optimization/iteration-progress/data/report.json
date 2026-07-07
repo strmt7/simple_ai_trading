@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1504,
+      "bytes": 1465,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "6dac929933e9182488d583a51a9a5c0c1e47e3b49ecfab1577a3106d26f5713d"
+      "sha256": "cd97196b7e2a88826019c85c01536f1fe0db4c7a7708db69592cf22df11173f3"
     },
     {
-      "bytes": 407,
+      "bytes": 394,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 1,
-      "sha256": "a4cc629be41ff05f84bad6f887b71aa5c14b3d126de46a567bd436a9f0a395a7"
+      "sha256": "3dbd730ff60b0493c766acb1f62a4190e9c6e498ee1022090cf0b0a34db3ac60"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T05:18:12.053318Z",
-  "latest_round_id": "round-microstructure-alpha-expanded-1d-smoke",
+  "generated_at_utc": "2026-07-07T05:32:05.728262Z",
+  "latest_round_id": "round-cost-aware-alpha-1d-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 1,
   "tracked_artifacts": [

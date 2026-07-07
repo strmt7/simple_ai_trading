@@ -21,6 +21,7 @@ from .backtest import (
     precompute_backtest_regime_scores,
     run_backtest,
 )
+from .execution_simulation import execution_assumptions_from_strategy
 from .features import ModelRow
 from .model import HybridExpert, TrainedModel
 from .objective import get_objective
@@ -29,6 +30,9 @@ from .types import StrategyConfig
 
 
 DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 126
+_RULE_ALPHA_COST_FLOOR_PARTICIPATION = 0.05
+_RULE_ALPHA_MIN_PROFIT_BUFFER_BPS = 2.0
+_RULE_ALPHA_MIN_STOP_BUFFER_BPS = 1.0
 
 
 @dataclass(frozen=True)
@@ -360,6 +364,35 @@ def model_for_rule_alpha(
     return model
 
 
+def _rule_alpha_one_side_cost_bps(strategy: StrategyConfig) -> float:
+    assumptions = execution_assumptions_from_strategy(strategy)
+    latency_seconds = min(10.0, max(0.0, float(assumptions.latency_ms)) / 1000.0)
+    impact_cost = max(0.0, float(assumptions.impact_coefficient)) * math.sqrt(_RULE_ALPHA_COST_FLOOR_PARTICIPATION)
+    return max(
+        0.0,
+        max(0.0, float(assumptions.spread_bps)) / 2.0
+        + max(0.0, float(assumptions.volatility_buffer_bps)) * latency_seconds
+        + impact_cost
+        + max(0.0, float(assumptions.testnet_to_live_buffer_bps)),
+    )
+
+
+def rule_alpha_stop_loss_floor_pct(strategy: StrategyConfig) -> float:
+    """Return a minimum stop distance above one adverse modeled fill."""
+
+    fee_bps = max(0.0, float(strategy.taker_fee_bps))
+    floor_bps = _rule_alpha_one_side_cost_bps(strategy) + fee_bps + _RULE_ALPHA_MIN_STOP_BUFFER_BPS
+    return max(0.0005, floor_bps / 10_000.0)
+
+
+def rule_alpha_take_profit_floor_pct(strategy: StrategyConfig) -> float:
+    """Return the minimum target move needed to clear round-trip modeled costs."""
+
+    fee_bps = max(0.0, float(strategy.taker_fee_bps))
+    floor_bps = (2.0 * _rule_alpha_one_side_cost_bps(strategy)) + (2.0 * fee_bps) + _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS
+    return max(0.0005, floor_bps / 10_000.0)
+
+
 def optimize_rule_alpha_model_zoo(
     selection_rows: Sequence[ModelRow],
     strategy: StrategyConfig,
@@ -476,8 +509,22 @@ def optimize_rule_alpha_model_zoo(
 
 def _candidate_strategy(strategy: StrategyConfig, candidate: RuleAlphaCandidate) -> StrategyConfig:
     payload = strategy.asdict()
-    payload["stop_loss_pct"] = max(0.0005, float(strategy.stop_loss_pct) * max(0.05, candidate.stop_loss_multiplier))
-    payload["take_profit_pct"] = max(0.0005, float(strategy.take_profit_pct) * max(0.05, candidate.take_profit_multiplier))
+    stop_floor = rule_alpha_stop_loss_floor_pct(strategy)
+    take_floor = rule_alpha_take_profit_floor_pct(strategy)
+    stop_loss_pct = max(
+        0.0005,
+        stop_floor,
+        float(strategy.stop_loss_pct) * max(0.05, candidate.stop_loss_multiplier),
+    )
+    take_profit_pct = max(
+        0.0005,
+        take_floor,
+        float(strategy.take_profit_pct) * max(0.05, candidate.take_profit_multiplier),
+    )
+    if take_profit_pct <= stop_loss_pct:
+        take_profit_pct = stop_loss_pct + (_RULE_ALPHA_MIN_PROFIT_BUFFER_BPS / 10_000.0)
+    payload["stop_loss_pct"] = stop_loss_pct
+    payload["take_profit_pct"] = take_profit_pct
     payload["cooldown_minutes"] = max(0, int(round(float(strategy.cooldown_minutes) * max(0.0, candidate.cooldown_multiplier))))
     payload["min_position_hold_bars"] = max(0, int(candidate.min_position_hold_bars))
     payload["flat_signal_exit_grace_bars"] = max(0, int(candidate.flat_signal_exit_grace_bars))
@@ -524,6 +571,8 @@ __all__ = [
     "optimize_rule_alpha_model_zoo",
     "rule_alpha_candidates",
     "rule_alpha_feature_params",
+    "rule_alpha_stop_loss_floor_pct",
+    "rule_alpha_take_profit_floor_pct",
     "summarize_rule_alpha_candidate_distribution",
     "summarize_rule_alpha_trade_path",
 ]

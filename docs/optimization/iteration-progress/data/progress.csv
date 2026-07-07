@@ -1,2 +1,2 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-microstructure-alpha-expanded-1d-smoke,2026-07-07T05:14:34.918131Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0
+round-cost-aware-alpha-1d-smoke,2026-07-07T05:31:10.848875Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0
