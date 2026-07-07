@@ -135,6 +135,55 @@ def test_market_quality_features_are_finite_and_live_inference_safe():
     assert len(inference_rows[-1].features) == am.advanced_feature_dimension(cfg)
 
 
+def test_higher_timeframe_context_uses_only_closed_context_bars():
+    candles = [
+        Candle(
+            open_time=i * 1_000,
+            open=100.0 + i * 0.01,
+            high=100.2 + i * 0.01,
+            low=99.8 + i * 0.01,
+            close=100.05 + i * 0.01,
+            volume=1.0 + (i % 4),
+            close_time=i * 1_000 + 999,
+            quote_volume=(100.05 + i * 0.01) * (1.0 + (i % 4)),
+            trade_count=2 + (i % 3),
+        )
+        for i in range(120)
+    ]
+    context = am._aggregate_higher_timeframe_candles(candles, 60_000)
+    close_times = [candle.close_time for candle in context]
+
+    assert len(context) == 2
+    assert close_times == [59_999, 119_999]
+    assert am._higher_timeframe_context_features_at(context, close_times, 119_998, (2,)) == [0.0] * 8
+    features = am._higher_timeframe_context_features_at(context, close_times, 119_999, (2,))
+    assert len(features) == 8
+    assert all(math.isfinite(value) for value in features)
+    assert features[0] > 0.0
+
+
+def test_higher_timeframe_context_is_dimensioned_for_train_and_inference():
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(),
+        confluence_windows=(),
+        market_quality_windows=(),
+        higher_timeframe_windows=(2, 5),
+        higher_timeframe_bucket_ms=60_000,
+    )
+    candles = _candles(80)
+    rows = am.make_advanced_rows(candles, cfg)
+    inference_rows = am.make_advanced_inference_rows(candles, cfg)
+
+    assert am.advanced_feature_dimension(cfg) == 4 + 16 + 8
+    assert rows
+    assert inference_rows
+    assert len(rows[-1].features) == am.advanced_feature_dimension(cfg)
+    assert len(inference_rows[-1].features) == am.advanced_feature_dimension(cfg)
+
+
 def test_make_advanced_rows_directml_matches_cpu_when_available() -> None:
     if resolve_backend("directml").kind != "directml":
         pytest.skip("DirectML backend is not available on this host")
@@ -349,6 +398,7 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
         extra_lookback_windows=(5, 20),
         confluence_windows=(8,),
         market_quality_windows=(13,),
+        higher_timeframe_windows=(34,),
         order_flow_windows=(21,),
         nonlinear_transforms=("tanh", "log1p"),
     )
@@ -360,6 +410,7 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
         "extra_lookback_windows",
         "technical_confluence",
         "market_quality_regime",
+        "higher_timeframe_context",
         "order_flow_microstructure",
         "nonlinear_transforms",
         "polynomial_interactions",
@@ -389,6 +440,8 @@ def test_advanced_config_from_signature_round_trips_candidate_specific_fields() 
         extra_lookback_windows=(4, 12, 48),
         confluence_windows=(5, 13, 34),
         market_quality_windows=(10, 30),
+        higher_timeframe_windows=(60, 240),
+        higher_timeframe_bucket_ms=60_000,
         order_flow_windows=(6, 18),
         nonlinear_transforms=("tanh", "log1p"),
         short_window=8,
@@ -419,9 +472,11 @@ def test_legacy_v8_signature_keeps_nine_order_flow_fields_per_window() -> None:
     )
     current_parts = am.advanced_feature_signature(cfg).split("|")
     legacy_parts = [
-        part.replace("advanced_version=v9-flow-state", "advanced_version=v8-information-event")
+        part.replace("advanced_version=v10-higher-timeframe-context", "advanced_version=v8-information-event")
         for part in current_parts
         if not part.startswith("order_flow_features_per_window=")
+        and not part.startswith("higher_timeframe_windows=")
+        and not part.startswith("higher_timeframe_bucket_ms=")
     ]
     parsed = am.advanced_config_from_signature("|".join(legacy_parts), FEATURE_NAMES)
 
@@ -441,13 +496,16 @@ def test_default_config_for_branches():
     assert a.polynomial_top_features == 5
     assert a.confluence_windows == (12, 36, 96)
     assert a.market_quality_windows == (30, 90, 180)
+    assert a.higher_timeframe_windows == (60, 240, 720)
     assert a.order_flow_windows == (15, 45, 120)
     assert a.label_lookahead == 8
     assert b.polynomial_degree == 3
     assert b.confluence_windows == (5, 13, 34, 89)
     assert b.market_quality_windows == (10, 30, 90)
+    assert b.higher_timeframe_windows == (10, 30, 120)
     assert b.order_flow_windows == (5, 15, 45, 90)
     assert b.label_threshold == pytest.approx(0.0005)
+    assert c.higher_timeframe_windows == (20, 60, 180)
     assert c.polynomial_top_features == len(FEATURE_NAMES)
     assert c.confluence_windows == (8, 21, 55)
     assert c.market_quality_windows == (20, 60, 120)

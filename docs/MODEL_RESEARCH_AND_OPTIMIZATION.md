@@ -430,6 +430,15 @@ searched beside label-horizon and triple-barrier variants. These probes are not
 lower safety standards; they only broaden the search surface before the same
 closed-trade, positive-P&L, edge, drawdown, profit-factor, and expectancy gates
 decide whether evidence can be accepted.
+The v10 advanced feature contract adds a separate
+`higher_timeframe_context` group. It derives closed one-minute context bars from
+the same candle stream used by the 1-second model and appends broad-regime
+return, average-distance, realized-volatility, range, drawdown/bounce, volume,
+and trade-count features. The context uses only bars whose close timestamp is
+not later than the row timestamp, so it does not leak the current unfinished
+minute into training or live inference. This is an evidence surface for broader
+day-trading regime alignment; it is not treated as proof of profitability until
+the same real-data backtest, activity, risk, and promotion gates pass.
 Automatic optimization universe selection is strict by default: symbols must
 pass the strategy's live liquidity gates at selection time. Research-tier
 symbols can be inspected only through an explicit opt-in code path and must not

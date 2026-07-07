@@ -17,6 +17,7 @@ inference at test / live time recomputes the same feature vector every call.
 from __future__ import annotations
 
 import math
+from bisect import bisect_right
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -33,9 +34,10 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v9-flow-state"
+ADVANCED_FEATURE_VERSION = "v10-higher-timeframe-context"
 _SUPPORTED_ADVANCED_FEATURE_VERSIONS = {
     ADVANCED_FEATURE_VERSION,
+    "v9-flow-state",
     "v8-information-event",
     "v7-volatility-barrier",
     "v6-order-flow",
@@ -43,6 +45,7 @@ _SUPPORTED_ADVANCED_FEATURE_VERSIONS = {
 _EXTRA_FEATURES_PER_WINDOW = 7
 _CONFLUENCE_FEATURES_PER_WINDOW = 9
 _MARKET_QUALITY_FEATURES_PER_WINDOW = 10
+_HIGHER_TIMEFRAME_FEATURES_PER_WINDOW = 8
 _ORDER_FLOW_FEATURES_PER_WINDOW = 13
 
 
@@ -61,6 +64,8 @@ class AdvancedFeatureConfig:
     extra_lookback_windows: tuple[int, ...] = (5, 20, 60)
     confluence_windows: tuple[int, ...] = ()
     market_quality_windows: tuple[int, ...] = ()
+    higher_timeframe_windows: tuple[int, ...] = ()
+    higher_timeframe_bucket_ms: int = 60_000
     order_flow_windows: tuple[int, ...] = ()
     nonlinear_transforms: tuple[str, ...] = ("tanh", "log1p")
     short_window: int = 10
@@ -780,6 +785,128 @@ def _market_quality_features_at(cache: _ConfluenceCache, end: int, windows: Sequ
     return features
 
 
+def _aggregate_higher_timeframe_candles(candles: Sequence[Candle], bucket_ms: int) -> list[Candle]:
+    """Build closed context bars from the same point-in-time candle stream."""
+
+    bucket = max(1, int(bucket_ms))
+    aggregated: list[Candle] = []
+    current_bucket: int | None = None
+    current_open_time = 0
+    current_open = 0.0
+    current_high = 0.0
+    current_low = 0.0
+    current_close = 0.0
+    current_volume = 0.0
+    current_quote_volume = 0.0
+    current_trade_count = 0
+    current_taker_buy_base = 0.0
+    current_taker_buy_quote = 0.0
+
+    def flush() -> None:
+        nonlocal current_bucket
+        if current_bucket is None:
+            return
+        aggregated.append(
+            Candle(
+                open_time=current_open_time,
+                open=current_open,
+                high=current_high,
+                low=current_low,
+                close=current_close,
+                volume=current_volume,
+                close_time=current_bucket + bucket - 1,
+                quote_volume=current_quote_volume,
+                trade_count=current_trade_count,
+                taker_buy_base_volume=current_taker_buy_base,
+                taker_buy_quote_volume=current_taker_buy_quote,
+            )
+        )
+
+    for candle in candles:
+        close_time = int(candle.close_time)
+        bucket_start = (close_time // bucket) * bucket
+        if current_bucket is None or bucket_start != current_bucket:
+            flush()
+            current_bucket = bucket_start
+            current_open_time = int(candle.open_time)
+            current_open = float(candle.open)
+            current_high = float(candle.high)
+            current_low = float(candle.low)
+            current_close = float(candle.close)
+            current_volume = max(0.0, float(candle.volume))
+            current_quote_volume = max(0.0, float(getattr(candle, "quote_volume", 0.0) or 0.0))
+            current_trade_count = max(0, int(getattr(candle, "trade_count", 0) or 0))
+            current_taker_buy_base = max(0.0, float(getattr(candle, "taker_buy_base_volume", 0.0) or 0.0))
+            current_taker_buy_quote = max(0.0, float(getattr(candle, "taker_buy_quote_volume", 0.0) or 0.0))
+            continue
+        current_high = max(current_high, float(candle.high))
+        current_low = min(current_low, float(candle.low))
+        current_close = float(candle.close)
+        current_volume += max(0.0, float(candle.volume))
+        current_quote_volume += max(0.0, float(getattr(candle, "quote_volume", 0.0) or 0.0))
+        current_trade_count += max(0, int(getattr(candle, "trade_count", 0) or 0))
+        current_taker_buy_base += max(0.0, float(getattr(candle, "taker_buy_base_volume", 0.0) or 0.0))
+        current_taker_buy_quote += max(0.0, float(getattr(candle, "taker_buy_quote_volume", 0.0) or 0.0))
+    flush()
+    return aggregated
+
+
+def _log_ratio(value: float, reference: float) -> float:
+    if value <= 0.0 or reference <= 0.0 or not math.isfinite(value) or not math.isfinite(reference):
+        return 0.0
+    return _safe(math.log(value / reference))
+
+
+def _higher_timeframe_context_features_at(
+    candles: Sequence[Candle],
+    close_times: Sequence[int],
+    timestamp: int,
+    windows: Sequence[int],
+) -> list[float]:
+    """Return broad-regime features using only context bars closed by ``timestamp``."""
+
+    features: list[float] = []
+    if not windows:
+        return features
+    end = bisect_right(close_times, int(timestamp)) - 1
+    if end < 0:
+        return [0.0 for _ in range(_HIGHER_TIMEFRAME_FEATURES_PER_WINDOW * len(windows))]
+    for window in windows:
+        window = max(2, int(window))
+        if end < window - 1:
+            features.extend([0.0] * _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW)
+            continue
+        start = end + 1 - window
+        group = candles[start:end + 1]
+        first_open = float(group[0].open)
+        last_close = float(group[-1].close)
+        closes = [float(item.close) for item in group]
+        high = max(float(item.high) for item in group)
+        low = min(float(item.low) for item in group)
+        mean_close = sum(closes) / float(len(closes))
+        returns = _window_returns(closes)
+        realized_volatility = 0.0
+        if len(returns) >= 2:
+            mean_return = sum(returns) / float(len(returns))
+            variance = sum((value - mean_return) ** 2 for value in returns) / float(len(returns) - 1)
+            realized_volatility = math.sqrt(max(0.0, variance))
+        volumes = [max(0.0, float(item.volume)) for item in group]
+        trade_counts = [max(0, int(getattr(item, "trade_count", 0) or 0)) for item in group]
+        mean_volume = sum(volumes) / float(len(volumes))
+        mean_trade_count = sum(trade_counts) / float(len(trade_counts))
+        features.extend([
+            _safe_ratio(last_close - first_open, first_open),
+            _safe_ratio(last_close - mean_close, mean_close),
+            _safe(realized_volatility),
+            _safe_ratio(high - low, last_close),
+            _safe_ratio(last_close - high, high),
+            _safe_ratio(last_close - low, low),
+            _log_ratio(volumes[-1], mean_volume),
+            _log_ratio(float(trade_counts[-1]), mean_trade_count),
+        ])
+    return features
+
+
 def _order_flow_features_at(cache: _ConfluenceCache, end: int, windows: Sequence[int]) -> list[float]:
     """Return trade-flow imbalance features from real aggTrade-derived candle fields."""
 
@@ -920,6 +1047,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
     extras = _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows)
     confluence = _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows)
     market_quality = _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows)
+    higher_timeframe = _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW * len(cfg.higher_timeframe_windows)
     order_flow = max(0, int(cfg.order_flow_features_per_window)) * len(cfg.order_flow_windows)
     transforms = base * len(cfg.nonlinear_transforms)
     pairs = 0
@@ -928,7 +1056,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
         pairs = k * (k + 1) // 2
         if cfg.polynomial_degree >= 3 and k >= 3:
             pairs += 1 + 3
-    return base + extras + confluence + market_quality + order_flow + transforms + pairs
+    return base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
 
 
 def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGroupSpan, ...]:
@@ -950,6 +1078,7 @@ def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGro
     add("extra_lookback_windows", _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows))
     add("technical_confluence", _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows))
     add("market_quality_regime", _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows))
+    add("higher_timeframe_context", _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW * len(cfg.higher_timeframe_windows))
     add("order_flow_microstructure", max(0, int(cfg.order_flow_features_per_window)) * len(cfg.order_flow_windows))
     add("nonlinear_transforms", base * len(cfg.nonlinear_transforms))
     pair_count = 0
@@ -976,10 +1105,24 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
     confluence_cache = _build_confluence_cache(candles[: at_index + 1])
     confluence = _confluence_features_at(confluence_cache, at_index, cfg.confluence_windows)
     market_quality = _market_quality_features_at(confluence_cache, at_index, cfg.market_quality_windows)
+    context_candles = (
+        _aggregate_higher_timeframe_candles(candles[: at_index + 1], cfg.higher_timeframe_bucket_ms)
+        if cfg.higher_timeframe_windows else []
+    )
+    context_close_times = [int(candle.close_time) for candle in context_candles]
+    higher_timeframe = _higher_timeframe_context_features_at(
+        context_candles,
+        context_close_times,
+        row.timestamp,
+        cfg.higher_timeframe_windows,
+    )
     order_flow = _order_flow_features_for_config(confluence_cache, at_index, cfg)
     transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
     pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
-    expanded = tuple(_safe(v) for v in base + extras + confluence + market_quality + order_flow + transforms + pairs)
+    expanded = tuple(
+        _safe(v)
+        for v in base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
+    )
     return ModelRow(
         timestamp=row.timestamp,
         close=row.close,
@@ -1020,6 +1163,11 @@ def make_advanced_rows(
     index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
     window_cache = _build_window_cache([candle.close for candle in valid_candles])
     confluence_cache = _build_confluence_cache(valid_candles)
+    context_candles = (
+        _aggregate_higher_timeframe_candles(valid_candles, cfg.higher_timeframe_bucket_ms)
+        if cfg.higher_timeframe_windows else []
+    )
+    context_close_times = [int(candle.close_time) for candle in context_candles]
     label_mode = _normalized_label_mode(cfg.label_mode)
     stop_threshold = (
         float(cfg.label_stop_threshold)
@@ -1164,6 +1312,12 @@ def make_advanced_rows(
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
+        higher_timeframe = _higher_timeframe_context_features_at(
+            context_candles,
+            context_close_times,
+            row.timestamp,
+            cfg.higher_timeframe_windows,
+        )
         order_flow = _order_flow_features_for_config(confluence_cache, idx, cfg)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
@@ -1173,7 +1327,9 @@ def make_advanced_rows(
                 close=row.close,
                 features=tuple(
                     _safe(value)
-                    for value in base + extras + confluence + market_quality + order_flow + transforms + pairs
+                    for value in (
+                        base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
+                    )
                 ),
                 label=label,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
@@ -1208,6 +1364,11 @@ def make_advanced_inference_rows(
     index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
     window_cache = _build_window_cache([candle.close for candle in valid_candles])
     confluence_cache = _build_confluence_cache(valid_candles)
+    context_candles = (
+        _aggregate_higher_timeframe_candles(valid_candles, cfg.higher_timeframe_bucket_ms)
+        if cfg.higher_timeframe_windows else []
+    )
+    context_close_times = [int(candle.close_time) for candle in context_candles]
     expanded: list[ModelRow] = []
     for row in base_rows:
         idx = index_by_time.get(row.timestamp)
@@ -1217,6 +1378,12 @@ def make_advanced_inference_rows(
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
+        higher_timeframe = _higher_timeframe_context_features_at(
+            context_candles,
+            context_close_times,
+            row.timestamp,
+            cfg.higher_timeframe_windows,
+        )
         order_flow = _order_flow_features_for_config(confluence_cache, idx, cfg)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
@@ -1226,7 +1393,9 @@ def make_advanced_inference_rows(
                 close=row.close,
                 features=tuple(
                     _safe(value)
-                    for value in base + extras + confluence + market_quality + order_flow + transforms + pairs
+                    for value in (
+                        base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
+                    )
                 ),
                 label=0,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
@@ -1287,6 +1456,8 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"extra_lookback_windows={','.join(str(w) for w in cfg.extra_lookback_windows)}",
         f"confluence_windows={','.join(str(w) for w in cfg.confluence_windows)}",
         f"market_quality_windows={','.join(str(w) for w in cfg.market_quality_windows)}",
+        f"higher_timeframe_windows={','.join(str(w) for w in cfg.higher_timeframe_windows)}",
+        f"higher_timeframe_bucket_ms={max(1, int(cfg.higher_timeframe_bucket_ms))}",
         f"order_flow_windows={','.join(str(w) for w in cfg.order_flow_windows)}",
         f"order_flow_features_per_window={max(0, int(cfg.order_flow_features_per_window))}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
@@ -1322,7 +1493,7 @@ def advanced_config_from_signature(
         stop_threshold = float(fields.get("label_stop_threshold", str(label_threshold)))
         order_flow_width = int(fields.get(
             "order_flow_features_per_window",
-            "13" if advanced_version == ADVANCED_FEATURE_VERSION else "9",
+            "13" if advanced_version in {ADVANCED_FEATURE_VERSION, "v9-flow-state"} else "9",
         ))
         return AdvancedFeatureConfig(
             base_features=base_features,
@@ -1331,6 +1502,8 @@ def advanced_config_from_signature(
             extra_lookback_windows=_parse_int_tuple(fields.get("extra_lookback_windows")),
             confluence_windows=_parse_int_tuple(fields.get("confluence_windows")),
             market_quality_windows=_parse_int_tuple(fields.get("market_quality_windows")),
+            higher_timeframe_windows=_parse_int_tuple(fields.get("higher_timeframe_windows")),
+            higher_timeframe_bucket_ms=max(1, int(fields.get("higher_timeframe_bucket_ms", "60000"))),
             order_flow_windows=_parse_int_tuple(fields.get("order_flow_windows")),
             nonlinear_transforms=_parse_str_tuple(fields.get("nonlinear_transforms"), default=("tanh", "log1p")),
             short_window=max(1, int(fields.get("short_window", "10"))),
@@ -1438,6 +1611,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             extra_lookback_windows=(10, 30, 90),
             confluence_windows=(12, 36, 96),
             market_quality_windows=(30, 90, 180),
+            higher_timeframe_windows=(60, 240, 720),
             order_flow_windows=(15, 45, 120),
             label_threshold=0.0010,
             label_lookahead=8,
@@ -1450,6 +1624,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
             extra_lookback_windows=(3, 15, 45, 120),
             confluence_windows=(5, 13, 34, 89),
             market_quality_windows=(10, 30, 90),
+            higher_timeframe_windows=(10, 30, 120),
             order_flow_windows=(5, 15, 45, 90),
             label_threshold=0.0005,
             label_lookahead=2,
@@ -1461,6 +1636,7 @@ def default_config_for(objective_name: str, strategy_feature_names: Sequence[str
         extra_lookback_windows=(5, 20, 60),
         confluence_windows=(8, 21, 55),
         market_quality_windows=(20, 60, 120),
+        higher_timeframe_windows=(20, 60, 180),
         order_flow_windows=(10, 30, 90),
         label_threshold=0.0010,
         label_lookahead=4,
