@@ -38,6 +38,7 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .api import BinanceAPIError, BinanceClient
+from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
 from .logging_ext import configure as configure_logging
 from .objective import ObjectiveSpec, get_objective
 from .positions import (
@@ -239,6 +240,38 @@ def _default_reconcile(
     store: PositionsStore,
 ) -> ReconciliationReport:
     return reconcile_account_positions(client.get_account(), runtime, store)
+
+
+def _lifecycle_reasons(plan: ExecutionLifecyclePlan, *, capability: str) -> str:
+    reasons = plan.open_block_reasons if capability == "open" else plan.close_block_reasons
+    return "; ".join(reasons) or "execution lifecycle blocked"
+
+
+def _loop_lifecycle_plan(
+    client: BinanceClient,
+    runtime: RuntimeConfig,
+    strategy: StrategyConfig,
+    cfg: AutonomousConfig,
+    store: PositionsStore,
+    *,
+    action: str,
+    reconcile: ReconcileFn,
+    api_budget_report: ApiBudgetReport | None = None,
+    require_api_budget_headroom: bool = True,
+) -> ExecutionLifecyclePlan:
+    reconciliation = None
+    if not cfg.dry_run:
+        reconciliation = reconcile(client, runtime, store)
+    return build_execution_lifecycle_plan(
+        runtime,
+        strategy,
+        store,
+        action=action,
+        effective_dry_run=cfg.dry_run,
+        reconciliation=reconciliation,
+        api_budget_report=api_budget_report,
+        require_api_budget_headroom=require_api_budget_headroom,
+    )
 
 
 def _default_decision(
@@ -858,6 +891,7 @@ def run_loop(
     ensure_credentials(runtime, cfg)
     objective = get_objective(cfg.objective)
     logger = logger or configure_logging(path=cfg.log_path)
+    api_budget_report: ApiBudgetReport | None = None
     if not cfg.dry_run:
         api_budget_report = ensure_api_budget_headroom(runtime, client)
         logger.info("autonomous api-budget %s", summarize_api_budget(api_budget_report))
@@ -866,11 +900,21 @@ def run_loop(
     store = PositionsStore(root=cfg.positions_root)
     reconcile = reconcile_fn or _default_reconcile
     if not cfg.dry_run:
-        startup_reconciliation = reconcile(client, runtime, store)
-        if not startup_reconciliation.ok:
+        startup_lifecycle = _loop_lifecycle_plan(
+            client,
+            runtime,
+            strategy,
+            cfg,
+            store,
+            action="start",
+            reconcile=reconcile,
+            api_budget_report=api_budget_report,
+        )
+        needs_new_entry_permission = startup_lifecycle.local_open_count == 0
+        if not startup_lifecycle.can_close or (needs_new_entry_permission and not startup_lifecycle.can_open):
             raise RuntimeError(
-                "Autonomous live mode refuses to start with unreconciled exchange exposure: "
-                f"{startup_reconciliation.asdict()}"
+                "Autonomous live mode refuses to start with unsafe execution lifecycle: "
+                f"{startup_lifecycle.asdict()}"
             )
     poll = max(_MIN_INTERVAL_SECONDS, float(cfg.poll_seconds))
 
@@ -889,6 +933,31 @@ def run_loop(
             state = control.state()
             if state == STATE_STOPPING:
                 mark_price = _stop_close_mark_price(client, runtime, store, last_mark_price, logger)
+                if not cfg.dry_run:
+                    try:
+                        stop_lifecycle = _loop_lifecycle_plan(
+                            client,
+                            runtime,
+                            strategy,
+                            cfg,
+                            store,
+                            action="stop",
+                            reconcile=reconcile,
+                            api_budget_report=api_budget_report,
+                            require_api_budget_headroom=False,
+                        )
+                    except BinanceAPIError as exc:
+                        logger.error("autonomous iter=%d operator-stop reconciliation failed: %s", iteration, exc)
+                        exit_reason = "operator-stop-reconciliation-failed"
+                        break
+                    if not stop_lifecycle.can_close:
+                        logger.error(
+                            "autonomous iter=%d operator-stop lifecycle blocked: %s",
+                            iteration,
+                            _lifecycle_reasons(stop_lifecycle, capability="close"),
+                        )
+                        exit_reason = "operator-stop-lifecycle-blocked"
+                        break
                 close_report = close_tracked_open_positions(
                     store,
                     mark_price,
@@ -981,6 +1050,31 @@ def run_loop(
                 )
                 if not capital_guard.allowed:
                     if capital_guard.force_close:
+                        if not cfg.dry_run:
+                            try:
+                                close_lifecycle = _loop_lifecycle_plan(
+                                    client,
+                                    runtime,
+                                    strategy,
+                                    cfg,
+                                    store,
+                                    action="risk-close",
+                                    reconcile=reconcile,
+                                    api_budget_report=api_budget_report,
+                                    require_api_budget_headroom=False,
+                                )
+                            except BinanceAPIError as exc:
+                                logger.error("autonomous iter=%d recovery close reconciliation failed: %s", iteration, exc)
+                                exit_reason = "recovery-close-reconciliation-failed"
+                                break
+                            if not close_lifecycle.can_close:
+                                logger.error(
+                                    "autonomous iter=%d recovery close lifecycle blocked: %s",
+                                    iteration,
+                                    _lifecycle_reasons(close_lifecycle, capability="close"),
+                                )
+                                exit_reason = "recovery-close-lifecycle-blocked"
+                                break
                         close_report = close_tracked_open_positions(
                             store,
                             last_mark_price,
@@ -1039,6 +1133,31 @@ def run_loop(
             )
             if not capital_guard.allowed:
                 if capital_guard.force_close:
+                    if not cfg.dry_run:
+                        try:
+                            close_lifecycle = _loop_lifecycle_plan(
+                                client,
+                                runtime,
+                                strategy,
+                                cfg,
+                                store,
+                                action="risk-close",
+                                reconcile=reconcile,
+                                api_budget_report=api_budget_report,
+                                require_api_budget_headroom=False,
+                            )
+                        except BinanceAPIError as exc:
+                            logger.error("autonomous iter=%d risk close reconciliation failed: %s", iteration, exc)
+                            exit_reason = "risk-close-reconciliation-failed"
+                            break
+                        if not close_lifecycle.can_close:
+                            logger.error(
+                                "autonomous iter=%d risk close lifecycle blocked: %s",
+                                iteration,
+                                _lifecycle_reasons(close_lifecycle, capability="close"),
+                            )
+                            exit_reason = "risk-close-lifecycle-blocked"
+                            break
                     close_report = close_tracked_open_positions(
                         store,
                         last_mark_price,
@@ -1065,6 +1184,32 @@ def run_loop(
             for position in store.load_open():
                 should_close, reason = _evaluate_auto_close(position, decision.mark_price, cfg, strategy)
                 if should_close:
+                    if not cfg.dry_run:
+                        try:
+                            close_lifecycle = _loop_lifecycle_plan(
+                                client,
+                                runtime,
+                                strategy,
+                                cfg,
+                                store,
+                                action="close",
+                                reconcile=reconcile,
+                                api_budget_report=api_budget_report,
+                                require_api_budget_headroom=False,
+                            )
+                        except BinanceAPIError as exc:
+                            logger.error("autonomous iter=%d close reconciliation failed id=%s error=%s", iteration, position.id, exc)
+                            exit_reason = "close-reconciliation-failed"
+                            break
+                        if not close_lifecycle.can_close:
+                            logger.error(
+                                "autonomous iter=%d close lifecycle blocked id=%s reason=%s",
+                                iteration,
+                                position.id,
+                                _lifecycle_reasons(close_lifecycle, capability="close"),
+                            )
+                            exit_reason = "close-lifecycle-blocked"
+                            break
                     trade = _close_to_trade(position, decision.mark_price, reason, clock=clock)
                     try:
                         if not position.dry_run:
@@ -1098,6 +1243,8 @@ def run_loop(
                         break
             if exit_reason == "close-order-failed" or exit_reason.endswith(":close-incomplete"):
                 break
+            if exit_reason in {"close-reconciliation-failed", "close-lifecycle-blocked"}:
+                break
 
             # Open new position only after the same risk gates used in operator
             # readiness checks approve it.
@@ -1110,6 +1257,30 @@ def run_loop(
                 now_ms_value=int(clock() * 1000),
             )
             if decision.side in {"LONG", "SHORT"} and gate.allowed:
+                if not cfg.dry_run:
+                    try:
+                        open_lifecycle = _loop_lifecycle_plan(
+                            client,
+                            runtime,
+                            strategy,
+                            cfg,
+                            store,
+                            action="open",
+                            reconcile=reconcile,
+                            api_budget_report=api_budget_report,
+                        )
+                    except BinanceAPIError as exc:
+                        logger.error("autonomous iter=%d open reconciliation failed: %s", iteration, exc)
+                        exit_reason = "open-reconciliation-failed"
+                        break
+                    if not open_lifecycle.can_open:
+                        logger.error(
+                            "autonomous iter=%d open lifecycle blocked: %s",
+                            iteration,
+                            _lifecycle_reasons(open_lifecycle, capability="open"),
+                        )
+                        exit_reason = "open-lifecycle-blocked"
+                        break
                 position = _open_position_from_decision(
                     decision, runtime, strategy, objective, cfg, clock=clock,
                 )

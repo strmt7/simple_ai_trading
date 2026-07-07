@@ -8,13 +8,24 @@ Scope: verified repositories and official documentation for the main matrix. Git
 
 1. Keep one obvious operator path. Freqtrade, LEAN CLI, and Hummingbot all expose many capabilities, but the first-run path is explicit: configure, fetch data, train or backtest, then paper or live run. This repo exposes that path through the TUI and `prepare`.
 2. Keep dry-run and paper modes first-class. Freqtrade, Hummingbot, OctoBot, Alpaca, and FinRL all treat simulated or paper workflows as a normal operating mode, not an afterthought.
-3. Put readiness and connectivity near execution. NautilusTrader and CCXT documentation both highlight that live execution needs reconciliation and exchange-specific state checks. This repo now has `doctor`, `report --doctor`, and a TUI readiness action.
+3. Put readiness and connectivity near execution. NautilusTrader and CCXT documentation both highlight that live execution needs reconciliation and exchange-specific state checks. This repo now has `doctor`, `report --doctor`, a TUI readiness action, and a shared execution-lifecycle preflight for signed autonomous actions.
 4. Make training and risk choices discoverable. LEAN, Freqtrade, vectorbt, backtesting.py, and Qlib all emphasize repeatable research and optimization loops. This repo now has named training presets and strategy risk profiles while still allowing custom values.
 5. Keep adapter boundaries explicit. CCXT, Hummingbot, python-binance, binance-connector-python, and Alpaca all separate exchange connectivity from strategy logic. This repo keeps the Binance client behind `_build_client` and tests connectivity through stubs.
 6. Treat exchange filters as normal runtime failures. Binance documentation and field reports repeatedly point to quantity, precision, notional, and price-filter rejections; started live loops now persist `order_error` events for entry, close, and emergency-close order failures.
 7. Batch public historical data only where it is safe. Binance kline downloads have request-size limits, so this repo pages historical fetches with `--batch-size`; live market/order loops remain sequential because signed calls and order state should not be parallelized casually.
 8. Reconcile live state before acting. Live-oriented systems and exchange SDK guidance assume account/order state can outlive a process; authenticated live runs must inspect exchange balances or positions for the active symbol set before assuming the bot is flat.
-9. Preserve simple local artifacts. This repo remains intentionally small: JSON data, JSON model, JSON run artifacts, no database dependency, no multi-exchange abstraction until the operational need is real. Started live loops persist halt context for post-run inspection.
+9. Preserve audit-friendly local artifacts. This repo remains intentionally small, but now uses a single SQLite market database for real market-data evidence plus JSON model/run/control artifacts for human inspection. Started live loops persist halt context for post-run inspection.
+
+## Architecture Pattern Followed In The Current Lifecycle Pass
+
+The useful common pattern is not "AI decides to buy." Mature repos separate responsibilities:
+
+- Freqtrade-style workflow separation: configure, fetch data, train/backtest, dry run, then live/testnet execution.
+- Hummingbot-style execution lifecycle: order workflows are stateful and self-closing, not ad hoc button handlers.
+- NautilusTrader-style parity: research/live behavior should share the same state, timing, risk, and execution vocabulary.
+- LEAN-style reporting discipline: portfolio, margin, and execution assumptions need explicit reports instead of hidden defaults.
+
+Applied here on 2026-07-07: `simple_ai_trading.execution_lifecycle` now creates one deterministic capability plan for signed autonomous startup, stop, risk-close, threshold-close, and live open calls. It lets normal risk-policy failures block new entries without blocking verified bot-owned closes, while ledger corruption, missing reconciliation, external exposure, quantity mismatch, or unverified bot ownership block both opens and closes.
 
 ## Repository Matrix
 
@@ -68,6 +79,10 @@ Implemented in the current operator pass:
 11. Entry, close, and emergency-close order rejections are caught, recorded as `order_error`, and returned as nonzero live-loop exits instead of uncaught exceptions.
 12. Authenticated live starts must detect existing spot/futures exposure for the active symbol set, reconcile it against the bot-owned local ledger, and refuse startup when the exposure lacks ownership proof. The app must not implicitly adopt or close external user positions.
 13. Futures close and emergency-close paths submit reduce-only market orders and request result responses.
+14. Authenticated autonomous startup no longer has the stale "signed execution is not wired" CLI guard; it reaches the signed autonomous loop only after non-mainnet, credential, model-readiness, API-budget, reconciliation, and lifecycle gates pass.
+15. The autonomous loop re-runs the execution-lifecycle plan before operator stop, risk-close, auto-close-threshold closes, and every signed open.
+16. The lifecycle plan distinguishes new-entry blocks from close blocks, so invalid entry risk cannot trap a verified bot-owned position, while reconciliation/ownership failures still fail closed.
+17. Focused tests now cover missing reconciliation, external exchange exposure, unverified local positions, corrupt or schema-drifted ledgers, API-budget exhaustion, and post-outage live reconciliation before opening.
 
 ## Sources Checked
 
