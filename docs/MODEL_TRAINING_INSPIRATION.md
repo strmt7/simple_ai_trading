@@ -210,6 +210,16 @@ weakening risk controls.
   remain explicitly oriented to the short-side runtime convention after
   probability calibration, so a model trained on short-success events cannot
   accidentally emit high-score long entries.
+- Implemented update: the core training-suite grid now benchmarks forward
+  return, triple-barrier path labels, CUSUM-gated volatility barriers,
+  downside/short labels, high-frequency scalp thresholds, and bounded
+  focal-loss variants as first-pass candidates. Event/volatility label
+  candidates now activate a trailing CUSUM/volatility window even when the base
+  objective has no dynamic label window configured. This follows the
+  Qlib-style principle that model research should compare distinct target
+  definitions under the same data, replay, and objective gates, while focal
+  loss is reserved for sparse hard-event labels so easy no-trade bars do not
+  dominate training.
 - Implemented update: optimization rounds now attempt the adaptive hybrid
   model-zoo overlay from rejected base selections by searching a copied model at
   the best diagnostic threshold. The hybrid uses chronological
@@ -550,7 +560,11 @@ Implementation direction:
   fills, latency between signal and order, and market-impact haircuts for
   position size.
 - Keep candle proxies only as fallback when depth data is unavailable, and mark
-  the artifact as lower-confidence.
+  the artifact as lower-confidence. The current fallback preserves per-candle
+  quote volume and trade count in `ModelRow`, uses quote volume for
+  participation impact, treats sparse trade-count seconds as higher fill
+  uncertainty, and uses high-low range only for exit-side adverse spread/latency
+  stress so entry fills do not leak pre-entry intrabar extremes.
 
 Sources:
 

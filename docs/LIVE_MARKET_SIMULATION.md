@@ -113,6 +113,17 @@ Backtest fill price uses:
 - volatility buffer,
 - taker fees.
 
+DB-backed `ModelRow` objects now preserve each candle's quote volume and trade
+count. When full top-of-book/L2 rows are unavailable, the fill model uses those
+fields plus the candle high-low range as a conservative per-row execution proxy:
+quote volume is preferred over `base_volume * close` for participation impact,
+sparse trade-count seconds increase fill uncertainty, and high-low range widens
+exit-side spread/latency buffers. Entry fills deliberately do not use the
+current bar's full high-low range because that would let pre-entry intrabar
+extremes leak into the simulated market order; entries use activity evidence
+and configured/symbol-level assumptions until quote-timestamped L1/L2 data is
+available.
+
 When model rows carry candle high/low data, backtests use those intrabar bounds
 for stop-loss, take-profit, liquidation, and drawdown checks. If a single bar
 touches both stop-loss and take-profit, the simulation records the stop-loss

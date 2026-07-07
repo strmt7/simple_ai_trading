@@ -78,6 +78,24 @@ def test_make_rows_shapes() -> None:
     assert first.label in (0, 1)
 
 
+def test_make_rows_preserves_execution_activity_fields() -> None:
+    candles = _fake_candles()
+    for index, candle in enumerate(candles):
+        candles[index] = replace(
+            candle,
+            quote_volume=10_000.0 + index,
+            trade_count=20 + index,
+        )
+
+    rows = make_rows(candles, short_window=10, long_window=30)
+
+    assert rows
+    source = {candle.close_time: candle for candle in candles}
+    first = rows[0]
+    assert first.quote_volume == pytest.approx(source[first.timestamp].quote_volume)
+    assert first.trade_count == source[first.timestamp].trade_count
+
+
 def test_make_rows_respects_enabled_feature_subset() -> None:
     selected = ("momentum_1", "rsi", "volume_ratio")
     rows = make_rows(_fake_candles(), short_window=10, long_window=30, enabled_features=selected)

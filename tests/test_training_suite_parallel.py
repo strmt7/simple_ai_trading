@@ -37,6 +37,7 @@ def _lenient_default_objective() -> ObjectiveSpec:
         min_closed_trades=0,
         min_realized_pnl=None,
         min_edge_vs_buy_hold=None,
+        min_market_edge_pct=None,
         max_drawdown_rejection=1.0,
         training=default.training,
     )

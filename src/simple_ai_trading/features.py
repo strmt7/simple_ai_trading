@@ -104,6 +104,8 @@ class ModelRow:
     volume: float = 0.0
     high: float | None = None
     low: float | None = None
+    quote_volume: float = 0.0
+    trade_count: int = 0
 
 
 class FeatureAccelerationError(RuntimeError):
@@ -424,6 +426,8 @@ def _make_rows_tensor(
                 volume=cache.candles[index].volume,
                 high=cache.candles[index].high,
                 low=cache.candles[index].low,
+                quote_volume=cache.candles[index].quote_volume,
+                trade_count=cache.candles[index].trade_count,
             )
         )
     return rows
@@ -595,6 +599,8 @@ def make_rows(
                 volume=cache.candles[i].volume,
                 high=cache.candles[i].high,
                 low=cache.candles[i].low,
+                quote_volume=cache.candles[i].quote_volume,
+                trade_count=cache.candles[i].trade_count,
             )
         )
 
@@ -649,6 +655,8 @@ def make_inference_rows(
                 volume=cache.candles[i].volume,
                 high=cache.candles[i].high,
                 low=cache.candles[i].low,
+                quote_volume=cache.candles[i].quote_volume,
+                trade_count=cache.candles[i].trade_count,
             )
         )
 
