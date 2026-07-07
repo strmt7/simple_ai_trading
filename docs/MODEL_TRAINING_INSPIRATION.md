@@ -236,9 +236,11 @@ weakening risk controls.
   rate, profit factor, max drawdown, exit-reason counts, side counts, reject
   reason, orientation, evaluated candidate count, active/profitable/accepted
   candidate counts, most-active candidate, best-PnL candidate, and active
-  family/profile coverage. The
-  `round-microstructure-alpha-expanded-1d-smoke` evidence run still produced
-  zero accepted symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
+  family/profile coverage. Candidate stop/take distances are now floored by
+  modeled execution cost, entry/exit fees, and explicit buffers before replay,
+  preventing sub-cost scalp targets from appearing viable. The
+  `round-cost-aware-alpha-1d-smoke` evidence run still produced zero accepted
+  symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
   It did prove the search is active: 216 BTCUSDT, 234 ETHUSDT, and 216 SOLUSDT
   rule-alpha variants closed at least one trade, but none were profitable after
   costs. The support is implemented and exercised by real-data smoke evidence,

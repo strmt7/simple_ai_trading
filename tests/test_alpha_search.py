@@ -9,7 +9,9 @@ from simple_ai_trading.alpha_search import (
     _diagnostic_rank_key,
     model_for_rule_alpha,
     optimize_rule_alpha_model_zoo,
+    rule_alpha_stop_loss_floor_pct,
     rule_alpha_feature_params,
+    rule_alpha_take_profit_floor_pct,
     rule_alpha_candidates,
     summarize_rule_alpha_candidate_distribution,
     summarize_rule_alpha_trade_path,
@@ -179,6 +181,38 @@ def test_rule_alpha_candidate_summary_roundtrips_with_model(tmp_path) -> None:
 
     assert loaded.rule_alpha_candidate_summary["evaluated_candidates"] == 4
     assert loaded.rule_alpha_candidate_summary["most_active_candidate"] == "micro_flow_scalp:unit"
+
+
+def test_rule_alpha_strategy_overrides_respect_execution_cost_floor() -> None:
+    rows = _rows()
+    strategy = StrategyConfig(
+        stop_loss_pct=0.010,
+        take_profit_pct=0.022,
+        taker_fee_bps=1.0,
+        slippage_bps=5.0,
+        max_spread_bps=5.0,
+        latency_buffer_ms=750,
+        testnet_liquidity_haircut=0.50,
+    )
+    candidate = RuleAlphaCandidate(
+        name="micro_flow_scalp:scalp_3s",
+        family="micro_flow_scalp",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.02,
+        stop_loss_multiplier=0.06,
+        take_profit_multiplier=0.05,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=1,
+        flat_signal_exit_grace_bars=0,
+    )
+
+    model = model_for_rule_alpha(rows, candidate, strategy, market_type="futures")
+
+    assert model.strategy_overrides["stop_loss_pct"] >= rule_alpha_stop_loss_floor_pct(strategy)
+    assert model.strategy_overrides["take_profit_pct"] >= rule_alpha_take_profit_floor_pct(strategy)
+    assert model.strategy_overrides["take_profit_pct"] > model.strategy_overrides["stop_loss_pct"]
+    assert model.strategy_overrides["take_profit_pct"] > strategy.take_profit_pct * candidate.take_profit_multiplier
 
 
 def test_rule_alpha_can_use_advanced_order_flow_features(tmp_path) -> None:
