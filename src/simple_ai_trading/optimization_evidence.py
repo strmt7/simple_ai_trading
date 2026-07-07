@@ -24,7 +24,11 @@ from .advanced_model import (
     make_advanced_rows,
     train_advanced,
 )
-from .alpha_search import optimize_rule_alpha_model_zoo, summarize_rule_alpha_trade_path
+from .alpha_search import (
+    DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
+    optimize_rule_alpha_model_zoo,
+    summarize_rule_alpha_trade_path,
+)
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol, major_symbols_for_quote
 from .backtest import (
@@ -2051,7 +2055,7 @@ def _select_rule_alpha_model_zoo_if_accepted(
     if status_callback is not None:
         status_callback(
             "rule_alpha_model_zoo_started",
-            {"selection_rows": len(result.selection_rows), "max_candidates": 48},
+            {"selection_rows": len(result.selection_rows), "max_candidates": DEFAULT_RULE_ALPHA_MAX_CANDIDATES},
         )
     alpha_report = optimize_rule_alpha_model_zoo(
         result.selection_rows,
@@ -2061,7 +2065,7 @@ def _select_rule_alpha_model_zoo_if_accepted(
         starting_cash=starting_cash,
         compute_backend=compute_backend,
         score_batch_size=batch_size,
-        max_candidates=48,
+        max_candidates=DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
         feature_cfg=result.candidate.feature_cfg,
     )
     model = result.model

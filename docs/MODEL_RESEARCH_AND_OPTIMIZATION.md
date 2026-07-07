@@ -226,7 +226,10 @@ before any template is promoted into the same serialized model path. The current
 templates are original momentum breakout, VWAP/RSI mean reversion,
 trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
 flow-reversion, flow-consensus breakout, and liquidity-absorption reversal
-families. Order-flow templates receive serialized offsets
+families. The default 72-candidate prefix is stratified: it covers every family
+and execution profile, then covers the full base family/profile matrix, before
+spending remaining slots on nearby threshold/sensitivity/deadband variants.
+Order-flow templates receive serialized offsets
 into the advanced aggTrade-derived order-flow feature block, so CPU, DirectML,
 CLI, Windows app, backtest, and live/autonomous inference use the same
 microstructure inputs. Each template is tested with normal and inverted
@@ -245,18 +248,18 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-v9-flow-state-1d-smoke` run used verified
+in code. The 2026-07-07 `round-stratified-alpha-search-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
 scoring, conservative 5x futures settings, seven hybrid profiles, the v9
 171-feature advanced vector including 13 order-flow microstructure fields per
-window, and 96 normal/inverted
+window, and 144 normal/inverted
 rule-alpha replays per symbol. It failed with zero accepted symbols, zero closed
 holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
-profiles were still negative after costs: BTCUSDT inverted trend-pullback lost
-`4.898503461525252`, ETHUSDT inverted volatility breakout lost
-`0.6041151999475005` on one closed short, and SOLUSDT mean-reversion lost
-`6.851032639100595` on the chronological selection slice. This is negative
-research evidence rather than promotion evidence.
+profiles were still negative after costs: BTCUSDT guarded momentum breakout
+lost `0.6405880579098948` on one closed short, ETHUSDT inverted guarded
+liquidity-absorption reversal lost `0.5363706418223728` on one closed long, and
+SOLUSDT held-180s flow reversion lost `0.5233335205740559` on one closed long.
+This is negative research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple
 label target/horizon profiles, and both forward-return and stop/take-aware

@@ -28,6 +28,9 @@ from .strategy_overrides import strategy_overrides_from_config
 from .types import StrategyConfig
 
 
+DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 72
+
+
 @dataclass(frozen=True)
 class RuleAlphaCandidate:
     name: str
@@ -165,8 +168,9 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         ("held_90s", 0.24, 0.22, 0.0, 90, 20),
         ("held_180s", 0.30, 0.28, 0.0, 180, 30),
     )
-    limit = max(1, int(max_candidates)) if max_candidates is not None else 48
-    ranked: list[tuple[tuple[int, int, int, int, int, int], RuleAlphaCandidate]] = []
+    limit = max(1, int(max_candidates)) if max_candidates is not None else DEFAULT_RULE_ALPHA_MAX_CANDIDATES
+    ranked: list[tuple[tuple[int, int, int, int, int, int], str, str, RuleAlphaCandidate]] = []
+    base_by_family_profile: dict[tuple[str, str], RuleAlphaCandidate] = {}
     for threshold_index, threshold in enumerate(thresholds):
         for sensitivity_index, sensitivity in enumerate(sensitivities):
             for deadband_index, deadband in enumerate(deadbands):
@@ -193,10 +197,35 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
                                 sensitivity_index,
                                 deadband_index,
                             ),
+                            family,
+                            profile,
                             candidate,
                         ))
+                        if threshold_index == 0 and sensitivity_index == 0 and deadband_index == 0:
+                            base_by_family_profile.setdefault((family, profile), candidate)
     ranked.sort(key=lambda item: item[0])
-    return tuple(candidate for _rank, candidate in ranked[:limit])
+    output: list[RuleAlphaCandidate] = []
+    seen: set[str] = set()
+
+    def add(candidate: RuleAlphaCandidate | None) -> None:
+        if candidate is None or candidate.name in seen or len(output) >= limit:
+            return
+        output.append(candidate)
+        seen.add(candidate.name)
+
+    profile_names = tuple(profile for profile, *_rest in execution_profiles)
+    # First guarantee coverage of every alpha family and every execution profile.
+    for family_index, family in enumerate(families):
+        add(base_by_family_profile.get((family, profile_names[family_index % len(profile_names)])))
+    for profile_index, profile in enumerate(profile_names):
+        add(base_by_family_profile.get((families[profile_index % len(families)], profile)))
+    # Then cover the full base family/profile matrix before spending slots on nearby parameter variants.
+    for profile in profile_names:
+        for family in families:
+            add(base_by_family_profile.get((family, profile)))
+    for _rank, _family, _profile, candidate in ranked:
+        add(candidate)
+    return tuple(output)
 
 
 def model_for_rule_alpha(
@@ -267,7 +296,7 @@ def optimize_rule_alpha_model_zoo(
     starting_cash: float,
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
-    max_candidates: int = 48,
+    max_candidates: int = DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
     feature_cfg: AdvancedFeatureConfig | None = None,
 ) -> RuleAlphaOptimizationReport:
     """Return the best accepted rule-alpha model, or a rejected report."""
@@ -412,6 +441,7 @@ def _clamp(value: float, low: float, high: float) -> float:
 
 
 __all__ = [
+    "DEFAULT_RULE_ALPHA_MAX_CANDIDATES",
     "RuleAlphaCandidate",
     "RuleAlphaCandidateResult",
     "RuleAlphaOptimizationReport",
