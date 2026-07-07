@@ -239,12 +239,17 @@ serialized feature vector instead of truncating before the order-flow block, and
 DirectML parity is covered by tests. Each template is tested with normal and inverted
 probability orientation plus bounded threshold/stop/take/hold profiles.
 Rule-alpha models serialize as `rule_alpha` hybrid experts, so a promoted
-template is available without a separate code path. Rejected searches record the
+template is available without a separate code path. The empirical feature-edge
+miner can add up to 18 one-feature tail rules only when an earlier mining slice
+and later validation slice both show enough signals and positive net edge after
+the modeled cost floor; mined candidates still use the same serialized
+`rule_alpha` path and replay gates. Rejected searches record the
 best rejected active profile, P&L, closed-trade count, win rate, profit factor,
 max drawdown, exit-reason counts, side counts, reject reason, orientation, and
 candidate count. Candidate diagnostics also persist the full zoo's
-active/profitable/accepted candidate counts, forward-event signal count,
-positive after-cost forward-event count, best raw event candidate, maximum
+active/profitable/accepted candidate counts, static-template candidate count,
+empirical mined candidate count, forward-event signal count, positive
+after-cost forward-event count, best raw event candidate, maximum
 closed trades, most-active candidate, best-PnL candidate, and active
 family/profile coverage so failed research cannot hide whether it was inactive,
 active-but-losing, or directionally negative before full trade replay.
@@ -257,12 +262,15 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-alpha-event-study-1d-smoke` run used verified
+in code. The 2026-07-07 `round-empirical-edge-miner-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
 scoring, conservative 5x futures settings, seven hybrid profiles, the v9
 171-feature advanced vector including 13 order-flow microstructure fields per
-window, cost-aware rule-alpha stop/take floors, and 270 normal/inverted
-rule-alpha replays per symbol. It failed with zero accepted symbols, zero closed
+window, cost-aware rule-alpha stop/take floors, 135 static templates, and an
+empirical feature-edge miner capped at 18 candidates. The empirical miner found
+zero validated one-feature candidates under the chronological sample-count and
+after-cost edge gates, so the run still replayed 270 normal/inverted
+static-template candidates per symbol. It failed with zero accepted symbols, zero closed
 holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
 profiles were still negative after costs: BTCUSDT guarded momentum breakout
 lost `0.6405880579098948` on one closed short, ETHUSDT scalp-3s

@@ -3,21 +3,21 @@
   "artifact_integrity": [
     {
       "bytes": 144044,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/charts/01-BTCUSDT-conservative.svg",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/01-BTCUSDT-conservative.svg",
       "sha256": "45f259b7b8a4a880b54d656a71e7c48a6bf3108d23d541eb86de22400a6a3272"
     },
     {
       "bytes": 146075,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/charts/02-ETHUSDT-conservative.svg",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/02-ETHUSDT-conservative.svg",
       "sha256": "11a6be240f8144193623f53a2a963340f572ca64a302883757082b77fd98f765"
     },
     {
       "bytes": 145931,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/charts/03-SOLUSDT-conservative.svg",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/03-SOLUSDT-conservative.svg",
       "sha256": "d98247e9df143d9ca9b1c3f4ec3b08e5c87487a7b1b9cb3e571285c61879b528"
     },
     {
-      "bytes": 417837,
+      "bytes": 417879,
       "columns": [
         "round_id",
         "symbol",
@@ -41,12 +41,12 @@
         "utc_hour",
         "utc_weekday"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/01-BTCUSDT-conservative-timeline.csv.gz",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/01-BTCUSDT-conservative-timeline.csv.gz",
       "row_count": 21586,
-      "sha256": "db50b83078735d4081dced42a8b3bcf827c7b95b42f20449d9c65f4fd02a0b06"
+      "sha256": "591fbb708bd16c6154db1bba7ae5e45bd26f4578fcb3b17bb101d86d55798bb3"
     },
     {
-      "bytes": 514903,
+      "bytes": 514968,
       "columns": [
         "round_id",
         "symbol",
@@ -70,12 +70,12 @@
         "utc_hour",
         "utc_weekday"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/02-ETHUSDT-conservative-timeline.csv.gz",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/02-ETHUSDT-conservative-timeline.csv.gz",
       "row_count": 21586,
-      "sha256": "671dbaca3c54de4159cac56c541c1e27d5b7fe939e6145656aac4a2d0b8190f1"
+      "sha256": "d098e2b25f9e73752beb7c931eca3c4b940030c03be9e2b60e9897d7d524efc6"
     },
     {
-      "bytes": 393115,
+      "bytes": 392919,
       "columns": [
         "round_id",
         "symbol",
@@ -99,12 +99,12 @@
         "utc_hour",
         "utc_weekday"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/03-SOLUSDT-conservative-timeline.csv.gz",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/03-SOLUSDT-conservative-timeline.csv.gz",
       "row_count": 21586,
-      "sha256": "074e1054dc678a14945ce14d2f33d6d096d4dac56298395e1656d7ddfd79617e"
+      "sha256": "41d7b517c3c918bc7c382c9e2b29c3b2cd1f2a8cb18a42600280de374857a0b6"
     },
     {
-      "bytes": 5341,
+      "bytes": 5377,
       "columns": [
         "round_id",
         "symbol",
@@ -177,12 +177,12 @@
         "threshold_diagnostic_best_long_threshold",
         "threshold_diagnostic_best_short_threshold"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/backtest-metrics.csv",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/backtest-metrics.csv",
       "row_count": 3,
-      "sha256": "453e3f2aff6c71d0b50699655119f012d1b714787274173966755d5a75e62ef8"
+      "sha256": "8dbede97ae9c8e7d935396fad35e8baf626689de472dd3353c11cfa710e588a8"
     },
     {
-      "bytes": 7303,
+      "bytes": 7443,
       "columns": [
         "symbol",
         "candidate_index",
@@ -219,6 +219,9 @@
         "rule_alpha_best_reject_reason",
         "rule_alpha_probability_inverted",
         "rule_alpha_evaluated_candidates",
+        "rule_alpha_static_template_candidates",
+        "rule_alpha_empirical_mined_candidates",
+        "rule_alpha_empirical_candidate_limit",
         "rule_alpha_active_candidates",
         "rule_alpha_profitable_candidates",
         "rule_alpha_accepted_candidates",
@@ -279,18 +282,18 @@
         "selection_liquidation_events",
         "selection_reject_reason"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.csv",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.csv",
       "row_count": 3,
-      "sha256": "09675192e648ce229eb3627ab1f7de6e6b17922ae669f9e0af88268e0130473c"
+      "sha256": "f72d6e5a26b0b438c8ff8dc543ad4f500cb5322bbcefa5a26f340afbcd130d5f"
     },
     {
-      "bytes": 14912,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.json",
-      "sha256": "27b40b1ad4e5878ba8fb336c2925be5cfbaeb7d8e4eca0fac9a827a480cfc922"
+      "bytes": 15359,
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.json",
+      "sha256": "371df0de1e5dcc8b912464467141c7c2287d73590296a2bf4e28b4fbcdb52ab4"
     },
     {
       "bytes": 2144,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/data-health.json",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/data-health.json",
       "sha256": "6a3beb69a995d0b0f08d2f9208d4df196830adad16032a52ed2c40cbd4cf8901"
     },
     {
@@ -304,12 +307,12 @@
         "mean_drawdown",
         "low_liquidity_symbol_count"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/portfolio-timeline.csv.gz",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/portfolio-timeline.csv.gz",
       "row_count": 21586,
-      "sha256": "86d57f2c201b4f84da6933fc9d4a81d7364d8ec60ea72f40b15317211420a034"
+      "sha256": "7cf1fd36b238a18844d9fda386c11e7bcaa3c3da7a80f383102bf09f99b734a4"
     },
     {
-      "bytes": 480,
+      "bytes": 483,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -328,19 +331,19 @@
         "critical_verdict",
         "mean_low_liquidity_sample_rate_pct"
       ],
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/round-progress.csv",
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/round-progress.csv",
       "row_count": 1,
-      "sha256": "9e59befa0239572bdb6a837a83c5c54e7a5b2b327618b6da2b64e59324f59c09"
+      "sha256": "66297ee6029da36e2c581898ded2f8c4d806febffe30d5d68f74d659daa2eef0"
     },
     {
-      "bytes": 640,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/round-status.json",
-      "sha256": "347032e20a7ff115e9ec3b272228192c083cd98d56e337b74b0333468d0d1f44"
+      "bytes": 649,
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/round-status.json",
+      "sha256": "9ea92c2f4644f7ac3d69fefcd5f69315252589e17ab3e1e1c267df20e23e915d"
     },
     {
-      "bytes": 922,
-      "path": "docs/optimization/round-alpha-event-study-1d-smoke/data/selected-universe.json",
-      "sha256": "7ee879c872028ba5f2441f81783b08f34d4a1bee758f5f9ee5975d59b959b56e"
+      "bytes": 923,
+      "path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/selected-universe.json",
+      "sha256": "389136a7551b420c1cb8efe7745d4251eddeb1d3bd116d53979fa2d6b89cc004"
     }
   ],
   "candidate_diagnostics": [
@@ -379,6 +382,8 @@
       "rule_alpha_best_score": 0.0007709811016937537,
       "rule_alpha_best_side_counts": "{\"short\":1}",
       "rule_alpha_best_win_rate": 0.0,
+      "rule_alpha_empirical_candidate_limit": 18,
+      "rule_alpha_empirical_mined_candidates": 0,
       "rule_alpha_evaluated_candidates": 270,
       "rule_alpha_event_best_candidate": "volume_flow_proxy:held_180s:t0.54:s6.0:d0.02",
       "rule_alpha_event_best_hit_rate": 0.0,
@@ -399,6 +404,7 @@
       "rule_alpha_profile": "momentum_breakout:guarded:t0.54:s6.0:d0.02",
       "rule_alpha_profiles_with_trades": "balanced,guarded,held_180s,held_30s,held_90s,micro,scalp_20s,scalp_3s,scalp_8s",
       "rule_alpha_profitable_candidates": 0,
+      "rule_alpha_static_template_candidates": 135,
       "score": 8.462265438159483e-05,
       "selected": true,
       "selection_closed_trades": 1,
@@ -475,6 +481,8 @@
       "rule_alpha_best_score": 0.001229731046708669,
       "rule_alpha_best_side_counts": "{\"long\":1}",
       "rule_alpha_best_win_rate": 0.0,
+      "rule_alpha_empirical_candidate_limit": 18,
+      "rule_alpha_empirical_mined_candidates": 0,
       "rule_alpha_evaluated_candidates": 270,
       "rule_alpha_event_best_candidate": "volume_flow_proxy:held_90s:t0.54:s6.0:d0.02",
       "rule_alpha_event_best_hit_rate": 0.0,
@@ -495,6 +503,7 @@
       "rule_alpha_profile": "liquidity_sweep_reversal:scalp_3s:t0.54:s6.0:d0.02",
       "rule_alpha_profiles_with_trades": "balanced,guarded,held_180s,held_30s,held_90s,micro,scalp_20s,scalp_3s,scalp_8s",
       "rule_alpha_profitable_candidates": 0,
+      "rule_alpha_static_template_candidates": 135,
       "score": -0.0010461889656803829,
       "selected": true,
       "selection_closed_trades": 1,
@@ -571,6 +580,8 @@
       "rule_alpha_best_score": 0.0012399992510371094,
       "rule_alpha_best_side_counts": "{\"long\":1}",
       "rule_alpha_best_win_rate": 0.0,
+      "rule_alpha_empirical_candidate_limit": 18,
+      "rule_alpha_empirical_mined_candidates": 0,
       "rule_alpha_evaluated_candidates": 270,
       "rule_alpha_event_best_candidate": "volume_flow_proxy:held_90s:t0.54:s6.0:d0.02",
       "rule_alpha_event_best_hit_rate": 0.0,
@@ -591,6 +602,7 @@
       "rule_alpha_profile": "flow_reversion:held_180s:t0.54:s6.0:d0.02",
       "rule_alpha_profiles_with_trades": "balanced,guarded,held_180s,held_30s,held_90s,micro,scalp_20s,scalp_3s,scalp_8s",
       "rule_alpha_profitable_candidates": 0,
+      "rule_alpha_static_template_candidates": 135,
       "score": 0.0,
       "selected": true,
       "selection_closed_trades": 0,
@@ -633,8 +645,8 @@
       "threshold_source": "round_selection_rejected_no_entry_diagnostic_recorded"
     }
   ],
-  "candidate_diagnostics_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.csv",
-  "candidate_diagnostics_json_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.json",
+  "candidate_diagnostics_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.csv",
+  "candidate_diagnostics_json_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.json",
   "compute_backend_device": "privateuseone:0",
   "compute_backend_kind": "directml",
   "compute_backend_reason": "",
@@ -776,7 +788,7 @@
       "warnings": []
     }
   ],
-  "data_health_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/data-health.json",
+  "data_health_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/data-health.json",
   "data_source": "Binance public market data stored in SQLite",
   "data_start_ms": 1717200000000,
   "data_start_utc": "2024-06-01T00:00:00Z",
@@ -787,7 +799,7 @@
     "ETHUSDT",
     "SOLUSDT"
   ],
-  "generated_at_utc": "2026-07-07T06:10:32.271852Z",
+  "generated_at_utc": "2026-07-07T06:55:26.507596Z",
   "health_filtered_symbol_selection": false,
   "interval": "1s",
   "leverage_applies": true,
@@ -800,9 +812,9 @@
       "avg_trade_return_pct": 0.0,
       "buy_hold_pnl": -0.7348862825293634,
       "buy_hold_roi_pct": -0.07348862825293634,
-      "candidate_diagnostics_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.csv",
+      "candidate_diagnostics_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.csv",
       "candles": 86400,
-      "chart_path": "docs/optimization/round-alpha-event-study-1d-smoke/charts/01-BTCUSDT-conservative.svg",
+      "chart_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/01-BTCUSDT-conservative.svg",
       "closed_trades": 0,
       "decision_threshold": 1.0,
       "duration_years": 0.0006839873754658148,
@@ -838,7 +850,7 @@
       "risk_level": "conservative",
       "risk_per_trade": 0.005,
       "roi_pct": 0.0,
-      "round_id": "round-alpha-event-study-1d-smoke",
+      "round_id": "round-empirical-edge-miner-1d-smoke",
       "round_selection_gate_passed": false,
       "round_selection_reject_reason": "realized_pnl<=0.0; edge_vs_buy_hold<0.0; market_edge_pct<0.002; profit_factor<1.1; expectancy<=0.0",
       "rows": 21586,
@@ -859,7 +871,7 @@
       "threshold_diagnostic_best_threshold": 0.6875,
       "threshold_diagnostic_best_trades": 1,
       "threshold_source": "round_selection_rejected_no_entry_diagnostic_recorded",
-      "timeline_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/01-BTCUSDT-conservative-timeline.csv.gz",
+      "timeline_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/01-BTCUSDT-conservative-timeline.csv.gz",
       "total_fees": 0.0,
       "trades": 0,
       "training_positive_rate_pct": 0.015442226769100105,
@@ -872,9 +884,9 @@
       "avg_trade_return_pct": 0.0,
       "buy_hold_pnl": -0.24319285921827258,
       "buy_hold_roi_pct": -0.024319285921827256,
-      "candidate_diagnostics_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.csv",
+      "candidate_diagnostics_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.csv",
       "candles": 86400,
-      "chart_path": "docs/optimization/round-alpha-event-study-1d-smoke/charts/02-ETHUSDT-conservative.svg",
+      "chart_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/02-ETHUSDT-conservative.svg",
       "closed_trades": 0,
       "decision_threshold": 1.0,
       "duration_years": 0.0006839873754658148,
@@ -910,7 +922,7 @@
       "risk_level": "conservative",
       "risk_per_trade": 0.005,
       "roi_pct": 0.0,
-      "round_id": "round-alpha-event-study-1d-smoke",
+      "round_id": "round-empirical-edge-miner-1d-smoke",
       "round_selection_gate_passed": false,
       "round_selection_reject_reason": "closed_trades<5; realized_pnl<=0.0; edge_vs_buy_hold<0.0; market_edge_pct<0.002; profit_factor<1.1; expectancy<=0.0",
       "rows": 21586,
@@ -931,7 +943,7 @@
       "threshold_diagnostic_best_threshold": 0.8875,
       "threshold_diagnostic_best_trades": 1,
       "threshold_source": "round_selection_rejected_no_entry_diagnostic_recorded",
-      "timeline_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/02-ETHUSDT-conservative-timeline.csv.gz",
+      "timeline_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/02-ETHUSDT-conservative-timeline.csv.gz",
       "total_fees": 0.0,
       "trades": 0,
       "training_positive_rate_pct": 0.0,
@@ -944,9 +956,9 @@
       "avg_trade_return_pct": 0.0,
       "buy_hold_pnl": -1.9920613197191028,
       "buy_hold_roi_pct": -0.1992061319719103,
-      "candidate_diagnostics_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.csv",
+      "candidate_diagnostics_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.csv",
       "candles": 86400,
-      "chart_path": "docs/optimization/round-alpha-event-study-1d-smoke/charts/03-SOLUSDT-conservative.svg",
+      "chart_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/03-SOLUSDT-conservative.svg",
       "closed_trades": 0,
       "decision_threshold": 1.0,
       "duration_years": 0.0006839873754658148,
@@ -982,7 +994,7 @@
       "risk_level": "conservative",
       "risk_per_trade": 0.005,
       "roi_pct": 0.0,
-      "round_id": "round-alpha-event-study-1d-smoke",
+      "round_id": "round-empirical-edge-miner-1d-smoke",
       "round_selection_gate_passed": false,
       "round_selection_reject_reason": "realized_pnl<=0.0; market_edge_pct<0.002",
       "rows": 21586,
@@ -1003,7 +1015,7 @@
       "threshold_diagnostic_best_threshold": 0.5,
       "threshold_diagnostic_best_trades": 1,
       "threshold_source": "round_selection_rejected_no_entry_diagnostic_recorded",
-      "timeline_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/03-SOLUSDT-conservative-timeline.csv.gz",
+      "timeline_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/03-SOLUSDT-conservative-timeline.csv.gz",
       "total_fees": 0.0,
       "trades": 0,
       "training_positive_rate_pct": 0.003860556692275026,
@@ -1012,17 +1024,17 @@
       "win_rate_pct": 0.0
     }
   ],
-  "metrics_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/backtest-metrics.csv",
+  "metrics_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/backtest-metrics.csv",
   "min_coverage_ratio": 1.0,
   "min_data_rows": 0,
   "min_promotion_data_years": 2.0,
   "model_candidate_count": 1,
   "objective": "conservative",
-  "portfolio_timeline_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/portfolio-timeline.csv.gz",
+  "portfolio_timeline_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/portfolio-timeline.csv.gz",
   "progress": {
     "accepted_symbol_count": 0,
     "critical_verdict": "fail",
-    "generated_at_utc": "2026-07-07T06:10:32.020992Z",
+    "generated_at_utc": "2026-07-07T06:55:26.257457Z",
     "mean_baseline_roi_pct": -0.0990046820488913,
     "mean_low_liquidity_sample_rate_pct": 39.22912999166126,
     "mean_market_edge_pct": 0.0990046820488913,
@@ -1030,14 +1042,14 @@
     "median_market_edge_pct": 0.07348862825293634,
     "median_roi_pct": 0.0,
     "profitable_symbol_count": 0,
-    "round_id": "round-alpha-event-study-1d-smoke",
+    "round_id": "round-empirical-edge-miner-1d-smoke",
     "symbol_count": 3,
     "total_closed_trades": 0,
     "total_trades": 0,
     "worst_max_drawdown_pct": 0.0,
     "zero_trade_symbol_count": 3
   },
-  "progress_csv_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/round-progress.csv",
+  "progress_csv_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/round-progress.csv",
   "promotion_grade": false,
   "promotion_grade_contract": {
     "reasons": [],
@@ -1057,11 +1069,11 @@
   "require_gpu": true,
   "require_prefilled_data": true,
   "require_verified_checksum": true,
-  "round_id": "round-alpha-event-study-1d-smoke",
-  "selected_universe_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/selected-universe.json",
+  "round_id": "round-empirical-edge-miner-1d-smoke",
+  "selected_universe_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/selected-universe.json",
   "selection_health_rejections": [],
   "starting_cash": 1000.0,
-  "status_path": "docs/optimization/round-alpha-event-study-1d-smoke/data/round-status.json",
+  "status_path": "docs/optimization/round-empirical-edge-miner-1d-smoke/data/round-status.json",
   "strategy": {
     "confidence_beta": 0.9,
     "cooldown_minutes": 15,
@@ -1166,21 +1178,21 @@
   "symbol_count_completed": 3,
   "symbol_count_requested": 3,
   "tracked_artifacts": [
-    "docs/optimization/round-alpha-event-study-1d-smoke/charts/01-BTCUSDT-conservative.svg",
-    "docs/optimization/round-alpha-event-study-1d-smoke/charts/02-ETHUSDT-conservative.svg",
-    "docs/optimization/round-alpha-event-study-1d-smoke/charts/03-SOLUSDT-conservative.svg",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/01-BTCUSDT-conservative-timeline.csv.gz",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/02-ETHUSDT-conservative-timeline.csv.gz",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/03-SOLUSDT-conservative-timeline.csv.gz",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/backtest-metrics.csv",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.csv",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/candidate-diagnostics.json",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/data-health.json",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/portfolio-timeline.csv.gz",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/report.json",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/round-progress.csv",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/round-status.json",
-    "docs/optimization/round-alpha-event-study-1d-smoke/data/selected-universe.json"
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/01-BTCUSDT-conservative.svg",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/02-ETHUSDT-conservative.svg",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/charts/03-SOLUSDT-conservative.svg",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/01-BTCUSDT-conservative-timeline.csv.gz",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/02-ETHUSDT-conservative-timeline.csv.gz",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/03-SOLUSDT-conservative-timeline.csv.gz",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/backtest-metrics.csv",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.csv",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/candidate-diagnostics.json",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/data-health.json",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/portfolio-timeline.csv.gz",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/report.json",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/round-progress.csv",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/round-status.json",
+    "docs/optimization/round-empirical-edge-miner-1d-smoke/data/selected-universe.json"
   ],
   "tracked_repo_artifact": true,
   "use_objective_strategy_defaults": true

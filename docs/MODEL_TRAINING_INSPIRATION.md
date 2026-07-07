@@ -238,13 +238,19 @@ weakening risk controls.
   searches record best active profile, family, score, P&L, closed trades, win
   rate, profit factor, max drawdown, exit-reason counts, side counts, reject
   reason, orientation, evaluated candidate count, active/profitable/accepted
-  candidate counts, forward-event signal count, positive after-cost
-  forward-event count, best raw event candidate, most-active candidate,
-  best-PnL candidate, and active family/profile coverage. Candidate stop/take distances are now floored by
+  candidate counts, static-template count, empirical mined candidate count,
+  forward-event signal count, positive after-cost forward-event count, best raw
+  event candidate, most-active candidate, best-PnL candidate, and active
+  family/profile coverage. Candidate stop/take distances are now floored by
   modeled execution cost, entry/exit fees, and explicit buffers before replay,
-  preventing sub-cost scalp targets from appearing viable. The
-  `round-alpha-event-study-1d-smoke` evidence run still produced zero accepted
+  preventing sub-cost scalp targets from appearing viable. An empirical
+  feature-edge miner now screens one-feature tail rules on chronological
+  mining/validation slices and can add up to 18 candidates only when both slices
+  clear sample-count and after-cost edge gates. The
+  `round-empirical-edge-miner-1d-smoke` evidence run still produced zero accepted
   symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
+  It found zero validated empirical one-feature candidates under the current
+  conservative gates.
   It did prove the search is active: 234 BTCUSDT, 252 ETHUSDT, and 234 SOLUSDT
   rule-alpha variants closed at least one trade, and the volume-synchronized
   flow family remained the most-active family on all three symbols. The added

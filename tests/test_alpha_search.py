@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from types import SimpleNamespace
 
 from simple_ai_trading.alpha_search import (
@@ -7,6 +8,7 @@ from simple_ai_trading.alpha_search import (
     RuleAlphaCandidate,
     RuleAlphaCandidateResult,
     _diagnostic_rank_key,
+    mine_empirical_rule_alpha_candidates,
     model_for_rule_alpha,
     optimize_rule_alpha_model_zoo,
     rule_alpha_event_study,
@@ -514,6 +516,53 @@ def test_rule_alpha_event_study_records_forward_edge() -> None:
     assert study["long_signal_count"] > 0
     assert study["mean_edge_bps"] > 0.0
     assert study["net_mean_edge_bps"] > 0.0
+
+
+def test_empirical_rule_alpha_miner_discovers_validated_feature_edge(tmp_path) -> None:
+    horizon = 8
+    closes = [100.0 + 2.0 * math.sin(index / 9.0) for index in range(420)]
+    rows: list[ModelRow] = []
+    for index, close in enumerate(closes):
+        future = closes[min(index + horizon, len(closes) - 1)]
+        edge_signal = 1.0 if future > close else -1.0
+        rows.append(ModelRow(
+            timestamp=index * 1000,
+            close=close,
+            features=(edge_signal, *([0.0] * 12)),
+            label=1 if edge_signal > 0.0 else 0,
+            volume=10_000.0,
+        ))
+    strategy = StrategyConfig(taker_fee_bps=0.0, slippage_bps=0.0, max_spread_bps=0.0, latency_buffer_ms=0)
+
+    candidates = mine_empirical_rule_alpha_candidates(
+        rows,
+        strategy,
+        objective_name="conservative",
+        market_type="futures",
+        max_candidates=4,
+    )
+
+    assert candidates
+    candidate = candidates[0]
+    assert candidate.family == "empirical_feature_edge"
+    assert candidate.params["feature_index"] == 0
+    assert candidate.params["validation_net_edge_bps"] > 0.0
+    model = model_for_rule_alpha(rows, candidate, strategy, market_type="futures")
+    high = (1.0, *([0.0] * 12))
+    low = (-1.0, *([0.0] * 12))
+    high_probability = model.predict_proba(high)
+    low_probability = model.predict_proba(low)
+    if float(candidate.params["trade_side"]) > 0.0:
+        assert max(high_probability, low_probability) > 0.5
+    else:
+        assert min(high_probability, low_probability) < 0.5
+
+    path = tmp_path / "empirical-model.json"
+    serialize_model(model, path)
+    loaded = load_model(path, expected_feature_dim=13)
+
+    assert loaded.hybrid_experts[0].params["feature_index"] == 0
+    assert loaded.predict_proba(high) == high_probability
 
 
 def test_rejected_rule_alpha_diagnostic_prefers_less_negative_pnl_over_activity_score() -> None:

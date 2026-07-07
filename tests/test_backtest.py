@@ -496,6 +496,57 @@ def test_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
     assert max(abs(left - right) for left, right in zip(gpu, cpu, strict=True)) < 1e-5
 
 
+def test_empirical_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
+    backend = backtest_module.resolve_backend("directml")
+    if backend.kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+    rows: list[ModelRow] = []
+    for index in range(18):
+        sign = 1.0 if index % 2 else -1.0
+        features = [0.0] * 26
+        features[15] = sign
+        rows.append(ModelRow(
+            timestamp=index * 1000,
+            close=100.0 + index,
+            features=tuple(features),
+            label=1 if sign > 0 else 0,
+        ))
+    model = TrainedModel(
+        weights=[0.0] * 26,
+        bias=0.0,
+        feature_dim=26,
+        epochs=0,
+        feature_means=[0.0] * 26,
+        feature_stds=[1.0] * 26,
+        hybrid_base_weight=0.0,
+        hybrid_experts=[
+            HybridExpert(
+                name="empirical-rule-alpha",
+                kind="rule_alpha",
+                weight=1.0,
+                feature_count=26,
+                params={
+                    "family": "empirical_feature_edge",
+                    "sensitivity": 8.0,
+                    "deadband": 0.0,
+                    "feature_index": 15,
+                    "feature_threshold": 0.0,
+                    "feature_scale": 1.0,
+                    "tail_direction": 1.0,
+                    "trade_side": 1.0,
+                    "edge_confidence": 0.75,
+                    "edge_slope": 1.0,
+                },
+            )
+        ],
+    )
+
+    gpu = backtest_module._batch_probabilities_torch(rows, model, backend=backend, batch_size=5)
+    cpu = [model.predict_proba(row.features) for row in rows]
+
+    assert max(abs(left - right) for left, right in zip(gpu, cpu, strict=True)) < 1e-5
+
+
 def test_backtest_tracks_fees_and_cap_hits() -> None:
     rows = [
         ModelRow(

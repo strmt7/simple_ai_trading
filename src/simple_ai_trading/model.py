@@ -111,6 +111,26 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
     """
 
     family = str((params or {}).get("family", "momentum_breakout")).strip().lower()
+    if family == "empirical_feature_edge":
+        feature_index = _param_int(params, "feature_index", 0, low=0, high=max(0, len(values) - 1))
+        threshold = _param_float(params, "feature_threshold", 0.0, low=-1e12, high=1e12)
+        scale = max(1e-9, abs(_param_float(params, "feature_scale", 1.0, low=1e-12, high=1e12)))
+        tail_direction = 1.0 if _param_float(params, "tail_direction", 1.0, low=-1.0, high=1.0) >= 0.0 else -1.0
+        trade_side = 1.0 if _param_float(params, "trade_side", 1.0, low=-1.0, high=1.0) >= 0.0 else -1.0
+        confidence = _param_float(params, "edge_confidence", 1.0, low=0.0, high=1.0)
+        slope = _param_float(params, "edge_slope", 1.0, low=0.1, high=20.0)
+        value = float(values[feature_index]) if feature_index < len(values) else 0.0
+        if not math.isfinite(value):
+            value = threshold
+        delta = tail_direction * (value - threshold) / scale
+        strength = math.tanh(max(0.0, delta) * slope)
+        score = trade_side * max(0.0, strength) * confidence
+        deadband = _param_float(params, "deadband", 0.04, low=0.0, high=0.95)
+        magnitude = abs(score)
+        if magnitude <= deadband:
+            return 0.0
+        adjusted = (magnitude - deadband) / max(1e-9, 1.0 - deadband)
+        return _clamp(math.copysign(adjusted, score), -1.0, 1.0)
     padded = list(values[:13])
     while len(padded) < 13:
         padded.append(0.0)
