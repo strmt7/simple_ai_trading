@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 import math
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from .advanced_model import AdvancedFeatureConfig, advanced_feature_group_spans
 from .backtest import (
@@ -31,10 +31,21 @@ from .types import StrategyConfig
 
 DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 135
 DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES = 18
+DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES = 18
 _RULE_ALPHA_COST_FLOOR_PARTICIPATION = 0.05
 _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS = 2.0
 _RULE_ALPHA_MIN_STOP_BUFFER_BPS = 1.0
 _EMPIRICAL_RULE_ALPHA_FAMILY = "empirical_feature_edge"
+
+
+@dataclass(frozen=True)
+class _EmpiricalCondition:
+    feature_index: int
+    threshold_value: float
+    feature_scale: float
+    tail_direction: float
+    tail_name: str
+    train_stats: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -485,6 +496,7 @@ def mine_empirical_rule_alpha_candidates(
     )
     cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0)
     candidates: list[tuple[tuple[float, float, int, float], RuleAlphaCandidate]] = []
+    condition_pools: dict[tuple[str, int, int, float], list[_EmpiricalCondition]] = {}
 
     for feature_index in range(feature_count):
         feature_values = [
@@ -526,6 +538,20 @@ def mine_empirical_rule_alpha_candidates(
                         horizon=horizon,
                         cost_floor_bps=cost_floor_bps,
                     )
+                    if (
+                        int(train_stats["signal_count"]) >= min_train_signals
+                        and float(train_stats["net_mean_edge_bps"]) > -max(2.0, cost_floor_bps * 0.25)
+                        and float(train_stats["hit_rate"]) >= 0.45
+                    ):
+                        key = (profile, int(horizon), int(grace_bars), float(trade_side))
+                        condition_pools.setdefault(key, []).append(_EmpiricalCondition(
+                            feature_index=int(feature_index),
+                            threshold_value=float(threshold_value),
+                            feature_scale=float(feature_scale),
+                            tail_direction=float(tail_direction),
+                            tail_name=str(tail_name),
+                            train_stats=dict(train_stats),
+                        ))
                     if (
                         int(train_stats["signal_count"]) < min_train_signals
                         or float(train_stats["net_mean_edge_bps"]) <= 0.0
@@ -590,15 +616,27 @@ def mine_empirical_rule_alpha_candidates(
                     )
                     candidates.append((score, candidate))
 
+    _mine_empirical_interaction_candidates(
+        candidates,
+        condition_pools,
+        training=training,
+        validation=validation,
+        cost_floor_bps=cost_floor_bps,
+        probability_threshold=probability_threshold,
+        market_type=market_type,
+    )
+
     candidates.sort(key=lambda item: item[0], reverse=True)
     output: list[RuleAlphaCandidate] = []
-    seen: set[tuple[int, float, float, int]] = set()
+    seen: set[tuple[int, float, float, int, int, float]] = set()
     for _score, candidate in candidates:
         key = (
             int(candidate.params.get("feature_index", -1)),
             float(candidate.params.get("tail_direction", 0.0)),
             float(candidate.params.get("trade_side", 0.0)),
             int(candidate.params.get("horizon_bars", 0)),
+            int(candidate.params.get("second_feature_index", -1)),
+            float(candidate.params.get("second_tail_direction", 0.0)),
         )
         if key in seen:
             continue
@@ -607,6 +645,136 @@ def mine_empirical_rule_alpha_candidates(
         if len(output) >= limit:
             break
     return tuple(output)
+
+
+def _mine_empirical_interaction_candidates(
+    candidates: list[tuple[tuple[float, float, int, float], RuleAlphaCandidate]],
+    condition_pools: Mapping[tuple[str, int, int, float], list[_EmpiricalCondition]],
+    *,
+    training: Sequence[ModelRow],
+    validation: Sequence[ModelRow],
+    cost_floor_bps: float,
+    probability_threshold: float,
+    market_type: str,
+) -> None:
+    """Append validated two-condition empirical rules to ``candidates``."""
+
+    del market_type  # side handling is already encoded in the condition-pool key.
+    emitted = 0
+    for (profile, horizon, grace_bars, trade_side), pool in condition_pools.items():
+        if emitted >= DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES:
+            break
+        if len(pool) < 2:
+            continue
+        pool.sort(
+            key=lambda item: (
+                float(item.train_stats.get("net_mean_edge_bps", 0.0) or 0.0),
+                float(item.train_stats.get("hit_rate", 0.0) or 0.0),
+                int(item.train_stats.get("signal_count", 0) or 0),
+                -int(item.feature_index),
+            ),
+            reverse=True,
+        )
+        pool = pool[:36]
+        min_train_signals = max(35, int((len(training) - horizon) * 0.002))
+        min_validation_signals = max(20, int((len(validation) - horizon) * 0.002))
+        for left_index, left in enumerate(pool):
+            for right in pool[left_index + 1:]:
+                if left.feature_index == right.feature_index:
+                    continue
+                train_stats = _empirical_edge_stats(
+                    training,
+                    feature_index=left.feature_index,
+                    threshold_value=left.threshold_value,
+                    feature_scale=left.feature_scale,
+                    tail_direction=left.tail_direction,
+                    trade_side=trade_side,
+                    horizon=horizon,
+                    cost_floor_bps=cost_floor_bps,
+                    second_feature_index=right.feature_index,
+                    second_threshold_value=right.threshold_value,
+                    second_feature_scale=right.feature_scale,
+                    second_tail_direction=right.tail_direction,
+                )
+                if (
+                    int(train_stats["signal_count"]) < min_train_signals
+                    or float(train_stats["net_mean_edge_bps"]) <= 0.0
+                    or float(train_stats["hit_rate"]) < 0.53
+                ):
+                    continue
+                validation_stats = _empirical_edge_stats(
+                    validation,
+                    feature_index=left.feature_index,
+                    threshold_value=left.threshold_value,
+                    feature_scale=left.feature_scale,
+                    tail_direction=left.tail_direction,
+                    trade_side=trade_side,
+                    horizon=horizon,
+                    cost_floor_bps=cost_floor_bps,
+                    second_feature_index=right.feature_index,
+                    second_threshold_value=right.threshold_value,
+                    second_feature_scale=right.feature_scale,
+                    second_tail_direction=right.tail_direction,
+                )
+                if (
+                    int(validation_stats["signal_count"]) < min_validation_signals
+                    or float(validation_stats["net_mean_edge_bps"]) <= 0.0
+                    or float(validation_stats["hit_rate"]) < 0.53
+                ):
+                    continue
+                trade_name = "long" if trade_side > 0.0 else "short"
+                first, second = sorted((left, right), key=lambda item: item.feature_index)
+                confidence = _clamp(
+                    min(float(train_stats["net_mean_edge_bps"]), float(validation_stats["net_mean_edge_bps"])) / max(cost_floor_bps, 1.0),
+                    0.15,
+                    1.0,
+                )
+                candidate = RuleAlphaCandidate(
+                    name=(
+                        f"{_EMPIRICAL_RULE_ALPHA_FAMILY}:{profile}:"
+                        f"f{first.feature_index}{first.tail_name}+f{second.feature_index}{second.tail_name}:{trade_name}"
+                    ),
+                    family=_EMPIRICAL_RULE_ALPHA_FAMILY,
+                    threshold=float(probability_threshold),
+                    sensitivity=8.0,
+                    deadband=0.0,
+                    stop_loss_multiplier=0.12 if horizon <= 8 else (0.20 if horizon <= 30 else 0.28),
+                    take_profit_multiplier=0.10 if horizon <= 8 else (0.18 if horizon <= 30 else 0.26),
+                    cooldown_multiplier=0.0,
+                    min_position_hold_bars=int(horizon),
+                    flat_signal_exit_grace_bars=int(grace_bars),
+                    params={
+                        "condition_count": 2,
+                        "feature_index": int(first.feature_index),
+                        "feature_threshold": float(first.threshold_value),
+                        "feature_scale": float(first.feature_scale),
+                        "tail_direction": float(first.tail_direction),
+                        "second_feature_index": int(second.feature_index),
+                        "second_feature_threshold": float(second.threshold_value),
+                        "second_feature_scale": float(second.feature_scale),
+                        "second_tail_direction": float(second.tail_direction),
+                        "trade_side": float(trade_side),
+                        "edge_confidence": float(confidence),
+                        "edge_slope": 1.0,
+                        "training_signal_count": int(train_stats["signal_count"]),
+                        "validation_signal_count": int(validation_stats["signal_count"]),
+                        "training_net_edge_bps": float(train_stats["net_mean_edge_bps"]),
+                        "validation_net_edge_bps": float(validation_stats["net_mean_edge_bps"]),
+                        "training_hit_rate": float(train_stats["hit_rate"]),
+                        "validation_hit_rate": float(validation_stats["hit_rate"]),
+                        "horizon_bars": int(horizon),
+                    },
+                )
+                score = (
+                    min(float(train_stats["net_mean_edge_bps"]), float(validation_stats["net_mean_edge_bps"])),
+                    min(float(train_stats["hit_rate"]), float(validation_stats["hit_rate"])),
+                    min(int(train_stats["signal_count"]), int(validation_stats["signal_count"])),
+                    -float(first.feature_index + second.feature_index),
+                )
+                candidates.append((score, candidate))
+                emitted += 1
+                if emitted >= DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES:
+                    return
 
 
 def _empirical_edge_stats(
@@ -619,6 +787,10 @@ def _empirical_edge_stats(
     trade_side: float,
     horizon: int,
     cost_floor_bps: float,
+    second_feature_index: int | None = None,
+    second_threshold_value: float | None = None,
+    second_feature_scale: float | None = None,
+    second_tail_direction: float | None = None,
 ) -> dict[str, object]:
     edges: list[float] = []
     side = 1.0 if trade_side >= 0.0 else -1.0
@@ -634,7 +806,24 @@ def _empirical_edge_stats(
             continue
         if tail * (value - threshold_value) <= 0.0:
             continue
+        if second_feature_index is not None:
+            if len(current.features) <= second_feature_index:
+                continue
+            second_value = float(current.features[second_feature_index])
+            if not math.isfinite(second_value):
+                continue
+            second_tail = 1.0 if float(second_tail_direction if second_tail_direction is not None else 1.0) >= 0.0 else -1.0
+            second_threshold = float(second_threshold_value if second_threshold_value is not None else 0.0)
+            if second_tail * (second_value - second_threshold) <= 0.0:
+                continue
         strength = math.tanh(max(0.0, tail * (value - threshold_value) / scale))
+        if second_feature_index is not None:
+            second_scale = max(abs(float(second_feature_scale if second_feature_scale is not None else 1.0)), 1e-9)
+            second_tail = 1.0 if float(second_tail_direction if second_tail_direction is not None else 1.0) >= 0.0 else -1.0
+            second_threshold = float(second_threshold_value if second_threshold_value is not None else 0.0)
+            second_value = float(current.features[second_feature_index])
+            second_strength = math.tanh(max(0.0, second_tail * (second_value - second_threshold) / second_scale))
+            strength = min(strength, second_strength)
         if strength <= 0.0:
             continue
         edge_bps = side * ((float(future.close) - float(current.close)) / float(current.close)) * 10_000.0
@@ -845,6 +1034,9 @@ def optimize_rule_alpha_model_zoo(
     candidate_summary = summarize_rule_alpha_candidate_distribution(diagnostics)
     candidate_summary["static_template_candidates"] = int(len(template_candidates))
     candidate_summary["empirical_mined_candidates"] = int(len(empirical_candidates))
+    candidate_summary["empirical_interaction_candidates"] = int(
+        sum(1 for candidate in empirical_candidates if "second_feature_index" in candidate.params)
+    )
     candidate_summary["empirical_candidate_limit"] = int(DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES)
     winner = best_accepted or best_diagnostic
     if winner is None:

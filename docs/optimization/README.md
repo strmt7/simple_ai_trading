@@ -17,7 +17,7 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-empirical-edge-miner-1d-smoke`, a failed
+The current retained checkpoint is `round-empirical-interaction-edge-1d-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
 `1s` SQLite market data. It is kept because it is truthful negative evidence:
 the default model trained on real second-level data, used DirectML for training
@@ -42,10 +42,11 @@ evidence, best rejected alpha evidence, and event-edge evidence, but
 executable models are parked in a no-entry state unless a selection, hybrid, or
 rule-alpha replay passes the full profitability, activity, drawdown,
 liquidation, and path-quality gates.
-The current research path also mines simple empirical feature-edge candidates
-from chronological train/validation slices. Those candidates are only added
-when both slices show enough signals and positive net forward edge after the
-modeled cost floor, and even then they still have to pass the same replay gates.
+The current research path also mines simple empirical feature-edge and
+two-feature interaction candidates from chronological train/validation slices.
+Those candidates are only added when both slices show enough signals and
+positive net forward edge after the modeled cost floor, and even then they still
+have to pass the same replay gates.
 Earlier BTC-only, stale BTC/ETH-only, broader-symbol, and prior per-round smoke
 artifacts were removed because they no longer matched the active scope, data
 standard, or model selection rules. Future checkpoints must be generated from
@@ -167,21 +168,21 @@ template is tested with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so
 repeated candidate replays do not waste time. Rule-alpha models serialize as `rule_alpha` hybrid
 experts, so a promoted alpha uses the same CLI, Windows app, backtest, and live
-prediction path. The empirical feature-edge miner can add up to 18 one-feature
-tail candidates, but only when chronological mining and validation slices both
-show positive net edge after the cost floor. Rejected alpha searches record best rejected profile, family,
+prediction path. The empirical feature-edge miner can add one-feature and
+two-feature interaction tail candidates, but only when chronological mining and
+validation slices both show positive net edge after the cost floor. Rejected alpha searches record best rejected profile, family,
 score, P&L, closed trades, win rate, profit factor, max drawdown, exit-reason
 counts, side counts, reject reason, orientation, and candidate count in
 `candidate-diagnostics.csv`. They also record the full zoo's active candidate
 count, profitable candidate count, accepted candidate count, static-template
-candidate count, empirical mined candidate count, forward-event signal count,
-positive after-cost forward-event count, best raw event candidate,
+candidate count, empirical mined candidate count, empirical interaction count,
+forward-event signal count, positive after-cost forward-event count, best raw event candidate,
 maximum closed trades, most-active candidate, best-PnL candidate, and active
 family/profile coverage so no round can hide a losing high-activity search
 behind a quiet no-entry final model.
 
 Latest retained local smoke evidence from 2026-07-07 is
-`round-empirical-edge-miner-1d-smoke`. It uses the verified UTC window
+`round-empirical-interaction-edge-1d-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
 missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
@@ -191,10 +192,11 @@ count, taker-buy volume, signed flow, no-trade ratio, flow/return alignment,
 flow strength, flow persistence, flow acceleration, and price/flow divergence,
 hybrid rescue profiles, order-flow-aware rule-alpha experts serialized with the
 v9 171-feature advanced vector, cost-aware rule-alpha stop/take floors, 135
-static templates, and the empirical feature-edge miner with an 18-candidate cap.
-The empirical miner found zero validated one-feature candidates under the
-chronological sample-count and after-cost edge gates, so the final search still
-ran 270 rule-alpha normal/inverted static-template replays per symbol.
+static templates, and empirical one-feature plus two-feature interaction mining.
+The empirical miner found zero validated one-feature or two-feature interaction
+candidates under the chronological sample-count and after-cost edge gates, so
+the final search still ran 270 rule-alpha normal/inverted static-template
+replays per symbol.
 It failed the critical gate: zero accepted symbols, zero total closed holdout
 trades, mean ROI `0.0%`, median ROI `0.0%`, mean buy-and-hold ROI
 `-0.0990046820488913%`, worst drawdown `0.0%`, three rejected diagnostic

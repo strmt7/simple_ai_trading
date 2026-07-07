@@ -565,6 +565,53 @@ def test_empirical_rule_alpha_miner_discovers_validated_feature_edge(tmp_path) -
     assert loaded.predict_proba(high) == high_probability
 
 
+def test_empirical_rule_alpha_miner_discovers_validated_feature_interaction(tmp_path) -> None:
+    horizon = 8
+    closes = [100.0 + 3.0 * math.sin(index / 11.0) for index in range(640)]
+    rows: list[ModelRow] = []
+    for index, close in enumerate(closes):
+        future = closes[min(index + horizon, len(closes) - 1)]
+        positive = future > close
+        first = 1.0 if positive or index % 5 == 0 else -1.0
+        second = 1.0 if positive or index % 5 == 1 else -1.0
+        rows.append(ModelRow(
+            timestamp=index * 1000,
+            close=close,
+            features=(first, second, *([0.0] * 11)),
+            label=1 if positive else 0,
+            volume=10_000.0,
+        ))
+    strategy = StrategyConfig(taker_fee_bps=0.0, slippage_bps=0.0, max_spread_bps=0.0, latency_buffer_ms=0)
+
+    candidates = mine_empirical_rule_alpha_candidates(
+        rows,
+        strategy,
+        objective_name="conservative",
+        market_type="futures",
+        max_candidates=8,
+    )
+    interaction = next(candidate for candidate in candidates if "second_feature_index" in candidate.params)
+
+    assert {interaction.params["feature_index"], interaction.params["second_feature_index"]} == {0, 1}
+    assert interaction.params["validation_net_edge_bps"] > 0.0
+    model = model_for_rule_alpha(rows, interaction, strategy, market_type="futures")
+
+    both = model.predict_proba((1.0, 1.0, *([0.0] * 11)))
+    first_only = model.predict_proba((1.0, -1.0, *([0.0] * 11)))
+
+    if float(interaction.params["trade_side"]) > 0.0:
+        assert both > first_only
+    else:
+        assert both < first_only
+
+    path = tmp_path / "interaction-model.json"
+    serialize_model(model, path)
+    loaded = load_model(path, expected_feature_dim=13)
+
+    assert "second_feature_index" in loaded.hybrid_experts[0].params
+    assert loaded.predict_proba((1.0, 1.0, *([0.0] * 11))) == both
+
+
 def test_rejected_rule_alpha_diagnostic_prefers_less_negative_pnl_over_activity_score() -> None:
     candidate = RuleAlphaCandidate(
         name="unit",
