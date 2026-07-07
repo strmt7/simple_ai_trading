@@ -1,3 +1,2 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-rule-alpha-major-1d-smoke,2026-07-07T03:19:12.673350Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0
-round-orderflow-alpha-major-1d-smoke,2026-07-07T03:50:18.797283Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0
+round-v9-flow-state-1d-smoke,2026-07-07T04:10:52.531062Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0

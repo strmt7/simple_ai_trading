@@ -99,7 +99,8 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   snapshots are persisted, this repo uses candle microstructure proxies plus
   second-level aggTrade-derived order-flow features such as taker-buy ratios,
   signed-flow imbalance, trade-count shocks, quote-volume shocks, no-trade
-  ratios, and flow/return alignment:
+  ratios, flow/return alignment, flow strength, flow persistence, flow
+  acceleration, and price/flow divergence:
   <https://arxiv.org/abs/1808.03668>
 - FinRL influenced the training-environment boundary: transaction cost,
   liquidity, and risk aversion must live inside the evaluation loop before any
@@ -179,11 +180,12 @@ used by the CLI. The advanced feature vector now includes:
 - market-quality regime features for trend efficiency, downside pressure,
   lagged return autocorrelation, volatility-of-volatility, volume pressure,
   volume/return correlation, ATR pressure, and current volume z-score,
-- v8 feature signatures that keep the v6 order-flow microstructure block from
-  real quote volume, trade count, taker-buy base/quote volume, signed flow
-  imbalance, no-trade seconds, and signed-flow/return alignment, keep the v7
-  volatility-adjusted triple-barrier modes, then add known-at-entry
-  information-event labels based on trailing CUSUM return activity.
+- v9 feature signatures that keep the v8 known-at-entry information-event
+  labels and expand the real aggTrade-derived order-flow microstructure block
+  from 9 to 13 fields per window with average signed-flow strength, serial flow
+  persistence, front/back-window flow acceleration, and price/flow divergence.
+  Legacy v8 signatures still rebuild the original 9-field order-flow layout, so
+  older evidence artifacts do not silently change dimension.
 - side-aware futures threshold calibration that can promote symmetric,
   long-only, or short-only thresholds only when the selection fold improves
   risk-adjusted evidence; the final holdout still has to pass profitability,
@@ -223,7 +225,8 @@ pattern seen in stronger bots: broad, cheap entry/exit template sweeps happen
 before any template is promoted into the same serialized model path. The current
 templates are original momentum breakout, VWAP/RSI mean reversion,
 trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
-and flow-reversion families. Order-flow templates receive serialized offsets
+flow-reversion, flow-consensus breakout, and liquidity-absorption reversal
+families. Order-flow templates receive serialized offsets
 into the advanced aggTrade-derived order-flow feature block, so CPU, DirectML,
 CLI, Windows app, backtest, and live/autonomous inference use the same
 microstructure inputs. Each template is tested with normal and inverted
@@ -242,10 +245,11 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-orderflow-alpha-major-1d-smoke` run used verified
+in code. The 2026-07-07 `round-v9-flow-state-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
-scoring, conservative 5x futures settings, seven hybrid profiles, the 159-feature
-advanced vector including order-flow microstructure fields, and 96 normal/inverted
+scoring, conservative 5x futures settings, seven hybrid profiles, the v9
+171-feature advanced vector including 13 order-flow microstructure fields per
+window, and 96 normal/inverted
 rule-alpha replays per symbol. It failed with zero accepted symbols, zero closed
 holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
 profiles were still negative after costs: BTCUSDT inverted trend-pullback lost

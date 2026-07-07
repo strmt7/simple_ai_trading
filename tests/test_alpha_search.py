@@ -106,17 +106,24 @@ def test_rule_alpha_can_use_advanced_order_flow_features(tmp_path) -> None:
     cfg = default_config_for("conservative", FEATURE_NAMES)
     feature_params = rule_alpha_feature_params(cfg)
     start = int(feature_params["order_flow_start"])
-    feature_count = start + 27
+    width = int(feature_params["order_flow_width"])
+    assert width == 13
+    feature_count = start + (3 * width)
     features = [0.0] * feature_count
     features[0] = 0.001
     features[1] = 0.001
-    for group_start in range(start, start + 27, 9):
+    for group_start in range(start, start + (3 * width), width):
+        features[group_start + 0] = 0.70
         features[group_start + 1] = 0.80
         features[group_start + 2] = 0.75
         features[group_start + 3] = 0.45
         features[group_start + 4] = 0.40
         features[group_start + 7] = 0.35
         features[group_start + 8] = 0.30
+        features[group_start + 9] = 0.65
+        features[group_start + 10] = 0.45
+        features[group_start + 11] = 0.30
+        features[group_start + 12] = 0.25
     row = ModelRow(timestamp=0, close=100.0, features=tuple(features), label=1, volume=1000.0)
     model = model_for_rule_alpha(
         [row],
@@ -139,6 +146,68 @@ def test_rule_alpha_can_use_advanced_order_flow_features(tmp_path) -> None:
     assert loaded.hybrid_experts[0].params["order_flow_window_count"] == 3
     assert loaded.rule_alpha_best_exit_reason_counts == {"take_profit_close": 2}
     assert loaded.predict_proba(row.features) == model.predict_proba(row.features)
+
+
+def test_rule_alpha_new_flow_families_use_expanded_order_flow_state() -> None:
+    cfg = default_config_for("conservative", FEATURE_NAMES)
+    feature_params = rule_alpha_feature_params(cfg)
+    start = int(feature_params["order_flow_start"])
+    width = int(feature_params["order_flow_width"])
+    features = [0.0] * (start + (3 * width))
+    features[0] = 0.0012
+    features[1] = 0.0010
+    features[2] = 0.0008
+    features[10] = 0.0010
+    for group_start in range(start, start + (3 * width), width):
+        features[group_start + 0] = 0.72
+        features[group_start + 1] = 0.70
+        features[group_start + 2] = 0.68
+        features[group_start + 7] = 0.45
+        features[group_start + 8] = 0.32
+        features[group_start + 9] = 0.58
+        features[group_start + 10] = 0.40
+        features[group_start + 11] = 0.35
+        features[group_start + 12] = 0.20
+    row = ModelRow(timestamp=0, close=100.0, features=tuple(features), label=1, volume=1000.0)
+    breakout = model_for_rule_alpha(
+        [row],
+        RuleAlphaCandidate(
+            name="flow_consensus_breakout:unit",
+            family="flow_consensus_breakout",
+            threshold=0.54,
+            sensitivity=8.0,
+            deadband=0.01,
+            stop_loss_multiplier=0.18,
+            take_profit_multiplier=0.16,
+            cooldown_multiplier=0.0,
+            min_position_hold_bars=30,
+            flat_signal_exit_grace_bars=10,
+        ),
+        StrategyConfig(),
+        market_type="futures",
+        feature_params=feature_params,
+    )
+    absorption = model_for_rule_alpha(
+        [row],
+        RuleAlphaCandidate(
+            name="liquidity_absorption_reversal:unit",
+            family="liquidity_absorption_reversal",
+            threshold=0.54,
+            sensitivity=8.0,
+            deadband=0.01,
+            stop_loss_multiplier=0.18,
+            take_profit_multiplier=0.16,
+            cooldown_multiplier=0.0,
+            min_position_hold_bars=30,
+            flat_signal_exit_grace_bars=10,
+        ),
+        StrategyConfig(),
+        market_type="futures",
+        feature_params=feature_params,
+    )
+
+    assert breakout.predict_proba(row.features) > 0.5
+    assert absorption.predict_proba(row.features) < breakout.predict_proba(row.features)
 
 
 def test_summarize_rule_alpha_trade_path_counts_exits_and_sides() -> None:

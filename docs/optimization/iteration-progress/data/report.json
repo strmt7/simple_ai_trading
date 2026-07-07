@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1503,
+      "bytes": 1456,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "dd56e6f3861e49f78bf127df91b4d2b80303d3cfab601a953444b26287b7d069"
+      "sha256": "3a33dcfc2b55cece70de48f7d267e0db48596bc6442821aa433e2ffb68bea466"
     },
     {
-      "bytes": 547,
+      "bytes": 391,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 2,
-      "sha256": "bc58b24c738377ce6882f34fe16992e250055cc7704dec102b56e5373b7a78b1"
+      "row_count": 1,
+      "sha256": "8e7dba7f9709edbc29dd099ec63f9e7ce090a25b10be68643688b19ab12237d4"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T03:50:18.823801Z",
-  "latest_round_id": "round-orderflow-alpha-major-1d-smoke",
+  "generated_at_utc": "2026-07-07T04:11:59.871849Z",
+  "latest_round_id": "round-v9-flow-state-1d-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 2,
+  "source_report_count": 1,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",

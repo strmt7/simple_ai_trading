@@ -237,6 +237,17 @@ def test_order_flow_features_match_naive_reference_and_dimensioned() -> None:
         current_quote_per_trade = am._safe_ratio(current_quote_volume, current_trade_count)
         signed_ratios = cache.signed_flow_ratios[start:end + 1]
         returns = cache.returns[start:end + 1]
+        midpoint = start + max(1, window // 2)
+        first_signed_ratio = am._safe_ratio(
+            sum(cache.signed_flow_ratios[start:midpoint]),
+            float(max(1, midpoint - start)),
+        )
+        second_signed_ratio = am._safe_ratio(
+            sum(cache.signed_flow_ratios[midpoint:end + 1]),
+            float(max(1, end - midpoint + 1)),
+        )
+        net_return = am._safe_ratio(cache.closes[end] - cache.closes[start], cache.closes[start])
+        mean_signed_ratio = sum(signed_ratios) / float(window)
         return [
             am._safe_ratio(sum_taker_base, sum_volume),
             am._safe_ratio(signed_base, sum_volume),
@@ -246,16 +257,20 @@ def test_order_flow_features_match_naive_reference_and_dimensioned() -> None:
             am._safe(math.tanh(math.log1p(current_quote_per_trade) - math.log1p(avg_quote_per_trade))),
             am._safe_ratio(sum(cache.no_trade_flags[start:end + 1]), float(window)),
             am._safe(am._correlation(signed_ratios, returns)),
-            am._safe(cache.signed_flow_ratios[end] - (sum(signed_ratios) / float(window))),
+            am._safe(cache.signed_flow_ratios[end] - mean_signed_ratio),
+            am._safe(sum(abs(value) for value in signed_ratios) / float(window)),
+            am._safe(am._correlation(signed_ratios[:-1], signed_ratios[1:])),
+            am._safe(second_signed_ratio - first_signed_ratio),
+            am._safe(math.tanh((mean_signed_ratio * 2.0) - math.tanh(net_return * 250.0))),
         ]
 
     expected = [value for window in windows for value in naive(window)]
     actual = am._order_flow_features_at(cache, end, windows)
 
-    assert len(actual) == 18
+    assert len(actual) == 26
     assert actual == pytest.approx(expected, abs=1e-12)
     assert all(math.isfinite(value) for value in actual)
-    assert am._order_flow_features_at(cache, -1, (20,)) == [0.0] * 9
+    assert am._order_flow_features_at(cache, -1, (20,)) == [0.0] * 13
 
     cfg = am.AdvancedFeatureConfig(
         base_features=tuple(FEATURE_NAMES[:4]),
@@ -269,7 +284,7 @@ def test_order_flow_features_match_naive_reference_and_dimensioned() -> None:
     rows = am.make_advanced_rows(candles, cfg)
     assert rows
     assert len(rows[0].features) == am.advanced_feature_dimension(cfg)
-    assert am.advanced_feature_dimension(cfg) == 4 + 18 + 8
+    assert am.advanced_feature_dimension(cfg) == 4 + 26 + 8
 
 
 def test_nonlinear_expand_unknown_raises():
@@ -390,6 +405,32 @@ def test_advanced_config_from_signature_round_trips_candidate_specific_fields() 
     assert parsed == cfg
     assert am.advanced_feature_signature(parsed) == am.advanced_feature_signature(cfg)
     assert am.advanced_config_from_signature("feature_version=v1") is None
+
+
+def test_legacy_v8_signature_keeps_nine_order_flow_fields_per_window() -> None:
+    cfg = am.AdvancedFeatureConfig(
+        base_features=FEATURE_NAMES[:4],
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(),
+        confluence_windows=(),
+        market_quality_windows=(),
+        order_flow_windows=(6, 18),
+    )
+    current_parts = am.advanced_feature_signature(cfg).split("|")
+    legacy_parts = [
+        part.replace("advanced_version=v9-flow-state", "advanced_version=v8-information-event")
+        for part in current_parts
+        if not part.startswith("order_flow_features_per_window=")
+    ]
+    parsed = am.advanced_config_from_signature("|".join(legacy_parts), FEATURE_NAMES)
+
+    assert parsed is not None
+    assert parsed.order_flow_features_per_window == 9
+    assert am.advanced_feature_dimension(parsed) == 4 + (2 * 9) + 8
+    rows = am.make_advanced_rows(_candles(240), parsed)
+    assert rows
+    assert len(rows[0].features) == am.advanced_feature_dimension(parsed)
 
 
 def test_default_config_for_branches():

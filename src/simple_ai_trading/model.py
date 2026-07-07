@@ -59,6 +59,10 @@ def _order_flow_summary(values: Sequence[float], params: dict[str, Any] | None) 
         "no_trade_ratio": 0.0,
         "flow_return_alignment": 0.0,
         "signed_ratio_delta": 0.0,
+        "mean_abs_signed_ratio": 0.0,
+        "flow_persistence": 0.0,
+        "flow_acceleration": 0.0,
+        "price_flow_divergence": 0.0,
     }
     if start < 0 or count <= 0 or len(values) <= start:
         return fallback
@@ -91,6 +95,10 @@ def _order_flow_summary(values: Sequence[float], params: dict[str, Any] | None) 
         "no_trade_ratio": no_trade,
         "flow_return_alignment": _clamp(mean_at(7, 0.0), -1.0, 1.0),
         "signed_ratio_delta": _clamp(mean_at(8, 0.0) * quality, -1.0, 1.0),
+        "mean_abs_signed_ratio": _clamp(mean_at(9, 0.0), 0.0, 1.0),
+        "flow_persistence": _clamp(mean_at(10, 0.0), -1.0, 1.0),
+        "flow_acceleration": _clamp(mean_at(11, 0.0) * quality, -1.0, 1.0),
+        "price_flow_divergence": _clamp(mean_at(12, 0.0), -1.0, 1.0),
     }
 
 
@@ -188,6 +196,40 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.18 * math.tanh((rsi - 0.50) * 4.6)
         )
         score = -0.58 * exhaustion * abs(stretched_price) - 0.42 * stretched_price
+    elif family == "flow_consensus_breakout":
+        consensus = (
+            0.22 * math.tanh(order_flow["signed_base"] * 2.8)
+            + 0.20 * math.tanh(order_flow["signed_quote"] * 2.8)
+            + 0.16 * math.tanh(order_flow["signed_ratio_delta"] * 3.2)
+            + 0.14 * math.tanh(order_flow["flow_acceleration"] * 3.0)
+            + 0.12 * math.tanh(order_flow["flow_persistence"] * 2.2)
+            + 0.08 * math.tanh(order_flow["flow_return_alignment"] * 2.0)
+            + 0.08 * math.tanh((order_flow["taker_buy_ratio"] - 0.5) * 5.0)
+        )
+        price_confirmation = (
+            0.38 * math.tanh(momentum_1 * 280.0)
+            + 0.30 * math.tanh(momentum_3 * 190.0)
+            + 0.18 * math.tanh(momentum_10 * 120.0)
+            + 0.14 * math.tanh(trend_acceleration * 250.0)
+        )
+        flow_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
+        flow_strength = 0.55 + 0.45 * math.tanh(order_flow["mean_abs_signed_ratio"] * 4.0)
+        score = flow_quality * flow_strength * (0.68 * consensus + 0.32 * price_confirmation)
+    elif family == "liquidity_absorption_reversal":
+        absorption = (
+            0.34 * math.tanh(order_flow["price_flow_divergence"] * 2.6)
+            + 0.24 * math.tanh(order_flow["signed_base"] * 2.0)
+            + 0.20 * math.tanh(order_flow["signed_quote"] * 2.0)
+            - 0.12 * math.tanh(order_flow["flow_return_alignment"] * 2.0)
+            + 0.10 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.0)
+        )
+        stretch = (
+            0.34 * math.tanh(gap_to_vwap * 150.0)
+            + 0.24 * math.tanh(momentum_3 * 180.0)
+            + 0.18 * math.tanh(momentum_10 * 120.0)
+            + 0.14 * math.tanh((rsi - 0.50) * 4.8)
+        )
+        score = -0.58 * absorption - 0.42 * stretch
     else:
         score = (
             0.32 * math.tanh(momentum_20 * 90.0)
