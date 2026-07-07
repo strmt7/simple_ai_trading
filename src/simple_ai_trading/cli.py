@@ -8256,13 +8256,6 @@ def command_autonomous(args: argparse.Namespace) -> int:
         if not effective_dry_run and not _has_api_credentials(runtime):
             print(_credential_required_message("Autonomous live mode"), file=sys.stderr)
             return 2
-        if not effective_dry_run:
-            print(
-                "Autonomous authenticated mode is disabled until exchange-order execution is wired into the autonomous loop. "
-                "Use live --live for signed testnet/demo orders.",
-                file=sys.stderr,
-            )
-            return 2
         model_path = Path(getattr(args, "model", "data/model.json"))
         decision_fn, model_error, model_notice = _build_autonomous_decision_fn(
             model_path=model_path,

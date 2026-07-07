@@ -688,7 +688,61 @@ def test_command_autonomous_start_blocks_unsafe_or_uncredentialed_live(tmp_path,
         lambda: RuntimeConfig(testnet=True, dry_run=False, api_key="fake-api-key", api_secret="fake-secret"),
     )
     assert cli.command_autonomous(base_args) == 2
-    assert "Autonomous authenticated mode is disabled" in capsys.readouterr().err
+    assert "model" in capsys.readouterr().err.lower()
+
+
+def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_path, monkeypatch, capsys):
+    _autonomous_control_path(tmp_path, monkeypatch)
+    calls = {}
+
+    def fake_run_loop(client, runtime, strategy, cfg, *, decision_fn):
+        calls["client"] = client
+        calls["runtime"] = runtime
+        calls["strategy"] = strategy
+        calls["cfg"] = cfg
+        calls["decision_fn"] = decision_fn
+        return type(
+            "Result",
+            (),
+            {
+                "exit_reason": "iteration-cap",
+                "iterations": 1,
+                "opened_trades": 0,
+                "closed_trades": 0,
+                "skipped_entries": 0,
+            },
+        )()
+
+    monkeypatch.setattr(
+        cli,
+        "load_runtime",
+        lambda: RuntimeConfig(testnet=True, dry_run=True, api_key="fake-api-key", api_secret="fake-secret"),
+    )
+    monkeypatch.setattr(cli, "load_strategy", StrategyConfig)
+    monkeypatch.setattr(cli, "_build_client", lambda runtime: ("client", runtime.symbol))
+    monkeypatch.setattr(
+        cli,
+        "_build_autonomous_decision_fn",
+        lambda **_kwargs: (lambda *_args: None, None, None),
+    )
+    monkeypatch.setattr("simple_ai_trading.autonomous.run_loop", fake_run_loop)
+
+    args = argparse.Namespace(
+        action="start",
+        objective="conservative",
+        model="data/model.json",
+        poll_seconds=1.0,
+        iterations=1,
+        heartbeat_every=1,
+        starting_cash=1000.0,
+        paper=False,
+        live=True,
+    )
+
+    assert cli.command_autonomous(args) == 0
+    assert calls["cfg"].dry_run is False
+    assert calls["decision_fn"] is not None
+    assert "autonomous: iteration-cap iterations=1" in capsys.readouterr().out
 
 
 def test_build_autonomous_decision_fn_scores_model_and_external_signals(monkeypatch, tmp_path):

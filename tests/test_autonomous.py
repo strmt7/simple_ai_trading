@@ -160,6 +160,7 @@ def _runtime(testnet: bool = True, *, api_key: str = "k", api_secret: str = "s")
         api_key=api_key,
         api_secret=api_secret,
         dry_run=True,
+        managed_usdc=1000.0,
     )
 
 
@@ -872,7 +873,7 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Pat
     result = run_loop(
         FakeClient(),
         _runtime(),
-        replace(_strategy(), recovery_cooldown_seconds=1, max_open_positions=1),
+        replace(_strategy(), recovery_cooldown_seconds=5, max_open_positions=1),
         cfg,
         decision_fn=dec,
         sleep=lambda _d: None,
@@ -883,10 +884,10 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Pat
     assert result.exit_reason == "iteration-cap"
     assert result.opened_trades == 1
     assert attempts["n"] == 3
-    assert reconciliations == ["BTCUSDC", "BTCUSDC"]
+    assert reconciliations == ["BTCUSDC", "BTCUSDC", "BTCUSDC"]
 
 
-def test_run_loop_zero_recovery_cooldown_still_observes_before_entry(tmp_path: Path) -> None:
+def test_run_loop_recovery_cooldown_observes_before_entry(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
     attempts = {"n": 0}
 
@@ -899,7 +900,7 @@ def test_run_loop_zero_recovery_cooldown_still_observes_before_entry(tmp_path: P
     result = run_loop(
         FakeClient(),
         _runtime(),
-        replace(_strategy(), recovery_cooldown_seconds=0, max_open_positions=1),
+        replace(_strategy(), recovery_cooldown_seconds=5, max_open_positions=1),
         cfg,
         decision_fn=dec,
         sleep=lambda _d: None,
@@ -967,7 +968,7 @@ def test_run_loop_reconciliation_mismatch_after_outage_fails_closed(tmp_path: Pa
     result = run_loop(
         FakeClient(),
         _runtime(),
-        replace(_strategy(), recovery_cooldown_seconds=1),
+        replace(_strategy(), recovery_cooldown_seconds=5),
         cfg,
         decision_fn=dec,
         sleep=lambda _d: None,

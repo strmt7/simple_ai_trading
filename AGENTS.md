@@ -105,7 +105,7 @@ Do not expand to broad directory scans on first pass. Open more files only when 
 
 - Never assume behavior from memory. Confirm by running tests or inspection of source.
 - No network calls in tests unless explicitly stubbed.
-- Preserve conservative defaults (`testnet`, `dry_run` behavior, mandatory diversification, automatic liquidity gating, and app-level `10x` leverage cap).
+- Preserve conservative defaults (`testnet`, `dry_run` behavior, mandatory diversification, automatic liquidity gating, and app-level `20x` leverage cap).
 - Do not claim production readiness or profitability without reproducible evidence from test artifacts.
 - Keep secrets out of prompts, logs, and history.
 - Avoid unnecessary hardcoded host assumptions; prefer configuration or environment overrides when host selection can be made safely dynamic.

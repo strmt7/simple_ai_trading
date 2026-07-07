@@ -73,6 +73,16 @@ Execution cost is symbol-specific where market data exists:
   when a current sample shows any known Binance request-weight or order-count
   window is at least 80% consumed, or when the exchange returns a `Retry-After`
   value.
+- Authenticated autonomous execution now uses a shared execution-lifecycle
+  preflight before signed startup, operator stop, risk-close,
+  auto-close-threshold closes, and every live open. The lifecycle gate checks
+  local ledger integrity, non-mainnet endpoint status, credentials, risk
+  policy, API-budget headroom for opens, signed account reconciliation, bot
+  ownership evidence, and open-position capacity. Risk-policy failures block
+  new entries but do not block verified bot-owned closes; reconciliation,
+  ledger, ownership, and external-exposure failures block both opens and
+  closes because they can cause the app to touch a stale or user-owned
+  position.
 - `backtest`, `backtest-chart`, and `backtest-panel` can consume the latest
   typed top-of-book row with `--execution-db data/market_data.sqlite`. The
   loaded profile is written into run artifacts and panel reports, including
