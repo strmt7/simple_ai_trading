@@ -1,2 +1,2 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-volume-sync-alpha-1d-smoke,2026-07-07T05:47:30.992088Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0
+round-alpha-event-study-1d-smoke,2026-07-07T06:10:32.271852Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.0990046820488913,0.0,0

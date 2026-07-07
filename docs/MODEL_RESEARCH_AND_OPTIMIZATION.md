@@ -243,9 +243,11 @@ template is available without a separate code path. Rejected searches record the
 best rejected active profile, P&L, closed-trade count, win rate, profit factor,
 max drawdown, exit-reason counts, side counts, reject reason, orientation, and
 candidate count. Candidate diagnostics also persist the full zoo's
-active/profitable/accepted candidate counts, maximum closed trades, most-active
-candidate, best-PnL candidate, and active family/profile coverage so failed
-research cannot hide whether it was inactive or active-but-losing.
+active/profitable/accepted candidate counts, forward-event signal count,
+positive after-cost forward-event count, best raw event candidate, maximum
+closed trades, most-active candidate, best-PnL candidate, and active
+family/profile coverage so failed research cannot hide whether it was inactive,
+active-but-losing, or directionally negative before full trade replay.
 
 The optimization-round evidence path now runs the same adaptive hybrid model-zoo
 as a post-base-candidate selection step even when the selected base candidate
@@ -255,7 +257,7 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-volume-sync-alpha-1d-smoke` run used verified
+in code. The 2026-07-07 `round-alpha-event-study-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
 scoring, conservative 5x futures settings, seven hybrid profiles, the v9
 171-feature advanced vector including 13 order-flow microstructure fields per
@@ -270,7 +272,10 @@ The expanded search did generate internal trading activity, with 234 BTCUSDT,
 252 ETHUSDT, and 234 SOLUSDT active candidates, but zero profitable candidates
 after modeled costs. Volume-synchronized flow became the most-active family on
 all three symbols and was still deeply negative after costs, so it remains
-research evidence rather than promotion evidence.
+research evidence rather than promotion evidence. The added event-study
+telemetry showed an even earlier failure: all 270 rule-alpha variants per symbol
+produced forward-event signals, but zero had positive net forward edge after the
+modeled cost floor.
 This is negative research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple

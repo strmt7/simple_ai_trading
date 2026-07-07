@@ -4,7 +4,7 @@
     {
       "bytes": 1468,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "ca267a2516ad25ebdd11f542e15a70cca31f53a9c0196937069ffa2b4746b8a1"
+      "sha256": "7a7a8d7c7580e290be076721f61f288ccbfeb6891eacc802931faaf07ca68ed4"
     },
     {
       "bytes": 395,
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 1,
-      "sha256": "094bc06b287eccba4da2903dd552459dac02c0ca41a5c6ae34194122abfd6c37"
+      "sha256": "746d306302b2fb1e6362ecbb3b0085e16ca5d9ab5dd2b0660b325ae91dd7bcd3"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T05:47:57.589435Z",
-  "latest_round_id": "round-volume-sync-alpha-1d-smoke",
+  "generated_at_utc": "2026-07-07T06:10:54.778859Z",
+  "latest_round_id": "round-alpha-event-study-1d-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 1,
   "tracked_artifacts": [

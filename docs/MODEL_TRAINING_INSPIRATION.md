@@ -238,15 +238,19 @@ weakening risk controls.
   searches record best active profile, family, score, P&L, closed trades, win
   rate, profit factor, max drawdown, exit-reason counts, side counts, reject
   reason, orientation, evaluated candidate count, active/profitable/accepted
-  candidate counts, most-active candidate, best-PnL candidate, and active
-  family/profile coverage. Candidate stop/take distances are now floored by
+  candidate counts, forward-event signal count, positive after-cost
+  forward-event count, best raw event candidate, most-active candidate,
+  best-PnL candidate, and active family/profile coverage. Candidate stop/take distances are now floored by
   modeled execution cost, entry/exit fees, and explicit buffers before replay,
   preventing sub-cost scalp targets from appearing viable. The
-  `round-volume-sync-alpha-1d-smoke` evidence run still produced zero accepted
+  `round-alpha-event-study-1d-smoke` evidence run still produced zero accepted
   symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
   It did prove the search is active: 234 BTCUSDT, 252 ETHUSDT, and 234 SOLUSDT
-  rule-alpha variants closed at least one trade, and the new volume-synchronized
-  flow family became the most-active family on all three symbols. None were
+  rule-alpha variants closed at least one trade, and the volume-synchronized
+  flow family remained the most-active family on all three symbols. The added
+  event study found signals for all 270 variants per symbol but zero positive
+  after-cost forward-edge variants, so the alpha templates are failing before
+  promotion, not merely being hidden by no-entry thresholds. None were
   profitable after costs. The support is implemented and exercised by real-data
   smoke evidence, but it is not profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"

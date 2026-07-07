@@ -9,6 +9,7 @@ from simple_ai_trading.alpha_search import (
     _diagnostic_rank_key,
     model_for_rule_alpha,
     optimize_rule_alpha_model_zoo,
+    rule_alpha_event_study,
     rule_alpha_stop_loss_floor_pct,
     rule_alpha_feature_params,
     rule_alpha_take_profit_floor_pct,
@@ -489,6 +490,32 @@ def test_summarize_rule_alpha_trade_path_counts_exits_and_sides() -> None:
     assert summary["average_bars_held"] == 21.0
 
 
+def test_rule_alpha_event_study_records_forward_edge() -> None:
+    rows = _rows(count=48)
+    candidate = RuleAlphaCandidate(
+        name="momentum_breakout:event",
+        family="momentum_breakout",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.01,
+        stop_loss_multiplier=0.18,
+        take_profit_multiplier=0.16,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=3,
+        flat_signal_exit_grace_bars=1,
+    )
+    strategy = StrategyConfig(taker_fee_bps=0.0, slippage_bps=0.0, max_spread_bps=0.0, latency_buffer_ms=0)
+    model = model_for_rule_alpha(rows, candidate, strategy, market_type="futures")
+
+    study = rule_alpha_event_study(rows, model, strategy, candidate, market_type="futures")
+
+    assert study["horizon_bars"] == 3
+    assert study["signal_count"] > 0
+    assert study["long_signal_count"] > 0
+    assert study["mean_edge_bps"] > 0.0
+    assert study["net_mean_edge_bps"] > 0.0
+
+
 def test_rejected_rule_alpha_diagnostic_prefers_less_negative_pnl_over_activity_score() -> None:
     candidate = RuleAlphaCandidate(
         name="unit",
@@ -633,6 +660,7 @@ def test_rule_alpha_candidate_summary_tracks_active_and_profitable_candidates() 
             edge_vs_buy_hold=2.0,
             profit_factor=2.0,
         ),
+        {"signal_count": 7, "net_mean_edge_bps": 4.0, "hit_rate": 0.71, "horizon_bars": 8},
     )
 
     summary = summarize_rule_alpha_candidate_distribution([active_loss, accepted_profit])
@@ -641,10 +669,60 @@ def test_rule_alpha_candidate_summary_tracks_active_and_profitable_candidates() 
     assert summary["active_candidates"] == 2
     assert summary["profitable_candidates"] == 1
     assert summary["accepted_candidates"] == 1
+    assert summary["event_candidates_with_signals"] == 1
+    assert summary["event_positive_candidates"] == 1
+    assert summary["event_best_candidate"] == "vwap_snapback_scalp:scalp_8s:t0.54:s6.0:d0.02"
+    assert summary["event_best_net_edge_bps"] == 4.0
     assert summary["max_closed_trades"] == 8
     assert summary["most_active_candidate"] == "micro_flow_scalp:scalp_3s:t0.54:s6.0:d0.02"
     assert summary["best_pnl_candidate"] == "vwap_snapback_scalp:scalp_8s:t0.54:s6.0:d0.02"
     assert "micro_flow_scalp" in str(summary["families_with_trades"])
+
+
+def test_rule_alpha_candidate_summary_does_not_invent_event_winner_without_signals() -> None:
+    candidate = RuleAlphaCandidate(
+        name="micro_flow_scalp:scalp_3s:t0.54:s6.0:d0.02",
+        family="micro_flow_scalp",
+        threshold=0.54,
+        sensitivity=6.0,
+        deadband=0.02,
+        stop_loss_multiplier=0.06,
+        take_profit_multiplier=0.05,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=1,
+        flat_signal_exit_grace_bars=0,
+    )
+    result = RuleAlphaCandidateResult(
+        candidate,
+        False,
+        False,
+        float("-inf"),
+        -0.1,
+        "loss",
+        BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0,
+            realized_pnl=0.0,
+            win_rate=0.0,
+            trades=0,
+            max_drawdown=0.0,
+            closed_trades=0,
+            gross_exposure=0.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=0.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=0.0,
+        ),
+        {"signal_count": 0, "net_mean_edge_bps": -5.0, "hit_rate": 0.0, "horizon_bars": 1},
+    )
+
+    summary = summarize_rule_alpha_candidate_distribution([result])
+
+    assert summary["event_candidates_with_signals"] == 0
+    assert summary["event_positive_candidates"] == 0
+    assert summary["event_best_candidate"] == ""
+    assert summary["event_best_net_edge_bps"] == 0.0
 
 
 def test_rule_alpha_search_promotes_only_objective_accepted_candidate(monkeypatch) -> None:

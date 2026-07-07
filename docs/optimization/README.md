@@ -17,7 +17,7 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-volume-sync-alpha-1d-smoke`, a failed
+The current retained checkpoint is `round-alpha-event-study-1d-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
 `1s` SQLite market data. It is kept because it is truthful negative evidence:
 the default model trained on real second-level data, used DirectML for training
@@ -34,8 +34,11 @@ latency, market-impact proxy, testnet/live buffer, entry/exit taker fees, and
 minimum profit/stop buffers before any replay can be scored.
 The alpha prefix is stratified so every family and execution profile is covered
 before nearby parameter variants are explored.
-Normal and inverted alpha variants were evaluated. None passed the objective gates. Rejected candidates keep
-diagnostic trade thresholds, P&L evidence, and best rejected alpha evidence, but
+Normal and inverted alpha variants were evaluated. Every candidate also gets a
+forward event study before full trade-lifecycle replay, so diagnostics separate
+raw directional edge from stop/take/cooldown execution evidence. None passed the
+objective gates. Rejected candidates keep diagnostic trade thresholds, P&L
+evidence, best rejected alpha evidence, and event-edge evidence, but
 executable models are parked in a no-entry state unless a selection, hybrid, or
 rule-alpha replay passes the full profitability, activity, drawdown,
 liquidation, and path-quality gates.
@@ -164,13 +167,14 @@ prediction path. Rejected alpha searches record best rejected profile, family,
 score, P&L, closed trades, win rate, profit factor, max drawdown, exit-reason
 counts, side counts, reject reason, orientation, and candidate count in
 `candidate-diagnostics.csv`. They also record the full zoo's active candidate
-count, profitable candidate count, accepted candidate count, maximum closed
-trades, most-active candidate, best-PnL candidate, and active family/profile
-coverage so no round can hide a losing high-activity search behind a quiet
-no-entry final model.
+count, profitable candidate count, accepted candidate count, forward-event
+signal count, positive after-cost forward-event count, best raw event candidate,
+maximum closed trades, most-active candidate, best-PnL candidate, and active
+family/profile coverage so no round can hide a losing high-activity search
+behind a quiet no-entry final model.
 
 Latest retained local smoke evidence from 2026-07-07 is
-`round-volume-sync-alpha-1d-smoke`. It uses the verified UTC window
+`round-alpha-event-study-1d-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
 missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
@@ -192,10 +196,18 @@ least-bad active alpha was `momentum_breakout:guarded:t0.54:s6.0:d0.02` with
 active alpha was `liquidity_sweep_reversal:scalp_3s:t0.54:s6.0:d0.02` with
 `-0.525900571656166` P&L over 1 closed long; SOLUSDT's least-bad active alpha
 was `flow_reversion:held_180s:t0.54:s6.0:d0.02` with `-0.5233335205740559`
-P&L over 1 closed long. The expanded alpha search did create activity before
+P&L over 1 closed long. The event-study layer measured raw directional edge
+before stop/take/cooldown replay. All 270 candidates per symbol produced event
+signals, but zero candidates had positive net forward edge after the modeled
+cost floor. The best raw event candidates were still negative: BTCUSDT
+`volume_flow_proxy:held_180s:t0.54:s6.0:d0.02` at `-33.9167073462523` bps over
+23 signals, ETHUSDT `volume_flow_proxy:held_90s:t0.54:s6.0:d0.02` at
+`-34.14643238432157` bps over 38 signals, and SOLUSDT
+`volume_flow_proxy:held_90s:t0.54:s6.0:d0.02` at `-33.786158043817835` bps
+over 77 signals. The expanded alpha search did create activity before
 the final fail-closed no-entry model: BTCUSDT had 234 active candidates,
 ETHUSDT had 252, SOLUSDT had 234, and each symbol had a 24-closed-trade
-most-active candidate. The new volume-synchronized flow family became the
+most-active candidate. The volume-synchronized flow family remained the
 most-active family on all three symbols but still lost after costs:
 BTCUSDT `-14.70702806780946`, ETHUSDT `-15.73342255896398`, and SOLUSDT
 `-16.420573099885246` on the most-active replay. None were profitable after
