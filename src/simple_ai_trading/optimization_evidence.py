@@ -1358,10 +1358,12 @@ def _round_model_candidates(
     # window in bars, and realized-volatility multiplier for dynamic barriers.
     raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int, int, int, float]] = [
         ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
+        ("positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75),
+        ("downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75),
         ("session_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5),
         ("session_downside_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "downside_volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5),
-        ("order_flow_pressure_volatility_barrier", 0.90, 1.00, 1.75, 1.00, 18.0, "volatility_triple_barrier", -0.06, 0.20, 0.14, 0.15, 8, 5, 90, 180, 2.0),
-        ("downside_order_flow_volatility_barrier", 0.90, 1.00, 1.75, 1.00, 18.0, "downside_volatility_triple_barrier", -0.06, 0.20, 0.14, 0.15, 8, 5, 90, 180, 2.0),
+        ("order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0),
+        ("downside_order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "downside_event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0),
         ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1, 0, 0, 0.0),
         ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1, 0, 0, 0.0),
         ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.55, 0.35, "downside_triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0),
@@ -1370,8 +1372,8 @@ def _round_model_candidates(
         ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
         ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0),
         ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
-        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0, 0, 0, 0.0),
         ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0, 0, 0, 0.0),
         ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1, 0, 0, 0.0),
         ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0, 0, 0, 0.0),
         ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0),
@@ -1494,6 +1496,7 @@ def _candidate_has_downside_positive_label(candidate: RoundModelCandidate) -> bo
         "downside_forward_return",
         "downside_triple_barrier",
         "downside_volatility_triple_barrier",
+        "downside_event_volatility_triple_barrier",
     }
 
 

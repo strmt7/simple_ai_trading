@@ -587,6 +587,100 @@ def test_make_advanced_rows_can_use_volatility_barrier_labels() -> None:
     assert restored.label_volatility_multiplier == pytest.approx(2.0)
 
 
+def test_trailing_cusum_event_direction_uses_only_past_returns() -> None:
+    candles: list[Candle] = []
+    close = 100.0
+    for index in range(12):
+        if index <= 5:
+            close *= 1.0001
+        else:
+            close *= 1.01
+        candles.append(Candle(
+            open_time=index * 1000,
+            open=close,
+            high=close * 1.0002,
+            low=close * 0.9998,
+            close=close,
+            volume=10.0,
+            close_time=index * 1000 + 999,
+            quote_volume=close * 10.0,
+            trade_count=50,
+            taker_buy_base_volume=5.0,
+            taker_buy_quote_volume=close * 5.0,
+        ))
+    cache = am._build_confluence_cache(candles)
+
+    before_jump = am._trailing_cusum_event_direction(cache, 5, window=5, threshold_pct=0.005)
+    after_jump = am._trailing_cusum_event_direction(cache, 8, window=5, threshold_pct=0.005)
+
+    assert before_jump == 0
+    assert after_jump == 1
+
+
+def test_make_advanced_rows_can_use_information_event_barrier_labels() -> None:
+    candles: list[Candle] = []
+    close = 100.0
+    for index in range(140):
+        if 45 <= index < 55:
+            close *= 1.0015
+        elif 80 <= index < 90:
+            close *= 0.9985
+        elif index >= 55 and index < 65:
+            close *= 1.0010
+        elif index >= 90 and index < 100:
+            close *= 0.9990
+        else:
+            close *= 1.00001
+        candles.append(Candle(
+            open_time=index * 1000,
+            open=close,
+            high=close * 1.001,
+            low=close * 0.999,
+            close=close,
+            volume=20.0,
+            close_time=index * 1000 + 999,
+            quote_volume=close * 20.0,
+            trade_count=80,
+            taker_buy_base_volume=10.0,
+            taker_buy_quote_volume=close * 10.0,
+        ))
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        label_threshold=0.0005,
+        label_stop_threshold=0.0007,
+        label_lookahead=10,
+        label_mode="information_event_triple_barrier",
+        label_volatility_window=12,
+        label_volatility_multiplier=0.0,
+    )
+    downside_cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5,),
+        label_threshold=0.0005,
+        label_stop_threshold=0.0007,
+        label_lookahead=10,
+        label_mode="downside_information_event_triple_barrier",
+        label_volatility_window=12,
+        label_volatility_multiplier=0.0,
+    )
+
+    rows = am.make_advanced_rows(candles, cfg)
+    downside_rows = am.make_advanced_rows(candles, downside_cfg)
+    signature = am.advanced_feature_signature(cfg)
+    restored = am.advanced_config_from_signature(signature)
+
+    assert sum(row.label for row in rows) > 0
+    assert sum(row.label for row in downside_rows) > 0
+    assert "label_mode=event_volatility_triple_barrier" in signature
+    assert restored is not None
+    assert restored.label_mode == "event_volatility_triple_barrier"
+
+
 def test_make_advanced_rows_handles_missing_index(monkeypatch):
     cfg = am.default_config_for("default", FEATURE_NAMES)
     # Force every base row to carry a timestamp not present in index_by_time

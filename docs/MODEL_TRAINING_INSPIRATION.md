@@ -188,24 +188,25 @@ weakening risk controls.
   promote an order-book model until it can reconstruct local books, prove depth
   continuity, replay quote-time walk-forward windows, and simulate queue/fill
   uncertainty per symbol.
-- Implemented update: v7 advanced signatures keep the v6 order-flow
+- Implemented update: v8 advanced signatures keep the v6 order-flow
   microstructure proxies from real second-level quote volume, trade count,
   taker-buy base/quote volume, signed flow imbalance, no-trade seconds, and
-  signed-flow/return alignment, then add volatility-adjusted triple-barrier
-  label modes. This is not a substitute for true order-book tensors, but it
-  gives the current BTC/ETH/SOL second-level database a more defensible
+  signed-flow/return alignment, keep the v7 volatility-adjusted triple-barrier
+  modes, then add known-at-entry information-event labels based on trailing
+  CUSUM return activity. This is not a substitute for true order-book tensors,
+  but it gives the current BTC/ETH/SOL second-level database a more defensible
   microstructure signal source than OHLCV alone.
 - Implemented update: futures threshold calibration now tests symmetric,
   long-only, and short-only threshold variants on the selection fold. This
   allows the optimizer to disable a harmful side when evidence supports it,
   while preserving fail-closed final holdout gates for P&L, drawdown,
   liquidations, edge, and trade quality.
-- Implemented update: bounded optimization candidates now start with distinct
-  long, downside/short, and order-flow hypotheses instead of walking one
-  candidate family. Downside-positive labels are explicitly oriented to the
-  short-side runtime convention after probability calibration, so a model
-  trained on short-success events cannot accidentally emit high-score long
-  entries.
+- Implemented update: bounded optimization candidates now start with default,
+  long information-event, and downside/short information-event hypotheses
+  instead of walking one candidate family. Downside-positive labels are
+  explicitly oriented to the short-side runtime convention after probability
+  calibration, so a model trained on short-success events cannot accidentally
+  emit high-score long entries.
 - Implemented update: optimization rounds now attempt the adaptive hybrid
   model-zoo overlay only after the selected base candidate passes selection
   gates. The hybrid uses chronological training/selection rows, records hybrid
@@ -213,9 +214,9 @@ weakening risk controls.
   base model only if the hybrid selection replay passes the same objective
   gates. Rejected base selections skip the hybrid overlay, retain diagnostic
   threshold/P&L evidence, and are parked in no-entry thresholds so diagnostics
-  cannot become executable trades. The `round-volatility-barrier-window-smoke`
-  evidence round still produced zero accepted symbols on
-  BTCUSDT/ETHUSDT/SOLUSDT, so the support is implemented but not profitable
+  cannot become executable trades. The `round-information-event-window-smoke`
+  evidence round still produced zero accepted symbols and zero holdout trades
+  on BTCUSDT/ETHUSDT/SOLUSDT, so the support is implemented but not profitable
   evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change

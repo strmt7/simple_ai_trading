@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 *.pyo
 data/
+!docs/optimization/**/data/
+!docs/optimization/**/data/**
 .env
 .env.local
 .env.*

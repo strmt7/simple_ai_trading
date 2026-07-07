@@ -1,0 +1,2 @@
+round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,total_closed_trades,zero_trade_symbol_count,profitable_symbol_count,critical_verdict,mean_low_liquidity_sample_rate_pct
+round-information-event-window-smoke,2026-07-07T00:24:30.559021Z,3,0,0.0,0.0,-0.891452207027972,0.891452207027972,0.9455046208104411,0.0,0,0,3,0,fail,39.574804085445514

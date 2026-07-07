@@ -1,0 +1,16 @@
+{
+  "accepted_symbol_count": 0,
+  "completed_symbol_count": 3,
+  "compute_backend_device": "privateuseone:0",
+  "compute_backend_kind": "directml",
+  "compute_backend_reason": "",
+  "compute_backend_requested": "directml",
+  "generated_at_utc": "2026-07-07T00:24:30.561020Z",
+  "metrics_csv_path": "docs/optimization/round-information-event-window-smoke/data/backtest-metrics.csv",
+  "phase": "round_complete",
+  "report_path": "docs/optimization/round-information-event-window-smoke/data/report.json",
+  "require_gpu": true,
+  "round_id": "round-information-event-window-smoke",
+  "status": "complete",
+  "symbol_count_requested": 3
+}

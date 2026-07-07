@@ -17,14 +17,15 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-volatility-barrier-window-smoke`, a
+The current retained checkpoint is `round-information-event-window-smoke`, a
 failed BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified
 local `1s` SQLite market data. It is kept because it is truthful negative
 evidence: the candidate search trained on real second-level data, used DirectML,
-added v7 volatility-adjusted triple-barrier labels on top of the order-flow
-feature set, tested side-aware futures threshold calibration, oriented
-downside-positive labels to short-side execution, and failed closed when all
-selection candidates failed objective gates. Rejected candidates keep diagnostic
+kept the v7 volatility-adjusted triple-barrier labels, added v8 known-at-entry
+information-event labels based on trailing CUSUM return activity, tested
+side-aware futures threshold calibration, oriented downside-positive labels to
+short-side execution, and failed closed when all selection candidates failed
+objective gates. Rejected candidates keep diagnostic
 trade thresholds and P&L evidence, but executable models are parked in a
 no-entry state and the adaptive hybrid model-zoo is skipped for rejected base
 selections.
@@ -80,31 +81,32 @@ audit whether a graph came from a single default model or a candidate search.
 Current promotion-count search starts with:
 
 - `default`,
-- `session_volatility_triple_barrier`,
-- `session_downside_volatility_triple_barrier`.
+- `positive_information_event_barrier`,
+- `downside_information_event_barrier`.
 
-The session candidates use one-second input data but test longer intraday
-holding horizons with trailing realized-volatility barriers and tighter
-stop/take-profit plus shorter cooldown execution profiles. Candidate labels are
-floored at the estimated round-trip taker-fee plus slippage hurdle with a safety
-margin, so micro profiles cannot train on moves that would be unprofitable after
-execution costs. Earlier short-horizon probes remain in the expanded candidate
-set when more candidates are requested, but they are no longer the default
-three-candidate prefix because the prior evidence showed extreme label sparsity
-and losing one-trade diagnostics.
+The information-event candidates use one-second input data, require a trailing
+CUSUM return event visible at the entry timestamp, and then apply
+volatility-aware triple-barrier labels over a longer intraday horizon. Candidate
+labels are floored at the estimated round-trip taker-fee plus slippage hurdle
+with a safety margin, so micro profiles cannot train on moves that would be
+unprofitable after execution costs. Earlier session-volatility and short-horizon
+probes remain in the expanded candidate set when more candidates are requested,
+but they are no longer the default three-candidate prefix because the latest
+research pass needs to test event-sampling hypotheses before wider sweeps.
 Downside-positive labels represent profitable short-side events. The optimizer
 therefore orients those model probabilities to the runtime futures convention
 after probability calibration and before threshold/backtest scoring, so short
 labels are not silently treated as high-score long signals. With
 `--model-candidates 6`, the bounded research prefix additionally includes:
 
-- `order_flow_pressure_volatility_barrier`,
-- `downside_order_flow_volatility_barrier`,
-- `frequency_probe_forward`.
+- `session_volatility_triple_barrier`,
+- `session_downside_volatility_triple_barrier`,
+- `order_flow_information_event_barrier`.
 
+`downside_order_flow_information_event_barrier`, `frequency_probe_forward`,
 `intraday_micro_triple_barrier`, `intraday_breakout_forward`, high-conviction,
 lower-signal, and longer-horizon probes remain in the expanded candidate set
-when more candidates are requested. The expanded full set now contains 18
+when more candidates are requested. The expanded full set now contains 20
 candidates. Round artifacts now write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
 model artifacts persist `round_candidate_diagnostics`, so future agents can
@@ -122,21 +124,21 @@ selection replay passes the same objective gates; rejected base selections skip
 the hybrid overlay entirely, and rejected hybrid attempts never alter
 executable thresholds.
 
-Latest retained local smoke evidence from 2026-07-06 is
-`round-volatility-barrier-window-smoke`. It uses the verified UTC window
+Latest retained local smoke evidence from 2026-07-07 is
+`round-information-event-window-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-07T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 604,800 expected rows, zero
 missing-second gaps, 1.0 coverage, and seven verified Binance archive
 checksums. The run used DirectML with `--require-gpu`, conservative 5x futures
-settings, cost-aware labels, the v7 volatility-barrier prefix, order-flow
+settings, cost-aware labels, the v8 information-event prefix, order-flow
 features built from real quote volume, trade count, taker-buy volume, signed
 flow, no-trade ratio, and flow/return alignment, downside-label short-side
 orientation, plus side-aware futures thresholds that can disable the long or
 short side when selection evidence justifies it. It failed the critical gate:
 zero accepted symbols, zero total closed holdout trades, mean ROI `0.0%`,
-median ROI `0.0%`, mean buy-and-hold ROI `-0.8883681696646504%`, worst drawdown
+median ROI `0.0%`, mean buy-and-hold ROI `-0.891452207027972%`, worst drawdown
 `0.0%`, and no liquidations. BTCUSDT and SOLUSDT selected `default`; ETHUSDT
-selected `session_volatility_triple_barrier`. All three selected models had
+selected `downside_information_event_barrier`. All three selected models had
 `threshold_source=round_selection_rejected_no_entry_diagnostic_recorded`,
 `decision_threshold=1.0`, long threshold `1.0`, no short threshold, and warning
 `round_selection_failed_no_entry_enforced`. This is truthful negative evidence,
