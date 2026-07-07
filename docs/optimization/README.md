@@ -17,7 +17,7 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-empirical-interaction-edge-1d-smoke`, a failed
+The current retained checkpoint is `round-broad-rule-alpha-1d-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
 `1s` SQLite market data. It is kept because it is truthful negative evidence:
 the default model trained on real second-level data, used DirectML for training
@@ -33,7 +33,9 @@ Rule-alpha stop and take-profit distances are floored by modeled spread,
 latency, market-impact proxy, testnet/live buffer, entry/exit taker fees, and
 minimum profit/stop buffers before any replay can be scored.
 The alpha prefix is stratified so every family and execution profile is covered
-before nearby parameter variants are explored.
+before nearby parameter variants are explored. The current default budget is
+225 static templates, which produced 450 normal/inverted replays per symbol in
+the latest evidence round.
 Normal and inverted alpha variants were evaluated. Every candidate also gets a
 forward event study before full trade-lifecycle replay, so diagnostics separate
 raw directional edge from stop/take/cooldown execution evidence. None passed the
@@ -162,7 +164,7 @@ templates receive serialized offsets into the advanced aggTrade-derived
 order-flow feature block, so GPU and CPU inference use the same microstructure
 inputs. CPU/live rule-alpha scoring now preserves the full serialized feature
 vector instead of truncating before the order-flow block, and a DirectML parity
-test covers the same family. The default 135-candidate prefix covers every family/profile base
+test covers the same family. The default 225-candidate budget covers every family/profile base
 combination before testing nearby threshold/sensitivity/deadband variants. Each
 template is tested with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so
@@ -182,7 +184,7 @@ family/profile coverage so no round can hide a losing high-activity search
 behind a quiet no-entry final model.
 
 Latest retained local smoke evidence from 2026-07-07 is
-`round-empirical-interaction-edge-1d-smoke`. It uses the verified UTC window
+`round-broad-rule-alpha-1d-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
 missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
@@ -191,11 +193,11 @@ cost-aware labels, order-flow features built from real quote volume, trade
 count, taker-buy volume, signed flow, no-trade ratio, flow/return alignment,
 flow strength, flow persistence, flow acceleration, and price/flow divergence,
 hybrid rescue profiles, order-flow-aware rule-alpha experts serialized with the
-v9 171-feature advanced vector, cost-aware rule-alpha stop/take floors, 135
+v9 171-feature advanced vector, cost-aware rule-alpha stop/take floors, 225
 static templates, and empirical one-feature plus two-feature interaction mining.
 The empirical miner found zero validated one-feature or two-feature interaction
 candidates under the chronological sample-count and after-cost edge gates, so
-the final search still ran 270 rule-alpha normal/inverted static-template
+the final search still ran 450 rule-alpha normal/inverted static-template
 replays per symbol.
 It failed the critical gate: zero accepted symbols, zero total closed holdout
 trades, mean ROI `0.0%`, median ROI `0.0%`, mean buy-and-hold ROI
@@ -209,7 +211,7 @@ active alpha was `liquidity_sweep_reversal:scalp_3s:t0.54:s6.0:d0.02` with
 `-0.525900571656166` P&L over 1 closed long; SOLUSDT's least-bad active alpha
 was `flow_reversion:held_180s:t0.54:s6.0:d0.02` with `-0.5233335205740559`
 P&L over 1 closed long. The event-study layer measured raw directional edge
-before stop/take/cooldown replay. All 270 candidates per symbol produced event
+before stop/take/cooldown replay. All 450 candidates per symbol produced event
 signals, but zero candidates had positive net forward edge after the modeled
 cost floor. The best raw event candidates were still negative: BTCUSDT
 `volume_flow_proxy:held_180s:t0.54:s6.0:d0.02` at `-33.9167073462523` bps over
@@ -217,12 +219,15 @@ cost floor. The best raw event candidates were still negative: BTCUSDT
 `-34.14643238432157` bps over 38 signals, and SOLUSDT
 `volume_flow_proxy:held_90s:t0.54:s6.0:d0.02` at `-33.786158043817835` bps
 over 77 signals. The expanded alpha search did create activity before
-the final fail-closed no-entry model: BTCUSDT had 234 active candidates,
-ETHUSDT had 252, SOLUSDT had 234, and each symbol had a 24-closed-trade
-most-active candidate. The volume-synchronized flow family remained the
-most-active family on all three symbols but still lost after costs:
-BTCUSDT `-14.70702806780946`, ETHUSDT `-15.73342255896398`, and SOLUSDT
-`-16.420573099885246` on the most-active replay. None were profitable after
+the final fail-closed no-entry model: BTCUSDT had 390 active candidates,
+ETHUSDT had 416, SOLUSDT had 390, and each symbol had a 24-closed-trade
+most-active candidate. The most-active replays were still negative after costs:
+BTCUSDT `micro_flow_scalp:scalp_8s:t0.54:s8.0:d0.05` at
+`-13.698733890780659`, ETHUSDT
+`volume_synchronized_flow:scalp_3s:t0.54:s6.0:d0.02` at
+`-15.73342255896398`, and SOLUSDT
+`order_flow_momentum:scalp_8s:t0.54:s6.0:d0.05` at
+`-16.29628526423312`. None were profitable after
 modeled costs; the cost-aware floors made previously uneconomic scalp distances
 explicit instead of allowing a candidate to target less than its estimated
 round-trip cost. The

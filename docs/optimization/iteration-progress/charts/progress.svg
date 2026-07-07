@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="980" height="360" viewBox="0 0 980 360">
   <rect width="980" height="360" fill="#ffffff"/>
   <text x="32" y="36" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Optimization progress</text>
-  <text x="32" y="64" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">Source: tracked exchange-sourced round reports. Latest: round-empirical-interaction-edge-1d-smoke</text>
+  <text x="32" y="64" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">Source: tracked exchange-sourced round reports. Latest: round-broad-rule-alpha-1d-smoke</text>
   <line x1="80" y1="48" x2="80" y2="258" stroke="#cbd5e1"/>
   <line x1="80" y1="258" x2="900" y2="258" stroke="#cbd5e1"/>
-  <polyline points="80.00,258.00" fill="none" stroke="#0f766e" stroke-width="3"/>
-  <polyline points="80.00,258.00" fill="none" stroke="#b91c1c" stroke-width="3" stroke-dasharray="8 5"/>
+  <polyline points="80.00,258.00 900.00,258.00" fill="none" stroke="#0f766e" stroke-width="3"/>
+  <polyline points="80.00,258.00 900.00,258.00" fill="none" stroke="#b91c1c" stroke-width="3" stroke-dasharray="8 5"/>
   <text x="32" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#0f766e">mean ROI %</text>
   <text x="32" y="174" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#b91c1c">worst drawdown %</text>
   <text x="80" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-empirical-interaction-edge-1d-smoke</text>
-  <text x="780" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-empirical-interaction-edge-1d-smoke</text>
+  <text x="780" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-broad-rule-alpha-1d-smoke</text>
   <text x="32" y="318" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#111827">Latest closed trades: 0 | latest accepted symbols: 0/3 | promotion: not_requested</text>
 </svg>

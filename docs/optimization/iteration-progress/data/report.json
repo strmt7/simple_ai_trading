@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1495,
+      "bytes": 1503,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "59190a3873bff2c1b69e74bb0b1db6c49cb8ac46dc5181f4854c22d94a9780b5"
+      "sha256": "f043afa82668b913a6ed9da042488544264a1ea17b73f8419a214596f8da5aeb"
     },
     {
-      "bytes": 404,
+      "bytes": 552,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 1,
-      "sha256": "917693e85dca62772421194910269a5a87786fd2ceb11d5f51eddf1e2b9aee80"
+      "row_count": 2,
+      "sha256": "2e6d55412dea78e0bb8e3cf1eeb4ff031f29a6c0ff6fd9450aac9164f5e54139"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T07:16:20.949688Z",
-  "latest_round_id": "round-empirical-interaction-edge-1d-smoke",
+  "generated_at_utc": "2026-07-07T07:41:53.458901Z",
+  "latest_round_id": "round-broad-rule-alpha-1d-smoke",
   "round_id": "iteration-progress",
-  "source_report_count": 1,
+  "source_report_count": 2,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",
