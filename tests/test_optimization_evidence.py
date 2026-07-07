@@ -1227,6 +1227,8 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
         "selection_backtest_complete",
         "inversion_backtest_complete",
         "hybrid_model_zoo_skipped",
+        "rule_alpha_model_zoo_started",
+        "rule_alpha_model_zoo_complete",
     ]
 
 

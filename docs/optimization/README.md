@@ -17,17 +17,19 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-hybrid-rescue-profile-smoke`, a
-failed BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified
-local `1s` SQLite market data. It is kept because it is truthful negative
-evidence: the default model trained on real second-level data, used DirectML for
-training and scoring, preserved rejected diagnostic threshold evidence, then
-exercised seven conservative hybrid model-zoo profiles from the rejected base
-model's diagnostic threshold. The expanded hybrid search included low-base
-technical, neighbor/kernel, and balanced rescue profiles, but none passed the
-objective gates. Rejected candidates keep diagnostic trade thresholds and P&L
-evidence, but executable models are parked in a no-entry state unless a
-selection or hybrid replay passes the full profitability, activity, drawdown,
+The current retained checkpoint is `round-rule-alpha-major-1d-smoke`, a failed
+BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
+`1s` SQLite market data. It is kept because it is truthful negative evidence:
+the default model trained on real second-level data, used DirectML for training
+and scoring, preserved rejected diagnostic threshold evidence, exercised the
+conservative hybrid model-zoo from the rejected base model's diagnostic
+threshold, then searched an interpretable rule-alpha template zoo across
+momentum breakout, VWAP/RSI mean reversion, trend-pullback, volatility
+breakout, and volume-flow proxy families. Normal and inverted alpha variants
+were evaluated. None passed the objective gates. Rejected candidates keep
+diagnostic trade thresholds, P&L evidence, and best rejected alpha evidence, but
+executable models are parked in a no-entry state unless a selection, hybrid, or
+rule-alpha replay passes the full profitability, activity, drawdown,
 liquidation, and path-quality gates.
 Earlier BTC-only, stale BTC/ETH-only, broader-symbol, and prior per-round smoke
 artifacts were removed because they no longer matched the active scope, data
@@ -131,28 +133,44 @@ profiles, but a hybrid model can replace the selected base model only when its
 chronological selection replay passes the same objective gates; rejected hybrid
 attempts never alter executable thresholds.
 
+After the classifier/hybrid pass, the optimizer runs an interpretable
+rule-alpha model zoo. This is the missing research layer used by many stronger
+open-source trading systems: broad entry/exit template sweeps happen before any
+template is allowed into live execution. The current templates are original
+implementations of momentum breakout, VWAP/RSI mean reversion, trend-pullback,
+volatility breakout, and volume-flow proxy ideas. Each template is tested with
+normal and inverted probability orientation, bounded threshold/stop/take/hold
+profiles, and cached regime/liquidity-session arrays so repeated candidate
+replays do not waste time. Rule-alpha models serialize as `rule_alpha` hybrid
+experts, so a promoted alpha uses the same CLI, Windows app, backtest, and live
+prediction path. Rejected alpha searches record best rejected profile, family,
+score, P&L, closed trades, reject reason, orientation, and candidate count in
+`candidate-diagnostics.csv`.
+
 Latest retained local smoke evidence from 2026-07-07 is
-`round-hybrid-rescue-profile-smoke`. It uses the verified UTC window
-2024-06-01T00:00:00Z through 2024-06-07T23:59:59Z for BTCUSDT, ETHUSDT, and
-SOLUSDT futures `1s` data. Each symbol has 604,800 expected rows, zero
-missing-second gaps, 1.0 coverage, and seven verified Binance archive
-checksums. The run used DirectML with `--require-gpu`, conservative 5x futures
-settings, cost-aware labels, order-flow features built from real quote volume,
-trade count, taker-buy volume, signed flow, no-trade ratio, and flow/return
-alignment, plus side-aware futures thresholds that can disable the long or short
-side when selection evidence justifies it. It failed the critical gate: zero
-accepted symbols, zero total closed holdout trades, mean ROI `0.0%`, median ROI
-`0.0%`, mean buy-and-hold ROI `-0.8926496915496698%`, worst drawdown `0.0%`,
-three rejected diagnostic threshold trades, and no liquidations. BTCUSDT,
-ETHUSDT, and SOLUSDT all selected `default`; all three expanded hybrid searches
-evaluated seven profiles and selected `base_only` because every hybrid attempt
-failed the objective gates. All three selected models had
-`threshold_source=round_selection_rejected_no_entry_diagnostic_recorded`,
-`decision_threshold=1.0`, long threshold `1.0`, no short threshold, and warning
-`round_selection_failed_no_entry_enforced`. This is truthful negative evidence,
-not promotion evidence: the window is one verified week, not years, every symbol
-failed selection gates, and no candidate or hybrid profile showed an after-cost
-edge that was safe to trade.
+`round-rule-alpha-major-1d-smoke`. It uses the verified UTC window
+2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
+SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
+missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
+The run used DirectML with `--require-gpu`, conservative 5x futures settings,
+cost-aware labels, order-flow features built from real quote volume, trade
+count, taker-buy volume, signed flow, no-trade ratio, and flow/return alignment,
+hybrid rescue profiles, and 96 rule-alpha normal/inverted replays per symbol.
+It failed the critical gate: zero accepted symbols, zero total closed holdout
+trades, mean ROI `0.0%`, median ROI `0.0%`, mean buy-and-hold ROI
+`-0.0990046820488913%`, worst drawdown `0.0%`, three rejected diagnostic
+threshold trades, and no liquidations. BTCUSDT, ETHUSDT, and SOLUSDT all stayed
+in no-entry state (`decision_threshold=1.0`, long threshold `1.0`, no executable
+short threshold). Best rejected alpha evidence was also negative: BTCUSDT's
+best alpha was inverted `trend_pullback:balanced:t0.54:s6.0:d0.02` with
+`-4.898503461525252` selection P&L over 9 closed trades; ETHUSDT's best alpha
+was `mean_reversion_vwap:balanced:t0.54:s6.0:d0.02` with
+`-6.797250193159016` P&L over 10 closed trades; SOLUSDT's best alpha was the
+same mean-reversion profile with `-6.851032639100595` P&L over 10 closed
+trades. This is truthful negative evidence, not promotion evidence: the window
+is one verified day, not years, every symbol failed selection gates, and no
+candidate, hybrid, or rule-alpha profile showed an after-cost edge that was safe
+to trade.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That

@@ -1,0 +1,16 @@
+{
+  "accepted_symbol_count": 0,
+  "completed_symbol_count": 3,
+  "compute_backend_device": "privateuseone:0",
+  "compute_backend_kind": "directml",
+  "compute_backend_reason": "",
+  "compute_backend_requested": "directml",
+  "generated_at_utc": "2026-07-07T03:19:12.460603Z",
+  "metrics_csv_path": "docs/optimization/round-rule-alpha-major-1d-smoke/data/backtest-metrics.csv",
+  "phase": "round_complete",
+  "report_path": "docs/optimization/round-rule-alpha-major-1d-smoke/data/report.json",
+  "require_gpu": true,
+  "round_id": "round-rule-alpha-major-1d-smoke",
+  "status": "complete",
+  "symbol_count_requested": 3
+}

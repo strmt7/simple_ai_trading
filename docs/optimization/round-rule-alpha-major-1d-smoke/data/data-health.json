@@ -1,0 +1,80 @@
+[
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 86400,
+    "first_open_time": 1717200000000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1717286399000,
+    "market_type": "futures",
+    "reasons": [],
+    "requested_end_ms": 1717286399999,
+    "requested_end_utc": "2024-06-01T23:59:59Z",
+    "requested_start_ms": 1717200000000,
+    "requested_start_utc": "2024-06-01T00:00:00Z",
+    "rows": 86400,
+    "span_days": 0.999988425925926,
+    "span_years": 0.0027378190990442874,
+    "status": "ok",
+    "symbol": "BTCUSDT",
+    "warnings": []
+  },
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 86400,
+    "first_open_time": 1717200000000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1717286399000,
+    "market_type": "futures",
+    "reasons": [],
+    "requested_end_ms": 1717286399999,
+    "requested_end_utc": "2024-06-01T23:59:59Z",
+    "requested_start_ms": 1717200000000,
+    "requested_start_utc": "2024-06-01T00:00:00Z",
+    "rows": 86400,
+    "span_days": 0.999988425925926,
+    "span_years": 0.0027378190990442874,
+    "status": "ok",
+    "symbol": "ETHUSDT",
+    "warnings": []
+  },
+  {
+    "archive_status_counts": {
+      "complete": 1
+    },
+    "checksum_status_counts": {
+      "verified": 1
+    },
+    "coverage_ratio": 1.0,
+    "expected_rows": 86400,
+    "first_open_time": 1717200000000,
+    "gap_count": 0,
+    "interval": "1s",
+    "last_open_time": 1717286399000,
+    "market_type": "futures",
+    "reasons": [],
+    "requested_end_ms": 1717286399999,
+    "requested_end_utc": "2024-06-01T23:59:59Z",
+    "requested_start_ms": 1717200000000,
+    "requested_start_utc": "2024-06-01T00:00:00Z",
+    "rows": 86400,
+    "span_days": 0.999988425925926,
+    "span_years": 0.0027378190990442874,
+    "status": "ok",
+    "symbol": "SOLUSDT",
+    "warnings": []
+  }
+]

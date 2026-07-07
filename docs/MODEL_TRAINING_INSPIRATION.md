@@ -215,12 +215,20 @@ weakening risk controls.
   selection replay passes the same objective gates. Rejected base selections
   still retain diagnostic threshold/P&L evidence and are parked in no-entry
   thresholds unless a hybrid replay passes; diagnostics cannot become
-  executable trades. The `round-daytrade-frequency-hybrid-smoke` evidence round
-  produced BTC/SOL selection trades with negative after-cost P&L, and
-  `round-hybrid-rescue-profile-smoke` evaluated seven conservative hybrid
-  profiles per symbol but still produced zero accepted symbols and zero
-  holdout trades on BTCUSDT/ETHUSDT/SOLUSDT. The support is implemented but not
-  profitable evidence.
+  executable trades.
+- Implemented update: optimization rounds now run an interpretable rule-alpha
+  template zoo after classifier/hybrid selection. The templates cover momentum
+  breakout, VWAP/RSI mean reversion, trend-pullback, volatility breakout, and
+  volume-flow proxy families with normal and inverted orientation. Regime and
+  liquidity-session arrays are cached across candidate replays, cutting the
+  one-day BTC DirectML evidence runtime from about 117 seconds to about 65
+  seconds without changing risk gates. Rejected alpha searches record best
+  profile, family, score, P&L, closed trades, reject reason, orientation, and
+  evaluated candidate count. The `round-rule-alpha-major-1d-smoke` evidence run
+  still produced zero accepted symbols and zero holdout trades on
+  BTCUSDT/ETHUSDT/SOLUSDT; best rejected alpha profiles lost money after costs
+  on the selection slice. The support is implemented but not profitable
+  evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time
