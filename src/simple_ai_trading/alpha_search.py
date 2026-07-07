@@ -10,7 +10,7 @@ objective accepts the full selection backtest.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 import math
 from typing import Any, Sequence
 
@@ -61,6 +61,7 @@ class RuleAlphaCandidateResult:
     raw_score: float
     reject_reason: str | None
     result: BacktestResult
+    event_study: dict[str, object] = field(default_factory=dict)
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -71,6 +72,7 @@ class RuleAlphaCandidateResult:
             "raw_score": float(self.raw_score),
             "reject_reason": self.reject_reason,
             "result": asdict(self.result),
+            "event_study": dict(self.event_study),
         }
 
 
@@ -136,6 +138,14 @@ def summarize_rule_alpha_candidate_distribution(
             "accepted_candidates": 0,
             "active_candidates": 0,
             "profitable_candidates": 0,
+            "event_candidates_with_signals": 0,
+            "event_positive_candidates": 0,
+            "event_best_candidate": "",
+            "event_best_net_edge_bps": 0.0,
+            "event_best_signal_count": 0,
+            "event_best_hit_rate": 0.0,
+            "event_best_horizon_bars": 0,
+            "event_best_probability_inverted": False,
             "max_closed_trades": 0,
             "most_active_candidate": "",
             "most_active_pnl": 0.0,
@@ -153,6 +163,28 @@ def summarize_rule_alpha_candidate_distribution(
         if int(getattr(item.result, "closed_trades", 0) or 0) > 0
         and float(getattr(item.result, "realized_pnl", 0.0) or 0.0) > 0.0
     ]
+    event_active = [
+        item
+        for item in result_list
+        if int(item.event_study.get("signal_count", 0) or 0) > 0
+    ]
+    event_positive = [
+        item
+        for item in event_active
+        if float(item.event_study.get("net_mean_edge_bps", 0.0) or 0.0) > 0.0
+    ]
+    best_event = (
+        max(
+            event_active,
+            key=lambda item: (
+                float(item.event_study.get("net_mean_edge_bps", float("-inf"))),
+                int(item.event_study.get("signal_count", 0) or 0),
+                float(item.event_study.get("hit_rate", 0.0) or 0.0),
+            ),
+        )
+        if event_active
+        else None
+    )
     most_active = max(
         result_list,
         key=lambda item: (
@@ -176,6 +208,14 @@ def summarize_rule_alpha_candidate_distribution(
         "accepted_candidates": int(sum(1 for item in result_list if item.accepted)),
         "active_candidates": int(len(active)),
         "profitable_candidates": int(len(profitable)),
+        "event_candidates_with_signals": int(len(event_active)),
+        "event_positive_candidates": int(len(event_positive)),
+        "event_best_candidate": str(best_event.candidate.name) if best_event is not None else "",
+        "event_best_net_edge_bps": float(best_event.event_study.get("net_mean_edge_bps", 0.0) or 0.0) if best_event is not None else 0.0,
+        "event_best_signal_count": int(best_event.event_study.get("signal_count", 0) or 0) if best_event is not None else 0,
+        "event_best_hit_rate": float(best_event.event_study.get("hit_rate", 0.0) or 0.0) if best_event is not None else 0.0,
+        "event_best_horizon_bars": int(best_event.event_study.get("horizon_bars", 0) or 0) if best_event is not None else 0,
+        "event_best_probability_inverted": bool(best_event.probability_inverted) if best_event is not None else False,
         "max_closed_trades": int(getattr(most_active.result, "closed_trades", 0) or 0),
         "most_active_candidate": str(most_active.candidate.name),
         "most_active_pnl": float(getattr(most_active.result, "realized_pnl", 0.0) or 0.0),
@@ -306,6 +346,91 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
     return tuple(output)
 
 
+def rule_alpha_event_study(
+    rows: Sequence[ModelRow],
+    model: TrainedModel,
+    strategy: StrategyConfig,
+    candidate: RuleAlphaCandidate,
+    *,
+    market_type: str,
+) -> dict[str, object]:
+    """Measure directional forward edge before full trade-lifecycle replay.
+
+    This is telemetry only.  Promotion still depends on `run_backtest` and the
+    objective gates, because stop/take/cooldown behavior can differ from a raw
+    forward-return event study.
+    """
+
+    row_list = list(rows)
+    horizon = max(1, min(300, int(candidate.min_position_hold_bars or 1)))
+    if len(row_list) <= horizon:
+        return {
+            "horizon_bars": int(horizon),
+            "signal_count": 0,
+            "long_signal_count": 0,
+            "short_signal_count": 0,
+            "mean_edge_bps": 0.0,
+            "net_mean_edge_bps": 0.0,
+            "hit_rate": 0.0,
+            "cost_floor_bps": float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0),
+        }
+    long_threshold = (
+        float(model.long_decision_threshold)
+        if model.long_decision_threshold is not None
+        else float(model.decision_threshold if model.decision_threshold is not None else candidate.threshold)
+    )
+    short_threshold = (
+        float(model.short_decision_threshold)
+        if market_type == "futures" and model.short_decision_threshold is not None
+        else None
+    )
+    cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0)
+    edges: list[float] = []
+    long_count = 0
+    short_count = 0
+    for index in range(0, len(row_list) - horizon):
+        current = row_list[index]
+        future = row_list[index + horizon]
+        if current.close <= 0.0 or future.close <= 0.0:
+            continue
+        probability = float(model.predict_proba(current.features))
+        side = 0
+        if probability >= long_threshold:
+            side = 1
+            long_count += 1
+        elif short_threshold is not None and probability <= short_threshold:
+            side = -1
+            short_count += 1
+        if side == 0:
+            continue
+        edge_bps = float(side) * ((float(future.close) - float(current.close)) / float(current.close)) * 10_000.0
+        if math.isfinite(edge_bps):
+            edges.append(edge_bps)
+    if not edges:
+        return {
+            "horizon_bars": int(horizon),
+            "signal_count": 0,
+            "long_signal_count": 0,
+            "short_signal_count": 0,
+            "mean_edge_bps": 0.0,
+            "net_mean_edge_bps": -cost_floor_bps,
+            "hit_rate": 0.0,
+            "cost_floor_bps": cost_floor_bps,
+        }
+    mean_edge = sum(edges) / len(edges)
+    wins = sum(1 for value in edges if value > cost_floor_bps)
+    return {
+        "horizon_bars": int(horizon),
+        "signal_count": int(len(edges)),
+        "long_signal_count": int(long_count),
+        "short_signal_count": int(short_count),
+        "mean_edge_bps": float(mean_edge),
+        "net_mean_edge_bps": float(mean_edge - cost_floor_bps),
+        "hit_rate": float(wins / len(edges)),
+        "cost_floor_bps": cost_floor_bps,
+    }
+
+
 def model_for_rule_alpha(
     rows: Sequence[ModelRow],
     candidate: RuleAlphaCandidate,
@@ -429,6 +554,13 @@ def optimize_rule_alpha_model_zoo(
                 probability_inverted=inverted,
                 feature_params=feature_params,
             )
+            event_study = rule_alpha_event_study(
+                rows,
+                model,
+                candidate_strategy,
+                candidate,
+                market_type=market_type,
+            )
             result = run_backtest(
                 rows,
                 model,
@@ -452,6 +584,7 @@ def optimize_rule_alpha_model_zoo(
                 raw_score=float(raw_score),
                 reject_reason=reject_reason,
                 result=result,
+                event_study=event_study,
             )
             diagnostics.append(candidate_result)
             if accepted and (best_accepted is None or candidate_result.score > best_accepted.score + 1e-12):
@@ -571,6 +704,7 @@ __all__ = [
     "model_for_rule_alpha",
     "optimize_rule_alpha_model_zoo",
     "rule_alpha_candidates",
+    "rule_alpha_event_study",
     "rule_alpha_feature_params",
     "rule_alpha_stop_loss_floor_pct",
     "rule_alpha_take_profit_floor_pct",
