@@ -421,6 +421,81 @@ def test_backtest_hybrid_gpu_batch_scoring_matches_cpu_when_available() -> None:
     assert not result.scoring_backend_reason
 
 
+def test_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> None:
+    backend = backtest_module.resolve_backend("directml")
+    if backend.kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+    rows: list[ModelRow] = []
+    for index in range(18):
+        sign = 1.0 if index % 2 else -1.0
+        base = [
+            0.0014 * sign,
+            0.0012 * sign,
+            0.0007 * sign,
+            0.0003 * sign,
+            0.0,
+            0.55 if sign > 0 else 0.45,
+            0.0005 * sign,
+            0.0002,
+            0.0002,
+            1.3,
+            0.0008 * sign,
+            0.0001 * sign,
+            0.2,
+        ]
+        flow = [
+            0.71 if sign > 0 else 0.29,
+            0.58 * sign,
+            0.55 * sign,
+            0.36,
+            0.34,
+            0.22,
+            0.0,
+            0.62,
+            0.24 * sign,
+            0.44,
+            0.36,
+            0.28 * sign,
+            0.02 * sign,
+        ]
+        rows.append(ModelRow(
+            timestamp=index * 1000,
+            close=100.0 + index * sign,
+            features=tuple(base + flow),
+            label=1 if sign > 0 else 0,
+        ))
+    model = TrainedModel(
+        weights=[0.0] * 26,
+        bias=0.0,
+        feature_dim=26,
+        epochs=0,
+        feature_means=[0.0] * 26,
+        feature_stds=[1.0] * 26,
+        hybrid_base_weight=0.0,
+        hybrid_experts=[
+            HybridExpert(
+                name="rule-alpha",
+                kind="rule_alpha",
+                weight=1.0,
+                feature_count=26,
+                params={
+                    "family": "volume_synchronized_flow",
+                    "sensitivity": 8.0,
+                    "deadband": 0.01,
+                    "order_flow_start": 13,
+                    "order_flow_width": 13,
+                    "order_flow_window_count": 1,
+                },
+            )
+        ],
+    )
+
+    gpu = backtest_module._batch_probabilities_torch(rows, model, backend=backend, batch_size=5)
+    cpu = [model.predict_proba(row.features) for row in rows]
+
+    assert max(abs(left - right) for left, right in zip(gpu, cpu, strict=True)) < 1e-5
+
+
 def test_backtest_tracks_fees_and_cap_hits() -> None:
     rows = [
         ModelRow(

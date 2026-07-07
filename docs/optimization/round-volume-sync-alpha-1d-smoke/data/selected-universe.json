@@ -1,38 +1,38 @@
 [
   {
     "liquidity_score": 1.0,
-    "quote_volume": 16086860760.6,
+    "quote_volume": 16015610472.64,
     "rank": 1,
     "reasons": [],
     "selection_score": 1.0,
-    "spread_bps": 0.015895206085089392,
+    "spread_bps": 0.015838284776881303,
     "strict_default_eligible": true,
     "symbol": "BTCUSDT",
     "tier": "explicit-symbol",
-    "trade_count": 5148276
+    "trade_count": 5119638
   },
   {
     "liquidity_score": 1.0,
-    "quote_volume": 10331876483.06,
+    "quote_volume": 10241683304.2,
     "rank": 2,
     "reasons": [],
     "selection_score": 1.0,
-    "spread_bps": 0.05681156456203059,
+    "spread_bps": 0.05655037082900528,
     "strict_default_eligible": true,
     "symbol": "ETHUSDT",
     "tier": "explicit-symbol",
-    "trade_count": 6344340
+    "trade_count": 6295922
   },
   {
     "liquidity_score": 1.0,
-    "quote_volume": 1906155519.3435,
+    "quote_volume": 1894721052.2239,
     "rank": 3,
     "reasons": [],
     "selection_score": 1.0,
-    "spread_bps": 1.241541995156857,
+    "spread_bps": 1.2352541535409678,
     "strict_default_eligible": true,
     "symbol": "SOLUSDT",
     "tier": "explicit-symbol",
-    "trade_count": 1747290
+    "trade_count": 1739311
   }
 ]

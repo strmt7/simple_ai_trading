@@ -224,13 +224,16 @@ weakening risk controls.
   volume-flow proxy families with normal and inverted orientation. The latest
   implementation adds order-flow momentum, flow-reversion, flow-consensus
   breakout, liquidity-absorption reversal, micro-flow scalp, VWAP snapback
-  scalp, liquidity-sweep reversal, compression breakout scalp, and adaptive
-  tape-regime families that use serialized offsets into the advanced
+  scalp, liquidity-sweep reversal, compression breakout scalp,
+  volume-synchronized flow, and adaptive tape-regime families that use
+  serialized offsets into the advanced
   aggTrade-derived order-flow feature block, plus short-hold and longer-hold
   profiles to test activity without changing risk gates. The rule-alpha prefix is
   now stratified so each family and execution profile is represented before
-  nearby parameter variants are explored; the default 126 candidates cover all
-  base family/profile combinations. Regime and liquidity-session arrays are
+  nearby parameter variants are explored; the default 135 candidates cover all
+  base family/profile combinations. CPU/live scoring preserves the full
+  serialized feature vector for order-flow rule-alpha templates, and DirectML
+  batch scoring is tested for parity. Regime and liquidity-session arrays are
   cached across candidate replays without changing risk gates. Rejected alpha
   searches record best active profile, family, score, P&L, closed trades, win
   rate, profit factor, max drawdown, exit-reason counts, side counts, reject
@@ -239,12 +242,13 @@ weakening risk controls.
   family/profile coverage. Candidate stop/take distances are now floored by
   modeled execution cost, entry/exit fees, and explicit buffers before replay,
   preventing sub-cost scalp targets from appearing viable. The
-  `round-cost-aware-alpha-1d-smoke` evidence run still produced zero accepted
+  `round-volume-sync-alpha-1d-smoke` evidence run still produced zero accepted
   symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
-  It did prove the search is active: 216 BTCUSDT, 234 ETHUSDT, and 216 SOLUSDT
-  rule-alpha variants closed at least one trade, but none were profitable after
-  costs. The support is implemented and exercised by real-data smoke evidence,
-  but it is not profitable evidence.
+  It did prove the search is active: 234 BTCUSDT, 252 ETHUSDT, and 234 SOLUSDT
+  rule-alpha variants closed at least one trade, and the new volume-synchronized
+  flow family became the most-active family on all three symbols. None were
+  profitable after costs. The support is implemented and exercised by real-data
+  smoke evidence, but it is not profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time

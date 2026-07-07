@@ -227,14 +227,16 @@ templates are original momentum breakout, VWAP/RSI mean reversion,
 trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
 flow-reversion, flow-consensus breakout, liquidity-absorption reversal,
 micro-flow scalp, VWAP snapback scalp, liquidity-sweep reversal, compression
-breakout scalp, and adaptive tape-regime families. The default 126-candidate
+breakout scalp, volume-synchronized flow, and adaptive tape-regime families. The default 135-candidate
 prefix is stratified: it covers every family
 and execution profile, then covers the full base family/profile matrix, before
 spending remaining slots on nearby threshold/sensitivity/deadband variants.
 Order-flow templates receive serialized offsets
 into the advanced aggTrade-derived order-flow feature block, so CPU, DirectML,
 CLI, Windows app, backtest, and live/autonomous inference use the same
-microstructure inputs. Each template is tested with normal and inverted
+microstructure inputs. CPU/live rule-alpha scoring now preserves the full
+serialized feature vector instead of truncating before the order-flow block, and
+DirectML parity is covered by tests. Each template is tested with normal and inverted
 probability orientation plus bounded threshold/stop/take/hold profiles.
 Rule-alpha models serialize as `rule_alpha` hybrid experts, so a promoted
 template is available without a separate code path. Rejected searches record the
@@ -253,20 +255,22 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-cost-aware-alpha-1d-smoke` run used verified
+in code. The 2026-07-07 `round-volume-sync-alpha-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
 scoring, conservative 5x futures settings, seven hybrid profiles, the v9
 171-feature advanced vector including 13 order-flow microstructure fields per
-window, cost-aware rule-alpha stop/take floors, and 252 normal/inverted
+window, cost-aware rule-alpha stop/take floors, and 270 normal/inverted
 rule-alpha replays per symbol. It failed with zero accepted symbols, zero closed
 holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
 profiles were still negative after costs: BTCUSDT guarded momentum breakout
 lost `0.6405880579098948` on one closed short, ETHUSDT scalp-3s
 liquidity-sweep reversal lost `0.525900571656166` on one closed long, and
 SOLUSDT held-180s flow reversion lost `0.5233335205740559` on one closed long.
-The expanded search did generate internal trading activity, with 216 BTCUSDT, 234 ETHUSDT,
-and 216 SOLUSDT active candidates, but zero profitable candidates after modeled
-costs.
+The expanded search did generate internal trading activity, with 234 BTCUSDT,
+252 ETHUSDT, and 234 SOLUSDT active candidates, but zero profitable candidates
+after modeled costs. Volume-synchronized flow became the most-active family on
+all three symbols and was still deeply negative after costs, so it remains
+research evidence rather than promotion evidence.
 This is negative research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple

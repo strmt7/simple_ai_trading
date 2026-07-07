@@ -29,7 +29,7 @@ from .strategy_overrides import strategy_overrides_from_config
 from .types import StrategyConfig
 
 
-DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 126
+DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 135
 _RULE_ALPHA_COST_FLOOR_PARTICIPATION = 0.05
 _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS = 2.0
 _RULE_ALPHA_MIN_STOP_BUFFER_BPS = 1.0
@@ -232,6 +232,7 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         "vwap_snapback_scalp",
         "liquidity_sweep_reversal",
         "compression_breakout_scalp",
+        "volume_synchronized_flow",
         "adaptive_tape_regime",
     )
     execution_profiles = (
