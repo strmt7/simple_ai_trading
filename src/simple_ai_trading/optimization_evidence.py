@@ -2078,7 +2078,14 @@ def _select_rule_alpha_model_zoo_if_accepted(
         for item in alpha_report.candidate_results
         if item.candidate.family == "empirical_feature_edge"
     )
+    empirical_interaction_evaluations = sum(
+        1
+        for item in alpha_report.candidate_results
+        if item.candidate.family == "empirical_feature_edge"
+        and "second_feature_index" in item.candidate.params
+    )
     candidate_summary["empirical_mined_candidates"] = int(empirical_evaluations // 2)
+    candidate_summary["empirical_interaction_candidates"] = int(empirical_interaction_evaluations // 2)
     candidate_summary["empirical_candidate_limit"] = int(DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES)
     candidate_summary["static_template_candidates"] = int(
         max(0, (int(alpha_report.evaluated_candidates) - int(empirical_evaluations)) // 2)
@@ -2240,6 +2247,7 @@ def _round_candidate_diagnostic(
         "rule_alpha_evaluated_candidates": int(getattr(model, "rule_alpha_evaluated_candidates", 0) or 0),
         "rule_alpha_static_template_candidates": int(_finite(rule_alpha_summary.get("static_template_candidates"))),
         "rule_alpha_empirical_mined_candidates": int(_finite(rule_alpha_summary.get("empirical_mined_candidates"))),
+        "rule_alpha_empirical_interaction_candidates": int(_finite(rule_alpha_summary.get("empirical_interaction_candidates"))),
         "rule_alpha_empirical_candidate_limit": int(_finite(rule_alpha_summary.get("empirical_candidate_limit"))),
         "rule_alpha_active_candidates": int(_finite(rule_alpha_summary.get("active_candidates"))),
         "rule_alpha_profitable_candidates": int(_finite(rule_alpha_summary.get("profitable_candidates"))),
@@ -2405,6 +2413,7 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "rule_alpha_evaluated_candidates": int(_finite(item.get("rule_alpha_evaluated_candidates"))),
             "rule_alpha_static_template_candidates": int(_finite(item.get("rule_alpha_static_template_candidates"))),
             "rule_alpha_empirical_mined_candidates": int(_finite(item.get("rule_alpha_empirical_mined_candidates"))),
+            "rule_alpha_empirical_interaction_candidates": int(_finite(item.get("rule_alpha_empirical_interaction_candidates"))),
             "rule_alpha_empirical_candidate_limit": int(_finite(item.get("rule_alpha_empirical_candidate_limit"))),
             "rule_alpha_active_candidates": int(_finite(item.get("rule_alpha_active_candidates"))),
             "rule_alpha_profitable_candidates": int(_finite(item.get("rule_alpha_profitable_candidates"))),
@@ -3225,7 +3234,7 @@ def build_round_evidence(
         "rule_alpha_best_reject_reason", "rule_alpha_probability_inverted",
         "rule_alpha_evaluated_candidates",
         "rule_alpha_static_template_candidates", "rule_alpha_empirical_mined_candidates",
-        "rule_alpha_empirical_candidate_limit",
+        "rule_alpha_empirical_interaction_candidates", "rule_alpha_empirical_candidate_limit",
         "rule_alpha_active_candidates", "rule_alpha_profitable_candidates",
         "rule_alpha_accepted_candidates", "rule_alpha_max_closed_trades",
         "rule_alpha_event_candidates_with_signals", "rule_alpha_event_positive_candidates",

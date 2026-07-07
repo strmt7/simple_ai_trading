@@ -505,6 +505,7 @@ def test_empirical_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> 
         sign = 1.0 if index % 2 else -1.0
         features = [0.0] * 26
         features[15] = sign
+        features[16] = sign
         rows.append(ModelRow(
             timestamp=index * 1000,
             close=100.0 + index,
@@ -533,6 +534,10 @@ def test_empirical_rule_alpha_gpu_batch_scoring_matches_cpu_when_available() -> 
                     "feature_threshold": 0.0,
                     "feature_scale": 1.0,
                     "tail_direction": 1.0,
+                    "second_feature_index": 16,
+                    "second_feature_threshold": 0.0,
+                    "second_feature_scale": 1.0,
+                    "second_tail_direction": 1.0,
                     "trade_side": 1.0,
                     "edge_confidence": 0.75,
                     "edge_slope": 1.0,

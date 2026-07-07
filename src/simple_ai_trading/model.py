@@ -123,6 +123,16 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
         if not math.isfinite(value):
             value = threshold
         delta = tail_direction * (value - threshold) / scale
+        if "second_feature_index" in (params or {}):
+            second_index = _param_int(params, "second_feature_index", 0, low=0, high=max(0, len(values) - 1))
+            second_threshold = _param_float(params, "second_feature_threshold", 0.0, low=-1e12, high=1e12)
+            second_scale = max(1e-9, abs(_param_float(params, "second_feature_scale", 1.0, low=1e-12, high=1e12)))
+            second_tail = 1.0 if _param_float(params, "second_tail_direction", 1.0, low=-1.0, high=1.0) >= 0.0 else -1.0
+            second_value = float(values[second_index]) if second_index < len(values) else second_threshold
+            if not math.isfinite(second_value):
+                second_value = second_threshold
+            second_delta = second_tail * (second_value - second_threshold) / second_scale
+            delta = min(delta, second_delta)
         strength = math.tanh(max(0.0, delta) * slope)
         score = trade_side * max(0.0, strength) * confidence
         deadband = _param_float(params, "deadband", 0.04, low=0.0, high=0.95)

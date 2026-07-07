@@ -776,6 +776,19 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                             torch.full_like(feature_values, float(threshold_value)),
                         )
                         delta = float(tail_direction) * (feature_values - float(threshold_value)) / float(feature_scale)
+                        if "second_feature_index" in params:
+                            second_index = int(_clamp_float(params.get("second_feature_index", 0), 0, max_feature_index, 0))
+                            second_threshold = _clamp_float(params.get("second_feature_threshold", 0.0), -1e12, 1e12, 0.0)
+                            second_scale = max(1e-9, abs(_clamp_float(params.get("second_feature_scale", 1.0), 1e-12, 1e12, 1.0)))
+                            second_tail = 1.0 if _clamp_float(params.get("second_tail_direction", 1.0), -1.0, 1.0, 1.0) >= 0.0 else -1.0
+                            second_values = raw_values[:, second_index]
+                            second_values = torch.where(
+                                torch.isfinite(second_values),
+                                second_values,
+                                torch.full_like(second_values, float(second_threshold)),
+                            )
+                            second_delta = float(second_tail) * (second_values - float(second_threshold)) / float(second_scale)
+                            delta = torch.minimum(delta, second_delta)
                         score = float(trade_side) * torch.clamp(torch.tanh(torch.clamp(delta, min=0.0) * float(slope)), min=0.0) * float(confidence)
                         magnitude = torch.abs(score)
                         adjusted = torch.where(
