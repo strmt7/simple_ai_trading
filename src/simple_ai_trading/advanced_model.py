@@ -1131,6 +1131,8 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
         volume=float(getattr(row, "volume", 0.0) or 0.0),
         high=getattr(row, "high", None),
         low=getattr(row, "low", None),
+        quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
+        trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
     )
 
 
@@ -1335,6 +1337,8 @@ def make_advanced_rows(
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
                 high=getattr(row, "high", None),
                 low=getattr(row, "low", None),
+                quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
+                trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
             )
         )
     return expanded
@@ -1401,6 +1405,8 @@ def make_advanced_inference_rows(
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
                 high=getattr(row, "high", None),
                 low=getattr(row, "low", None),
+                quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
+                trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
             )
         )
     return expanded

@@ -7,7 +7,13 @@ from typing import Dict, List, Sequence
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
-from .execution_simulation import SymbolExecutionProfile, simulate_market_fill
+from .execution_simulation import (
+    ExecutionAssumptions,
+    SimulatedFill,
+    SymbolExecutionProfile,
+    execution_assumptions_for_symbol,
+    simulate_market_fill,
+)
 from .features import ModelRow
 from .financial_sanity import blocking_reasons, build_backtest_financial_sanity_report
 from .liquidity_session import LiquiditySessionAdjustment, apply_liquidity_session_meta, liquidity_session_adjustment
@@ -266,7 +272,29 @@ def _fill_price(
     notional: float = 0.0,
     volume: float = 0.0,
     symbol_profile: SymbolExecutionProfile | None = None,
+    assumptions: ExecutionAssumptions | None = None,
 ) -> float:
+    return _simulate_fill(
+        price,
+        side_sign,
+        cfg,
+        notional=notional,
+        volume=volume,
+        symbol_profile=symbol_profile,
+        assumptions=assumptions,
+    ).fill_price
+
+
+def _simulate_fill(
+    price: float,
+    side_sign: int,
+    cfg: StrategyConfig,
+    *,
+    notional: float = 0.0,
+    volume: float = 0.0,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    assumptions: ExecutionAssumptions | None = None,
+) -> SimulatedFill:
     return simulate_market_fill(
         price,
         side_sign,
@@ -274,7 +302,85 @@ def _fill_price(
         cfg,
         bar_volume_notional=volume,
         symbol_profile=symbol_profile,
-    ).fill_price
+        assumptions=assumptions,
+    )
+
+
+def _row_quote_volume_notional(row: ModelRow, price: float) -> float:
+    quote_volume = _finite_float(getattr(row, "quote_volume", 0.0), 0.0)
+    if quote_volume > 0.0:
+        return quote_volume
+    return max(0.0, _finite_float(getattr(row, "volume", 0.0), 0.0) * max(0.0, price))
+
+
+def _row_reported_quote_volume_notional(row: ModelRow) -> float:
+    return max(0.0, _finite_float(getattr(row, "quote_volume", 0.0), 0.0))
+
+
+def _row_trade_count(row: ModelRow) -> int:
+    return max(0, int(_finite_float(getattr(row, "trade_count", 0), 0.0)))
+
+
+def _row_range_bps(row: ModelRow, price: float) -> float:
+    high = _finite_float(getattr(row, "high", price), price)
+    low = _finite_float(getattr(row, "low", price), price)
+    midpoint = max(1e-12, (max(high, low, price) + min(high, low, price)) / 2.0)
+    observed_range = max(0.0, high - low)
+    return max(0.0, min(10_000.0, observed_range / midpoint * 10_000.0))
+
+
+def _row_execution_assumptions(
+    row: ModelRow,
+    cfg: StrategyConfig,
+    *,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    include_range: bool = True,
+) -> ExecutionAssumptions:
+    """Return per-row adverse execution assumptions from real bar evidence.
+
+    This is still an L1/candle proxy, not a queue-position simulator. It makes
+    second-level backtests more honest by charging wider fills during high
+    intrabar range or sparse-trade seconds when no top-of-book/L2 tape exists.
+    """
+
+    price = max(0.0, _finite_float(getattr(row, "close", 0.0), 0.0))
+    base = execution_assumptions_for_symbol(cfg, symbol_profile)
+    has_activity_evidence = (
+        _finite_float(getattr(row, "quote_volume", 0.0), 0.0) > 0.0
+        or _row_trade_count(row) > 0
+    )
+    range_bps = _row_range_bps(row, price) if include_range and has_activity_evidence and price > 0.0 else 0.0
+    has_range_evidence = range_bps > 0.0
+    if not has_range_evidence and not has_activity_evidence:
+        return base
+
+    trade_count = _row_trade_count(row)
+    sparse_trade_multiplier = 1.0
+    if has_activity_evidence:
+        if trade_count <= 0:
+            sparse_trade_multiplier = 2.0
+        else:
+            sparse_trade_multiplier = 1.0 + min(1.0, 1.0 / math.sqrt(float(trade_count)))
+
+    spread_bps = max(base.spread_bps, min(250.0, range_bps * 0.12))
+    volatility_buffer_bps = max(base.volatility_buffer_bps, min(500.0, range_bps * 0.35))
+    liquidity_haircut = max(
+        base.liquidity_haircut,
+        min(1.0, base.liquidity_haircut + max(0.0, sparse_trade_multiplier - 1.0) * 0.25),
+    )
+    impact_coefficient = max(base.impact_coefficient, base.impact_coefficient * sparse_trade_multiplier)
+    testnet_to_live_buffer_bps = max(
+        base.testnet_to_live_buffer_bps,
+        spread_bps * (1.0 + liquidity_haircut),
+    )
+    return ExecutionAssumptions(
+        spread_bps=float(spread_bps),
+        latency_ms=int(base.latency_ms),
+        liquidity_haircut=float(liquidity_haircut),
+        impact_coefficient=float(impact_coefficient),
+        volatility_buffer_bps=float(volatility_buffer_bps),
+        testnet_to_live_buffer_bps=float(testnet_to_live_buffer_bps),
+    )
 
 
 def _normalize_market_direction(
@@ -305,19 +411,23 @@ def _close_position(
     cfg: StrategyConfig,
     *,
     symbol_profile: SymbolExecutionProfile | None = None,
-) -> tuple[float, float, float]:
+    fill_volume_notional: float = 0.0,
+    execution_assumptions: ExecutionAssumptions | None = None,
+) -> tuple[float, float, float, float, float]:
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
-    exit_price = _fill_price(
+    exit_fill = _simulate_fill(
         price,
         -position_side,
         cfg,
         notional=abs(notional),
-        volume=abs(notional) * 20.0,
+        volume=fill_volume_notional if fill_volume_notional > 0.0 else abs(notional) * 20.0,
         symbol_profile=symbol_profile,
+        assumptions=execution_assumptions,
     )
+    exit_price = exit_fill.fill_price
     realized = position_side * (exit_price - entry_price) * qty
     exit_fee = abs(exit_price * qty) * fee_rate
-    return margin_used + realized - exit_fee, realized, exit_fee
+    return margin_used + realized - exit_fee, realized, exit_fee, exit_fill.total_cost_bps, exit_price
 
 
 def _futures_liquidation_state(
@@ -473,21 +583,27 @@ def _buy_hold_pnl(
     if baseline_notional <= 0.0:
         return 0.0
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
+    first_row = rows[0]
+    last_row = rows[-1]
+    first_volume_notional = _row_reported_quote_volume_notional(first_row)
+    last_volume_notional = _row_reported_quote_volume_notional(last_row)
     entry = _fill_price(
         first,
         1,
         cfg,
         notional=baseline_notional,
-        volume=baseline_notional * 20.0,
+        volume=first_volume_notional if first_volume_notional > 0.0 else baseline_notional * 20.0,
         symbol_profile=symbol_profile,
+        assumptions=_row_execution_assumptions(first_row, cfg, symbol_profile=symbol_profile),
     )
     exit_price = _fill_price(
         last,
         -1,
         cfg,
         notional=baseline_notional,
-        volume=baseline_notional * 20.0,
+        volume=last_volume_notional if last_volume_notional > 0.0 else baseline_notional * 20.0,
         symbol_profile=symbol_profile,
+        assumptions=_row_execution_assumptions(last_row, cfg, symbol_profile=symbol_profile),
     )
     if entry <= 0 or exit_price <= 0:
         return 0.0
@@ -1643,6 +1759,7 @@ def run_backtest(
     entry_price = 0.0
     margin_used = 0.0
     entry_fee_paid = 0.0
+    entry_execution_cost_bps = 0.0
     entry_equity_reference = cash
     entry_timestamp = int(rows[0].timestamp)
     entry_row_index = 0
@@ -1802,15 +1919,23 @@ def run_backtest(
                 continue
 
             side_sign = 1 if execution_signal > 0 else -1
-            row_volume_notional = max(0.0, float(getattr(row, "volume", 0.0) or 0.0) * price)
-            entry = _fill_price(
+            row_volume_notional = _row_quote_volume_notional(row, price)
+            row_execution_assumptions = _row_execution_assumptions(
+                row,
+                cfg,
+                symbol_profile=symbol_profile,
+                include_range=False,
+            )
+            entry_fill = _simulate_fill(
                 price,
                 side_sign,
                 cfg,
                 notional=gross,
                 volume=row_volume_notional,
                 symbol_profile=symbol_profile,
+                assumptions=row_execution_assumptions,
             )
+            entry = entry_fill.fill_price
             if entry <= 0:
                 continue
 
@@ -1824,6 +1949,7 @@ def run_backtest(
             entry_row_index = int(row_index)
             flat_signal_streak = 0
             entry_fee_paid = fee
+            entry_execution_cost_bps = float(entry_fill.total_cost_bps)
             cash -= total_cost
             total_fees += fee
             position_side = side_sign
@@ -1874,6 +2000,8 @@ def run_backtest(
                     "return_pct": float(return_pct),
                     "entry_fee": float(entry_fee_paid),
                     "exit_fee": 0.0,
+                    "entry_execution_cost_bps": float(entry_execution_cost_bps),
+                    "exit_execution_cost_bps": 0.0,
                     "exit_reason": "liquidation",
                     "liquidated": True,
                     "liquidation_margin_balance": float(margin_balance),
@@ -1891,6 +2019,7 @@ def run_backtest(
                 entry_price = 0.0
                 margin_used = 0.0
                 entry_fee_paid = 0.0
+                entry_execution_cost_bps = 0.0
                 entry_equity_reference = cash
                 flat_signal_streak = 0
                 entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "liquidation")
@@ -1930,7 +2059,9 @@ def run_backtest(
                     closed_side = position_side
                     closed_notional = abs(notional)
                     closed_entry_price = entry_price
-                    cash_delta, realized, exit_fee = _close_position(
+                    row_quote_volume_notional = _row_reported_quote_volume_notional(row)
+                    row_execution_assumptions = _row_execution_assumptions(row, cfg, symbol_profile=symbol_profile)
+                    cash_delta, realized, exit_fee, exit_execution_cost_bps, exit_price = _close_position(
                         position_side=position_side,
                         price=close_mark_price,
                         entry_price=entry_price,
@@ -1939,6 +2070,8 @@ def run_backtest(
                         margin_used=margin_used,
                         cfg=cfg,
                         symbol_profile=symbol_profile,
+                        fill_volume_notional=row_quote_volume_notional,
+                        execution_assumptions=row_execution_assumptions,
                     )
                     cash += cash_delta
                     total_fees += exit_fee
@@ -1954,11 +2087,14 @@ def run_backtest(
                         "gross_notional": float(closed_notional),
                         "entry_price": float(closed_entry_price),
                         "exit_mark_price": float(close_mark_price),
+                        "exit_price": float(exit_price),
                         "realized_pnl": float(realized),
                         "net_pnl": float(net_pnl),
                         "return_pct": float(return_pct),
                         "entry_fee": float(entry_fee_paid),
                         "exit_fee": float(exit_fee),
+                        "entry_execution_cost_bps": float(entry_execution_cost_bps),
+                        "exit_execution_cost_bps": float(exit_execution_cost_bps),
                         "exit_reason": str(close_reason or "signal_exit"),
                         "bars_held": int(bars_held),
                         "flat_signal_streak": int(flat_signal_streak),
@@ -1976,6 +2112,7 @@ def run_backtest(
                     entry_price = 0.0
                     margin_used = 0.0
                     entry_fee_paid = 0.0
+                    entry_execution_cost_bps = 0.0
                     entry_equity_reference = cash
                     flat_signal_streak = 0
                     entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "reset")
@@ -2006,7 +2143,9 @@ def run_backtest(
                 closed_side = position_side
                 closed_notional = abs(notional)
                 closed_entry_price = entry_price
-                drawdown_delta, drawdown_realized, drawdown_fee = _close_position(
+                row_quote_volume_notional = _row_reported_quote_volume_notional(row)
+                row_execution_assumptions = _row_execution_assumptions(row, cfg, symbol_profile=symbol_profile)
+                drawdown_delta, drawdown_realized, drawdown_fee, drawdown_execution_cost_bps, drawdown_exit_price = _close_position(
                     position_side=position_side,
                     price=drawdown_mark_price,
                     entry_price=entry_price,
@@ -2015,6 +2154,8 @@ def run_backtest(
                     margin_used=margin_used,
                     cfg=cfg,
                     symbol_profile=symbol_profile,
+                    fill_volume_notional=row_quote_volume_notional,
+                    execution_assumptions=row_execution_assumptions,
                 )
                 cash += drawdown_delta
                 total_fees += drawdown_fee
@@ -2030,11 +2171,14 @@ def run_backtest(
                     "gross_notional": float(closed_notional),
                     "entry_price": float(closed_entry_price),
                     "exit_mark_price": float(drawdown_mark_price),
+                    "exit_price": float(drawdown_exit_price),
                     "realized_pnl": float(drawdown_realized),
                     "net_pnl": float(net_pnl),
                     "return_pct": float(return_pct),
                     "entry_fee": float(entry_fee_paid),
                     "exit_fee": float(drawdown_fee),
+                    "entry_execution_cost_bps": float(entry_execution_cost_bps),
+                    "exit_execution_cost_bps": float(drawdown_execution_cost_bps),
                     "exit_reason": "drawdown_limit",
                     "drawdown": float(dd),
                     "meta_label_action": str(entry_meta.action),
@@ -2050,6 +2194,7 @@ def run_backtest(
                 entry_price = 0.0
                 margin_used = 0.0
                 entry_fee_paid = 0.0
+                entry_execution_cost_bps = 0.0
                 entry_equity_reference = cash
                 flat_signal_streak = 0
                 entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "drawdown_limit")
@@ -2065,7 +2210,15 @@ def run_backtest(
         closed_side = position_side
         closed_notional = abs(notional)
         closed_entry_price = entry_price
-        final_delta, final_realized, final_fee = _close_position(
+        final_row = rows[-1]
+        final_volume_notional = _row_reported_quote_volume_notional(final_row)
+        final_execution_assumptions = _row_execution_assumptions(
+            final_row,
+            cfg,
+            symbol_profile=symbol_profile,
+            include_range=int(entry_row_index) != len(rows) - 1,
+        )
+        final_delta, final_realized, final_fee, final_execution_cost_bps, final_exit_price = _close_position(
             position_side=position_side,
             price=final_mark_price,
             entry_price=entry_price,
@@ -2074,6 +2227,8 @@ def run_backtest(
             margin_used=margin_used,
             cfg=cfg,
             symbol_profile=symbol_profile,
+            fill_volume_notional=final_volume_notional,
+            execution_assumptions=final_execution_assumptions,
         )
         cash += final_delta
         total_fees += final_fee
@@ -2089,11 +2244,14 @@ def run_backtest(
             "gross_notional": float(closed_notional),
             "entry_price": float(closed_entry_price),
             "exit_mark_price": float(final_mark_price),
+            "exit_price": float(final_exit_price),
             "realized_pnl": float(final_realized),
             "net_pnl": float(net_pnl),
             "return_pct": float(return_pct),
             "entry_fee": float(entry_fee_paid),
             "exit_fee": float(final_fee),
+            "entry_execution_cost_bps": float(entry_execution_cost_bps),
+            "exit_execution_cost_bps": float(final_execution_cost_bps),
             "exit_reason": "final_mark",
             "meta_label_action": str(entry_meta.action),
             "meta_label_size_multiplier": float(entry_meta.size_multiplier),

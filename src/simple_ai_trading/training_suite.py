@@ -113,6 +113,7 @@ class CandidateParams:
     label_threshold_multiplier: float = 1.0
     label_lookahead_multiplier: float = 1.0
     label_mode: str = "forward_return"
+    focal_gamma: float = 0.0
     seed: int = 7
 
     def asdict(self) -> dict[str, float | int | str]:
@@ -128,7 +129,7 @@ class ObjectiveOutcome:
     feature_dim: int
     feature_signature: str
     best_score: float
-    best_params: dict[str, float | int]
+    best_params: dict[str, float | int | str]
     explored_candidates: int
     rejected_candidates: int
     epochs: int
@@ -252,12 +253,23 @@ def _feature_config_for_candidate(
 
     threshold_multiplier = max(0.10, min(5.0, float(candidate.label_threshold_multiplier)))
     lookahead_multiplier = max(0.25, min(4.0, float(candidate.label_lookahead_multiplier)))
+    label_mode = str(candidate.label_mode or "forward_return")
+    normalized_label_mode = label_mode.strip().lower().replace("-", "_")
+    volatility_window = max(0, int(base.label_volatility_window))
+    volatility_multiplier = max(0.0, float(base.label_volatility_multiplier))
+    if "event" in normalized_label_mode or "volatility" in normalized_label_mode:
+        derived_window = max(6, int(round(float(base.label_lookahead) * lookahead_multiplier * 3.0)))
+        volatility_window = max(volatility_window, derived_window)
+        if volatility_multiplier <= 0.0:
+            volatility_multiplier = 0.50
     return replace(
         base,
         label_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
         label_lookahead=max(1, int(round(float(base.label_lookahead) * lookahead_multiplier))),
-        label_mode=str(candidate.label_mode or "forward_return"),
+        label_mode=label_mode,
         label_stop_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
+        label_volatility_window=volatility_window,
+        label_volatility_multiplier=volatility_multiplier,
     )
 
 
@@ -282,7 +294,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
 
     Three epoch budgets, two learning rates, two L2 penalties, four thresholds,
     one stop/take profile, two risk levels, three confidence shrinkage levels,
-    six label horizon/target profiles, and one seed.
+    ten label/loss profiles, and one seed.
     The suite then searches locally around the winner and checks seed ensembles
     for the best candidates, keeping GPU runs finishable while still deduping
     arithmetic collisions.
@@ -305,12 +317,20 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     risk_options = (training.risk_per_trade * 0.50, training.risk_per_trade)
     confidence_options = (0.70, 0.85, 1.0)
     label_profile_options = (
-        (1.0, 1.0, "forward_return"),
-        (0.60, 0.50, "forward_return"),
-        (1.40, 1.75, "forward_return"),
-        (1.0, 1.0, "triple_barrier"),
-        (0.75, 0.75, "triple_barrier"),
-        (1.25, 1.50, "triple_barrier"),
+        # Directional baseline, high-frequency scalp, and high-conviction longer lookahead.
+        (1.0, 1.0, "forward_return", 0.0),
+        (0.10, 0.25, "forward_return", 1.5),
+        (1.40, 1.75, "forward_return", 0.0),
+        # Path-aware labels benchmark whether stop/take ordering beats point-to-point return.
+        (1.0, 1.0, "triple_barrier", 0.0),
+        (0.10, 0.25, "triple_barrier", 1.5),
+        (0.75, 0.75, "triple_barrier", 1.0),
+        # CUSUM-gated volatility barriers avoid training on low-information bars.
+        (0.10, 0.25, "event_volatility_triple_barrier", 1.5),
+        (0.75, 0.75, "event_volatility_triple_barrier", 1.0),
+        # Futures-capable short-side labels are first-class candidates, not fallback inversions.
+        (0.10, 0.25, "downside_forward_return", 1.5),
+        (0.10, 0.25, "downside_event_volatility_triple_barrier", 2.0),
     )
     seed_options = (7,)
 
@@ -320,7 +340,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
         stop_take_options, risk_options, confidence_options, label_profile_options, seed_options,
     ):
         stop, take = stop_take
-        label_threshold_multiplier, label_lookahead_multiplier, label_mode = label_profile
+        label_threshold_multiplier, label_lookahead_multiplier, label_mode, focal_gamma = label_profile
         candidates.append(CandidateParams(
             epochs=int(epochs),
             learning_rate=float(lr),
@@ -333,6 +353,7 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
             label_threshold_multiplier=max(0.10, min(5.0, float(label_threshold_multiplier))),
             label_lookahead_multiplier=max(0.25, min(4.0, float(label_lookahead_multiplier))),
             label_mode=str(label_mode),
+            focal_gamma=max(0.0, min(4.0, float(focal_gamma))),
             seed=int(seed),
         ))
     # Deduplicate collisions produced by the arithmetic above.
@@ -1199,6 +1220,7 @@ def _purged_walk_forward_gate(
                 early_stopping_rounds=max(10, min(40, int(candidate.epochs) // 8)) if calibration_rows else None,
                 compute_backend=compute_backend,
                 batch_size=batch_size,
+                focal_gamma=candidate.focal_gamma,
             )
             if training.calibrate_threshold and calibration_rows:
                 threshold, threshold_source, threshold_score = _calibrate_candidate_threshold(
@@ -1293,8 +1315,24 @@ def _candidate_variant(candidate: CandidateParams, **updates: object) -> Candida
         label_threshold_multiplier=max(0.10, min(5.0, float(payload["label_threshold_multiplier"]))),
         label_lookahead_multiplier=max(0.25, min(4.0, float(payload["label_lookahead_multiplier"]))),
         label_mode=str(payload.get("label_mode") or "forward_return"),
+        focal_gamma=max(0.0, min(4.0, float(payload.get("focal_gamma", 0.0)))),
         seed=int(payload["seed"]),
     )
+
+
+def _alternate_label_mode(label_mode: str) -> str:
+    """Return a nearby label family that changes the decision target semantics."""
+
+    mode = str(label_mode or "forward_return").strip().lower().replace("-", "_")
+    if mode == "triple_barrier":
+        return "event_volatility_triple_barrier"
+    if mode == "event_volatility_triple_barrier":
+        return "triple_barrier"
+    if mode.startswith("downside_event"):
+        return "downside_forward_return"
+    if mode.startswith("downside"):
+        return "downside_event_volatility_triple_barrier"
+    return "triple_barrier"
 
 
 def _local_refinement_candidates(candidate: CandidateParams) -> list[CandidateParams]:
@@ -1348,9 +1386,11 @@ def _local_refinement_candidates(candidate: CandidateParams) -> list[CandidatePa
         _candidate_variant(candidate, label_threshold_multiplier=candidate.label_threshold_multiplier * 1.20),
         _candidate_variant(candidate, label_lookahead_multiplier=candidate.label_lookahead_multiplier * 0.75),
         _candidate_variant(candidate, label_lookahead_multiplier=candidate.label_lookahead_multiplier * 1.25),
+        _candidate_variant(candidate, focal_gamma=max(0.0, candidate.focal_gamma - 0.75)),
+        _candidate_variant(candidate, focal_gamma=candidate.focal_gamma + 0.75),
         _candidate_variant(
             candidate,
-            label_mode=("triple_barrier" if candidate.label_mode != "triple_barrier" else "forward_return"),
+            label_mode=_alternate_label_mode(candidate.label_mode),
         ),
     ]
 
@@ -1436,6 +1476,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         ensemble_seeds=ensemble_seeds,
         compute_backend=compute_backend,
         batch_size=batch_size,
+        focal_gamma=candidate.focal_gamma,
     )
     strategy = _strategy_for_candidate(base_strategy, candidate, training)
     threshold_score = None
@@ -1546,6 +1587,7 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             ensemble_seeds=ensemble_seeds,
             compute_backend=compute_backend,
             batch_size=batch_size,
+            focal_gamma=candidate.focal_gamma,
         )
         fallback_model.decision_threshold = float(strategy.signal_threshold)
         fallback_model.threshold_source = "strategy_full_fit"
@@ -2382,7 +2424,7 @@ def run_training_suite(
     return report
 
 
-def describe_candidate_grid(objective: ObjectiveSpec) -> list[dict[str, float | int]]:
+def describe_candidate_grid(objective: ObjectiveSpec) -> list[dict[str, float | int | str]]:
     """Return the grid of hyperparameters the suite will explore for ``objective``."""
 
     training = _default_training(objective)

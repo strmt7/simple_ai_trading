@@ -32,6 +32,7 @@ from simple_ai_trading.training_suite import (
     _ensemble_seed_pack,
     _calibrate_candidate_threshold,
     _evaluate_candidate,
+    _feature_config_for_candidate,
     _feature_ablation_report,
     _local_refinement_candidates,
     _purged_walk_forward_gate,
@@ -104,7 +105,8 @@ def test_candidate_params_asdict_keys() -> None:
     expected_keys = {
         "epochs", "learning_rate", "l2_penalty",
         "signal_threshold", "stop_loss_pct", "take_profit_pct", "risk_per_trade",
-        "confidence_beta", "label_threshold_multiplier", "label_lookahead_multiplier", "label_mode", "seed",
+        "confidence_beta", "label_threshold_multiplier", "label_lookahead_multiplier",
+        "label_mode", "focal_gamma", "seed",
     }
     assert set(d.keys()) == expected_keys
 
@@ -115,7 +117,7 @@ def test_candidate_params_asdict_keys() -> None:
 def test_candidate_grid_returns_unique_deduped_list() -> None:
     training = get_objective("default").training
     grid = _candidate_grid(training)
-    assert len(grid) == 1728
+    assert len(grid) == 2880
     # dedupe check: no two entries share identical tuple of values
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
@@ -128,6 +130,7 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     label_threshold_set = {c.label_threshold_multiplier for c in grid}
     label_lookahead_set = {c.label_lookahead_multiplier for c in grid}
     label_mode_set = {c.label_mode for c in grid}
+    focal_gamma_set = {c.focal_gamma for c in grid}
     seed_set = {c.seed for c in grid}
     assert len(epoch_set) >= 2
     assert len(lr_set) >= 2
@@ -135,12 +138,36 @@ def test_candidate_grid_returns_unique_deduped_list() -> None:
     assert len(threshold_set) >= 2
     assert min(threshold_set) == pytest.approx(training.signal_threshold - 0.08)
     assert confidence_set == {0.70, 0.85, 1.0}
-    assert label_threshold_set == {0.60, 0.75, 1.0, 1.25, 1.40}
-    assert label_lookahead_set == {0.50, 0.75, 1.0, 1.50, 1.75}
-    assert label_mode_set == {"forward_return", "triple_barrier"}
-    assert sum(1 for candidate in grid if candidate.label_mode == "triple_barrier") == 864
+    assert label_threshold_set == {0.10, 0.75, 1.0, 1.40}
+    assert label_lookahead_set == {0.25, 0.75, 1.0, 1.75}
+    assert label_mode_set == {
+        "downside_event_volatility_triple_barrier",
+        "downside_forward_return",
+        "event_volatility_triple_barrier",
+        "forward_return",
+        "triple_barrier",
+    }
     assert sum(1 for candidate in grid if candidate.label_mode == "forward_return") == 864
+    assert sum(1 for candidate in grid if candidate.label_mode == "triple_barrier") == 864
+    assert sum(1 for candidate in grid if candidate.label_mode == "event_volatility_triple_barrier") == 576
+    assert sum(1 for candidate in grid if candidate.label_mode == "downside_forward_return") == 288
+    assert sum(
+        1 for candidate in grid
+        if candidate.label_mode == "downside_event_volatility_triple_barrier"
+    ) == 288
+    assert focal_gamma_set == {0.0, 1.0, 1.5, 2.0}
+    assert sum(1 for candidate in grid if candidate.focal_gamma > 0.0) == 2016
     assert seed_set == {7}
+    event_candidate = next(
+        candidate for candidate in grid
+        if candidate.label_mode == "event_volatility_triple_barrier"
+    )
+    event_cfg = _feature_config_for_candidate(
+        default_config_for("conservative", StrategyConfig().enabled_features),
+        event_candidate,
+    )
+    assert event_cfg.label_volatility_window >= 6
+    assert event_cfg.label_volatility_multiplier > 0.0
 
 
 def test_candidate_grid_dedupes_colliding_entries() -> None:
@@ -167,7 +194,7 @@ def test_candidate_grid_dedupes_colliding_entries() -> None:
     # All candidates distinct after dedup
     tuples = [tuple(c.asdict().values()) for c in grid]
     assert len(tuples) == len(set(tuples))
-    assert len(grid) == 864
+    assert len(grid) == 1440
 
 
 # ----- calibration helpers --------------------------------------------------

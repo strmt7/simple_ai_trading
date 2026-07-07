@@ -1184,6 +1184,86 @@ def test_backtest_uses_row_volume_for_participation_impact() -> None:
     assert high_volume.realized_pnl > low_volume.realized_pnl
 
 
+def test_backtest_uses_row_microstructure_range_and_trade_sparsity_for_fills() -> None:
+    calm_rows = [
+        ModelRow(
+            timestamp=0,
+            close=100.0,
+            features=(1.0,),
+            label=1,
+            volume=10_000.0,
+            high=100.02,
+            low=99.98,
+            quote_volume=1_000_000.0,
+            trade_count=500,
+        ),
+        ModelRow(
+            timestamp=60_000,
+            close=100.0,
+            features=(0.0,),
+            label=0,
+            volume=10_000.0,
+            high=100.02,
+            low=99.98,
+            quote_volume=1_000_000.0,
+            trade_count=500,
+        ),
+        ModelRow(
+            timestamp=120_000,
+            close=110.0,
+            features=(0.0,),
+            label=0,
+            volume=10_000.0,
+            high=110.02,
+            low=109.98,
+            quote_volume=1_000_000.0,
+            trade_count=500,
+        ),
+    ]
+    stressed_rows = [
+        ModelRow(
+            timestamp=row.timestamp,
+            close=row.close,
+            features=row.features,
+            label=row.label,
+            volume=row.volume,
+            high=row.close * 1.04,
+            low=row.close * 0.96,
+            quote_volume=5_000.0,
+            trade_count=1,
+        )
+        for row in calm_rows
+    ]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+        decision_threshold=0.55,
+    )
+    cfg = StrategyConfig(
+        risk_per_trade=0.10,
+        max_position_pct=0.20,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        max_spread_bps=0.0,
+        latency_buffer_ms=0,
+        testnet_liquidity_haircut=0.0,
+        stop_loss_pct=0.50,
+        take_profit_pct=0.50,
+    )
+
+    calm = run_backtest(calm_rows, model, cfg, starting_cash=1000.0)
+    stressed = run_backtest(stressed_rows, model, cfg, starting_cash=1000.0)
+
+    assert calm.closed_trades == stressed.closed_trades == 1
+    assert stressed.realized_pnl < calm.realized_pnl
+    assert stressed.trade_log[0]["entry_execution_cost_bps"] > calm.trade_log[0]["entry_execution_cost_bps"]
+    assert stressed.trade_log[0]["exit_execution_cost_bps"] > calm.trade_log[0]["exit_execution_cost_bps"]
+
+
 def test_backtest_buy_hold_baseline_handles_invalid_inputs() -> None:
     model = TrainedModel(
         weights=[0.0],
