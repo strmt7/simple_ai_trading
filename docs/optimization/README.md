@@ -165,9 +165,12 @@ into the advanced feature vector, so GPU and CPU inference use the same
 microstructure and broad-regime inputs. CPU/live rule-alpha scoring now
 preserves the full serialized feature vector instead of truncating before the
 advanced blocks, and DirectML parity tests cover the same families. The default
-225-template full-replay budget is now selected from a larger cheap event-rank
-pool using after-cost forward-event edge, signal count, and hit-rate telemetry;
-the ranker chooses what to replay, not what to promote. Each template is tested
+225-template full-replay budget is now selected from a larger cheap
+chronological event-rank pool using after-cost forward-event edge, signal
+count, and hit-rate telemetry from earlier and later slices; the ranker chooses
+what to replay, not what to promote. Evidence tables retain the split mode plus
+training/validation row, edge, signal, and hit-rate fields so future graph
+updates cannot hide unstable candidates. Each template is tested
 with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so
 repeated candidate replays do not waste time. Rule-alpha models serialize as `rule_alpha` hybrid

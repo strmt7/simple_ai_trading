@@ -230,12 +230,16 @@ micro-flow scalp, VWAP snapback scalp, liquidity-sweep reversal, compression
 breakout scalp, volume-synchronized flow, adaptive tape-regime, and
 higher-timeframe alignment families. The default full-replay budget stays at
 225 static templates, but those replays are now selected from a larger
-stratified event-rank pool. The cheap ranker scores both normal and inverted
-orientation by after-cost forward-event edge, signal count, and hit rate before
-choosing which templates deserve full lifecycle replay. This ranker is only an
-efficiency and search-quality layer: it cannot promote a template, and every
-selected template still has to pass the same backtest, activity, edge,
-drawdown, profit-factor, expectancy, and path-quality gates.
+stratified chronological event-rank pool. The cheap ranker scores both normal
+and inverted orientation by after-cost forward-event edge, signal count, and
+hit rate on earlier and later slices before choosing which templates deserve
+full lifecycle replay. This ranker is only an efficiency and search-quality
+layer: it cannot promote a template, and every selected template still has to
+pass the same backtest, activity, edge, drawdown, profit-factor, expectancy,
+and path-quality gates. Optimization evidence stores the split mode, training
+rows, validation rows, and best training/validation edge, signal, and hit-rate
+statistics so graph/table regeneration can audit whether a replay candidate was
+selected by stable forward evidence or by a small-sample fallback.
 Order-flow and higher-timeframe templates receive serialized offsets into the
 advanced feature vector, so CPU, DirectML, CLI, Windows app, backtest, and
 live/autonomous inference use the same microstructure and broad-regime inputs.
