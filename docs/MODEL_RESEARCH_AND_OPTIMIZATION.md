@@ -227,7 +227,7 @@ templates are original momentum breakout, VWAP/RSI mean reversion,
 trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
 flow-reversion, flow-consensus breakout, liquidity-absorption reversal,
 micro-flow scalp, VWAP snapback scalp, liquidity-sweep reversal, compression
-breakout scalp, volume-synchronized flow, and adaptive tape-regime families. The default 135-candidate
+breakout scalp, volume-synchronized flow, and adaptive tape-regime families. The default 225-candidate
 prefix is stratified: it covers every family
 and execution profile, then covers the full base family/profile matrix, before
 spending remaining slots on nearby threshold/sensitivity/deadband variants.
@@ -262,27 +262,28 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-empirical-interaction-edge-1d-smoke` run used verified
+in code. The 2026-07-07 `round-broad-rule-alpha-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
 scoring, conservative 5x futures settings, seven hybrid profiles, the v9
 171-feature advanced vector including 13 order-flow microstructure fields per
-window, cost-aware rule-alpha stop/take floors, 135 static templates, and an
+window, cost-aware rule-alpha stop/take floors, 225 static templates, and an
 empirical feature-edge miner that tests one-feature and two-feature interaction
 rules. The empirical miner found zero validated one-feature or two-feature
 interaction candidates under the chronological sample-count and after-cost edge
-gates, so the run still replayed 270 normal/inverted
+gates, so the run still replayed 450 normal/inverted
 static-template candidates per symbol. It failed with zero accepted symbols, zero closed
 holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
 profiles were still negative after costs: BTCUSDT guarded momentum breakout
 lost `0.6405880579098948` on one closed short, ETHUSDT scalp-3s
 liquidity-sweep reversal lost `0.525900571656166` on one closed long, and
 SOLUSDT held-180s flow reversion lost `0.5233335205740559` on one closed long.
-The expanded search did generate internal trading activity, with 234 BTCUSDT,
-252 ETHUSDT, and 234 SOLUSDT active candidates, but zero profitable candidates
-after modeled costs. Volume-synchronized flow became the most-active family on
-all three symbols and was still deeply negative after costs, so it remains
-research evidence rather than promotion evidence. The added event-study
-telemetry showed an even earlier failure: all 270 rule-alpha variants per symbol
+The broader search did generate more internal trading activity, with 390 BTCUSDT,
+416 ETHUSDT, and 390 SOLUSDT active candidates, but zero profitable candidates
+after modeled costs. The most-active candidates still lost after costs
+(`-13.698733890780659`, `-15.73342255896398`, and `-16.29628526423312` for
+BTCUSDT, ETHUSDT, and SOLUSDT), so this remains research evidence rather than
+promotion evidence. The added event-study telemetry showed an even earlier
+failure: all 450 rule-alpha variants per symbol
 produced forward-event signals, but zero had positive net forward edge after the
 modeled cost floor.
 This is negative research evidence rather than promotion evidence.

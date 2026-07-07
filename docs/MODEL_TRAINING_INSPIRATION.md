@@ -230,8 +230,9 @@ weakening risk controls.
   aggTrade-derived order-flow feature block, plus short-hold and longer-hold
   profiles to test activity without changing risk gates. The rule-alpha prefix is
   now stratified so each family and execution profile is represented before
-  nearby parameter variants are explored; the default 135 candidates cover all
-  base family/profile combinations. CPU/live scoring preserves the full
+  nearby parameter variants are explored; the default 225 candidates cover all
+  base family/profile combinations plus bounded threshold/sensitivity/deadband
+  variants. CPU/live scoring preserves the full
   serialized feature vector for order-flow rule-alpha templates, and DirectML
   batch scoring is tested for parity. Regime and liquidity-session arrays are
   cached across candidate replays without changing risk gates. Rejected alpha
@@ -247,14 +248,13 @@ weakening risk controls.
   feature-edge miner now screens one-feature and two-feature interaction tail
   rules on chronological mining/validation slices and can add candidates only
   when both slices clear sample-count and after-cost edge gates. The
-  `round-empirical-interaction-edge-1d-smoke` evidence run still produced zero accepted
+  `round-broad-rule-alpha-1d-smoke` evidence run still produced zero accepted
   symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT.
   It found zero validated empirical one-feature or two-feature interaction
   candidates under the current conservative gates.
-  It did prove the search is active: 234 BTCUSDT, 252 ETHUSDT, and 234 SOLUSDT
-  rule-alpha variants closed at least one trade, and the volume-synchronized
-  flow family remained the most-active family on all three symbols. The added
-  event study found signals for all 270 variants per symbol but zero positive
+  It did prove the search is active: 390 BTCUSDT, 416 ETHUSDT, and 390 SOLUSDT
+  rule-alpha variants closed at least one trade after the broader sweep. The
+  added event study found signals for all 450 variants per symbol but zero positive
   after-cost forward-edge variants, so the alpha templates are failing before
   promotion, not merely being hidden by no-entry thresholds. None were
   profitable after costs. The support is implemented and exercised by real-data

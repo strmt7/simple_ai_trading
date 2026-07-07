@@ -123,6 +123,12 @@ def test_rule_alpha_default_search_covers_base_family_profile_matrix() -> None:
         "held_180s",
     }
     assert len(base_pairs) == len(families) * len(profiles)
+    assert any(
+        candidate.threshold != 0.54
+        or candidate.sensitivity != 6.0
+        or candidate.deadband != 0.02
+        for candidate in candidates
+    )
 
 
 def test_rule_alpha_model_roundtrips_and_affects_probability(tmp_path) -> None:
