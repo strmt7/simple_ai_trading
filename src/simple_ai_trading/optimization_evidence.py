@@ -7,6 +7,7 @@ import copy
 import gc
 import gzip
 import hashlib
+import json
 import math
 import statistics
 from bisect import bisect_left, insort
@@ -23,7 +24,7 @@ from .advanced_model import (
     make_advanced_rows,
     train_advanced,
 )
-from .alpha_search import optimize_rule_alpha_model_zoo
+from .alpha_search import optimize_rule_alpha_model_zoo, summarize_rule_alpha_trade_path
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol, major_symbols_for_quote
 from .backtest import (
@@ -2061,6 +2062,7 @@ def _select_rule_alpha_model_zoo_if_accepted(
         compute_backend=compute_backend,
         score_batch_size=batch_size,
         max_candidates=48,
+        feature_cfg=result.candidate.feature_cfg,
     )
     model = result.model
     model.rule_alpha_evaluated_candidates = int(alpha_report.evaluated_candidates)
@@ -2073,6 +2075,12 @@ def _select_rule_alpha_model_zoo_if_accepted(
     if alpha_report.best_result is not None:
         model.rule_alpha_best_pnl = float(alpha_report.best_result.realized_pnl)
         model.rule_alpha_best_closed_trades = int(alpha_report.best_result.closed_trades)
+        path_summary = summarize_rule_alpha_trade_path(alpha_report.best_result)
+        model.rule_alpha_best_win_rate = float(path_summary["win_rate"])
+        model.rule_alpha_best_profit_factor = float(path_summary["profit_factor"])
+        model.rule_alpha_best_max_drawdown = float(path_summary["max_drawdown"])
+        model.rule_alpha_best_exit_reason_counts = dict(path_summary["exit_reason_counts"])
+        model.rule_alpha_best_side_counts = dict(path_summary["side_counts"])
     if not alpha_report.accepted or alpha_report.model is None or alpha_report.best_result is None:
         _append_unique_warning(model, "rule_alpha_model_zoo_rejected")
         if status_callback is not None:
@@ -2187,6 +2195,23 @@ def _round_candidate_diagnostic(
             else None
         ),
         "rule_alpha_best_closed_trades": int(getattr(model, "rule_alpha_best_closed_trades", 0) or 0),
+        "rule_alpha_best_win_rate": (
+            float(getattr(model, "rule_alpha_best_win_rate"))
+            if getattr(model, "rule_alpha_best_win_rate", None) is not None
+            else None
+        ),
+        "rule_alpha_best_profit_factor": (
+            float(getattr(model, "rule_alpha_best_profit_factor"))
+            if getattr(model, "rule_alpha_best_profit_factor", None) is not None
+            else None
+        ),
+        "rule_alpha_best_max_drawdown": (
+            float(getattr(model, "rule_alpha_best_max_drawdown"))
+            if getattr(model, "rule_alpha_best_max_drawdown", None) is not None
+            else None
+        ),
+        "rule_alpha_best_exit_reason_counts": dict(getattr(model, "rule_alpha_best_exit_reason_counts", {}) or {}),
+        "rule_alpha_best_side_counts": dict(getattr(model, "rule_alpha_best_side_counts", {}) or {}),
         "rule_alpha_best_reject_reason": str(getattr(model, "rule_alpha_best_reject_reason", "") or ""),
         "rule_alpha_probability_inverted": bool(getattr(model, "rule_alpha_probability_inverted", False)),
         "rule_alpha_evaluated_candidates": int(getattr(model, "rule_alpha_evaluated_candidates", 0) or 0),
@@ -2315,6 +2340,19 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "rule_alpha_best_score": item.get("rule_alpha_best_score"),
             "rule_alpha_best_pnl": item.get("rule_alpha_best_pnl"),
             "rule_alpha_best_closed_trades": int(_finite(item.get("rule_alpha_best_closed_trades"))),
+            "rule_alpha_best_win_rate": item.get("rule_alpha_best_win_rate"),
+            "rule_alpha_best_profit_factor": item.get("rule_alpha_best_profit_factor"),
+            "rule_alpha_best_max_drawdown": item.get("rule_alpha_best_max_drawdown"),
+            "rule_alpha_best_exit_reason_counts": json.dumps(
+                item.get("rule_alpha_best_exit_reason_counts", {}) or {},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            "rule_alpha_best_side_counts": json.dumps(
+                item.get("rule_alpha_best_side_counts", {}) or {},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
             "rule_alpha_best_reject_reason": str(item.get("rule_alpha_best_reject_reason", "")),
             "rule_alpha_probability_inverted": bool(item.get("rule_alpha_probability_inverted") is True),
             "rule_alpha_evaluated_candidates": int(_finite(item.get("rule_alpha_evaluated_candidates"))),
@@ -3110,6 +3148,9 @@ def build_round_evidence(
         "hybrid_best_score", "hybrid_evaluated_profiles", "hybrid_expert_count",
         "rule_alpha_profile", "rule_alpha_family", "rule_alpha_best_score",
         "rule_alpha_best_pnl", "rule_alpha_best_closed_trades",
+        "rule_alpha_best_win_rate", "rule_alpha_best_profit_factor",
+        "rule_alpha_best_max_drawdown", "rule_alpha_best_exit_reason_counts",
+        "rule_alpha_best_side_counts",
         "rule_alpha_best_reject_reason", "rule_alpha_probability_inverted",
         "rule_alpha_evaluated_candidates",
         "round_selection_gate_passed",

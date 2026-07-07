@@ -9,10 +9,12 @@ objective accepts the full selection backtest.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import asdict, dataclass
 import math
-from typing import Sequence
+from typing import Any, Sequence
 
+from .advanced_model import AdvancedFeatureConfig, advanced_feature_group_spans
 from .backtest import (
     BacktestResult,
     precompute_backtest_liquidity_adjustments,
@@ -91,6 +93,43 @@ class RuleAlphaOptimizationReport:
         }
 
 
+def summarize_rule_alpha_trade_path(result: BacktestResult) -> dict[str, Any]:
+    exit_reasons: Counter[str] = Counter()
+    side_counts: Counter[str] = Counter()
+    bars_held: list[int] = []
+    for trade in getattr(result, "trade_log", ()) or ():
+        if not isinstance(trade, dict):
+            continue
+        exit_reasons[str(trade.get("exit_reason") or "unknown")] += 1
+        side = int(trade.get("side") or 0)
+        side_counts["long" if side > 0 else ("short" if side < 0 else "flat")] += 1
+        if isinstance(trade.get("bars_held"), (int, float)):
+            bars_held.append(max(0, int(trade["bars_held"])))
+    return {
+        "win_rate": float(getattr(result, "win_rate", 0.0) or 0.0),
+        "profit_factor": float(getattr(result, "profit_factor", 0.0) or 0.0),
+        "max_drawdown": float(getattr(result, "max_drawdown", 0.0) or 0.0),
+        "average_trade_return": float(getattr(result, "average_trade_return", 0.0) or 0.0),
+        "max_consecutive_losses": int(getattr(result, "max_consecutive_losses", 0) or 0),
+        "exit_reason_counts": dict(sorted(exit_reasons.items())),
+        "side_counts": dict(sorted(side_counts.items())),
+        "average_bars_held": (sum(bars_held) / len(bars_held)) if bars_held else 0.0,
+    }
+
+
+def rule_alpha_feature_params(feature_cfg: AdvancedFeatureConfig | None) -> dict[str, object]:
+    if feature_cfg is None:
+        return {}
+    params: dict[str, object] = {}
+    for span in advanced_feature_group_spans(feature_cfg):
+        if span.name == "order_flow_microstructure" and span.size > 0:
+            params["order_flow_start"] = int(span.start)
+            params["order_flow_width"] = 9
+            params["order_flow_window_count"] = max(0, int(span.size) // 9)
+            break
+    return params
+
+
 def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = None) -> tuple[RuleAlphaCandidate, ...]:
     """Return a bounded, diversified set of intraday alpha templates."""
 
@@ -112,11 +151,16 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         "trend_pullback",
         "volatility_breakout",
         "volume_flow_proxy",
+        "order_flow_momentum",
+        "flow_reversion",
     )
     execution_profiles = (
         ("micro", 0.14, 0.10, 0.0, 2, 0),
         ("balanced", 0.18, 0.14, 0.0, 3, 1),
         ("guarded", 0.22, 0.18, 0.25, 4, 1),
+        ("held_30s", 0.18, 0.16, 0.0, 30, 10),
+        ("held_90s", 0.24, 0.22, 0.0, 90, 20),
+        ("held_180s", 0.30, 0.28, 0.0, 180, 30),
     )
     limit = max(1, int(max_candidates)) if max_candidates is not None else 48
     ranked: list[tuple[tuple[int, int, int, int, int, int], RuleAlphaCandidate]] = []
@@ -159,6 +203,7 @@ def model_for_rule_alpha(
     *,
     market_type: str,
     probability_inverted: bool = False,
+    feature_params: dict[str, object] | None = None,
 ) -> TrainedModel:
     """Build a serializable model that emits only the selected rule alpha."""
 
@@ -167,6 +212,12 @@ def model_for_rule_alpha(
     feature_dim = len(rows[0].features)
     threshold = _clamp(candidate.threshold, 0.50 if market_type == "futures" else 0.05, 0.95)
     short_threshold = 1.0 - threshold if market_type == "futures" else None
+    expert_params = {
+        "family": candidate.family,
+        "sensitivity": candidate.sensitivity,
+        "deadband": candidate.deadband,
+        **dict(feature_params or {}),
+    }
     model = TrainedModel(
         weights=[0.0] * feature_dim,
         bias=0.0,
@@ -189,12 +240,8 @@ def model_for_rule_alpha(
                 name="rule_alpha_intraday_template",
                 kind="rule_alpha",
                 weight=1.0,
-                feature_count=min(13, feature_dim),
-                params={
-                    "family": candidate.family,
-                    "sensitivity": candidate.sensitivity,
-                    "deadband": candidate.deadband,
-                },
+                feature_count=feature_dim,
+                params=expert_params,
                 notes="Interpretable intraday alpha template selected by bounded real-backtest search.",
             )
         ],
@@ -218,6 +265,7 @@ def optimize_rule_alpha_model_zoo(
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
     max_candidates: int = 48,
+    feature_cfg: AdvancedFeatureConfig | None = None,
 ) -> RuleAlphaOptimizationReport:
     """Return the best accepted rule-alpha model, or a rejected report."""
 
@@ -230,6 +278,7 @@ def optimize_rule_alpha_model_zoo(
     diagnostics: list[RuleAlphaCandidateResult] = []
     regime_scores = precompute_backtest_regime_scores(rows, strategy)
     liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, strategy)
+    feature_params = rule_alpha_feature_params(feature_cfg)
     for candidate in rule_alpha_candidates(objective.name, max_candidates=max_candidates):
         candidate_strategy = _candidate_strategy(strategy, candidate)
         for inverted in (False, True):
@@ -239,6 +288,7 @@ def optimize_rule_alpha_model_zoo(
                 strategy,
                 market_type=market_type,
                 probability_inverted=inverted,
+                feature_params=feature_params,
             )
             result = run_backtest(
                 rows,
@@ -279,10 +329,17 @@ def optimize_rule_alpha_model_zoo(
         strategy,
         market_type=market_type,
         probability_inverted=winner.probability_inverted,
+        feature_params=feature_params,
     )
     model.rule_alpha_best_score = float(winner.score if winner.accepted else winner.raw_score)
     model.rule_alpha_best_pnl = float(winner.result.realized_pnl)
     model.rule_alpha_best_closed_trades = int(winner.result.closed_trades)
+    path_summary = summarize_rule_alpha_trade_path(winner.result)
+    model.rule_alpha_best_win_rate = float(path_summary["win_rate"])
+    model.rule_alpha_best_profit_factor = float(path_summary["profit_factor"])
+    model.rule_alpha_best_max_drawdown = float(path_summary["max_drawdown"])
+    model.rule_alpha_best_exit_reason_counts = dict(path_summary["exit_reason_counts"])
+    model.rule_alpha_best_side_counts = dict(path_summary["side_counts"])
     model.rule_alpha_best_reject_reason = str(winner.reject_reason or "")
     model.rule_alpha_probability_inverted = bool(winner.probability_inverted)
     model.rule_alpha_evaluated_candidates = len(diagnostics)
@@ -320,13 +377,28 @@ def _candidate_strategy(strategy: StrategyConfig, candidate: RuleAlphaCandidate)
     return StrategyConfig(**payload)
 
 
-def _diagnostic_rank_key(result: RuleAlphaCandidateResult) -> tuple[float, float, float, float]:
+def _diagnostic_rank_key(result: RuleAlphaCandidateResult) -> tuple[float, ...]:
     backtest = result.result
+    if result.accepted:
+        return (
+            1.0,
+            float(result.score),
+            float(backtest.realized_pnl),
+            float(backtest.profit_factor),
+            -float(backtest.max_drawdown),
+            -float(backtest.max_consecutive_losses),
+            float(backtest.closed_trades),
+        )
     return (
-        float(result.raw_score),
+        0.0,
+        1.0 if int(backtest.closed_trades) > 0 else 0.0,
         float(backtest.realized_pnl),
         float(backtest.edge_vs_buy_hold),
+        float(backtest.profit_factor),
+        -float(backtest.max_drawdown),
+        -float(backtest.max_consecutive_losses),
         float(backtest.closed_trades),
+        float(result.raw_score),
     )
 
 
@@ -343,4 +415,6 @@ __all__ = [
     "model_for_rule_alpha",
     "optimize_rule_alpha_model_zoo",
     "rule_alpha_candidates",
+    "rule_alpha_feature_params",
+    "summarize_rule_alpha_trade_path",
 ]

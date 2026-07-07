@@ -749,13 +749,13 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     )
                     expert_probs = torch.clamp(torch.sigmoid((trend + mean_reversion + breakout) * 2.2), min=0.0, max=1.0)
                 elif kind == "rule_alpha":
-                    count = max(1, min(int(feature_count), int(features.shape[1]), 13))
-                    values = features[:, :count]
+                    count = max(1, min(int(feature_count), int(features.shape[1])))
+                    raw_values = features[:, :count]
                     if count < 13:
                         padding = torch.zeros((features.shape[0], 13 - count), dtype=torch.float32, device=device)
-                        values = torch.cat((values, padding), dim=1)
+                        values = torch.cat((raw_values, padding), dim=1)
                     else:
-                        values = values[:, :13]
+                        values = raw_values[:, :13]
                     family = str(params.get("family", "momentum_breakout")).strip().lower()
                     sensitivity = _clamp_float(params.get("sensitivity", 7.0), 0.1, 30.0, 7.0)
                     bias = _clamp_float(params.get("bias", 0.0), -5.0, 5.0, 0.0)
@@ -773,6 +773,37 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     trend_acceleration = values[:, 10]
                     gap_to_vwap = values[:, 11]
                     volume_trend = values[:, 12]
+                    order_start = int(_clamp_float(params.get("order_flow_start", -1), -1, 100000, -1))
+                    order_width = int(_clamp_float(params.get("order_flow_width", 9), 1, 64, 9))
+                    order_count = int(_clamp_float(params.get("order_flow_window_count", 0), 0, 32, 0))
+                    taker_buy_ratio = torch.full_like(momentum_1, 0.5)
+                    signed_base = torch.zeros_like(momentum_1)
+                    signed_quote = torch.zeros_like(momentum_1)
+                    trade_impulse = torch.zeros_like(momentum_1)
+                    quote_impulse = torch.zeros_like(momentum_1)
+                    quote_per_trade_impulse = torch.zeros_like(momentum_1)
+                    no_trade_ratio = torch.zeros_like(momentum_1)
+                    flow_return_alignment = torch.zeros_like(momentum_1)
+                    signed_ratio_delta = torch.zeros_like(momentum_1)
+                    flow_groups = []
+                    if order_start >= 0 and order_count > 0:
+                        for order_index in range(order_count):
+                            group_start = order_start + order_index * order_width
+                            group_end = group_start + order_width
+                            if group_end <= raw_values.shape[1]:
+                                flow_groups.append(raw_values[:, group_start:group_end])
+                    if flow_groups:
+                        flow_stack = torch.stack(flow_groups, dim=2)
+                        taker_buy_ratio = torch.clamp(torch.mean(flow_stack[:, 0, :], dim=1), min=0.0, max=1.0)
+                        no_trade_ratio = torch.clamp(torch.mean(flow_stack[:, 6, :], dim=1), min=0.0, max=1.0) if order_width > 6 else no_trade_ratio
+                        flow_quality = 1.0 - no_trade_ratio
+                        signed_base = torch.clamp(torch.mean(flow_stack[:, 1, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 1 else signed_base
+                        signed_quote = torch.clamp(torch.mean(flow_stack[:, 2, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 2 else signed_quote
+                        trade_impulse = torch.clamp(torch.mean(flow_stack[:, 3, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 3 else trade_impulse
+                        quote_impulse = torch.clamp(torch.mean(flow_stack[:, 4, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 4 else quote_impulse
+                        quote_per_trade_impulse = torch.clamp(torch.mean(flow_stack[:, 5, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 5 else quote_per_trade_impulse
+                        flow_return_alignment = torch.clamp(torch.mean(flow_stack[:, 7, :], dim=1), min=-1.0, max=1.0) if order_width > 7 else flow_return_alignment
+                        signed_ratio_delta = torch.clamp(torch.mean(flow_stack[:, 8, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 8 else signed_ratio_delta
                     if family == "mean_reversion_vwap":
                         score = (
                             0.36 * torch.tanh((0.42 - rsi) * 5.4)
@@ -816,6 +847,35 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                             + 0.24 * torch.tanh(momentum_10 * 120.0)
                         )
                         score = direction * (0.55 + 0.45 * torch.tanh(flow))
+                    elif family == "order_flow_momentum":
+                        flow_pressure = (
+                            0.34 * torch.tanh(signed_base * 2.6)
+                            + 0.30 * torch.tanh(signed_quote * 2.6)
+                            + 0.16 * torch.tanh(signed_ratio_delta * 3.4)
+                            + 0.10 * torch.tanh(flow_return_alignment * 2.0)
+                            + 0.06 * torch.tanh(trade_impulse * 1.6)
+                            + 0.04 * torch.tanh(quote_impulse * 1.6)
+                        )
+                        price_confirmation = (
+                            0.36 * torch.tanh(momentum_1 * 260.0)
+                            + 0.30 * torch.tanh(momentum_3 * 170.0)
+                            + 0.18 * torch.tanh(momentum_10 * 105.0)
+                            + 0.16 * torch.tanh(ema_gap * 105.0)
+                        )
+                        liquidity_penalty = 0.18 * torch.tanh(no_trade_ratio * 4.0)
+                        score = 0.62 * flow_pressure + 0.38 * price_confirmation - liquidity_penalty
+                    elif family == "flow_reversion":
+                        exhaustion = (
+                            0.36 * torch.tanh(signed_base * 2.4)
+                            + 0.30 * torch.tanh(signed_quote * 2.4)
+                            + 0.16 * torch.tanh(quote_per_trade_impulse * 1.8)
+                        )
+                        stretched_price = (
+                            0.32 * torch.tanh(gap_to_vwap * 145.0)
+                            + 0.24 * torch.tanh(momentum_3 * 170.0)
+                            + 0.18 * torch.tanh((rsi - 0.50) * 4.6)
+                        )
+                        score = -0.58 * exhaustion * torch.abs(stretched_price) - 0.42 * stretched_price
                     else:
                         score = (
                             0.32 * torch.tanh(momentum_20 * 90.0)
