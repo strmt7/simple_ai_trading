@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1501,
+      "bytes": 1509,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "cb0aca806ad406bb7d3032cec73d9128b1b737f2a0e589dfbcf7cbaf167fe1ee"
+      "sha256": "d3c4fc3053dce36684af69118aaf18a2e7e11ed9a700cef687a469fa1131ad44"
     },
     {
-      "bytes": 594,
+      "bytes": 552,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -27,12 +27,12 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 2,
-      "sha256": "386df4bb05a466f0ba019379a48e9bae6cd744ecf0d35188dce85425a420f1c8"
+      "sha256": "bce42936db937cc0fdeb8997ce5be20c1196305172c9043a7d014db5aa06fde0"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-06T23:34:47.295861Z",
-  "latest_round_id": "round-volatility-barrier-window-smoke",
+  "generated_at_utc": "2026-07-07T00:24:31.891394Z",
+  "latest_round_id": "round-information-event-window-smoke",
   "round_id": "iteration-progress",
   "source_report_count": 2,
   "tracked_artifacts": [

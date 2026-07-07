@@ -179,17 +179,18 @@ used by the CLI. The advanced feature vector now includes:
 - market-quality regime features for trend efficiency, downside pressure,
   lagged return autocorrelation, volatility-of-volatility, volume pressure,
   volume/return correlation, ATR pressure, and current volume z-score,
-- v7 feature signatures that keep the v6 order-flow microstructure block from
+- v8 feature signatures that keep the v6 order-flow microstructure block from
   real quote volume, trade count, taker-buy base/quote volume, signed flow
-  imbalance, no-trade seconds, and signed-flow/return alignment, then add
-  volatility-adjusted triple-barrier label modes.
+  imbalance, no-trade seconds, and signed-flow/return alignment, keep the v7
+  volatility-adjusted triple-barrier modes, then add known-at-entry
+  information-event labels based on trailing CUSUM return activity.
 - side-aware futures threshold calibration that can promote symmetric,
   long-only, or short-only thresholds only when the selection fold improves
   risk-adjusted evidence; the final holdout still has to pass profitability,
   drawdown, liquidation, trade-quality, and market-edge gates.
-- a diverse bounded candidate prefix that covers default, session-scale
-  volatility barriers, downside/short volatility barriers, long/short
-  order-flow pressure, and frequency probes before wider sweeps.
+- a diverse bounded candidate prefix that covers default, long information
+  events, downside/short information events, session-scale volatility barriers,
+  and order-flow event probes before wider sweeps.
 - downside-positive label orientation: after probability calibration, models
   trained on short-success labels are inverted into the runtime convention so
   short evidence cannot be accidentally scored as a high-probability long
@@ -223,10 +224,10 @@ long hybrid checks, and keeps the base model unless the hybrid replay passes
 are parked in a no-entry threshold state while retaining diagnostic threshold
 P&L/trade evidence. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-06 `round-volatility-barrier-window-smoke`
-BTCUSDT/ETHUSDT/SOLUSDT futures window still failed with zero accepted symbols
-and zero closed holdout trades, so it is negative research evidence rather than
-promotion evidence.
+in code. The 2026-07-07 `round-information-event-window-smoke`
+BTCUSDT/ETHUSDT/SOLUSDT futures window still failed with zero accepted symbols,
+zero closed holdout trades, and mean ROI `0.0%`, so it is negative research
+evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple
 label target/horizon profiles, and both forward-return and stop/take-aware

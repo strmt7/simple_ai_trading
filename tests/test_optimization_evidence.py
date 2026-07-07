@@ -122,33 +122,33 @@ def test_round_model_candidates_prioritize_intraday_search_for_default_promotion
 
     assert names == [
         "default",
-        "session_volatility_triple_barrier",
-        "session_downside_volatility_triple_barrier",
+        "positive_information_event_barrier",
+        "downside_information_event_barrier",
     ]
-    assert candidates[1].feature_cfg.label_mode == "volatility_triple_barrier"
-    assert candidates[1].feature_cfg.label_lookahead >= 60
-    assert candidates[1].feature_cfg.label_volatility_window == 120
-    assert candidates[1].feature_cfg.label_volatility_multiplier == pytest.approx(2.5)
-    assert candidates[2].feature_cfg.label_mode == "downside_volatility_triple_barrier"
-    assert candidates[2].feature_cfg.label_lookahead >= 60
+    assert candidates[1].feature_cfg.label_mode == "event_volatility_triple_barrier"
+    assert candidates[1].feature_cfg.label_lookahead >= 45
+    assert candidates[1].feature_cfg.label_volatility_window == 60
+    assert candidates[1].feature_cfg.label_volatility_multiplier == pytest.approx(1.75)
+    assert candidates[2].feature_cfg.label_mode == "downside_event_volatility_triple_barrier"
+    assert candidates[2].feature_cfg.label_lookahead >= 45
     cost_floor = oe._round_trip_cost_label_floor(strategy)
     assert candidates[1].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].feature_cfg.label_threshold >= cost_floor
-    assert candidates[1].min_position_hold_bars == 5
-    assert candidates[1].flat_signal_exit_grace_bars == 5
-    assert candidates[2].min_position_hold_bars == 5
-    assert candidates[2].flat_signal_exit_grace_bars == 5
+    assert candidates[1].min_position_hold_bars == 3
+    assert candidates[1].flat_signal_exit_grace_bars == 3
+    assert candidates[2].min_position_hold_bars == 3
+    assert candidates[2].flat_signal_exit_grace_bars == 3
     assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
     activity_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
     downside_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
     assert activity_strategy.cooldown_minutes < strategy.cooldown_minutes
-    assert activity_strategy.min_position_hold_bars == 5
-    assert activity_strategy.flat_signal_exit_grace_bars == 5
+    assert activity_strategy.min_position_hold_bars == 3
+    assert activity_strategy.flat_signal_exit_grace_bars == 3
     assert downside_strategy.stop_loss_pct < strategy.stop_loss_pct
     assert downside_strategy.take_profit_pct < strategy.take_profit_pct
     assert downside_strategy.cooldown_minutes < strategy.cooldown_minutes
-    assert downside_strategy.min_position_hold_bars == 5
-    assert downside_strategy.flat_signal_exit_grace_bars == 5
+    assert downside_strategy.min_position_hold_bars == 3
+    assert downside_strategy.flat_signal_exit_grace_bars == 3
 
 
 def test_round_model_candidates_cover_order_flow_before_micro_family() -> None:
@@ -161,18 +161,17 @@ def test_round_model_candidates_cover_order_flow_before_micro_family() -> None:
 
     assert names == [
         "default",
+        "positive_information_event_barrier",
+        "downside_information_event_barrier",
         "session_volatility_triple_barrier",
         "session_downside_volatility_triple_barrier",
-        "order_flow_pressure_volatility_barrier",
-        "downside_order_flow_volatility_barrier",
-        "frequency_probe_forward",
+        "order_flow_information_event_barrier",
     ]
-    assert candidates[3].feature_cfg.label_mode == "volatility_triple_barrier"
-    assert candidates[4].feature_cfg.label_mode == "downside_volatility_triple_barrier"
-    assert candidates[3].feature_cfg.label_lookahead >= 90
-    assert candidates[4].feature_cfg.label_lookahead >= 90
-    assert candidates[3].feature_cfg.order_flow_windows
-    assert candidates[4].feature_cfg.order_flow_windows
+    assert candidates[1].feature_cfg.label_mode == "event_volatility_triple_barrier"
+    assert candidates[2].feature_cfg.label_mode == "downside_event_volatility_triple_barrier"
+    assert candidates[5].feature_cfg.label_mode == "event_volatility_triple_barrier"
+    assert candidates[5].feature_cfg.label_lookahead >= 75
+    assert candidates[5].feature_cfg.order_flow_windows
 
 
 def test_downside_positive_labels_are_oriented_to_short_side() -> None:
@@ -181,7 +180,7 @@ def test_downside_positive_labels_are_oriented_to_short_side() -> None:
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
     downside = oe.RoundModelCandidate(
         name="downside-test",
-        feature_cfg=replace(feature_cfg, label_mode="downside_volatility_triple_barrier"),
+        feature_cfg=replace(feature_cfg, label_mode="downside_event_volatility_triple_barrier"),
         epochs=1,
         learning_rate=0.01,
         l2_penalty=0.0,
@@ -352,14 +351,14 @@ def test_round_model_candidates_do_not_train_on_sub_cost_intraday_labels() -> No
     assert cost_floor == pytest.approx(0.0015)
     assert [candidate.name for candidate in candidates] == [
         "default",
-        "session_volatility_triple_barrier",
-        "session_downside_volatility_triple_barrier",
+        "positive_information_event_barrier",
+        "downside_information_event_barrier",
     ]
     assert all(candidate.feature_cfg.label_threshold >= cost_floor for candidate in candidates)
     assert candidates[1].feature_cfg.label_threshold == pytest.approx(cost_floor)
     assert candidates[2].feature_cfg.label_threshold == pytest.approx(cost_floor)
-    assert candidates[1].feature_cfg.label_lookahead >= 60
-    assert candidates[2].feature_cfg.label_lookahead >= 60
+    assert candidates[1].feature_cfg.label_lookahead >= 45
+    assert candidates[2].feature_cfg.label_lookahead >= 45
 
 
 def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:
@@ -1768,25 +1767,32 @@ def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
 
     assert [candidate.name for candidate in candidates[:3]] == [
         "default",
-        "session_volatility_triple_barrier",
-        "session_downside_volatility_triple_barrier",
+        "positive_information_event_barrier",
+        "downside_information_event_barrier",
     ]
     assert len(candidates) == 16
     assert candidates[1].stop_loss_multiplier < 1.0
     assert candidates[1].take_profit_multiplier < 1.0
     assert candidates[1].cooldown_multiplier < 1.0
+    assert any(candidate.name == "positive_information_event_barrier" for candidate in candidates)
+    assert any(candidate.name == "downside_information_event_barrier" for candidate in candidates)
     assert any(candidate.name == "session_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.name == "session_downside_volatility_triple_barrier" for candidate in candidates)
-    assert any(candidate.name == "order_flow_pressure_volatility_barrier" for candidate in candidates)
-    assert any(candidate.name == "downside_order_flow_volatility_barrier" for candidate in candidates)
+    assert any(candidate.name == "order_flow_information_event_barrier" for candidate in candidates)
+    assert any(candidate.name == "downside_order_flow_information_event_barrier" for candidate in candidates)
     assert any(candidate.name == "intraday_breakout_forward" for candidate in candidates)
     assert any(candidate.name == "intraday_activity_triple_barrier" for candidate in candidates)
     assert any(candidate.name == "intraday_downside_triple_barrier" for candidate in candidates)
     thresholds = [candidate.signal_threshold for candidate in candidates]
     assert min(thresholds) == pytest.approx(0.56)
     assert max(thresholds) == pytest.approx(0.70)
-    assert any(candidate.name.startswith("lower_signal") for candidate in candidates)
+    assert any(
+        candidate.name != "default" and candidate.signal_threshold == pytest.approx(0.56)
+        for candidate in candidates
+    )
     assert any(candidate.name == "frequency_probe_forward" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_mode == "event_volatility_triple_barrier" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_mode == "downside_event_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "downside_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "triple_barrier" for candidate in candidates)
@@ -1954,13 +1960,13 @@ def test_train_round_model_selects_best_scored_candidate(
     assert calls["train"] == 2
     assert selected_model.model_family.startswith("candidate_2")
     assert selected_model.model_candidate_count == 2
-    assert selected_model.model_selected_candidate == "session_volatility_triple_barrier"
+    assert selected_model.model_selected_candidate == "positive_information_event_barrier"
     assert selected_model.model_selection_score > 0.0
     assert "model_selected_candidate" in selected_model.__dataclass_fields__
     assert len(selected_model.round_candidate_diagnostics) == 2
     assert selected_model.round_candidate_diagnostics[0]["name"] == "default"
     assert selected_model.round_candidate_diagnostics[0]["selected"] is False
-    assert selected_model.round_candidate_diagnostics[1]["name"] == "session_volatility_triple_barrier"
+    assert selected_model.round_candidate_diagnostics[1]["name"] == "positive_information_event_barrier"
     assert selected_model.round_candidate_diagnostics[1]["selected"] is True
     assert selected_model.round_candidate_diagnostics[1]["threshold_diagnostic_best_trades"] == 0
     assert report.row_count == 60
@@ -2050,7 +2056,7 @@ def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
         model_candidate_count=2,
     )
 
-    assert selected_model.model_selected_candidate == "session_volatility_triple_barrier"
+    assert selected_model.model_selected_candidate == "positive_information_event_barrier"
     assert selected_model.round_selection_gate_passed is False
     assert selected_model.threshold_diagnostic_best_pnl == pytest.approx(-2.0)
     assert selected_model.round_candidate_diagnostics[0]["selected"] is False

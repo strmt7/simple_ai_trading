@@ -33,8 +33,8 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v7-volatility-barrier"
-_SUPPORTED_ADVANCED_FEATURE_VERSIONS = {ADVANCED_FEATURE_VERSION, "v6-order-flow"}
+ADVANCED_FEATURE_VERSION = "v8-information-event"
+_SUPPORTED_ADVANCED_FEATURE_VERSIONS = {ADVANCED_FEATURE_VERSION, "v7-volatility-barrier", "v6-order-flow"}
 _EXTRA_FEATURES_PER_WINDOW = 7
 _CONFLUENCE_FEATURES_PER_WINDOW = 9
 _MARKET_QUALITY_FEATURES_PER_WINDOW = 10
@@ -154,6 +154,15 @@ def _normalized_label_mode(value: str) -> str:
         return "triple_barrier"
     if mode in {"volatility_triple", "volatility_triple_barrier", "dynamic_triple_barrier"}:
         return "volatility_triple_barrier"
+    if mode in {
+        "event_triple",
+        "event_triple_barrier",
+        "event_volatility_triple",
+        "event_volatility_triple_barrier",
+        "information_event_triple_barrier",
+        "cusum_volatility_triple_barrier",
+    }:
+        return "event_volatility_triple_barrier"
     if mode in {"downside", "downside_forward", "downside_forward_return", "short_forward"}:
         return "downside_forward_return"
     if mode in {"downside_triple", "downside_triple_barrier", "short_triple_barrier"}:
@@ -164,6 +173,16 @@ def _normalized_label_mode(value: str) -> str:
         "short_volatility_triple_barrier",
     }:
         return "downside_volatility_triple_barrier"
+    if mode in {
+        "downside_event_triple",
+        "downside_event_triple_barrier",
+        "downside_event_volatility_triple",
+        "downside_event_volatility_triple_barrier",
+        "short_event_volatility_triple_barrier",
+        "downside_information_event_triple_barrier",
+        "short_cusum_volatility_triple_barrier",
+    }:
+        return "downside_event_volatility_triple_barrier"
     return "forward_return"
 
 
@@ -274,6 +293,43 @@ def _volatility_adjusted_label_threshold_pct(
     if not math.isfinite(realized_volatility) or realized_volatility <= 0.0:
         return base
     return max(base, realized_volatility * multiplier)
+
+
+def _trailing_cusum_event_direction(
+    cache: "_ConfluenceCache",
+    end: int,
+    *,
+    window: int,
+    threshold_pct: float,
+) -> int:
+    """Return the known-at-entry CUSUM direction for recent return activity.
+
+    The event is intentionally based only on returns available through ``end``.
+    A positive value means recent activity cleared the positive CUSUM threshold,
+    a negative value means recent activity cleared the downside threshold, and
+    zero means there is no information event strong enough to label.
+    """
+
+    threshold = max(0.0, float(threshold_pct))
+    if threshold <= 0.0 or window <= 1 or end <= 1:
+        return 0
+    bounded_end = min(max(1, int(end)), len(cache.returns) - 1)
+    start = max(1, bounded_end + 1 - int(window))
+    positive = 0.0
+    negative = 0.0
+    for index in range(start, bounded_end + 1):
+        value = float(cache.returns[index])
+        if not math.isfinite(value):
+            continue
+        positive = max(0.0, positive + value)
+        negative = min(0.0, negative + value)
+    positive_hit = positive >= threshold
+    negative_hit = abs(negative) >= threshold
+    if positive_hit and (not negative_hit or positive >= abs(negative)):
+        return 1
+    if negative_hit:
+        return -1
+    return 0
 
 
 def _prefix_sum(values: Sequence[float]) -> list[float]:
@@ -946,6 +1002,36 @@ def make_advanced_rows(
                 take_profit_pct=adjusted_take_profit,
                 stop_loss_pct=adjusted_stop_loss,
             )
+        elif label_mode == "event_volatility_triple_barrier":
+            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=cfg.label_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=stop_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            if _trailing_cusum_event_direction(
+                confluence_cache,
+                idx,
+                window=volatility_window,
+                threshold_pct=adjusted_take_profit,
+            ) > 0:
+                label = _triple_barrier_label(
+                    valid_candles,
+                    idx,
+                    horizon=label_lookahead,
+                    take_profit_pct=adjusted_take_profit,
+                    stop_loss_pct=adjusted_stop_loss,
+                )
+            else:
+                label = 0
         elif label_mode == "downside_triple_barrier":
             label = _downside_triple_barrier_label(
                 valid_candles,
@@ -976,6 +1062,36 @@ def make_advanced_rows(
                 take_profit_pct=adjusted_take_profit,
                 stop_loss_pct=adjusted_stop_loss,
             )
+        elif label_mode == "downside_event_volatility_triple_barrier":
+            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=cfg.label_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+                confluence_cache,
+                idx,
+                base_threshold=stop_threshold,
+                volatility_window=volatility_window,
+                volatility_multiplier=volatility_multiplier,
+            )
+            if _trailing_cusum_event_direction(
+                confluence_cache,
+                idx,
+                window=volatility_window,
+                threshold_pct=adjusted_take_profit,
+            ) < 0:
+                label = _downside_triple_barrier_label(
+                    valid_candles,
+                    idx,
+                    horizon=label_lookahead,
+                    take_profit_pct=adjusted_take_profit,
+                    stop_loss_pct=adjusted_stop_loss,
+                )
+            else:
+                label = 0
         elif label_mode == "downside_forward_return":
             future_index = min(len(valid_candles) - 1, idx + label_lookahead)
             present = float(valid_candles[idx].close)
