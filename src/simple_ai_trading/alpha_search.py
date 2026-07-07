@@ -453,6 +453,18 @@ def rule_alpha_event_study(
     }
 
 
+def _event_rank_slices(rows: Sequence[ModelRow]) -> tuple[list[ModelRow], list[ModelRow]]:
+    row_list = list(rows)
+    if len(row_list) < 240:
+        return row_list, row_list
+    split = max(120, min(len(row_list) - 80, int(len(row_list) * 0.60)))
+    training = row_list[:split]
+    validation = row_list[split:]
+    if len(training) < 120 or len(validation) < 80:
+        return row_list, row_list
+    return training, validation
+
+
 def _event_rank_rule_alpha_candidates(
     rows: Sequence[ModelRow],
     strategy: StrategyConfig,
@@ -470,67 +482,140 @@ def _event_rank_rule_alpha_candidates(
     """
 
     limit = max(1, int(replay_limit))
-    scored: list[tuple[tuple[float, float, float, float, float], RuleAlphaCandidate, dict[str, object], bool]] = []
+    row_list = list(rows)
+    training_rows, validation_rows = _event_rank_slices(row_list)
+    split_mode = "full_sample" if len(training_rows) == len(row_list) and len(validation_rows) == len(row_list) else "chronological"
+    scored: list[
+        tuple[
+            tuple[float, ...],
+            RuleAlphaCandidate,
+            dict[str, object],
+            dict[str, object],
+            bool,
+        ]
+    ] = []
     for index, candidate in enumerate(candidates):
         candidate_strategy = _candidate_strategy(strategy, candidate)
-        best_event: dict[str, object] | None = None
+        best_training_event: dict[str, object] | None = None
+        best_validation_event: dict[str, object] | None = None
         best_inverted = False
-        best_key: tuple[float, float, float, float, float] | None = None
+        best_key: tuple[float, ...] | None = None
         for inverted in (False, True):
             model = model_for_rule_alpha(
-                rows,
+                row_list,
                 candidate,
                 strategy,
                 market_type=market_type,
                 probability_inverted=inverted,
                 feature_params=feature_params,
             )
-            event = rule_alpha_event_study(
-                rows,
+            training_event = rule_alpha_event_study(
+                training_rows,
                 model,
                 candidate_strategy,
                 candidate,
                 market_type=market_type,
             )
-            signal_count = int(event.get("signal_count", 0) or 0)
-            net_edge = float(event.get("net_mean_edge_bps", 0.0) or 0.0)
-            hit_rate = float(event.get("hit_rate", 0.0) or 0.0)
+            validation_event = rule_alpha_event_study(
+                validation_rows,
+                model,
+                candidate_strategy,
+                candidate,
+                market_type=market_type,
+            )
+            training_signal_count = int(training_event.get("signal_count", 0) or 0)
+            validation_signal_count = int(validation_event.get("signal_count", 0) or 0)
+            training_net_edge = float(training_event.get("net_mean_edge_bps", 0.0) or 0.0)
+            validation_net_edge = float(validation_event.get("net_mean_edge_bps", 0.0) or 0.0)
+            training_hit_rate = float(training_event.get("hit_rate", 0.0) or 0.0)
+            validation_hit_rate = float(validation_event.get("hit_rate", 0.0) or 0.0)
+            min_signal_count = min(training_signal_count, validation_signal_count)
+            min_net_edge = min(training_net_edge, validation_net_edge)
+            min_hit_rate = min(training_hit_rate, validation_hit_rate)
             key = (
-                1.0 if signal_count > 0 else 0.0,
-                1.0 if net_edge > 0.0 else 0.0,
-                net_edge,
-                hit_rate,
+                1.0 if min_signal_count > 0 else 0.0,
+                1.0 if min_net_edge > 0.0 else 0.0,
+                min_net_edge,
+                validation_net_edge,
+                training_net_edge,
+                min_hit_rate,
+                float(min_signal_count),
                 -float(index),
             )
             if best_key is None or key > best_key:
                 best_key = key
-                best_event = event
+                best_training_event = training_event
+                best_validation_event = validation_event
                 best_inverted = bool(inverted)
-        if best_key is not None and best_event is not None:
-            scored.append((best_key, candidate, best_event, best_inverted))
+        if best_key is not None and best_training_event is not None and best_validation_event is not None:
+            scored.append((best_key, candidate, best_training_event, best_validation_event, best_inverted))
     scored.sort(key=lambda item: item[0], reverse=True)
     selected = tuple(item[1] for item in scored[:limit])
     best = scored[0] if scored else None
     summary = {
+        "event_rank_split_mode": split_mode,
+        "event_rank_training_rows": int(len(training_rows)),
+        "event_rank_validation_rows": int(len(validation_rows)),
         "event_rank_pool_candidates": int(len(scored)),
         "event_rank_selected_template_candidates": int(len(selected)),
         "event_rank_positive_pool_candidates": int(
-            sum(1 for _key, _candidate, event, _inverted in scored if float(event.get("net_mean_edge_bps", 0.0) or 0.0) > 0.0)
+            sum(
+                1
+                for _key, _candidate, training_event, validation_event, _inverted in scored
+                if min(
+                    float(training_event.get("net_mean_edge_bps", 0.0) or 0.0),
+                    float(validation_event.get("net_mean_edge_bps", 0.0) or 0.0),
+                ) > 0.0
+            )
         ),
         "event_rank_signal_pool_candidates": int(
-            sum(1 for _key, _candidate, event, _inverted in scored if int(event.get("signal_count", 0) or 0) > 0)
+            sum(
+                1
+                for _key, _candidate, training_event, validation_event, _inverted in scored
+                if min(
+                    int(training_event.get("signal_count", 0) or 0),
+                    int(validation_event.get("signal_count", 0) or 0),
+                ) > 0
+            )
         ),
         "event_rank_best_candidate": str(best[1].name) if best is not None else "",
         "event_rank_best_net_edge_bps": (
+            min(
+                float(best[2].get("net_mean_edge_bps", 0.0) or 0.0),
+                float(best[3].get("net_mean_edge_bps", 0.0) or 0.0),
+            ) if best is not None else 0.0
+        ),
+        "event_rank_best_training_net_edge_bps": (
             float(best[2].get("net_mean_edge_bps", 0.0) or 0.0) if best is not None else 0.0
         ),
+        "event_rank_best_validation_net_edge_bps": (
+            float(best[3].get("net_mean_edge_bps", 0.0) or 0.0) if best is not None else 0.0
+        ),
         "event_rank_best_signal_count": (
+            min(
+                int(best[2].get("signal_count", 0) or 0),
+                int(best[3].get("signal_count", 0) or 0),
+            ) if best is not None else 0
+        ),
+        "event_rank_best_training_signal_count": (
             int(best[2].get("signal_count", 0) or 0) if best is not None else 0
         ),
+        "event_rank_best_validation_signal_count": (
+            int(best[3].get("signal_count", 0) or 0) if best is not None else 0
+        ),
         "event_rank_best_hit_rate": (
+            min(
+                float(best[2].get("hit_rate", 0.0) or 0.0),
+                float(best[3].get("hit_rate", 0.0) or 0.0),
+            ) if best is not None else 0.0
+        ),
+        "event_rank_best_training_hit_rate": (
             float(best[2].get("hit_rate", 0.0) or 0.0) if best is not None else 0.0
         ),
-        "event_rank_best_probability_inverted": bool(best[3]) if best is not None else False,
+        "event_rank_best_validation_hit_rate": (
+            float(best[3].get("hit_rate", 0.0) or 0.0) if best is not None else 0.0
+        ),
+        "event_rank_best_probability_inverted": bool(best[4]) if best is not None else False,
     }
     return selected, summary
 
