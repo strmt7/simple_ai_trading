@@ -17,7 +17,7 @@ Current implementation notes:
 
 Real-data graph checkpoints:
 
-The current retained checkpoint is `round-orderflow-alpha-major-1d-smoke`, a failed
+The current retained checkpoint is `round-v9-flow-state-1d-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
 `1s` SQLite market data. It is kept because it is truthful negative evidence:
 the default model trained on real second-level data, used DirectML for training
@@ -25,7 +25,8 @@ and scoring, preserved rejected diagnostic threshold evidence, exercised the
 conservative hybrid model-zoo from the rejected base model's diagnostic
 threshold, then searched an interpretable order-flow-aware rule-alpha template zoo across
 momentum breakout, VWAP/RSI mean reversion, trend-pullback, volatility
-breakout, volume-flow proxy, order-flow momentum, and flow-reversion families.
+breakout, volume-flow proxy, order-flow momentum, flow-reversion,
+flow-consensus breakout, and liquidity-absorption reversal families.
 Normal and inverted alpha variants were evaluated. None passed the objective gates. Rejected candidates keep
 diagnostic trade thresholds, P&L evidence, and best rejected alpha evidence, but
 executable models are parked in a no-entry state unless a selection, hybrid, or
@@ -138,10 +139,11 @@ rule-alpha model zoo. This is the missing research layer used by many stronger
 open-source trading systems: broad entry/exit template sweeps happen before any
 template is allowed into live execution. The current templates are original
 implementations of momentum breakout, VWAP/RSI mean reversion, trend-pullback,
-volatility breakout, volume-flow proxy, order-flow momentum, and flow-reversion
-ideas. Order-flow templates receive serialized offsets into the advanced
-aggTrade-derived order-flow feature block, so GPU and CPU inference use the same
-microstructure inputs. Each template is tested with
+volatility breakout, volume-flow proxy, order-flow momentum, flow-reversion,
+flow-consensus breakout, and liquidity-absorption reversal ideas. Order-flow
+templates receive serialized offsets into the advanced aggTrade-derived
+order-flow feature block, so GPU and CPU inference use the same microstructure
+inputs. Each template is tested with
 normal and inverted probability orientation, bounded threshold/stop/take/hold
 profiles, and cached regime/liquidity-session arrays so repeated candidate
 replays do not waste time. Rule-alpha models serialize as `rule_alpha` hybrid
@@ -152,15 +154,16 @@ counts, side counts, reject reason, orientation, and candidate count in
 `candidate-diagnostics.csv`.
 
 Latest retained local smoke evidence from 2026-07-07 is
-`round-orderflow-alpha-major-1d-smoke`. It uses the verified UTC window
+`round-v9-flow-state-1d-smoke`. It uses the verified UTC window
 2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
 SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
 missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
 The run used DirectML with `--require-gpu`, conservative 5x futures settings,
 cost-aware labels, order-flow features built from real quote volume, trade
-count, taker-buy volume, signed flow, no-trade ratio, and flow/return alignment,
+count, taker-buy volume, signed flow, no-trade ratio, flow/return alignment,
+flow strength, flow persistence, flow acceleration, and price/flow divergence,
 hybrid rescue profiles, order-flow-aware rule-alpha experts serialized with the
-159-feature advanced vector, and 96 rule-alpha normal/inverted replays per symbol.
+v9 171-feature advanced vector, and 96 rule-alpha normal/inverted replays per symbol.
 It failed the critical gate: zero accepted symbols, zero total closed holdout
 trades, mean ROI `0.0%`, median ROI `0.0%`, mean buy-and-hold ROI
 `-0.0990046820488913%`, worst drawdown `0.0%`, three rejected diagnostic

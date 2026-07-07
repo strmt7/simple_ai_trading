@@ -123,9 +123,10 @@ def rule_alpha_feature_params(feature_cfg: AdvancedFeatureConfig | None) -> dict
     params: dict[str, object] = {}
     for span in advanced_feature_group_spans(feature_cfg):
         if span.name == "order_flow_microstructure" and span.size > 0:
+            window_count = max(0, len(tuple(feature_cfg.order_flow_windows)))
             params["order_flow_start"] = int(span.start)
-            params["order_flow_width"] = 9
-            params["order_flow_window_count"] = max(0, int(span.size) // 9)
+            params["order_flow_width"] = int(span.size) // window_count if window_count > 0 else int(span.size)
+            params["order_flow_window_count"] = window_count
             break
     return params
 
@@ -153,6 +154,8 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         "volume_flow_proxy",
         "order_flow_momentum",
         "flow_reversion",
+        "flow_consensus_breakout",
+        "liquidity_absorption_reversal",
     )
     execution_profiles = (
         ("micro", 0.14, 0.10, 0.0, 2, 0),

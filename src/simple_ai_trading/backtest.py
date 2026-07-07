@@ -785,6 +785,10 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     no_trade_ratio = torch.zeros_like(momentum_1)
                     flow_return_alignment = torch.zeros_like(momentum_1)
                     signed_ratio_delta = torch.zeros_like(momentum_1)
+                    mean_abs_signed_ratio = torch.zeros_like(momentum_1)
+                    flow_persistence = torch.zeros_like(momentum_1)
+                    flow_acceleration = torch.zeros_like(momentum_1)
+                    price_flow_divergence = torch.zeros_like(momentum_1)
                     flow_groups = []
                     if order_start >= 0 and order_count > 0:
                         for order_index in range(order_count):
@@ -804,6 +808,10 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         quote_per_trade_impulse = torch.clamp(torch.mean(flow_stack[:, 5, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 5 else quote_per_trade_impulse
                         flow_return_alignment = torch.clamp(torch.mean(flow_stack[:, 7, :], dim=1), min=-1.0, max=1.0) if order_width > 7 else flow_return_alignment
                         signed_ratio_delta = torch.clamp(torch.mean(flow_stack[:, 8, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 8 else signed_ratio_delta
+                        mean_abs_signed_ratio = torch.clamp(torch.mean(flow_stack[:, 9, :], dim=1), min=0.0, max=1.0) if order_width > 9 else mean_abs_signed_ratio
+                        flow_persistence = torch.clamp(torch.mean(flow_stack[:, 10, :], dim=1), min=-1.0, max=1.0) if order_width > 10 else flow_persistence
+                        flow_acceleration = torch.clamp(torch.mean(flow_stack[:, 11, :], dim=1) * flow_quality, min=-1.0, max=1.0) if order_width > 11 else flow_acceleration
+                        price_flow_divergence = torch.clamp(torch.mean(flow_stack[:, 12, :], dim=1), min=-1.0, max=1.0) if order_width > 12 else price_flow_divergence
                     if family == "mean_reversion_vwap":
                         score = (
                             0.36 * torch.tanh((0.42 - rsi) * 5.4)
@@ -876,6 +884,40 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                             + 0.18 * torch.tanh((rsi - 0.50) * 4.6)
                         )
                         score = -0.58 * exhaustion * torch.abs(stretched_price) - 0.42 * stretched_price
+                    elif family == "flow_consensus_breakout":
+                        consensus = (
+                            0.22 * torch.tanh(signed_base * 2.8)
+                            + 0.20 * torch.tanh(signed_quote * 2.8)
+                            + 0.16 * torch.tanh(signed_ratio_delta * 3.2)
+                            + 0.14 * torch.tanh(flow_acceleration * 3.0)
+                            + 0.12 * torch.tanh(flow_persistence * 2.2)
+                            + 0.08 * torch.tanh(flow_return_alignment * 2.0)
+                            + 0.08 * torch.tanh((taker_buy_ratio - 0.5) * 5.0)
+                        )
+                        price_confirmation = (
+                            0.38 * torch.tanh(momentum_1 * 280.0)
+                            + 0.30 * torch.tanh(momentum_3 * 190.0)
+                            + 0.18 * torch.tanh(momentum_10 * 120.0)
+                            + 0.14 * torch.tanh(trend_acceleration * 250.0)
+                        )
+                        flow_quality = 1.0 - torch.clamp(no_trade_ratio, min=0.0, max=1.0)
+                        flow_strength = 0.55 + 0.45 * torch.tanh(mean_abs_signed_ratio * 4.0)
+                        score = flow_quality * flow_strength * (0.68 * consensus + 0.32 * price_confirmation)
+                    elif family == "liquidity_absorption_reversal":
+                        absorption = (
+                            0.34 * torch.tanh(price_flow_divergence * 2.6)
+                            + 0.24 * torch.tanh(signed_base * 2.0)
+                            + 0.20 * torch.tanh(signed_quote * 2.0)
+                            - 0.12 * torch.tanh(flow_return_alignment * 2.0)
+                            + 0.10 * torch.tanh(mean_abs_signed_ratio * 3.0)
+                        )
+                        stretch = (
+                            0.34 * torch.tanh(gap_to_vwap * 150.0)
+                            + 0.24 * torch.tanh(momentum_3 * 180.0)
+                            + 0.18 * torch.tanh(momentum_10 * 120.0)
+                            + 0.14 * torch.tanh((rsi - 0.50) * 4.8)
+                        )
+                        score = -0.58 * absorption - 0.42 * stretch
                     else:
                         score = (
                             0.32 * torch.tanh(momentum_20 * 90.0)

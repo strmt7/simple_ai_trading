@@ -33,12 +33,17 @@ from .features import (
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
 
-ADVANCED_FEATURE_VERSION = "v8-information-event"
-_SUPPORTED_ADVANCED_FEATURE_VERSIONS = {ADVANCED_FEATURE_VERSION, "v7-volatility-barrier", "v6-order-flow"}
+ADVANCED_FEATURE_VERSION = "v9-flow-state"
+_SUPPORTED_ADVANCED_FEATURE_VERSIONS = {
+    ADVANCED_FEATURE_VERSION,
+    "v8-information-event",
+    "v7-volatility-barrier",
+    "v6-order-flow",
+}
 _EXTRA_FEATURES_PER_WINDOW = 7
 _CONFLUENCE_FEATURES_PER_WINDOW = 9
 _MARKET_QUALITY_FEATURES_PER_WINDOW = 10
-_ORDER_FLOW_FEATURES_PER_WINDOW = 9
+_ORDER_FLOW_FEATURES_PER_WINDOW = 13
 
 
 @dataclass(frozen=True)
@@ -66,6 +71,7 @@ class AdvancedFeatureConfig:
     label_stop_threshold: float | None = None
     label_volatility_window: int = 0
     label_volatility_multiplier: float = 0.0
+    order_flow_features_per_window: int = _ORDER_FLOW_FEATURES_PER_WINDOW
 
 
 @dataclass(frozen=True)
@@ -395,6 +401,8 @@ class _ConfluenceCache:
     signed_quote_flow_prefix: list[float]
     signed_flow_ratio_prefix: list[float]
     signed_flow_ratio_square_prefix: list[float]
+    signed_flow_ratio_abs_prefix: list[float]
+    signed_flow_ratio_lag_product_prefix: list[float]
     signed_flow_return_product_prefix: list[float]
     no_trade_prefix: list[float]
 
@@ -569,6 +577,9 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         returns[index] * signed_flow_ratios[index]
         for index in range(len(values))
     ]
+    signed_flow_ratio_lag_products = [0.0]
+    for index in range(1, len(signed_flow_ratios)):
+        signed_flow_ratio_lag_products.append(signed_flow_ratios[index - 1] * signed_flow_ratios[index])
     volume_abs_return_products = [
         nonnegative_volumes[index] * abs_returns[index]
         for index in range(len(values))
@@ -612,6 +623,8 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         signed_quote_flow_prefix=_prefix_sum(signed_quote_flows),
         signed_flow_ratio_prefix=_prefix_sum(signed_flow_ratios),
         signed_flow_ratio_square_prefix=_prefix_sum([value * value for value in signed_flow_ratios]),
+        signed_flow_ratio_abs_prefix=_prefix_sum([abs(value) for value in signed_flow_ratios]),
+        signed_flow_ratio_lag_product_prefix=_prefix_sum(signed_flow_ratio_lag_products),
         signed_flow_return_product_prefix=_prefix_sum(signed_flow_return_products),
         no_trade_prefix=_prefix_sum(no_trade_flags),
     )
@@ -784,6 +797,7 @@ def _order_flow_features_at(cache: _ConfluenceCache, end: int, windows: Sequence
             features.extend([0.0] * _ORDER_FLOW_FEATURES_PER_WINDOW)
             continue
         start = end + 1 - window
+        midpoint = start + max(1, window // 2)
         sum_volume = _bounded_window_sum(cache.nonnegative_volume_prefix, start, end)
         sum_quote_volume = _bounded_window_sum(cache.quote_volume_prefix, start, end)
         sum_trade_count = _bounded_window_sum(cache.trade_count_prefix, start, end)
@@ -804,6 +818,34 @@ def _order_flow_features_at(cache: _ConfluenceCache, end: int, windows: Sequence
             _bounded_window_sum(cache.signed_flow_return_product_prefix, start, end),
         )
         mean_signed_ratio = _safe_ratio(_bounded_window_sum(cache.signed_flow_ratio_prefix, start, end), float(window))
+        mean_abs_signed_ratio = _safe_ratio(
+            _bounded_window_sum(cache.signed_flow_ratio_abs_prefix, start, end),
+            float(window),
+        )
+        pair_count = max(0, end - start)
+        flow_persistence = 0.0
+        if pair_count >= 3:
+            flow_persistence = _correlation_from_sums(
+                pair_count,
+                _bounded_window_sum(cache.signed_flow_ratio_prefix, start, end - 1),
+                _bounded_window_sum(cache.signed_flow_ratio_prefix, start + 1, end),
+                _bounded_window_sum(cache.signed_flow_ratio_square_prefix, start, end - 1),
+                _bounded_window_sum(cache.signed_flow_ratio_square_prefix, start + 1, end),
+                _bounded_window_sum(cache.signed_flow_ratio_lag_product_prefix, start + 1, end),
+            )
+        first_count = max(1, midpoint - start)
+        second_count = max(1, end - midpoint + 1)
+        first_signed_ratio = _safe_ratio(
+            _bounded_window_sum(cache.signed_flow_ratio_prefix, start, midpoint - 1),
+            float(first_count),
+        )
+        second_signed_ratio = _safe_ratio(
+            _bounded_window_sum(cache.signed_flow_ratio_prefix, midpoint, end),
+            float(second_count),
+        )
+        flow_acceleration = second_signed_ratio - first_signed_ratio
+        net_return = _safe_ratio(cache.closes[end] - cache.closes[start], cache.closes[start])
+        price_flow_divergence = math.tanh((mean_signed_ratio * 2.0) - math.tanh(net_return * 250.0))
         features.extend([
             _safe_ratio(sum_taker_base, sum_volume),
             _safe_ratio(signed_base, sum_volume),
@@ -814,7 +856,27 @@ def _order_flow_features_at(cache: _ConfluenceCache, end: int, windows: Sequence
             _safe(no_trade_ratio),
             _safe(flow_return_alignment),
             _safe(current_signed_ratio - mean_signed_ratio),
+            _safe(mean_abs_signed_ratio),
+            _safe(flow_persistence),
+            _safe(flow_acceleration),
+            _safe(price_flow_divergence),
         ])
+    return features
+
+
+def _order_flow_features_for_config(cache: _ConfluenceCache, end: int, cfg: AdvancedFeatureConfig) -> list[float]:
+    raw = _order_flow_features_at(cache, end, cfg.order_flow_windows)
+    width = max(0, int(cfg.order_flow_features_per_window))
+    if width == _ORDER_FLOW_FEATURES_PER_WINDOW:
+        return raw
+    features: list[float] = []
+    for index in range(len(cfg.order_flow_windows)):
+        start = index * _ORDER_FLOW_FEATURES_PER_WINDOW
+        group = raw[start:start + _ORDER_FLOW_FEATURES_PER_WINDOW]
+        if width <= _ORDER_FLOW_FEATURES_PER_WINDOW:
+            features.extend(group[:width])
+        else:
+            features.extend(group + [0.0] * (width - _ORDER_FLOW_FEATURES_PER_WINDOW))
     return features
 
 
@@ -858,7 +920,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
     extras = _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows)
     confluence = _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows)
     market_quality = _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows)
-    order_flow = _ORDER_FLOW_FEATURES_PER_WINDOW * len(cfg.order_flow_windows)
+    order_flow = max(0, int(cfg.order_flow_features_per_window)) * len(cfg.order_flow_windows)
     transforms = base * len(cfg.nonlinear_transforms)
     pairs = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -888,7 +950,7 @@ def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGro
     add("extra_lookback_windows", _EXTRA_FEATURES_PER_WINDOW * len(cfg.extra_lookback_windows))
     add("technical_confluence", _CONFLUENCE_FEATURES_PER_WINDOW * len(cfg.confluence_windows))
     add("market_quality_regime", _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows))
-    add("order_flow_microstructure", _ORDER_FLOW_FEATURES_PER_WINDOW * len(cfg.order_flow_windows))
+    add("order_flow_microstructure", max(0, int(cfg.order_flow_features_per_window)) * len(cfg.order_flow_windows))
     add("nonlinear_transforms", base * len(cfg.nonlinear_transforms))
     pair_count = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -914,7 +976,7 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
     confluence_cache = _build_confluence_cache(candles[: at_index + 1])
     confluence = _confluence_features_at(confluence_cache, at_index, cfg.confluence_windows)
     market_quality = _market_quality_features_at(confluence_cache, at_index, cfg.market_quality_windows)
-    order_flow = _order_flow_features_at(confluence_cache, at_index, cfg.order_flow_windows)
+    order_flow = _order_flow_features_for_config(confluence_cache, at_index, cfg)
     transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
     pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
     expanded = tuple(_safe(v) for v in base + extras + confluence + market_quality + order_flow + transforms + pairs)
@@ -1102,7 +1164,7 @@ def make_advanced_rows(
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
-        order_flow = _order_flow_features_at(confluence_cache, idx, cfg.order_flow_windows)
+        order_flow = _order_flow_features_for_config(confluence_cache, idx, cfg)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
@@ -1155,7 +1217,7 @@ def make_advanced_inference_rows(
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
-        order_flow = _order_flow_features_at(confluence_cache, idx, cfg.order_flow_windows)
+        order_flow = _order_flow_features_for_config(confluence_cache, idx, cfg)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
@@ -1226,6 +1288,7 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"confluence_windows={','.join(str(w) for w in cfg.confluence_windows)}",
         f"market_quality_windows={','.join(str(w) for w in cfg.market_quality_windows)}",
         f"order_flow_windows={','.join(str(w) for w in cfg.order_flow_windows)}",
+        f"order_flow_features_per_window={max(0, int(cfg.order_flow_features_per_window))}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
         f"label_lookahead={int(cfg.label_lookahead)}",
         f"label_mode={_normalized_label_mode(cfg.label_mode)}",
@@ -1248,7 +1311,8 @@ def advanced_config_from_signature(
     """
 
     fields = _signature_fields(str(signature or ""))
-    if fields.get("advanced_version") not in _SUPPORTED_ADVANCED_FEATURE_VERSIONS:
+    advanced_version = fields.get("advanced_version")
+    if advanced_version not in _SUPPORTED_ADVANCED_FEATURE_VERSIONS:
         return None
     try:
         feature_names_raw = fields.get("feature_names", "")
@@ -1256,6 +1320,10 @@ def advanced_config_from_signature(
         base_features = normalize_enabled_features(feature_names or fallback_feature_names or FEATURE_NAMES)
         label_threshold = float(fields.get("label_threshold", "0.001"))
         stop_threshold = float(fields.get("label_stop_threshold", str(label_threshold)))
+        order_flow_width = int(fields.get(
+            "order_flow_features_per_window",
+            "13" if advanced_version == ADVANCED_FEATURE_VERSION else "9",
+        ))
         return AdvancedFeatureConfig(
             base_features=base_features,
             polynomial_degree=max(1, int(fields.get("polynomial_degree", "2"))),
@@ -1273,6 +1341,7 @@ def advanced_config_from_signature(
             label_stop_threshold=stop_threshold,
             label_volatility_window=max(0, int(fields.get("label_volatility_window", "0"))),
             label_volatility_multiplier=max(0.0, float(fields.get("label_volatility_multiplier", "0"))),
+            order_flow_features_per_window=max(0, order_flow_width),
         )
     except (TypeError, ValueError):
         return None

@@ -188,14 +188,16 @@ weakening risk controls.
   promote an order-book model until it can reconstruct local books, prove depth
   continuity, replay quote-time walk-forward windows, and simulate queue/fill
   uncertainty per symbol.
-- Implemented update: v8 advanced signatures keep the v6 order-flow
-  microstructure proxies from real second-level quote volume, trade count,
-  taker-buy base/quote volume, signed flow imbalance, no-trade seconds, and
-  signed-flow/return alignment, keep the v7 volatility-adjusted triple-barrier
-  modes, then add known-at-entry information-event labels based on trailing
-  CUSUM return activity. This is not a substitute for true order-book tensors,
-  but it gives the current BTC/ETH/SOL second-level database a more defensible
-  microstructure signal source than OHLCV alone.
+- Implemented update: v9 advanced signatures keep the v8 information-event
+  labels and expand the real second-level aggTrade-derived order-flow block
+  from 9 to 13 fields per window. In addition to taker-buy ratio, signed flow,
+  quote/trade shocks, no-trade seconds, and signed-flow/return alignment, the
+  model now receives average signed-flow strength, serial flow persistence,
+  front/back-window flow acceleration, and price/flow divergence. Legacy v8
+  signatures still rebuild the original 9-field layout. This is not a
+  substitute for true order-book tensors, but it gives the current BTC/ETH/SOL
+  second-level database a more defensible microstructure signal source than
+  OHLCV alone.
 - Implemented update: futures threshold calibration now tests symmetric,
   long-only, and short-only threshold variants on the selection fold. This
   allows the optimizer to disable a harmful side when evidence supports it,
@@ -220,17 +222,19 @@ weakening risk controls.
   template zoo after classifier/hybrid selection. The templates cover momentum
   breakout, VWAP/RSI mean reversion, trend-pullback, volatility breakout, and
   volume-flow proxy families with normal and inverted orientation. The latest
-  implementation adds order-flow momentum and flow-reversion families that use
-  serialized offsets into the advanced aggTrade-derived order-flow feature block,
-  plus longer-hold profiles to reduce immediate fee churn. Regime and
+  implementation adds order-flow momentum, flow-reversion, flow-consensus
+  breakout, and liquidity-absorption reversal families that use serialized
+  offsets into the advanced aggTrade-derived order-flow feature block, plus
+  longer-hold profiles to reduce immediate fee churn. Regime and
   liquidity-session arrays are cached across candidate replays without changing
   risk gates. Rejected alpha searches record best active profile, family, score,
   P&L, closed trades, win rate, profit factor, max drawdown, exit-reason counts,
   side counts, reject reason, orientation, and evaluated candidate count. The
-  `round-orderflow-alpha-major-1d-smoke` evidence run still produced zero
+  `round-v9-flow-state-1d-smoke` evidence run still produced zero
   accepted symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT; best
   active alpha profiles lost money after costs on the selection slice. The
-  support is implemented but not profitable evidence.
+  support is implemented and exercised by real-data smoke evidence, but it is
+  not profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time
