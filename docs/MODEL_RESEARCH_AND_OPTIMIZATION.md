@@ -188,8 +188,9 @@ used by the CLI. The advanced feature vector now includes:
   long-only, or short-only thresholds only when the selection fold improves
   risk-adjusted evidence; the final holdout still has to pass profitability,
   drawdown, liquidation, trade-quality, and market-edge gates.
-- a diverse bounded candidate prefix that covers default, long information
-  events, downside/short information events, session-scale volatility barriers,
+- a diverse bounded candidate prefix that covers default, long and short
+  day-trading frequency probes, intraday triple-barrier probes, focal
+  rare-event information-event candidates, session-scale volatility barriers,
   and order-flow event probes before wider sweeps.
 - downside-positive label orientation: after probability calibration, models
   trained on short-success labels are inverted into the runtime convention so
@@ -208,26 +209,28 @@ model:
 
 The optimizer evaluates risk-level-specific weight profiles:
 
-- `conservative`: favors base-model agreement, smoother kernels, and smaller
-  expert overrides.
+- `conservative`: starts with base-model agreement profiles, then also tests
+  low-base rescue profiles where technical confluence, neighbor voting, and
+  kernel smoothing can dominate if selection evidence supports them.
 - `regular`: balances base probability, Lorentzian neighbor structure, kernel
   smoothness, and confluence.
 - `aggressive`: allows stronger expert contribution, but still has to pass
   backtest gates and drawdown limits.
 
 The optimization-round evidence path now runs the same adaptive hybrid model-zoo
-as a post-base-candidate selection step only after the selected base candidate
-passes selection gates. It uses the existing chronological training/selection
-split, records hybrid profile and score diagnostics, emits status updates during
-long hybrid checks, and keeps the base model unless the hybrid replay passes
-`ObjectiveSpec.accepts`. Rejected base selections skip the hybrid overlay and
-are parked in a no-entry threshold state while retaining diagnostic threshold
-P&L/trade evidence. This prevents a sophisticated ensemble overlay, or a
+as a post-base-candidate selection step even when the selected base candidate
+failed, but only from a copied model reset to the best diagnostic threshold. It
+uses the existing chronological training/selection split, records hybrid
+profile and score diagnostics, emits status updates during long hybrid checks,
+and keeps the fail-closed no-entry model unless the hybrid replay passes
+`ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-information-event-window-smoke`
-BTCUSDT/ETHUSDT/SOLUSDT futures window still failed with zero accepted symbols,
-zero closed holdout trades, and mean ROI `0.0%`, so it is negative research
-evidence rather than promotion evidence.
+in code. The 2026-07-07 `round-daytrade-frequency-hybrid-smoke` activity-probe
+run produced BTC/SOL selection trades but negative after-cost P&L, and the
+`round-hybrid-rescue-profile-smoke` run evaluated seven conservative hybrid
+profiles per symbol but still selected `base_only`. BTCUSDT/ETHUSDT/SOLUSDT
+all failed with zero accepted symbols, zero closed holdout trades, and mean ROI
+`0.0%`, so these are negative research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple
 label target/horizon profiles, and both forward-return and stop/take-aware

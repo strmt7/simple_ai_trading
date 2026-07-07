@@ -82,6 +82,7 @@ class TrainedModel:
     seed: int = 7
     class_weight_pos: float = 1.0
     class_weight_neg: float = 1.0
+    focal_gamma: float = 0.0
     decision_threshold: float | None = None
     long_decision_threshold: float | None = None
     short_decision_threshold: float | None = None
@@ -495,6 +496,23 @@ def _class_weights(rows: List[ModelRow]) -> tuple[float, float]:
     pos_weight = float(negatives) / float(total)
     neg_weight = float(positives) / float(total)
     return pos_weight, neg_weight
+
+
+def _focal_bce_logit_gradient(probability: float, label: int, gamma: float) -> float:
+    """Return d focal-BCE / d logit for one binary sample.
+
+    ``gamma=0`` reduces exactly to the normal BCE-with-logits gradient
+    ``probability - label``. Positive gamma downweights already-easy samples
+    while keeping the CPU fallback mathematically aligned with the torch loss.
+    """
+
+    p = _clamp(float(probability), 1e-9, 1.0 - 1e-9)
+    g = max(0.0, float(gamma))
+    if g <= 0.0:
+        return p - float(1 if label else 0)
+    if int(label) == 1:
+        return g * p * ((1.0 - p) ** g) * math.log(p) - ((1.0 - p) ** (g + 1.0))
+    return (p ** (g + 1.0)) - g * (p ** g) * (1.0 - p) * math.log(1.0 - p)
 
 
 def _f1(tp: int, fp: int, fn: int) -> float:
@@ -1296,6 +1314,7 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
     min_delta: float,
     batch_size: int,
     backend: BackendInfo,
+    focal_gamma: float = 0.0,
 ) -> TrainedModel:
     import torch  # type: ignore
 
@@ -1337,6 +1356,7 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
     batch = max(1, min(int(batch_size or len(rows)), len(rows)))
     pos_weight = torch.tensor(float(class_weight_pos), dtype=torch.float32, device=device)
     neg_weight = torch.tensor(float(class_weight_neg), dtype=torch.float32, device=device)
+    focal = max(0.0, float(focal_gamma))
     averaged_weights_t = torch.zeros_like(weights)
     averaged_bias_t = torch.zeros_like(bias)
     averaged_count = 0
@@ -1358,6 +1378,10 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
             # Stable BCE-with-logits written from tensor primitives supported by
             # CUDA, ROCm, DirectML, and MPS.
             per_row_loss = torch.clamp(logits, min=0.0) - logits * yb + torch.log1p(torch.exp(-torch.abs(logits)))
+            if focal > 0.0:
+                probabilities = torch.sigmoid(logits)
+                pt = torch.where(yb > 0.5, probabilities, 1.0 - probabilities)
+                per_row_loss = per_row_loss * torch.pow(torch.clamp(1.0 - pt, min=0.0, max=1.0), focal)
             sample_weights = torch.where(yb > 0.5, pos_weight, neg_weight)
             loss = (per_row_loss * sample_weights).mean() + 0.5 * float(l2_penalty) * torch.sum(weights * weights)
             loss.backward()
@@ -1424,6 +1448,7 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
         seed=int(seed),
         class_weight_pos=float(class_weight_pos),
         class_weight_neg=float(class_weight_neg),
+        focal_gamma=float(focal),
         best_epoch=best_epoch,
         training_loss=float(training_loss),
         validation_loss=float(validation_loss) if validation_loss is not None else None,
@@ -1437,7 +1462,8 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
           early_stopping_rounds: int | None = None,
           min_delta: float = 1e-6,
           compute_backend: str | None = None,
-          batch_size: int = 8192) -> TrainedModel:
+          batch_size: int = 8192,
+          focal_gamma: float = 0.0) -> TrainedModel:
     feature_dim = validate_model_rows(rows)
     validation_rows = list(validation_rows or [])
     if validation_rows:
@@ -1463,6 +1489,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
                     min_delta=min_delta,
                     batch_size=batch_size,
                     backend=backend,
+                    focal_gamma=focal_gamma,
                 ),
                 backend,
             )
@@ -1482,6 +1509,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
     if class_weight_pos <= 0.0 or class_weight_neg <= 0.0:
         class_weight_pos = 1.0
         class_weight_neg = 1.0
+    focal = max(0.0, float(focal_gamma))
 
     indices = list(range(len(rows)))
     best_weights = list(weights)
@@ -1504,7 +1532,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
             score = bias + sum(w * xi for w, xi in zip(weights, x, strict=True))
             pred = _sigmoid(score)
             weight = class_weight_pos if y == 1 else class_weight_neg
-            error = (pred - y) * weight
+            error = _focal_bce_logit_gradient(pred, y, focal) * weight
             for i, xi in enumerate(x):
                 # L2 penalty and signed-gradient update
                 grad = error * xi + l2_penalty * weights[i]
@@ -1559,6 +1587,7 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
         seed=int(seed),
         class_weight_pos=float(class_weight_pos),
         class_weight_neg=float(class_weight_neg),
+        focal_gamma=float(focal),
         best_epoch=best_epoch,
         training_loss=float(training_loss),
         validation_loss=float(validation_loss) if validation_loss is not None else None,
@@ -1865,6 +1894,7 @@ def load_model(
         seed=int(payload.get("seed", 7)),
         class_weight_pos=float(payload.get("class_weight_pos", 1.0)),
         class_weight_neg=float(payload.get("class_weight_neg", 1.0)),
+        focal_gamma=max(0.0, float(payload.get("focal_gamma", 0.0) or 0.0)),
         decision_threshold=(
             float(payload["decision_threshold"])
             if payload.get("decision_threshold") is not None

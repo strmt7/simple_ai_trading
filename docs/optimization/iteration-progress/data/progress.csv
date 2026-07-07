@@ -1,3 +1,5 @@
 round_id,generated_at_utc,market_type,interval,objective,critical_verdict,promotion_grade,promotion_status,symbol_count_completed,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,worst_max_drawdown_pct,total_closed_trades
-round-volatility-barrier-window-smoke,2026-07-06T23:34:47.096527Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.8883681696646504,0.0,0
 round-information-event-window-smoke,2026-07-07T00:24:31.724842Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.891452207027972,0.0,0
+round-focal-event-window-smoke,2026-07-07T01:22:47.264929Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.891452207027972,0.0,0
+round-daytrade-frequency-hybrid-smoke,2026-07-07T01:53:23.418514Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.8926496915496698,0.0,0
+round-hybrid-rescue-profile-smoke,2026-07-07T02:10:16.524726Z,futures,1s,conservative,fail,False,not_requested,3,0,0.0,0.0,-0.8926496915496698,0.0,0

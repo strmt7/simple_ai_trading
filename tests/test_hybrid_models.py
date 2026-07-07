@@ -153,6 +153,16 @@ def test_optimize_hybrid_model_zoo_returns_report() -> None:
     assert report.best_profile
 
 
+def test_conservative_hybrid_profiles_include_low_base_rescue_models() -> None:
+    profiles = {profile.name: profile for profile in hybrid_models._profiles_for("conservative")}
+
+    assert profiles["technical_rescue_core"].base <= 0.10
+    assert profiles["technical_rescue_core"].technical >= 0.70
+    assert profiles["neighbor_kernel_rescue"].base <= 0.15
+    assert profiles["neighbor_kernel_rescue"].lorentzian > profiles["neighbor_kernel_rescue"].base
+    assert profiles["balanced_rescue_committee"].base == pytest.approx(0.25)
+
+
 def test_optimize_hybrid_model_zoo_records_expert_ablation(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run_backtest(_rows, model, _strategy, **_kwargs):
         kinds = {expert.kind for expert in getattr(model, "hybrid_experts", [])}

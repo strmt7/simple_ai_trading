@@ -1,0 +1,2 @@
+round_id,generated_at_utc,symbol_count,accepted_symbol_count,mean_roi_pct,median_roi_pct,mean_baseline_roi_pct,mean_market_edge_pct,median_market_edge_pct,worst_max_drawdown_pct,total_trades,total_closed_trades,zero_trade_symbol_count,profitable_symbol_count,critical_verdict,mean_low_liquidity_sample_rate_pct
+round-hybrid-rescue-profile-smoke,2026-07-07T02:10:15.403869Z,3,0,0.0,0.0,-0.8926496915496698,0.8926496915496698,0.9490970743755345,0.0,0,0,3,0,fail,39.57575436879076

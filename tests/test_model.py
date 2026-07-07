@@ -59,6 +59,24 @@ def test_train_and_evaluate() -> None:
     assert 0.0 <= score <= 1.0
 
 
+def test_focal_gradient_matches_bce_when_gamma_zero() -> None:
+    assert model_module._focal_bce_logit_gradient(0.8, 1, 0.0) == pytest.approx(-0.2)
+    assert model_module._focal_bce_logit_gradient(0.2, 0, 0.0) == pytest.approx(0.2)
+    assert model_module._focal_bce_logit_gradient(0.99, 0, 2.0) > model_module._focal_bce_logit_gradient(0.2, 0, 2.0)
+    assert abs(model_module._focal_bce_logit_gradient(0.99, 1, 2.0)) < abs(model_module._focal_bce_logit_gradient(0.8, 1, 2.0))
+
+
+def test_train_records_focal_gamma_and_roundtrips(tmp_path: Path) -> None:
+    trained = train(_rows(), epochs=3, compute_backend="cpu", focal_gamma=2.0)
+    assert trained.focal_gamma == pytest.approx(2.0)
+
+    path = tmp_path / "focal.json"
+    serialize_model(trained, path)
+    loaded = load_model(path)
+
+    assert loaded.focal_gamma == pytest.approx(2.0)
+
+
 def test_probability_inversion_roundtrip(tmp_path: Path) -> None:
     base = TrainedModel(
         weights=[1.0],
@@ -164,6 +182,7 @@ def test_load_model_backwards_compatibility(tmp_path: Path) -> None:
     assert model.l2_penalty == 1e-4
     assert model.class_weight_pos == 1.0
     assert model.class_weight_neg == 1.0
+    assert model.focal_gamma == 0.0
     assert model.decision_threshold is None
     assert model.calibration_size == 0
     assert model.validation_size == 0
