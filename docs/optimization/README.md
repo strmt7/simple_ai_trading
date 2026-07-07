@@ -164,9 +164,11 @@ ideas. Order-flow and higher-timeframe templates receive serialized offsets
 into the advanced feature vector, so GPU and CPU inference use the same
 microstructure and broad-regime inputs. CPU/live rule-alpha scoring now
 preserves the full serialized feature vector instead of truncating before the
-advanced blocks, and DirectML parity tests cover the same families. The default 225-candidate budget covers every family/profile base
-combination before testing nearby threshold/sensitivity/deadband variants. Each
-template is tested with normal and inverted probability orientation, bounded
+advanced blocks, and DirectML parity tests cover the same families. The default
+225-template full-replay budget is now selected from a larger cheap event-rank
+pool using after-cost forward-event edge, signal count, and hit-rate telemetry;
+the ranker chooses what to replay, not what to promote. Each template is tested
+with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so
 repeated candidate replays do not waste time. Rule-alpha models serialize as `rule_alpha` hybrid
 experts, so a promoted alpha uses the same CLI, Windows app, backtest, and live

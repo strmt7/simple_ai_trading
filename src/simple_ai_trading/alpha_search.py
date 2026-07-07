@@ -32,6 +32,7 @@ from .types import StrategyConfig
 DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 225
 DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES = 18
 DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES = 18
+DEFAULT_RULE_ALPHA_EVENT_RANK_POOL_MULTIPLIER = 3
 _RULE_ALPHA_COST_FLOOR_PARTICIPATION = 0.05
 _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS = 2.0
 _RULE_ALPHA_MIN_STOP_BUFFER_BPS = 1.0
@@ -101,6 +102,7 @@ class RuleAlphaOptimizationReport:
     evaluated_candidates: int
     best_result: BacktestResult | None
     candidate_results: tuple[RuleAlphaCandidateResult, ...]
+    candidate_summary: dict[str, object] = field(default_factory=dict)
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -113,6 +115,7 @@ class RuleAlphaOptimizationReport:
             "evaluated_candidates": int(self.evaluated_candidates),
             "best_result": asdict(self.best_result) if self.best_result is not None else None,
             "candidate_results": [item.asdict() for item in self.candidate_results],
+            "candidate_summary": dict(self.candidate_summary),
         }
 
 
@@ -448,6 +451,88 @@ def rule_alpha_event_study(
         "hit_rate": float(wins / len(edges)),
         "cost_floor_bps": cost_floor_bps,
     }
+
+
+def _event_rank_rule_alpha_candidates(
+    rows: Sequence[ModelRow],
+    strategy: StrategyConfig,
+    candidates: Sequence[RuleAlphaCandidate],
+    *,
+    market_type: str,
+    replay_limit: int,
+    feature_params: dict[str, object],
+) -> tuple[tuple[RuleAlphaCandidate, ...], dict[str, object]]:
+    """Rank a larger static template pool by cheap after-cost event evidence.
+
+    This ranking decides which candidates deserve the bounded full lifecycle
+    replay.  It does not approve any candidate; only `run_backtest` and the
+    objective gates can do that.
+    """
+
+    limit = max(1, int(replay_limit))
+    scored: list[tuple[tuple[float, float, float, float, float], RuleAlphaCandidate, dict[str, object], bool]] = []
+    for index, candidate in enumerate(candidates):
+        candidate_strategy = _candidate_strategy(strategy, candidate)
+        best_event: dict[str, object] | None = None
+        best_inverted = False
+        best_key: tuple[float, float, float, float, float] | None = None
+        for inverted in (False, True):
+            model = model_for_rule_alpha(
+                rows,
+                candidate,
+                strategy,
+                market_type=market_type,
+                probability_inverted=inverted,
+                feature_params=feature_params,
+            )
+            event = rule_alpha_event_study(
+                rows,
+                model,
+                candidate_strategy,
+                candidate,
+                market_type=market_type,
+            )
+            signal_count = int(event.get("signal_count", 0) or 0)
+            net_edge = float(event.get("net_mean_edge_bps", 0.0) or 0.0)
+            hit_rate = float(event.get("hit_rate", 0.0) or 0.0)
+            key = (
+                1.0 if signal_count > 0 else 0.0,
+                1.0 if net_edge > 0.0 else 0.0,
+                net_edge,
+                hit_rate,
+                -float(index),
+            )
+            if best_key is None or key > best_key:
+                best_key = key
+                best_event = event
+                best_inverted = bool(inverted)
+        if best_key is not None and best_event is not None:
+            scored.append((best_key, candidate, best_event, best_inverted))
+    scored.sort(key=lambda item: item[0], reverse=True)
+    selected = tuple(item[1] for item in scored[:limit])
+    best = scored[0] if scored else None
+    summary = {
+        "event_rank_pool_candidates": int(len(scored)),
+        "event_rank_selected_template_candidates": int(len(selected)),
+        "event_rank_positive_pool_candidates": int(
+            sum(1 for _key, _candidate, event, _inverted in scored if float(event.get("net_mean_edge_bps", 0.0) or 0.0) > 0.0)
+        ),
+        "event_rank_signal_pool_candidates": int(
+            sum(1 for _key, _candidate, event, _inverted in scored if int(event.get("signal_count", 0) or 0) > 0)
+        ),
+        "event_rank_best_candidate": str(best[1].name) if best is not None else "",
+        "event_rank_best_net_edge_bps": (
+            float(best[2].get("net_mean_edge_bps", 0.0) or 0.0) if best is not None else 0.0
+        ),
+        "event_rank_best_signal_count": (
+            int(best[2].get("signal_count", 0) or 0) if best is not None else 0
+        ),
+        "event_rank_best_hit_rate": (
+            float(best[2].get("hit_rate", 0.0) or 0.0) if best is not None else 0.0
+        ),
+        "event_rank_best_probability_inverted": bool(best[3]) if best is not None else False,
+    }
+    return selected, summary
 
 
 def mine_empirical_rule_alpha_candidates(
@@ -979,7 +1064,20 @@ def optimize_rule_alpha_model_zoo(
     regime_scores = precompute_backtest_regime_scores(rows, strategy)
     liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, strategy)
     feature_params = rule_alpha_feature_params(feature_cfg)
-    template_candidates = rule_alpha_candidates(objective.name, max_candidates=max_candidates)
+    template_replay_limit = max(1, int(max_candidates))
+    event_rank_pool_limit = max(
+        template_replay_limit,
+        template_replay_limit * DEFAULT_RULE_ALPHA_EVENT_RANK_POOL_MULTIPLIER,
+    )
+    template_pool = rule_alpha_candidates(objective.name, max_candidates=event_rank_pool_limit)
+    template_candidates, event_rank_summary = _event_rank_rule_alpha_candidates(
+        rows,
+        strategy,
+        template_pool,
+        market_type=market_type,
+        replay_limit=template_replay_limit,
+        feature_params=feature_params,
+    )
     empirical_candidates = mine_empirical_rule_alpha_candidates(
         rows,
         strategy,
@@ -1037,7 +1135,9 @@ def optimize_rule_alpha_model_zoo(
                 best_diagnostic = candidate_result
 
     candidate_summary = summarize_rule_alpha_candidate_distribution(diagnostics)
+    candidate_summary.update(event_rank_summary)
     candidate_summary["static_template_candidates"] = int(len(template_candidates))
+    candidate_summary["static_template_pool_candidates"] = int(len(template_pool))
     candidate_summary["empirical_mined_candidates"] = int(len(empirical_candidates))
     candidate_summary["empirical_interaction_candidates"] = int(
         sum(1 for candidate in empirical_candidates if "second_feature_index" in candidate.params)
@@ -1045,7 +1145,18 @@ def optimize_rule_alpha_model_zoo(
     candidate_summary["empirical_candidate_limit"] = int(DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES)
     winner = best_accepted or best_diagnostic
     if winner is None:
-        return RuleAlphaOptimizationReport(False, None, float("-inf"), None, False, None, len(diagnostics), None, tuple(diagnostics))
+        return RuleAlphaOptimizationReport(
+            False,
+            None,
+            float("-inf"),
+            None,
+            False,
+            None,
+            len(diagnostics),
+            None,
+            tuple(diagnostics),
+            dict(candidate_summary),
+        )
     model = model_for_rule_alpha(
         rows,
         winner.candidate,
@@ -1088,6 +1199,7 @@ def optimize_rule_alpha_model_zoo(
         len(diagnostics),
         winner.result,
         tuple(diagnostics),
+        dict(candidate_summary),
     )
 
 

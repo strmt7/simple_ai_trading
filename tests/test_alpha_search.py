@@ -938,6 +938,83 @@ def test_rule_alpha_search_promotes_only_objective_accepted_candidate(monkeypatc
     assert report.best_result.closed_trades > 0
 
 
+def test_rule_alpha_event_rank_pool_can_promote_candidate_beyond_small_prefix(monkeypatch) -> None:
+    rows = _rows(count=64)
+    strategy = StrategyConfig(
+        cooldown_minutes=0,
+        max_trades_per_day=100,
+        taker_fee_bps=0.0,
+        slippage_bps=0.0,
+        liquidity_risk_enabled=False,
+        dynamic_liquidity_session_enabled=False,
+    )
+    objective = SimpleNamespace(
+        name="conservative",
+        score=lambda result: result.realized_pnl,
+        reject_reason=lambda result: None if result.realized_pnl > 0.0 and result.closed_trades > 0 else "no_profit",
+    )
+    monkeypatch.setattr("simple_ai_trading.alpha_search.get_objective", lambda _name: objective)
+
+    def fake_event_study(_rows, _model, _strategy, candidate, *, market_type):
+        del market_type
+        edge = 12.0 if candidate.family == "higher_timeframe_alignment" else -8.0
+        return {
+            "horizon_bars": int(candidate.min_position_hold_bars),
+            "signal_count": 12,
+            "long_signal_count": 12,
+            "short_signal_count": 0,
+            "mean_edge_bps": edge,
+            "net_mean_edge_bps": edge,
+            "hit_rate": 0.75 if edge > 0 else 0.25,
+            "cost_floor_bps": 0.0,
+        }
+
+    def fake_run_backtest(_rows, model, _strategy, **_kwargs):
+        family = model.hybrid_experts[0].params["family"]
+        accepted = family == "higher_timeframe_alignment"
+        pnl = 4.0 if accepted else -2.0
+        return BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + pnl,
+            realized_pnl=pnl,
+            win_rate=0.6 if accepted else 0.0,
+            trades=2,
+            max_drawdown=0.001,
+            closed_trades=2,
+            gross_exposure=100.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=pnl,
+            profit_factor=2.0 if accepted else 0.0,
+        )
+
+    monkeypatch.setattr("simple_ai_trading.alpha_search.rule_alpha_event_study", fake_event_study)
+    monkeypatch.setattr("simple_ai_trading.alpha_search.run_backtest", fake_run_backtest)
+
+    first_six_families = {candidate.family for candidate in rule_alpha_candidates("conservative", max_candidates=6)}
+    assert "higher_timeframe_alignment" not in first_six_families
+
+    report = optimize_rule_alpha_model_zoo(
+        rows,
+        strategy,
+        objective_name="conservative",
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="cpu",
+        max_candidates=6,
+    )
+
+    assert report.accepted is True
+    assert report.best_candidate is not None
+    assert report.best_candidate.family == "higher_timeframe_alignment"
+    assert report.evaluated_candidates == 12
+    assert report.candidate_summary["event_rank_pool_candidates"] >= 18
+    assert report.candidate_summary["event_rank_best_candidate"].startswith("higher_timeframe_alignment:")
+    assert report.candidate_summary["static_template_candidates"] == 6
+
+
 def test_rule_alpha_search_fails_closed_when_objective_rejects(monkeypatch) -> None:
     rows = _rows(count=24)
     objective = SimpleNamespace(
