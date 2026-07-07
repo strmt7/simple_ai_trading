@@ -202,22 +202,25 @@ weakening risk controls.
   while preserving fail-closed final holdout gates for P&L, drawdown,
   liquidations, edge, and trade quality.
 - Implemented update: bounded optimization candidates now start with default,
-  long information-event, and downside/short information-event hypotheses
-  instead of walking one candidate family. Downside-positive labels are
-  explicitly oriented to the short-side runtime convention after probability
-  calibration, so a model trained on short-success events cannot accidentally
-  emit high-score long entries.
+  long day-trading frequency, and downside/short day-trading frequency
+  hypotheses instead of walking one candidate family. Downside-positive labels
+  remain explicitly oriented to the short-side runtime convention after
+  probability calibration, so a model trained on short-success events cannot
+  accidentally emit high-score long entries.
 - Implemented update: optimization rounds now attempt the adaptive hybrid
-  model-zoo overlay only after the selected base candidate passes selection
-  gates. The hybrid uses chronological training/selection rows, records hybrid
-  profile/score evidence, emits long-run status phases, and can replace the
-  base model only if the hybrid selection replay passes the same objective
-  gates. Rejected base selections skip the hybrid overlay, retain diagnostic
-  threshold/P&L evidence, and are parked in no-entry thresholds so diagnostics
-  cannot become executable trades. The `round-information-event-window-smoke`
-  evidence round still produced zero accepted symbols and zero holdout trades
-  on BTCUSDT/ETHUSDT/SOLUSDT, so the support is implemented but not profitable
-  evidence.
+  model-zoo overlay from rejected base selections by searching a copied model at
+  the best diagnostic threshold. The hybrid uses chronological
+  training/selection rows, records hybrid profile/score evidence, emits
+  long-run status phases, and can replace the base model only if the hybrid
+  selection replay passes the same objective gates. Rejected base selections
+  still retain diagnostic threshold/P&L evidence and are parked in no-entry
+  thresholds unless a hybrid replay passes; diagnostics cannot become
+  executable trades. The `round-daytrade-frequency-hybrid-smoke` evidence round
+  produced BTC/SOL selection trades with negative after-cost P&L, and
+  `round-hybrid-rescue-profile-smoke` evaluated seven conservative hybrid
+  profiles per symbol but still produced zero accepted symbols and zero
+  holdout trades on BTCUSDT/ETHUSDT/SOLUSDT. The support is implemented but not
+  profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time

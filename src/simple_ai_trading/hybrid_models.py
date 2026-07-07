@@ -135,6 +135,9 @@ def _profiles_for(objective_name: str) -> tuple[_WeightProfile, ...]:
             _WeightProfile("guarded_neighbors", 0.68, 0.16, 0.11, 0.05),
             _WeightProfile("kernel_confirmation", 0.62, 0.12, 0.20, 0.06),
             _WeightProfile("technical_tiebreaker", 0.72, 0.10, 0.08, 0.10),
+            _WeightProfile("technical_rescue_core", 0.10, 0.06, 0.09, 0.75),
+            _WeightProfile("neighbor_kernel_rescue", 0.15, 0.44, 0.31, 0.10),
+            _WeightProfile("balanced_rescue_committee", 0.25, 0.25, 0.25, 0.25),
         )
     if objective_name == "aggressive":
         return (

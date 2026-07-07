@@ -25,7 +25,12 @@ from .advanced_model import (
 )
 from .api import BinanceAPIError, BinanceClient, Candle
 from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol, major_symbols_for_quote
-from .backtest import BacktestResult, calibrate_threshold_for_backtest, run_backtest
+from .backtest import (
+    BacktestResult,
+    calibrate_threshold_for_backtest,
+    closed_trades_per_day,
+    run_backtest,
+)
 from .compute import resolve_backend
 from .data_coverage import describe_candle_coverage, iso_utc
 from .data_downloader import MarketDataSyncConfig, sync_market_data
@@ -277,6 +282,7 @@ class RoundModelCandidate:
     cooldown_multiplier: float = 1.0
     min_position_hold_bars: int = 0
     flat_signal_exit_grace_bars: int = 0
+    focal_gamma: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -1354,29 +1360,34 @@ def _round_model_candidates(
     # budget is small, so the prefix must cover baseline, long-biased,
     # short-biased, and order-flow hypotheses instead of walking one family.
     #
-    # Last three fields: minimum label horizon in bars, trailing volatility
-    # window in bars, and realized-volatility multiplier for dynamic barriers.
-    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int, int, int, float]] = [
-        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
-        ("positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75),
-        ("downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75),
-        ("session_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5),
-        ("session_downside_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "downside_volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5),
-        ("order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0),
-        ("downside_order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "downside_event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0),
-        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.55, 0.50, "forward_return", -0.10, 0.50, 0.55, 0.25, 1, 1, 0, 0, 0.0),
-        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.30, 0.20, "triple_barrier", -0.12, 0.12, 0.10, 0.0, 1, 1, 0, 0, 0.0),
-        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.55, 0.35, "downside_triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0),
-        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0),
-        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1, 0, 0, 0.0),
-        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
-        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0),
-        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
-        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0),
-        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0, 0, 0, 0.0),
-        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1, 0, 0, 0.0),
-        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0, 0, 0, 0.0),
-        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0),
+    # Last four fields: minimum label horizon in bars, trailing volatility
+    # window in bars, realized-volatility multiplier for dynamic barriers,
+    # and focal-loss gamma for rare-event training.
+    raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int, int, int, float, float]] = [
+        ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("day_trade_frequency_probe_forward", 0.65, 1.10, 1.0, 0.75, 4.0, "forward_return", -0.10, 0.14, 0.10, 0.0, 2, 0, 30, 0, 0.0, 0.0),
+        ("day_trade_frequency_probe_downside", 0.65, 1.10, 1.0, 0.75, 4.0, "downside_forward_return", -0.10, 0.14, 0.10, 0.0, 2, 0, 30, 0, 0.0, 0.0),
+        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.75, 8.0, "triple_barrier", -0.10, 0.12, 0.10, 0.0, 2, 1, 45, 0, 0.0, 0.0),
+        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.75, 8.0, "downside_triple_barrier", -0.10, 0.12, 0.10, 0.0, 2, 1, 45, 0, 0.0, 0.0),
+        ("focal_positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 2.0),
+        ("focal_downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 2.0),
+        ("session_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5, 0.0),
+        ("session_downside_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "downside_volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5, 0.0),
+        ("positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 0.0),
+        ("downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 0.0),
+        ("order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0, 0.0),
+        ("downside_order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "downside_event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0, 0.0),
+        ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.75, 4.0, "forward_return", -0.10, 0.14, 0.10, 0.0, 2, 0, 30, 0, 0.0, 0.0),
+        ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0, 0.0),
+        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1, 0, 0, 0.0, 0.0),
+        ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0, 0.0),
+        ("triple_barrier_base", 1.0, 0.90, 1.5, 1.0, 1.0, "triple_barrier", 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("triple_barrier_conservative", 0.75, 0.75, 3.0, 1.25, 1.50, "triple_barrier", 0.0, 1.10, 1.10, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("lower_signal_short_forward", 0.65, 1.0, 1.25, 0.70, 0.60, "forward_return", -0.06, 0.65, 0.70, 0.35, 1, 1, 0, 0, 0.0, 0.0),
+        ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0, 0.0),
     ]
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
@@ -1397,6 +1408,7 @@ def _round_model_candidates(
         min_label_lookahead,
         label_volatility_window,
         label_volatility_multiplier,
+        focal_gamma,
     ) in raw:
         label_lookahead = max(
             1,
@@ -1428,6 +1440,7 @@ def _round_model_candidates(
             cooldown_multiplier=max(0.0, float(cooldown_multiplier)),
             min_position_hold_bars=max(0, int(min_position_hold_bars)),
             flat_signal_exit_grace_bars=max(0, int(flat_signal_exit_grace_bars)),
+            focal_gamma=max(0.0, float(focal_gamma)),
         )
         key = (
             candidate.epochs,
@@ -1445,6 +1458,7 @@ def _round_model_candidates(
             candidate.feature_cfg.label_mode,
             candidate.feature_cfg.label_volatility_window,
             round(candidate.feature_cfg.label_volatility_multiplier, 12),
+            round(candidate.focal_gamma, 12),
         )
         if key in seen:
             continue
@@ -1572,6 +1586,7 @@ def _evaluate_round_model_candidate(
         early_stopping_rounds=30,
         compute_backend=compute_backend,
         batch_size=batch_size,
+        focal_gamma=candidate.focal_gamma,
     )
     if require_gpu:
         _require_non_cpu_backend(
@@ -1637,6 +1652,14 @@ def _evaluate_round_model_candidate(
     model.threshold_diagnostic_best_trades = diagnostic_trades
     model.threshold_diagnostic_best_long_threshold = getattr(threshold_report, "best_long_threshold", None)
     model.threshold_diagnostic_best_short_threshold = getattr(threshold_report, "best_short_threshold", None)
+    model.threshold_baseline_score = float(getattr(threshold_report, "baseline_score", 0.0))
+    model.threshold_baseline_pnl = float(getattr(threshold_report, "baseline_realized_pnl", 0.0))
+    model.threshold_baseline_trades = int(getattr(threshold_report, "baseline_closed_trades", 0) or 0)
+    model.threshold_min_closed_trades = int(getattr(threshold_report, "min_closed_trades", 0) or 0)
+    model.threshold_min_trades_per_day = float(getattr(threshold_report, "min_trades_per_day", 0.0) or 0.0)
+    model.threshold_selected_trades_per_day = float(getattr(threshold_report, "trades_per_day", 0.0) or 0.0)
+    model.threshold_best_trades_per_day = float(getattr(threshold_report, "best_trades_per_day", 0.0) or 0.0)
+    model.threshold_evaluated_thresholds = int(getattr(threshold_report, "evaluated_thresholds", 0) or 0)
     if status_callback is not None:
         status_callback(
             "threshold_calibration_complete",
@@ -1869,6 +1892,45 @@ def _finite_or_none(value: object) -> float | None:
     return parsed if math.isfinite(parsed) else None
 
 
+def _hybrid_search_seed_model(result: RoundModelCandidateResult, *, market_type: str) -> object:
+    """Return a model configured for offline hybrid rescue search.
+
+    Failed base candidates are forced to a no-entry threshold before they can
+    ever be serialized for live use. That is correct for safety, but it makes
+    offline hybrid research impossible unless we search from the best diagnostic
+    threshold captured during selection. The returned copy is used only for
+    selection backtests; the original fail-closed model remains unchanged unless
+    the hybrid result passes the full objective gates.
+    """
+
+    model = copy.deepcopy(result.model)
+    if bool(getattr(result.model, "round_selection_gate_passed", True)):
+        return model
+    diagnostic_threshold = _finite(
+        getattr(model, "threshold_diagnostic_best_threshold", None),
+        float(result.candidate.signal_threshold),
+    )
+    if str(market_type).lower() == "futures":
+        best_long = getattr(model, "threshold_diagnostic_best_long_threshold", None)
+        best_short = getattr(model, "threshold_diagnostic_best_short_threshold", None)
+        if best_long is None and best_short is None:
+            threshold = max(0.5, min(0.95, float(diagnostic_threshold)))
+            model.long_decision_threshold = threshold
+            model.short_decision_threshold = 1.0 - threshold
+        else:
+            model.long_decision_threshold = best_long
+            model.short_decision_threshold = best_short
+    else:
+        model.long_decision_threshold = None
+        model.short_decision_threshold = None
+    model.decision_threshold = max(0.0, min(1.0, float(diagnostic_threshold)))
+    model.round_selection_gate_passed = True
+    model.round_selection_reject_reason = ""
+    model.threshold_source = "hybrid_rescue_diagnostic_threshold_search"
+    _append_unique_warning(model, "hybrid_rescue_search_from_rejected_base")
+    return model
+
+
 def _select_hybrid_model_zoo_if_accepted(
     result: RoundModelCandidateResult,
     strategy: StrategyConfig,
@@ -1880,26 +1942,11 @@ def _select_hybrid_model_zoo_if_accepted(
     batch_size: int,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> RoundModelCandidateResult:
-    """Attach the adaptive hybrid expert pack only when selection evidence passes."""
+    """Attach the adaptive hybrid expert pack when it passes full objective gates."""
 
     model = result.model
     feature_dim = int(getattr(model, "feature_dim", 0) or 0)
-    if getattr(model, "round_selection_gate_passed", True) is False:
-        if status_callback is not None:
-            status_callback(
-                "hybrid_model_zoo_skipped",
-                {
-                    "reason": "base_selection_gate_failed",
-                    "feature_dim": int(feature_dim),
-                    "training_rows": len(result.training_rows),
-                    "selection_rows": len(result.selection_rows),
-                },
-            )
-        model.hybrid_profile = "base_selection_gate_failed"
-        model.hybrid_base_score = _finite_or_none(result.score)
-        model.hybrid_best_score = None
-        model.hybrid_evaluated_profiles = 0
-        return replace(result, model=model)
+    base_selection_failed = bool(getattr(model, "round_selection_gate_passed", True)) is False
     if feature_dim <= 1 or not result.training_rows or not result.selection_rows:
         if status_callback is not None:
             status_callback(
@@ -1919,10 +1966,12 @@ def _select_hybrid_model_zoo_if_accepted(
                 "feature_dim": int(feature_dim),
                 "training_rows": len(result.training_rows),
                 "selection_rows": len(result.selection_rows),
+                "base_selection_failed": bool(base_selection_failed),
             },
         )
+    search_model = _hybrid_search_seed_model(result, market_type=market_type)
     hybrid_report = optimize_hybrid_model_zoo(
-        model,
+        search_model,
         result.training_rows,
         result.selection_rows,
         strategy,
@@ -1971,6 +2020,8 @@ def _select_hybrid_model_zoo_if_accepted(
     hybrid_model.round_selection_gate_passed = True
     hybrid_model.round_selection_reject_reason = ""
     _append_unique_warning(hybrid_model, "round_hybrid_model_zoo_selected")
+    if base_selection_failed:
+        _append_unique_warning(hybrid_model, "round_hybrid_model_zoo_rescued_rejected_base")
     return replace(
         result,
         score=float(hybrid_report.best_score),
@@ -2002,6 +2053,7 @@ def _round_candidate_diagnostic(
         "label_threshold": float(result.candidate.feature_cfg.label_threshold),
         "label_lookahead": int(result.candidate.feature_cfg.label_lookahead),
         "label_mode": str(result.candidate.feature_cfg.label_mode),
+        "focal_gamma": float(result.candidate.focal_gamma),
         "model_family": str(getattr(model, "model_family", "") or ""),
         "probability_inverted": bool(getattr(model, "probability_inverted", False)),
         "hybrid_profile": str(getattr(model, "hybrid_profile", "") or ""),
@@ -2056,6 +2108,22 @@ def _round_candidate_diagnostic(
             else None
         ),
         "threshold_calibration_trades": int(getattr(model, "threshold_calibration_trades", 0) or 0),
+        "threshold_baseline_score": (
+            float(getattr(model, "threshold_baseline_score"))
+            if getattr(model, "threshold_baseline_score", None) is not None
+            else None
+        ),
+        "threshold_baseline_pnl": (
+            float(getattr(model, "threshold_baseline_pnl"))
+            if getattr(model, "threshold_baseline_pnl", None) is not None
+            else None
+        ),
+        "threshold_baseline_trades": int(getattr(model, "threshold_baseline_trades", 0) or 0),
+        "threshold_min_closed_trades": int(getattr(model, "threshold_min_closed_trades", 0) or 0),
+        "threshold_min_trades_per_day": float(getattr(model, "threshold_min_trades_per_day", 0.0) or 0.0),
+        "threshold_selected_trades_per_day": float(getattr(model, "threshold_selected_trades_per_day", 0.0) or 0.0),
+        "threshold_best_trades_per_day": float(getattr(model, "threshold_best_trades_per_day", 0.0) or 0.0),
+        "threshold_evaluated_thresholds": int(getattr(model, "threshold_evaluated_thresholds", 0) or 0),
         "threshold_diagnostic_best_threshold": (
             float(getattr(model, "threshold_diagnostic_best_threshold"))
             if getattr(model, "threshold_diagnostic_best_threshold", None) is not None
@@ -2080,9 +2148,11 @@ def _round_candidate_diagnostic(
         "selection_profit_factor": float(getattr(selection, "profit_factor", 0.0)),
         "selection_expectancy": float(getattr(selection, "expectancy", 0.0)),
         "selection_edge_vs_buy_hold": float(getattr(selection, "edge_vs_buy_hold", 0.0)),
+        "selection_trades_per_day": float(closed_trades_per_day(selection)),
         "selection_trades_per_day_cap_hit": int(getattr(selection, "trades_per_day_cap_hit", 0) or 0),
         "selection_regime_entry_skips": int(getattr(selection, "regime_entry_skips", 0) or 0),
         "selection_meta_label_skips": int(getattr(selection, "meta_label_skips", 0) or 0),
+        "selection_meta_label_downsizes": int(getattr(selection, "meta_label_downsizes", 0) or 0),
         "selection_liquidation_events": int(getattr(selection, "liquidation_events", 0) or 0),
         "selection_reject_reason": str(result.selection_reject_reason or ""),
     }
@@ -2111,6 +2181,7 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "label_threshold": _finite(item.get("label_threshold")),
             "label_lookahead": int(_finite(item.get("label_lookahead"))),
             "label_mode": str(item.get("label_mode", "")),
+            "focal_gamma": _finite(item.get("focal_gamma")),
             "model_family": str(item.get("model_family", "")),
             "probability_inverted": bool(item.get("probability_inverted") is True),
             "hybrid_profile": str(item.get("hybrid_profile", "")),
@@ -2127,6 +2198,14 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "threshold_calibration_score": item.get("threshold_calibration_score"),
             "threshold_calibration_pnl": item.get("threshold_calibration_pnl"),
             "threshold_calibration_trades": int(_finite(item.get("threshold_calibration_trades"))),
+            "threshold_baseline_score": item.get("threshold_baseline_score"),
+            "threshold_baseline_pnl": item.get("threshold_baseline_pnl"),
+            "threshold_baseline_trades": int(_finite(item.get("threshold_baseline_trades"))),
+            "threshold_min_closed_trades": int(_finite(item.get("threshold_min_closed_trades"))),
+            "threshold_min_trades_per_day": _finite(item.get("threshold_min_trades_per_day")),
+            "threshold_selected_trades_per_day": _finite(item.get("threshold_selected_trades_per_day")),
+            "threshold_best_trades_per_day": _finite(item.get("threshold_best_trades_per_day")),
+            "threshold_evaluated_thresholds": int(_finite(item.get("threshold_evaluated_thresholds"))),
             "threshold_diagnostic_best_threshold": item.get("threshold_diagnostic_best_threshold"),
             "threshold_diagnostic_best_long_threshold": item.get("threshold_diagnostic_best_long_threshold"),
             "threshold_diagnostic_best_short_threshold": item.get("threshold_diagnostic_best_short_threshold"),
@@ -2141,9 +2220,11 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "selection_profit_factor": _finite(item.get("selection_profit_factor")),
             "selection_expectancy": _finite(item.get("selection_expectancy")),
             "selection_edge_vs_buy_hold": _finite(item.get("selection_edge_vs_buy_hold")),
+            "selection_trades_per_day": _finite(item.get("selection_trades_per_day")),
             "selection_trades_per_day_cap_hit": int(_finite(item.get("selection_trades_per_day_cap_hit"))),
             "selection_regime_entry_skips": int(_finite(item.get("selection_regime_entry_skips"))),
             "selection_meta_label_skips": int(_finite(item.get("selection_meta_label_skips"))),
+            "selection_meta_label_downsizes": int(_finite(item.get("selection_meta_label_downsizes"))),
             "selection_liquidation_events": int(_finite(item.get("selection_liquidation_events"))),
             "selection_reject_reason": str(item.get("selection_reject_reason", "")),
         })
@@ -2874,19 +2955,24 @@ def build_round_evidence(
         "symbol", "candidate_index", "name", "selected", "score", "signal_threshold",
         "stop_loss_pct", "take_profit_pct", "cooldown_minutes", "min_position_hold_bars",
         "flat_signal_exit_grace_bars", "label_threshold", "label_lookahead", "label_mode",
-        "model_family", "probability_inverted", "hybrid_profile", "hybrid_base_score",
+        "focal_gamma", "model_family", "probability_inverted", "hybrid_profile", "hybrid_base_score",
         "hybrid_best_score", "hybrid_evaluated_profiles", "hybrid_expert_count",
         "round_selection_gate_passed",
         "round_selection_reject_reason", "threshold_source", "decision_threshold",
         "long_decision_threshold", "short_decision_threshold",
         "threshold_calibration_score", "threshold_calibration_pnl", "threshold_calibration_trades",
+        "threshold_baseline_score", "threshold_baseline_pnl", "threshold_baseline_trades",
+        "threshold_min_closed_trades", "threshold_min_trades_per_day",
+        "threshold_selected_trades_per_day", "threshold_best_trades_per_day",
+        "threshold_evaluated_thresholds",
         "threshold_diagnostic_best_threshold", "threshold_diagnostic_best_long_threshold",
         "threshold_diagnostic_best_short_threshold", "threshold_diagnostic_best_score",
         "threshold_diagnostic_best_pnl", "threshold_diagnostic_best_trades",
         "selection_realized_pnl", "selection_closed_trades", "selection_max_drawdown",
         "selection_win_rate", "selection_total_fees", "selection_profit_factor",
-        "selection_expectancy", "selection_edge_vs_buy_hold", "selection_trades_per_day_cap_hit",
-        "selection_regime_entry_skips", "selection_meta_label_skips", "selection_liquidation_events",
+        "selection_expectancy", "selection_edge_vs_buy_hold", "selection_trades_per_day",
+        "selection_trades_per_day_cap_hit", "selection_regime_entry_skips",
+        "selection_meta_label_skips", "selection_meta_label_downsizes", "selection_liquidation_events",
         "selection_reject_reason",
     )
     _write_csv(
