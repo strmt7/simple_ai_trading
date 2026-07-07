@@ -159,12 +159,12 @@ implementations of momentum breakout, VWAP/RSI mean reversion, trend-pullback,
 volatility breakout, volume-flow proxy, order-flow momentum, flow-reversion,
 flow-consensus breakout, liquidity-absorption reversal, micro-flow scalp,
 VWAP snapback scalp, liquidity-sweep reversal, compression breakout scalp,
-volume-synchronized flow, and adaptive tape-regime ideas. Order-flow
-templates receive serialized offsets into the advanced aggTrade-derived
-order-flow feature block, so GPU and CPU inference use the same microstructure
-inputs. CPU/live rule-alpha scoring now preserves the full serialized feature
-vector instead of truncating before the order-flow block, and a DirectML parity
-test covers the same family. The default 225-candidate budget covers every family/profile base
+volume-synchronized flow, adaptive tape-regime, and higher-timeframe alignment
+ideas. Order-flow and higher-timeframe templates receive serialized offsets
+into the advanced feature vector, so GPU and CPU inference use the same
+microstructure and broad-regime inputs. CPU/live rule-alpha scoring now
+preserves the full serialized feature vector instead of truncating before the
+advanced blocks, and DirectML parity tests cover the same families. The default 225-candidate budget covers every family/profile base
 combination before testing nearby threshold/sensitivity/deadband variants. Each
 template is tested with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so

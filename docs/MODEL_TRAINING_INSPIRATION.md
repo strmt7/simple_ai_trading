@@ -226,15 +226,15 @@ weakening risk controls.
   implementation adds order-flow momentum, flow-reversion, flow-consensus
   breakout, liquidity-absorption reversal, micro-flow scalp, VWAP snapback
   scalp, liquidity-sweep reversal, compression breakout scalp,
-  volume-synchronized flow, and adaptive tape-regime families that use
-  serialized offsets into the advanced
-  aggTrade-derived order-flow feature block, plus short-hold and longer-hold
+  volume-synchronized flow, adaptive tape-regime, and higher-timeframe
+  alignment families that use serialized offsets into the advanced order-flow
+  and higher-timeframe context feature blocks, plus short-hold and longer-hold
   profiles to test activity without changing risk gates. The rule-alpha prefix is
   now stratified so each family and execution profile is represented before
   nearby parameter variants are explored; the default 225 candidates cover all
   base family/profile combinations plus bounded threshold/sensitivity/deadband
   variants. CPU/live scoring preserves the full
-  serialized feature vector for order-flow rule-alpha templates, and DirectML
+  serialized feature vector for advanced rule-alpha templates, and DirectML
   batch scoring is tested for parity. Regime and liquidity-session arrays are
   cached across candidate replays without changing risk gates. Rejected alpha
   searches record best active profile, family, score, P&L, closed trades, win

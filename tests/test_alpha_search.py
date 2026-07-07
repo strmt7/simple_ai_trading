@@ -57,9 +57,9 @@ def _rows(*, rising: bool = True, count: int = 36) -> list[ModelRow]:
 
 
 def test_rule_alpha_candidates_are_bounded_and_diverse() -> None:
-    candidates = rule_alpha_candidates("conservative", max_candidates=15)
+    candidates = rule_alpha_candidates("conservative", max_candidates=16)
 
-    assert len(candidates) == 15
+    assert len(candidates) == 16
     assert {candidate.family for candidate in candidates} >= {
         "momentum_breakout",
         "flow_consensus_breakout",
@@ -68,6 +68,7 @@ def test_rule_alpha_candidates_are_bounded_and_diverse() -> None:
         "vwap_snapback_scalp",
         "liquidity_sweep_reversal",
         "volume_synchronized_flow",
+        "higher_timeframe_alignment",
     }
     assert {candidate.name.split(":")[1] for candidate in candidates} >= {
         "scalp_3s",
@@ -110,6 +111,7 @@ def test_rule_alpha_default_search_covers_base_family_profile_matrix() -> None:
         "compression_breakout_scalp",
         "volume_synchronized_flow",
         "adaptive_tape_regime",
+        "higher_timeframe_alignment",
     }
     assert profiles == {
         "scalp_3s",
@@ -282,6 +284,81 @@ def test_rule_alpha_can_use_advanced_order_flow_features(tmp_path) -> None:
     assert loaded.hybrid_experts[0].params["order_flow_window_count"] == 3
     assert loaded.rule_alpha_best_exit_reason_counts == {"take_profit_close": 2}
     assert loaded.predict_proba(row.features) == model.predict_proba(row.features)
+
+
+def test_rule_alpha_can_use_higher_timeframe_context_features(tmp_path) -> None:
+    candidate = RuleAlphaCandidate(
+        name="higher_timeframe_alignment:unit",
+        family="higher_timeframe_alignment",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.01,
+        stop_loss_multiplier=0.18,
+        take_profit_multiplier=0.16,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=30,
+        flat_signal_exit_grace_bars=10,
+    )
+    cfg = default_config_for("conservative", FEATURE_NAMES)
+    feature_params = rule_alpha_feature_params(cfg)
+    htf_start = int(feature_params["higher_timeframe_start"])
+    htf_width = int(feature_params["higher_timeframe_width"])
+    order_start = int(feature_params["order_flow_start"])
+    order_width = int(feature_params["order_flow_width"])
+    assert htf_width == 8
+    feature_count = max(htf_start + (3 * htf_width), order_start + (3 * order_width))
+    features = [0.0] * feature_count
+    features[0] = 0.0015
+    features[1] = 0.0012
+    features[2] = 0.0010
+    features[6] = 0.0008
+    features[9] = 1.1
+    for group_start in range(htf_start, htf_start + (3 * htf_width), htf_width):
+        features[group_start + 0] = 0.004
+        features[group_start + 1] = 0.002
+        features[group_start + 2] = 0.0002
+        features[group_start + 3] = 0.006
+        features[group_start + 4] = -0.002
+        features[group_start + 5] = 0.005
+        features[group_start + 6] = 0.30
+        features[group_start + 7] = 0.20
+    for group_start in range(order_start, order_start + (3 * order_width), order_width):
+        features[group_start + 1] = 0.42
+        features[group_start + 11] = 0.22
+    long_row = ModelRow(timestamp=0, close=100.0, features=tuple(features), label=1, volume=1000.0)
+    short_features = list(features)
+    for index in (0, 1, 2, 6):
+        short_features[index] = -short_features[index]
+    for group_start in range(htf_start, htf_start + (3 * htf_width), htf_width):
+        short_features[group_start + 0] = -0.004
+        short_features[group_start + 1] = -0.002
+        short_features[group_start + 4] = -0.005
+        short_features[group_start + 5] = 0.002
+        short_features[group_start + 6] = -0.30
+        short_features[group_start + 7] = -0.20
+    for group_start in range(order_start, order_start + (3 * order_width), order_width):
+        short_features[group_start + 1] = -0.42
+        short_features[group_start + 11] = -0.22
+    short_row = ModelRow(timestamp=1, close=99.0, features=tuple(short_features), label=0, volume=1000.0)
+    model = model_for_rule_alpha(
+        [long_row, short_row],
+        candidate,
+        StrategyConfig(),
+        market_type="futures",
+        feature_params=feature_params,
+    )
+
+    assert model.hybrid_experts[0].feature_count == feature_count
+    assert model.hybrid_experts[0].params["higher_timeframe_start"] == htf_start
+    assert model.predict_proba(long_row.features) > 0.54
+    assert model.predict_proba(short_row.features) < 0.46
+
+    path = tmp_path / "htf-model.json"
+    serialize_model(model, path)
+    loaded = load_model(path, expected_feature_dim=feature_count)
+
+    assert loaded.hybrid_experts[0].params["higher_timeframe_window_count"] == 3
+    assert loaded.predict_proba(long_row.features) == model.predict_proba(long_row.features)
 
 
 def test_rule_alpha_new_flow_families_use_expanded_order_flow_state() -> None:

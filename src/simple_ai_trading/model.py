@@ -102,6 +102,53 @@ def _order_flow_summary(values: Sequence[float], params: dict[str, Any] | None) 
     }
 
 
+def _higher_timeframe_summary(values: Sequence[float], params: dict[str, Any] | None) -> dict[str, float]:
+    start = _param_int(params, "higher_timeframe_start", -1, low=-1, high=100_000)
+    width = _param_int(params, "higher_timeframe_width", 8, low=1, high=64)
+    count = _param_int(params, "higher_timeframe_window_count", 0, low=0, high=32)
+    fallback = {
+        "available": 0.0,
+        "return": 0.0,
+        "mean_gap": 0.0,
+        "realized_volatility": 0.0,
+        "range": 0.0,
+        "drawdown": 0.0,
+        "bounce": 0.0,
+        "volume_impulse": 0.0,
+        "trade_impulse": 0.0,
+    }
+    if start < 0 or count <= 0 or len(values) <= start:
+        return fallback
+    groups: list[Sequence[float]] = []
+    for index in range(count):
+        group_start = start + index * width
+        group_end = group_start + width
+        if group_end <= len(values):
+            groups.append(values[group_start:group_end])
+    if not groups:
+        return fallback
+
+    def mean_at(offset: int, default: float = 0.0) -> float:
+        items = [
+            float(group[offset])
+            for group in groups
+            if len(group) > offset and math.isfinite(float(group[offset]))
+        ]
+        return sum(items) / len(items) if items else default
+
+    return {
+        "available": 1.0,
+        "return": _clamp(mean_at(0, 0.0), -1.0, 1.0),
+        "mean_gap": _clamp(mean_at(1, 0.0), -1.0, 1.0),
+        "realized_volatility": _clamp(abs(mean_at(2, 0.0)), 0.0, 1.0),
+        "range": _clamp(abs(mean_at(3, 0.0)), 0.0, 2.0),
+        "drawdown": _clamp(mean_at(4, 0.0), -1.0, 0.0),
+        "bounce": _clamp(mean_at(5, 0.0), 0.0, 2.0),
+        "volume_impulse": _clamp(mean_at(6, 0.0), -5.0, 5.0),
+        "trade_impulse": _clamp(mean_at(7, 0.0), -5.0, 5.0),
+    }
+
+
 def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any] | None) -> float:
     """Return an interpretable long/short alpha score from raw base features.
 
@@ -155,6 +202,7 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
     gap_to_vwap = padded[11]
     volume_trend = padded[12]
     order_flow = _order_flow_summary(values, params)
+    higher_timeframe = _higher_timeframe_summary(values, params)
 
     if family == "mean_reversion_vwap":
         score = (
@@ -376,6 +424,40 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
         persistence = math.tanh(order_flow["flow_persistence"] * 2.4 + order_flow["flow_return_alignment"] * 1.8)
         trend_weight = 0.5 + 0.5 * persistence
         score = trend_weight * trend + (1.0 - trend_weight) * reversion
+    elif family == "higher_timeframe_alignment":
+        if higher_timeframe["available"] <= 0.0:
+            score = 0.0
+        else:
+            broad_direction = (
+                0.30 * math.tanh(higher_timeframe["return"] * 105.0)
+                + 0.22 * math.tanh(higher_timeframe["mean_gap"] * 125.0)
+                + 0.14 * math.tanh(higher_timeframe["bounce"] * 32.0)
+                + 0.14 * math.tanh(higher_timeframe["drawdown"] * 32.0)
+                + 0.10 * math.tanh(higher_timeframe["volume_impulse"] * 1.5)
+                + 0.10 * math.tanh(higher_timeframe["trade_impulse"] * 1.5)
+            )
+            local_direction = (
+                0.24 * math.tanh(momentum_1 * 300.0)
+                + 0.22 * math.tanh(momentum_3 * 210.0)
+                + 0.18 * math.tanh(momentum_10 * 130.0)
+                + 0.14 * math.tanh(ema_gap * 115.0)
+                + 0.12 * math.tanh(order_flow["signed_base"] * 2.4)
+                + 0.10 * math.tanh(order_flow["flow_acceleration"] * 2.4)
+            )
+            same_direction = broad_direction * local_direction
+            alignment = 0.42 + 0.58 * (0.5 + 0.5 * math.tanh(same_direction * 5.0))
+            volatility_penalty = 0.35 * math.tanh(
+                higher_timeframe["realized_volatility"] * 130.0 + higher_timeframe["range"] * 32.0
+            )
+            participation = 0.64 + 0.18 * math.tanh(higher_timeframe["volume_impulse"] * 1.4) + 0.18 * math.tanh(volume_ratio * 1.8)
+            flow_quality = 1.0 - 0.5 * _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
+            score = (
+                alignment
+                * max(0.20, 1.0 - volatility_penalty)
+                * participation
+                * flow_quality
+                * (0.54 * local_direction + 0.46 * broad_direction)
+            )
     else:
         score = (
             0.32 * math.tanh(momentum_20 * 90.0)

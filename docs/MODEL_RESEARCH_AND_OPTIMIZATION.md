@@ -227,16 +227,17 @@ templates are original momentum breakout, VWAP/RSI mean reversion,
 trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
 flow-reversion, flow-consensus breakout, liquidity-absorption reversal,
 micro-flow scalp, VWAP snapback scalp, liquidity-sweep reversal, compression
-breakout scalp, volume-synchronized flow, and adaptive tape-regime families. The default 225-candidate
+breakout scalp, volume-synchronized flow, adaptive tape-regime, and
+higher-timeframe alignment families. The default 225-candidate
 prefix is stratified: it covers every family
 and execution profile, then covers the full base family/profile matrix, before
 spending remaining slots on nearby threshold/sensitivity/deadband variants.
-Order-flow templates receive serialized offsets
-into the advanced aggTrade-derived order-flow feature block, so CPU, DirectML,
-CLI, Windows app, backtest, and live/autonomous inference use the same
-microstructure inputs. CPU/live rule-alpha scoring now preserves the full
-serialized feature vector instead of truncating before the order-flow block, and
-DirectML parity is covered by tests. Each template is tested with normal and inverted
+Order-flow and higher-timeframe templates receive serialized offsets into the
+advanced feature vector, so CPU, DirectML, CLI, Windows app, backtest, and
+live/autonomous inference use the same microstructure and broad-regime inputs.
+CPU/live rule-alpha scoring now preserves the full serialized feature vector
+instead of truncating before the advanced blocks, and DirectML parity is covered
+by tests. Each template is tested with normal and inverted
 probability orientation plus bounded threshold/stop/take/hold profiles.
 Rule-alpha models serialize as `rule_alpha` hybrid experts, so a promoted
 template is available without a separate code path. The empirical feature-edge

@@ -253,7 +253,11 @@ def rule_alpha_feature_params(feature_cfg: AdvancedFeatureConfig | None) -> dict
             params["order_flow_start"] = int(span.start)
             params["order_flow_width"] = int(span.size) // window_count if window_count > 0 else int(span.size)
             params["order_flow_window_count"] = window_count
-            break
+        elif span.name == "higher_timeframe_context" and span.size > 0:
+            window_count = max(0, len(tuple(feature_cfg.higher_timeframe_windows)))
+            params["higher_timeframe_start"] = int(span.start)
+            params["higher_timeframe_width"] = int(span.size) // window_count if window_count > 0 else int(span.size)
+            params["higher_timeframe_window_count"] = window_count
     return params
 
 
@@ -288,6 +292,7 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         "compression_breakout_scalp",
         "volume_synchronized_flow",
         "adaptive_tape_regime",
+        "higher_timeframe_alignment",
     )
     execution_profiles = (
         ("scalp_3s", 0.06, 0.05, 0.0, 1, 0),
