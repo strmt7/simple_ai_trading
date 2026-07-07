@@ -4,11 +4,18 @@ from types import SimpleNamespace
 
 from simple_ai_trading.alpha_search import (
     RuleAlphaCandidate,
+    RuleAlphaCandidateResult,
+    _diagnostic_rank_key,
     model_for_rule_alpha,
     optimize_rule_alpha_model_zoo,
+    rule_alpha_feature_params,
     rule_alpha_candidates,
+    summarize_rule_alpha_trade_path,
 )
+from simple_ai_trading.advanced_model import default_config_for
+from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading.features import ModelRow
+from simple_ai_trading.features import FEATURE_NAMES
 from simple_ai_trading.model import load_model, serialize_model
 from simple_ai_trading.types import StrategyConfig
 
@@ -81,6 +88,160 @@ def test_rule_alpha_model_roundtrips_and_affects_probability(tmp_path) -> None:
     assert loaded.hybrid_experts[0].kind == "rule_alpha"
     assert loaded.hybrid_experts[0].params["deadband"] == 0.02
     assert loaded.predict_proba(rows[0].features) == long_probability
+
+
+def test_rule_alpha_can_use_advanced_order_flow_features(tmp_path) -> None:
+    candidate = RuleAlphaCandidate(
+        name="order_flow_momentum:unit",
+        family="order_flow_momentum",
+        threshold=0.54,
+        sensitivity=8.0,
+        deadband=0.01,
+        stop_loss_multiplier=0.18,
+        take_profit_multiplier=0.16,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=30,
+        flat_signal_exit_grace_bars=10,
+    )
+    cfg = default_config_for("conservative", FEATURE_NAMES)
+    feature_params = rule_alpha_feature_params(cfg)
+    start = int(feature_params["order_flow_start"])
+    feature_count = start + 27
+    features = [0.0] * feature_count
+    features[0] = 0.001
+    features[1] = 0.001
+    for group_start in range(start, start + 27, 9):
+        features[group_start + 1] = 0.80
+        features[group_start + 2] = 0.75
+        features[group_start + 3] = 0.45
+        features[group_start + 4] = 0.40
+        features[group_start + 7] = 0.35
+        features[group_start + 8] = 0.30
+    row = ModelRow(timestamp=0, close=100.0, features=tuple(features), label=1, volume=1000.0)
+    model = model_for_rule_alpha(
+        [row],
+        candidate,
+        StrategyConfig(),
+        market_type="futures",
+        feature_params=feature_params,
+    )
+
+    assert model.hybrid_experts[0].feature_count == feature_count
+    assert model.hybrid_experts[0].params["order_flow_start"] == start
+    assert model.predict_proba(row.features) > 0.5
+
+    model.rule_alpha_best_win_rate = 0.5
+    model.rule_alpha_best_exit_reason_counts = {"take_profit_close": 2}
+    path = tmp_path / "flow-model.json"
+    serialize_model(model, path)
+    loaded = load_model(path, expected_feature_dim=feature_count)
+
+    assert loaded.hybrid_experts[0].params["order_flow_window_count"] == 3
+    assert loaded.rule_alpha_best_exit_reason_counts == {"take_profit_close": 2}
+    assert loaded.predict_proba(row.features) == model.predict_proba(row.features)
+
+
+def test_summarize_rule_alpha_trade_path_counts_exits_and_sides() -> None:
+    result = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=1001.0,
+        realized_pnl=1.0,
+        win_rate=0.5,
+        trades=2,
+        max_drawdown=0.01,
+        closed_trades=2,
+        gross_exposure=100.0,
+        total_fees=0.1,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        profit_factor=1.5,
+        average_trade_return=0.001,
+        max_consecutive_losses=1,
+        trade_log=(
+            {"exit_reason": "take_profit_close", "side": 1, "bars_held": 30},
+            {"exit_reason": "stop_loss_close", "side": -1, "bars_held": 12},
+        ),
+    )
+
+    summary = summarize_rule_alpha_trade_path(result)
+
+    assert summary["exit_reason_counts"] == {"stop_loss_close": 1, "take_profit_close": 1}
+    assert summary["side_counts"] == {"long": 1, "short": 1}
+    assert summary["average_bars_held"] == 21.0
+
+
+def test_rejected_rule_alpha_diagnostic_prefers_less_negative_pnl_over_activity_score() -> None:
+    candidate = RuleAlphaCandidate(
+        name="unit",
+        family="momentum_breakout",
+        threshold=0.54,
+        sensitivity=6.0,
+        deadband=0.02,
+        stop_loss_multiplier=0.18,
+        take_profit_multiplier=0.16,
+        cooldown_multiplier=0.0,
+        min_position_hold_bars=2,
+        flat_signal_exit_grace_bars=0,
+    )
+    better_loss = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=997.0,
+        realized_pnl=-3.0,
+        win_rate=0.0,
+        trades=3,
+        max_drawdown=0.003,
+        closed_trades=3,
+        gross_exposure=100.0,
+        total_fees=0.3,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        edge_vs_buy_hold=-1.0,
+        profit_factor=0.0,
+        max_consecutive_losses=3,
+    )
+    worse_loss = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=990.0,
+        realized_pnl=-10.0,
+        win_rate=0.0,
+        trades=12,
+        max_drawdown=0.010,
+        closed_trades=12,
+        gross_exposure=100.0,
+        total_fees=1.2,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        edge_vs_buy_hold=-8.0,
+        profit_factor=0.0,
+        max_consecutive_losses=12,
+    )
+
+    better = RuleAlphaCandidateResult(candidate, False, False, float("-inf"), 0.01, "reject", better_loss)
+    worse = RuleAlphaCandidateResult(candidate, False, False, float("-inf"), 0.05, "reject", worse_loss)
+
+    assert _diagnostic_rank_key(better) > _diagnostic_rank_key(worse)
+
+    no_trade = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=1000.0,
+        realized_pnl=0.0,
+        win_rate=0.0,
+        trades=0,
+        max_drawdown=0.0,
+        closed_trades=0,
+        gross_exposure=0.0,
+        total_fees=0.0,
+        stopped_by_drawdown=False,
+        max_exposure=0.0,
+        trades_per_day_cap_hit=0,
+        edge_vs_buy_hold=0.0,
+    )
+    inactive = RuleAlphaCandidateResult(candidate, False, False, float("-inf"), 0.50, "reject", no_trade)
+
+    assert _diagnostic_rank_key(better) > _diagnostic_rank_key(inactive)
 
 
 def test_rule_alpha_search_promotes_only_objective_accepted_candidate(monkeypatch) -> None:

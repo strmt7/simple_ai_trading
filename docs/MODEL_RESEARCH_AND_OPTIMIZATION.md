@@ -222,13 +222,17 @@ an interpretable rule-alpha template zoo. This implements the open-source
 pattern seen in stronger bots: broad, cheap entry/exit template sweeps happen
 before any template is promoted into the same serialized model path. The current
 templates are original momentum breakout, VWAP/RSI mean reversion,
-trend-pullback, volatility breakout, and volume-flow proxy families. Each is
-tested with normal and inverted probability orientation plus bounded
-threshold/stop/take/hold profiles. Rule-alpha models serialize as `rule_alpha`
-hybrid experts, so a promoted template is available to CLI, Windows app,
-backtest, and live/autonomous inference without a separate code path. Rejected
-searches record the best rejected profile, P&L, closed-trade count, reject
-reason, orientation, and candidate count.
+trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
+and flow-reversion families. Order-flow templates receive serialized offsets
+into the advanced aggTrade-derived order-flow feature block, so CPU, DirectML,
+CLI, Windows app, backtest, and live/autonomous inference use the same
+microstructure inputs. Each template is tested with normal and inverted
+probability orientation plus bounded threshold/stop/take/hold profiles.
+Rule-alpha models serialize as `rule_alpha` hybrid experts, so a promoted
+template is available without a separate code path. Rejected searches record the
+best rejected active profile, P&L, closed-trade count, win rate, profit factor,
+max drawdown, exit-reason counts, side counts, reject reason, orientation, and
+candidate count.
 
 The optimization-round evidence path now runs the same adaptive hybrid model-zoo
 as a post-base-candidate selection step even when the selected base candidate
@@ -238,16 +242,17 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-rule-alpha-major-1d-smoke` run used verified
+in code. The 2026-07-07 `round-orderflow-alpha-major-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
-scoring, conservative 5x futures settings, seven hybrid profiles, and 96
-normal/inverted rule-alpha replays per symbol. It failed with zero accepted
-symbols, zero closed holdout trades, mean ROI `0.0%`, and no liquidations. Best
-rejected alpha profiles were also negative after costs: BTCUSDT inverted
-trend-pullback lost `4.898503461525252`, ETHUSDT mean-reversion lost
-`6.797250193159016`, and SOLUSDT mean-reversion lost `6.851032639100595` on
-the chronological selection slice. This is negative research evidence rather
-than promotion evidence.
+scoring, conservative 5x futures settings, seven hybrid profiles, the 159-feature
+advanced vector including order-flow microstructure fields, and 96 normal/inverted
+rule-alpha replays per symbol. It failed with zero accepted symbols, zero closed
+holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
+profiles were still negative after costs: BTCUSDT inverted trend-pullback lost
+`4.898503461525252`, ETHUSDT inverted volatility breakout lost
+`0.6041151999475005` on one closed short, and SOLUSDT mean-reversion lost
+`6.851032639100595` on the chronological selection slice. This is negative
+research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple
 label target/horizon profiles, and both forward-return and stop/take-aware

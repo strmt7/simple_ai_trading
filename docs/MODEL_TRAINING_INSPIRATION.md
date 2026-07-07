@@ -219,16 +219,18 @@ weakening risk controls.
 - Implemented update: optimization rounds now run an interpretable rule-alpha
   template zoo after classifier/hybrid selection. The templates cover momentum
   breakout, VWAP/RSI mean reversion, trend-pullback, volatility breakout, and
-  volume-flow proxy families with normal and inverted orientation. Regime and
-  liquidity-session arrays are cached across candidate replays, cutting the
-  one-day BTC DirectML evidence runtime from about 117 seconds to about 65
-  seconds without changing risk gates. Rejected alpha searches record best
-  profile, family, score, P&L, closed trades, reject reason, orientation, and
-  evaluated candidate count. The `round-rule-alpha-major-1d-smoke` evidence run
-  still produced zero accepted symbols and zero holdout trades on
-  BTCUSDT/ETHUSDT/SOLUSDT; best rejected alpha profiles lost money after costs
-  on the selection slice. The support is implemented but not profitable
-  evidence.
+  volume-flow proxy families with normal and inverted orientation. The latest
+  implementation adds order-flow momentum and flow-reversion families that use
+  serialized offsets into the advanced aggTrade-derived order-flow feature block,
+  plus longer-hold profiles to reduce immediate fee churn. Regime and
+  liquidity-session arrays are cached across candidate replays without changing
+  risk gates. Rejected alpha searches record best active profile, family, score,
+  P&L, closed trades, win rate, profit factor, max drawdown, exit-reason counts,
+  side counts, reject reason, orientation, and evaluated candidate count. The
+  `round-orderflow-alpha-major-1d-smoke` evidence run still produced zero
+  accepted symbols and zero holdout trades on BTCUSDT/ETHUSDT/SOLUSDT; best
+  active alpha profiles lost money after costs on the selection slice. The
+  support is implemented but not profitable evidence.
 - FinMamba/Mamba-style research is useful inspiration for "trade anything"
   workflows because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time

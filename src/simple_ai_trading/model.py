@@ -36,6 +36,64 @@ def _param_float(params: dict[str, Any] | None, key: str, default: float, *, low
     return _clamp(value, low, high)
 
 
+def _param_int(params: dict[str, Any] | None, key: str, default: int, *, low: int, high: int) -> int:
+    raw = params.get(key, default) if isinstance(params, dict) else default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError, OverflowError):
+        value = int(default)
+    return max(int(low), min(int(high), value))
+
+
+def _order_flow_summary(values: Sequence[float], params: dict[str, Any] | None) -> dict[str, float]:
+    start = _param_int(params, "order_flow_start", -1, low=-1, high=100_000)
+    width = _param_int(params, "order_flow_width", 9, low=1, high=64)
+    count = _param_int(params, "order_flow_window_count", 0, low=0, high=32)
+    fallback = {
+        "taker_buy_ratio": 0.5,
+        "signed_base": 0.0,
+        "signed_quote": 0.0,
+        "trade_impulse": 0.0,
+        "quote_impulse": 0.0,
+        "quote_per_trade_impulse": 0.0,
+        "no_trade_ratio": 0.0,
+        "flow_return_alignment": 0.0,
+        "signed_ratio_delta": 0.0,
+    }
+    if start < 0 or count <= 0 or len(values) <= start:
+        return fallback
+    groups: list[Sequence[float]] = []
+    for index in range(count):
+        group_start = start + index * width
+        group_end = group_start + width
+        if group_end <= len(values):
+            groups.append(values[group_start:group_end])
+    if not groups:
+        return fallback
+
+    def mean_at(offset: int, default: float = 0.0) -> float:
+        items = [
+            float(group[offset])
+            for group in groups
+            if len(group) > offset and math.isfinite(float(group[offset]))
+        ]
+        return sum(items) / len(items) if items else default
+
+    no_trade = max(0.0, min(1.0, mean_at(6, 0.0)))
+    quality = 1.0 - no_trade
+    return {
+        "taker_buy_ratio": _clamp(mean_at(0, 0.5), 0.0, 1.0),
+        "signed_base": _clamp(mean_at(1, 0.0) * quality, -1.0, 1.0),
+        "signed_quote": _clamp(mean_at(2, 0.0) * quality, -1.0, 1.0),
+        "trade_impulse": _clamp(mean_at(3, 0.0) * quality, -1.0, 1.0),
+        "quote_impulse": _clamp(mean_at(4, 0.0) * quality, -1.0, 1.0),
+        "quote_per_trade_impulse": _clamp(mean_at(5, 0.0) * quality, -1.0, 1.0),
+        "no_trade_ratio": no_trade,
+        "flow_return_alignment": _clamp(mean_at(7, 0.0), -1.0, 1.0),
+        "signed_ratio_delta": _clamp(mean_at(8, 0.0) * quality, -1.0, 1.0),
+    }
+
+
 def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any] | None) -> float:
     """Return an interpretable long/short alpha score from raw base features.
 
@@ -58,6 +116,7 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
     trend_acceleration = padded[10]
     gap_to_vwap = padded[11]
     volume_trend = padded[12]
+    order_flow = _order_flow_summary(values, params)
 
     if family == "mean_reversion_vwap":
         score = (
@@ -100,6 +159,35 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.24 * math.tanh(momentum_10 * 120.0)
         )
         score = direction * (0.55 + 0.45 * math.tanh(flow))
+    elif family == "order_flow_momentum":
+        flow_pressure = (
+            0.34 * math.tanh(order_flow["signed_base"] * 2.6)
+            + 0.30 * math.tanh(order_flow["signed_quote"] * 2.6)
+            + 0.16 * math.tanh(order_flow["signed_ratio_delta"] * 3.4)
+            + 0.10 * math.tanh(order_flow["flow_return_alignment"] * 2.0)
+            + 0.06 * math.tanh(order_flow["trade_impulse"] * 1.6)
+            + 0.04 * math.tanh(order_flow["quote_impulse"] * 1.6)
+        )
+        price_confirmation = (
+            0.36 * math.tanh(momentum_1 * 260.0)
+            + 0.30 * math.tanh(momentum_3 * 170.0)
+            + 0.18 * math.tanh(momentum_10 * 105.0)
+            + 0.16 * math.tanh(ema_gap * 105.0)
+        )
+        liquidity_penalty = 0.18 * math.tanh(order_flow["no_trade_ratio"] * 4.0)
+        score = 0.62 * flow_pressure + 0.38 * price_confirmation - liquidity_penalty
+    elif family == "flow_reversion":
+        exhaustion = (
+            0.36 * math.tanh(order_flow["signed_base"] * 2.4)
+            + 0.30 * math.tanh(order_flow["signed_quote"] * 2.4)
+            + 0.16 * math.tanh(order_flow["quote_per_trade_impulse"] * 1.8)
+        )
+        stretched_price = (
+            0.32 * math.tanh(gap_to_vwap * 145.0)
+            + 0.24 * math.tanh(momentum_3 * 170.0)
+            + 0.18 * math.tanh((rsi - 0.50) * 4.6)
+        )
+        score = -0.58 * exhaustion * abs(stretched_price) - 0.42 * stretched_price
     else:
         score = (
             0.32 * math.tanh(momentum_20 * 90.0)
@@ -234,6 +322,11 @@ class TrainedModel:
     rule_alpha_best_score: float | None = None
     rule_alpha_best_pnl: float | None = None
     rule_alpha_best_closed_trades: int = 0
+    rule_alpha_best_win_rate: float | None = None
+    rule_alpha_best_profit_factor: float | None = None
+    rule_alpha_best_max_drawdown: float | None = None
+    rule_alpha_best_exit_reason_counts: dict[str, int] = field(default_factory=dict)
+    rule_alpha_best_side_counts: dict[str, int] = field(default_factory=dict)
     rule_alpha_best_reject_reason: str = ""
     rule_alpha_probability_inverted: bool = False
     rule_alpha_evaluated_candidates: int = 0
@@ -2199,6 +2292,29 @@ def load_model(
             else None
         ),
         rule_alpha_best_closed_trades=max(0, int(payload.get("rule_alpha_best_closed_trades", 0) or 0)),
+        rule_alpha_best_win_rate=(
+            float(payload["rule_alpha_best_win_rate"])
+            if payload.get("rule_alpha_best_win_rate") is not None
+            else None
+        ),
+        rule_alpha_best_profit_factor=(
+            float(payload["rule_alpha_best_profit_factor"])
+            if payload.get("rule_alpha_best_profit_factor") is not None
+            else None
+        ),
+        rule_alpha_best_max_drawdown=(
+            float(payload["rule_alpha_best_max_drawdown"])
+            if payload.get("rule_alpha_best_max_drawdown") is not None
+            else None
+        ),
+        rule_alpha_best_exit_reason_counts={
+            str(key): max(0, int(value))
+            for key, value in dict(payload.get("rule_alpha_best_exit_reason_counts", {})).items()
+        } if isinstance(payload.get("rule_alpha_best_exit_reason_counts", {}), dict) else {},
+        rule_alpha_best_side_counts={
+            str(key): max(0, int(value))
+            for key, value in dict(payload.get("rule_alpha_best_side_counts", {})).items()
+        } if isinstance(payload.get("rule_alpha_best_side_counts", {}), dict) else {},
         rule_alpha_best_reject_reason=str(payload.get("rule_alpha_best_reject_reason", "") or ""),
         rule_alpha_probability_inverted=bool(payload.get("rule_alpha_probability_inverted") is True),
         rule_alpha_evaluated_candidates=max(0, int(payload.get("rule_alpha_evaluated_candidates", 0) or 0)),
