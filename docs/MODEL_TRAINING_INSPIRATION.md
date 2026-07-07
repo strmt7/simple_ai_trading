@@ -188,16 +188,17 @@ weakening risk controls.
   promote an order-book model until it can reconstruct local books, prove depth
   continuity, replay quote-time walk-forward windows, and simulate queue/fill
   uncertainty per symbol.
-- Implemented update: v9 advanced signatures keep the v8 information-event
-  labels and expand the real second-level aggTrade-derived order-flow block
-  from 9 to 13 fields per window. In addition to taker-buy ratio, signed flow,
-  quote/trade shocks, no-trade seconds, and signed-flow/return alignment, the
-  model now receives average signed-flow strength, serial flow persistence,
-  front/back-window flow acceleration, and price/flow divergence. Legacy v8
-  signatures still rebuild the original 9-field layout. This is not a
-  substitute for true order-book tensors, but it gives the current BTC/ETH/SOL
-  second-level database a more defensible microstructure signal source than
-  OHLCV alone.
+- Implemented update: v10 advanced signatures keep legacy v8/v9 compatibility,
+  preserve the 13-field real second-level aggTrade-derived order-flow block,
+  and add a closed-bar higher-timeframe context group. In addition to taker-buy
+  ratio, signed flow, quote/trade shocks, no-trade seconds,
+  signed-flow/return alignment, average signed-flow strength, serial flow
+  persistence, front/back-window flow acceleration, and price/flow divergence,
+  the model now receives broader return, average-distance, realized-volatility,
+  drawdown/bounce, volume, and trade-count context from one-minute bars derived
+  from the same input stream. This is not a substitute for true order-book
+  tensors, but it gives the current BTC/ETH/SOL second-level database a more
+  defensible regime and microstructure signal source than OHLCV alone.
 - Implemented update: futures threshold calibration now tests symmetric,
   long-only, and short-only threshold variants on the selection fold. This
   allows the optimizer to disable a harmful side when evidence supports it,

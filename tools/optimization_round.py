@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
+import json
 from pathlib import Path
 import sys
-
-from simple_ai_trading.api import BinanceClient
-from simple_ai_trading.config import load_strategy
-from simple_ai_trading.optimization_evidence import build_round_evidence, parse_evidence_timestamp_ms
-from simple_ai_trading.optimization_progress import build_optimization_progress_artifacts
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -103,8 +100,42 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _safe_round_id(round_id: str) -> str:
+    return str(round_id).strip().lower().replace(" ", "-")
+
+
+def _write_startup_status(args: argparse.Namespace) -> Path:
+    data_dir = Path(args.docs_root) / _safe_round_id(args.round_id) / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    status_path = data_dir / "round-status.json"
+    status = {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "round_id": str(args.round_id),
+        "phase": "process_startup",
+        "status": "running",
+        "message": "optimization wrapper parsed arguments; importing evidence engine",
+        "market": str(args.market),
+        "interval": str(args.interval),
+        "objective": str(args.objective),
+        "compute_backend": str(args.compute_backend),
+        "require_gpu": bool(args.require_gpu),
+    }
+    tmp_path = status_path.with_suffix(".tmp")
+    tmp_path.write_text(json.dumps(status, indent=2, sort_keys=True), encoding="utf-8")
+    tmp_path.replace(status_path)
+    return status_path
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    status_path = _write_startup_status(args)
+    print(f"startup status: {status_path}", flush=True)
+
+    from simple_ai_trading.api import BinanceClient
+    from simple_ai_trading.config import load_strategy
+    from simple_ai_trading.optimization_evidence import build_round_evidence, parse_evidence_timestamp_ms
+    from simple_ai_trading.optimization_progress import build_optimization_progress_artifacts
+
     strategy = load_strategy()
     client = BinanceClient(
         "",
