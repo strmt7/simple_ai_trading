@@ -230,6 +230,88 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
             + 0.14 * math.tanh((rsi - 0.50) * 4.8)
         )
         score = -0.58 * absorption - 0.42 * stretch
+    elif family == "micro_flow_scalp":
+        flow_pressure = (
+            0.24 * math.tanh(order_flow["signed_base"] * 3.2)
+            + 0.22 * math.tanh(order_flow["signed_quote"] * 3.0)
+            + 0.18 * math.tanh(order_flow["signed_ratio_delta"] * 4.0)
+            + 0.14 * math.tanh(order_flow["flow_acceleration"] * 3.2)
+            + 0.10 * math.tanh((order_flow["taker_buy_ratio"] - 0.5) * 6.0)
+            + 0.08 * math.tanh(order_flow["trade_impulse"] * 2.0)
+            + 0.04 * math.tanh(order_flow["quote_impulse"] * 2.0)
+        )
+        price_tape = (
+            0.40 * math.tanh(momentum_1 * 360.0)
+            + 0.30 * math.tanh(momentum_3 * 220.0)
+            + 0.18 * math.tanh(trend_acceleration * 300.0)
+            + 0.12 * math.tanh(ema_gap * 120.0)
+        )
+        liquidity_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
+        score = liquidity_quality * (0.68 * flow_pressure + 0.32 * price_tape)
+    elif family == "vwap_snapback_scalp":
+        stretch = (
+            0.42 * math.tanh(gap_to_vwap * 180.0)
+            + 0.24 * math.tanh(momentum_3 * 210.0)
+            + 0.18 * math.tanh((rsi - 0.50) * 5.2)
+            + 0.16 * math.tanh(ema_gap * 130.0)
+        )
+        exhaustion = (
+            0.30 * math.tanh(order_flow["price_flow_divergence"] * 2.8)
+            + 0.22 * math.tanh(order_flow["signed_ratio_delta"] * 3.0)
+            - 0.18 * math.tanh(order_flow["flow_return_alignment"] * 2.4)
+            + 0.16 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.2)
+        )
+        participation = 0.72 + 0.28 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.0)
+        score = -participation * (0.64 * stretch + 0.36 * exhaustion)
+    elif family == "liquidity_sweep_reversal":
+        sweep = (
+            0.28 * math.tanh(order_flow["signed_base"] * 3.2)
+            + 0.24 * math.tanh(order_flow["signed_quote"] * 3.0)
+            + 0.18 * math.tanh(order_flow["trade_impulse"] * 2.2)
+            + 0.16 * math.tanh(order_flow["quote_impulse"] * 2.0)
+            + 0.14 * math.tanh(order_flow["flow_acceleration"] * 2.8)
+        )
+        price_stretch = (
+            0.34 * math.tanh(gap_to_vwap * 165.0)
+            + 0.26 * math.tanh(momentum_3 * 190.0)
+            + 0.20 * math.tanh(momentum_10 * 130.0)
+            + 0.20 * math.tanh((rsi - 0.50) * 4.8)
+        )
+        divergence = math.tanh(order_flow["price_flow_divergence"] * 3.0)
+        score = -0.52 * sweep * abs(price_stretch) - 0.30 * price_stretch - 0.18 * divergence
+    elif family == "compression_breakout_scalp":
+        direction = (
+            0.42 * math.tanh(momentum_1 * 360.0)
+            + 0.28 * math.tanh(momentum_3 * 230.0)
+            + 0.18 * math.tanh(order_flow["signed_base"] * 2.6)
+            + 0.12 * math.tanh(order_flow["flow_acceleration"] * 2.8)
+        )
+        compression = 1.0 - math.tanh((relative_atr + volatility_20) * 75.0)
+        participation = (
+            0.46
+            + 0.24 * math.tanh(volume_ratio * 1.8)
+            + 0.18 * math.tanh(abs(order_flow["signed_base"]) * 2.4)
+            + 0.12 * math.tanh(order_flow["mean_abs_signed_ratio"] * 3.0)
+        )
+        liquidity_quality = 1.0 - 0.5 * _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
+        score = direction * (0.55 + 0.45 * compression) * participation * liquidity_quality
+    elif family == "adaptive_tape_regime":
+        trend = (
+            0.30 * math.tanh(momentum_1 * 310.0)
+            + 0.24 * math.tanh(momentum_3 * 210.0)
+            + 0.18 * math.tanh(momentum_10 * 130.0)
+            + 0.18 * math.tanh(order_flow["signed_base"] * 2.8)
+            + 0.10 * math.tanh(order_flow["flow_acceleration"] * 2.8)
+        )
+        reversion = -(
+            0.36 * math.tanh(gap_to_vwap * 155.0)
+            + 0.24 * math.tanh(momentum_3 * 175.0)
+            + 0.20 * math.tanh((rsi - 0.50) * 4.6)
+            + 0.20 * math.tanh(order_flow["price_flow_divergence"] * 2.4)
+        )
+        persistence = math.tanh(order_flow["flow_persistence"] * 2.4 + order_flow["flow_return_alignment"] * 1.8)
+        trend_weight = 0.5 + 0.5 * persistence
+        score = trend_weight * trend + (1.0 - trend_weight) * reversion
     else:
         score = (
             0.32 * math.tanh(momentum_20 * 90.0)
@@ -372,6 +454,7 @@ class TrainedModel:
     rule_alpha_best_reject_reason: str = ""
     rule_alpha_probability_inverted: bool = False
     rule_alpha_evaluated_candidates: int = 0
+    rule_alpha_candidate_summary: dict[str, Any] = field(default_factory=dict)
     meta_label_policy: dict[str, Any] = field(default_factory=dict)
     selection_risk: dict[str, Any] = field(default_factory=dict)
     execution_validation: dict[str, Any] = field(default_factory=dict)
@@ -2360,6 +2443,11 @@ def load_model(
         rule_alpha_best_reject_reason=str(payload.get("rule_alpha_best_reject_reason", "") or ""),
         rule_alpha_probability_inverted=bool(payload.get("rule_alpha_probability_inverted") is True),
         rule_alpha_evaluated_candidates=max(0, int(payload.get("rule_alpha_evaluated_candidates", 0) or 0)),
+        rule_alpha_candidate_summary=(
+            dict(payload["rule_alpha_candidate_summary"])
+            if isinstance(payload.get("rule_alpha_candidate_summary"), dict)
+            else {}
+        ),
         meta_label_policy=(
             dict(payload["meta_label_policy"])
             if isinstance(payload.get("meta_label_policy"), dict)

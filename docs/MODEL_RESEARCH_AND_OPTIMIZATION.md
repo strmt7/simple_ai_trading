@@ -225,8 +225,10 @@ pattern seen in stronger bots: broad, cheap entry/exit template sweeps happen
 before any template is promoted into the same serialized model path. The current
 templates are original momentum breakout, VWAP/RSI mean reversion,
 trend-pullback, volatility breakout, volume-flow proxy, order-flow momentum,
-flow-reversion, flow-consensus breakout, and liquidity-absorption reversal
-families. The default 72-candidate prefix is stratified: it covers every family
+flow-reversion, flow-consensus breakout, liquidity-absorption reversal,
+micro-flow scalp, VWAP snapback scalp, liquidity-sweep reversal, compression
+breakout scalp, and adaptive tape-regime families. The default 126-candidate
+prefix is stratified: it covers every family
 and execution profile, then covers the full base family/profile matrix, before
 spending remaining slots on nearby threshold/sensitivity/deadband variants.
 Order-flow templates receive serialized offsets
@@ -238,7 +240,10 @@ Rule-alpha models serialize as `rule_alpha` hybrid experts, so a promoted
 template is available without a separate code path. Rejected searches record the
 best rejected active profile, P&L, closed-trade count, win rate, profit factor,
 max drawdown, exit-reason counts, side counts, reject reason, orientation, and
-candidate count.
+candidate count. Candidate diagnostics also persist the full zoo's
+active/profitable/accepted candidate counts, maximum closed trades, most-active
+candidate, best-PnL candidate, and active family/profile coverage so failed
+research cannot hide whether it was inactive or active-but-losing.
 
 The optimization-round evidence path now runs the same adaptive hybrid model-zoo
 as a post-base-candidate selection step even when the selected base candidate
@@ -248,17 +253,20 @@ profile and score diagnostics, emits status updates during long hybrid checks,
 and keeps the fail-closed no-entry model unless the hybrid replay passes
 `ObjectiveSpec.accepts`. This prevents a sophisticated ensemble overlay, or a
 rejected diagnostic threshold, from becoming executable just because it exists
-in code. The 2026-07-07 `round-stratified-alpha-search-1d-smoke` run used verified
+in code. The 2026-07-07 `round-microstructure-alpha-expanded-1d-smoke` run used verified
 BTCUSDT/ETHUSDT/SOLUSDT futures `1s` data for 2024-06-01, DirectML training and
 scoring, conservative 5x futures settings, seven hybrid profiles, the v9
 171-feature advanced vector including 13 order-flow microstructure fields per
-window, and 144 normal/inverted
+window, and 252 normal/inverted
 rule-alpha replays per symbol. It failed with zero accepted symbols, zero closed
 holdout trades, mean ROI `0.0%`, and no liquidations. Best rejected active alpha
 profiles were still negative after costs: BTCUSDT guarded momentum breakout
-lost `0.6405880579098948` on one closed short, ETHUSDT inverted guarded
-liquidity-absorption reversal lost `0.5363706418223728` on one closed long, and
-SOLUSDT held-180s flow reversion lost `0.5233335205740559` on one closed long.
+lost `0.6405880579098948` on one closed short, ETHUSDT scalp-3s volatility
+breakout lost `0.4777638673568845` on one closed long, and SOLUSDT held-180s
+flow reversion lost `0.5233335205740559` on one closed long. The expanded
+search did generate internal trading activity, with 216 BTCUSDT, 234 ETHUSDT,
+and 216 SOLUSDT active candidates, but zero profitable candidates after modeled
+costs.
 This is negative research evidence rather than promotion evidence.
 
 The training-suite grid deliberately includes lower threshold probes, multiple

@@ -27,6 +27,7 @@ from .advanced_model import (
 from .alpha_search import (
     DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
     optimize_rule_alpha_model_zoo,
+    summarize_rule_alpha_candidate_distribution,
     summarize_rule_alpha_trade_path,
 )
 from .api import BinanceAPIError, BinanceClient, Candle
@@ -2070,6 +2071,7 @@ def _select_rule_alpha_model_zoo_if_accepted(
     )
     model = result.model
     model.rule_alpha_evaluated_candidates = int(alpha_report.evaluated_candidates)
+    model.rule_alpha_candidate_summary = summarize_rule_alpha_candidate_distribution(alpha_report.candidate_results)
     if alpha_report.best_candidate is not None:
         model.rule_alpha_profile = str(alpha_report.best_candidate.name)
         model.rule_alpha_family = str(alpha_report.best_candidate.family)
@@ -2157,6 +2159,11 @@ def _round_candidate_diagnostic(
     candidate_strategy = _strategy_for_round_candidate(strategy, result.candidate)
     model = result.model
     selection = result.selection_result
+    rule_alpha_summary = (
+        dict(getattr(model, "rule_alpha_candidate_summary", {}) or {})
+        if isinstance(getattr(model, "rule_alpha_candidate_summary", {}), dict)
+        else {}
+    )
     return {
         "name": result.candidate.name,
         "selected": bool(selected),
@@ -2219,6 +2226,19 @@ def _round_candidate_diagnostic(
         "rule_alpha_best_reject_reason": str(getattr(model, "rule_alpha_best_reject_reason", "") or ""),
         "rule_alpha_probability_inverted": bool(getattr(model, "rule_alpha_probability_inverted", False)),
         "rule_alpha_evaluated_candidates": int(getattr(model, "rule_alpha_evaluated_candidates", 0) or 0),
+        "rule_alpha_active_candidates": int(_finite(rule_alpha_summary.get("active_candidates"))),
+        "rule_alpha_profitable_candidates": int(_finite(rule_alpha_summary.get("profitable_candidates"))),
+        "rule_alpha_accepted_candidates": int(_finite(rule_alpha_summary.get("accepted_candidates"))),
+        "rule_alpha_max_closed_trades": int(_finite(rule_alpha_summary.get("max_closed_trades"))),
+        "rule_alpha_most_active_candidate": str(rule_alpha_summary.get("most_active_candidate", "") or ""),
+        "rule_alpha_most_active_pnl": _finite(rule_alpha_summary.get("most_active_pnl")),
+        "rule_alpha_most_active_profit_factor": _finite(rule_alpha_summary.get("most_active_profit_factor")),
+        "rule_alpha_most_active_reject_reason": str(rule_alpha_summary.get("most_active_reject_reason", "") or ""),
+        "rule_alpha_best_pnl_candidate": str(rule_alpha_summary.get("best_pnl_candidate", "") or ""),
+        "rule_alpha_best_pnl_candidate_pnl": _finite(rule_alpha_summary.get("best_pnl")),
+        "rule_alpha_best_pnl_candidate_closed_trades": int(_finite(rule_alpha_summary.get("best_pnl_closed_trades"))),
+        "rule_alpha_families_with_trades": str(rule_alpha_summary.get("families_with_trades", "") or ""),
+        "rule_alpha_profiles_with_trades": str(rule_alpha_summary.get("profiles_with_trades", "") or ""),
         "round_selection_gate_passed": bool(getattr(model, "round_selection_gate_passed", False)),
         "round_selection_reject_reason": str(getattr(model, "round_selection_reject_reason", "") or ""),
         "threshold_source": str(getattr(model, "threshold_source", "") or ""),
@@ -2360,6 +2380,19 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "rule_alpha_best_reject_reason": str(item.get("rule_alpha_best_reject_reason", "")),
             "rule_alpha_probability_inverted": bool(item.get("rule_alpha_probability_inverted") is True),
             "rule_alpha_evaluated_candidates": int(_finite(item.get("rule_alpha_evaluated_candidates"))),
+            "rule_alpha_active_candidates": int(_finite(item.get("rule_alpha_active_candidates"))),
+            "rule_alpha_profitable_candidates": int(_finite(item.get("rule_alpha_profitable_candidates"))),
+            "rule_alpha_accepted_candidates": int(_finite(item.get("rule_alpha_accepted_candidates"))),
+            "rule_alpha_max_closed_trades": int(_finite(item.get("rule_alpha_max_closed_trades"))),
+            "rule_alpha_most_active_candidate": str(item.get("rule_alpha_most_active_candidate", "")),
+            "rule_alpha_most_active_pnl": _finite(item.get("rule_alpha_most_active_pnl")),
+            "rule_alpha_most_active_profit_factor": _finite(item.get("rule_alpha_most_active_profit_factor")),
+            "rule_alpha_most_active_reject_reason": str(item.get("rule_alpha_most_active_reject_reason", "")),
+            "rule_alpha_best_pnl_candidate": str(item.get("rule_alpha_best_pnl_candidate", "")),
+            "rule_alpha_best_pnl_candidate_pnl": _finite(item.get("rule_alpha_best_pnl_candidate_pnl")),
+            "rule_alpha_best_pnl_candidate_closed_trades": int(_finite(item.get("rule_alpha_best_pnl_candidate_closed_trades"))),
+            "rule_alpha_families_with_trades": str(item.get("rule_alpha_families_with_trades", "")),
+            "rule_alpha_profiles_with_trades": str(item.get("rule_alpha_profiles_with_trades", "")),
             "round_selection_gate_passed": bool(item.get("round_selection_gate_passed") is True),
             "round_selection_reject_reason": str(item.get("round_selection_reject_reason", "")),
             "threshold_source": str(item.get("threshold_source", "")),
@@ -3157,6 +3190,13 @@ def build_round_evidence(
         "rule_alpha_best_side_counts",
         "rule_alpha_best_reject_reason", "rule_alpha_probability_inverted",
         "rule_alpha_evaluated_candidates",
+        "rule_alpha_active_candidates", "rule_alpha_profitable_candidates",
+        "rule_alpha_accepted_candidates", "rule_alpha_max_closed_trades",
+        "rule_alpha_most_active_candidate", "rule_alpha_most_active_pnl",
+        "rule_alpha_most_active_profit_factor", "rule_alpha_most_active_reject_reason",
+        "rule_alpha_best_pnl_candidate", "rule_alpha_best_pnl_candidate_pnl",
+        "rule_alpha_best_pnl_candidate_closed_trades",
+        "rule_alpha_families_with_trades", "rule_alpha_profiles_with_trades",
         "round_selection_gate_passed",
         "round_selection_reject_reason", "threshold_source", "decision_threshold",
         "long_decision_threshold", "short_decision_threshold",

@@ -918,6 +918,88 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                             + 0.14 * torch.tanh((rsi - 0.50) * 4.8)
                         )
                         score = -0.58 * absorption - 0.42 * stretch
+                    elif family == "micro_flow_scalp":
+                        flow_pressure = (
+                            0.24 * torch.tanh(signed_base * 3.2)
+                            + 0.22 * torch.tanh(signed_quote * 3.0)
+                            + 0.18 * torch.tanh(signed_ratio_delta * 4.0)
+                            + 0.14 * torch.tanh(flow_acceleration * 3.2)
+                            + 0.10 * torch.tanh((taker_buy_ratio - 0.5) * 6.0)
+                            + 0.08 * torch.tanh(trade_impulse * 2.0)
+                            + 0.04 * torch.tanh(quote_impulse * 2.0)
+                        )
+                        price_tape = (
+                            0.40 * torch.tanh(momentum_1 * 360.0)
+                            + 0.30 * torch.tanh(momentum_3 * 220.0)
+                            + 0.18 * torch.tanh(trend_acceleration * 300.0)
+                            + 0.12 * torch.tanh(ema_gap * 120.0)
+                        )
+                        liquidity_quality = 1.0 - torch.clamp(no_trade_ratio, min=0.0, max=1.0)
+                        score = liquidity_quality * (0.68 * flow_pressure + 0.32 * price_tape)
+                    elif family == "vwap_snapback_scalp":
+                        stretch = (
+                            0.42 * torch.tanh(gap_to_vwap * 180.0)
+                            + 0.24 * torch.tanh(momentum_3 * 210.0)
+                            + 0.18 * torch.tanh((rsi - 0.50) * 5.2)
+                            + 0.16 * torch.tanh(ema_gap * 130.0)
+                        )
+                        exhaustion = (
+                            0.30 * torch.tanh(price_flow_divergence * 2.8)
+                            + 0.22 * torch.tanh(signed_ratio_delta * 3.0)
+                            - 0.18 * torch.tanh(flow_return_alignment * 2.4)
+                            + 0.16 * torch.tanh(mean_abs_signed_ratio * 3.2)
+                        )
+                        participation = 0.72 + 0.28 * torch.tanh(mean_abs_signed_ratio * 3.0)
+                        score = -participation * (0.64 * stretch + 0.36 * exhaustion)
+                    elif family == "liquidity_sweep_reversal":
+                        sweep = (
+                            0.28 * torch.tanh(signed_base * 3.2)
+                            + 0.24 * torch.tanh(signed_quote * 3.0)
+                            + 0.18 * torch.tanh(trade_impulse * 2.2)
+                            + 0.16 * torch.tanh(quote_impulse * 2.0)
+                            + 0.14 * torch.tanh(flow_acceleration * 2.8)
+                        )
+                        price_stretch = (
+                            0.34 * torch.tanh(gap_to_vwap * 165.0)
+                            + 0.26 * torch.tanh(momentum_3 * 190.0)
+                            + 0.20 * torch.tanh(momentum_10 * 130.0)
+                            + 0.20 * torch.tanh((rsi - 0.50) * 4.8)
+                        )
+                        divergence = torch.tanh(price_flow_divergence * 3.0)
+                        score = -0.52 * sweep * torch.abs(price_stretch) - 0.30 * price_stretch - 0.18 * divergence
+                    elif family == "compression_breakout_scalp":
+                        direction = (
+                            0.42 * torch.tanh(momentum_1 * 360.0)
+                            + 0.28 * torch.tanh(momentum_3 * 230.0)
+                            + 0.18 * torch.tanh(signed_base * 2.6)
+                            + 0.12 * torch.tanh(flow_acceleration * 2.8)
+                        )
+                        compression = 1.0 - torch.tanh((relative_atr + volatility_20) * 75.0)
+                        participation = (
+                            0.46
+                            + 0.24 * torch.tanh(volume_ratio * 1.8)
+                            + 0.18 * torch.tanh(torch.abs(signed_base) * 2.4)
+                            + 0.12 * torch.tanh(mean_abs_signed_ratio * 3.0)
+                        )
+                        liquidity_quality = 1.0 - 0.5 * torch.clamp(no_trade_ratio, min=0.0, max=1.0)
+                        score = direction * (0.55 + 0.45 * compression) * participation * liquidity_quality
+                    elif family == "adaptive_tape_regime":
+                        trend = (
+                            0.30 * torch.tanh(momentum_1 * 310.0)
+                            + 0.24 * torch.tanh(momentum_3 * 210.0)
+                            + 0.18 * torch.tanh(momentum_10 * 130.0)
+                            + 0.18 * torch.tanh(signed_base * 2.8)
+                            + 0.10 * torch.tanh(flow_acceleration * 2.8)
+                        )
+                        reversion = -(
+                            0.36 * torch.tanh(gap_to_vwap * 155.0)
+                            + 0.24 * torch.tanh(momentum_3 * 175.0)
+                            + 0.20 * torch.tanh((rsi - 0.50) * 4.6)
+                            + 0.20 * torch.tanh(price_flow_divergence * 2.4)
+                        )
+                        persistence = torch.tanh(flow_persistence * 2.4 + flow_return_alignment * 1.8)
+                        trend_weight = 0.5 + 0.5 * persistence
+                        score = trend_weight * trend + (1.0 - trend_weight) * reversion
                     else:
                         score = (
                             0.32 * torch.tanh(momentum_20 * 90.0)

@@ -28,7 +28,7 @@ from .strategy_overrides import strategy_overrides_from_config
 from .types import StrategyConfig
 
 
-DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 72
+DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 126
 
 
 @dataclass(frozen=True)
@@ -120,6 +120,71 @@ def summarize_rule_alpha_trade_path(result: BacktestResult) -> dict[str, Any]:
     }
 
 
+def summarize_rule_alpha_candidate_distribution(
+    results: Sequence[RuleAlphaCandidateResult],
+) -> dict[str, object]:
+    """Return compact audit telemetry for the full rule-alpha search surface."""
+
+    result_list = list(results)
+    if not result_list:
+        return {
+            "evaluated_candidates": 0,
+            "accepted_candidates": 0,
+            "active_candidates": 0,
+            "profitable_candidates": 0,
+            "max_closed_trades": 0,
+            "most_active_candidate": "",
+            "most_active_pnl": 0.0,
+            "most_active_reject_reason": "",
+            "best_pnl_candidate": "",
+            "best_pnl": 0.0,
+            "best_pnl_closed_trades": 0,
+            "families_with_trades": "",
+            "profiles_with_trades": "",
+        }
+    active = [item for item in result_list if int(getattr(item.result, "closed_trades", 0) or 0) > 0]
+    profitable = [
+        item
+        for item in result_list
+        if int(getattr(item.result, "closed_trades", 0) or 0) > 0
+        and float(getattr(item.result, "realized_pnl", 0.0) or 0.0) > 0.0
+    ]
+    most_active = max(
+        result_list,
+        key=lambda item: (
+            int(getattr(item.result, "closed_trades", 0) or 0),
+            float(getattr(item.result, "realized_pnl", 0.0) or 0.0),
+            float(getattr(item.result, "profit_factor", 0.0) or 0.0),
+        ),
+    )
+    best_pnl = max(
+        result_list,
+        key=lambda item: (
+            float(getattr(item.result, "realized_pnl", 0.0) or 0.0),
+            int(getattr(item.result, "closed_trades", 0) or 0),
+            -float(getattr(item.result, "max_drawdown", 0.0) or 0.0),
+        ),
+    )
+    active_families = sorted({item.candidate.family for item in active})
+    active_profiles = sorted({item.candidate.name.split(":")[1] for item in active if ":" in item.candidate.name})
+    return {
+        "evaluated_candidates": int(len(result_list)),
+        "accepted_candidates": int(sum(1 for item in result_list if item.accepted)),
+        "active_candidates": int(len(active)),
+        "profitable_candidates": int(len(profitable)),
+        "max_closed_trades": int(getattr(most_active.result, "closed_trades", 0) or 0),
+        "most_active_candidate": str(most_active.candidate.name),
+        "most_active_pnl": float(getattr(most_active.result, "realized_pnl", 0.0) or 0.0),
+        "most_active_profit_factor": float(getattr(most_active.result, "profit_factor", 0.0) or 0.0),
+        "most_active_reject_reason": str(most_active.reject_reason or ""),
+        "best_pnl_candidate": str(best_pnl.candidate.name),
+        "best_pnl": float(getattr(best_pnl.result, "realized_pnl", 0.0) or 0.0),
+        "best_pnl_closed_trades": int(getattr(best_pnl.result, "closed_trades", 0) or 0),
+        "families_with_trades": ",".join(active_families),
+        "profiles_with_trades": ",".join(active_profiles),
+    }
+
+
 def rule_alpha_feature_params(feature_cfg: AdvancedFeatureConfig | None) -> dict[str, object]:
     if feature_cfg is None:
         return {}
@@ -159,8 +224,16 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         "flow_reversion",
         "flow_consensus_breakout",
         "liquidity_absorption_reversal",
+        "micro_flow_scalp",
+        "vwap_snapback_scalp",
+        "liquidity_sweep_reversal",
+        "compression_breakout_scalp",
+        "adaptive_tape_regime",
     )
     execution_profiles = (
+        ("scalp_3s", 0.06, 0.05, 0.0, 1, 0),
+        ("scalp_8s", 0.08, 0.07, 0.0, 2, 0),
+        ("scalp_20s", 0.10, 0.09, 0.0, 4, 1),
         ("micro", 0.14, 0.10, 0.0, 2, 0),
         ("balanced", 0.18, 0.14, 0.0, 3, 1),
         ("guarded", 0.22, 0.18, 0.25, 4, 1),
@@ -352,6 +425,7 @@ def optimize_rule_alpha_model_zoo(
             if best_diagnostic is None or _diagnostic_rank_key(candidate_result) > _diagnostic_rank_key(best_diagnostic):
                 best_diagnostic = candidate_result
 
+    candidate_summary = summarize_rule_alpha_candidate_distribution(diagnostics)
     winner = best_accepted or best_diagnostic
     if winner is None:
         return RuleAlphaOptimizationReport(False, None, float("-inf"), None, False, None, len(diagnostics), None, tuple(diagnostics))
@@ -375,6 +449,7 @@ def optimize_rule_alpha_model_zoo(
     model.rule_alpha_best_reject_reason = str(winner.reject_reason or "")
     model.rule_alpha_probability_inverted = bool(winner.probability_inverted)
     model.rule_alpha_evaluated_candidates = len(diagnostics)
+    model.rule_alpha_candidate_summary = dict(candidate_summary)
     model.round_selection_gate_passed = bool(winner.accepted)
     model.round_selection_reject_reason = "" if winner.accepted else str(winner.reject_reason or "rule_alpha_selection_failed")
     if not winner.accepted:
@@ -449,5 +524,6 @@ __all__ = [
     "optimize_rule_alpha_model_zoo",
     "rule_alpha_candidates",
     "rule_alpha_feature_params",
+    "summarize_rule_alpha_candidate_distribution",
     "summarize_rule_alpha_trade_path",
 ]
