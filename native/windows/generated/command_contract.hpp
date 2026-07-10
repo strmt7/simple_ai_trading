@@ -43,6 +43,36 @@ inline constexpr CommandOptionSpec kOptions_ai_benchmark[] = {
     {L"--json", L"json", L"", L"false", L"", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_ai_forecast_benchmark[] = {
+    {L"--database", L"database", L"", L"data/market_data.sqlite", L"", false, true},
+    {L"--model-size", L"model_size", L"small, base", L"base", L"", false, true},
+    {L"--backend", L"backend", L"cpu, cuda, rocm, directml, mps, auto", L"directml", L"", false, true},
+    {L"--source-cache", L"source_cache", L"", L"", L"", false, true},
+    {L"--bootstrap-source", L"bootstrap_source", L"", L"false", L"", false, false},
+    {L"--repair-source", L"repair_source", L"", L"false", L"", false, false},
+    {L"--allow-cpu", L"allow_cpu", L"", L"false", L"", false, false},
+    {L"--start", L"start", L"", L"2024-07-01T00:00:00Z", L"", false, true},
+    {L"--end-exclusive", L"end_exclusive", L"", L"2026-01-01T00:00:00Z", L"", false, true},
+    {L"--samples-per-symbol", L"samples_per_symbol", L"", L"128", L"", false, true},
+    {L"--lookback-bars", L"lookback_bars", L"", L"480", L"", false, true},
+    {L"--prediction-bars", L"prediction_bars", L"", L"12", L"", false, true},
+    {L"--batch-size", L"batch_size", L"", L"3", L"", false, true},
+    {L"--inference-samples", L"inference_samples", L"", L"10", L"", false, true},
+    {L"--temperature", L"temperature", L"", L"0.6", L"", false, true},
+    {L"--top-k", L"top_k", L"", L"0", L"", false, true},
+    {L"--top-p", L"top_p", L"", L"0.9", L"", false, true},
+    {L"--include-volume", L"include_volume", L"", L"false", L"include volume/amount despite the upstream crypto evaluation using OHLC only", false, false},
+    {L"--seed", L"seed", L"", L"17", L"", false, true},
+    {L"--bootstrap-samples", L"bootstrap_samples", L"", L"2000", L"", false, true},
+    {L"--worker-timeout", L"worker_timeout", L"", L"60.0", L"", false, true},
+    {L"--max-worker-restarts", L"max_worker_restarts", L"", L"5", L"", false, true},
+    {L"--worker-rotation-batches", L"worker_rotation_batches", L"", L"20", L"", false, true},
+    {L"--observations", L"observations", L"", L"data/foundation_ai/kronos_observations.csv", L"", false, true},
+    {L"--output", L"output", L"", L"data/foundation_ai/kronos_benchmark.json", L"", false, true},
+    {L"--chart", L"chart", L"", L"data/foundation_ai/kronos_benchmark.svg", L"", false, true},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_ai_review[] = {
     {L"--report", L"report", L"", L"data/model_lab/model_lab_report.json", L"", false, true},
     {L"--output", L"output", L"", L"", L"", false, true},
@@ -556,6 +586,7 @@ inline constexpr CommandOptionSpec kOptions_universe[] = {
 inline constexpr CommandSpec kCommands[] = {
     {L"ai", L"usage: simple-ai-trading ai [-h] [--enable] [--disable] [--provider PROVIDER]                             [--model MODEL] [--require-gpu] [--no-require-gpu]                             [--min-free-vram-gb MIN_FREE_VRAM_GB]                             [--min-free-ram-gb MIN_FREE_RAM_GB]                             [--min-model-parameters-b MIN_MODEL_PARAMETERS_B]                             [--allow-paper-fallback] [--no-paper-fallback]                             [--json]", kOptions_ai, 12},
     {L"ai-benchmark", L"usage: simple-ai-trading ai-benchmark [-h] [--models MODELS] [--url URL]                                       [--timeout TIMEOUT]                                       [--minimum-score MINIMUM_SCORE]                                       [--output OUTPUT] [--json]", kOptions_ai_benchmark, 6},
+    {L"ai-forecast-benchmark", L"usage: simple-ai-trading ai-forecast-benchmark [-h] [--database DATABASE]                                                [--model-size {small,base}]                                                [--backend {cpu,cuda,rocm,directml,mps,auto}]                                                [--source-cache SOURCE_CACHE]                                                [--bootstrap-source]                                                [--repair-source] [--allow-cpu]                                                [--start START]                                                [--end-exclusive END_EXCLUSIVE]                                                [--samples-per-symbol SAMPLES_PER_SYMBOL]                                                [--lookback-bars LOOKBACK_BARS]                                                [--prediction-bars PREDICTION_BARS]                                                [--batch-size BATCH_SIZE]                                                [--inference-samples INFERENCE_SAMPLES]                                                [--temperature TEMPERATURE]                                                [--top-k TOP_K] [--top-p TOP_P]                                                [--include-volume]                                                [--seed SEED]                                                [--bootstrap-samples BOOTSTRAP_SAMPLES]                                                [--worker-timeout WORKER_TIMEOUT]                                                [--max-worker-restarts MAX_WORKER_RESTARTS]                                                [--worker-rotation-batches WORKER_ROTATION_BATCHES]                                                [--observations OBSERVATIONS]                                                [--output OUTPUT]                                                [--chart CHART] [--json]", kOptions_ai_forecast_benchmark, 27},
     {L"ai-review", L"usage: simple-ai-trading ai-review [-h] [--report REPORT] [--output OUTPUT]                                    [--model MODEL] [--url URL]                                    [--timeout TIMEOUT] [--json]", kOptions_ai_review, 6},
     {L"api-budget", L"usage: simple-ai-trading api-budget [-h] [--db DB] [--market {spot,futures}]                                     [--refresh] [--cached-only]                                     [--max-age-seconds MAX_AGE_SECONDS]                                     [--compact] [--json]", kOptions_api_budget, 7},
     {L"archive-sync", L"usage: simple-ai-trading archive-sync [-h] [--db DB] [--symbol SYMBOL]                                       [--symbols SYMBOLS]                                       [--top-symbols TOP_SYMBOLS]                                       [--quote-asset QUOTE_ASSET]                                       [--max-scan MAX_SCAN]                                       [--min-history-months MIN_HISTORY_MONTHS]                                       [--interval INTERVAL]                                       [--market {spot,futures}]                                       [--cadence {monthly,daily}]                                       [--data-type {klines,aggTrades}]                                       [--max-files MAX_FILES]                                       [--start-period START_PERIOD]                                       [--end-period END_PERIOD] [--plan-only]                                       [--max-planned-gb MAX_PLANNED_GB]                                       [--timeout TIMEOUT] [--force]                                       [--aggregate-only]                                       [--no-verify-checksum]                                       [--require-checksum] [--json]", kOptions_archive_sync, 22},

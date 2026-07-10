@@ -162,17 +162,31 @@ def _write_startup_status(args: argparse.Namespace) -> Path:
         "objective": str(args.objective),
         "compute_backend": str(args.compute_backend),
         "require_gpu": bool(args.require_gpu),
-        "model_candidates": int(args.model_candidates),
+        "model_candidates": int(
+            getattr(args, "model_candidates", DEFAULT_MODEL_CANDIDATES)
+        ),
         "model_candidate_names": [
             value.strip()
-            for value in str(args.model_candidate_names or "").split(",")
+            for value in str(getattr(args, "model_candidate_names", "") or "").split(",")
             if value.strip()
         ],
-        "rule_alpha_candidates": int(args.rule_alpha_candidates),
-        "rule_alpha_empirical_features": int(args.rule_alpha_empirical_features),
+        "rule_alpha_candidates": int(
+            getattr(args, "rule_alpha_candidates", DEFAULT_RULE_ALPHA_CANDIDATES)
+        ),
+        "rule_alpha_empirical_features": int(
+            getattr(
+                args,
+                "rule_alpha_empirical_features",
+                DEFAULT_RULE_ALPHA_EMPIRICAL_FEATURES,
+            )
+        ),
     }
     tmp_path = status_path.with_suffix(".tmp")
-    tmp_path.write_text(json.dumps(status, indent=2, sort_keys=True), encoding="utf-8")
+    tmp_path.write_text(
+        json.dumps(status, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     tmp_path.replace(status_path)
     return status_path
 

@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 2795,
+      "bytes": 2781,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "b6034c2c64c9b1d9d82de2f492b4698575dfc8e085c58740d119cf5200600b24"
+      "sha256": "e49dc37be9ecba712fada3a01fd74b65a91b396228a54f9da0be39f327d41138"
     },
     {
-      "bytes": 7983,
+      "bytes": 7934,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -27,7 +27,7 @@
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
       "row_count": 48,
-      "sha256": "5ba0ba3656dfeb7dfbbba93afabd25b261c8b9c1da8b1c6be405304052b738d1"
+      "sha256": "7fa8f106dbf289fd24b4135a20d2e5bc4fc9acc58200941257587cd20d492eb4"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",

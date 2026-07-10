@@ -23,7 +23,34 @@ simple-ai-trading compute --backend directml
 simple-ai-trading compute --backend cpu
 simple-ai-trading ai
 simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
+simple-ai-trading ai-forecast-benchmark --backend directml --model-size base
 ```
+
+## Financial Foundation Forecast Gate
+
+The optional Kronos benchmark is process-isolated because the live AMD host
+exposed intermittent DirectML device failures during long inference sequences.
+The benchmark never retries a failed DirectML request in the same interpreter.
+It closes that worker, starts a fresh verified worker, checks immutable engine
+identity, and replays the same batch once with the same seed. Planned rotation
+after 20 batches bounds long-lived device state. A second fault in one batch,
+an identity change, a deadline, non-finite output, shape mismatch, or seeded
+output mismatch fails the run.
+
+The retained 1,536-observation host run started 27 workers: one initial worker,
+25 planned rotations, and one successful fault replacement. It recorded zero
+in-process retries and exact same-seed output equality. Total supervised
+inference time was 116.982 seconds across 512 batches. This proves that the
+runtime can execute and recover on this AMD/DirectML host; it does not prove
+predictive or trading value. The candidate failed the random-walk forecast gate
+and remains research-only. See
+[`docs/ai/foundation/latest`](ai/foundation/latest/README.md).
+
+For new packaged ONNX deployment work, Windows ML is the preferred evaluation
+path because Microsoft describes ONNX Runtime DirectML as sustained engineering.
+The current PyTorch/Kronos experiment remains on `torch-directml` only because
+that is the verified upstream model execution path; changing providers requires
+a new parity and numerical benchmark.
 
 CPU-only mode is allowed. When selected or when GPU probing fails:
 

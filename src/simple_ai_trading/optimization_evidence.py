@@ -1301,7 +1301,7 @@ def _result_points(result: BacktestResult) -> list[EquityPoint]:
 def _write_csv(path: Path, rows: Sequence[Mapping[str, object]], fieldnames: Sequence[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with _open_text_writer(path) as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(fieldnames))
+        writer = csv.DictWriter(handle, fieldnames=list(fieldnames), lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in fieldnames})
@@ -4590,7 +4590,11 @@ def build_round_evidence(
             low_liquidity_count = 0
             weekend_count = 0
             with _open_text_writer(symbol_timeline_path) as handle:
-                writer = csv.DictWriter(handle, fieldnames=list(timeline_fieldnames))
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=list(timeline_fieldnames),
+                    lineterminator="\n",
+                )
                 writer.writeheader()
                 for timestamp, point in sorted(point_by_timestamp.items()):
                     if timestamp <= 0:
@@ -4631,6 +4635,7 @@ def build_round_evidence(
             chart_path.write_text(
                 render_comparison_svg(strategy_points, baseline_points, title=f"{item.symbol} {objective.label} Backtest vs Passive Baseline"),
                 encoding="utf-8",
+                newline="\n",
             )
             write_status(
                 "artifact_stream_complete",
@@ -4882,7 +4887,7 @@ def build_round_evidence(
             last_symbol_reason=metric.reason,
         )
         candles = []
-        rows = []
+        rows = []  # noqa: F841 - release the per-symbol feature matrix before the next symbol
         validation_rows = []
         gc.collect()
     metric_rows = [metric.asdict() for metric in metrics]

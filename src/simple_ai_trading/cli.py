@@ -875,6 +875,52 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai_benchmark.add_argument("--json", action="store_true")
     parser_ai_benchmark.set_defaults(func=command_ai_benchmark)
 
+    parser_ai_forecast = subparsers.add_parser(
+        "ai-forecast-benchmark",
+        help="benchmark a pinned financial foundation forecast on real post-cutoff BTC/ETH/SOL data",
+    )
+    parser_ai_forecast.add_argument("--database", default="data/market_data.sqlite")
+    parser_ai_forecast.add_argument("--model-size", choices=("small", "base"), default="base")
+    parser_ai_forecast.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default="directml")
+    parser_ai_forecast.add_argument("--source-cache", default=None)
+    parser_ai_forecast.add_argument("--bootstrap-source", action="store_true")
+    parser_ai_forecast.add_argument("--repair-source", action="store_true")
+    parser_ai_forecast.add_argument("--allow-cpu", action="store_true")
+    parser_ai_forecast.add_argument("--start", default="2024-07-01T00:00:00Z")
+    parser_ai_forecast.add_argument("--end-exclusive", default="2026-01-01T00:00:00Z")
+    parser_ai_forecast.add_argument("--samples-per-symbol", type=int, default=128)
+    parser_ai_forecast.add_argument("--lookback-bars", type=int, default=480)
+    parser_ai_forecast.add_argument("--prediction-bars", type=int, default=12)
+    parser_ai_forecast.add_argument("--batch-size", type=int, default=3)
+    parser_ai_forecast.add_argument("--inference-samples", type=int, default=10)
+    parser_ai_forecast.add_argument("--temperature", type=float, default=0.6)
+    parser_ai_forecast.add_argument("--top-k", type=int, default=0)
+    parser_ai_forecast.add_argument("--top-p", type=float, default=0.9)
+    parser_ai_forecast.add_argument(
+        "--include-volume",
+        action="store_true",
+        help="include volume/amount despite the upstream crypto evaluation using OHLC only",
+    )
+    parser_ai_forecast.add_argument("--seed", type=int, default=17)
+    parser_ai_forecast.add_argument("--bootstrap-samples", type=int, default=2000)
+    parser_ai_forecast.add_argument("--worker-timeout", type=float, default=60.0)
+    parser_ai_forecast.add_argument("--max-worker-restarts", type=int, default=5)
+    parser_ai_forecast.add_argument("--worker-rotation-batches", type=int, default=20)
+    parser_ai_forecast.add_argument(
+        "--observations",
+        default="data/foundation_ai/kronos_observations.csv",
+    )
+    parser_ai_forecast.add_argument(
+        "--output",
+        default="data/foundation_ai/kronos_benchmark.json",
+    )
+    parser_ai_forecast.add_argument(
+        "--chart",
+        default="data/foundation_ai/kronos_benchmark.svg",
+    )
+    parser_ai_forecast.add_argument("--json", action="store_true")
+    parser_ai_forecast.set_defaults(func=command_ai_forecast_benchmark)
+
     parser_ai_review = subparsers.add_parser(
         "ai-review",
         help="run a structured local-AI risk review over a model-lab report",
@@ -4663,6 +4709,70 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                 print(f"       first_failure={result.failures[0]}")
         print(f"  benchmark -> {output}")
     return 0 if report.passed else 2
+
+
+def command_ai_forecast_benchmark(args: argparse.Namespace) -> int:
+    from .foundation_benchmark import (
+        FoundationBenchmarkConfig,
+        parse_utc_ms,
+        run_foundation_forecast_benchmark,
+    )
+
+    try:
+        config = FoundationBenchmarkConfig(
+            database_path=str(args.database),
+            source_cache_root=(str(args.source_cache) if args.source_cache else None),
+            model_size=str(args.model_size),
+            backend=str(args.backend),
+            bootstrap_source=bool(args.bootstrap_source or args.repair_source),
+            repair_source=bool(args.repair_source),
+            require_accelerator=not bool(args.allow_cpu),
+            start_ms=parse_utc_ms(str(args.start)),
+            end_exclusive_ms=parse_utc_ms(str(args.end_exclusive)),
+            samples_per_symbol=int(args.samples_per_symbol),
+            lookback_bars=int(args.lookback_bars),
+            prediction_bars=int(args.prediction_bars),
+            batch_size=int(args.batch_size),
+            inference_samples=int(args.inference_samples),
+            temperature=float(args.temperature),
+            top_k=int(args.top_k),
+            top_p=float(args.top_p),
+            include_volume=bool(args.include_volume),
+            seed=int(args.seed),
+            bootstrap_samples=int(args.bootstrap_samples),
+            worker_timeout_seconds=float(args.worker_timeout),
+            max_worker_restarts=int(args.max_worker_restarts),
+            worker_rotation_batches=int(args.worker_rotation_batches),
+        )
+        report = run_foundation_forecast_benchmark(
+            config,
+            observations_path=Path(args.observations),
+            chart_path=Path(args.chart),
+            report_path=Path(args.output),
+            progress=lambda message: print(f"ai-forecast-benchmark: {message}", file=sys.stderr),
+        )
+    except (ImportError, OSError, RuntimeError, ValueError) as exc:
+        print(f"ai-forecast-benchmark failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(args.json):
+        print(json.dumps(report.asdict(), indent=2, sort_keys=True))
+    else:
+        overall = report.metrics["overall"]
+        print(
+            "ai-forecast-benchmark: "
+            f"status={report.status} observations={report.observation_count} "
+            f"mae={float(overall['model_mae']):.8f} "
+            f"random_walk_mae={float(overall['random_walk_mae']):.8f} "
+            f"ic={float(overall['information_coefficient']):.4f} "
+            f"direction={float(overall['direction_accuracy']):.3f}"
+        )
+        if report.reasons:
+            print(f"  first_rejection={report.reasons[0]}")
+        print(f"  observations -> {report.observations_path}")
+        print(f"  chart -> {report.chart_path}")
+        print(f"  report -> {args.output}")
+        print("  trading_authority=false; no after-cost or order-placement claim")
+    return 0 if report.predictive_candidate else 2
 
 
 def command_ai_review(args: argparse.Namespace) -> int:
@@ -9039,24 +9149,16 @@ def command_autonomous(args: argparse.Namespace) -> int:
         if not effective_dry_run and not _has_api_credentials(runtime):
             print(_credential_required_message("Autonomous live mode"), file=sys.stderr)
             return 2
-        try:
-            client = _build_client(runtime)
-            if effective_dry_run:
-                strategy, commission_assumption = apply_offline_commission_floor(
-                    strategy,
-                    market_type=runtime.market_type,
-                    symbol=runtime.symbol,
-                )
-            else:
-                strategy, commission_assumption, _commission_rates = apply_verified_commission_rate(
-                    strategy,
-                    client=client,
-                    symbol=runtime.symbol,
-                )
-        except (BinanceAPIError, ValueError) as exc:
-            print(f"Autonomous startup blocked: commission-rate verification failed: {exc}", file=sys.stderr)
-            return 2
         model_path = Path(getattr(args, "model", "data/model.json"))
+        try:
+            strategy, commission_assumption = apply_offline_commission_floor(
+                strategy,
+                market_type=runtime.market_type,
+                symbol=runtime.symbol,
+            )
+        except ValueError as exc:
+            print(f"Autonomous startup blocked: commission floor failed: {exc}", file=sys.stderr)
+            return 2
         decision_fn, model_error, model_notice = _build_autonomous_decision_fn(
             model_path=model_path,
             strategy=strategy,
@@ -9071,6 +9173,47 @@ def command_autonomous(args: argparse.Namespace) -> int:
         )
         if model_error is not None or decision_fn is None:
             print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)
+            return 2
+        try:
+            client = _build_client(runtime)
+            if not effective_dry_run:
+                verified_strategy, verified_assumption, _commission_rates = apply_verified_commission_rate(
+                    strategy,
+                    client=client,
+                    symbol=runtime.symbol,
+                )
+                if (
+                    verified_assumption.modeled_taker_fee_bps
+                    > commission_assumption.modeled_taker_fee_bps
+                ):
+                    decision_fn, model_error, model_notice = _build_autonomous_decision_fn(
+                        model_path=model_path,
+                        strategy=verified_strategy,
+                        effective_dry_run=effective_dry_run,
+                        require_model_candidate_search=True,
+                        require_live_data_evidence=True,
+                        require_microstructure_evidence=runtime.market_type == "futures",
+                        expected_symbol=runtime.symbol,
+                        expected_market_type=runtime.market_type,
+                        expected_interval=runtime.interval,
+                        minimum_model_taker_fee_bps=(
+                            verified_assumption.modeled_taker_fee_bps
+                        ),
+                    )
+                    if model_error is not None or decision_fn is None:
+                        print(
+                            model_error
+                            or "Autonomous startup blocked after verified commission update.",
+                            file=sys.stderr,
+                        )
+                        return 2
+                strategy = verified_strategy
+                commission_assumption = verified_assumption
+        except (BinanceAPIError, ValueError) as exc:
+            print(
+                f"Autonomous startup blocked: commission-rate verification failed: {exc}",
+                file=sys.stderr,
+            )
             return 2
         if model_notice is not None:
             print(model_notice, file=sys.stderr)

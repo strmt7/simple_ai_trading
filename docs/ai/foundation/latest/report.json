@@ -1,0 +1,743 @@
+{
+  "bootstrap": {
+    "ci_95_high": 1.435617228597002e-06,
+    "ci_95_low": -1.9992029061741546e-06,
+    "day_blocks": 256,
+    "mean_mae_improvement": -1.8097310119550496e-07,
+    "method": "UTC-day block bootstrap with replacement",
+    "positive_probability": 0.4235,
+    "samples": 2000,
+    "seed": 17
+  },
+  "calibration": {
+    "boundary_utc": "2025-04-02T00:40:00Z",
+    "calibrated_selection_metrics": {
+      "by_symbol": {
+        "BTCUSDT": {
+          "direction_accuracy": 0.48828125,
+          "direction_observations": 256,
+          "final_return_information_coefficient": -0.1480956639387812,
+          "final_return_mae": 0.0014954607341900413,
+          "information_coefficient": -0.07297416417354956,
+          "mae_improvement": -4.668126403224032e-07,
+          "mae_improvement_pct": -0.00042979992913998855,
+          "mean_actual_average_return": -7.265017607914525e-05,
+          "mean_predicted_average_return": 2.9888374534829755e-06,
+          "model_mae": 0.00108658295336765,
+          "observations": 256,
+          "random_walk_final_return_mae": 0.0014930839784531372,
+          "random_walk_mae": 0.0010861161407273276,
+          "rank_information_coefficient": -0.022023060196841384,
+          "rmse": 0.0015751539839426818
+        },
+        "ETHUSDT": {
+          "direction_accuracy": 0.0,
+          "direction_observations": 0,
+          "final_return_information_coefficient": 0.0,
+          "final_return_mae": 0.002707930477810334,
+          "information_coefficient": 0.0,
+          "mae_improvement": 0.0,
+          "mae_improvement_pct": 0.0,
+          "mean_actual_average_return": -4.527513088781968e-05,
+          "mean_predicted_average_return": 0.0,
+          "model_mae": 0.0018379229225341147,
+          "observations": 256,
+          "random_walk_final_return_mae": 0.002707930477810334,
+          "random_walk_mae": 0.0018379229225341147,
+          "rank_information_coefficient": 0.0,
+          "rmse": 0.002611022508730164
+        },
+        "SOLUSDT": {
+          "direction_accuracy": 0.0,
+          "direction_observations": 0,
+          "final_return_information_coefficient": 0.0,
+          "final_return_mae": 0.0030173849671014,
+          "information_coefficient": 0.0,
+          "mae_improvement": 0.0,
+          "mae_improvement_pct": 0.0,
+          "mean_actual_average_return": -0.00010956136822814176,
+          "mean_predicted_average_return": 0.0,
+          "model_mae": 0.0021526441843807264,
+          "observations": 256,
+          "random_walk_final_return_mae": 0.0030173849671014,
+          "random_walk_mae": 0.0021526441843807264,
+          "rank_information_coefficient": 0.0,
+          "rmse": 0.0031474036510231204
+        }
+      },
+      "overall": {
+        "direction_accuracy": 0.48828125,
+        "direction_observations": 256,
+        "final_return_information_coefficient": -0.0523647743922937,
+        "final_return_mae": 0.002406925393033925,
+        "information_coefficient": -0.026063519549403023,
+        "mae_improvement": -1.556042134407288e-07,
+        "mae_improvement_pct": -9.195228804928775e-05,
+        "mean_actual_average_return": -7.582889173170223e-05,
+        "mean_predicted_average_return": 9.96279151160992e-07,
+        "model_mae": 0.0016923833534274971,
+        "observations": 768,
+        "random_walk_final_return_mae": 0.002406133141121624,
+        "random_walk_mae": 0.0016922277492140564,
+        "rank_information_coefficient": -0.02025436459674331,
+        "rmse": 0.002530131640626612
+      }
+    },
+    "eligible_symbols": [],
+    "method": "zero-intercept nonnegative OLS scale, bounded to [0,1]",
+    "raw_full_bootstrap": {
+      "ci_95_high": -0.0019850345474414764,
+      "ci_95_low": -0.002834138375073164,
+      "day_blocks": 512,
+      "mean_mae_improvement": -0.002392726029728888,
+      "method": "UTC-day block bootstrap with replacement",
+      "positive_probability": 0.0,
+      "samples": 2000,
+      "seed": 17
+    },
+    "raw_selection_metrics": {
+      "by_symbol": {
+        "BTCUSDT": {
+          "direction_accuracy": 0.48828125,
+          "direction_observations": 256,
+          "final_return_information_coefficient": -0.1480956639387812,
+          "final_return_mae": 0.004620504983204498,
+          "information_coefficient": -0.07297416417354954,
+          "mae_improvement": -0.0020262282753886083,
+          "mae_improvement_pct": -1.8655723816347356,
+          "mean_actual_average_return": -7.265017607914525e-05,
+          "mean_predicted_average_return": 0.0003866168419310806,
+          "model_mae": 0.003112344416115936,
+          "observations": 256,
+          "random_walk_final_return_mae": 0.0014930839784531372,
+          "random_walk_mae": 0.0010861161407273276,
+          "rank_information_coefficient": -0.022023060196841384,
+          "rmse": 0.005816231657474869
+        },
+        "ETHUSDT": {
+          "direction_accuracy": 0.5546875,
+          "direction_observations": 256,
+          "final_return_information_coefficient": -0.13894057466348597,
+          "final_return_mae": 0.007445959459179719,
+          "information_coefficient": -0.025210152773111616,
+          "mae_improvement": -0.003374718399263974,
+          "mae_improvement_pct": -1.836158827928941,
+          "mean_actual_average_return": -4.527513088781968e-05,
+          "mean_predicted_average_return": -8.951754176495658e-05,
+          "model_mae": 0.005212641321798089,
+          "observations": 256,
+          "random_walk_final_return_mae": 0.002707930477810334,
+          "random_walk_mae": 0.0018379229225341147,
+          "rank_information_coefficient": 0.10450617990386817,
+          "rmse": 0.010058293246305193
+        },
+        "SOLUSDT": {
+          "direction_accuracy": 0.5725490196078431,
+          "direction_observations": 255,
+          "final_return_information_coefficient": -0.17356574325576843,
+          "final_return_mae": 0.008965394579552536,
+          "information_coefficient": -0.07973665252595974,
+          "mae_improvement": -0.004130174163240439,
+          "mae_improvement_pct": -1.9186515789318006,
+          "mean_actual_average_return": -0.00010956136822814176,
+          "mean_predicted_average_return": 0.0006565700155142474,
+          "model_mae": 0.006282818347621165,
+          "observations": 256,
+          "random_walk_final_return_mae": 0.0030173849671014,
+          "random_walk_mae": 0.0021526441843807264,
+          "rank_information_coefficient": 0.04255765049210346,
+          "rmse": 0.012015452473360609
+        }
+      },
+      "overall": {
+        "direction_accuracy": 0.5384615384615384,
+        "direction_observations": 767,
+        "final_return_information_coefficient": -0.15778214503065266,
+        "final_return_mae": 0.007010619673978917,
+        "information_coefficient": -0.059400678052829094,
+        "mae_improvement": -0.0031770402792976734,
+        "mae_improvement_pct": -1.8774306713580533,
+        "mean_actual_average_return": -7.582889173170223e-05,
+        "mean_predicted_average_return": 0.00031788977189345716,
+        "model_mae": 0.00486926802851173,
+        "observations": 768,
+        "random_walk_final_return_mae": 0.002406133141121624,
+        "random_walk_mae": 0.0016922277492140564,
+        "rank_information_coefficient": 0.05711554568065335,
+        "rmse": 0.009650024384453977
+      }
+    },
+    "scales": {
+      "BTCUSDT": 0.007730748196468312,
+      "ETHUSDT": 0.0,
+      "SOLUSDT": 0.0
+    },
+    "selection_bootstrap": {
+      "ci_95_high": 1.435617228597002e-06,
+      "ci_95_low": -1.9992029061741546e-06,
+      "day_blocks": 256,
+      "mean_mae_improvement": -1.8097310119550496e-07,
+      "method": "UTC-day block bootstrap with replacement",
+      "positive_probability": 0.4235,
+      "samples": 2000,
+      "seed": 17
+    },
+    "selection_observations": 768,
+    "split": "earlier-half tuning; later-half selection",
+    "tuning_observations": 768
+  },
+  "chart_path": "benchmark.svg",
+  "chart_sha256": "249650fe84f2545cc8f31b605e83b48ab5a244bfd2a39ddc8952ed492cfe279e",
+  "config": {
+    "backend": "directml",
+    "bar_minutes": 5,
+    "batch_size": 3,
+    "bootstrap_samples": 2000,
+    "bootstrap_source": false,
+    "database_path": "data/market_data.sqlite",
+    "end_exclusive_ms": 1767225600000,
+    "include_volume": false,
+    "inference_samples": 1,
+    "lookback_bars": 480,
+    "max_worker_restarts": 5,
+    "model_size": "base",
+    "prediction_bars": 4,
+    "repair_source": false,
+    "require_accelerator": true,
+    "samples_per_symbol": 512,
+    "seed": 17,
+    "source_cache_root": "<verified-local-foundation-cache>",
+    "start_ms": 1719792000000,
+    "temperature": 0.6,
+    "top_k": 0,
+    "top_p": 0.9,
+    "worker_rotation_batches": 20,
+    "worker_timeout_seconds": 60.0
+  },
+  "engine": {
+    "backend": {
+      "device": "privateuseone:0",
+      "kind": "directml",
+      "reason": "",
+      "requested": "directml",
+      "vendor": "DirectML"
+    },
+    "load_seconds": 2.4955957000056515,
+    "max_context": 512,
+    "model_artifact": {
+      "config_sha256": "77ebc3038b647709b92be002f801d72e1a385f4c8c2c5aa1cc6cf21fcfe44eb2",
+      "config_size": 228,
+      "expected_parameters": 102310592,
+      "repository": "NeoQuasar/Kronos-base",
+      "revision": "2b554741eca47781b64468546e77fef3e85130e6",
+      "weights_sha256": "abff193acab6db1a0368e9773e75799d11403b6d054ee6d5f0a11aeabc5f4b83",
+      "weights_size": 409264008
+    },
+    "model_parameters": 102310592,
+    "model_size": "base",
+    "package_versions": {
+      "einops": "0.8.1",
+      "huggingface_hub": "0.33.1",
+      "pandas": "3.0.3",
+      "safetensors": "0.6.2",
+      "torch": "2.4.1+cpu",
+      "torch-directml": "0.2.5.dev240914"
+    },
+    "provider": "kronos",
+    "rng_seed_control": "torch.manual_seed + torch_directml.default_generator.manual_seed",
+    "source": {
+      "commit": "67b630e67f6a18c9e9be918d9b4337c960db1e9a",
+      "downloaded": [],
+      "files": [
+        {
+          "relative_path": "model/__init__.py",
+          "sha256": "f8f856ca3fedadcaac97e196be23d1aeda1c3c9ffe8903d66d43ea3bcac6240c",
+          "size": 412,
+          "url": "https://raw.githubusercontent.com/shiyu-coder/Kronos/67b630e67f6a18c9e9be918d9b4337c960db1e9a/model/__init__.py"
+        },
+        {
+          "relative_path": "model/kronos.py",
+          "sha256": "0a5f90282e2039c2de0771473419715c845def154896dbd0f5747837e6241032",
+          "size": 30133,
+          "url": "https://raw.githubusercontent.com/shiyu-coder/Kronos/67b630e67f6a18c9e9be918d9b4337c960db1e9a/model/kronos.py"
+        },
+        {
+          "relative_path": "model/module.py",
+          "sha256": "a07edbadc0e96804c8158c021bbc6063bb7cc43b34d7fc470d5c8ff2005a409f",
+          "size": 23426,
+          "url": "https://raw.githubusercontent.com/shiyu-coder/Kronos/67b630e67f6a18c9e9be918d9b4337c960db1e9a/model/module.py"
+        },
+        {
+          "relative_path": "LICENSE",
+          "sha256": "acb2d194d378204e5f2be4dcd24d39ecac437903620c790c3315a96dab388fdc",
+          "size": 1062,
+          "url": "https://raw.githubusercontent.com/shiyu-coder/Kronos/67b630e67f6a18c9e9be918d9b4337c960db1e9a/LICENSE"
+        }
+      ],
+      "provider": "kronos",
+      "repository": "https://github.com/shiyu-coder/Kronos",
+      "source_root": "<verified-local-foundation-cache>/kronos/67b630e67f6a18c9e9be918d9b4337c960db1e9a",
+      "verified": true
+    },
+    "tokenizer_artifact": {
+      "config_sha256": "2366e7ccfec76cbc19cf3c4c1b9c5d901be336ca1e83f2d2292c9bff381b77a2",
+      "config_size": 301,
+      "expected_parameters": 3958042,
+      "repository": "NeoQuasar/Kronos-Tokenizer-base",
+      "revision": "0e0117387f39004a9016484a186a908917e22426",
+      "weights_sha256": "59d85f6af76a2c3b8240ea06cb21db4213b4eeca053f246b23e29cf832fc6bee",
+      "weights_size": 15842368
+    },
+    "tokenizer_parameters": 3958042
+  },
+  "evaluation": {
+    "after_cost_trading_evidence": false,
+    "orders_allowed": false,
+    "pretraining_cutoff": "2024-06-30T23:59:59Z",
+    "random_walk_baseline": "zero expected return from the last observed close",
+    "sampling_mode": "deterministic_evenly_spaced_candidate_diagnostic",
+    "selection_end_exclusive": "2026-01-01T00:00:00Z",
+    "selection_start": "2024-07-01T00:00:00Z",
+    "target": "mean future close return over prediction_bars",
+    "terminal_period": "2026-01-01T00:00:00Z onward; not accessed"
+  },
+  "generated_at_ms": 1783678426029,
+  "inference": {
+    "average_batch_seconds": 0.22847963632852952,
+    "batches": 512,
+    "in_process_retries": 0,
+    "maximum_batch_seconds": 0.584101800006465,
+    "minimum_batch_seconds": 0.20262820000061765,
+    "planned_worker_rotation_count": 25,
+    "planned_worker_rotations": [
+      {
+        "before_batch": 21,
+        "previous_pid": 8432,
+        "replacement_pid": 51816
+      },
+      {
+        "before_batch": 41,
+        "previous_pid": 51816,
+        "replacement_pid": 30356
+      },
+      {
+        "before_batch": 61,
+        "previous_pid": 30356,
+        "replacement_pid": 47760
+      },
+      {
+        "before_batch": 81,
+        "previous_pid": 47760,
+        "replacement_pid": 24820
+      },
+      {
+        "before_batch": 101,
+        "previous_pid": 24820,
+        "replacement_pid": 19248
+      },
+      {
+        "before_batch": 121,
+        "previous_pid": 19248,
+        "replacement_pid": 14408
+      },
+      {
+        "before_batch": 141,
+        "previous_pid": 14408,
+        "replacement_pid": 55972
+      },
+      {
+        "before_batch": 161,
+        "previous_pid": 55972,
+        "replacement_pid": 35668
+      },
+      {
+        "before_batch": 181,
+        "previous_pid": 35668,
+        "replacement_pid": 4088
+      },
+      {
+        "before_batch": 201,
+        "previous_pid": 4088,
+        "replacement_pid": 38564
+      },
+      {
+        "before_batch": 221,
+        "previous_pid": 38564,
+        "replacement_pid": 39032
+      },
+      {
+        "before_batch": 241,
+        "previous_pid": 39032,
+        "replacement_pid": 6668
+      },
+      {
+        "before_batch": 261,
+        "previous_pid": 5964,
+        "replacement_pid": 7252
+      },
+      {
+        "before_batch": 281,
+        "previous_pid": 7252,
+        "replacement_pid": 41760
+      },
+      {
+        "before_batch": 301,
+        "previous_pid": 41760,
+        "replacement_pid": 30320
+      },
+      {
+        "before_batch": 321,
+        "previous_pid": 30320,
+        "replacement_pid": 30944
+      },
+      {
+        "before_batch": 341,
+        "previous_pid": 30944,
+        "replacement_pid": 48716
+      },
+      {
+        "before_batch": 361,
+        "previous_pid": 48716,
+        "replacement_pid": 28072
+      },
+      {
+        "before_batch": 381,
+        "previous_pid": 28072,
+        "replacement_pid": 52256
+      },
+      {
+        "before_batch": 401,
+        "previous_pid": 52256,
+        "replacement_pid": 26252
+      },
+      {
+        "before_batch": 421,
+        "previous_pid": 26252,
+        "replacement_pid": 51372
+      },
+      {
+        "before_batch": 441,
+        "previous_pid": 51372,
+        "replacement_pid": 15776
+      },
+      {
+        "before_batch": 461,
+        "previous_pid": 15776,
+        "replacement_pid": 38300
+      },
+      {
+        "before_batch": 481,
+        "previous_pid": 38300,
+        "replacement_pid": 22920
+      },
+      {
+        "before_batch": 501,
+        "previous_pid": 22920,
+        "replacement_pid": 10108
+      }
+    ],
+    "seeded_repeatability": {
+      "batch": 1,
+      "checked": true,
+      "exact": true,
+      "maximum_absolute_close_difference": 0.0,
+      "seed": 17
+    },
+    "total_seconds": 116.98157380020712,
+    "worker_pids": [
+      8432,
+      51816,
+      30356,
+      47760,
+      24820,
+      19248,
+      14408,
+      55972,
+      35668,
+      4088,
+      38564,
+      39032,
+      6668,
+      5964,
+      7252,
+      41760,
+      30320,
+      30944,
+      48716,
+      28072,
+      52256,
+      26252,
+      51372,
+      15776,
+      38300,
+      22920,
+      10108
+    ],
+    "worker_process_starts": 27,
+    "worker_restart_count": 1,
+    "worker_restarts": [
+      {
+        "attempt": 1,
+        "batch": 250,
+        "error": "foundation worker inference failed with RuntimeError: The parameter is incorrect.",
+        "previous_pid": 6668,
+        "replacement_pid": 5964
+      }
+    ],
+    "worker_seconds_total": 113.44163450009364
+  },
+  "metrics": {
+    "by_symbol": {
+      "BTCUSDT": {
+        "direction_accuracy": 0.50390625,
+        "direction_observations": 512,
+        "final_return_information_coefficient": -0.07710681857157783,
+        "final_return_mae": 0.0043491633415228765,
+        "information_coefficient": -0.023754768903270527,
+        "mae_improvement": -0.0016460628612237238,
+        "mae_improvement_pct": -1.322869511454793,
+        "mean_actual_average_return": -0.0001922047899715763,
+        "mean_predicted_average_return": 0.00027635572785888064,
+        "model_mae": 0.0028903752041799895,
+        "observations": 512,
+        "random_walk_final_return_mae": 0.0017648658641294195,
+        "random_walk_mae": 0.0012443123429562656,
+        "rank_information_coefficient": -0.006810512296723544,
+        "rmse": 0.005161718927353965
+      },
+      "ETHUSDT": {
+        "direction_accuracy": 0.525390625,
+        "direction_observations": 512,
+        "final_return_information_coefficient": -0.13874151133355395,
+        "final_return_mae": 0.006353319818191796,
+        "information_coefficient": -0.0289491561628123,
+        "mae_improvement": -0.002420413567935527,
+        "mae_improvement_pct": -1.285373862205932,
+        "mean_actual_average_return": -0.00021539246931946828,
+        "mean_predicted_average_return": 0.0001158679896523494,
+        "model_mae": 0.0043034560344920375,
+        "observations": 512,
+        "random_walk_final_return_mae": 0.00272254157452949,
+        "random_walk_mae": 0.0018830424665565106,
+        "rank_information_coefficient": 0.04872519483640608,
+        "rmse": 0.008025179816586674
+      },
+      "SOLUSDT": {
+        "direction_accuracy": 0.5303326810176126,
+        "direction_observations": 511,
+        "final_return_information_coefficient": -0.1544946028295694,
+        "final_return_mae": 0.008038858889220006,
+        "information_coefficient": -0.07786448410483388,
+        "mae_improvement": -0.0031018250039316153,
+        "mae_improvement_pct": -1.3077644607301773,
+        "mean_actual_average_return": -0.00020683577405079812,
+        "mean_predicted_average_return": 0.00042270594342603174,
+        "model_mae": 0.005473677961458648,
+        "observations": 512,
+        "random_walk_final_return_mae": 0.0033662143661893846,
+        "random_walk_mae": 0.0023718529575270323,
+        "rank_information_coefficient": -0.00273523778052437,
+        "rmse": 0.010020329622363008
+      }
+    },
+    "overall": {
+      "direction_accuracy": 0.5198697068403909,
+      "direction_observations": 1535,
+      "final_return_information_coefficient": -0.13629970166922104,
+      "final_return_mae": 0.006247114016311559,
+      "information_coefficient": -0.053404966758700656,
+      "mae_improvement": -0.0023894338110302896,
+      "mae_improvement_pct": -1.3035152947038993,
+      "mean_actual_average_return": -0.00020481101111394757,
+      "mean_predicted_average_return": 0.0002716432203124206,
+      "model_mae": 0.004222503066710226,
+      "observations": 1536,
+      "random_walk_final_return_mae": 0.002617873934949432,
+      "random_walk_mae": 0.0018330692556799363,
+      "rank_information_coefficient": 0.018675676287831747,
+      "rmse": 0.007988613962266543
+    }
+  },
+  "observation_count": 1536,
+  "observations_path": "observations.csv",
+  "observations_sha256": "4a2257fb4524e48cbbc98ed1eb17a67e5149ff11d8cd4d8923171ca7004a4044",
+  "predictive_candidate": false,
+  "promotion": {
+    "latest_only_contract": "docs/ai/foundation/latest",
+    "path_sanitization": "local database/cache/output paths replaced; UTF-8 text normalized to LF; numerical values unchanged",
+    "source_observations_sha256": "0aa9fe6ce2a4cba09d32605688818e541178810de9759911c0fd6ab41b745a2e",
+    "source_report_sha256": "dcdea5b57f8d668e5dfc41299e2595f3abc73b51cb087fe0bad0b01f6bdbdbc6"
+  },
+  "reasons": [
+    "no_symbol_passed_causal_amplitude_calibration",
+    "calibrated_mae_uplift_day_block_ci_not_strictly_positive"
+  ],
+  "source_evidence": [
+    {
+      "end_exclusive_ms": 1767225600000,
+      "expected_rows": 792960,
+      "maximum_open_time": 1767225540000,
+      "minimum_open_time": 1719648000000,
+      "required_months": [
+        "2024-06",
+        "2024-07",
+        "2024-08",
+        "2024-09",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "row_count": 792960,
+      "sources": [
+        "binance_public_archive"
+      ],
+      "start_ms": 1719648000000,
+      "symbol": "BTCUSDT",
+      "verified_archive_periods": [
+        "2024-06-29",
+        "2024-06-30",
+        "2024-07",
+        "2024-08",
+        "2024-09",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ]
+    },
+    {
+      "end_exclusive_ms": 1767225600000,
+      "expected_rows": 792960,
+      "maximum_open_time": 1767225540000,
+      "minimum_open_time": 1719648000000,
+      "required_months": [
+        "2024-06",
+        "2024-07",
+        "2024-08",
+        "2024-09",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "row_count": 792960,
+      "sources": [
+        "binance_public_archive"
+      ],
+      "start_ms": 1719648000000,
+      "symbol": "ETHUSDT",
+      "verified_archive_periods": [
+        "2024-06",
+        "2024-07",
+        "2024-08",
+        "2024-09",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ]
+    },
+    {
+      "end_exclusive_ms": 1767225600000,
+      "expected_rows": 792960,
+      "maximum_open_time": 1767225540000,
+      "minimum_open_time": 1719648000000,
+      "required_months": [
+        "2024-06",
+        "2024-07",
+        "2024-08",
+        "2024-09",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "row_count": 792960,
+      "sources": [
+        "binance_public_archive"
+      ],
+      "start_ms": 1719648000000,
+      "symbol": "SOLUSDT",
+      "verified_archive_periods": [
+        "2024-06",
+        "2024-07",
+        "2024-08",
+        "2024-09",
+        "2024-10",
+        "2024-11",
+        "2024-12",
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ]
+    }
+  ],
+  "status": "rejected",
+  "trading_authority": false,
+  "version": "kronos-postcutoff-causal-v1"
+}

@@ -74,6 +74,54 @@ experiments, plus finance-specialized DragonLLM, FinGPT, and FinMA candidates
 for future local serving tests. They still must pass the same benchmark and
 uplift gates before they can affect autonomous trading.
 
+### Kronos Forecast Evidence (Rejected)
+
+`simple-ai-trading ai-forecast-benchmark` evaluates a separately gated
+financial time-series foundation model. The implementation hash-pins the
+Kronos source commit, model revision, tokenizer revision, file sizes, SHA-256
+digests, and parameter counts before executable source or weights are loaded.
+It then runs inference in a supervised child process with bounded deadlines,
+planned DirectML worker rotation, one same-seed replay check, and no in-process
+retry after a device fault.
+
+The latest benchmark used the 102,310,592-parameter Kronos-base model on
+DirectML and 1,536 deterministic BTCUSDT, ETHUSDT, and SOLUSDT decisions from
+2024-07-01 through 2025-12-31. Each decision used 480 five-minute bars (40
+hours) to predict the next four five-minute bars (20 minutes). The underlying
+792,960 one-minute rows per symbol came only from checksum-verified Binance
+USD-M archives. Data from 2026 onward remained sealed and was not accessed.
+
+The candidate failed:
+
+| Metric | Kronos-base | Zero-return random walk |
+|---|---:|---:|
+| Raw mean absolute error | 0.0042225031 | 0.0018330693 |
+| Causally calibrated selection MAE | 0.0016923834 | 0.0016922277 |
+| Raw information coefficient | -0.053405 | n/a |
+| Raw direction accuracy | 51.987% | n/a |
+
+Raw MAE improvement was `-130.3515%`. Earlier-half nonnegative amplitude
+calibration assigned scales of `0.00773075`, `0`, and `0` to BTC, ETH, and SOL;
+no symbol remained eligible. The later-half UTC-day block-bootstrap 95% interval
+for paired MAE uplift was `[-0.0000019992, 0.0000014356]`, with only `42.35%`
+positive probability. This is forecast-error evidence, not after-cost P&L,
+backtesting, or permission to trade.
+
+The exact latest artifacts are under
+[`docs/ai/foundation/latest`](ai/foundation/latest/README.md). The CSV is the
+replotting source, the report binds data/model/runtime evidence, the SVG is a
+deterministic view, and the manifest hashes every promoted file. Promotion
+re-parses all CSV rows, verifies temporal bounds and error identities, rejects
+host-local paths or stale files, and publishes the manifest last.
+
+The upstream Kronos paper reports crypto forecasting on Binance spot OHLC data
+at five-minute and slower intervals; its investment simulation is a separate
+daily, long-only Chinese A-share experiment. Those results do not establish an
+edge for second-level leveraged futures day trading. A materially different
+hypothesis must beat the causal random-walk gate before further integration:
+https://arxiv.org/html/2508.02739 and
+https://github.com/shiyu-coder/Kronos
+
 ## Why AI Stays Gated
 
 DirectML remains the Windows-first acceleration layer because Microsoft

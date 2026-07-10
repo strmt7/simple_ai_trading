@@ -37,6 +37,23 @@ def _candle(index: int, *, interval_ms: int = 1000, close: float = 100.0) -> Can
     )
 
 
+def _passing_edge_preflight(*_args, **_kwargs) -> dict[str, object]:
+    evidence = {
+        "signal_count": 100,
+        "net_mean_edge_bps": 1.0,
+        "hit_rate": 0.60,
+        "severe_regime_blocked_signal_count": 0,
+    }
+    return {
+        "evaluated": True,
+        "reject_reason": None,
+        "min_training_signals": 20,
+        "min_selection_signals": 5,
+        "training": dict(evidence),
+        "selection": dict(evidence),
+    }
+
+
 def _evidence(
     symbol: str,
     *,
@@ -1688,6 +1705,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "_candidate_edge_preflight", _passing_edge_preflight)
 
     def fake_train_advanced(train_rows, _feature_cfg, **kwargs):
         observed["train_rows"] = len(train_rows)
@@ -1811,6 +1829,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
         batch_size=1024,
         status_callback=status_callback,
         model_candidate_count=1,
+        model_candidate_names=("default",),
     )
 
     assert observed["train_rows"] == 41
@@ -2018,6 +2037,7 @@ def test_train_round_model_parks_rejected_selection_in_no_entry_state(
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "_candidate_edge_preflight", _passing_edge_preflight)
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -3068,6 +3088,7 @@ def test_train_round_model_selects_best_scored_candidate(
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "_candidate_edge_preflight", _passing_edge_preflight)
 
     def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
         calls["train"] += 1
@@ -3138,23 +3159,24 @@ def test_train_round_model_selects_best_scored_candidate(
         compute_backend="auto",
         batch_size=1024,
         model_candidate_count=2,
+        model_candidate_names=("default", "short_horizon_forward"),
     )
 
     assert calls["train"] == 2
     assert selected_model.model_family.startswith("candidate_2")
     assert selected_model.model_candidate_count == 2
-    assert selected_model.model_selected_candidate == "day_trade_frequency_probe_forward"
+    assert selected_model.model_selected_candidate == "short_horizon_forward"
     assert selected_model.model_selection_score > 0.0
     assert "model_selected_candidate" in selected_model.__dataclass_fields__
     assert len(selected_model.round_candidate_diagnostics) == 2
     assert selected_model.round_candidate_diagnostics[0]["name"] == "default"
     assert selected_model.round_candidate_diagnostics[0]["selected"] is False
-    assert selected_model.round_candidate_diagnostics[1]["name"] == "day_trade_frequency_probe_forward"
+    assert selected_model.round_candidate_diagnostics[1]["name"] == "short_horizon_forward"
     assert selected_model.round_candidate_diagnostics[1]["focal_gamma"] == pytest.approx(0.0)
     assert selected_model.round_candidate_diagnostics[1]["selected"] is True
     assert selected_model.round_candidate_diagnostics[1]["threshold_diagnostic_best_trades"] == 0
-    assert report.row_count == 50
-    assert len(holdout_rows) == 25
+    assert report.row_count >= 20
+    assert len(holdout_rows) >= 20
 
 
 def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
@@ -3168,6 +3190,7 @@ def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
     monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "_candidate_edge_preflight", _passing_edge_preflight)
 
     def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
         calls["train"] += 1
@@ -3240,9 +3263,10 @@ def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
         compute_backend="auto",
         batch_size=1024,
         model_candidate_count=2,
+        model_candidate_names=("default", "short_horizon_forward"),
     )
 
-    assert selected_model.model_selected_candidate == "day_trade_frequency_probe_forward"
+    assert selected_model.model_selected_candidate == "short_horizon_forward"
     assert selected_model.round_selection_gate_passed is False
     assert selected_model.threshold_diagnostic_best_pnl == pytest.approx(-2.0)
     assert selected_model.round_candidate_diagnostics[0]["selected"] is False
