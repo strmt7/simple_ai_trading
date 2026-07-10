@@ -22,6 +22,7 @@ from .microstructure_features import MicrostructureDataset
 from .microstructure_model import (
     MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION,
     MicrostructureModelArtifact,
+    PerformanceConfidence,
     PrequentialValidationEvidence,
     ThresholdPolicy,
     TradingMetrics,
@@ -326,10 +327,14 @@ def _validate_candidate_contract(
     return source
 
 
-def plan_prequential_folds(
+def _plan_prequential_interval(
     artifact: MicrostructureModelArtifact,
     dataset: MicrostructureDataset,
     config: PrequentialConfig,
+    *,
+    evaluation_interval_start_ms: int,
+    evaluation_interval_end_exclusive_ms: int,
+    evaluation_label_cutoff_ms: int | None,
 ) -> tuple[PrequentialFoldPlan, ...]:
     cfg = config.validated()
     _validate_candidate_contract(artifact, dataset)
@@ -338,17 +343,17 @@ def plan_prequential_folds(
         np.asarray(dataset.long_exit_time_ms, dtype=np.int64),
         np.asarray(dataset.short_exit_time_ms, dtype=np.int64),
     ) + int(dataset.trade_feature_embargo_ms)
-    selection_start_ms = int(artifact.split.selection_start_ms)
-    terminal_start_ms = int(artifact.split.terminal_start_ms)
-    if terminal_start_ms <= selection_start_ms:
-        raise ValueError("candidate selection/terminal time contract is invalid")
+    interval_start_ms = int(evaluation_interval_start_ms)
+    interval_end_ms = int(evaluation_interval_end_exclusive_ms)
+    if interval_end_ms <= interval_start_ms:
+        raise ValueError("prequential evaluation interval is invalid")
     all_plans: list[PrequentialFoldPlan] = []
     fold = 0
-    evaluation_start_ms = selection_start_ms
-    while evaluation_start_ms < terminal_start_ms:
+    evaluation_start_ms = interval_start_ms
+    while evaluation_start_ms < interval_end_ms:
         fold += 1
         evaluation_end_ms = min(
-            terminal_start_ms,
+            interval_end_ms,
             evaluation_start_ms + int(cfg.evaluation_block_days) * _DAY_MS,
         )
         policy_start_ms = evaluation_start_ms - int(cfg.policy_days) * _DAY_MS
@@ -373,11 +378,10 @@ def plan_prequential_folds(
             & (times < evaluation_start_ms)
             & (available_ms < evaluation_start_ms)
         ).astype(np.int64)
-        evaluation = np.flatnonzero(
-            (times >= evaluation_start_ms)
-            & (times < evaluation_end_ms)
-            & (available_ms < artifact.split.terminal_start_ms)
-        ).astype(np.int64)
+        evaluation_mask = (times >= evaluation_start_ms) & (times < evaluation_end_ms)
+        if evaluation_label_cutoff_ms is not None:
+            evaluation_mask &= available_ms < int(evaluation_label_cutoff_ms)
+        evaluation = np.flatnonzero(evaluation_mask).astype(np.int64)
         all_plans.append(
             PrequentialFoldPlan(
                 fold=fold,
@@ -393,10 +397,25 @@ def plan_prequential_folds(
         )
         evaluation_start_ms = evaluation_end_ms
     if not all_plans:
-        raise ValueError("candidate has no pre-terminal selection days for prequential scoring")
+        raise ValueError("prequential interval produced no evaluation folds")
     if cfg.max_folds > 0:
         return tuple(all_plans[: cfg.max_folds])
     return tuple(all_plans)
+
+
+def plan_prequential_folds(
+    artifact: MicrostructureModelArtifact,
+    dataset: MicrostructureDataset,
+    config: PrequentialConfig,
+) -> tuple[PrequentialFoldPlan, ...]:
+    return _plan_prequential_interval(
+        artifact,
+        dataset,
+        config,
+        evaluation_interval_start_ms=artifact.split.selection_start_ms,
+        evaluation_interval_end_exclusive_ms=artifact.split.terminal_start_ms,
+        evaluation_label_cutoff_ms=artifact.split.terminal_start_ms,
+    )
 
 
 def _require_segment_support(
@@ -785,6 +804,331 @@ def _render_chart(
         )
     lines.append("</svg>")
     return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+@dataclass(frozen=True)
+class _FoldSequenceEvaluation:
+    fold_reports: tuple[dict[str, object], ...]
+    indexes: np.ndarray
+    fold_ids: np.ndarray
+    predictions: _PredictionBatch
+    policies: tuple[ThresholdPolicy, ...]
+    trace: _VariablePolicyTrace
+    backend_kinds: frozenset[str]
+    backend_devices: frozenset[str]
+
+
+@dataclass(frozen=True)
+class TerminalPrequentialProtocolResult:
+    version: str
+    protocol_sha256: str
+    fold_models_sha256: str
+    backend_kind: str
+    backend_device: str
+    planned_folds: int
+    complete_folds: int
+    expected_rows: int
+    evaluated_rows: int
+    first_evaluation_ms: int
+    last_evaluation_ms: int
+    latest_policy: ThresholdPolicy
+    metrics: TradingMetrics
+    confidence: PerformanceConfidence
+    auc: Mapping[str, float]
+    brier: Mapping[str, float]
+    baselines: Mapping[str, TradingMetrics]
+    folds: tuple[Mapping[str, object], ...]
+
+
+def _evaluate_fold_sequence(
+    artifact: MicrostructureModelArtifact,
+    dataset: MicrostructureDataset,
+    plans: Sequence[PrequentialFoldPlan],
+    config: PrequentialConfig,
+    *,
+    compute_backend: str,
+    progress: PrequentialProgressCallback | None,
+) -> _FoldSequenceEvaluation:
+    fold_reports: list[dict[str, object]] = []
+    complete_indexes: list[np.ndarray] = []
+    complete_predictions: list[_PredictionBatch] = []
+    complete_fold_ids: list[np.ndarray] = []
+    complete_policies: list[ThresholdPolicy] = []
+    backend_kinds: set[str] = set()
+    backend_devices: set[str] = set()
+    total_steps = len(plans)
+    for offset, plan in enumerate(plans, start=1):
+        if progress:
+            progress(f"fold-{plan.fold}-start", offset - 1, total_steps)
+        started = time.perf_counter()
+        base_report = plan.summary()
+        try:
+            fitted = _fit_fold_models(
+                artifact,
+                dataset,
+                plan,
+                config,
+                compute_backend=compute_backend,
+                seed=int(artifact.seed) + plan.fold * 101,
+            )
+            backend_kinds.add(fitted.backend_kind)
+            backend_devices.add(fitted.backend_device)
+            policy_predictions = _predict_models(
+                artifact,
+                dataset,
+                fitted,
+                plan.policy_indexes,
+            )
+            policy, policy_metrics, policy_search = _select_threshold(
+                risk_level=artifact.risk_level,
+                timestamps=dataset.decision_time_ms[plan.policy_indexes],
+                long_exit_times=dataset.long_exit_time_ms[plan.policy_indexes],
+                short_exit_times=dataset.short_exit_time_ms[plan.policy_indexes],
+                long_targets=dataset.long_net_bps[plan.policy_indexes],
+                short_targets=dataset.short_net_bps[plan.policy_indexes],
+                long_edge=policy_predictions.long_edge,
+                short_edge=policy_predictions.short_edge,
+                long_probability=policy_predictions.long_probability,
+                short_probability=policy_predictions.short_probability,
+                long_eligible=dataset.long_liquidity_eligible[plan.policy_indexes],
+                short_eligible=dataset.short_liquidity_eligible[plan.policy_indexes],
+            )
+            evaluation_predictions = _predict_models(
+                artifact,
+                dataset,
+                fitted,
+                plan.evaluation_indexes,
+            )
+            local_trace = _simulate_non_overlapping_trace(
+                timestamps=dataset.decision_time_ms[plan.evaluation_indexes],
+                long_exit_times=dataset.long_exit_time_ms[plan.evaluation_indexes],
+                short_exit_times=dataset.short_exit_time_ms[plan.evaluation_indexes],
+                long_targets=dataset.long_net_bps[plan.evaluation_indexes],
+                short_targets=dataset.short_net_bps[plan.evaluation_indexes],
+                long_edge=evaluation_predictions.long_edge,
+                short_edge=evaluation_predictions.short_edge,
+                long_probability=evaluation_predictions.long_probability,
+                short_probability=evaluation_predictions.short_probability,
+                edge_threshold=policy.minimum_predicted_edge_bps,
+                probability_threshold=policy.minimum_profitable_probability,
+                long_eligible=dataset.long_liquidity_eligible[plan.evaluation_indexes],
+                short_eligible=dataset.short_liquidity_eligible[plan.evaluation_indexes],
+            )
+            auc, brier = _side_probability_quality(
+                dataset,
+                plan.evaluation_indexes,
+                evaluation_predictions.long_probability,
+                evaluation_predictions.short_probability,
+            )
+            fold_reports.append(
+                {
+                    **base_report,
+                    "status": "complete",
+                    "error": None,
+                    "backend_kind": fitted.backend_kind,
+                    "backend_device": fitted.backend_device,
+                    "model_sha256": fitted.model_sha256,
+                    "side_training_rows": dict(fitted.side_training_rows),
+                    "side_calibration_rows": dict(fitted.side_calibration_rows),
+                    "probability_calibration": dict(fitted.calibration),
+                    "policy": asdict(policy),
+                    "policy_metrics": asdict(policy_metrics),
+                    "policy_search": asdict(policy_search),
+                    "evaluation_metrics_local_reset": asdict(local_trace.metrics),
+                    "evaluation_auc": auc,
+                    "evaluation_brier": brier,
+                    "seconds": float(time.perf_counter() - started),
+                }
+            )
+            complete_indexes.append(plan.evaluation_indexes)
+            complete_predictions.append(evaluation_predictions)
+            complete_fold_ids.append(
+                np.full(len(plan.evaluation_indexes), plan.fold, dtype=np.int32)
+            )
+            complete_policies.extend([policy] * len(plan.evaluation_indexes))
+        except (KeyError, RuntimeError, TypeError, ValueError) as exc:
+            fold_reports.append(
+                {
+                    **base_report,
+                    "status": "failed",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "seconds": float(time.perf_counter() - started),
+                }
+            )
+        gc.collect()
+        if progress:
+            progress(f"fold-{plan.fold}-complete", offset, total_steps)
+    if not complete_indexes:
+        raise RuntimeError("prequential evaluation produced no complete folds")
+
+    indexes = np.concatenate(complete_indexes)
+    fold_ids = np.concatenate(complete_fold_ids)
+    predictions = _PredictionBatch(
+        long_edge=np.concatenate([item.long_edge for item in complete_predictions]),
+        short_edge=np.concatenate([item.short_edge for item in complete_predictions]),
+        long_probability=np.concatenate(
+            [item.long_probability for item in complete_predictions]
+        ),
+        short_probability=np.concatenate(
+            [item.short_probability for item in complete_predictions]
+        ),
+    )
+    order = np.argsort(dataset.decision_time_ms[indexes], kind="stable")
+    indexes = indexes[order]
+    fold_ids = fold_ids[order]
+    predictions = _PredictionBatch(
+        long_edge=predictions.long_edge[order],
+        short_edge=predictions.short_edge[order],
+        long_probability=predictions.long_probability[order],
+        short_probability=predictions.short_probability[order],
+    )
+    policies = tuple(complete_policies[int(value)] for value in order)
+    trace = _variable_policy_trace(
+        dataset,
+        indexes,
+        predictions,
+        np.asarray(
+            [item.minimum_predicted_edge_bps for item in policies],
+            dtype=np.float64,
+        ),
+        np.asarray(
+            [item.minimum_profitable_probability for item in policies],
+            dtype=np.float64,
+        ),
+    )
+    for fold in fold_reports:
+        if fold["status"] != "complete":
+            continue
+        fold_mask = fold_ids == int(fold["fold"])
+        executed_mask = fold_mask & trace.executed
+        executed_indexes = indexes[executed_mask]
+        executed_sides = trace.selected_side[executed_mask]
+        executed_pnls = np.where(
+            executed_sides > 0,
+            dataset.long_net_bps[executed_indexes],
+            dataset.short_net_bps[executed_indexes],
+        )
+        fold["evaluation_metrics"] = asdict(
+            _trading_metrics(
+                executed_pnls.tolist(),
+                executed_sides.tolist(),
+                dataset.decision_time_ms[executed_indexes].tolist(),
+            )
+        )
+        fold["cross_boundary_suppressed_actions"] = int(
+            np.sum(fold_mask & (trace.selected_side != 0) & ~trace.executed)
+        )
+    return _FoldSequenceEvaluation(
+        fold_reports=tuple(fold_reports),
+        indexes=indexes,
+        fold_ids=fold_ids,
+        predictions=predictions,
+        policies=policies,
+        trace=trace,
+        backend_kinds=frozenset(backend_kinds),
+        backend_devices=frozenset(backend_devices),
+    )
+
+
+def evaluate_terminal_prequential_protocol(
+    artifact: MicrostructureModelArtifact,
+    dataset: MicrostructureDataset,
+    *,
+    compute_backend: str = "auto",
+    progress: PrequentialProgressCallback | None = None,
+) -> TerminalPrequentialProtocolResult:
+    """Replay the locked test-then-refit protocol over the terminal interval."""
+
+    _validate_candidate_contract(artifact, dataset)
+    cfg = PROMOTION_PREQUENTIAL_CONFIG.validated()
+    times = np.asarray(dataset.decision_time_ms, dtype=np.int64)
+    terminal_indexes = np.flatnonzero(
+        times >= int(artifact.split.terminal_start_ms)
+    ).astype(np.int64)
+    if not len(terminal_indexes):
+        raise ValueError("terminal prequential interval is empty")
+    terminal_end_exclusive_ms = int(times[terminal_indexes[-1]]) + 1
+    plans = _plan_prequential_interval(
+        artifact,
+        dataset,
+        cfg,
+        evaluation_interval_start_ms=artifact.split.terminal_start_ms,
+        evaluation_interval_end_exclusive_ms=terminal_end_exclusive_ms,
+        evaluation_label_cutoff_ms=None,
+    )
+    if len(plans) < 3:
+        raise ValueError("terminal prequential protocol requires at least three folds")
+    sequence = _evaluate_fold_sequence(
+        artifact,
+        dataset,
+        plans,
+        cfg,
+        compute_backend=compute_backend,
+        progress=progress,
+    )
+    failed = [fold for fold in sequence.fold_reports if fold["status"] != "complete"]
+    if failed:
+        raise RuntimeError(
+            "terminal prequential fold failure: "
+            f"fold={failed[0]['fold']} error={failed[0]['error']}"
+        )
+    if not np.array_equal(sequence.indexes, terminal_indexes):
+        raise RuntimeError("terminal prequential replay did not cover every terminal row")
+    if (
+        sequence.backend_kinds != {artifact.training_backend_kind}
+        or sequence.backend_devices != {artifact.training_backend_device}
+    ):
+        raise RuntimeError("terminal prequential backend drifted from candidate training")
+    confidence = _performance_confidence(
+        sequence.trace,
+        times[terminal_indexes],
+        bootstrap_samples=cfg.bootstrap_samples,
+    )
+    auc, brier = _side_probability_quality(
+        dataset,
+        terminal_indexes,
+        sequence.predictions.long_probability,
+        sequence.predictions.short_probability,
+    )
+    baselines = _baseline_metrics(dataset, terminal_indexes)
+    complete_folds = [
+        fold for fold in sequence.fold_reports if fold["status"] == "complete"
+    ]
+    fold_models_sha = hashlib.sha256(
+        json.dumps(
+            [
+                {
+                    "fold": int(fold["fold"]),
+                    "model_sha256": str(fold["model_sha256"]),
+                }
+                for fold in complete_folds
+            ],
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    return TerminalPrequentialProtocolResult(
+        version=PREQUENTIAL_EVIDENCE_VERSION,
+        protocol_sha256=prequential_protocol_sha256(cfg),
+        fold_models_sha256=fold_models_sha,
+        backend_kind=next(iter(sequence.backend_kinds)),
+        backend_device=next(iter(sequence.backend_devices)),
+        planned_folds=len(plans),
+        complete_folds=len(complete_folds),
+        expected_rows=len(terminal_indexes),
+        evaluated_rows=len(sequence.indexes),
+        first_evaluation_ms=int(times[terminal_indexes[0]]),
+        last_evaluation_ms=int(times[terminal_indexes[-1]]),
+        latest_policy=sequence.policies[-1],
+        metrics=sequence.trace.metrics,
+        confidence=confidence,
+        auc=auc,
+        brier=brier,
+        baselines=baselines,
+        folds=tuple(sequence.fold_reports),
+    )
 
 
 def evaluate_prequential_microstructure_model(
@@ -1779,8 +2123,10 @@ __all__ = [
     "PrequentialConfig",
     "PrequentialEvaluationReport",
     "PrequentialFoldPlan",
+    "TerminalPrequentialProtocolResult",
     "attach_verified_prequential_evidence",
     "evaluate_prequential_microstructure_model",
+    "evaluate_terminal_prequential_protocol",
     "plan_prequential_folds",
     "prequential_protocol_sha256",
 ]

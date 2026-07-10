@@ -154,17 +154,17 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
 
-The separate `microstructure-action-value-v11` path uses real Binance USD-M
+The separate `microstructure-action-value-v12` path uses real Binance USD-M
 book-ticker and trade archives to build causal one-second L1/tape features. Its
 promotion lifecycle is deliberately staged: candidate training, complete
 rolling-refit prequential evidence with the terminal period sealed, hash and
-row-level evidence verification, one-use terminal reservation, terminal
-validation, then an expiring deployment refit. The former
+row-level evidence verification, one-use terminal reservation, locked
+rolling-refit terminal validation, then an expiring deployment refit. The former
 `microstructure-train --evaluate-terminal` shortcut is disabled. Terminal,
 refit, and accepted-runtime loaders independently reject missing or drifted
-prequential evidence. No v11 artifact is currently accepted or claimed
-profitable, and rolling-refit terminal replay plus exchange shadow calibration
-remain incomplete; see
+prequential evidence. No v12 artifact is currently accepted or claimed
+profitable, and mandatory exchange no-order shadow calibration remains
+incomplete; see
 [Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned

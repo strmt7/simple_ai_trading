@@ -22,6 +22,7 @@ from simple_ai_trading.microstructure_model import (
     PurgedSplitEvidence,
     ThresholdPolicy,
     ThresholdSearchEvidence,
+    TerminalPrequentialEvidence,
     TradingMetrics,
     _apply_platt_scaling,
     _candidate_payload_sha256,
@@ -447,6 +448,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
             "deployment_refit": None,
             "terminal_evaluated_at": None,
             "prequential_validation": None,
+            "terminal_prequential": None,
         }
     )
     candidate_sha = hashlib.sha256(
@@ -478,6 +480,50 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "max_drawdown_bps": 20.0,
         "mean_daily_net_bps_ci_lower": 0.4,
         "attached_at": "2026-01-01T00:00:00+00:00",
+    }
+    terminal_start_ms = 1_730_000_000_000
+    terminal_folds = [
+        {
+            "fold": fold,
+            "status": "complete",
+            "error": None,
+            "backend_kind": "opencl",
+            "backend_device": "opencl:0:0",
+            "evaluation_start_ms": terminal_start_ms + (fold - 1) * 1_000,
+            "evaluation_end_exclusive_ms": terminal_start_ms + fold * 1_000,
+            "evaluation_rows": 3_334 if fold == 3 else 3_333,
+            "evaluation_metrics": {"total_net_bps": 10.0},
+            "policy": dict(payload["threshold_policy"]),
+            "model_sha256": str(fold + 3) * 64,
+        }
+        for fold in range(1, 4)
+    ]
+    terminal_fold_models_sha = hashlib.sha256(
+        json.dumps(
+            [
+                {"fold": fold["fold"], "model_sha256": fold["model_sha256"]}
+                for fold in terminal_folds
+            ],
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    payload["terminal_prequential"] = {
+        "version": "microstructure-prequential-fixed-refit-v1",
+        "protocol_sha256": "2" * 64,
+        "fold_models_sha256": terminal_fold_models_sha,
+        "backend_kind": "opencl",
+        "backend_device": "opencl:0:0",
+        "planned_folds": 3,
+        "complete_folds": 3,
+        "expected_rows": 10_000,
+        "evaluated_rows": 10_000,
+        "first_evaluation_ms": terminal_start_ms,
+        "last_evaluation_ms": terminal_start_ms + 2_999,
+        "latest_policy": dict(payload["threshold_policy"]),
+        "folds": terminal_folds,
     }
     return payload
 
@@ -777,6 +823,38 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         trained_at=datetime.now(timezone.utc).isoformat(),
         terminal_evaluated_at=datetime.now(timezone.utc).isoformat(),
     )
+    terminal_folds = tuple(
+        {
+            "fold": fold,
+            "status": "complete",
+            "error": None,
+            "backend_kind": "cpu",
+            "backend_device": "cpu",
+            "evaluation_start_ms": 4 + fold,
+            "evaluation_end_exclusive_ms": 5 + fold,
+            "evaluation_rows": 334 if fold == 3 else 333,
+            "evaluation_metrics": {"total_net_bps": 10.0},
+            "policy": {
+                "minimum_predicted_edge_bps": 1.0,
+                "minimum_profitable_probability": 0.6,
+                "selection_utility_bps": 10.0,
+            },
+            "model_sha256": str(fold + 3) * 64,
+        }
+        for fold in range(1, 4)
+    )
+    terminal_fold_sha = hashlib.sha256(
+        json.dumps(
+            [
+                {"fold": fold["fold"], "model_sha256": fold["model_sha256"]}
+                for fold in terminal_folds
+            ],
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
     artifact = replace(
         artifact,
         prequential_validation=PrequentialValidationEvidence(
@@ -799,6 +877,21 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
             max_drawdown_bps=20.0,
             mean_daily_net_bps_ci_lower=0.5,
             attached_at=datetime.now(timezone.utc).isoformat(),
+        ),
+        terminal_prequential=TerminalPrequentialEvidence(
+            version="microstructure-prequential-fixed-refit-v1",
+            protocol_sha256="1" * 64,
+            fold_models_sha256=terminal_fold_sha,
+            backend_kind="cpu",
+            backend_device="cpu",
+            planned_folds=3,
+            complete_folds=3,
+            expected_rows=1_000,
+            evaluated_rows=1_000,
+            first_evaluation_ms=5,
+            last_evaluation_ms=7,
+            latest_policy=ThresholdPolicy(1.0, 0.6, 10.0),
+            folds=terminal_folds,
         ),
     )
 
