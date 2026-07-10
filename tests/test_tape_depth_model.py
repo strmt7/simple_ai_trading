@@ -12,8 +12,10 @@ from simple_ai_trading.tape_depth_features import (
     TapeDepthForecastDataset,
 )
 from simple_ai_trading.tape_depth_model import (
+    _selected_feature_names,
     load_tape_depth_model_artifact,
     save_tape_depth_model_artifact,
+    score_tape_depth_evaluation,
     train_tape_depth_forecaster,
 )
 
@@ -50,15 +52,16 @@ def _predictive_dataset(rows: int = 12_000) -> TapeDepthForecastDataset:
         features=features,
         source_evidence={
             "verified": True,
-            "schema_version": "binance-usdm-tick-v5",
+            "schema_version": "binance-usdm-tick-v6",
             "manifest_fingerprint": "a" * 64,
         },
     )
 
 
 def test_tape_depth_forecaster_is_predictive_but_never_executable(tmp_path) -> None:
+    dataset = _predictive_dataset()
     artifact = train_tape_depth_forecaster(
-        _predictive_dataset(),
+        dataset,
         risk_level="conservative",
         compute_backend="cpu",
         minimum_segment_rows=500,
@@ -76,6 +79,14 @@ def test_tape_depth_forecaster_is_predictive_but_never_executable(tmp_path) -> N
     )
     assert artifact.evaluation_metrics.top_decile_mean_signed_gross_bps > 0.0
     assert set(artifact.model_strings) == {"direction", "mean", "lower", "upper"}
+    assert artifact.feature_set == "full"
+    assert artifact.model_feature_names == TAPE_DEPTH_FEATURE_NAMES
+    assert len(artifact.dataset_fingerprint) == 64
+
+    replay = score_tape_depth_evaluation(artifact, dataset)
+    assert replay.rows == artifact.evaluation_metrics.rows
+    assert replay.metrics() == artifact.evaluation_metrics
+    assert len(replay.fingerprint()) == 64
 
     path = tmp_path / "tape-depth.json"
     save_tape_depth_model_artifact(artifact, path)
@@ -96,3 +107,71 @@ def test_tape_depth_loader_rejects_forged_trading_authority(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="cannot authorize trading"):
         load_tape_depth_model_artifact(path)
+
+
+def test_tape_depth_replay_rejects_feature_drift() -> None:
+    dataset = _predictive_dataset(6_000)
+    artifact = train_tape_depth_forecaster(
+        dataset,
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+    dataset.features[0, 0] += 0.25
+
+    with pytest.raises(ValueError, match="fingerprint differs"):
+        score_tape_depth_evaluation(artifact, dataset)
+
+
+def test_tape_depth_forecaster_honors_timestamp_split_boundaries() -> None:
+    dataset = _predictive_dataset(12_000)
+    boundaries = tuple(int(dataset.decision_time_ms[index]) for index in (6_000, 8_000, 10_000))
+
+    artifact = train_tape_depth_forecaster(
+        dataset,
+        compute_backend="cpu",
+        minimum_segment_rows=500,
+        split_boundaries_ms=boundaries,
+    )
+
+    assert artifact.split.tuning_start_ms == boundaries[0]
+    assert artifact.split.calibration_start_ms == boundaries[1]
+    assert artifact.split.evaluation_start_ms == boundaries[2]
+    assert score_tape_depth_evaluation(artifact, dataset).rows == 2_000
+
+
+def test_tape_depth_predictor_is_independent_from_execution_risk_level() -> None:
+    dataset = _predictive_dataset(6_000)
+    conservative = train_tape_depth_forecaster(
+        dataset,
+        risk_level="conservative",
+        model_profile="regularized",
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+    aggressive = train_tape_depth_forecaster(
+        dataset,
+        risk_level="aggressive",
+        model_profile="regularized",
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+
+    assert conservative.risk_level == "conservative"
+    assert aggressive.risk_level == "aggressive"
+    assert conservative.model_profile == aggressive.model_profile == "regularized"
+    assert conservative.best_iterations == aggressive.best_iterations
+    assert conservative.model_strings == aggressive.model_strings
+    assert conservative.evaluation_metrics == aggressive.evaluation_metrics
+
+
+def test_tape_depth_feature_sets_are_ordered_explicit_ablations() -> None:
+    core = _selected_feature_names("core")
+    derived = _selected_feature_names("tape_derived")
+    full = _selected_feature_names("full")
+
+    assert set(core) < set(derived) < set(full)
+    assert tuple(name for name in full if name in core) == core
+    assert tuple(name for name in full if name in derived) == derived
+    assert not any(name.startswith("depth_") for name in derived)
+    assert any(name.startswith("vwap_deviation_bps_") for name in derived)
+    assert any(name.startswith("depth_") for name in full)

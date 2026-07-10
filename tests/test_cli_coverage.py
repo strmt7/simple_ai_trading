@@ -343,6 +343,19 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tape_train.window_days == 365
     assert tape_train.horizon_seconds == 60
     assert tape_train.compute_backend == "auto"
+    assert tape_train.model_profile == "regularized"
+    assert tape_train.feature_set == "full"
+    tape_prequential = cli._parse_args(
+        ["tape-depth-prequential", "--max-folds", "2", "--plan-only"]
+    )
+    assert tape_prequential.training_window_days == 730
+    assert tape_prequential.decision_cadence_seconds == 20
+    assert tape_prequential.max_folds == 2
+    assert tape_prequential.plan_only is True
+    assert tape_prequential.resume is False
+    assert tape_prequential.model_profile == "regularized"
+    assert tape_prequential.feature_set == "full"
+    assert tape_prequential.maximum_cached_rows == 15_000_000
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
@@ -896,6 +909,7 @@ def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -
         rejection_reasons=(),
         trading_authority=False,
         execution_claim=False,
+        model_profile="regularized",
         evaluation_metrics=metrics,
         asdict=lambda: {
             "status": "research_candidate",
@@ -986,6 +1000,75 @@ def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -
     rendered = capsys.readouterr().out
     assert "trading_authority=false" in rendered
     assert "execution_claim=false" in rendered
+
+
+def test_tape_depth_prequential_plan_is_cli_and_windows_ready(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class Warehouse:
+        def __init__(self, *_args, **kwargs) -> None:
+            calls["warehouse_options"] = kwargs
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+    def run(warehouse, **kwargs):
+        calls["run"] = (warehouse, kwargs)
+        return {
+            "plan_only": True,
+            "trading_authority": False,
+            "execution_claim": False,
+            "total_folds": 6,
+        }
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_warehouse.MicrostructureWarehouse",
+        Warehouse,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_prequential.run_tape_depth_prequential",
+        run,
+    )
+
+    result = cli.command_tape_depth_prequential(
+        argparse.Namespace(
+            symbols="BTCUSDT,ETHUSDT,SOLUSDT",
+            warehouse="ticks.duckdb",
+            cache_root="cache",
+            output_dir=str(tmp_path),
+            training_window_days=730,
+            tuning_window_days=30,
+            calibration_window_days=30,
+            evaluation_window_days=90,
+            horizon_seconds=60,
+            total_latency_ms=750,
+            decision_cadence_seconds=20,
+            maximum_depth_age_ms=60_000,
+            maximum_rows=5_000_000,
+            max_folds=2,
+            risk_level="conservative",
+            compute_backend="directml",
+            minimum_segment_rows=10_000,
+            memory_limit="8GB",
+            threads=8,
+            plan_only=True,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    run_options = calls["run"][1]  # type: ignore[index]
+    assert run_options["symbols"] == ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+    assert run_options["compute_backend"] == "directml"
+    assert run_options["plan_only"] is True
+    assert "folds=6" in capsys.readouterr().out
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:

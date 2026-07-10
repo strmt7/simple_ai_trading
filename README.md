@@ -24,7 +24,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - Profit reinvestment is disabled by default. Enabling it prints a warning because compounding amplifies losses as well as gains.
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
-- Training, retraining, tuning, model-lab feature generation/scoring, external-signal scoring, probability-temperature calibration, threshold calibration, backtest replay, and backtest-panel feature generation use GPU-first `auto` whenever the caller does not explicitly select a backend. Training, scoring, and calibration artifacts record requested/resolved backend evidence; feature builders fall back to the original CPU path if a GPU tensor operation is unavailable. Hybrid model-zoo backtest scoring also uses the tensor backend for Lorentzian, rational-quadratic, and technical-confluence experts when supported.
+- Training, retraining, tuning, model-lab feature generation/scoring, external-signal scoring, probability-temperature calibration, threshold calibration, backtest replay, and backtest-panel feature generation use GPU-first `auto` whenever the caller does not explicitly select a backend. Training, scoring, and calibration artifacts record requested/resolved backend evidence; feature builders fall back to the original CPU path if a GPU tensor operation is unavailable. Hybrid model-zoo backtest scoring also uses the tensor backend for Lorentzian, rational-quadratic, and technical-confluence experts when supported. LightGBM resolves non-CPU training through OpenCL and lets the installed driver select the device by default instead of assuming platform/device `0:0`; operators can set both `SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID` and `SIMPLE_AI_TRADING_OPENCL_DEVICE_ID` together when explicit selection is required.
 - AI defaults to a local multibillion model identifier (`qwen3:8b`) and a minimum 2B-parameter preflight. AI-assisted signal approval requires explicit holdout uplift over the non-AI ML baseline, paired trade/window return-delta evidence with a positive-delta-rate and sign-test gate, and no worse drawdown, liquidation, loss-streak, profit-factor, win-rate, or downside return/risk evidence when those metrics are available; otherwise AI remains advisory/review-only. Use `simple-ai-trading ai-benchmark` to compare installed local AI reviewers against structured finance-risk cases before relying on AI review.
 - Binance API budget telemetry is captured from exchange response headers when available. Authenticated live startup is blocked when a current budget sample shows any known request-weight or order-count window is 80% or more consumed, or when Binance returns `Retry-After`.
 
@@ -134,7 +134,9 @@ simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market future
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --require-checksum
 simple-ai-trading data-health --interval 1s --market spot --min-rows 1000000 --require-verified-checksum --json
 simple-ai-trading tick-archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --data-types bookTicker,trades,bookDepth --full-history --plan-only --plan-output docs/microstructure/availability.json
-simple-ai-trading tape-depth-train --symbol BTCUSDT --window-days 365 --horizon-seconds 60 --compute-backend directml
+simple-ai-trading tape-depth-train --symbol BTCUSDT --window-days 365 --horizon-seconds 60 --model-profile regularized --feature-set full --compute-backend directml
+simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --plan-only
+simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --compute-backend directml --output-dir data/tape-depth-prequential-full
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
 simple-ai-trading microstructure-prequential --input data/microstructure-model.json
 simple-ai-trading microstructure-promote --input data/microstructure-model.json
@@ -184,12 +186,55 @@ as a current best bid/ask history.
 
 `tape-depth-train` builds a bounded, purged LightGBM direction/return/uncertainty
 ensemble from checksummed one-second trade tape and causally joined coarse depth.
+Its exact one-second clock keeps real no-trade seconds as an explicit zero-volume,
+zero-count row carrying only the last verified trade reference; `trade_observed`
+and trade-age features distinguish those rows, and a verified daily trade
+manifest is required for every requested date so a missing archive cannot look
+like an inactive market.
 Its label is the future real trade-reference return after the configured latency,
 not an executable fill or after-cost PnL. The artifact is therefore restricted to
 `research_candidate` or `rejected`, records `trading_authority=false` and
 `execution_claim=false`, and cannot be loaded as an accepted trading model. It is
 the long-history forecasting lane; the shorter exact-BBO lifecycle and current
 no-order shadow remain mandatory before any execution claim.
+
+`tape-depth-prequential` is the multi-year rolling evidence path. Its default
+fold has 730 calendar days of training, separate 30-day tuning and calibration
+periods, and a non-overlapping 90-day screening evaluation period. Decisions are
+sampled every 20 seconds, while every feature window and target still comes from the
+one-second source table. Each fold persists the exact serialized model, a
+deterministic compressed row-level prediction table, source/dataset/model hashes,
+and a fold metrics row. The final deterministic SVG uses real UTC dates and
+shows AUC, rank IC, and gross forecast return with explicit baselines and a
+no-fill/no-cost caveat. It never sums overlapping forecast horizons into ROI and
+cannot grant trading authority. Full-corpus evidence is not claimed until the
+active checksummed acquisition and every planned fold complete.
+
+The runner computes the causal one-second-derived matrix once per remaining
+symbol and retains only 20-second decision rows, bounded by
+`--maximum-cached-rows` (`15,000,000` by default). Fold slices share that matrix
+in memory but receive their own exact source-manifest binding and dataset hash.
+This removes repeated multi-year window calculations without allowing future
+features or labels into an earlier fold.
+
+Long rolling runs persist an atomic fold summary after every completed model.
+`--resume` reopens only a matching plan, reloads each serialized model, parses
+each compressed prediction table, recomputes its metrics and fingerprints, and
+skips a fold only when every binding and file hash matches. A changed, missing,
+or path-escaping artifact blocks resume instead of silently mixing runs.
+
+Forecaster capacity is independent of trading risk tolerance. The explicit
+`regularized`, `balanced`, and `expressive` model profiles are prediction trials
+that must be counted and compared on earlier rolling evidence. Conservative,
+regular, and aggressive remain execution-policy settings for drawdown, cooldown,
+leverage, and sizing; changing risk level with the same model profile produces
+the same serialized predictor.
+
+`core`, `tape_derived`, and `full` are ordered feature-set ablations. The model
+artifact serializes the exact ordered input names while its dataset fingerprint
+still binds the complete source matrix. Derived tape/activity features and
+coarse depth therefore have to beat the simpler earlier-fold baseline and
+confirm later; adding columns is not treated as automatic improvement.
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned
 financial time-series foundation model. It requires exact BTCUSDT, ETHUSDT, and

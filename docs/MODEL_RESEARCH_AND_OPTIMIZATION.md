@@ -24,6 +24,23 @@ execution gating. Do not treat roadmap entries as product capabilities: a
 capability is executable only when its blueprint status, code path, tests, and
 operator docs all agree.
 
+The 2026-07-10 research refresh adds three constraints to that roadmap:
+
+- [LOBERT](https://arxiv.org/abs/2511.12563) is a message-level LOB foundation
+  model. Its tokenization is relevant only after synchronized L2 messages exist;
+  the official coarse percentage-band history is not relabeled as that input.
+- [Time-series foundation-model benchmark requirements](https://arxiv.org/abs/2510.13654)
+  identify overlapping or obscure pretraining corpora and temporal leakage as
+  benchmark risks. Foundation candidates therefore require hash-pinned weights,
+  known cutoffs, and genuinely post-cutoff rolling evidence.
+- The [Finance Agent Benchmark](https://arxiv.org/abs/2508.00828) reports major
+  limitations on real financial-research tasks, while
+  [Agent Market Arena](https://arxiv.org/abs/2510.11695) finds that agent/risk
+  architecture can matter more than backbone choice. The local multibillion LLM
+  therefore remains a schema-constrained veto/advisory component. Coordinator,
+  memory, and risk-style uplift must be ablated separately, and no LLM receives
+  direct order authority.
+
 ## Causal L1/Tape Action-Value Model
 
 The `microstructure-action-value-v13` workflow is a separate, fail-closed
@@ -166,6 +183,21 @@ cycle features, the observed `0.20%`, `1%`, and `5%` cumulative depth bands, a
 depth-age mask, and depth-curve shape. The depth join is backward-looking only;
 a depth snapshot newer than the decision second is never used.
 
+The v3 feature contract also includes causal VWAP deviation, bounded price-path
+efficiency, observed-trade rates, short/long quote-volume and trade-intensity
+acceleration, and price/flow alignment. These are interpretable
+microstructure candidates, not presumed alpha. Their value must be established
+by profile and feature-group ablations on the earlier rolling folds and then
+confirmed on later untouched folds.
+
+The source clock is complete even when no trade occurs in a particular second.
+Such a row carries the most recent verified trade reference for OHLC, records
+zero volume and zero trade count, and exposes `trade_observed=0` plus the exact
+trade age. It does not invent volume or a transaction. This fill is permitted
+only inside a continuous sequence of checksummed daily trade manifests; every
+requested UTC date must have a verified manifest, so an absent archive fails
+instead of becoming a long carry-forward interval.
+
 The target is deliberately narrow: the real trade-reference return from the end
 of the configured latency delay, rounded up to the next observable one-second
 boundary, to the exact future horizon. The effective delay and complete target
@@ -184,6 +216,8 @@ simple-ai-trading tape-depth-train `
   --horizon-seconds 60 `
   --total-latency-ms 750 `
   --decision-cadence-seconds 5 `
+  --model-profile regularized `
+  --feature-set full `
   --compute-backend directml
 ```
 
@@ -195,6 +229,91 @@ Artifacts can only be `research_candidate` or `rejected`; both carry
 forged authority field. Model selection still requires full-corpus,
 cross-symbol, rolling out-of-sample comparison. Any order-capable descendant
 must independently pass exact-BBO replay and the current no-order shadow.
+
+Prediction capacity is not a risk-profile proxy. `regularized`, `balanced`, and
+`expressive` are explicit model-profile trials, while conservative, regular,
+and aggressive remain downstream execution policies. Holding model profile,
+data, and seed constant while changing execution risk level must produce the
+same model strings and forecast metrics. This prevents a risk label from hiding
+an uncounted hyperparameter trial.
+
+Feature growth is governed by three ordered ablations: `core` contains the
+basic causal tape, volatility, range, activity, clock, and no-trade state;
+`tape_derived` adds VWAP, path-efficiency, intensity-acceleration, and
+price/flow-alignment candidates; `full` adds the causally joined coarse-depth
+bands. The artifact stores the exact model input order, while its dataset hash
+binds the complete matrix. A more complex set must improve earlier rolling
+folds and later confirmation folds; otherwise the simpler set remains the
+candidate.
+
+The rolling comparison is implemented by `tape-depth-prequential`. The default
+calendar protocol uses 730 days for training, 30 days for early-stopping tuning,
+30 days for probability calibration, and the next non-overlapping 90 days for
+screening evaluation. Its 20-second decision cadence keeps each 880-day fold below the
+five-million-row memory gate while all return, volatility, flow, depth, and
+target inputs retain one-second source resolution. Fold boundaries are exact
+UTC timestamps rather than percentages, and every preceding label whose exit
+reaches or crosses a boundary is purged from that segment.
+
+The 90-day outer block is an efficiency and robustness screen: it avoids
+rebuilding nearly identical 820-day matrices every month and requires a frozen
+candidate to remain useful across a full quarter. Only candidates that survive
+the complete quarterly screen should incur a separate monthly-refit replay and
+current shadow. This reduces redundant GPU work without dropping any source
+seconds or hiding monthly behavior, because the row-level quarterly predictions
+can still be grouped into calendar months.
+
+Within a run, the causal one-second window query is executed once for each
+remaining symbol rather than once per overlapping fold. Only cadence-aligned
+decision rows are retained, under the separate 15-million
+`--maximum-cached-rows` bound. Each fold is a zero-copy contiguous matrix view,
+but its dataset fingerprint is rebuilt with the fold's exact checksummed
+manifest subset. Feature reuse therefore removes redundant computation without
+reusing a later label, calibration row, or source binding.
+
+```powershell
+simple-ai-trading tape-depth-prequential `
+  --symbols BTCUSDT,ETHUSDT,SOLUSDT `
+  --training-window-days 730 `
+  --tuning-window-days 30 `
+  --calibration-window-days 30 `
+  --evaluation-window-days 90 `
+  --decision-cadence-seconds 20 `
+  --plan-only
+
+simple-ai-trading tape-depth-prequential `
+  --symbols BTCUSDT,ETHUSDT,SOLUSDT `
+  --compute-backend directml `
+  --resume `
+  --output-dir data/tape-depth-prequential-full
+```
+
+The run writes `plan.json`, continuously updated `run-status.json`, one exact
+model artifact and deterministic gzip prediction table per fold,
+`fold-metrics.csv`, `report.json`, and `forecast-diagnostics.svg`. Every table,
+model, prediction batch, plan, and graph is hash-bound. Reported model metrics
+are recomputed from the serialized LightGBM strings against exact float64 source
+labels; float32 is restricted to learner inputs. The chart has real UTC dates
+and explicit random/zero baselines. Its gross-return panel states that it has no
+spread, fees, fills, or ROI. Overlapping horizons are never summed into a
+performance curve. This remains forecast evidence only until exact-BBO replay,
+execution-cost stress, and current no-order shadow independently pass.
+
+Every completed fold is checkpointed in `fold-summaries.json`. `--resume`
+requires the same plan and configuration, constrains every relative evidence
+path to the run directory, verifies model/prediction file hashes, reloads the
+serialized model contract, parses the complete gzip table, and recomputes its
+prediction fingerprint and metrics before skipping work. A complete report is
+immutable and cannot be resumed.
+
+For non-CPU LightGBM work, DirectML remains the general Windows tensor backend
+while LightGBM itself uses its OpenCL trainer. Automatic selection now delegates
+to the installed OpenCL driver instead of assuming platform/device `0:0`.
+Explicit overrides are accepted only when both
+`SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID` and
+`SIMPLE_AI_TRADING_OPENCL_DEVICE_ID` are valid non-negative integers. On the
+current AMD host, a real 100,000-row, 48-feature probe reported LightGBM's GPU
+trainer and device `gfx1201`; this capability check is not a model result.
 
 The fold, queue, and latency design follows the documented limits of market-
 data replay: a replay cannot infer the strategy's own market impact, queue

@@ -11,7 +11,6 @@ from __future__ import annotations
 import copy
 from dataclasses import asdict, dataclass, field
 import math
-import os
 from statistics import median
 from typing import Callable, Mapping, Sequence
 
@@ -28,6 +27,7 @@ from .execution_simulation import (
     simulate_market_fill,
 )
 from .features import ModelRow
+from .lightgbm_backend import lightgbm_backend_parameters
 from .model import HybridExpert, HybridPrototype, TrainedModel
 from .objective import get_objective
 from .risk_controls import stop_loss_sized_notional_pct
@@ -1922,10 +1922,12 @@ def _train_signed_payoff_lightgbm_ranker_expert(
         return fail("import", "lightgbm_or_numpy_unavailable", exc)
 
     backend = resolve_backend(compute_backend or "auto")
-    use_gpu = backend.kind != "cpu"
     try:
-        platform_id = int(os.getenv("SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID", "0"))
-        device_id = int(os.getenv("SIMPLE_AI_TRADING_OPENCL_DEVICE_ID", "0"))
+        backend_parameters, backend_kind, backend_device = lightgbm_backend_parameters(
+            compute_backend or "auto",
+            seed,
+            resolved_backend=backend,
+        )
     except ValueError as exc:
         return fail("backend", "invalid_opencl_platform_or_device_id", exc)
     input_dim = int(model.feature_dim)
@@ -1994,6 +1996,7 @@ def _train_signed_payoff_lightgbm_ranker_expert(
             else (31 if objective_name_normalized == "conservative" else 47)
         )
         parameters: dict[str, object] = {
+            **backend_parameters,
             "objective": "lambdarank" if training_mode == "daily_utility_rank" else "binary",
             "metric": "ndcg" if training_mode == "daily_utility_rank" else "binary_logloss",
             "learning_rate": 0.035,
@@ -2006,13 +2009,6 @@ def _train_signed_payoff_lightgbm_ranker_expert(
             "lambda_l1": 1e-4,
             "lambda_l2": 2e-3,
             "max_bin": 63,
-            "seed": int(seed),
-            "feature_fraction_seed": int(seed) + 1,
-            "bagging_seed": int(seed) + 2,
-            "data_random_seed": int(seed) + 3,
-            "verbosity": -1,
-            "num_threads": max(1, min(16, os.cpu_count() or 1)),
-            "device_type": "gpu" if use_gpu else "cpu",
         }
         if training_mode == "daily_utility_rank":
             parameters.update(
@@ -2023,15 +2019,6 @@ def _train_signed_payoff_lightgbm_ranker_expert(
                     "lambdarank_norm": True,
                 }
             )
-        if use_gpu:
-            parameters.update(
-                {
-                    "gpu_platform_id": platform_id,
-                    "gpu_device_id": device_id,
-                    "gpu_use_dp": False,
-                }
-            )
-
         def binary_labels(targets):
             return (targets > 0.0).astype(np.float32)
 
@@ -2485,8 +2472,8 @@ def _train_signed_payoff_lightgbm_ranker_expert(
             "validation_actionable_hit_rate": actionable_hit_rate,
             "validation_prediction_abs_mean": float(np.mean(np.abs(predicted_best))),
             "training_backend_requested": str(backend.requested),
-            "training_backend_kind": "opencl" if use_gpu else "cpu",
-            "training_backend_device": f"opencl:{platform_id}:{device_id}" if use_gpu else "cpu",
+            "training_backend_kind": backend_kind,
+            "training_backend_device": backend_device,
             "training_backend_reason": "",
             "target": (
                 "intraday-session-ranked after-cost utility with calibrated positive-path probability and conditional payoff"

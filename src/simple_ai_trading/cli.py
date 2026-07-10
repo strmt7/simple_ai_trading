@@ -764,6 +764,16 @@ def _build_parser() -> argparse.ArgumentParser:
         default="conservative",
     )
     parser_tape_depth_train.add_argument(
+        "--model-profile",
+        choices=["regularized", "balanced", "expressive"],
+        default="regularized",
+    )
+    parser_tape_depth_train.add_argument(
+        "--feature-set",
+        choices=["core", "tape_derived", "full"],
+        default="full",
+    )
+    parser_tape_depth_train.add_argument(
         "--compute-backend",
         choices=_COMPUTE_BACKEND_CHOICES,
         default="auto",
@@ -774,6 +784,77 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_train.add_argument("--threads", type=int, default=8)
     parser_tape_depth_train.add_argument("--json", action="store_true")
     parser_tape_depth_train.set_defaults(func=command_tape_depth_train)
+
+    parser_tape_depth_prequential = subparsers.add_parser(
+        "tape-depth-prequential",
+        help="run timestamp-defined rolling gross-forecast evidence across major symbols",
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT"
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--cache-root", default="data/archive-cache"
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--output-dir", default="data/tape-depth-prequential"
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--training-window-days", type=int, default=730
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--tuning-window-days", type=int, default=30
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--calibration-window-days", type=int, default=30
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--evaluation-window-days", type=int, default=90
+    )
+    parser_tape_depth_prequential.add_argument("--horizon-seconds", type=int, default=60)
+    parser_tape_depth_prequential.add_argument("--total-latency-ms", type=int, default=750)
+    parser_tape_depth_prequential.add_argument(
+        "--decision-cadence-seconds", type=int, default=20
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--maximum-depth-age-ms", type=int, default=60_000
+    )
+    parser_tape_depth_prequential.add_argument("--maximum-rows", type=int, default=5_000_000)
+    parser_tape_depth_prequential.add_argument(
+        "--maximum-cached-rows", type=int, default=15_000_000
+    )
+    parser_tape_depth_prequential.add_argument("--max-folds", type=int, default=0)
+    parser_tape_depth_prequential.add_argument(
+        "--risk-level",
+        choices=["conservative", "regular", "aggressive"],
+        default="conservative",
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--model-profile",
+        choices=["regularized", "balanced", "expressive"],
+        default="regularized",
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--feature-set",
+        choices=["core", "tape_derived", "full"],
+        default="full",
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--minimum-segment-rows", type=int, default=10_000
+    )
+    parser_tape_depth_prequential.add_argument("--memory-limit", default="8GB")
+    parser_tape_depth_prequential.add_argument("--threads", type=int, default=8)
+    parser_tape_depth_prequential.add_argument("--plan-only", action="store_true")
+    parser_tape_depth_prequential.add_argument("--resume", action="store_true")
+    parser_tape_depth_prequential.add_argument("--json", action="store_true")
+    parser_tape_depth_prequential.set_defaults(func=command_tape_depth_prequential)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
@@ -6361,10 +6442,15 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
                     getattr(args, "maximum_depth_age_ms", 60_000)
                 ),
                 maximum_rows=int(getattr(args, "maximum_rows", 5_000_000)),
+                maximum_cached_rows=int(
+                    getattr(args, "maximum_cached_rows", 15_000_000)
+                ),
             )
         artifact = train_tape_depth_forecaster(
             dataset,
             risk_level=str(getattr(args, "risk_level", "conservative")),
+            model_profile=str(getattr(args, "model_profile", "regularized")),
+            feature_set=str(getattr(args, "feature_set", "full")),
             compute_backend=str(getattr(args, "compute_backend", "auto")),
             minimum_segment_rows=int(getattr(args, "minimum_segment_rows", 2_000)),
             progress=progress,
@@ -6389,6 +6475,7 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
         print(
             "tape-depth-train: "
             f"status={artifact.status} rows={metrics.rows} "
+            f"profile={artifact.model_profile} "
             f"auc={metrics.direction_auc:.6f} "
             f"spearman_ic={metrics.spearman_information_coefficient:+.6f} "
             f"top_decile_gross_bps={metrics.top_decile_signed_gross_bps:+.4f} "
@@ -6398,6 +6485,107 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
             print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
         print(f"artifact={output_path} sha256={digest}")
     return 0 if artifact.status == "research_candidate" else 2
+
+
+def command_tape_depth_prequential(args: argparse.Namespace) -> int:
+    """Plan or run rolling, hash-bound gross-forecast evidence."""
+
+    from .assets import normalize_symbols
+    from .microstructure_warehouse import MicrostructureWarehouse
+    from .tape_depth_prequential import run_tape_depth_prequential
+
+    symbols = normalize_symbols(
+        str(getattr(args, "symbols", "BTCUSDT,ETHUSDT,SOLUSDT")),
+        default=("BTCUSDT", "ETHUSDT", "SOLUSDT"),
+    )
+    if any(not is_supported_major_symbol(symbol, "USDT") for symbol in symbols):
+        print(
+            "tape-depth-prequential supports only BTCUSDT, ETHUSDT, and SOLUSDT",
+            file=sys.stderr,
+        )
+        return 2
+    json_mode = bool(getattr(args, "json", False))
+
+    def progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(
+                f"tape-depth-prequential {phase}: {completed}/{total}",
+                flush=True,
+            )
+
+    try:
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            report = run_tape_depth_prequential(
+                warehouse,
+                symbols=symbols,
+                output_dir=str(
+                    getattr(args, "output_dir", "data/tape-depth-prequential")
+                ),
+                training_window_days=int(
+                    getattr(args, "training_window_days", 730)
+                ),
+                tuning_window_days=int(getattr(args, "tuning_window_days", 30)),
+                calibration_window_days=int(
+                    getattr(args, "calibration_window_days", 30)
+                ),
+                evaluation_window_days=int(
+                    getattr(args, "evaluation_window_days", 90)
+                ),
+                horizon_seconds=int(getattr(args, "horizon_seconds", 60)),
+                total_latency_ms=int(getattr(args, "total_latency_ms", 750)),
+                decision_cadence_seconds=int(
+                    getattr(args, "decision_cadence_seconds", 20)
+                ),
+                maximum_depth_age_ms=int(
+                    getattr(args, "maximum_depth_age_ms", 60_000)
+                ),
+                maximum_rows=int(getattr(args, "maximum_rows", 5_000_000)),
+                max_folds=int(getattr(args, "max_folds", 0)),
+                risk_level=str(getattr(args, "risk_level", "conservative")),
+                model_profile=str(
+                    getattr(args, "model_profile", "regularized")
+                ),
+                feature_set=str(getattr(args, "feature_set", "full")),
+                compute_backend=str(getattr(args, "compute_backend", "auto")),
+                minimum_segment_rows=int(
+                    getattr(args, "minimum_segment_rows", 10_000)
+                ),
+                plan_only=bool(getattr(args, "plan_only", False)),
+                resume=bool(getattr(args, "resume", False)),
+                progress=progress,
+            )
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"tape-depth-prequential failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if json_mode:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    elif bool(getattr(args, "plan_only", False)):
+        print(
+            "tape-depth-prequential plan: "
+            f"symbols={len(symbols)} folds={int(report['total_folds'])} "
+            "trading_authority=false execution_claim=false"
+        )
+    else:
+        aggregate = dict(report["aggregate_forecast_metrics"])
+        print(
+            "tape-depth-prequential: "
+            f"status={report['status']} folds={report['completed_folds']} "
+            f"rows={aggregate['rows']} "
+            f"weighted_auc={float(aggregate['weighted_direction_auc']):.6f} "
+            f"weighted_ic={float(aggregate['weighted_spearman_information_coefficient']):+.6f} "
+            "profitability_claim=false trading_authority=false"
+        )
+    if bool(getattr(args, "plan_only", False)):
+        return 0
+    return 0 if report.get("status") == "research_candidate" else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:
