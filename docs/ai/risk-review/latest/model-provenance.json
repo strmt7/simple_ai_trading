@@ -1,0 +1,61 @@
+{
+  "schema_version": "ollama-local-model-provenance-v1",
+  "generated_at": "2026-07-10T22:15:51.0900031Z",
+  "benchmark": {
+    "contract": "finance-risk-review-adversarial-v6",
+    "path": "docs/ai/risk-review/latest/comparison.json",
+    "sha256": "369f98826ee97b0b2c23c3fb3e53cb966cc0eb01785140774391993b1dbe9281"
+  },
+  "source_reports": [
+    {
+      "model": "qwen3:8b",
+      "path": "docs/ai/risk-review/latest/qwen3-8b-source-v4.json",
+      "sha256": "74cdb307ccfc2dee30b8fca994cd38432d9abec2e018798dc88b70034652b643"
+    },
+    {
+      "model": "fino1:8b",
+      "path": "docs/ai/risk-review/latest/fino1-8b-source-v4.json",
+      "sha256": "2ed1df8730b802fb99a4a8b079b1ff3e644f43c1a3f7ea33a38dc31a34c713a2"
+    }
+  ],
+  "models": [
+    {
+      "model": "qwen3:8b",
+      "source_reference": "ollama-library/qwen3:8b",
+      "ollama_manifest_digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+      "base_blob_sha256": "a3de86cd1c132c822487ededd47a324c50491393e6565cd14bafa40d0b8e686f",
+      "size_bytes": 5225388164,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M",
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ],
+      "locally_verified": true
+    },
+    {
+      "model": "fino1:8b",
+      "source_reference": "hf.co/DevQuasar/TheFinAI.Fino1-8B-GGUF:Q6_K",
+      "upstream_model_reference": "TheFinAI/Fino1-8B",
+      "conversion_status": "third_party_gguf_quantization",
+      "ollama_manifest_digest": "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+      "base_blob_sha256": "b2f2960af9c7e7c548803ccf9bcae9fcda781d441e46b4a9362efe19bec5096b",
+      "size_bytes": 6596013713,
+      "family": "llama",
+      "parameter_size": "8.03B",
+      "quantization": "Q6_K",
+      "capabilities": [
+        "completion",
+        "tools"
+      ],
+      "locally_verified": true
+    }
+  ],
+  "limitations": [
+    "Local manifest and blob identity do not prove financial edge.",
+    "The Fino1 GGUF conversion is third-party and was evaluated solely by observed local behavior.",
+    "Neither model has direct order authority."
+  ]
+}

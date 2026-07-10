@@ -11,6 +11,7 @@ from simple_ai_trading import tape_depth_cache as cache_module
 from simple_ai_trading.microstructure_warehouse import (
     MicrostructureWarehouse,
     TICK_WAREHOUSE_SCHEMA_VERSION,
+    official_tick_archive_url,
 )
 from simple_ai_trading.tape_depth_cache import (
     load_tape_depth_dataset_cache,
@@ -40,6 +41,11 @@ def _manifest(
     last_ms: int,
 ) -> None:
     source_hash = ("a" if data_type == "trades" else "b") * 64
+    source_url = official_tick_archive_url(
+        symbol=symbol,
+        data_type=data_type,
+        period=period,
+    )
     warehouse.connect().execute(
         """
         INSERT INTO archive_manifest (
@@ -62,7 +68,7 @@ def _manifest(
             symbol,
             data_type,
             period,
-            f"https://data.binance.vision/{archive_id}.zip",
+            source_url,
             source_hash,
             source_hash,
             rows,
@@ -70,6 +76,29 @@ def _manifest(
             first_ms,
             last_ms,
         ],
+    )
+    inventory_rows = warehouse.connect().execute(
+        """
+        SELECT period, url
+        FROM archive_manifest
+        WHERE symbol = ? AND data_type = ? AND status = 'complete' AND is_current
+        ORDER BY period
+        """,
+        [symbol, data_type],
+    ).fetchall()
+    warehouse.record_official_archive_inventory(
+        symbol=symbol,
+        data_type=data_type,
+        items=[
+            {
+                "period": item_period,
+                "url": item_url,
+                "size_bytes": 0,
+                "last_modified": "test-fixture",
+            }
+            for item_period, item_url in inventory_rows
+        ],
+        full_history=True,
     )
 
 
@@ -120,6 +149,22 @@ def _warehouse_fixture(tmp_path) -> tuple[MicrostructureWarehouse, int, int]:
         "INSERT INTO trade_1s VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         trade_rows,
     )
+    warehouse.connect().executemany(
+        "INSERT INTO trade_raw VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            (
+                "trades",
+                "BTCUSDT",
+                index,
+                100.0 + index * 0.002 + 0.02 * math.sin(index / 10.0),
+                1.0,
+                100.0 + index * 0.002 + 0.02 * math.sin(index / 10.0),
+                base_ms + index * 1_000,
+                False,
+            )
+            for index in range(seconds)
+        ],
+    )
     for peer_index, peer in enumerate(("ETHUSDT", "SOLUSDT"), start=1):
         archive_id = f"trades-{peer.lower()}"
         _manifest(
@@ -158,6 +203,22 @@ def _warehouse_fixture(tmp_path) -> tuple[MicrostructureWarehouse, int, int]:
         warehouse.connect().executemany(
             "INSERT INTO trade_1s VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             peer_rows,
+        )
+        warehouse.connect().executemany(
+            "INSERT INTO trade_raw VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    archive_id,
+                    peer,
+                    peer_index * 10_000 + index,
+                    50.0 * peer_index + index * (0.001 + peer_index * 0.0002),
+                    1.0,
+                    50.0 * peer_index + index * (0.001 + peer_index * 0.0002),
+                    base_ms + index * 1_000,
+                    False,
+                )
+                for index in range(seconds)
+            ],
         )
     depth_start_index = 950
     depth_indexes = list(range(depth_start_index, seconds, 30))
@@ -614,25 +675,40 @@ def test_cross_asset_context_marks_a_not_yet_listed_peer_unavailable(tmp_path) -
 def test_cross_asset_evidence_stops_at_the_last_observable_feature_day(
     tmp_path,
 ) -> None:
-    warehouse, base_ms, seconds = _warehouse_fixture(tmp_path)
+    warehouse, base_ms, _seconds = _warehouse_fixture(tmp_path)
     peer_end_ms = base_ms + 86_399_000
+    target_day_two_ms = base_ms + 86_400_000
     target_end_ms = base_ms + 86_405_000
     try:
-        warehouse.connect().execute(
-            """
-            UPDATE archive_manifest
-            SET last_exchange_time_ms = ?, rows_read = rows_read + 1,
-                derived_rows = derived_rows + 1
-            WHERE period = '2026-07-09'
-            """,
-            [peer_end_ms],
-        )
         for peer_index, peer in enumerate(("ETHUSDT", "SOLUSDT"), start=1):
+            archive_id = f"trades-{peer.lower()}"
             price = 100.0 * peer_index
+            warehouse.connect().execute(
+                """
+                UPDATE archive_manifest
+                SET last_exchange_time_ms = ?, rows_read = rows_read + 1,
+                    derived_rows = derived_rows + 1
+                WHERE archive_id = ?
+                """,
+                [peer_end_ms, archive_id],
+            )
+            warehouse.connect().execute(
+                "INSERT INTO trade_raw VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    archive_id,
+                    peer,
+                    100_000 + peer_index,
+                    price,
+                    1.0,
+                    price,
+                    peer_end_ms,
+                    False,
+                ],
+            )
             warehouse.connect().execute(
                 "INSERT INTO trade_1s VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
-                    f"trades-{peer.lower()}",
+                    archive_id,
                     peer,
                     peer_end_ms,
                     price,
@@ -647,17 +723,73 @@ def test_cross_asset_evidence_stops_at_the_last_observable_feature_day(
                     1,
                 ],
             )
-        for data_type in ("trades", "bookDepth"):
-            _manifest(
-                warehouse,
-                archive_id=f"{data_type}-target-day-two",
-                data_type=data_type,
-                period="2026-07-10",
-                rows=seconds,
-                derived_rows=seconds,
-                first_ms=base_ms + 86_400_000,
-                last_ms=target_end_ms,
+        _manifest(
+            warehouse,
+            archive_id="trades-target-day-two",
+            data_type="trades",
+            period="2026-07-10",
+            rows=6,
+            derived_rows=6,
+            first_ms=target_day_two_ms,
+            last_ms=target_end_ms,
+        )
+        for index in range(6):
+            timestamp_ms = target_day_two_ms + index * 1_000
+            price = 102.0 + index * 0.01
+            warehouse.connect().execute(
+                "INSERT INTO trade_raw VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    "trades-target-day-two",
+                    "BTCUSDT",
+                    index,
+                    price,
+                    1.0,
+                    price,
+                    timestamp_ms,
+                    False,
+                ],
             )
+            warehouse.connect().execute(
+                "INSERT INTO trade_1s VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    "trades-target-day-two",
+                    "BTCUSDT",
+                    timestamp_ms,
+                    price,
+                    price,
+                    price,
+                    price,
+                    1.0,
+                    price,
+                    0.5,
+                    0.5,
+                    0.0,
+                    1,
+                ],
+            )
+        _manifest(
+            warehouse,
+            archive_id="bookDepth-target-day-two",
+            data_type="bookDepth",
+            period="2026-07-10",
+            rows=24,
+            derived_rows=2,
+            first_ms=target_day_two_ms,
+            last_ms=target_end_ms,
+        )
+        for timestamp_ms in (target_day_two_ms, target_end_ms):
+            for percentage in (-5, -4, -3, -2, -1, -0.20, 0.20, 1, 2, 3, 4, 5):
+                warehouse.connect().execute(
+                    "INSERT INTO book_depth_aggregate_raw VALUES (?, ?, ?, ?, ?, ?)",
+                    [
+                        "bookDepth-target-day-two",
+                        "BTCUSDT",
+                        timestamp_ms,
+                        percentage,
+                        abs(percentage) + 1.0,
+                        (abs(percentage) + 1.0) * 100.0,
+                    ],
+                )
 
         evidence = tape_depth_dataset_source_evidence(
             warehouse,
@@ -682,7 +814,7 @@ def test_cross_asset_evidence_stops_at_the_last_observable_feature_day(
 def test_tape_depth_source_evidence_rejects_a_missing_trade_archive_day(tmp_path) -> None:
     warehouse, base_ms, _seconds = _warehouse_fixture(tmp_path)
     try:
-        with pytest.raises(ValueError, match="missing day"):
+        with pytest.raises(ValueError, match="missing"):
             tape_depth_source_evidence(
                 warehouse,
                 "BTCUSDT",

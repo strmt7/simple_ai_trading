@@ -529,6 +529,32 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tick_archive.add_argument("--json", action="store_true")
     parser_tick_archive.set_defaults(func=command_tick_archive_sync)
 
+    parser_tick_corpus_audit = subparsers.add_parser(
+        "tick-corpus-audit",
+        help="certify official inventory, manifests, and physical DuckDB partitions",
+    )
+    parser_tick_corpus_audit.add_argument(
+        "--symbols",
+        default="BTCUSDT,ETHUSDT,SOLUSDT",
+        help="comma-separated BTC/ETH/SOL futures symbols",
+    )
+    parser_tick_corpus_audit.add_argument(
+        "--data-types",
+        default="bookTicker,trades,bookDepth",
+        help="comma-separated official products: bookTicker,trades,bookDepth",
+    )
+    parser_tick_corpus_audit.add_argument("--start-date", default=None)
+    parser_tick_corpus_audit.add_argument("--end-date", default=None)
+    parser_tick_corpus_audit.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_tick_corpus_audit.add_argument("--cache-root", default="data/archive-cache")
+    parser_tick_corpus_audit.add_argument("--memory-limit", default="8GB")
+    parser_tick_corpus_audit.add_argument("--threads", type=int, default=8)
+    parser_tick_corpus_audit.add_argument("--output", default=None)
+    parser_tick_corpus_audit.add_argument("--json", action="store_true")
+    parser_tick_corpus_audit.set_defaults(func=command_tick_corpus_audit)
+
     parser_micro_train = subparsers.add_parser(
         "microstructure-train",
         help="train a purged cost-aware L1/tape model from the tick warehouse",
@@ -4987,18 +5013,39 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
 
     raw_models = str(getattr(args, "models", "") or "")
     models = [item.strip() for item in raw_models.split(",") if item.strip()]
+    json_mode = bool(getattr(args, "json", False))
+
+    def progress(phase: str, payload: Mapping[str, object]) -> None:
+        if json_mode:
+            return
+        if phase == "model_started":
+            print(
+                f"ai-benchmark model {payload['model_index']}/{payload['model_count']}: "
+                f"{payload['model']} ({payload['case_count']} cases)",
+                flush=True,
+            )
+        elif phase == "case_complete":
+            match = "match" if payload["action_match"] else "mismatch"
+            print(
+                f"  case {payload['case_index']}/{payload['case_count']} "
+                f"{payload['case']}: {match} "
+                f"latency={float(payload['latency_seconds']):.2f}s",
+                flush=True,
+            )
+
     try:
         report = benchmark_finance_ai_models(
             models=models,
             base_url=str(getattr(args, "url", None) or "http://127.0.0.1:11434"),
             timeout_seconds=max(0.1, float(getattr(args, "timeout", 20.0))),
             minimum_score=max(0.0, min(1.0, float(getattr(args, "minimum_score", 0.78)))),
+            progress=progress,
         )
         output = write_benchmark_report(report, Path(getattr(args, "output", "data/ai_model_benchmark.json")))
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"ai-benchmark failed: {exc}", file=sys.stderr)
         return 2
-    if getattr(args, "json", False):
+    if json_mode:
         print(json.dumps(report.asdict(), indent=2, sort_keys=True))
     else:
         print(
@@ -5802,7 +5849,11 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
     import duckdb
     import requests
 
-    from .microstructure_warehouse import MicrostructureWarehouse, SUPPORTED_TICK_ARCHIVES
+    from .microstructure_warehouse import (
+        MicrostructureWarehouse,
+        SUPPORTED_TICK_ARCHIVES,
+        TickArchiveIngestResult,
+    )
 
     recoverable_errors = (OSError, RuntimeError, ValueError, requests.RequestException, duckdb.Error)
 
@@ -5976,6 +6027,9 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         return 2
     results: list[dict[str, object]] = []
     errors: list[dict[str, str]] = []
+    inventory_snapshots: list[dict[str, object]] = []
+    initial_inventory_ids: dict[tuple[str, str], str] = {}
+    corpus_certificates: list[dict[str, object]] = []
     try:
         with MicrostructureWarehouse(
             str(getattr(args, "warehouse", "data/microstructure.duckdb")),
@@ -5983,9 +6037,47 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
             memory_limit=str(getattr(args, "memory_limit", "8GB")),
             threads=int(getattr(args, "threads", 8)),
         ) as warehouse:
+            inventory_groups: dict[tuple[str, str], list[object]] = {}
+            reusable_archives: dict[
+                tuple[str, str, str], TickArchiveIngestResult
+            ] = {}
+            for symbol, data_type, item in plan:
+                inventory_groups.setdefault((symbol, data_type), []).append(item)
+            for (symbol, data_type), items in sorted(inventory_groups.items()):
+                snapshot = warehouse.record_official_archive_inventory(
+                    symbol=symbol,
+                    data_type=data_type,
+                    items=items,
+                    full_history=full_history,
+                    scope_start_period=(start.isoformat() if start is not None else None),
+                    scope_end_period=(end.isoformat() if end is not None else None),
+                )
+                inventory_snapshots.append(snapshot)
+                initial_inventory_ids[(symbol, data_type)] = str(snapshot["snapshot_id"])
+                reusable_archives.update(
+                    {
+                        (symbol, data_type, period): result
+                        for period, result in warehouse.reusable_official_archives(
+                            symbol=symbol,
+                            data_type=data_type,
+                            items=items,
+                        ).items()
+                    }
+                )
             for symbol, data_type, item in plan:
                 if not json_mode:
                     print(f"tick-archive-sync start {symbol} {data_type} {item.period}", flush=True)
+
+                reusable = reusable_archives.get((symbol, data_type, item.period))
+                if reusable is not None:
+                    results.append(reusable.asdict())
+                    if not json_mode:
+                        print(
+                            f"tick-archive-sync complete {symbol} {data_type} {item.period}: "
+                            f"status={reusable.status} rows={reusable.rows_read}",
+                            flush=True,
+                        )
+                    continue
 
                 def progress(phase: str, completed: int, total: int | None) -> None:
                     if not json_mode:
@@ -6024,6 +6116,56 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                         f"status={result.status} rows={result.rows_read}",
                         flush=True,
                     )
+            if full_history:
+                for symbol in symbols:
+                    for data_type in data_types:
+                        refreshed_items = list_archive_items(
+                            symbol=symbol,
+                            interval="tick",
+                            market_type="futures",
+                            cadence="daily",
+                            data_type=data_type,
+                            timeout=max(
+                                1,
+                                min(
+                                    60,
+                                    int(float(getattr(args, "timeout", 240.0))),
+                                ),
+                            ),
+                        )
+                        refreshed = warehouse.record_official_archive_inventory(
+                            symbol=symbol,
+                            data_type=data_type,
+                            items=refreshed_items,
+                            full_history=True,
+                        )
+                        inventory_snapshots.append(refreshed)
+                        if str(refreshed["snapshot_id"]) != initial_inventory_ids.get(
+                            (symbol, data_type)
+                        ):
+                            errors.append(
+                                {
+                                    "symbol": symbol,
+                                    "data_type": data_type,
+                                    "period": "full_history",
+                                    "error": "official_inventory_changed_during_sync",
+                                }
+                            )
+                for symbol in symbols:
+                    certificate = warehouse.corpus_certificate(symbol)
+                    corpus_certificates.append(certificate)
+                    if certificate["status"] != "pass":
+                        errors.append(
+                            {
+                                "symbol": symbol,
+                                "data_type": "corpus_certificate",
+                                "period": "full_history",
+                                "error": "; ".join(
+                                    str(value)
+                                    for value in certificate.get("reasons", [])[:8]
+                                ),
+                            }
+                        )
     except recoverable_errors as exc:
         print(f"tick-archive-sync warehouse failed: {exc}", file=sys.stderr)
         return 2
@@ -6035,6 +6177,12 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
             else "incomplete"
         ),
         "completed_files": len(results),
+        "reused_files": sum(
+            item.get("status") == "skipped_verified_unchanged" for item in results
+        ),
+        "ingested_files": sum(item.get("status") == "complete" for item in results),
+        "inventory_snapshots": inventory_snapshots,
+        "corpus_certificates": corpus_certificates,
         "errors": errors,
         "results": results,
     }
@@ -6044,9 +6192,123 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         print(
             "tick-archive-sync: "
             f"status={payload['status']} planned={len(plan)} completed={len(results)} "
+            f"reused={payload['reused_files']} ingested={payload['ingested_files']} "
             f"missing={len(missing)} errors={len(errors)}"
         )
     return 0 if payload["status"] == "ok" else 2
+
+
+def command_tick_corpus_audit(args: argparse.Namespace) -> int:
+    """Emit a fail-closed certificate for the reusable full-history corpus."""
+
+    import duckdb
+
+    from .assets import normalize_symbols
+    from .microstructure_warehouse import MicrostructureWarehouse, SUPPORTED_TICK_ARCHIVES
+
+    symbols = normalize_symbols(
+        str(getattr(args, "symbols", "BTCUSDT,ETHUSDT,SOLUSDT")),
+        default=("BTCUSDT", "ETHUSDT", "SOLUSDT"),
+    )
+    data_types = tuple(
+        dict.fromkeys(
+            item.strip()
+            for item in str(
+                getattr(args, "data_types", "bookTicker,trades,bookDepth")
+            ).split(",")
+            if item.strip()
+        )
+    )
+    if not data_types or any(item not in SUPPORTED_TICK_ARCHIVES for item in data_types):
+        print("tick-corpus-audit: unsupported or missing data type", file=sys.stderr)
+        return 2
+    start_value = getattr(args, "start_date", None)
+    end_value = getattr(args, "end_date", None)
+    if bool(start_value) != bool(end_value):
+        print(
+            "tick-corpus-audit: provide both --start-date and --end-date",
+            file=sys.stderr,
+        )
+        return 2
+    start_ms: int | None = None
+    end_ms: int | None = None
+    if start_value and end_value:
+        try:
+            start = _parse_cli_utc_date(start_value, "start-date")
+            end = _parse_cli_utc_date(end_value, "end-date")
+        except ValueError as exc:
+            print(f"tick-corpus-audit: {exc}", file=sys.stderr)
+            return 2
+        if start > end:
+            print(
+                "tick-corpus-audit: start-date must not be after end-date",
+                file=sys.stderr,
+            )
+            return 2
+        start_ms = int(
+            datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc).timestamp()
+            * 1_000
+        )
+        end_ms = int(
+            datetime.combine(
+                end + timedelta(days=1),
+                datetime.min.time(),
+                tzinfo=timezone.utc,
+            ).timestamp()
+            * 1_000
+        ) - 1
+    try:
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            certificates = [
+                warehouse.corpus_certificate(
+                    symbol,
+                    required_data_types=data_types,
+                    required_start_ms=start_ms,
+                    required_end_ms=end_ms,
+                )
+                for symbol in symbols
+            ]
+    except (OSError, RuntimeError, ValueError, duckdb.Error) as exc:
+        print(f"tick-corpus-audit failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+    payload = {
+        "contract": "official-binance-multi-symbol-corpus-audit-v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": (
+            "pass"
+            if certificates and all(item["status"] == "pass" for item in certificates)
+            else "fail"
+        ),
+        "warehouse": str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+        "symbols": list(symbols),
+        "required_data_types": list(data_types),
+        "required_start_ms": start_ms,
+        "required_end_ms": end_ms,
+        "certificates": certificates,
+    }
+    output = getattr(args, "output", None)
+    if output:
+        write_json_atomic(Path(str(output)), payload, indent=2, sort_keys=True)
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            f"tick-corpus-audit: status={payload['status']} symbols={len(certificates)}"
+        )
+        for item in certificates:
+            print(
+                f"  {item['symbol']}: {item['status']} "
+                f"common={item['common_first_period']}..{item['common_last_period']} "
+                f"days={item['common_period_count']}"
+            )
+            if item["reasons"]:
+                print("    " + "; ".join(str(reason) for reason in item["reasons"][:8]))
+    return 0 if payload["status"] == "pass" else 2
 
 
 def command_microstructure_train(args: argparse.Namespace) -> int:

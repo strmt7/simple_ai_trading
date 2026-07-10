@@ -43,10 +43,10 @@ The 2026-07-10 research refresh adds three constraints to that roadmap:
 
 ## Causal L1/Tape Action-Value Model
 
-The `microstructure-action-value-v13` workflow is a separate, fail-closed
+The `microstructure-action-value-v14` workflow is a separate, fail-closed
 research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
 feed the legacy candle autonomous loop, and the repository currently has no
-accepted v13 artifact or profitability result.
+accepted v14 artifact or profitability result.
 
 Its implemented lifecycle is:
 
@@ -138,7 +138,7 @@ cross-spread execution, but it still cannot measure the strategy's own market
 impact, private order-entry latency, exchange acknowledgements, queue position,
 or partial fills because it submits zero orders. Historical and shadow success
 therefore do not guarantee live profitability. This limitation is one reason no
-v13 artifact is currently accepted or claimed profitable.
+v14 artifact is currently accepted or claimed profitable.
 
 ### Official Tick-Source Coverage
 
@@ -163,6 +163,35 @@ trade-tape/depth features separate from the shorter BBO model, and any current
 execution claim still requires a fresh public-feed shadow. Full corpus ingestion
 is in progress; the compact listing plan is not a claim that all files are
 already present in the local warehouse.
+
+The warehouse persists each official S3 listing as an immutable inventory
+snapshot before ingestion. A full-history run succeeds only after a corpus
+certificate reconciles every listed UTC-day partition against one current
+manifest with the exact official URL and compressed byte count, a matching
+Binance SHA-256 sidecar, a supported schema, positive raw and derived row
+counts, valid exchange-time bounds, and no invalid, duplicate, crossed-book, or
+uncanonicalized trade/depth rows. It also reconciles manifest counts and time
+bounds against the physical raw and derived DuckDB partitions, validates the
+materialized 100 ms BBO execution path, and rechecks coarse-depth band groups.
+The certificate records per-product launch and end dates and computes the exact
+common calendar intersection; it never assumes that BBO, trades, and coarse
+depth share coverage. Both the executable L1 dataset and the long-history
+tape/depth dataset require this certificate. An archive plan, downloaded ZIP,
+or manifest count alone is insufficient.
+
+Repeat syncs do not redownload an unchanged 275 GiB corpus. Before reuse, the
+warehouse batches one physical integrity scan per symbol/product and requires
+the exact official URL and byte size, an S3 `LastModified` time no newer than
+the verified ingestion, matching source/sidecar hashes, current schema, intact
+row counts and bounds, and valid derived partitions. Changed or damaged
+partitions are excluded from reuse and are fetched again; the final corpus
+certificate remains the authority.
+
+This closes a previous provenance weakness: a missing trade archive can no
+longer be interpreted as a day of genuine zero order flow, and a complete BBO
+build cannot stand in for incomplete trade/depth inputs. Existing action-value
+artifacts use schema v13 and are invalid under v14 because they lack this corpus
+binding.
 
 Reproduce the plan without downloading data:
 
@@ -238,6 +267,56 @@ An evaluation regime may therefore produce any action count, including zero;
 the report no longer manufactures a fixed 10% activity rate. This follows the
 standard leakage rule that learned transforms and decision thresholds must not
 be fitted on test observations.
+
+### Multi-Fidelity Candidate Search
+
+`model_experiment.py` provides the precommitted candidate-design and
+successive-halving contract for the next model-research runs. It is not yet a
+replacement for the existing sealed `tape-depth-prequential` selection command.
+It preserves three explicit tape/depth anchors, stratifies every candidate
+dimension with a deterministic randomized Latin hypercube, fingerprints the
+complete design, and counts anchors, failures, and eliminated variants in the
+cumulative trial burden. The initial space covers forecast horizon, decision
+cadence, maximum coarse-depth age, model capacity, and feature-group ablations
+for one risk profile at a time. It does not tune latency, fees, spread, or source
+quality downward to manufacture performance.
+
+Candidate evaluation uses four chronological resource levels:
+
+1. A causal viability screen over several precommitted, non-overlapping short
+   windows spread across BTC, ETH, and SOL history. This can reject inactivity,
+   clearly negative after-cost expectancy, liquidation, incomplete costs,
+   missing source evidence, one-sided degeneration, or excessive drawdown. It
+   cannot promote a model or support a profitability statement.
+2. Wider cross-regime selection requiring more trades, a positive-window
+   majority, nonnegative expectancy, and risk-profile drawdown limits.
+3. Rolling prequential evaluation with stronger profit-factor, loss-streak,
+   side-balance, activity, and cross-symbol gates.
+4. Full certified-history validation for the small frozen survivor set.
+
+Every stage emits `research_only_no_trading_authority` and explicitly records
+that it did not consume the terminal holdout. The separate one-use terminal,
+deployment-refit, and public-feed shadow lifecycle remains mandatory. An AI
+overlay will enter this process only after an executable ML baseline survives;
+it must be compared on paired periods under the same fills and costs and show a
+positive uplift without worse drawdown or liquidation evidence.
+
+The implementation adapts, rather than blindly invokes, the following methods:
+
+- [SciPy Latin-hypercube documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.LatinHypercube.html)
+  defines stratified space-filling marginals. The repository uses a dependency-
+  free hash-deterministic equivalent so design replay is stable on Windows.
+- [scikit-learn successive-halving documentation](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.HalvingRandomSearchCV.html)
+  motivates allocating larger resources only to survivors. Ordinary shuffled
+  folds and generic estimator scores are not used; resources are certified
+  chronological market windows and gates are after-cost trading/risk metrics.
+- Bailey, Borwein, Lopez de Prado, and Zhu's
+  [Probability of Backtest Overfitting](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253)
+  motivates retaining the complete selection-trial burden. Halving reduces
+  compute; it does not erase multiple-testing risk.
+- Binance's [official public-data repository](https://github.com/binance/binance-public-data)
+  documents daily/monthly archives, timestamp changes, archive corrections,
+  and SHA-256 sidecars used by the corpus certificate.
 
 ```powershell
 simple-ai-trading tape-depth-train `
@@ -827,6 +906,31 @@ p-value at or below 5%, and a positive 95% moving-block-bootstrap lower bound
 from at least 2,000 deterministic resamples. Artifact policy can tighten but
 cannot weaken those built-in floors.
 Missing or failed uplift evidence leaves AI in advisory/review-only mode.
+
+### Local AI Risk-Review Benchmark
+
+The 2026-07-10 local `finance-risk-review-adversarial-v6` comparison evaluated
+Qwen3 8B Q4_K_M and the finance-specialized Fino1 8B Q6_K conversion on 11
+schema-constrained adversarial cases. Both returned valid JSON and the expected
+action for all 11 cases. Qwen passed every semantic/risk-range gate with score
+`0.983409` and mean latency `3.19s`. Fino scored `0.990455` but was rejected by
+the all-cases rule because its liquidation rationale did not identify the
+explicit `15x` leverage exposure. A higher average score cannot override a
+single missed critical-risk concept.
+
+The final v6 scores are deterministic rescores of the persisted v4 normalized
+responses. Only scorer aliases and the rational risk range for a flat,
+non-urgent provenance conflict changed; model prompts and response hashes did
+not. The source payload hashes are embedded in
+[`docs/ai/risk-review/latest/comparison.json`](ai/risk-review/latest/comparison.json),
+and exact Ollama manifest/base-blob identities are in
+[`docs/ai/risk-review/latest/model-provenance.json`](ai/risk-review/latest/model-provenance.json).
+Fino is explicitly recorded as a third-party GGUF conversion, not an official
+quantization. The report sets `financial_edge_tested=false` and
+`trading_authority=false`; it selects a risk reviewer only. A paired,
+post-cost, no-lookahead AI-vs-ML uplift benchmark is still required before AI
+can be credited with market edge.
+
 After a candidate survives development selection, the suite trains a compact
 meta-label policy from the accepted model's development-only simulated trade
 log. The policy
