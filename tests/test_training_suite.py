@@ -92,6 +92,27 @@ def _rows(n: int) -> list[ModelRow]:
     return [ModelRow(timestamp=i, close=1.0, features=(0.1, 0.2), label=i % 2) for i in range(n)]
 
 
+def _passing_terminal_gate(*_args, **_kwargs) -> tuple[float, dict[str, object]]:
+    return 100.0, {
+        "schema_version": "terminal-holdout-v1",
+        "passed": True,
+        "reason": None,
+        "evaluation_count": 1,
+        "rows": 10,
+        "start_timestamp": 1_000,
+        "end_timestamp": 1_009,
+        "purge_gap": 1,
+        "dataset_fingerprint": "a" * 64,
+        "score": 100.0,
+        "result": {
+            "accepted": True,
+            "realized_pnl": 10.0,
+            "stopped_by_liquidation": False,
+            "liquidation_events": 0,
+        },
+    }
+
+
 @pytest.fixture
 def _passing_selection_risk_stub(monkeypatch: pytest.MonkeyPatch) -> None:
     def report(best, _ranked_pool, **counts):
@@ -120,6 +141,7 @@ def _passing_selection_risk_stub(monkeypatch: pytest.MonkeyPatch) -> None:
         }
 
     monkeypatch.setattr(training_suite, "_selection_risk_report", report)
+    monkeypatch.setattr(training_suite, "_terminal_holdout_gate", _passing_terminal_gate)
 
 
 # ----- CandidateParams ------------------------------------------------------
@@ -625,6 +647,138 @@ def test_walk_forward_split_large_rows_splits_properly() -> None:
     assert len(test) >= 5
 
 
+def test_terminal_holdout_reservation_is_chronological_and_purged() -> None:
+    rows = _rows(100)
+
+    development, terminal = training_suite._reserve_terminal_holdout(rows, purge_gap=3)
+
+    assert [row.timestamp for row in development] == list(range(77))
+    assert [row.timestamp for row in terminal] == list(range(80, 100))
+    assert set(row.timestamp for row in development).isdisjoint(row.timestamp for row in terminal)
+
+
+def test_terminal_holdout_reservation_fails_closed_for_tiny_inputs() -> None:
+    rows = _rows(9)
+
+    development, terminal = training_suite._reserve_terminal_holdout(rows, purge_gap=3)
+
+    assert development == []
+    assert terminal == rows
+    assert development is not terminal
+
+
+def test_terminal_holdout_reservation_rejects_non_chronological_rows() -> None:
+    rows = _rows(12)
+    rows[6], rows[7] = rows[7], rows[6]
+
+    with pytest.raises(ValueError, match="strictly chronological"):
+        training_suite._reserve_terminal_holdout(rows, purge_gap=3)
+
+
+def test_terminal_row_fingerprint_binds_every_feature_value() -> None:
+    rows = _rows(12)
+    changed = list(rows)
+    changed[-1] = ModelRow(
+        timestamp=changed[-1].timestamp,
+        close=changed[-1].close,
+        features=(changed[-1].features[0], changed[-1].features[1] + 1e-12),
+        label=changed[-1].label,
+    )
+
+    fingerprint = training_suite._model_rows_fingerprint(rows)
+
+    assert len(fingerprint) == 64
+    assert fingerprint == training_suite._model_rows_fingerprint(list(rows))
+    assert fingerprint != training_suite._model_rows_fingerprint(changed)
+
+
+def test_terminal_holdout_gate_records_one_frozen_evaluation(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = {"backtest": 0}
+
+    def fake_backtest(*args, **kwargs):
+        del args, kwargs
+        calls["backtest"] += 1
+        return _make_result(realized_pnl=50.0, edge_vs_buy_hold=25.0, closed_trades=5)
+
+    monkeypatch.setattr(training_suite, "run_backtest", fake_backtest)
+    score, report = training_suite._terminal_holdout_gate(
+        _rows(20),
+        _fake_trained_model(2),
+        StrategyConfig(),
+        get_objective("default"),
+        market_type="spot",
+        starting_cash=1000.0,
+        purge_gap=2,
+    )
+
+    assert calls["backtest"] == 1
+    assert score > 0.0
+    assert report["passed"] is True
+    assert report["evaluation_count"] == 1
+    assert report["rows"] == 20
+    assert report["purge_gap"] == 2
+    assert len(str(report["dataset_fingerprint"])) == 64
+    assert report["result"]["accepted"] is True
+
+
+def test_terminal_holdout_gate_fails_closed_on_evaluation_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_backtest(*args, **kwargs):
+        del args, kwargs
+        raise RuntimeError("terminal scorer unavailable")
+
+    monkeypatch.setattr(training_suite, "run_backtest", fail_backtest)
+    score, report = training_suite._terminal_holdout_gate(
+        _rows(20),
+        _fake_trained_model(2),
+        StrategyConfig(),
+        get_objective("default"),
+        market_type="spot",
+        starting_cash=1000.0,
+        purge_gap=2,
+    )
+
+    assert score == float("-inf")
+    assert report["passed"] is False
+    assert report["reason"] == "terminal_holdout_evaluation_error"
+    assert report["evaluation_count"] == 1
+    assert "RuntimeError" in str(report["error"])
+
+
+def test_terminal_holdout_gate_rejects_missing_rows_and_nonpositive_score(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    empty_score, empty_report = training_suite._terminal_holdout_gate(
+        [],
+        _fake_trained_model(2),
+        StrategyConfig(),
+        get_objective("default"),
+        market_type="spot",
+        starting_cash=1000.0,
+        purge_gap=2,
+    )
+    assert empty_score == float("-inf")
+    assert empty_report["reason"] == "terminal_holdout_missing"
+    assert empty_report["evaluation_count"] == 0
+
+    monkeypatch.setattr(
+        training_suite,
+        "run_backtest",
+        lambda *_a, **_k: _make_result(realized_pnl=0.0, edge_vs_buy_hold=0.0, closed_trades=0),
+    )
+    rejected_score, rejected_report = training_suite._terminal_holdout_gate(
+        _rows(20),
+        _fake_trained_model(2),
+        StrategyConfig(),
+        get_objective("default"),
+        market_type="spot",
+        starting_cash=1000.0,
+        purge_gap=2,
+    )
+    assert rejected_score == float("-inf")
+    assert rejected_report["passed"] is False
+    assert "terminal_objective_score<=0" in str(rejected_report["reason"])
+
+
 def test_purged_walk_forward_splits_apply_gap() -> None:
     feature_cfg = default_config_for("regular", ())
     training = _default_training(get_objective("regular"))
@@ -1085,11 +1239,13 @@ def test_selection_risk_report_counts_hidden_internal_model_trials() -> None:
         local_refinement_candidates=0,
         ensemble_refinement_candidates=0,
         hybrid_rescue_candidates=0,
+        hybrid_profile_trials=4,
     )
 
     assert report["internal_variants_evaluated"] == 5
     assert report["internal_variant_extra_trials"] == 3
-    assert report["effective_trials"] == 5
+    assert report["hybrid_profile_trials"] == 4
+    assert report["effective_trials"] == 9
 
 
 def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1678,7 +1834,7 @@ def test_train_for_objective_rejects_failed_walk_forward_gate(
         )
 
 
-def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
+def test_train_for_objective_does_not_rescue_failed_walk_forward_with_hybrid(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     _passing_selection_risk_stub: None,
@@ -1724,34 +1880,142 @@ def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
             "ensemble_refined": bool(payload.get("ensemble_seeds")),
         }
 
-    rescue_result = _make_result(realized_pnl=35.0, edge_vs_buy_hold=12.0, closed_trades=6, win_rate=0.75)
-    rescue_model = _fake_trained_model(feature_dim)
-
     monkeypatch.setattr(training_suite, "_evaluate_candidate", fake_evaluate)
     monkeypatch.setattr(
         training_suite,
         "optimize_hybrid_model_zoo",
+        lambda *_a, **_k: pytest.fail("hybrid rescue must not run after walk-forward rejection"),
+    )
+
+    with pytest.raises(TrainingSuiteRejected, match="All conservative training candidates were rejected"):
+        train_for_objective(
+            _synthetic_candles(n=260),
+            StrategyConfig(),
+            objective,
+            output_dir=tmp_path,
+            market_type="spot",
+            starting_cash=1000.0,
+            max_workers=1,
+        )
+
+    assert not (tmp_path / "model_conservative.json").exists()
+
+
+def test_train_for_objective_keeps_terminal_rows_sealed_until_final_model(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("default")
+    candidate = CandidateParams(
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-4,
+        signal_threshold=0.55,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=7,
+    )
+    candidate_rows = _rows(100)
+    feature_cfg = default_config_for("conservative", ())
+    backtest_windows: list[tuple[int, int]] = []
+    gate_windows: list[tuple[int, int]] = []
+    ablation_windows: list[tuple[int, int]] = []
+    selection_trial_counts: dict[str, int] = {}
+
+    monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
+    monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    monkeypatch.setattr(
+        training_suite,
+        "_rows_for_candidate",
+        lambda *_a, **_k: (list(candidate_rows), feature_cfg),
+    )
+    monkeypatch.setattr(
+        training_suite,
+        "_evaluate_candidate",
+        lambda payload: {
+            "score": 2.0,
+            "candidate": payload["candidate"],
+            "strategy": StrategyConfig(),
+            "model": _fake_trained_model(2),
+            "feature_cfg": feature_cfg,
+            "feature_dim": 2,
+            "feature_signature": "sealed-terminal-test",
+            "row_count": 60,
+            "positive_rate": 0.5,
+            "threshold": 0.55,
+            "threshold_source": "strategy",
+            "threshold_score": None,
+            "calibration_rows": 10,
+            "validation_rows": 10,
+            "selection_score": 2.0,
+            "validation_score": 2.0,
+            "full_sample_score": 2.0,
+            "selection_result": {"accepted": True, "realized_pnl": 20.0},
+            "validation_result": {"accepted": True, "realized_pnl": 20.0},
+            "full_sample_result": {"accepted": True, "realized_pnl": 20.0},
+            "ensemble_refined": bool(payload.get("ensemble_seeds")),
+        },
+    )
+
+    def fake_walk_forward(_candidate, rows, *_args, **_kwargs):
+        gate_windows.append((rows[0].timestamp, rows[-1].timestamp))
+        return {
+            "passed": True,
+            "reason": None,
+            "fold_count": 2,
+            "accepted_folds": 2,
+            "worst_score": 1.5,
+            "worst_realized_pnl": 10.0,
+            "worst_max_drawdown": 0.02,
+            "folds": [],
+        }
+
+    monkeypatch.setattr(training_suite, "_purged_walk_forward_gate", fake_walk_forward)
+    monkeypatch.setattr(
+        training_suite,
+        "optimize_hybrid_model_zoo",
+        lambda *_a, **_k: SimpleNamespace(accepted=False, evaluated_profiles=7),
+    )
+
+    def fake_selection_risk(*_args, **counts):
+        selection_trial_counts.update({key: int(value) for key, value in counts.items()})
+        return {
+            "passed": True,
+            "reason": None,
+            "reasons": [],
+            "effective_trials": 10,
+            "selected_score": 1.5,
+            "trial_penalty": 0.1,
+            "deflated_score": 1.4,
+            "overfit_diagnostics": {"status": "skipped", "passed": True},
+        }
+
+    monkeypatch.setattr(
+        training_suite,
+        "_selection_risk_report",
+        fake_selection_risk,
+    )
+
+    def fake_backtest(rows, *_args, **_kwargs):
+        backtest_windows.append((rows[0].timestamp, rows[-1].timestamp))
+        return _make_result(realized_pnl=50.0, edge_vs_buy_hold=25.0, closed_trades=5)
+
+    monkeypatch.setattr(training_suite, "run_backtest", fake_backtest)
+    monkeypatch.setattr(
+        training_suite,
+        "build_meta_label_report",
         lambda *_a, **_k: SimpleNamespace(
-            accepted=True,
-            model=rescue_model,
-            base_score=float("-inf"),
-            best_score=1.25,
-            best_profile="technical_rescue",
-            evaluated_profiles=4,
-            best_result=rescue_result,
-            ablation_results=[
-                SimpleNamespace(asdict=lambda: {
-                    "removed_expert_kind": "all_hybrid_experts",
-                    "score": float("-inf"),
-                    "delta_vs_best": float("-inf"),
-                    "accepted": False,
-                    "removed_expert_count": 3,
-                    "remaining_expert_count": 0,
-                })
-            ],
+            policy={"enabled": True},
+            asdict=lambda: {"status": "trained", "policy": {"enabled": True}},
         ),
     )
-    monkeypatch.setattr(training_suite, "run_backtest", lambda *_a, **_k: rescue_result)
+
+    def fake_ablation(rows, *_args, **_kwargs):
+        ablation_windows.append((rows[0].timestamp, rows[-1].timestamp))
+        return []
+
+    monkeypatch.setattr(training_suite, "_feature_ablation_report", fake_ablation)
 
     outcome = train_for_objective(
         _synthetic_candles(n=260),
@@ -1763,12 +2027,16 @@ def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
         max_workers=1,
     )
 
-    assert outcome.hybrid_model is True
-    assert outcome.hybrid_rescue is True
-    assert outcome.hybrid_profile == "technical_rescue"
-    assert outcome.hybrid_rescue_candidates >= 1
-    assert outcome.hybrid_ablation[0]["removed_expert_kind"] == "all_hybrid_experts"
-    assert outcome.best_score > 0.0
+    expected_development_end = 80 - training_suite._label_purge_gap(feature_cfg) - 1
+    assert gate_windows == [(0, expected_development_end)]
+    assert ablation_windows == [(0, expected_development_end)]
+    assert backtest_windows == [(0, expected_development_end), (80, 99)]
+    terminal = outcome.selection_risk["terminal_holdout"]
+    assert terminal["start_timestamp"] == 80
+    assert terminal["end_timestamp"] == 99
+    assert terminal["meta_label_enabled"] is True
+    assert terminal["evaluation_count"] == 1
+    assert selection_trial_counts["hybrid_profile_trials"] == 7
 
 
 def test_train_for_objective_persists_walk_forward_gate(
@@ -1834,6 +2102,35 @@ def test_train_for_objective_persists_walk_forward_gate(
 
     assert outcome.best_score == pytest.approx(1.25)
     assert outcome.walk_forward_gate == gate
+
+    monkeypatch.setattr(
+        training_suite,
+        "_terminal_holdout_gate",
+        lambda *_a, **_k: (
+            float("-inf"),
+            {
+                "schema_version": "terminal-holdout-v1",
+                "passed": False,
+                "reason": "terminal_objective_score<=0",
+                "evaluation_count": 1,
+                "rows": 10,
+                "dataset_fingerprint": "b" * 64,
+            },
+        ),
+    )
+    failed_dir = tmp_path / "failed-terminal"
+    with pytest.raises(TrainingSuiteRejected, match="failed sealed terminal holdout") as exc:
+        train_for_objective(
+            _synthetic_candles(n=420),
+            StrategyConfig(),
+            objective,
+            output_dir=failed_dir,
+            market_type="spot",
+            starting_cash=1000.0,
+            max_workers=1,
+        )
+    assert exc.value.diagnostics["terminal_holdout"]["passed"] is False
+    assert not (failed_dir / "model_conservative.json").exists()
 
 
 def test_train_for_objective_insufficient_candles(tmp_path: Path) -> None:
@@ -2501,7 +2798,10 @@ def test_rank_report_ranks_precomputed_backtests() -> None:
 # ----- real-runner smoke test for train_for_objective ----------------------
 
 
-def test_train_for_objective_real_runner_small_dataset(tmp_path: Path) -> None:
+def test_train_for_objective_real_runner_small_dataset(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Exercises the real ``_run_candidate`` path end-to-end with a small dataset.
 
     We shrink the grid by monkey-patching ``_candidate_grid`` to a single
@@ -2538,6 +2838,7 @@ def test_train_for_objective_real_runner_small_dataset(tmp_path: Path) -> None:
     # Swap in a tiny grid (monkeypatch via direct assignment on the module).
     original = training_suite._candidate_grid
     original_get_objective = training_suite.get_objective
+    monkeypatch.setattr(training_suite, "_terminal_holdout_gate", _passing_terminal_gate)
     training_suite._candidate_grid = lambda _t: [single_candidate]
     training_suite.get_objective = lambda _name: objective
     try:

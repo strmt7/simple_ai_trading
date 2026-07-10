@@ -229,6 +229,21 @@ def _write_report(
                         "trial_penalty": 0.17 if harmful_selection_risk else 0.04,
                         "deflated_score": deflated_score,
                         "score_margin_to_runner_up": 0.03,
+                        "terminal_holdout": {
+                            "schema_version": "terminal-holdout-v1",
+                            "passed": not harmful_selection_risk,
+                            "reason": "terminal_holdout_failed" if harmful_selection_risk else None,
+                            "evaluation_count": 1,
+                            "rows": 100,
+                            "score": None if harmful_selection_risk else 0.10,
+                            "dataset_fingerprint": "a" * 64,
+                            "result": {
+                                "accepted": not harmful_selection_risk,
+                                "realized_pnl": -10.0 if harmful_selection_risk else 10.0,
+                                "stopped_by_liquidation": False,
+                                "liquidation_events": 0,
+                            },
+                        },
                         "overfit_diagnostics": {
                             "status": "available",
                             "passed": not harmful_selection_risk,
@@ -429,6 +444,32 @@ def test_ai_review_blocks_before_model_call_on_failed_selection_risk(tmp_path: P
     assert review.deterministic_precheck["selection_risk_warning_count"] == 1
     assert "selection-risk evidence" in str(review.error)
     assert "deflated_score=-0.02" in review.deterministic_precheck["selection_risk_warnings"][0]
+
+
+def test_ai_review_blocks_before_model_call_without_terminal_holdout(tmp_path: Path, monkeypatch) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    del payload["outcomes"][0]["selection_risk"]["regular"]["terminal_holdout"]
+    report_path.write_text(json.dumps(payload), encoding="utf-8")
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("AI provider should not be called")
+
+    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(compute_backend="directml"),
+        post_json=fake_post,
+    )
+
+    assert called is False
+    assert review.approved is False
+    assert review.deterministic_precheck["selection_risk_warning_count"] == 1
+    assert "terminal_holdout_missing_or_failed" in review.deterministic_precheck["selection_risk_warnings"][0]
 
 
 def test_ai_review_blocks_before_model_call_when_ai_uplift_missing(tmp_path: Path, monkeypatch) -> None:

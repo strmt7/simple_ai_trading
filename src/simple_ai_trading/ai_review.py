@@ -381,6 +381,7 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
             continue
         raw_passed = raw.get("passed")
         overfit = raw.get("overfit_diagnostics")
+        terminal = raw.get("terminal_holdout")
         compact_overfit = None
         if isinstance(overfit, Mapping):
             compact_overfit = {
@@ -389,6 +390,28 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
                 "reason": _bounded_text(overfit.get("reason")),
                 "probability_backtest_overfit": _optional_finite(overfit.get("probability_backtest_overfit")),
                 "max_probability_backtest_overfit": _optional_finite(overfit.get("max_probability_backtest_overfit")),
+            }
+        compact_terminal = None
+        if isinstance(terminal, Mapping):
+            terminal_result = terminal.get("result")
+            compact_terminal = {
+                "schema_version": _bounded_text(terminal.get("schema_version")),
+                "passed": bool(terminal.get("passed")) if "passed" in terminal else None,
+                "reason": _bounded_text(terminal.get("reason")),
+                "evaluation_count": int(_finite(terminal.get("evaluation_count"))),
+                "rows": int(_finite(terminal.get("rows"))),
+                "score": _optional_finite(terminal.get("score")),
+                "dataset_fingerprint": _bounded_text(terminal.get("dataset_fingerprint"), limit=64),
+                "result": (
+                    {
+                        "accepted": bool(terminal_result.get("accepted")),
+                        "realized_pnl": _optional_finite(terminal_result.get("realized_pnl")),
+                        "stopped_by_liquidation": bool(terminal_result.get("stopped_by_liquidation")),
+                        "liquidation_events": int(_finite(terminal_result.get("liquidation_events"))),
+                    }
+                    if isinstance(terminal_result, Mapping)
+                    else None
+                ),
             }
         compact[str(objective)] = {
             "passed": raw_passed if isinstance(raw_passed, bool) else None,
@@ -403,6 +426,7 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
             "trial_penalty": _optional_finite(raw.get("trial_penalty")),
             "deflated_score": _optional_finite(raw.get("deflated_score")),
             "score_margin_to_runner_up": _optional_finite(raw.get("score_margin_to_runner_up")),
+            "terminal_holdout": compact_terminal,
             "overfit_diagnostics": compact_overfit,
         }
     return compact
@@ -645,8 +669,16 @@ def _selection_risk_precheck_warnings(compact: Mapping[str, object]) -> list[str
             explicit_failed = raw.get("passed") is False
             raw_deflated = raw.get("deflated_score")
             deflated_score = float(raw_deflated) if isinstance(raw_deflated, (int, float)) else None
-            if explicit_failed or (deflated_score is not None and deflated_score <= 0.0):
+            terminal = raw.get("terminal_holdout")
+            terminal_failed = not (
+                isinstance(terminal, Mapping)
+                and terminal.get("passed") is True
+                and int(_finite(terminal.get("evaluation_count"))) == 1
+            )
+            if explicit_failed or terminal_failed or (deflated_score is not None and deflated_score <= 0.0):
                 reason = _bounded_text(raw.get("reason")) or "selection_risk_failed"
+                if terminal_failed and not explicit_failed:
+                    reason = "terminal_holdout_missing_or_failed"
                 deflated_text = f"{deflated_score:.6g}" if deflated_score is not None else "missing"
                 warnings.append(
                     f"{symbol} {objective} selection risk failed ({reason}); deflated_score={deflated_text}"
@@ -742,8 +774,8 @@ def _prompt(compact: Mapping[str, object]) -> str:
         "Approve only when deterministic gates passed, stress scenarios are coherent, meta-label evidence does not "
         "show fragile take/skip behavior, temporal robustness and statistical edge evidence are coherent, regime "
         "concentration is not hiding a fragile one-state edge, purged walk-forward evidence used real accepted folds, "
-        "selection-risk evidence shows the selected score "
-        "survived the number of tried models, hybrid and feature ablation evidence does not show "
+        "selection-risk evidence shows the selected score survived the number of tried models and includes one "
+        "positive fingerprinted terminal replay of the exact final model, hybrid and feature ablation evidence does not show "
         "that removing a model component improves the accepted score, any AI-assisted signal has explicit holdout "
         "uplift over the non-AI ML baseline without worse drawdown, learning feedback from closed trades does "
         "not indicate an unresolved repeated-loss pattern, portfolio tail risk is acceptable, and there "

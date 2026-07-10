@@ -903,6 +903,46 @@ def _selection_risk_checks(
                 limit=">=1",
             )
         )
+        terminal = report.get("terminal_holdout")
+        terminal_path = f"{report_path}.terminal_holdout"
+        terminal_result = terminal.get("result") if isinstance(terminal, Mapping) else None
+        terminal_score = _finite(terminal.get("score")) if isinstance(terminal, Mapping) else None
+        terminal_rows = _finite(terminal.get("rows")) if isinstance(terminal, Mapping) else None
+        terminal_pnl = _finite(terminal_result.get("realized_pnl")) if isinstance(terminal_result, Mapping) else None
+        terminal_fingerprint = (
+            str(terminal.get("dataset_fingerprint") or "").lower()
+            if isinstance(terminal, Mapping)
+            else ""
+        )
+        terminal_passed = bool(
+            isinstance(terminal, Mapping)
+            and terminal.get("schema_version") == "terminal-holdout-v1"
+            and terminal.get("passed") is True
+            and terminal.get("reason") in (None, "")
+            and _finite(terminal.get("evaluation_count")) == 1.0
+            and terminal_rows is not None
+            and terminal_rows > 0.0
+            and terminal_score is not None
+            and terminal_score > 0.0
+            and len(terminal_fingerprint) == 64
+            and all(character in "0123456789abcdef" for character in terminal_fingerprint)
+            and isinstance(terminal_result, Mapping)
+            and terminal_result.get("accepted") is True
+            and terminal_pnl is not None
+            and terminal_pnl > 0.0
+            and terminal_result.get("stopped_by_liquidation") is False
+            and _finite(terminal_result.get("liquidation_events")) == 0.0
+        )
+        checks.append(
+            _check(
+                "ok" if terminal_passed else "block",
+                "sealed terminal holdout",
+                "accepted selection-risk terminal evidence",
+                path=terminal_path,
+                metric=terminal_score if terminal_score is not None else "missing",
+                limit="single accepted positive fingerprinted evaluation",
+            )
+        )
         overfit = report.get("overfit_diagnostics")
         if not isinstance(overfit, Mapping):
             checks.append(
