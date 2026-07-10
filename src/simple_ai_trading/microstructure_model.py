@@ -27,7 +27,7 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v13"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v14"
 MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
     "microstructure-prequential-fixed-refit-v1"
 )
@@ -549,6 +549,26 @@ def _validated_source_evidence(
         raise ValueError("microstructure model source does not use the availability clock")
     if str(value.get("symbol") or "").upper() != symbol:
         raise ValueError("microstructure model source symbol does not match the artifact")
+    corpus = value.get("corpus_certificate")
+    if not isinstance(corpus, Mapping):
+        raise ValueError("microstructure model source is missing its corpus certificate")
+    required_types = corpus.get("required_data_types")
+    if (
+        corpus.get("contract") != "official-binance-corpus-certificate-v1"
+        or corpus.get("status") != "pass"
+        or corpus.get("verified") is not True
+        or corpus.get("schema_version") != TICK_WAREHOUSE_SCHEMA_VERSION
+        or str(corpus.get("symbol") or "").upper() != symbol
+        or not isinstance(required_types, (list, tuple))
+        or set(str(item) for item in required_types)
+        != {"bookTicker", "trades", "bookDepth"}
+    ):
+        raise ValueError("microstructure model corpus certificate is invalid")
+    certificate_sha256 = str(corpus.get("certificate_sha256") or "").lower()
+    if len(certificate_sha256) != 64 or any(
+        character not in "0123456789abcdef" for character in certificate_sha256
+    ):
+        raise ValueError("microstructure model corpus certificate digest is invalid")
     for key in ("build_id", "manifest_fingerprint"):
         digest = str(value.get(key) or "").lower()
         if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):

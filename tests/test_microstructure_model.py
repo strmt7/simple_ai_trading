@@ -378,6 +378,15 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
                 "quote_update_sum": 1_000_000,
                 "verified": True,
                 "manifest_current": True,
+                "corpus_certificate": {
+                    "contract": "official-binance-corpus-certificate-v1",
+                    "status": "pass",
+                    "verified": True,
+                    "schema_version": "binance-usdm-tick-v6",
+                    "symbol": "BTCUSDT",
+                    "required_data_types": ["bookTicker", "trades", "bookDepth"],
+                    "certificate_sha256": "e" * 64,
+                },
             }
         },
         "threshold_policy": {
@@ -746,6 +755,15 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         "quote_update_sum": rows * 10,
         "verified": True,
         "manifest_current": True,
+        "corpus_certificate": {
+            "contract": "official-binance-corpus-certificate-v1",
+            "status": "pass",
+            "verified": True,
+            "schema_version": "binance-usdm-tick-v6",
+            "symbol": "BTCUSDT",
+            "required_data_types": ["bookTicker", "trades", "bookDepth"],
+            "certificate_sha256": "c" * 64,
+        },
     }
     dataset = MicrostructureDataset(
         symbol="BTCUSDT",

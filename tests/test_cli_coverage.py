@@ -1014,6 +1014,162 @@ def test_tick_archive_full_history_plan_uses_independent_official_coverage(
     assert by_type["trades"]["selected_last_period"] == "2026-07-09"
 
 
+def test_tick_corpus_audit_reports_each_symbol_and_writes_evidence(
+    monkeypatch,
+    tmp_path,
+    capsys,
+) -> None:
+    calls: list[tuple[str, tuple[str, ...], int | None, int | None]] = []
+
+    class Warehouse:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def corpus_certificate(self, symbol, **kwargs):
+            calls.append(
+                (
+                    symbol,
+                    tuple(kwargs["required_data_types"]),
+                    kwargs["required_start_ms"],
+                    kwargs["required_end_ms"],
+                )
+            )
+            return {
+                "symbol": symbol,
+                "status": "pass",
+                "common_first_period": "2026-07-08",
+                "common_last_period": "2026-07-09",
+                "common_period_count": 2,
+                "reasons": [],
+            }
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_warehouse.MicrostructureWarehouse",
+        Warehouse,
+    )
+    output = tmp_path / "corpus-audit.json"
+    result = cli.command_tick_corpus_audit(
+        argparse.Namespace(
+            symbols="BTCUSDT,ETHUSDT,SOLUSDT",
+            data_types="bookTicker,trades,bookDepth",
+            start_date="2026-07-08",
+            end_date="2026-07-09",
+            warehouse="warehouse.duckdb",
+            cache_root="cache",
+            memory_limit="1GB",
+            threads=1,
+            output=str(output),
+            json=False,
+        )
+    )
+
+    assert result == 0
+    assert len(calls) == 3
+    assert calls[0][1] == ("bookTicker", "trades", "bookDepth")
+    assert calls[0][2:] == (1_783_468_800_000, 1_783_641_599_999)
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == "pass"
+    assert "status=pass symbols=3" in capsys.readouterr().out
+
+
+def test_tick_archive_full_history_rejects_inventory_change_during_sync(
+    monkeypatch,
+    capsys,
+) -> None:
+    listing_calls = 0
+
+    def item(period: str):
+        return SimpleNamespace(
+            period=period,
+            size_bytes=100,
+            last_modified=f"{period}T01:00:00Z",
+            url=(
+                "https://data.binance.vision/data/futures/um/daily/trades/"
+                f"BTCUSDT/BTCUSDT-trades-{period}.zip"
+            ),
+        )
+
+    def listing(**_kwargs):
+        nonlocal listing_calls
+        listing_calls += 1
+        return [item("2026-07-08")] if listing_calls == 1 else [
+            item("2026-07-08"),
+            item("2026-07-09"),
+        ]
+
+    class Warehouse:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def record_official_archive_inventory(self, **kwargs):
+            periods = tuple(value.period for value in kwargs["items"])
+            return {
+                "snapshot_id": "snapshot-" + "-".join(periods),
+                "symbol": kwargs["symbol"],
+                "data_type": kwargs["data_type"],
+            }
+
+        def reusable_official_archives(self, **_kwargs):
+            return {}
+
+        def ingest_public_archive(self, **kwargs):
+            return SimpleNamespace(
+                status="complete",
+                rows_read=100,
+                asdict=lambda: {
+                    "status": "complete",
+                    "symbol": kwargs["symbol"],
+                    "period": kwargs["period"],
+                },
+            )
+
+        def corpus_certificate(self, symbol):
+            return {"symbol": symbol, "status": "pass", "reasons": []}
+
+    monkeypatch.setattr(cli, "list_archive_items", listing)
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_warehouse.MicrostructureWarehouse",
+        Warehouse,
+    )
+    result = cli.command_tick_archive_sync(
+        argparse.Namespace(
+            symbols="BTCUSDT",
+            data_types="trades",
+            start_date=None,
+            end_date=None,
+            full_history=True,
+            available_only=False,
+            plan_only=False,
+            plan_output=None,
+            max_planned_gb=1.0,
+            warehouse="warehouse.duckdb",
+            cache_root="cache",
+            memory_limit="1GB",
+            threads=1,
+            timeout=10.0,
+            no_retain_archive=True,
+            json=True,
+        )
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert result == 2
+    assert listing_calls == 2
+    assert payload["status"] == "incomplete"
+    assert payload["errors"][0]["error"] == "official_inventory_changed_during_sync"
+
+
 def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -> None:
     calls: dict[str, object] = {}
     dataset = SimpleNamespace()

@@ -281,6 +281,27 @@ def build_executable_microstructure_dataset(
     require_causal_bars = getattr(warehouse, "require_causal_feature_bars", None)
     if callable(require_causal_bars):
         source_evidence = require_causal_bars(normalized_symbol)
+        require_corpus = getattr(warehouse, "require_corpus_certificate", None)
+        if callable(require_corpus):
+            certificate_kwargs: dict[str, object] = {
+                "required_data_types": ("bookTicker", "trades", "bookDepth"),
+                "require_full_history_inventory": True,
+            }
+            if start_ms is not None and end_ms is not None:
+                certificate_kwargs.update(
+                    {
+                        "required_start_ms": int(start_ms),
+                        "required_end_ms": int(end_ms),
+                    }
+                )
+            corpus_certificate = require_corpus(
+                normalized_symbol,
+                **certificate_kwargs,
+            )
+            source_evidence = {
+                **dict(source_evidence),
+                "corpus_certificate": corpus_certificate,
+            }
 
     sql = """
         WITH joined AS (

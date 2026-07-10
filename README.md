@@ -25,7 +25,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Windows GPU acceleration defaults to DirectML via `torch-directml`, which works across AMD, NVIDIA, and Intel DirectX 12 GPUs.
 - Training, retraining, tuning, model-lab feature generation/scoring, external-signal scoring, probability-temperature calibration, threshold calibration, backtest replay, and backtest-panel feature generation use GPU-first `auto` whenever the caller does not explicitly select a backend. Training, scoring, and calibration artifacts record requested/resolved backend evidence; feature builders fall back to the original CPU path if a GPU tensor operation is unavailable. Hybrid model-zoo backtest scoring also uses the tensor backend for Lorentzian, rational-quadratic, and technical-confluence experts when supported. LightGBM resolves non-CPU training through OpenCL and lets the installed driver select the device by default instead of assuming platform/device `0:0`; operators can set both `SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID` and `SIMPLE_AI_TRADING_OPENCL_DEVICE_ID` together when explicit selection is required.
-- AI defaults to a local multibillion model identifier (`qwen3:8b`) and a minimum 2B-parameter preflight. AI-assisted signal approval requires hash-bound baseline, AI, model, dataset, and paired-period artifacts; at least 30 contiguous fixed-period holdout returns spanning at least 90 days; a positive-delta-rate and exact sign-test gate; a positive deterministic moving-block-bootstrap confidence bound; and no worse drawdown, liquidation, loss-streak, profit-factor, win-rate, or downside return/risk evidence. Trade lists are never paired by index because an AI veto changes trade timing. Otherwise AI remains advisory/review-only. Use `simple-ai-trading ai-benchmark` to compare installed local AI reviewers against structured finance-risk cases before relying on AI review.
+- AI defaults to a local multibillion model identifier (`qwen3:8b`) and a minimum 2B-parameter preflight. AI-assisted signal approval requires hash-bound baseline, AI, model, dataset, and paired-period artifacts; at least 30 contiguous fixed-period holdout returns spanning at least 90 days; a positive-delta-rate and exact sign-test gate; a positive deterministic moving-block-bootstrap confidence bound; and no worse drawdown, liquidation, loss-streak, profit-factor, win-rate, or downside return/risk evidence. Trade lists are never paired by index because an AI veto changes trade timing. Otherwise AI remains advisory/review-only. The current local v6 risk-review comparison selected Qwen3 8B (`11/11`, score `0.983409`, `3.19s` mean latency); Fino1 8B was rejected despite `11/11` actions and score `0.990455` because it omitted leverage in the liquidation case. These are safety/reasoning results, not financial-edge evidence. Exact reports and model digests are under [`docs/ai/risk-review/latest/`](docs/ai/risk-review/latest/). Use `simple-ai-trading ai-benchmark` to reproduce the live contract.
 - Binance API budget telemetry is captured from exchange response headers when available. Authenticated live startup is blocked when a current budget sample shows any known request-weight or order-count window is 80% or more consumed, or when Binance returns `Retry-After`.
 
 ## Install
@@ -162,7 +162,7 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
 
-The separate `microstructure-action-value-v13` path uses real Binance USD-M
+The separate `microstructure-action-value-v14` path uses real Binance USD-M
 book-ticker and trade archives to build causal one-second L1/tape features. Its
 promotion lifecycle is deliberately staged: candidate training, complete
 rolling-refit prequential evidence with the terminal period sealed, hash and
@@ -178,7 +178,7 @@ snapshot, manifest, shadow trades, and report. The former
 `microstructure-train --evaluate-terminal` shortcut is disabled. Terminal,
 refit, shadow, and accepted-runtime loaders independently reject missing or
 drifted evidence. A refit produces only `shadow_candidate`; only a passing
-`microstructure-shadow` run produces `accepted`. No v13 artifact is currently
+`microstructure-shadow` run produces `accepted`. No v14 artifact is currently
 accepted or claimed profitable; see
 [Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 The official compact tick plan is tracked at
@@ -186,6 +186,21 @@ The official compact tick plan is tracked at
 trade data spans multiple years through 2026-07-09, while official BBO archives
 stop on 2024-03-30. The app does not disguise coarse `bookDepth` percentage bands
 as a current best bid/ask history.
+
+Full-history tick sync snapshots the official Binance listing before ingestion
+and exits nonzero until every listed daily archive has a matching checksum-bound
+warehouse manifest. Model datasets require a corpus certificate covering the
+exact requested UTC days and quote/trade/depth products; a missing day cannot
+silently become zero flow. Certification also reconciles physical raw/derived
+partition counts and time bounds, the 100 ms BBO path, and coarse-depth band
+groups. Repeat syncs reuse an archive only when S3 `LastModified`, official byte
+size, verified source/sidecar hashes, schema, and physical partitions remain
+unchanged; damaged or replaced partitions are fetched again. Candidate research
+has a fingerprinted Latin-hypercube design and chronological successive-halving
+contract to avoid retraining every correlated variant at full scale; integration
+with the sealed prequential selector remains in progress. Short-window survivors
+remain research-only and cannot consume terminal evidence or gain trading
+authority.
 
 `tape-depth-train` builds a bounded, purged LightGBM direction/return/uncertainty
 ensemble from checksummed one-second trade tape and causally joined coarse depth.

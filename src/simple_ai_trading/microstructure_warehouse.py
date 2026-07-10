@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import hashlib
 import json
 import os
@@ -13,7 +13,7 @@ import re
 import shutil
 import socket
 import time
-from typing import Callable, Iterator, Mapping
+from typing import Callable, Iterator, Mapping, Sequence
 from urllib.parse import urlparse
 import zipfile
 
@@ -114,6 +114,54 @@ def _period_bounds_ms(period: str) -> tuple[int, int]:
         raise ValueError("tick archives require a daily YYYY-MM-DD period") from exc
     start = int(parsed.timestamp() * 1000)
     return start, start + 86_400_000 - 1
+
+
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _listing_last_modified_ms(value: str) -> int | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return int(parsed.astimezone(timezone.utc).timestamp() * 1_000)
+
+
+def _inventory_snapshot_id(
+    *,
+    symbol: str,
+    data_type: str,
+    full_history: bool,
+    scope_start_period: str,
+    scope_end_period: str,
+    listing_sha256: str,
+) -> str:
+    return _canonical_sha256(
+        {
+            "contract": "official-binance-daily-inventory-v1",
+            "data_type": data_type,
+            "full_history": bool(full_history),
+            "listing_sha256": listing_sha256,
+            "market_type": "futures",
+            "scope_end_period": scope_end_period,
+            "scope_start_period": scope_start_period,
+            "symbol": symbol,
+            "warehouse_schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
+        }
+    )
 
 
 def _normalize_tick_request(symbol: str, data_type: str, period: str) -> tuple[str, str, str]:
@@ -463,6 +511,35 @@ class MicrostructureWarehouse:
                 crossed_books UBIGINT NOT NULL,
                 ingested_at_ms BIGINT NOT NULL,
                 error VARCHAR NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS archive_inventory_snapshot (
+                snapshot_id VARCHAR PRIMARY KEY,
+                schema_version VARCHAR NOT NULL,
+                provider VARCHAR NOT NULL,
+                market_type VARCHAR NOT NULL,
+                symbol VARCHAR NOT NULL,
+                data_type VARCHAR NOT NULL,
+                full_history BOOLEAN NOT NULL,
+                scope_start_period VARCHAR NOT NULL,
+                scope_end_period VARCHAR NOT NULL,
+                item_count UINTEGER NOT NULL,
+                first_period VARCHAR NOT NULL,
+                last_period VARCHAR NOT NULL,
+                listing_sha256 VARCHAR NOT NULL,
+                observed_at_ms BIGINT NOT NULL,
+                is_current BOOLEAN NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS archive_inventory_item (
+                snapshot_id VARCHAR NOT NULL,
+                symbol VARCHAR NOT NULL,
+                data_type VARCHAR NOT NULL,
+                period VARCHAR NOT NULL,
+                url VARCHAR NOT NULL,
+                expected_bytes UBIGINT NOT NULL,
+                last_modified VARCHAR NOT NULL,
+                PRIMARY KEY (snapshot_id, period)
             );
 
             CREATE TABLE IF NOT EXISTS book_ticker_raw (
@@ -840,6 +917,869 @@ class MicrostructureWarehouse:
             return None
         columns = [item[0] for item in self.connect().description]
         return dict(zip(columns, row, strict=True))
+
+    def _unchanged_listing_manifest(
+        self,
+        *,
+        symbol: str,
+        data_type: str,
+        period: str,
+        url: str,
+        expected_bytes: int,
+        expected_last_modified: str,
+    ) -> Mapping[str, object] | None:
+        """Reuse only evidence ingested after the currently listed S3 object version."""
+
+        modified_ms = _listing_last_modified_ms(expected_last_modified)
+        if modified_ms is None or int(expected_bytes) <= 0:
+            return None
+        row = self.connect().execute(
+            """
+            SELECT * FROM archive_manifest
+            WHERE symbol = ? AND data_type = ? AND period = ? AND url = ?
+              AND status = 'complete' AND is_current
+              AND schema_version = ?
+              AND expected_bytes = ? AND compressed_bytes = ?
+              AND checksum_status = 'verified'
+              AND length(source_sha256) = 64
+              AND lower(source_sha256) = lower(expected_sha256)
+              AND ingested_at_ms >= ?
+            """,
+            [
+                symbol,
+                data_type,
+                period,
+                url,
+                TICK_WAREHOUSE_SCHEMA_VERSION,
+                int(expected_bytes),
+                int(expected_bytes),
+                modified_ms,
+            ],
+        ).fetchone()
+        if row is None:
+            return None
+        columns = [item[0] for item in self.connect().description]
+        return dict(zip(columns, row, strict=True))
+
+    def _physical_archive_stats(
+        self,
+        *,
+        symbol: str,
+        data_type: str,
+    ) -> dict[str, dict[str, int]]:
+        table_contract = {
+            "bookTicker": (
+                "book_ticker_raw",
+                "transaction_time_ms",
+                "book_ticker_path_1s",
+                "second_ms",
+                "book_ticker_100ms",
+                "bucket_ms",
+            ),
+            "trades": (
+                "trade_raw",
+                "trade_time_ms",
+                "trade_1s",
+                "second_ms",
+                None,
+                None,
+            ),
+            "bookDepth": (
+                "book_depth_aggregate_raw",
+                "timestamp_ms",
+                None,
+                None,
+                None,
+                None,
+            ),
+        }
+        raw_table, raw_clock, derived_table, derived_clock, auxiliary_table, auxiliary_clock = (
+            table_contract[data_type]
+        )
+        raw_quality = {
+            "bookTicker": (
+                "NOT isfinite(r.bid_price) OR NOT isfinite(r.ask_price) "
+                "OR NOT isfinite(r.bid_qty) OR NOT isfinite(r.ask_qty) "
+                "OR r.bid_price <= 0 OR r.ask_price <= 0 "
+                "OR r.bid_qty <= 0 OR r.ask_qty <= 0 "
+                "OR r.event_time_ms < r.transaction_time_ms",
+                "r.bid_price >= r.ask_price",
+            ),
+            "trades": (
+                "NOT isfinite(r.price) OR NOT isfinite(r.qty) "
+                "OR NOT isfinite(r.quote_qty) OR r.price <= 0 "
+                "OR r.qty <= 0 OR r.quote_qty < 0",
+                "false",
+            ),
+            "bookDepth": (
+                "r.percentage NOT IN (-5,-4,-3,-2,-1,-0.20,0.20,1,2,3,4,5) "
+                "OR NOT isfinite(r.depth) OR NOT isfinite(r.notional) "
+                "OR r.depth < 0 OR r.notional < 0",
+                "false",
+            ),
+        }
+        invalid_expression, crossed_expression = raw_quality[data_type]
+        conn = self.connect()
+        raw_rows = conn.execute(
+            f"""
+            SELECT r.archive_id, count(*)::UBIGINT,
+                   min(r.{raw_clock})::BIGINT, max(r.{raw_clock})::BIGINT,
+                   count(*) FILTER (WHERE {invalid_expression})::UBIGINT,
+                   0::UBIGINT,
+                   count(*) FILTER (WHERE {crossed_expression})::UBIGINT
+            FROM {raw_table} r
+            JOIN archive_manifest m USING (archive_id)
+            WHERE m.symbol = ? AND m.data_type = ?
+              AND m.status = 'complete' AND m.is_current
+            GROUP BY r.archive_id
+            """,
+            [symbol, data_type],
+        ).fetchall()
+        output = {
+            str(row[0]): {
+                "raw_rows": int(row[1]),
+                "raw_first_ms": int(row[2]),
+                "raw_last_ms": int(row[3]),
+                "derived_rows": 0,
+                "derived_first_ms": 0,
+                "derived_last_ms": 0,
+                "auxiliary_rows": 0,
+                "auxiliary_first_ms": 0,
+                "auxiliary_last_ms": 0,
+                "physical_invalid_rows": int(row[4]),
+                "physical_duplicate_ids": int(row[5]),
+                "physical_crossed_books": int(row[6]),
+                "derived_invalid_groups": 0,
+            }
+            for row in raw_rows
+        }
+        if data_type == "bookDepth":
+            derived_rows = conn.execute(
+                """
+                WITH grouped AS (
+                    SELECT r.archive_id, r.timestamp_ms, count(*) AS band_count,
+                           count(*) FILTER (WHERE abs(r.percentage) = 0.20) AS fine_band_count
+                    FROM book_depth_aggregate_raw r
+                    JOIN archive_manifest m USING (archive_id)
+                    WHERE m.symbol = ? AND m.data_type = 'bookDepth'
+                      AND m.status = 'complete' AND m.is_current
+                    GROUP BY r.archive_id, r.timestamp_ms
+                )
+                SELECT archive_id, count(*)::UBIGINT,
+                       min(timestamp_ms)::BIGINT, max(timestamp_ms)::BIGINT,
+                       count(*) FILTER (
+                           WHERE band_count NOT IN (10, 12)
+                              OR (band_count = 10 AND fine_band_count <> 0)
+                              OR (band_count = 12 AND fine_band_count <> 2)
+                       )::UBIGINT
+                FROM grouped GROUP BY archive_id
+                """,
+                [symbol],
+            ).fetchall()
+        else:
+            derived_rows = conn.execute(
+                f"""
+                SELECT r.archive_id, count(*)::UBIGINT,
+                       min(r.{derived_clock})::BIGINT, max(r.{derived_clock})::BIGINT
+                FROM {derived_table} r
+                JOIN archive_manifest m USING (archive_id)
+                WHERE m.symbol = ? AND m.data_type = ?
+                  AND m.status = 'complete' AND m.is_current
+                GROUP BY r.archive_id
+                """,
+                [symbol, data_type],
+            ).fetchall()
+        for row in derived_rows:
+            archive_id, row_count, first_ms, last_ms = row[:4]
+            stats = output.setdefault(str(archive_id), {})
+            stats.update(
+                {
+                    "derived_rows": int(row_count),
+                    "derived_first_ms": int(first_ms),
+                    "derived_last_ms": int(last_ms),
+                }
+            )
+            if len(row) > 4:
+                stats["derived_invalid_groups"] = int(row[4])
+        if auxiliary_table is not None:
+            auxiliary_rows = conn.execute(
+                f"""
+                SELECT r.archive_id, count(*)::UBIGINT,
+                       min(r.{auxiliary_clock})::BIGINT, max(r.{auxiliary_clock})::BIGINT
+                FROM {auxiliary_table} r
+                JOIN archive_manifest m USING (archive_id)
+                WHERE m.symbol = ? AND m.data_type = ?
+                  AND m.status = 'complete' AND m.is_current
+                GROUP BY r.archive_id
+                """,
+                [symbol, data_type],
+            ).fetchall()
+            for archive_id, row_count, first_ms, last_ms in auxiliary_rows:
+                stats = output.setdefault(str(archive_id), {})
+                stats.update(
+                    {
+                        "auxiliary_rows": int(row_count),
+                        "auxiliary_first_ms": int(first_ms),
+                        "auxiliary_last_ms": int(last_ms),
+                    }
+                )
+        return output
+
+    @staticmethod
+    def _manifest_matches_physical_rows(
+        data_type: str,
+        manifest: Mapping[str, object],
+        physical: Mapping[str, int],
+    ) -> bool:
+        first_ms = manifest.get("first_exchange_time_ms")
+        last_ms = manifest.get("last_exchange_time_ms")
+        if first_ms is None or last_ms is None:
+            return False
+        first_value = int(first_ms)
+        last_value = int(last_ms)
+        if (
+            int(physical.get("raw_rows", 0)) != int(manifest.get("rows_read") or 0)
+            or int(physical.get("derived_rows", 0))
+            != int(manifest.get("derived_rows") or 0)
+            or int(physical.get("raw_first_ms", 0)) != first_value
+            or int(physical.get("raw_last_ms", 0)) != last_value
+            or int(physical.get("physical_invalid_rows", 0)) != 0
+            or int(physical.get("physical_duplicate_ids", 0)) != 0
+            or int(physical.get("physical_crossed_books", 0)) != 0
+            or int(physical.get("derived_invalid_groups", 0)) != 0
+        ):
+            return False
+        quantum = 1 if data_type == "bookDepth" else 1_000
+        if (
+            int(physical.get("derived_first_ms", 0))
+            != (first_value // quantum) * quantum
+            or int(physical.get("derived_last_ms", 0))
+            != (last_value // quantum) * quantum
+        ):
+            return False
+        return data_type != "bookTicker" or (
+            int(physical.get("auxiliary_rows", 0)) > 0
+            and int(physical.get("auxiliary_first_ms", 0))
+            == (first_value // 100) * 100
+            and int(physical.get("auxiliary_last_ms", 0))
+            == (last_value // 100) * 100
+        )
+
+    def reusable_official_archives(
+        self,
+        *,
+        symbol: str,
+        data_type: str,
+        items: Sequence[object],
+    ) -> dict[str, TickArchiveIngestResult]:
+        """Return physically intact archives whose official S3 object is unchanged."""
+
+        normalized_symbol, normalized_type, _ = _normalize_tick_request(
+            symbol,
+            data_type,
+            "2000-01-01",
+        )
+        physical = self._physical_archive_stats(
+            symbol=normalized_symbol,
+            data_type=normalized_type,
+        )
+        output: dict[str, TickArchiveIngestResult] = {}
+        for item in items:
+            period = str(
+                item.get("period") if isinstance(item, Mapping) else getattr(item, "period", "")
+            )
+            url = str(item.get("url") if isinstance(item, Mapping) else getattr(item, "url", ""))
+            expected_bytes = int(
+                item.get("size_bytes", 0)
+                if isinstance(item, Mapping)
+                else getattr(item, "size_bytes", 0)
+            )
+            last_modified = str(
+                item.get("last_modified", "")
+                if isinstance(item, Mapping)
+                else getattr(item, "last_modified", "")
+            )
+            normalized_period = _normalize_tick_request(
+                normalized_symbol,
+                normalized_type,
+                period,
+            )[2]
+            _validate_official_url(
+                url,
+                symbol=normalized_symbol,
+                data_type=normalized_type,
+                period=normalized_period,
+            )
+            manifest = self._unchanged_listing_manifest(
+                symbol=normalized_symbol,
+                data_type=normalized_type,
+                period=normalized_period,
+                url=url,
+                expected_bytes=expected_bytes,
+                expected_last_modified=last_modified,
+            )
+            if manifest is None:
+                continue
+            if any(
+                int(manifest.get(name) or 0) != 0
+                for name in (
+                    "invalid_rows",
+                    "duplicate_ids",
+                    "crossed_books",
+                )
+            ) or (
+                normalized_type != "bookTicker"
+                and int(manifest.get("out_of_order_rows") or 0) != 0
+            ):
+                continue
+            stats = physical.get(str(manifest.get("archive_id") or ""), {})
+            if not self._manifest_matches_physical_rows(normalized_type, manifest, stats):
+                continue
+            output[normalized_period] = self._result_from_manifest(
+                manifest,
+                status="skipped_verified_unchanged",
+            )
+        return output
+
+    def record_official_archive_inventory(
+        self,
+        *,
+        symbol: str,
+        data_type: str,
+        items: Sequence[object],
+        full_history: bool,
+        scope_start_period: str | None = None,
+        scope_end_period: str | None = None,
+    ) -> dict[str, object]:
+        """Persist an immutable snapshot of the official daily archive listing."""
+
+        normalized_symbol, normalized_type, _ = _normalize_tick_request(
+            symbol,
+            data_type,
+            "2000-01-01",
+        )
+        normalized_items: list[dict[str, object]] = []
+        for item in items:
+            if isinstance(item, Mapping):
+                period = str(item.get("period") or "")
+                url = str(item.get("url") or "")
+                size_bytes = int(item.get("size_bytes") or 0)
+                last_modified = str(item.get("last_modified") or "")
+            else:
+                period = str(getattr(item, "period", "") or "")
+                url = str(getattr(item, "url", "") or "")
+                size_bytes = int(getattr(item, "size_bytes", 0) or 0)
+                last_modified = str(getattr(item, "last_modified", "") or "")
+            _period_bounds_ms(period)
+            _validate_official_url(
+                url,
+                symbol=normalized_symbol,
+                data_type=normalized_type,
+                period=period,
+            )
+            if size_bytes < 0:
+                raise ValueError("official archive inventory size cannot be negative")
+            normalized_items.append(
+                {
+                    "period": period,
+                    "url": url,
+                    "expected_bytes": size_bytes,
+                    "last_modified": last_modified,
+                }
+            )
+        normalized_items.sort(key=lambda value: (str(value["period"]), str(value["url"])))
+        if not normalized_items:
+            raise ValueError(
+                f"official archive inventory is empty for {normalized_symbol} {normalized_type}"
+            )
+        periods = [str(item["period"]) for item in normalized_items]
+        urls = [str(item["url"]) for item in normalized_items]
+        if len(periods) != len(set(periods)) or len(urls) != len(set(urls)):
+            raise ValueError("official archive inventory contains duplicate periods or URLs")
+        first_period = periods[0]
+        last_period = periods[-1]
+        scope_start = str(scope_start_period or first_period)
+        scope_end = str(scope_end_period or last_period)
+        _period_bounds_ms(scope_start)
+        _period_bounds_ms(scope_end)
+        if scope_start > scope_end:
+            raise ValueError("official archive inventory scope is reversed")
+        if any(period < scope_start or period > scope_end for period in periods):
+            raise ValueError("official archive inventory item is outside its declared scope")
+        if bool(full_history) and (scope_start != first_period or scope_end != last_period):
+            raise ValueError("full-history inventory scope must equal its listed boundaries")
+        listing_sha256 = _canonical_sha256(normalized_items)
+        snapshot_id = _inventory_snapshot_id(
+            symbol=normalized_symbol,
+            data_type=normalized_type,
+            full_history=bool(full_history),
+            scope_start_period=scope_start,
+            scope_end_period=scope_end,
+            listing_sha256=listing_sha256,
+        )
+        observed_at_ms = int(time.time() * 1000)
+        lock_path = self.path.with_suffix(self.path.suffix + ".writer.lock")
+        with _exclusive_operation_lock(lock_path):
+            conn = self.connect()
+            conn.execute("BEGIN TRANSACTION")
+            try:
+                conn.execute(
+                    "UPDATE archive_inventory_snapshot SET is_current = false "
+                    "WHERE symbol = ? AND data_type = ? AND is_current",
+                    [normalized_symbol, normalized_type],
+                )
+                existing = conn.execute(
+                    """
+                    SELECT schema_version, provider, market_type, symbol, data_type,
+                           full_history, scope_start_period, scope_end_period,
+                           item_count, first_period, last_period, listing_sha256,
+                           observed_at_ms
+                    FROM archive_inventory_snapshot WHERE snapshot_id = ?
+                    """,
+                    [snapshot_id],
+                ).fetchone()
+                if existing is None:
+                    conn.execute(
+                        """
+                        INSERT INTO archive_inventory_snapshot VALUES (
+                            ?, ?, 'binance', 'futures', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true
+                        )
+                        """,
+                        [
+                            snapshot_id,
+                            TICK_WAREHOUSE_SCHEMA_VERSION,
+                            normalized_symbol,
+                            normalized_type,
+                            bool(full_history),
+                            scope_start,
+                            scope_end,
+                            len(normalized_items),
+                            first_period,
+                            last_period,
+                            listing_sha256,
+                            observed_at_ms,
+                        ],
+                    )
+                    conn.executemany(
+                        "INSERT INTO archive_inventory_item VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [
+                            (
+                                snapshot_id,
+                                normalized_symbol,
+                                normalized_type,
+                                item["period"],
+                                item["url"],
+                                item["expected_bytes"],
+                                item["last_modified"],
+                            )
+                            for item in normalized_items
+                        ],
+                    )
+                else:
+                    expected_snapshot = (
+                        TICK_WAREHOUSE_SCHEMA_VERSION,
+                        "binance",
+                        "futures",
+                        normalized_symbol,
+                        normalized_type,
+                        bool(full_history),
+                        scope_start,
+                        scope_end,
+                        len(normalized_items),
+                        first_period,
+                        last_period,
+                        listing_sha256,
+                    )
+                    if tuple(existing[:-1]) != expected_snapshot:
+                        raise ValueError("immutable official inventory snapshot metadata changed")
+                    persisted_items = conn.execute(
+                        """
+                        SELECT period, url, expected_bytes, last_modified
+                        FROM archive_inventory_item
+                        WHERE snapshot_id = ? ORDER BY period, url
+                        """,
+                        [snapshot_id],
+                    ).fetchall()
+                    expected_items = [
+                        (
+                            item["period"],
+                            item["url"],
+                            item["expected_bytes"],
+                            item["last_modified"],
+                        )
+                        for item in normalized_items
+                    ]
+                    if persisted_items != expected_items:
+                        raise ValueError("immutable official inventory snapshot items changed")
+                    observed_at_ms = int(existing[-1])
+                    conn.execute(
+                        "UPDATE archive_inventory_snapshot SET is_current = true "
+                        "WHERE snapshot_id = ?",
+                        [snapshot_id],
+                    )
+                conn.execute("COMMIT")
+            except Exception:
+                conn.execute("ROLLBACK")
+                raise
+        return {
+            "snapshot_id": snapshot_id,
+            "symbol": normalized_symbol,
+            "data_type": normalized_type,
+            "full_history": bool(full_history),
+            "item_count": len(normalized_items),
+            "first_period": first_period,
+            "last_period": last_period,
+            "listing_sha256": listing_sha256,
+            "observed_at_ms": observed_at_ms,
+        }
+
+    def corpus_certificate(
+        self,
+        symbol: str,
+        *,
+        required_data_types: Sequence[str] = ("bookTicker", "trades", "bookDepth"),
+        required_start_ms: int | None = None,
+        required_end_ms: int | None = None,
+        require_full_history_inventory: bool = True,
+    ) -> dict[str, object]:
+        """Prove official-listing, checksum, partition, and time-range completeness."""
+
+        normalized = normalize_symbol(symbol)
+        if not is_supported_major_symbol(normalized):
+            raise ValueError(f"unsupported corpus certificate symbol: {normalized}")
+        types = tuple(dict.fromkeys(str(value).strip() for value in required_data_types))
+        if not types or any(value not in SUPPORTED_TICK_ARCHIVES for value in types):
+            raise ValueError("corpus certificate data types are invalid")
+        if (required_start_ms is None) != (required_end_ms is None):
+            raise ValueError("corpus certificate requires both start and end timestamps")
+        required_periods: set[str] | None = None
+        required_first_period: str | None = None
+        required_last_period: str | None = None
+        if required_start_ms is not None and required_end_ms is not None:
+            start_value = int(required_start_ms)
+            end_value = int(required_end_ms)
+            if start_value > end_value:
+                raise ValueError("corpus certificate interval is reversed")
+            first_day = datetime.fromtimestamp(start_value / 1000, tz=timezone.utc).date()
+            last_day = datetime.fromtimestamp(end_value / 1000, tz=timezone.utc).date()
+            required_periods = set()
+            cursor = first_day
+            while cursor <= last_day:
+                required_periods.add(cursor.isoformat())
+                cursor += timedelta(days=1)
+            required_first_period = first_day.isoformat()
+            required_last_period = last_day.isoformat()
+
+        conn = self.connect()
+        reasons: list[str] = []
+        by_type: dict[str, dict[str, object]] = {}
+        canonical_types: dict[str, object] = {}
+        expected_sets: list[set[str]] = []
+        for data_type in types:
+            snapshots = conn.execute(
+                """
+                SELECT snapshot_id, schema_version, full_history,
+                       scope_start_period, scope_end_period, item_count,
+                       first_period, last_period, listing_sha256, observed_at_ms
+                FROM archive_inventory_snapshot
+                WHERE symbol = ? AND data_type = ? AND is_current
+                ORDER BY observed_at_ms DESC, snapshot_id
+                """,
+                [normalized, data_type],
+            ).fetchall()
+            if len(snapshots) != 1:
+                reasons.append(f"{data_type}:current_inventory_count={len(snapshots)}")
+                by_type[data_type] = {
+                    "status": "fail",
+                    "reason": "missing_or_ambiguous_official_inventory",
+                }
+                expected_sets.append(set())
+                continue
+            (
+                snapshot_id,
+                schema_version,
+                full_history,
+                scope_start,
+                scope_end,
+                item_count,
+                first_period,
+                last_period,
+                listing_sha256,
+                observed_at_ms,
+            ) = snapshots[0]
+            inventory_rows = conn.execute(
+                """
+                SELECT period, url, expected_bytes, last_modified
+                FROM archive_inventory_item
+                WHERE snapshot_id = ?
+                ORDER BY period, url
+                """,
+                [snapshot_id],
+            ).fetchall()
+            inventory = {
+                str(row[0]): {
+                    "period": str(row[0]),
+                    "url": str(row[1]),
+                    "expected_bytes": int(row[2] or 0),
+                    "last_modified": str(row[3] or ""),
+                }
+                for row in inventory_rows
+            }
+            expected = set(inventory)
+            expected_sets.append(expected)
+            type_reasons: list[str] = []
+            if str(schema_version) != TICK_WAREHOUSE_SCHEMA_VERSION:
+                type_reasons.append("inventory_schema_mismatch")
+            if require_full_history_inventory and not bool(full_history):
+                type_reasons.append("inventory_is_not_full_history")
+            if len(inventory_rows) != int(item_count or 0) or len(inventory) != len(inventory_rows):
+                type_reasons.append("inventory_row_count_mismatch")
+            if _canonical_sha256([inventory[key] for key in sorted(inventory)]) != str(
+                listing_sha256
+            ):
+                type_reasons.append("inventory_fingerprint_mismatch")
+            if expected and (
+                str(first_period) != min(expected)
+                or str(last_period) != max(expected)
+                or any(period < str(scope_start) or period > str(scope_end) for period in expected)
+            ):
+                type_reasons.append("inventory_boundary_mismatch")
+            expected_snapshot_id = _inventory_snapshot_id(
+                symbol=normalized,
+                data_type=data_type,
+                full_history=bool(full_history),
+                scope_start_period=str(scope_start),
+                scope_end_period=str(scope_end),
+                listing_sha256=str(listing_sha256),
+            )
+            if str(snapshot_id) != expected_snapshot_id:
+                type_reasons.append("inventory_identity_mismatch")
+            scope = expected if required_periods is None else set(required_periods)
+            absent_from_listing = sorted(scope - expected)
+            if absent_from_listing:
+                type_reasons.append(
+                    f"official_listing_missing_periods={','.join(absent_from_listing[:3])}"
+                )
+            manifests = conn.execute(
+                """
+                SELECT archive_id, period, url, expected_bytes, compressed_bytes,
+                       source_sha256, expected_sha256, checksum_status,
+                       rows_read, derived_rows, first_exchange_time_ms,
+                       last_exchange_time_ms, invalid_rows, duplicate_ids,
+                       out_of_order_rows, crossed_books, schema_version
+                FROM archive_manifest
+                WHERE symbol = ? AND data_type = ?
+                  AND status = 'complete' AND is_current
+                ORDER BY period, archive_id
+                """,
+                [normalized, data_type],
+            ).fetchall()
+            manifests_by_period: dict[str, list[tuple[object, ...]]] = {}
+            for row in manifests:
+                manifests_by_period.setdefault(str(row[1]), []).append(row)
+            physical_by_archive = self._physical_archive_stats(
+                symbol=normalized,
+                data_type=data_type,
+            )
+            verified: list[dict[str, object]] = []
+            missing: list[str] = []
+            invalid: list[str] = []
+            invalid_details: dict[str, list[str]] = {}
+            for period in sorted(scope & expected):
+                matches = manifests_by_period.get(period, [])
+                if len(matches) != 1:
+                    (missing if not matches else invalid).append(period)
+                    if matches:
+                        invalid_details[period] = ["ambiguous_current_manifest"]
+                    continue
+                row = matches[0]
+                (
+                    archive_id,
+                    _period,
+                    url,
+                    manifest_expected_bytes,
+                    compressed_bytes,
+                    source_sha256,
+                    expected_sha256,
+                    checksum_status,
+                    rows_read,
+                    derived_rows,
+                    first_ms,
+                    last_ms,
+                    invalid_rows,
+                    duplicate_ids,
+                    out_of_order_rows,
+                    crossed_books,
+                    manifest_schema,
+                ) = row
+                expected_item = inventory[period]
+                period_start_ms, period_end_ms = _period_bounds_ms(period)
+                expected_size = int(expected_item["expected_bytes"])
+                source_hash = str(source_sha256).lower()
+                expected_hash = str(expected_sha256).lower()
+                physical = physical_by_archive.get(str(archive_id), {})
+                failures: list[str] = []
+                if str(manifest_schema) != TICK_WAREHOUSE_SCHEMA_VERSION:
+                    failures.append("manifest_schema_mismatch")
+                if str(url) != str(expected_item["url"]):
+                    failures.append("official_url_mismatch")
+                if str(checksum_status) != "verified" or len(source_hash) != 64:
+                    failures.append("checksum_not_verified")
+                elif source_hash != expected_hash:
+                    failures.append("checksum_hash_mismatch")
+                if int(rows_read or 0) <= 0 or int(derived_rows or 0) <= 0:
+                    failures.append("manifest_row_count_empty")
+                if first_ms is None or last_ms is None:
+                    failures.append("manifest_time_bounds_missing")
+                elif not period_start_ms <= int(first_ms) <= int(last_ms) <= period_end_ms:
+                    failures.append("manifest_time_bounds_invalid")
+                if int(invalid_rows or 0) != 0 or int(duplicate_ids or 0) != 0:
+                    failures.append("manifest_row_quality_failed")
+                if data_type != "bookTicker" and int(out_of_order_rows or 0) != 0:
+                    failures.append("manifest_source_order_failed")
+                if int(crossed_books or 0) != 0:
+                    failures.append("manifest_crossed_book_failed")
+                if expected_size > 0 and (
+                    int(manifest_expected_bytes or 0) != expected_size
+                    or int(compressed_bytes or 0) != expected_size
+                ):
+                    failures.append("official_byte_size_mismatch")
+                if int(physical.get("raw_rows", 0)) != int(rows_read or 0):
+                    failures.append("physical_raw_row_count_mismatch")
+                if int(physical.get("derived_rows", 0)) != int(derived_rows or 0):
+                    failures.append("physical_derived_row_count_mismatch")
+                if any(
+                    int(physical.get(name, 0)) != 0
+                    for name in (
+                        "physical_invalid_rows",
+                        "physical_duplicate_ids",
+                        "physical_crossed_books",
+                        "derived_invalid_groups",
+                    )
+                ):
+                    failures.append("physical_row_quality_failed")
+                if first_ms is not None and last_ms is not None:
+                    first_value = int(first_ms)
+                    last_value = int(last_ms)
+                    if (
+                        int(physical.get("raw_first_ms", 0)) != first_value
+                        or int(physical.get("raw_last_ms", 0)) != last_value
+                    ):
+                        failures.append("physical_raw_time_bounds_mismatch")
+                    quantum = 1 if data_type == "bookDepth" else 1_000
+                    if (
+                        int(physical.get("derived_first_ms", 0))
+                        != (first_value // quantum) * quantum
+                        or int(physical.get("derived_last_ms", 0))
+                        != (last_value // quantum) * quantum
+                    ):
+                        failures.append("physical_derived_time_bounds_mismatch")
+                    if data_type == "bookTicker" and (
+                        int(physical.get("auxiliary_rows", 0)) <= 0
+                        or int(physical.get("auxiliary_first_ms", 0))
+                        != (first_value // 100) * 100
+                        or int(physical.get("auxiliary_last_ms", 0))
+                        != (last_value // 100) * 100
+                    ):
+                        failures.append("physical_100ms_execution_path_mismatch")
+                if failures:
+                    invalid.append(period)
+                    invalid_details[period] = failures
+                    continue
+                verified.append(
+                    {
+                        "archive_id": str(archive_id),
+                        "period": period,
+                        "source_sha256": source_hash,
+                        "rows_read": int(rows_read),
+                        "derived_rows": int(derived_rows),
+                        "first_exchange_time_ms": int(first_ms),
+                        "last_exchange_time_ms": int(last_ms),
+                        "physical_stats": physical,
+                    }
+                )
+            if missing:
+                type_reasons.append(f"missing_manifests={','.join(missing[:3])}")
+            if invalid:
+                type_reasons.append(f"invalid_manifests={','.join(invalid[:3])}")
+            reasons.extend(f"{data_type}:{reason}" for reason in type_reasons)
+            by_type[data_type] = {
+                "status": "pass" if not type_reasons else "fail",
+                "snapshot_id": str(snapshot_id),
+                "listing_sha256": str(listing_sha256),
+                "full_history": bool(full_history),
+                "scope_start_period": str(scope_start),
+                "scope_end_period": str(scope_end),
+                "official_archive_count": len(expected),
+                "verified_scope_archive_count": len(verified),
+                "first_period": str(first_period),
+                "last_period": str(last_period),
+                "observed_at_ms": int(observed_at_ms),
+                "missing_periods": missing,
+                "invalid_periods": invalid,
+                "invalid_details": invalid_details,
+                "reasons": type_reasons,
+            }
+            canonical_types[data_type] = {
+                "inventory": [inventory[key] for key in sorted(inventory)],
+                "invalid_details": invalid_details,
+                "missing_periods": missing,
+                "snapshot_id": str(snapshot_id),
+                "verified": verified,
+            }
+
+        common_periods = set.intersection(*expected_sets) if expected_sets and all(expected_sets) else set()
+        common_first = min(common_periods) if common_periods else None
+        common_last = max(common_periods) if common_periods else None
+        common_calendar_gaps: list[str] = []
+        if common_first is not None and common_last is not None:
+            cursor: date = datetime.strptime(common_first, "%Y-%m-%d").date()
+            final_day = datetime.strptime(common_last, "%Y-%m-%d").date()
+            while cursor <= final_day:
+                if cursor.isoformat() not in common_periods:
+                    common_calendar_gaps.append(cursor.isoformat())
+                cursor += timedelta(days=1)
+        if not common_periods:
+            reasons.append("common_inventory_periods=0")
+        elif required_periods is None and common_calendar_gaps:
+            reasons.append(f"common_calendar_gaps={','.join(common_calendar_gaps[:3])}")
+        canonical_payload = {
+            "contract": "official-binance-corpus-certificate-v1",
+            "required_data_types": list(types),
+            "required_first_period": required_first_period,
+            "required_last_period": required_last_period,
+            "symbol": normalized,
+            "types": canonical_types,
+        }
+        certificate_sha256 = _canonical_sha256(canonical_payload)
+        return {
+            "contract": "official-binance-corpus-certificate-v1",
+            "status": "pass" if not reasons else "fail",
+            "verified": not reasons,
+            "schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
+            "provider": "binance",
+            "market_type": "futures",
+            "symbol": normalized,
+            "truth_basis": "official_listing_plus_checksum_bound_daily_manifests",
+            "required_data_types": list(types),
+            "required_first_period": required_first_period,
+            "required_last_period": required_last_period,
+            "require_full_history_inventory": bool(require_full_history_inventory),
+            "common_first_period": common_first,
+            "common_last_period": common_last,
+            "common_period_count": len(common_periods),
+            "common_calendar_gaps": common_calendar_gaps,
+            "data_types": by_type,
+            "reasons": reasons,
+            "certificate_sha256": certificate_sha256,
+        }
+
+    def require_corpus_certificate(self, symbol: str, **kwargs: object) -> dict[str, object]:
+        evidence = self.corpus_certificate(symbol, **kwargs)
+        if evidence["status"] != "pass":
+            detail = "; ".join(str(value) for value in evidence["reasons"][:8])
+            raise ValueError(f"{normalize_symbol(symbol)} corpus certification failed: {detail}")
+        return evidence
 
     def ingest_public_archive(
         self,

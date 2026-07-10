@@ -75,6 +75,15 @@ def _dataset_and_artifact() -> tuple[MicrostructureDataset, MicrostructureModelA
         "quote_update_sum": rows * 2,
         "verified": True,
         "manifest_current": True,
+        "corpus_certificate": {
+            "contract": "official-binance-corpus-certificate-v1",
+            "status": "pass",
+            "verified": True,
+            "schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
+            "symbol": "BTCUSDT",
+            "required_data_types": ["bookTicker", "trades", "bookDepth"],
+            "certificate_sha256": "c" * 64,
+        },
     }
     dataset = MicrostructureDataset(
         symbol="BTCUSDT",

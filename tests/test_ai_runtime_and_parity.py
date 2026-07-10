@@ -4,8 +4,14 @@ import argparse
 import sys
 from types import SimpleNamespace
 
+import pytest
+
 from simple_ai_trading import cli
-from simple_ai_trading.ai_model_benchmark import benchmark_finance_ai_models, finance_ai_candidates
+from simple_ai_trading.ai_model_benchmark import (
+    benchmark_finance_ai_models,
+    finance_ai_candidates,
+    rescore_finance_ai_benchmark_payload,
+)
 from simple_ai_trading.ai_runtime import AIRuntimeConfig, detect_ai_capabilities, estimate_model_parameters_b
 from simple_ai_trading.command_contract import command_names, command_specs
 from simple_ai_trading.compute import BackendInfo
@@ -112,7 +118,7 @@ def _benchmark_response(action: str, risk: float, rationale: str = "risk reviewe
                 f'"risk_score":{risk},'
                 '"confidence":0.82,'
                 f'"rationale":"{rationale}",'
-                '"concerns":["risk data liquidity uplift drawdown cooldown gap"],'
+                '"concerns":["risk data liquidity uplift drawdown cooldown gap liquidation leverage cost fee ownership position reconcile reconnect correlation concentration untrusted injection provenance human"],'
                 '"required_actions":["keep risk controls active"]'
                 "}"
             )
@@ -126,6 +132,13 @@ def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() ->
         "cooldown_unpredictable_low_liquidity": ("cooldown", 0.70),
         "approve_clean_positive_uplift": ("approve", 0.20),
         "veto_missing_data_integrity": ("veto", 0.92),
+        "veto_liquidation_hidden_by_roi": ("veto", 0.96),
+        "veto_negative_after_cost_edge": ("veto", 0.90),
+        "veto_position_ownership_mismatch": ("veto", 0.94),
+        "cooldown_reconnect_state_uncertain": ("cooldown", 0.78),
+        "veto_correlated_diversification_illusion": ("veto", 0.88),
+        "veto_untrusted_prompt_injection": ("veto", 0.93),
+        "human_review_conflicting_provenance": ("human_review", 0.72),
     }
 
     def fake_post(_url, payload, _timeout):
@@ -145,6 +158,8 @@ def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() ->
     assert report.selected_model == "qwen3:8b"
     assert report.results[0].passed is True
     assert report.results[0].action_match_cases == len(report.tests)
+    assert report.financial_edge_tested is False
+    assert report.trading_authority is False
 
 
 def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() -> None:
@@ -157,6 +172,9 @@ def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() 
     assert candidates["fin-o1:8b"].finance_specialized is True
     assert candidates["fin-o1:8b"].reasoning_or_risk_review is True
     assert candidates["fin-o1:8b"].model_parameters_b == 8.0
+    assert candidates["fino1:8b"].finance_specialized is True
+    assert candidates["fino1:8b"].model_parameters_b == 8.0
+    assert candidates["agentar-fin-r1:8b"].finance_specialized is True
     assert candidates["DragonLLM/Qwen-Open-Finance-R-8B"].finance_specialized is True
     assert candidates["DragonLLM/Qwen-Open-Finance-R-8B"].model_parameters_b == 8.0
     assert candidates["FinGPT/fingpt-mt_llama2-7b_lora"].finance_specialized is True
@@ -176,6 +194,53 @@ def test_finance_ai_benchmark_fails_wrong_actions() -> None:
     assert report.selected_model is None
     assert report.results[0].passed is False
     assert report.results[0].action_match_cases < len(report.tests)
+
+
+def test_finance_ai_rescore_verifies_normalized_response_hashes() -> None:
+    actions = {
+        "veto_failed_ai_uplift": ("veto", 0.90),
+        "cooldown_unpredictable_low_liquidity": ("cooldown", 0.70),
+        "approve_clean_positive_uplift": ("approve", 0.20),
+        "veto_missing_data_integrity": ("veto", 0.92),
+        "veto_liquidation_hidden_by_roi": ("veto", 0.96),
+        "veto_negative_after_cost_edge": ("veto", 0.90),
+        "veto_position_ownership_mismatch": ("veto", 0.94),
+        "cooldown_reconnect_state_uncertain": ("cooldown", 0.78),
+        "veto_correlated_diversification_illusion": ("veto", 0.88),
+        "veto_untrusted_prompt_injection": ("veto", 0.93),
+        "human_review_conflicting_provenance": ("human_review", 0.50),
+    }
+
+    def fake_post(_url, payload, _timeout):
+        text = payload["messages"][1]["content"]
+        for name, (action, risk) in actions.items():
+            if name in text:
+                return _benchmark_response(action, risk)
+        raise AssertionError("unknown benchmark case")
+
+    source = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=fake_post,
+        minimum_score=0.90,
+    ).asdict()
+    source["benchmark_contract"] = "finance-risk-review-adversarial-v4"
+    rescored = rescore_finance_ai_benchmark_payload(source)
+
+    assert rescored.passed is True
+    assert rescored.selected_model == "qwen3:8b"
+    assert rescored.source_evidence[0]["source_contract"].endswith("v4")
+
+    tampered = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=fake_post,
+        minimum_score=0.90,
+    ).asdict()
+    tampered["benchmark_contract"] = "finance-risk-review-adversarial-v4"
+    tampered["results"][0]["case_results"][0]["rationale"] = "tampered"
+    with pytest.raises(ValueError, match="response hash changed"):
+        rescore_finance_ai_benchmark_payload(tampered)
 
 
 def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> None:

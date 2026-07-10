@@ -222,6 +222,14 @@ def tape_depth_source_evidence(
     required_end_ms: int,
     include_book_depth: bool = True,
 ) -> dict[str, object]:
+    required_types = ("trades", "bookDepth") if include_book_depth else ("trades",)
+    corpus_certificate = warehouse.require_corpus_certificate(
+        symbol,
+        required_data_types=required_types,
+        required_start_ms=required_start_ms,
+        required_end_ms=required_end_ms,
+        require_full_history_inventory=True,
+    )
     data_type_filter = (
         "data_type IN ('trades', 'bookDepth')"
         if include_book_depth
@@ -323,7 +331,10 @@ def tape_depth_source_evidence(
                 )
             depth_cursor += timedelta(days=1)
     canonical = json.dumps(
-        by_type,
+        {
+            "corpus_certificate_sha256": corpus_certificate["certificate_sha256"],
+            "manifests": by_type,
+        },
         ensure_ascii=True,
         separators=(",", ":"),
         sort_keys=True,
@@ -363,6 +374,7 @@ def tape_depth_source_evidence(
         "required_first_period": start_date.isoformat(),
         "required_last_period": end_date.isoformat(),
         "manifest_fingerprint": hashlib.sha256(canonical).hexdigest(),
+        "corpus_certificate": corpus_certificate,
         "trades": coverage("trades"),
         "book_depth": coverage("bookDepth"),
         "verified": True,
