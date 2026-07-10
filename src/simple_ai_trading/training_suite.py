@@ -950,6 +950,11 @@ def _selection_risk_report(
     entries = list(ranked_pool)
     if id(best) not in entry_ids:
         entries.append(best)
+    internal_variants_evaluated = sum(
+        max(1, int(_finite_number_or_none(entry.get("internal_variant_count")) or 1))
+        for entry in ranked_pool
+    )
+    internal_variant_extra_trials = max(0, internal_variants_evaluated - len(ranked_pool))
     scores = [
         score
         for entry in entries
@@ -960,8 +965,9 @@ def _selection_risk_report(
         int(base_candidate_count)
         + int(local_refinement_candidates)
         + int(ensemble_refinement_candidates)
-        + int(hybrid_rescue_candidates),
-        len(entries),
+        + int(hybrid_rescue_candidates)
+        + internal_variant_extra_trials,
+        len(entries) + internal_variant_extra_trials,
     )
     if best_score is None:
         overfit = _overfit_diagnostics(best, entries)
@@ -974,6 +980,8 @@ def _selection_risk_report(
             "local_refinement_candidates": int(local_refinement_candidates),
             "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
             "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
+            "internal_variants_evaluated": int(internal_variants_evaluated),
+            "internal_variant_extra_trials": int(internal_variant_extra_trials),
             "finite_candidate_scores": len(scores),
             "overfit_diagnostics": overfit,
         }
@@ -1009,6 +1017,8 @@ def _selection_risk_report(
         "local_refinement_candidates": int(local_refinement_candidates),
         "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
         "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
+        "internal_variants_evaluated": int(internal_variants_evaluated),
+        "internal_variant_extra_trials": int(internal_variant_extra_trials),
         "finite_candidate_scores": len(scores),
         "selected_score": float(best_score),
         "runner_up_score": float(runner_up) if runner_up is not None else None,
@@ -1163,6 +1173,11 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
         "validation_score": _finite_number_or_none(entry.get("validation_score")),
         "full_sample_score": _finite_number_or_none(entry.get("full_sample_score")),
         "inversion_score": _finite_number_or_none(entry.get("inversion_score")),
+        "inversion_selection_score": _finite_number_or_none(entry.get("inversion_selection_score")),
+        "selected_internal_variant": entry.get("selected_internal_variant"),
+        "inversion_source_variant": entry.get("inversion_source_variant"),
+        "internal_variant_count": int(entry.get("internal_variant_count") or 0),
+        "internal_variant_selection": list(entry.get("internal_variant_selection", []) or []),
         "threshold": _finite_number_or_none(entry.get("threshold")),
         "threshold_source": entry.get("threshold_source"),
         "threshold_score": _finite_number_or_none(entry.get("threshold_score")),
@@ -1171,6 +1186,11 @@ def _candidate_diagnostics(entry: dict[str, Any]) -> dict[str, object]:
         "selection_result": entry.get("selection_result") if isinstance(entry.get("selection_result"), dict) else None,
         "validation_result": entry.get("validation_result") if isinstance(entry.get("validation_result"), dict) else None,
         "full_sample_result": entry.get("full_sample_result") if isinstance(entry.get("full_sample_result"), dict) else None,
+        "inversion_selection_result": (
+            entry.get("inversion_selection_result")
+            if isinstance(entry.get("inversion_selection_result"), dict)
+            else None
+        ),
         "inversion_validation_result": (
             entry.get("inversion_validation_result")
             if isinstance(entry.get("inversion_validation_result"), dict)
@@ -1582,30 +1602,13 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     )
     selection_score = objective.score(selection_result) if objective.accepts(selection_result) else float("-inf")
     selected_selection_result = selection_result
-    holdout_result = run_backtest(
-        rows_eval,
-        model,
-        strategy,
-        starting_cash=starting_cash,
-        market_type=market_type,
-        compute_backend=compute_backend,
-        score_batch_size=score_batch_size,
-    )
-    validation_score = objective.score(holdout_result) if objective.accepts(holdout_result) else float("-inf")
-    selected_holdout_result = holdout_result
-    full_result = run_backtest(
-        rows_train + rows_eval,
-        model,
-        strategy,
-        starting_cash=starting_cash,
-        market_type=market_type,
-        compute_backend=compute_backend,
-        score_batch_size=score_batch_size,
-    )
-    full_sample_score = objective.score(full_result) if objective.accepts(full_result) else float("-inf")
-    selected_full_result = full_result
-    score = min(validation_score, full_sample_score)
     selected_calibration_rows = len(calibration_rows)
+    selected_internal_variant = "calibration_fit" if calibration_rows else "full_fit"
+    internal_variant_selection: list[dict[str, object]] = [{
+        "variant": selected_internal_variant,
+        "score": _finite_number_or_none(selection_score),
+        "result": _gate_result_payload(selection_result, objective),
+    }]
 
     if calibration_rows and include_full_fit_fallback:
         fallback_model, fallback_report = train_advanced(
@@ -1657,48 +1660,21 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
             if objective.accepts(fallback_selection_result)
             else float("-inf")
         )
-        fallback_holdout_result = run_backtest(
-            rows_eval,
-            fallback_model,
-            strategy,
-            starting_cash=starting_cash,
-            market_type=market_type,
-            compute_backend=compute_backend,
-            score_batch_size=score_batch_size,
-        )
-        fallback_validation_score = (
-            objective.score(fallback_holdout_result)
-            if objective.accepts(fallback_holdout_result)
-            else float("-inf")
-        )
-        fallback_full_result = run_backtest(
-            rows_train + rows_eval,
-            fallback_model,
-            strategy,
-            starting_cash=starting_cash,
-            market_type=market_type,
-            compute_backend=compute_backend,
-            score_batch_size=score_batch_size,
-        )
-        fallback_full_score = (
-            objective.score(fallback_full_result)
-            if objective.accepts(fallback_full_result)
-            else float("-inf")
-        )
-        fallback_score = min(fallback_validation_score, fallback_full_score)
-        if fallback_score > score + 1e-12:
-            score = fallback_score
+        internal_variant_selection.append({
+            "variant": "full_fit",
+            "score": _finite_number_or_none(fallback_selection_score),
+            "result": _gate_result_payload(fallback_selection_result, objective),
+        })
+        if fallback_selection_score > selection_score + 1e-12:
             model = fallback_model
             report = fallback_report
             threshold_score = fallback_threshold_score
             selected_calibration_rows = 0
             selection_score = fallback_selection_score
-            validation_score = fallback_validation_score
-            full_sample_score = fallback_full_score
             selected_selection_result = fallback_selection_result
-            selected_holdout_result = fallback_holdout_result
-            selected_full_result = fallback_full_result
+            selected_internal_variant = "full_fit"
 
+    inversion_source_variant = selected_internal_variant
     inverted_model = copy.deepcopy(model)
     inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
     inverted_model.model_family = f"{inverted_model.model_family}:inverted"
@@ -1720,44 +1696,48 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         if objective.accepts(inverted_selection_result)
         else float("-inf")
     )
-    inverted_holdout_result = run_backtest(
-        rows_eval,
-        inverted_model,
-        strategy,
-        starting_cash=starting_cash,
-        market_type=market_type,
-        compute_backend=compute_backend,
-        score_batch_size=score_batch_size,
-    )
-    inverted_validation_score = (
-        objective.score(inverted_holdout_result)
-        if objective.accepts(inverted_holdout_result)
-        else float("-inf")
-    )
-    inverted_full_result = run_backtest(
-        rows_train + rows_eval,
-        inverted_model,
-        strategy,
-        starting_cash=starting_cash,
-        market_type=market_type,
-        compute_backend=compute_backend,
-        score_batch_size=score_batch_size,
-    )
-    inverted_full_score = (
-        objective.score(inverted_full_result)
-        if objective.accepts(inverted_full_result)
-        else float("-inf")
-    )
-    inverted_score = min(inverted_validation_score, inverted_full_score)
-    if inverted_score > score + 1e-12:
-        score = inverted_score
+    internal_variant_selection.append({
+        "variant": "probability_inverted",
+        "source_variant": inversion_source_variant,
+        "score": _finite_number_or_none(inverted_selection_score),
+        "result": _gate_result_payload(inverted_selection_result, objective),
+    })
+    inversion_selected = inverted_selection_score > selection_score + 1e-12
+    if inversion_selected:
         model = inverted_model
         selection_score = inverted_selection_score
-        validation_score = inverted_validation_score
-        full_sample_score = inverted_full_score
         selected_selection_result = inverted_selection_result
-        selected_holdout_result = inverted_holdout_result
-        selected_full_result = inverted_full_result
+        selected_internal_variant = "probability_inverted"
+
+    selected_holdout_result = run_backtest(
+        rows_eval,
+        model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=score_batch_size,
+    )
+    validation_score = (
+        objective.score(selected_holdout_result)
+        if objective.accepts(selected_holdout_result)
+        else float("-inf")
+    )
+    selected_full_result = run_backtest(
+        rows_train + rows_eval,
+        model,
+        strategy,
+        starting_cash=starting_cash,
+        market_type=market_type,
+        compute_backend=compute_backend,
+        score_batch_size=score_batch_size,
+    )
+    full_sample_score = (
+        objective.score(selected_full_result)
+        if objective.accepts(selected_full_result)
+        else float("-inf")
+    )
+    score = min(selection_score, validation_score, full_sample_score)
 
     return {
         "score": float(score),
@@ -1780,9 +1760,23 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         "selection_result": _gate_result_payload(selected_selection_result, objective),
         "validation_result": _gate_result_payload(selected_holdout_result, objective),
         "full_sample_result": _gate_result_payload(selected_full_result, objective),
-        "inversion_score": float(inverted_score),
-        "inversion_validation_result": _gate_result_payload(inverted_holdout_result, objective),
-        "inversion_full_sample_result": _gate_result_payload(inverted_full_result, objective),
+        "selected_internal_variant": selected_internal_variant,
+        "internal_variant_count": len(internal_variant_selection),
+        "internal_variant_selection": internal_variant_selection,
+        "inversion_source_variant": inversion_source_variant,
+        "inversion_score": float(inverted_selection_score),
+        "inversion_selection_score": float(inverted_selection_score),
+        "inversion_selection_result": _gate_result_payload(inverted_selection_result, objective),
+        "inversion_validation_result": (
+            _gate_result_payload(selected_holdout_result, objective)
+            if inversion_selected
+            else None
+        ),
+        "inversion_full_sample_result": (
+            _gate_result_payload(selected_full_result, objective)
+            if inversion_selected
+            else None
+        ),
         "ensemble_refined": bool(ensemble_seeds),
     }
 

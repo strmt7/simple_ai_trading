@@ -499,6 +499,10 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   train-only sample-weight scale and calibration-only action threshold:
   <https://scikit-learn.org/stable/common_pitfalls.html> and
   <https://scikit-learn.org/stable/modules/classification_threshold.html>
+  The same boundary applies to the general training suite: its calibration-fit,
+  full-fit fallback, and probability-inversion variants are compared only on
+  the chronological selection panel. The winning internal variant is frozen
+  before a single validation replay is allowed.
 - Bailey and Lopez de Prado's Deflated Sharpe Ratio work influenced the
   project policy of treating high backtest scores as suspect unless the
   selection process and holdout evidence are visible in the artifact:
@@ -734,9 +738,26 @@ hybrid expert or feature group improves the selected score, the AI review
 deterministically vetoes before calling the local model.
 The training suite also writes a `selection_risk` report for the selected
 candidate and serialized model. This deterministic multiple-trials haircut uses
-the explored candidate count plus local, ensemble, and hybrid-rescue checks to
-deflate the selected score by observed score dispersion. A candidate is not
-promoted unless the deflated score remains positive.
+the explored candidate count plus local, ensemble, hybrid-rescue, full-fit, and
+probability-inversion checks to deflate the selected score by observed score
+dispersion. `internal_variants_evaluated` and
+`internal_variant_extra_trials` make those formerly implicit trials auditable.
+A candidate is not promoted unless the deflated score remains positive.
+
+Each general-suite candidate now follows a fixed internal chronology. A model
+may use its fit/calibration partition for early stopping and probability or
+threshold calibration. The calibration-fit model, optional full-fit fallback,
+and one probability-inversion variant are then scored on selection rows only.
+The best internal variant and threshold are frozen from that panel; ties retain
+the less adaptive incumbent. Only that frozen model is replayed once on the
+later validation rows and once on the overlapping full-sample sanity panel.
+The candidate score is the minimum accepted objective score across selection,
+validation, and full-sample replays. Unselected inversion variants expose no
+validation or full-sample result. Candidate diagnostics persist the selected
+variant, inversion source, every internal selection result, and exact internal
+trial count. The full-sample replay is a conservative consistency check, not an
+independent out-of-sample estimate; purged walk-forward and model-lab gates
+remain required before promotion.
 AI-assisted alpha has a separate deterministic uplift gate. When AI is enabled,
 `ai-review` will not call the local LLM unless every accepted AI-assisted symbol
 includes an `ai_uplift` artifact showing the AI-assisted holdout beats the
