@@ -53,7 +53,7 @@ from .backtest import (
     run_backtest,
     trade_activity_satisfies,
 )
-from .assets import DEFAULT_CONSERVATIVE_LEVERAGE
+from .assets import DEFAULT_CONSERVATIVE_LEVERAGE, is_supported_major_symbol, normalize_symbol
 from .features import ModelRow
 from .hybrid_models import optimize_hybrid_model_zoo
 from .market_edge import build_market_edge_report
@@ -75,6 +75,12 @@ from .objective import (
 )
 from .strategy_overrides import strategy_overrides_from_config
 from .storage import write_json_atomic
+from .terminal_holdout_ledger import (
+    TerminalHoldoutLedger,
+    reservation_evidence_passed,
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 from .types import StrategyConfig
 
 _DEFAULT_OUTPUT_DIR = Path("data")
@@ -1937,6 +1943,8 @@ def train_for_objective(
     batch_size: int = 8192,
     score_batch_size: int | None = None,
     max_candidates: int | None = None,
+    terminal_ledger: TerminalHoldoutLedger | None = None,
+    terminal_symbol: str | None = None,
 ) -> ObjectiveOutcome:
     """Run the training suite for one objective, returning the outcome.
 
@@ -2251,6 +2259,7 @@ def train_for_objective(
         hybrid_rescue_candidates=hybrid_rescue_candidates,
         hybrid_profile_trials=hybrid_profile_trials,
     )
+    selection_risk["objective"] = objective.name
     best["selection_risk"] = selection_risk
     if not selection_risk.get("passed"):
         best["score"] = float("-inf")
@@ -2331,17 +2340,193 @@ def train_for_objective(
             }]
     if runner is None:
         development_selected_score = float(best["score"])
-        terminal_score, terminal_holdout = _terminal_holdout_gate(
-            best_terminal_rows,
-            best["model"],
-            best["strategy"],
-            objective,
-            market_type=market_type,
-            starting_cash=starting_cash,
-            purge_gap=best_purge_gap,
-            compute_backend=effective_compute_backend,
-            score_batch_size=effective_score_batch_size,
-        )
+        terminal_dataset_fingerprint = _model_rows_fingerprint(best_terminal_rows)
+        try:
+            terminal_model_sha256 = terminal_model_fingerprint(best["model"])
+        except (TypeError, ValueError, OverflowError) as exc:
+            terminal_reason = f"terminal_model_fingerprint_error: {exc}"
+            selection_risk["passed"] = False
+            selection_risk["reason"] = terminal_reason
+            raw_reasons = selection_risk.get("reasons")
+            reasons = [str(item) for item in raw_reasons] if isinstance(raw_reasons, list) else []
+            reasons.append(terminal_reason)
+            selection_risk["reasons"] = list(dict.fromkeys(reasons))
+            best["selection_risk"] = selection_risk
+            best["score"] = float("-inf")
+            raise TrainingSuiteRejected(
+                f"Selected {objective.name} model could not be fingerprinted before terminal holdout",
+                row_count=len(rows),
+                diagnostics={"objective": objective.name, "reason": terminal_reason},
+            ) from exc
+        terminal_reservation: dict[str, object] | None = None
+        if terminal_ledger is not None:
+            if not terminal_symbol:
+                raise TrainingSuiteRejected(
+                    "Durable terminal governance requires an explicit symbol",
+                    row_count=len(rows),
+                    diagnostics={"objective": objective.name, "reason": "terminal_symbol_missing"},
+                )
+            if not best_terminal_rows:
+                raise TrainingSuiteRejected(
+                    "Durable terminal governance cannot reserve an empty holdout",
+                    row_count=len(rows),
+                    diagnostics={"objective": objective.name, "reason": "terminal_holdout_missing"},
+                )
+            try:
+                terminal_reservation = terminal_ledger.reserve(
+                    symbol=terminal_symbol,
+                    market_type=market_type,
+                    objective=objective.name,
+                    first_timestamp=int(best_terminal_rows[0].timestamp),
+                    last_timestamp=int(best_terminal_rows[-1].timestamp),
+                    rows=len(best_terminal_rows),
+                    dataset_fingerprint=terminal_dataset_fingerprint,
+                    model_fingerprint=terminal_model_sha256,
+                )
+            except Exception as exc:
+                terminal_reason = f"terminal_reservation_failed: {exc}"
+                selection_risk["passed"] = False
+                selection_risk["reason"] = terminal_reason
+                raw_reasons = selection_risk.get("reasons")
+                reasons = [str(item) for item in raw_reasons] if isinstance(raw_reasons, list) else []
+                reasons.append(terminal_reason)
+                selection_risk["reasons"] = list(dict.fromkeys(reasons))
+                best["selection_risk"] = selection_risk
+                best["score"] = float("-inf")
+                raise TrainingSuiteRejected(
+                    f"Selected {objective.name} model could not reserve sealed terminal holdout",
+                    row_count=len(rows),
+                    diagnostics={"objective": objective.name, "reason": terminal_reason},
+                ) from exc
+        try:
+            terminal_score, terminal_holdout = _terminal_holdout_gate(
+                best_terminal_rows,
+                best["model"],
+                best["strategy"],
+                objective,
+                market_type=market_type,
+                starting_cash=starting_cash,
+                purge_gap=best_purge_gap,
+                compute_backend=effective_compute_backend,
+                score_batch_size=effective_score_batch_size,
+            )
+        except Exception as exc:
+            if terminal_reservation is not None and terminal_ledger is not None:
+                try:
+                    error_report = {
+                        "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+                        "passed": False,
+                        "reason": "terminal_holdout_unhandled_error",
+                        "error": f"{exc.__class__.__name__}: {exc}",
+                    }
+                    terminal_ledger.finalize(
+                        str(terminal_reservation["reservation_id"]),
+                        result_status="evaluation_error",
+                        result_fingerprint=terminal_result_fingerprint(error_report),
+                        error=f"{exc.__class__.__name__}: {exc}",
+                    )
+                except Exception:
+                    pass
+            terminal_reason = f"terminal_holdout_unhandled_error: {exc.__class__.__name__}: {exc}"
+            selection_risk["passed"] = False
+            selection_risk["reason"] = terminal_reason
+            best["selection_risk"] = selection_risk
+            best["score"] = float("-inf")
+            raise TrainingSuiteRejected(
+                f"Selected {objective.name} model failed sealed terminal holdout",
+                row_count=len(rows),
+                diagnostics={"objective": objective.name, "reason": terminal_reason},
+            ) from exc
+        if terminal_holdout.get("dataset_fingerprint") != terminal_dataset_fingerprint:
+            terminal_holdout["passed"] = False
+            terminal_holdout["reason"] = "terminal_dataset_fingerprint_drift"
+            terminal_score = float("-inf")
+        try:
+            terminal_result_sha256 = terminal_result_fingerprint(terminal_holdout)
+        except (TypeError, ValueError, OverflowError) as exc:
+            terminal_reason = f"terminal_result_fingerprint_error: {exc}"
+            if terminal_reservation is not None and terminal_ledger is not None:
+                fallback_report = {
+                    "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+                    "passed": False,
+                    "reason": terminal_reason,
+                }
+                try:
+                    terminal_ledger.finalize(
+                        str(terminal_reservation["reservation_id"]),
+                        result_status="evaluation_error",
+                        result_fingerprint=terminal_result_fingerprint(fallback_report),
+                        error=terminal_reason,
+                    )
+                except Exception:
+                    pass
+            selection_risk["passed"] = False
+            selection_risk["reason"] = terminal_reason
+            best["selection_risk"] = selection_risk
+            best["score"] = float("-inf")
+            raise TrainingSuiteRejected(
+                f"Selected {objective.name} model terminal result could not be fingerprinted",
+                row_count=len(rows),
+                diagnostics={"objective": objective.name, "reason": terminal_reason},
+            ) from exc
+        if terminal_reservation is not None and terminal_ledger is not None:
+            terminal_result_status = (
+                "accepted"
+                if terminal_holdout.get("passed") is True
+                else "evaluation_error"
+                if terminal_holdout.get("reason") == "terminal_holdout_evaluation_error"
+                else "rejected"
+            )
+            try:
+                terminal_holdout["reservation"] = terminal_ledger.finalize(
+                    str(terminal_reservation["reservation_id"]),
+                    result_status=terminal_result_status,
+                    result_fingerprint=terminal_result_sha256,
+                    error=str(terminal_holdout.get("reason") or ""),
+                )
+            except Exception as exc:
+                terminal_reason = f"terminal_reservation_finalize_failed: {exc}"
+                selection_risk["passed"] = False
+                selection_risk["reason"] = terminal_reason
+                best["selection_risk"] = selection_risk
+                best["score"] = float("-inf")
+                raise TrainingSuiteRejected(
+                    f"Selected {objective.name} model terminal audit could not be finalized",
+                    row_count=len(rows),
+                    diagnostics={
+                        "objective": objective.name,
+                        "reason": terminal_reason,
+                        "terminal_holdout": terminal_holdout,
+                    },
+                ) from exc
+            if not reservation_evidence_passed(
+                terminal_holdout.get("reservation"),
+                expected_dataset_fingerprint=terminal_dataset_fingerprint,
+                expected_model_fingerprint=terminal_model_sha256,
+                expected_result_fingerprint=terminal_result_sha256,
+                expected_rows=len(best_terminal_rows),
+                expected_first_timestamp=int(best_terminal_rows[0].timestamp),
+                expected_last_timestamp=int(best_terminal_rows[-1].timestamp),
+                expected_symbol=terminal_symbol,
+                expected_market_type=market_type,
+                expected_objective=objective.name,
+            ) and terminal_holdout.get("passed") is True:
+                terminal_reason = "terminal_reservation_evidence_mismatch"
+                selection_risk["passed"] = False
+                selection_risk["reason"] = terminal_reason
+                best["selection_risk"] = selection_risk
+                best["score"] = float("-inf")
+                raise TrainingSuiteRejected(
+                    f"Selected {objective.name} model terminal audit evidence mismatched",
+                    row_count=len(rows),
+                    diagnostics={
+                        "objective": objective.name,
+                        "reason": terminal_reason,
+                        "terminal_holdout": terminal_holdout,
+                    },
+                )
+        else:
+            terminal_holdout["reservation"] = None
         selection_risk["development_selected_score"] = development_selected_score
         selection_risk["terminal_holdout"] = terminal_holdout
         if terminal_holdout.get("passed") is True and math.isfinite(terminal_score):
@@ -2474,6 +2659,8 @@ def run_training_suite(
     batch_size: int = 8192,
     score_batch_size: int | None = None,
     max_candidates: int | None = None,
+    symbol: str | None = None,
+    terminal_ledger_path: Path | None = None,
 ) -> SuiteReport:
     """Train one model per objective and persist a suite summary."""
 
@@ -2490,6 +2677,18 @@ def run_training_suite(
         seen_specs.add(spec.name)
         specs.append(spec)
     names = tuple(spec.name for spec in specs)
+    if terminal_ledger_path is not None and symbol is None:
+        raise ValueError("terminal_ledger_path requires an explicit symbol")
+    normalized_symbol: str | None = None
+    if symbol is not None:
+        normalized_symbol = normalize_symbol(symbol, default="")
+        if not is_supported_major_symbol(normalized_symbol):
+            raise ValueError("training-suite terminal governance supports only BTC, ETH, or SOL")
+    terminal_ledger = (
+        TerminalHoldoutLedger(terminal_ledger_path)
+        if normalized_symbol is not None
+        else None
+    )
     outcomes: list[ObjectiveOutcome] = []
     total_rows = 0
     for spec in specs:
@@ -2507,6 +2706,9 @@ def run_training_suite(
             extra["score_batch_size"] = int(score_batch_size)
         if max_candidates is not None:
             extra["max_candidates"] = max(1, int(max_candidates))
+        if terminal_ledger is not None:
+            extra["terminal_ledger"] = terminal_ledger
+            extra["terminal_symbol"] = normalized_symbol
         outcome = train_for_objective(
             candles, base_strategy, spec,
             output_dir=output_dir,

@@ -14,6 +14,7 @@ import requests
 from .ai_runtime import AICapabilityReport, detect_ai_capabilities
 from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
 from .storage import write_json_atomic
+from .terminal_holdout_ledger import reservation_evidence_passed, terminal_result_fingerprint
 from .types import RuntimeConfig
 
 DEFAULT_AI_REVIEW_MODEL = "qwen3:8b"
@@ -394,14 +395,52 @@ def _compact_selection_risk_map(raw_map: object) -> dict[str, dict[str, object]]
         compact_terminal = None
         if isinstance(terminal, Mapping):
             terminal_result = terminal.get("result")
+            reservation = terminal.get("reservation")
+            try:
+                terminal_result_sha256 = terminal_result_fingerprint(terminal)
+            except (TypeError, ValueError, OverflowError):
+                terminal_result_sha256 = ""
+            compact_reservation = None
+            if isinstance(reservation, Mapping):
+                compact_reservation = {
+                    "schema_version": _bounded_text(reservation.get("schema_version")),
+                    "reservation_id": _bounded_text(reservation.get("reservation_id"), limit=64),
+                    "ledger_id": _bounded_text(reservation.get("ledger_id"), limit=64),
+                    "symbol": _bounded_text(reservation.get("symbol"), limit=24),
+                    "market_type": _bounded_text(reservation.get("market_type"), limit=16),
+                    "objective": _bounded_text(reservation.get("objective"), limit=32),
+                    "first_timestamp": int(_finite(reservation.get("first_timestamp"))),
+                    "last_timestamp": int(_finite(reservation.get("last_timestamp"))),
+                    "rows": int(_finite(reservation.get("rows"))),
+                    "dataset_fingerprint": _bounded_text(
+                        reservation.get("dataset_fingerprint"),
+                        limit=64,
+                    ),
+                    "model_fingerprint": _bounded_text(
+                        reservation.get("model_fingerprint"),
+                        limit=64,
+                    ),
+                    "result_fingerprint": _bounded_text(
+                        reservation.get("result_fingerprint"),
+                        limit=64,
+                    ),
+                    "status": _bounded_text(reservation.get("status"), limit=16),
+                    "result_status": _bounded_text(reservation.get("result_status"), limit=24),
+                    "reserved_at_ms": int(_finite(reservation.get("reserved_at_ms"))),
+                    "completed_at_ms": int(_finite(reservation.get("completed_at_ms"))),
+                }
             compact_terminal = {
                 "schema_version": _bounded_text(terminal.get("schema_version")),
                 "passed": bool(terminal.get("passed")) if "passed" in terminal else None,
                 "reason": _bounded_text(terminal.get("reason")),
                 "evaluation_count": int(_finite(terminal.get("evaluation_count"))),
                 "rows": int(_finite(terminal.get("rows"))),
+                "start_timestamp": int(_finite(terminal.get("start_timestamp"))),
+                "end_timestamp": int(_finite(terminal.get("end_timestamp"))),
                 "score": _optional_finite(terminal.get("score")),
                 "dataset_fingerprint": _bounded_text(terminal.get("dataset_fingerprint"), limit=64),
+                "result_fingerprint": terminal_result_sha256,
+                "reservation": compact_reservation,
                 "result": (
                     {
                         "accepted": bool(terminal_result.get("accepted")),
@@ -670,10 +709,23 @@ def _selection_risk_precheck_warnings(compact: Mapping[str, object]) -> list[str
             raw_deflated = raw.get("deflated_score")
             deflated_score = float(raw_deflated) if isinstance(raw_deflated, (int, float)) else None
             terminal = raw.get("terminal_holdout")
+            terminal_reservation_passed = bool(
+                isinstance(terminal, Mapping)
+                and reservation_evidence_passed(
+                    terminal.get("reservation"),
+                    expected_dataset_fingerprint=str(terminal.get("dataset_fingerprint") or ""),
+                    expected_result_fingerprint=str(terminal.get("result_fingerprint") or ""),
+                    expected_rows=int(_finite(terminal.get("rows"))),
+                    expected_first_timestamp=int(_finite(terminal.get("start_timestamp"))),
+                    expected_last_timestamp=int(_finite(terminal.get("end_timestamp"))),
+                    expected_objective=str(objective),
+                )
+            )
             terminal_failed = not (
                 isinstance(terminal, Mapping)
                 and terminal.get("passed") is True
                 and int(_finite(terminal.get("evaluation_count"))) == 1
+                and terminal_reservation_passed
             )
             if explicit_failed or terminal_failed or (deflated_score is not None and deflated_score <= 0.0):
                 reason = _bounded_text(raw.get("reason")) or "selection_risk_failed"
@@ -719,6 +771,7 @@ def _deterministic_precheck(
     compact: Mapping[str, object],
     *,
     require_ai_uplift: bool = False,
+    financial_report: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     accepted_symbols = list(compact.get("accepted_symbols") or [])
     portfolio = compact.get("portfolio_risk")
@@ -731,7 +784,10 @@ def _deterministic_precheck(
         compact,
         require_ai_uplift=require_ai_uplift,
     )
-    financial_sanity = build_model_lab_financial_sanity_report(compact, source="ai_review_precheck")
+    financial_sanity = build_model_lab_financial_sanity_report(
+        financial_report if financial_report is not None else compact,
+        source="ai_review_precheck",
+    )
     financial_sanity_warnings = blocking_reasons(financial_sanity)[:_MAX_CONCERNS]
     return {
         "accepted_symbol_count": len(accepted_symbols),
@@ -805,7 +861,11 @@ def run_model_lab_ai_review(
     if not isinstance(report_payload, Mapping):
         raise ValueError("model-lab report must be a JSON object")
     compact = _compact_model_lab_report(report_payload)
-    precheck = _deterministic_precheck(compact, require_ai_uplift=bool(runtime.ai_enabled))
+    precheck = _deterministic_precheck(
+        compact,
+        require_ai_uplift=bool(runtime.ai_enabled),
+        financial_report=report_payload,
+    )
     if not precheck["allowed_for_ai_review"]:
         ablation_warnings = precheck.get("ablation_warnings")
         data_coverage_warnings = precheck.get("data_coverage_warnings")

@@ -779,6 +779,36 @@ and deflated score are capped by this sealed result. Model readiness, financial
 sanity, and compact AI review all reject missing or malformed terminal evidence.
 The old zero-fold hybrid rescue path was removed: failed walk-forward evidence
 cannot be replaced with a synthetic passing gate.
+
+The general suite also has a durable cross-run boundary. `train-suite` requires
+an explicit `--symbol` to create durable evidence, while `model-lab` forwards
+the symbol it actually loaded. A bare candle JSON has no trustworthy asset
+identity, so omission remains available only for research and cannot produce a
+live-ready artifact. Immediately before the
+first terminal backtest, the process uses `BEGIN IMMEDIATE` to reserve the exact
+terminal timestamps in `~/.config/simple_ai_trading/terminal_holdouts.sqlite3`.
+Overlap is rejected independently for each symbol, market type, and one of the
+three supported risk objectives. Reserved rows are never deleted or made
+reusable by the application: accepted, rejected, evaluation-error, and
+process-interrupted reservations all continue to block overlap. Finalization
+stores three separate SHA-256 bindings: derived terminal rows, the exact model
+excluding only later governance stamps, and the complete terminal report.
+Authenticated live readiness recomputes the model/report hashes and verifies
+the reservation against the local database. A copied model without its matching
+ledger is research-only until it is revalidated; deleting or replacing the
+ledger intentionally invalidates existing live authority. Administrative users
+can always delete all local state, which application code cannot prevent, so
+the ledger and its filesystem backups must be protected as governance records.
+
+The ledger uses SQLite rollback-journal mode, `synchronous=FULL`, a 30-second
+busy timeout, atomic immediate write transactions, and an integrity check on
+open. This deliberately avoids concurrent WAL on the bundled SQLite 3.45.1
+runtime: SQLite documents single-writer transaction semantics and the behavior
+of `BEGIN IMMEDIATE` at <https://sqlite.org/lang_transaction.html>, while its
+current WAL guidance documents a rare WAL-reset issue fixed in newer SQLite
+releases at <https://sqlite.org/wal.html>. Ledger writes are tiny and occur only
+at terminal reservation/finalization, so durability takes priority over WAL
+throughput.
 AI-assisted alpha has a separate deterministic uplift gate. When AI is enabled,
 `ai-review` will not call the local LLM unless every accepted AI-assisted symbol
 includes an `ai_uplift` artifact showing the AI-assisted holdout beats the

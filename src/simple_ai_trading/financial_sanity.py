@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 from .model import TrainedModel
+from .terminal_holdout_ledger import reservation_evidence_passed, terminal_result_fingerprint
 
 _PREFERRED_PROBABILITY_BRIER_MAX = 0.30
 _HARD_PROBABILITY_BRIER_MAX = 0.35
@@ -908,11 +909,32 @@ def _selection_risk_checks(
         terminal_result = terminal.get("result") if isinstance(terminal, Mapping) else None
         terminal_score = _finite(terminal.get("score")) if isinstance(terminal, Mapping) else None
         terminal_rows = _finite(terminal.get("rows")) if isinstance(terminal, Mapping) else None
+        terminal_first = _finite(terminal.get("start_timestamp")) if isinstance(terminal, Mapping) else None
+        terminal_last = _finite(terminal.get("end_timestamp")) if isinstance(terminal, Mapping) else None
         terminal_pnl = _finite(terminal_result.get("realized_pnl")) if isinstance(terminal_result, Mapping) else None
         terminal_fingerprint = (
             str(terminal.get("dataset_fingerprint") or "").lower()
             if isinstance(terminal, Mapping)
             else ""
+        )
+        try:
+            terminal_result_fingerprint_value = terminal_result_fingerprint(terminal)
+        except (TypeError, ValueError, OverflowError):
+            terminal_result_fingerprint_value = ""
+        terminal_reservation_passed = bool(
+            isinstance(terminal, Mapping)
+            and terminal_rows is not None
+            and terminal_first is not None
+            and terminal_last is not None
+            and reservation_evidence_passed(
+                terminal.get("reservation"),
+                expected_dataset_fingerprint=terminal_fingerprint,
+                expected_result_fingerprint=terminal_result_fingerprint_value,
+                expected_rows=int(terminal_rows),
+                expected_first_timestamp=int(terminal_first),
+                expected_last_timestamp=int(terminal_last),
+                expected_objective=str(objective),
+            )
         )
         terminal_passed = bool(
             isinstance(terminal, Mapping)
@@ -922,6 +944,10 @@ def _selection_risk_checks(
             and _finite(terminal.get("evaluation_count")) == 1.0
             and terminal_rows is not None
             and terminal_rows > 0.0
+            and terminal_first is not None
+            and terminal_first >= 0.0
+            and terminal_last is not None
+            and terminal_last >= terminal_first
             and terminal_score is not None
             and terminal_score > 0.0
             and len(terminal_fingerprint) == 64
@@ -932,6 +958,7 @@ def _selection_risk_checks(
             and terminal_pnl > 0.0
             and terminal_result.get("stopped_by_liquidation") is False
             and _finite(terminal_result.get("liquidation_events")) == 0.0
+            and terminal_reservation_passed
         )
         checks.append(
             _check(
@@ -940,7 +967,7 @@ def _selection_risk_checks(
                 "accepted selection-risk terminal evidence",
                 path=terminal_path,
                 metric=terminal_score if terminal_score is not None else "missing",
-                limit="single accepted positive fingerprinted evaluation",
+                limit="single accepted positive fingerprinted ledger-reserved evaluation",
             )
         )
         overfit = report.get("overfit_diagnostics")

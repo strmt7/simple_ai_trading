@@ -12,6 +12,10 @@ from simple_ai_trading.risk_controls import (
     stop_loss_sized_notional_pct,
 )
 from simple_ai_trading.model import TrainedModel, serialize_model
+from simple_ai_trading.terminal_holdout_ledger import (
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
@@ -296,15 +300,15 @@ def test_risk_policy_warns_paper_impossible_stop_loss_geometry() -> None:
 
 def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
     promoted_path = tmp_path / "promoted.json"
-    serialize_model(
-        TrainedModel(
+    promoted_model = TrainedModel(
             weights=[0.0],
             bias=0.0,
             feature_dim=1,
             epochs=1,
             feature_means=[0.0],
             feature_stds=[1.0],
-                selection_risk={
+            selection_risk={
+                    "objective": "conservative",
                     "passed": True,
                     "effective_trials": 10,
                     "selected_score": 0.10,
@@ -316,8 +320,29 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
                         "reason": None,
                         "evaluation_count": 1,
                         "rows": 100,
+                        "start_timestamp": 1_000,
+                        "end_timestamp": 2_000,
                         "score": 0.08,
                         "dataset_fingerprint": "a" * 64,
+                        "reservation": {
+                            "schema_version": "terminal-holdout-reservation-v1",
+                            "reservation_id": "1" * 64,
+                            "ledger_id": "2" * 64,
+                            "symbol": "BTCUSDC",
+                            "market_type": "spot",
+                            "objective": "conservative",
+                            "first_timestamp": 1_000,
+                            "last_timestamp": 2_000,
+                            "rows": 100,
+                            "dataset_fingerprint": "a" * 64,
+                            "model_fingerprint": "b" * 64,
+                            "result_fingerprint": "c" * 64,
+                            "status": "complete",
+                            "result_status": "accepted",
+                            "error": "",
+                            "reserved_at_ms": 1_000,
+                            "completed_at_ms": 2_000,
+                        },
                         "result": {
                             "accepted": True,
                             "realized_pnl": 10.0,
@@ -349,7 +374,15 @@ def test_risk_policy_reports_model_promotion_evidence(tmp_path) -> None:
             probability_brier_after=0.22,
             probability_ece_before=0.10,
             probability_ece_after=0.08,
-        ),
+        )
+    reservation = promoted_model.selection_risk["terminal_holdout"]["reservation"]
+    assert isinstance(reservation, dict)
+    reservation["model_fingerprint"] = terminal_model_fingerprint(promoted_model)
+    reservation["result_fingerprint"] = terminal_result_fingerprint(
+        promoted_model.selection_risk["terminal_holdout"]
+    )
+    serialize_model(
+        promoted_model,
         promoted_path,
     )
     runtime = RuntimeConfig(testnet=True, dry_run=False, api_key="k", api_secret="s", managed_usdc=1000.0)

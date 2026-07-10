@@ -25,6 +25,10 @@ from simple_ai_trading.model import (
     train,
     walk_forward_report,
 )
+from simple_ai_trading.terminal_holdout_ledger import (
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -148,7 +152,7 @@ def _flat_model(
 ) -> TrainedModel:
     bias = 0.0 if probability == 0.5 else 10.0 if probability > 0.5 else -10.0
     rows = int(365.25 * 24 * 60 * 60 * 2)
-    return TrainedModel(
+    trained = TrainedModel(
         weights=[0.0] * feature_dim,
         bias=bias,
         feature_dim=feature_dim,
@@ -156,6 +160,7 @@ def _flat_model(
         feature_means=[0.0] * feature_dim,
         feature_stds=[1.0] * feature_dim,
         selection_risk={
+            "objective": "conservative",
             "passed": True,
             "effective_trials": 12,
             "selected_score": 0.12,
@@ -167,8 +172,29 @@ def _flat_model(
                 "reason": None,
                 "evaluation_count": 1,
                 "rows": 100,
+                "start_timestamp": 1_000,
+                "end_timestamp": 2_000,
                 "score": 0.10,
                 "dataset_fingerprint": "a" * 64,
+                "reservation": {
+                    "schema_version": "terminal-holdout-reservation-v1",
+                    "reservation_id": "1" * 64,
+                    "ledger_id": "2" * 64,
+                    "symbol": "BTCUSDC",
+                    "market_type": market_type,
+                    "objective": "conservative",
+                    "first_timestamp": 1_000,
+                    "last_timestamp": 2_000,
+                    "rows": 100,
+                    "dataset_fingerprint": "a" * 64,
+                    "model_fingerprint": "b" * 64,
+                    "result_fingerprint": "c" * 64,
+                    "status": "complete",
+                    "result_status": "accepted",
+                    "error": "",
+                    "reserved_at_ms": 1_000,
+                    "completed_at_ms": 2_000,
+                },
                 "result": {
                     "accepted": True,
                     "realized_pnl": 10.0,
@@ -254,6 +280,13 @@ def _flat_model(
         model_selection_score=0.42,
         strategy_overrides={"taker_fee_bps": 4.0},
     )
+    reservation = trained.selection_risk["terminal_holdout"]["reservation"]
+    assert isinstance(reservation, dict)
+    reservation["model_fingerprint"] = terminal_model_fingerprint(trained)
+    reservation["result_fingerprint"] = terminal_result_fingerprint(
+        trained.selection_risk["terminal_holdout"]
+    )
+    return trained
 
 
 def _strategy_args(**overrides):
@@ -1144,6 +1177,10 @@ def test_cli_live_guards_leverage_clamps_and_no_rows(tmp_path, monkeypatch, caps
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
+    monkeypatch.setattr(
+        "simple_ai_trading.model_readiness.TerminalHoldoutLedger.evidence_matches",
+        lambda *_args, **_kwargs: True,
+    )
 
     save_runtime(RuntimeConfig(market_type="spot", testnet=True, dry_run=True, managed_usdc=1000.0))
     save_strategy(StrategyConfig())

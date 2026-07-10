@@ -9,6 +9,11 @@ from simple_ai_trading.model_readiness import (
     build_model_readiness_report,
     load_model_readiness_report,
 )
+from simple_ai_trading.terminal_holdout_ledger import (
+    TerminalHoldoutLedger,
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 
 
 def _live_data_coverage(symbol: str = "BTCUSDC", *, interval: str = "1s", years: float = 2.0) -> dict[str, object]:
@@ -52,35 +57,14 @@ def _live_data_coverage(symbol: str = "BTCUSDC", *, interval: str = "1s", years:
 
 
 def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedModel:
-    return TrainedModel(
+    model = TrainedModel(
         weights=[0.0],
         bias=0.0,
         feature_dim=1,
         epochs=1,
         feature_means=[0.0],
         feature_stds=[1.0],
-        selection_risk={
-            "passed": promoted,
-            "effective_trials": 20,
-            "selected_score": 0.15,
-            "trial_penalty": 0.03,
-            "deflated_score": deflated_score,
-            "terminal_holdout": {
-                "schema_version": "terminal-holdout-v1",
-                "passed": True,
-                "reason": None,
-                "evaluation_count": 1,
-                "rows": 100,
-                "score": 0.10,
-                "dataset_fingerprint": "a" * 64,
-                "result": {
-                    "accepted": True,
-                    "realized_pnl": 10.0,
-                    "stopped_by_liquidation": False,
-                    "liquidation_events": 0,
-                },
-            },
-        } if promoted or deflated_score <= 0.0 else {},
+        selection_risk={},
         execution_validation={
             "passed": True,
             "symbol": "BTCUSDC",
@@ -123,6 +107,55 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
     )
+    if promoted or deflated_score <= 0.0:
+        model_sha = terminal_model_fingerprint(model)
+        model.selection_risk = {
+            "objective": "conservative",
+            "passed": promoted,
+            "effective_trials": 20,
+            "selected_score": 0.15,
+            "trial_penalty": 0.03,
+            "deflated_score": deflated_score,
+            "terminal_holdout": {
+                "schema_version": "terminal-holdout-v1",
+                "passed": True,
+                "reason": None,
+                "evaluation_count": 1,
+                "rows": 100,
+                "start_timestamp": 1_000,
+                "end_timestamp": 2_000,
+                "score": 0.10,
+                "dataset_fingerprint": "a" * 64,
+                "reservation": {
+                    "schema_version": "terminal-holdout-reservation-v1",
+                    "reservation_id": "1" * 64,
+                    "ledger_id": "2" * 64,
+                    "symbol": "BTCUSDC",
+                    "market_type": "futures",
+                    "objective": "conservative",
+                    "first_timestamp": 1_000,
+                    "last_timestamp": 2_000,
+                    "rows": 100,
+                    "dataset_fingerprint": "a" * 64,
+                    "model_fingerprint": model_sha,
+                    "result_fingerprint": "b" * 64,
+                    "status": "complete",
+                    "result_status": "accepted",
+                    "error": "",
+                    "reserved_at_ms": 1_000,
+                    "completed_at_ms": 2_000,
+                },
+                "result": {
+                    "accepted": True,
+                    "realized_pnl": 10.0,
+                    "stopped_by_liquidation": False,
+                    "liquidation_events": 0,
+                },
+            },
+        }
+        terminal = model.selection_risk["terminal_holdout"]
+        terminal["reservation"]["result_fingerprint"] = terminal_result_fingerprint(terminal)
+    return model
 
 
 def test_model_readiness_allows_promoted_model_and_round_trips_from_path(tmp_path) -> None:
@@ -155,11 +188,61 @@ def test_model_readiness_allows_promoted_model_and_round_trips_from_path(tmp_pat
     assert any("triple_barrier_base" in check.detail for check in loaded_report.checks)
 
 
+def test_model_readiness_can_require_authoritative_local_terminal_ledger(tmp_path) -> None:
+    model = _model()
+    ledger_path = tmp_path / "terminal.sqlite3"
+    ledger = TerminalHoldoutLedger(ledger_path)
+    reserved = ledger.reserve(
+        symbol="BTCUSDC",
+        market_type="futures",
+        objective="conservative",
+        first_timestamp=1_000,
+        last_timestamp=2_000,
+        rows=100,
+        dataset_fingerprint="a" * 64,
+        model_fingerprint=terminal_model_fingerprint(model),
+    )
+    model.selection_risk["terminal_holdout"]["reservation"] = ledger.finalize(
+        str(reserved["reservation_id"]),
+        result_status="accepted",
+        result_fingerprint=terminal_result_fingerprint(
+            model.selection_risk["terminal_holdout"]
+        ),
+    )
+
+    report = build_model_readiness_report(
+        model,
+        expected_symbol="BTCUSDC",
+        expected_market_type="futures",
+        require_terminal_ledger_record=True,
+        terminal_ledger_path=ledger_path,
+    )
+
+    assert report.allowed is True
+    assert any(
+        check.label == "terminal holdout ledger" and check.status == "ok"
+        for check in report.checks
+    )
+
+    model.selection_risk["terminal_holdout"]["reservation"]["ledger_id"] = "f" * 64
+    tampered = build_model_readiness_report(
+        model,
+        expected_symbol="BTCUSDC",
+        expected_market_type="futures",
+        require_terminal_ledger_record=True,
+        terminal_ledger_path=ledger_path,
+    )
+    assert tampered.allowed is False
+
+
 def test_model_readiness_warns_on_single_candidate_evidence() -> None:
     model = _model()
     model.model_candidate_count = 1
     model.model_selected_candidate = "default"
     model.model_selection_score = None
+    reservation = model.selection_risk["terminal_holdout"]["reservation"]
+    assert isinstance(reservation, dict)
+    reservation["model_fingerprint"] = terminal_model_fingerprint(model)
 
     report = build_model_readiness_report(model)
 
@@ -366,6 +449,12 @@ def test_model_readiness_blocks_missing_or_tampered_terminal_holdout() -> None:
     malformed_report = build_model_readiness_report(malformed)
     assert malformed_report.allowed is False
     assert "terminal=False" in malformed_report.checks[0].detail
+
+    result_tampered = _model()
+    result_tampered.selection_risk["terminal_holdout"]["result"]["realized_pnl"] = 999.0
+    result_tampered_report = build_model_readiness_report(result_tampered)
+    assert result_tampered_report.allowed is False
+    assert "terminal=False" in result_tampered_report.checks[0].detail
 
 
 def test_model_readiness_blocks_missing_or_failed_execution_validation() -> None:

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from simple_ai_trading.ai_review import run_model_lab_ai_review
 from simple_ai_trading.ai_runtime import AICapabilityReport
+from simple_ai_trading.terminal_holdout_ledger import terminal_result_fingerprint
 from simple_ai_trading.types import RuntimeConfig
 
 
@@ -198,6 +199,7 @@ def _write_report(
                 "hybrid_profiles": {"regular": "balanced_neighbors"},
                 "walk_forward_gate": {
                     "regular": {
+                        "objective": "regular",
                         "passed": True,
                         "reason": None,
                         "fold_count": 3,
@@ -235,8 +237,29 @@ def _write_report(
                             "reason": "terminal_holdout_failed" if harmful_selection_risk else None,
                             "evaluation_count": 1,
                             "rows": 100,
+                            "start_timestamp": 1_000,
+                            "end_timestamp": 2_000,
                             "score": None if harmful_selection_risk else 0.10,
                             "dataset_fingerprint": "a" * 64,
+                            "reservation": {
+                                "schema_version": "terminal-holdout-reservation-v1",
+                                "reservation_id": "1" * 64,
+                                "ledger_id": "2" * 64,
+                                "symbol": "BTCUSDT",
+                                "market_type": "futures",
+                                "objective": "regular",
+                                "first_timestamp": 1_000,
+                                "last_timestamp": 2_000,
+                                "rows": 100,
+                                "dataset_fingerprint": "a" * 64,
+                                "model_fingerprint": "b" * 64,
+                                "result_fingerprint": "c" * 64,
+                                "status": "complete",
+                                "result_status": "accepted" if not harmful_selection_risk else "rejected",
+                                "error": "",
+                                "reserved_at_ms": 1_000,
+                                "completed_at_ms": 2_000,
+                            },
                             "result": {
                                 "accepted": not harmful_selection_risk,
                                 "realized_pnl": -10.0 if harmful_selection_risk else 10.0,
@@ -321,6 +344,9 @@ def _write_report(
             }
         ],
     }
+    terminal = payload["outcomes"][0]["selection_risk"]["regular"]["terminal_holdout"]
+    reservation = terminal["reservation"]
+    reservation["result_fingerprint"] = terminal_result_fingerprint(terminal)
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 

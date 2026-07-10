@@ -30,6 +30,10 @@ from simple_ai_trading.model import (
 from simple_ai_trading.features import ModelRow, feature_signature
 from simple_ai_trading.market_store import MarketDataStore
 from simple_ai_trading.positions import OpenPosition, PositionsStore, bot_client_order_id
+from simple_ai_trading.terminal_holdout_ledger import (
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -153,6 +157,7 @@ def _promoted_selection_risk(
     deflated_score: float = 0.09,
 ) -> dict[str, object]:
     return {
+        "objective": "conservative",
         "passed": True,
         "effective_trials": effective_trials,
         "selected_score": selected_score,
@@ -164,8 +169,29 @@ def _promoted_selection_risk(
             "reason": None,
             "evaluation_count": 1,
             "rows": 100,
+            "start_timestamp": 1_000,
+            "end_timestamp": 2_000,
             "score": 0.10,
             "dataset_fingerprint": "a" * 64,
+            "reservation": {
+                "schema_version": "terminal-holdout-reservation-v1",
+                "reservation_id": "1" * 64,
+                "ledger_id": "2" * 64,
+                "symbol": "BTCUSDC",
+                "market_type": "futures",
+                "objective": "conservative",
+                "first_timestamp": 1_000,
+                "last_timestamp": 2_000,
+                "rows": 100,
+                "dataset_fingerprint": "a" * 64,
+                "model_fingerprint": "b" * 64,
+                "result_fingerprint": "c" * 64,
+                "status": "complete",
+                "result_status": "accepted",
+                "error": "",
+                "reserved_at_ms": 1_000,
+                "completed_at_ms": 2_000,
+            },
             "result": {
                 "accepted": True,
                 "realized_pnl": 10.0,
@@ -174,6 +200,19 @@ def _promoted_selection_risk(
             },
         },
     }
+
+
+def _bind_promoted_selection_risk(model: TrainedModel) -> TrainedModel:
+    terminal = model.selection_risk["terminal_holdout"]
+    assert isinstance(terminal, dict)
+    reservation = terminal["reservation"]
+    assert isinstance(reservation, dict)
+    validation = model.execution_validation
+    reservation["symbol"] = str(validation.get("symbol") or "BTCUSDC")
+    reservation["market_type"] = str(validation.get("market_type") or "futures")
+    reservation["model_fingerprint"] = terminal_model_fingerprint(model)
+    reservation["result_fingerprint"] = terminal_result_fingerprint(terminal)
+    return model
 
 
 class _SignedCommissionClientEvidence:
@@ -454,10 +493,21 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     benchmark_args = cli._parse_args(["signals-benchmark", "--provider-limit", "30", "--parallelism", "8"])
     assert benchmark_args.provider_limit == [30]
     assert benchmark_args.parallelism == [8]
-    suite_args = cli._parse_args(["train-suite", "--max-workers", "2", "--compute-backend", "auto", "--batch-size", "64"])
+    suite_args = cli._parse_args([
+        "train-suite",
+        "--max-workers",
+        "2",
+        "--compute-backend",
+        "auto",
+        "--batch-size",
+        "64",
+        "--symbol",
+        "ETHUSDT",
+    ])
     assert suite_args.max_workers == 2
     assert suite_args.compute_backend == "auto"
     assert suite_args.batch_size == 64
+    assert suite_args.symbol == "ETHUSDT"
     report_default = cli._parse_args(["report"])
     assert report_default.doctor is True
     report_no_doctor = cli._parse_args(["report", "--no-doctor"])
@@ -2548,14 +2598,14 @@ def test_cli_recognizes_model_lab_candidate_advanced_signature() -> None:
     assert len(backtest_rows[-1].features) == dim
 
 
-def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
+def test_live_helpers_accept_train_suite_advanced_model(tmp_path, monkeypatch) -> None:
     strategy = StrategyConfig()
     candles = _simple_candles(320)
     feature_cfg = default_config_for("default", strategy.enabled_features)
     advanced_rows = make_advanced_rows(candles, feature_cfg)
     assert advanced_rows
 
-    model = TrainedModel(
+    model = _bind_promoted_selection_risk(TrainedModel(
         weights=[0.0] * len(advanced_rows[0].features),
         bias=0.0,
         feature_dim=len(advanced_rows[0].features),
@@ -2587,9 +2637,13 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
         strategy_overrides={"taker_fee_bps": 4.0},
-    )
+    ))
     model_file = tmp_path / "model_default.json"
     serialize_model(model, model_file)
+    monkeypatch.setattr(
+        "simple_ai_trading.model_readiness.TerminalHoldoutLedger.evidence_matches",
+        lambda *_args, **_kwargs: True,
+    )
 
     loaded, error, notice = cli._load_live_start_model(model_file, strategy, effective_dry_run=False)
 
@@ -2810,7 +2864,7 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
     strategy = StrategyConfig(enabled_features=("momentum_1",))
     model_file = tmp_path / "model.json"
     serialize_model(
-        TrainedModel(
+        _bind_promoted_selection_risk(TrainedModel(
             weights=[0.0],
             bias=0.0,
             feature_dim=1,
@@ -2827,7 +2881,7 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
             probability_brier_after=0.22,
             probability_ece_before=0.10,
             probability_ece_after=0.08,
-        ),
+        )),
         model_file,
     )
 
@@ -5129,7 +5183,7 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
     save_strategy(strategy)
     model_file = tmp_path / "model.json"
     serialize_model(
-        TrainedModel(
+        _bind_promoted_selection_risk(TrainedModel(
             weights=[0.0] * 13,
             bias=0.0,
             feature_dim=13,
@@ -5157,11 +5211,15 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
             model_selected_candidate="triple_barrier_base",
             model_selection_score=0.42,
             strategy_overrides={"taker_fee_bps": 4.0},
-        ),
+        )),
         model_file,
     )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoStartupLeverageClient())
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 5.0)
+    monkeypatch.setattr(
+        "simple_ai_trading.model_readiness.TerminalHoldoutLedger.evidence_matches",
+        lambda *_args, **_kwargs: True,
+    )
     assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, model=str(model_file), leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
     assert "Failed to set leverage" not in capsys.readouterr().err
 
@@ -5409,7 +5467,7 @@ def test_command_live_blocks_failed_feature_drift(tmp_path, monkeypatch, capsys)
 def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
     row = SimpleNamespace(timestamp=60_000, close=100.0, features=(1.0, 2.0), label=1)
-    model = TrainedModel(
+    model = _bind_promoted_selection_risk(TrainedModel(
         weights=[0.0],
         bias=0.0,
         feature_dim=1,
@@ -5436,7 +5494,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
         strategy_overrides={"taker_fee_bps": 4.0},
-    )
+    ))
 
     def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
         assert kind == "live"
@@ -5463,6 +5521,10 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: model)
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+    monkeypatch.setattr(
+        "simple_ai_trading.model_readiness.TerminalHoldoutLedger.evidence_matches",
+        lambda *_args, **_kwargs: True,
+    )
 
     assert (
         cli.command_live(

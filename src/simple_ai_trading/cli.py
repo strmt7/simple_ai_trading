@@ -40,6 +40,7 @@ from .assets import (
     MAX_AUTONOMOUS_LEVERAGE,
     SUPPORTED_MAJOR_QUOTE_ASSETS,
     is_supported_major_symbol,
+    normalize_symbol,
     symbol_base_for_supported_quote,
 )
 from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
@@ -1334,6 +1335,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_train_suite.add_argument("--input", default="data/historical_market.json")
     parser_train_suite.add_argument("--output-dir", default="data")
+    parser_train_suite.add_argument(
+        "--symbol",
+        default=None,
+        help="explicit asset identity for durable terminal governance; omission is research-only",
+    )
     parser_train_suite.add_argument("--starting-cash", type=float, default=1000.0)
     parser_train_suite.add_argument(
         "--objective", action="append", default=None,
@@ -3835,6 +3841,7 @@ def _load_live_start_model(
                     min_live_data_years=min_live_data_years,
                     min_live_coverage_ratio=min_live_coverage_ratio,
                     max_live_gap_count=max_live_gap_count,
+                    require_terminal_ledger_record=not effective_dry_run,
                 )
             return model, None, None
         except ModelPromotionError as exc:
@@ -9823,6 +9830,18 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             "max_workers": args.max_workers,
             "compute_backend": backend_label,
         }
+        requested_symbol = str(getattr(args, "symbol", None) or "").strip()
+        if requested_symbol:
+            training_symbol = normalize_symbol(requested_symbol, default="")
+            if not is_supported_major_symbol(training_symbol):
+                raise ValueError("train-suite requires a supported BTC, ETH, or SOL symbol")
+            suite_kwargs["symbol"] = training_symbol
+        else:
+            print(
+                "training suite warning: --symbol omitted; durable terminal governance is disabled "
+                "and produced models are research-only",
+                file=sys.stderr,
+            )
         if getattr(args, "batch_size", 8192) != 8192:
             suite_kwargs["batch_size"] = max(1, int(args.batch_size))
         if max_candidates is not None:
