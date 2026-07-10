@@ -10,6 +10,7 @@ from simple_ai_trading.financial_sanity import (
 )
 from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading.model import TrainedModel
+from simple_ai_trading.terminal_holdout_ledger import terminal_result_fingerprint
 
 
 def _backtest_result(**overrides) -> BacktestResult:
@@ -415,7 +416,8 @@ def _accepted_data_coverage(symbol: str = "BTCUSDT") -> dict[str, object]:
 
 
 def _accepted_selection_risk() -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
+        "objective": "regular",
         "passed": True,
         "reason": None,
         "reasons": [],
@@ -430,8 +432,29 @@ def _accepted_selection_risk() -> dict[str, object]:
             "reason": None,
             "evaluation_count": 1,
             "rows": 100,
+            "start_timestamp": 1_000,
+            "end_timestamp": 2_000,
             "score": 0.10,
             "dataset_fingerprint": "a" * 64,
+            "reservation": {
+                "schema_version": "terminal-holdout-reservation-v1",
+                "reservation_id": "1" * 64,
+                "ledger_id": "2" * 64,
+                "symbol": "BTCUSDT",
+                "market_type": "futures",
+                "objective": "regular",
+                "first_timestamp": 1_000,
+                "last_timestamp": 2_000,
+                "rows": 100,
+                "dataset_fingerprint": "a" * 64,
+                "model_fingerprint": "b" * 64,
+                "result_fingerprint": "c" * 64,
+                "status": "complete",
+                "result_status": "accepted",
+                "error": "",
+                "reserved_at_ms": 1_000,
+                "completed_at_ms": 2_000,
+            },
             "result": {
                 "accepted": True,
                 "realized_pnl": 10.0,
@@ -445,6 +468,12 @@ def _accepted_selection_risk() -> dict[str, object]:
             "passed": True,
         },
     }
+    terminal = payload["terminal_holdout"]
+    assert isinstance(terminal, dict)
+    reservation = terminal["reservation"]
+    assert isinstance(reservation, dict)
+    reservation["result_fingerprint"] = terminal_result_fingerprint(terminal)
+    return payload
 
 
 def _accepted_stress_validation() -> dict[str, object]:

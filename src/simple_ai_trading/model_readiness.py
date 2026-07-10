@@ -10,6 +10,12 @@ from typing import Mapping
 from .financial_sanity import build_model_financial_sanity_report
 from .microstructure_data import MICROSTRUCTURE_SCHEMA_VERSION
 from .model import ModelLoadError, TrainedModel, load_model
+from .terminal_holdout_ledger import (
+    TerminalHoldoutLedger,
+    reservation_evidence_passed,
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 
 _ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
 _LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
@@ -111,7 +117,14 @@ def _walk_forward_gate_passed(raw: object) -> bool:
     )
 
 
-def _terminal_holdout_passed(raw: object) -> bool:
+def _terminal_holdout_passed(
+    raw: object,
+    model: TrainedModel,
+    *,
+    expected_symbol: str | None = None,
+    expected_market_type: str | None = None,
+    expected_objective: str | None = None,
+) -> bool:
     if not isinstance(raw, dict):
         return False
     result = raw.get("result")
@@ -119,17 +132,35 @@ def _terminal_holdout_passed(raw: object) -> bool:
     try:
         evaluation_count = int(raw.get("evaluation_count", 0) or 0)
         rows = int(raw.get("rows", 0) or 0)
+        first_timestamp = int(raw.get("start_timestamp", -1))
+        last_timestamp = int(raw.get("end_timestamp", -1))
         score = float(raw.get("score", 0.0) or 0.0)
         realized_pnl = float(result.get("realized_pnl", 0.0)) if isinstance(result, dict) else 0.0
         liquidation_events = int(result.get("liquidation_events", 0) or 0) if isinstance(result, dict) else 1
+        model_fingerprint = terminal_model_fingerprint(model)
+        result_fingerprint = terminal_result_fingerprint(raw)
     except (TypeError, ValueError, OverflowError):
         return False
+    reservation_passed = reservation_evidence_passed(
+        raw.get("reservation"),
+        expected_dataset_fingerprint=fingerprint,
+        expected_model_fingerprint=model_fingerprint,
+        expected_result_fingerprint=result_fingerprint,
+        expected_rows=rows,
+        expected_first_timestamp=first_timestamp,
+        expected_last_timestamp=last_timestamp,
+        expected_symbol=expected_symbol,
+        expected_market_type=expected_market_type,
+        expected_objective=expected_objective,
+    )
     return (
         raw.get("schema_version") == "terminal-holdout-v1"
         and raw.get("passed") is True
         and raw.get("reason") in (None, "")
         and evaluation_count == 1
         and rows > 0
+        and first_timestamp >= 0
+        and last_timestamp >= first_timestamp
         and score > 0.0
         and realized_pnl > 0.0
         and liquidation_events == 0
@@ -138,6 +169,7 @@ def _terminal_holdout_passed(raw: object) -> bool:
         and isinstance(result, dict)
         and result.get("accepted") is True
         and result.get("stopped_by_liquidation") is False
+        and reservation_passed
     )
 
 
@@ -385,6 +417,8 @@ def build_model_readiness_report(
     min_microstructure_span_days: float = 365.0,
     min_microstructure_unique_days: int = 20,
     min_microstructure_normalized_rows: int = 1_000_000,
+    require_terminal_ledger_record: bool = False,
+    terminal_ledger_path: str | Path | None = None,
 ) -> ModelReadinessReport:
     checks: list[ModelReadinessCheck] = []
     selection_risk = getattr(model, "selection_risk", None)
@@ -396,13 +430,44 @@ def build_model_readiness_report(
             deflated_score = _finite(selection_risk.get("deflated_score"))
             selected_score = _finite(selection_risk.get("selected_score"))
             effective_trials = int(_finite(selection_risk.get("effective_trials")) or 0)
-            terminal_holdout_passed = _terminal_holdout_passed(selection_risk.get("terminal_holdout"))
+            terminal_holdout = selection_risk.get("terminal_holdout")
+            expected_objective = str(selection_risk.get("objective") or "") or None
+            terminal_holdout_passed = _terminal_holdout_passed(
+                terminal_holdout,
+                model,
+                expected_symbol=expected_symbol,
+                expected_market_type=expected_market_type,
+                expected_objective=expected_objective,
+            )
+            terminal_ledger_record_passed = True
+            if require_terminal_ledger_record:
+                reservation = (
+                    terminal_holdout.get("reservation")
+                    if isinstance(terminal_holdout, Mapping)
+                    else None
+                )
+                try:
+                    terminal_ledger_record_passed = TerminalHoldoutLedger(
+                        terminal_ledger_path
+                    ).evidence_matches(reservation)
+                except Exception:
+                    terminal_ledger_record_passed = False
+                checks.append(
+                    _check(
+                        "ok" if terminal_ledger_record_passed else "block",
+                        "terminal holdout ledger",
+                        "durable reservation matches the local governance database",
+                        metric=terminal_ledger_record_passed,
+                        limit=True,
+                    )
+                )
             if (
                 passed
                 and deflated_score is not None
                 and deflated_score > 0.0
                 and effective_trials > 0
                 and terminal_holdout_passed
+                and terminal_ledger_record_passed
             ):
                 checks.append(
                     _check(
@@ -421,7 +486,7 @@ def build_model_readiness_report(
                         (
                             "failed promotion evidence "
                             f"passed={passed} deflated_score={deflated_score} trials={effective_trials} "
-                            f"terminal={terminal_holdout_passed}"
+                            f"terminal={terminal_holdout_passed} ledger={terminal_ledger_record_passed}"
                         ),
                         metric=deflated_score if deflated_score is not None else "missing",
                         limit=">0",
@@ -626,6 +691,8 @@ def assert_model_promoted(
     min_microstructure_span_days: float = 365.0,
     min_microstructure_unique_days: int = 20,
     min_microstructure_normalized_rows: int = 1_000_000,
+    require_terminal_ledger_record: bool = False,
+    terminal_ledger_path: str | Path | None = None,
 ) -> ModelReadinessReport:
     report = build_model_readiness_report(
         model,
@@ -647,6 +714,8 @@ def assert_model_promoted(
         min_microstructure_span_days=min_microstructure_span_days,
         min_microstructure_unique_days=min_microstructure_unique_days,
         min_microstructure_normalized_rows=min_microstructure_normalized_rows,
+        require_terminal_ledger_record=require_terminal_ledger_record,
+        terminal_ledger_path=terminal_ledger_path,
     )
     if not report.allowed:
         reasons = "; ".join(f"{check.label}: {check.detail}" for check in report.checks if check.status == "block")
@@ -674,6 +743,8 @@ def load_model_readiness_report(
     min_microstructure_span_days: float = 365.0,
     min_microstructure_unique_days: int = 20,
     min_microstructure_normalized_rows: int = 1_000_000,
+    require_terminal_ledger_record: bool = False,
+    terminal_ledger_path: str | Path | None = None,
 ) -> ModelReadinessReport:
     path = Path(model_path)
     model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
@@ -697,4 +768,6 @@ def load_model_readiness_report(
         min_microstructure_span_days=min_microstructure_span_days,
         min_microstructure_unique_days=min_microstructure_unique_days,
         min_microstructure_normalized_rows=min_microstructure_normalized_rows,
+        require_terminal_ledger_record=require_terminal_ledger_record,
+        terminal_ledger_path=terminal_ledger_path,
     )

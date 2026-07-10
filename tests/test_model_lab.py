@@ -11,6 +11,7 @@ from simple_ai_trading import model_lab
 from simple_ai_trading.data_coverage import describe_candle_coverage
 from simple_ai_trading.model_lab import run_model_lab
 from simple_ai_trading.training_suite import TrainingSuiteRejected
+from simple_ai_trading.terminal_holdout_ledger import terminal_result_fingerprint
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
@@ -202,7 +203,8 @@ class _ObjectiveReport:
 
 
 def _selection_risk(*, passed: bool = True) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
+        "objective": "regular",
         "passed": bool(passed),
         "reason": None if passed else "selection_risk_deflated_score<=0",
         "reasons": [] if passed else ["selection_risk_deflated_score<=0"],
@@ -217,8 +219,29 @@ def _selection_risk(*, passed: bool = True) -> dict[str, object]:
             "reason": None if passed else "terminal_holdout_failed",
             "evaluation_count": 1,
             "rows": 100,
+            "start_timestamp": 1_000,
+            "end_timestamp": 2_000,
             "score": 0.10 if passed else None,
             "dataset_fingerprint": "a" * 64,
+            "reservation": {
+                "schema_version": "terminal-holdout-reservation-v1",
+                "reservation_id": "1" * 64,
+                "ledger_id": "2" * 64,
+                "symbol": "BTCUSDC",
+                "market_type": "spot",
+                "objective": "regular",
+                "first_timestamp": 1_000,
+                "last_timestamp": 2_000,
+                "rows": 100,
+                "dataset_fingerprint": "a" * 64,
+                "model_fingerprint": "b" * 64,
+                "result_fingerprint": "c" * 64,
+                "status": "complete",
+                "result_status": "accepted" if passed else "rejected",
+                "error": "",
+                "reserved_at_ms": 1_000,
+                "completed_at_ms": 2_000,
+            },
             "result": {
                 "accepted": bool(passed),
                 "realized_pnl": 10.0 if passed else -10.0,
@@ -232,6 +255,12 @@ def _selection_risk(*, passed: bool = True) -> dict[str, object]:
             "passed": True,
         },
     }
+    terminal = payload["terminal_holdout"]
+    assert isinstance(terminal, dict)
+    reservation = terminal["reservation"]
+    assert isinstance(reservation, dict)
+    reservation["result_fingerprint"] = terminal_result_fingerprint(terminal)
+    return payload
 
 
 def _walk_forward_gate(*, passed: bool = True) -> dict[str, object]:
@@ -336,6 +365,7 @@ def test_run_model_lab_ranks_liquid_symbols_and_writes_report(tmp_path: Path, mo
         assert candles
         assert kwargs["objectives"] == ("regular",)
         assert kwargs["max_candidates"] == 5
+        assert kwargs["symbol"] in {"BTCUSDC", "ETHUSDC"}
         model_path = kwargs["output_dir"] / "model_regular.json"
         serialize_model(
             TrainedModel(

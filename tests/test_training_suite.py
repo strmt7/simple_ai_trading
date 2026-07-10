@@ -50,6 +50,7 @@ from simple_ai_trading.training_suite import (
     run_training_suite,
     train_for_objective,
 )
+from simple_ai_trading.terminal_holdout_ledger import TerminalHoldoutLedger
 from simple_ai_trading.types import StrategyConfig
 
 
@@ -2017,6 +2018,7 @@ def test_train_for_objective_keeps_terminal_rows_sealed_until_final_model(
 
     monkeypatch.setattr(training_suite, "_feature_ablation_report", fake_ablation)
 
+    ledger = TerminalHoldoutLedger(tmp_path / "terminal-ledger.sqlite3")
     outcome = train_for_objective(
         _synthetic_candles(n=260),
         StrategyConfig(),
@@ -2025,6 +2027,8 @@ def test_train_for_objective_keeps_terminal_rows_sealed_until_final_model(
         market_type="spot",
         starting_cash=1000.0,
         max_workers=1,
+        terminal_ledger=ledger,
+        terminal_symbol="BTCUSDT",
     )
 
     expected_development_end = 80 - training_suite._label_purge_gap(feature_cfg) - 1
@@ -2036,7 +2040,26 @@ def test_train_for_objective_keeps_terminal_rows_sealed_until_final_model(
     assert terminal["end_timestamp"] == 99
     assert terminal["meta_label_enabled"] is True
     assert terminal["evaluation_count"] == 1
+    assert terminal["reservation"]["status"] == "complete"
+    assert terminal["reservation"]["result_status"] == "accepted"
+    assert ledger.evidence_matches(terminal["reservation"])
     assert selection_trial_counts["hybrid_profile_trials"] == 7
+
+    reuse_dir = tmp_path / "reuse"
+    with pytest.raises(TrainingSuiteRejected, match="could not reserve sealed terminal holdout"):
+        train_for_objective(
+            _synthetic_candles(n=260),
+            StrategyConfig(),
+            objective,
+            output_dir=reuse_dir,
+            market_type="spot",
+            starting_cash=1000.0,
+            max_workers=1,
+            terminal_ledger=ledger,
+            terminal_symbol="BTCUSDT",
+        )
+    assert backtest_windows.count((80, 99)) == 1
+    assert not (reuse_dir / "model_conservative.json").exists()
 
 
 def test_train_for_objective_persists_walk_forward_gate(
@@ -2751,10 +2774,32 @@ def test_run_training_suite_forwards_optional_gpu_args(
         compute_backend="directml",
         batch_size=64,
         score_batch_size=32,
+        symbol="BTCUSDT",
+        terminal_ledger_path=tmp_path / "governance.sqlite3",
     )
     assert observed[0]["compute_backend"] == "directml"
     assert observed[0]["batch_size"] == 64
     assert observed[0]["score_batch_size"] == 32
+    assert observed[0]["terminal_symbol"] == "BTCUSDT"
+    assert isinstance(observed[0]["terminal_ledger"], TerminalHoldoutLedger)
+    assert observed[0]["terminal_ledger"].path == tmp_path / "governance.sqlite3"
+
+
+def test_run_training_suite_rejects_invalid_terminal_governance_identity(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="requires an explicit symbol"):
+        run_training_suite(
+            _synthetic_candles(n=20),
+            StrategyConfig(),
+            objectives=["conservative"],
+            terminal_ledger_path=tmp_path / "governance.sqlite3",
+        )
+    with pytest.raises(ValueError, match="BTC, ETH, or SOL"):
+        run_training_suite(
+            _synthetic_candles(n=20),
+            StrategyConfig(),
+            objectives=["conservative"],
+            symbol="DOGEUSDT",
+        )
 
 
 # ----- describe_candidate_grid + preview_candidates ------------------------

@@ -99,6 +99,7 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
         max_workers,
         compute_backend,
         max_candidates,
+        symbol,
     ):
         # assert malformed entries were skipped
         assert len(candles) == 1
@@ -106,6 +107,7 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
         assert max_workers == 3
         assert compute_backend == "cpu"
         assert max_candidates == 7
+        assert symbol == "BTCUSDC"
         return _Fake()
 
     monkeypatch.setattr(cli, "run_training_suite", fake_run, raising=False)
@@ -123,6 +125,7 @@ def test_command_train_suite_malformed_rows_and_limited_objectives(tmp_path, mon
         compute_backend="cpu",
         batch_size=8192,
         max_candidates=7,
+        symbol="BTCUSDC",
     )
     assert cli.command_train_suite(args) == 0
     out = capsys.readouterr().out
@@ -226,10 +229,12 @@ def test_command_train_suite_passes_gpu_options(tmp_path, monkeypatch):
         max_workers=None,
         compute_backend="directml",
         batch_size=64,
+        symbol="BTCUSDC",
     )
     assert cli.command_train_suite(args) == 0
     assert observed["compute_backend"] == "directml"
     assert observed["batch_size"] == 64
+    assert observed["symbol"] == "BTCUSDC"
 
 
 def test_command_train_suite_uses_saved_compute_backend_without_cli_override(tmp_path, monkeypatch):

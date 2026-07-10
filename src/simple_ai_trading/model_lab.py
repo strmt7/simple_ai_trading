@@ -661,6 +661,7 @@ def run_model_lab(
                 batch_size=batch_size,
                 score_batch_size=score_batch_size,
                 max_candidates=max_candidates,
+                symbol=symbol,
             )
             liquidity = liquidity_by_symbol[symbol]
             stress_profile = liquidity.execution_profile(
