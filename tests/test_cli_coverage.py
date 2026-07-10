@@ -300,8 +300,13 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert compute_args.backend == "auto"
     micro_candidate = cli._parse_args(["microstructure-train"])
     assert micro_candidate.evaluate_terminal is False
+    assert micro_candidate.deployment_calibration_days == 14
+    assert micro_candidate.maximum_model_age_seconds == 86_400
     micro_terminal = cli._parse_args(["microstructure-train", "--evaluate-terminal"])
     assert micro_terminal.evaluate_terminal is True
+    micro_refit = cli._parse_args(["microstructure-refit", "--input", "validated.json"])
+    assert micro_refit.input == "validated.json"
+    assert micro_refit.output is None
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
