@@ -633,8 +633,17 @@ def _peer_return_context(
     )
     if cadence_ms <= 0 or np.any(np.diff(feature_seconds_ms) != cadence_ms):
         raise ValueError("cross-asset feature seconds are not regularly spaced")
-    joins: list[str] = []
-    projections = ["d.second_ms", "p0.second_ms AS current_trade_second_ms", "p0.close AS current_close"]
+    lag_values = ", ".join(f"({window})" for window in (0, *_CROSS_ASSET_WINDOWS))
+    projections = [
+        "max(trade_second_ms) FILTER (WHERE lag_seconds = 0) "
+        "AS current_trade_second_ms",
+        "max(peer_close) FILTER (WHERE lag_seconds = 0) AS current_close",
+        *(
+            f"max(peer_close) FILTER (WHERE lag_seconds = {window}) "
+            f"AS close_{window}"
+            for window in _CROSS_ASSET_WINDOWS
+        ),
+    ]
     source_start_ms = int(feature_seconds_ms[0]) - max(_CROSS_ASSET_WINDOWS) * 1_000
     parameters: list[object] = [
         symbol,
@@ -646,21 +655,6 @@ def _peer_return_context(
         int(feature_seconds_ms[-1]),
         cadence_ms,
     ]
-    joins.append(
-        """
-        ASOF LEFT JOIN peer_trades p0
-          ON d.second_ms >= p0.second_ms
-        """
-    )
-    for window in _CROSS_ASSET_WINDOWS:
-        alias = f"p{window}"
-        projections.append(f"{alias}.close AS close_{window}")
-        joins.append(
-            f"""
-            ASOF LEFT JOIN peer_trades {alias}
-              ON d.second_ms - {window * 1_000} >= {alias}.second_ms
-            """
-        )
     query = f"""
         WITH peer_source AS MATERIALIZED (
             SELECT second_ms, close FROM current_trade_1s
@@ -674,11 +668,25 @@ def _peer_return_context(
         ), decisions AS (
             SELECT value AS second_ms
             FROM generate_series(?::BIGINT, ?::BIGINT, ?::BIGINT) AS generated(value)
+        ), offsets(lag_seconds) AS (
+            VALUES {lag_values}
+        ), requests AS MATERIALIZED (
+            SELECT d.second_ms, o.lag_seconds,
+                   d.second_ms - o.lag_seconds * 1000 AS request_ms
+            FROM decisions d
+            CROSS JOIN offsets o
+        ), matched AS (
+            SELECT r.second_ms, r.lag_seconds,
+                   p.second_ms AS trade_second_ms,
+                   p.close AS peer_close
+            FROM (SELECT * FROM requests ORDER BY request_ms) r
+            ASOF LEFT JOIN peer_trades p
+              ON r.request_ms >= p.second_ms
         )
-        SELECT {', '.join(projections)}
-        FROM decisions d
-        {' '.join(joins)}
-        ORDER BY d.second_ms
+        SELECT second_ms, {', '.join(projections)}
+        FROM matched
+        GROUP BY second_ms
+        ORDER BY second_ms
     """
     values = warehouse.connect().execute(query, parameters).fetchnumpy()
     seconds = np.asarray(values.pop("second_ms"), dtype=np.int64)
