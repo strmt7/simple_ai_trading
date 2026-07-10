@@ -331,6 +331,7 @@ def test_tape_depth_prediction_table_is_complete_and_deterministic(tmp_path) -> 
         mean_prediction_bps=np.asarray([1.1, -0.5]),
         lower_prediction_bps=np.asarray([-0.2, -1.4]),
         upper_prediction_bps=np.asarray([2.2, 0.3]),
+        signal_threshold_bps=1.0,
     )
     path = tmp_path / "predictions.csv.gz"
 
@@ -346,6 +347,7 @@ def test_tape_depth_prediction_table_is_complete_and_deterministic(tmp_path) -> 
     assert len(rows) == 2
     assert rows[0]["decision_time_ms"] == "1000"
     assert rows[1]["actual_gross_return_bps"] == "-0.75"
+    assert rows[0]["signal_threshold_bps"] == "1"
 
 
 def test_dataset_range_source_evidence_uses_exact_causal_boundaries(monkeypatch) -> None:
@@ -447,7 +449,8 @@ def test_tape_depth_diagnostics_chart_uses_real_utc_axis_and_caveat(tmp_path) ->
                     "metrics": {
                         "direction_auc": 0.52 + 0.01 * symbol_index + 0.005 * fold_index,
                         "spearman_information_coefficient": 0.02 + 0.01 * fold_index,
-                        "top_decile_mean_signed_gross_bps": 0.3 + 0.1 * symbol_index,
+                        "calibration_threshold_mean_signed_gross_bps": 0.3
+                        + 0.1 * symbol_index,
                     },
                 }
             )

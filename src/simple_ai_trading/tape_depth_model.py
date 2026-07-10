@@ -30,7 +30,7 @@ from .tape_depth_features import (
 )
 
 
-TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v4"
+TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v5"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 _MODEL_PROFILES = frozenset({"regularized", "balanced", "expressive"})
 _FEATURE_SETS = frozenset({"core", "tape_derived", "cross_asset", "full"})
@@ -83,10 +83,10 @@ class TapeDepthForecastMetrics:
     spearman_information_coefficient: float
     interval_80_coverage: float
     interval_crossing_rate: float
-    top_decile_rows: int
-    top_decile_signed_gross_bps: float
-    top_decile_mean_signed_gross_bps: float
-    top_decile_positive_rate: float
+    calibration_threshold_rows: int
+    calibration_threshold_signed_gross_bps: float
+    calibration_threshold_mean_signed_gross_bps: float
+    calibration_threshold_positive_rate: float
 
 
 @dataclass(frozen=True)
@@ -115,7 +115,9 @@ class TapeDepthModelArtifact:
     seed: int
     split: TapeDepthSplitEvidence
     best_iterations: Mapping[str, int]
+    training_weight_scale_bps: float
     probability_calibration: tuple[float, float]
+    signal_threshold_bps: float
     evaluation_metrics: TapeDepthForecastMetrics
     model_strings: Mapping[str, str]
     dataset_fingerprint: str
@@ -140,6 +142,7 @@ class TapeDepthPredictionBatch:
     mean_prediction_bps: np.ndarray
     lower_prediction_bps: np.ndarray
     upper_prediction_bps: np.ndarray
+    signal_threshold_bps: float
 
     @property
     def rows(self) -> int:
@@ -152,6 +155,7 @@ class TapeDepthPredictionBatch:
             mean_prediction=self.mean_prediction_bps,
             lower_prediction=self.lower_prediction_bps,
             upper_prediction=self.upper_prediction_bps,
+            signal_threshold_bps=self.signal_threshold_bps,
         )
 
     def fingerprint(self) -> str:
@@ -165,6 +169,11 @@ class TapeDepthPredictionBatch:
             ("mean_prediction_bps", self.mean_prediction_bps, "<f8"),
             ("lower_prediction_bps", self.lower_prediction_bps, "<f8"),
             ("upper_prediction_bps", self.upper_prediction_bps, "<f8"),
+            (
+                "signal_threshold_bps",
+                np.asarray([self.signal_threshold_bps], dtype=np.float64),
+                "<f8",
+            ),
         )
         for name, values, dtype in arrays:
             canonical = np.ascontiguousarray(np.asarray(values, dtype=dtype))
@@ -289,9 +298,18 @@ def _purged_segments(
     return segments, evidence
 
 
-def _weights(targets: np.ndarray) -> np.ndarray:
+def _weight_scale(targets: np.ndarray) -> float:
     values = np.abs(np.asarray(targets, dtype=np.float64))
-    scale = max(1.0, float(np.quantile(values, 0.90)))
+    if len(values) < 1 or not np.all(np.isfinite(values)):
+        raise ValueError("tape/depth weight calibration targets are invalid")
+    return max(1.0, float(np.quantile(values, 0.90)))
+
+
+def _weights(targets: np.ndarray, *, scale_bps: float | None = None) -> np.ndarray:
+    values = np.abs(np.asarray(targets, dtype=np.float64))
+    scale = _weight_scale(values) if scale_bps is None else float(scale_bps)
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise ValueError("tape/depth weight scale must be positive and finite")
     return (1.0 + np.clip(values / scale, 0.0, 3.0)).astype(np.float32)
 
 
@@ -393,6 +411,7 @@ def _evaluation_metrics(
     mean_prediction: np.ndarray,
     lower_prediction: np.ndarray,
     upper_prediction: np.ndarray,
+    signal_threshold_bps: float,
 ) -> TapeDepthForecastMetrics:
     actual = np.asarray(targets, dtype=np.float64)
     probabilities = np.asarray(direction_probability, dtype=np.float64)
@@ -404,7 +423,9 @@ def _evaluation_metrics(
     lower = np.minimum(lower_raw, upper_raw)
     upper = np.maximum(lower_raw, upper_raw)
     crossing = float(np.mean(lower_raw > upper_raw))
-    threshold = float(np.quantile(np.abs(predicted), 0.90))
+    threshold = float(signal_threshold_bps)
+    if not math.isfinite(threshold) or threshold < 0.0:
+        raise ValueError("tape/depth signal threshold must be non-negative and finite")
     selected = np.flatnonzero(np.abs(predicted) >= threshold)
     signed = np.sign(predicted[selected]) * actual[selected]
     errors = predicted - actual
@@ -423,10 +444,16 @@ def _evaluation_metrics(
         spearman_information_coefficient=_correlation(_rank(predicted), _rank(actual)),
         interval_80_coverage=float(np.mean((actual >= lower) & (actual <= upper))),
         interval_crossing_rate=crossing,
-        top_decile_rows=len(selected),
-        top_decile_signed_gross_bps=float(np.sum(signed)),
-        top_decile_mean_signed_gross_bps=float(np.mean(signed)),
-        top_decile_positive_rate=float(np.mean(signed > 0.0)),
+        calibration_threshold_rows=len(selected),
+        calibration_threshold_signed_gross_bps=(
+            float(np.sum(signed)) if len(signed) else 0.0
+        ),
+        calibration_threshold_mean_signed_gross_bps=(
+            float(np.mean(signed)) if len(signed) else 0.0
+        ),
+        calibration_threshold_positive_rate=(
+            float(np.mean(signed > 0.0)) if len(signed) else 0.0
+        ),
     )
 
 
@@ -492,7 +519,11 @@ def train_tape_depth_forecaster(
     best_iterations: dict[str, int] = {}
     models: dict[str, lgb.Booster] = {}
     final_fit = np.concatenate((train, tuning))
-    economic_weights = _weights(target)
+    training_weight_scale_bps = _weight_scale(exact_target[train])
+    economic_weights = _weights(
+        exact_target,
+        scale_bps=training_weight_scale_bps,
+    )
     total_steps = len(specifications) * 2 + 2
     completed = 0
     for name, (values, objective, metric, alpha) in specifications.items():
@@ -546,6 +577,15 @@ def train_tape_depth_forecaster(
         raw_calibration,
         labels[calibration],
     )
+    calibration_mean_prediction = np.asarray(
+        canonical_models["mean"].predict(x[calibration]),
+        dtype=np.float64,
+    )
+    if not np.all(np.isfinite(calibration_mean_prediction)):
+        raise ValueError("tape/depth forecaster emitted non-finite calibration values")
+    signal_threshold_bps = float(
+        np.quantile(np.abs(calibration_mean_prediction), 0.90)
+    )
     completed += 1
     if progress:
         progress("evaluate", completed, total_steps)
@@ -573,6 +613,7 @@ def train_tape_depth_forecaster(
         mean_prediction=mean_prediction,
         lower_prediction=lower_prediction,
         upper_prediction=upper_prediction,
+        signal_threshold_bps=signal_threshold_bps,
     )
     reasons: list[str] = []
     if metrics.direction_auc <= 0.51:
@@ -583,8 +624,8 @@ def train_tape_depth_forecaster(
         reasons.append("mean_forecast_mae_not_better_than_zero")
     if metrics.spearman_information_coefficient <= 0.0:
         reasons.append("spearman_information_coefficient_not_positive")
-    if metrics.top_decile_mean_signed_gross_bps <= 0.0:
-        reasons.append("top_decile_signed_gross_return_not_positive")
+    if metrics.calibration_threshold_mean_signed_gross_bps <= 0.0:
+        reasons.append("calibration_threshold_signed_gross_return_not_positive")
     if not 0.50 <= metrics.interval_80_coverage <= 0.98:
         reasons.append("quantile_interval_coverage_outside_sanity_band")
     if metrics.interval_crossing_rate > 0.05:
@@ -620,7 +661,9 @@ def train_tape_depth_forecaster(
         seed=int(seed),
         split=split,
         best_iterations=best_iterations,
+        training_weight_scale_bps=training_weight_scale_bps,
         probability_calibration=probability_calibration,
+        signal_threshold_bps=signal_threshold_bps,
         evaluation_metrics=metrics,
         model_strings=model_strings,
         dataset_fingerprint=dataset_fingerprint,
@@ -692,6 +735,16 @@ def score_tape_depth_evaluation(
     )
     if split != artifact.split:
         raise ValueError("tape/depth evaluation split differs from the artifact")
+    expected_weight_scale = _weight_scale(
+        np.asarray(dataset.gross_return_bps[segments["train"]], dtype=np.float64)
+    )
+    if not math.isclose(
+        artifact.training_weight_scale_bps,
+        expected_weight_scale,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("tape/depth training weight scale differs from the artifact")
     required_models = {"direction", "mean", "lower", "upper"}
     if set(artifact.model_strings) != required_models:
         raise ValueError("tape/depth artifact model ensemble is incomplete")
@@ -704,6 +757,28 @@ def score_tape_depth_evaluation(
         raise ValueError("tape/depth artifact model strings are invalid") from exc
     evaluation = segments["evaluation"]
     feature_indexes = [dataset.feature_names.index(name) for name in expected_model_features]
+    calibration_features = np.asarray(
+        dataset.features[segments["calibration"]][:, feature_indexes],
+        dtype=np.float32,
+    )
+    replayed_threshold = float(
+        np.quantile(
+            np.abs(
+                np.asarray(
+                    models["mean"].predict(calibration_features),
+                    dtype=np.float64,
+                )
+            ),
+            0.90,
+        )
+    )
+    if not math.isclose(
+        artifact.signal_threshold_bps,
+        replayed_threshold,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        raise ValueError("tape/depth calibration signal threshold differs")
     features = np.asarray(
         dataset.features[evaluation][:, feature_indexes],
         dtype=np.float32,
@@ -733,6 +808,7 @@ def score_tape_depth_evaluation(
         upper_prediction_bps=np.asarray(
             models["upper"].predict(features), dtype=np.float64
         ),
+        signal_threshold_bps=artifact.signal_threshold_bps,
     )
     predicted_arrays = (
         batch.direction_probability,
@@ -795,6 +871,23 @@ def load_tape_depth_model_artifact(path: str | Path) -> TapeDepthModelArtifact:
     ):
         raise ValueError("tape/depth dataset summary binding is invalid")
     try:
+        training_weight_scale_bps = float(payload["training_weight_scale_bps"])
+        signal_threshold_bps = float(payload["signal_threshold_bps"])
+        probability_calibration = tuple(
+            float(value) for value in payload["probability_calibration"]
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("tape/depth calibration fields are incomplete") from exc
+    if (
+        not math.isfinite(training_weight_scale_bps)
+        or training_weight_scale_bps <= 0.0
+        or not math.isfinite(signal_threshold_bps)
+        or signal_threshold_bps < 0.0
+        or len(probability_calibration) != 2
+        or not all(math.isfinite(value) for value in probability_calibration)
+    ):
+        raise ValueError("tape/depth calibration fields are invalid")
+    try:
         values = dict(payload)
         values["rejection_reasons"] = tuple(payload.get("rejection_reasons") or ())
         values["feature_names"] = tuple(payload.get("feature_names") or ())
@@ -803,9 +896,9 @@ def load_tape_depth_model_artifact(path: str | Path) -> TapeDepthModelArtifact:
         values["evaluation_metrics"] = TapeDepthForecastMetrics(
             **dict(payload["evaluation_metrics"])
         )
-        values["probability_calibration"] = tuple(
-            payload["probability_calibration"]
-        )
+        values["training_weight_scale_bps"] = training_weight_scale_bps
+        values["probability_calibration"] = probability_calibration
+        values["signal_threshold_bps"] = signal_threshold_bps
         return TapeDepthModelArtifact(**values)
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("tape/depth artifact fields are incomplete") from exc

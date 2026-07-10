@@ -940,7 +940,7 @@ def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -
         rows=10_000,
         direction_auc=0.60,
         spearman_information_coefficient=0.10,
-        top_decile_signed_gross_bps=50.0,
+        calibration_threshold_signed_gross_bps=50.0,
     )
     artifact = SimpleNamespace(
         status="research_candidate",

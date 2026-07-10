@@ -304,6 +304,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "checksummed official trade/depth manifests",
             "causal as-of depth join with age mask",
             "purged train/tune/calibration/evaluation split",
+            "training-only sample-weight scale and calibration-only action threshold",
             "predictor profile selected independently from execution risk tolerance",
             "ordered core/tape-derived/cross-asset/full feature ablations",
             "point-in-time peer joins with exact source-manifest boundaries",

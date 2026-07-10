@@ -223,7 +223,21 @@ forecast target, not a synthetic spread, executable fill, queue estimate, or
 after-cost PnL. A purged chronological train/tune/calibration/evaluation split
 fits LightGBM direction, Huber mean-return, and 10th/90th-percentile models,
 then records AUC, Brier score, MAE, RMSE, Spearman information coefficient,
-interval coverage, and top-decile signed gross return against simple baselines.
+interval coverage, and calibration-threshold signed gross return against simple
+baselines.
+
+The v5 learner fits every data-dependent policy statistic before evaluation.
+The 90th-percentile return-magnitude scale used for sample weights comes only
+from exact float64 training targets and is then frozen for train/tune refitting;
+calibration and evaluation targets cannot alter model weights or tree strings.
+Likewise, the absolute mean-forecast action threshold is the 90th percentile of
+calibration predictions, not the evaluation prediction distribution. Both
+values are serialized, the threshold is repeated in every row-level prediction
+table, and replay recomputes them from the bound training/calibration segments.
+An evaluation regime may therefore produce any action count, including zero;
+the report no longer manufactures a fixed 10% activity rate. This follows the
+standard leakage rule that learned transforms and decision thresholds must not
+be fitted on test observations.
 
 ```powershell
 simple-ai-trading tape-depth-train `
@@ -369,7 +383,7 @@ simple-ai-trading tape-depth-confirm `
 ```
 
 Selection aggregates baseline-relative AUC, Brier, MAE, rank IC, gross
-top-decile return, and fold-positivity measures over screening only. Every
+calibration-threshold return, and fold-positivity measures over screening only. Every
 symbol must beat the direction, prevalence, and zero-return baselines. The
 selector also applies deterministic combinatorially symmetric cross-validation
 to each declared trial's relative forecast-metric rank across screening folds.
@@ -481,6 +495,10 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   order: candidate screening artifacts cannot contain terminal folds, and only
   the frozen winner can open the terminal suffix:
   <https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html>
+- Scikit-learn's leakage and decision-threshold guidance also informs the v5
+  train-only sample-weight scale and calibration-only action threshold:
+  <https://scikit-learn.org/stable/common_pitfalls.html> and
+  <https://scikit-learn.org/stable/modules/classification_threshold.html>
 - Bailey and Lopez de Prado's Deflated Sharpe Ratio work influenced the
   project policy of treating high backtest scores as suspect unless the
   selection process and holdout evidence are visible in the artifact:

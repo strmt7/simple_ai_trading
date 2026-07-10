@@ -453,6 +453,8 @@ def write_tape_depth_predictions(
             (batch.direction_probability < 0.0)
             | (batch.direction_probability > 1.0)
         )
+        or not math.isfinite(batch.signal_threshold_bps)
+        or batch.signal_threshold_bps < 0.0
     ):
         raise ValueError("tape/depth prediction batch failed its numeric contract")
     try:
@@ -480,6 +482,7 @@ def write_tape_depth_predictions(
                             "mean_prediction_bps",
                             "lower_prediction_bps",
                             "upper_prediction_bps",
+                            "signal_threshold_bps",
                         )
                     )
                     for row in zip(*arrays, strict=True):
@@ -493,6 +496,7 @@ def write_tape_depth_predictions(
                                 format(float(row[5]), ".17g"),
                                 format(float(row[6]), ".17g"),
                                 format(float(row[7]), ".17g"),
+                                format(float(batch.signal_threshold_bps), ".17g"),
                             )
                         )
             raw.flush()
@@ -516,6 +520,7 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         "mean_prediction_bps",
         "lower_prediction_bps",
         "upper_prediction_bps",
+        "signal_threshold_bps",
     )
     columns: dict[str, list[int] | list[float]] = {
         name: [] for name in expected_fields
@@ -564,6 +569,11 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         upper_prediction_bps=np.asarray(
             columns["upper_prediction_bps"], dtype=np.float64
         ),
+        signal_threshold_bps=float(columns["signal_threshold_bps"][0]),
+    )
+    threshold_values = np.asarray(
+        columns["signal_threshold_bps"],
+        dtype=np.float64,
     )
     numeric_arrays = (
         batch.actual_gross_return_bps,
@@ -578,6 +588,9 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         or np.any(batch.target_exit_time_ms <= batch.target_entry_time_ms)
         or not all(np.all(np.isfinite(values)) for values in numeric_arrays)
         or np.any((batch.direction_probability < 0.0) | (batch.direction_probability > 1.0))
+        or not np.all(threshold_values == batch.signal_threshold_bps)
+        or not math.isfinite(batch.signal_threshold_bps)
+        or batch.signal_threshold_bps < 0.0
     ):
         raise ValueError("tape/depth prediction table failed its numeric contract")
     return batch
@@ -631,8 +644,8 @@ def _aggregate_fold_metrics(folds: Sequence[dict[str, object]]) -> dict[str, obj
         "spearman_information_coefficient",
         "interval_80_coverage",
         "interval_crossing_rate",
-        "top_decile_mean_signed_gross_bps",
-        "top_decile_positive_rate",
+        "calibration_threshold_mean_signed_gross_bps",
+        "calibration_threshold_positive_rate",
     )
     output: dict[str, object] = {
         "folds": len(folds),
@@ -895,8 +908,8 @@ def render_tape_depth_prequential_svg(
             "no rank association = 0",
         ),
         (
-            "top_decile_mean_signed_gross_bps",
-            "Top-decile mean signed gross return (bps)",
+            "calibration_threshold_mean_signed_gross_bps",
+            "Calibration-threshold mean signed gross return (bps)",
             0.0,
             "gross only; no spread, fees, fills, or ROI",
         ),

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 
 import numpy as np
 import pytest
 
+from simple_ai_trading import tape_depth_model as tape_model
 from simple_ai_trading.tape_depth_features import (
     TAPE_DEPTH_FEATURE_NAMES,
     TAPE_DEPTH_FEATURE_VERSION,
@@ -77,8 +79,10 @@ def test_tape_depth_forecaster_is_predictive_but_never_executable(tmp_path) -> N
         artifact.evaluation_metrics.mean_absolute_error_bps
         < artifact.evaluation_metrics.zero_baseline_mae_bps
     )
-    assert artifact.evaluation_metrics.top_decile_mean_signed_gross_bps > 0.0
+    assert artifact.evaluation_metrics.calibration_threshold_mean_signed_gross_bps > 0.0
     assert set(artifact.model_strings) == {"direction", "mean", "lower", "upper"}
+    assert artifact.training_weight_scale_bps > 0.0
+    assert artifact.signal_threshold_bps > 0.0
     assert artifact.feature_set == "full"
     assert artifact.model_feature_names == TAPE_DEPTH_FEATURE_NAMES
     assert len(artifact.dataset_fingerprint) == 64
@@ -87,6 +91,11 @@ def test_tape_depth_forecaster_is_predictive_but_never_executable(tmp_path) -> N
     assert replay.rows == artifact.evaluation_metrics.rows
     assert replay.metrics() == artifact.evaluation_metrics
     assert len(replay.fingerprint()) == 64
+    no_action_metrics = replace(replay, signal_threshold_bps=1e9).metrics()
+    assert no_action_metrics.calibration_threshold_rows == 0
+    assert no_action_metrics.calibration_threshold_signed_gross_bps == 0.0
+    assert no_action_metrics.calibration_threshold_mean_signed_gross_bps == 0.0
+    assert no_action_metrics.calibration_threshold_positive_rate == 0.0
 
     path = tmp_path / "tape-depth.json"
     save_tape_depth_model_artifact(artifact, path)
@@ -164,6 +173,63 @@ def test_tape_depth_predictor_is_independent_from_execution_risk_level() -> None
     assert conservative.evaluation_metrics == aggressive.evaluation_metrics
 
 
+def test_tape_depth_training_statistics_do_not_read_evaluation_targets() -> None:
+    dataset = _predictive_dataset(6_000)
+    changed_targets = np.asarray(dataset.gross_return_bps, dtype=np.float64).copy()
+    changed_targets[int(dataset.rows * 0.85) :] *= 100.0
+    changed_evaluation = replace(
+        dataset,
+        gross_return_bps=changed_targets,
+        target_exit_price=(
+            np.asarray(dataset.target_entry_price, dtype=np.float64)
+            * (1.0 + changed_targets / 10_000.0)
+        ),
+    )
+
+    original = train_tape_depth_forecaster(
+        dataset,
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+    future_changed = train_tape_depth_forecaster(
+        changed_evaluation,
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+
+    assert original.training_weight_scale_bps == future_changed.training_weight_scale_bps
+    assert original.best_iterations == future_changed.best_iterations
+    assert original.model_strings == future_changed.model_strings
+    assert original.probability_calibration == future_changed.probability_calibration
+    assert original.signal_threshold_bps == future_changed.signal_threshold_bps
+
+
+def test_tape_depth_replay_recomputes_training_scale_and_calibration_threshold() -> None:
+    dataset = _predictive_dataset(6_000)
+    artifact = train_tape_depth_forecaster(
+        dataset,
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+
+    with pytest.raises(ValueError, match="weight scale differs"):
+        score_tape_depth_evaluation(
+            replace(
+                artifact,
+                training_weight_scale_bps=artifact.training_weight_scale_bps + 1.0,
+            ),
+            dataset,
+        )
+    with pytest.raises(ValueError, match="signal threshold differs"):
+        score_tape_depth_evaluation(
+            replace(
+                artifact,
+                signal_threshold_bps=artifact.signal_threshold_bps + 1.0,
+            ),
+            dataset,
+        )
+
+
 def test_tape_depth_feature_sets_are_ordered_explicit_ablations() -> None:
     core = _selected_feature_names("core")
     derived = _selected_feature_names("tape_derived")
@@ -188,3 +254,69 @@ def test_tape_depth_forecaster_rejects_an_unknown_feature_ablation() -> None:
             feature_set="unknown",
             compute_backend="cpu",
         )
+
+
+def test_tape_depth_learned_statistics_reject_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="calibration targets are invalid"):
+        tape_model._weight_scale(np.asarray([np.nan]))
+    with pytest.raises(ValueError, match="scale must be positive"):
+        tape_model._weights(np.asarray([1.0]), scale_bps=0.0)
+    values = np.asarray([-1.0, 1.0])
+    with pytest.raises(ValueError, match="signal threshold"):
+        tape_model._evaluation_metrics(
+            targets=values,
+            direction_probability=np.asarray([0.25, 0.75]),
+            mean_prediction=values,
+            lower_prediction=values - 0.5,
+            upper_prediction=values + 0.5,
+            signal_threshold_bps=-1.0,
+        )
+
+
+def test_tape_depth_zero_action_evaluation_is_rejected(monkeypatch) -> None:
+    original_metrics = tape_model._evaluation_metrics
+
+    def no_action_metrics(**kwargs):
+        metrics = original_metrics(**kwargs)
+        return replace(
+            metrics,
+            calibration_threshold_rows=0,
+            calibration_threshold_signed_gross_bps=0.0,
+            calibration_threshold_mean_signed_gross_bps=0.0,
+            calibration_threshold_positive_rate=0.0,
+        )
+
+    monkeypatch.setattr(tape_model, "_evaluation_metrics", no_action_metrics)
+    artifact = train_tape_depth_forecaster(
+        _predictive_dataset(6_000),
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+
+    assert artifact.status == "rejected"
+    assert "calibration_threshold_signed_gross_return_not_positive" in (
+        artifact.rejection_reasons
+    )
+
+
+def test_tape_depth_loader_rejects_missing_or_invalid_learned_statistics(
+    tmp_path,
+) -> None:
+    artifact = train_tape_depth_forecaster(
+        _predictive_dataset(6_000),
+        compute_backend="cpu",
+        minimum_segment_rows=256,
+    )
+    missing = artifact.asdict()
+    missing.pop("signal_threshold_bps")
+    missing_path = tmp_path / "missing-threshold.json"
+    missing_path.write_text(json.dumps(missing), encoding="utf-8")
+    with pytest.raises(ValueError, match="calibration fields are incomplete"):
+        load_tape_depth_model_artifact(missing_path)
+
+    invalid = artifact.asdict()
+    invalid["training_weight_scale_bps"] = 0.0
+    invalid_path = tmp_path / "invalid-weight-scale.json"
+    invalid_path.write_text(json.dumps(invalid), encoding="utf-8")
+    with pytest.raises(ValueError, match="calibration fields are invalid"):
+        load_tape_depth_model_artifact(invalid_path)
