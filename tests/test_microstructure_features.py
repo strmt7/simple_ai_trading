@@ -61,6 +61,7 @@ def test_path_targets_can_cross_a_utc_archive_boundary() -> None:
         taker_fee_bps=5.0,
         reference_order_notional_quote=1.0,
         max_l1_participation=0.10,
+        max_quote_age_ms=1_000,
         decision_cadence_seconds=1,
         target_mode="fixed_horizon",
         stop_loss_bps=None,

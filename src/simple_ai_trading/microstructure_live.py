@@ -31,6 +31,7 @@ class MicrostructureScorer(Protocol):
     symbol: str
     decision_cadence_seconds: int
     total_latency_ms: int
+    max_quote_age_ms: int
 
     def score(
         self,
@@ -42,6 +43,8 @@ class MicrostructureScorer(Protocol):
         close_ask: float,
         close_bid_qty: float,
         close_ask_qty: float,
+        quote_time_ms: int,
+        observation_time_ms: int,
     ) -> MicrostructureActionPrediction: ...
 
 
@@ -189,8 +192,21 @@ class _TradeAccumulator:
 
 
 @dataclass(frozen=True)
+class LiveTopOfBook:
+    symbol: str
+    event_time_ms: int
+    transaction_time_ms: int
+    update_id: int
+    bid: float
+    ask: float
+    bid_qty: float
+    ask_qty: float
+
+
+@dataclass(frozen=True)
 class LiveMicrostructurePrediction:
     feature_row: StreamingFeatureRow
+    execution_quote: LiveTopOfBook
     prediction: MicrostructureActionPrediction
     observed_exchange_time_ms: int
     signal_deadline_ms: int
@@ -216,6 +232,7 @@ class LiveMicrostructureSecondAggregator:
             raise ValueError("max_pending_seconds must lie in [2, 120]")
         self._quotes: dict[int, _QuoteAccumulator] = {}
         self._trades: dict[int, _TradeAccumulator] = {}
+        self._latest_quote: LiveTopOfBook | None = None
         self._lock = threading.Lock()
         self.last_finalized_second_ms = -1
         self.late_event_count = 0
@@ -228,7 +245,12 @@ class LiveMicrostructureSecondAggregator:
     def _invalidate_pending(self) -> None:
         self._quotes.clear()
         self._trades.clear()
+        self._latest_quote = None
         self.integrity_reset_count += 1
+
+    def current_quote(self) -> LiveTopOfBook | None:
+        with self._lock:
+            return self._latest_quote
 
     def _event_second(self, payload: Mapping[str, object]) -> int:
         symbol = normalize_symbol(str(payload.get("s", "")))
@@ -255,6 +277,28 @@ class LiveMicrostructureSecondAggregator:
                     appended = self._quotes.setdefault(second_ms, _QuoteAccumulator()).append(
                         payload
                     )
+                    if appended:
+                        quote = LiveTopOfBook(
+                            symbol=self.symbol,
+                            event_time_ms=int(payload["E"]),
+                            transaction_time_ms=int(payload.get("T", payload["E"])),
+                            update_id=int(payload["u"]),
+                            bid=float(payload["b"]),
+                            ask=float(payload["a"]),
+                            bid_qty=float(payload["B"]),
+                            ask_qty=float(payload["A"]),
+                        )
+                        current = self._latest_quote
+                        if current is None or (
+                            quote.event_time_ms,
+                            quote.transaction_time_ms,
+                            quote.update_id,
+                        ) >= (
+                            current.event_time_ms,
+                            current.transaction_time_ms,
+                            current.update_id,
+                        ):
+                            self._latest_quote = quote
                 elif event_type in {"trade", "aggTrade"}:
                     appended = self._trades.setdefault(second_ms, _TradeAccumulator()).append(
                         payload
@@ -378,6 +422,7 @@ class StreamingMicrostructureCoordinator:
         self.post_inference_deadline_misses = 0
         self.inference_failures = 0
         self.last_inference_error = ""
+        self.missing_current_quote_count = 0
 
     def ingest(self, payload: Mapping[str, object]) -> None:
         try:
@@ -404,6 +449,10 @@ class StreamingMicrostructureCoordinator:
             feature_row = self.engine.append(second)
             if feature_row is None:
                 continue
+            execution_quote = self.aggregator.current_quote()
+            if execution_quote is None:
+                self.missing_current_quote_count += 1
+                continue
             deadline = feature_row.decision_time_ms + int(self.scorer.total_latency_ms)
             remaining = deadline - int(exchange_now_ms)
             if remaining <= 0:
@@ -414,10 +463,12 @@ class StreamingMicrostructureCoordinator:
                     feature_row.features,
                     decision_time_ms=feature_row.decision_time_ms,
                     order_notional_quote=notional,
-                    close_bid=feature_row.close_bid,
-                    close_ask=feature_row.close_ask,
-                    close_bid_qty=feature_row.close_bid_qty,
-                    close_ask_qty=feature_row.close_ask_qty,
+                    close_bid=execution_quote.bid,
+                    close_ask=execution_quote.ask,
+                    close_bid_qty=execution_quote.bid_qty,
+                    close_ask_qty=execution_quote.ask_qty,
+                    quote_time_ms=execution_quote.event_time_ms,
+                    observation_time_ms=int(exchange_now_ms),
                 )
             except Exception as exc:  # noqa: BLE001 - inference failure must fail closed
                 self.inference_failures += 1
@@ -434,6 +485,7 @@ class StreamingMicrostructureCoordinator:
             predictions.append(
                 LiveMicrostructurePrediction(
                     feature_row=feature_row,
+                    execution_quote=execution_quote,
                     prediction=prediction,
                     observed_exchange_time_ms=completed_exchange_time_ms,
                     signal_deadline_ms=deadline,
@@ -448,5 +500,6 @@ __all__ = [
     "MicrostructureFeedIntegrityError",
     "LiveMicrostructurePrediction",
     "LiveMicrostructureSecondAggregator",
+    "LiveTopOfBook",
     "StreamingMicrostructureCoordinator",
 ]

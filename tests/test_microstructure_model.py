@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 import numpy as np
 import pytest
@@ -11,15 +12,26 @@ from simple_ai_trading.microstructure_features import (
     MicrostructureDataset,
 )
 from simple_ai_trading.microstructure_model import (
+    DeploymentRefitEvidence,
     MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
+    MicrostructureModelArtifact,
+    PerformanceConfidence,
+    PurgedSplitEvidence,
+    ThresholdPolicy,
+    ThresholdSearchEvidence,
+    TradingMetrics,
     _apply_platt_scaling,
     _fit_platt_scaling,
+    _model_strings_sha256,
     _performance_confidence,
     _purged_split,
     _select_threshold,
     _simulate_non_overlapping,
     _simulate_non_overlapping_trace,
     load_microstructure_action_scorer,
+    load_microstructure_model_artifact,
+    refit_validated_microstructure_model,
+    save_microstructure_model_artifact,
 )
 
 
@@ -39,6 +51,7 @@ def _five_day_dataset() -> MicrostructureDataset:
         taker_fee_bps=5.0,
         reference_order_notional_quote=1.0,
         max_l1_participation=0.10,
+        max_quote_age_ms=1_000,
         decision_cadence_seconds=1,
         target_mode="fixed_horizon",
         stop_loss_bps=None,
@@ -78,6 +91,13 @@ def test_purged_split_separates_policy_selection_and_terminal_days() -> None:
     assert all(len(indexes) >= 256 for indexes in splits.values())
     assert evidence.policy_rows == len(splits["policy"])
     assert evidence.selection_rows == len(splits["selection"])
+    assert evidence.tuning_early_stop_rows >= 256
+    assert evidence.tuning_calibration_rows >= 256
+    assert evidence.tuning_internal_purged_rows > 0
+    tuning_early_end = dataset.decision_time_ms[splits["tuning"]][
+        evidence.tuning_early_stop_rows - 1
+    ]
+    assert tuning_early_end + evidence.purge_ms < evidence.tuning_calibration_start_ms
     for left, right in (("train", "tuning"), ("tuning", "policy"), ("policy", "selection")):
         assert (
             dataset.decision_time_ms[splits[left][-1]] + evidence.purge_ms
@@ -205,7 +225,7 @@ def test_threshold_search_uses_base_rate_relative_probability_tails() -> None:
 
 
 def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "schema_version": MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
         "status": status,
         "rejection_reasons": [] if status == "accepted" else ["selection_failed"],
@@ -218,6 +238,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "taker_fee_bps": 5.0,
         "reference_order_notional_quote": 1_000.0,
         "max_l1_participation": 0.10,
+        "max_quote_age_ms": 1_000,
         "decision_cadence_seconds": 5,
         "target_mode": "exchange_trigger_market_exit_1s_adverse_first",
         "stop_loss_bps": 25.0,
@@ -226,6 +247,8 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "path_resolution_ms": 1_000,
         "unique_utc_days": 365,
         "minimum_promotion_days": 365,
+        "deployment_calibration_days": 14,
+        "maximum_model_age_seconds": 86_400,
         "calendar_day_coverage_ratio": 1.0,
         "terminal_evaluated_at": "2026-01-01T00:00:00+00:00",
         "terminal_metrics": {
@@ -268,6 +291,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
             "trade_feature_embargo_ms": 1_000,
             "reference_order_notional_quote": 1_000.0,
             "max_l1_participation": 0.10,
+            "max_quote_age_ms": 1_000,
             "decision_cadence_seconds": 5,
             "source_evidence": {
                 "build_id": "c" * 64,
@@ -297,15 +321,43 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
             "selection_utility_bps": 1.0,
         },
         "probability_calibration": {"long": [1.0, 0.0], "short": [1.0, 0.0]},
-        "model_strings": {
-            "long_probability": "0.80",
-            "long_win_magnitude": "4.0",
-            "long_loss_magnitude": "1.0",
-            "short_probability": "0.70",
-            "short_win_magnitude": "3.0",
-            "short_loss_magnitude": "2.0",
-        },
     }
+    models = {
+        "long_probability": "0.80",
+        "long_win_magnitude": "4.0",
+        "long_loss_magnitude": "1.0",
+        "short_probability": "0.70",
+        "short_win_magnitude": "3.0",
+        "short_loss_magnitude": "2.0",
+    }
+    payload["model_strings"] = models
+    payload["deployment_model_strings"] = dict(models)
+    training_cutoff_ms = 1_731_535_999_000
+    payload["deployment_refit"] = {
+        "refit_mode": "full_history_fixed_hyperparameters",
+        "backend_kind": "opencl",
+        "backend_device": "opencl:0:0",
+        "lightgbm_version": "4.6.0",
+        "training_rows": 100_000,
+        "calibration_days": 14,
+        "calibration_start_ms": training_cutoff_ms - 14 * 86_400_000,
+        "calibration_end_ms": training_cutoff_ms,
+        "side_training_rows": {"long": 99_000, "short": 99_000},
+        "side_calibration_rows": {"long": 13_000, "short": 13_000},
+        "probability_calibration": {
+            "long": [1.0, 0.0],
+            "short": [1.0, 0.0],
+        },
+        "training_cutoff_ms": training_cutoff_ms,
+        "maximum_model_age_seconds": 86_400,
+        "expires_at_ms": training_cutoff_ms + 86_400_000,
+        "source_feature_build_id": "c" * 64,
+        "source_manifest_fingerprint": "d" * 64,
+        "validation_model_sha256": _model_strings_sha256(models),
+        "deployment_model_sha256": _model_strings_sha256(models),
+        "fitted_at": "2026-01-01T00:00:00+00:00",
+    }
+    return payload
 
 
 def test_promoted_runtime_scorer_loads_exact_contract_and_selects_best_side(
@@ -332,6 +384,8 @@ def test_promoted_runtime_scorer_loads_exact_contract_and_selects_best_side(
         close_ask=50_001.0,
         close_bid_qty=1.0,
         close_ask_qty=1.0,
+        quote_time_ms=9_900,
+        observation_time_ms=10_100,
     )
     oversized = scorer.score(
         features,
@@ -341,6 +395,8 @@ def test_promoted_runtime_scorer_loads_exact_contract_and_selects_best_side(
         close_ask=50_001.0,
         close_bid_qty=1.0,
         close_ask_qty=1.0,
+        quote_time_ms=9_900,
+        observation_time_ms=10_100,
     )
 
     assert scorer.symbol == "BTCUSDT"
@@ -352,6 +408,20 @@ def test_promoted_runtime_scorer_loads_exact_contract_and_selects_best_side(
     assert result.long_l1_participation < 0.10
     assert oversized.side == "FLAT"
     assert oversized.reason == "order_notional_exceeds_validated_reference"
+    stale = scorer.score(
+        features,
+        decision_time_ms=10_000,
+        order_notional_quote=1_000.0,
+        close_bid=50_000.0,
+        close_ask=50_001.0,
+        close_bid_qty=1.0,
+        close_ask_qty=1.0,
+        quote_time_ms=8_000,
+        observation_time_ms=10_100,
+    )
+    assert stale.side == "FLAT"
+    assert stale.reason == "quote_age_exceeds_validated_limit"
+    assert scorer.enforce_model_freshness is True
     with pytest.raises(ValueError, match="violates decision cadence"):
         scorer.score(
             features,
@@ -361,13 +431,32 @@ def test_promoted_runtime_scorer_loads_exact_contract_and_selects_best_side(
             close_ask=50_001.0,
             close_bid_qty=1.0,
             close_ask_qty=1.0,
+            quote_time_ms=10_900,
+            observation_time_ms=11_100,
+        )
+    with pytest.raises(RuntimeError, match="expired"):
+        scorer.score(
+            features,
+            decision_time_ms=1_731_622_400_000,
+            order_notional_quote=1_000.0,
+            close_bid=50_000.0,
+            close_ask=50_001.0,
+            close_bid_qty=1.0,
+            close_ask_qty=1.0,
+            quote_time_ms=1_731_622_399_900,
+            observation_time_ms=1_731_622_400_100,
+        )
+    with pytest.raises(RuntimeError, match="expired"):
+        load_microstructure_action_scorer(
+            path,
+            as_of_ms=1_731_622_400_000,
         )
 
 
 def test_runtime_scorer_rejects_unpromoted_or_drifted_artifacts(tmp_path) -> None:
     rejected = tmp_path / "rejected.json"
     rejected.write_text(json.dumps(_runtime_artifact_payload(status="rejected")), encoding="utf-8")
-    with pytest.raises(ValueError, match="accepted artifact"):
+    with pytest.raises(ValueError, match="rejected"):
         load_microstructure_action_scorer(rejected)
 
     drifted_payload = _runtime_artifact_payload()
@@ -390,3 +479,225 @@ def test_runtime_scorer_rejects_unpromoted_or_drifted_artifacts(tmp_path) -> Non
     unprotected.write_text(json.dumps(unprotected_payload), encoding="utf-8")
     with pytest.raises(ValueError, match="protective-exit contract"):
         load_microstructure_action_scorer(unprotected)
+
+
+def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment_refit(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    days = 30
+    rows_per_day = 300
+    timestamps = np.concatenate(
+        [
+            1_700_000_000_000
+            + day * 86_400_000
+            + np.arange(rows_per_day, dtype=np.int64) * 1_000
+            for day in range(days)
+        ]
+    )
+    rows = len(timestamps)
+    values = np.ones(rows, dtype=np.float64)
+    alternating = np.where(np.arange(rows) % 2 == 0, 2.0, -2.0)
+    source = {
+        "build_id": "a" * 64,
+        "schema_version": "binance-usdm-tick-v4",
+        "feature_build_version": "book-ticker-event-time-v1",
+        "availability_clock": "event_time_ms",
+        "symbol": "BTCUSDT",
+        "status": "complete",
+        "is_current": True,
+        "manifest_fingerprint": "b" * 64,
+        "source_archive_count": days,
+        "source_manifest_rows": rows * 10,
+        "source_raw_rows": rows * 10,
+        "feature_rows": rows,
+        "first_feature_second_ms": int(timestamps[0]),
+        "last_feature_second_ms": int(timestamps[-1]),
+        "duplicate_seconds": 0,
+        "invalid_feature_rows": 0,
+        "quote_update_sum": rows * 10,
+        "verified": True,
+        "manifest_current": True,
+    }
+    dataset = MicrostructureDataset(
+        symbol="BTCUSDT",
+        feature_version=MICROSTRUCTURE_FEATURE_VERSION,
+        feature_names=MICROSTRUCTURE_FEATURE_NAMES,
+        horizon_seconds=60,
+        total_latency_ms=250,
+        taker_fee_bps=5.0,
+        reference_order_notional_quote=1_000.0,
+        max_l1_participation=0.05,
+        max_quote_age_ms=1_000,
+        decision_cadence_seconds=1,
+        target_mode="exchange_trigger_market_exit_1s_adverse_first",
+        stop_loss_bps=25.0,
+        take_profit_bps=40.0,
+        trigger_execution_slippage_bps=1.0,
+        path_resolution_ms=1_000,
+        decision_time_ms=timestamps,
+        long_exit_time_ms=timestamps + 60_000,
+        short_exit_time_ms=timestamps + 60_000,
+        features=np.zeros((rows, len(MICROSTRUCTURE_FEATURE_NAMES)), dtype=np.float32),
+        long_net_bps=alternating,
+        short_net_bps=-alternating,
+        entry_spread_bps=values,
+        exit_spread_bps=values,
+        entry_quote_age_ms=np.zeros(rows, dtype=np.int64),
+        exit_quote_age_ms=np.zeros(rows, dtype=np.int64),
+        entry_bid_price=50_000.0 * values,
+        entry_ask_price=50_001.0 * values,
+        fixed_exit_bid_price=50_000.0 * values,
+        fixed_exit_ask_price=50_001.0 * values,
+        entry_bid_qty=values,
+        entry_ask_qty=values,
+        fixed_exit_bid_qty=values,
+        fixed_exit_ask_qty=values,
+        long_l1_participation=0.01 * values,
+        short_l1_participation=0.01 * values,
+        long_liquidity_eligible=np.ones(rows, dtype=bool),
+        short_liquidity_eligible=np.ones(rows, dtype=bool),
+        source_evidence=source,
+    )
+    metrics = TradingMetrics(40, 100.0, 2.5, 2.0, 0.6, 1.5, 20.0, -5.0, 8.0, 20, 20, 20, 2.0)
+    confidence = PerformanceConfidence(20, 20, 3, 2_000, 5.0, 4.0, -2.0, 12.0, 2.0, 0.5, 8.0, 0.99)
+    model_strings = {
+        name: f"validation-{name}"
+        for name in (
+            "long_probability",
+            "long_win_magnitude",
+            "long_loss_magnitude",
+            "short_probability",
+            "short_win_magnitude",
+            "short_loss_magnitude",
+        )
+    }
+    artifact = MicrostructureModelArtifact(
+        schema_version=MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
+        model_family="side_specific_hurdle_expected_value",
+        status="validated",
+        rejection_reasons=(),
+        symbol="BTCUSDT",
+        feature_version=MICROSTRUCTURE_FEATURE_VERSION,
+        feature_names=MICROSTRUCTURE_FEATURE_NAMES,
+        risk_level="conservative",
+        horizon_seconds=60,
+        total_latency_ms=250,
+        taker_fee_bps=5.0,
+        reference_order_notional_quote=1_000.0,
+        max_l1_participation=0.05,
+        max_quote_age_ms=1_000,
+        decision_cadence_seconds=1,
+        target_mode="exchange_trigger_market_exit_1s_adverse_first",
+        stop_loss_bps=25.0,
+        take_profit_bps=40.0,
+        trigger_execution_slippage_bps=1.0,
+        path_resolution_ms=1_000,
+        training_backend_kind="cpu",
+        training_backend_device="cpu",
+        lightgbm_version="test",
+        seed=7,
+        unique_utc_days=days,
+        calendar_span_days=days,
+        calendar_day_coverage_ratio=1.0,
+        minimum_rows_per_utc_day=rows_per_day,
+        daily_rows_p10=float(rows_per_day),
+        median_rows_per_utc_day=float(rows_per_day),
+        minimum_promotion_days=1,
+        deployment_calibration_days=2,
+        maximum_model_age_seconds=3_600,
+        split=PurgedSplitEvidence(
+            2_000,
+            1_000,
+            1_000,
+            1_000,
+            1_000,
+            1,
+            2,
+            3,
+            4,
+            5,
+            60_000,
+            3_000,
+            450,
+            500,
+            4,
+            50,
+        ),
+        best_iterations={name: 1 for name in model_strings},
+        probability_calibration={"long": (1.0, 0.0), "short": (1.0, 0.0)},
+        threshold_policy=ThresholdPolicy(1.0, 0.6, 10.0),
+        policy_search=ThresholdSearchEvidence(1_000, 100, 100, 20, 10, 5, 10.0, metrics),
+        tuning_auc={"long": 0.6, "short": 0.6},
+        tuning_brier={"long": 0.2, "short": 0.2},
+        selection_auc={"long": 0.6, "short": 0.6},
+        selection_brier={"long": 0.2, "short": 0.2},
+        terminal_auc={"long": 0.6, "short": 0.6},
+        terminal_brier={"long": 0.2, "short": 0.2},
+        policy_metrics=metrics,
+        selection_metrics=metrics,
+        terminal_metrics=metrics,
+        selection_confidence=confidence,
+        terminal_confidence=confidence,
+        selection_baselines={"no_trade": TradingMetrics(0, 0.0, 0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0, 0, 0, 0.0)},
+        terminal_baselines={"no_trade": TradingMetrics(0, 0.0, 0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0, 0, 0, 0.0)},
+        model_strings=model_strings,
+        deployment_model_strings=None,
+        deployment_refit=None,
+        dataset_summary=dataset.summary(),
+        trained_at=datetime.now(timezone.utc).isoformat(),
+        terminal_evaluated_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+    class _Booster:
+        def __init__(self, identity: int) -> None:
+            self.identity = identity
+
+        def predict(self, features):
+            return np.full(len(features), 0.5, dtype=np.float64)
+
+        def model_to_string(self, *, num_iteration: int) -> str:
+            return f"deployment-{self.identity}-iteration-{num_iteration}"
+
+    calls: list[int] = []
+
+    def fake_train_fixed_booster(**_kwargs):
+        calls.append(len(calls))
+        return _Booster(calls[-1])
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model._train_fixed_booster",
+        fake_train_fixed_booster,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model._backend_parameters",
+        lambda _backend, _seed: ({"device_type": "cpu"}, "cpu", "cpu"),
+    )
+
+    accepted = refit_validated_microstructure_model(
+        artifact,
+        dataset,
+        compute_backend="cpu",
+    )
+
+    assert accepted.status == "accepted"
+    assert len(calls) == 8
+    assert accepted.deployment_model_strings is not None
+    assert set(accepted.deployment_model_strings) == set(model_strings)
+    assert isinstance(accepted.deployment_refit, DeploymentRefitEvidence)
+    assert accepted.deployment_refit.training_rows == rows
+    assert accepted.deployment_refit.calibration_days == 2
+    assert accepted.deployment_refit.expires_at_ms == timestamps[-1] + 3_600_000
+    assert accepted.deployment_refit.validation_model_sha256 == _model_strings_sha256(
+        model_strings
+    )
+    path = tmp_path / "accepted-microstructure.json"
+    save_microstructure_model_artifact(accepted, path)
+    reloaded = load_microstructure_model_artifact(path)
+    assert reloaded.status == "accepted"
+    assert reloaded.max_quote_age_ms == 1_000
+    assert reloaded.deployment_refit is not None
+    assert (
+        reloaded.deployment_refit.deployment_model_sha256
+        == accepted.deployment_refit.deployment_model_sha256
+    )

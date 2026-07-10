@@ -24,6 +24,51 @@ execution gating. Do not treat roadmap entries as product capabilities: a
 capability is executable only when its blueprint status, code path, tests, and
 operator docs all agree.
 
+## Causal L1/Tape Action-Value Model
+
+The `microstructure-action-value-v10` workflow is a separate, fail-closed
+research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
+feed the legacy candle autonomous loop, and the repository currently has no
+accepted v10 artifact or profitability result.
+
+Its implemented lifecycle is:
+
+1. `microstructure-train` rebuilds verified event-time BBO feature bars, joins
+   real trade tape, and constructs 1-second causal features with path-aware,
+   adverse-first stop/take labels, actual bid/ask execution, taker fees,
+   top-of-book quantity, quote age, and a fixed decision cadence.
+2. Training uses chronological train, early-stop, probability-calibration,
+   policy, selection, and terminal regions. Every adjacent use of labels is
+   separated by the horizon/latency purge. Early stopping and Platt calibration
+   no longer share rows.
+3. A selection pass produces only `candidate`. The terminal range is reserved
+   in the warehouse and may be consumed once. A terminal pass produces
+   `validated`, not a live model.
+4. Deployment refit fixes the already selected hyperparameters, tree counts,
+   and policy thresholds. Provisional classifiers learn calibration on a
+   purged recent tail; six final estimators then refit on all labeled rows. No
+   terminal metric is used to retune the model.
+5. Only a successful refit produces `accepted`. It records validation and
+   deployment estimator hashes, source build/fingerprint, backend, row counts,
+   calibration span, training cutoff, and a hard expiry. A failed refit leaves
+   the atomic `validated` artifact available for `microstructure-refit`.
+6. Streaming features use only closed seconds, while liquidity eligibility uses
+   the newest independently tracked BBO known at inference time. The scorer
+   blocks stale quotes, crossed/invalid books, excess L1 participation,
+   unvalidated notional, cadence violations, expired models, and late signals.
+
+Candidate generation does not consume terminal evidence:
+
+```powershell
+simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only `
+  --stop-loss-bps 25 --take-profit-bps 40
+```
+
+`--evaluate-terminal` is appropriate only after model-family and contract
+selection is finished. `microstructure-refit --input PATH` is a recovery path
+for a terminal-validated artifact; it refuses a rebuilt or changed source even
+when filenames are unchanged.
+
 Promotion-grade optimization is also data-health gated. If
 `tools/optimization_round.py` is run without explicit symbols and with hard
 requirements such as `--require-prefilled-data`, `--min-data-rows`, or

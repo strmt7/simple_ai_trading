@@ -22,6 +22,25 @@ A validation report may be documented only when it includes:
 - training backend and probability-calibration backend evidence,
 - generated artifact path.
 
+For causal L1/tape artifacts, validation additionally requires:
+
+- exact event-time warehouse build ID and manifest fingerprint,
+- separate purged early-stop and probability-calibration rows,
+- candidate-only selection evidence before one-use terminal reservation,
+- positive lower 95% block-bootstrap daily after-cost return on selection and
+  terminal segments, including zero-trade calendar days,
+- actual L1 notional participation and maximum quote-age contracts,
+- path-aware adverse-first stop/take execution at 1-second resolution,
+- a terminal-validated status distinct from deployment acceptance,
+- a fixed-hyperparameter deployment refit with estimator hashes, calibration
+  span, backend, training cutoff, and source identity,
+- startup and per-decision model expiry enforcement,
+- current-BBO execution gating independent from the closed feature second.
+
+No candidate, validated artifact, stale accepted artifact, or rejected artifact
+is live-ready. Profitability is an empirical result, not a status that code may
+infer or manufacture.
+
 ## Financial Sanity Standard
 
 Model artifacts must pass the built-in financial sanity gate before they can be

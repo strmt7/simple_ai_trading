@@ -553,6 +553,18 @@ def _build_parser() -> argparse.ArgumentParser:
         default="auto",
     )
     parser_micro_train.add_argument("--minimum-promotion-days", type=int, default=365)
+    parser_micro_train.add_argument(
+        "--deployment-calibration-days",
+        type=int,
+        default=14,
+        help="recent purged tail used only to calibrate the post-validation deployment refit",
+    )
+    parser_micro_train.add_argument(
+        "--maximum-model-age-seconds",
+        type=int,
+        default=86_400,
+        help="hard live-inference expiry measured from the latest labeled refit row",
+    )
     terminal_mode = parser_micro_train.add_mutually_exclusive_group()
     terminal_mode.add_argument(
         "--evaluate-terminal",
@@ -570,6 +582,24 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_train.add_argument("--threads", type=int, default=8)
     parser_micro_train.add_argument("--json", action="store_true")
     parser_micro_train.set_defaults(evaluate_terminal=False, func=command_microstructure_train)
+
+    parser_micro_refit = subparsers.add_parser(
+        "microstructure-refit",
+        help="resume the source-bound deployment refit for a terminal-validated artifact",
+    )
+    parser_micro_refit.add_argument("--input", default="data/microstructure-model.json")
+    parser_micro_refit.add_argument("--output", default=None)
+    parser_micro_refit.add_argument("--warehouse", default="data/microstructure.duckdb")
+    parser_micro_refit.add_argument("--cache-root", default="data/archive-cache")
+    parser_micro_refit.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_micro_refit.add_argument("--memory-limit", default="8GB")
+    parser_micro_refit.add_argument("--threads", type=int, default=8)
+    parser_micro_refit.add_argument("--json", action="store_true")
+    parser_micro_refit.set_defaults(func=command_microstructure_refit)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
@@ -5480,6 +5510,7 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
     from .microstructure_model import (
         evaluate_microstructure_model_terminal,
         microstructure_candidate_sha256,
+        refit_validated_microstructure_model,
         save_microstructure_model_artifact,
         train_microstructure_action_value_model,
     )
@@ -5500,6 +5531,8 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
         else float(configured_participation)
     )
     terminal_reservation: dict[str, object] | None = None
+    deployment_refit_error: str | None = None
+    output = str(getattr(args, "output", "data/microstructure-model.json"))
     if evaluate_terminal and (stop is None or take is None):
         print(
             "microstructure-train --evaluate-terminal requires explicit path-aware "
@@ -5569,6 +5602,12 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                 risk_level=risk_level,
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
                 minimum_promotion_days=int(getattr(args, "minimum_promotion_days", 365)),
+                deployment_calibration_days=int(
+                    getattr(args, "deployment_calibration_days", 14)
+                ),
+                maximum_model_age_seconds=int(
+                    getattr(args, "maximum_model_age_seconds", 86_400)
+                ),
                 evaluate_terminal=False,
                 progress=model_progress,
             )
@@ -5602,23 +5641,35 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                         )
                     )
                     raise
+                save_microstructure_model_artifact(artifact, output)
                 terminal_reservation.update(
                     warehouse.finalize_terminal_holdout(
                         str(reservation["reservation_id"]),
                         result_status=artifact.status,
                     )
                 )
+                if artifact.status == "validated":
+                    try:
+                        artifact = refit_validated_microstructure_model(
+                            artifact,
+                            dataset,
+                            compute_backend=str(getattr(args, "compute_backend", "auto")),
+                            progress=model_progress,
+                        )
+                    except (OSError, RuntimeError, ValueError) as exc:
+                        deployment_refit_error = f"{type(exc).__name__}: {exc}"
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"microstructure-train failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
-    output = str(getattr(args, "output", "data/microstructure-model.json"))
     digest = save_microstructure_model_artifact(artifact, output)
     payload = artifact.asdict()
     payload.pop("model_strings", None)
+    payload.pop("deployment_model_strings", None)
     payload["artifact_path"] = output
     payload["artifact_sha256"] = digest
     payload["path_target_evidence"] = asdict(path_evidence) if path_evidence is not None else None
     payload["terminal_holdout_reservation"] = terminal_reservation
+    payload["deployment_refit_error"] = deployment_refit_error
     if json_mode:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
@@ -5651,9 +5702,99 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
             )
         if artifact.rejection_reasons:
             print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
+        if deployment_refit_error:
+            print("deployment refit failed: " + deployment_refit_error, file=sys.stderr)
         print(f"artifact={output} sha256={digest}")
     successful_statuses = {"accepted"} if evaluate_terminal else {"candidate"}
     return 0 if artifact.status in successful_statuses else 2
+
+
+def command_microstructure_refit(args: argparse.Namespace) -> int:
+    from .microstructure_features import (
+        apply_path_aware_lifecycle_targets,
+        build_executable_microstructure_dataset,
+    )
+    from .microstructure_model import (
+        load_microstructure_model_artifact,
+        refit_validated_microstructure_model,
+        save_microstructure_model_artifact,
+    )
+    from .microstructure_warehouse import MicrostructureWarehouse
+
+    input_path = Path(str(getattr(args, "input", "data/microstructure-model.json")))
+    output_value = getattr(args, "output", None)
+    output_path = Path(str(output_value)) if output_value else input_path
+    json_mode = bool(getattr(args, "json", False))
+
+    def progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(f"microstructure-refit {phase}: {completed}/{total}", flush=True)
+
+    try:
+        artifact = load_microstructure_model_artifact(input_path)
+        if artifact.status != "validated":
+            raise ValueError("microstructure-refit requires a terminal-validated artifact")
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            warehouse.require_causal_feature_bars(artifact.symbol)
+            dataset = build_executable_microstructure_dataset(
+                warehouse,
+                symbol=artifact.symbol,
+                horizon_seconds=artifact.horizon_seconds,
+                total_latency_ms=artifact.total_latency_ms,
+                taker_fee_bps=artifact.taker_fee_bps,
+                max_quote_age_ms=artifact.max_quote_age_ms,
+                reference_order_notional_quote=artifact.reference_order_notional_quote,
+                max_l1_participation=artifact.max_l1_participation,
+                decision_cadence_seconds=artifact.decision_cadence_seconds,
+            )
+            dataset, _path_evidence = apply_path_aware_lifecycle_targets(
+                warehouse,
+                dataset,
+                stop_loss_bps=float(artifact.stop_loss_bps or 0.0),
+                take_profit_bps=float(artifact.take_profit_bps or 0.0),
+                trigger_execution_slippage_bps=float(
+                    artifact.trigger_execution_slippage_bps or 0.0
+                ),
+            )
+            accepted = refit_validated_microstructure_model(
+                artifact,
+                dataset,
+                compute_backend=str(getattr(args, "compute_backend", "auto")),
+                progress=progress,
+            )
+        digest = save_microstructure_model_artifact(accepted, output_path)
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"microstructure-refit failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+
+    payload = {
+        "status": accepted.status,
+        "artifact_path": str(output_path),
+        "artifact_sha256": digest,
+        "symbol": accepted.symbol,
+        "deployment_refit": (
+            asdict(accepted.deployment_refit)
+            if accepted.deployment_refit is not None
+            else None
+        ),
+    }
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        refit = accepted.deployment_refit
+        print(
+            "microstructure-refit: "
+            f"status={accepted.status} symbol={accepted.symbol} "
+            f"cutoff_ms={refit.training_cutoff_ms if refit else 'n/a'} "
+            f"expires_at_ms={refit.expires_at_ms if refit else 'n/a'}"
+        )
+        print(f"artifact={output_path} sha256={digest}")
+    return 0 if accepted.status == "accepted" else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:

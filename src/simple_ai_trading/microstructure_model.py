@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -27,7 +27,7 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v9"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v10"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 ModelProgressCallback = Callable[[str, int, int], None]
 
@@ -46,6 +46,10 @@ class PurgedSplitEvidence:
     terminal_start_ms: int
     purge_ms: int
     purged_rows: int
+    tuning_early_stop_rows: int
+    tuning_calibration_rows: int
+    tuning_calibration_start_ms: int
+    tuning_internal_purged_rows: int
 
 
 @dataclass(frozen=True)
@@ -101,6 +105,29 @@ class ThresholdSearchEvidence:
 
 
 @dataclass(frozen=True)
+class DeploymentRefitEvidence:
+    refit_mode: str
+    backend_kind: str
+    backend_device: str
+    lightgbm_version: str
+    training_rows: int
+    calibration_days: int
+    calibration_start_ms: int
+    calibration_end_ms: int
+    side_training_rows: Mapping[str, int]
+    side_calibration_rows: Mapping[str, int]
+    probability_calibration: Mapping[str, tuple[float, float]]
+    training_cutoff_ms: int
+    maximum_model_age_seconds: int
+    expires_at_ms: int
+    source_feature_build_id: str
+    source_manifest_fingerprint: str
+    validation_model_sha256: str
+    deployment_model_sha256: str
+    fitted_at: str
+
+
+@dataclass(frozen=True)
 class MicrostructureModelArtifact:
     schema_version: str
     model_family: str
@@ -115,6 +142,7 @@ class MicrostructureModelArtifact:
     taker_fee_bps: float
     reference_order_notional_quote: float
     max_l1_participation: float
+    max_quote_age_ms: int
     decision_cadence_seconds: int
     target_mode: str
     stop_loss_bps: float | None
@@ -132,6 +160,8 @@ class MicrostructureModelArtifact:
     daily_rows_p10: float
     median_rows_per_utc_day: float
     minimum_promotion_days: int
+    deployment_calibration_days: int
+    maximum_model_age_seconds: int
     split: PurgedSplitEvidence
     best_iterations: Mapping[str, int]
     probability_calibration: Mapping[str, tuple[float, float]]
@@ -151,6 +181,8 @@ class MicrostructureModelArtifact:
     selection_baselines: Mapping[str, TradingMetrics]
     terminal_baselines: Mapping[str, TradingMetrics] | None
     model_strings: Mapping[str, str]
+    deployment_model_strings: Mapping[str, str] | None
+    deployment_refit: DeploymentRefitEvidence | None
     dataset_summary: Mapping[str, object]
     trained_at: str
     terminal_evaluated_at: str | None
@@ -180,6 +212,10 @@ class MicrostructureActionPrediction:
     reason: str
 
 
+class MicrostructureModelExpiredError(RuntimeError):
+    """The promoted estimator is older than its validated live-use contract."""
+
+
 _RUNTIME_MODEL_NAMES = tuple(
     f"{side}_{component}"
     for side in ("long", "short")
@@ -201,6 +237,7 @@ class MicrostructureActionScorer:
         taker_fee_bps: float,
         reference_order_notional_quote: float,
         max_l1_participation: float,
+        max_quote_age_ms: int,
         decision_cadence_seconds: int,
         stop_loss_bps: float,
         take_profit_bps: float,
@@ -210,6 +247,9 @@ class MicrostructureActionScorer:
         minimum_profitable_probability: float,
         probability_calibration: Mapping[str, tuple[float, float]],
         models: Mapping[str, lgb.Booster],
+        training_cutoff_ms: int | None = None,
+        expires_at_ms: int | None = None,
+        enforce_model_freshness: bool = False,
     ) -> None:
         self.artifact_sha256 = artifact_sha256
         self.symbol = symbol
@@ -219,6 +259,7 @@ class MicrostructureActionScorer:
         self.taker_fee_bps = taker_fee_bps
         self.reference_order_notional_quote = reference_order_notional_quote
         self.max_l1_participation = max_l1_participation
+        self.max_quote_age_ms = max_quote_age_ms
         self.decision_cadence_seconds = decision_cadence_seconds
         self.stop_loss_bps = stop_loss_bps
         self.take_profit_bps = take_profit_bps
@@ -228,6 +269,9 @@ class MicrostructureActionScorer:
         self.minimum_profitable_probability = minimum_profitable_probability
         self.probability_calibration = dict(probability_calibration)
         self.models = dict(models)
+        self.training_cutoff_ms = training_cutoff_ms
+        self.expires_at_ms = expires_at_ms
+        self.enforce_model_freshness = bool(enforce_model_freshness)
 
     def score(
         self,
@@ -239,6 +283,8 @@ class MicrostructureActionScorer:
         close_ask: float,
         close_bid_qty: float,
         close_ask_qty: float,
+        quote_time_ms: int,
+        observation_time_ms: int,
     ) -> MicrostructureActionPrediction:
         matrix = np.asarray(features, dtype=np.float32)
         if matrix.shape != (len(MICROSTRUCTURE_FEATURE_NAMES),):
@@ -255,6 +301,15 @@ class MicrostructureActionScorer:
             or (decision_time // 1_000) % self.decision_cadence_seconds != 0
         ):
             raise ValueError("microstructure inference timestamp violates decision cadence")
+        if (
+            self.enforce_model_freshness
+            and self.expires_at_ms is not None
+            and decision_time > self.expires_at_ms
+        ):
+            raise MicrostructureModelExpiredError(
+                "microstructure deployment model expired at "
+                f"{self.expires_at_ms}; decision={decision_time}"
+            )
         liquidity_values = np.asarray(
             [order_notional_quote, close_bid, close_ask, close_bid_qty, close_ask_qty],
             dtype=np.float64,
@@ -263,12 +318,34 @@ class MicrostructureActionScorer:
             raise ValueError("microstructure inference liquidity inputs must be finite and positive")
         if close_bid >= close_ask:
             raise ValueError("microstructure inference quote is crossed")
+        quote_time = int(quote_time_ms)
+        observation_time = int(observation_time_ms)
+        quote_age_ms = observation_time - quote_time
+        if (
+            quote_time <= 0
+            or observation_time < decision_time
+            or quote_age_ms < 0
+        ):
+            raise ValueError("microstructure inference quote timing is invalid")
         long_participation = float(
             (float(order_notional_quote) / float(close_ask)) / float(close_ask_qty)
         )
         short_participation = float(
             (float(order_notional_quote) / float(close_bid)) / float(close_bid_qty)
         )
+        if quote_age_ms > self.max_quote_age_ms:
+            return MicrostructureActionPrediction(
+                side="FLAT",
+                long_expected_net_bps=0.0,
+                short_expected_net_bps=0.0,
+                long_profitable_probability=0.0,
+                short_profitable_probability=0.0,
+                minimum_predicted_edge_bps=self.minimum_predicted_edge_bps,
+                minimum_profitable_probability=self.minimum_profitable_probability,
+                long_l1_participation=long_participation,
+                short_l1_participation=short_participation,
+                reason="quote_age_exceeds_validated_limit",
+            )
         within_validated_notional = (
             float(order_notional_quote) <= self.reference_order_notional_quote
         )
@@ -347,6 +424,22 @@ def _artifact_int(value: object, label: str) -> int:
         return int(value)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"microstructure model {label} is invalid") from exc
+
+
+def _model_strings_sha256(models: Mapping[str, object]) -> str:
+    payload: dict[str, str] = {}
+    for name in _RUNTIME_MODEL_NAMES:
+        value = models.get(name)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"microstructure model is missing estimator {name}")
+        payload[name] = value
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _validated_source_evidence(
@@ -446,10 +539,144 @@ def _validated_performance_confidence(
     return value
 
 
+def _record_from_mapping(record_type, value: object, label: str):
+    if not isinstance(value, Mapping):
+        raise ValueError(f"microstructure model is missing {label}")
+    try:
+        return record_type(
+            **{item.name: value[item.name] for item in fields(record_type)}
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"microstructure model {label} is invalid") from exc
+
+
+def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelArtifact:
+    """Load a research artifact for deterministic terminal/refit recovery workflows."""
+
+    target = Path(path)
+    try:
+        payload = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("microstructure model artifact is not valid UTF-8 JSON") from exc
+    if not isinstance(payload, Mapping):
+        raise ValueError("microstructure model artifact must be a JSON object")
+    if payload.get("schema_version") != MICROSTRUCTURE_MODEL_SCHEMA_VERSION:
+        raise ValueError("microstructure model schema is not supported")
+    status = str(payload.get("status") or "")
+    if status not in {"candidate", "validated", "accepted", "rejected"}:
+        raise ValueError("microstructure model artifact status is unsupported")
+    feature_names = tuple(payload.get("feature_names") or ())
+    if feature_names != MICROSTRUCTURE_FEATURE_NAMES:
+        raise ValueError("microstructure model feature names do not match the current contract")
+    symbol = str(payload.get("symbol") or "").strip().upper()
+    dataset_summary = payload.get("dataset_summary")
+    if not isinstance(dataset_summary, Mapping):
+        raise ValueError("microstructure model is missing dataset evidence")
+    _validated_source_evidence(dataset_summary.get("source_evidence"), symbol=symbol)
+    model_strings = payload.get("model_strings")
+    if not isinstance(model_strings, Mapping):
+        raise ValueError("microstructure model is missing serialized estimators")
+    _model_strings_sha256(model_strings)
+
+    metrics_fields = ("policy_metrics", "selection_metrics", "terminal_metrics")
+    confidence_fields = ("selection_confidence", "terminal_confidence")
+    auc_fields = ("tuning_auc", "tuning_brier", "selection_auc", "selection_brier", "terminal_auc", "terminal_brier")
+    values = {item.name: payload.get(item.name) for item in fields(MicrostructureModelArtifact)}
+    values["rejection_reasons"] = tuple(payload.get("rejection_reasons") or ())
+    values["feature_names"] = feature_names
+    values["split"] = _record_from_mapping(
+        PurgedSplitEvidence,
+        payload.get("split"),
+        "purged split evidence",
+    )
+    values["threshold_policy"] = _record_from_mapping(
+        ThresholdPolicy,
+        payload.get("threshold_policy"),
+        "threshold policy",
+    )
+    raw_search = payload.get("policy_search")
+    if not isinstance(raw_search, Mapping):
+        raise ValueError("microstructure model is missing threshold-search evidence")
+    search_values = dict(raw_search)
+    if search_values.get("best_observed_metrics") is not None:
+        search_values["best_observed_metrics"] = _record_from_mapping(
+            TradingMetrics,
+            search_values["best_observed_metrics"],
+            "threshold-search metrics",
+        )
+    values["policy_search"] = _record_from_mapping(
+        ThresholdSearchEvidence,
+        search_values,
+        "threshold-search evidence",
+    )
+    for name in metrics_fields:
+        raw = payload.get(name)
+        values[name] = (
+            None
+            if raw is None
+            else _record_from_mapping(TradingMetrics, raw, name.replace("_", " "))
+        )
+    for name in confidence_fields:
+        raw = payload.get(name)
+        values[name] = (
+            None
+            if raw is None
+            else _record_from_mapping(
+                PerformanceConfidence,
+                raw,
+                name.replace("_", " "),
+            )
+        )
+    for name in auc_fields:
+        raw = payload.get(name)
+        values[name] = None if raw is None else dict(raw)
+    for name in ("selection_baselines", "terminal_baselines"):
+        raw = payload.get(name)
+        if raw is None:
+            values[name] = None
+        elif isinstance(raw, Mapping):
+            values[name] = {
+                str(key): _record_from_mapping(
+                    TradingMetrics,
+                    item,
+                    f"{name} {key}",
+                )
+                for key, item in raw.items()
+            }
+        else:
+            raise ValueError(f"microstructure model {name} is invalid")
+    raw_refit = payload.get("deployment_refit")
+    values["deployment_refit"] = (
+        None
+        if raw_refit is None
+        else _record_from_mapping(
+            DeploymentRefitEvidence,
+            raw_refit,
+            "deployment refit evidence",
+        )
+    )
+    values["probability_calibration"] = {
+        str(key): tuple(item)
+        for key, item in dict(payload.get("probability_calibration") or {}).items()
+    }
+    values["best_iterations"] = dict(payload.get("best_iterations") or {})
+    values["model_strings"] = dict(model_strings)
+    deployment_models = payload.get("deployment_model_strings")
+    values["deployment_model_strings"] = (
+        None if deployment_models is None else dict(deployment_models)
+    )
+    values["dataset_summary"] = dict(dataset_summary)
+    try:
+        return MicrostructureModelArtifact(**values)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("microstructure model artifact fields are incomplete") from exc
+
+
 def load_microstructure_action_scorer(
     path: str | Path,
     *,
     require_accepted: bool = True,
+    as_of_ms: int | None = None,
 ) -> MicrostructureActionScorer:
     """Load an inference scorer only after validating the full live contract."""
 
@@ -465,6 +692,10 @@ def load_microstructure_action_scorer(
         raise ValueError("microstructure model schema is not supported")
     status = str(payload.get("status") or "")
     rejection_reasons = payload.get("rejection_reasons")
+    if status == "rejected" or rejection_reasons:
+        raise ValueError("rejected microstructure artifacts cannot be loaded for inference")
+    if status not in {"candidate", "validated", "accepted"}:
+        raise ValueError("microstructure model artifact status is unsupported")
     if require_accepted and (status != "accepted" or rejection_reasons):
         raise ValueError("live microstructure inference requires an accepted artifact")
     if payload.get("feature_version") != MICROSTRUCTURE_FEATURE_VERSION:
@@ -483,7 +714,10 @@ def load_microstructure_action_scorer(
         "trade feature embargo",
     ) != MICROSTRUCTURE_TRADE_EMBARGO_MS:
         raise ValueError("microstructure model trade feature embargo does not match the live engine")
-    _validated_source_evidence(dataset_summary.get("source_evidence"), symbol=symbol)
+    source_evidence = _validated_source_evidence(
+        dataset_summary.get("source_evidence"),
+        symbol=symbol,
+    )
     _validated_performance_confidence(
         payload.get("selection_confidence"),
         label="selection",
@@ -572,6 +806,7 @@ def load_microstructure_action_scorer(
         payload.get("max_l1_participation"),
         "maximum L1 participation",
     )
+    max_quote_age_ms = _artifact_int(payload.get("max_quote_age_ms"), "maximum quote age")
     decision_cadence = _artifact_int(payload.get("decision_cadence_seconds"), "decision cadence")
     target_mode = str(payload.get("target_mode") or "")
     stop_loss_bps = _artifact_float(payload.get("stop_loss_bps"), "stop loss")
@@ -585,7 +820,11 @@ def load_microstructure_action_scorer(
         raise ValueError("microstructure model timing contract is invalid")
     if taker_fee_bps < 0.0:
         raise ValueError("microstructure model fee contract is invalid")
-    if reference_notional <= 0.0 or not 0.0 < max_participation <= 1.0:
+    if (
+        reference_notional <= 0.0
+        or not 0.0 < max_participation <= 1.0
+        or max_quote_age_ms <= 0
+    ):
         raise ValueError("microstructure model liquidity contract is invalid")
     if decision_cadence <= 0 or decision_cadence > 60:
         raise ValueError("microstructure model decision cadence is invalid")
@@ -609,6 +848,11 @@ def load_microstructure_action_scorer(
         )
         != max_participation
         or _artifact_int(
+            dataset_summary.get("max_quote_age_ms"),
+            "dataset maximum quote age",
+        )
+        != max_quote_age_ms
+        or _artifact_int(
             dataset_summary.get("decision_cadence_seconds"),
             "dataset decision cadence",
         )
@@ -618,10 +862,110 @@ def load_microstructure_action_scorer(
     raw_models = payload.get("model_strings")
     if not isinstance(raw_models, Mapping):
         raise ValueError("microstructure model is missing serialized estimators")
+    active_models: Mapping[str, object] = raw_models
+    training_cutoff_ms: int | None = None
+    expires_at_ms: int | None = None
+    enforce_model_freshness = False
+    if status == "accepted":
+        refit = payload.get("deployment_refit")
+        deployment_models = payload.get("deployment_model_strings")
+        if not isinstance(refit, Mapping) or not isinstance(deployment_models, Mapping):
+            raise ValueError("accepted microstructure model is missing deployment refit evidence")
+        if refit.get("refit_mode") != "full_history_fixed_hyperparameters":
+            raise ValueError("microstructure deployment refit mode is unsupported")
+        if (
+            not str(refit.get("backend_kind") or "").strip()
+            or not str(refit.get("backend_device") or "").strip()
+            or not str(refit.get("lightgbm_version") or "").strip()
+        ):
+            raise ValueError("microstructure deployment backend evidence is missing")
+        calibration_days = _artifact_int(
+            payload.get("deployment_calibration_days"),
+            "deployment calibration days",
+        )
+        maximum_age_seconds = _artifact_int(
+            payload.get("maximum_model_age_seconds"),
+            "maximum model age",
+        )
+        if calibration_days < 2 or maximum_age_seconds <= 0:
+            raise ValueError("microstructure deployment age or calibration contract is invalid")
+        if (
+            _artifact_int(refit.get("calibration_days"), "refit calibration days")
+            != calibration_days
+            or _artifact_int(refit.get("maximum_model_age_seconds"), "refit maximum age")
+            != maximum_age_seconds
+        ):
+            raise ValueError("microstructure deployment refit settings drifted from the artifact")
+        training_cutoff_ms = _artifact_int(refit.get("training_cutoff_ms"), "refit cutoff")
+        expires_at_ms = _artifact_int(refit.get("expires_at_ms"), "refit expiration")
+        if (
+            training_cutoff_ms <= 0
+            or expires_at_ms != training_cutoff_ms + maximum_age_seconds * 1_000
+        ):
+            raise ValueError("microstructure deployment expiration evidence is inconsistent")
+        training_rows = _artifact_int(refit.get("training_rows"), "refit training rows")
+        calibration_start_ms = _artifact_int(
+            refit.get("calibration_start_ms"),
+            "refit calibration start",
+        )
+        calibration_end_ms = _artifact_int(
+            refit.get("calibration_end_ms"),
+            "refit calibration end",
+        )
+        if (
+            training_rows <= 0
+            or calibration_start_ms <= 0
+            or calibration_start_ms > calibration_end_ms
+            or calibration_end_ms > training_cutoff_ms
+        ):
+            raise ValueError("microstructure deployment refit row or time evidence is invalid")
+        for field in ("side_training_rows", "side_calibration_rows"):
+            values = refit.get(field)
+            if not isinstance(values, Mapping) or any(
+                _artifact_int(values.get(side), f"refit {field} {side}") <= 0
+                for side in ("long", "short")
+            ):
+                raise ValueError(f"microstructure deployment {field} evidence is invalid")
+        if (
+            str(refit.get("source_feature_build_id") or "") != source_evidence["build_id"]
+            or str(refit.get("source_manifest_fingerprint") or "")
+            != source_evidence["manifest_fingerprint"]
+        ):
+            raise ValueError("microstructure deployment source provenance drifted")
+        if str(refit.get("validation_model_sha256") or "") != _model_strings_sha256(
+            raw_models
+        ):
+            raise ValueError("microstructure validation estimator hash drifted")
+        if str(refit.get("deployment_model_sha256") or "") != _model_strings_sha256(
+            deployment_models
+        ):
+            raise ValueError("microstructure deployment estimator hash drifted")
+        refit_calibration = refit.get("probability_calibration")
+        if not isinstance(refit_calibration, Mapping):
+            raise ValueError("microstructure deployment calibration is missing")
+        deployment_calibration: dict[str, tuple[float, float]] = {}
+        for side in ("long", "short"):
+            values = refit_calibration.get(side)
+            if not isinstance(values, (list, tuple)) or len(values) != 2:
+                raise ValueError(f"microstructure deployment {side} calibration is missing")
+            pair = (
+                _artifact_float(values[0], f"deployment {side} calibration slope"),
+                _artifact_float(values[1], f"deployment {side} calibration intercept"),
+            )
+            if pair[0] <= 0.0:
+                raise ValueError(f"microstructure deployment {side} calibration is invalid")
+            deployment_calibration[side] = pair
+        if as_of_ms is not None and int(as_of_ms) > expires_at_ms:
+            raise MicrostructureModelExpiredError(
+                f"microstructure deployment model expired at {expires_at_ms}; as_of={int(as_of_ms)}"
+            )
+        active_models = deployment_models
+        calibration = deployment_calibration
+        enforce_model_freshness = True
     models: dict[str, lgb.Booster] = {}
     try:
         for name in _RUNTIME_MODEL_NAMES:
-            model_string = raw_models.get(name)
+            model_string = active_models.get(name)
             if not isinstance(model_string, str) or not model_string.strip():
                 raise ValueError(f"microstructure model is missing estimator {name}")
             models[name] = lgb.Booster(model_str=model_string)
@@ -636,6 +980,7 @@ def load_microstructure_action_scorer(
         taker_fee_bps=taker_fee_bps,
         reference_order_notional_quote=reference_notional,
         max_l1_participation=max_participation,
+        max_quote_age_ms=max_quote_age_ms,
         decision_cadence_seconds=decision_cadence,
         stop_loss_bps=stop_loss_bps,
         take_profit_bps=take_profit_bps,
@@ -645,6 +990,9 @@ def load_microstructure_action_scorer(
         minimum_profitable_probability=probability_threshold,
         probability_calibration=calibration,
         models=models,
+        training_cutoff_ms=training_cutoff_ms,
+        expires_at_ms=expires_at_ms,
+        enforce_model_freshness=enforce_model_freshness,
     )
 
 
@@ -664,6 +1012,7 @@ def concatenate_microstructure_datasets(
             item.taker_fee_bps,
             item.reference_order_notional_quote,
             item.max_l1_participation,
+            item.max_quote_age_ms,
             item.decision_cadence_seconds,
             item.target_mode,
             item.stop_loss_bps,
@@ -682,6 +1031,7 @@ def concatenate_microstructure_datasets(
             first.taker_fee_bps,
             first.reference_order_notional_quote,
             first.max_l1_participation,
+            first.max_quote_age_ms,
             first.decision_cadence_seconds,
             first.target_mode,
             first.stop_loss_bps,
@@ -707,6 +1057,7 @@ def concatenate_microstructure_datasets(
         taker_fee_bps=first.taker_fee_bps,
         reference_order_notional_quote=first.reference_order_notional_quote,
         max_l1_participation=first.max_l1_participation,
+        max_quote_age_ms=first.max_quote_age_ms,
         decision_cadence_seconds=first.decision_cadence_seconds,
         target_mode=first.target_mode,
         stop_loss_bps=first.stop_loss_bps,
@@ -792,6 +1143,11 @@ def _purged_split(dataset: MicrostructureDataset) -> tuple[dict[str, np.ndarray]
     terminal = np.arange(selection_boundary, rows, dtype=np.int64)
     if min(len(train), len(tuning), len(policy), len(selection), len(terminal)) < 256:
         raise ValueError("purged train/tuning/policy/selection/terminal segments are too small")
+    tuning_early_stop, tuning_calibration = _purged_tuning_subsplit(
+        times,
+        tuning,
+        purge_ms=purge_ms,
+    )
     used = len(train) + len(tuning) + len(policy) + len(selection) + len(terminal)
     evidence = PurgedSplitEvidence(
         train_rows=len(train),
@@ -806,6 +1162,12 @@ def _purged_split(dataset: MicrostructureDataset) -> tuple[dict[str, np.ndarray]
         terminal_start_ms=int(times[selection_boundary]),
         purge_ms=purge_ms,
         purged_rows=rows - used,
+        tuning_early_stop_rows=len(tuning_early_stop),
+        tuning_calibration_rows=len(tuning_calibration),
+        tuning_calibration_start_ms=int(times[tuning_calibration[0]]),
+        tuning_internal_purged_rows=(
+            len(tuning) - len(tuning_early_stop) - len(tuning_calibration)
+        ),
     )
     return {
         "train": train,
@@ -814,6 +1176,24 @@ def _purged_split(dataset: MicrostructureDataset) -> tuple[dict[str, np.ndarray]
         "selection": selection,
         "terminal": terminal,
     }, evidence
+
+
+def _purged_tuning_subsplit(
+    times: np.ndarray,
+    tuning_indexes: np.ndarray,
+    *,
+    purge_ms: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    indexes = np.asarray(tuning_indexes, dtype=np.int64)
+    if len(indexes) < 512:
+        raise ValueError("tuning segment is too small for separate calibration")
+    calibration_offset = len(indexes) // 2
+    calibration = indexes[calibration_offset:]
+    cutoff = int(times[calibration[0]]) - int(purge_ms)
+    early_stop = indexes[:calibration_offset][times[indexes[:calibration_offset]] < cutoff]
+    if min(len(early_stop), len(calibration)) < 256:
+        raise ValueError("purged tuning early-stop/calibration segments are too small")
+    return early_stop, calibration
 
 
 def _backend_parameters(compute_backend: str, seed: int) -> tuple[dict[str, object], str, str]:
@@ -908,6 +1288,34 @@ def _train_booster(
     )
     iteration = max(1, int(booster.best_iteration or booster.current_iteration()))
     return booster, iteration
+
+
+def _train_fixed_booster(
+    *,
+    features: np.ndarray,
+    targets: np.ndarray,
+    objective: str,
+    metric: str,
+    parameters: Mapping[str, object],
+    iterations: int,
+) -> lgb.Booster:
+    rounds = int(iterations)
+    if rounds <= 0:
+        raise ValueError("deployment refit iterations must be positive")
+    config = dict(parameters)
+    config.update({"objective": objective, "metric": metric})
+    dataset = lgb.Dataset(
+        features,
+        label=targets,
+        weight=np.ones(len(targets), dtype=np.float32),
+        free_raw_data=False,
+    )
+    return lgb.train(
+        config,
+        dataset,
+        num_boost_round=rounds,
+        callbacks=[lgb.log_evaluation(0)],
+    )
 
 
 def _auc(labels: np.ndarray, scores: np.ndarray) -> float:
@@ -1366,6 +1774,8 @@ def train_microstructure_action_value_model(
     compute_backend: str = "auto",
     seed: int = 20260710,
     minimum_promotion_days: int = 365,
+    deployment_calibration_days: int = 14,
+    maximum_model_age_seconds: int = 86_400,
     evaluate_terminal: bool = False,
     progress: ModelProgressCallback | None = None,
 ) -> MicrostructureModelArtifact:
@@ -1374,6 +1784,12 @@ def train_microstructure_action_value_model(
         raise ValueError("risk_level must be conservative, regular, or aggressive")
     if dataset.rows <= 0 or not np.all(np.isfinite(dataset.features)):
         raise ValueError("microstructure dataset is empty or non-finite")
+    calibration_days = int(deployment_calibration_days)
+    maximum_age = int(maximum_model_age_seconds)
+    if calibration_days < 2:
+        raise ValueError("deployment_calibration_days must be at least 2")
+    if maximum_age <= 0:
+        raise ValueError("maximum_model_age_seconds must be positive")
     _validated_source_evidence(dataset.source_evidence, symbol=dataset.symbol)
     splits, split_evidence = _purged_split(dataset)
     x = np.asarray(dataset.features, dtype=np.float32)
@@ -1391,17 +1807,29 @@ def train_microstructure_action_value_model(
     training_step = 0
     total_training_steps = 6
     train_indexes = splits["train"]
-    tuning_indexes = splits["tuning"]
+    tuning_indexes, calibration_indexes = _purged_tuning_subsplit(
+        dataset.decision_time_ms,
+        splits["tuning"],
+        purge_ms=split_evidence.purge_ms,
+    )
     for side, target in targets.items():
         side_train_indexes = train_indexes[liquidity_eligible[side][train_indexes]]
         side_tuning_indexes = tuning_indexes[liquidity_eligible[side][tuning_indexes]]
+        side_calibration_indexes = calibration_indexes[
+            liquidity_eligible[side][calibration_indexes]
+        ]
         train_labels = (target[side_train_indexes] > 0.0).astype(np.float32)
         tuning_labels = (target[side_tuning_indexes] > 0.0).astype(np.float32)
+        calibration_labels = (
+            target[side_calibration_indexes] > 0.0
+        ).astype(np.float32)
         if min(
             int(np.sum(train_labels == 0.0)),
             int(np.sum(train_labels == 1.0)),
             int(np.sum(tuning_labels == 0.0)),
             int(np.sum(tuning_labels == 1.0)),
+            int(np.sum(calibration_labels == 0.0)),
+            int(np.sum(calibration_labels == 1.0)),
         ) < 256:
             raise ValueError(f"{side} hurdle classifier has insufficient class support")
         if progress:
@@ -1419,12 +1847,12 @@ def train_microstructure_action_value_model(
         training_step += 1
         models[f"{side}_probability"] = classifier
         iterations[f"{side}_probability"] = classifier_iteration
-        raw_tuning_probability = classifier.predict(
-            x[side_tuning_indexes], num_iteration=classifier_iteration
+        raw_calibration_probability = classifier.predict(
+            x[side_calibration_indexes], num_iteration=classifier_iteration
         )
         probability_calibration[side] = _fit_platt_scaling(
-            raw_tuning_probability,
-            tuning_labels,
+            raw_calibration_probability,
+            calibration_labels,
         )
 
         for outcome, keep, magnitude in (
@@ -1487,10 +1915,10 @@ def train_microstructure_action_value_model(
             output[side] = (probability * win - (1.0 - probability) * loss, probability)
         return output["long"][0], output["short"][0], output["long"][1], output["short"][1]
 
-    tuning_predictions = predictions(tuning_indexes)
+    tuning_predictions = predictions(calibration_indexes)
     tuning_auc, tuning_brier = _side_probability_quality(
         dataset,
-        tuning_indexes,
+        calibration_indexes,
         tuning_predictions[2],
         tuning_predictions[3],
     )
@@ -1588,6 +2016,7 @@ def train_microstructure_action_value_model(
         taker_fee_bps=dataset.taker_fee_bps,
         reference_order_notional_quote=dataset.reference_order_notional_quote,
         max_l1_participation=dataset.max_l1_participation,
+        max_quote_age_ms=dataset.max_quote_age_ms,
         decision_cadence_seconds=dataset.decision_cadence_seconds,
         target_mode=dataset.target_mode,
         stop_loss_bps=dataset.stop_loss_bps,
@@ -1605,6 +2034,8 @@ def train_microstructure_action_value_model(
         daily_rows_p10=daily_rows_p10,
         median_rows_per_utc_day=median_rows_per_utc_day,
         minimum_promotion_days=max(1, int(minimum_promotion_days)),
+        deployment_calibration_days=calibration_days,
+        maximum_model_age_seconds=maximum_age,
         split=split_evidence,
         best_iterations=iterations,
         probability_calibration=probability_calibration,
@@ -1624,12 +2055,26 @@ def train_microstructure_action_value_model(
         selection_baselines=selection_baselines,
         terminal_baselines=None,
         model_strings=model_strings,
+        deployment_model_strings=None,
+        deployment_refit=None,
         dataset_summary=dataset.summary(),
         trained_at=datetime.now(timezone.utc).isoformat(),
         terminal_evaluated_at=None,
     )
     if evaluate_terminal and artifact.status == "candidate":
-        return evaluate_microstructure_model_terminal(artifact, dataset, progress=progress)
+        validated = evaluate_microstructure_model_terminal(
+            artifact,
+            dataset,
+            progress=progress,
+        )
+        if validated.status == "validated":
+            return refit_validated_microstructure_model(
+                validated,
+                dataset,
+                compute_backend=compute_backend,
+                progress=progress,
+            )
+        return validated
     return artifact
 
 
@@ -1646,6 +2091,189 @@ def microstructure_candidate_sha256(artifact: MicrostructureModelArtifact) -> st
         allow_nan=False,
     ).encode("ascii")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def refit_validated_microstructure_model(
+    artifact: MicrostructureModelArtifact,
+    dataset: MicrostructureDataset,
+    *,
+    compute_backend: str = "auto",
+    progress: ModelProgressCallback | None = None,
+) -> MicrostructureModelArtifact:
+    """Refit fixed validated estimators on all labeled rows for bounded live use."""
+
+    if artifact.status != "validated" or artifact.rejection_reasons:
+        raise ValueError("deployment refit requires a terminal-validated artifact")
+    if artifact.terminal_metrics is None or artifact.terminal_evaluated_at is None:
+        raise ValueError("deployment refit requires terminal evaluation evidence")
+    if artifact.deployment_refit is not None or artifact.deployment_model_strings is not None:
+        raise ValueError("deployment refit has already been applied")
+    if (
+        dataset.symbol != artifact.symbol
+        or dataset.feature_version != artifact.feature_version
+        or dataset.feature_names != artifact.feature_names
+        or dataset.horizon_seconds != artifact.horizon_seconds
+        or dataset.total_latency_ms != artifact.total_latency_ms
+        or dataset.taker_fee_bps != artifact.taker_fee_bps
+        or dataset.reference_order_notional_quote
+        != artifact.reference_order_notional_quote
+        or dataset.max_l1_participation != artifact.max_l1_participation
+        or dataset.max_quote_age_ms != artifact.max_quote_age_ms
+        or dataset.decision_cadence_seconds != artifact.decision_cadence_seconds
+        or dataset.target_mode != artifact.target_mode
+        or dataset.stop_loss_bps != artifact.stop_loss_bps
+        or dataset.take_profit_bps != artifact.take_profit_bps
+        or dataset.trigger_execution_slippage_bps
+        != artifact.trigger_execution_slippage_bps
+        or dataset.path_resolution_ms != artifact.path_resolution_ms
+    ):
+        raise ValueError("deployment refit dataset does not match the validated contract")
+    source = _validated_source_evidence(dataset.source_evidence, symbol=dataset.symbol)
+    artifact_source = _validated_source_evidence(
+        artifact.dataset_summary.get("source_evidence"),
+        symbol=artifact.symbol,
+    )
+    if (
+        source["build_id"] != artifact_source["build_id"]
+        or source["manifest_fingerprint"] != artifact_source["manifest_fingerprint"]
+    ):
+        raise ValueError("deployment refit source provenance does not match validation")
+
+    calibration_days = int(artifact.deployment_calibration_days)
+    maximum_age_seconds = int(artifact.maximum_model_age_seconds)
+    times = np.asarray(dataset.decision_time_ms, dtype=np.int64)
+    day_ids = _utc_day_ids(times)
+    unique_days = np.unique(day_ids)
+    if len(unique_days) <= calibration_days + 2:
+        raise ValueError("deployment refit has insufficient days before its calibration tail")
+    calibration_first_day = int(unique_days[-calibration_days])
+    calibration_indexes = np.flatnonzero(day_ids >= calibration_first_day).astype(np.int64)
+    calibration_start_ms = int(times[calibration_indexes[0]])
+    provisional_cutoff_ms = calibration_start_ms - int(artifact.split.purge_ms)
+    provisional_indexes = np.flatnonzero(times < provisional_cutoff_ms).astype(np.int64)
+    if len(provisional_indexes) < 2_000 or len(calibration_indexes) < 512:
+        raise ValueError("deployment refit train/calibration segments are too small")
+
+    x = np.asarray(dataset.features, dtype=np.float32)
+    backend_parameters, backend_kind, backend_device = _backend_parameters(
+        compute_backend,
+        artifact.seed + 10_000,
+    )
+    parameters = {
+        **backend_parameters,
+        **_risk_parameters(artifact.risk_level, len(provisional_indexes)),
+    }
+    targets = {"long": dataset.long_net_bps, "short": dataset.short_net_bps}
+    eligible = {
+        "long": np.asarray(dataset.long_liquidity_eligible, dtype=bool),
+        "short": np.asarray(dataset.short_liquidity_eligible, dtype=bool),
+    }
+    deployment_models: dict[str, lgb.Booster] = {}
+    deployment_calibration: dict[str, tuple[float, float]] = {}
+    side_training_rows: dict[str, int] = {}
+    side_calibration_rows: dict[str, int] = {}
+    completed = 0
+    total_steps = 8
+    for side, target in targets.items():
+        provisional_side = provisional_indexes[eligible[side][provisional_indexes]]
+        calibration_side = calibration_indexes[eligible[side][calibration_indexes]]
+        final_side = np.flatnonzero(eligible[side]).astype(np.int64)
+        provisional_labels = (target[provisional_side] > 0.0).astype(np.float32)
+        calibration_labels = (target[calibration_side] > 0.0).astype(np.float32)
+        final_labels = (target[final_side] > 0.0).astype(np.float32)
+        if min(
+            int(np.sum(provisional_labels == 0.0)),
+            int(np.sum(provisional_labels == 1.0)),
+            int(np.sum(calibration_labels == 0.0)),
+            int(np.sum(calibration_labels == 1.0)),
+            int(np.sum(final_labels == 0.0)),
+            int(np.sum(final_labels == 1.0)),
+        ) < 256:
+            raise ValueError(f"deployment refit {side} classifier lacks class support")
+        if progress:
+            progress(f"refit-{side}-calibration-model", completed, total_steps)
+        provisional_classifier = _train_fixed_booster(
+            features=x[provisional_side],
+            targets=provisional_labels,
+            objective="binary",
+            metric="binary_logloss",
+            parameters=parameters,
+            iterations=int(artifact.best_iterations[f"{side}_probability"]),
+        )
+        completed += 1
+        raw_calibration = provisional_classifier.predict(x[calibration_side])
+        deployment_calibration[side] = _fit_platt_scaling(
+            raw_calibration,
+            calibration_labels,
+        )
+
+        if progress:
+            progress(f"refit-{side}-probability", completed, total_steps)
+        deployment_models[f"{side}_probability"] = _train_fixed_booster(
+            features=x[final_side],
+            targets=final_labels,
+            objective="binary",
+            metric="binary_logloss",
+            parameters=parameters,
+            iterations=int(artifact.best_iterations[f"{side}_probability"]),
+        )
+        completed += 1
+        for outcome, keep, magnitude in (
+            ("win", final_labels == 1.0, target[final_side]),
+            ("loss", final_labels == 0.0, -target[final_side]),
+        ):
+            if int(np.sum(keep)) < 256:
+                raise ValueError(f"deployment refit {side} {outcome} regressor lacks support")
+            if progress:
+                progress(f"refit-{side}-{outcome}-magnitude", completed, total_steps)
+            name = f"{side}_{outcome}_magnitude"
+            deployment_models[name] = _train_fixed_booster(
+                features=x[final_side][keep],
+                targets=np.asarray(magnitude[keep], dtype=np.float32),
+                objective="regression",
+                metric="l2",
+                parameters=parameters,
+                iterations=int(artifact.best_iterations[name]),
+            )
+            completed += 1
+        side_training_rows[side] = int(len(final_side))
+        side_calibration_rows[side] = int(len(calibration_side))
+
+    deployment_model_strings = {
+        name: model.model_to_string(num_iteration=int(artifact.best_iterations[name]))
+        for name, model in deployment_models.items()
+    }
+    training_cutoff_ms = int(times[-1])
+    expires_at_ms = training_cutoff_ms + maximum_age_seconds * 1_000
+    evidence = DeploymentRefitEvidence(
+        refit_mode="full_history_fixed_hyperparameters",
+        backend_kind=backend_kind,
+        backend_device=backend_device,
+        lightgbm_version=str(lgb.__version__),
+        training_rows=int(dataset.rows),
+        calibration_days=calibration_days,
+        calibration_start_ms=calibration_start_ms,
+        calibration_end_ms=int(times[calibration_indexes[-1]]),
+        side_training_rows=side_training_rows,
+        side_calibration_rows=side_calibration_rows,
+        probability_calibration=deployment_calibration,
+        training_cutoff_ms=training_cutoff_ms,
+        maximum_model_age_seconds=maximum_age_seconds,
+        expires_at_ms=expires_at_ms,
+        source_feature_build_id=str(source["build_id"]),
+        source_manifest_fingerprint=str(source["manifest_fingerprint"]),
+        validation_model_sha256=_model_strings_sha256(artifact.model_strings),
+        deployment_model_sha256=_model_strings_sha256(deployment_model_strings),
+        fitted_at=datetime.now(timezone.utc).isoformat(),
+    )
+    if progress:
+        progress("deployment-refit-complete", total_steps, total_steps)
+    return replace(
+        artifact,
+        status="accepted",
+        deployment_model_strings=deployment_model_strings,
+        deployment_refit=evidence,
+    )
 
 
 def evaluate_microstructure_model_terminal(
@@ -1682,6 +2310,7 @@ def evaluate_microstructure_model_terminal(
         artifact.taker_fee_bps,
         artifact.reference_order_notional_quote,
         artifact.max_l1_participation,
+        artifact.max_quote_age_ms,
         artifact.decision_cadence_seconds,
         artifact.target_mode,
         artifact.stop_loss_bps,
@@ -1702,6 +2331,7 @@ def evaluate_microstructure_model_terminal(
         dataset.taker_fee_bps,
         dataset.reference_order_notional_quote,
         dataset.max_l1_participation,
+        dataset.max_quote_age_ms,
         dataset.decision_cadence_seconds,
         dataset.target_mode,
         dataset.stop_loss_bps,
@@ -1827,7 +2457,7 @@ def evaluate_microstructure_model_terminal(
         progress("terminal-evaluation", 6, 6)
     return replace(
         artifact,
-        status="accepted" if not reasons else "rejected",
+        status="validated" if not reasons else "rejected",
         rejection_reasons=tuple(reasons),
         terminal_auc=terminal_auc,
         terminal_brier=terminal_brier,
@@ -1859,8 +2489,10 @@ def save_microstructure_model_artifact(
 
 __all__ = [
     "MICROSTRUCTURE_MODEL_SCHEMA_VERSION",
+    "DeploymentRefitEvidence",
     "MicrostructureActionPrediction",
     "MicrostructureActionScorer",
+    "MicrostructureModelExpiredError",
     "MicrostructureModelArtifact",
     "PurgedSplitEvidence",
     "ThresholdPolicy",
@@ -1869,7 +2501,9 @@ __all__ = [
     "concatenate_microstructure_datasets",
     "evaluate_microstructure_model_terminal",
     "load_microstructure_action_scorer",
+    "load_microstructure_model_artifact",
     "microstructure_candidate_sha256",
+    "refit_validated_microstructure_model",
     "save_microstructure_model_artifact",
     "train_microstructure_action_value_model",
 ]

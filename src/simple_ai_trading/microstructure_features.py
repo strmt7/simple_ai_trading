@@ -27,6 +27,7 @@ class MicrostructureDataset:
     taker_fee_bps: float
     reference_order_notional_quote: float
     max_l1_participation: float
+    max_quote_age_ms: int
     decision_cadence_seconds: int
     target_mode: str
     stop_loss_bps: float | None
@@ -96,6 +97,7 @@ class MicrostructureDataset:
             "taker_fee_bps": self.taker_fee_bps,
             "reference_order_notional_quote": self.reference_order_notional_quote,
             "max_l1_participation": self.max_l1_participation,
+            "max_quote_age_ms": self.max_quote_age_ms,
             "decision_cadence_seconds": self.decision_cadence_seconds,
             "target_mode": self.target_mode,
             "stop_loss_bps": self.stop_loss_bps,
@@ -605,6 +607,7 @@ def build_executable_microstructure_dataset(
         taker_fee_bps=fee,
         reference_order_notional_quote=reference_notional,
         max_l1_participation=participation_limit,
+        max_quote_age_ms=max_age,
         decision_cadence_seconds=decision_cadence,
         target_mode="fixed_horizon",
         stop_loss_bps=None,
@@ -710,6 +713,7 @@ def _validate_dataset(dataset: MicrostructureDataset) -> None:
         )
         <= 0.0
         or dataset.max_l1_participation > 1.0
+        or dataset.max_quote_age_ms <= 0
     ):
         raise ValueError("microstructure liquidity contract is invalid")
     if dataset.decision_cadence_seconds <= 0 or dataset.decision_cadence_seconds > 60:

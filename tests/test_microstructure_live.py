@@ -120,15 +120,33 @@ def test_live_aggregator_recovers_underlying_fill_count_from_aggregate_trade() -
     assert rows[0].base_volume == pytest.approx(0.06)
 
 
+def test_live_aggregator_exposes_newest_unclosed_quote_for_execution_gates() -> None:
+    aggregator = LiveMicrostructureSecondAggregator("BTCUSDT", settlement_delay_ms=100)
+    second_ms = 1_700_000_000_000
+    aggregator.ingest(_quote(second_ms, 1, event_offset_ms=900))
+    assert aggregator.drain(second_ms + 1_100)
+    next_quote = _quote(second_ms + 1_000, 2, event_offset_ms=50)
+
+    aggregator.ingest(next_quote)
+    current = aggregator.current_quote()
+
+    assert current is not None
+    assert current.event_time_ms == second_ms + 1_050
+    assert current.update_id == 3
+    assert current.bid == pytest.approx(float(next_quote["b"]))
+
+
 class _Scorer:
     symbol = "BTCUSDT"
     decision_cadence_seconds = 5
     total_latency_ms = 500
+    max_quote_age_ms = 1_000
 
     def score(self, features, **kwargs) -> MicrostructureActionPrediction:
         assert np.asarray(features).shape == (81,)
         assert kwargs["decision_time_ms"] % 5_000 == 0
         assert kwargs["close_bid_qty"] > 0.0
+        assert kwargs["quote_time_ms"] <= kwargs["observation_time_ms"]
         return MicrostructureActionPrediction(
             side="FLAT",
             long_expected_net_bps=0.0,
@@ -197,6 +215,7 @@ def test_streaming_coordinator_preserves_warmup_cadence_and_latency_budget() -> 
     assert predictions
     assert all(item.feature_row.decision_time_ms % 5_000 == 0 for item in predictions)
     assert all(0 < item.remaining_latency_budget_ms <= 400 for item in predictions)
+    assert all(item.execution_quote.event_time_ms > 0 for item in predictions)
     assert coordinator.deadline_misses == 0
     assert coordinator.engine.gap_resets == 0
 
