@@ -828,6 +828,143 @@ def default_fidelity_stages(risk_level: str) -> tuple[FidelityStage, ...]:
     )
 
 
+def validate_experiment_design_payload(
+    payload: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate a serialized design before it can constrain screening reports."""
+
+    if payload.get("contract") != EXPERIMENT_DESIGN_CONTRACT:
+        raise ValueError("experiment design contract is unsupported")
+    domains = payload.get("domains")
+    candidates = payload.get("candidates")
+    if not isinstance(domains, list) or not domains or not isinstance(candidates, list):
+        raise ValueError("experiment design domains or candidates are invalid")
+    domain_by_name: dict[str, Mapping[str, object]] = {}
+    for raw_domain in domains:
+        if not isinstance(raw_domain, Mapping):
+            raise ValueError("experiment design domain is invalid")
+        name = str(raw_domain.get("name") or "")
+        if not name or name in domain_by_name:
+            raise ValueError("experiment design domain names are empty or duplicated")
+        if "choices" in raw_domain:
+            choices = raw_domain.get("choices")
+            if not isinstance(choices, (list, tuple)) or not choices:
+                raise ValueError("experiment design choice domain is invalid")
+        else:
+            try:
+                lower = float(raw_domain.get("lower"))
+                upper = float(raw_domain.get("upper"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("experiment design numeric domain is invalid") from exc
+            if (
+                not math.isfinite(lower)
+                or not math.isfinite(upper)
+                or lower >= upper
+                or raw_domain.get("scale") not in {"linear", "log"}
+            ):
+                raise ValueError("experiment design numeric domain is invalid")
+        domain_by_name[name] = raw_domain
+    names = tuple(domain_by_name)
+    normalized_candidates: list[dict[str, object]] = []
+    seen_ids: set[str] = set()
+    seen_parameters: set[str] = set()
+    source_counts = {"anchor": 0, "latin_hypercube": 0}
+    source_indices: dict[str, set[int]] = {key: set() for key in source_counts}
+    for raw_candidate in candidates:
+        if not isinstance(raw_candidate, Mapping):
+            raise ValueError("experiment design candidate is invalid")
+        candidate_id = str(raw_candidate.get("candidate_id") or "")
+        source = str(raw_candidate.get("source") or "")
+        parameters = raw_candidate.get("parameters")
+        try:
+            design_index = int(raw_candidate.get("design_index", -1))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("experiment design candidate index is invalid") from exc
+        if (
+            source not in source_counts
+            or design_index < 0
+            or design_index in source_indices[source]
+            or not isinstance(parameters, Mapping)
+            or set(parameters) != set(names)
+        ):
+            raise ValueError("experiment design candidate structure is invalid")
+        normalized_parameters = {name: parameters[name] for name in names}
+        for name, value in normalized_parameters.items():
+            domain = domain_by_name[name]
+            if "choices" in domain:
+                if value not in domain["choices"]:  # type: ignore[operator]
+                    raise ValueError("experiment design candidate is outside a choice domain")
+                continue
+            lower = float(domain["lower"])
+            upper = float(domain["upper"])
+            if (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(float(value))
+                or not lower <= float(value) <= upper
+            ):
+                raise ValueError("experiment design candidate is outside a numeric domain")
+        expected_id = _canonical_sha256(
+            {
+                "contract": EXPERIMENT_DESIGN_CONTRACT,
+                "parameters": normalized_parameters,
+            }
+        )
+        parameter_identity = _canonical_sha256(normalized_parameters)
+        if (
+            candidate_id != expected_id
+            or candidate_id in seen_ids
+            or parameter_identity in seen_parameters
+        ):
+            raise ValueError("experiment design candidate identity is invalid or duplicated")
+        seen_ids.add(candidate_id)
+        seen_parameters.add(parameter_identity)
+        source_indices[source].add(design_index)
+        source_counts[source] += 1
+        normalized_candidates.append(
+            {
+                "candidate_id": candidate_id,
+                "source": source,
+                "design_index": design_index,
+                "parameters": normalized_parameters,
+            }
+        )
+    try:
+        seed = int(payload.get("seed"))
+        anchor_count = int(payload.get("anchor_count"))
+        sampled_count = int(payload.get("sampled_count"))
+        trial_burden = int(payload.get("trial_burden"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("experiment design counts are invalid") from exc
+    if (
+        payload.get("sampling_method") != "deterministic_randomized_latin_hypercube"
+        or anchor_count != source_counts["anchor"]
+        or sampled_count != source_counts["latin_hypercube"]
+        or trial_burden != len(normalized_candidates)
+        or trial_burden <= 0
+        or source_indices["anchor"] != set(range(anchor_count))
+        or source_indices["latin_hypercube"] != set(range(sampled_count))
+    ):
+        raise ValueError("experiment design counts or sampling method are invalid")
+    design_payload = {
+        "contract": EXPERIMENT_DESIGN_CONTRACT,
+        "seed": seed,
+        "sampling_method": payload["sampling_method"],
+        "domains": domains,
+        "candidates": normalized_candidates,
+    }
+    if payload.get("design_sha256") != _canonical_sha256(design_payload):
+        raise ValueError("experiment design fingerprint is invalid")
+    return {
+        **dict(payload),
+        "candidates": normalized_candidates,
+        "seed": seed,
+        "anchor_count": anchor_count,
+        "sampled_count": sampled_count,
+        "trial_burden": trial_burden,
+    }
+
+
 __all__ = [
     "ChoiceDomain",
     "EXPERIMENT_DESIGN_CONTRACT",
@@ -844,4 +981,5 @@ __all__ = [
     "generate_latin_hypercube_design",
     "plan_calendar_windows",
     "tape_depth_candidate_design",
+    "validate_experiment_design_payload",
 ]

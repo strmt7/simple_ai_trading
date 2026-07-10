@@ -812,6 +812,78 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_train.add_argument("--json", action="store_true")
     parser_tape_depth_train.set_defaults(func=command_tape_depth_train)
 
+    parser_tape_depth_design = subparsers.add_parser(
+        "tape-depth-design",
+        help="write a precommitted multi-dimensional tape/depth experiment design",
+    )
+    parser_tape_depth_design.add_argument(
+        "--risk-level",
+        choices=["conservative", "regular", "aggressive"],
+        default="conservative",
+    )
+    parser_tape_depth_design.add_argument("--sampled-count", type=int, default=24)
+    parser_tape_depth_design.add_argument("--seed", type=int, default=20_260_710)
+    parser_tape_depth_design.add_argument(
+        "--output",
+        default="data/tape-depth-experiment-design.json",
+    )
+    parser_tape_depth_design.add_argument("--json", action="store_true")
+    parser_tape_depth_design.set_defaults(func=command_tape_depth_design)
+
+    parser_tape_depth_study = subparsers.add_parser(
+        "tape-depth-study",
+        help="run and checkpoint every candidate in a precommitted screening design",
+    )
+    parser_tape_depth_study.add_argument(
+        "--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT"
+    )
+    parser_tape_depth_study.add_argument("--design", required=True)
+    parser_tape_depth_study.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_tape_depth_study.add_argument("--cache-root", default="data/archive-cache")
+    parser_tape_depth_study.add_argument(
+        "--output-dir", default="data/tape-depth-study"
+    )
+    parser_tape_depth_study.add_argument("--training-window-days", type=int, default=730)
+    parser_tape_depth_study.add_argument("--tuning-window-days", type=int, default=30)
+    parser_tape_depth_study.add_argument(
+        "--calibration-window-days", type=int, default=30
+    )
+    parser_tape_depth_study.add_argument(
+        "--evaluation-window-days", type=int, default=90
+    )
+    parser_tape_depth_study.add_argument("--total-latency-ms", type=int, default=750)
+    parser_tape_depth_study.add_argument("--maximum-rows", type=int, default=5_000_000)
+    parser_tape_depth_study.add_argument(
+        "--maximum-cached-rows", type=int, default=15_000_000
+    )
+    parser_tape_depth_study.add_argument(
+        "--no-dataset-cache",
+        action="store_false",
+        dest="dataset_cache",
+    )
+    parser_tape_depth_study.add_argument(
+        "--max-folds", type=int, choices=[4, 6, 8, 10], default=4
+    )
+    parser_tape_depth_study.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_tape_depth_study.add_argument(
+        "--minimum-segment-rows", type=int, default=10_000
+    )
+    parser_tape_depth_study.add_argument("--memory-limit", default="8GB")
+    parser_tape_depth_study.add_argument("--threads", type=int, default=8)
+    parser_tape_depth_study.add_argument("--resume", action="store_true")
+    parser_tape_depth_study.add_argument("--plan-only", action="store_true")
+    parser_tape_depth_study.add_argument("--json", action="store_true")
+    parser_tape_depth_study.set_defaults(
+        dataset_cache=True,
+        func=command_tape_depth_study,
+    )
+
     parser_tape_depth_prequential = subparsers.add_parser(
         "tape-depth-prequential",
         help="run timestamp-defined rolling gross-forecast evidence across major symbols",
@@ -840,13 +912,24 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_prequential.add_argument(
         "--evaluation-window-days", type=int, default=90
     )
-    parser_tape_depth_prequential.add_argument("--horizon-seconds", type=int, default=60)
+    parser_tape_depth_prequential.add_argument(
+        "--horizon-seconds",
+        type=int,
+        default=None,
+        help="default 60; sealed confirmation derives the frozen winner",
+    )
     parser_tape_depth_prequential.add_argument("--total-latency-ms", type=int, default=750)
     parser_tape_depth_prequential.add_argument(
-        "--decision-cadence-seconds", type=int, default=20
+        "--decision-cadence-seconds",
+        type=int,
+        default=None,
+        help="default 20; sealed confirmation derives the frozen winner",
     )
     parser_tape_depth_prequential.add_argument(
-        "--maximum-depth-age-ms", type=int, default=60_000
+        "--maximum-depth-age-ms",
+        type=int,
+        default=None,
+        help="default 60000; sealed confirmation derives the frozen winner",
     )
     parser_tape_depth_prequential.add_argument("--maximum-rows", type=int, default=5_000_000)
     parser_tape_depth_prequential.add_argument(
@@ -912,6 +995,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="append",
         required=True,
         help="screening report path; repeat for every declared trial",
+    )
+    parser_tape_depth_select.add_argument(
+        "--design",
+        required=True,
+        help="precommitted multi-fidelity experiment design JSON",
     )
     parser_tape_depth_select.add_argument(
         "--output", default="data/tape-depth-selection.json"
@@ -6805,6 +6893,138 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
     return 0 if artifact.status == "research_candidate" else 2
 
 
+def command_tape_depth_design(args: argparse.Namespace) -> int:
+    """Persist the complete candidate set before any screening result exists."""
+
+    from .model_experiment import tape_depth_candidate_design
+
+    try:
+        design = tape_depth_candidate_design(
+            str(getattr(args, "risk_level", "conservative")),
+            sampled_count=int(getattr(args, "sampled_count", 24)),
+            seed=int(getattr(args, "seed", 20_260_710)),
+        )
+        output = Path(
+            str(
+                getattr(
+                    args,
+                    "output",
+                    "data/tape-depth-experiment-design.json",
+                )
+            )
+        )
+        write_json_atomic(output, design.asdict(), indent=2, sort_keys=True)
+    except (OSError, TypeError, ValueError) as exc:
+        print(f"tape-depth-design failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+    payload = design.asdict()
+    payload["output"] = str(output)
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "tape-depth-design: "
+            f"trials={design.trial_burden} anchors={design.anchor_count} "
+            f"sampled={design.sampled_count} sha256={design.design_sha256}"
+        )
+        print(f"design={output}")
+    return 0
+
+
+def command_tape_depth_study(args: argparse.Namespace) -> int:
+    """Run a complete design sequentially and freeze a screening winner."""
+
+    from .assets import normalize_symbols
+    from .microstructure_warehouse import MicrostructureWarehouse
+    from .tape_depth_study import run_tape_depth_screening_study
+
+    symbols = normalize_symbols(
+        str(getattr(args, "symbols", "BTCUSDT,ETHUSDT,SOLUSDT")),
+        default=("BTCUSDT", "ETHUSDT", "SOLUSDT"),
+    )
+    if any(not is_supported_major_symbol(symbol, "USDT") for symbol in symbols):
+        print(
+            "tape-depth-study supports only BTCUSDT, ETHUSDT, and SOLUSDT",
+            file=sys.stderr,
+        )
+        return 2
+    json_mode = bool(getattr(args, "json", False))
+
+    def progress(phase: str, completed: int, total: int) -> None:
+        if json_mode:
+            return
+        if phase == "candidate_started":
+            print(
+                f"tape-depth-study candidate {completed + 1}/{total} started",
+                flush=True,
+            )
+        elif phase == "candidate_complete":
+            print(
+                f"tape-depth-study candidate {completed}/{total} complete",
+                flush=True,
+            )
+        else:
+            print(
+                f"tape-depth-study {phase}: {completed}/{total}",
+                flush=True,
+            )
+
+    options = {
+        "symbols": symbols,
+        "design_path": str(getattr(args, "design", "")),
+        "output_dir": str(getattr(args, "output_dir", "data/tape-depth-study")),
+        "training_window_days": int(getattr(args, "training_window_days", 730)),
+        "tuning_window_days": int(getattr(args, "tuning_window_days", 30)),
+        "calibration_window_days": int(
+            getattr(args, "calibration_window_days", 30)
+        ),
+        "evaluation_window_days": int(
+            getattr(args, "evaluation_window_days", 90)
+        ),
+        "total_latency_ms": int(getattr(args, "total_latency_ms", 750)),
+        "maximum_rows": int(getattr(args, "maximum_rows", 5_000_000)),
+        "maximum_cached_rows": int(
+            getattr(args, "maximum_cached_rows", 15_000_000)
+        ),
+        "dataset_cache": bool(getattr(args, "dataset_cache", True)),
+        "max_folds": int(getattr(args, "max_folds", 4)),
+        "compute_backend": str(getattr(args, "compute_backend", "auto")),
+        "minimum_segment_rows": int(
+            getattr(args, "minimum_segment_rows", 10_000)
+        ),
+        "resume": bool(getattr(args, "resume", False)),
+        "plan_only": bool(getattr(args, "plan_only", False)),
+        "progress": progress,
+    }
+    try:
+        if options["plan_only"]:
+            report = run_tape_depth_screening_study(object(), **options)
+        else:
+            with MicrostructureWarehouse(
+                str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+                cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+                memory_limit=str(getattr(args, "memory_limit", "8GB")),
+                threads=int(getattr(args, "threads", 8)),
+            ) as warehouse:
+                report = run_tape_depth_screening_study(warehouse, **options)
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(f"tape-depth-study failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+    if json_mode:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        print(
+            "tape-depth-study: "
+            f"status={report['status']} "
+            f"completed={report['completed_candidates']}/"
+            f"{report['design']['trial_burden']} "
+            "profitability_claim=false trading_authority=false"
+        )
+    if options["plan_only"]:
+        return 0
+    return 0 if report.get("status") == "winner_frozen" else 2
+
+
 def command_tape_depth_prequential(args: argparse.Namespace) -> int:
     """Plan or run rolling, hash-bound gross-forecast evidence."""
 
@@ -6823,6 +7043,9 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
         )
         return 2
     json_mode = bool(getattr(args, "json", False))
+    horizon_arg = getattr(args, "horizon_seconds", None)
+    cadence_arg = getattr(args, "decision_cadence_seconds", None)
+    depth_age_arg = getattr(args, "maximum_depth_age_ms", None)
 
     def progress(phase: str, completed: int, total: int) -> None:
         if not json_mode:
@@ -6854,13 +7077,13 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
                 evaluation_window_days=int(
                     getattr(args, "evaluation_window_days", 90)
                 ),
-                horizon_seconds=int(getattr(args, "horizon_seconds", 60)),
+                horizon_seconds=(None if horizon_arg is None else int(horizon_arg)),
                 total_latency_ms=int(getattr(args, "total_latency_ms", 750)),
-                decision_cadence_seconds=int(
-                    getattr(args, "decision_cadence_seconds", 20)
+                decision_cadence_seconds=(
+                    None if cadence_arg is None else int(cadence_arg)
                 ),
-                maximum_depth_age_ms=int(
-                    getattr(args, "maximum_depth_age_ms", 60_000)
+                maximum_depth_age_ms=(
+                    None if depth_age_arg is None else int(depth_age_arg)
                 ),
                 maximum_rows=int(getattr(args, "maximum_rows", 5_000_000)),
                 maximum_cached_rows=int(
@@ -6920,6 +7143,7 @@ def command_tape_depth_select(args: argparse.Namespace) -> int:
         selection = load_and_select_tape_depth_reports(
             paths,
             output=str(getattr(args, "output", "data/tape-depth-selection.json")),
+            design_path=str(getattr(args, "design", "")),
         )
     except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
         print(

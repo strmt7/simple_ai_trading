@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from datetime import date, timedelta
 
 import pytest
@@ -15,6 +16,7 @@ from simple_ai_trading.model_experiment import (
     generate_latin_hypercube_design,
     plan_calendar_windows,
     tape_depth_candidate_design,
+    validate_experiment_design_payload,
 )
 
 
@@ -52,6 +54,28 @@ def test_tape_depth_design_counts_anchors_and_all_sampled_trials() -> None:
         candidate.parameter_map()["risk_level"] == "conservative"
         for candidate in design.candidates
     )
+
+
+def test_serialized_design_validation_rejects_candidate_and_fingerprint_drift() -> None:
+    payload = tape_depth_candidate_design(
+        "conservative",
+        sampled_count=6,
+        seed=7,
+    ).asdict()
+
+    validated = validate_experiment_design_payload(payload)
+    assert validated["design_sha256"] == payload["design_sha256"]
+    assert validated["trial_burden"] == 9
+
+    changed_candidate = copy.deepcopy(payload)
+    changed_candidate["candidates"][0]["parameters"]["horizon_seconds"] = 30  # type: ignore[index]
+    with pytest.raises(ValueError, match="identity"):
+        validate_experiment_design_payload(changed_candidate)
+
+    changed_hash = copy.deepcopy(payload)
+    changed_hash["design_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="fingerprint"):
+        validate_experiment_design_payload(changed_hash)
 
 
 def test_design_rejects_invalid_or_duplicate_anchors() -> None:

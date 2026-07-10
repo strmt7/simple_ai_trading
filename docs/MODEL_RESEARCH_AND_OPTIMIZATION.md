@@ -271,15 +271,24 @@ be fitted on test observations.
 ### Multi-Fidelity Candidate Search
 
 `model_experiment.py` provides the precommitted candidate-design and
-successive-halving contract for the next model-research runs. It is not yet a
-replacement for the existing sealed `tape-depth-prequential` selection command.
-It preserves three explicit tape/depth anchors, stratifies every candidate
+successive-halving contract for model-research runs. `tape-depth-design` writes
+that immutable design before screening, and the sealed `tape-depth-select` path
+requires every declared candidate exactly once. It preserves three explicit
+tape/depth anchors, stratifies every candidate
 dimension with a deterministic randomized Latin hypercube, fingerprints the
 complete design, and counts anchors, failures, and eliminated variants in the
 cumulative trial burden. The initial space covers forecast horizon, decision
 cadence, maximum coarse-depth age, model capacity, and feature-group ablations
 for one risk profile at a time. It does not tune latency, fees, spread, or source
 quality downward to manufacture performance.
+
+`tape-depth-study` operationalizes the sealed screening level. It executes one
+candidate at a time, forwards fold-level progress, checkpoints after every
+candidate, verifies model/prediction/report evidence before reusing a completed
+candidate under `--resume`, and calls the same design-bound selector only when
+the declared design is complete. It does not run confirmation or consume the
+terminal suffix. `--plan-only` validates and materializes the candidate plan
+without opening the warehouse.
 
 Candidate evaluation uses four chronological resource levels:
 
@@ -426,14 +435,29 @@ serialized model contract, parses the complete gzip table, and recomputes its
 prediction fingerprint and metrics before skipping work. A complete report is
 immutable and cannot be resumed.
 
-Profile and feature-set selection is a physically separate fail-closed stage.
+Timing, profile, and feature-set selection is a physically separate fail-closed stage.
 Each candidate run receives only the declared initial screening folds. The
 runner requires 4, 6, 8, or 10 non-overlapping screening folds and at least two
 untouched later folds per symbol. Supply every screening report exactly once;
 selection requires the same symbols, coverage fingerprints, chronological fold
-identities, and dataset fingerprints:
+boundaries, and identical dataset fingerprints for reports that share horizon,
+cadence, and maximum depth age. The design file and every source report are
+hash-bound into the winner lock:
 
 ```powershell
+simple-ai-trading tape-depth-design `
+  --risk-level conservative `
+  --sampled-count 24 `
+  --seed 20260710 `
+  --output data/tape-depth-experiment-design.json
+
+simple-ai-trading tape-depth-study `
+  --design data/tape-depth-experiment-design.json `
+  --symbols BTCUSDT,ETHUSDT,SOLUSDT `
+  --compute-backend directml `
+  --resume `
+  --output-dir data/tape-depth-study
+
 simple-ai-trading tape-depth-prequential `
   --symbols BTCUSDT,ETHUSDT,SOLUSDT `
   --study-stage screening `
@@ -443,6 +467,7 @@ simple-ai-trading tape-depth-prequential `
   --output-dir data/tape-depth-regularized-core
 
 simple-ai-trading tape-depth-select `
+  --design data/tape-depth-experiment-design.json `
   --report data/tape-depth-regularized-core/report.json `
   --report data/tape-depth-balanced-tape/report.json `
   --report data/tape-depth-balanced-cross-asset/report.json `

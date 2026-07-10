@@ -135,9 +135,11 @@ simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market future
 simple-ai-trading data-health --interval 1s --market spot --min-rows 1000000 --require-verified-checksum --json
 simple-ai-trading tick-archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --data-types bookTicker,trades,bookDepth --full-history --plan-only --plan-output docs/microstructure/availability.json
 simple-ai-trading tape-depth-train --symbol BTCUSDT --window-days 365 --horizon-seconds 60 --model-profile regularized --feature-set full --compute-backend directml
+simple-ai-trading tape-depth-design --risk-level conservative --sampled-count 24 --seed 20260710 --output data/tape-depth-experiment-design.json
+simple-ai-trading tape-depth-study --design data/tape-depth-experiment-design.json --symbols BTCUSDT,ETHUSDT,SOLUSDT --compute-backend directml --resume --output-dir data/tape-depth-study
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --plan-only
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --study-stage screening --max-folds 4 --model-profile regularized --feature-set core --compute-backend directml --output-dir data/tape-depth-regularized-core
-simple-ai-trading tape-depth-select --report data/tape-depth-regularized-core/report.json --report data/tape-depth-balanced-full/report.json --output data/tape-depth-selection.json
+simple-ai-trading tape-depth-select --design data/tape-depth-experiment-design.json --report data/tape-depth-regularized-core/report.json --report data/tape-depth-balanced-full/report.json --output data/tape-depth-selection.json
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --study-stage confirmation --selection-lock data/tape-depth-selection.json --compute-backend directml --output-dir data/tape-depth-confirmation-run
 simple-ai-trading tape-depth-confirm --selection data/tape-depth-selection.json --report data/tape-depth-confirmation-run/report.json --output data/tape-depth-confirmation.json
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
@@ -281,13 +283,22 @@ automatic improvement.
 Tape/depth model selection is physically split into screening and confirmation.
 Every candidate run must use `--study-stage screening`, start at fold zero, and
 declare 4, 6, 8, or 10 non-overlapping screening folds while leaving at least
-two later folds untouched. `tape-depth-select` verifies identical datasets and
-full-corpus coverage fingerprints, recomputes all candidate metrics, and runs a
+two later folds untouched. `tape-depth-design` freezes horizon, decision cadence,
+maximum depth age, model profile, feature set, and risk profile before screening.
+`tape-depth-select` requires every design candidate exactly once, verifies common
+fold boundaries/full-corpus coverage and identical datasets among candidates
+that share one dataset configuration, recomputes all candidate metrics, and runs a
 complete symmetric-fold forecast-rank PBO diagnostic with a fail-closed 0.20
 limit. This is not a PnL/Sharpe PBO or profitability claim. It then writes a
-source-report-bound winner lock. A confirmation run accepts that lock, derives
-the winning profile/feature set and terminal fold boundary from it, and fails if
-the corpus, modeling configuration, winner, or source reports changed.
+source-report/design-bound winner lock. A confirmation run accepts that lock,
+derives the winning horizon, cadence, depth age, profile, feature set, and
+terminal fold boundary from it, and fails if the corpus, modeling configuration,
+winner, design, or source reports changed.
+`tape-depth-study` is the checkpointed operator for this screening stage. It
+runs candidates sequentially so GPU jobs do not compete, preserves per-candidate
+fold checkpoints, verifies complete reports before `--resume` skips them, emits
+nested progress, and invokes the same design-bound selector only after every
+declared report exists. It never accesses the confirmation suffix itself.
 `tape-depth-confirm` then verifies that the single supplied report contains the
 entire untouched suffix. Before either stage trusts a report, it reloads every
 serialized model and compressed row-level prediction table, verifies contained

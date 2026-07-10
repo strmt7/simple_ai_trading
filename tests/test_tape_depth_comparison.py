@@ -7,6 +7,11 @@ from types import SimpleNamespace
 
 import pytest
 
+from simple_ai_trading.model_experiment import (
+    ChoiceDomain,
+    generate_latin_hypercube_design,
+    tape_depth_candidate_design,
+)
 from simple_ai_trading.tape_depth_comparison import (
     confirm_tape_depth_report,
     load_and_confirm_tape_depth_report,
@@ -23,6 +28,25 @@ from simple_ai_trading.tape_depth_prequential import (
 _SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 _AVAILABLE_FOLDS = 8
 _SCREENING_FOLDS = 4
+
+
+def _trial_label(model_profile: str, feature_set: str) -> str:
+    return f"h60-c20-d60000/{model_profile}/{feature_set}"
+
+
+def _two_candidate_design():
+    return generate_latin_hypercube_design(
+        (
+            ChoiceDomain("risk_level", ("conservative",)),
+            ChoiceDomain("horizon_seconds", (60,)),
+            ChoiceDomain("decision_cadence_seconds", (20,)),
+            ChoiceDomain("maximum_depth_age_ms", (60_000,)),
+            ChoiceDomain("model_profile", ("regularized", "expressive")),
+            ChoiceDomain("feature_set", ("core", "full")),
+        ),
+        sampled_count=2,
+        seed=73,
+    )
 
 
 def _refingerprint(payload: dict[str, object], field: str) -> None:
@@ -67,6 +91,9 @@ def _report(
     stage: str,
     edge: float,
     selection_lock_sha256: str | None = None,
+    horizon_seconds: int = 60,
+    decision_cadence_seconds: int = 20,
+    maximum_depth_age_ms: int = 60_000,
 ) -> dict[str, object]:
     fold_start = 0 if stage == "screening" else _SCREENING_FOLDS
     fold_indices = (
@@ -77,7 +104,10 @@ def _report(
     folds = []
     for symbol_index, symbol in enumerate(_SYMBOLS):
         for fold_index in fold_indices:
-            identity = f"{symbol}:{fold_index}".encode("ascii")
+            identity = (
+                f"{symbol}:{fold_index}:{horizon_seconds}:"
+                f"{decision_cadence_seconds}:{maximum_depth_age_ms}"
+            ).encode("ascii")
             folds.append(
                 {
                     "symbol": symbol,
@@ -99,10 +129,10 @@ def _report(
         "tuning_window_days": 30,
         "calibration_window_days": 30,
         "evaluation_window_days": 90,
-        "horizon_seconds": 60,
+        "horizon_seconds": horizon_seconds,
         "total_latency_ms": 750,
-        "decision_cadence_seconds": 20,
-        "maximum_depth_age_ms": 60_000,
+        "decision_cadence_seconds": decision_cadence_seconds,
+        "maximum_depth_age_ms": maximum_depth_age_ms,
         "maximum_rows": 5_000_000,
         "maximum_cached_rows": 15_000_000,
         "dataset_cache": True,
@@ -124,7 +154,12 @@ def _report(
         "profitability_claim": False,
         "config": config,
         "plan_fingerprints": {
-            symbol: hashlib.sha256(f"{symbol}:{stage}".encode("ascii")).hexdigest()
+            symbol: hashlib.sha256(
+                (
+                    f"{symbol}:{stage}:{horizon_seconds}:"
+                    f"{decision_cadence_seconds}:{maximum_depth_age_ms}"
+                ).encode("ascii")
+            ).hexdigest()
             for symbol in _SYMBOLS
         },
         "coverage_fingerprints": {
@@ -154,7 +189,7 @@ def test_screening_freezes_winner_without_confirmation_metrics() -> None:
     selection = _selection()
 
     assert selection["status"] == "winner_frozen"
-    assert selection["selected_trial"] == "expressive/full"
+    assert selection["selected_trial"] == _trial_label("expressive", "full")
     assert selection["confirmation_fold_start"] == _SCREENING_FOLDS
     assert "confirmation" not in selection
     assert len(str(selection["selection_fingerprint"])) == 64
@@ -163,6 +198,120 @@ def test_screening_freezes_winner_without_confirmation_metrics() -> None:
     assert diagnostic["symmetric_splits"] == 6  # type: ignore[index]
     assert selection["trading_authority"] is False
     assert selection["profitability_claim"] is False
+
+
+def test_screening_freezes_all_dataset_and_model_dimensions() -> None:
+    selection = select_tape_depth_screening_reports(
+        [
+            _report(
+                "regularized",
+                "core",
+                stage="screening",
+                edge=0.02,
+                horizon_seconds=15,
+                decision_cadence_seconds=1,
+                maximum_depth_age_ms=15_000,
+            ),
+            _report(
+                "expressive",
+                "full",
+                stage="screening",
+                edge=0.04,
+                horizon_seconds=300,
+                decision_cadence_seconds=5,
+                maximum_depth_age_ms=60_000,
+            ),
+        ]
+    )
+
+    assert selection["selected_trial"] == "h300-c5-d60000/expressive/full"
+    assert selection["selected_trial_config"] == {
+        "horizon_seconds": 300,
+        "decision_cadence_seconds": 5,
+        "maximum_depth_age_ms": 60_000,
+        "model_profile": "expressive",
+        "feature_set": "full",
+    }
+    lock_hash = "e" * 64
+    confirmation = confirm_tape_depth_report(
+        selection,
+        _report(
+            "expressive",
+            "full",
+            stage="confirmation",
+            edge=0.03,
+            selection_lock_sha256=lock_hash,
+            horizon_seconds=300,
+            decision_cadence_seconds=5,
+            maximum_depth_age_ms=60_000,
+        ),
+        selection_lock_sha256=lock_hash,
+    )
+    assert confirmation["status"] == "confirmed_forecast_candidate"
+    assert confirmation["selected_trial_config"] == selection["selected_trial_config"]
+
+    with pytest.raises(ValueError, match="frozen winner contract"):
+        confirm_tape_depth_report(
+            selection,
+            _report(
+                "expressive",
+                "full",
+                stage="confirmation",
+                edge=0.03,
+                selection_lock_sha256=lock_hash,
+                horizon_seconds=60,
+                decision_cadence_seconds=5,
+                maximum_depth_age_ms=60_000,
+            ),
+            selection_lock_sha256=lock_hash,
+        )
+
+
+def test_screening_binds_every_report_to_the_precommitted_design() -> None:
+    design = tape_depth_candidate_design(
+        "conservative",
+        sampled_count=4,
+        seed=31,
+    )
+    reports = []
+    for index, candidate in enumerate(design.candidates):
+        parameters = candidate.parameter_map()
+        reports.append(
+            _report(
+                str(parameters["model_profile"]),
+                str(parameters["feature_set"]),
+                stage="screening",
+                edge=0.02 + index * 0.002,
+                horizon_seconds=int(parameters["horizon_seconds"]),
+                decision_cadence_seconds=int(
+                    parameters["decision_cadence_seconds"]
+                ),
+                maximum_depth_age_ms=int(parameters["maximum_depth_age_ms"]),
+            )
+        )
+
+    selection = select_tape_depth_screening_reports(
+        reports,
+        experiment_design=design.asdict(),
+    )
+    selected = max(
+        design.candidates,
+        key=lambda candidate: design.candidates.index(candidate),
+    )
+    assert selection["experiment_design"]["design_sha256"] == design.design_sha256  # type: ignore[index]
+    assert selection["declared_trial_count"] == design.trial_burden
+    winning_trial = next(
+        item
+        for item in selection["screening_trials"]  # type: ignore[union-attr]
+        if item["trial"] == selection["selected_trial"]
+    )
+    assert winning_trial["experiment_candidate"]["candidate_id"] == selected.candidate_id
+
+    with pytest.raises(ValueError, match="every experiment design candidate"):
+        select_tape_depth_screening_reports(
+            reports[:-1],
+            experiment_design=design.asdict(),
+        )
 
 
 def test_screening_rejects_fold_unstable_leaderboard_as_overfit() -> None:
@@ -176,7 +325,7 @@ def test_screening_rejects_fold_unstable_leaderboard_as_overfit() -> None:
     selection = select_tape_depth_screening_reports([early, late])
 
     assert selection["status"] == "rejected"
-    assert selection["ranked_winner_trial"] == "regularized/core"
+    assert selection["ranked_winner_trial"] == _trial_label("regularized", "core")
     assert selection["selected_trial"] is None
     assert selection["rejection_reasons"] == [
         "forecast_selection_pbo_above_0_20"
@@ -201,7 +350,7 @@ def test_confirmation_rejects_failed_winner_without_runner_up() -> None:
         selection_lock_sha256=lock_hash,
     )
 
-    assert confirmation["selected_trial"] == "expressive/full"
+    assert confirmation["selected_trial"] == _trial_label("expressive", "full")
     assert confirmation["status"] == "rejected"
     assert confirmation["rejection_reasons"] == [
         "frozen_winner_failed_confirmation"
@@ -216,7 +365,7 @@ def test_screening_prefers_simpler_feature_set_on_exact_tie() -> None:
         ]
     )
 
-    assert selection["selected_trial"] == "regularized/cross_asset"
+    assert selection["selected_trial"] == _trial_label("regularized", "cross_asset")
 
 
 def test_screening_rejects_dataset_drift() -> None:
@@ -224,7 +373,7 @@ def test_screening_rejects_dataset_drift() -> None:
     second = _report("balanced", "tape_derived", stage="screening", edge=0.03)
     second["folds"][0]["dataset_fingerprint"] = "f" * 64  # type: ignore[index]
 
-    with pytest.raises(ValueError, match="identical folds and data"):
+    with pytest.raises(ValueError, match="identical data"):
         select_tape_depth_screening_reports([first, second])
 
 
@@ -253,6 +402,50 @@ def test_selection_file_recomputes_all_source_reports(
         first.read_bytes()
     ).hexdigest()
     assert len(stub_prequential_evidence) == 4
+
+
+def test_selection_file_recomputes_hash_bound_experiment_design(
+    tmp_path,
+    stub_prequential_evidence,
+) -> None:
+    design = _two_candidate_design()
+    design_path = tmp_path / "design.json"
+    design_path.write_text(json.dumps(design.asdict()), encoding="utf-8")
+    report_paths = []
+    for index, candidate in enumerate(design.candidates):
+        parameters = candidate.parameter_map()
+        path = tmp_path / f"candidate-{index}.json"
+        path.write_text(
+            json.dumps(
+                _report(
+                    str(parameters["model_profile"]),
+                    str(parameters["feature_set"]),
+                    stage="screening",
+                    edge=0.02 + index * 0.01,
+                )
+            ),
+            encoding="utf-8",
+        )
+        report_paths.append(path)
+    output = tmp_path / "selection.json"
+
+    selection = load_and_select_tape_depth_reports(
+        report_paths,
+        output=output,
+        design_path=design_path,
+    )
+    loaded, _file_hash = load_verified_tape_depth_selection(output)
+
+    assert loaded == selection
+    assert selection["experiment_design"]["design_sha256"] == design.design_sha256  # type: ignore[index]
+    assert selection["experiment_design_source"]["sha256"] == hashlib.sha256(  # type: ignore[index]
+        design_path.read_bytes()
+    ).hexdigest()
+
+    design_path.write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="design source changed"):
+        load_verified_tape_depth_selection(output)
+    assert len(stub_prequential_evidence) >= 4
 
 
 def test_selection_lock_rejects_changed_source_report(
@@ -332,13 +525,12 @@ def test_confirmation_request_requires_exact_untouched_plan_suffix() -> None:
     selection = _selection()
     config = {
         **dict(selection["modeling_config"]),  # type: ignore[arg-type]
+        **dict(selection["selected_trial_config"]),  # type: ignore[arg-type]
         "dataset_cache": True,
         "maximum_cached_rows": 15_000_000,
         "study_stage": "confirmation",
         "fold_start": _SCREENING_FOLDS,
         "max_folds": 0,
-        "model_profile": "expressive",
-        "feature_set": "full",
         "selection_lock_sha256": "d" * 64,
     }
     coverage = dict(selection["coverage_fingerprints"])  # type: ignore[arg-type]
@@ -490,7 +682,7 @@ def test_screening_selection_rejects_invalid_trial_sets_and_seal_depth() -> None
     report = _report("regularized", "core", stage="screening", edge=0.02)
     with pytest.raises(ValueError, match="at least one"):
         select_tape_depth_screening_reports([])
-    with pytest.raises(ValueError, match="unique profile"):
+    with pytest.raises(ValueError, match="unique complete"):
         select_tape_depth_screening_reports([report, copy.deepcopy(report)])
 
     development = copy.deepcopy(report)
@@ -583,13 +775,12 @@ def test_confirmation_rejects_invalid_file_hash_and_request_identity() -> None:
 
     config = {
         **dict(selection["modeling_config"]),  # type: ignore[arg-type]
+        **dict(selection["selected_trial_config"]),  # type: ignore[arg-type]
         "dataset_cache": True,
         "maximum_cached_rows": 15_000_000,
         "study_stage": "development",
         "fold_start": _SCREENING_FOLDS,
         "max_folds": 0,
-        "model_profile": "expressive",
-        "feature_set": "full",
         "selection_lock_sha256": "f" * 64,
     }
     with pytest.raises(ValueError, match="frozen winner contract"):

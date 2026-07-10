@@ -12,6 +12,10 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
+from .model_experiment import (
+    EXPERIMENT_DESIGN_CONTRACT,
+    validate_experiment_design_payload,
+)
 from .storage import write_json_atomic
 from .tape_depth_prequential import (
     TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION,
@@ -19,13 +23,20 @@ from .tape_depth_prequential import (
 )
 
 
-TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v2"
-TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v2"
-_TRIAL_CONFIG_KEYS = frozenset({"model_profile", "feature_set"})
-_STAGE_CONFIG_KEYS = frozenset(
+TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v3"
+TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v3"
+_TRIAL_CONFIG_KEYS = frozenset(
     {
         "model_profile",
         "feature_set",
+        "horizon_seconds",
+        "decision_cadence_seconds",
+        "maximum_depth_age_ms",
+    }
+)
+_STAGE_CONFIG_KEYS = frozenset(
+    {
+        *_TRIAL_CONFIG_KEYS,
         "study_stage",
         "fold_start",
         "max_folds",
@@ -83,12 +94,35 @@ def _with_fingerprint(payload: Mapping[str, object], field: str) -> dict[str, ob
 
 @dataclass(frozen=True)
 class TrialKey:
+    horizon_seconds: int
+    decision_cadence_seconds: int
+    maximum_depth_age_ms: int
     model_profile: str
     feature_set: str
 
     @property
     def label(self) -> str:
-        return f"{self.model_profile}/{self.feature_set}"
+        return (
+            f"h{self.horizon_seconds}-c{self.decision_cadence_seconds}-"
+            f"d{self.maximum_depth_age_ms}/{self.model_profile}/{self.feature_set}"
+        )
+
+    @property
+    def dataset_key(self) -> tuple[int, int, int]:
+        return (
+            self.horizon_seconds,
+            self.decision_cadence_seconds,
+            self.maximum_depth_age_ms,
+        )
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "horizon_seconds": self.horizon_seconds,
+            "decision_cadence_seconds": self.decision_cadence_seconds,
+            "maximum_depth_age_ms": self.maximum_depth_age_ms,
+            "model_profile": self.model_profile,
+            "feature_set": self.feature_set,
+        }
 
     @property
     def complexity(self) -> int:
@@ -174,6 +208,19 @@ def _validate_report(
     feature_set = str(config.get("feature_set") or "")
     if profile not in _PROFILE_COMPLEXITY or feature_set not in _FEATURE_COMPLEXITY:
         raise ValueError("comparison trial profile or feature set is unsupported")
+    try:
+        horizon_seconds = int(config.get("horizon_seconds", -1))
+        decision_cadence_seconds = int(config.get("decision_cadence_seconds", -1))
+        maximum_depth_age_ms = int(config.get("maximum_depth_age_ms", -1))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("comparison trial timing configuration is invalid") from exc
+    if (
+        not 1 <= horizon_seconds <= 3_600
+        or not 1 <= decision_cadence_seconds <= 60
+        or 60 % decision_cadence_seconds != 0
+        or not 1_000 <= maximum_depth_age_ms <= 300_000
+    ):
+        raise ValueError("comparison trial timing configuration is invalid")
     stage = str(config.get("study_stage") or "")
     if stage not in {"development", "screening", "confirmation"}:
         raise ValueError("comparison report study stage is invalid")
@@ -260,7 +307,16 @@ def _validate_report(
             for previous, current in zip(symbol_folds, symbol_folds[1:])
         ):
             raise ValueError(f"comparison evaluation folds overlap for {symbol}")
-    return TrialKey(profile, feature_set), normalized_folds
+    return (
+        TrialKey(
+            horizon_seconds=horizon_seconds,
+            decision_cadence_seconds=decision_cadence_seconds,
+            maximum_depth_age_ms=maximum_depth_age_ms,
+            model_profile=profile,
+            feature_set=feature_set,
+        ),
+        normalized_folds,
+    )
 
 
 def _segment_metrics(folds: Sequence[Mapping[str, object]]) -> dict[str, object]:
@@ -506,17 +562,71 @@ def _forecast_selection_overfit_diagnostic(
     }
 
 
+def _bind_experiment_design(
+    reports: Sequence[Mapping[str, object]],
+    experiment_design: Mapping[str, object] | None,
+) -> tuple[dict[str, object] | None, tuple[dict[str, object] | None, ...]]:
+    if experiment_design is None:
+        return None, tuple(None for _ in reports)
+    design = validate_experiment_design_payload(experiment_design)
+    domain_names = tuple(str(item["name"]) for item in design["domains"])  # type: ignore[index]
+    expected_names = _TRIAL_CONFIG_KEYS | {"risk_level"}
+    if set(domain_names) != expected_names:
+        raise ValueError("tape/depth experiment design domains do not match the selector")
+    candidates_by_parameters: dict[str, dict[str, object]] = {}
+    for candidate in design["candidates"]:  # type: ignore[assignment]
+        parameters = dict(candidate["parameters"])
+        identity = _canonical_json(parameters)
+        candidates_by_parameters[identity] = dict(candidate)
+    bound: list[dict[str, object] | None] = []
+    used_ids: set[str] = set()
+    for report in reports:
+        config = report.get("config")
+        if not isinstance(config, Mapping):
+            raise ValueError("screening report configuration is invalid")
+        parameters = {name: config.get(name) for name in domain_names}
+        candidate = candidates_by_parameters.get(_canonical_json(parameters))
+        if candidate is None:
+            raise ValueError("screening report is not declared by the experiment design")
+        candidate_id = str(candidate["candidate_id"])
+        if candidate_id in used_ids:
+            raise ValueError("experiment design candidate is represented more than once")
+        used_ids.add(candidate_id)
+        bound.append(candidate)
+    if used_ids != {
+        str(candidate["candidate_id"])
+        for candidate in design["candidates"]  # type: ignore[assignment]
+    }:
+        raise ValueError("screening reports do not cover every experiment design candidate")
+    summary = {
+        "contract": design["contract"],
+        "design_sha256": design["design_sha256"],
+        "seed": design["seed"],
+        "sampling_method": design["sampling_method"],
+        "anchor_count": design["anchor_count"],
+        "sampled_count": design["sampled_count"],
+        "trial_burden": design["trial_burden"],
+    }
+    return summary, tuple(bound)
+
+
 def select_tape_depth_screening_reports(
     reports: Sequence[Mapping[str, object]],
+    *,
+    experiment_design: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Freeze one winner from reports that contain screening folds only."""
 
     if not reports:
         raise ValueError("at least one tape/depth screening report is required")
     validated = [_validate_report(report) for report in reports]
+    design_summary, design_candidates = _bind_experiment_design(
+        reports,
+        experiment_design,
+    )
     trial_keys = [item[0] for item in validated]
     if len(set(trial_keys)) != len(trial_keys):
-        raise ValueError("screening trials must have unique profile/feature pairs")
+        raise ValueError("screening trials must have unique complete configurations")
     base_config = dict(reports[0]["config"])
     if base_config.get("study_stage") != "screening":
         raise ValueError("selection accepts screening-stage reports only")
@@ -530,7 +640,6 @@ def select_tape_depth_screening_reports(
         )
     base_common_config = _config_without(base_config, _TRIAL_CONFIG_KEYS)
     base_modeling_config = _config_without(base_config, _STAGE_CONFIG_KEYS)
-    base_plans = reports[0].get("plan_fingerprints")
     base_coverage = reports[0].get("coverage_fingerprints")
     base_available = {
         str(key): int(value)
@@ -540,19 +649,40 @@ def select_tape_depth_screening_reports(
     symbols = tuple(str(symbol) for symbol in base_config["symbols"])
     if any(base_available[symbol] - screening_fold_count < 2 for symbol in symbols):
         raise ValueError("screening leaves fewer than two sealed folds")
-    base_identities = [
+    base_boundaries = [
         (
             str(fold["symbol"]),
             int(fold["fold_index"]),
             int(fold["evaluation_start_ms"]),
             int(fold["evaluation_end_ms"]),
-            str(fold["dataset_fingerprint"]),
         )
         for fold in base_folds
     ]
-    for report, (_key, folds) in zip(reports, validated, strict=True):
+    dataset_contracts: dict[
+        tuple[int, int, int],
+        tuple[object, tuple[tuple[str, int, int, int, str], ...]],
+    ] = {}
+    plan_fingerprints_by_trial: dict[str, object] = {}
+    for report, (key, folds) in zip(reports, validated, strict=True):
         config = dict(report["config"])
-        identities = [
+        boundaries = [
+            (
+                str(fold["symbol"]),
+                int(fold["fold_index"]),
+                int(fold["evaluation_start_ms"]),
+                int(fold["evaluation_end_ms"]),
+            )
+            for fold in folds
+        ]
+        if (
+            config.get("study_stage") != "screening"
+            or _config_without(config, _TRIAL_CONFIG_KEYS) != base_common_config
+            or report.get("coverage_fingerprints") != base_coverage
+            or report.get("available_fold_counts") != reports[0].get("available_fold_counts")
+            or boundaries != base_boundaries
+        ):
+            raise ValueError("screening reports do not use identical folds and coverage")
+        dataset_identities = tuple(
             (
                 str(fold["symbol"]),
                 int(fold["fold_index"]),
@@ -561,18 +691,19 @@ def select_tape_depth_screening_reports(
                 str(fold["dataset_fingerprint"]),
             )
             for fold in folds
-        ]
-        if (
-            config.get("study_stage") != "screening"
-            or _config_without(config, _TRIAL_CONFIG_KEYS) != base_common_config
-            or report.get("plan_fingerprints") != base_plans
-            or report.get("coverage_fingerprints") != base_coverage
-            or report.get("available_fold_counts") != reports[0].get("available_fold_counts")
-            or identities != base_identities
-        ):
-            raise ValueError("screening reports do not use identical folds and data")
+        )
+        dataset_contract = (
+            report.get("plan_fingerprints"),
+            dataset_identities,
+        )
+        prior_contract = dataset_contracts.setdefault(key.dataset_key, dataset_contract)
+        if prior_contract != dataset_contract:
+            raise ValueError(
+                "screening reports with the same dataset configuration do not use identical data"
+            )
+        plan_fingerprints_by_trial[key.label] = report.get("plan_fingerprints")
     screening_trials: list[dict[str, object]] = []
-    for key, folds in validated:
+    for report_index, (key, folds) in enumerate(validated):
         by_symbol: dict[str, object] = {}
         for symbol in symbols:
             symbol_folds = tuple(fold for fold in folds if fold["symbol"] == symbol)
@@ -589,8 +720,14 @@ def select_tape_depth_screening_reports(
         screening_trials.append(
             {
                 "trial": key.label,
+                "trial_config": key.asdict(),
+                "experiment_candidate": design_candidates[report_index],
+                "horizon_seconds": key.horizon_seconds,
+                "decision_cadence_seconds": key.decision_cadence_seconds,
+                "maximum_depth_age_ms": key.maximum_depth_age_ms,
                 "model_profile": key.model_profile,
                 "feature_set": key.feature_set,
+                "screening_plan_fingerprints": plan_fingerprints_by_trial[key.label],
                 "complexity": key.complexity,
                 "eligible": all(bool(dict(by_symbol[symbol])["passed"]) for symbol in symbols),
                 "screening_by_symbol": by_symbol,
@@ -645,11 +782,14 @@ def select_tape_depth_screening_reports(
         "execution_claim": False,
         "profitability_claim": False,
         "declared_trial_count": len(screening_trials),
+        "experiment_design": design_summary,
         "symbols": list(symbols),
         "modeling_config": base_modeling_config,
         "coverage_fingerprints": base_coverage,
         "available_fold_counts": base_available,
-        "screening_plan_fingerprints": base_plans,
+        "screening_plan_fingerprints": (
+            selected["screening_plan_fingerprints"] if selected is not None else None
+        ),
         "screening_fold_count": screening_fold_count,
         "screening_boundaries_ms": boundaries,
         "confirmation_fold_start": screening_fold_count,
@@ -662,6 +802,14 @@ def select_tape_depth_screening_reports(
             str(ranked_winner["trial"]) if ranked_winner else None
         ),
         "selected_trial": str(selected["trial"]) if selected else None,
+        "selected_trial_config": dict(selected["trial_config"]) if selected else None,
+        "selected_horizon_seconds": int(selected["horizon_seconds"]) if selected else None,
+        "selected_decision_cadence_seconds": (
+            int(selected["decision_cadence_seconds"]) if selected else None
+        ),
+        "selected_maximum_depth_age_ms": (
+            int(selected["maximum_depth_age_ms"]) if selected else None
+        ),
         "selected_model_profile": str(selected["model_profile"]) if selected else None,
         "selected_feature_set": str(selected["feature_set"]) if selected else None,
         "limitations": [
@@ -688,19 +836,51 @@ def _validate_selection_payload(selection: Mapping[str, object]) -> None:
     symbols = selection.get("symbols")
     if not isinstance(symbols, list) or not symbols or len(set(symbols)) != len(symbols):
         raise ValueError("selection lock symbols are invalid")
+    try:
+        selected_key = TrialKey(
+            horizon_seconds=int(selection.get("selected_horizon_seconds", -1)),
+            decision_cadence_seconds=int(
+                selection.get("selected_decision_cadence_seconds", -1)
+            ),
+            maximum_depth_age_ms=int(
+                selection.get("selected_maximum_depth_age_ms", -1)
+            ),
+            model_profile=str(selection.get("selected_model_profile") or ""),
+            feature_set=str(selection.get("selected_feature_set") or ""),
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("selection lock winner is invalid") from exc
     if (
-        str(selection.get("selected_model_profile")) not in _PROFILE_COMPLEXITY
-        or str(selection.get("selected_feature_set")) not in _FEATURE_COMPLEXITY
-        or selection.get("selected_trial")
-        != f"{selection.get('selected_model_profile')}/{selection.get('selected_feature_set')}"
+        selected_key.model_profile not in _PROFILE_COMPLEXITY
+        or selected_key.feature_set not in _FEATURE_COMPLEXITY
+        or not 1 <= selected_key.horizon_seconds <= 3_600
+        or not 1 <= selected_key.decision_cadence_seconds <= 60
+        or 60 % selected_key.decision_cadence_seconds != 0
+        or not 1_000 <= selected_key.maximum_depth_age_ms <= 300_000
+        or selection.get("selected_trial") != selected_key.label
+        or selection.get("selected_trial_config") != selected_key.asdict()
         or not isinstance(selection.get("modeling_config"), Mapping)
     ):
         raise ValueError("selection lock winner is invalid")
+    experiment = selection.get("experiment_design")
+    if experiment is not None and (
+        not isinstance(experiment, Mapping)
+        or experiment.get("contract") != EXPERIMENT_DESIGN_CONTRACT
+        or not _is_sha256(experiment.get("design_sha256"))
+        or int(experiment.get("trial_burden", -1))
+        != int(selection.get("declared_trial_count", -2))
+    ):
+        raise ValueError("selection lock experiment design binding is invalid")
     normalized_symbols = tuple(str(symbol) for symbol in symbols)
     _mapping_of_sha256(
         selection.get("coverage_fingerprints"),
         expected_symbols=normalized_symbols,
         name="selection coverage fingerprints",
+    )
+    _mapping_of_sha256(
+        selection.get("screening_plan_fingerprints"),
+        expected_symbols=normalized_symbols,
+        name="selection screening plan fingerprints",
     )
     available = _mapping_of_positive_ints(
         selection.get("available_fold_counts"),
@@ -754,6 +934,12 @@ def validate_tape_depth_confirmation_request(
         or int(config.get("max_folds", -1)) != 0
         or int(config.get("fold_start", -1))
         != int(selection["confirmation_fold_start"])
+        or int(config.get("horizon_seconds", -1))
+        != int(selection["selected_horizon_seconds"])
+        or int(config.get("decision_cadence_seconds", -1))
+        != int(selection["selected_decision_cadence_seconds"])
+        or int(config.get("maximum_depth_age_ms", -1))
+        != int(selection["selected_maximum_depth_age_ms"])
         or str(config.get("model_profile")) != str(selection["selected_model_profile"])
         or str(config.get("feature_set")) != str(selection["selected_feature_set"])
         or _config_without(config, _STAGE_CONFIG_KEYS) != dict(selection["modeling_config"])
@@ -797,6 +983,10 @@ def confirm_tape_depth_report(
     if (
         config.get("study_stage") != "confirmation"
         or config.get("selection_lock_sha256") != selection_lock_sha256
+        or key.horizon_seconds != selection["selected_horizon_seconds"]
+        or key.decision_cadence_seconds
+        != selection["selected_decision_cadence_seconds"]
+        or key.maximum_depth_age_ms != selection["selected_maximum_depth_age_ms"]
         or key.model_profile != selection["selected_model_profile"]
         or key.feature_set != selection["selected_feature_set"]
         or int(config.get("fold_start", -1)) != int(selection["confirmation_fold_start"])
@@ -837,6 +1027,7 @@ def confirm_tape_depth_report(
         "execution_claim": False,
         "profitability_claim": False,
         "selected_trial": selection["selected_trial"],
+        "selected_trial_config": selection["selected_trial_config"],
         "declared_trial_count": selection["declared_trial_count"],
         "selection_fingerprint": selection["selection_fingerprint"],
         "selection_lock_sha256": selection_lock_sha256,
@@ -870,22 +1061,41 @@ def load_and_select_tape_depth_reports(
     paths: Sequence[str | Path],
     *,
     output: str | Path,
+    design_path: str | Path | None = None,
 ) -> dict[str, object]:
     if not paths:
         raise ValueError("at least one screening report path is required")
     destination = Path(output).resolve()
     reports: list[dict[str, object]] = []
     sources: list[dict[str, str]] = []
+    resolved_design = Path(design_path).resolve() if design_path is not None else None
+    experiment_design: dict[str, object] | None = None
+    design_source: dict[str, str] | None = None
+    if resolved_design is not None:
+        if resolved_design == destination:
+            raise ValueError("selection output cannot overwrite the experiment design")
+        experiment_design, design_raw = _read_json_object(
+            resolved_design,
+            "experiment design",
+        )
+        design_source = {
+            "path": str(resolved_design),
+            "sha256": _sha256_bytes(design_raw),
+        }
     for raw_path in paths:
         path = Path(raw_path).resolve()
-        if path == destination:
+        if path == destination or path == resolved_design:
             raise ValueError("selection output cannot overwrite an input report")
         report, raw = _read_json_object(path, "screening report")
         verify_tape_depth_prequential_report(path, report)
         reports.append(report)
         sources.append({"path": str(path), "sha256": _sha256_bytes(raw)})
-    selection = select_tape_depth_screening_reports(reports)
+    selection = select_tape_depth_screening_reports(
+        reports,
+        experiment_design=experiment_design,
+    )
     selection["source_reports"] = sources
+    selection["experiment_design_source"] = design_source
     selection = _with_fingerprint(selection, "selection_fingerprint")
     write_json_atomic(destination, selection, indent=2, sort_keys=True)
     return selection
@@ -913,8 +1123,34 @@ def load_verified_tape_depth_selection(
             raise ValueError("selection lock screening source report changed")
         reports.append(report)
         normalized_sources.append({"path": str(source_path), "sha256": report_sha256})
-    expected = select_tape_depth_screening_reports(reports)
+    design_summary = selection.get("experiment_design")
+    design_source = selection.get("experiment_design_source")
+    experiment_design: dict[str, object] | None = None
+    normalized_design_source: dict[str, str] | None = None
+    if design_summary is None:
+        if design_source is not None:
+            raise ValueError("selection lock has an unexpected experiment design source")
+    else:
+        if not isinstance(design_source, Mapping):
+            raise ValueError("selection lock omits its experiment design source")
+        design_path = Path(str(design_source.get("path") or "")).resolve()
+        experiment_design, design_raw = _read_json_object(
+            design_path,
+            "experiment design source",
+        )
+        design_sha256 = _sha256_bytes(design_raw)
+        if design_sha256 != design_source.get("sha256"):
+            raise ValueError("selection lock experiment design source changed")
+        normalized_design_source = {
+            "path": str(design_path),
+            "sha256": design_sha256,
+        }
+    expected = select_tape_depth_screening_reports(
+        reports,
+        experiment_design=experiment_design,
+    )
     expected["source_reports"] = normalized_sources
+    expected["experiment_design_source"] = normalized_design_source
     expected = _with_fingerprint(expected, "selection_fingerprint")
     if selection != expected:
         raise ValueError("selection lock differs from recomputed screening evidence")
