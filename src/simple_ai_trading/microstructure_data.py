@@ -5,15 +5,18 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 import gzip
+import heapq
 import hashlib
 import json
 import math
 from pathlib import Path
+from queue import Empty, Full, Queue
 import random
 import secrets
 from statistics import median
+import threading
 import time
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 import requests
 
@@ -22,8 +25,12 @@ from .assets import is_supported_major_symbol, normalize_symbol
 
 BINANCE_FUTURES_REST_URL = "https://fapi.binance.com"
 BINANCE_FUTURES_PUBLIC_STREAM_URL = "wss://fstream.binance.com/public/stream"
-MICROSTRUCTURE_SCHEMA_VERSION = "binance-usdm-l2-v1"
+BINANCE_FUTURES_MARKET_STREAM_URL = "wss://fstream.binance.com/market/stream"
+MICROSTRUCTURE_SCHEMA_VERSION = "binance-usdm-l2-v2"
 MAX_LATENCY_SAMPLES = 100_000
+_STREAM_REORDER_WINDOW_NS = 20_000_000
+_STREAM_QUEUE_CAPACITY = 32_768
+_MAX_CAPTURE_DURATION_SECONDS = 23 * 60 * 60
 
 
 @dataclass(frozen=True)
@@ -59,6 +66,7 @@ class SymbolMicrostructureEvidence:
     depth_messages: int
     depth_rows: int
     trade_messages: int
+    trade_fill_count: int
     ignored_non_market_trade_messages: int
     book_ticker_messages: int
     sequence_gap_count: int
@@ -86,7 +94,7 @@ class MicrostructureCaptureResult:
     schema_version: str
     provider: str
     market_type: str
-    stream_url: str
+    stream_urls: tuple[str, ...]
     output_dir: str
     manifest_path: str
     started_at_ms: int
@@ -103,6 +111,7 @@ class MicrostructureCaptureResult:
         payload["evidence"] = [item.asdict() for item in self.evidence]
         payload["symbols"] = list(self.symbols)
         payload["errors"] = list(self.errors)
+        payload["stream_urls"] = list(self.stream_urls)
         return payload
 
 
@@ -113,6 +122,7 @@ class _MutableSymbolStats:
     depth_messages: int = 0
     depth_rows: int = 0
     trade_messages: int = 0
+    trade_fill_count: int = 0
     ignored_non_market_trade_messages: int = 0
     book_ticker_messages: int = 0
     sequence_gap_count: int = 0
@@ -134,6 +144,67 @@ class _MutableSymbolStats:
         replacement = rng.randrange(self.latency_seen)
         if replacement < MAX_LATENCY_SAMPLES:
             self.latency_samples_ms[replacement] = float(value)
+
+
+@dataclass(frozen=True)
+class _StreamEnvelope:
+    route: str
+    received_at_ns: int
+    raw_text: str
+
+
+def _stream_receiver(
+    *,
+    route: str,
+    url: str,
+    connect_fn: Callable[..., object],
+    output: Queue[_StreamEnvelope],
+    failures: Queue[str],
+    ready: threading.Event,
+    stop: threading.Event,
+    timeout_seconds: float,
+) -> None:
+    try:
+        with connect_fn(
+            url,
+            open_timeout=max(1.0, float(timeout_seconds)),
+            close_timeout=3.0,
+            ping_interval=None,
+            max_size=16_000_000,
+            max_queue=4096,
+        ) as websocket:
+            ready.set()
+            while not stop.is_set():
+                try:
+                    raw_message = websocket.recv(timeout=0.5)
+                except TimeoutError:
+                    continue
+                except Exception as exc:  # noqa: BLE001 - connection failures are evidence
+                    if not stop.is_set():
+                        failures.put(f"{route}:{type(exc).__name__}:{str(exc)[:500]}")
+                        stop.set()
+                    return
+                received_at_ns = time.time_ns()
+                raw_text = (
+                    raw_message.decode("utf-8")
+                    if isinstance(raw_message, bytes)
+                    else str(raw_message)
+                )
+                try:
+                    output.put(
+                        _StreamEnvelope(route, received_at_ns, raw_text),
+                        timeout=0.5,
+                    )
+                except Full:
+                    failures.put(f"{route}:capture_queue_full")
+                    stop.set()
+                    return
+    except Exception as exc:  # noqa: BLE001 - connection failures are evidence
+        if not stop.is_set():
+            failures.put(f"{route}:{type(exc).__name__}:{str(exc)[:500]}")
+            stop.set()
+    finally:
+        ready.set()
 
 
 def _utc_capture_id(now_ms: int) -> str:
@@ -333,7 +404,7 @@ def _observe_event(
             stats.depth_messages += 1
             stats.depth_rows += _validate_price_levels(data.get("b", []))
             stats.depth_rows += _validate_price_levels(data.get("a", []))
-        elif event_type == "trade":
+        elif event_type in {"trade", "aggTrade"}:
             price = float(data.get("p", 0.0))
             quantity = float(data.get("q", 0.0))
             if price <= 0.0 or quantity <= 0.0:
@@ -341,6 +412,25 @@ def _observe_event(
                     stats.ignored_non_market_trade_messages += 1
                     return
                 raise ValueError("invalid trade price or quantity")
+            maker = data.get("m")
+            if not isinstance(maker, bool):
+                raise ValueError("invalid trade maker flag")
+            if event_type == "aggTrade":
+                aggregate_id = int(data.get("a", 0) or 0)
+                first_trade_id = int(data.get("f", 0) or 0)
+                last_trade_id = int(data.get("l", 0) or 0)
+                if (
+                    aggregate_id <= 0
+                    or first_trade_id <= 0
+                    or last_trade_id < first_trade_id
+                ):
+                    raise ValueError("invalid aggregate trade identifiers")
+                stats.trade_fill_count += last_trade_id - first_trade_id + 1
+            else:
+                trade_id = int(data.get("t", 0) or 0)
+                if trade_id <= 0:
+                    raise ValueError("invalid trade identifier")
+                stats.trade_fill_count += 1
             stats.trade_messages += 1
         elif event_type == "bookTicker":
             bid = float(data.get("b", 0.0))
@@ -358,12 +448,27 @@ def _observe_event(
         stats.invalid_event_count += 1
 
 
-def _stream_url(symbols: Sequence[str], base_url: str) -> str:
-    streams: list[str] = []
+def _stream_urls(
+    symbols: Sequence[str],
+    public_base_url: str,
+    market_base_url: str,
+) -> tuple[str, str]:
+    public_streams: list[str] = []
+    market_streams: list[str] = []
     for symbol in symbols:
         lower = symbol.lower()
-        streams.extend((f"{lower}@depth@100ms", f"{lower}@bookTicker", f"{lower}@trade"))
-    return f"{base_url.rstrip('/')}?streams={'/'.join(streams)}"
+        public_streams.extend((f"{lower}@depth@100ms", f"{lower}@bookTicker"))
+        market_streams.append(f"{lower}@aggTrade")
+    return (
+        f"{public_base_url.rstrip('/')}?streams={'/'.join(public_streams)}",
+        f"{market_base_url.rstrip('/')}?streams={'/'.join(market_streams)}",
+    )
+
+
+def _stream_url(symbols: Sequence[str], base_url: str) -> str:
+    """Compatibility helper returning the routed public stream URL."""
+
+    return _stream_urls(symbols, base_url, BINANCE_FUTURES_MARKET_STREAM_URL)[0]
 
 
 def _initial_snapshot_array(payload: Mapping[str, object]):
@@ -453,7 +558,7 @@ def _synchronize_raw_capture(
                 normalized_row_estimate += len(data.get("b", [])) + len(data.get("a", []))
             elif not synchronized:
                 continue
-            elif event_type == "trade":
+            elif event_type in {"trade", "aggTrade"}:
                 price = float(data.get("p", 0.0))
                 quantity = float(data.get("q", 0.0))
                 if (
@@ -472,6 +577,44 @@ def _synchronize_raw_capture(
     return message_count, normalized_row_estimate
 
 
+def _prepare_hftbacktest_input(source_path: Path, output_path: Path) -> int:
+    """Map real aggregate trades to HftBacktest's equivalent trade event schema."""
+
+    transformed = 0
+    with gzip.open(source_path, "rt", encoding="utf-8") as source, gzip.open(
+        output_path,
+        "wt",
+        encoding="utf-8",
+        compresslevel=6,
+        newline="\n",
+    ) as target:
+        for line in source:
+            stripped = line.rstrip("\n")
+            try:
+                received_at, raw_json = stripped.split(" ", 1)
+                payload = json.loads(raw_json)
+                data = payload.get("data", payload)
+            except (AttributeError, json.JSONDecodeError, ValueError) as exc:
+                raise ValueError(f"invalid synchronized capture line: {exc}") from exc
+            if isinstance(data, Mapping) and str(data.get("e", "")) == "aggTrade":
+                normalized_data = dict(data)
+                normalized_data["e"] = "trade"
+                normalized_data["t"] = int(data["a"])
+                normalized_data["X"] = "MARKET"
+                if payload is data:
+                    normalized_payload: dict[str, object] = normalized_data
+                else:
+                    normalized_payload = dict(payload)
+                    normalized_payload["data"] = normalized_data
+                    stream = str(normalized_payload.get("stream", ""))
+                    if stream.endswith("@aggTrade"):
+                        normalized_payload["stream"] = stream[: -len("@aggTrade")] + "@trade"
+                raw_json = json.dumps(normalized_payload, separators=(",", ":"))
+                transformed += 1
+            target.write(f"{received_at} {raw_json}\n")
+    return transformed
+
+
 def _convert_to_hftbacktest(
     synchronized_path: Path,
     normalized_path: Path,
@@ -488,13 +631,20 @@ def _convert_to_hftbacktest(
     snapshot = _initial_snapshot_array(snapshot_payload)
     np.savez_compressed(snapshot_path, data=snapshot)
     buffer_size = max(10_000, int(max(1, row_estimate) * 1.15) + 10_000)
-    converted = binancefutures.convert(
-        str(synchronized_path),
-        output_filename=str(normalized_path),
-        opt="t",
-        combined_stream=True,
-        buffer_size=buffer_size,
+    converter_input = synchronized_path.with_name(
+        synchronized_path.name.removesuffix(".jsonl.gz") + ".hft-input.jsonl.gz"
     )
+    _prepare_hftbacktest_input(synchronized_path, converter_input)
+    try:
+        converted = binancefutures.convert(
+            str(converter_input),
+            output_filename=str(normalized_path),
+            opt="t",
+            combined_stream=True,
+            buffer_size=buffer_size,
+        )
+    finally:
+        converter_input.unlink(missing_ok=True)
     return int(len(converted))
 
 
@@ -541,6 +691,7 @@ def capture_binance_futures_microstructure(
     output_root: str | Path = "data/microstructure",
     rest_url: str = BINANCE_FUTURES_REST_URL,
     stream_base_url: str = BINANCE_FUTURES_PUBLIC_STREAM_URL,
+    market_stream_base_url: str = BINANCE_FUTURES_MARKET_STREAM_URL,
     timeout_seconds: float = 10.0,
     convert: bool = True,
     capture_id: str | None = None,
@@ -551,8 +702,15 @@ def capture_binance_futures_microstructure(
 
     normalized_symbols = _normalize_symbols(symbols)
     requested_duration = float(duration_seconds)
-    if not math.isfinite(requested_duration) or requested_duration < 1.0 or requested_duration > 86_400.0:
-        raise ValueError("duration_seconds must be between 1 and 86400")
+    if (
+        not math.isfinite(requested_duration)
+        or requested_duration < 1.0
+        or requested_duration > _MAX_CAPTURE_DURATION_SECONDS
+    ):
+        raise ValueError(
+            "duration_seconds must be between 1 and 82800; "
+            "Binance disconnects each WebSocket at 24 hours"
+        )
     started_at_ms = int(time.time() * 1000)
     resolved_capture_id = capture_id or _utc_capture_id(started_at_ms)
     capture_dir = Path(output_root) / resolved_capture_id
@@ -569,13 +727,71 @@ def capture_binance_futures_microstructure(
         symbol: capture_dir / f"{symbol.lower()}.initial-depth.npz" for symbol in normalized_symbols
     }
     normalized_paths = {symbol: capture_dir / f"{symbol.lower()}.hft.npz" for symbol in normalized_symbols}
-    stream_url = _stream_url(normalized_symbols, stream_base_url)
+    stream_urls = _stream_urls(
+        normalized_symbols,
+        stream_base_url,
+        market_stream_base_url,
+    )
     rng = random.Random(0)
     snapshots: dict[str, dict[str, object]] = {}
     filters: dict[str, tuple[float, float]] = {}
     clock_sync: ClockSyncEvidence | None = None
     writers: dict[str, object] = {}
+    received: Queue[_StreamEnvelope] = Queue(maxsize=_STREAM_QUEUE_CAPACITY)
+    failures: Queue[str] = Queue()
+    stop_streams = threading.Event()
+    route_ready = {route: threading.Event() for route in ("public", "market")}
+    threads: list[threading.Thread] = []
+    pending: list[tuple[int, int, _StreamEnvelope]] = []
+    pending_sequence = 0
     session = requests.Session()
+
+    def process_envelope(envelope: _StreamEnvelope) -> None:
+        try:
+            payload = json.loads(envelope.raw_text)
+            data = payload.get("data", payload)
+            symbol = str(data.get("s", "")).upper()
+        except (AttributeError, json.JSONDecodeError):
+            errors.append(f"{envelope.route}:invalid_websocket_json")
+            return
+        if symbol not in stats:
+            errors.append(
+                f"{envelope.route}:unexpected_stream_symbol:{symbol or 'missing'}"
+            )
+            return
+        stats[symbol].raw_messages += 1
+        _observe_event(
+            stats[symbol],
+            data,
+            receive_time_ns=envelope.received_at_ns,
+            clock_offset_ms=clock_sync.offset_ms if clock_sync is not None else 0.0,
+            rng=rng,
+        )
+        writer = writers[symbol]
+        writer.write(  # type: ignore[attr-defined]
+            f"{envelope.received_at_ns} {envelope.raw_text}\n"
+        )
+
+    def buffer_envelope(envelope: _StreamEnvelope) -> None:
+        nonlocal pending_sequence
+        pending_sequence += 1
+        heapq.heappush(
+            pending,
+            (envelope.received_at_ns, pending_sequence, envelope),
+        )
+
+    def flush_pending(*, force: bool = False) -> None:
+        watermark = time.time_ns() - _STREAM_REORDER_WINDOW_NS
+        while pending and (force or pending[0][0] <= watermark):
+            _received_at, _sequence, envelope = heapq.heappop(pending)
+            process_envelope(envelope)
+
+    def first_stream_failure() -> str | None:
+        try:
+            return failures.get_nowait()
+        except Empty:
+            return None
+
     try:
         clock_sync = probe_binance_futures_clock(
             session=session,
@@ -590,59 +806,72 @@ def capture_binance_futures_microstructure(
         )
         for symbol, path in raw_paths.items():
             writers[symbol] = gzip.open(path, "wt", encoding="utf-8", compresslevel=6, newline="\n")
-        with connect(
-            stream_url,
-            open_timeout=max(1.0, float(timeout_seconds)),
-            close_timeout=3.0,
-            ping_interval=15.0,
-            ping_timeout=max(5.0, float(timeout_seconds)),
-            max_size=16_000_000,
-            max_queue=4096,
-        ) as websocket:
-            for symbol in normalized_symbols:
-                snapshot = _fetch_depth_snapshot(
-                    session,
-                    symbol,
-                    rest_url=rest_url,
-                    timeout_seconds=timeout_seconds,
-                )
-                snapshots[symbol] = snapshot
-                _write_json(snapshot_paths[symbol], snapshot)
-            deadline = time.perf_counter() + requested_duration
-            while time.perf_counter() < deadline:
-                remaining = max(0.05, min(1.0, deadline - time.perf_counter()))
-                try:
-                    raw_message = websocket.recv(timeout=remaining)
-                except TimeoutError:
-                    continue
-                receive_time_ns = time.time_ns()
-                if isinstance(raw_message, bytes):
-                    raw_text = raw_message.decode("utf-8")
-                else:
-                    raw_text = str(raw_message)
-                try:
-                    payload = json.loads(raw_text)
-                    data = payload.get("data", payload)
-                    symbol = str(data.get("s", "")).upper()
-                except (AttributeError, json.JSONDecodeError):
-                    errors.append("invalid_websocket_json")
-                    continue
-                if symbol not in stats:
-                    errors.append(f"unexpected_stream_symbol:{symbol or 'missing'}")
-                    continue
-                stats[symbol].raw_messages += 1
-                _observe_event(
-                    stats[symbol],
-                    data,
-                    receive_time_ns=receive_time_ns,
-                    clock_offset_ms=clock_sync.offset_ms,
-                    rng=rng,
-                )
-                writer = writers[symbol]
-                writer.write(f"{receive_time_ns} {raw_text}\n")  # type: ignore[attr-defined]
+        for route, url in zip(("public", "market"), stream_urls, strict=True):
+            thread = threading.Thread(
+                target=_stream_receiver,
+                kwargs={
+                    "route": route,
+                    "url": url,
+                    "connect_fn": connect,
+                    "output": received,
+                    "failures": failures,
+                    "ready": route_ready[route],
+                    "stop": stop_streams,
+                    "timeout_seconds": timeout_seconds,
+                },
+                name=f"microstructure-{route}",
+                daemon=True,
+            )
+            thread.start()
+            threads.append(thread)
+        for route, ready in route_ready.items():
+            if not ready.wait(timeout=max(1.0, float(timeout_seconds)) + 1.0):
+                raise RuntimeError(f"{route} websocket did not become ready")
+        stream_failure = first_stream_failure()
+        if stream_failure is not None:
+            raise RuntimeError(stream_failure)
+        for symbol in normalized_symbols:
+            snapshot = _fetch_depth_snapshot(
+                session,
+                symbol,
+                rest_url=rest_url,
+                timeout_seconds=timeout_seconds,
+            )
+            snapshots[symbol] = snapshot
+            _write_json(snapshot_paths[symbol], snapshot)
+        deadline = time.perf_counter() + requested_duration
+        while time.perf_counter() < deadline and not stop_streams.is_set():
+            stream_failure = first_stream_failure()
+            if stream_failure is not None:
+                raise RuntimeError(stream_failure)
+            remaining = max(0.01, min(0.25, deadline - time.perf_counter()))
+            try:
+                buffer_envelope(received.get(timeout=remaining))
+            except Empty:
+                pass
+            flush_pending()
+        stream_failure = first_stream_failure()
+        if stream_failure is not None:
+            raise RuntimeError(stream_failure)
     except Exception as exc:  # capture failures are persisted and fail closed
         errors.append(f"capture:{type(exc).__name__}:{str(exc)[:500]}")
     finally:
+        stop_streams.set()
+        for thread in threads:
+            thread.join(timeout=5.0)
+            if thread.is_alive():
+                errors.append(f"stream_thread_stuck:{thread.name}")
+        while True:
+            try:
+                buffer_envelope(received.get_nowait())
+            except Empty:
+                break
+        flush_pending(force=True)
+        while True:
+            stream_failure = first_stream_failure()
+            if stream_failure is None:
+                break
+            errors.append(f"stream:{stream_failure}")
         for writer in writers.values():
             writer.close()  # type: ignore[attr-defined]
         session.close()
@@ -659,6 +888,12 @@ def capture_binance_futures_microstructure(
         tick_size, lot_size = filters.get(symbol, (0.0, 0.0))
         if stats[symbol].raw_messages <= 0:
             item_errors.append("no_raw_messages")
+        if stats[symbol].depth_messages <= 0:
+            item_errors.append("no_depth_messages")
+        if stats[symbol].book_ticker_messages <= 0:
+            item_errors.append("no_book_ticker_messages")
+        if stats[symbol].trade_messages <= 0:
+            item_errors.append("no_aggregate_trade_messages")
         if snapshot is None:
             item_errors.append("missing_initial_snapshot")
         if stats[symbol].sequence_gap_count > 0:
@@ -716,6 +951,7 @@ def capture_binance_futures_microstructure(
                 depth_messages=int(stats[symbol].depth_messages),
                 depth_rows=int(stats[symbol].depth_rows),
                 trade_messages=int(stats[symbol].trade_messages),
+                trade_fill_count=int(stats[symbol].trade_fill_count),
                 ignored_non_market_trade_messages=int(stats[symbol].ignored_non_market_trade_messages),
                 book_ticker_messages=int(stats[symbol].book_ticker_messages),
                 sequence_gap_count=int(stats[symbol].sequence_gap_count),
@@ -745,7 +981,7 @@ def capture_binance_futures_microstructure(
         schema_version=MICROSTRUCTURE_SCHEMA_VERSION,
         provider="binance",
         market_type="futures",
-        stream_url=stream_url,
+        stream_urls=stream_urls,
         output_dir=str(capture_dir),
         manifest_path=str(manifest_path),
         started_at_ms=started_at_ms,

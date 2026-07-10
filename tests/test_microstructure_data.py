@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 from pathlib import Path
+import random
 
 import pytest
 
@@ -29,6 +30,61 @@ def test_exchange_filters_require_real_tick_and_lot_sizes() -> None:
     assert microstructure._exchange_filters(payload, ("BTCUSDT",)) == {"BTCUSDT": (0.1, 0.001)}
     with pytest.raises(ValueError, match="missing exchange filters"):
         microstructure._exchange_filters(payload, ("BTCUSDT", "ETHUSDT"))
+
+
+def test_stream_urls_separate_public_book_data_from_market_aggregate_trades() -> None:
+    public_url, market_url = microstructure._stream_urls(
+        ("BTCUSDT", "ETHUSDT"),
+        microstructure.BINANCE_FUTURES_PUBLIC_STREAM_URL,
+        microstructure.BINANCE_FUTURES_MARKET_STREAM_URL,
+    )
+
+    assert "/public/stream?streams=" in public_url
+    assert "btcusdt@depth@100ms" in public_url
+    assert "ethusdt@bookTicker" in public_url
+    assert "aggTrade" not in public_url
+    assert "/market/stream?streams=" in market_url
+    assert "btcusdt@aggTrade" in market_url
+    assert "depth" not in market_url
+    assert "bookTicker" not in market_url
+
+
+def test_capture_segment_limit_leaves_margin_before_binance_24_hour_disconnect(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="82800"):
+        microstructure.capture_binance_futures_microstructure(
+            ("BTCUSDT",),
+            duration_seconds=82_801,
+            output_root=tmp_path,
+        )
+
+
+def test_observe_aggregate_trade_counts_underlying_real_fills() -> None:
+    stats = microstructure._MutableSymbolStats("BTCUSDT")
+
+    microstructure._observe_event(
+        stats,
+        {
+            "e": "aggTrade",
+            "E": 1_700_000_000_010,
+            "T": 1_700_000_000_000,
+            "s": "BTCUSDT",
+            "a": 10,
+            "p": "50000",
+            "q": "0.06",
+            "f": 100,
+            "l": 102,
+            "m": False,
+        },
+        receive_time_ns=1_700_000_000_020_000_000,
+        clock_offset_ms=0.0,
+        rng=random.Random(0),
+    )
+
+    assert stats.trade_messages == 1
+    assert stats.trade_fill_count == 3
+    assert stats.invalid_event_count == 0
 
 
 def test_initial_snapshot_uses_hftbacktest_depth_snapshot_events() -> None:
@@ -136,3 +192,38 @@ def test_synchronize_raw_capture_rejects_post_snapshot_sequence_gap(tmp_path: Pa
             synchronized_path,
             snapshot_last_update_id=100,
         )
+
+
+def test_prepare_hftbacktest_input_maps_real_aggregate_trade_schema(tmp_path: Path) -> None:
+    source = tmp_path / "synchronized.jsonl.gz"
+    output = tmp_path / "hft-input.jsonl.gz"
+    line = _stream_line(
+        1_700_000_000_020_000_000,
+        "btcusdt@aggTrade",
+        {
+            "e": "aggTrade",
+            "E": 1_700_000_000_010,
+            "T": 1_700_000_000_000,
+            "s": "BTCUSDT",
+            "a": 10,
+            "p": "50000",
+            "q": "0.06",
+            "f": 100,
+            "l": 102,
+            "m": False,
+        },
+    )
+    with gzip.open(source, "wt", encoding="utf-8") as handle:
+        handle.write(line)
+
+    transformed = microstructure._prepare_hftbacktest_input(source, output)
+
+    assert transformed == 1
+    with gzip.open(output, "rt", encoding="utf-8") as handle:
+        _received_at, raw_json = handle.readline().split(" ", 1)
+    payload = json.loads(raw_json)
+    assert payload["stream"] == "btcusdt@trade"
+    assert payload["data"]["e"] == "trade"
+    assert payload["data"]["t"] == 10
+    assert payload["data"]["X"] == "MARKET"
+    assert payload["data"]["q"] == "0.06"

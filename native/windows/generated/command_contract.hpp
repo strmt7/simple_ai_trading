@@ -88,7 +88,7 @@ inline constexpr CommandOptionSpec kOptions_archive_sync[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_audit[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
 };
 
@@ -105,7 +105,7 @@ inline constexpr CommandOptionSpec kOptions_autonomous[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_backtest[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
     {L"--start-cash", L"start_cash", L"", L"1000.0", L"", false, true},
     {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"", L"model-scoring backend override; default uses saved runtime compute_backend", false, true},
@@ -114,7 +114,7 @@ inline constexpr CommandOptionSpec kOptions_backtest[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_backtest_chart[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
     {L"--output", L"output", L"", L"data/backtest_performance.svg", L"", false, true},
     {L"--start-cash", L"start_cash", L"", L"1000.0", L"", false, true},
@@ -128,7 +128,7 @@ inline constexpr CommandOptionSpec kOptions_backtest_panel[] = {
     {L"--market", L"market", L"", L"", L"override runtime market type", false, true},
     {L"--from-date", L"from_date", L"", L"", L"", false, true},
     {L"--to-date", L"to_date", L"", L"", L"", false, true},
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"", L"", false, true},
     {L"--objective", L"objective", L"", L"", L"", false, true},
     {L"--tag", L"tag", L"", L"", L"", false, true},
@@ -185,13 +185,13 @@ inline constexpr CommandOptionSpec kOptions_data_sync[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_doctor[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
     {L"--online", L"online", L"", L"false", L"also check exchange connectivity", false, false},
 };
 
 inline constexpr CommandOptionSpec kOptions_evaluate[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
     {L"--threshold", L"threshold", L"", L"", L"", false, true},
     {L"--calibrate-threshold", L"calibrate_threshold", L"", L"false", L"", false, false},
@@ -202,7 +202,7 @@ inline constexpr CommandOptionSpec kOptions_fetch[] = {
     {L"--interval", L"interval", L"", L"", L"", false, true},
     {L"--limit", L"limit", L"", L"500", L"", false, true},
     {L"--batch-size", L"batch_size", L"", L"1000", L"klines per request (spot max 1000, futures max 1500)", false, true},
-    {L"--output", L"output", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--output", L"output", L"", L"data/historical_market.json", L"", false, true},
 };
 
 inline constexpr CommandOptionSpec kOptions_live[] = {
@@ -288,7 +288,7 @@ inline constexpr CommandOptionSpec kOptions_positions[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_prepare[] = {
-    {L"--historical", L"historical", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--historical", L"historical", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
     {L"--limit", L"limit", L"", L"500", L"", false, true},
     {L"--batch-size", L"batch_size", L"", L"1000", L"klines per fetch request (spot max 1000, futures max 1500)", false, true},
@@ -319,7 +319,7 @@ inline constexpr CommandOptionSpec kOptions_report[] = {
     {L"--doctor", L"doctor", L"", L"true", L"include readiness checks", false, false},
     {L"--no-doctor", L"doctor", L"", L"true", L"omit readiness checks", false, false},
     {L"--online", L"online", L"", L"false", L"include exchange connectivity in readiness checks", false, false},
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--model", L"model", L"", L"data/model.json", L"", false, true},
 };
 
@@ -481,7 +481,7 @@ inline constexpr CommandOptionSpec kOptions_tick_archive_sync[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_train[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--output", L"output", L"", L"data/model.json", L"", false, true},
     {L"--source", L"source", L"auto, file, db", L"auto", L"", false, true},
     {L"--db", L"db", L"", L"data/market_data.sqlite", L"", false, true},
@@ -504,7 +504,7 @@ inline constexpr CommandOptionSpec kOptions_train[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_train_suite[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--output-dir", L"output_dir", L"", L"data", L"", false, true},
     {L"--starting-cash", L"starting_cash", L"", L"1000.0", L"", false, true},
     {L"--objective", L"objective", L"", L"", L"restrict suite to named objective(s); repeat to list multiple.", false, true},
@@ -515,7 +515,7 @@ inline constexpr CommandOptionSpec kOptions_train_suite[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_tune[] = {
-    {L"--input", L"input", L"", L"data/historical_btcusdc.json", L"", false, true},
+    {L"--input", L"input", L"", L"data/historical_market.json", L"", false, true},
     {L"--save-best", L"save_best", L"", L"false", L"", false, false},
     {L"--min-risk", L"min_risk", L"", L"0.002", L"", false, true},
     {L"--max-risk", L"max_risk", L"", L"0.02", L"", false, true},

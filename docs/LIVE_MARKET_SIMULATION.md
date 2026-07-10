@@ -10,6 +10,9 @@ Primary references used for the current design:
 - Binance USD-M futures kline docs: https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data
 - Binance rate-limit guidance for backing off on `429`/`418` and tracking request weight: https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/rate-limits
 - Binance WebSocket stream constraints: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
+- Binance USD-M routed WebSocket contract: https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect
+- Binance USD-M public depth/BBO streams: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public
+- Binance USD-M market aggregate-trade stream: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market
 - Binance USD-M futures leverage endpoints: https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Notional-and-Leverage-Brackets and https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Change-Initial-Leverage
 - Binance account commission endpoints: https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/User-Commission-Rate and https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints#query-commission-rates-user_data
 - Cont, Kukanov, and Stoikov on order-flow imbalance and price impact: https://arxiv.org/abs/1011.6402
@@ -55,6 +58,18 @@ Execution cost is symbol-specific where market data exists:
   any candle rows are written. `--require-checksum` makes missing sidecars a
   hard failure for promotion-grade data builds; without it, unavailable
   sidecars are recorded as `checksum_status=unavailable` for audit.
+- `microstructure-capture` uses the current routed USD-M stream contract rather
+  than mixing incompatible products on one socket. Depth and best-book updates
+  arrive on `/public`; aggregate trade flow arrives independently on `/market`.
+  The recorder timestamps both at receipt, merges them through a bounded queue
+  and 20 ms reorder window, requires depth, BBO, and trade evidence per symbol,
+  and fails on queue overflow, a stuck receiver, sequence gaps, crossed books,
+  invalid messages, or a missing REST-snapshot bridge. Aggregate messages retain
+  their real quantity while `f`/`l` IDs recover the underlying fill count used
+  by the historical raw-trade feature contract. HftBacktest normalization uses
+  a deterministic adapter copy; the immutable raw capture remains unchanged.
+  Captures are capped at 23 hours because Binance disconnects every WebSocket at
+  24 hours; multi-day evidence must use separately hashed capture segments.
 - `data-health` is the pre-training database gate. It emits machine-readable
   row counts, UTC spans, expected rows, coverage ratio, gap count,
   archive-status counts, and checksum-status counts, and it exits nonzero when
@@ -382,7 +397,10 @@ timescale and truth basis used for its promotion.
 
 Known limitations:
 
-- Full L2 order-book depth and queue position are not yet replayed tick-by-tick.
+- Bounded live L2 captures can be normalized and replayed tick-by-tick, but the
+  repository does not yet contain the many independently hashed days required
+  for promotion-grade queue-position evidence. The long historical action-value
+  dataset therefore remains L1 BBO plus trade tape until that evidence exists.
 - Data-probed session liquidity is only as good as the available exchange
   history for that symbol and interval. A newly listed symbol or sparse archive
   cannot prove historical session behavior and should fail promotion-grade data

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import asyncio
@@ -748,7 +748,7 @@ def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkey
     assert asyncio.run(_action("Fetch candles").run(_ScriptedUI(forms=[{"limit": "0", "output": ""}]))) == 2
     monkeypatch.setattr(cli, "command_fetch", capture("fetch"))
     assert asyncio.run(_action("Fetch candles").run(_ScriptedUI(forms=[{"limit": "2", "output": ""}]))) == 0
-    assert captured["fetch"].output == "data/historical_btcusdc.json"
+    assert captured["fetch"].output == "data/historical_market.json"
 
     assert asyncio.run(_action("Train model").run(_ScriptedUI(forms=[None]))) == 0
     bad_train = {

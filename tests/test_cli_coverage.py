@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import asyncio
 import json
@@ -128,7 +128,7 @@ def _promoted_execution_validation(
             "immutable_market_data": True,
             "engine": "hftbacktest",
             "engine_version": "2.4.4",
-            "schema_version": "binance-usdm-l2-v1",
+            "schema_version": "binance-usdm-l2-v2",
             "symbol": symbol,
             "queue_model": "risk_adverse_queue_model",
             "latency_model": "empirical_feed_and_order_latency",
@@ -424,7 +424,7 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
             account=True,
             doctor=True,
             online=True,
-            input="data/historical_btcusdc.json",
+            input="data/historical_market.json",
             model="data/model.json",
         )
     ) == 0
@@ -441,7 +441,7 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
             account=True,
             doctor=False,
             online=False,
-            input="data/historical_btcusdc.json",
+            input="data/historical_market.json",
             model="data/model.json",
         )
     ) == 2
@@ -454,7 +454,7 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
             account=True,
             doctor=False,
             online=False,
-            input="data/historical_btcusdc.json",
+            input="data/historical_market.json",
             model="data/model.json",
         )
     ) == 2
@@ -464,7 +464,7 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
         with_account=False,
         doctor=False,
         online=False,
-        input_path="data/historical_btcusdc.json",
+        input_path="data/historical_market.json",
         model_path="data/model.json",
     )
     assert "Readiness report" not in plain
