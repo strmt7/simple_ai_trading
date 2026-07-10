@@ -899,6 +899,11 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
         "validation_score": float("-inf"),
         "full_sample_score": float("-inf"),
         "inversion_score": float("-inf"),
+        "inversion_selection_score": float("-inf"),
+        "selected_internal_variant": "probability_inverted",
+        "inversion_source_variant": "full_fit",
+        "internal_variant_count": 3,
+        "internal_variant_selection": [{"variant": "full_fit", "score": 1.0}],
         "threshold": 0.64,
         "threshold_source": "strategy",
         "threshold_score": None,
@@ -907,6 +912,7 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
         "selection_result": {"realized_pnl": 1.0},
         "validation_result": {"realized_pnl": -1.0},
         "full_sample_result": {"realized_pnl": -2.0},
+        "inversion_selection_result": {"realized_pnl": 2.0},
         "inversion_validation_result": {"realized_pnl": -3.0},
         "inversion_full_sample_result": {"realized_pnl": -4.0},
         "walk_forward_gate": {"passed": False},
@@ -920,6 +926,11 @@ def test_candidate_diagnostics_include_probability_inversion_evidence() -> None:
     assert diagnostics["label_lookahead"] == feature_cfg.label_lookahead
     assert diagnostics["label_mode"] == feature_cfg.label_mode
     assert diagnostics["inversion_score"] is None
+    assert diagnostics["inversion_selection_score"] is None
+    assert diagnostics["selected_internal_variant"] == "probability_inverted"
+    assert diagnostics["inversion_source_variant"] == "full_fit"
+    assert diagnostics["internal_variant_count"] == 3
+    assert diagnostics["inversion_selection_result"] == {"realized_pnl": 2.0}
     assert diagnostics["inversion_validation_result"] == {"realized_pnl": -3.0}
     assert diagnostics["inversion_full_sample_result"] == {"realized_pnl": -4.0}
 
@@ -1052,6 +1063,35 @@ def test_selection_risk_report_allows_stable_selection_validation_ranking() -> N
     assert overfit["selected_validation_rank_percentile"] == pytest.approx(1.0)
 
 
+def test_selection_risk_report_counts_hidden_internal_model_trials() -> None:
+    best = {
+        "score": 0.90,
+        "selection_score": 0.90,
+        "validation_score": 0.91,
+        "internal_variant_count": 3,
+    }
+    report = training_suite._selection_risk_report(
+        best,
+        [
+            best,
+            {
+                "score": 0.80,
+                "selection_score": 0.80,
+                "validation_score": 0.75,
+                "internal_variant_count": 2,
+            },
+        ],
+        base_candidate_count=2,
+        local_refinement_candidates=0,
+        ensemble_refinement_candidates=0,
+        hybrid_rescue_candidates=0,
+    )
+
+    assert report["internal_variants_evaluated"] == 5
+    assert report["internal_variant_extra_trials"] == 3
+    assert report["effective_trials"] == 5
+
+
 def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
     model = _fake_trained_model(2)
 
@@ -1091,6 +1131,54 @@ def test_evaluate_candidate_without_calibration_uses_strategy_threshold(monkeypa
     assert model.strategy_overrides["signal_threshold"] == pytest.approx(0.64)
     assert model.strategy_overrides["risk_per_trade"] == pytest.approx(0.01)
     assert model.strategy_overrides["take_profit_pct"] == pytest.approx(0.03)
+
+
+def test_evaluate_candidate_can_freeze_probability_inversion_from_selection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = {"backtest": 0}
+
+    def fake_train_advanced(rows, cfg, **kwargs):
+        del cfg, kwargs
+        return _fake_trained_model(2), SimpleNamespace(row_count=len(rows), positive_rate=0.5)
+
+    def fake_run_backtest(*args, **kwargs):
+        del args, kwargs
+        calls["backtest"] += 1
+        pnl = 50.0 if calls["backtest"] == 1 else 75.0
+        return _make_result(realized_pnl=pnl, closed_trades=5)
+
+    monkeypatch.setattr(training_suite, "train_advanced", fake_train_advanced)
+    monkeypatch.setattr(training_suite, "run_backtest", fake_run_backtest)
+
+    candidate = CandidateParams(
+        epochs=4,
+        learning_rate=0.01,
+        l2_penalty=0.001,
+        signal_threshold=0.64,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=11,
+    )
+    result = _evaluate_candidate({
+        "candidate": candidate,
+        "rows_train": _rows(20),
+        "rows_eval": _rows(8),
+        "feature_cfg": default_config_for("default", ()),
+        "base_strategy": StrategyConfig(),
+        "objective": "default",
+        "market_type": "spot",
+        "starting_cash": 1000.0,
+    })
+
+    assert calls["backtest"] == 4
+    assert result["selected_internal_variant"] == "probability_inverted"
+    assert result["inversion_source_variant"] == "full_fit"
+    assert result["internal_variant_count"] == 2
+    assert result["model"].probability_inverted is True
+    assert result["inversion_validation_result"] == result["validation_result"]
+    assert result["inversion_full_sample_result"] == result["full_sample_result"]
 
 
 def test_evaluate_candidate_failed_probability_calibration_continues(
@@ -1164,9 +1252,7 @@ def test_evaluate_candidate_selects_full_fit_when_calibration_regresses(
         calls["backtest"] += 1
         if calls["backtest"] == 1:
             return _make_result(ending_cash=1000.0, realized_pnl=0.0, win_rate=0.2)
-        if calls["backtest"] in {2, 3}:
-            return _make_result(ending_cash=1010.0, realized_pnl=10.0, win_rate=0.4)
-        if calls["backtest"] in {4, 5, 6}:
+        if calls["backtest"] in {2, 4, 5}:
             return _make_result(ending_cash=1075.0, realized_pnl=75.0, win_rate=0.8)
         return _make_result(ending_cash=990.0, realized_pnl=-10.0, win_rate=0.1)
 
@@ -1205,7 +1291,9 @@ def test_evaluate_candidate_selects_full_fit_when_calibration_regresses(
     })
 
     assert calls["train"] == 2
-    assert calls["backtest"] == 9
+    assert calls["backtest"] == 5
+    assert result["selected_internal_variant"] == "full_fit"
+    assert result["internal_variant_count"] == 3
     assert result["threshold"] == pytest.approx(0.64)
     assert result["threshold_source"] == "strategy_full_fit"
     assert result["threshold_score"] is None
@@ -1213,6 +1301,80 @@ def test_evaluate_candidate_selects_full_fit_when_calibration_regresses(
     assert result["validation_score"] > 0.0
     assert result["full_sample_score"] > 0.0
     assert result["model"].strategy_overrides["signal_threshold"] == pytest.approx(0.64)
+
+
+def test_evaluate_candidate_freezes_internal_variant_before_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    evaluated_variants: list[tuple[str, bool, tuple[int, ...]]] = []
+
+    def fake_train_advanced(rows, cfg, **kwargs):
+        del cfg
+        model = _fake_trained_model(2)
+        model.fit_variant = "calibration_fit" if "validation_rows" in kwargs else "full_fit"
+        return model, SimpleNamespace(row_count=len(rows), positive_rate=0.5)
+
+    def fake_run_backtest(rows, model, _strategy, **kwargs):
+        del kwargs
+        timestamps = tuple(row.timestamp for row in rows)
+        variant = str(model.fit_variant)
+        inverted = bool(getattr(model, "probability_inverted", False))
+        evaluated_variants.append((variant, inverted, timestamps))
+        touches_validation = any(timestamp >= 1_000 for timestamp in timestamps)
+        if touches_validation:
+            assert variant == "calibration_fit"
+            assert inverted is False
+            return _make_result(realized_pnl=-10.0, closed_trades=5)
+        if inverted:
+            return _make_result(realized_pnl=30.0, closed_trades=5)
+        if variant == "full_fit":
+            return _make_result(realized_pnl=40.0, closed_trades=5)
+        return _make_result(realized_pnl=50.0, closed_trades=5)
+
+    monkeypatch.setattr(training_suite, "train_advanced", fake_train_advanced)
+    monkeypatch.setattr(
+        training_suite,
+        "calibrate_probability_temperature",
+        lambda *a, **k: SimpleNamespace(status="fail"),
+    )
+    monkeypatch.setattr(
+        training_suite,
+        "_calibrate_candidate_threshold",
+        lambda *a, **k: (0.64, "classification_f1", 1.0),
+    )
+    monkeypatch.setattr(training_suite, "_refine_threshold_on_selection_rows", lambda *a, **k: None)
+    monkeypatch.setattr(training_suite, "run_backtest", fake_run_backtest)
+
+    candidate = CandidateParams(
+        epochs=80,
+        learning_rate=0.01,
+        l2_penalty=0.001,
+        signal_threshold=0.64,
+        stop_loss_pct=0.02,
+        take_profit_pct=0.03,
+        risk_per_trade=0.01,
+        seed=11,
+    )
+    result = _evaluate_candidate({
+        "candidate": candidate,
+        "rows_train": _rows(80),
+        "rows_eval": [
+            ModelRow(timestamp=1_000 + i, close=1.0, features=(0.1, 0.2), label=i % 2)
+            for i in range(12)
+        ],
+        "feature_cfg": default_config_for("default", ()),
+        "base_strategy": StrategyConfig(),
+        "objective": "default",
+        "market_type": "spot",
+        "starting_cash": 1000.0,
+    })
+
+    assert len(evaluated_variants) == 5
+    assert result["selected_internal_variant"] == "calibration_fit"
+    assert result["internal_variant_count"] == 3
+    assert result["inversion_validation_result"] is None
+    assert result["inversion_full_sample_result"] is None
+    assert result["score"] == float("-inf")
 
 
 def test_evaluate_candidate_keeps_final_holdout_out_of_threshold_selection(
