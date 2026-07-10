@@ -427,7 +427,9 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
         ["tape-depth-prequential", "--max-folds", "2", "--plan-only"]
     )
     assert tape_prequential.training_window_days == 730
-    assert tape_prequential.decision_cadence_seconds == 20
+    assert tape_prequential.horizon_seconds is None
+    assert tape_prequential.decision_cadence_seconds is None
+    assert tape_prequential.maximum_depth_age_ms is None
     assert tape_prequential.max_folds == 2
     assert tape_prequential.plan_only is True
     assert tape_prequential.resume is False
@@ -443,6 +445,8 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     tape_select = cli._parse_args(
         [
             "tape-depth-select",
+            "--design",
+            "design.json",
             "--report",
             "regularized.json",
             "--report",
@@ -450,6 +454,7 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
         ]
     )
     assert tape_select.report == ["regularized.json", "balanced.json"]
+    assert tape_select.design == "design.json"
     assert tape_select.output == "data/tape-depth-selection.json"
     assert tape_select.func is cli.command_tape_depth_select
     tape_confirm = cli._parse_args(
@@ -1376,6 +1381,7 @@ def test_tape_depth_select_command_is_fail_closed(
     result = cli.command_tape_depth_select(
         argparse.Namespace(
             report=["regularized.json", "balanced.json"],
+            design="design.json",
             output=str(output),
             json=False,
         )
@@ -1383,10 +1389,71 @@ def test_tape_depth_select_command_is_fail_closed(
 
     assert result == 0
     assert calls["paths"] == ("regularized.json", "balanced.json")
-    assert calls["options"] == {"output": str(output)}
+    assert calls["options"] == {
+        "output": str(output),
+        "design_path": "design.json",
+    }
     rendered = capsys.readouterr().out
     assert "selected=regularized/core" in rendered
     assert "profitability_claim=false trading_authority=false" in rendered
+
+
+def test_tape_depth_design_command_writes_precommitted_candidate_set(
+    tmp_path,
+    capsys,
+) -> None:
+    output = tmp_path / "design.json"
+    result = cli.command_tape_depth_design(
+        argparse.Namespace(
+            risk_level="conservative",
+            sampled_count=6,
+            seed=17,
+            output=str(output),
+            json=False,
+        )
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert result == 0
+    assert payload["trial_burden"] == 9
+    assert payload["anchor_count"] == 3
+    assert len(payload["design_sha256"]) == 64
+    assert "trials=9" in capsys.readouterr().out
+
+
+def test_tape_depth_study_command_plans_without_opening_warehouse(
+    tmp_path,
+    capsys,
+) -> None:
+    design_path = tmp_path / "design.json"
+    assert cli.command_tape_depth_design(
+        argparse.Namespace(
+            risk_level="conservative",
+            sampled_count=4,
+            seed=19,
+            output=str(design_path),
+            json=False,
+        )
+    ) == 0
+    capsys.readouterr()
+
+    result = cli.command_tape_depth_study(
+        argparse.Namespace(
+            symbols="BTCUSDT,ETHUSDT,SOLUSDT",
+            design=str(design_path),
+            output_dir=str(tmp_path / "study"),
+            plan_only=True,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    payload = json.loads(
+        (tmp_path / "study" / "study-plan.json").read_text(encoding="utf-8")
+    )
+    assert payload["status"] == "planned_research_only"
+    assert payload["completed_candidates"] == 0
+    assert "profitability_claim=false trading_authority=false" in capsys.readouterr().out
 
 
 def test_tape_depth_confirm_command_is_fail_closed(
@@ -1444,7 +1511,12 @@ def test_tape_depth_selection_commands_render_json_and_fail_closed(
     )
     assert (
         cli.command_tape_depth_select(
-            argparse.Namespace(report=["bad.json"], output=str(tmp_path / "s"), json=False)
+            argparse.Namespace(
+                report=["bad.json"],
+                design="design.json",
+                output=str(tmp_path / "s"),
+                json=False,
+            )
         )
         == 2
     )
@@ -1461,7 +1533,12 @@ def test_tape_depth_selection_commands_render_json_and_fail_closed(
     )
     assert (
         cli.command_tape_depth_select(
-            argparse.Namespace(report=["ok.json"], output=str(tmp_path / "s"), json=True)
+            argparse.Namespace(
+                report=["ok.json"],
+                design="design.json",
+                output=str(tmp_path / "s"),
+                json=True,
+            )
         )
         == 0
     )

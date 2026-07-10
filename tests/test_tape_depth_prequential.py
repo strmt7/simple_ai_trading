@@ -183,6 +183,9 @@ def test_tape_depth_confirmation_derives_frozen_winner_and_suffix(
         fold_start=4,
     )
     selection = {
+        "selected_horizon_seconds": 300,
+        "selected_decision_cadence_seconds": 5,
+        "selected_maximum_depth_age_ms": 30_000,
         "selected_model_profile": "expressive",
         "selected_feature_set": "cross_asset",
         "confirmation_fold_start": 4,
@@ -220,6 +223,9 @@ def test_tape_depth_confirmation_derives_frozen_winner_and_suffix(
     assert isinstance(plan_options, dict)
     assert plan_options["fold_start"] == 4
     assert plan_options["max_folds"] == 0
+    assert plan_options["horizon_seconds"] == 300
+    assert plan_options["decision_cadence_seconds"] == 5
+    assert report["config"]["maximum_depth_age_ms"] == 30_000  # type: ignore[index]
     assert report["config"]["model_profile"] == "expressive"  # type: ignore[index]
     assert report["config"]["feature_set"] == "cross_asset"  # type: ignore[index]
     assert report["config"]["selection_lock_sha256"] == "a" * 64  # type: ignore[index]
@@ -241,6 +247,9 @@ def test_tape_depth_confirmation_rejects_manual_winner_override(
     message: str,
 ) -> None:
     selection = {
+        "selected_horizon_seconds": 60,
+        "selected_decision_cadence_seconds": 20,
+        "selected_maximum_depth_age_ms": 60_000,
         "selected_model_profile": "expressive",
         "selected_feature_set": "full",
         "confirmation_fold_start": 4,
@@ -260,6 +269,45 @@ def test_tape_depth_confirmation_rejects_manual_winner_override(
             model_profile=model_profile,
             feature_set=feature_set,
             plan_only=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("override", "message"),
+    [
+        ({"horizon_seconds": 60}, "horizon differs"),
+        ({"decision_cadence_seconds": 20}, "cadence differs"),
+        ({"maximum_depth_age_ms": 60_000}, "depth age differs"),
+    ],
+)
+def test_tape_depth_confirmation_rejects_manual_timing_override(
+    tmp_path,
+    monkeypatch,
+    override: dict[str, int],
+    message: str,
+) -> None:
+    selection = {
+        "selected_horizon_seconds": 300,
+        "selected_decision_cadence_seconds": 5,
+        "selected_maximum_depth_age_ms": 30_000,
+        "selected_model_profile": "regularized",
+        "selected_feature_set": "full",
+        "confirmation_fold_start": 4,
+    }
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_verified_tape_depth_selection",
+        lambda _path: (selection, "b" * 64),
+    )
+
+    with pytest.raises(ValueError, match=message):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / message.replace(" ", "-"),
+            study_stage="confirmation",
+            selection_lock="selection.json",
+            plan_only=True,
+            **override,
         )
 
 
@@ -297,6 +345,9 @@ def test_tape_depth_study_rejects_insufficient_screening_and_confirmation_plans(
         folds=(replace(base.folds[0], fold_index=4),),
     )
     selection = {
+        "selected_horizon_seconds": 60,
+        "selected_decision_cadence_seconds": 20,
+        "selected_maximum_depth_age_ms": 60_000,
         "selected_model_profile": "regularized",
         "selected_feature_set": "full",
         "confirmation_fold_start": 4,

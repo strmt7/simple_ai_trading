@@ -1022,10 +1022,10 @@ def run_tape_depth_prequential(
     tuning_window_days: int = 30,
     calibration_window_days: int = 30,
     evaluation_window_days: int = 90,
-    horizon_seconds: int = 60,
+    horizon_seconds: int | None = None,
     total_latency_ms: int = 750,
-    decision_cadence_seconds: int = 20,
-    maximum_depth_age_ms: int = 60_000,
+    decision_cadence_seconds: int | None = None,
+    maximum_depth_age_ms: int | None = None,
     maximum_rows: int = 5_000_000,
     maximum_cached_rows: int = 15_000_000,
     dataset_cache: bool = True,
@@ -1048,6 +1048,16 @@ def run_tape_depth_prequential(
         raise ValueError("study_stage must be development, screening, or confirmation")
     requested_fold_start = 0
     requested_max_folds = int(max_folds)
+    requested_horizon = None if horizon_seconds is None else int(horizon_seconds)
+    requested_cadence = (
+        None if decision_cadence_seconds is None else int(decision_cadence_seconds)
+    )
+    requested_depth_age = (
+        None if maximum_depth_age_ms is None else int(maximum_depth_age_ms)
+    )
+    resolved_horizon = 60 if requested_horizon is None else requested_horizon
+    resolved_cadence = 20 if requested_cadence is None else requested_cadence
+    resolved_depth_age = 60_000 if requested_depth_age is None else requested_depth_age
     selected_profile = str(model_profile or "regularized")
     selected_feature_set = str(feature_set or "full")
     selection_lock_payload: dict[str, object] | None = None
@@ -1064,12 +1074,28 @@ def run_tape_depth_prequential(
         )
         locked_profile = str(selection_lock_payload["selected_model_profile"])
         locked_feature_set = str(selection_lock_payload["selected_feature_set"])
+        locked_horizon = int(selection_lock_payload["selected_horizon_seconds"])
+        locked_cadence = int(
+            selection_lock_payload["selected_decision_cadence_seconds"]
+        )
+        locked_depth_age = int(
+            selection_lock_payload["selected_maximum_depth_age_ms"]
+        )
         if model_profile is not None and str(model_profile) != locked_profile:
             raise ValueError("confirmation model profile differs from the frozen winner")
         if feature_set is not None and str(feature_set) != locked_feature_set:
             raise ValueError("confirmation feature set differs from the frozen winner")
+        if requested_horizon is not None and requested_horizon != locked_horizon:
+            raise ValueError("confirmation horizon differs from the frozen winner")
+        if requested_cadence is not None and requested_cadence != locked_cadence:
+            raise ValueError("confirmation cadence differs from the frozen winner")
+        if requested_depth_age is not None and requested_depth_age != locked_depth_age:
+            raise ValueError("confirmation depth age differs from the frozen winner")
         selected_profile = locked_profile
         selected_feature_set = locked_feature_set
+        resolved_horizon = locked_horizon
+        resolved_cadence = locked_cadence
+        resolved_depth_age = locked_depth_age
         requested_fold_start = int(
             selection_lock_payload["confirmation_fold_start"]
         )
@@ -1079,6 +1105,10 @@ def run_tape_depth_prequential(
         raise ValueError(
             "screening must start at fold 0 and include 4, 6, 8, or 10 folds"
         )
+
+    horizon_seconds = resolved_horizon
+    decision_cadence_seconds = resolved_cadence
+    maximum_depth_age_ms = resolved_depth_age
 
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)

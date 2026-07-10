@@ -338,8 +338,10 @@ def test_generated_native_contract_matches_cli() -> None:
 
     selection = next(spec for spec in command_specs() if spec.name == "tape-depth-select")
     reports = next(option for option in selection.options if option.dest == "report")
+    design = next(option for option in selection.options if option.dest == "design")
     assert reports.repeatable is True
     assert reports.value_arity == "1"
+    assert design.required is True
     assert (
         '{L"--report", L"report", L"", L"", '
         'L"screening report path; repeat for every declared trial", '
