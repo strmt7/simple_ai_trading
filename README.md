@@ -136,8 +136,10 @@ simple-ai-trading data-health --interval 1s --market spot --min-rows 1000000 --r
 simple-ai-trading tick-archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --data-types bookTicker,trades,bookDepth --full-history --plan-only --plan-output docs/microstructure/availability.json
 simple-ai-trading tape-depth-train --symbol BTCUSDT --window-days 365 --horizon-seconds 60 --model-profile regularized --feature-set full --compute-backend directml
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --plan-only
-simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --compute-backend directml --output-dir data/tape-depth-prequential-full
-simple-ai-trading tape-depth-compare --report data/tape-depth-regularized-core/report.json --report data/tape-depth-balanced-full/report.json --output data/tape-depth-comparison.json
+simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --study-stage screening --max-folds 4 --model-profile regularized --feature-set core --compute-backend directml --output-dir data/tape-depth-regularized-core
+simple-ai-trading tape-depth-select --report data/tape-depth-regularized-core/report.json --report data/tape-depth-balanced-full/report.json --output data/tape-depth-selection.json
+simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --study-stage confirmation --selection-lock data/tape-depth-selection.json --compute-backend directml --output-dir data/tape-depth-confirmation-run
+simple-ai-trading tape-depth-confirm --selection data/tape-depth-selection.json --report data/tape-depth-confirmation-run/report.json --output data/tape-depth-confirmation.json
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
 simple-ai-trading microstructure-prequential --input data/microstructure-model.json
 simple-ai-trading microstructure-promote --input data/microstructure-model.json
@@ -253,12 +255,22 @@ binds the complete source matrix. Every added group must beat the simpler
 earlier-fold baseline and confirm later; adding columns is not treated as
 automatic improvement.
 
-`tape-depth-compare` validates complete, identical fold plans and dataset
-fingerprints across every declared profile/feature trial. It ranks only the
-earlier folds, reports later-fold metrics only for that winner, and rejects the
-comparison without trying a runner-up if confirmation fails. Its strongest
-possible result is `confirmed_forecast_candidate`; it makes no profitability
-claim and grants no execution authority.
+Tape/depth model selection is physically split into screening and confirmation.
+Every candidate run must use `--study-stage screening`, start at fold zero, and
+declare at least two screening folds while leaving at least two later folds
+untouched. `tape-depth-select` verifies identical datasets and full-corpus
+coverage fingerprints, recomputes all candidate metrics, and writes a
+source-report-bound winner lock. A confirmation run accepts that lock, derives
+the winning profile/feature set and terminal fold boundary from it, and fails if
+the corpus, modeling configuration, winner, or source reports changed.
+`tape-depth-confirm` then verifies that the single supplied report contains the
+entire untouched suffix. Before either stage trusts a report, it reloads every
+serialized model and compressed row-level prediction table, verifies contained
+paths and file hashes, and recomputes fold fingerprints, timestamps, metrics,
+status, and aggregates against `plan.json`. A failed winner rejects the study;
+no runner-up is evaluated. The strongest result is
+`confirmed_forecast_candidate`; it is still forecast evidence with no
+profitability claim or execution authority.
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned
 financial time-series foundation model. It requires exact BTCUSDT, ETHUSDT, and

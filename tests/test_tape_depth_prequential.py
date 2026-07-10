@@ -58,6 +58,9 @@ def test_tape_depth_plan_uses_two_year_training_and_nonoverlapping_evaluation() 
         right.evaluation_start_ms == left.evaluation_end_ms + 20_000
         for left, right in zip(plan.folds, plan.folds[1:])
     )
+    assert plan.fold_start == 0
+    assert plan.available_fold_count == len(plan.folds)
+    assert len(plan.coverage_fingerprint) == 64
     assert len(plan.plan_fingerprint) == 64
 
 
@@ -77,6 +80,25 @@ def test_tape_depth_plan_is_deterministic_and_contract_sensitive() -> None:
     assert first.plan_fingerprint != changed.plan_fingerprint
 
 
+def test_tape_depth_plan_preserves_full_coverage_identity_across_fold_windows() -> None:
+    options = {
+        "symbol": "BTCUSDT",
+        "source_first_second_ms": _ms("2019-01-01T00:00:00"),
+        "source_last_second_ms": _ms("2026-07-09T23:59:59"),
+    }
+    full = plan_tape_depth_folds(**options)
+    screening = plan_tape_depth_folds(**options, max_folds=3)
+    confirmation = plan_tape_depth_folds(**options, fold_start=3)
+
+    assert [fold.fold_index for fold in screening.folds] == [0, 1, 2]
+    assert [fold.fold_index for fold in confirmation.folds] == list(
+        range(3, full.available_fold_count)
+    )
+    assert screening.available_fold_count == confirmation.available_fold_count
+    assert screening.coverage_fingerprint == confirmation.coverage_fingerprint
+    assert screening.plan_fingerprint != confirmation.plan_fingerprint
+
+
 def test_tape_depth_plan_rejects_a_fold_above_memory_bound() -> None:
     with pytest.raises(ValueError, match="maximum_rows=100000"):
         plan_tape_depth_folds(
@@ -84,6 +106,16 @@ def test_tape_depth_plan_rejects_a_fold_above_memory_bound() -> None:
             source_first_second_ms=_ms("2020-09-14T00:00:00"),
             source_last_second_ms=_ms("2026-07-09T23:59:59"),
             maximum_rows=100_000,
+        )
+
+
+def test_tape_depth_plan_rejects_negative_fold_window() -> None:
+    with pytest.raises(ValueError, match="fold_start and max_folds"):
+        plan_tape_depth_folds(
+            symbol="BTCUSDT",
+            source_first_second_ms=_ms("2020-01-01T00:00:00"),
+            source_last_second_ms=_ms("2024-12-31T23:59:59"),
+            fold_start=-1,
         )
 
 
@@ -95,6 +127,197 @@ def test_tape_depth_plan_requires_clock_aligned_cadence(cadence: int) -> None:
             source_first_second_ms=_ms("2020-01-01T00:00:00"),
             source_last_second_ms=_ms("2024-12-31T23:59:59"),
             decision_cadence_seconds=cadence,
+        )
+
+
+def test_tape_depth_study_stages_fail_before_accessing_unsealed_data(tmp_path) -> None:
+    with pytest.raises(ValueError, match="at least two folds"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "screening",
+            study_stage="screening",
+            max_folds=1,
+        )
+    with pytest.raises(ValueError, match="verified selection lock"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "confirmation",
+            study_stage="confirmation",
+        )
+
+    with pytest.raises(ValueError, match="study_stage"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "invalid-stage",
+            study_stage="invalid",
+        )
+    with pytest.raises(ValueError, match="only for confirmation"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "development-lock",
+            selection_lock="selection.json",
+        )
+    with pytest.raises(ValueError, match="boundaries come only"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "manual-confirmation-window",
+            study_stage="confirmation",
+            selection_lock="selection.json",
+            max_folds=1,
+        )
+
+
+def test_tape_depth_confirmation_derives_frozen_winner_and_suffix(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    plan = plan_tape_depth_folds(
+        symbol="BTCUSDT",
+        source_first_second_ms=_ms("2019-01-01T00:00:00"),
+        source_last_second_ms=_ms("2026-07-09T23:59:59"),
+        fold_start=2,
+    )
+    selection = {
+        "selected_model_profile": "expressive",
+        "selected_feature_set": "cross_asset",
+        "confirmation_fold_start": 2,
+    }
+    calls: dict[str, object] = {}
+
+    def planned(_warehouse, **options):
+        calls["plan_options"] = options
+        return (plan,)
+
+    def validated(payload, **options):
+        calls["selection"] = payload
+        calls["validation"] = options
+
+    monkeypatch.setattr(prequential, "plan_tape_depth_warehouse", planned)
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_verified_tape_depth_selection",
+        lambda _path: (selection, "a" * 64),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.validate_tape_depth_confirmation_request",
+        validated,
+    )
+
+    report = run_tape_depth_prequential(
+        object(),  # type: ignore[arg-type]
+        symbols=("BTCUSDT",),
+        output_dir=tmp_path / "confirmation-plan",
+        study_stage="confirmation",
+        selection_lock="selection.json",
+        plan_only=True,
+    )
+
+    plan_options = calls["plan_options"]
+    assert isinstance(plan_options, dict)
+    assert plan_options["fold_start"] == 2
+    assert plan_options["max_folds"] == 0
+    assert report["config"]["model_profile"] == "expressive"  # type: ignore[index]
+    assert report["config"]["feature_set"] == "cross_asset"  # type: ignore[index]
+    assert report["config"]["selection_lock_sha256"] == "a" * 64  # type: ignore[index]
+    assert calls["selection"] == selection
+
+
+@pytest.mark.parametrize(
+    ("model_profile", "feature_set", "message"),
+    [
+        ("balanced", None, "model profile differs"),
+        (None, "core", "feature set differs"),
+    ],
+)
+def test_tape_depth_confirmation_rejects_manual_winner_override(
+    tmp_path,
+    monkeypatch,
+    model_profile: str | None,
+    feature_set: str | None,
+    message: str,
+) -> None:
+    selection = {
+        "selected_model_profile": "expressive",
+        "selected_feature_set": "full",
+        "confirmation_fold_start": 2,
+    }
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_verified_tape_depth_selection",
+        lambda _path: (selection, "b" * 64),
+    )
+
+    with pytest.raises(ValueError, match=message):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / message.replace(" ", "-"),
+            study_stage="confirmation",
+            selection_lock="selection.json",
+            model_profile=model_profile,
+            feature_set=feature_set,
+            plan_only=True,
+        )
+
+
+def test_tape_depth_study_rejects_insufficient_screening_and_confirmation_plans(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    base = plan_tape_depth_folds(
+        symbol="BTCUSDT",
+        source_first_second_ms=_ms("2019-01-01T00:00:00"),
+        source_last_second_ms=_ms("2026-07-09T23:59:59"),
+        max_folds=2,
+    )
+    shallow_screening = replace(base, available_fold_count=3)
+    monkeypatch.setattr(
+        prequential,
+        "plan_tape_depth_warehouse",
+        lambda *_args, **_kwargs: (shallow_screening,),
+    )
+    with pytest.raises(ValueError, match="at least two sealed folds"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "shallow-screening",
+            study_stage="screening",
+            max_folds=2,
+            plan_only=True,
+        )
+
+    one_fold = replace(
+        base,
+        fold_start=2,
+        max_folds=0,
+        available_fold_count=3,
+        folds=(replace(base.folds[0], fold_index=2),),
+    )
+    selection = {
+        "selected_model_profile": "regularized",
+        "selected_feature_set": "full",
+        "confirmation_fold_start": 2,
+    }
+    monkeypatch.setattr(
+        prequential,
+        "plan_tape_depth_warehouse",
+        lambda *_args, **_kwargs: (one_fold,),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_verified_tape_depth_selection",
+        lambda _path: (selection, "c" * 64),
+    )
+    with pytest.raises(ValueError, match="at least two untouched folds"):
+        run_tape_depth_prequential(
+            object(),  # type: ignore[arg-type]
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "shallow-confirmation",
+            study_stage="confirmation",
+            selection_lock="selection.json",
+            plan_only=True,
         )
 
 
@@ -312,11 +535,14 @@ def test_tape_depth_resume_rejects_path_escape_and_skips_verified_fold(
         evaluation_window_days=90,
         horizon_seconds=60,
         total_latency_ms=750,
-        decision_cadence_seconds=20,
-        maximum_rows=5_000_000,
-        max_folds=1,
-        folds=(fold,),
-        plan_fingerprint="e" * 64,
+            decision_cadence_seconds=20,
+            maximum_rows=5_000_000,
+            fold_start=0,
+            max_folds=1,
+            available_fold_count=1,
+            folds=(fold,),
+            coverage_fingerprint="d" * 64,
+            plan_fingerprint="e" * 64,
     )
     monkeypatch.setattr(
         prequential,
@@ -399,7 +625,29 @@ def test_tape_depth_resume_rejects_path_escape_and_skips_verified_fold(
 
     assert report["completed_folds"] == 1
     assert progress == ["resume-verified"]
-    assert (tmp_path / "report.json").is_file()
+    report_path = tmp_path / "report.json"
+    assert report_path.is_file()
+    prequential.verify_tape_depth_prequential_report(report_path, report)
+    drifted = json.loads(json.dumps(report))
+    drifted["folds"][0]["metrics"]["direction_auc"] += 0.01
+    with pytest.raises(ValueError, match="binding differs"):
+        prequential.verify_tape_depth_prequential_report(report_path, drifted)
+    escaped_report = json.loads(json.dumps(report))
+    escaped_report["folds"][0]["artifact_path"] = "../outside.json"
+    with pytest.raises(ValueError, match="invalid artifact_path"):
+        prequential.verify_tape_depth_prequential_report(report_path, escaped_report)
+    aggregate_drift = json.loads(json.dumps(report))
+    aggregate_drift["aggregate_forecast_metrics"]["rows"] = 0
+    with pytest.raises(ValueError, match="aggregate replay differs"):
+        prequential.verify_tape_depth_prequential_report(report_path, aggregate_drift)
+    plan_path = tmp_path / "plan.json"
+    plan_text = plan_path.read_text(encoding="utf-8")
+    plan_path.write_text("{}", encoding="utf-8")
+    try:
+        with pytest.raises(ValueError, match="plan evidence differs"):
+            prequential.verify_tape_depth_prequential_report(report_path, report)
+    finally:
+        plan_path.write_text(plan_text, encoding="utf-8")
     with pytest.raises(ValueError, match="cannot be resumed"):
         prequential.run_tape_depth_prequential(
             object(),
@@ -445,11 +693,14 @@ def test_tape_depth_prequential_reuses_verified_dataset_cache(
         evaluation_window_days=90,
         horizon_seconds=60,
         total_latency_ms=750,
-        decision_cadence_seconds=20,
-        maximum_rows=dataset.rows,
-        max_folds=1,
-        folds=(fold,),
-        plan_fingerprint="e" * 64,
+            decision_cadence_seconds=20,
+            maximum_rows=dataset.rows,
+            fold_start=0,
+            max_folds=1,
+            available_fold_count=1,
+            folds=(fold,),
+            coverage_fingerprint="d" * 64,
+            plan_fingerprint="e" * 64,
     )
     captured: dict[str, object] = {}
     monkeypatch.setattr(

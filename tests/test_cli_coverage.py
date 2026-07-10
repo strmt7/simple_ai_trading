@@ -361,25 +361,39 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tape_prequential.max_folds == 2
     assert tape_prequential.plan_only is True
     assert tape_prequential.resume is False
-    assert tape_prequential.model_profile == "regularized"
-    assert tape_prequential.feature_set == "full"
+    assert tape_prequential.model_profile is None
+    assert tape_prequential.feature_set is None
+    assert tape_prequential.study_stage == "development"
+    assert tape_prequential.selection_lock is None
     assert tape_prequential.maximum_cached_rows == 15_000_000
     assert tape_prequential.dataset_cache is True
     assert cli._parse_args(
         ["tape-depth-prequential", "--no-dataset-cache"]
     ).dataset_cache is False
-    tape_compare = cli._parse_args(
+    tape_select = cli._parse_args(
         [
-            "tape-depth-compare",
+            "tape-depth-select",
             "--report",
             "regularized.json",
             "--report",
             "balanced.json",
         ]
     )
-    assert tape_compare.report == ["regularized.json", "balanced.json"]
-    assert tape_compare.selection_fraction == 0.67
-    assert tape_compare.func is cli.command_tape_depth_compare
+    assert tape_select.report == ["regularized.json", "balanced.json"]
+    assert tape_select.output == "data/tape-depth-selection.json"
+    assert tape_select.func is cli.command_tape_depth_select
+    tape_confirm = cli._parse_args(
+        [
+            "tape-depth-confirm",
+            "--selection",
+            "selection.json",
+            "--report",
+            "confirmation.json",
+        ]
+    )
+    assert tape_confirm.selection == "selection.json"
+    assert tape_confirm.report == "confirmation.json"
+    assert tape_confirm.func is cli.command_tape_depth_confirm
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
@@ -1093,22 +1107,24 @@ def test_tape_depth_prequential_plan_is_cli_and_windows_ready(
     assert run_options["compute_backend"] == "directml"
     assert run_options["maximum_cached_rows"] == 15_000_000
     assert run_options["dataset_cache"] is True
+    assert run_options["study_stage"] == "development"
+    assert run_options["selection_lock"] is None
     assert run_options["plan_only"] is True
     assert "folds=6" in capsys.readouterr().out
 
 
-def test_tape_depth_compare_command_is_fail_closed(
+def test_tape_depth_select_command_is_fail_closed(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
     calls: dict[str, object] = {}
 
-    def compare(paths, **kwargs):
+    def select(paths, **kwargs):
         calls["paths"] = paths
         calls["options"] = kwargs
         return {
-            "status": "confirmed_forecast_candidate",
+            "status": "winner_frozen",
             "declared_trial_count": 2,
             "selected_trial": "regularized/core",
             "profitability_claim": False,
@@ -1116,28 +1132,128 @@ def test_tape_depth_compare_command_is_fail_closed(
         }
 
     monkeypatch.setattr(
-        "simple_ai_trading.tape_depth_comparison.load_and_compare_tape_depth_reports",
-        compare,
+        "simple_ai_trading.tape_depth_comparison.load_and_select_tape_depth_reports",
+        select,
     )
-    output = tmp_path / "comparison.json"
-    result = cli.command_tape_depth_compare(
+    output = tmp_path / "selection.json"
+    result = cli.command_tape_depth_select(
         argparse.Namespace(
             report=["regularized.json", "balanced.json"],
             output=str(output),
-            selection_fraction=0.6,
             json=False,
         )
     )
 
     assert result == 0
     assert calls["paths"] == ("regularized.json", "balanced.json")
-    assert calls["options"] == {
+    assert calls["options"] == {"output": str(output)}
+    rendered = capsys.readouterr().out
+    assert "selected=regularized/core" in rendered
+    assert "profitability_claim=false trading_authority=false" in rendered
+
+
+def test_tape_depth_confirm_command_is_fail_closed(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    calls: dict[str, object] = {}
+
+    def confirm(**kwargs):
+        calls.update(kwargs)
+        return {
+            "status": "confirmed_forecast_candidate",
+            "selected_trial": "regularized/core",
+            "profitability_claim": False,
+            "trading_authority": False,
+        }
+
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_and_confirm_tape_depth_report",
+        confirm,
+    )
+    output = tmp_path / "confirmation.json"
+    result = cli.command_tape_depth_confirm(
+        argparse.Namespace(
+            selection="selection.json",
+            report="winner.json",
+            output=str(output),
+            json=False,
+        )
+    )
+
+    assert result == 0
+    assert calls == {
+        "selection_path": "selection.json",
+        "report_path": "winner.json",
         "output": str(output),
-        "selection_fraction": 0.6,
     }
     rendered = capsys.readouterr().out
     assert "selected=regularized/core" in rendered
     assert "profitability_claim=false trading_authority=false" in rendered
+
+
+def test_tape_depth_selection_commands_render_json_and_fail_closed(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise ValueError("invalid evidence")
+
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_and_select_tape_depth_reports",
+        fail,
+    )
+    assert (
+        cli.command_tape_depth_select(
+            argparse.Namespace(report=["bad.json"], output=str(tmp_path / "s"), json=False)
+        )
+        == 2
+    )
+    assert "invalid evidence" in capsys.readouterr().err
+
+    selection = {
+        "status": "winner_frozen",
+        "declared_trial_count": 1,
+        "selected_trial": "regularized/core",
+    }
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_and_select_tape_depth_reports",
+        lambda *_args, **_kwargs: selection,
+    )
+    assert (
+        cli.command_tape_depth_select(
+            argparse.Namespace(report=["ok.json"], output=str(tmp_path / "s"), json=True)
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out) == selection
+
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_and_confirm_tape_depth_report",
+        fail,
+    )
+    confirm_args = argparse.Namespace(
+        selection="selection.json",
+        report="report.json",
+        output=str(tmp_path / "c"),
+        json=False,
+    )
+    assert cli.command_tape_depth_confirm(confirm_args) == 2
+    assert "invalid evidence" in capsys.readouterr().err
+
+    confirmation = {
+        "status": "confirmed_forecast_candidate",
+        "selected_trial": "regularized/core",
+    }
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_and_confirm_tape_depth_report",
+        lambda **_kwargs: confirmation,
+    )
+    confirm_args.json = True
+    assert cli.command_tape_depth_confirm(confirm_args) == 0
+    assert json.loads(capsys.readouterr().out) == confirmation
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:

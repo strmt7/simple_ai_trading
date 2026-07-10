@@ -271,15 +271,23 @@ def test_generated_native_contract_matches_cli() -> None:
             if option.choices:
                 assert _wide(", ".join(option.choices)) in text
 
-    compare = next(spec for spec in command_specs() if spec.name == "tape-depth-compare")
-    reports = next(option for option in compare.options if option.dest == "report")
+    selection = next(spec for spec in command_specs() if spec.name == "tape-depth-select")
+    reports = next(option for option in selection.options if option.dest == "report")
     assert reports.repeatable is True
     assert reports.value_arity == "1"
     assert (
         '{L"--report", L"report", L"", L"", '
-        'L"prequential report path; repeat for every declared trial", '
+        'L"screening report path; repeat for every declared trial", '
         'L"1", true, true, true}'
     ) in text
+    confirmation = next(
+        spec for spec in command_specs() if spec.name == "tape-depth-confirm"
+    )
+    assert {option.dest for option in confirmation.options} >= {
+        "selection",
+        "report",
+        "output",
+    }
 
 
 def test_native_window_initializes_hwnd_during_create() -> None:

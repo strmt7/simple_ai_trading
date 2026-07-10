@@ -43,8 +43,8 @@ from .tape_depth_model import (
 )
 
 
-TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION = "tape-depth-prequential-plan-v1"
-TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION = "tape-depth-prequential-evidence-v1"
+TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION = "tape-depth-prequential-plan-v2"
+TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION = "tape-depth-prequential-evidence-v2"
 _DAY_MS = 86_400_000
 
 
@@ -80,8 +80,11 @@ class TapeDepthSymbolPlan:
     total_latency_ms: int
     decision_cadence_seconds: int
     maximum_rows: int
+    fold_start: int
     max_folds: int
+    available_fold_count: int
     folds: tuple[TapeDepthFoldPlan, ...]
+    coverage_fingerprint: str
     plan_fingerprint: str
 
     def asdict(self) -> dict[str, object]:
@@ -129,6 +132,7 @@ def plan_tape_depth_folds(
     total_latency_ms: int = 750,
     decision_cadence_seconds: int = 20,
     maximum_rows: int = 5_000_000,
+    fold_start: int = 0,
     max_folds: int = 0,
 ) -> TapeDepthSymbolPlan:
     """Plan non-overlapping calendar evaluation folds over exact source coverage."""
@@ -144,6 +148,7 @@ def plan_tape_depth_folds(
     latency = int(total_latency_ms)
     cadence = int(decision_cadence_seconds)
     row_limit = int(maximum_rows)
+    first_fold = int(fold_start)
     fold_limit = int(max_folds)
     if not 365 <= training_days <= 3_650:
         raise ValueError("training_window_days must lie in [365, 3650]")
@@ -155,8 +160,10 @@ def plan_tape_depth_folds(
         raise ValueError("total_latency_ms must lie in [0, 60000]")
     if not 1 <= cadence <= 60 or 60 % cadence != 0:
         raise ValueError("decision_cadence_seconds must divide 60 and lie in [1, 60]")
-    if row_limit < 1 or fold_limit < 0:
-        raise ValueError("maximum_rows must be positive and max_folds non-negative")
+    if row_limit < 1 or first_fold < 0 or fold_limit < 0:
+        raise ValueError(
+            "maximum_rows must be positive; fold_start and max_folds must be non-negative"
+        )
     first_second = int(source_first_second_ms)
     last_second = int(source_last_second_ms)
     if first_second >= last_second:
@@ -172,7 +179,7 @@ def plan_tape_depth_folds(
     first_dataset_start = _align_up(first_eligible, _DAY_MS)
     pre_evaluation_days = training_days + tuning_days + calibration_days
     evaluation_start = first_dataset_start + pre_evaluation_days * _DAY_MS
-    folds: list[TapeDepthFoldPlan] = []
+    available_folds: list[TapeDepthFoldPlan] = []
     fold_index = 0
     while True:
         evaluation_end = evaluation_start + evaluation_days * _DAY_MS - cadence_ms
@@ -189,7 +196,7 @@ def plan_tape_depth_folds(
             raise ValueError(
                 f"planned fold may emit {estimated_rows} rows; maximum_rows={row_limit}"
             )
-        folds.append(
+        available_folds.append(
             TapeDepthFoldPlan(
                 symbol=normalized,
                 fold_index=fold_index,
@@ -203,10 +210,8 @@ def plan_tape_depth_folds(
             )
         )
         fold_index += 1
-        if fold_limit and len(folds) >= fold_limit:
-            break
         evaluation_start += evaluation_days * _DAY_MS
-    payload: dict[str, object] = {
+    coverage_payload: dict[str, object] = {
         "schema_version": TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION,
         "symbol": normalized,
         "source_first_second_ms": first_second,
@@ -221,7 +226,17 @@ def plan_tape_depth_folds(
         "total_latency_ms": latency,
         "decision_cadence_seconds": cadence,
         "maximum_rows": row_limit,
+        "folds": [fold.asdict() for fold in available_folds],
+    }
+    coverage_fingerprint = _plan_fingerprint(coverage_payload)
+    selected_end = None if fold_limit == 0 else first_fold + fold_limit
+    folds = available_folds[first_fold:selected_end]
+    payload: dict[str, object] = {
+        **coverage_payload,
+        "fold_start": first_fold,
         "max_folds": fold_limit,
+        "available_fold_count": len(available_folds),
+        "coverage_fingerprint": coverage_fingerprint,
         "folds": [fold.asdict() for fold in folds],
     }
     return TapeDepthSymbolPlan(
@@ -239,8 +254,11 @@ def plan_tape_depth_folds(
         total_latency_ms=latency,
         decision_cadence_seconds=cadence,
         maximum_rows=row_limit,
+        fold_start=first_fold,
         max_folds=fold_limit,
+        available_fold_count=len(available_folds),
         folds=tuple(folds),
+        coverage_fingerprint=coverage_fingerprint,
         plan_fingerprint=_plan_fingerprint(payload),
     )
 
@@ -398,6 +416,11 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _is_sha256(value: object) -> bool:
+    text = str(value or "").lower()
+    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
 
 
 def write_tape_depth_predictions(
@@ -626,6 +649,178 @@ def _aggregate_fold_metrics(folds: Sequence[dict[str, object]]) -> dict[str, obj
     return output
 
 
+def _verified_relative_evidence_path(
+    root: Path,
+    payload: dict[str, object],
+    *,
+    path_name: str,
+    hash_name: str,
+) -> tuple[Path, Path]:
+    relative = Path(str(payload.get(path_name) or ""))
+    resolved = (root / relative).resolve()
+    if (
+        not relative.parts
+        or relative.is_absolute()
+        or root not in resolved.parents
+        or not resolved.is_file()
+        or not _is_sha256(payload.get(hash_name))
+        or _sha256_file(resolved) != payload.get(hash_name)
+    ):
+        raise ValueError(f"tape/depth report has invalid {path_name} evidence")
+    return relative, resolved
+
+
+def verify_tape_depth_prequential_report(
+    report_path: str | Path,
+    report: dict[str, object],
+) -> None:
+    """Recompute every fold binding from serialized row-level evidence."""
+
+    if report.get("schema_version") != TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION:
+        raise ValueError("tape/depth report schema is unsupported")
+    if (
+        report.get("trading_authority") is not False
+        or report.get("execution_claim") is not False
+        or report.get("profitability_claim") is not False
+    ):
+        raise ValueError("tape/depth report carries forbidden authority")
+    root = Path(report_path).resolve().parent
+    plan_path = root / "plan.json"
+    try:
+        plan_payload = json.loads(plan_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("tape/depth report plan evidence is unreadable") from exc
+    folds = report.get("folds")
+    config = report.get("config")
+    plans = plan_payload.get("plans") if isinstance(plan_payload, dict) else None
+    if (
+        not isinstance(folds, list)
+        or not folds
+        or not all(isinstance(fold, dict) for fold in folds)
+        or not isinstance(config, dict)
+        or not isinstance(plans, list)
+        or plan_payload.get("schema_version") != TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION
+        or plan_payload.get("config") != config
+        or plan_payload.get("total_folds") != len(folds)
+        or plan_payload.get("coverage_fingerprints")
+        != report.get("coverage_fingerprints")
+        or plan_payload.get("available_fold_counts")
+        != report.get("available_fold_counts")
+    ):
+        raise ValueError("tape/depth report plan evidence differs")
+    flat_plan_folds: list[dict[str, object]] = []
+    plan_fingerprints: dict[str, object] = {}
+    for raw_plan in plans:
+        if not isinstance(raw_plan, dict) or not isinstance(raw_plan.get("folds"), list):
+            raise ValueError("tape/depth report plan evidence differs")
+        symbol = str(raw_plan.get("symbol") or "")
+        plan_fingerprints[symbol] = raw_plan.get("plan_fingerprint")
+        flat_plan_folds.extend(dict(fold) for fold in raw_plan["folds"])
+    if (
+        len(flat_plan_folds) != len(folds)
+        or plan_fingerprints != report.get("plan_fingerprints")
+        or int(report.get("total_folds", -1)) != len(folds)
+        or int(report.get("completed_folds", -1)) != len(folds)
+    ):
+        raise ValueError("tape/depth report fold plan is incomplete")
+
+    verified_summaries: list[dict[str, object]] = []
+    for index, (raw_summary, raw_plan) in enumerate(
+        zip(folds, flat_plan_folds, strict=True)
+    ):
+        summary = dict(raw_summary)
+        plan_keys = (
+            "symbol",
+            "fold_index",
+            "dataset_start_ms",
+            "tuning_start_ms",
+            "calibration_start_ms",
+            "evaluation_start_ms",
+            "evaluation_end_ms",
+            "estimated_dataset_rows",
+            "estimated_evaluation_rows",
+        )
+        if any(summary.get(name) != raw_plan.get(name) for name in plan_keys):
+            raise ValueError(f"tape/depth report fold {index} differs from its plan")
+        try:
+            fold_plan = TapeDepthFoldPlan(
+                symbol=str(raw_plan["symbol"]),
+                fold_index=int(raw_plan["fold_index"]),
+                dataset_start_ms=int(raw_plan["dataset_start_ms"]),
+                tuning_start_ms=int(raw_plan["tuning_start_ms"]),
+                calibration_start_ms=int(raw_plan["calibration_start_ms"]),
+                evaluation_start_ms=int(raw_plan["evaluation_start_ms"]),
+                evaluation_end_ms=int(raw_plan["evaluation_end_ms"]),
+                estimated_dataset_rows=int(raw_plan["estimated_dataset_rows"]),
+                estimated_evaluation_rows=int(raw_plan["estimated_evaluation_rows"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"tape/depth report fold {index} plan is invalid") from exc
+        artifact_relative, artifact_path = _verified_relative_evidence_path(
+            root,
+            summary,
+            path_name="artifact_path",
+            hash_name="artifact_sha256",
+        )
+        predictions_relative, predictions_path = _verified_relative_evidence_path(
+            root,
+            summary,
+            path_name="predictions_path",
+            hash_name="predictions_sha256",
+        )
+        artifact = load_tape_depth_model_artifact(artifact_path)
+        predictions = read_tape_depth_predictions(predictions_path)
+        if (
+            predictions.rows != fold_plan.estimated_evaluation_rows
+            or int(predictions.decision_time_ms[0]) != fold_plan.evaluation_start_ms
+            or int(predictions.decision_time_ms[-1]) != fold_plan.evaluation_end_ms
+            or predictions.metrics() != artifact.evaluation_metrics
+        ):
+            raise ValueError(f"tape/depth report fold {index} prediction replay differs")
+        expected = _fold_summary(
+            TapeDepthFoldEvaluation(
+                plan=fold_plan,
+                artifact=artifact,
+                predictions=predictions,
+            ),
+            artifact_path=artifact_relative,
+            artifact_sha256=str(summary["artifact_sha256"]),
+            predictions_path=predictions_relative,
+            predictions_sha256=str(summary["predictions_sha256"]),
+        )
+        if summary != expected:
+            raise ValueError(f"tape/depth report fold {index} binding differs")
+        if (
+            summary.get("risk_level") != config.get("risk_level")
+            or summary.get("model_profile") != config.get("model_profile")
+            or summary.get("feature_set") != config.get("feature_set")
+        ):
+            raise ValueError(f"tape/depth report fold {index} config differs")
+        verified_summaries.append(summary)
+
+    for path_name, hash_name in (
+        ("fold_metrics_path", "fold_metrics_sha256"),
+        ("forecast_diagnostics_path", "forecast_diagnostics_sha256"),
+    ):
+        _verified_relative_evidence_path(
+            root,
+            report,
+            path_name=path_name,
+            hash_name=hash_name,
+        )
+    expected_status = (
+        "research_candidate"
+        if all(fold["status"] == "research_candidate" for fold in verified_summaries)
+        else "rejected"
+    )
+    if (
+        report.get("status") != expected_status
+        or report.get("aggregate_forecast_metrics")
+        != _aggregate_fold_metrics(verified_summaries)
+    ):
+        raise ValueError("tape/depth report aggregate replay differs")
+
+
 def _write_fold_metrics_csv(folds: Sequence[dict[str, object]], path: Path) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".partial")
@@ -821,17 +1016,56 @@ def run_tape_depth_prequential(
     maximum_rows: int = 5_000_000,
     maximum_cached_rows: int = 15_000_000,
     dataset_cache: bool = True,
+    study_stage: str = "development",
     max_folds: int = 0,
     risk_level: str = "conservative",
-    model_profile: str = "regularized",
-    feature_set: str = "full",
+    model_profile: str | None = None,
+    feature_set: str | None = None,
     compute_backend: str = "auto",
     minimum_segment_rows: int = 10_000,
+    selection_lock: str | Path | None = None,
     plan_only: bool = False,
     resume: bool = False,
     progress: Callable[[str, int, int], None] | None = None,
 ) -> dict[str, object]:
     """Run or plan full rolling evidence without creating trading authority."""
+
+    stage = str(study_stage).strip().lower()
+    if stage not in {"development", "screening", "confirmation"}:
+        raise ValueError("study_stage must be development, screening, or confirmation")
+    requested_fold_start = 0
+    requested_max_folds = int(max_folds)
+    selected_profile = str(model_profile or "regularized")
+    selected_feature_set = str(feature_set or "full")
+    selection_lock_payload: dict[str, object] | None = None
+    selection_lock_sha256: str | None = None
+    if stage == "confirmation":
+        if selection_lock is None:
+            raise ValueError("confirmation requires a verified selection lock")
+        if requested_max_folds != 0:
+            raise ValueError("confirmation fold boundaries come only from the selection lock")
+        from .tape_depth_comparison import load_verified_tape_depth_selection
+
+        selection_lock_payload, selection_lock_sha256 = (
+            load_verified_tape_depth_selection(selection_lock)
+        )
+        locked_profile = str(selection_lock_payload["selected_model_profile"])
+        locked_feature_set = str(selection_lock_payload["selected_feature_set"])
+        if model_profile is not None and str(model_profile) != locked_profile:
+            raise ValueError("confirmation model profile differs from the frozen winner")
+        if feature_set is not None and str(feature_set) != locked_feature_set:
+            raise ValueError("confirmation feature set differs from the frozen winner")
+        selected_profile = locked_profile
+        selected_feature_set = locked_feature_set
+        requested_fold_start = int(
+            selection_lock_payload["confirmation_fold_start"]
+        )
+    elif selection_lock is not None:
+        raise ValueError("selection_lock is valid only for confirmation")
+    if stage == "screening" and (
+        requested_fold_start != 0 or requested_max_folds < 2
+    ):
+        raise ValueError("screening must start at fold 0 and include at least two folds")
 
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
@@ -846,8 +1080,19 @@ def run_tape_depth_prequential(
         total_latency_ms=total_latency_ms,
         decision_cadence_seconds=decision_cadence_seconds,
         maximum_rows=maximum_rows,
-        max_folds=max_folds,
+        fold_start=requested_fold_start,
+        max_folds=requested_max_folds,
     )
+    if stage == "screening" and any(
+        len(plan.folds) != requested_max_folds
+        or plan.available_fold_count - len(plan.folds) < 2
+        for plan in plans
+    ):
+        raise ValueError(
+            "screening requires its declared folds plus at least two sealed folds per symbol"
+        )
+    if stage == "confirmation" and any(len(plan.folds) < 2 for plan in plans):
+        raise ValueError("confirmation requires at least two untouched folds per symbol")
     total_folds = sum(len(plan.folds) for plan in plans)
     config = {
         "symbols": [plan.symbol for plan in plans],
@@ -862,13 +1107,25 @@ def run_tape_depth_prequential(
         "maximum_rows": int(maximum_rows),
         "maximum_cached_rows": int(maximum_cached_rows),
         "dataset_cache": bool(dataset_cache),
-        "max_folds": int(max_folds),
+        "study_stage": stage,
+        "fold_start": requested_fold_start,
+        "max_folds": requested_max_folds,
         "risk_level": str(risk_level),
-        "model_profile": str(model_profile),
-        "feature_set": str(feature_set),
+        "model_profile": selected_profile,
+        "feature_set": selected_feature_set,
         "compute_backend": str(compute_backend),
         "minimum_segment_rows": int(minimum_segment_rows),
+        "selection_lock_sha256": selection_lock_sha256,
     }
+    if stage == "confirmation":
+        from .tape_depth_comparison import validate_tape_depth_confirmation_request
+
+        assert selection_lock_payload is not None
+        validate_tape_depth_confirmation_request(
+            selection_lock_payload,
+            config=config,
+            plans=plans,
+        )
     plan_payload: dict[str, object] = {
         "schema_version": TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION,
         "truth_basis": "warehouse_coverage_and_timestamp_defined_purged_folds",
@@ -877,6 +1134,12 @@ def run_tape_depth_prequential(
         "plan_only": bool(plan_only),
         "config": config,
         "total_folds": total_folds,
+        "coverage_fingerprints": {
+            plan.symbol: plan.coverage_fingerprint for plan in plans
+        },
+        "available_fold_counts": {
+            plan.symbol: plan.available_fold_count for plan in plans
+        },
         "plans": [plan.asdict() for plan in plans],
     }
     occupied = [
@@ -1252,8 +1515,8 @@ def run_tape_depth_prequential(
                     maximum_depth_age_ms=maximum_depth_age_ms,
                     maximum_rows=maximum_rows,
                     risk_level=risk_level,
-                    model_profile=model_profile,
-                    feature_set=feature_set,
+                    model_profile=selected_profile,
+                    feature_set=selected_feature_set,
                     compute_backend=compute_backend,
                     minimum_segment_rows=minimum_segment_rows,
                     prefetched_dataset=prefetched_dataset,
@@ -1329,6 +1592,12 @@ def run_tape_depth_prequential(
         "plan_fingerprints": {
             plan.symbol: plan.plan_fingerprint for plan in plans
         },
+        "coverage_fingerprints": {
+            plan.symbol: plan.coverage_fingerprint for plan in plans
+        },
+        "available_fold_counts": {
+            plan.symbol: plan.available_fold_count for plan in plans
+        },
         "total_folds": total_folds,
         "completed_folds": len(fold_summaries),
         "fold_metrics_path": fold_metrics_path.name,
@@ -1366,5 +1635,6 @@ __all__ = [
     "read_tape_depth_predictions",
     "render_tape_depth_prequential_svg",
     "run_tape_depth_prequential",
+    "verify_tape_depth_prequential_report",
     "write_tape_depth_predictions",
 ]
