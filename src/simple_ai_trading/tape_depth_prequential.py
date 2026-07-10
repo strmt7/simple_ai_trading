@@ -25,7 +25,7 @@ from .tape_depth_features import (
     TapeDepthForecastDataset,
     build_tape_depth_forecast_dataset,
     slice_tape_depth_forecast_dataset,
-    tape_depth_source_evidence,
+    tape_depth_dataset_source_evidence,
 )
 from .tape_depth_model import (
     TapeDepthModelArtifact,
@@ -310,7 +310,7 @@ def evaluate_tape_depth_fold(
             int(math.ceil(int(total_latency_ms) / 1_000.0)),
         )
         target_offset_seconds = entry_delay_seconds + int(horizon_seconds)
-        source_evidence = tape_depth_source_evidence(
+        source_evidence = tape_depth_dataset_source_evidence(
             warehouse,
             plan.symbol,
             required_start_ms=plan.dataset_start_ms - 901_000,
@@ -319,6 +319,8 @@ def evaluate_tape_depth_fold(
                 - 1_000
                 + target_offset_seconds * 1_000
             ),
+            peer_feature_start_ms=plan.dataset_start_ms - 1_000,
+            peer_feature_end_ms=plan.evaluation_end_ms - 1_000,
         )
         dataset = slice_tape_depth_forecast_dataset(
             prefetched_dataset,

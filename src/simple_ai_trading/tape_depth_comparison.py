@@ -18,7 +18,7 @@ from .tape_depth_prequential import TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION
 TAPE_DEPTH_COMPARISON_SCHEMA_VERSION = "tape-depth-ablation-comparison-v1"
 _IGNORED_CONFIG_KEYS = frozenset({"model_profile", "feature_set"})
 _PROFILE_COMPLEXITY = {"regularized": 0, "balanced": 1, "expressive": 2}
-_FEATURE_COMPLEXITY = {"core": 0, "tape_derived": 1, "full": 2}
+_FEATURE_COMPLEXITY = {"core": 0, "tape_derived": 1, "cross_asset": 2, "full": 3}
 
 
 def _is_sha256(value: object) -> bool:

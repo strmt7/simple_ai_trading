@@ -183,12 +183,29 @@ cycle features, the observed `0.20%`, `1%`, and `5%` cumulative depth bands, a
 depth-age mask, and depth-curve shape. The depth join is backward-looking only;
 a depth snapshot newer than the decision second is never used.
 
-The v3 feature contract also includes causal VWAP deviation, bounded price-path
+The v4 feature contract also includes causal VWAP deviation, bounded price-path
 efficiency, observed-trade rates, short/long quote-volume and trade-intensity
 acceleration, and price/flow alignment. These are interpretable
 microstructure candidates, not presumed alpha. Their value must be established
 by profile and feature-group ablations on the earlier rolling folds and then
 confirmed on later untouched folds.
+
+V4 adds a point-in-time cross-asset context block across BTCUSDT, ETHUSDT, and
+SOLUSDT. At each feature second it computes 1, 5, 15, 60, and 300-second peer
+returns, peer dispersion, target-relative returns, and a BTC-anchor return by
+backward as-of joins only. A complete-context flag and maximum peer-trade age
+make missing or stale context observable; unavailable values are zeroed only
+alongside that false flag. The dataset evidence hash includes the exact peer
+trade manifests and stops at the final feature second, not the later label
+horizon. This is a testable hypothesis motivated by short-lived lagged
+cross-asset effects, not presumed alpha. Cont, Cucuringu, and Zhang report that
+lagged cross-asset order-flow imbalance can improve short-horizon return
+forecasts while contemporaneous cross-impact adds little after strong local
+order-flow features; CryptoGAT separately motivates testing crypto cross-asset
+graphs. Both require independent rolling confirmation here:
+
+- https://arxiv.org/abs/2112.13213
+- https://arxiv.org/abs/2606.27670
 
 The source clock is complete even when no trade occurs in a particular second.
 Such a row carries the most recent verified trade reference for OHLC, records
@@ -237,14 +254,14 @@ data, and seed constant while changing execution risk level must produce the
 same model strings and forecast metrics. This prevents a risk label from hiding
 an uncounted hyperparameter trial.
 
-Feature growth is governed by three ordered ablations: `core` contains the
+Feature growth is governed by four ordered ablations: `core` contains the
 basic causal tape, volatility, range, activity, clock, and no-trade state;
 `tape_derived` adds VWAP, path-efficiency, intensity-acceleration, and
-price/flow-alignment candidates; `full` adds the causally joined coarse-depth
-bands. The artifact stores the exact model input order, while its dataset hash
-binds the complete matrix. A more complex set must improve earlier rolling
-folds and later confirmation folds; otherwise the simpler set remains the
-candidate.
+price/flow-alignment candidates; `cross_asset` adds the point-in-time peer and
+BTC-anchor block; `full` adds the causally joined coarse-depth bands. The
+artifact stores the exact model input order, while its dataset hash binds the
+complete matrix. A more complex set must improve earlier rolling folds and
+later confirmation folds; otherwise the simpler set remains the candidate.
 
 The rolling comparison is implemented by `tape-depth-prequential`. The default
 calendar protocol uses 730 days for training, 30 days for early-stopping tuning,
@@ -315,6 +332,7 @@ fingerprints:
 simple-ai-trading tape-depth-compare `
   --report data/tape-depth-regularized-core/report.json `
   --report data/tape-depth-balanced-tape/report.json `
+  --report data/tape-depth-balanced-cross-asset/report.json `
   --report data/tape-depth-expressive-full/report.json `
   --selection-fraction 0.67 `
   --output data/tape-depth-comparison.json

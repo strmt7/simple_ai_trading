@@ -33,7 +33,7 @@ from .tape_depth_features import (
 TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v4"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 _MODEL_PROFILES = frozenset({"regularized", "balanced", "expressive"})
-_FEATURE_SETS = frozenset({"core", "tape_derived", "full"})
+_FEATURE_SETS = frozenset({"core", "tape_derived", "cross_asset", "full"})
 _DERIVED_PREFIXES = (
     "vwap_deviation_bps_",
     "price_efficiency_",
@@ -43,6 +43,12 @@ _DERIVED_PREFIXES = (
     "flow_price_alignment_",
 )
 _DEPTH_PREFIXES = ("depth_", "log_depth_", "log_bid_depth_", "log_ask_depth_")
+_CROSS_ASSET_PREFIXES = (
+    "cross_asset_",
+    "peer_",
+    "relative_return_vs_",
+    "btc_anchor_",
+)
 
 
 @dataclass(frozen=True)
@@ -196,6 +202,11 @@ def _selected_feature_names(feature_set: str) -> tuple[str, ...]:
         name
         for name in TAPE_DEPTH_FEATURE_NAMES
         if not name.startswith(_DEPTH_PREFIXES)
+    )
+    if feature_set == "cross_asset":
+        return names
+    names = tuple(
+        name for name in names if not name.startswith(_CROSS_ASSET_PREFIXES)
     )
     if feature_set == "core":
         names = tuple(
@@ -441,7 +452,7 @@ def train_tape_depth_forecaster(
         raise ValueError("model_profile must be regularized, balanced, or expressive")
     selected_feature_set = str(feature_set).strip().lower()
     if selected_feature_set not in _FEATURE_SETS:
-        raise ValueError("feature_set must be core, tape_derived, or full")
+        raise ValueError("feature_set must be core, tape_derived, cross_asset, or full")
     if (
         dataset.feature_version != TAPE_DEPTH_FEATURE_VERSION
         or dataset.feature_names != TAPE_DEPTH_FEATURE_NAMES

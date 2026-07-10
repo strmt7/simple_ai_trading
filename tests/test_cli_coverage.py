@@ -339,12 +339,20 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tick_plan.plan_only is True
     assert tick_plan.start_date is None
     assert tick_plan.end_date is None
-    tape_train = cli._parse_args(["tape-depth-train", "--window-days", "365"])
+    tape_train = cli._parse_args(
+        [
+            "tape-depth-train",
+            "--window-days",
+            "365",
+            "--feature-set",
+            "cross_asset",
+        ]
+    )
     assert tape_train.window_days == 365
     assert tape_train.horizon_seconds == 60
     assert tape_train.compute_backend == "auto"
     assert tape_train.model_profile == "regularized"
-    assert tape_train.feature_set == "full"
+    assert tape_train.feature_set == "cross_asset"
     tape_prequential = cli._parse_args(
         ["tape-depth-prequential", "--max-folds", "2", "--plan-only"]
     )

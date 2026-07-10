@@ -129,6 +129,28 @@ def test_tape_depth_comparison_does_not_fallback_after_winner_fails_confirmation
     assert comparison["confirmation"]["trial"] == "expressive/full"  # type: ignore[index]
 
 
+def test_tape_depth_comparison_prefers_cross_asset_over_full_on_an_exact_tie() -> None:
+    comparison = compare_tape_depth_reports(
+        [
+            _report(
+                "regularized",
+                "cross_asset",
+                selection_edge=0.02,
+                confirmation_edge=0.02,
+            ),
+            _report(
+                "regularized",
+                "full",
+                selection_edge=0.02,
+                confirmation_edge=0.02,
+            ),
+        ],
+        selection_fraction=0.5,
+    )
+
+    assert comparison["selected_trial"] == "regularized/cross_asset"
+
+
 def test_tape_depth_comparison_rejects_dataset_drift() -> None:
     first = _report(
         "regularized",
