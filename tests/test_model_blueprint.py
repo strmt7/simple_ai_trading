@@ -24,6 +24,11 @@ def test_model_blueprint_contract_is_fail_closed() -> None:
     assert families["rl_meta_controller"].execution_authority == "none_for_raw_buy_sell_decisions"
     assert families["meta_label_gate"].execution_authority == "pre_entry_skip_or_downsize_only"
     assert "conservative" not in families["rl_meta_controller"].risk_levels
+    assert families["tape_depth_gross_forecaster"].status == "implemented_evidence"
+    assert (
+        families["tape_depth_gross_forecaster"].execution_authority
+        == "none_gross_forecast_feature_only"
+    )
     assert "blocked_until_depth_store" == families["deep_lob_microstructure"].status
 
 
@@ -36,6 +41,8 @@ def test_model_blueprint_training_lanes_cover_every_family() -> None:
     assert "sequence_forecast_features" in lanes
     assert "timestamped forecast-feature store" in lanes["sequence_forecast_features"].next_build_step
     assert "cross_asset_graph_sequence" in lanes["sequence_forecast_features"].families
+    assert "tape_depth_gross_forecaster" in lanes["microstructure_depth_research"].families
+    assert "Blocked from executable authority" in lanes["microstructure_depth_research"].runtime_limit
     assert "ai_uplift_gate" in lanes["governance_and_ai_review"].families
     assert "No direct orders" in lanes["sandbox_meta_control"].runtime_limit
 

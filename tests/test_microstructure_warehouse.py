@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import duckdb
 import pytest
 
 from simple_ai_trading.microstructure_warehouse import MicrostructureWarehouse
@@ -14,6 +15,7 @@ def _insert_complete_manifest(
     rows: int,
     first_ms: int,
     last_ms: int,
+    data_type: str = "bookTicker",
 ) -> None:
     warehouse.connect().execute(
         """
@@ -25,13 +27,14 @@ def _insert_complete_manifest(
             last_exchange_time_ms, invalid_rows, duplicate_ids, update_id_regressions,
             event_time_regressions, out_of_order_rows, crossed_books, ingested_at_ms, error
         ) VALUES (
-            ?, 'binance-usdm-tick-v4', 'binance', 'futures', 'BTCUSDT',
-            'bookTicker', ?, ?, '', 'complete', true, 0, 0, 0, ?, ?,
+            ?, 'binance-usdm-tick-v5', 'binance', 'futures', 'BTCUSDT',
+            ?, ?, ?, '', 'complete', true, 0, 0, 0, ?, ?,
             'verified', ?, 0, ?, ?, 0, 0, 0, 0, 0, 0, 1, ''
         )
         """,
         [
             archive_id,
+            data_type,
             period,
             f"https://data.binance.vision/{archive_id}.zip",
             source_hash,
@@ -89,6 +92,139 @@ def test_book_ticker_ingest_canonicalizes_interleaved_source_rows(tmp_path) -> N
         (200, 1_707_955_200_026),
         (300, 1_708_017_636_626),
     ]
+
+
+def test_book_depth_ingest_preserves_official_point_two_percent_bands(tmp_path) -> None:
+    csv_path = tmp_path / "BTCUSDT-bookDepth-2026-07-09.csv"
+    percentages = (-5, -4, -3, -2, -1, -0.20, 0.20, 1, 2, 3, 4, 5)
+    csv_path.write_text(
+        "timestamp,percentage,depth,notional\n"
+        + "".join(
+            f"2026-07-09 00:00:06,{percentage:.2f},100.0,10000.0\n"
+            for percentage in percentages
+        ),
+        encoding="ascii",
+    )
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "depth.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        metrics = warehouse._ingest_book_depth_csv(
+            csv_path,
+            symbol="BTCUSDT",
+            archive_id="depth-fixture",
+            period="2026-07-09",
+        )
+        persisted = warehouse.connect().execute(
+            "SELECT percentage::VARCHAR FROM book_depth_aggregate_raw "
+            "WHERE archive_id = 'depth-fixture' ORDER BY percentage"
+        ).fetchall()
+    finally:
+        warehouse.close()
+
+    assert metrics["rows_read"] == 12
+    assert metrics["derived_rows"] == 1
+    assert ("-0.20",) in persisted
+    assert ("0.20",) in persisted
+
+
+def test_warehouse_migrates_legacy_integer_book_depth_percentage(tmp_path) -> None:
+    database = tmp_path / "legacy.duckdb"
+    connection = duckdb.connect(str(database))
+    connection.execute(
+        "CREATE TABLE book_depth_aggregate_raw ("
+        "archive_id VARCHAR, symbol VARCHAR, timestamp_ms BIGINT, "
+        "percentage SMALLINT, depth DOUBLE, notional DOUBLE)"
+    )
+    connection.execute(
+        "INSERT INTO book_depth_aggregate_raw VALUES "
+        "('legacy', 'BTCUSDT', 1, -1, 10.0, 100.0)"
+    )
+    connection.close()
+
+    warehouse = MicrostructureWarehouse(
+        database,
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        column_type = {
+            row[1]: row[2]
+            for row in warehouse.connect().execute(
+                "PRAGMA table_info('book_depth_aggregate_raw')"
+            ).fetchall()
+        }["percentage"]
+        value = warehouse.connect().execute(
+            "SELECT percentage::VARCHAR FROM book_depth_aggregate_raw"
+        ).fetchone()
+    finally:
+        warehouse.close()
+
+    assert column_type == "DECIMAL(4,2)"
+    assert value == ("-1.00",)
+
+
+def test_trade_depth_view_uses_only_latest_snapshot_available_at_second(tmp_path) -> None:
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "asof.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        _insert_complete_manifest(
+            warehouse,
+            archive_id="trades",
+            period="2026-07-09",
+            source_hash="a" * 64,
+            rows=2,
+            first_ms=1_000,
+            last_ms=2_999,
+            data_type="trades",
+        )
+        _insert_complete_manifest(
+            warehouse,
+            archive_id="depth",
+            period="2026-07-09",
+            source_hash="b" * 64,
+            rows=12,
+            first_ms=1_500,
+            last_ms=1_500,
+            data_type="bookDepth",
+        )
+        warehouse.connect().executemany(
+            "INSERT INTO trade_1s VALUES "
+            "('trades', 'BTCUSDT', ?, 100, 101, 99, 100, 10, 1000, 6, 4, 0.2, 2)",
+            [(1_000,), (2_000,)],
+        )
+        percentages = (-5, -4, -3, -2, -1, -0.20, 0.20, 1, 2, 3, 4, 5)
+        warehouse.connect().executemany(
+            "INSERT INTO book_depth_aggregate_raw VALUES "
+            "('depth', 'BTCUSDT', 1500, ?, ?, ?)",
+            [
+                (
+                    percentage,
+                    200.0 if percentage < 0 else 100.0,
+                    20_000.0 if percentage < 0 else 10_000.0,
+                )
+                for percentage in percentages
+            ],
+        )
+        rows = warehouse.connect().execute(
+            "SELECT second_ms, depth_time_ms, depth_age_ms, "
+            "bid_depth_0_2, ask_depth_0_2, depth_imbalance_0_2 "
+            "FROM current_trade_depth_1s ORDER BY second_ms"
+        ).fetchall()
+    finally:
+        warehouse.close()
+
+    assert rows[0] == (1_000, None, None, None, None, None)
+    assert rows[1][:5] == (2_000, 1_500, 500, 200.0, 100.0)
+    assert rows[1][5] == pytest.approx(1.0 / 3.0)
 
 
 def test_causal_feature_rebuild_aggregates_event_time_across_daily_archives(tmp_path) -> None:
