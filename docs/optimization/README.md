@@ -14,8 +14,20 @@ Current implementation notes:
 - [Round 002 - Learning Feedback Promotion Gate](round-002-learning-feedback-gate.md)
 - [Round 003 - Data Coverage and API Efficiency](round-003-data-coverage-api-efficiency.md)
 - [Round 004 - Regime Entry Gate](round-004-regime-entry-gate.md)
+- [Round 005 - Financial Foundation Forecast Gate](round-005-foundation-forecast-gate.md)
 
 Real-data graph checkpoints:
+
+Round 005 adds the latest AI forecast evidence under
+[`docs/ai/foundation/latest`](../ai/foundation/latest/README.md). A
+102.3M-parameter Kronos-base candidate was evaluated on 1,536 post-pretraining
+BTCUSDT, ETHUSDT, and SOLUSDT decisions backed by 792,960 checksum-verified
+Binance USD-M one-minute rows per symbol. It failed the random-walk MAE gate
+before any trading simulation: raw MAE improvement was `-130.3515%`, causal
+later-half calibrated MAE was slightly worse than the baseline, no symbol was
+eligible, and the UTC-day bootstrap interval crossed zero. The retained SVG is
+forecast-error evidence, not a performance or P&L chart; the CSV and
+machine-readable report are the numerical authority.
 
 Latest local BTC-only profitability work is negative evidence, not a promoted
 model. `round-profitability-btc-weekday-adaptive-v25` used BTCUSDT futures

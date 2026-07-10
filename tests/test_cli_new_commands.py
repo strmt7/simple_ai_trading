@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from simple_ai_trading import cli
+from simple_ai_trading.api import CommissionRates
 from simple_ai_trading.config import save_runtime
 from simple_ai_trading.positions import OpenPosition, PositionsStore
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
@@ -590,7 +591,9 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
 
     def fake_decision_fn(**kwargs):
         calls["decision_kwargs"] = kwargs
-        decision_fn = lambda *_args: None
+        def decision_fn(*_args):
+            return None
+
         decision_fn._effective_strategy = StrategyConfig(
             **{**kwargs["strategy"].asdict(), "leverage": 7.0}
         )
@@ -702,6 +705,18 @@ def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_p
     _autonomous_control_path(tmp_path, monkeypatch)
     calls = {}
 
+    class VerifiedClient:
+        @staticmethod
+        def get_commission_rates(symbol: str) -> CommissionRates:
+            return CommissionRates(
+                symbol=symbol,
+                market_type="spot",
+                maker_rate=0.001,
+                taker_rate=0.001,
+                rpi_rate=None,
+                source="test_verified_commission",
+            )
+
     def fake_run_loop(client, runtime, strategy, cfg, *, decision_fn):
         calls["client"] = client
         calls["runtime"] = runtime
@@ -726,7 +741,7 @@ def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_p
         lambda: RuntimeConfig(testnet=True, dry_run=True, api_key="fake-api-key", api_secret="fake-secret"),
     )
     monkeypatch.setattr(cli, "load_strategy", StrategyConfig)
-    monkeypatch.setattr(cli, "_build_client", lambda runtime: ("client", runtime.symbol))
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: VerifiedClient())
     monkeypatch.setattr(
         cli,
         "_build_autonomous_decision_fn",

@@ -2,19 +2,19 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 144044,
+      "bytes": 144026,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/charts/01-BTCUSDT-conservative.svg",
-      "sha256": "45f259b7b8a4a880b54d656a71e7c48a6bf3108d23d541eb86de22400a6a3272"
+      "sha256": "a092396874c2449f04a3f9b9dd7dafaf2be9a9bc42734b8edb850b0a6aa25703"
     },
     {
-      "bytes": 146075,
+      "bytes": 146057,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/charts/02-ETHUSDT-conservative.svg",
-      "sha256": "11a6be240f8144193623f53a2a963340f572ca64a302883757082b77fd98f765"
+      "sha256": "260f0fc168056348361e0ac8e99c6cc4e9852ca26268d20c62f429b907127ce0"
     },
     {
-      "bytes": 145931,
+      "bytes": 145913,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/charts/03-SOLUSDT-conservative.svg",
-      "sha256": "d98247e9df143d9ca9b1c3f4ec3b08e5c87487a7b1b9cb3e571285c61879b528"
+      "sha256": "274a3c46f0b83b4090d929287c63e45aed60c54a67c9e76fa0177fc7bf03a925"
     },
     {
       "bytes": 418131,
@@ -104,7 +104,7 @@
       "sha256": "ea6a10bd7dfbba92896fedb00be50698f2a1c7823a9775ca4fc59a68a9510f79"
     },
     {
-      "bytes": 5329,
+      "bytes": 5325,
       "columns": [
         "round_id",
         "symbol",
@@ -179,10 +179,10 @@
       ],
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/backtest-metrics.csv",
       "row_count": 3,
-      "sha256": "0ed4eeb275642ce995e27740c378b841ee7fc5f0e73d353f9d5613fc81cd9ba5"
+      "sha256": "6d82977ca40d939f4c858cf71e7d908fc8524d3a5394df46e730b20b68833561"
     },
     {
-      "bytes": 7498,
+      "bytes": 7494,
       "columns": [
         "symbol",
         "candidate_index",
@@ -285,17 +285,17 @@
       ],
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/candidate-diagnostics.csv",
       "row_count": 3,
-      "sha256": "f97da16fa4f98b3fa09a8630dd5d888b0ee469190ea4fa0bbd18a410275b6189"
+      "sha256": "10a30e893332f5981bb4e30c84e5d63306b6fb73229f92aebdad1527dfdb9207"
     },
     {
-      "bytes": 15529,
+      "bytes": 15227,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/candidate-diagnostics.json",
-      "sha256": "81b9fde33ebec4674401f3535a0e4a31f20251be48871060b44ff917a2e691c7"
+      "sha256": "0d8d5c073ba6059dff482ce28c805c63597b6c9d6ec7e78b354dfea97ec48346"
     },
     {
-      "bytes": 2144,
+      "bytes": 2064,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/data-health.json",
-      "sha256": "6a3beb69a995d0b0f08d2f9208d4df196830adad16032a52ed2c40cbd4cf8901"
+      "sha256": "5ae3eacebef9edc8847e94c790078413b29d32efca4af45d60a75697af09db1b"
     },
     {
       "bytes": 243516,
@@ -313,7 +313,7 @@
       "sha256": "55c47c88a04f5739491224ce879aeeacf45d0c64ac1c05786dab198c31fd7004"
     },
     {
-      "bytes": 479,
+      "bytes": 477,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -334,17 +334,17 @@
       ],
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/round-progress.csv",
       "row_count": 1,
-      "sha256": "7190fcee843f89bc7f97a03641264ecabea6b7047a26409cc064f58fa502b891"
+      "sha256": "20da453216124d13aeb11591226a05089dadd6e0de2806c25a6be686b87441c2"
     },
     {
-      "bytes": 637,
+      "bytes": 621,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/round-status.json",
-      "sha256": "6fb1e98c3948717a674405fed412f08b030d9187d5d864a5e33d4aa1cc92a2d5"
+      "sha256": "53977bfbf95ebbc90e469abf9a3ee571b6a012df0e86a8bf3ba4695cf8c58b77"
     },
     {
-      "bytes": 923,
+      "bytes": 885,
       "path": "docs/optimization/round-broad-rule-alpha-1d-smoke/data/selected-universe.json",
-      "sha256": "2c38887737e5bc22d2fa120a0f278d84ebb4f7a04af26900d55f93654944a98c"
+      "sha256": "9f6b839b3d6ddcebe6e273c38741e1ebec698913c7f86b6b047eb51fcac8bb91"
     }
   ],
   "candidate_diagnostics": [

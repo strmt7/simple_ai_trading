@@ -1,0 +1,13 @@
+{
+  "files": {
+    "README.md": "55f74454d759ad083cadb13057a401aed7481febe5bf7c105f4171387aa3cfd5",
+    "benchmark.svg": "249650fe84f2545cc8f31b605e83b48ab5a244bfd2a39ddc8952ed492cfe279e",
+    "observations.csv": "4a2257fb4524e48cbbc98ed1eb17a67e5149ff11d8cd4d8923171ca7004a4044",
+    "report.json": "f2af6fb3f0194ecf0dc328b6a47b6c3b6c96965af6d9eacb834674ba3f1b4be2"
+  },
+  "observation_count": 1536,
+  "source_report_sha256": "dcdea5b57f8d668e5dfc41299e2595f3abc73b51cb087fe0bad0b01f6bdbdbc6",
+  "status": "rejected",
+  "trading_authority": false,
+  "version": 1
+}

@@ -1,0 +1,9 @@
+# Hash-bound evidence must retain the exact bytes recorded in its manifest.
+docs/ai/foundation/latest/* text eol=lf
+docs/optimization/iteration-progress/**/*.csv text eol=lf
+docs/optimization/iteration-progress/**/*.json text eol=lf
+docs/optimization/iteration-progress/**/*.svg text eol=lf
+docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.csv text eol=lf
+docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.json text eol=lf
+docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.svg text eol=lf
+docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.csv.gz -text

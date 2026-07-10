@@ -153,6 +153,13 @@ def test_iteration_progress_artifact_is_manifested_and_auditable(tmp_path, monke
     monkeypatch.setattr(audit_data_provenance, "_tracked_files", lambda: tracked)
 
     assert report["latest_round_id"] == "round-005"
-    assert (tmp_path / "docs" / "optimization" / "iteration-progress" / "data" / "progress.csv").exists()
-    assert (tmp_path / "docs" / "optimization" / "iteration-progress" / "charts" / "progress.svg").exists()
+    generated_root = tmp_path / "docs" / "optimization" / "iteration-progress"
+    assert (generated_root / "data" / "progress.csv").exists()
+    assert (generated_root / "charts" / "progress.svg").exists()
+    for generated in (
+        generated_root / "data" / "progress.csv",
+        generated_root / "data" / "report.json",
+        generated_root / "charts" / "progress.svg",
+    ):
+        assert b"\r\n" not in generated.read_bytes()
     assert audit_data_provenance.audit() == []

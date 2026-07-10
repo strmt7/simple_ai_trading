@@ -156,7 +156,7 @@ def build_optimization_progress_artifacts(
     data_dir.mkdir(parents=True, exist_ok=True)
     charts_dir.mkdir(parents=True, exist_ok=True)
     _write_csv(csv_path, rows, _FIELDS)
-    chart_path.write_text(_render_progress_svg(rows), encoding="utf-8")
+    chart_path.write_text(_render_progress_svg(rows), encoding="utf-8", newline="\n")
     tracked_artifacts = [
         str(report_path).replace("\\", "/"),
         str(csv_path).replace("\\", "/"),
