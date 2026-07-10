@@ -14,6 +14,7 @@ from simple_ai_trading.tape_depth_features import (
     TapeDepthForecastDataset,
 )
 from simple_ai_trading.tape_depth_model import (
+    TapeDepthSignalPolicy,
     _selected_feature_names,
     load_tape_depth_model_artifact,
     save_tape_depth_model_artifact,
@@ -91,7 +92,13 @@ def test_tape_depth_forecaster_is_predictive_but_never_executable(tmp_path) -> N
     assert replay.rows == artifact.evaluation_metrics.rows
     assert replay.metrics() == artifact.evaluation_metrics
     assert len(replay.fingerprint()) == 64
-    no_action_metrics = replace(replay, signal_threshold_bps=1e9).metrics()
+    no_action_metrics = replace(
+        replay,
+        signal_policy=replace(
+            replay.signal_policy,
+            signal_threshold_bps=1e9,
+        ),
+    ).metrics()
     assert no_action_metrics.calibration_threshold_rows == 0
     assert no_action_metrics.calibration_threshold_signed_gross_bps == 0.0
     assert no_action_metrics.calibration_threshold_mean_signed_gross_bps == 0.0
@@ -148,7 +155,7 @@ def test_tape_depth_forecaster_honors_timestamp_split_boundaries() -> None:
     assert score_tape_depth_evaluation(artifact, dataset).rows == 2_000
 
 
-def test_tape_depth_predictor_is_independent_from_execution_risk_level() -> None:
+def test_tape_depth_predictor_is_shared_but_decision_policy_is_risk_specific() -> None:
     dataset = _predictive_dataset(6_000)
     conservative = train_tape_depth_forecaster(
         dataset,
@@ -170,7 +177,19 @@ def test_tape_depth_predictor_is_independent_from_execution_risk_level() -> None
     assert conservative.model_profile == aggressive.model_profile == "regularized"
     assert conservative.best_iterations == aggressive.best_iterations
     assert conservative.model_strings == aggressive.model_strings
-    assert conservative.evaluation_metrics == aggressive.evaluation_metrics
+    assert conservative.signal_policy.magnitude_quantile == 0.95
+    assert aggressive.signal_policy.magnitude_quantile == 0.80
+    assert conservative.signal_policy.minimum_direction_probability == 0.60
+    assert aggressive.signal_policy.minimum_direction_probability == 0.52
+    assert (
+        conservative.signal_policy.signal_threshold_bps
+        >= aggressive.signal_policy.signal_threshold_bps
+    )
+    assert (
+        conservative.evaluation_metrics.calibration_threshold_rows
+        <= aggressive.evaluation_metrics.calibration_threshold_rows
+    )
+    assert conservative.evaluation_metrics != aggressive.evaluation_metrics
 
 
 def test_tape_depth_training_statistics_do_not_read_evaluation_targets() -> None:
@@ -201,7 +220,7 @@ def test_tape_depth_training_statistics_do_not_read_evaluation_targets() -> None
     assert original.best_iterations == future_changed.best_iterations
     assert original.model_strings == future_changed.model_strings
     assert original.probability_calibration == future_changed.probability_calibration
-    assert original.signal_threshold_bps == future_changed.signal_threshold_bps
+    assert original.signal_policy == future_changed.signal_policy
 
 
 def test_tape_depth_replay_recomputes_training_scale_and_calibration_threshold() -> None:
@@ -220,11 +239,14 @@ def test_tape_depth_replay_recomputes_training_scale_and_calibration_threshold()
             ),
             dataset,
         )
-    with pytest.raises(ValueError, match="signal threshold differs"):
+    with pytest.raises(ValueError, match="signal policy differs at signal_threshold_bps"):
         score_tape_depth_evaluation(
             replace(
                 artifact,
-                signal_threshold_bps=artifact.signal_threshold_bps + 1.0,
+                signal_policy=replace(
+                    artifact.signal_policy,
+                    signal_threshold_bps=artifact.signal_threshold_bps + 1.0,
+                ),
             ),
             dataset,
         )
@@ -261,16 +283,41 @@ def test_tape_depth_learned_statistics_reject_invalid_inputs() -> None:
         tape_model._weight_scale(np.asarray([np.nan]))
     with pytest.raises(ValueError, match="scale must be positive"):
         tape_model._weights(np.asarray([1.0]), scale_bps=0.0)
-    values = np.asarray([-1.0, 1.0])
-    with pytest.raises(ValueError, match="signal threshold"):
-        tape_model._evaluation_metrics(
-            targets=values,
-            direction_probability=np.asarray([0.25, 0.75]),
-            mean_prediction=values,
-            lower_prediction=values - 0.5,
-            upper_prediction=values + 0.5,
+    with pytest.raises(ValueError, match="signal policy"):
+        TapeDepthSignalPolicy(
+            risk_level="conservative",
+            magnitude_quantile=0.95,
+            minimum_direction_probability=0.60,
+            interval_width_quantile=0.75,
             signal_threshold_bps=-1.0,
+            maximum_interval_width_bps=2.0,
+            direction_baseline_probability=0.5,
         )
+
+
+def test_tape_depth_baselines_are_frozen_from_calibration_not_evaluation() -> None:
+    targets = np.asarray([1.0, 2.0, 3.0, -1.0])
+    policy = TapeDepthSignalPolicy(
+        risk_level="regular",
+        magnitude_quantile=0.90,
+        minimum_direction_probability=0.56,
+        interval_width_quantile=0.90,
+        signal_threshold_bps=0.5,
+        maximum_interval_width_bps=2.0,
+        direction_baseline_probability=0.25,
+    )
+
+    metrics = tape_model._evaluation_metrics(
+        targets=targets,
+        direction_probability=np.asarray([0.8, 0.8, 0.8, 0.2]),
+        mean_prediction=targets,
+        lower_prediction=targets - 0.5,
+        upper_prediction=targets + 0.5,
+        signal_policy=policy,
+    )
+
+    assert metrics.prevalence_brier == pytest.approx(0.4375)
+    assert metrics.majority_accuracy == pytest.approx(0.25)
 
 
 def test_tape_depth_zero_action_evaluation_is_rejected(monkeypatch) -> None:
@@ -281,6 +328,9 @@ def test_tape_depth_zero_action_evaluation_is_rejected(monkeypatch) -> None:
         return replace(
             metrics,
             calibration_threshold_rows=0,
+            calibration_threshold_long_rows=0,
+            calibration_threshold_short_rows=0,
+            calibration_threshold_selection_rate=0.0,
             calibration_threshold_signed_gross_bps=0.0,
             calibration_threshold_mean_signed_gross_bps=0.0,
             calibration_threshold_positive_rate=0.0,
@@ -308,7 +358,7 @@ def test_tape_depth_loader_rejects_missing_or_invalid_learned_statistics(
         minimum_segment_rows=256,
     )
     missing = artifact.asdict()
-    missing.pop("signal_threshold_bps")
+    missing.pop("signal_policy")
     missing_path = tmp_path / "missing-threshold.json"
     missing_path.write_text(json.dumps(missing), encoding="utf-8")
     with pytest.raises(ValueError, match="calibration fields are incomplete"):

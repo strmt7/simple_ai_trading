@@ -1191,6 +1191,9 @@ def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -
         rows=10_000,
         direction_auc=0.60,
         spearman_information_coefficient=0.10,
+        calibration_threshold_rows=100,
+        calibration_threshold_long_rows=55,
+        calibration_threshold_short_rows=45,
         calibration_threshold_signed_gross_bps=50.0,
     )
     artifact = SimpleNamespace(
@@ -1198,6 +1201,7 @@ def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -
         rejection_reasons=(),
         trading_authority=False,
         execution_claim=False,
+        risk_level="conservative",
         model_profile="regularized",
         evaluation_metrics=metrics,
         asdict=lambda: {

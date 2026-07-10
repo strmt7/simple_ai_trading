@@ -18,6 +18,7 @@ from simple_ai_trading.tape_depth_features import (
 )
 from simple_ai_trading.tape_depth_model import (
     TapeDepthPredictionBatch,
+    TapeDepthSignalPolicy,
     save_tape_depth_model_artifact,
     score_tape_depth_evaluation,
     train_tape_depth_forecaster,
@@ -382,7 +383,15 @@ def test_tape_depth_prediction_table_is_complete_and_deterministic(tmp_path) -> 
         mean_prediction_bps=np.asarray([1.1, -0.5]),
         lower_prediction_bps=np.asarray([-0.2, -1.4]),
         upper_prediction_bps=np.asarray([2.2, 0.3]),
-        signal_threshold_bps=1.0,
+        signal_policy=TapeDepthSignalPolicy(
+            risk_level="conservative",
+            magnitude_quantile=0.95,
+            minimum_direction_probability=0.60,
+            interval_width_quantile=0.75,
+            signal_threshold_bps=1.0,
+            maximum_interval_width_bps=3.0,
+            direction_baseline_probability=0.5,
+        ),
     )
     path = tmp_path / "predictions.csv.gz"
 
@@ -399,6 +408,15 @@ def test_tape_depth_prediction_table_is_complete_and_deterministic(tmp_path) -> 
     assert rows[0]["decision_time_ms"] == "1000"
     assert rows[1]["actual_gross_return_bps"] == "-0.75"
     assert rows[0]["signal_threshold_bps"] == "1"
+
+    rows[1]["minimum_direction_probability"] = "0.61"
+    tampered = tmp_path / "tampered-predictions.csv.gz"
+    with gzip.open(tampered, "wt", encoding="ascii", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=tuple(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    with pytest.raises(ValueError, match="numeric contract"):
+        read_tape_depth_predictions(tampered)
 
 
 def test_dataset_range_source_evidence_uses_exact_causal_boundaries(monkeypatch) -> None:

@@ -23,8 +23,8 @@ from .tape_depth_prequential import (
 )
 
 
-TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v3"
-TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v3"
+TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v4"
+TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v4"
 _TRIAL_CONFIG_KEYS = frozenset(
     {
         "model_profile",
@@ -56,6 +56,8 @@ _SELECTION_METRIC_NAMES = (
     "mae_improvement_ratio",
     "spearman_information_coefficient",
     "calibration_threshold_mean_signed_gross_bps",
+    "selected_action_rate",
+    "selected_side_balance",
     "positive_ic_fold_rate",
     "positive_gross_fold_rate",
 )
@@ -343,6 +345,18 @@ def _segment_metrics(folds: Sequence[Mapping[str, object]]) -> dict[str, object]
     zero_mae = weighted("zero_baseline_mae_bps")
     information_coefficient = weighted("spearman_information_coefficient")
     threshold_gross = weighted("calibration_threshold_mean_signed_gross_bps")
+    selected_actions = sum(
+        int(dict(fold["metrics"])["calibration_threshold_rows"])
+        for fold in folds
+    )
+    selected_long_actions = sum(
+        int(dict(fold["metrics"])["calibration_threshold_long_rows"])
+        for fold in folds
+    )
+    selected_short_actions = sum(
+        int(dict(fold["metrics"])["calibration_threshold_short_rows"])
+        for fold in folds
+    )
     ic_values = [
         _finite(dict(fold["metrics"])["spearman_information_coefficient"], "ic")
         for fold in folds
@@ -364,6 +378,15 @@ def _segment_metrics(folds: Sequence[Mapping[str, object]]) -> dict[str, object]
         "mae_improvement_ratio": (zero_mae - mae) / max(zero_mae, 1e-12),
         "spearman_information_coefficient": information_coefficient,
         "calibration_threshold_mean_signed_gross_bps": threshold_gross,
+        "selected_actions": selected_actions,
+        "selected_action_rate": selected_actions / float(np.sum(rows)),
+        "selected_long_actions": selected_long_actions,
+        "selected_short_actions": selected_short_actions,
+        "selected_side_balance": min(
+            selected_long_actions,
+            selected_short_actions,
+        )
+        / max(selected_long_actions, selected_short_actions, 1),
         "positive_ic_fold_rate": sum(value > 0.0 for value in ic_values)
         / len(ic_values),
         "positive_gross_fold_rate": sum(value > 0.0 for value in gross_values)
@@ -394,6 +417,14 @@ def _passes_segment(metrics: Mapping[str, object]) -> tuple[bool, tuple[str, ...
             metrics["calibration_threshold_mean_signed_gross_bps"], "gross"
         )
         > 0.0,
+        "selected_action_rate_below_minimum": _finite(
+            metrics["selected_action_rate"], "selected_action_rate"
+        )
+        >= 0.002,
+        "selected_side_balance_below_0_05": _finite(
+            metrics["selected_side_balance"], "selected_side_balance"
+        )
+        >= 0.05,
         "positive_ic_fold_rate_below_half": _finite(
             metrics["positive_ic_fold_rate"], "positive_ic_fold_rate"
         )

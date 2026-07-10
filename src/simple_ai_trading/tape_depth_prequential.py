@@ -36,6 +36,7 @@ from .tape_depth_features import (
 from .tape_depth_model import (
     TapeDepthModelArtifact,
     TapeDepthPredictionBatch,
+    TapeDepthSignalPolicy,
     load_tape_depth_model_artifact,
     save_tape_depth_model_artifact,
     score_tape_depth_evaluation,
@@ -44,7 +45,7 @@ from .tape_depth_model import (
 
 
 TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION = "tape-depth-prequential-plan-v2"
-TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION = "tape-depth-prequential-evidence-v2"
+TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION = "tape-depth-prequential-evidence-v3"
 _DAY_MS = 86_400_000
 
 
@@ -453,10 +454,9 @@ def write_tape_depth_predictions(
             (batch.direction_probability < 0.0)
             | (batch.direction_probability > 1.0)
         )
-        or not math.isfinite(batch.signal_threshold_bps)
-        or batch.signal_threshold_bps < 0.0
     ):
         raise ValueError("tape/depth prediction batch failed its numeric contract")
+    policy = batch.signal_policy
     try:
         with temporary.open("wb") as raw:
             with gzip.GzipFile(
@@ -482,7 +482,13 @@ def write_tape_depth_predictions(
                             "mean_prediction_bps",
                             "lower_prediction_bps",
                             "upper_prediction_bps",
+                            "risk_level",
+                            "magnitude_quantile",
+                            "minimum_direction_probability",
+                            "interval_width_quantile",
                             "signal_threshold_bps",
+                            "maximum_interval_width_bps",
+                            "direction_baseline_probability",
                         )
                     )
                     for row in zip(*arrays, strict=True):
@@ -496,7 +502,22 @@ def write_tape_depth_predictions(
                                 format(float(row[5]), ".17g"),
                                 format(float(row[6]), ".17g"),
                                 format(float(row[7]), ".17g"),
-                                format(float(batch.signal_threshold_bps), ".17g"),
+                                policy.risk_level,
+                                format(float(policy.magnitude_quantile), ".17g"),
+                                format(
+                                    float(policy.minimum_direction_probability),
+                                    ".17g",
+                                ),
+                                format(float(policy.interval_width_quantile), ".17g"),
+                                format(float(policy.signal_threshold_bps), ".17g"),
+                                format(
+                                    float(policy.maximum_interval_width_bps),
+                                    ".17g",
+                                ),
+                                format(
+                                    float(policy.direction_baseline_probability),
+                                    ".17g",
+                                ),
                             )
                         )
             raw.flush()
@@ -520,9 +541,15 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         "mean_prediction_bps",
         "lower_prediction_bps",
         "upper_prediction_bps",
+        "risk_level",
+        "magnitude_quantile",
+        "minimum_direction_probability",
+        "interval_width_quantile",
         "signal_threshold_bps",
+        "maximum_interval_width_bps",
+        "direction_baseline_probability",
     )
-    columns: dict[str, list[int] | list[float]] = {
+    columns: dict[str, list[object]] = {
         name: [] for name in expected_fields
     }
     try:
@@ -533,7 +560,10 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
             for row in reader:
                 for name in expected_fields[:3]:
                     columns[name].append(int(row[name]))
-                for name in expected_fields[3:]:
+                for name in expected_fields[3:8]:
+                    columns[name].append(float(row[name]))
+                columns["risk_level"].append(row["risk_level"])
+                for name in expected_fields[9:]:
                     columns[name].append(float(row[name]))
     except (
         csv.Error,
@@ -569,11 +599,23 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         upper_prediction_bps=np.asarray(
             columns["upper_prediction_bps"], dtype=np.float64
         ),
-        signal_threshold_bps=float(columns["signal_threshold_bps"][0]),
-    )
-    threshold_values = np.asarray(
-        columns["signal_threshold_bps"],
-        dtype=np.float64,
+        signal_policy=TapeDepthSignalPolicy(
+            risk_level=str(columns["risk_level"][0]),
+            magnitude_quantile=float(columns["magnitude_quantile"][0]),
+            minimum_direction_probability=float(
+                columns["minimum_direction_probability"][0]
+            ),
+            interval_width_quantile=float(
+                columns["interval_width_quantile"][0]
+            ),
+            signal_threshold_bps=float(columns["signal_threshold_bps"][0]),
+            maximum_interval_width_bps=float(
+                columns["maximum_interval_width_bps"][0]
+            ),
+            direction_baseline_probability=float(
+                columns["direction_baseline_probability"][0]
+            ),
+        ),
     )
     numeric_arrays = (
         batch.actual_gross_return_bps,
@@ -588,9 +630,11 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         or np.any(batch.target_exit_time_ms <= batch.target_entry_time_ms)
         or not all(np.all(np.isfinite(values)) for values in numeric_arrays)
         or np.any((batch.direction_probability < 0.0) | (batch.direction_probability > 1.0))
-        or not np.all(threshold_values == batch.signal_threshold_bps)
-        or not math.isfinite(batch.signal_threshold_bps)
-        or batch.signal_threshold_bps < 0.0
+        or any(
+            any(value != values[0] for value in values[1:])
+            for name, values in columns.items()
+            if name in expected_fields[8:]
+        )
     ):
         raise ValueError("tape/depth prediction table failed its numeric contract")
     return batch
@@ -616,6 +660,7 @@ def _fold_summary(
         "risk_level": artifact.risk_level,
         "model_profile": artifact.model_profile,
         "feature_set": artifact.feature_set,
+        "signal_policy": asdict(artifact.signal_policy),
         "dataset_fingerprint": artifact.dataset_fingerprint,
         "source_manifest_fingerprint": artifact.dataset_summary["source_evidence"][
             "manifest_fingerprint"
@@ -646,12 +691,22 @@ def _aggregate_fold_metrics(folds: Sequence[dict[str, object]]) -> dict[str, obj
         "interval_crossing_rate",
         "calibration_threshold_mean_signed_gross_bps",
         "calibration_threshold_positive_rate",
+        "calibration_threshold_selection_rate",
     )
     output: dict[str, object] = {
         "folds": len(folds),
         "rows": total_rows,
         "research_candidate_folds": sum(
             1 for fold in folds if fold["status"] == "research_candidate"
+        ),
+        "selected_actions": sum(
+            int(item["calibration_threshold_rows"]) for item in metrics
+        ),
+        "selected_long_actions": sum(
+            int(item["calibration_threshold_long_rows"]) for item in metrics
+        ),
+        "selected_short_actions": sum(
+            int(item["calibration_threshold_short_rows"]) for item in metrics
         ),
     }
     for name in weighted_names:
@@ -1299,6 +1354,7 @@ def run_tape_depth_prequential(
             or summary.get("risk_level") != artifact.risk_level
             or summary.get("model_profile") != artifact.model_profile
             or summary.get("feature_set") != artifact.feature_set
+            or summary.get("signal_policy") != asdict(artifact.signal_policy)
             or summary.get("backend_kind") != artifact.backend_kind
             or summary.get("backend_device") != artifact.backend_device
             or summary.get("dataset_fingerprint") != artifact.dataset_fingerprint
