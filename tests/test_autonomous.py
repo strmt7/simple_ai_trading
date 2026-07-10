@@ -379,6 +379,47 @@ def test_evaluate_auto_close_no_close_path(tmp_path: Path) -> None:
     assert reason == ""
 
 
+def test_evaluate_auto_close_uses_model_time_barrier_and_reverse_signal() -> None:
+    pos = replace(_make_position("LONG", entry=100.0), opened_at_ms=1_000)
+    strategy = StrategyConfig(
+        take_profit_pct=0.5,
+        stop_loss_pct=0.5,
+        max_position_hold_bars=15,
+    )
+
+    before = _evaluate_auto_close(
+        pos,
+        100.0,
+        AutonomousConfig(),
+        strategy,
+        decision_side="LONG",
+        observed_at_ms=15_999,
+        interval_ms=1_000,
+    )
+    timed = _evaluate_auto_close(
+        pos,
+        100.0,
+        AutonomousConfig(),
+        strategy,
+        decision_side="LONG",
+        observed_at_ms=16_000,
+        interval_ms=1_000,
+    )
+    reversed_signal = _evaluate_auto_close(
+        pos,
+        100.0,
+        AutonomousConfig(),
+        strategy,
+        decision_side="SHORT",
+        observed_at_ms=2_000,
+        interval_ms=1_000,
+    )
+
+    assert before == (False, "")
+    assert timed == (True, "time-limit@15bars")
+    assert reversed_signal == (True, "signal-reverse")
+
+
 # ----- _open_position_from_decision ----------------------------------------
 
 

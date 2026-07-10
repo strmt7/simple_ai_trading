@@ -6,6 +6,7 @@ from simple_ai_trading.risk_controls import (
     assess_entry_risk,
     build_risk_policy_report,
     market_regime_unpredictability,
+    regime_unpredictability_requires_cooldown,
     render_risk_policy_report,
     stop_loss_effective_loss_pct,
     stop_loss_sized_notional_pct,
@@ -37,6 +38,14 @@ def test_market_regime_unpredictability_scores_wait_conditions() -> None:
     assert market_regime_unpredictability("mixed", 0.2, ("low_regime_separation",)) > 0.85
     assert market_regime_unpredictability("insufficient_data", 0.0) == 1.0
     assert market_regime_unpredictability("trend_up", 0.9) < 0.25
+
+
+def test_regime_cooldown_requires_severe_unpredictability() -> None:
+    assert regime_unpredictability_requires_cooldown(0.61, 0.60) is False
+    assert regime_unpredictability_requires_cooldown(0.86, 0.60) is False
+    assert regime_unpredictability_requires_cooldown(0.91, 0.60) is True
+    assert regime_unpredictability_requires_cooldown(1.0, 0.85) is True
+    assert regime_unpredictability_requires_cooldown(float("nan"), 0.60) is True
 
 
 def test_stop_loss_sized_notional_pct_respects_caps_and_leverage() -> None:

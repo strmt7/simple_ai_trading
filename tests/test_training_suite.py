@@ -211,6 +211,11 @@ def test_calibration_split_small_and_large_rows() -> None:
     assert train_large[-1].timestamp == 79
     assert calibration_large[0].timestamp == 80
 
+    purged_train, purged_calibration = _calibration_split(_rows(100), ratio=0.2, purge_gap=9)
+    assert len(purged_train) == 71
+    assert purged_train[-1].timestamp == 70
+    assert purged_calibration[0].timestamp == 80
+
 
 def test_threshold_guard_accepts_stable_or_sharper_candidates() -> None:
     class Report:

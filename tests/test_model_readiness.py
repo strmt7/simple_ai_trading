@@ -213,6 +213,58 @@ def test_model_readiness_can_require_live_data_evidence() -> None:
     assert any(check.label == "live data evidence" and check.status == "ok" for check in report.checks)
 
 
+def test_model_readiness_requires_substantial_hftbacktest_evidence_for_live_promotion() -> None:
+    model = _model()
+    model.execution_validation["microstructure_replay"] = {
+        "passed": True,
+        "strategy_replay_passed": True,
+        "replay_smoke_passed": True,
+        "artifact_hashes_verified": True,
+        "immutable_market_data": True,
+        "engine": "hftbacktest",
+        "engine_version": "2.4.4",
+        "schema_version": "binance-usdm-l2-v1",
+        "symbol": "BTCUSDC",
+        "queue_model": "risk_adverse_queue_model",
+        "latency_model": "empirical_feed_and_order_latency",
+        "captured_seconds": 20 * 86_400,
+        "span_days": 400,
+        "unique_days": 20,
+        "normalized_rows": 20_000_000,
+        "sequence_gap_count": 0,
+        "crossed_book_count": 0,
+        "invalid_event_count": 0,
+        "clock_sync_samples": 100,
+    }
+
+    report = build_model_readiness_report(
+        model,
+        require_microstructure_evidence=True,
+        expected_symbol="BTCUSDC",
+    )
+
+    assert report.allowed is True
+    assert any(check.label == "microstructure replay" and check.status == "ok" for check in report.checks)
+
+    model.execution_validation["microstructure_replay"]["captured_seconds"] = 6
+    failed = build_model_readiness_report(
+        model,
+        require_microstructure_evidence=True,
+        expected_symbol="BTCUSDC",
+    )
+    assert failed.allowed is False
+    assert any(
+        check.label == "microstructure replay" and "captured_seconds=6.0<1728000" in check.detail
+        for check in failed.checks
+    )
+    with pytest.raises(ModelPromotionError, match="microstructure replay"):
+        assert_model_promoted(
+            model,
+            require_microstructure_evidence=True,
+            expected_symbol="BTCUSDC",
+        )
+
+
 @pytest.mark.parametrize(
     ("mutator", "match_text"),
     [

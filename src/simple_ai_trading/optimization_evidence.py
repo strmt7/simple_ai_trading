@@ -19,8 +19,12 @@ from typing import Callable, Iterable, Mapping, Sequence
 
 from .advanced_model import (
     AdvancedFeatureConfig,
+    AdvancedTrainingReport,
     advanced_feature_dimension,
+    advanced_feature_signature,
     default_config_for,
+    label_advanced_rows,
+    make_advanced_inference_rows,
     make_advanced_rows,
     train_advanced,
 )
@@ -28,6 +32,8 @@ from .alpha_search import (
     DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES,
     DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
     optimize_rule_alpha_model_zoo,
+    rule_alpha_stop_loss_floor_pct,
+    rule_alpha_take_profit_floor_pct,
     summarize_rule_alpha_candidate_distribution,
     summarize_rule_alpha_trade_path,
 )
@@ -37,16 +43,22 @@ from .backtest import (
     BacktestResult,
     calibrate_threshold_for_backtest,
     closed_trades_per_day,
+    precompute_backtest_regime_scores,
     run_backtest,
 )
 from .compute import resolve_backend
 from .data_coverage import describe_candle_coverage, iso_utc
 from .data_downloader import MarketDataSyncConfig, sync_market_data
-from .execution_simulation import SymbolExecutionProfile
-from .hybrid_models import optimize_hybrid_model_zoo
+from .execution_simulation import (
+    EXECUTION_ACTIVITY_ESTIMATOR,
+    EXECUTION_MODEL_VERSION,
+    SymbolExecutionProfile,
+)
+from .features import ModelRow
+from .hybrid_models import optimize_hybrid_model_zoo, path_net_edge_bps
 from .intervals import interval_milliseconds, validate_interval
 from .market_edge import build_market_edge_report
-from .market_store import MarketDataStore
+from .market_store import AggTrade, AggTradeBucket, MarketDataStore
 from .market_universe import (
     _exchange_symbol_map,
     _looks_price_pegged,
@@ -56,14 +68,23 @@ from .market_universe import (
     _score_liquidity,
     _spread_bps,
 )
-from .model import calibrate_probability_temperature
+from .model import TrainedModel, calibrate_probability_temperature, collect_feature_stats
 from .model import effective_training_backend_name
 from .objective import ObjectiveSpec, get_objective
 from .performance_charts import EquityPoint
-from .risk_controls import stop_loss_sized_notional_pct
+from .risk_controls import regime_unpredictability_requires_cooldown, stop_loss_sized_notional_pct
 from .storage import write_json_atomic
 from .strategy_overrides import apply_model_strategy_overrides, strategy_overrides_from_config
 from .types import StrategyConfig
+from .trade_tape_features import TRADE_TAPE_FEATURES_PER_WINDOW
+
+
+DEFAULT_ROUND_MODEL_CANDIDATES = 36
+MIN_TRAINING_CLASS_ROWS = 20
+MIN_EDGE_PREFLIGHT_ROWS = 1_000
+MIN_EDGE_PREFLIGHT_SIGNAL_ROWS = 20
+PROBABILITY_CALIBRATION_MAX_ROWS = 2_048
+PROBABILITY_CALIBRATION_STEPS = 17
 
 
 @dataclass(frozen=True)
@@ -290,6 +311,7 @@ class RoundModelCandidate:
     cooldown_multiplier: float = 1.0
     min_position_hold_bars: int = 0
     flat_signal_exit_grace_bars: int = 0
+    max_position_hold_bars: int = 0
     focal_gamma: float = 0.0
 
 
@@ -464,6 +486,19 @@ def effective_leverage_for_market(strategy: StrategyConfig, market_type: str) ->
     return max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, _finite(strategy.leverage, 1.0)))
 
 
+def _price_move_scale_for_market(strategy: StrategyConfig, market_type: str) -> float:
+    """Keep market-price barriers independent from the margin multiplier.
+
+    Leverage changes required margin and liquidation distance. Gross exposure
+    is already bounded by stop-risk sizing, so dividing the underlying price
+    stop by leverage would charge the same risk twice and force high-leverage
+    profiles into progressively more cost-dominated trades.
+    """
+
+    del strategy, market_type
+    return 1.0
+
+
 def parse_evidence_timestamp_ms(value: object, *, end_of_day: bool = False) -> int | None:
     """Parse an evidence-window boundary as UTC milliseconds."""
 
@@ -582,6 +617,50 @@ def fetch_full_history(
     if quality.gap_count:
         raise ValueError(f"market database has {quality.gap_count} gaps for {symbol} {interval}")
     return candles
+
+
+def fetch_aggregate_trades_for_window(
+    *,
+    db_path: Path,
+    symbol: str,
+    market_type: str,
+    start_ms: int | None = None,
+    end_ms: int | None = None,
+    limit: int | None = None,
+) -> list[AggTrade]:
+    """Load raw aggregate trades that are already persisted for the requested window."""
+
+    with MarketDataStore(db_path) as store:
+        return store.fetch_agg_trades(
+            symbol,
+            market_type,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            limit=limit,
+        )
+
+
+def fetch_aggregate_trade_buckets_for_window(
+    *,
+    db_path: Path,
+    symbol: str,
+    market_type: str,
+    bucket_ms: int = 1000,
+    start_ms: int | None = None,
+    end_ms: int | None = None,
+    limit: int | None = None,
+) -> list[AggTradeBucket]:
+    """Load SQL-aggregated trade-tape buckets for scalable feature generation."""
+
+    with MarketDataStore(db_path) as store:
+        return store.fetch_agg_trade_buckets(
+            symbol,
+            market_type,
+            bucket_ms=bucket_ms,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            limit=limit,
+        )
 
 
 def _count_by(items: Sequence[object], attr: str) -> dict[str, int]:
@@ -948,12 +1027,75 @@ def _split_train_validation(rows: Sequence[object], validation_fraction: float =
     return row_list[:-validation_size], row_list[-validation_size:]
 
 
+def _purged_train_selection_validation_split(
+    rows: Sequence[ModelRow],
+    *,
+    label_lookahead: int,
+    label_entry_offset: int,
+) -> tuple[list[ModelRow], list[ModelRow], list[ModelRow], int]:
+    """Return chronological 50/25/25 slices with label-overlap purged.
+
+    A row's target can observe through ``entry_offset + lookahead`` future
+    bars. Removing that many rows from the tail of training and selection
+    prevents either target set from reading prices in the next evaluation
+    period. Past context at the start of a later period remains available,
+    matching live inference.
+    """
+
+    train_selection_rows, validation_rows = _split_train_validation(rows, validation_fraction=0.25)
+    raw_train_rows, raw_selection_rows = _split_train_validation(
+        train_selection_rows,
+        validation_fraction=1.0 / 3.0,
+    )
+    purge_bars = max(1, int(label_lookahead)) + max(0, int(label_entry_offset))
+    if len(raw_train_rows) <= purge_bars or len(raw_selection_rows) <= purge_bars:
+        return [], [], list(validation_rows), int(purge_bars)
+    return (
+        list(raw_train_rows[:-purge_bars]),
+        list(raw_selection_rows[:-purge_bars]),
+        list(validation_rows),
+        int(purge_bars),
+    )
+
+
+def _chronological_calibration_sample(
+    rows: Sequence[ModelRow],
+    *,
+    max_rows: int = PROBABILITY_CALIBRATION_MAX_ROWS,
+) -> list[ModelRow]:
+    """Return a deterministic, bounded sample spanning the selection slice."""
+
+    row_list = list(rows)
+    limit = max(1, int(max_rows))
+    if len(row_list) <= limit:
+        return row_list
+    if limit == 1:
+        return [row_list[-1]]
+    indices = sorted(
+        {
+            min(len(row_list) - 1, max(0, int(round(index * (len(row_list) - 1) / float(limit - 1)))))
+            for index in range(limit)
+        }
+    )
+    return [row_list[index] for index in indices]
+
+
 def strategy_with_objective_defaults(strategy: StrategyConfig, objective: ObjectiveSpec) -> StrategyConfig:
     """Apply the objective's trading defaults while preserving unrelated safeguards."""
 
     training = objective.training
     if training is None:
         return StrategyConfig(**{**strategy.asdict(), "risk_level": objective.name})
+    regime_cooldown_minutes = {
+        "conservative": 12,
+        "regular": 7,
+        "aggressive": 4,
+    }.get(objective.name, int(strategy.unpredictability_cooldown_minutes))
+    regime_limit = {
+        "conservative": 0.68,
+        "regular": 0.72,
+        "aggressive": 0.76,
+    }.get(objective.name, float(strategy.max_regime_unpredictability))
     return StrategyConfig(
         **{
             **strategy.asdict(),
@@ -966,19 +1108,57 @@ def strategy_with_objective_defaults(strategy: StrategyConfig, objective: Object
             "max_position_pct": float(training.max_position_pct),
             "max_trades_per_day": int(training.max_trades_per_day),
             "cooldown_minutes": int(training.cooldown_minutes),
+            "unpredictability_cooldown_minutes": int(regime_cooldown_minutes),
+            "max_regime_unpredictability": float(regime_limit),
             "training_epochs": int(training.epochs),
         }
     )
 
 
 def _strategy_for_round_candidate(strategy: StrategyConfig, candidate: RoundModelCandidate) -> StrategyConfig:
+    return _strategy_for_round_candidate_market(strategy, candidate, market_type="spot")
+
+
+def _strategy_for_round_candidate_market(
+    strategy: StrategyConfig,
+    candidate: RoundModelCandidate,
+    *,
+    market_type: str,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> StrategyConfig:
+    price_move_scale = _price_move_scale_for_market(strategy, market_type)
+    base_stop_loss_pct = float(strategy.stop_loss_pct) * price_move_scale
+    base_take_profit_pct = float(strategy.take_profit_pct) * price_move_scale
+    stop_loss_pct = max(
+        0.001,
+        rule_alpha_stop_loss_floor_pct(strategy, symbol_profile=symbol_profile),
+        base_stop_loss_pct * max(0.05, float(candidate.stop_loss_multiplier)),
+    )
+    take_profit_pct = max(
+        0.001,
+        rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile),
+        base_take_profit_pct * max(0.05, float(candidate.take_profit_multiplier)),
+    )
+    if take_profit_pct <= stop_loss_pct:
+        take_profit_pct = stop_loss_pct + 0.0002
+    horizon_bars = max(1, int(getattr(candidate.feature_cfg, "label_lookahead", 1) or 1))
+    max_position_hold_bars = max(1, int(candidate.max_position_hold_bars or horizon_bars))
+    regime_lookback_bars = max(
+        int(strategy.liquidity_lookback_bars),
+        min(1800, max(96, int(math.ceil(horizon_bars / 3.0)))),
+    )
     return replace(
         strategy,
-        stop_loss_pct=max(0.001, float(strategy.stop_loss_pct) * max(0.05, float(candidate.stop_loss_multiplier))),
-        take_profit_pct=max(0.001, float(strategy.take_profit_pct) * max(0.05, float(candidate.take_profit_multiplier))),
+        stop_loss_pct=stop_loss_pct,
+        take_profit_pct=take_profit_pct,
+        liquidity_lookback_bars=regime_lookback_bars,
         cooldown_minutes=max(0, int(round(float(strategy.cooldown_minutes) * max(0.0, float(candidate.cooldown_multiplier))))),
         min_position_hold_bars=max(0, int(candidate.min_position_hold_bars)),
-        flat_signal_exit_grace_bars=max(0, int(candidate.flat_signal_exit_grace_bars)),
+        flat_signal_exit_grace_bars=max(
+            max_position_hold_bars,
+            int(candidate.flat_signal_exit_grace_bars),
+        ),
+        max_position_hold_bars=max_position_hold_bars,
     )
 
 
@@ -1345,20 +1525,57 @@ def _portfolio_timeline(rows_by_symbol: Sequence[Sequence[Mapping[str, object]]]
     return _portfolio_timeline_from_aggregate(aggregate)
 
 
+def _median_candle_interval_ms(candles: Sequence[Candle]) -> int:
+    """Return a robust cadence estimate without materializing every timestamp gap."""
+
+    if len(candles) < 2:
+        return 1000
+    diffs: list[int] = []
+    max_checks = min(10_000, len(candles) - 1)
+    stride = max(1, (len(candles) - 1) // max_checks)
+    for index in range(0, len(candles) - 1, stride):
+        delta = int(candles[index + 1].open_time) - int(candles[index].open_time)
+        if delta > 0:
+            diffs.append(delta)
+        if len(diffs) >= max_checks:
+            break
+    return max(1, int(statistics.median(diffs))) if diffs else 1000
+
+
 def _round_model_candidates(
     objective: ObjectiveSpec,
     strategy: StrategyConfig,
     base_feature_cfg: AdvancedFeatureConfig,
     requested: int,
+    *,
+    market_type: str = "spot",
+    symbol_profile: SymbolExecutionProfile | None = None,
+    has_trade_tape: bool = False,
+    requested_names: Sequence[str] | None = None,
+    bar_interval_ms: int = 1000,
 ) -> list[RoundModelCandidate]:
     training = objective.training
     base_epochs = max(1, int(training.epochs if training else 100))
     base_lr = float(training.learning_rate if training else 0.03)
     base_l2 = float(training.l2_penalty if training else 1e-3)
     base_threshold = float(training.signal_threshold if training else strategy.signal_threshold)
-    base_label_threshold = max(1e-8, float(base_feature_cfg.label_threshold))
+    price_move_scale = _price_move_scale_for_market(strategy, market_type)
+    base_label_threshold = max(1e-8, float(base_feature_cfg.label_threshold) * price_move_scale)
+    base_stop_loss_pct = float(strategy.stop_loss_pct) * price_move_scale
+    base_take_profit_pct = float(strategy.take_profit_pct) * price_move_scale
     base_label_lookahead = max(1, int(base_feature_cfg.label_lookahead))
-    cost_label_floor = _round_trip_cost_label_floor(strategy)
+    bar_interval_ms = max(1, int(bar_interval_ms))
+
+    def duration_seconds_to_bars(value: float, *, allow_zero: bool = False) -> int:
+        seconds = max(0.0, float(value))
+        if allow_zero and seconds <= 0.0:
+            return 0
+        return max(1, int(math.ceil(seconds * 1000.0 / float(bar_interval_ms))))
+    cost_label_floor = max(
+        _round_trip_cost_label_floor(strategy),
+        rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile),
+    )
+    cost_label_target_floor = cost_label_floor + 0.0002
     min_signal_threshold = {
         "conservative": 0.56,
         "regular": 0.52,
@@ -1368,26 +1585,59 @@ def _round_model_candidates(
     # budget is small, so the prefix must cover baseline, long-biased,
     # short-biased, and order-flow hypotheses instead of walking one family.
     #
-    # Last four fields: minimum label horizon in bars, trailing volatility
-    # window in bars, realized-volatility multiplier for dynamic barriers,
-    # and focal-loss gamma for rare-event training.
+    # For named duration candidates, lifecycle and label-window values are
+    # seconds and are converted to bars using the observed candle cadence.
+    # The final two fields are the realized-volatility multiplier for dynamic
+    # barriers and focal-loss gamma for rare-event training.
     raw: list[tuple[str, float, float, float, float, float, str, float, float, float, float, int, int, int, int, float, float]] = [
         ("default", 1.0, 1.0, 1.0, 1.0, 1.0, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
+        ("path_scalp_30s_forward", 0.70, 1.15, 1.25, 0.65, 3.75, "triple_barrier", -0.10, 0.20, 0.16, 0.0, 2, 2, 30, 0, 0.0, 0.0),
+        ("path_scalp_30s_downside", 0.70, 1.15, 1.25, 0.65, 3.75, "downside_triple_barrier", -0.10, 0.20, 0.16, 0.0, 2, 2, 30, 0, 0.0, 0.0),
+        ("path_scalp_90s_forward", 0.75, 1.10, 1.50, 0.75, 11.25, "triple_barrier", -0.09, 0.24, 0.20, 0.0, 3, 3, 90, 60, 0.50, 0.0),
+        ("path_scalp_90s_downside", 0.75, 1.10, 1.50, 0.75, 11.25, "downside_triple_barrier", -0.09, 0.24, 0.20, 0.0, 3, 3, 90, 60, 0.50, 0.0),
+        ("trade_tape_path_90s_forward", 0.75, 1.10, 1.50, 0.75, 11.25, "triple_barrier", -0.09, 0.24, 0.20, 0.0, 3, 3, 90, 60, 0.50, 0.0),
+        ("trade_tape_path_90s_downside", 0.75, 1.10, 1.50, 0.75, 11.25, "downside_triple_barrier", -0.09, 0.24, 0.20, 0.0, 3, 3, 90, 60, 0.50, 0.0),
+        ("trade_tape_scalp_15s_forward", 0.70, 1.15, 1.50, 0.65, 1.875, "triple_barrier", -0.10, 0.18, 0.14, 0.0, 1, 1, 15, 30, 0.60, 0.0),
+        ("trade_tape_scalp_15s_downside", 0.70, 1.15, 1.50, 0.65, 1.875, "downside_triple_barrier", -0.10, 0.18, 0.14, 0.0, 1, 1, 15, 30, 0.60, 0.0),
+        ("trade_tape_imbalance_60s_forward", 0.80, 1.05, 1.75, 0.75, 7.5, "event_volatility_triple_barrier", -0.08, 0.22, 0.18, 0.0, 2, 2, 60, 45, 0.90, 0.0),
+        ("trade_tape_imbalance_60s_downside", 0.80, 1.05, 1.75, 0.75, 7.5, "downside_event_volatility_triple_barrier", -0.08, 0.22, 0.18, 0.0, 2, 2, 60, 45, 0.90, 0.0),
+        ("trade_tape_trend_5m_forward", 0.85, 0.95, 2.00, 1.25, 37.5, "event_volatility_triple_barrier", -0.06, 0.35, 0.40, 0.0, 30, 10, 300, 120, 1.20, 0.50),
+        ("trade_tape_trend_5m_downside", 0.85, 0.95, 2.00, 1.25, 37.5, "downside_event_volatility_triple_barrier", -0.06, 0.35, 0.40, 0.0, 30, 10, 300, 120, 1.20, 0.50),
+        ("trade_tape_trend_15m_forward", 0.90, 0.90, 2.25, 1.60, 112.5, "event_volatility_triple_barrier", -0.04, 0.45, 0.65, 0.0, 60, 20, 900, 240, 1.50, 1.00),
+        ("trade_tape_trend_15m_downside", 0.90, 0.90, 2.25, 1.60, 112.5, "downside_event_volatility_triple_barrier", -0.04, 0.45, 0.65, 0.0, 60, 20, 900, 240, 1.50, 1.00),
         ("day_trade_frequency_probe_forward", 0.65, 1.10, 1.0, 0.75, 4.0, "forward_return", -0.10, 0.14, 0.10, 0.0, 2, 0, 30, 0, 0.0, 0.0),
         ("day_trade_frequency_probe_downside", 0.65, 1.10, 1.0, 0.75, 4.0, "downside_forward_return", -0.10, 0.14, 0.10, 0.0, 2, 0, 30, 0, 0.0, 0.0),
-        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.75, 8.0, "triple_barrier", -0.10, 0.12, 0.10, 0.0, 2, 1, 45, 0, 0.0, 0.0),
-        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.75, 8.0, "downside_triple_barrier", -0.10, 0.12, 0.10, 0.0, 2, 1, 45, 0, 0.0, 0.0),
+        ("cost_aware_5m_forward", 0.75, 1.05, 1.25, 0.85, 37.5, "forward_return", -0.10, 0.22, 0.25, 0.0, 30, 15, 300, 0, 0.0, 0.0),
+        ("cost_aware_5m_downside", 0.75, 1.05, 1.25, 0.85, 37.5, "downside_forward_return", -0.10, 0.22, 0.25, 0.0, 30, 15, 300, 0, 0.0, 0.0),
+        ("cost_aware_15m_forward", 0.80, 0.95, 1.50, 1.0, 112.5, "forward_return", -0.08, 0.30, 0.45, 0.05, 120, 30, 900, 0, 0.0, 0.0),
+        ("cost_aware_15m_downside", 0.80, 0.95, 1.50, 1.0, 112.5, "downside_forward_return", -0.08, 0.30, 0.45, 0.05, 120, 30, 900, 0, 0.0, 0.0),
+        ("high_conviction_60m_forward", 1.0, 0.85, 2.50, 35.0, 450.0, "forward_return", -0.04, 0.45, 1.55, 0.15, 120, 45, 3600, 0, 0.0, 1.5),
+        ("high_conviction_60m_downside", 1.0, 0.85, 2.50, 35.0, 450.0, "downside_forward_return", -0.04, 0.45, 1.55, 0.15, 120, 45, 3600, 0, 0.0, 1.5),
+        ("high_conviction_90m_forward", 1.0, 0.80, 3.00, 50.0, 675.0, "forward_return", -0.03, 0.55, 1.90, 0.20, 180, 60, 5400, 0, 0.0, 1.75),
+        ("high_conviction_90m_downside", 1.0, 0.80, 3.00, 50.0, 675.0, "downside_forward_return", -0.03, 0.55, 1.90, 0.20, 180, 60, 5400, 0, 0.0, 1.75),
+        ("high_conviction_120m_forward", 1.0, 0.75, 3.50, 60.0, 900.0, "forward_return", -0.02, 0.65, 2.20, 0.25, 240, 90, 7200, 0, 0.0, 2.0),
+        ("high_conviction_120m_downside", 1.0, 0.75, 3.50, 60.0, 900.0, "downside_forward_return", -0.02, 0.65, 2.20, 0.25, 240, 90, 7200, 0, 0.0, 2.0),
+        ("cost_aware_30m_forward", 0.85, 0.90, 1.75, 1.10, 225.0, "forward_return", -0.06, 0.35, 0.55, 0.05, 180, 60, 1800, 0, 0.0, 0.0),
+        ("cost_aware_30m_downside", 0.85, 0.90, 1.75, 1.10, 225.0, "downside_forward_return", -0.06, 0.35, 0.55, 0.05, 180, 60, 1800, 0, 0.0, 0.0),
         ("focal_positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 2.0),
         ("focal_downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 2.0),
+        ("cost_aware_60m_forward", 0.90, 0.85, 2.00, 1.20, 450.0, "forward_return", -0.04, 0.45, 0.75, 0.10, 300, 90, 3600, 0, 0.0, 0.0),
+        ("cost_aware_60m_downside", 0.90, 0.85, 2.00, 1.20, 450.0, "downside_forward_return", -0.04, 0.45, 0.75, 0.10, 300, 90, 3600, 0, 0.0, 0.0),
+        ("cost_aware_2h_forward", 0.95, 0.80, 2.25, 1.35, 900.0, "forward_return", -0.02, 0.65, 0.90, 0.15, 600, 120, 7200, 0, 0.0, 0.0),
+        ("cost_aware_2h_downside", 0.95, 0.80, 2.25, 1.35, 900.0, "downside_forward_return", -0.02, 0.65, 0.90, 0.15, 600, 120, 7200, 0, 0.0, 0.0),
+        ("cost_aware_4h_forward", 1.0, 0.75, 2.50, 1.50, 1800.0, "forward_return", 0.0, 0.80, 1.10, 0.20, 900, 180, 14400, 0, 0.0, 0.0),
+        ("cost_aware_4h_downside", 1.0, 0.75, 2.50, 1.50, 1800.0, "downside_forward_return", 0.0, 0.80, 1.10, 0.20, 900, 180, 14400, 0, 0.0, 0.0),
+        ("intraday_activity_triple_barrier", 0.80, 1.15, 1.25, 0.75, 8.0, "triple_barrier", -0.10, 0.12, 0.10, 0.0, 2, 1, 45, 0, 0.0, 0.0),
+        ("intraday_downside_triple_barrier", 0.80, 1.15, 1.25, 0.75, 8.0, "downside_triple_barrier", -0.10, 0.12, 0.10, 0.0, 2, 1, 45, 0, 0.0, 0.0),
         ("session_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5, 0.0),
         ("session_downside_volatility_triple_barrier", 0.85, 1.00, 2.0, 1.00, 12.0, "downside_volatility_triple_barrier", -0.08, 0.18, 0.12, 0.12, 5, 5, 60, 120, 2.5, 0.0),
-        ("positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 0.0),
-        ("downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 0.0),
         ("order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0, 0.0),
         ("downside_order_flow_information_event_barrier", 0.90, 1.00, 1.75, 0.90, 12.0, "downside_event_volatility_triple_barrier", -0.10, 0.18, 0.12, 0.12, 5, 5, 75, 90, 2.0, 0.0),
+        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1, 0, 0, 0.0, 0.0),
+        ("positive_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 0.0),
+        ("downside_information_event_barrier", 0.75, 1.00, 2.5, 0.75, 8.0, "downside_event_volatility_triple_barrier", -0.12, 0.16, 0.10, 0.10, 3, 3, 45, 60, 1.75, 0.0),
         ("frequency_probe_forward", 0.50, 1.10, 1.0, 0.75, 4.0, "forward_return", -0.10, 0.14, 0.10, 0.0, 2, 0, 30, 0, 0.0, 0.0),
         ("intraday_micro_triple_barrier", 0.70, 1.05, 1.5, 0.55, 0.35, "triple_barrier", -0.08, 0.25, 0.16, 0.10, 2, 2, 0, 0, 0.0, 0.0),
-        ("intraday_breakout_forward", 0.85, 1.10, 1.0, 0.45, 0.25, "forward_return", -0.10, 0.35, 0.20, 0.15, 1, 1, 0, 0, 0.0, 0.0),
         ("high_conviction_triple_barrier", 1.0, 0.80, 3.0, 1.10, 1.25, "triple_barrier", 0.04, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
         ("lower_lr_more_l2", 0.75, 0.75, 3.0, 1.20, 1.25, str(base_feature_cfg.label_mode), 0.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, 0.0, 0.0),
         ("short_horizon_forward", 0.50, 1.0, 1.0, 0.75, 0.75, "forward_return", 0.0, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0, 0.0),
@@ -1397,6 +1647,54 @@ def _round_model_candidates(
         ("long_horizon_forward", 1.0, 0.75, 2.0, 1.40, 1.75, "forward_return", 0.0, 1.25, 1.25, 1.0, 0, 0, 0, 0, 0.0, 0.0),
         ("lower_signal_triple_barrier", 0.80, 0.90, 2.0, 0.80, 0.80, "triple_barrier", -0.06, 0.75, 0.75, 0.50, 1, 1, 0, 0, 0.0, 0.0),
     ]
+    if has_trade_tape:
+        tape_priority = {
+            "trade_tape_trend_5m_forward": 1,
+            "trade_tape_trend_5m_downside": 2,
+            "trade_tape_trend_15m_forward": 3,
+            "trade_tape_trend_15m_downside": 4,
+            "trade_tape_path_90s_forward": 5,
+            "trade_tape_path_90s_downside": 6,
+            "trade_tape_imbalance_60s_forward": 7,
+            "trade_tape_imbalance_60s_downside": 8,
+            "trade_tape_scalp_15s_forward": 9,
+            "trade_tape_scalp_15s_downside": 10,
+            "default": 30,
+        }
+        raw = sorted(
+            raw,
+            key=lambda item: (
+                tape_priority.get(item[0], 20),
+                0 if str(item[0]).startswith("path_scalp") else 1,
+            ),
+        )
+    elif str(market_type).lower() == "futures":
+        cost_aware_priority = {
+            "cost_aware_5m_forward": 1,
+            "cost_aware_5m_downside": 2,
+            "cost_aware_15m_forward": 3,
+            "cost_aware_15m_downside": 4,
+            "path_scalp_90s_forward": 5,
+            "path_scalp_90s_downside": 6,
+            "path_scalp_30s_forward": 7,
+            "path_scalp_30s_downside": 8,
+            "default": 20,
+        }
+        raw = sorted(raw, key=lambda item: cost_aware_priority.get(item[0], 15))
+
+    requested_name_order: list[str] = []
+    for value in requested_names or ():
+        name = str(value).strip()
+        if name and name not in requested_name_order:
+            requested_name_order.append(name)
+    if requested_name_order:
+        by_name = {item[0]: item for item in raw}
+        unknown = [name for name in requested_name_order if name not in by_name]
+        if unknown:
+            raise ValueError(f"Unknown round model candidate name(s): {', '.join(unknown)}")
+        raw = [by_name[name] for name in requested_name_order]
+    candidate_limit = len(requested_name_order) if requested_name_order else max(1, int(requested))
+
     output: list[RoundModelCandidate] = []
     seen: set[tuple[object, ...]] = set()
     for (
@@ -1418,24 +1716,65 @@ def _round_model_candidates(
         label_volatility_multiplier,
         focal_gamma,
     ) in raw:
-        label_lookahead = max(
-            1,
-            int(min_label_lookahead),
-            int(round(base_label_lookahead * float(lookahead_mult))),
+        if "trade_tape" in name and not has_trade_tape:
+            continue
+        duration_scaled = int(min_label_lookahead) > 0
+        if duration_scaled:
+            label_lookahead = duration_seconds_to_bars(
+                max(float(min_label_lookahead), float(base_label_lookahead) * float(lookahead_mult))
+            )
+            candidate_min_position_hold_bars = duration_seconds_to_bars(
+                min_position_hold_bars,
+                allow_zero=True,
+            )
+            candidate_flat_signal_exit_grace_bars = duration_seconds_to_bars(
+                flat_signal_exit_grace_bars,
+                allow_zero=True,
+            )
+            candidate_label_volatility_window = duration_seconds_to_bars(
+                label_volatility_window,
+                allow_zero=True,
+            )
+        else:
+            label_lookahead = max(1, int(round(base_label_lookahead * float(lookahead_mult))))
+            candidate_min_position_hold_bars = max(0, int(min_position_hold_bars))
+            candidate_flat_signal_exit_grace_bars = max(0, int(flat_signal_exit_grace_bars))
+            candidate_label_volatility_window = max(0, int(label_volatility_window))
+        candidate_stop_target = max(
+            rule_alpha_stop_loss_floor_pct(strategy, symbol_profile=symbol_profile),
+            base_stop_loss_pct * max(0.05, float(stop_loss_multiplier)),
+        )
+        candidate_take_target = max(
+            cost_label_target_floor,
+            base_take_profit_pct * max(0.05, float(take_profit_multiplier)),
+            base_label_threshold * float(threshold_mult),
+        )
+        if candidate_take_target <= candidate_stop_target:
+            candidate_take_target = candidate_stop_target + 0.0002
+        candidate_stop_label = max(
+            1e-8,
+            candidate_stop_target,
+            (
+                float(base_feature_cfg.label_stop_threshold) * float(threshold_mult)
+                if base_feature_cfg.label_stop_threshold is not None
+                else 0.0
+            ),
         )
         feature_cfg = replace(
             base_feature_cfg,
-            label_threshold=max(1e-8, cost_label_floor, base_label_threshold * float(threshold_mult)),
+            label_threshold=max(1e-8, candidate_take_target),
             label_lookahead=label_lookahead,
             label_mode=str(label_mode),
-            label_stop_threshold=(
-                max(1e-8, float(base_feature_cfg.label_stop_threshold) * float(threshold_mult))
-                if base_feature_cfg.label_stop_threshold is not None
-                else None
-            ),
-            label_volatility_window=max(0, int(label_volatility_window)),
+            label_stop_threshold=candidate_stop_label,
+            label_volatility_window=candidate_label_volatility_window,
             label_volatility_multiplier=max(0.0, float(label_volatility_multiplier)),
         )
+        if has_trade_tape and "trade_tape" in name:
+            feature_cfg = replace(
+                feature_cfg,
+                trade_tape_windows=(3, 10, 30) if "scalp_15s" in name else (5, 15, 60),
+                trade_tape_features_per_window=TRADE_TAPE_FEATURES_PER_WINDOW,
+            )
         candidate = RoundModelCandidate(
             name=name,
             feature_cfg=feature_cfg,
@@ -1446,8 +1785,9 @@ def _round_model_candidates(
             stop_loss_multiplier=max(0.05, float(stop_loss_multiplier)),
             take_profit_multiplier=max(0.05, float(take_profit_multiplier)),
             cooldown_multiplier=max(0.0, float(cooldown_multiplier)),
-            min_position_hold_bars=max(0, int(min_position_hold_bars)),
-            flat_signal_exit_grace_bars=max(0, int(flat_signal_exit_grace_bars)),
+            min_position_hold_bars=candidate_min_position_hold_bars,
+            flat_signal_exit_grace_bars=candidate_flat_signal_exit_grace_bars,
+            max_position_hold_bars=label_lookahead,
             focal_gamma=max(0.0, float(focal_gamma)),
         )
         key = (
@@ -1460,6 +1800,7 @@ def _round_model_candidates(
             round(candidate.cooldown_multiplier, 12),
             candidate.min_position_hold_bars,
             candidate.flat_signal_exit_grace_bars,
+            candidate.max_position_hold_bars,
             advanced_feature_dimension(candidate.feature_cfg),
             candidate.feature_cfg.label_threshold,
             candidate.feature_cfg.label_lookahead,
@@ -1472,7 +1813,7 @@ def _round_model_candidates(
             continue
         seen.add(key)
         output.append(candidate)
-        if len(output) >= max(1, int(requested)):
+        if len(output) >= candidate_limit:
             break
     return output
 
@@ -1522,6 +1863,26 @@ def _candidate_has_downside_positive_label(candidate: RoundModelCandidate) -> bo
     }
 
 
+def _round_feature_cache_key(cfg: AdvancedFeatureConfig) -> tuple[object, ...]:
+    return (
+        tuple(cfg.base_features),
+        int(cfg.polynomial_degree),
+        int(cfg.polynomial_top_features),
+        tuple(int(value) for value in cfg.extra_lookback_windows),
+        tuple(int(value) for value in cfg.confluence_windows),
+        tuple(int(value) for value in cfg.market_quality_windows),
+        tuple(int(value) for value in cfg.higher_timeframe_windows),
+        int(cfg.higher_timeframe_bucket_ms),
+        tuple(int(value) for value in cfg.order_flow_windows),
+        tuple(int(value) for value in cfg.trade_tape_windows),
+        tuple(str(value) for value in cfg.nonlinear_transforms),
+        int(cfg.short_window),
+        int(cfg.long_window),
+        int(cfg.order_flow_features_per_window),
+        int(cfg.trade_tape_features_per_window),
+    )
+
+
 def _orient_candidate_model_for_market_side(model: object, candidate: RoundModelCandidate) -> None:
     """Map candidate label semantics onto the runtime long/high, short/low convention."""
 
@@ -1535,21 +1896,303 @@ def _orient_candidate_model_for_market_side(model: object, candidate: RoundModel
     model.quality_warnings = warnings
 
 
+def _label_balance(rows: Sequence[ModelRow]) -> tuple[int, int]:
+    positives = sum(1 for row in rows if int(row.label) == 1)
+    negatives = len(rows) - positives
+    return positives, negatives
+
+
+def _sparse_label_reject_reason(rows: Sequence[ModelRow]) -> str | None:
+    positives, negatives = _label_balance(rows)
+    if positives < MIN_TRAINING_CLASS_ROWS:
+        return f"training_positive_rows<{MIN_TRAINING_CLASS_ROWS}"
+    if negatives < MIN_TRAINING_CLASS_ROWS:
+        return f"training_negative_rows<{MIN_TRAINING_CLASS_ROWS}"
+    return None
+
+
+def _candidate_label_trade_side(candidate: RoundModelCandidate) -> float:
+    return -1.0 if _candidate_has_downside_positive_label(candidate) else 1.0
+
+
+def _candidate_uses_path_barrier_label(candidate: RoundModelCandidate) -> bool:
+    mode = str(candidate.feature_cfg.label_mode or "").strip().lower().replace("-", "_")
+    return "triple_barrier" in mode or mode.endswith("_barrier")
+
+
+def _candidate_edge_preflight_stats(
+    rows: Sequence[ModelRow],
+    candidate: RoundModelCandidate,
+    strategy: StrategyConfig,
+    *,
+    market_type: str = "futures",
+    symbol_profile: SymbolExecutionProfile | None = None,
+    regime_scores: Sequence[float] | None = None,
+) -> dict[str, object]:
+    """Measure whether positive candidate labels have after-cost forward edge."""
+
+    horizon = max(1, int(candidate.feature_cfg.label_lookahead))
+    label_entry_offset = max(0, int(getattr(candidate.feature_cfg, "label_entry_offset", 0) or 0))
+    execution_entry_offset = 1
+    side = _candidate_label_trade_side(candidate)
+    cost_bps = max(
+        _round_trip_cost_label_floor(strategy),
+        rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile),
+    ) * 10_000.0
+    path_barrier_label = _candidate_uses_path_barrier_label(candidate)
+    edges: list[float] = []
+    available = max(0, len(rows) - horizon - execution_entry_offset)
+    severe_regime_blocked = 0
+    regime_limit = max(0.0, min(1.0, float(strategy.max_regime_unpredictability)))
+    for index in range(available):
+        current = rows[index]
+        if int(current.label) != 1:
+            continue
+        if regime_scores is not None and index + execution_entry_offset < len(regime_scores):
+            regime_score = max(
+                0.0,
+                min(1.0, _finite(regime_scores[index + execution_entry_offset], 1.0)),
+            )
+            if regime_score > regime_limit and regime_unpredictability_requires_cooldown(regime_score, regime_limit):
+                severe_regime_blocked += 1
+                continue
+        edge_bps = path_net_edge_bps(
+            rows,
+            signal_index=index,
+            horizon_bars=horizon,
+            side=int(side),
+            strategy=strategy,
+            market_type=market_type,
+            symbol_profile=symbol_profile,
+        )
+        if edge_bps is not None and math.isfinite(edge_bps):
+            edges.append(float(edge_bps))
+    signal_count = len(edges)
+    mean_net_edge = sum(edges) / signal_count if signal_count else -cost_bps
+    hit_rate = sum(1 for edge in edges if edge > 0.0) / signal_count if signal_count else 0.0
+    return {
+        "rows": int(len(rows)),
+        "available_rows": int(available),
+        "signal_count": int(signal_count),
+        "signal_rate": float(signal_count / available) if available else 0.0,
+        "net_mean_edge_bps": float(mean_net_edge),
+        "hit_rate": float(hit_rate),
+        "cost_floor_bps": float(cost_bps),
+        "path_barrier_label": bool(path_barrier_label),
+        "label_entry_offset": int(label_entry_offset),
+        "execution_entry_offset": int(execution_entry_offset),
+        "severe_regime_blocked_signal_count": int(severe_regime_blocked),
+    }
+
+
+def _candidate_edge_preflight(
+    train_rows: Sequence[ModelRow],
+    selection_rows: Sequence[ModelRow],
+    candidate: RoundModelCandidate,
+    strategy: StrategyConfig,
+    objective: ObjectiveSpec,
+    *,
+    market_type: str,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> dict[str, object]:
+    """Return fail-closed economic sanity evidence before expensive training."""
+
+    total_rows = len(train_rows) + len(selection_rows)
+    training_regime_scores = precompute_backtest_regime_scores(train_rows, strategy)
+    selection_regime_scores = precompute_backtest_regime_scores(selection_rows, strategy)
+    training = _candidate_edge_preflight_stats(
+        train_rows,
+        candidate,
+        strategy,
+        market_type=market_type,
+        symbol_profile=symbol_profile,
+        regime_scores=training_regime_scores,
+    )
+    selection = _candidate_edge_preflight_stats(
+        selection_rows,
+        candidate,
+        strategy,
+        market_type=market_type,
+        symbol_profile=symbol_profile,
+        regime_scores=selection_regime_scores,
+    )
+    min_train_signals = max(MIN_EDGE_PREFLIGHT_SIGNAL_ROWS, int(objective.min_closed_trades) * 2)
+    min_selection_signals = max(5, int(objective.min_closed_trades))
+    evaluated = total_rows >= MIN_EDGE_PREFLIGHT_ROWS
+    reject_reason: str | None = None
+    if evaluated:
+        train_signals = int(training["signal_count"])
+        selection_signals = int(selection["signal_count"])
+        train_edge = float(training["net_mean_edge_bps"])
+        selection_edge = float(selection["net_mean_edge_bps"])
+        train_hit_rate = float(training["hit_rate"])
+        selection_hit_rate = float(selection["hit_rate"])
+        if train_signals < min_train_signals:
+            reject_reason = f"edge_preflight_training_signals<{min_train_signals}"
+        elif selection_signals < min_selection_signals:
+            reject_reason = f"edge_preflight_selection_signals<{min_selection_signals}"
+        elif train_edge <= 0.0:
+            reject_reason = "edge_preflight_training_net_edge<=0"
+        elif selection_edge <= 0.0:
+            reject_reason = "edge_preflight_selection_net_edge<=0"
+        elif train_hit_rate < 0.50 or selection_hit_rate < 0.50:
+            reject_reason = "edge_preflight_hit_rate_below_half"
+    return {
+        "evaluated": bool(evaluated),
+        "reject_reason": reject_reason,
+        "min_training_signals": int(min_train_signals),
+        "min_selection_signals": int(min_selection_signals),
+        "training": training,
+        "selection": selection,
+    }
+
+
+def _attach_candidate_edge_preflight(model: object, preflight: Mapping[str, object]) -> None:
+    training = preflight.get("training") if isinstance(preflight.get("training"), Mapping) else {}
+    selection = preflight.get("selection") if isinstance(preflight.get("selection"), Mapping) else {}
+    model.edge_preflight_evaluated = bool(preflight.get("evaluated") is True)
+    model.edge_preflight_reject_reason = str(preflight.get("reject_reason") or "")
+    model.edge_preflight_training_signal_count = int(_finite(training.get("signal_count") if isinstance(training, Mapping) else 0))
+    model.edge_preflight_selection_signal_count = int(_finite(selection.get("signal_count") if isinstance(selection, Mapping) else 0))
+    model.edge_preflight_training_net_edge_bps = _finite(training.get("net_mean_edge_bps") if isinstance(training, Mapping) else 0.0)
+    model.edge_preflight_selection_net_edge_bps = _finite(selection.get("net_mean_edge_bps") if isinstance(selection, Mapping) else 0.0)
+    model.edge_preflight_training_hit_rate = _finite(training.get("hit_rate") if isinstance(training, Mapping) else 0.0)
+    model.edge_preflight_selection_hit_rate = _finite(selection.get("hit_rate") if isinstance(selection, Mapping) else 0.0)
+    model.edge_preflight_training_severe_regime_blocks = int(
+        _finite(training.get("severe_regime_blocked_signal_count") if isinstance(training, Mapping) else 0)
+    )
+    model.edge_preflight_selection_severe_regime_blocks = int(
+        _finite(selection.get("severe_regime_blocked_signal_count") if isinstance(selection, Mapping) else 0)
+    )
+
+
+def _no_entry_sparse_label_candidate_result(
+    candidate: RoundModelCandidate,
+    candidate_strategy: StrategyConfig,
+    train_rows: Sequence[ModelRow],
+    selection_rows: Sequence[ModelRow],
+    validation_rows: Sequence[ModelRow],
+    rows: Sequence[ModelRow],
+    *,
+    reject_reason: str,
+    compute_backend: str,
+    starting_cash: float,
+    batch_size: int = 8192,
+    require_gpu: bool = False,
+    threshold_source: str = "round_selection_rejected_sparse_label_no_entry",
+    model_family: str = "advanced_logistic:sparse_label_no_entry",
+    quality_warnings: Sequence[str] = (
+        "round_candidate_sparse_label_training_skipped",
+        "round_selection_failed_no_entry_enforced",
+    ),
+    edge_preflight: Mapping[str, object] | None = None,
+) -> RoundModelCandidateResult:
+    feature_dim = advanced_feature_dimension(candidate.feature_cfg)
+    if train_rows:
+        feature_means, feature_stds, stats_backend = collect_feature_stats(
+            train_rows,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
+            require_accelerated=require_gpu,
+        )
+    else:
+        stats_backend = resolve_backend(effective_training_backend_name(compute_backend))
+        feature_means = [0.0] * feature_dim
+        feature_stds = [1.0] * feature_dim
+    model = TrainedModel(
+        weights=[0.0] * feature_dim,
+        bias=0.0,
+        feature_dim=feature_dim,
+        epochs=0,
+        feature_means=feature_means,
+        feature_stds=feature_stds,
+        feature_signature=advanced_feature_signature(candidate.feature_cfg),
+        decision_threshold=1.0,
+        long_decision_threshold=1.0,
+        short_decision_threshold=None,
+        threshold_source=str(threshold_source),
+        training_backend_requested=str(compute_backend),
+        training_backend_kind="skipped",
+        training_backend_device="none",
+        training_backend_reason=reject_reason,
+        feature_stats_backend_requested=str(stats_backend.requested),
+        feature_stats_backend_kind=str(stats_backend.kind),
+        feature_stats_backend_device=str(stats_backend.device),
+        feature_stats_backend_reason=str(stats_backend.reason),
+        model_family=str(model_family),
+        quality_warnings=list(quality_warnings),
+        strategy_overrides=strategy_overrides_from_config(candidate_strategy),
+    )
+    if edge_preflight is not None:
+        _attach_candidate_edge_preflight(model, edge_preflight)
+    model.round_selection_gate_passed = False
+    model.round_selection_reject_reason = reject_reason
+    report = AdvancedTrainingReport(
+        feature_dim=feature_dim,
+        feature_signature=advanced_feature_signature(candidate.feature_cfg),
+        epochs=0,
+        learning_rate=float(candidate.learning_rate),
+        l2_penalty=float(candidate.l2_penalty),
+        seed=7,
+        row_count=len(train_rows),
+        positive_rate=(_label_balance(train_rows)[0] / len(train_rows)) if train_rows else 0.0,
+    )
+    selection_result = BacktestResult(
+        starting_cash=float(starting_cash),
+        ending_cash=float(starting_cash),
+        realized_pnl=0.0,
+        win_rate=0.0,
+        trades=0,
+        max_drawdown=0.0,
+        closed_trades=0,
+        gross_exposure=0.0,
+        total_fees=0.0,
+        stopped_by_drawdown=False,
+        max_exposure=0.0,
+        trades_per_day_cap_hit=0,
+        scoring_backend_requested=str(compute_backend),
+        scoring_backend_kind="skipped",
+        scoring_backend_device="none",
+        scoring_backend_reason=reject_reason,
+    )
+    return RoundModelCandidateResult(
+        candidate=candidate,
+        score=float("-inf"),
+        model=model,
+        report=report,
+        selection_result=selection_result,
+        selection_reject_reason=reject_reason,
+        training_rows=list(train_rows),
+        selection_rows=list(selection_rows),
+        rows=list(rows),
+        validation_rows=list(validation_rows),
+    )
+
+
 def _evaluate_round_model_candidate(
     candles: Sequence[Candle],
     strategy: StrategyConfig,
     objective: ObjectiveSpec,
     candidate: RoundModelCandidate,
     *,
+    agg_trades: Sequence[AggTrade] | None = None,
+    agg_trade_buckets: Sequence[AggTradeBucket] | None = None,
     market_type: str,
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
     require_gpu: bool,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    precomputed_feature_rows: Sequence[ModelRow] | None = None,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> RoundModelCandidateResult:
-    candidate_strategy = _strategy_for_round_candidate(strategy, candidate)
-    if status_callback is not None:
+    candidate_strategy = _strategy_for_round_candidate_market(
+        strategy,
+        candidate,
+        market_type=market_type,
+        symbol_profile=symbol_profile,
+    )
+    if status_callback is not None and precomputed_feature_rows is None:
         status_callback(
             "feature_generation_started",
             {
@@ -1559,21 +2202,170 @@ def _evaluate_round_model_candidate(
                 "candidate_cooldown_minutes": int(candidate_strategy.cooldown_minutes),
             },
         )
-    rows = make_advanced_rows(
-        candles,
-        candidate.feature_cfg,
-        compute_backend=compute_backend,
-        require_accelerated=require_gpu,
-    )
+    if precomputed_feature_rows is None:
+        rows = make_advanced_rows(
+            candles,
+            candidate.feature_cfg,
+            agg_trades=agg_trades if candidate.feature_cfg.trade_tape_windows else None,
+            agg_trade_buckets=agg_trade_buckets if candidate.feature_cfg.trade_tape_windows else None,
+            compute_backend=compute_backend,
+            require_accelerated=require_gpu,
+        )
+    else:
+        if status_callback is not None:
+            status_callback(
+                "feature_relabel_started",
+                {
+                    "feature_row_count": len(precomputed_feature_rows),
+                    "candidate_label_mode": str(candidate.feature_cfg.label_mode),
+                    "candidate_label_lookahead": int(candidate.feature_cfg.label_lookahead),
+                    "candidate_label_threshold": float(candidate.feature_cfg.label_threshold),
+                },
+            )
+        rows = label_advanced_rows(candles, candidate.feature_cfg, precomputed_feature_rows)
     if status_callback is not None:
         status_callback(
             "feature_generation_complete",
             {"row_count": len(rows), "feature_dim": advanced_feature_dimension(candidate.feature_cfg)},
         )
-    train_selection_rows, validation_rows = _split_train_validation(rows, validation_fraction=0.25)
-    train_rows, selection_rows = _split_train_validation(train_selection_rows, validation_fraction=0.20)
+    train_rows, selection_rows, validation_rows, split_purge_bars = _purged_train_selection_validation_split(
+        rows,
+        label_lookahead=int(candidate.feature_cfg.label_lookahead),
+        label_entry_offset=int(getattr(candidate.feature_cfg, "label_entry_offset", 0) or 0),
+    )
     if not train_rows or not selection_rows or not validation_rows:
-        raise ValueError("insufficient rows for train/validation backtest evidence")
+        reject_reason = f"purged_split_insufficient_rows:purge_bars={split_purge_bars}"
+        if status_callback is not None:
+            status_callback(
+                "training_skipped_purged_split",
+                {
+                    "reason": reject_reason,
+                    "training_rows": len(train_rows),
+                    "selection_rows": len(selection_rows),
+                    "validation_rows": len(validation_rows),
+                    "purge_bars": int(split_purge_bars),
+                },
+            )
+        return _no_entry_sparse_label_candidate_result(
+            candidate,
+            candidate_strategy,
+            train_rows,
+            selection_rows,
+            validation_rows,
+            rows,
+            reject_reason=reject_reason,
+            compute_backend=compute_backend,
+            starting_cash=starting_cash,
+            batch_size=batch_size,
+            require_gpu=require_gpu,
+            threshold_source="round_selection_rejected_purged_split_no_entry",
+            model_family="advanced_logistic:purged_split_no_entry",
+            quality_warnings=(
+                "round_candidate_purged_split_insufficient_rows",
+                "round_selection_failed_no_entry_enforced",
+            ),
+        )
+    if status_callback is not None:
+        status_callback(
+            "chronological_split_complete",
+            {
+                "training_rows": len(train_rows),
+                "selection_rows": len(selection_rows),
+                "validation_rows": len(validation_rows),
+                "purge_bars": int(split_purge_bars),
+                "purged_training_tail_rows": int(split_purge_bars),
+                "purged_selection_tail_rows": int(split_purge_bars),
+            },
+        )
+    sparse_reject_reason = _sparse_label_reject_reason(train_rows)
+    if sparse_reject_reason is not None:
+        positives, negatives = _label_balance(train_rows)
+        if status_callback is not None:
+            status_callback(
+                "training_skipped_sparse_label",
+                {
+                    "reason": sparse_reject_reason,
+                    "train_rows": len(train_rows),
+                    "positive_rows": positives,
+                    "negative_rows": negatives,
+                    "selection_rows": len(selection_rows),
+                    "validation_rows": len(validation_rows),
+                },
+            )
+        return _no_entry_sparse_label_candidate_result(
+            candidate,
+            candidate_strategy,
+            train_rows,
+            selection_rows,
+            validation_rows,
+            rows,
+            reject_reason=sparse_reject_reason,
+            compute_backend=compute_backend,
+            starting_cash=starting_cash,
+            batch_size=batch_size,
+            require_gpu=require_gpu,
+        )
+    edge_preflight = _candidate_edge_preflight(
+        train_rows,
+        selection_rows,
+        candidate,
+        candidate_strategy,
+        objective,
+        market_type=market_type,
+        symbol_profile=symbol_profile,
+    )
+    if status_callback is not None:
+        status_callback(
+            "training_edge_preflight_complete",
+            {
+                "evaluated": bool(edge_preflight.get("evaluated") is True),
+                "reject_reason": str(edge_preflight.get("reject_reason") or ""),
+                "training_signal_count": int(
+                    _finite((edge_preflight.get("training") or {}).get("signal_count") if isinstance(edge_preflight.get("training"), Mapping) else 0)
+                ),
+                "selection_signal_count": int(
+                    _finite((edge_preflight.get("selection") or {}).get("signal_count") if isinstance(edge_preflight.get("selection"), Mapping) else 0)
+                ),
+                "training_net_edge_bps": _finite(
+                    (edge_preflight.get("training") or {}).get("net_mean_edge_bps") if isinstance(edge_preflight.get("training"), Mapping) else 0.0
+                ),
+                "selection_net_edge_bps": _finite(
+                    (edge_preflight.get("selection") or {}).get("net_mean_edge_bps") if isinstance(edge_preflight.get("selection"), Mapping) else 0.0
+                ),
+            },
+        )
+    edge_reject_reason = str(edge_preflight.get("reject_reason") or "")
+    if edge_reject_reason:
+        if status_callback is not None:
+            status_callback(
+                "training_skipped_edge_preflight",
+                {
+                    "reason": edge_reject_reason,
+                    "train_rows": len(train_rows),
+                    "selection_rows": len(selection_rows),
+                    "validation_rows": len(validation_rows),
+                },
+            )
+        return _no_entry_sparse_label_candidate_result(
+            candidate,
+            candidate_strategy,
+            train_rows,
+            selection_rows,
+            validation_rows,
+            rows,
+            reject_reason=edge_reject_reason,
+            compute_backend=compute_backend,
+            starting_cash=starting_cash,
+            batch_size=batch_size,
+            require_gpu=require_gpu,
+            threshold_source="round_selection_rejected_edge_preflight_no_entry",
+            model_family="advanced_logistic:edge_preflight_no_entry",
+            quality_warnings=(
+                "round_candidate_edge_preflight_training_skipped",
+                "round_selection_failed_no_entry_enforced",
+            ),
+            edge_preflight=edge_preflight,
+        )
     if status_callback is not None:
         status_callback(
             "training_started",
@@ -1582,6 +2374,25 @@ def _evaluate_round_model_candidate(
                 "selection_rows": len(selection_rows),
                 "validation_rows": len(validation_rows),
                 "batch_size": int(batch_size),
+            },
+        )
+    train_positives, _train_negatives = _label_balance(train_rows)
+    training_positive_rate = float(train_positives) / float(len(train_rows)) if train_rows else 0.0
+    rare_event_bagging = (
+        training_positive_rate > 0.0
+        and training_positive_rate <= 0.03
+        and len(train_rows) >= 10_000
+    )
+    rare_event_ensemble_seeds = (7, 19, 37) if rare_event_bagging else None
+    balanced_negative_multiplier = 16 if rare_event_bagging else 0
+    if status_callback is not None and rare_event_bagging:
+        status_callback(
+            "rare_event_bagging_enabled",
+            {
+                "positive_rows": int(train_positives),
+                "training_positive_rate": float(training_positive_rate),
+                "ensemble_members": len(rare_event_ensemble_seeds or ()),
+                "balanced_negative_multiplier": int(balanced_negative_multiplier),
             },
         )
     model, report = train_advanced(
@@ -1595,7 +2406,10 @@ def _evaluate_round_model_candidate(
         compute_backend=compute_backend,
         batch_size=batch_size,
         focal_gamma=candidate.focal_gamma,
+        ensemble_seeds=rare_event_ensemble_seeds,
+        balanced_negative_multiplier=balanced_negative_multiplier,
     )
+    _attach_candidate_edge_preflight(model, edge_preflight)
     if require_gpu:
         _require_non_cpu_backend(
             getattr(model, "training_backend_kind", ""),
@@ -1611,12 +2425,22 @@ def _evaluate_round_model_candidate(
                 "best_epoch": getattr(model, "best_epoch", None),
             },
         )
-        status_callback("threshold_calibration_started", {"selection_rows": len(selection_rows)})
+    calibration_rows = _chronological_calibration_sample(selection_rows)
+    if status_callback is not None:
+        status_callback(
+            "probability_calibration_started",
+            {
+                "selection_rows": len(selection_rows),
+                "calibration_rows": len(calibration_rows),
+                "temperature_steps": int(PROBABILITY_CALIBRATION_STEPS),
+            },
+        )
     calibration = calibrate_probability_temperature(
-        list(selection_rows[: max(1, min(len(selection_rows), 5000))]),
+        calibration_rows,
         model,
         compute_backend=compute_backend,
         batch_size=batch_size,
+        steps=PROBABILITY_CALIBRATION_STEPS,
     )
     if require_gpu and getattr(calibration, "status", "fail") != "fail":
         _require_non_cpu_backend(
@@ -1625,9 +2449,39 @@ def _evaluate_round_model_candidate(
             "probability_calibration",
         )
     _apply_probability_calibration(model, calibration)
+    if status_callback is not None:
+        status_callback(
+            "probability_calibration_complete",
+            {
+                "status": str(getattr(calibration, "status", "")),
+                "rows": int(getattr(calibration, "rows", 0) or 0),
+                "temperature": float(getattr(calibration, "temperature", 1.0) or 1.0),
+                "improved": bool(getattr(calibration, "improved", False)),
+                "backend_kind": str(getattr(calibration, "calibration_backend_kind", "")),
+                "backend_device": str(getattr(calibration, "calibration_backend_device", "")),
+            },
+        )
     _orient_candidate_model_for_market_side(model, candidate)
     model.decision_threshold = float(candidate.signal_threshold)
+    calibration_side = "both"
+    if str(market_type).lower() == "futures":
+        if _candidate_has_downside_positive_label(candidate):
+            calibration_side = "short"
+            model.long_decision_threshold = None
+            model.short_decision_threshold = 1.0 - float(candidate.signal_threshold)
+        else:
+            calibration_side = "long"
+            model.long_decision_threshold = float(candidate.signal_threshold)
+            model.short_decision_threshold = None
     model.threshold_source = "objective_round_evidence_default"
+    if status_callback is not None:
+        status_callback(
+            "threshold_calibration_started",
+            {
+                "selection_rows": len(selection_rows),
+                "allowed_sides": calibration_side,
+            },
+        )
     threshold_report = calibrate_threshold_for_backtest(
         selection_rows,
         model,
@@ -1637,12 +2491,17 @@ def _evaluate_round_model_candidate(
         baseline_threshold=model.decision_threshold,
         start=0.50 if market_type == "futures" else 0.05,
         end=0.95,
-        steps=37,
+        steps=7,
         min_score_delta=0.0,
         min_closed_trades=objective.min_closed_trades,
         min_trades_per_day=objective.min_trades_per_day,
         compute_backend=compute_backend,
         score_batch_size=batch_size,
+        symbol_profile=symbol_profile,
+        adaptive_probability_thresholds=True,
+        max_adaptive_thresholds=10,
+        allowed_sides=calibration_side,
+        status_callback=status_callback,
     )
     diagnostic_threshold = float(
         getattr(threshold_report, "best_threshold", getattr(threshold_report, "threshold", candidate.signal_threshold))
@@ -1706,6 +2565,7 @@ def _evaluate_round_model_candidate(
         market_type=market_type,
         compute_backend=compute_backend,
         score_batch_size=batch_size,
+        symbol_profile=symbol_profile,
     )
     if require_gpu:
         _require_non_cpu_backend(
@@ -1741,6 +2601,16 @@ def _evaluate_round_model_candidate(
     else:
         inverted_model = copy.deepcopy(model)
         inverted_model.probability_inverted = not bool(getattr(inverted_model, "probability_inverted", False))
+        if str(market_type).lower() == "futures":
+            long_threshold = getattr(model, "long_decision_threshold", None)
+            threshold = (
+                float(long_threshold)
+                if long_threshold is not None
+                else float(getattr(model, "decision_threshold", candidate.signal_threshold) or candidate.signal_threshold)
+            )
+            threshold = max(0.5, min(1.0, threshold))
+            inverted_model.long_decision_threshold = None
+            inverted_model.short_decision_threshold = 1.0 - threshold
         inverted_model.model_family = f"{inverted_model.model_family}:round_selection_inverted"
         inverted_model.quality_warnings = [
             *list(getattr(inverted_model, "quality_warnings", [])),
@@ -1754,6 +2624,7 @@ def _evaluate_round_model_candidate(
             market_type=market_type,
             compute_backend=compute_backend,
             score_batch_size=batch_size,
+            symbol_profile=symbol_profile,
         )
         if require_gpu:
             _require_non_cpu_backend(
@@ -1851,29 +2722,46 @@ def _round_candidate_rank_key(result: RoundModelCandidateResult) -> tuple[float,
     score = finite(result.score, float("-inf"))
     diagnostic_pnl = finite(getattr(model, "threshold_diagnostic_best_pnl", None), float("-inf"))
     diagnostic_trades = finite(getattr(model, "threshold_diagnostic_best_trades", 0), 0.0)
+    evaluated_thresholds = finite(getattr(model, "threshold_evaluated_thresholds", 0), 0.0)
     selection_pnl = finite(getattr(selection, "realized_pnl", 0.0), 0.0)
     closed_trades = finite(getattr(selection, "closed_trades", 0), 0.0)
     liquidation_events = finite(getattr(selection, "liquidation_events", 0), 0.0)
     drawdown = finite(getattr(selection, "max_drawdown", 1.0), 1.0)
     fees = finite(getattr(selection, "total_fees", 0.0), 0.0)
+    report_rows = finite(getattr(result.report, "row_count", 0), 0.0)
+    positive_rate = finite(getattr(result.report, "positive_rate", 0.0), 0.0)
+    positive_rows = report_rows * positive_rate
+    negative_rows = report_rows - positive_rows
+    class_viable = 1.0 if positive_rows >= 20.0 and negative_rows >= 20.0 else 0.0
     if gate_passed <= 0.0:
-        profitable_selection = 1.0 if selection_pnl > 0.0 else 0.0
-        nonnegative_selection = 1.0 if selection_pnl >= 0.0 and liquidation_events <= 0.0 else 0.0
+        trade_evidence = 1.0 if diagnostic_trades > 0.0 or closed_trades > 0.0 else 0.0
+        if closed_trades > 0.0:
+            evidence_pnl = selection_pnl
+        elif diagnostic_trades > 0.0:
+            evidence_pnl = diagnostic_pnl
+        else:
+            evidence_pnl = float("-inf")
+        profitable_evidence = 1.0 if evidence_pnl > 0.0 else 0.0
+        nonnegative_evidence = 1.0 if evidence_pnl >= 0.0 and liquidation_events <= 0.0 else 0.0
         return (
             gate_passed,
-            profitable_selection,
-            nonnegative_selection,
-            selection_pnl,
-            -liquidation_events,
-            -drawdown,
-            -fees,
+            class_viable,
+            trade_evidence,
+            profitable_evidence,
+            nonnegative_evidence,
+            evidence_pnl,
             diagnostic_pnl,
             score,
             diagnostic_trades,
-            -closed_trades,
+            closed_trades,
+            evaluated_thresholds,
+            -liquidation_events,
+            -drawdown,
+            -fees,
         )
     return (
         gate_passed,
+        class_viable,
         score,
         diagnostic_pnl,
         selection_pnl,
@@ -1948,6 +2836,7 @@ def _select_hybrid_model_zoo_if_accepted(
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
+    symbol_profile: SymbolExecutionProfile | None = None,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> RoundModelCandidateResult:
     """Attach the adaptive hybrid expert pack when it passes full objective gates."""
@@ -1988,12 +2877,51 @@ def _select_hybrid_model_zoo_if_accepted(
         starting_cash=starting_cash,
         compute_backend=compute_backend,
         score_batch_size=batch_size,
-        feature_count=min(13, feature_dim),
+        feature_count=min(256, feature_dim),
+        symbol_profile=symbol_profile,
+        status_callback=status_callback,
     )
     model.hybrid_profile = str(hybrid_report.best_profile)
     model.hybrid_base_score = _finite_or_none(hybrid_report.base_score)
     model.hybrid_best_score = _finite_or_none(hybrid_report.best_score)
     model.hybrid_evaluated_profiles = int(hybrid_report.evaluated_profiles)
+    model.hybrid_dense_mlp_attempt = (
+        dict(hybrid_report.neural_expert_params)
+        if isinstance(getattr(hybrid_report, "neural_expert_params", None), dict)
+        else {}
+    )
+    def payoff_attempt_metadata(item: Mapping[str, object]) -> dict[str, object]:
+        metadata = dict(item)
+        for tree_key, count_key, hash_key in (
+            ("tree_info", "tree_count", "tree_sha256"),
+            ("long_tree_info", "long_tree_count", "long_tree_sha256"),
+            ("short_tree_info", "short_tree_count", "short_tree_sha256"),
+        ):
+            trees = metadata.pop(tree_key, None)
+            if isinstance(trees, list):
+                encoded = json.dumps(trees, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                metadata[count_key] = len(trees)
+                metadata[hash_key] = hashlib.sha256(encoded).hexdigest()
+        metadata["tree_count"] = int(metadata.get("tree_count", 0) or 0) + int(
+            metadata.get("long_tree_count", 0) or 0
+        ) + int(metadata.get("short_tree_count", 0) or 0)
+        return metadata
+
+    model.hybrid_payoff_ranker_attempt = [
+        payoff_attempt_metadata(item)
+        for item in getattr(hybrid_report, "payoff_expert_params", ())
+        if isinstance(item, dict)
+    ]
+    model.hybrid_payoff_ranker_failures = [
+        dict(item)
+        for item in getattr(hybrid_report, "payoff_expert_failures", ())
+        if isinstance(item, dict)
+    ]
+    model.hybrid_profile_attempts = [
+        item.asdict() if hasattr(item, "asdict") else dict(item)
+        for item in getattr(hybrid_report, "profile_results", ())
+        if hasattr(item, "asdict") or isinstance(item, dict)
+    ]
     selected_result = getattr(hybrid_report, "best_result", None)
     if not bool(getattr(hybrid_report, "accepted", False)) or selected_result is None:
         _append_unique_warning(model, "round_hybrid_model_zoo_rejected")
@@ -2025,6 +2953,26 @@ def _select_hybrid_model_zoo_if_accepted(
     hybrid_model.hybrid_base_score = _finite_or_none(hybrid_report.base_score)
     hybrid_model.hybrid_best_score = _finite_or_none(hybrid_report.best_score)
     hybrid_model.hybrid_evaluated_profiles = int(hybrid_report.evaluated_profiles)
+    hybrid_model.hybrid_dense_mlp_attempt = (
+        dict(hybrid_report.neural_expert_params)
+        if isinstance(getattr(hybrid_report, "neural_expert_params", None), dict)
+        else {}
+    )
+    hybrid_model.hybrid_payoff_ranker_attempt = [
+        payoff_attempt_metadata(item)
+        for item in getattr(hybrid_report, "payoff_expert_params", ())
+        if isinstance(item, dict)
+    ]
+    hybrid_model.hybrid_payoff_ranker_failures = [
+        dict(item)
+        for item in getattr(hybrid_report, "payoff_expert_failures", ())
+        if isinstance(item, dict)
+    ]
+    hybrid_model.hybrid_profile_attempts = [
+        item.asdict() if hasattr(item, "asdict") else dict(item)
+        for item in getattr(hybrid_report, "profile_results", ())
+        if hasattr(item, "asdict") or isinstance(item, dict)
+    ]
     hybrid_model.round_selection_gate_passed = True
     hybrid_model.round_selection_reject_reason = ""
     _append_unique_warning(hybrid_model, "round_hybrid_model_zoo_selected")
@@ -2039,6 +2987,13 @@ def _select_hybrid_model_zoo_if_accepted(
     )
 
 
+def _hybrid_model_zoo_was_evaluated(model: object) -> bool:
+    return bool(
+        int(getattr(model, "hybrid_evaluated_profiles", 0) or 0) > 0
+        or getattr(model, "hybrid_profile_attempts", None)
+    )
+
+
 def _select_rule_alpha_model_zoo_if_accepted(
     result: RoundModelCandidateResult,
     strategy: StrategyConfig,
@@ -2048,16 +3003,45 @@ def _select_rule_alpha_model_zoo_if_accepted(
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
+    rule_alpha_max_candidates: int = DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
+    rule_alpha_empirical_max_features: int | None = None,
+    symbol_profile: SymbolExecutionProfile | None = None,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> RoundModelCandidateResult:
     """Promote an interpretable alpha template only if it passes selection gates."""
 
     if not result.selection_rows:
         return result
+    model = result.model
+    hard_no_entry_base = (
+        bool(getattr(model, "round_selection_gate_passed", False)) is False
+        and int(getattr(model, "threshold_evaluated_thresholds", 0) or 0) <= 0
+        and int(getattr(model, "threshold_diagnostic_best_trades", 0) or 0) <= 0
+        and int(getattr(result.selection_result, "closed_trades", 0) or 0) <= 0
+    )
+    if hard_no_entry_base:
+        _append_unique_warning(model, "rule_alpha_model_zoo_skipped_hard_no_entry_base")
+        if status_callback is not None:
+            status_callback(
+                "rule_alpha_model_zoo_skipped",
+                {
+                    "reason": "base_candidate_has_no_scored_selection_evidence",
+                    "selection_rows": len(result.selection_rows),
+                },
+            )
+        return replace(result, model=model)
     if status_callback is not None:
         status_callback(
             "rule_alpha_model_zoo_started",
-            {"selection_rows": len(result.selection_rows), "max_candidates": DEFAULT_RULE_ALPHA_MAX_CANDIDATES},
+            {
+                "selection_rows": len(result.selection_rows),
+                "max_candidates": max(1, int(rule_alpha_max_candidates)),
+                "empirical_feature_scan_limit": (
+                    max(1, int(rule_alpha_empirical_max_features))
+                    if rule_alpha_empirical_max_features is not None
+                    else None
+                ),
+            },
         )
     alpha_report = optimize_rule_alpha_model_zoo(
         result.selection_rows,
@@ -2067,15 +3051,27 @@ def _select_rule_alpha_model_zoo_if_accepted(
         starting_cash=starting_cash,
         compute_backend=compute_backend,
         score_batch_size=batch_size,
-        max_candidates=DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
+        max_candidates=max(1, int(rule_alpha_max_candidates)),
+        empirical_max_feature_count=rule_alpha_empirical_max_features,
         feature_cfg=result.candidate.feature_cfg,
+        symbol_profile=symbol_profile,
+        ranking_rows=result.training_rows,
+        status_callback=status_callback,
     )
-    model = result.model
     model.rule_alpha_evaluated_candidates = int(alpha_report.evaluated_candidates)
     candidate_summary = summarize_rule_alpha_candidate_distribution(alpha_report.candidate_results)
     if isinstance(getattr(alpha_report, "candidate_summary", None), dict):
         for key, value in alpha_report.candidate_summary.items():
-            if str(key).startswith("event_rank_") or str(key) == "static_template_pool_candidates":
+            if (
+                str(key).startswith("event_rank_")
+                or str(key) in {
+                    "ranking_rows",
+                    "selection_rows",
+                    "ranking_source",
+                    "static_template_pool_candidates",
+                    "empirical_feature_scan_limit",
+                }
+            ):
                 candidate_summary[str(key)] = value
     empirical_evaluations = sum(
         1
@@ -2091,6 +3087,12 @@ def _select_rule_alpha_model_zoo_if_accepted(
     candidate_summary["empirical_mined_candidates"] = int(empirical_evaluations // 2)
     candidate_summary["empirical_interaction_candidates"] = int(empirical_interaction_evaluations // 2)
     candidate_summary["empirical_candidate_limit"] = int(DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES)
+    candidate_summary.setdefault(
+        "empirical_feature_scan_limit",
+        max(1, int(rule_alpha_empirical_max_features))
+        if rule_alpha_empirical_max_features is not None
+        else 0,
+    )
     candidate_summary["static_template_candidates"] = int(
         max(0, (int(alpha_report.evaluated_candidates) - int(empirical_evaluations)) // 2)
     )
@@ -2178,14 +3180,149 @@ def _round_candidate_diagnostic(
     *,
     strategy: StrategyConfig,
     selected: bool,
+    market_type: str = "spot",
+    symbol_profile: SymbolExecutionProfile | None = None,
 ) -> dict[str, object]:
-    candidate_strategy = _strategy_for_round_candidate(strategy, result.candidate)
+    candidate_strategy = _strategy_for_round_candidate_market(
+        strategy,
+        result.candidate,
+        market_type=market_type,
+        symbol_profile=symbol_profile,
+    )
     model = result.model
     selection = result.selection_result
     rule_alpha_summary = (
         dict(getattr(model, "rule_alpha_candidate_summary", {}) or {})
         if isinstance(getattr(model, "rule_alpha_candidate_summary", {}), dict)
         else {}
+    )
+    dense_mlp_params: dict[str, object] = {}
+    dense_mlp_selected = False
+    for expert in list(getattr(model, "hybrid_experts", []) or []):
+        if str(getattr(expert, "kind", "") or "") != "dense_mlp":
+            continue
+        params = getattr(expert, "params", {})
+        if isinstance(params, dict):
+            dense_mlp_params = dict(params)
+            dense_mlp_selected = True
+        break
+    if not dense_mlp_params and isinstance(getattr(model, "hybrid_dense_mlp_attempt", None), dict):
+        dense_mlp_params = dict(getattr(model, "hybrid_dense_mlp_attempt", {}) or {})
+    dense_positive_rows = int(_finite(dense_mlp_params.get("positive_rows")))
+    dense_sampled_rows = int(_finite(dense_mlp_params.get("sampled_rows")))
+    payoff_ranker_params: list[dict[str, object]] = []
+    payoff_ranker_selected = 0
+    for expert in list(getattr(model, "hybrid_experts", []) or []):
+        if not str(getattr(expert, "kind", "") or "").startswith("signed_payoff_"):
+            continue
+        params = getattr(expert, "params", {})
+        if isinstance(params, dict):
+            item = dict(params)
+            item["expert_kind"] = str(getattr(expert, "kind", "") or "")
+            payoff_ranker_params.append(item)
+            payoff_ranker_selected += 1
+    if not payoff_ranker_params:
+        attempt = getattr(model, "hybrid_payoff_ranker_attempt", []) or []
+        if isinstance(attempt, list):
+            payoff_ranker_params = [dict(item) for item in attempt if isinstance(item, dict)]
+    payoff_ranker_failures = [
+        dict(item)
+        for item in (getattr(model, "hybrid_payoff_ranker_failures", []) or [])
+        if isinstance(item, dict)
+    ]
+    payoff_horizon_evidence: dict[int, dict[str, object]] = {}
+    for item in payoff_ranker_params:
+        horizon = int(_finite(item.get("horizon_bars")))
+        if horizon <= 0:
+            continue
+        existing = payoff_horizon_evidence.get(horizon)
+        if existing is None or int(_finite(item.get("training_examples"))) > int(_finite(existing.get("training_examples"))):
+            payoff_horizon_evidence[horizon] = item
+    payoff_training_examples = sum(
+        int(_finite(item.get("training_examples")))
+        for item in payoff_horizon_evidence.values()
+    )
+    payoff_positive_long = sum(
+        int(_finite(item.get("positive_long_rows")))
+        for item in payoff_horizon_evidence.values()
+    )
+    payoff_positive_short = sum(
+        int(_finite(item.get("positive_short_rows")))
+        for item in payoff_horizon_evidence.values()
+    )
+    payoff_ensemble_seeds = sorted({
+        int(_finite(item.get("seed")))
+        for item in payoff_ranker_params
+        if str(item.get("expert_kind", "") or "") == "signed_payoff_mlp_ranker"
+        and int(_finite(item.get("seed"))) > 0
+    })
+    payoff_tree_params = next(
+        (
+            item
+            for item in payoff_ranker_params
+            if str(item.get("expert_kind", "") or "") == "signed_payoff_lightgbm_ranker"
+        ),
+        {},
+    )
+    payoff_backend = next(
+        (str(item.get("training_backend_kind", "") or "") for item in payoff_ranker_params if item.get("training_backend_kind")),
+        "",
+    )
+    payoff_horizons = ",".join(
+        str(int(_finite(item.get("approx_horizon_seconds"))))
+        for item in payoff_ranker_params
+        if _finite(item.get("approx_horizon_seconds")) > 0.0
+    )
+    payoff_kinds = ",".join(sorted({
+        str(item.get("expert_kind", "") or item.get("kind", "") or "")
+        for item in payoff_ranker_params
+        if str(item.get("expert_kind", "") or item.get("kind", "") or "")
+    }))
+    profile_attempts = [
+        dict(item)
+        for item in (getattr(model, "hybrid_profile_attempts", []) or [])
+        if isinstance(item, dict)
+    ]
+    profile_profitable_attempts = [
+        item
+        for item in profile_attempts
+        if _finite(item.get("realized_pnl")) > 0.0 and int(_finite(item.get("closed_trades"))) > 0
+    ]
+    best_profile_attempt = max(
+        profile_attempts,
+        key=lambda item: (
+            1 if item.get("realized_pnl") is not None else 0,
+            _finite(item.get("realized_pnl"), float("-inf")),
+            _finite(item.get("closed_trades"), 0.0),
+            _finite(item.get("search_score"), float("-inf")),
+        ),
+        default={},
+    )
+    selection_path = summarize_rule_alpha_trade_path(selection)
+    selection_trade_log = [
+        dict(item)
+        for item in (getattr(selection, "trade_log", ()) or ())
+        if isinstance(item, dict)
+    ]
+    selection_bars_held = [
+        max(0, int(_finite(item.get("bars_held"))))
+        for item in selection_trade_log
+        if isinstance(item.get("bars_held"), (int, float))
+    ]
+    entry_execution_costs = [
+        max(0.0, _finite(item.get("entry_execution_cost_bps")))
+        for item in selection_trade_log
+    ]
+    exit_execution_costs = [
+        max(0.0, _finite(item.get("exit_execution_cost_bps")))
+        for item in selection_trade_log
+    ]
+    selection_trade_count = len(selection_trade_log)
+    mean_entry_execution_cost = (
+        sum(entry_execution_costs) / selection_trade_count if selection_trade_count else 0.0
+    )
+    mean_exit_execution_cost = (
+        sum(exit_execution_costs) / selection_trade_count if selection_trade_count else 0.0
     )
     return {
         "name": result.candidate.name,
@@ -2197,11 +3334,35 @@ def _round_candidate_diagnostic(
         "cooldown_minutes": int(candidate_strategy.cooldown_minutes),
         "min_position_hold_bars": int(candidate_strategy.min_position_hold_bars),
         "flat_signal_exit_grace_bars": int(candidate_strategy.flat_signal_exit_grace_bars),
+        "max_position_hold_bars": int(candidate_strategy.max_position_hold_bars),
         "label_threshold": float(result.candidate.feature_cfg.label_threshold),
         "label_lookahead": int(result.candidate.feature_cfg.label_lookahead),
+        "label_entry_offset": int(getattr(result.candidate.feature_cfg, "label_entry_offset", 0) or 0),
         "label_mode": str(result.candidate.feature_cfg.label_mode),
         "focal_gamma": float(result.candidate.focal_gamma),
+        "training_row_count": int(getattr(result.report, "row_count", 0) or 0),
+        "selection_row_count": int(len(result.selection_rows)),
+        "validation_row_count": int(len(result.validation_rows)),
+        "training_split_purge_bars": int(result.candidate.feature_cfg.label_lookahead)
+        + int(getattr(result.candidate.feature_cfg, "label_entry_offset", 0) or 0),
+        "training_positive_rate_pct": float(getattr(result.report, "positive_rate", 0.0) or 0.0) * 100.0,
+        "edge_preflight_evaluated": bool(getattr(model, "edge_preflight_evaluated", False)),
+        "edge_preflight_reject_reason": str(getattr(model, "edge_preflight_reject_reason", "") or ""),
+        "edge_preflight_training_signal_count": int(getattr(model, "edge_preflight_training_signal_count", 0) or 0),
+        "edge_preflight_selection_signal_count": int(getattr(model, "edge_preflight_selection_signal_count", 0) or 0),
+        "edge_preflight_training_net_edge_bps": _finite(getattr(model, "edge_preflight_training_net_edge_bps", 0.0)),
+        "edge_preflight_selection_net_edge_bps": _finite(getattr(model, "edge_preflight_selection_net_edge_bps", 0.0)),
+        "edge_preflight_training_hit_rate": _finite(getattr(model, "edge_preflight_training_hit_rate", 0.0)),
+        "edge_preflight_selection_hit_rate": _finite(getattr(model, "edge_preflight_selection_hit_rate", 0.0)),
+        "edge_preflight_training_severe_regime_blocks": int(getattr(model, "edge_preflight_training_severe_regime_blocks", 0) or 0),
+        "edge_preflight_selection_severe_regime_blocks": int(getattr(model, "edge_preflight_selection_severe_regime_blocks", 0) or 0),
         "model_family": str(getattr(model, "model_family", "") or ""),
+        "feature_stats_backend_requested": str(
+            getattr(model, "feature_stats_backend_requested", "") or ""
+        ),
+        "feature_stats_backend_kind": str(getattr(model, "feature_stats_backend_kind", "") or ""),
+        "feature_stats_backend_device": str(getattr(model, "feature_stats_backend_device", "") or ""),
+        "feature_stats_backend_reason": str(getattr(model, "feature_stats_backend_reason", "") or ""),
         "probability_inverted": bool(getattr(model, "probability_inverted", False)),
         "hybrid_profile": str(getattr(model, "hybrid_profile", "") or ""),
         "hybrid_base_score": (
@@ -2215,7 +3376,88 @@ def _round_candidate_diagnostic(
             else None
         ),
         "hybrid_evaluated_profiles": int(getattr(model, "hybrid_evaluated_profiles", 0) or 0),
+        "hybrid_profile_attempt_count": int(len(profile_attempts)),
+        "hybrid_profile_profitable_attempt_count": int(len(profile_profitable_attempts)),
+        "hybrid_profile_best_attempt": str(best_profile_attempt.get("profile", "") or ""),
+        "hybrid_profile_best_attempt_pnl": (
+            _finite(best_profile_attempt.get("realized_pnl"))
+            if best_profile_attempt
+            else None
+        ),
+        "hybrid_profile_best_attempt_closed_trades": int(_finite(best_profile_attempt.get("closed_trades"))),
+        "hybrid_profile_attempts_json": json.dumps(profile_attempts, sort_keys=True, separators=(",", ":")),
         "hybrid_expert_count": len(getattr(model, "hybrid_experts", []) or []),
+        "hybrid_dense_mlp_attempted": bool(dense_mlp_params),
+        "hybrid_dense_mlp_selected": bool(dense_mlp_selected),
+        "hybrid_dense_mlp_present": bool(dense_mlp_selected),
+        "hybrid_dense_mlp_backend_kind": str(dense_mlp_params.get("training_backend_kind", "") or ""),
+        "hybrid_dense_mlp_training_rows": int(_finite(dense_mlp_params.get("training_rows"))),
+        "hybrid_dense_mlp_validation_rows": int(_finite(dense_mlp_params.get("validation_rows"))),
+        "hybrid_dense_mlp_sampled_rows": int(dense_sampled_rows),
+        "hybrid_dense_mlp_positive_rate_pct": (
+            float(dense_positive_rows) / float(dense_sampled_rows) * 100.0
+            if dense_sampled_rows > 0
+            else 0.0
+        ),
+        "hybrid_dense_mlp_validation_loss": (
+            float(dense_mlp_params["validation_loss"])
+            if dense_mlp_params.get("validation_loss") is not None
+            else None
+        ),
+        "hybrid_payoff_ranker_attempted": bool(payoff_ranker_params),
+        "hybrid_payoff_ranker_selected_count": int(payoff_ranker_selected),
+        "hybrid_payoff_ranker_backend_kind": payoff_backend,
+        "hybrid_payoff_ranker_kinds": payoff_kinds,
+        "hybrid_payoff_ranker_horizons_seconds": payoff_horizons,
+        "hybrid_payoff_ranker_training_examples": int(payoff_training_examples),
+        "hybrid_payoff_ranker_positive_long_rows": int(payoff_positive_long),
+        "hybrid_payoff_ranker_positive_short_rows": int(payoff_positive_short),
+        "hybrid_payoff_ranker_ensemble_member_count": int(len(payoff_ensemble_seeds)),
+        "hybrid_payoff_ranker_ensemble_seeds_json": json.dumps(payoff_ensemble_seeds, separators=(",", ":")),
+        "hybrid_payoff_ranker_attempts_json": json.dumps(payoff_ranker_params, sort_keys=True, separators=(",", ":")),
+        "hybrid_payoff_ranker_failure_count": int(len(payoff_ranker_failures)),
+        "hybrid_payoff_ranker_failures_json": json.dumps(payoff_ranker_failures, sort_keys=True, separators=(",", ":")),
+        "hybrid_payoff_tree_attempted": bool(payoff_tree_params),
+        "hybrid_payoff_tree_selected": any(
+            str(getattr(expert, "kind", "") or "") == "signed_payoff_lightgbm_ranker"
+            for expert in list(getattr(model, "hybrid_experts", []) or [])
+        ),
+        "hybrid_payoff_tree_backend_kind": str(payoff_tree_params.get("training_backend_kind", "") or ""),
+        "hybrid_payoff_tree_count": int(
+            _finite(payoff_tree_params.get("tree_count"))
+            or len(payoff_tree_params.get("tree_info", []) or [])
+            or (
+                len(payoff_tree_params.get("long_tree_info", []) or [])
+                + len(payoff_tree_params.get("short_tree_info", []) or [])
+            )
+        ),
+        "hybrid_payoff_tree_lightgbm_version": str(payoff_tree_params.get("lightgbm_version", "") or ""),
+        "hybrid_payoff_tree_schema": str(payoff_tree_params.get("payoff_tree_schema", "") or ""),
+        "hybrid_payoff_tree_long_count": int(_finite(payoff_tree_params.get("long_tree_count"))),
+        "hybrid_payoff_tree_short_count": int(_finite(payoff_tree_params.get("short_tree_count"))),
+        "hybrid_payoff_tree_long_best_iteration": int(_finite(payoff_tree_params.get("long_best_iteration"))),
+        "hybrid_payoff_tree_short_best_iteration": int(_finite(payoff_tree_params.get("short_best_iteration"))),
+        "hybrid_payoff_tree_long_validation_mae_bps": _finite(
+            payoff_tree_params.get("long_validation_mae_bps")
+        ),
+        "hybrid_payoff_tree_short_validation_mae_bps": _finite(
+            payoff_tree_params.get("short_validation_mae_bps")
+        ),
+        "hybrid_payoff_tree_validation_actionable_rows": int(
+            _finite(payoff_tree_params.get("validation_actionable_rows"))
+        ),
+        "hybrid_payoff_tree_validation_actionable_rate_pct": (
+            _finite(payoff_tree_params.get("validation_actionable_rate")) * 100.0
+        ),
+        "hybrid_payoff_tree_validation_actionable_mean_edge_bps": _finite(
+            payoff_tree_params.get("validation_actionable_realized_mean_edge_bps")
+        ),
+        "hybrid_payoff_tree_validation_actionable_hit_rate_pct": (
+            _finite(payoff_tree_params.get("validation_actionable_hit_rate")) * 100.0
+        ),
+        "hybrid_payoff_internal_validation_purged_examples": int(
+            _finite(next(iter(payoff_horizon_evidence.values()), {}).get("internal_validation_purged_examples"))
+        ),
         "rule_alpha_profile": str(getattr(model, "rule_alpha_profile", "") or ""),
         "rule_alpha_family": str(getattr(model, "rule_alpha_family", "") or ""),
         "rule_alpha_best_score": (
@@ -2249,11 +3491,15 @@ def _round_candidate_diagnostic(
         "rule_alpha_best_reject_reason": str(getattr(model, "rule_alpha_best_reject_reason", "") or ""),
         "rule_alpha_probability_inverted": bool(getattr(model, "rule_alpha_probability_inverted", False)),
         "rule_alpha_evaluated_candidates": int(getattr(model, "rule_alpha_evaluated_candidates", 0) or 0),
+        "rule_alpha_ranking_rows": int(_finite(rule_alpha_summary.get("ranking_rows"))),
+        "rule_alpha_selection_rows": int(_finite(rule_alpha_summary.get("selection_rows"))),
+        "rule_alpha_ranking_source": str(rule_alpha_summary.get("ranking_source", "") or ""),
         "rule_alpha_static_template_candidates": int(_finite(rule_alpha_summary.get("static_template_candidates"))),
         "rule_alpha_static_template_pool_candidates": int(_finite(rule_alpha_summary.get("static_template_pool_candidates"))),
         "rule_alpha_event_rank_split_mode": str(rule_alpha_summary.get("event_rank_split_mode", "") or ""),
         "rule_alpha_event_rank_training_rows": int(_finite(rule_alpha_summary.get("event_rank_training_rows"))),
         "rule_alpha_event_rank_validation_rows": int(_finite(rule_alpha_summary.get("event_rank_validation_rows"))),
+        "rule_alpha_event_rank_density_floor": int(_finite(rule_alpha_summary.get("event_rank_density_floor"))),
         "rule_alpha_event_rank_pool_candidates": int(_finite(rule_alpha_summary.get("event_rank_pool_candidates"))),
         "rule_alpha_event_rank_selected_template_candidates": int(_finite(rule_alpha_summary.get("event_rank_selected_template_candidates"))),
         "rule_alpha_event_rank_positive_pool_candidates": int(_finite(rule_alpha_summary.get("event_rank_positive_pool_candidates"))),
@@ -2272,6 +3518,7 @@ def _round_candidate_diagnostic(
         "rule_alpha_empirical_mined_candidates": int(_finite(rule_alpha_summary.get("empirical_mined_candidates"))),
         "rule_alpha_empirical_interaction_candidates": int(_finite(rule_alpha_summary.get("empirical_interaction_candidates"))),
         "rule_alpha_empirical_candidate_limit": int(_finite(rule_alpha_summary.get("empirical_candidate_limit"))),
+        "rule_alpha_empirical_feature_scan_limit": int(_finite(rule_alpha_summary.get("empirical_feature_scan_limit"))),
         "rule_alpha_active_candidates": int(_finite(rule_alpha_summary.get("active_candidates"))),
         "rule_alpha_profitable_candidates": int(_finite(rule_alpha_summary.get("profitable_candidates"))),
         "rule_alpha_accepted_candidates": int(_finite(rule_alpha_summary.get("accepted_candidates"))),
@@ -2373,8 +3620,24 @@ def _round_candidate_diagnostic(
         "selection_expectancy": float(getattr(selection, "expectancy", 0.0)),
         "selection_edge_vs_buy_hold": float(getattr(selection, "edge_vs_buy_hold", 0.0)),
         "selection_trades_per_day": float(closed_trades_per_day(selection)),
+        "selection_exit_reason_counts": dict(selection_path["exit_reason_counts"]),
+        "selection_side_counts": dict(selection_path["side_counts"]),
+        "selection_average_bars_held": float(selection_path["average_bars_held"]),
+        "selection_median_bars_held": float(statistics.median(selection_bars_held)) if selection_bars_held else 0.0,
+        "selection_mean_entry_execution_cost_bps": float(mean_entry_execution_cost),
+        "selection_mean_exit_execution_cost_bps": float(mean_exit_execution_cost),
+        "selection_mean_round_trip_execution_cost_bps": float(
+            mean_entry_execution_cost + mean_exit_execution_cost
+        ),
+        "selection_gross_profitable_trades": sum(
+            1 for item in selection_trade_log if _finite(item.get("realized_pnl")) > 0.0
+        ),
+        "selection_net_profitable_trades": sum(
+            1 for item in selection_trade_log if _finite(item.get("net_pnl")) > 0.0
+        ),
         "selection_trades_per_day_cap_hit": int(getattr(selection, "trades_per_day_cap_hit", 0) or 0),
         "selection_regime_entry_skips": int(getattr(selection, "regime_entry_skips", 0) or 0),
+        "selection_regime_entry_downsizes": int(getattr(selection, "regime_entry_downsizes", 0) or 0),
         "selection_meta_label_skips": int(getattr(selection, "meta_label_skips", 0) or 0),
         "selection_meta_label_downsizes": int(getattr(selection, "meta_label_downsizes", 0) or 0),
         "selection_liquidation_events": int(getattr(selection, "liquidation_events", 0) or 0),
@@ -2402,17 +3665,109 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "cooldown_minutes": int(_finite(item.get("cooldown_minutes"))),
             "min_position_hold_bars": int(_finite(item.get("min_position_hold_bars"))),
             "flat_signal_exit_grace_bars": int(_finite(item.get("flat_signal_exit_grace_bars"))),
+            "max_position_hold_bars": int(_finite(item.get("max_position_hold_bars"))),
             "label_threshold": _finite(item.get("label_threshold")),
             "label_lookahead": int(_finite(item.get("label_lookahead"))),
             "label_mode": str(item.get("label_mode", "")),
             "focal_gamma": _finite(item.get("focal_gamma")),
+            "training_row_count": int(_finite(item.get("training_row_count"))),
+            "training_positive_rate_pct": _finite(item.get("training_positive_rate_pct")),
+            "edge_preflight_evaluated": bool(item.get("edge_preflight_evaluated") is True),
+            "edge_preflight_reject_reason": str(item.get("edge_preflight_reject_reason", "")),
+            "edge_preflight_training_signal_count": int(_finite(item.get("edge_preflight_training_signal_count"))),
+            "edge_preflight_selection_signal_count": int(_finite(item.get("edge_preflight_selection_signal_count"))),
+            "edge_preflight_training_net_edge_bps": _finite(item.get("edge_preflight_training_net_edge_bps")),
+            "edge_preflight_selection_net_edge_bps": _finite(item.get("edge_preflight_selection_net_edge_bps")),
+            "edge_preflight_training_hit_rate": _finite(item.get("edge_preflight_training_hit_rate")),
+            "edge_preflight_selection_hit_rate": _finite(item.get("edge_preflight_selection_hit_rate")),
+            "edge_preflight_training_severe_regime_blocks": int(_finite(item.get("edge_preflight_training_severe_regime_blocks"))),
+            "edge_preflight_selection_severe_regime_blocks": int(_finite(item.get("edge_preflight_selection_severe_regime_blocks"))),
             "model_family": str(item.get("model_family", "")),
+            "feature_stats_backend_requested": str(item.get("feature_stats_backend_requested", "")),
+            "feature_stats_backend_kind": str(item.get("feature_stats_backend_kind", "")),
+            "feature_stats_backend_device": str(item.get("feature_stats_backend_device", "")),
+            "feature_stats_backend_reason": str(item.get("feature_stats_backend_reason", "")),
             "probability_inverted": bool(item.get("probability_inverted") is True),
             "hybrid_profile": str(item.get("hybrid_profile", "")),
             "hybrid_base_score": item.get("hybrid_base_score"),
             "hybrid_best_score": item.get("hybrid_best_score"),
             "hybrid_evaluated_profiles": int(_finite(item.get("hybrid_evaluated_profiles"))),
+            "hybrid_profile_attempt_count": int(_finite(item.get("hybrid_profile_attempt_count"))),
+            "hybrid_profile_profitable_attempt_count": int(_finite(item.get("hybrid_profile_profitable_attempt_count"))),
+            "hybrid_profile_best_attempt": str(item.get("hybrid_profile_best_attempt", "")),
+            "hybrid_profile_best_attempt_pnl": item.get("hybrid_profile_best_attempt_pnl"),
+            "hybrid_profile_best_attempt_closed_trades": int(_finite(item.get("hybrid_profile_best_attempt_closed_trades"))),
+            "hybrid_profile_attempts_json": str(item.get("hybrid_profile_attempts_json", "")),
             "hybrid_expert_count": int(_finite(item.get("hybrid_expert_count"))),
+            "hybrid_dense_mlp_attempted": bool(item.get("hybrid_dense_mlp_attempted") is True),
+            "hybrid_dense_mlp_selected": bool(item.get("hybrid_dense_mlp_selected") is True),
+            "hybrid_dense_mlp_present": bool(item.get("hybrid_dense_mlp_present") is True),
+            "hybrid_dense_mlp_backend_kind": str(item.get("hybrid_dense_mlp_backend_kind", "")),
+            "hybrid_dense_mlp_training_rows": int(_finite(item.get("hybrid_dense_mlp_training_rows"))),
+            "hybrid_dense_mlp_validation_rows": int(_finite(item.get("hybrid_dense_mlp_validation_rows"))),
+            "hybrid_dense_mlp_sampled_rows": int(_finite(item.get("hybrid_dense_mlp_sampled_rows"))),
+            "hybrid_dense_mlp_positive_rate_pct": _finite(item.get("hybrid_dense_mlp_positive_rate_pct")),
+            "hybrid_dense_mlp_validation_loss": item.get("hybrid_dense_mlp_validation_loss"),
+            "hybrid_payoff_ranker_attempted": bool(item.get("hybrid_payoff_ranker_attempted") is True),
+            "hybrid_payoff_ranker_selected_count": int(_finite(item.get("hybrid_payoff_ranker_selected_count"))),
+            "hybrid_payoff_ranker_backend_kind": str(item.get("hybrid_payoff_ranker_backend_kind", "")),
+            "hybrid_payoff_ranker_kinds": str(item.get("hybrid_payoff_ranker_kinds", "")),
+            "hybrid_payoff_ranker_horizons_seconds": str(item.get("hybrid_payoff_ranker_horizons_seconds", "")),
+            "hybrid_payoff_ranker_training_examples": int(_finite(item.get("hybrid_payoff_ranker_training_examples"))),
+            "hybrid_payoff_ranker_positive_long_rows": int(_finite(item.get("hybrid_payoff_ranker_positive_long_rows"))),
+            "hybrid_payoff_ranker_positive_short_rows": int(_finite(item.get("hybrid_payoff_ranker_positive_short_rows"))),
+            "hybrid_payoff_ranker_ensemble_member_count": int(
+                _finite(item.get("hybrid_payoff_ranker_ensemble_member_count"))
+            ),
+            "hybrid_payoff_ranker_ensemble_seeds_json": str(
+                item.get("hybrid_payoff_ranker_ensemble_seeds_json", "")
+            ),
+            "hybrid_payoff_ranker_attempts_json": str(
+                item.get("hybrid_payoff_ranker_attempts_json", "")
+            ),
+            "hybrid_payoff_ranker_failure_count": int(
+                _finite(item.get("hybrid_payoff_ranker_failure_count"))
+            ),
+            "hybrid_payoff_ranker_failures_json": str(
+                item.get("hybrid_payoff_ranker_failures_json", "")
+            ),
+            "hybrid_payoff_tree_attempted": bool(item.get("hybrid_payoff_tree_attempted") is True),
+            "hybrid_payoff_tree_selected": bool(item.get("hybrid_payoff_tree_selected") is True),
+            "hybrid_payoff_tree_backend_kind": str(item.get("hybrid_payoff_tree_backend_kind", "")),
+            "hybrid_payoff_tree_count": int(_finite(item.get("hybrid_payoff_tree_count"))),
+            "hybrid_payoff_tree_lightgbm_version": str(
+                item.get("hybrid_payoff_tree_lightgbm_version", "")
+            ),
+            "hybrid_payoff_tree_schema": str(item.get("hybrid_payoff_tree_schema", "")),
+            "hybrid_payoff_tree_long_count": int(_finite(item.get("hybrid_payoff_tree_long_count"))),
+            "hybrid_payoff_tree_short_count": int(_finite(item.get("hybrid_payoff_tree_short_count"))),
+            "hybrid_payoff_tree_long_best_iteration": int(
+                _finite(item.get("hybrid_payoff_tree_long_best_iteration"))
+            ),
+            "hybrid_payoff_tree_short_best_iteration": int(
+                _finite(item.get("hybrid_payoff_tree_short_best_iteration"))
+            ),
+            "hybrid_payoff_tree_long_validation_mae_bps": _finite(
+                item.get("hybrid_payoff_tree_long_validation_mae_bps")
+            ),
+            "hybrid_payoff_tree_short_validation_mae_bps": _finite(
+                item.get("hybrid_payoff_tree_short_validation_mae_bps")
+            ),
+            "hybrid_payoff_tree_validation_actionable_rows": int(
+                _finite(item.get("hybrid_payoff_tree_validation_actionable_rows"))
+            ),
+            "hybrid_payoff_tree_validation_actionable_rate_pct": _finite(
+                item.get("hybrid_payoff_tree_validation_actionable_rate_pct")
+            ),
+            "hybrid_payoff_tree_validation_actionable_mean_edge_bps": _finite(
+                item.get("hybrid_payoff_tree_validation_actionable_mean_edge_bps")
+            ),
+            "hybrid_payoff_tree_validation_actionable_hit_rate_pct": _finite(
+                item.get("hybrid_payoff_tree_validation_actionable_hit_rate_pct")
+            ),
+            "hybrid_payoff_internal_validation_purged_examples": int(
+                _finite(item.get("hybrid_payoff_internal_validation_purged_examples"))
+            ),
             "rule_alpha_profile": str(item.get("rule_alpha_profile", "")),
             "rule_alpha_family": str(item.get("rule_alpha_family", "")),
             "rule_alpha_best_score": item.get("rule_alpha_best_score"),
@@ -2434,11 +3789,15 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "rule_alpha_best_reject_reason": str(item.get("rule_alpha_best_reject_reason", "")),
             "rule_alpha_probability_inverted": bool(item.get("rule_alpha_probability_inverted") is True),
             "rule_alpha_evaluated_candidates": int(_finite(item.get("rule_alpha_evaluated_candidates"))),
+            "rule_alpha_ranking_rows": int(_finite(item.get("rule_alpha_ranking_rows"))),
+            "rule_alpha_selection_rows": int(_finite(item.get("rule_alpha_selection_rows"))),
+            "rule_alpha_ranking_source": str(item.get("rule_alpha_ranking_source", "")),
             "rule_alpha_static_template_candidates": int(_finite(item.get("rule_alpha_static_template_candidates"))),
             "rule_alpha_static_template_pool_candidates": int(_finite(item.get("rule_alpha_static_template_pool_candidates"))),
             "rule_alpha_event_rank_split_mode": str(item.get("rule_alpha_event_rank_split_mode", "")),
             "rule_alpha_event_rank_training_rows": int(_finite(item.get("rule_alpha_event_rank_training_rows"))),
             "rule_alpha_event_rank_validation_rows": int(_finite(item.get("rule_alpha_event_rank_validation_rows"))),
+            "rule_alpha_event_rank_density_floor": int(_finite(item.get("rule_alpha_event_rank_density_floor"))),
             "rule_alpha_event_rank_pool_candidates": int(_finite(item.get("rule_alpha_event_rank_pool_candidates"))),
             "rule_alpha_event_rank_selected_template_candidates": int(_finite(item.get("rule_alpha_event_rank_selected_template_candidates"))),
             "rule_alpha_event_rank_positive_pool_candidates": int(_finite(item.get("rule_alpha_event_rank_positive_pool_candidates"))),
@@ -2457,6 +3816,7 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "rule_alpha_empirical_mined_candidates": int(_finite(item.get("rule_alpha_empirical_mined_candidates"))),
             "rule_alpha_empirical_interaction_candidates": int(_finite(item.get("rule_alpha_empirical_interaction_candidates"))),
             "rule_alpha_empirical_candidate_limit": int(_finite(item.get("rule_alpha_empirical_candidate_limit"))),
+            "rule_alpha_empirical_feature_scan_limit": int(_finite(item.get("rule_alpha_empirical_feature_scan_limit"))),
             "rule_alpha_active_candidates": int(_finite(item.get("rule_alpha_active_candidates"))),
             "rule_alpha_profitable_candidates": int(_finite(item.get("rule_alpha_profitable_candidates"))),
             "rule_alpha_accepted_candidates": int(_finite(item.get("rule_alpha_accepted_candidates"))),
@@ -2510,8 +3870,32 @@ def _candidate_diagnostic_rows(symbol: str, model: object) -> list[dict[str, obj
             "selection_expectancy": _finite(item.get("selection_expectancy")),
             "selection_edge_vs_buy_hold": _finite(item.get("selection_edge_vs_buy_hold")),
             "selection_trades_per_day": _finite(item.get("selection_trades_per_day")),
+            "selection_exit_reason_counts": json.dumps(
+                item.get("selection_exit_reason_counts", {}) or {},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            "selection_side_counts": json.dumps(
+                item.get("selection_side_counts", {}) or {},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            "selection_average_bars_held": _finite(item.get("selection_average_bars_held")),
+            "selection_median_bars_held": _finite(item.get("selection_median_bars_held")),
+            "selection_mean_entry_execution_cost_bps": _finite(
+                item.get("selection_mean_entry_execution_cost_bps")
+            ),
+            "selection_mean_exit_execution_cost_bps": _finite(
+                item.get("selection_mean_exit_execution_cost_bps")
+            ),
+            "selection_mean_round_trip_execution_cost_bps": _finite(
+                item.get("selection_mean_round_trip_execution_cost_bps")
+            ),
+            "selection_gross_profitable_trades": int(_finite(item.get("selection_gross_profitable_trades"))),
+            "selection_net_profitable_trades": int(_finite(item.get("selection_net_profitable_trades"))),
             "selection_trades_per_day_cap_hit": int(_finite(item.get("selection_trades_per_day_cap_hit"))),
             "selection_regime_entry_skips": int(_finite(item.get("selection_regime_entry_skips"))),
+            "selection_regime_entry_downsizes": int(_finite(item.get("selection_regime_entry_downsizes"))),
             "selection_meta_label_skips": int(_finite(item.get("selection_meta_label_skips"))),
             "selection_meta_label_downsizes": int(_finite(item.get("selection_meta_label_downsizes"))),
             "selection_liquidation_events": int(_finite(item.get("selection_liquidation_events"))),
@@ -2525,39 +3909,189 @@ def train_round_model(
     strategy: StrategyConfig,
     objective: ObjectiveSpec,
     *,
+    agg_trades: Sequence[AggTrade] | None = None,
+    agg_trade_buckets: Sequence[AggTradeBucket] | None = None,
     market_type: str,
     starting_cash: float,
     compute_backend: str,
     batch_size: int,
     require_gpu: bool = False,
-    model_candidate_count: int = 1,
+    model_candidate_count: int = DEFAULT_ROUND_MODEL_CANDIDATES,
+    model_candidate_names: Sequence[str] | None = None,
+    rule_alpha_max_candidates: int = DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
+    rule_alpha_empirical_max_features: int | None = None,
+    symbol_profile: SymbolExecutionProfile | None = None,
     status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[object, object, list[object], list[object]]:
     base_feature_cfg = default_config_for(objective.name, strategy.enabled_features)
-    candidates = _round_model_candidates(objective, strategy, base_feature_cfg, model_candidate_count)
+    bar_interval_ms = _median_candle_interval_ms(candles)
+    trade_tape_rows = list(agg_trades or ())
+    trade_tape_buckets = list(agg_trade_buckets or ())
+    candidates = _round_model_candidates(
+        objective,
+        strategy,
+        base_feature_cfg,
+        model_candidate_count,
+        market_type=market_type,
+        symbol_profile=symbol_profile,
+        has_trade_tape=bool(trade_tape_rows or trade_tape_buckets),
+        requested_names=model_candidate_names,
+        bar_interval_ms=bar_interval_ms,
+    )
     if len(candidates) > 1 and status_callback is not None:
         status_callback("model_candidate_search_started", {"candidate_count": len(candidates)})
     best: RoundModelCandidateResult | None = None
     evaluated: list[RoundModelCandidateResult] = []
+    feature_row_cache: dict[tuple[object, ...], list[ModelRow]] = {}
+    feature_cache_order: list[tuple[object, ...]] = []
     for index, candidate in enumerate(candidates, start=1):
-        callback = status_callback if index == 1 else None
+        def candidate_status_callback(phase: str, payload: Mapping[str, object], *, _index: int = index, _candidate: RoundModelCandidate = candidate) -> None:
+            if status_callback is None:
+                return
+            enriched = dict(payload)
+            enriched.setdefault("candidate_index", _index)
+            enriched.setdefault("candidate_count", len(candidates))
+            enriched.setdefault("candidate", _candidate.name)
+            status_callback(phase, enriched)
+
+        callback = candidate_status_callback if status_callback is not None else None
         if len(candidates) > 1 and status_callback is not None:
             status_callback(
                 "model_candidate_started",
                 {"candidate_index": index, "candidate_count": len(candidates), "candidate": candidate.name},
+            )
+        cache_key = _round_feature_cache_key(candidate.feature_cfg)
+        cached_feature_rows = feature_row_cache.get(cache_key)
+        if cached_feature_rows is None:
+            if feature_row_cache:
+                feature_row_cache.clear()
+                feature_cache_order.clear()
+                if status_callback is not None:
+                    status_callback(
+                        "feature_cache_evicted",
+                        {
+                            "candidate_index": index,
+                            "candidate_count": len(candidates),
+                            "candidate": candidate.name,
+                        },
+                    )
+                gc.collect()
+            if status_callback is not None:
+                status_callback(
+                    "feature_cache_generation_started",
+                    {
+                        "candidate_index": index,
+                        "candidate_count": len(candidates),
+                        "candidate": candidate.name,
+                        "candle_count": len(candles),
+                        "agg_trade_count": len(trade_tape_rows) if candidate.feature_cfg.trade_tape_windows else 0,
+                        "agg_trade_bucket_count": len(trade_tape_buckets) if candidate.feature_cfg.trade_tape_windows else 0,
+                        "trade_tape_windows": list(candidate.feature_cfg.trade_tape_windows),
+                    },
+                )
+            def feature_progress_callback(phase: str, payload: dict[str, int]) -> None:
+                if status_callback is None:
+                    return
+                enriched = dict(payload)
+                enriched.update(
+                    {
+                        "candidate_index": index,
+                        "candidate_count": len(candidates),
+                        "candidate": candidate.name,
+                    }
+                )
+                status_callback(f"feature_cache_{phase}", enriched)
+
+            cached_feature_rows = make_advanced_inference_rows(
+                candles,
+                candidate.feature_cfg,
+                agg_trades=trade_tape_rows if candidate.feature_cfg.trade_tape_windows else None,
+                agg_trade_buckets=trade_tape_buckets if candidate.feature_cfg.trade_tape_windows else None,
+                compute_backend=compute_backend,
+                require_accelerated=require_gpu,
+                compact_features=True,
+                progress_callback=feature_progress_callback if status_callback is not None else None,
+            )
+            feature_row_cache[cache_key] = cached_feature_rows
+            feature_cache_order.append(cache_key)
+            if status_callback is not None:
+                status_callback(
+                    "feature_cache_generation_complete",
+                    {
+                        "candidate_index": index,
+                        "candidate_count": len(candidates),
+                        "candidate": candidate.name,
+                        "feature_row_count": len(cached_feature_rows),
+                        "feature_dim": advanced_feature_dimension(candidate.feature_cfg),
+                        "feature_storage": "float32_array",
+                        "trade_tape_enabled": bool(candidate.feature_cfg.trade_tape_windows),
+                    },
+                )
+        elif status_callback is not None:
+            status_callback(
+                "feature_cache_reused",
+                {
+                    "candidate_index": index,
+                    "candidate_count": len(candidates),
+                    "candidate": candidate.name,
+                    "feature_row_count": len(cached_feature_rows),
+                },
             )
         result = _evaluate_round_model_candidate(
             candles,
             strategy,
             objective,
             candidate,
+            agg_trades=trade_tape_rows if candidate.feature_cfg.trade_tape_windows else None,
+            agg_trade_buckets=trade_tape_buckets if candidate.feature_cfg.trade_tape_windows else None,
             market_type=market_type,
             starting_cash=starting_cash,
             compute_backend=compute_backend,
             batch_size=batch_size,
             require_gpu=require_gpu,
+            symbol_profile=symbol_profile,
+            precomputed_feature_rows=cached_feature_rows,
             status_callback=callback,
         )
+        diagnostic_trades = int(getattr(result.model, "threshold_diagnostic_best_trades", 0) or 0)
+        selection_trades = int(getattr(result.selection_result, "closed_trades", 0) or 0)
+        preflight_training_edge = _finite(getattr(result.model, "edge_preflight_training_net_edge_bps", 0.0))
+        preflight_selection_edge = _finite(getattr(result.model, "edge_preflight_selection_net_edge_bps", 0.0))
+        should_try_hybrid_rescue = (
+            bool(getattr(result.model, "round_selection_gate_passed", False)) is False
+            and preflight_training_edge > 0.0
+            and preflight_selection_edge > 0.0
+            and max(diagnostic_trades, selection_trades) >= max(1, int(objective.min_closed_trades))
+        )
+        if should_try_hybrid_rescue:
+            candidate_strategy = _strategy_for_round_candidate_market(
+                strategy,
+                candidate,
+                market_type=market_type,
+                symbol_profile=symbol_profile,
+            )
+            if status_callback is not None:
+                status_callback(
+                    "hybrid_model_zoo_rescue_candidate_started",
+                    {
+                        "candidate_index": index,
+                        "candidate_count": len(candidates),
+                        "candidate": candidate.name,
+                        "diagnostic_trades": diagnostic_trades,
+                        "selection_trades": selection_trades,
+                    },
+                )
+            result = _select_hybrid_model_zoo_if_accepted(
+                result,
+                candidate_strategy,
+                objective,
+                market_type=market_type,
+                starting_cash=starting_cash,
+                compute_backend=compute_backend,
+                batch_size=batch_size,
+                symbol_profile=symbol_profile,
+                status_callback=status_callback,
+            )
         if len(candidates) > 1 and status_callback is not None:
             status_callback(
                 "model_candidate_complete",
@@ -2574,17 +4108,35 @@ def train_round_model(
         gc.collect()
     if best is None:
         raise ValueError("no model candidates were evaluated")
-    best_strategy = _strategy_for_round_candidate(strategy, best.candidate)
-    best = _select_hybrid_model_zoo_if_accepted(
-        best,
-        best_strategy,
-        objective,
+    best_strategy = _strategy_for_round_candidate_market(
+        strategy,
+        best.candidate,
         market_type=market_type,
-        starting_cash=starting_cash,
-        compute_backend=compute_backend,
-        batch_size=batch_size,
-        status_callback=status_callback,
+        symbol_profile=symbol_profile,
     )
+    if _hybrid_model_zoo_was_evaluated(best.model):
+        if status_callback is not None:
+            status_callback(
+                "hybrid_model_zoo_reused_candidate_result",
+                {
+                    "candidate": best.candidate.name,
+                    "evaluated_profiles": int(
+                        getattr(best.model, "hybrid_evaluated_profiles", 0) or 0
+                    ),
+                },
+            )
+    else:
+        best = _select_hybrid_model_zoo_if_accepted(
+            best,
+            best_strategy,
+            objective,
+            market_type=market_type,
+            starting_cash=starting_cash,
+            compute_backend=compute_backend,
+            batch_size=batch_size,
+            symbol_profile=symbol_profile,
+            status_callback=status_callback,
+        )
     best = _select_rule_alpha_model_zoo_if_accepted(
         best,
         best_strategy,
@@ -2593,6 +4145,9 @@ def train_round_model(
         starting_cash=starting_cash,
         compute_backend=compute_backend,
         batch_size=batch_size,
+        rule_alpha_max_candidates=max(1, int(rule_alpha_max_candidates)),
+        rule_alpha_empirical_max_features=rule_alpha_empirical_max_features,
+        symbol_profile=symbol_profile,
         status_callback=status_callback,
     )
     best.model.model_candidate_count = len(candidates)
@@ -2608,7 +4163,13 @@ def train_round_model(
         for result in evaluated
     ]
     best.model.round_candidate_diagnostics = [
-        _round_candidate_diagnostic(result, strategy=strategy, selected=result.candidate == best.candidate)
+        _round_candidate_diagnostic(
+            result,
+            strategy=strategy,
+            selected=result.candidate == best.candidate,
+            market_type=market_type,
+            symbol_profile=symbol_profile,
+        )
         for result in diagnostic_results
     ]
     if len(candidates) > 1 and status_callback is not None:
@@ -2652,11 +4213,21 @@ def build_round_evidence(
     promotion_grade: bool = False,
     min_promotion_data_years: float = 2.0,
     use_objective_strategy_defaults: bool = False,
-    model_candidate_count: int = 1,
+    model_candidate_count: int = DEFAULT_ROUND_MODEL_CANDIDATES,
+    model_candidate_names: Sequence[str] | None = None,
+    rule_alpha_max_candidates: int = DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
+    rule_alpha_empirical_max_features: int | None = None,
     data_start_ms: int | None = None,
     data_end_ms: int | None = None,
+    commission_assumption: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     promotion_grade = bool(promotion_grade)
+    normalized_candidate_names = tuple(
+        dict.fromkeys(str(value).strip() for value in (model_candidate_names or ()) if str(value).strip())
+    )
+    model_candidate_names = normalized_candidate_names or None
+    if normalized_candidate_names:
+        model_candidate_count = len(normalized_candidate_names)
     min_promotion_data_years = max(0.0, _finite(min_promotion_data_years, 0.0))
     min_coverage_ratio = max(0.0, min(1.0, _finite(min_coverage_ratio, 0.995)))
     max_gap_count = max(0, int(max_gap_count))
@@ -2776,6 +4347,7 @@ def build_round_evidence(
             current_symbol_index=selected_index,
         )
         candles: list[Candle] = []
+        agg_trade_buckets: list[AggTradeBucket] = []
         coverage = None
         try:
             if item.tier == "explicit-symbol" and item.reasons:
@@ -2834,6 +4406,35 @@ def build_round_evidence(
                 start_ms=data_start_ms,
                 end_ms=data_end_ms,
             )
+            if str(interval) == "1s":
+                trade_start_ms = data_start_ms if data_start_ms is not None else (candles[0].open_time if candles else None)
+                trade_end_ms = data_end_ms if data_end_ms is not None else (candles[-1].close_time if candles else None)
+                write_status(
+                    "load_agg_trades_started",
+                    symbol_count_requested=len(selected),
+                    completed_symbol_count=len(metrics),
+                    current_symbol=item.symbol,
+                    current_symbol_index=selected_index,
+                    start_ms=trade_start_ms,
+                    end_ms=trade_end_ms,
+                )
+                agg_trade_buckets = fetch_aggregate_trade_buckets_for_window(
+                    db_path=paths.market_db_path,
+                    symbol=item.symbol,
+                    market_type=market_type,
+                    bucket_ms=interval_milliseconds(interval),
+                    start_ms=trade_start_ms,
+                    end_ms=trade_end_ms,
+                )
+                write_status(
+                    "load_agg_trades_complete",
+                    symbol_count_requested=len(selected),
+                    completed_symbol_count=len(metrics),
+                    current_symbol=item.symbol,
+                    current_symbol_index=selected_index,
+                    agg_trade_bucket_count=len(agg_trade_buckets),
+                    trade_tape_available=bool(agg_trade_buckets),
+                )
             write_status(
                 "load_candles_complete",
                 symbol_count_requested=len(selected),
@@ -2857,6 +4458,15 @@ def build_round_evidence(
                     else "binance_full_history_public_market_data"
                 ),
             )
+            symbol_profile = SymbolExecutionProfile(
+                item.symbol,
+                item.spread_bps,
+                item.quote_volume,
+                item.trade_count,
+                item.liquidity_score,
+                latency_ms=evidence_strategy.latency_buffer_ms,
+                liquidity_haircut=evidence_strategy.testnet_liquidity_haircut,
+            )
             def symbol_train_status(phase: str, payload: Mapping[str, object]) -> None:
                 write_status(
                     phase,
@@ -2871,12 +4481,17 @@ def build_round_evidence(
                 candles,
                 evidence_strategy,
                 objective,
+                agg_trade_buckets=agg_trade_buckets,
                 market_type=market_type,
                 starting_cash=starting_cash,
                 compute_backend=compute_backend,
                 batch_size=batch_size,
                 require_gpu=require_gpu,
                 model_candidate_count=model_candidate_count,
+                model_candidate_names=model_candidate_names,
+                rule_alpha_max_candidates=rule_alpha_max_candidates,
+                rule_alpha_empirical_max_features=rule_alpha_empirical_max_features,
+                symbol_profile=symbol_profile,
                 status_callback=symbol_train_status,
             )
             symbol_candidate_diagnostics = _candidate_diagnostic_rows(item.symbol, model)
@@ -2902,12 +4517,8 @@ def build_round_evidence(
                 market_type=market_type,
                 compute_backend=compute_backend,
                 score_batch_size=batch_size,
-                symbol_profile=SymbolExecutionProfile(
-                    item.symbol,
-                    item.spread_bps,
-                    item.quote_volume,
-                    item.trade_count,
-                    item.liquidity_score,
+                symbol_profile=replace(
+                    symbol_profile,
                     latency_ms=selected_strategy.latency_buffer_ms,
                     liquidity_haircut=selected_strategy.testnet_liquidity_haircut,
                 ),
@@ -3243,6 +4854,24 @@ def build_round_evidence(
                 timeline_csv_path="",
             )
         metrics.append(metric)
+        partial_metric_rows = [completed_metric.asdict() for completed_metric in metrics]
+        _write_csv(
+            paths.metrics_csv_path,
+            partial_metric_rows,
+            tuple(partial_metric_rows[0].keys()) if partial_metric_rows else ("round_id", "symbol", "objective"),
+        )
+        if candidate_diagnostic_rows:
+            _write_csv(
+                paths.candidate_diagnostics_csv_path,
+                candidate_diagnostic_rows,
+                tuple(candidate_diagnostic_rows[0].keys()),
+            )
+            write_json_atomic(
+                paths.candidate_diagnostics_json_path,
+                candidate_diagnostic_rows,
+                indent=2,
+                sort_keys=True,
+            )
         write_status(
             "symbol_completed",
             symbol_count_requested=len(selected),
@@ -3265,9 +4894,45 @@ def build_round_evidence(
     candidate_diagnostic_fieldnames = (
         "symbol", "candidate_index", "name", "selected", "score", "signal_threshold",
         "stop_loss_pct", "take_profit_pct", "cooldown_minutes", "min_position_hold_bars",
-        "flat_signal_exit_grace_bars", "label_threshold", "label_lookahead", "label_mode",
-        "focal_gamma", "model_family", "probability_inverted", "hybrid_profile", "hybrid_base_score",
+        "flat_signal_exit_grace_bars", "max_position_hold_bars", "label_threshold", "label_lookahead",
+        "label_entry_offset", "label_mode", "focal_gamma", "training_row_count", "selection_row_count",
+        "validation_row_count", "training_split_purge_bars", "training_positive_rate_pct",
+        "edge_preflight_evaluated", "edge_preflight_reject_reason",
+        "edge_preflight_training_signal_count", "edge_preflight_selection_signal_count",
+        "edge_preflight_training_net_edge_bps", "edge_preflight_selection_net_edge_bps",
+        "edge_preflight_training_hit_rate", "edge_preflight_selection_hit_rate",
+        "edge_preflight_training_severe_regime_blocks", "edge_preflight_selection_severe_regime_blocks",
+        "model_family", "feature_stats_backend_requested", "feature_stats_backend_kind",
+        "feature_stats_backend_device", "feature_stats_backend_reason",
+        "probability_inverted", "hybrid_profile", "hybrid_base_score",
         "hybrid_best_score", "hybrid_evaluated_profiles", "hybrid_expert_count",
+        "hybrid_profile_attempt_count", "hybrid_profile_profitable_attempt_count",
+        "hybrid_profile_best_attempt", "hybrid_profile_best_attempt_pnl",
+        "hybrid_profile_best_attempt_closed_trades", "hybrid_profile_attempts_json",
+        "hybrid_dense_mlp_attempted", "hybrid_dense_mlp_selected",
+        "hybrid_dense_mlp_present", "hybrid_dense_mlp_backend_kind",
+        "hybrid_dense_mlp_training_rows", "hybrid_dense_mlp_validation_rows",
+        "hybrid_dense_mlp_sampled_rows", "hybrid_dense_mlp_positive_rate_pct",
+        "hybrid_dense_mlp_validation_loss",
+        "hybrid_payoff_ranker_attempted", "hybrid_payoff_ranker_selected_count",
+        "hybrid_payoff_ranker_backend_kind", "hybrid_payoff_ranker_kinds",
+        "hybrid_payoff_ranker_horizons_seconds",
+        "hybrid_payoff_ranker_training_examples",
+        "hybrid_payoff_ranker_positive_long_rows", "hybrid_payoff_ranker_positive_short_rows",
+        "hybrid_payoff_ranker_ensemble_member_count", "hybrid_payoff_ranker_ensemble_seeds_json",
+        "hybrid_payoff_ranker_attempts_json", "hybrid_payoff_ranker_failure_count",
+        "hybrid_payoff_ranker_failures_json",
+        "hybrid_payoff_tree_attempted", "hybrid_payoff_tree_selected",
+        "hybrid_payoff_tree_backend_kind", "hybrid_payoff_tree_count",
+        "hybrid_payoff_tree_lightgbm_version", "hybrid_payoff_tree_schema",
+        "hybrid_payoff_tree_long_count", "hybrid_payoff_tree_short_count",
+        "hybrid_payoff_tree_long_best_iteration", "hybrid_payoff_tree_short_best_iteration",
+        "hybrid_payoff_tree_long_validation_mae_bps", "hybrid_payoff_tree_short_validation_mae_bps",
+        "hybrid_payoff_tree_validation_actionable_rows",
+        "hybrid_payoff_tree_validation_actionable_rate_pct",
+        "hybrid_payoff_tree_validation_actionable_mean_edge_bps",
+        "hybrid_payoff_tree_validation_actionable_hit_rate_pct",
+        "hybrid_payoff_internal_validation_purged_examples",
         "rule_alpha_profile", "rule_alpha_family", "rule_alpha_best_score",
         "rule_alpha_best_pnl", "rule_alpha_best_closed_trades",
         "rule_alpha_best_win_rate", "rule_alpha_best_profit_factor",
@@ -3275,9 +4940,10 @@ def build_round_evidence(
         "rule_alpha_best_side_counts",
         "rule_alpha_best_reject_reason", "rule_alpha_probability_inverted",
         "rule_alpha_evaluated_candidates",
+        "rule_alpha_ranking_rows", "rule_alpha_selection_rows", "rule_alpha_ranking_source",
         "rule_alpha_static_template_candidates", "rule_alpha_static_template_pool_candidates",
         "rule_alpha_event_rank_split_mode", "rule_alpha_event_rank_training_rows",
-        "rule_alpha_event_rank_validation_rows",
+        "rule_alpha_event_rank_validation_rows", "rule_alpha_event_rank_density_floor",
         "rule_alpha_event_rank_pool_candidates", "rule_alpha_event_rank_selected_template_candidates",
         "rule_alpha_event_rank_positive_pool_candidates", "rule_alpha_event_rank_signal_pool_candidates",
         "rule_alpha_event_rank_best_candidate", "rule_alpha_event_rank_best_net_edge_bps",
@@ -3292,6 +4958,7 @@ def build_round_evidence(
         "rule_alpha_event_rank_best_probability_inverted",
         "rule_alpha_empirical_mined_candidates",
         "rule_alpha_empirical_interaction_candidates", "rule_alpha_empirical_candidate_limit",
+        "rule_alpha_empirical_feature_scan_limit",
         "rule_alpha_active_candidates", "rule_alpha_profitable_candidates",
         "rule_alpha_accepted_candidates", "rule_alpha_max_closed_trades",
         "rule_alpha_event_candidates_with_signals", "rule_alpha_event_positive_candidates",
@@ -3317,7 +4984,13 @@ def build_round_evidence(
         "selection_realized_pnl", "selection_closed_trades", "selection_max_drawdown",
         "selection_win_rate", "selection_total_fees", "selection_profit_factor",
         "selection_expectancy", "selection_edge_vs_buy_hold", "selection_trades_per_day",
+        "selection_exit_reason_counts", "selection_side_counts",
+        "selection_average_bars_held", "selection_median_bars_held",
+        "selection_mean_entry_execution_cost_bps", "selection_mean_exit_execution_cost_bps",
+        "selection_mean_round_trip_execution_cost_bps", "selection_gross_profitable_trades",
+        "selection_net_profitable_trades",
         "selection_trades_per_day_cap_hit", "selection_regime_entry_skips",
+        "selection_regime_entry_downsizes",
         "selection_meta_label_skips", "selection_meta_label_downsizes", "selection_liquidation_events",
         "selection_reject_reason",
     )
@@ -3436,6 +5109,26 @@ def build_round_evidence(
         "min_promotion_data_years": float(min_promotion_data_years),
         "use_objective_strategy_defaults": bool(use_objective_strategy_defaults),
         "strategy": evidence_strategy.asdict(),
+        "commission_assumption": (
+            dict(commission_assumption)
+            if commission_assumption is not None
+            else {
+                "market_type": market_type,
+                "symbol": "",
+                "configured_taker_fee_bps": float(evidence_strategy.taker_fee_bps),
+                "exchange_taker_fee_bps": None,
+                "modeled_taker_fee_bps": float(evidence_strategy.taker_fee_bps),
+                "source": "strategy_config_unverified",
+                "verified": False,
+            }
+        ),
+        "execution_model": {
+            "version": EXECUTION_MODEL_VERSION,
+            "market_impact": "square_root_participation_in_causal_trailing_24h_quote_volume",
+            "activity_estimator": EXECUTION_ACTIVITY_ESTIMATOR,
+            "missing_activity_behavior": "fail_closed_bar_volume_or_maximum_participation",
+            "historical_order_book_replay": False,
+        },
         "configured_leverage": float(evidence_strategy.leverage),
         "effective_leverage": float(effective_leverage),
         "leverage_applies": bool(leverage_applies),
@@ -3445,6 +5138,7 @@ def build_round_evidence(
         "compute_backend_reason": backend_info.reason,
         "require_gpu": bool(require_gpu),
         "model_candidate_count": int(max(1, model_candidate_count)),
+        "model_candidate_names": [str(value) for value in (model_candidate_names or ())],
         "starting_cash": float(starting_cash),
         "symbol_count_requested": len([str(symbol).strip() for symbol in (symbols or []) if str(symbol).strip()]) if symbols else int(symbol_count),
         "symbol_count_completed": len(metrics),
@@ -3481,6 +5175,7 @@ def build_round_evidence(
 
 __all__ = [
     "BacktestEvidence",
+    "DEFAULT_ROUND_MODEL_CANDIDATES",
     "EvidencePaths",
     "SelectedSymbol",
     "build_round_evidence",

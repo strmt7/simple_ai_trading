@@ -14,7 +14,7 @@ from simple_ai_trading.data_downloader import (
 )
 import simple_ai_trading.storage as storage
 from simple_ai_trading.market_data import clean_candles
-from simple_ai_trading.market_store import MarketDataStore
+from simple_ai_trading.market_store import AggTrade, MarketDataStore
 from simple_ai_trading.storage import write_json_atomic
 
 
@@ -272,6 +272,52 @@ def test_market_data_store_roundtrip_snapshots_and_sync_runs(tmp_path) -> None:
         assert empty.coverage_ratio == 0.0
 
 
+def test_market_data_store_catalogues_only_valid_microstructure_capture_evidence(tmp_path) -> None:
+    payload = {
+        "capture_id": "capture-1",
+        "provider": "binance",
+        "market_type": "futures",
+        "schema_version": "binance-usdm-l2-v1",
+        "status": "pass",
+        "started_at_ms": 100,
+        "completed_at_ms": 200,
+        "output_dir": "data/microstructure/capture-1",
+        "manifest_path": "data/microstructure/capture-1/manifest.json",
+        "evidence": [
+            {
+                "symbol": "BTCUSDT",
+                "raw_path": "raw.gz",
+                "normalized_path": "data.npz",
+                "initial_snapshot_path": "snapshot.npz",
+                "raw_sha256": "a" * 64,
+                "normalized_sha256": "b" * 64,
+                "raw_messages": 100,
+                "normalized_rows": 1000,
+                "depth_messages": 50,
+                "trade_messages": 25,
+                "book_ticker_messages": 25,
+                "sequence_gap_count": 0,
+                "crossed_book_count": 0,
+                "invalid_event_count": 0,
+                "replay_smoke_passed": True,
+                "error": "",
+            }
+        ],
+    }
+    with MarketDataStore(tmp_path / "microstructure.sqlite") as store:
+        assert store.record_microstructure_capture(payload) > 0
+        latest = store.latest_microstructure_capture("btcusdt")
+        assert latest is not None
+        assert latest["capture_id"] == "capture-1"
+        failed = dict(payload)
+        failed["capture_id"] = "capture-2"
+        failed["status"] = "fail"
+        failed["completed_at_ms"] = 300
+        assert store.record_microstructure_capture(failed) > 0
+        assert store.latest_microstructure_capture("BTCUSDT")["capture_id"] == "capture-1"
+        assert store.latest_microstructure_capture("BTCUSDT", require_passed=False)["capture_id"] == "capture-2"
+
+
 def test_market_data_store_reports_coverage_gaps(tmp_path) -> None:
     with MarketDataStore(tmp_path / "gaps.sqlite") as store:
         store.upsert_candles("BTCUSDC", "spot", "1m", [_candle(0), _candle(180_000)])
@@ -280,6 +326,62 @@ def test_market_data_store_reports_coverage_gaps(tmp_path) -> None:
     assert quality.expected_count == 4
     assert quality.gap_count == 2
     assert quality.coverage_ratio == 0.5
+
+
+def test_market_data_store_roundtrip_agg_trades_with_dedup_and_windowing(tmp_path) -> None:
+    trades = [
+        AggTrade("BTCUSDT", "futures", 100, 70_000.0, 0.25, 500, 502, 1_717_200_000_123, False),
+        AggTrade("BTCUSDT", "futures", 101, 70_001.5, 0.10, 503, 503, 1_717_200_000_456, True, False),
+        AggTrade("BTCUSDT", "futures", 102, 70_002.0, 0.20, 504, 506, 1_717_200_001_100, False),
+    ]
+
+    with MarketDataStore(tmp_path / "agg.sqlite") as store:
+        assert store.upsert_agg_trades("btcusdt", "futures", []) == 0
+        assert store.upsert_agg_trades("btcusdt", "futures", trades, ingested_at_ms=1) == 3
+        assert store.upsert_agg_trades("btcusdt", "futures", trades, ingested_at_ms=2) == 0
+        changed = [
+            trades[0],
+            AggTrade("BTCUSDT", "futures", 101, 70_005.0, 0.15, 503, 503, 1_717_200_000_456, True, False),
+            trades[2],
+        ]
+        assert store.upsert_agg_trades("btcusdt", "futures", changed, ingested_at_ms=3) == 1
+
+        fetched = store.fetch_agg_trades("BTCUSDT", "futures")
+        buckets = store.fetch_agg_trade_buckets("BTCUSDT", "futures")
+        latest_bucket = store.fetch_agg_trade_buckets("BTCUSDT", "futures", limit=1)
+        latest = store.fetch_agg_trades("BTCUSDT", "futures", limit=1)
+        window = store.fetch_agg_trades(
+            "BTCUSDT",
+            "futures",
+            start_ms=1_717_200_000_200,
+            end_ms=1_717_200_001_000,
+        )
+        coverage = store.agg_trade_coverage("btcusdt", "futures")
+
+    assert [trade.agg_trade_id for trade in fetched] == [100, 101, 102]
+    assert fetched[1].price == 70_005.0
+    assert fetched[1].quantity == 0.15
+    assert fetched[1].is_buyer_maker is True
+    assert fetched[1].best_match is False
+    assert latest[0].agg_trade_id == 102
+    assert [bucket.open_time for bucket in buckets] == [1_717_200_000_000, 1_717_200_001_000]
+    assert buckets[0].first_price == 70_000.0
+    assert buckets[0].last_price == 70_005.0
+    assert buckets[0].total_quantity == pytest.approx(0.40)
+    assert buckets[0].buy_notional == pytest.approx(70_000.0 * 0.25)
+    assert buckets[0].sell_notional == pytest.approx(70_005.0 * 0.15)
+    assert buckets[0].aggregate_count == 2
+    assert buckets[0].buyer_taker_count == 1
+    assert buckets[0].seller_taker_count == 1
+    assert buckets[0].max_trade_notional == pytest.approx(70_000.0 * 0.25)
+    assert latest_bucket[0].open_time == 1_717_200_001_000
+    assert [trade.agg_trade_id for trade in window] == [101]
+    assert coverage.count == 3
+    assert coverage.first_trade_time_ms == 1_717_200_000_123
+    assert coverage.last_trade_time_ms == 1_717_200_001_100
+    assert coverage.first_agg_trade_id == 100
+    assert coverage.last_agg_trade_id == 102
+    assert coverage.asdict()["symbol"] == "BTCUSDT"
 
 
 class _SyncClient:

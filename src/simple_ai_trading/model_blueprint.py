@@ -222,6 +222,9 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "cannot override risk controls",
         ),
         sources=(
+            "https://arxiv.org/abs/2508.02739",
+            "https://github.com/shiyu-coder/Kronos",
+            "https://arxiv.org/abs/2606.27100",
             "https://arxiv.org/abs/2403.07815",
             "https://github.com/amazon-science/chronos-forecasting",
             "https://research.google/blog/a-decoder-only-foundation-model-for-time-series-forecasting/",
@@ -338,6 +341,8 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "cannot approve failed model-lab outcome",
         ),
         sources=(
+            "https://arxiv.org/abs/2503.16252",
+            "https://huggingface.co/SUFE-AIFLM-Lab/Fin-R1",
             "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/",
             "https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows",
             "https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html",
@@ -544,6 +549,39 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         source_type="primary_research",
         applied_to=("foundation_forecaster", "cross_asset_graph_sequence"),
         usage_policy="Use for universal forecast inspiration; promotion still requires AI-vs-ML uplift evidence.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="kronos_finance_foundation",
+        label="Kronos finance-native time-series foundation model",
+        url="https://arxiv.org/abs/2508.02739",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster",),
+        usage_policy=(
+            "Benchmark open Kronos-base forecasts only as timestamped features; "
+            "the upstream demonstration is not production trading evidence."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="tsfm_finance_benchmark_2026",
+        label="2026 pretrained TSFM financial-return benchmark",
+        url="https://arxiv.org/abs/2606.27100",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster", "patch_transformer"),
+        usage_policy=(
+            "Require rolling-origin and random-walk comparisons because reported "
+            "forecast gains are model- and asset-specific rather than universal alpha."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="fin_r1",
+        label="Fin-R1 7B financial reasoning model",
+        url="https://arxiv.org/abs/2503.16252",
+        source_type="primary_research",
+        applied_to=("ai_risk_reviewer", "ai_uplift_gate"),
+        usage_policy=(
+            "Benchmark schema-constrained risk reasoning locally; financial QA scores "
+            "are not evidence of return prediction or permission to create orders."
+        ),
     ),
     ResearchSourceBlueprint(
         source_id="bloomberggpt",

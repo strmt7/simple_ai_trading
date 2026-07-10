@@ -1,4 +1,4 @@
-# Optimization Evidence
+﻿# Optimization Evidence
 
 This directory only accepts real-data optimization evidence.
 
@@ -16,6 +16,17 @@ Current implementation notes:
 - [Round 004 - Regime Entry Gate](round-004-regime-entry-gate.md)
 
 Real-data graph checkpoints:
+
+Latest local BTC-only profitability work is negative evidence, not a promoted
+model. `round-profitability-btc-weekday-adaptive-v25` used BTCUSDT futures
+`1s` data for 2024-06-03 through 2024-06-07 UTC with DirectML selected. Longer
+cost-aware labels showed positive label preflight edge, but executable replay
+still produced at most one selection trade and failed the conservative
+day-trading gates (`no_accepted_symbols`, `no_closed_trades`). Follow-up
+high-conviction 60/90/120 minute candidates were added from raw weekday
+after-cost opportunity scans, and `round-highconv-btc-pruned-v27` was stopped
+after threshold calibration again proved too slow on a single candidate. These
+artifacts must not be interpreted as profitability evidence.
 
 The current retained checkpoint is `round-broad-rule-alpha-1d-smoke`, a failed
 BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
@@ -91,14 +102,15 @@ explanation. If regime or meta-label gates explicitly skipped entries in
 unpredictable markets, low activity can still pass so the system is allowed to
 wait instead of manufacturing trades.
 
-`tools/optimization_round.py` defaults to `--model-candidates 3` for promotion
-rounds. Each symbol evaluates a bounded set of label target/horizon and model
-regularization candidates on the training/selection slice, then uses only the
-selected candidate on the final holdout. `report.json` and
+`tools/optimization_round.py` defaults to `--model-candidates 32` for promotion
+rounds. Each symbol evaluates the broad profitability-search prefix of bounded
+cost-aware label target/horizon and model regularization candidates on the
+training/selection slice, then uses only the selected candidate on the final
+holdout. Pass `--model-candidates 3` only for smoke diagnostics. `report.json` and
 `backtest-metrics.csv` record `model_candidate_count`,
 `model_selected_candidate`, and `model_selection_score` so future agents can
 audit whether a graph came from a single default model or a candidate search.
-Current promotion-count search starts with:
+The smoke-count search starts with:
 
 - `default`,
 - `day_trade_frequency_probe_forward`,
@@ -107,21 +119,22 @@ Current promotion-count search starts with:
 The frequency probes use one-second input data and a longer intraday horizon so
 the smoke path can test whether the system can generate repeated long/short day
 trading decisions. Candidate labels are still floored at the estimated
-round-trip taker-fee plus slippage hurdle with a safety margin, so micro
-profiles cannot train on moves that would be unprofitable after execution
-costs. Information-event candidates based on trailing CUSUM return activity,
+execution-cost hurdle with a safety margin, so micro profiles cannot train on
+moves that would be unprofitable after fees, spread, latency, and
+testnet-to-live buffers. Cost-aware 5m/15m/30m/60m/2h/4h day-trading horizons,
+information-event candidates based on trailing CUSUM return activity,
 session-volatility probes, order-flow event probes, focal rare-event training,
-and higher-conviction variants remain in the expanded candidate set when more
-candidates are requested.
+and higher-conviction variants are included by the default 32-candidate
+profitability search.
 Downside-positive labels represent profitable short-side events. The optimizer
 therefore orients those model probabilities to the runtime futures convention
 after probability calibration and before threshold/backtest scoring, so short
 labels are not silently treated as high-score long signals. With
 `--model-candidates 6`, the bounded research prefix additionally includes:
 
-- `intraday_activity_triple_barrier`,
-- `intraday_downside_triple_barrier`,
-- `focal_positive_information_event_barrier`.
+- `cost_aware_5m_forward`,
+- `cost_aware_5m_downside`,
+- `cost_aware_15m_forward`.
 
 `focal_downside_information_event_barrier`,
 `session_volatility_triple_barrier`,
@@ -132,24 +145,40 @@ labels are not silently treated as high-score long signals. With
 `downside_order_flow_information_event_barrier`, `frequency_probe_forward`,
 `intraday_micro_triple_barrier`, `intraday_breakout_forward`, high-conviction,
 lower-signal, and longer-horizon probes remain in the expanded candidate set
-when more candidates are requested. The expanded full set now contains 24
+when more candidates are requested. The expanded full set now contains 32
 candidates. Round artifacts now write
 `candidate-diagnostics.csv` and `candidate-diagnostics.json`, and serialized
 model artifacts persist `round_candidate_diagnostics`, so future agents can
 audit each candidate's threshold, trade-count, P&L, and selection-gate result
 instead of only seeing the final selected candidate. Candidate diagnostics also
-record model family, hybrid profile/score evidence, neutral-signal hold/grace
-settings, selection-slice realized P&L, closed trades, drawdown, fees, profit
-factor, expectancy, edge vs buy-hold, cap hits, regime skips, meta-label skips,
-liquidation events, and reject reason. When every candidate fails hard gates,
+record model family, hybrid profile/score evidence, dense-MLP attempted vs
+selected state, dense-MLP training backend, dense-MLP row counts, dense-MLP
+positive rate, dense-MLP validation loss, neutral-signal hold/grace settings,
+selection-slice realized P&L, closed trades, drawdown, fees, profit factor,
+expectancy, edge vs buy-hold, cap hits, regime skips, meta-label skips,
+liquidation events, and reject reason. Multi-candidate rounds build one
+advanced feature matrix per symbol/feature-shape and relabel it per candidate,
+so 1s research does not recompute the same order-flow, higher-timeframe, and
+polynomial feature vector for every label profile. Candidate training also
+fails closed before GPU training when the chronological training slice has
+fewer than 20 positive or 20 negative labels; diagnostics preserve the
+`training_positive_rows<20` or `training_negative_rows<20` reason so sparse
+label failures cannot masquerade as model evidence. When every candidate fails hard gates,
 selection is still rejected for promotion/live use, but the optimizer now
 breaks ties toward non-losing/no-trade selection evidence and enforces no-entry
 thresholds on the rejected executable model. The hybrid model-zoo overlay is
 searched even after a rejected base selection by using a copied model at the
 best diagnostic threshold. Conservative hybrid search includes low-base rescue
-profiles, but a hybrid model can replace the selected base model only when its
-chronological selection replay passes the same objective gates; rejected hybrid
-attempts never alter executable thresholds.
+profiles plus neural committee/rescue profiles. The dense neural expert is a
+compact GPU-trained MLP serialized into the same model JSON and replayed through
+the same stdlib inference path as CLI/app/live scoring, but a hybrid model can
+replace the selected base model only when its chronological selection replay
+passes the same objective gates; rejected hybrid attempts never alter
+executable thresholds. On large second-level windows the hybrid profile zoo uses
+an even chronological sample for profile search, then replays only the winning
+hybrid profile on the full selection slice before accepting it. Reports include
+the sampled and full selection row counts so a sampled search cannot be mistaken
+for final promotion evidence.
 
 After the classifier/hybrid pass, the optimizer runs an interpretable
 rule-alpha model zoo. This is the missing research layer used by many stronger
@@ -170,7 +199,10 @@ chronological event-rank pool using after-cost forward-event edge, signal
 count, and hit-rate telemetry from earlier and later slices; the ranker chooses
 what to replay, not what to promote. Evidence tables retain the split mode plus
 training/validation row, edge, signal, and hit-rate fields so future graph
-updates cannot hide unstable candidates. Each template is tested
+updates cannot hide unstable candidates. For large second-level selection
+windows, the event-rank pool is capped at the replay budget so week-scale runs
+do not spend hours ranking templates that still require the same full replay
+gates. Each template is tested
 with normal and inverted probability orientation, bounded
 threshold/stop/take/hold profiles, and cached regime/liquidity-session arrays so
 repeated candidate replays do not waste time. Rule-alpha models serialize as `rule_alpha` hybrid

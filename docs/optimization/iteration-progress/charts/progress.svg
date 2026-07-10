@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="980" height="360" viewBox="0 0 980 360">
   <rect width="980" height="360" fill="#ffffff"/>
   <text x="32" y="36" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Optimization progress</text>
-  <text x="32" y="64" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">Source: tracked exchange-sourced round reports. Latest: round-broad-rule-alpha-1d-smoke</text>
+  <text x="32" y="64" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">Source: tracked exchange-sourced round reports. Latest: round-action-value-btc-1m-2020-2026-v73</text>
   <line x1="80" y1="48" x2="80" y2="258" stroke="#cbd5e1"/>
   <line x1="80" y1="258" x2="900" y2="258" stroke="#cbd5e1"/>
-  <polyline points="80.00,258.00 900.00,258.00" fill="none" stroke="#0f766e" stroke-width="3"/>
-  <polyline points="80.00,258.00 900.00,258.00" fill="none" stroke="#b91c1c" stroke-width="3" stroke-dasharray="8 5"/>
+  <polyline points="80.00,258.00 97.45,258.00 114.89,258.00 132.34,258.00 149.79,258.00 167.23,258.00 184.68,258.00 202.13,258.00 219.57,258.00 237.02,258.00 254.47,258.00 271.91,258.00 289.36,258.00 306.81,258.00 324.26,258.00 341.70,258.00 359.15,258.00 376.60,258.00 394.04,258.00 411.49,258.00 428.94,258.00 446.38,258.00 463.83,258.00 481.28,258.00 498.72,258.00 516.17,258.00 533.62,258.00 551.06,258.00 568.51,258.00 585.96,258.00 603.40,258.00 620.85,258.00 638.30,258.00 655.74,258.00 673.19,258.00 690.64,258.00 708.09,258.00 725.53,258.00 742.98,258.00 760.43,258.00 777.87,258.00 795.32,258.00 812.77,258.00 830.21,258.00 847.66,258.00 865.11,258.00 882.55,258.00 900.00,258.00" fill="none" stroke="#0f766e" stroke-width="3"/>
+  <polyline points="80.00,258.00 97.45,258.00 114.89,258.00 132.34,258.00 149.79,258.00 167.23,258.00 184.68,258.00 202.13,258.00 219.57,258.00 237.02,258.00 254.47,258.00 271.91,258.00 289.36,258.00 306.81,258.00 324.26,258.00 341.70,258.00 359.15,258.00 376.60,258.00 394.04,258.00 411.49,258.00 428.94,258.00 446.38,258.00 463.83,258.00 481.28,258.00 498.72,258.00 516.17,258.00 533.62,258.00 551.06,258.00 568.51,258.00 585.96,258.00 603.40,258.00 620.85,258.00 638.30,258.00 655.74,258.00 673.19,258.00 690.64,258.00 708.09,258.00 725.53,258.00 742.98,258.00 760.43,258.00 777.87,258.00 795.32,258.00 812.77,258.00 830.21,258.00 847.66,258.00 865.11,258.00 882.55,258.00 900.00,258.00" fill="none" stroke="#b91c1c" stroke-width="3" stroke-dasharray="8 5"/>
   <text x="32" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#0f766e">mean ROI %</text>
   <text x="32" y="174" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#b91c1c">worst drawdown %</text>
-  <text x="80" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-empirical-interaction-edge-1d-smoke</text>
-  <text x="780" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-broad-rule-alpha-1d-smoke</text>
-  <text x="32" y="318" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#111827">Latest closed trades: 0 | latest accepted symbols: 0/3 | promotion: not_requested</text>
+  <text x="80" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-broad-rule-alpha-1d-smoke</text>
+  <text x="780" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">round-action-value-btc-1m-2020-2026-v73</text>
+  <text x="32" y="318" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#111827">Latest closed trades: 0 | latest accepted symbols: 0/1 | promotion: not_requested</text>
 </svg>

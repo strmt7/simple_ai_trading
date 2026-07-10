@@ -94,6 +94,32 @@ def test_make_rows_preserves_execution_activity_fields() -> None:
     first = rows[0]
     assert first.quote_volume == pytest.approx(source[first.timestamp].quote_volume)
     assert first.trade_count == source[first.timestamp].trade_count
+    assert first.trailing_quote_volume_24h_estimate > first.quote_volume
+    assert first.trailing_trade_count_24h_estimate > first.trade_count
+    assert first.trailing_activity_observed_ms >= 5 * 60 * 1000
+
+
+def test_trailing_activity_estimate_is_causal() -> None:
+    candles = [
+        replace(candle, quote_volume=1_000.0 + index, trade_count=10 + index)
+        for index, candle in enumerate(_fake_candles())
+    ]
+    original = make_rows(candles, short_window=10, long_window=30)
+    changed_future = list(candles)
+    pivot_timestamp = original[0].timestamp
+    changed_future = [
+        replace(candle, quote_volume=1_000_000_000.0, trade_count=1_000_000)
+        if candle.close_time > pivot_timestamp
+        else candle
+        for candle in changed_future
+    ]
+    modified = make_rows(changed_future, short_window=10, long_window=30)
+
+    assert modified[0].timestamp == original[0].timestamp
+    assert modified[0].trailing_quote_volume_24h_estimate == pytest.approx(
+        original[0].trailing_quote_volume_24h_estimate
+    )
+    assert modified[0].trailing_trade_count_24h_estimate == original[0].trailing_trade_count_24h_estimate
 
 
 def test_make_rows_respects_enabled_feature_subset() -> None:

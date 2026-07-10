@@ -279,6 +279,7 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
         cooldown_minutes=-5,
         min_position_hold_bars=-10,
         flat_signal_exit_grace_bars=-2,
+        max_position_hold_bars=-3,
         confidence_beta=float("nan"),
         external_signals_enabled="yes",
         external_signal_timeout_seconds=float("inf"),
@@ -302,13 +303,14 @@ def test_runtime_and_strategy_configs_coerce_nonfinite_and_string_values(tmp_pat
     assert strategy.stop_loss_pct == 0.010
     assert strategy.take_profit_pct == 0.018
     assert strategy.max_drawdown_limit == 0.10
-    assert strategy.taker_fee_bps == 1.0
+    assert strategy.taker_fee_bps == 10.0
     assert strategy.slippage_bps == 5.0
     assert strategy.label_threshold == 0.001
     assert strategy.max_open_positions == 3
     assert strategy.cooldown_minutes == 0
     assert strategy.min_position_hold_bars == 0
     assert strategy.flat_signal_exit_grace_bars == 0
+    assert strategy.max_position_hold_bars == 0
     assert strategy.confidence_beta == 0.90
     assert strategy.external_signals_enabled is True
     assert strategy.external_signal_timeout_seconds == 3.0

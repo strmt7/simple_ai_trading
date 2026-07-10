@@ -2,7 +2,8 @@ param(
     [string]$Exe = "",
     [string]$Out = "",
     [int]$MinWidth = 1200,
-    [int]$MinHeight = 720
+    [int]$MinHeight = 720,
+    [switch]$RealStatus
 )
 
 $ErrorActionPreference = "Stop"
@@ -61,7 +62,11 @@ $bitmap = $null
 $graphics = $null
 try {
     $env:SIMPLE_AI_TRADING_REPO_ROOT = $Repo
-    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = "1"
+    if ($RealStatus.IsPresent) {
+        Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue
+    } else {
+        $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = "1"
+    }
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue
 
@@ -70,7 +75,7 @@ try {
         $process.Refresh()
         $process.MainWindowHandle -ne [IntPtr]::Zero
     } "native app window handle" 10000
-    Start-Sleep -Milliseconds 600
+    Start-Sleep -Milliseconds $(if ($RealStatus.IsPresent) { 5000 } else { 600 })
 
     $rect = New-Object SatNativeCapture+RECT
     if (-not [SatNativeCapture]::GetWindowRect($process.MainWindowHandle, [ref]$rect)) {

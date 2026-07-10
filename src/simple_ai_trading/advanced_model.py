@@ -16,10 +16,13 @@ inference at test / live time recomputes the same feature vector every call.
 
 from __future__ import annotations
 
+from array import array
 import math
+import random
 from bisect import bisect_right
+from collections import deque
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Callable, Iterable, Sequence, cast
 
 from .api import Candle
 from .features import (
@@ -31,12 +34,21 @@ from .features import (
     make_rows as make_base_rows,
     normalize_enabled_features,
 )
+from .market_store import AggTrade, AggTradeBucket
 from .market_data import clean_candles
 from .model import TrainedModel, ensemble_member_from_model, train as train_logistic
+from .trade_tape_features import (
+    TRADE_TAPE_FEATURES_PER_WINDOW,
+    TradeTapeFeatureCache,
+    build_trade_tape_feature_cache,
+    trade_tape_features_at,
+)
 
-ADVANCED_FEATURE_VERSION = "v10-higher-timeframe-context"
+ADVANCED_FEATURE_VERSION = "v12-expanded-trade-tape"
 _SUPPORTED_ADVANCED_FEATURE_VERSIONS = {
     ADVANCED_FEATURE_VERSION,
+    "v11-next-entry-labels",
+    "v10-higher-timeframe-context",
     "v9-flow-state",
     "v8-information-event",
     "v7-volatility-barrier",
@@ -47,6 +59,7 @@ _CONFLUENCE_FEATURES_PER_WINDOW = 9
 _MARKET_QUALITY_FEATURES_PER_WINDOW = 10
 _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW = 8
 _ORDER_FLOW_FEATURES_PER_WINDOW = 13
+_TRADE_TAPE_FEATURES_PER_WINDOW = TRADE_TAPE_FEATURES_PER_WINDOW
 
 
 @dataclass(frozen=True)
@@ -67,16 +80,19 @@ class AdvancedFeatureConfig:
     higher_timeframe_windows: tuple[int, ...] = ()
     higher_timeframe_bucket_ms: int = 60_000
     order_flow_windows: tuple[int, ...] = ()
+    trade_tape_windows: tuple[int, ...] = ()
     nonlinear_transforms: tuple[str, ...] = ("tanh", "log1p")
     short_window: int = 10
     long_window: int = 40
     label_threshold: float = 0.001
     label_lookahead: int = 4
+    label_entry_offset: int = 1
     label_mode: str = "forward_return"
     label_stop_threshold: float | None = None
     label_volatility_window: int = 0
     label_volatility_multiplier: float = 0.0
     order_flow_features_per_window: int = _ORDER_FLOW_FEATURES_PER_WINDOW
+    trade_tape_features_per_window: int = _TRADE_TAPE_FEATURES_PER_WINDOW
 
 
 @dataclass(frozen=True)
@@ -343,9 +359,9 @@ def _trailing_cusum_event_direction(
     return 0
 
 
-def _prefix_sum(values: Sequence[float]) -> list[float]:
+def _prefix_sum(values: Iterable[float]) -> array:
     total = 0.0
-    prefix = [0.0]
+    prefix = array("d", [0.0])
     for value in values:
         total += value
         prefix.append(total)
@@ -358,65 +374,105 @@ def _window_sum(prefix: Sequence[float], start: int, end: int) -> float:
 
 @dataclass(frozen=True)
 class _AdvancedWindowCache:
-    closes: list[float]
-    close_prefix: list[float]
-    close_square_prefix: list[float]
-    gain_prefix: list[float]
-    loss_prefix: list[float]
-    abs_move_prefix: list[float]
+    closes: array
+    close_prefix: array
+    close_square_prefix: array
+    gain_prefix: array
+    loss_prefix: array
+    abs_move_prefix: array
+    rolling_highs: dict[int, array]
+    rolling_lows: dict[int, array]
 
 
 @dataclass(frozen=True)
 class _ConfluenceCache:
     candles: list[Candle]
-    opens: list[float]
-    highs: list[float]
-    lows: list[float]
-    closes: list[float]
-    volumes: list[float]
-    quote_volumes: list[float]
-    trade_counts: list[float]
-    taker_buy_base_volumes: list[float]
-    taker_buy_quote_volumes: list[float]
-    signed_base_flows: list[float]
-    signed_quote_flows: list[float]
-    signed_flow_ratios: list[float]
-    no_trade_flags: list[float]
-    nonnegative_volumes: list[float]
-    returns: list[float]
-    abs_returns: list[float]
-    close_prefix: list[float]
-    volume_prefix: list[float]
-    nonnegative_volume_prefix: list[float]
-    true_range_prefix: list[float]
-    return_prefix: list[float]
-    return_square_prefix: list[float]
-    abs_return_prefix: list[float]
-    abs_return_square_prefix: list[float]
-    downside_abs_return_prefix: list[float]
-    return_lag_product_prefix: list[float]
-    return_volume_product_prefix: list[float]
-    volume_square_prefix: list[float]
-    volume_abs_return_product_prefix: list[float]
-    quote_volume_prefix: list[float]
-    trade_count_prefix: list[float]
-    taker_buy_base_prefix: list[float]
-    taker_buy_quote_prefix: list[float]
-    signed_base_flow_prefix: list[float]
-    signed_quote_flow_prefix: list[float]
-    signed_flow_ratio_prefix: list[float]
-    signed_flow_ratio_square_prefix: list[float]
-    signed_flow_ratio_abs_prefix: list[float]
-    signed_flow_ratio_lag_product_prefix: list[float]
-    signed_flow_return_product_prefix: list[float]
-    no_trade_prefix: list[float]
+    opens: array
+    highs: array
+    lows: array
+    closes: array
+    volumes: array
+    quote_volumes: array
+    trade_counts: array
+    taker_buy_base_volumes: array
+    taker_buy_quote_volumes: array
+    signed_base_flows: array
+    signed_quote_flows: array
+    signed_flow_ratios: array
+    no_trade_flags: array
+    nonnegative_volumes: array
+    returns: array
+    abs_returns: array
+    close_prefix: array
+    volume_prefix: array
+    nonnegative_volume_prefix: array
+    true_range_prefix: array
+    return_prefix: array
+    return_square_prefix: array
+    abs_return_prefix: array
+    abs_return_square_prefix: array
+    downside_abs_return_prefix: array
+    return_lag_product_prefix: array
+    return_volume_product_prefix: array
+    volume_square_prefix: array
+    volume_abs_return_product_prefix: array
+    quote_volume_prefix: array
+    trade_count_prefix: array
+    taker_buy_base_prefix: array
+    taker_buy_quote_prefix: array
+    signed_base_flow_prefix: array
+    signed_quote_flow_prefix: array
+    signed_flow_ratio_prefix: array
+    signed_flow_ratio_square_prefix: array
+    signed_flow_ratio_abs_prefix: array
+    signed_flow_ratio_lag_product_prefix: array
+    signed_flow_return_product_prefix: array
+    no_trade_prefix: array
+    rolling_highs: dict[int, array]
+    rolling_lows: dict[int, array]
+    rolling_abs_return_maxima: dict[int, array]
+
+
+def _rolling_extrema(values: Sequence[float], window: int, *, maximum: bool) -> array:
+    """Return causal rolling extrema in O(n), including the current sample."""
+
+    width = max(1, int(window))
+    indexes: deque[int] = deque()
+    output = array("d")
+    for index, raw_value in enumerate(values):
+        value = float(raw_value)
+        while indexes and (
+            float(values[indexes[-1]]) <= value if maximum else float(values[indexes[-1]]) >= value
+        ):
+            indexes.pop()
+        indexes.append(index)
+        oldest = index - width + 1
+        while indexes and indexes[0] < oldest:
+            indexes.popleft()
+        output.append(float(values[indexes[0]]))
+    return output
+
+
+def _cached_rolling_extrema(
+    values: Sequence[float],
+    cache: dict[int, array],
+    window: int,
+    *,
+    maximum: bool,
+) -> array:
+    width = max(1, int(window))
+    result = cache.get(width)
+    if result is None:
+        result = _rolling_extrema(values, width, maximum=maximum)
+        cache[width] = result
+    return result
 
 
 def _build_window_cache(closes: Sequence[float]) -> _AdvancedWindowCache:
-    close_values = [float(value) for value in closes]
-    gains = [0.0]
-    losses = [0.0]
-    abs_moves = [0.0]
+    close_values = array("d", (float(value) for value in closes))
+    gains = array("d", [0.0])
+    losses = array("d", [0.0])
+    abs_moves = array("d", [0.0])
     for index in range(1, len(close_values)):
         delta = close_values[index] - close_values[index - 1]
         gains.append(max(0.0, delta))
@@ -425,10 +481,12 @@ def _build_window_cache(closes: Sequence[float]) -> _AdvancedWindowCache:
     return _AdvancedWindowCache(
         closes=close_values,
         close_prefix=_prefix_sum(close_values),
-        close_square_prefix=_prefix_sum([value * value for value in close_values]),
+        close_square_prefix=_prefix_sum(value * value for value in close_values),
         gain_prefix=_prefix_sum(gains),
         loss_prefix=_prefix_sum(losses),
         abs_move_prefix=_prefix_sum(abs_moves),
+        rolling_highs={},
+        rolling_lows={},
     )
 
 
@@ -495,10 +553,19 @@ def _extra_window_features_at(cache: _AdvancedWindowCache, end: int, windows: Se
         rsi = _rsi_at(cache, end, window)
         vol = _volatility_at(cache, end, window)
         if end >= window - 1 and start >= 0:
-            window_values = cache.closes[start:end + 1]
-            first = window_values[0]
-            high = max(window_values)
-            low = min(window_values)
+            first = cache.closes[start]
+            high = _cached_rolling_extrema(
+                cache.closes,
+                cache.rolling_highs,
+                window,
+                maximum=True,
+            )[end]
+            low = _cached_rolling_extrema(
+                cache.closes,
+                cache.rolling_lows,
+                window,
+                maximum=False,
+            )[end]
             path = _window_sum(cache.abs_move_prefix, start, end)
             net_move = abs(anchor - first)
         else:
@@ -529,66 +596,68 @@ def _sign_vote(value: float, deadband: float = 0.0) -> float:
 
 def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
     values = list(candles)
-    opens = [float(candle.open) for candle in values]
-    highs = [float(candle.high) for candle in values]
-    lows = [float(candle.low) for candle in values]
-    closes = [float(candle.close) for candle in values]
-    volumes = [float(candle.volume) for candle in values]
-    quote_volumes = [max(0.0, float(getattr(candle, "quote_volume", 0.0) or 0.0)) for candle in values]
-    trade_counts = [float(max(0, int(getattr(candle, "trade_count", 0) or 0))) for candle in values]
-    taker_buy_base_volumes = [
-        max(0.0, float(getattr(candle, "taker_buy_base_volume", 0.0) or 0.0))
-        for candle in values
-    ]
-    taker_buy_quote_volumes = [
-        max(0.0, float(getattr(candle, "taker_buy_quote_volume", 0.0) or 0.0))
-        for candle in values
-    ]
-    nonnegative_volumes = [max(0.0, value) for value in volumes]
-    signed_base_flows = [
+    opens = array("d", (float(candle.open) for candle in values))
+    highs = array("d", (float(candle.high) for candle in values))
+    lows = array("d", (float(candle.low) for candle in values))
+    closes = array("d", (float(candle.close) for candle in values))
+    volumes = array("d", (float(candle.volume) for candle in values))
+    quote_volumes = array(
+        "d", (max(0.0, float(getattr(candle, "quote_volume", 0.0) or 0.0)) for candle in values)
+    )
+    trade_counts = array(
+        "d", (float(max(0, int(getattr(candle, "trade_count", 0) or 0))) for candle in values)
+    )
+    taker_buy_base_volumes = array(
+        "d", (max(0.0, float(getattr(candle, "taker_buy_base_volume", 0.0) or 0.0)) for candle in values)
+    )
+    taker_buy_quote_volumes = array(
+        "d", (max(0.0, float(getattr(candle, "taker_buy_quote_volume", 0.0) or 0.0)) for candle in values)
+    )
+    nonnegative_volumes = array("d", (max(0.0, value) for value in volumes))
+    signed_base_flows = array("d", (
         (2.0 * taker_buy_base_volumes[index]) - nonnegative_volumes[index]
         for index in range(len(values))
-    ]
-    signed_quote_flows = [
+    ))
+    signed_quote_flows = array("d", (
         (2.0 * taker_buy_quote_volumes[index]) - quote_volumes[index]
         for index in range(len(values))
-    ]
-    signed_flow_ratios = [
+    ))
+    signed_flow_ratios = array("d", (
         _safe_ratio(signed_base_flows[index], nonnegative_volumes[index])
         for index in range(len(values))
-    ]
-    no_trade_flags = [
+    ))
+    no_trade_flags = array("d", (
         1.0 if nonnegative_volumes[index] <= 0.0 or trade_counts[index] <= 0.0 else 0.0
         for index in range(len(values))
-    ]
-    true_ranges = [0.0]
-    returns = [0.0]
+    ))
+    true_ranges = array("d", [0.0])
+    returns = array("d", [0.0])
     for index in range(1, len(values)):
         previous_close = closes[index - 1]
         high = highs[index]
         low = lows[index]
         true_ranges.append(max(high - low, abs(high - previous_close), abs(low - previous_close)))
         returns.append(_safe_ratio(closes[index] - previous_close, previous_close))
-    abs_returns = [abs(value) for value in returns]
-    downside_abs_returns = [abs(value) if value < 0.0 else 0.0 for value in returns]
-    return_lag_products = [0.0]
+    abs_returns = array("d", (abs(value) for value in returns))
+    downside_abs_returns = array("d", (abs(value) if value < 0.0 else 0.0 for value in returns))
+    return_lag_products = array("d", [0.0])
     for index in range(1, len(returns)):
         return_lag_products.append(returns[index - 1] * returns[index])
-    return_volume_products = [
+    return_volume_products = array("d", (
         returns[index] * nonnegative_volumes[index]
         for index in range(len(values))
-    ]
-    signed_flow_return_products = [
+    ))
+    signed_flow_return_products = array("d", (
         returns[index] * signed_flow_ratios[index]
         for index in range(len(values))
-    ]
-    signed_flow_ratio_lag_products = [0.0]
+    ))
+    signed_flow_ratio_lag_products = array("d", [0.0])
     for index in range(1, len(signed_flow_ratios)):
         signed_flow_ratio_lag_products.append(signed_flow_ratios[index - 1] * signed_flow_ratios[index])
-    volume_abs_return_products = [
+    volume_abs_return_products = array("d", (
         nonnegative_volumes[index] * abs_returns[index]
         for index in range(len(values))
-    ]
+    ))
     return _ConfluenceCache(
         candles=values,
         opens=opens,
@@ -612,13 +681,13 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         nonnegative_volume_prefix=_prefix_sum(nonnegative_volumes),
         true_range_prefix=_prefix_sum(true_ranges),
         return_prefix=_prefix_sum(returns),
-        return_square_prefix=_prefix_sum([value * value for value in returns]),
+        return_square_prefix=_prefix_sum(value * value for value in returns),
         abs_return_prefix=_prefix_sum(abs_returns),
-        abs_return_square_prefix=_prefix_sum([value * value for value in abs_returns]),
+        abs_return_square_prefix=_prefix_sum(value * value for value in abs_returns),
         downside_abs_return_prefix=_prefix_sum(downside_abs_returns),
         return_lag_product_prefix=_prefix_sum(return_lag_products),
         return_volume_product_prefix=_prefix_sum(return_volume_products),
-        volume_square_prefix=_prefix_sum([value * value for value in nonnegative_volumes]),
+        volume_square_prefix=_prefix_sum(value * value for value in nonnegative_volumes),
         volume_abs_return_product_prefix=_prefix_sum(volume_abs_return_products),
         quote_volume_prefix=_prefix_sum(quote_volumes),
         trade_count_prefix=_prefix_sum(trade_counts),
@@ -627,11 +696,14 @@ def _build_confluence_cache(candles: Sequence[Candle]) -> _ConfluenceCache:
         signed_base_flow_prefix=_prefix_sum(signed_base_flows),
         signed_quote_flow_prefix=_prefix_sum(signed_quote_flows),
         signed_flow_ratio_prefix=_prefix_sum(signed_flow_ratios),
-        signed_flow_ratio_square_prefix=_prefix_sum([value * value for value in signed_flow_ratios]),
-        signed_flow_ratio_abs_prefix=_prefix_sum([abs(value) for value in signed_flow_ratios]),
+        signed_flow_ratio_square_prefix=_prefix_sum(value * value for value in signed_flow_ratios),
+        signed_flow_ratio_abs_prefix=_prefix_sum(abs(value) for value in signed_flow_ratios),
         signed_flow_ratio_lag_product_prefix=_prefix_sum(signed_flow_ratio_lag_products),
         signed_flow_return_product_prefix=_prefix_sum(signed_flow_return_products),
         no_trade_prefix=_prefix_sum(no_trade_flags),
+        rolling_highs={},
+        rolling_lows={},
+        rolling_abs_return_maxima={},
     )
 
 
@@ -663,8 +735,23 @@ def _confluence_features_at(cache: _ConfluenceCache, end: int, windows: Sequence
         avg_volume = _window_mean(cache.volume_prefix, start, end)
         avg_true_range = _window_mean(cache.true_range_prefix, start, end)
         avg_true_range = max(avg_true_range, close * 0.00001)
-        previous_high = max(cache.highs[start:end]) if end > start else cache.highs[end]
-        previous_low = min(cache.lows[start:end]) if end > start else cache.lows[end]
+        if end > start:
+            prior_width = max(1, window - 1)
+            previous_high = _cached_rolling_extrema(
+                cache.highs,
+                cache.rolling_highs,
+                prior_width,
+                maximum=True,
+            )[end - 1]
+            previous_low = _cached_rolling_extrema(
+                cache.lows,
+                cache.rolling_lows,
+                prior_width,
+                maximum=False,
+            )[end - 1]
+        else:
+            previous_high = cache.highs[end]
+            previous_low = cache.lows[end]
         trend_atr = _safe((close - sma) / avg_true_range) if math.isfinite(sma) else 0.0
         volume_surge = _safe((volume / avg_volume) - 1.0) if avg_volume > 0.0 else 0.0
         breakout_atr = 0.0
@@ -754,7 +841,17 @@ def _market_quality_features_at(cache: _ConfluenceCache, end: int, windows: Sequ
             abs_return_stdev = math.sqrt(
                 max(0.0, (abs_return_sq_sum - (path * path / return_count)) / (return_count - 1))
             )
-        tail_ratio = _safe_ratio(max(cache.abs_returns[return_start:return_end + 1]) if return_count else 0.0, mean_abs_return)
+        tail_value = (
+            _cached_rolling_extrema(
+                cache.abs_returns,
+                cache.rolling_abs_return_maxima,
+                max(1, return_count),
+                maximum=True,
+            )[return_end]
+            if return_count
+            else 0.0
+        )
+        tail_ratio = _safe_ratio(tail_value, mean_abs_return)
         total_return_volume = _bounded_window_sum(cache.nonnegative_volume_prefix, return_start, return_end)
         volume_return_pressure = _safe_ratio(
             _bounded_window_sum(cache.return_volume_product_prefix, return_start, return_end),
@@ -855,6 +952,113 @@ def _log_ratio(value: float, reference: float) -> float:
     if value <= 0.0 or reference <= 0.0 or not math.isfinite(value) or not math.isfinite(reference):
         return 0.0
     return _safe(math.log(value / reference))
+
+
+@dataclass(frozen=True)
+class _HigherTimeframeContextCache:
+    windows: tuple[int, ...]
+    close_times: array
+    opens: array
+    closes: array
+    volumes: array
+    trade_counts: array
+    close_prefix: array
+    volume_prefix: array
+    trade_count_prefix: array
+    return_prefix: array
+    return_square_prefix: array
+    rolling_highs: dict[int, array]
+    rolling_lows: dict[int, array]
+
+
+def _build_higher_timeframe_context_cache(
+    candles: Sequence[Candle],
+    windows: Sequence[int],
+) -> _HigherTimeframeContextCache:
+    normalized_windows = tuple(max(2, int(window)) for window in windows)
+    close_times = array("q", (int(candle.close_time) for candle in candles))
+    opens = array("d", (float(candle.open) for candle in candles))
+    highs = array("d", (float(candle.high) for candle in candles))
+    lows = array("d", (float(candle.low) for candle in candles))
+    closes = array("d", (float(candle.close) for candle in candles))
+    volumes = array("d", (max(0.0, float(candle.volume)) for candle in candles))
+    trade_counts = array(
+        "d",
+        (float(max(0, int(getattr(candle, "trade_count", 0) or 0))) for candle in candles),
+    )
+    returns = array("d", [0.0]) if closes else array("d")
+    for index in range(1, len(closes)):
+        returns.append(_safe_ratio(closes[index] - closes[index - 1], closes[index - 1]))
+    rolling_highs = {
+        window: _rolling_extrema(highs, window, maximum=True)
+        for window in sorted(set(normalized_windows))
+    }
+    rolling_lows = {
+        window: _rolling_extrema(lows, window, maximum=False)
+        for window in sorted(set(normalized_windows))
+    }
+    return _HigherTimeframeContextCache(
+        windows=normalized_windows,
+        close_times=close_times,
+        opens=opens,
+        closes=closes,
+        volumes=volumes,
+        trade_counts=trade_counts,
+        close_prefix=_prefix_sum(closes),
+        volume_prefix=_prefix_sum(volumes),
+        trade_count_prefix=_prefix_sum(trade_counts),
+        return_prefix=_prefix_sum(returns),
+        return_square_prefix=_prefix_sum(value * value for value in returns),
+        rolling_highs=rolling_highs,
+        rolling_lows=rolling_lows,
+    )
+
+
+def _higher_timeframe_context_features_from_cache(
+    cache: _HigherTimeframeContextCache,
+    timestamp: int,
+) -> list[float]:
+    features: list[float] = []
+    if not cache.windows:
+        return features
+    end = bisect_right(cache.close_times, int(timestamp)) - 1
+    if end < 0:
+        return [0.0 for _ in range(_HIGHER_TIMEFRAME_FEATURES_PER_WINDOW * len(cache.windows))]
+    for window in cache.windows:
+        if end < window - 1:
+            features.extend([0.0] * _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW)
+            continue
+        start = end + 1 - window
+        first_open = cache.opens[start]
+        last_close = cache.closes[end]
+        mean_close = _window_mean(cache.close_prefix, start, end)
+        return_start = start + 1
+        return_count = max(0, end - return_start + 1)
+        realized_volatility = 0.0
+        if return_count >= 2:
+            return_sum = _bounded_window_sum(cache.return_prefix, return_start, end)
+            return_square_sum = _bounded_window_sum(cache.return_square_prefix, return_start, end)
+            variance = (
+                return_square_sum - (return_sum * return_sum / float(return_count))
+            ) / float(return_count - 1)
+            realized_volatility = math.sqrt(max(0.0, variance))
+        high = cache.rolling_highs[window][end]
+        low = cache.rolling_lows[window][end]
+        mean_volume = _window_mean(cache.volume_prefix, start, end)
+        mean_trade_count = _window_mean(cache.trade_count_prefix, start, end)
+        features.extend(
+            [
+                _safe_ratio(last_close - first_open, first_open),
+                _safe_ratio(last_close - mean_close, mean_close),
+                _safe(realized_volatility),
+                _safe_ratio(high - low, last_close),
+                _safe_ratio(last_close - high, high),
+                _safe_ratio(last_close - low, low),
+                _log_ratio(cache.volumes[end], mean_volume),
+                _log_ratio(cache.trade_counts[end], mean_trade_count),
+            ]
+        )
+    return features
 
 
 def _higher_timeframe_context_features_at(
@@ -1007,6 +1211,19 @@ def _order_flow_features_for_config(cache: _ConfluenceCache, end: int, cfg: Adva
     return features
 
 
+def _trade_tape_features_for_config(
+    cache: TradeTapeFeatureCache | None,
+    end: int,
+    cfg: AdvancedFeatureConfig,
+) -> list[float]:
+    return trade_tape_features_at(
+        cache,
+        end,
+        cfg.trade_tape_windows,
+        features_per_window=max(0, int(cfg.trade_tape_features_per_window)),
+    )
+
+
 def _nonlinear_expand(values: Sequence[float], transforms: Sequence[str]) -> list[float]:
     out: list[float] = []
     for name in transforms:
@@ -1049,6 +1266,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
     market_quality = _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows)
     higher_timeframe = _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW * len(cfg.higher_timeframe_windows)
     order_flow = max(0, int(cfg.order_flow_features_per_window)) * len(cfg.order_flow_windows)
+    trade_tape = max(0, int(cfg.trade_tape_features_per_window)) * len(cfg.trade_tape_windows)
     transforms = base * len(cfg.nonlinear_transforms)
     pairs = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -1056,7 +1274,7 @@ def advanced_feature_dimension(cfg: AdvancedFeatureConfig) -> int:
         pairs = k * (k + 1) // 2
         if cfg.polynomial_degree >= 3 and k >= 3:
             pairs += 1 + 3
-    return base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
+    return base + extras + confluence + market_quality + higher_timeframe + order_flow + trade_tape + transforms + pairs
 
 
 def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGroupSpan, ...]:
@@ -1080,6 +1298,7 @@ def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGro
     add("market_quality_regime", _MARKET_QUALITY_FEATURES_PER_WINDOW * len(cfg.market_quality_windows))
     add("higher_timeframe_context", _HIGHER_TIMEFRAME_FEATURES_PER_WINDOW * len(cfg.higher_timeframe_windows))
     add("order_flow_microstructure", max(0, int(cfg.order_flow_features_per_window)) * len(cfg.order_flow_windows))
+    add("trade_tape_microstructure", max(0, int(cfg.trade_tape_features_per_window)) * len(cfg.trade_tape_windows))
     add("nonlinear_transforms", base * len(cfg.nonlinear_transforms))
     pair_count = 0
     if cfg.polynomial_degree >= 2 and cfg.polynomial_top_features > 1:
@@ -1091,8 +1310,15 @@ def advanced_feature_group_spans(cfg: AdvancedFeatureConfig) -> tuple[FeatureGro
     return tuple(spans)
 
 
-def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureConfig,
-               at_index: int) -> ModelRow:
+def expand_row(
+    row: ModelRow,
+    candles: Sequence[Candle],
+    cfg: AdvancedFeatureConfig,
+    at_index: int,
+    *,
+    agg_trades: Sequence[AggTrade] | None = None,
+    agg_trade_buckets: Sequence[AggTradeBucket] | None = None,
+) -> ModelRow:
     """Return ``row`` with its feature tuple expanded per ``cfg``.
 
     ``candles`` is the full candle sequence whose ``at_index`` corresponds to
@@ -1117,11 +1343,17 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
         cfg.higher_timeframe_windows,
     )
     order_flow = _order_flow_features_for_config(confluence_cache, at_index, cfg)
+    tape_cache = (
+        build_trade_tape_feature_cache(candles[: at_index + 1], agg_trades, buckets=agg_trade_buckets)
+        if cfg.trade_tape_windows
+        else None
+    )
+    trade_tape = _trade_tape_features_for_config(tape_cache, at_index, cfg)
     transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
     pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
     expanded = tuple(
         _safe(v)
-        for v in base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
+        for v in base + extras + confluence + market_quality + higher_timeframe + order_flow + trade_tape + transforms + pairs
     )
     return ModelRow(
         timestamp=row.timestamp,
@@ -1133,13 +1365,260 @@ def expand_row(row: ModelRow, candles: Sequence[Candle], cfg: AdvancedFeatureCon
         low=getattr(row, "low", None),
         quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
         trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
+        trailing_quote_volume_24h_estimate=float(
+            getattr(row, "trailing_quote_volume_24h_estimate", 0.0) or 0.0
+        ),
+        trailing_trade_count_24h_estimate=max(
+            0,
+            int(getattr(row, "trailing_trade_count_24h_estimate", 0) or 0),
+        ),
+        trailing_activity_observed_ms=max(
+            0,
+            int(getattr(row, "trailing_activity_observed_ms", 0) or 0),
+        ),
     )
+
+
+def _advanced_label_at(
+    valid_candles: Sequence[Candle],
+    confluence_cache: _ConfluenceCache | None,
+    idx: int,
+    cfg: AdvancedFeatureConfig,
+    *,
+    label_lookahead: int,
+    label_mode: str,
+    stop_threshold: float,
+    volatility_window: int,
+    volatility_multiplier: float,
+    fallback_label: int = 0,
+) -> int:
+    label = int(fallback_label)
+    entry_offset = max(0, int(cfg.label_entry_offset))
+    entry_index = int(idx) + entry_offset
+    if entry_index < 0 or entry_index >= len(valid_candles):
+        return 0
+    if label_mode == "forward_return":
+        future_index = min(len(valid_candles) - 1, entry_index + label_lookahead)
+        present = float(valid_candles[entry_index].close)
+        future = float(valid_candles[future_index].close)
+        label = 1 if _safe_ratio(future - present, present) >= float(cfg.label_threshold) else 0
+    elif label_mode == "triple_barrier":
+        label = _triple_barrier_label(
+            valid_candles,
+            entry_index,
+            horizon=label_lookahead,
+            take_profit_pct=cfg.label_threshold,
+            stop_loss_pct=stop_threshold,
+        )
+    elif label_mode == "volatility_triple_barrier":
+        if confluence_cache is None:
+            raise ValueError("confluence_cache_required_for_volatility_labels")
+        adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=cfg.label_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=stop_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        label = _triple_barrier_label(
+            valid_candles,
+            entry_index,
+            horizon=label_lookahead,
+            take_profit_pct=adjusted_take_profit,
+            stop_loss_pct=adjusted_stop_loss,
+        )
+    elif label_mode == "event_volatility_triple_barrier":
+        if confluence_cache is None:
+            raise ValueError("confluence_cache_required_for_event_labels")
+        adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=cfg.label_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=stop_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        if _trailing_cusum_event_direction(
+            confluence_cache,
+            idx,
+            window=volatility_window,
+            threshold_pct=adjusted_take_profit,
+        ) > 0:
+            label = _triple_barrier_label(
+                valid_candles,
+                entry_index,
+                horizon=label_lookahead,
+                take_profit_pct=adjusted_take_profit,
+                stop_loss_pct=adjusted_stop_loss,
+            )
+        else:
+            label = 0
+    elif label_mode == "downside_triple_barrier":
+        label = _downside_triple_barrier_label(
+            valid_candles,
+            entry_index,
+            horizon=label_lookahead,
+            take_profit_pct=cfg.label_threshold,
+            stop_loss_pct=stop_threshold,
+        )
+    elif label_mode == "downside_volatility_triple_barrier":
+        if confluence_cache is None:
+            raise ValueError("confluence_cache_required_for_volatility_labels")
+        adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=cfg.label_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=stop_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        label = _downside_triple_barrier_label(
+            valid_candles,
+            entry_index,
+            horizon=label_lookahead,
+            take_profit_pct=adjusted_take_profit,
+            stop_loss_pct=adjusted_stop_loss,
+        )
+    elif label_mode == "downside_event_volatility_triple_barrier":
+        if confluence_cache is None:
+            raise ValueError("confluence_cache_required_for_event_labels")
+        adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=cfg.label_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
+            confluence_cache,
+            idx,
+            base_threshold=stop_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+        )
+        if _trailing_cusum_event_direction(
+            confluence_cache,
+            idx,
+            window=volatility_window,
+            threshold_pct=adjusted_take_profit,
+        ) < 0:
+            label = _downside_triple_barrier_label(
+                valid_candles,
+                entry_index,
+                horizon=label_lookahead,
+                take_profit_pct=adjusted_take_profit,
+                stop_loss_pct=adjusted_stop_loss,
+            )
+        else:
+            label = 0
+    elif label_mode == "downside_forward_return":
+        future_index = min(len(valid_candles) - 1, entry_index + label_lookahead)
+        present = float(valid_candles[entry_index].close)
+        future = float(valid_candles[future_index].close)
+        downside_return = _safe_ratio(present - future, present)
+        label = 1 if downside_return >= float(cfg.label_threshold) else 0
+    return int(label)
+
+
+def label_advanced_rows(
+    candles: Sequence[Candle],
+    cfg: AdvancedFeatureConfig,
+    feature_rows: Sequence[ModelRow],
+    *,
+    lookahead: int | None = None,
+) -> list[ModelRow]:
+    """Apply candidate labels to precomputed advanced feature rows."""
+
+    label_lookahead = max(1, int(cfg.label_lookahead if lookahead is None else lookahead))
+    valid_candles = _filter_valid(candles)
+    if not valid_candles or not feature_rows:
+        return []
+    index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
+    label_mode = _normalized_label_mode(cfg.label_mode)
+    confluence_cache = (
+        _build_confluence_cache(valid_candles)
+        if "volatility" in label_mode or "event" in label_mode
+        else None
+    )
+    stop_threshold = (
+        float(cfg.label_stop_threshold)
+        if cfg.label_stop_threshold is not None
+        else float(cfg.label_threshold)
+    )
+    volatility_window = max(0, int(cfg.label_volatility_window))
+    volatility_multiplier = max(0.0, float(cfg.label_volatility_multiplier))
+    entry_offset = max(0, int(cfg.label_entry_offset))
+    min_index = max(0, int(cfg.long_window) + label_lookahead)
+    max_index = len(valid_candles) - label_lookahead - entry_offset
+    relabeled: list[ModelRow] = []
+    for row in feature_rows:
+        idx = index_by_time.get(row.timestamp)
+        if idx is None or idx < min_index or idx >= max_index:
+            continue
+        label = _advanced_label_at(
+            valid_candles,
+            confluence_cache,
+            idx,
+            cfg,
+            label_lookahead=label_lookahead,
+            label_mode=label_mode,
+            stop_threshold=stop_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+            fallback_label=row.label,
+        )
+        relabeled.append(
+            ModelRow(
+                timestamp=row.timestamp,
+                close=row.close,
+                features=row.features,
+                label=label,
+                volume=float(getattr(row, "volume", 0.0) or 0.0),
+                high=getattr(row, "high", None),
+                low=getattr(row, "low", None),
+                quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
+                trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
+                trailing_quote_volume_24h_estimate=float(
+                    getattr(row, "trailing_quote_volume_24h_estimate", 0.0) or 0.0
+                ),
+                trailing_trade_count_24h_estimate=max(
+                    0,
+                    int(getattr(row, "trailing_trade_count_24h_estimate", 0) or 0),
+                ),
+                trailing_activity_observed_ms=max(
+                    0,
+                    int(getattr(row, "trailing_activity_observed_ms", 0) or 0),
+                ),
+            )
+        )
+    return relabeled
 
 
 def make_advanced_rows(
     candles: Sequence[Candle],
     cfg: AdvancedFeatureConfig,
     *,
+    agg_trades: Sequence[AggTrade] | None = None,
+    agg_trade_buckets: Sequence[AggTradeBucket] | None = None,
     lookahead: int | None = None,
     compute_backend: str | None = None,
     require_accelerated: bool = False,
@@ -1169,7 +1648,15 @@ def make_advanced_rows(
         _aggregate_higher_timeframe_candles(valid_candles, cfg.higher_timeframe_bucket_ms)
         if cfg.higher_timeframe_windows else []
     )
-    context_close_times = [int(candle.close_time) for candle in context_candles]
+    context_cache = _build_higher_timeframe_context_cache(
+        context_candles,
+        cfg.higher_timeframe_windows,
+    )
+    tape_cache = (
+        build_trade_tape_feature_cache(valid_candles, agg_trades, buckets=agg_trade_buckets)
+        if cfg.trade_tape_windows
+        else None
+    )
     label_mode = _normalized_label_mode(cfg.label_mode)
     stop_threshold = (
         float(cfg.label_stop_threshold)
@@ -1178,149 +1665,32 @@ def make_advanced_rows(
     )
     volatility_window = max(0, int(cfg.label_volatility_window))
     volatility_multiplier = max(0.0, float(cfg.label_volatility_multiplier))
+    entry_offset = max(0, int(cfg.label_entry_offset))
+    max_label_index = len(valid_candles) - label_lookahead - entry_offset
     expanded: list[ModelRow] = []
     for row in base_rows:
         idx = index_by_time.get(row.timestamp)
-        if idx is None:
+        if idx is None or idx >= max_label_index:
             continue
-        label = row.label
-        if label_mode == "triple_barrier":
-            label = _triple_barrier_label(
-                valid_candles,
-                idx,
-                horizon=label_lookahead,
-                take_profit_pct=cfg.label_threshold,
-                stop_loss_pct=stop_threshold,
-            )
-        elif label_mode == "volatility_triple_barrier":
-            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=cfg.label_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=stop_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            label = _triple_barrier_label(
-                valid_candles,
-                idx,
-                horizon=label_lookahead,
-                take_profit_pct=adjusted_take_profit,
-                stop_loss_pct=adjusted_stop_loss,
-            )
-        elif label_mode == "event_volatility_triple_barrier":
-            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=cfg.label_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=stop_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            if _trailing_cusum_event_direction(
-                confluence_cache,
-                idx,
-                window=volatility_window,
-                threshold_pct=adjusted_take_profit,
-            ) > 0:
-                label = _triple_barrier_label(
-                    valid_candles,
-                    idx,
-                    horizon=label_lookahead,
-                    take_profit_pct=adjusted_take_profit,
-                    stop_loss_pct=adjusted_stop_loss,
-                )
-            else:
-                label = 0
-        elif label_mode == "downside_triple_barrier":
-            label = _downside_triple_barrier_label(
-                valid_candles,
-                idx,
-                horizon=label_lookahead,
-                take_profit_pct=cfg.label_threshold,
-                stop_loss_pct=stop_threshold,
-            )
-        elif label_mode == "downside_volatility_triple_barrier":
-            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=cfg.label_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=stop_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            label = _downside_triple_barrier_label(
-                valid_candles,
-                idx,
-                horizon=label_lookahead,
-                take_profit_pct=adjusted_take_profit,
-                stop_loss_pct=adjusted_stop_loss,
-            )
-        elif label_mode == "downside_event_volatility_triple_barrier":
-            adjusted_take_profit = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=cfg.label_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            adjusted_stop_loss = _volatility_adjusted_label_threshold_pct(
-                confluence_cache,
-                idx,
-                base_threshold=stop_threshold,
-                volatility_window=volatility_window,
-                volatility_multiplier=volatility_multiplier,
-            )
-            if _trailing_cusum_event_direction(
-                confluence_cache,
-                idx,
-                window=volatility_window,
-                threshold_pct=adjusted_take_profit,
-            ) < 0:
-                label = _downside_triple_barrier_label(
-                    valid_candles,
-                    idx,
-                    horizon=label_lookahead,
-                    take_profit_pct=adjusted_take_profit,
-                    stop_loss_pct=adjusted_stop_loss,
-                )
-            else:
-                label = 0
-        elif label_mode == "downside_forward_return":
-            future_index = min(len(valid_candles) - 1, idx + label_lookahead)
-            present = float(valid_candles[idx].close)
-            future = float(valid_candles[future_index].close)
-            downside_return = _safe_ratio(present - future, present)
-            label = 1 if downside_return >= float(cfg.label_threshold) else 0
+        label = _advanced_label_at(
+            valid_candles,
+            confluence_cache,
+            idx,
+            cfg,
+            label_lookahead=label_lookahead,
+            label_mode=label_mode,
+            stop_threshold=stop_threshold,
+            volatility_window=volatility_window,
+            volatility_multiplier=volatility_multiplier,
+            fallback_label=row.label,
+        )
         base = list(row.features)
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
-        higher_timeframe = _higher_timeframe_context_features_at(
-            context_candles,
-            context_close_times,
-            row.timestamp,
-            cfg.higher_timeframe_windows,
-        )
+        higher_timeframe = _higher_timeframe_context_features_from_cache(context_cache, row.timestamp)
         order_flow = _order_flow_features_for_config(confluence_cache, idx, cfg)
+        trade_tape = _trade_tape_features_for_config(tape_cache, idx, cfg)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
         expanded.append(
@@ -1330,7 +1700,7 @@ def make_advanced_rows(
                 features=tuple(
                     _safe(value)
                     for value in (
-                        base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
+                        base + extras + confluence + market_quality + higher_timeframe + order_flow + trade_tape + transforms + pairs
                     )
                 ),
                 label=label,
@@ -1339,6 +1709,17 @@ def make_advanced_rows(
                 low=getattr(row, "low", None),
                 quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
                 trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
+                trailing_quote_volume_24h_estimate=float(
+                    getattr(row, "trailing_quote_volume_24h_estimate", 0.0) or 0.0
+                ),
+                trailing_trade_count_24h_estimate=max(
+                    0,
+                    int(getattr(row, "trailing_trade_count_24h_estimate", 0) or 0),
+                ),
+                trailing_activity_observed_ms=max(
+                    0,
+                    int(getattr(row, "trailing_activity_observed_ms", 0) or 0),
+                ),
             )
         )
     return expanded
@@ -1348,8 +1729,12 @@ def make_advanced_inference_rows(
     candles: Sequence[Candle],
     cfg: AdvancedFeatureConfig,
     *,
+    agg_trades: Sequence[AggTrade] | None = None,
+    agg_trade_buckets: Sequence[AggTradeBucket] | None = None,
     compute_backend: str | None = None,
     require_accelerated: bool = False,
+    compact_features: bool = False,
+    progress_callback: Callable[[str, dict[str, int]], None] | None = None,
 ) -> list[ModelRow]:
     """Build expanded rows for live inference without future-label lookahead."""
 
@@ -1364,6 +1749,11 @@ def make_advanced_inference_rows(
     )
     if not base_rows:
         return []
+    if progress_callback is not None:
+        progress_callback(
+            "base_rows_complete",
+            {"base_row_count": int(len(base_rows)), "candle_count": int(len(candles))},
+        )
     valid_candles = _filter_valid(candles)
     index_by_time = {candle.close_time: idx for idx, candle in enumerate(valid_candles)}
     window_cache = _build_window_cache([candle.close for candle in valid_candles])
@@ -1372,9 +1762,27 @@ def make_advanced_inference_rows(
         _aggregate_higher_timeframe_candles(valid_candles, cfg.higher_timeframe_bucket_ms)
         if cfg.higher_timeframe_windows else []
     )
-    context_close_times = [int(candle.close_time) for candle in context_candles]
+    context_cache = _build_higher_timeframe_context_cache(
+        context_candles,
+        cfg.higher_timeframe_windows,
+    )
+    tape_cache = (
+        build_trade_tape_feature_cache(valid_candles, agg_trades, buckets=agg_trade_buckets)
+        if cfg.trade_tape_windows
+        else None
+    )
+    if progress_callback is not None:
+        progress_callback(
+            "support_cache_complete",
+            {
+                "base_row_count": int(len(base_rows)),
+                "valid_candle_count": int(len(valid_candles)),
+                "trade_tape_enabled": int(bool(cfg.trade_tape_windows)),
+            },
+        )
     expanded: list[ModelRow] = []
-    for row in base_rows:
+    progress_stride = 50_000
+    for row_number, row in enumerate(base_rows, start=1):
         idx = index_by_time.get(row.timestamp)
         if idx is None:
             continue
@@ -1382,33 +1790,57 @@ def make_advanced_inference_rows(
         extras = _extra_window_features_at(window_cache, idx, cfg.extra_lookback_windows)
         confluence = _confluence_features_at(confluence_cache, idx, cfg.confluence_windows)
         market_quality = _market_quality_features_at(confluence_cache, idx, cfg.market_quality_windows)
-        higher_timeframe = _higher_timeframe_context_features_at(
-            context_candles,
-            context_close_times,
-            row.timestamp,
-            cfg.higher_timeframe_windows,
-        )
+        higher_timeframe = _higher_timeframe_context_features_from_cache(context_cache, row.timestamp)
         order_flow = _order_flow_features_for_config(confluence_cache, idx, cfg)
+        trade_tape = _trade_tape_features_for_config(tape_cache, idx, cfg)
         transforms = _nonlinear_expand(base, cfg.nonlinear_transforms)
         pairs = _polynomial_pairs(base, cfg.polynomial_top_features, cfg.polynomial_degree)
+        expanded_values = [
+            _safe(value)
+            for value in (
+                base + extras + confluence + market_quality + higher_timeframe + order_flow + trade_tape + transforms + pairs
+            )
+        ]
+        feature_values = (
+            cast(tuple[float, ...], array("f", expanded_values))
+            if compact_features
+            else tuple(expanded_values)
+        )
         expanded.append(
             ModelRow(
                 timestamp=row.timestamp,
                 close=row.close,
-                features=tuple(
-                    _safe(value)
-                    for value in (
-                        base + extras + confluence + market_quality + higher_timeframe + order_flow + transforms + pairs
-                    )
-                ),
+                features=feature_values,
                 label=0,
                 volume=float(getattr(row, "volume", 0.0) or 0.0),
                 high=getattr(row, "high", None),
                 low=getattr(row, "low", None),
                 quote_volume=float(getattr(row, "quote_volume", 0.0) or 0.0),
                 trade_count=max(0, int(getattr(row, "trade_count", 0) or 0)),
+                trailing_quote_volume_24h_estimate=float(
+                    getattr(row, "trailing_quote_volume_24h_estimate", 0.0) or 0.0
+                ),
+                trailing_trade_count_24h_estimate=max(
+                    0,
+                    int(getattr(row, "trailing_trade_count_24h_estimate", 0) or 0),
+                ),
+                trailing_activity_observed_ms=max(
+                    0,
+                    int(getattr(row, "trailing_activity_observed_ms", 0) or 0),
+                ),
             )
         )
+        if progress_callback is not None and (
+            row_number == len(base_rows) or row_number % progress_stride == 0
+        ):
+            progress_callback(
+                "expanded_rows_progress",
+                {
+                    "processed_base_rows": int(row_number),
+                    "base_row_count": int(len(base_rows)),
+                    "expanded_row_count": int(len(expanded)),
+                },
+            )
     return expanded
 
 
@@ -1466,8 +1898,11 @@ def advanced_feature_signature(cfg: AdvancedFeatureConfig) -> str:
         f"higher_timeframe_bucket_ms={max(1, int(cfg.higher_timeframe_bucket_ms))}",
         f"order_flow_windows={','.join(str(w) for w in cfg.order_flow_windows)}",
         f"order_flow_features_per_window={max(0, int(cfg.order_flow_features_per_window))}",
+        f"trade_tape_windows={','.join(str(w) for w in cfg.trade_tape_windows)}",
+        f"trade_tape_features_per_window={max(0, int(cfg.trade_tape_features_per_window))}",
         f"nonlinear_transforms={','.join(cfg.nonlinear_transforms)}",
         f"label_lookahead={int(cfg.label_lookahead)}",
+        f"label_entry_offset={max(0, int(cfg.label_entry_offset))}",
         f"label_mode={_normalized_label_mode(cfg.label_mode)}",
         f"label_stop_threshold={float(cfg.label_stop_threshold if cfg.label_stop_threshold is not None else cfg.label_threshold):.10g}",
         f"label_volatility_window={max(0, int(cfg.label_volatility_window))}",
@@ -1501,6 +1936,7 @@ def advanced_config_from_signature(
             "order_flow_features_per_window",
             "13" if advanced_version in {ADVANCED_FEATURE_VERSION, "v9-flow-state"} else "9",
         ))
+        trade_tape_width = int(fields.get("trade_tape_features_per_window", str(_TRADE_TAPE_FEATURES_PER_WINDOW)))
         return AdvancedFeatureConfig(
             base_features=base_features,
             polynomial_degree=max(1, int(fields.get("polynomial_degree", "2"))),
@@ -1511,16 +1947,25 @@ def advanced_config_from_signature(
             higher_timeframe_windows=_parse_int_tuple(fields.get("higher_timeframe_windows")),
             higher_timeframe_bucket_ms=max(1, int(fields.get("higher_timeframe_bucket_ms", "60000"))),
             order_flow_windows=_parse_int_tuple(fields.get("order_flow_windows")),
+            trade_tape_windows=_parse_int_tuple(fields.get("trade_tape_windows")),
             nonlinear_transforms=_parse_str_tuple(fields.get("nonlinear_transforms"), default=("tanh", "log1p")),
             short_window=max(1, int(fields.get("short_window", "10"))),
             long_window=max(1, int(fields.get("long_window", "40"))),
             label_threshold=label_threshold,
             label_lookahead=max(1, int(fields.get("label_lookahead", "4"))),
+            label_entry_offset=max(
+                0,
+                int(fields.get(
+                    "label_entry_offset",
+                    "1" if advanced_version == ADVANCED_FEATURE_VERSION else "0",
+                )),
+            ),
             label_mode=_normalized_label_mode(fields.get("label_mode", "forward_return")),
             label_stop_threshold=stop_threshold,
             label_volatility_window=max(0, int(fields.get("label_volatility_window", "0"))),
             label_volatility_multiplier=max(0.0, float(fields.get("label_volatility_multiplier", "0"))),
             order_flow_features_per_window=max(0, order_flow_width),
+            trade_tape_features_per_window=max(0, trade_tape_width),
         )
     except (TypeError, ValueError):
         return None
@@ -1540,6 +1985,32 @@ class AdvancedTrainingReport:
     positive_rate: float
 
 
+def _balanced_rare_event_rows(
+    rows: Sequence[ModelRow],
+    *,
+    seed: int,
+    negative_multiplier: int,
+) -> list[ModelRow]:
+    """Return all positives plus a deterministic negative sample for rare labels."""
+
+    values = list(rows)
+    multiplier = max(0, int(negative_multiplier))
+    if multiplier <= 0:
+        return values
+    positives = [row for row in values if int(row.label) == 1]
+    negatives = [row for row in values if int(row.label) == 0]
+    if not positives or not negatives:
+        return values
+    negative_limit = min(len(negatives), max(len(positives), len(positives) * multiplier))
+    rng = random.Random(int(seed))
+    sampled_negatives = (
+        rng.sample(negatives, negative_limit)
+        if negative_limit < len(negatives)
+        else list(negatives)
+    )
+    return sorted([*positives, *sampled_negatives], key=lambda row: (int(row.timestamp), float(row.close)))
+
+
 def train_advanced(
     rows: Sequence[ModelRow],
     cfg: AdvancedFeatureConfig,
@@ -1554,6 +2025,7 @@ def train_advanced(
     compute_backend: str | None = None,
     batch_size: int = 8192,
     focal_gamma: float = 0.0,
+    balanced_negative_multiplier: int = 0,
 ) -> tuple[TrainedModel, AdvancedTrainingReport]:
     """Train a logistic regression on an expanded feature set.
 
@@ -1567,9 +2039,17 @@ def train_advanced(
     train_rows = list(rows)
     holdout_rows = list(validation_rows or [])
     seeds = tuple(dict.fromkeys(int(value) for value in (ensemble_seeds or (seed,))))
+    member_rows = [
+        _balanced_rare_event_rows(
+            train_rows,
+            seed=member_seed,
+            negative_multiplier=balanced_negative_multiplier,
+        )
+        for member_seed in seeds
+    ]
     models = [
         train_logistic(
-            train_rows,
+            rows_for_member,
             epochs=epochs,
             learning_rate=learning_rate,
             seed=member_seed,
@@ -1581,12 +2061,16 @@ def train_advanced(
             batch_size=batch_size,
             focal_gamma=focal_gamma,
         )
-        for member_seed in seeds
+        for member_seed, rows_for_member in zip(seeds, member_rows, strict=True)
     ]
     model = models[0]
     if len(models) > 1:
         model.ensemble_members = [ensemble_member_from_model(member) for member in models]
         model.seed = int(seeds[0])
+    if int(balanced_negative_multiplier) > 0 and any(len(rows_for_member) < len(train_rows) for rows_for_member in member_rows):
+        model.quality_warnings.append(
+            f"balanced_rare_event_bagging_negatives_x{int(balanced_negative_multiplier)}"
+        )
     positives = sum(1 for row in train_rows if row.label == 1)
     report = AdvancedTrainingReport(
         feature_dim=model.feature_dim,

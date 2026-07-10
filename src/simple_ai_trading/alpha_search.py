@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 import math
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from .advanced_model import AdvancedFeatureConfig, advanced_feature_group_spans
 from .backtest import (
@@ -21,9 +21,18 @@ from .backtest import (
     precompute_backtest_regime_scores,
     run_backtest,
 )
-from .execution_simulation import execution_assumptions_from_strategy
+from .execution_simulation import (
+    SymbolExecutionProfile,
+    execution_assumptions_for_symbol,
+    execution_assumptions_from_strategy,
+)
 from .features import ModelRow
-from .model import HybridExpert, TrainedModel
+from .model import (
+    HybridExpert,
+    TrainedModel,
+    _rule_alpha_score_from_values,
+    market_direction_from_probability,
+)
 from .objective import get_objective
 from .strategy_overrides import strategy_overrides_from_config
 from .types import StrategyConfig
@@ -33,10 +42,76 @@ DEFAULT_RULE_ALPHA_MAX_CANDIDATES = 225
 DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES = 18
 DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES = 18
 DEFAULT_RULE_ALPHA_EVENT_RANK_POOL_MULTIPLIER = 3
+RULE_ALPHA_LARGE_WINDOW_ROW_COUNT = 20_000
+RULE_ALPHA_EXECUTION_ENTRY_OFFSET = 1
 _RULE_ALPHA_COST_FLOOR_PARTICIPATION = 0.05
+_RULE_ALPHA_MIN_MAJOR_COST_FLOOR_PARTICIPATION = 0.001
+_RULE_ALPHA_MIN_PROFILED_COST_FLOOR_PARTICIPATION = 0.005
 _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS = 2.0
 _RULE_ALPHA_MIN_STOP_BUFFER_BPS = 1.0
 _EMPIRICAL_RULE_ALPHA_FAMILY = "empirical_feature_edge"
+
+
+def _price_move_scale_for_market(strategy: StrategyConfig, market_type: str) -> float:
+    del strategy, market_type
+    return 1.0
+
+
+def _median_row_interval_ms(rows: Sequence[ModelRow]) -> int:
+    if len(rows) < 2:
+        return 1000
+    diffs: list[int] = []
+    max_checks = min(10_000, len(rows) - 1)
+    stride = max(1, (len(rows) - 1) // max_checks)
+    for index in range(0, len(rows) - 1, stride):
+        delta = int(rows[index + 1].timestamp) - int(rows[index].timestamp)
+        if delta > 0:
+            diffs.append(delta)
+        if len(diffs) >= max_checks:
+            break
+    if not diffs:
+        return 1000
+    diffs.sort()
+    return max(1, int(diffs[len(diffs) // 2]))
+
+
+def _seconds_to_bars(seconds: int, bar_interval_ms: int, *, allow_zero: bool = False) -> int:
+    value = max(0, int(seconds))
+    if allow_zero and value == 0:
+        return 0
+    return max(1, int(math.ceil(float(value * 1000) / float(max(1, bar_interval_ms)))))
+
+
+def _rule_alpha_execution_profiles(
+    bar_interval_ms: int,
+) -> tuple[tuple[str, float, float, float, int, int, int], ...]:
+    interval_ms = max(1, int(bar_interval_ms))
+    if interval_ms <= 1000:
+        raw = (
+            ("scalp_3s", 0.06, 0.05, 0.0, 1, 0, 3),
+            ("scalp_8s", 0.08, 0.07, 0.0, 2, 0, 8),
+            ("scalp_20s", 0.10, 0.09, 0.0, 4, 1, 20),
+            ("micro", 0.14, 0.10, 0.0, 2, 0, 2),
+            ("balanced", 0.18, 0.14, 0.0, 3, 1, 3),
+            ("guarded", 0.22, 0.18, 0.25, 4, 1, 4),
+            ("held_30s", 0.18, 0.16, 0.0, 30, 10, 30),
+            ("held_90s", 0.24, 0.22, 0.0, 90, 20, 90),
+            ("held_180s", 0.30, 0.28, 0.0, 180, 30, 180),
+        )
+    else:
+        raw = (
+            ("held_180s", 0.30, 0.28, 0.0, 60, 30, 180),
+            ("held_15m", 0.35, 0.32, 0.0, 300, 60, 900),
+            ("held_60m", 0.45, 0.42, 0.10, 600, 120, 3600),
+            ("held_120m", 0.55, 0.52, 0.20, 900, 180, 7200),
+        )
+    return tuple(
+        profile
+        for profile in raw
+        if profile[6] * 1000 >= interval_ms
+        and (profile[6] * 1000) % interval_ms == 0
+        and (profile[6] * 1000) // interval_ms <= 300
+    )
 
 
 @dataclass(frozen=True)
@@ -61,6 +136,7 @@ class RuleAlphaCandidate:
     cooldown_multiplier: float
     min_position_hold_bars: int
     flat_signal_exit_grace_bars: int
+    max_position_hold_bars: int = 0
     params: dict[str, object] = field(default_factory=dict)
 
     def asdict(self) -> dict[str, object]:
@@ -256,6 +332,11 @@ def rule_alpha_feature_params(feature_cfg: AdvancedFeatureConfig | None) -> dict
             params["order_flow_start"] = int(span.start)
             params["order_flow_width"] = int(span.size) // window_count if window_count > 0 else int(span.size)
             params["order_flow_window_count"] = window_count
+        elif span.name == "trade_tape_microstructure" and span.size > 0:
+            window_count = max(0, len(tuple(feature_cfg.trade_tape_windows)))
+            params["trade_tape_start"] = int(span.start)
+            params["trade_tape_width"] = int(span.size) // window_count if window_count > 0 else int(span.size)
+            params["trade_tape_window_count"] = window_count
         elif span.name == "higher_timeframe_context" and span.size > 0:
             window_count = max(0, len(tuple(feature_cfg.higher_timeframe_windows)))
             params["higher_timeframe_start"] = int(span.start)
@@ -264,7 +345,53 @@ def rule_alpha_feature_params(feature_cfg: AdvancedFeatureConfig | None) -> dict
     return params
 
 
-def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = None) -> tuple[RuleAlphaCandidate, ...]:
+def _empirical_feature_scan_indices(
+    *,
+    feature_dim: int,
+    max_feature_count: int | None,
+    feature_cfg: AdvancedFeatureConfig | None,
+) -> tuple[int, ...]:
+    if feature_dim <= 0:
+        return ()
+    limit = min(feature_dim, 512 if max_feature_count is None else max(1, int(max_feature_count)))
+    if feature_cfg is None:
+        return tuple(range(limit))
+    priority = (
+        "trade_tape_microstructure",
+        "order_flow_microstructure",
+        "market_quality_regime",
+        "higher_timeframe_context",
+        "technical_confluence",
+        "base_features",
+    )
+    spans = advanced_feature_group_spans(feature_cfg)
+    ordered: list[int] = []
+    seen: set[int] = set()
+    for name in priority:
+        for span in spans:
+            if span.name != name:
+                continue
+            for index in range(max(0, int(span.start)), min(feature_dim, int(span.end))):
+                if index not in seen:
+                    ordered.append(index)
+                    seen.add(index)
+                    if len(ordered) >= limit:
+                        return tuple(ordered)
+    for index in range(feature_dim):
+        if index not in seen:
+            ordered.append(index)
+            seen.add(index)
+            if len(ordered) >= limit:
+                break
+    return tuple(ordered)
+
+
+def rule_alpha_candidates(
+    objective_name: str,
+    *,
+    max_candidates: int | None = None,
+    bar_interval_ms: int = 1000,
+) -> tuple[RuleAlphaCandidate, ...]:
     """Return a bounded, diversified set of intraday alpha templates."""
 
     name = "aggressive" if objective_name == "risky" else str(objective_name or "conservative").lower()
@@ -296,18 +423,12 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         "volume_synchronized_flow",
         "adaptive_tape_regime",
         "higher_timeframe_alignment",
+        "directional_regime_rider",
     )
-    execution_profiles = (
-        ("scalp_3s", 0.06, 0.05, 0.0, 1, 0),
-        ("scalp_8s", 0.08, 0.07, 0.0, 2, 0),
-        ("scalp_20s", 0.10, 0.09, 0.0, 4, 1),
-        ("micro", 0.14, 0.10, 0.0, 2, 0),
-        ("balanced", 0.18, 0.14, 0.0, 3, 1),
-        ("guarded", 0.22, 0.18, 0.25, 4, 1),
-        ("held_30s", 0.18, 0.16, 0.0, 30, 10),
-        ("held_90s", 0.24, 0.22, 0.0, 90, 20),
-        ("held_180s", 0.30, 0.28, 0.0, 180, 30),
-    )
+    interval_ms = max(1, int(bar_interval_ms))
+    execution_profiles = _rule_alpha_execution_profiles(interval_ms)
+    if not execution_profiles:
+        return ()
     limit = max(1, int(max_candidates)) if max_candidates is not None else DEFAULT_RULE_ALPHA_MAX_CANDIDATES
     ranked: list[tuple[tuple[int, int, int, int, int, int], str, str, RuleAlphaCandidate]] = []
     base_by_family_profile: dict[tuple[str, str], RuleAlphaCandidate] = {}
@@ -315,7 +436,18 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
         for sensitivity_index, sensitivity in enumerate(sensitivities):
             for deadband_index, deadband in enumerate(deadbands):
                 for family_index, family in enumerate(families):
-                    for profile_index, (profile, stop_mult, take_mult, cooldown_mult, hold_bars, grace_bars) in enumerate(execution_profiles):
+                    for profile_index, (
+                        profile,
+                        stop_mult,
+                        take_mult,
+                        cooldown_mult,
+                        min_hold_seconds,
+                        grace_seconds,
+                        max_hold_seconds,
+                    ) in enumerate(execution_profiles):
+                        min_hold_bars = _seconds_to_bars(min_hold_seconds, interval_ms)
+                        grace_bars = _seconds_to_bars(grace_seconds, interval_ms, allow_zero=True)
+                        max_hold_bars = _seconds_to_bars(max_hold_seconds, interval_ms)
                         candidate = RuleAlphaCandidate(
                             name=f"{family}:{profile}:t{threshold:.2f}:s{sensitivity:.1f}:d{deadband:.2f}",
                             family=family,
@@ -325,8 +457,19 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
                             stop_loss_multiplier=float(stop_mult),
                             take_profit_multiplier=float(take_mult),
                             cooldown_multiplier=float(cooldown_mult),
-                            min_position_hold_bars=int(hold_bars),
+                            min_position_hold_bars=int(min_hold_bars),
                             flat_signal_exit_grace_bars=int(grace_bars),
+                            max_position_hold_bars=int(max_hold_bars),
+                            params={
+                                "duration_contract": "wall_clock_seconds_v1",
+                                "bar_interval_ms": int(interval_ms),
+                                "intended_min_hold_seconds": int(min_hold_seconds),
+                                "intended_grace_seconds": int(grace_seconds),
+                                "intended_max_hold_seconds": int(max_hold_seconds),
+                                "effective_min_hold_seconds": float(min_hold_bars * interval_ms) / 1000.0,
+                                "effective_grace_seconds": float(grace_bars * interval_ms) / 1000.0,
+                                "effective_max_hold_seconds": float(max_hold_bars * interval_ms) / 1000.0,
+                            },
                         )
                         ranked.append((
                             (
@@ -370,21 +513,29 @@ def rule_alpha_candidates(objective_name: str, *, max_candidates: int | None = N
 
 def rule_alpha_event_study(
     rows: Sequence[ModelRow],
-    model: TrainedModel,
+    model: TrainedModel | None,
     strategy: StrategyConfig,
     candidate: RuleAlphaCandidate,
     *,
     market_type: str,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    feature_params: Mapping[str, object] | None = None,
+    probability_inverted: bool = False,
 ) -> dict[str, object]:
-    """Measure directional forward edge before full trade-lifecycle replay.
+    """Measure path-aware directional edge before full trade-lifecycle replay.
 
     This is telemetry only.  Promotion still depends on `run_backtest` and the
     objective gates, because stop/take/cooldown behavior can differ from a raw
-    forward-return event study.
+    forward-return event study.  The prefilter still models stop/take paths so
+    one future close cannot hide an adverse excursion that would have stopped
+    the trade first.
     """
 
     row_list = list(rows)
-    horizon = max(1, min(300, int(candidate.min_position_hold_bars or 1)))
+    horizon = max(
+        1,
+        min(300, int(candidate.max_position_hold_bars or candidate.min_position_hold_bars or 1)),
+    )
     if len(row_list) <= horizon:
         return {
             "horizon_bars": int(horizon),
@@ -394,40 +545,80 @@ def rule_alpha_event_study(
             "mean_edge_bps": 0.0,
             "net_mean_edge_bps": 0.0,
             "hit_rate": 0.0,
-            "cost_floor_bps": float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0),
+            "cost_floor_bps": float(rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile) * 10_000.0),
+            "path_take_count": 0,
+            "path_stop_count": 0,
+            "path_timeout_count": 0,
+            "path_average_bars_held": 0.0,
         }
-    long_threshold = (
-        float(model.long_decision_threshold)
-        if model.long_decision_threshold is not None
-        else float(model.decision_threshold if model.decision_threshold is not None else candidate.threshold)
-    )
-    short_threshold = (
-        float(model.short_decision_threshold)
-        if market_type == "futures" and model.short_decision_threshold is not None
-        else None
-    )
-    cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0)
+    if model is None:
+        long_threshold = float(candidate.threshold)
+        short_threshold = float(1.0 - candidate.threshold) if market_type == "futures" else None
+        direct_params = _rule_alpha_direct_params(candidate, feature_params)
+    else:
+        long_threshold = (
+            float(model.long_decision_threshold)
+            if model.long_decision_threshold is not None
+            else float(model.decision_threshold if model.decision_threshold is not None else candidate.threshold)
+        )
+        short_threshold = (
+            float(model.short_decision_threshold)
+            if market_type == "futures" and model.short_decision_threshold is not None
+            else None
+        )
+        direct_params = None
+    cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile) * 10_000.0)
     edges: list[float] = []
+    bars_held_values: list[int] = []
+    exit_reasons: Counter[str] = Counter()
     long_count = 0
     short_count = 0
-    for index in range(0, len(row_list) - horizon):
+    cooldown_ms = max(0, int(round(float(getattr(strategy, "cooldown_minutes", 0) or 0.0) * 60_000.0)))
+    index = 0
+    while index < len(row_list) - horizon:
         current = row_list[index]
-        future = row_list[index + horizon]
-        if current.close <= 0.0 or future.close <= 0.0:
+        if current.close <= 0.0:
+            index += 1
             continue
-        probability = float(model.predict_proba(current.features))
-        side = 0
-        if probability >= long_threshold:
-            side = 1
+        if direct_params is not None:
+            probability = _rule_alpha_direct_probability(
+                current.features,
+                direct_params,
+                probability_inverted=probability_inverted,
+            )
+        else:
+            probability = float(model.predict_proba(current.features)) if model is not None else 0.5
+        side = market_direction_from_probability(
+            probability,
+            long_threshold,
+            market_type=market_type,
+            short_threshold=short_threshold,
+        )
+        if side > 0:
             long_count += 1
-        elif short_threshold is not None and probability <= short_threshold:
-            side = -1
+        elif side < 0:
             short_count += 1
         if side == 0:
+            index += 1
             continue
-        edge_bps = float(side) * ((float(future.close) - float(current.close)) / float(current.close)) * 10_000.0
+        edge_bps, bars_held, exit_reason = _rule_alpha_path_edge_bps(
+            row_list,
+            index,
+            horizon,
+            side,
+            strategy,
+        )
         if math.isfinite(edge_bps):
             edges.append(edge_bps)
+            bars_held_values.append(int(bars_held))
+            exit_reasons[str(exit_reason)] += 1
+        next_index = index + max(1, int(bars_held))
+        if cooldown_ms > 0:
+            exit_timestamp = int(row_list[min(len(row_list) - 1, index + max(1, int(bars_held)))].timestamp)
+            resume_timestamp = exit_timestamp + cooldown_ms
+            while next_index < len(row_list) and int(row_list[next_index].timestamp) < resume_timestamp:
+                next_index += 1
+        index = max(index + 1, next_index)
     if not edges:
         return {
             "horizon_bars": int(horizon),
@@ -438,6 +629,10 @@ def rule_alpha_event_study(
             "net_mean_edge_bps": -cost_floor_bps,
             "hit_rate": 0.0,
             "cost_floor_bps": cost_floor_bps,
+            "path_take_count": 0,
+            "path_stop_count": 0,
+            "path_timeout_count": 0,
+            "path_average_bars_held": 0.0,
         }
     mean_edge = sum(edges) / len(edges)
     wins = sum(1 for value in edges if value > cost_floor_bps)
@@ -450,7 +645,159 @@ def rule_alpha_event_study(
         "net_mean_edge_bps": float(mean_edge - cost_floor_bps),
         "hit_rate": float(wins / len(edges)),
         "cost_floor_bps": cost_floor_bps,
+        "path_take_count": int(exit_reasons["take"]),
+        "path_stop_count": int(exit_reasons["stop"]),
+        "path_timeout_count": int(exit_reasons["timeout"]),
+        "path_average_bars_held": float(sum(bars_held_values) / len(bars_held_values)) if bars_held_values else 0.0,
     }
+
+
+def _bounded_param_float(params: Mapping[str, object], key: str, default: float, *, low: float, high: float) -> float:
+    try:
+        value = float(params.get(key, default))
+    except (TypeError, ValueError, OverflowError):
+        value = float(default)
+    if not math.isfinite(value):
+        value = float(default)
+    return _clamp(value, low, high)
+
+
+def _rule_alpha_direct_params(
+    candidate: RuleAlphaCandidate,
+    feature_params: Mapping[str, object] | None,
+) -> dict[str, object]:
+    return {
+        "family": candidate.family,
+        "sensitivity": candidate.sensitivity,
+        "deadband": candidate.deadband,
+        **dict(feature_params or {}),
+        **dict(candidate.params or {}),
+    }
+
+
+def _rule_alpha_direct_probability(
+    features: Sequence[float],
+    params: Mapping[str, object],
+    *,
+    probability_inverted: bool,
+) -> float:
+    if not features:
+        probability = 0.5
+    else:
+        values = list(features)
+        while len(values) < 13:
+            values.append(0.0)
+        score = _rule_alpha_score_from_values(values, dict(params))
+        sensitivity = _bounded_param_float(params, "sensitivity", 7.0, low=0.1, high=30.0)
+        bias = _bounded_param_float(params, "bias", 0.0, low=-5.0, high=5.0)
+        probability = 1.0 / (1.0 + math.exp(-max(-50.0, min(50.0, score * sensitivity + bias))))
+        probability = _clamp(probability, 0.0, 1.0)
+    return float(_clamp(1.0 - probability if probability_inverted else probability, 0.0, 1.0))
+
+
+def _rule_alpha_path_edge_bps(
+    rows: Sequence[ModelRow],
+    start_index: int,
+    horizon: int,
+    side: int,
+    strategy: StrategyConfig,
+    *,
+    entry_offset: int = RULE_ALPHA_EXECUTION_ENTRY_OFFSET,
+) -> tuple[float, int, str]:
+    """Return gross path edge using stop-first intrabar semantics.
+
+    The full backtester remains authoritative.  This helper exists only for
+    ranking candidate alpha templates cheaply and avoids accepting a signal
+    whose future close looks good after a stop would already have fired.
+    """
+
+    row_count = len(rows)
+    if row_count <= 0:
+        return 0.0, 0, "timeout"
+    signal_start = max(0, min(row_count - 1, int(start_index)))
+    offset = max(0, int(entry_offset))
+    start = signal_start + offset
+    if start >= row_count:
+        return 0.0, offset, "timeout"
+    current = rows[start]
+    entry = float(current.close)
+    if entry <= 0.0 or side == 0:
+        return 0.0, offset, "timeout"
+    stop_pct = max(0.0, float(getattr(strategy, "stop_loss_pct", 0.0) or 0.0))
+    take_pct = max(0.0, float(getattr(strategy, "take_profit_pct", 0.0) or 0.0))
+    edge_bps, bars_held, exit_reason = _rule_alpha_path_edge_bps_with_barriers(
+        rows,
+        start,
+        horizon,
+        side,
+        stop_loss_pct=stop_pct,
+        take_profit_pct=take_pct,
+    )
+    return edge_bps, offset + int(bars_held), exit_reason
+
+
+def _rule_alpha_path_edge_bps_with_barriers(
+    rows: Sequence[ModelRow],
+    start_index: int,
+    horizon: int,
+    side: int,
+    *,
+    stop_loss_pct: float,
+    take_profit_pct: float,
+) -> tuple[float, int, str]:
+    row_count = len(rows)
+    if row_count <= 0:
+        return 0.0, 0, "timeout"
+    start = max(0, min(row_count - 1, int(start_index)))
+    if start >= row_count - 1:
+        return 0.0, 0, "timeout"
+    current = rows[start]
+    entry = float(current.close)
+    if entry <= 0.0 or side == 0:
+        return 0.0, 0, "timeout"
+    stop_pct = max(0.0, float(stop_loss_pct))
+    take_pct = max(0.0, float(take_profit_pct))
+    end = max(start + 1, min(row_count - 1, start + max(1, int(horizon))))
+    for index in range(start + 1, end + 1):
+        row = rows[index]
+        close = max(0.0, float(row.close))
+        high = _coerce_row_high(row, close)
+        low = _coerce_row_low(row, close)
+        if side > 0:
+            stop_price = entry * (1.0 - stop_pct)
+            take_price = entry * (1.0 + take_pct)
+            if stop_pct > 0.0 and low <= stop_price:
+                return ((stop_price - entry) / entry) * 10_000.0, index - start, "stop"
+            if take_pct > 0.0 and high >= take_price:
+                return ((take_price - entry) / entry) * 10_000.0, index - start, "take"
+        else:
+            stop_price = entry * (1.0 + stop_pct)
+            take_price = max(0.0, entry * (1.0 - take_pct))
+            if stop_pct > 0.0 and high >= stop_price:
+                return ((entry - stop_price) / entry) * 10_000.0, index - start, "stop"
+            if take_pct > 0.0 and low <= take_price:
+                return ((entry - take_price) / entry) * 10_000.0, index - start, "take"
+    final = max(0.0, float(rows[end].close))
+    if final <= 0.0:
+        return 0.0, end - start, "timeout"
+    edge = float(side) * ((final - entry) / entry) * 10_000.0
+    return edge, end - start, "timeout"
+
+
+def _coerce_row_high(row: ModelRow, close: float) -> float:
+    try:
+        high = float(row.high if row.high is not None else close)
+    except (TypeError, ValueError, OverflowError):
+        high = close
+    return max(close, high) if math.isfinite(high) else close
+
+
+def _coerce_row_low(row: ModelRow, close: float) -> float:
+    try:
+        low = float(row.low if row.low is not None else close)
+    except (TypeError, ValueError, OverflowError):
+        low = close
+    return min(close, low) if math.isfinite(low) else close
 
 
 def _event_rank_slices(rows: Sequence[ModelRow]) -> tuple[list[ModelRow], list[ModelRow]]:
@@ -473,6 +820,8 @@ def _event_rank_rule_alpha_candidates(
     market_type: str,
     replay_limit: int,
     feature_params: dict[str, object],
+    symbol_profile: SymbolExecutionProfile | None = None,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[tuple[RuleAlphaCandidate, ...], dict[str, object]]:
     """Rank a larger static template pool by cheap after-cost event evidence.
 
@@ -494,34 +843,58 @@ def _event_rank_rule_alpha_candidates(
             bool,
         ]
     ] = []
+    candidate_count = len(candidates)
+    best_progress_key: tuple[float, ...] | None = None
+    best_progress_candidate = ""
+    best_progress_edge = 0.0
+    density_floor = max(
+        3,
+        min(30, int(max(1, len(validation_rows)) * 0.001)),
+    )
     for index, candidate in enumerate(candidates):
-        candidate_strategy = _candidate_strategy(strategy, candidate)
+        if status_callback is not None:
+            status_callback(
+                "rule_alpha_event_rank_candidate_started",
+                {
+                    "candidate_index": index + 1,
+                    "candidate_count": candidate_count,
+                    "candidate": candidate.name,
+                    "candidate_family": candidate.family,
+                    "selected_limit": limit,
+                    "training_rows": len(training_rows),
+                    "validation_rows": len(validation_rows),
+                },
+            )
+        candidate_strategy = _candidate_strategy(
+            strategy,
+            candidate,
+            market_type=market_type,
+            symbol_profile=symbol_profile,
+        )
         best_training_event: dict[str, object] | None = None
         best_validation_event: dict[str, object] | None = None
         best_inverted = False
         best_key: tuple[float, ...] | None = None
         for inverted in (False, True):
-            model = model_for_rule_alpha(
-                row_list,
-                candidate,
-                strategy,
-                market_type=market_type,
-                probability_inverted=inverted,
-                feature_params=feature_params,
-            )
             training_event = rule_alpha_event_study(
                 training_rows,
-                model,
+                None,
                 candidate_strategy,
                 candidate,
                 market_type=market_type,
+                symbol_profile=symbol_profile,
+                feature_params=feature_params,
+                probability_inverted=inverted,
             )
             validation_event = rule_alpha_event_study(
                 validation_rows,
-                model,
+                None,
                 candidate_strategy,
                 candidate,
                 market_type=market_type,
+                symbol_profile=symbol_profile,
+                feature_params=feature_params,
+                probability_inverted=inverted,
             )
             training_signal_count = int(training_event.get("signal_count", 0) or 0)
             validation_signal_count = int(validation_event.get("signal_count", 0) or 0)
@@ -532,9 +905,16 @@ def _event_rank_rule_alpha_candidates(
             min_signal_count = min(training_signal_count, validation_signal_count)
             min_net_edge = min(training_net_edge, validation_net_edge)
             min_hit_rate = min(training_hit_rate, validation_hit_rate)
+            repeatable_edge_score = (
+                min_net_edge * math.log1p(float(min_signal_count))
+                if min_net_edge > 0.0 and min_signal_count > 0
+                else min_net_edge
+            )
             key = (
                 1.0 if min_signal_count > 0 else 0.0,
                 1.0 if min_net_edge > 0.0 else 0.0,
+                1.0 if min_signal_count >= density_floor else 0.0,
+                repeatable_edge_score,
                 min_net_edge,
                 validation_net_edge,
                 training_net_edge,
@@ -549,13 +929,46 @@ def _event_rank_rule_alpha_candidates(
                 best_inverted = bool(inverted)
         if best_key is not None and best_training_event is not None and best_validation_event is not None:
             scored.append((best_key, candidate, best_training_event, best_validation_event, best_inverted))
+            candidate_min_edge = min(
+                float(best_training_event.get("net_mean_edge_bps", 0.0) or 0.0),
+                float(best_validation_event.get("net_mean_edge_bps", 0.0) or 0.0),
+            )
+            if best_progress_key is None or best_key > best_progress_key:
+                best_progress_key = best_key
+                best_progress_candidate = candidate.name
+                best_progress_edge = candidate_min_edge
+        if status_callback is not None:
+            status_callback(
+                "rule_alpha_event_rank_candidate_scored",
+                {
+                    "candidate_index": index + 1,
+                    "candidate_count": candidate_count,
+                    "candidate": candidate.name,
+                    "candidate_family": candidate.family,
+                    "scored_candidates": len(scored),
+                    "selected_limit": limit,
+                    "density_floor": int(density_floor),
+                    "best_candidate": best_progress_candidate,
+                    "best_net_edge_bps": float(best_progress_edge),
+                },
+            )
     scored.sort(key=lambda item: item[0], reverse=True)
-    selected = tuple(item[1] for item in scored[:limit])
+    positive_scored = [
+        item
+        for item in scored
+        if min(
+            float(item[2].get("net_mean_edge_bps", 0.0) or 0.0),
+            float(item[3].get("net_mean_edge_bps", 0.0) or 0.0),
+        ) > 0.0
+    ]
+    replay_source = positive_scored if positive_scored else []
+    selected = tuple(item[1] for item in replay_source[:limit])
     best = scored[0] if scored else None
     summary = {
         "event_rank_split_mode": split_mode,
         "event_rank_training_rows": int(len(training_rows)),
         "event_rank_validation_rows": int(len(validation_rows)),
+        "event_rank_density_floor": int(density_floor),
         "event_rank_pool_candidates": int(len(scored)),
         "event_rank_selected_template_candidates": int(len(selected)),
         "event_rank_positive_pool_candidates": int(
@@ -627,6 +1040,11 @@ def mine_empirical_rule_alpha_candidates(
     objective_name: str,
     market_type: str,
     max_candidates: int = DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES,
+    max_feature_count: int | None = None,
+    feature_cfg: AdvancedFeatureConfig | None = None,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    bar_interval_ms: int | None = None,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[RuleAlphaCandidate, ...]:
     """Mine simple one-feature edge rules with chronological validation.
 
@@ -640,7 +1058,13 @@ def mine_empirical_rule_alpha_candidates(
     limit = max(0, int(max_candidates))
     if limit <= 0 or len(row_list) < 240:
         return ()
-    feature_count = min(len(row_list[0].features), 512)
+    feature_dim = len(row_list[0].features)
+    feature_indices = _empirical_feature_scan_indices(
+        feature_dim=feature_dim,
+        max_feature_count=max_feature_count,
+        feature_cfg=feature_cfg,
+    )
+    feature_count = len(feature_indices)
     if feature_count <= 0:
         return ()
     split = max(120, min(len(row_list) - 80, int(len(row_list) * 0.60)))
@@ -656,10 +1080,34 @@ def mine_empirical_rule_alpha_candidates(
         "aggressive": 0.52,
     }
     probability_threshold = float(threshold_by_risk.get(name, 0.56))
-    profiles = (
-        ("empirical_8s", 0.10, 0.09, 8, 2),
-        ("empirical_30s", 0.18, 0.16, 30, 8),
-        ("empirical_90s", 0.26, 0.24, 90, 20),
+    interval_ms = max(1, int(bar_interval_ms or _median_row_interval_ms(row_list)))
+    raw_profiles = (
+        (
+            ("empirical_8s", 0.10, 0.09, 8, 2),
+            ("empirical_30s", 0.18, 0.16, 30, 8),
+            ("empirical_90s", 0.26, 0.24, 90, 20),
+        )
+        if interval_ms <= 1000
+        else (
+            ("empirical_15m", 0.35, 0.32, 900, 60),
+            ("empirical_60m", 0.45, 0.42, 3600, 120),
+            ("empirical_120m", 0.55, 0.52, 7200, 180),
+        )
+    )
+    profiles = tuple(
+        (
+            profile,
+            stop_mult,
+            take_mult,
+            _seconds_to_bars(horizon_seconds, interval_ms),
+            _seconds_to_bars(grace_seconds, interval_ms, allow_zero=True),
+            int(horizon_seconds),
+            int(grace_seconds),
+        )
+        for profile, stop_mult, take_mult, horizon_seconds, grace_seconds in raw_profiles
+        if horizon_seconds * 1000 >= interval_ms
+        and (horizon_seconds * 1000) % interval_ms == 0
+        and (horizon_seconds * 1000) // interval_ms <= 300
     )
     quantiles = (
         (0.08, -1.0, "low08"),
@@ -669,11 +1117,29 @@ def mine_empirical_rule_alpha_candidates(
         (0.88, 1.0, "high88"),
         (0.92, 1.0, "high92"),
     )
-    cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy) * 10_000.0)
+    cost_floor_bps = float(rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile) * 10_000.0)
     candidates: list[tuple[tuple[float, float, int, float], RuleAlphaCandidate]] = []
-    condition_pools: dict[tuple[str, int, int, float], list[_EmpiricalCondition]] = {}
+    condition_pools: dict[tuple[str, int, int, float, float, float], list[_EmpiricalCondition]] = {}
+    progress_stride = max(1, feature_count // 16)
 
-    for feature_index in range(feature_count):
+    for scan_index, feature_index in enumerate(feature_indices):
+        if status_callback is not None and (
+            scan_index == 0
+            or (scan_index + 1) % progress_stride == 0
+            or scan_index + 1 == feature_count
+        ):
+            status_callback(
+                "rule_alpha_empirical_feature_scan_progress",
+                {
+                    "feature_index": int(scan_index + 1),
+                    "feature_column_index": int(feature_index),
+                    "feature_scan_index": int(scan_index + 1),
+                    "feature_count": int(feature_count),
+                    "feature_dim": int(feature_dim),
+                    "candidate_count": int(len(candidates)),
+                    "condition_pool_count": int(sum(len(pool) for pool in condition_pools.values())),
+                },
+            )
         feature_values = [
             float(row.features[feature_index])
             for row in training
@@ -688,9 +1154,24 @@ def mine_empirical_rule_alpha_candidates(
         feature_scale = max(abs(q90 - q10), 1e-9)
         if not math.isfinite(feature_scale) or feature_scale <= 1e-9:
             continue
-        for profile, stop_mult, take_mult, horizon, grace_bars in profiles:
+        for (
+            profile,
+            stop_mult,
+            take_mult,
+            horizon,
+            grace_bars,
+            horizon_seconds,
+            grace_seconds,
+        ) in profiles:
             if len(training) <= horizon or len(validation) <= horizon:
                 continue
+            stop_loss_pct, take_profit_pct = _rule_alpha_profile_barriers(
+                strategy,
+                market_type=market_type,
+                stop_loss_multiplier=float(stop_mult),
+                take_profit_multiplier=float(take_mult),
+                symbol_profile=symbol_profile,
+            )
             min_train_signals = max(40, int((len(training) - horizon) * 0.003))
             min_validation_signals = max(25, int((len(validation) - horizon) * 0.003))
             for quantile, tail_direction, tail_name in quantiles:
@@ -718,7 +1199,31 @@ def mine_empirical_rule_alpha_candidates(
                         and float(train_stats["net_mean_edge_bps"]) > -max(2.0, cost_floor_bps * 0.25)
                         and float(train_stats["hit_rate"]) >= 0.45
                     ):
-                        key = (profile, int(horizon), int(grace_bars), float(trade_side))
+                        train_stats = _empirical_edge_stats(
+                            training,
+                            feature_index=feature_index,
+                            threshold_value=threshold_value,
+                            feature_scale=feature_scale,
+                            tail_direction=tail_direction,
+                            trade_side=trade_side,
+                            horizon=horizon,
+                            cost_floor_bps=cost_floor_bps,
+                            stop_loss_pct=stop_loss_pct,
+                            take_profit_pct=take_profit_pct,
+                        )
+                    if (
+                        int(train_stats["signal_count"]) >= min_train_signals
+                        and float(train_stats["net_mean_edge_bps"]) > -max(2.0, cost_floor_bps * 0.25)
+                        and float(train_stats["hit_rate"]) >= 0.45
+                    ):
+                        key = (
+                            profile,
+                            int(horizon),
+                            int(grace_bars),
+                            float(trade_side),
+                            float(stop_loss_pct),
+                            float(take_profit_pct),
+                        )
                         condition_pools.setdefault(key, []).append(_EmpiricalCondition(
                             feature_index=int(feature_index),
                             threshold_value=float(threshold_value),
@@ -749,6 +1254,24 @@ def mine_empirical_rule_alpha_candidates(
                         or float(validation_stats["hit_rate"]) < 0.52
                     ):
                         continue
+                    validation_stats = _empirical_edge_stats(
+                        validation,
+                        feature_index=feature_index,
+                        threshold_value=threshold_value,
+                        feature_scale=feature_scale,
+                        tail_direction=tail_direction,
+                        trade_side=trade_side,
+                        horizon=horizon,
+                        cost_floor_bps=cost_floor_bps,
+                        stop_loss_pct=stop_loss_pct,
+                        take_profit_pct=take_profit_pct,
+                    )
+                    if (
+                        int(validation_stats["signal_count"]) < min_validation_signals
+                        or float(validation_stats["net_mean_edge_bps"]) <= 0.0
+                        or float(validation_stats["hit_rate"]) < 0.52
+                    ):
+                        continue
                     trade_name = "long" if trade_side > 0.0 else "short"
                     confidence = _clamp(
                         min(float(train_stats["net_mean_edge_bps"]), float(validation_stats["net_mean_edge_bps"])) / max(cost_floor_bps, 1.0),
@@ -766,6 +1289,7 @@ def mine_empirical_rule_alpha_candidates(
                         cooldown_multiplier=0.0,
                         min_position_hold_bars=int(horizon),
                         flat_signal_exit_grace_bars=int(grace_bars),
+                        max_position_hold_bars=int(horizon),
                         params={
                             "feature_index": int(feature_index),
                             "feature_threshold": float(threshold_value),
@@ -781,6 +1305,12 @@ def mine_empirical_rule_alpha_candidates(
                             "training_hit_rate": float(train_stats["hit_rate"]),
                             "validation_hit_rate": float(validation_stats["hit_rate"]),
                             "horizon_bars": int(horizon),
+                            "duration_contract": "wall_clock_seconds_v1",
+                            "bar_interval_ms": int(interval_ms),
+                            "intended_max_hold_seconds": int(horizon_seconds),
+                            "intended_grace_seconds": int(grace_seconds),
+                            "effective_max_hold_seconds": float(horizon * interval_ms) / 1000.0,
+                            "effective_grace_seconds": float(grace_bars * interval_ms) / 1000.0,
                         },
                     )
                     score = (
@@ -799,12 +1329,15 @@ def mine_empirical_rule_alpha_candidates(
         cost_floor_bps=cost_floor_bps,
         probability_threshold=probability_threshold,
         market_type=market_type,
+        bar_interval_ms=interval_ms,
+        status_callback=status_callback,
     )
 
     candidates.sort(key=lambda item: item[0], reverse=True)
     output: list[RuleAlphaCandidate] = []
     seen: set[tuple[int, float, float, int, int, float]] = set()
-    for _score, candidate in candidates:
+
+    def add(candidate: RuleAlphaCandidate) -> None:
         key = (
             int(candidate.params.get("feature_index", -1)),
             float(candidate.params.get("tail_direction", 0.0)),
@@ -813,30 +1346,58 @@ def mine_empirical_rule_alpha_candidates(
             int(candidate.params.get("second_feature_index", -1)),
             float(candidate.params.get("second_tail_direction", 0.0)),
         )
-        if key in seen:
-            continue
+        if key in seen or len(output) >= limit:
+            return
         seen.add(key)
         output.append(candidate)
-        if len(output) >= limit:
-            break
+
+    best_single = next(
+        (candidate for _score, candidate in candidates if "second_feature_index" not in candidate.params),
+        None,
+    )
+    best_interaction = next(
+        (candidate for _score, candidate in candidates if "second_feature_index" in candidate.params),
+        None,
+    )
+    if best_single is not None:
+        add(best_single)
+    if best_interaction is not None and limit > 1:
+        add(best_interaction)
+    for _score, candidate in candidates:
+        add(candidate)
     return tuple(output)
 
 
 def _mine_empirical_interaction_candidates(
     candidates: list[tuple[tuple[float, float, int, float], RuleAlphaCandidate]],
-    condition_pools: Mapping[tuple[str, int, int, float], list[_EmpiricalCondition]],
+    condition_pools: Mapping[tuple[str, int, int, float, float, float], list[_EmpiricalCondition]],
     *,
     training: Sequence[ModelRow],
     validation: Sequence[ModelRow],
     cost_floor_bps: float,
     probability_threshold: float,
     market_type: str,
+    bar_interval_ms: int,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> None:
     """Append validated two-condition empirical rules to ``candidates``."""
 
     del market_type  # side handling is already encoded in the condition-pool key.
     emitted = 0
-    for (profile, horizon, grace_bars, trade_side), pool in condition_pools.items():
+    pool_items = list(condition_pools.items())
+    pool_count = len(pool_items)
+    for pool_index, ((profile, horizon, grace_bars, trade_side, stop_loss_pct, take_profit_pct), pool) in enumerate(pool_items, start=1):
+        if status_callback is not None:
+            status_callback(
+                "rule_alpha_empirical_interaction_scan_progress",
+                {
+                    "pool_index": int(pool_index),
+                    "pool_count": int(pool_count),
+                    "pool_size": int(len(pool)),
+                    "emitted_interactions": int(emitted),
+                    "candidate_count": int(len(candidates)),
+                },
+            )
         if emitted >= DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES:
             break
         if len(pool) < 2:
@@ -866,6 +1427,8 @@ def _mine_empirical_interaction_candidates(
                     trade_side=trade_side,
                     horizon=horizon,
                     cost_floor_bps=cost_floor_bps,
+                    stop_loss_pct=stop_loss_pct,
+                    take_profit_pct=take_profit_pct,
                     second_feature_index=right.feature_index,
                     second_threshold_value=right.threshold_value,
                     second_feature_scale=right.feature_scale,
@@ -886,6 +1449,8 @@ def _mine_empirical_interaction_candidates(
                     trade_side=trade_side,
                     horizon=horizon,
                     cost_floor_bps=cost_floor_bps,
+                    stop_loss_pct=stop_loss_pct,
+                    take_profit_pct=take_profit_pct,
                     second_feature_index=right.feature_index,
                     second_threshold_value=right.threshold_value,
                     second_feature_scale=right.feature_scale,
@@ -918,6 +1483,7 @@ def _mine_empirical_interaction_candidates(
                     cooldown_multiplier=0.0,
                     min_position_hold_bars=int(horizon),
                     flat_signal_exit_grace_bars=int(grace_bars),
+                    max_position_hold_bars=int(horizon),
                     params={
                         "condition_count": 2,
                         "feature_index": int(first.feature_index),
@@ -938,6 +1504,10 @@ def _mine_empirical_interaction_candidates(
                         "training_hit_rate": float(train_stats["hit_rate"]),
                         "validation_hit_rate": float(validation_stats["hit_rate"]),
                         "horizon_bars": int(horizon),
+                        "duration_contract": "wall_clock_seconds_v1",
+                        "bar_interval_ms": int(bar_interval_ms),
+                        "effective_max_hold_seconds": float(horizon * bar_interval_ms) / 1000.0,
+                        "effective_grace_seconds": float(grace_bars * bar_interval_ms) / 1000.0,
                     },
                 )
                 score = (
@@ -962,19 +1532,25 @@ def _empirical_edge_stats(
     trade_side: float,
     horizon: int,
     cost_floor_bps: float,
+    stop_loss_pct: float | None = None,
+    take_profit_pct: float | None = None,
     second_feature_index: int | None = None,
     second_threshold_value: float | None = None,
     second_feature_scale: float | None = None,
     second_tail_direction: float | None = None,
+    entry_offset: int = RULE_ALPHA_EXECUTION_ENTRY_OFFSET,
 ) -> dict[str, object]:
     edges: list[float] = []
     side = 1.0 if trade_side >= 0.0 else -1.0
     tail = 1.0 if tail_direction >= 0.0 else -1.0
     scale = max(abs(float(feature_scale)), 1e-9)
-    for index in range(0, len(rows) - horizon):
+    offset = max(0, int(entry_offset))
+    available = max(0, len(rows) - horizon - offset)
+    for index in range(0, available):
         current = rows[index]
-        future = rows[index + horizon]
-        if len(current.features) <= feature_index or current.close <= 0.0 or future.close <= 0.0:
+        entry = rows[index + offset]
+        future = rows[index + offset + horizon]
+        if len(current.features) <= feature_index or entry.close <= 0.0 or future.close <= 0.0:
             continue
         value = float(current.features[feature_index])
         if not math.isfinite(value):
@@ -1001,7 +1577,17 @@ def _empirical_edge_stats(
             strength = min(strength, second_strength)
         if strength <= 0.0:
             continue
-        edge_bps = side * ((float(future.close) - float(current.close)) / float(current.close)) * 10_000.0
+        if stop_loss_pct is not None and take_profit_pct is not None:
+            edge_bps, _bars_held, _exit_reason = _rule_alpha_path_edge_bps_with_barriers(
+                rows,
+                index + offset,
+                horizon,
+                int(side),
+                stop_loss_pct=float(stop_loss_pct),
+                take_profit_pct=float(take_profit_pct),
+            )
+        else:
+            edge_bps = side * ((float(future.close) - float(entry.close)) / float(entry.close)) * 10_000.0
         if math.isfinite(edge_bps):
             edges.append(edge_bps)
     if not edges:
@@ -1044,6 +1630,7 @@ def model_for_rule_alpha(
     market_type: str,
     probability_inverted: bool = False,
     feature_params: dict[str, object] | None = None,
+    symbol_profile: SymbolExecutionProfile | None = None,
 ) -> TrainedModel:
     """Build a serializable model that emits only the selected rule alpha."""
 
@@ -1087,7 +1674,14 @@ def model_for_rule_alpha(
             )
         ],
     )
-    model.strategy_overrides = strategy_overrides_from_config(_candidate_strategy(strategy, candidate))
+    model.strategy_overrides = strategy_overrides_from_config(
+        _candidate_strategy(
+            strategy,
+            candidate,
+            market_type=market_type,
+            symbol_profile=symbol_profile,
+        )
+    )
     if probability_inverted:
         model.quality_warnings = [
             *list(getattr(model, "quality_warnings", []) or []),
@@ -1096,10 +1690,19 @@ def model_for_rule_alpha(
     return model
 
 
-def _rule_alpha_one_side_cost_bps(strategy: StrategyConfig) -> float:
-    assumptions = execution_assumptions_from_strategy(strategy)
+def _rule_alpha_one_side_cost_bps(
+    strategy: StrategyConfig,
+    *,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> float:
+    assumptions = (
+        execution_assumptions_for_symbol(strategy, symbol_profile)
+        if symbol_profile is not None
+        else execution_assumptions_from_strategy(strategy)
+    )
     latency_seconds = min(10.0, max(0.0, float(assumptions.latency_ms)) / 1000.0)
-    impact_cost = max(0.0, float(assumptions.impact_coefficient)) * math.sqrt(_RULE_ALPHA_COST_FLOOR_PARTICIPATION)
+    participation = _rule_alpha_cost_floor_participation(symbol_profile)
+    impact_cost = max(0.0, float(assumptions.impact_coefficient)) * math.sqrt(participation)
     return max(
         0.0,
         max(0.0, float(assumptions.spread_bps)) / 2.0
@@ -1109,20 +1712,68 @@ def _rule_alpha_one_side_cost_bps(strategy: StrategyConfig) -> float:
     )
 
 
-def rule_alpha_stop_loss_floor_pct(strategy: StrategyConfig) -> float:
+def _rule_alpha_cost_floor_participation(symbol_profile: SymbolExecutionProfile | None = None) -> float:
+    """Return a conservative participation proxy for label/event cost floors.
+
+    The final backtest uses per-row quote volume and actual order notional. This
+    preselection floor only prevents obviously sub-cost labels from dominating
+    training, so it should not assume a fixed 5% share of the one-second book for
+    BTC/ETH/SOL-sized autonomous positions.
+    """
+
+    if symbol_profile is None:
+        return _RULE_ALPHA_COST_FLOOR_PARTICIPATION
+    liquidity_score = min(1.0, max(0.0, float(symbol_profile.liquidity_score)))
+    quote_volume = max(0.0, float(symbol_profile.quote_volume))
+    trade_count = max(0, int(symbol_profile.trade_count))
+    profiled_floor = _RULE_ALPHA_MIN_PROFILED_COST_FLOOR_PARTICIPATION
+    if quote_volume >= 1_000_000_000.0 and trade_count >= 1_000_000:
+        profiled_floor = _RULE_ALPHA_MIN_MAJOR_COST_FLOOR_PARTICIPATION
+    liquidity_scaled = _RULE_ALPHA_COST_FLOOR_PARTICIPATION * ((1.0 - liquidity_score) ** 2)
+    return max(profiled_floor, min(_RULE_ALPHA_COST_FLOOR_PARTICIPATION, liquidity_scaled))
+
+
+def rule_alpha_stop_loss_floor_pct(
+    strategy: StrategyConfig,
+    *,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> float:
     """Return a minimum stop distance above one adverse modeled fill."""
 
     fee_bps = max(0.0, float(strategy.taker_fee_bps))
-    floor_bps = _rule_alpha_one_side_cost_bps(strategy) + fee_bps + _RULE_ALPHA_MIN_STOP_BUFFER_BPS
+    floor_bps = (
+        _rule_alpha_one_side_cost_bps(strategy, symbol_profile=symbol_profile)
+        + fee_bps
+        + _RULE_ALPHA_MIN_STOP_BUFFER_BPS
+    )
     return max(0.0005, floor_bps / 10_000.0)
 
 
-def rule_alpha_take_profit_floor_pct(strategy: StrategyConfig) -> float:
+def rule_alpha_take_profit_floor_pct(
+    strategy: StrategyConfig,
+    *,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> float:
     """Return the minimum target move needed to clear round-trip modeled costs."""
 
     fee_bps = max(0.0, float(strategy.taker_fee_bps))
-    floor_bps = (2.0 * _rule_alpha_one_side_cost_bps(strategy)) + (2.0 * fee_bps) + _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS
+    floor_bps = (
+        (2.0 * _rule_alpha_one_side_cost_bps(strategy, symbol_profile=symbol_profile))
+        + (2.0 * fee_bps)
+        + _RULE_ALPHA_MIN_PROFIT_BUFFER_BPS
+    )
     return max(0.0005, floor_bps / 10_000.0)
+
+
+def _rule_alpha_event_rank_pool_limit(row_count: int, template_replay_limit: int) -> int:
+    replay_limit = max(1, int(template_replay_limit))
+    rows = max(0, int(row_count))
+    if rows >= RULE_ALPHA_LARGE_WINDOW_ROW_COUNT:
+        return replay_limit
+    return max(
+        replay_limit,
+        replay_limit * DEFAULT_RULE_ALPHA_EVENT_RANK_POOL_MULTIPLIER,
+    )
 
 
 def optimize_rule_alpha_model_zoo(
@@ -1135,13 +1786,20 @@ def optimize_rule_alpha_model_zoo(
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
     max_candidates: int = DEFAULT_RULE_ALPHA_MAX_CANDIDATES,
+    empirical_max_feature_count: int | None = None,
     feature_cfg: AdvancedFeatureConfig | None = None,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    ranking_rows: Sequence[ModelRow] | None = None,
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> RuleAlphaOptimizationReport:
     """Return the best accepted rule-alpha model, or a rejected report."""
 
     rows = list(selection_rows)
     if not rows:
         return RuleAlphaOptimizationReport(False, None, float("-inf"), None, False, None, 0, None, ())
+    discovery_rows = list(ranking_rows) if ranking_rows is not None else rows
+    if not discovery_rows:
+        discovery_rows = rows
     objective = get_objective(objective_name)
     best_accepted: RuleAlphaCandidateResult | None = None
     best_diagnostic: RuleAlphaCandidateResult | None = None
@@ -1149,30 +1807,107 @@ def optimize_rule_alpha_model_zoo(
     regime_scores = precompute_backtest_regime_scores(rows, strategy)
     liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, strategy)
     feature_params = rule_alpha_feature_params(feature_cfg)
+    feature_dim = len(discovery_rows[0].features) if discovery_rows else 0
+    bar_interval_ms = _median_row_interval_ms(discovery_rows)
+    empirical_feature_scan_limit = len(_empirical_feature_scan_indices(
+        feature_dim=feature_dim,
+        max_feature_count=empirical_max_feature_count,
+        feature_cfg=feature_cfg,
+    ))
     template_replay_limit = max(1, int(max_candidates))
-    event_rank_pool_limit = max(
-        template_replay_limit,
-        template_replay_limit * DEFAULT_RULE_ALPHA_EVENT_RANK_POOL_MULTIPLIER,
+    event_rank_pool_limit = _rule_alpha_event_rank_pool_limit(len(discovery_rows), template_replay_limit)
+    template_pool = rule_alpha_candidates(
+        objective.name,
+        max_candidates=event_rank_pool_limit,
+        bar_interval_ms=bar_interval_ms,
     )
-    template_pool = rule_alpha_candidates(objective.name, max_candidates=event_rank_pool_limit)
     template_candidates, event_rank_summary = _event_rank_rule_alpha_candidates(
-        rows,
+        discovery_rows,
         strategy,
         template_pool,
         market_type=market_type,
         replay_limit=template_replay_limit,
         feature_params=feature_params,
+        symbol_profile=symbol_profile,
+        status_callback=status_callback,
     )
+    if status_callback is not None:
+        status_callback(
+            "rule_alpha_event_rank_complete",
+            {
+                "selection_rows": len(rows),
+                "ranking_rows": len(discovery_rows),
+                "template_candidates": len(template_candidates),
+                "template_pool_candidates": len(template_pool),
+                "event_rank_pool_candidates": int(event_rank_summary.get("event_rank_pool_candidates", 0) or 0),
+                "event_rank_positive_pool_candidates": int(
+                    event_rank_summary.get("event_rank_positive_pool_candidates", 0) or 0
+                ),
+                "event_rank_best_candidate": str(event_rank_summary.get("event_rank_best_candidate", "") or ""),
+                "event_rank_best_net_edge_bps": float(
+                    event_rank_summary.get("event_rank_best_net_edge_bps", 0.0) or 0.0
+                ),
+            },
+        )
+        status_callback(
+            "rule_alpha_empirical_mining_started",
+            {
+                "selection_rows": len(rows),
+                "ranking_rows": len(discovery_rows),
+                "feature_dim": int(feature_dim),
+                "feature_scan_limit": int(empirical_feature_scan_limit),
+                "candidate_limit": DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES,
+                "interaction_candidate_limit": DEFAULT_EMPIRICAL_RULE_ALPHA_INTERACTION_MAX_CANDIDATES,
+            },
+        )
     empirical_candidates = mine_empirical_rule_alpha_candidates(
-        rows,
+        discovery_rows,
         strategy,
         objective_name=objective.name,
         market_type=market_type,
         max_candidates=DEFAULT_EMPIRICAL_RULE_ALPHA_MAX_CANDIDATES,
+        max_feature_count=empirical_max_feature_count,
+        feature_cfg=feature_cfg,
+        symbol_profile=symbol_profile,
+        bar_interval_ms=bar_interval_ms,
+        status_callback=status_callback,
     )
-    for candidate in (*template_candidates, *empirical_candidates):
-        candidate_strategy = _candidate_strategy(strategy, candidate)
+    if status_callback is not None:
+        status_callback(
+            "rule_alpha_empirical_mining_complete",
+            {
+                "selection_rows": len(rows),
+                "ranking_rows": len(discovery_rows),
+                "empirical_candidates": len(empirical_candidates),
+                "empirical_interaction_candidates": sum(
+                    1 for candidate in empirical_candidates if "second_feature_index" in candidate.params
+                ),
+            },
+        )
+    replay_candidates = (*template_candidates, *empirical_candidates)
+    total_replays = len(replay_candidates) * 2
+    replay_index = 0
+    for candidate in replay_candidates:
+        candidate_strategy = _candidate_strategy(
+            strategy,
+            candidate,
+            market_type=market_type,
+            symbol_profile=symbol_profile,
+        )
         for inverted in (False, True):
+            replay_index += 1
+            if status_callback is not None:
+                status_callback(
+                    "rule_alpha_candidate_started",
+                    {
+                        "candidate_index": replay_index,
+                        "candidate_count": total_replays,
+                        "candidate": candidate.name,
+                        "candidate_family": candidate.family,
+                        "probability_inverted": bool(inverted),
+                        "evaluated_candidates": len(diagnostics),
+                    },
+                )
             model = model_for_rule_alpha(
                 rows,
                 candidate,
@@ -1180,6 +1915,7 @@ def optimize_rule_alpha_model_zoo(
                 market_type=market_type,
                 probability_inverted=inverted,
                 feature_params=feature_params,
+                symbol_profile=symbol_profile,
             )
             event_study = rule_alpha_event_study(
                 rows,
@@ -1187,6 +1923,7 @@ def optimize_rule_alpha_model_zoo(
                 candidate_strategy,
                 candidate,
                 market_type=market_type,
+                symbol_profile=symbol_profile,
             )
             result = run_backtest(
                 rows,
@@ -1196,6 +1933,7 @@ def optimize_rule_alpha_model_zoo(
                 market_type=market_type,
                 compute_backend=compute_backend,
                 score_batch_size=score_batch_size,
+                symbol_profile=symbol_profile,
                 precomputed_regime_scores=regime_scores,
                 precomputed_liquidity_adjustments=liquidity_adjustments,
             )
@@ -1218,12 +1956,39 @@ def optimize_rule_alpha_model_zoo(
                 best_accepted = candidate_result
             if best_diagnostic is None or _diagnostic_rank_key(candidate_result) > _diagnostic_rank_key(best_diagnostic):
                 best_diagnostic = candidate_result
+            if status_callback is not None:
+                diagnostic = best_accepted or best_diagnostic
+                status_callback(
+                    "rule_alpha_candidate_evaluated",
+                    {
+                        "candidate_index": replay_index,
+                        "candidate_count": total_replays,
+                        "candidate": candidate.name,
+                        "candidate_family": candidate.family,
+                        "probability_inverted": bool(inverted),
+                        "accepted": bool(accepted),
+                        "raw_score": float(raw_score),
+                        "score": float(score),
+                        "realized_pnl": float(result.realized_pnl),
+                        "closed_trades": int(result.closed_trades),
+                        "best_candidate": diagnostic.candidate.name if diagnostic is not None else "",
+                        "best_accepted": bool(diagnostic.accepted) if diagnostic is not None else False,
+                        "best_raw_score": float(diagnostic.raw_score) if diagnostic is not None else float("-inf"),
+                        "best_pnl": float(diagnostic.result.realized_pnl) if diagnostic is not None else 0.0,
+                        "best_closed_trades": int(diagnostic.result.closed_trades) if diagnostic is not None else 0,
+                    },
+                )
 
     candidate_summary = summarize_rule_alpha_candidate_distribution(diagnostics)
     candidate_summary.update(event_rank_summary)
+    candidate_summary["ranking_rows"] = int(len(discovery_rows))
+    candidate_summary["selection_rows"] = int(len(rows))
+    candidate_summary["ranking_source"] = "external_chronological_training_slice" if ranking_rows is not None else "selection_slice"
+    candidate_summary["bar_interval_ms"] = int(bar_interval_ms)
     candidate_summary["static_template_candidates"] = int(len(template_candidates))
     candidate_summary["static_template_pool_candidates"] = int(len(template_pool))
     candidate_summary["empirical_mined_candidates"] = int(len(empirical_candidates))
+    candidate_summary["empirical_feature_scan_limit"] = int(empirical_feature_scan_limit)
     candidate_summary["empirical_interaction_candidates"] = int(
         sum(1 for candidate in empirical_candidates if "second_feature_index" in candidate.params)
     )
@@ -1249,6 +2014,7 @@ def optimize_rule_alpha_model_zoo(
         market_type=market_type,
         probability_inverted=winner.probability_inverted,
         feature_params=feature_params,
+        symbol_profile=symbol_profile,
     )
     model.rule_alpha_best_score = float(winner.score if winner.accepted else winner.raw_score)
     model.rule_alpha_best_pnl = float(winner.result.realized_pnl)
@@ -1288,28 +2054,59 @@ def optimize_rule_alpha_model_zoo(
     )
 
 
-def _candidate_strategy(strategy: StrategyConfig, candidate: RuleAlphaCandidate) -> StrategyConfig:
+def _candidate_strategy(
+    strategy: StrategyConfig,
+    candidate: RuleAlphaCandidate,
+    *,
+    market_type: str = "spot",
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> StrategyConfig:
     payload = strategy.asdict()
-    stop_floor = rule_alpha_stop_loss_floor_pct(strategy)
-    take_floor = rule_alpha_take_profit_floor_pct(strategy)
-    stop_loss_pct = max(
-        0.0005,
-        stop_floor,
-        float(strategy.stop_loss_pct) * max(0.05, candidate.stop_loss_multiplier),
+    stop_loss_pct, take_profit_pct = _rule_alpha_profile_barriers(
+        strategy,
+        market_type=market_type,
+        stop_loss_multiplier=candidate.stop_loss_multiplier,
+        take_profit_multiplier=candidate.take_profit_multiplier,
+        symbol_profile=symbol_profile,
     )
-    take_profit_pct = max(
-        0.0005,
-        take_floor,
-        float(strategy.take_profit_pct) * max(0.05, candidate.take_profit_multiplier),
-    )
-    if take_profit_pct <= stop_loss_pct:
-        take_profit_pct = stop_loss_pct + (_RULE_ALPHA_MIN_PROFIT_BUFFER_BPS / 10_000.0)
     payload["stop_loss_pct"] = stop_loss_pct
     payload["take_profit_pct"] = take_profit_pct
     payload["cooldown_minutes"] = max(0, int(round(float(strategy.cooldown_minutes) * max(0.0, candidate.cooldown_multiplier))))
     payload["min_position_hold_bars"] = max(0, int(candidate.min_position_hold_bars))
     payload["flat_signal_exit_grace_bars"] = max(0, int(candidate.flat_signal_exit_grace_bars))
+    payload["max_position_hold_bars"] = max(
+        1,
+        int(candidate.max_position_hold_bars or candidate.min_position_hold_bars or 1),
+    )
     return StrategyConfig(**payload)
+
+
+def _rule_alpha_profile_barriers(
+    strategy: StrategyConfig,
+    *,
+    market_type: str,
+    stop_loss_multiplier: float,
+    take_profit_multiplier: float,
+    symbol_profile: SymbolExecutionProfile | None = None,
+) -> tuple[float, float]:
+    stop_floor = rule_alpha_stop_loss_floor_pct(strategy, symbol_profile=symbol_profile)
+    take_floor = rule_alpha_take_profit_floor_pct(strategy, symbol_profile=symbol_profile)
+    price_move_scale = _price_move_scale_for_market(strategy, market_type)
+    base_stop_loss_pct = float(strategy.stop_loss_pct) * price_move_scale
+    base_take_profit_pct = float(strategy.take_profit_pct) * price_move_scale
+    stop_loss_pct = max(
+        0.0005,
+        stop_floor,
+        base_stop_loss_pct * max(0.05, float(stop_loss_multiplier)),
+    )
+    take_profit_pct = max(
+        0.0005,
+        take_floor + (_RULE_ALPHA_MIN_PROFIT_BUFFER_BPS / 10_000.0),
+        base_take_profit_pct * max(0.05, float(take_profit_multiplier)),
+    )
+    if take_profit_pct <= stop_loss_pct:
+        take_profit_pct = stop_loss_pct + (_RULE_ALPHA_MIN_PROFIT_BUFFER_BPS / 10_000.0)
+    return float(stop_loss_pct), float(take_profit_pct)
 
 
 def _diagnostic_rank_key(result: RuleAlphaCandidateResult) -> tuple[float, ...]:

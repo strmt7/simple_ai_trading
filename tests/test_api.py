@@ -143,6 +143,97 @@ def test_request_supports_unsigned_and_signed_paths(monkeypatch) -> None:
     assert calls[1][1] == "https://testnet.binancefuture.com/fapi/v1/order"
 
 
+def test_futures_commission_rate_is_symbol_specific_and_signed(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
+
+    def fake_request(method: str, path: str, params=None, signed: bool = False):
+        assert (method, path, params, signed) == (
+            "GET",
+            "/fapi/v1/commissionRate",
+            {"symbol": "BTCUSDT"},
+            True,
+        )
+        return {
+            "symbol": "BTCUSDT",
+            "makerCommissionRate": "0.0002",
+            "takerCommissionRate": "0.0004",
+            "rpiCommissionRate": "0.00005",
+        }
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    rates = client.get_commission_rates("btcusdt")
+    assert rates.market_type == "futures"
+    assert rates.maker_bps == pytest.approx(2.0)
+    assert rates.taker_bps == pytest.approx(4.0)
+    assert rates.rpi_bps == pytest.approx(0.5)
+
+
+def test_spot_commission_rate_includes_special_tax_and_worst_side(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
+
+    def fake_request(method: str, path: str, params=None, signed: bool = False):
+        assert (method, path, params, signed) == (
+            "GET",
+            "/api/v3/account/commission",
+            {"symbol": "BTCUSDT"},
+            True,
+        )
+        return {
+            "symbol": "BTCUSDT",
+            "standardCommission": {
+                "maker": "0.0008",
+                "taker": "0.0010",
+                "buyer": "0.0001",
+                "seller": "0.0002",
+            },
+            "specialCommission": {
+                "maker": "0.0000",
+                "taker": "0.0001",
+                "buyer": "0.0000",
+                "seller": "0.0001",
+            },
+            "taxCommission": {
+                "maker": "0.00001",
+                "taker": "0.00002",
+                "buyer": "0.00001",
+                "seller": "0.00003",
+            },
+        }
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    rates = client.get_commission_rates("BTCUSDT")
+    assert rates.market_type == "spot"
+    assert rates.maker_bps == pytest.approx(11.4)
+    assert rates.taker_bps == pytest.approx(14.5)
+
+
+def test_commission_rate_rejects_malformed_or_wrong_symbol_payload(monkeypatch) -> None:
+    client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
+    monkeypatch.setattr(
+        client,
+        "_request",
+        lambda *_args, **_kwargs: {
+            "symbol": "ETHUSDT",
+            "makerCommissionRate": "0.0002",
+            "takerCommissionRate": "0.0004",
+        },
+    )
+    with pytest.raises(BinanceAPIError, match="Unexpected symbol"):
+        client.get_commission_rates("BTCUSDT")
+
+    monkeypatch.setattr(
+        client,
+        "_request",
+        lambda *_args, **_kwargs: {
+            "symbol": "BTCUSDT",
+            "makerCommissionRate": "0.0002",
+            "takerCommissionRate": "not-a-rate",
+        },
+    )
+    with pytest.raises(BinanceAPIError, match="takerCommissionRate"):
+        client.get_commission_rates("BTCUSDT")
+
+
 def test_quantize_and_parse_filter_handle_invalid_inputs() -> None:
     assert BinanceClient._quantize_to_step(1.23, 0.0) == 1.23
     assert BinanceClient._quantize_to_step(1.23, -1.0) == 1.23

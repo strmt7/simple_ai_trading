@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from array import array
 import math
+from dataclasses import replace
 
 import pytest
 
@@ -10,6 +12,7 @@ from simple_ai_trading import advanced_model as am
 from simple_ai_trading.api import Candle
 from simple_ai_trading.compute import resolve_backend
 from simple_ai_trading.features import FEATURE_NAMES, ModelRow
+from simple_ai_trading.market_store import AggTrade
 
 
 def _candles(n: int = 220) -> list[Candle]:
@@ -135,6 +138,19 @@ def test_market_quality_features_are_finite_and_live_inference_safe():
     assert len(inference_rows[-1].features) == am.advanced_feature_dimension(cfg)
 
 
+def test_compact_inference_features_preserve_values_in_float32_storage() -> None:
+    candles = _candles(160)
+    cfg = am.default_config_for("conservative", FEATURE_NAMES)
+
+    regular = am.make_advanced_inference_rows(candles, cfg)
+    compact = am.make_advanced_inference_rows(candles, cfg, compact_features=True)
+
+    assert len(compact) == len(regular)
+    assert isinstance(compact[-1].features, array)
+    assert compact[-1].features.typecode == "f"
+    assert compact[-1].features == pytest.approx(regular[-1].features, abs=1e-6)
+
+
 def test_higher_timeframe_context_uses_only_closed_context_bars():
     candles = [
         Candle(
@@ -157,9 +173,12 @@ def test_higher_timeframe_context_uses_only_closed_context_bars():
     assert close_times == [59_999, 119_999]
     assert am._higher_timeframe_context_features_at(context, close_times, 119_998, (2,)) == [0.0] * 8
     features = am._higher_timeframe_context_features_at(context, close_times, 119_999, (2,))
+    cached = am._build_higher_timeframe_context_cache(context, (2,))
     assert len(features) == 8
     assert all(math.isfinite(value) for value in features)
     assert features[0] > 0.0
+    assert am._higher_timeframe_context_features_from_cache(cached, 119_998) == [0.0] * 8
+    assert am._higher_timeframe_context_features_from_cache(cached, 119_999) == pytest.approx(features)
 
 
 def test_higher_timeframe_context_is_dimensioned_for_train_and_inference():
@@ -421,6 +440,61 @@ def test_advanced_feature_group_spans_cover_dimension_in_order() -> None:
     assert spans[-1].asdict()["size"] == spans[-1].size
 
 
+def test_trade_tape_features_are_signatured_and_point_in_time() -> None:
+    candles = [
+        Candle(
+            open_time=i * 1000,
+            open=100.0 + i,
+            high=100.5 + i,
+            low=99.5 + i,
+            close=100.2 + i,
+            volume=1.0,
+            close_time=i * 1000 + 999,
+            quote_volume=100.2 + i,
+            trade_count=1,
+        )
+        for i in range(30)
+    ]
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=1,
+        extra_lookback_windows=(),
+        confluence_windows=(),
+        market_quality_windows=(),
+        higher_timeframe_windows=(),
+        order_flow_windows=(),
+        trade_tape_windows=(2,),
+        nonlinear_transforms=(),
+        short_window=2,
+        long_window=3,
+        label_lookahead=1,
+    )
+    trades = [
+        AggTrade("BTCUSDT", "futures", 1, 119.0, 1.0, 10, 10, 19_100, True),
+        AggTrade("BTCUSDT", "futures", 2, 120.0, 3.0, 11, 11, 20_100, False),
+    ]
+    future_trade = AggTrade("BTCUSDT", "futures", 3, 80.0, 100.0, 12, 12, 21_100, True)
+
+    rows_without_future = am.make_advanced_rows(candles, cfg, agg_trades=trades)
+    rows_with_future = am.make_advanced_rows(candles, cfg, agg_trades=trades + [future_trade])
+    spans = am.advanced_feature_group_spans(cfg)
+    tape_span = next(span for span in spans if span.name == "trade_tape_microstructure")
+    target_timestamp = candles[20].close_time
+    row_without_future = next(row for row in rows_without_future if row.timestamp == target_timestamp)
+    row_with_future = next(row for row in rows_with_future if row.timestamp == target_timestamp)
+    tape = row_with_future.features[tape_span.start:tape_span.end]
+
+    assert am.advanced_feature_dimension(cfg) == 4 + 16
+    assert "trade_tape_windows=2" in am.advanced_feature_signature(cfg)
+    assert row_with_future.features == row_without_future.features
+    assert tape[0] == pytest.approx((120.0 * 3.0) / ((119.0 * 1.0) + (120.0 * 3.0)))
+    assert tape[1] > 0.45
+    assert tape[2] == pytest.approx(0.0)
+    assert tape[5] == pytest.approx(1.0)
+    assert tape[9] == pytest.approx(0.0)
+
+
 def test_advanced_feature_signature_stable():
     cfg = am.default_config_for("default", FEATURE_NAMES)
     assert am.advanced_feature_signature(cfg) == am.advanced_feature_signature(cfg)
@@ -443,6 +517,7 @@ def test_advanced_config_from_signature_round_trips_candidate_specific_fields() 
         higher_timeframe_windows=(60, 240),
         higher_timeframe_bucket_ms=60_000,
         order_flow_windows=(6, 18),
+        trade_tape_windows=(6, 18),
         nonlinear_transforms=("tanh", "log1p"),
         short_window=8,
         long_window=34,
@@ -450,6 +525,7 @@ def test_advanced_config_from_signature_round_trips_candidate_specific_fields() 
         label_lookahead=7,
         label_mode="triple_barrier",
         label_stop_threshold=0.00125,
+        trade_tape_features_per_window=10,
     )
 
     parsed = am.advanced_config_from_signature(am.advanced_feature_signature(cfg), FEATURE_NAMES)
@@ -472,11 +548,12 @@ def test_legacy_v8_signature_keeps_nine_order_flow_fields_per_window() -> None:
     )
     current_parts = am.advanced_feature_signature(cfg).split("|")
     legacy_parts = [
-        part.replace("advanced_version=v10-higher-timeframe-context", "advanced_version=v8-information-event")
+        part.replace("advanced_version=v12-expanded-trade-tape", "advanced_version=v8-information-event")
         for part in current_parts
         if not part.startswith("order_flow_features_per_window=")
         and not part.startswith("higher_timeframe_windows=")
         and not part.startswith("higher_timeframe_bucket_ms=")
+        and not part.startswith("label_entry_offset=")
     ]
     parsed = am.advanced_config_from_signature("|".join(legacy_parts), FEATURE_NAMES)
 
@@ -526,6 +603,49 @@ def test_make_advanced_rows_happy_path():
     assert rows[0].volume == pytest.approx(volume_by_timestamp[rows[0].timestamp])
 
 
+def test_cached_advanced_feature_rows_relabel_like_make_advanced_rows() -> None:
+    candles = _candles(180)
+    base_cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:6]),
+        polynomial_degree=2,
+        polynomial_top_features=4,
+        extra_lookback_windows=(5, 15),
+        confluence_windows=(8, 21),
+        market_quality_windows=(12,),
+        higher_timeframe_windows=(3, 9),
+        order_flow_windows=(5,),
+        label_threshold=0.001,
+        label_lookahead=6,
+        label_mode="event_volatility_triple_barrier",
+        label_stop_threshold=0.0008,
+        label_volatility_window=8,
+        label_volatility_multiplier=1.2,
+    )
+    feature_rows = am.make_advanced_inference_rows(candles, base_cfg)
+    relabeled = am.label_advanced_rows(candles, base_cfg, feature_rows)
+    direct = am.make_advanced_rows(candles, base_cfg)
+
+    assert [(row.timestamp, row.label, row.features) for row in relabeled] == [
+        (row.timestamp, row.label, row.features) for row in direct
+    ]
+    forward_cfg = replace(
+        base_cfg,
+        label_mode="forward_return",
+        label_threshold=0.0002,
+        label_lookahead=4,
+        label_stop_threshold=None,
+        label_volatility_window=0,
+        label_volatility_multiplier=0.0,
+    )
+    forward_feature_rows = am.make_advanced_inference_rows(candles, forward_cfg)
+    forward_relabeled = am.label_advanced_rows(candles, forward_cfg, forward_feature_rows)
+    forward_direct = am.make_advanced_rows(candles, forward_cfg)
+
+    assert [(row.timestamp, row.label, row.features) for row in forward_relabeled] == [
+        (row.timestamp, row.label, row.features) for row in forward_direct
+    ]
+
+
 def test_make_advanced_rows_can_use_triple_barrier_labels() -> None:
     candles = _candles(120)
     cfg = am.AdvancedFeatureConfig(
@@ -541,6 +661,67 @@ def test_make_advanced_rows_can_use_triple_barrier_labels() -> None:
     assert rows
     assert {row.label for row in rows} <= {0, 1}
     assert "label_mode=triple_barrier" in am.advanced_feature_signature(cfg)
+
+
+def test_advanced_labels_start_from_next_executable_entry() -> None:
+    closes = [100.0] * 30
+    closes[20] = 100.0
+    closes[21] = 101.0
+    closes[22] = 100.4
+    closes[23] = 100.5
+    candles: list[Candle] = []
+    for index, close in enumerate(closes):
+        high = close + 0.05
+        low = close - 0.05
+        if index == 21:
+            high = 101.5
+            low = 100.8
+        elif index == 22:
+            high = 101.2
+            low = 100.2
+        candles.append(Candle(
+            open_time=index * 1000,
+            open=close,
+            high=high,
+            low=low,
+            close=close,
+            volume=5.0,
+            close_time=index * 1000 + 999,
+            quote_volume=close * 5.0,
+            trade_count=10,
+            taker_buy_base_volume=2.5,
+            taker_buy_quote_volume=close * 2.5,
+        ))
+    cfg = am.AdvancedFeatureConfig(
+        base_features=tuple(FEATURE_NAMES[:4]),
+        polynomial_degree=1,
+        polynomial_top_features=4,
+        extra_lookback_windows=(),
+        confluence_windows=(),
+        market_quality_windows=(),
+        higher_timeframe_windows=(),
+        order_flow_windows=(),
+        nonlinear_transforms=(),
+        short_window=1,
+        long_window=2,
+        label_threshold=0.005,
+        label_stop_threshold=0.004,
+        label_lookahead=2,
+        label_mode="triple_barrier",
+    )
+
+    rows = am.make_advanced_rows(candles, cfg)
+    first = next(row for row in rows if row.timestamp == candles[20].close_time)
+
+    assert am._triple_barrier_label(
+        candles,
+        20,
+        horizon=2,
+        take_profit_pct=cfg.label_threshold,
+        stop_loss_pct=float(cfg.label_stop_threshold),
+    ) == 1
+    assert first.label == 0
+    assert "label_entry_offset=1" in am.advanced_feature_signature(cfg)
 
 
 def test_make_advanced_rows_can_use_downside_labels() -> None:
@@ -858,3 +1039,31 @@ def test_train_advanced_can_build_seed_ensemble():
     assert len(model.ensemble_members) == 2
     assert {member.seed for member in model.ensemble_members} == {5, 7}
     assert 0.0 <= model.predict_proba(rows[-1].features) <= 1.0
+
+
+def test_train_advanced_balanced_rare_event_bagging_marks_model():
+    cfg = am.default_config_for("default", FEATURE_NAMES)
+    rows = [
+        ModelRow(
+            timestamp=index,
+            close=100.0,
+            features=(float(index % 5),),
+            label=1 if index in {7, 23} else 0,
+        )
+        for index in range(80)
+    ]
+
+    model, report = am.train_advanced(
+        rows,
+        cfg,
+        epochs=2,
+        learning_rate=0.05,
+        l2_penalty=1e-3,
+        ensemble_seeds=(3, 5),
+        balanced_negative_multiplier=4,
+    )
+
+    assert report.row_count == len(rows)
+    assert report.positive_rate == pytest.approx(2 / 80)
+    assert len(model.ensemble_members) == 2
+    assert any("balanced_rare_event_bagging" in warning for warning in model.quality_warnings)

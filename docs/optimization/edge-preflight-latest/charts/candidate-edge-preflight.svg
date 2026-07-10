@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="90" y="38" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="600" fill="#111827">Real 1s candidate edge preflight, 2024-06-01 to 2024-06-07 UTC</text>
+<text x="90" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Bars show min(train, selection) net edge bps for positive labels after modeled costs. Gray/red candidates are rejected before training.</text>
+<line x1="90" y1="390.76" x2="1570" y2="390.76" stroke="#111827" stroke-width="1"/>
+<line x1="90" y1="610.00" x2="1570" y2="610.00" stroke="#e5e7eb"/>
+<text x="80" y="614.00" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">-43</text>
+<line x1="90" y1="502.00" x2="1570" y2="502.00" stroke="#e5e7eb"/>
+<text x="80" y="506.00" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">-22</text>
+<line x1="90" y1="394.00" x2="1570" y2="394.00" stroke="#e5e7eb"/>
+<text x="80" y="398.00" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">-1</text>
+<line x1="90" y1="286.00" x2="1570" y2="286.00" stroke="#e5e7eb"/>
+<text x="80" y="290.00" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">21</text>
+<line x1="90" y1="178.00" x2="1570" y2="178.00" stroke="#e5e7eb"/>
+<text x="80" y="182.00" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">42</text>
+<line x1="90" y1="70.00" x2="1570" y2="70.00" stroke="#e5e7eb"/>
+<text x="80" y="74.00" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">63</text>
+<rect x="92.88" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 01 default: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="113.43" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 02 day_trade_frequency_probe_forward: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="133.99" y="364.70" width="14.80" height="26.06" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 03 day_trade_frequency_probe_downside: min edge 5.13 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="154.54" y="341.63" width="14.80" height="49.13" fill="#2563eb" opacity="0.86"><title>BTCUSDT 04 cost_aware_5m_forward: min edge 9.66 bps; reject=none</title></rect>
+<rect x="175.10" y="328.96" width="14.80" height="61.80" fill="#2563eb" opacity="0.86"><title>BTCUSDT 05 cost_aware_5m_downside: min edge 12.16 bps; reject=none</title></rect>
+<rect x="195.66" y="311.50" width="14.80" height="79.26" fill="#2563eb" opacity="0.86"><title>BTCUSDT 06 cost_aware_15m_forward: min edge 15.59 bps; reject=none</title></rect>
+<rect x="216.21" y="328.55" width="14.80" height="62.21" fill="#2563eb" opacity="0.86"><title>BTCUSDT 07 cost_aware_15m_downside: min edge 12.24 bps; reject=none</title></rect>
+<rect x="236.77" y="293.79" width="14.80" height="96.97" fill="#2563eb" opacity="0.86"><title>BTCUSDT 08 cost_aware_30m_forward: min edge 19.07 bps; reject=none</title></rect>
+<rect x="257.32" y="317.61" width="14.80" height="73.15" fill="#2563eb" opacity="0.86"><title>BTCUSDT 09 cost_aware_30m_downside: min edge 14.39 bps; reject=none</title></rect>
+<rect x="277.88" y="244.83" width="14.80" height="145.93" fill="#2563eb" opacity="0.86"><title>BTCUSDT 10 cost_aware_60m_forward: min edge 28.71 bps; reject=none</title></rect>
+<rect x="298.43" y="274.89" width="14.80" height="115.87" fill="#2563eb" opacity="0.86"><title>BTCUSDT 11 cost_aware_60m_downside: min edge 22.79 bps; reject=none</title></rect>
+<rect x="318.99" y="194.36" width="14.80" height="196.40" fill="#2563eb" opacity="0.86"><title>BTCUSDT 12 cost_aware_2h_forward: min edge 38.63 bps; reject=none</title></rect>
+<rect x="339.54" y="265.15" width="14.80" height="125.61" fill="#2563eb" opacity="0.86"><title>BTCUSDT 13 cost_aware_2h_downside: min edge 24.71 bps; reject=none</title></rect>
+<rect x="360.10" y="147.28" width="14.80" height="243.48" fill="#2563eb" opacity="0.86"><title>BTCUSDT 14 cost_aware_4h_forward: min edge 47.89 bps; reject=none</title></rect>
+<rect x="380.66" y="244.02" width="14.80" height="146.74" fill="#2563eb" opacity="0.86"><title>BTCUSDT 15 cost_aware_4h_downside: min edge 28.86 bps; reject=none</title></rect>
+<rect x="401.21" y="385.70" width="14.80" height="5.06" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 16 intraday_activity_triple_barrier: min edge 0.99 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="421.77" y="387.13" width="14.80" height="3.63" fill="#2563eb" opacity="0.86"><title>BTCUSDT 17 intraday_downside_triple_barrier: min edge 0.71 bps; reject=none</title></rect>
+<rect x="442.32" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 18 focal_positive_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="462.88" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 19 focal_downside_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="483.43" y="390.76" width="14.80" height="9.78" fill="#dc2626" opacity="0.86"><title>BTCUSDT 20 session_volatility_triple_barrier: min edge -1.92 bps; reject=edge_preflight_no_positive_after_cost_label_edge</title></rect>
+<rect x="503.99" y="386.33" width="14.80" height="4.43" fill="#2563eb" opacity="0.86"><title>BTCUSDT 21 session_downside_volatility_triple_barrier: min edge 0.87 bps; reject=none</title></rect>
+<rect x="524.54" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 22 order_flow_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="545.10" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 23 downside_order_flow_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_selection_signals<5</title></rect>
+<rect x="565.66" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>BTCUSDT 24 intraday_breakout_forward: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<text x="336.67" y="664" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#111827">BTCUSDT</text>
+<rect x="586.21" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 01 default: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="606.77" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 02 day_trade_frequency_probe_forward: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="627.32" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 03 day_trade_frequency_probe_downside: min edge -35.80 bps; reject=edge_preflight_selection_signals<5</title></rect>
+<rect x="647.88" y="340.64" width="14.80" height="50.12" fill="#059669" opacity="0.86"><title>ETHUSDT 04 cost_aware_5m_forward: min edge 9.86 bps; reject=none</title></rect>
+<rect x="668.43" y="348.15" width="14.80" height="42.61" fill="#059669" opacity="0.86"><title>ETHUSDT 05 cost_aware_5m_downside: min edge 8.38 bps; reject=none</title></rect>
+<rect x="688.99" y="335.90" width="14.80" height="54.86" fill="#059669" opacity="0.86"><title>ETHUSDT 06 cost_aware_15m_forward: min edge 10.79 bps; reject=none</title></rect>
+<rect x="709.54" y="327.33" width="14.80" height="63.43" fill="#059669" opacity="0.86"><title>ETHUSDT 07 cost_aware_15m_downside: min edge 12.48 bps; reject=none</title></rect>
+<rect x="730.10" y="315.50" width="14.80" height="75.26" fill="#059669" opacity="0.86"><title>ETHUSDT 08 cost_aware_30m_forward: min edge 14.80 bps; reject=none</title></rect>
+<rect x="750.66" y="317.96" width="14.80" height="72.80" fill="#059669" opacity="0.86"><title>ETHUSDT 09 cost_aware_30m_downside: min edge 14.32 bps; reject=none</title></rect>
+<rect x="771.21" y="296.29" width="14.80" height="94.47" fill="#059669" opacity="0.86"><title>ETHUSDT 10 cost_aware_60m_forward: min edge 18.58 bps; reject=none</title></rect>
+<rect x="791.77" y="284.65" width="14.80" height="106.11" fill="#059669" opacity="0.86"><title>ETHUSDT 11 cost_aware_60m_downside: min edge 20.87 bps; reject=none</title></rect>
+<rect x="812.32" y="277.90" width="14.80" height="112.86" fill="#059669" opacity="0.86"><title>ETHUSDT 12 cost_aware_2h_forward: min edge 22.20 bps; reject=none</title></rect>
+<rect x="832.88" y="284.34" width="14.80" height="106.42" fill="#059669" opacity="0.86"><title>ETHUSDT 13 cost_aware_2h_downside: min edge 20.93 bps; reject=none</title></rect>
+<rect x="853.43" y="237.90" width="14.80" height="152.86" fill="#059669" opacity="0.86"><title>ETHUSDT 14 cost_aware_4h_forward: min edge 30.07 bps; reject=none</title></rect>
+<rect x="873.99" y="175.89" width="14.80" height="214.87" fill="#059669" opacity="0.86"><title>ETHUSDT 15 cost_aware_4h_downside: min edge 42.27 bps; reject=none</title></rect>
+<rect x="894.54" y="390.76" width="14.80" height="37.31" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 16 intraday_activity_triple_barrier: min edge -7.34 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="915.10" y="390.76" width="14.80" height="29.63" fill="#059669" opacity="0.86"><title>ETHUSDT 17 intraday_downside_triple_barrier: min edge -5.83 bps; reject=none</title></rect>
+<rect x="935.66" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 18 focal_positive_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="956.21" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 19 focal_downside_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="976.77" y="390.76" width="14.80" height="28.03" fill="#059669" opacity="0.86"><title>ETHUSDT 20 session_volatility_triple_barrier: min edge -5.51 bps; reject=none</title></rect>
+<rect x="997.32" y="390.76" width="14.80" height="13.66" fill="#059669" opacity="0.86"><title>ETHUSDT 21 session_downside_volatility_triple_barrier: min edge -2.69 bps; reject=none</title></rect>
+<rect x="1017.88" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 22 order_flow_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1038.43" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 23 downside_order_flow_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1058.99" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>ETHUSDT 24 intraday_breakout_forward: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<text x="830.00" y="664" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#111827">ETHUSDT</text>
+<rect x="1079.54" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 01 default: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1100.10" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 02 day_trade_frequency_probe_forward: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1120.66" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 03 day_trade_frequency_probe_downside: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1141.21" y="340.56" width="14.80" height="50.20" fill="#d97706" opacity="0.86"><title>SOLUSDT 04 cost_aware_5m_forward: min edge 9.87 bps; reject=none</title></rect>
+<rect x="1161.77" y="336.58" width="14.80" height="54.18" fill="#d97706" opacity="0.86"><title>SOLUSDT 05 cost_aware_5m_downside: min edge 10.66 bps; reject=none</title></rect>
+<rect x="1182.32" y="307.62" width="14.80" height="83.14" fill="#d97706" opacity="0.86"><title>SOLUSDT 06 cost_aware_15m_forward: min edge 16.35 bps; reject=none</title></rect>
+<rect x="1202.88" y="320.61" width="14.80" height="70.15" fill="#d97706" opacity="0.86"><title>SOLUSDT 07 cost_aware_15m_downside: min edge 13.80 bps; reject=none</title></rect>
+<rect x="1223.43" y="276.86" width="14.80" height="113.90" fill="#d97706" opacity="0.86"><title>SOLUSDT 08 cost_aware_30m_forward: min edge 22.41 bps; reject=none</title></rect>
+<rect x="1243.99" y="287.43" width="14.80" height="103.33" fill="#d97706" opacity="0.86"><title>SOLUSDT 09 cost_aware_30m_downside: min edge 20.33 bps; reject=none</title></rect>
+<rect x="1264.54" y="243.51" width="14.80" height="147.25" fill="#d97706" opacity="0.86"><title>SOLUSDT 10 cost_aware_60m_forward: min edge 28.96 bps; reject=none</title></rect>
+<rect x="1285.10" y="267.22" width="14.80" height="123.54" fill="#d97706" opacity="0.86"><title>SOLUSDT 11 cost_aware_60m_downside: min edge 24.30 bps; reject=none</title></rect>
+<rect x="1305.66" y="182.86" width="14.80" height="207.90" fill="#d97706" opacity="0.86"><title>SOLUSDT 12 cost_aware_2h_forward: min edge 40.89 bps; reject=none</title></rect>
+<rect x="1326.21" y="233.20" width="14.80" height="157.56" fill="#d97706" opacity="0.86"><title>SOLUSDT 13 cost_aware_2h_downside: min edge 30.99 bps; reject=none</title></rect>
+<rect x="1346.77" y="107.24" width="14.80" height="283.52" fill="#d97706" opacity="0.86"><title>SOLUSDT 14 cost_aware_4h_forward: min edge 55.77 bps; reject=none</title></rect>
+<rect x="1367.32" y="186.11" width="14.80" height="204.65" fill="#d97706" opacity="0.86"><title>SOLUSDT 15 cost_aware_4h_downside: min edge 40.26 bps; reject=none</title></rect>
+<rect x="1387.88" y="390.76" width="14.80" height="14.38" fill="#d97706" opacity="0.86"><title>SOLUSDT 16 intraday_activity_triple_barrier: min edge -2.83 bps; reject=none</title></rect>
+<rect x="1408.43" y="390.76" width="14.80" height="40.14" fill="#dc2626" opacity="0.86"><title>SOLUSDT 17 intraday_downside_triple_barrier: min edge -7.90 bps; reject=edge_preflight_no_positive_after_cost_label_edge</title></rect>
+<rect x="1428.99" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 18 focal_positive_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1449.54" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 19 focal_downside_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1470.10" y="384.80" width="14.80" height="5.96" fill="#d97706" opacity="0.86"><title>SOLUSDT 20 session_volatility_triple_barrier: min edge 1.17 bps; reject=none</title></rect>
+<rect x="1490.66" y="390.76" width="14.80" height="21.85" fill="#dc2626" opacity="0.86"><title>SOLUSDT 21 session_downside_volatility_triple_barrier: min edge -4.30 bps; reject=edge_preflight_no_positive_after_cost_label_edge</title></rect>
+<rect x="1511.21" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 22 order_flow_information_event_barrier: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1531.77" y="390.76" width="14.80" height="113.70" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 23 downside_order_flow_information_event_barrier: min edge -22.36 bps; reject=edge_preflight_training_signals<20</title></rect>
+<rect x="1552.32" y="390.76" width="14.80" height="182.00" fill="#9ca3af" opacity="0.86"><title>SOLUSDT 24 intraday_breakout_forward: min edge -35.80 bps; reject=edge_preflight_training_signals<20</title></rect>
+<text x="1323.33" y="664" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#111827">SOLUSDT</text>
+<text x="100.28" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">1</text>
+<text x="593.61" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">1</text>
+<text x="1086.94" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">1</text>
+<text x="161.94" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">4</text>
+<text x="655.28" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">4</text>
+<text x="1148.61" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">4</text>
+<text x="244.17" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">8</text>
+<text x="737.50" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">8</text>
+<text x="1230.83" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">8</text>
+<text x="326.39" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">12</text>
+<text x="819.72" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">12</text>
+<text x="1313.06" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">12</text>
+<text x="408.61" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">16</text>
+<text x="901.94" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">16</text>
+<text x="1395.28" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">16</text>
+<text x="490.83" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">20</text>
+<text x="984.17" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">20</text>
+<text x="1477.50" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">20</text>
+<text x="573.06" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">24</text>
+<text x="1066.39" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">24</text>
+<text x="1559.72" y="685" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#64748b">24</text>
+<rect x="90" y="690" width="14" height="8" fill="#2563eb"/><text x="110" y="698" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">BTC viable</text>
+<rect x="200" y="690" width="14" height="8" fill="#059669"/><text x="220" y="698" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">ETH viable</text>
+<rect x="310" y="690" width="14" height="8" fill="#d97706"/><text x="330" y="698" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">SOL viable</text>
+<rect x="420" y="690" width="14" height="8" fill="#9ca3af"/><text x="440" y="698" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">signal-count rejected</text>
+<rect x="590" y="690" width="14" height="8" fill="#dc2626"/><text x="610" y="698" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">after-cost edge rejected</text>
+</svg>

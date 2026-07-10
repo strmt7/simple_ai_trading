@@ -27,7 +27,7 @@ Use this skill whenever you touch `Dockerfile`, `docker-compose.yml`, `.dockerig
 
 - Start a live loop by default. Default `CMD` is `shell` (interactive) or `menu`, not `live`.
 - Accept a `BINANCE_LIVE=1` style env that flips `testnet=false`. Live real-money mode must remain an explicit CLI flag combination with `testnet=true`, not a container-level setting.
-- Bake credentials into the image. Secrets come from mounted `~/.config/simple_ai_bitcoin_trading_binance/runtime.json` (mode 0600) or from env vars at runtime.
+- Bake credentials into the image. Secrets come from mounted `~/.config/simple_ai_trading/runtime.json` (mode 0600) or from env vars at runtime.
 
 ## Verification
 

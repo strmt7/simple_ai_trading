@@ -16,7 +16,7 @@ from simple_ai_trading.advanced_model import (
     default_config_for,
     make_advanced_rows,
 )
-from simple_ai_trading.api import BinanceAPIError, Candle, SymbolConstraints
+from simple_ai_trading.api import BinanceAPIError, Candle, CommissionRates, SymbolConstraints
 from simple_ai_trading.assets import DEFAULT_AGGRESSIVE_LEVERAGE
 from simple_ai_trading.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
 from simple_ai_trading.model import (
@@ -100,7 +100,7 @@ def _promoted_execution_validation(
     market_type: str = "spot",
     interval: str = "1s",
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "passed": True,
         "symbol": symbol,
         "market_type": market_type,
@@ -119,6 +119,29 @@ def _promoted_execution_validation(
         "portfolio": {"accepted": True},
         "data_coverage": _live_data_coverage(symbol, market_type=market_type, interval=interval),
     }
+    if market_type == "futures":
+        payload["microstructure_replay"] = {
+            "passed": True,
+            "strategy_replay_passed": True,
+            "replay_smoke_passed": True,
+            "artifact_hashes_verified": True,
+            "immutable_market_data": True,
+            "engine": "hftbacktest",
+            "engine_version": "2.4.4",
+            "schema_version": "binance-usdm-l2-v1",
+            "symbol": symbol,
+            "queue_model": "risk_adverse_queue_model",
+            "latency_model": "empirical_feed_and_order_latency",
+            "captured_seconds": 20 * 86_400,
+            "span_days": 400,
+            "unique_days": 20,
+            "normalized_rows": 20_000_000,
+            "sequence_gap_count": 0,
+            "crossed_book_count": 0,
+            "invalid_event_count": 0,
+            "clock_sync_samples": 100,
+        }
+    return payload
 
 
 class _FakeClient:
@@ -137,6 +160,15 @@ class _FakeClient:
 
     def get_account(self):
         return _exchange_account()
+
+    def get_commission_rates(self, symbol: str):
+        return CommissionRates(
+            symbol=symbol,
+            market_type="futures",
+            maker_rate=0.0002,
+            taker_rate=0.0004,
+            source="test_fixture",
+        )
 
     def get_max_leverage(self, symbol: str) -> int:
         return 10
@@ -266,6 +298,10 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert train_args.batch_size == 128
     compute_args = cli._parse_args(["compute", "--backend", "auto"])
     assert compute_args.backend == "auto"
+    micro_candidate = cli._parse_args(["microstructure-train"])
+    assert micro_candidate.evaluate_terminal is False
+    micro_terminal = cli._parse_args(["microstructure-train", "--evaluate-terminal"])
+    assert micro_terminal.evaluate_terminal is True
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
@@ -358,6 +394,22 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert live.retrain_window == 300
     assert live.retrain_min_rows == 240
     assert live.paper is False
+
+
+def test_microstructure_terminal_evaluation_requires_protective_exits(capsys) -> None:
+    result = cli.command_microstructure_train(
+        argparse.Namespace(
+            evaluate_terminal=True,
+            stop_loss_bps=None,
+            take_profit_bps=None,
+            risk_level="conservative",
+            max_l1_participation=None,
+            json=False,
+        )
+    )
+
+    assert result == 2
+    assert "requires explicit path-aware" in capsys.readouterr().err
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:
@@ -561,6 +613,7 @@ def test_clamp_and_direction_helpers() -> None:
     assert cli._score_to_direction(0.56, cfg, "futures") == 1
     assert cli._score_to_direction(0.40, cfg, "futures") == -1
     assert cli._score_to_direction(0.50, cfg, "futures") == 0
+    assert cli._score_to_direction(0.50, cfg, "futures", threshold=0.50, short_threshold=0.50) == 0
     assert cli._score_to_direction(0.10, cfg, "futures") == -1
     assert cli._score_to_direction(
         0.10,
@@ -2358,6 +2411,35 @@ def test_command_status_prints_masked_secret(tmp_path, monkeypatch, capsys) -> N
     assert "visible-key" not in output
 
 
+def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=True,
+            market_type="futures",
+            quote_asset="USDT",
+            symbol="BTCUSDT",
+            symbols=("BTCUSDT",),
+        )
+    )
+    save_strategy(StrategyConfig(risk_level="conservative", leverage=5.0))
+
+    assert cli.command_status(argparse.Namespace(compact=True)) == 0
+    line = capsys.readouterr().out.strip()
+    assert "environment=testnet" in line
+    assert "execution=paper" in line
+    assert "positions=0 ledger=clear" in line
+    assert "BTCUSDT" in line
+
+    open_path = tmp_path / "data" / "autonomous" / "open_positions.json"
+    open_path.parent.mkdir(parents=True, exist_ok=True)
+    open_path.write_text("{invalid", encoding="utf-8")
+    assert cli.command_status(argparse.Namespace(compact=True)) == 0
+    assert "positions=0 ledger=invalid" in capsys.readouterr().out
+
+
 def test_command_compute_shows_and_saves_backend(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(compute_backend="cpu"))
@@ -2494,6 +2576,7 @@ def test_command_risk_live_requests_strict_model_evidence(tmp_path, monkeypatch,
     assert captured["require_model_candidate_search"] is True
     assert captured["require_accelerator_evidence"] is True
     assert captured["require_live_data_evidence"] is True
+    assert captured["require_microstructure_evidence"] is False
     assert captured["expected_symbol"] == "BTCUSDC"
     assert captured["expected_market_type"] == "spot"
     assert captured["expected_interval"] == "15m"
@@ -4151,6 +4234,7 @@ def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, mo
     assert captured["require_model_candidate_search"] is True
     assert captured["require_accelerator_evidence"] is True
     assert captured["require_live_data_evidence"] is True
+    assert captured["require_microstructure_evidence"] is False
     assert captured["expected_symbol"] == "BTCUSDC"
     assert captured["expected_market_type"] == "spot"
     assert captured["expected_interval"] == "15m"
@@ -4210,6 +4294,7 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
             model_candidate_count=3,
             model_selected_candidate="triple_barrier_base",
             model_selection_score=0.42,
+            strategy_overrides={"taker_fee_bps": 4.0},
         ),
         model_file,
     )
@@ -7617,4 +7702,4 @@ def test_command_autonomous_start_success_error_and_client_failure(tmp_path, mon
     monkeypatch.setattr(cli, "_build_autonomous_decision_fn", lambda **_kwargs: (fake_decision, None, None))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: (_ for _ in ()).throw(BinanceAPIError("startup down")))
     assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
-    assert "Autonomous startup blocked: startup down" in capsys.readouterr().err
+    assert "Autonomous startup blocked: commission-rate verification failed: startup down" in capsys.readouterr().err

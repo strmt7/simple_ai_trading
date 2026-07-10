@@ -324,6 +324,57 @@ def test_threshold_calibration_preserves_rejected_trade_diagnostics(monkeypatch)
     assert report.asdict()["best_closed_trades"] == 2
 
 
+def test_threshold_calibration_prefers_repeated_edge_over_single_lucky_trade(monkeypatch) -> None:
+    rows = [_flat_row(i * 60_000, close=100.0, score=10.0, label=1) for i in range(240)]
+
+    def result(realized_pnl: float, closed_trades: int) -> backtest_mod.BacktestResult:
+        return backtest_mod.BacktestResult(
+            starting_cash=1000.0,
+            ending_cash=1000.0 + realized_pnl,
+            realized_pnl=realized_pnl,
+            win_rate=0.80 if closed_trades else 0.0,
+            trades=closed_trades,
+            max_drawdown=0.001 if closed_trades else 0.0,
+            closed_trades=closed_trades,
+            gross_exposure=100.0 if closed_trades else 0.0,
+            total_fees=0.0,
+            stopped_by_drawdown=False,
+            max_exposure=100.0 if closed_trades else 0.0,
+            trades_per_day_cap_hit=0,
+            edge_vs_buy_hold=realized_pnl,
+            profit_factor=2.0 if closed_trades else 0.0,
+        )
+
+    def fake_run_backtest(_rows, threshold_model, *_args, **_kwargs):
+        threshold = float(getattr(threshold_model, "decision_threshold", 0.0) or 0.0)
+        if threshold >= 0.70:
+            return result(20.0, 1)
+        if threshold >= 0.60:
+            return result(15.0, 5)
+        return result(0.0, 0)
+
+    monkeypatch.setattr(backtest_mod, "run_backtest", fake_run_backtest)
+
+    report = calibrate_threshold_for_backtest(
+        rows,
+        _simple_model(10.0),
+        StrategyConfig(signal_threshold=0.5),
+        starting_cash=1000.0,
+        baseline_threshold=0.5,
+        start=0.60,
+        end=0.70,
+        steps=2,
+        min_closed_trades=5,
+        min_trades_per_day=2.0,
+        market_type="futures",
+    )
+
+    assert report.accepted is True
+    assert report.best_threshold == pytest.approx(0.60)
+    assert report.best_closed_trades == 5
+    assert report.best_realized_pnl == pytest.approx(15.0)
+
+
 def test_threshold_calibration_trade_density_is_softened_by_risk_gate_skips(monkeypatch) -> None:
     rows = [_flat_row(day * 86_400_000, close=100.0 + day, score=10.0, label=1) for day in range(8)]
 
@@ -580,7 +631,7 @@ def test_threshold_calibration_passes_gpu_scoring_options(monkeypatch) -> None:
         steps=2,
     )
 
-    assert result.evaluated_thresholds == 3
+    assert result.evaluated_thresholds == 2
     assert calls
     assert all(call["compute_backend"] == "directml" for call in calls)
     assert all(call["score_batch_size"] == 64 for call in calls)
@@ -731,6 +782,19 @@ def test_backtest_flat_signal_grace_delays_exit_without_delaying_stop() -> None:
         starting_cash=1000.0,
         market_type="spot",
     )
+    timed = run_backtest(
+        flat_rows,
+        _StepModel([0.99, 0.99, 0.99, 0.99, 0.99]),
+        StrategyConfig(
+            **{
+                **base_cfg.asdict(),
+                "flat_signal_exit_grace_bars": 99,
+                "max_position_hold_bars": 3,
+            }
+        ),
+        starting_cash=1000.0,
+        market_type="spot",
+    )
 
     assert immediate.closed_trades == 1
     assert delayed.closed_trades == 1
@@ -738,6 +802,9 @@ def test_backtest_flat_signal_grace_delays_exit_without_delaying_stop() -> None:
     assert delayed.trade_log[0]["closed_at"] == 240_000
     assert delayed.trade_log[0]["bars_held"] == 3
     assert delayed.trade_log[0]["flat_signal_streak"] == 3
+    assert timed.trade_log[0]["closed_at"] == 240_000
+    assert timed.trade_log[0]["bars_held"] == 3
+    assert timed.trade_log[0]["exit_reason"] == "time_limit"
 
     stop_rows = [
         _flat_row(0, 100.0, 10.0, 1),
