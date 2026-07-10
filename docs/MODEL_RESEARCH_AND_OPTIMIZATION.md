@@ -333,29 +333,58 @@ serialized model contract, parses the complete gzip table, and recomputes its
 prediction fingerprint and metrics before skipping work. A complete report is
 immutable and cannot be resumed.
 
-Profile and feature-set selection is a separate fail-closed step. Supply every
-declared trial exactly once; the comparison requires complete reports with the
-same symbols, plan fingerprints, chronological fold identities, and dataset
-fingerprints:
+Profile and feature-set selection is a physically separate fail-closed stage.
+Each candidate run receives only the declared initial screening folds. The
+runner refuses a screening window with fewer than two folds or fewer than two
+untouched later folds per symbol. Supply every screening report exactly once;
+selection requires the same symbols, coverage fingerprints, chronological fold
+identities, and dataset fingerprints:
 
 ```powershell
-simple-ai-trading tape-depth-compare `
+simple-ai-trading tape-depth-prequential `
+  --symbols BTCUSDT,ETHUSDT,SOLUSDT `
+  --study-stage screening `
+  --max-folds 4 `
+  --model-profile regularized `
+  --feature-set core `
+  --output-dir data/tape-depth-regularized-core
+
+simple-ai-trading tape-depth-select `
   --report data/tape-depth-regularized-core/report.json `
   --report data/tape-depth-balanced-tape/report.json `
   --report data/tape-depth-balanced-cross-asset/report.json `
   --report data/tape-depth-expressive-full/report.json `
-  --selection-fraction 0.67 `
-  --output data/tape-depth-comparison.json
+  --output data/tape-depth-selection.json
+
+simple-ai-trading tape-depth-prequential `
+  --symbols BTCUSDT,ETHUSDT,SOLUSDT `
+  --study-stage confirmation `
+  --selection-lock data/tape-depth-selection.json `
+  --output-dir data/tape-depth-confirmation-run
+
+simple-ai-trading tape-depth-confirm `
+  --selection data/tape-depth-selection.json `
+  --report data/tape-depth-confirmation-run/report.json `
+  --output data/tape-depth-confirmation.json
 ```
 
 Selection aggregates baseline-relative AUC, Brier, MAE, rank IC, gross
-top-decile return, and fold-positivity measures over the earlier folds. Every
-symbol must beat the direction, prevalence, and zero-return baselines. Only the
-selected trial is summarized on the later folds. A failed winner rejects the
-experiment; a runner-up is not substituted after seeing confirmation results.
-This controls one obvious adaptive-selection path, but it does not prove that
-an operator never inspected later data. The output remains forecast evidence,
-not executable PnL, trading authority, or a profitability claim.
+top-decile return, and fold-positivity measures over screening only. Every
+symbol must beat the direction, prevalence, and zero-return baselines. The
+winner lock hashes every source report and records the full-corpus coverage
+fingerprint, winning profile/feature set, exact terminal boundary, and trial
+count. Loading it recomputes selection from unchanged sources. Confirmation
+automatically uses only that winner and the complete untouched suffix; manual
+fold caps, corpus drift, winner changes, overlap, and incomplete terminal
+reports fail closed. Report loading also verifies `plan.json`, relative-path
+containment, all artifact/prediction/table/chart hashes, serialized models, and
+the complete compressed prediction rows; it recomputes fold fingerprints,
+timestamps, metrics, status, and aggregate metrics before selection or
+confirmation. A failed winner rejects the experiment, and no runner-up is
+evaluated. This enforces the software access path; external copies or human
+inspection outside the application remain outside what a local artifact can
+cryptographically prove. Both outputs remain forecast evidence, not executable
+PnL, trading authority, or profitability claims.
 
 For non-CPU LightGBM work, DirectML remains the general Windows tensor backend
 while LightGBM itself uses its OpenCL trainer. Automatic selection now delegates
@@ -439,6 +468,12 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   single-path winners and report how a selected model behaves across multiple
   chronological windows:
   <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253>
+- Scikit-learn's nested-CV guidance states that using the same observations for
+  parameter selection and performance estimation produces optimistically
+  biased results. The tape/depth workflow applies that separation in calendar
+  order: candidate screening artifacts cannot contain terminal folds, and only
+  the frozen winner can open the terminal suffix:
+  <https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html>
 - Bailey and Lopez de Prado's Deflated Sharpe Ratio work influenced the
   project policy of treating high backtest scores as suspect unless the
   selection process and holdout evidence are visible in the artifact:

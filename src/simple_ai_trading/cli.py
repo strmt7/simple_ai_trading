@@ -831,6 +831,15 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="dataset_cache",
         help="disable the verified DuckDB derived-dataset cache",
     )
+    parser_tape_depth_prequential.add_argument(
+        "--study-stage",
+        choices=["development", "screening", "confirmation"],
+        default="development",
+    )
+    parser_tape_depth_prequential.add_argument(
+        "--selection-lock",
+        help="winner lock required for sealed confirmation",
+    )
     parser_tape_depth_prequential.add_argument("--max-folds", type=int, default=0)
     parser_tape_depth_prequential.add_argument(
         "--risk-level",
@@ -840,12 +849,14 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_prequential.add_argument(
         "--model-profile",
         choices=["regularized", "balanced", "expressive"],
-        default="regularized",
+        default=None,
+        help="default regularized; confirmation derives the frozen winner",
     )
     parser_tape_depth_prequential.add_argument(
         "--feature-set",
         choices=["core", "tape_derived", "cross_asset", "full"],
-        default="full",
+        default=None,
+        help="default full; confirmation derives the frozen winner",
     )
     parser_tape_depth_prequential.add_argument(
         "--compute-backend",
@@ -865,24 +876,33 @@ def _build_parser() -> argparse.ArgumentParser:
         func=command_tape_depth_prequential,
     )
 
-    parser_tape_depth_compare = subparsers.add_parser(
-        "tape-depth-compare",
-        help="select tape/depth ablations on early folds and confirm only the winner later",
+    parser_tape_depth_select = subparsers.add_parser(
+        "tape-depth-select",
+        help="freeze one winner from screening-only tape/depth reports",
     )
-    parser_tape_depth_compare.add_argument(
+    parser_tape_depth_select.add_argument(
         "--report",
         action="append",
         required=True,
-        help="prequential report path; repeat for every declared trial",
+        help="screening report path; repeat for every declared trial",
     )
-    parser_tape_depth_compare.add_argument(
-        "--output", default="data/tape-depth-comparison.json"
+    parser_tape_depth_select.add_argument(
+        "--output", default="data/tape-depth-selection.json"
     )
-    parser_tape_depth_compare.add_argument(
-        "--selection-fraction", type=float, default=0.67
+    parser_tape_depth_select.add_argument("--json", action="store_true")
+    parser_tape_depth_select.set_defaults(func=command_tape_depth_select)
+
+    parser_tape_depth_confirm = subparsers.add_parser(
+        "tape-depth-confirm",
+        help="confirm only the frozen tape/depth winner on untouched folds",
     )
-    parser_tape_depth_compare.add_argument("--json", action="store_true")
-    parser_tape_depth_compare.set_defaults(func=command_tape_depth_compare)
+    parser_tape_depth_confirm.add_argument("--selection", required=True)
+    parser_tape_depth_confirm.add_argument("--report", required=True)
+    parser_tape_depth_confirm.add_argument(
+        "--output", default="data/tape-depth-confirmation.json"
+    )
+    parser_tape_depth_confirm.add_argument("--json", action="store_true")
+    parser_tape_depth_confirm.set_defaults(func=command_tape_depth_confirm)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
@@ -6577,16 +6597,16 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
                     getattr(args, "maximum_cached_rows", 15_000_000)
                 ),
                 dataset_cache=bool(getattr(args, "dataset_cache", True)),
+                study_stage=str(getattr(args, "study_stage", "development")),
                 max_folds=int(getattr(args, "max_folds", 0)),
                 risk_level=str(getattr(args, "risk_level", "conservative")),
-                model_profile=str(
-                    getattr(args, "model_profile", "regularized")
-                ),
-                feature_set=str(getattr(args, "feature_set", "full")),
+                model_profile=getattr(args, "model_profile", None),
+                feature_set=getattr(args, "feature_set", None),
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
                 minimum_segment_rows=int(
                     getattr(args, "minimum_segment_rows", 10_000)
                 ),
+                selection_lock=getattr(args, "selection_lock", None),
                 plan_only=bool(getattr(args, "plan_only", False)),
                 resume=bool(getattr(args, "resume", False)),
                 progress=progress,
@@ -6620,37 +6640,65 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
     return 0 if report.get("status") == "research_candidate" else 2
 
 
-def command_tape_depth_compare(args: argparse.Namespace) -> int:
-    """Compare declared forecast trials without exposing later folds to losers."""
+def command_tape_depth_select(args: argparse.Namespace) -> int:
+    """Freeze one winner without loading any terminal-fold report."""
 
-    from .tape_depth_comparison import load_and_compare_tape_depth_reports
+    from .tape_depth_comparison import load_and_select_tape_depth_reports
 
     paths = tuple(str(path) for path in (getattr(args, "report", None) or ()))
     try:
-        comparison = load_and_compare_tape_depth_reports(
+        selection = load_and_select_tape_depth_reports(
             paths,
-            output=str(
-                getattr(args, "output", "data/tape-depth-comparison.json")
-            ),
-            selection_fraction=float(getattr(args, "selection_fraction", 0.67)),
+            output=str(getattr(args, "output", "data/tape-depth-selection.json")),
         )
     except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
         print(
-            f"tape-depth-compare failed: {type(exc).__name__}: {exc}",
+            f"tape-depth-select failed: {type(exc).__name__}: {exc}",
             file=sys.stderr,
         )
         return 2
     if bool(getattr(args, "json", False)):
-        print(json.dumps(comparison, indent=2, sort_keys=True))
+        print(json.dumps(selection, indent=2, sort_keys=True))
     else:
         print(
-            "tape-depth-compare: "
-            f"status={comparison['status']} "
-            f"trials={comparison['declared_trial_count']} "
-            f"selected={comparison['selected_trial']} "
+            "tape-depth-select: "
+            f"status={selection['status']} "
+            f"trials={selection['declared_trial_count']} "
+            f"selected={selection['selected_trial']} "
             "profitability_claim=false trading_authority=false"
         )
-    return 0 if comparison.get("status") == "confirmed_forecast_candidate" else 2
+    return 0 if selection.get("status") == "winner_frozen" else 2
+
+
+def command_tape_depth_confirm(args: argparse.Namespace) -> int:
+    """Evaluate the frozen winner on its untouched terminal folds."""
+
+    from .tape_depth_comparison import load_and_confirm_tape_depth_report
+
+    try:
+        confirmation = load_and_confirm_tape_depth_report(
+            selection_path=str(getattr(args, "selection", "")),
+            report_path=str(getattr(args, "report", "")),
+            output=str(
+                getattr(args, "output", "data/tape-depth-confirmation.json")
+            ),
+        )
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"tape-depth-confirm failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(confirmation, indent=2, sort_keys=True))
+    else:
+        print(
+            "tape-depth-confirm: "
+            f"status={confirmation['status']} "
+            f"selected={confirmation['selected_trial']} "
+            "profitability_claim=false trading_authority=false"
+        )
+    return 0 if confirmation.get("status") == "confirmed_forecast_candidate" else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:
