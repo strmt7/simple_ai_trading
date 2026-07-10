@@ -6920,9 +6920,12 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
         print(
             "tape-depth-train: "
             f"status={artifact.status} rows={metrics.rows} "
-            f"profile={artifact.model_profile} "
+            f"risk={artifact.risk_level} profile={artifact.model_profile} "
             f"auc={metrics.direction_auc:.6f} "
             f"spearman_ic={metrics.spearman_information_coefficient:+.6f} "
+            f"actions={metrics.calibration_threshold_rows} "
+            f"long={metrics.calibration_threshold_long_rows} "
+            f"short={metrics.calibration_threshold_short_rows} "
             "calibration_threshold_gross_bps="
             f"{metrics.calibration_threshold_signed_gross_bps:+.4f} "
             "trading_authority=false execution_claim=false"

@@ -229,13 +229,19 @@ not an executable fill or after-cost PnL. The artifact is therefore restricted t
 the long-history forecasting lane; the shorter exact-BBO lifecycle and current
 no-order shadow remain mandatory before any execution claim.
 
-The v5 forecast contract eliminates test-distribution tuning: return-magnitude
-sample weights use a scale learned only from exact float64 training targets,
-and the action-magnitude threshold is frozen from calibration predictions.
-Evaluation data cannot change either value. Both are serialized and recomputed
-during replay, and the threshold is embedded in every compressed prediction
-row. Consequently, an evaluation fold may emit zero qualifying forecasts; the
-software does not force an ex-post 10% activity rate.
+The v6 forecast contract eliminates test-distribution tuning: return-magnitude
+sample weights use a scale learned only from exact float64 training targets.
+The calibration segment freezes the probability transform, direction baseline,
+forecast-magnitude gate, and maximum uncertainty width. Evaluation data cannot
+change any of them, and replay refits/recomputes every value before accepting the
+artifact. Conservative uses calibration quantiles `0.95/0.75` for magnitude and
+interval width plus `0.60` directional confidence; regular uses `0.90/0.90` and
+`0.56`; aggressive uses `0.80/0.98` and `0.52`. A forecast is selected only when
+magnitude, calibrated direction, and uncertainty agree. Every compressed
+prediction row carries the complete policy. Long/short/action counts are
+reported, but no quota forces an entry against risk analysis. The Brier and
+majority baselines are frozen from calibration prevalence rather than reading
+evaluation labels.
 
 `tape-depth-prequential` is the multi-year rolling evidence path. Its default
 fold has 730 calendar days of training, separate 30-day tuning and calibration

@@ -30,7 +30,7 @@ from .tape_depth_features import (
 )
 
 
-TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v5"
+TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v6"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 _MODEL_PROFILES = frozenset({"regularized", "balanced", "expressive"})
 _FEATURE_SETS = frozenset({"core", "tape_derived", "cross_asset", "full"})
@@ -49,6 +49,11 @@ _CROSS_ASSET_PREFIXES = (
     "relative_return_vs_",
     "btc_anchor_",
 )
+_RISK_SIGNAL_POLICY_SPECS = {
+    "conservative": (0.95, 0.60, 0.75),
+    "regular": (0.90, 0.56, 0.90),
+    "aggressive": (0.80, 0.52, 0.98),
+}
 
 
 @dataclass(frozen=True)
@@ -84,9 +89,26 @@ class TapeDepthForecastMetrics:
     interval_80_coverage: float
     interval_crossing_rate: float
     calibration_threshold_rows: int
+    calibration_threshold_long_rows: int
+    calibration_threshold_short_rows: int
+    calibration_threshold_selection_rate: float
     calibration_threshold_signed_gross_bps: float
     calibration_threshold_mean_signed_gross_bps: float
     calibration_threshold_positive_rate: float
+
+
+@dataclass(frozen=True)
+class TapeDepthSignalPolicy:
+    risk_level: str
+    magnitude_quantile: float
+    minimum_direction_probability: float
+    interval_width_quantile: float
+    signal_threshold_bps: float
+    maximum_interval_width_bps: float
+    direction_baseline_probability: float
+
+    def __post_init__(self) -> None:
+        _validate_signal_policy(self)
 
 
 @dataclass(frozen=True)
@@ -117,7 +139,7 @@ class TapeDepthModelArtifact:
     best_iterations: Mapping[str, int]
     training_weight_scale_bps: float
     probability_calibration: tuple[float, float]
-    signal_threshold_bps: float
+    signal_policy: TapeDepthSignalPolicy
     evaluation_metrics: TapeDepthForecastMetrics
     model_strings: Mapping[str, str]
     dataset_fingerprint: str
@@ -131,6 +153,10 @@ class TapeDepthModelArtifact:
         payload["model_feature_names"] = list(self.model_feature_names)
         return payload
 
+    @property
+    def signal_threshold_bps(self) -> float:
+        return self.signal_policy.signal_threshold_bps
+
 
 @dataclass(frozen=True)
 class TapeDepthPredictionBatch:
@@ -142,7 +168,7 @@ class TapeDepthPredictionBatch:
     mean_prediction_bps: np.ndarray
     lower_prediction_bps: np.ndarray
     upper_prediction_bps: np.ndarray
-    signal_threshold_bps: float
+    signal_policy: TapeDepthSignalPolicy
 
     @property
     def rows(self) -> int:
@@ -155,8 +181,12 @@ class TapeDepthPredictionBatch:
             mean_prediction=self.mean_prediction_bps,
             lower_prediction=self.lower_prediction_bps,
             upper_prediction=self.upper_prediction_bps,
-            signal_threshold_bps=self.signal_threshold_bps,
+            signal_policy=self.signal_policy,
         )
+
+    @property
+    def signal_threshold_bps(self) -> float:
+        return self.signal_policy.signal_threshold_bps
 
     def fingerprint(self) -> str:
         digest = hashlib.sha256()
@@ -169,17 +199,20 @@ class TapeDepthPredictionBatch:
             ("mean_prediction_bps", self.mean_prediction_bps, "<f8"),
             ("lower_prediction_bps", self.lower_prediction_bps, "<f8"),
             ("upper_prediction_bps", self.upper_prediction_bps, "<f8"),
-            (
-                "signal_threshold_bps",
-                np.asarray([self.signal_threshold_bps], dtype=np.float64),
-                "<f8",
-            ),
         )
         for name, values, dtype in arrays:
             canonical = np.ascontiguousarray(np.asarray(values, dtype=dtype))
             digest.update(name.encode("ascii") + b"\x00")
             digest.update(np.asarray(canonical.shape, dtype="<i8").tobytes())
             digest.update(canonical.tobytes(order="C"))
+        policy = json.dumps(
+            asdict(self.signal_policy),
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+        digest.update(b"signal_policy\x00" + policy)
         return digest.hexdigest()
 
 
@@ -404,6 +437,70 @@ def _correlation(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.corrcoef(first, second)[0, 1])
 
 
+def _validate_signal_policy(policy: TapeDepthSignalPolicy) -> None:
+    expected = _RISK_SIGNAL_POLICY_SPECS.get(policy.risk_level)
+    if expected is None:
+        raise ValueError("tape/depth signal policy risk level is unsupported")
+    magnitude_quantile, minimum_probability, width_quantile = expected
+    if (
+        not math.isclose(policy.magnitude_quantile, magnitude_quantile)
+        or not math.isclose(
+            policy.minimum_direction_probability,
+            minimum_probability,
+        )
+        or not math.isclose(policy.interval_width_quantile, width_quantile)
+        or not math.isfinite(policy.signal_threshold_bps)
+        or policy.signal_threshold_bps < 0.0
+        or not math.isfinite(policy.maximum_interval_width_bps)
+        or policy.maximum_interval_width_bps < 0.0
+        or not math.isfinite(policy.direction_baseline_probability)
+        or not 0.0 <= policy.direction_baseline_probability <= 1.0
+    ):
+        raise ValueError("tape/depth signal policy is invalid")
+
+
+def _calibrated_signal_policy(
+    *,
+    risk_level: str,
+    calibration_targets: np.ndarray,
+    mean_prediction: np.ndarray,
+    lower_prediction: np.ndarray,
+    upper_prediction: np.ndarray,
+) -> TapeDepthSignalPolicy:
+    magnitude_quantile, minimum_probability, width_quantile = (
+        _RISK_SIGNAL_POLICY_SPECS[risk_level]
+    )
+    targets = np.asarray(calibration_targets, dtype=np.float64)
+    predicted = np.asarray(mean_prediction, dtype=np.float64)
+    lower = np.asarray(lower_prediction, dtype=np.float64)
+    upper = np.asarray(upper_prediction, dtype=np.float64)
+    if (
+        len(targets) <= 0
+        or any(len(values) != len(targets) for values in (predicted, lower, upper))
+        or not all(
+            np.all(np.isfinite(values))
+            for values in (targets, predicted, lower, upper)
+        )
+    ):
+        raise ValueError("tape/depth signal calibration arrays are invalid")
+    interval_width = np.maximum(lower, upper) - np.minimum(lower, upper)
+    policy = TapeDepthSignalPolicy(
+        risk_level=risk_level,
+        magnitude_quantile=magnitude_quantile,
+        minimum_direction_probability=minimum_probability,
+        interval_width_quantile=width_quantile,
+        signal_threshold_bps=float(
+            np.quantile(np.abs(predicted), magnitude_quantile)
+        ),
+        maximum_interval_width_bps=float(
+            np.quantile(interval_width, width_quantile)
+        ),
+        direction_baseline_probability=float(np.mean(targets > 0.0)),
+    )
+    _validate_signal_policy(policy)
+    return policy
+
+
 def _evaluation_metrics(
     *,
     targets: np.ndarray,
@@ -411,31 +508,58 @@ def _evaluation_metrics(
     mean_prediction: np.ndarray,
     lower_prediction: np.ndarray,
     upper_prediction: np.ndarray,
-    signal_threshold_bps: float,
+    signal_policy: TapeDepthSignalPolicy,
 ) -> TapeDepthForecastMetrics:
+    _validate_signal_policy(signal_policy)
     actual = np.asarray(targets, dtype=np.float64)
     probabilities = np.asarray(direction_probability, dtype=np.float64)
     predicted = np.asarray(mean_prediction, dtype=np.float64)
     lower_raw = np.asarray(lower_prediction, dtype=np.float64)
     upper_raw = np.asarray(upper_prediction, dtype=np.float64)
     labels = (actual > 0.0).astype(np.float64)
-    prevalence = float(np.mean(labels))
+    baseline_probability = signal_policy.direction_baseline_probability
     lower = np.minimum(lower_raw, upper_raw)
     upper = np.maximum(lower_raw, upper_raw)
     crossing = float(np.mean(lower_raw > upper_raw))
-    threshold = float(signal_threshold_bps)
-    if not math.isfinite(threshold) or threshold < 0.0:
-        raise ValueError("tape/depth signal threshold must be non-negative and finite")
-    selected = np.flatnonzero(np.abs(predicted) >= threshold)
-    signed = np.sign(predicted[selected]) * actual[selected]
+    threshold = signal_policy.signal_threshold_bps
+    interval_width = upper - lower
+    uncertainty_gate = interval_width <= signal_policy.maximum_interval_width_bps
+    long_mask = (
+        (predicted >= threshold)
+        & (predicted > 0.0)
+        & (
+            probabilities
+            >= signal_policy.minimum_direction_probability
+        )
+        & uncertainty_gate
+    )
+    short_mask = (
+        (predicted <= -threshold)
+        & (predicted < 0.0)
+        & (
+            probabilities
+            <= 1.0 - signal_policy.minimum_direction_probability
+        )
+        & uncertainty_gate
+    )
+    selected_mask = long_mask | short_mask
+    selected = np.flatnonzero(selected_mask)
+    signed = np.where(long_mask[selected], actual[selected], -actual[selected])
     errors = predicted - actual
     return TapeDepthForecastMetrics(
         rows=len(actual),
         direction_auc=_auc(labels.astype(np.int8), probabilities),
         direction_brier=float(np.mean((probabilities - labels) ** 2)),
-        prevalence_brier=float(np.mean((prevalence - labels) ** 2)),
+        prevalence_brier=float(
+            np.mean((baseline_probability - labels) ** 2)
+        ),
         direction_accuracy=float(np.mean((probabilities >= 0.5) == (labels > 0.5))),
-        majority_accuracy=max(prevalence, 1.0 - prevalence),
+        majority_accuracy=float(
+            np.mean(
+                (baseline_probability >= 0.5)
+                == (labels > 0.5)
+            )
+        ),
         mean_absolute_error_bps=float(np.mean(np.abs(errors))),
         zero_baseline_mae_bps=float(np.mean(np.abs(actual))),
         root_mean_squared_error_bps=float(np.sqrt(np.mean(errors**2))),
@@ -445,6 +569,11 @@ def _evaluation_metrics(
         interval_80_coverage=float(np.mean((actual >= lower) & (actual <= upper))),
         interval_crossing_rate=crossing,
         calibration_threshold_rows=len(selected),
+        calibration_threshold_long_rows=int(np.count_nonzero(long_mask)),
+        calibration_threshold_short_rows=int(np.count_nonzero(short_mask)),
+        calibration_threshold_selection_rate=(
+            float(len(selected) / len(actual)) if len(actual) else 0.0
+        ),
         calibration_threshold_signed_gross_bps=(
             float(np.sum(signed)) if len(signed) else 0.0
         ),
@@ -577,14 +706,24 @@ def train_tape_depth_forecaster(
         raw_calibration,
         labels[calibration],
     )
-    calibration_mean_prediction = np.asarray(
-        canonical_models["mean"].predict(x[calibration]),
-        dtype=np.float64,
-    )
-    if not np.all(np.isfinite(calibration_mean_prediction)):
+    calibration_predictions = {
+        name: np.asarray(
+            canonical_models[name].predict(x[calibration]),
+            dtype=np.float64,
+        )
+        for name in ("mean", "lower", "upper")
+    }
+    if not all(
+        np.all(np.isfinite(values))
+        for values in calibration_predictions.values()
+    ):
         raise ValueError("tape/depth forecaster emitted non-finite calibration values")
-    signal_threshold_bps = float(
-        np.quantile(np.abs(calibration_mean_prediction), 0.90)
+    signal_policy = _calibrated_signal_policy(
+        risk_level=risk,
+        calibration_targets=exact_target[calibration],
+        mean_prediction=calibration_predictions["mean"],
+        lower_prediction=calibration_predictions["lower"],
+        upper_prediction=calibration_predictions["upper"],
     )
     completed += 1
     if progress:
@@ -613,7 +752,7 @@ def train_tape_depth_forecaster(
         mean_prediction=mean_prediction,
         lower_prediction=lower_prediction,
         upper_prediction=upper_prediction,
-        signal_threshold_bps=signal_threshold_bps,
+        signal_policy=signal_policy,
     )
     reasons: list[str] = []
     if metrics.direction_auc <= 0.51:
@@ -626,6 +765,9 @@ def train_tape_depth_forecaster(
         reasons.append("spearman_information_coefficient_not_positive")
     if metrics.calibration_threshold_mean_signed_gross_bps <= 0.0:
         reasons.append("calibration_threshold_signed_gross_return_not_positive")
+    minimum_actions = max(5, int(math.ceil(metrics.rows * 0.001)))
+    if metrics.calibration_threshold_rows < minimum_actions:
+        reasons.append("risk_policy_action_count_below_minimum")
     if not 0.50 <= metrics.interval_80_coverage <= 0.98:
         reasons.append("quantile_interval_coverage_outside_sanity_band")
     if metrics.interval_crossing_rate > 0.05:
@@ -663,7 +805,7 @@ def train_tape_depth_forecaster(
         best_iterations=best_iterations,
         training_weight_scale_bps=training_weight_scale_bps,
         probability_calibration=probability_calibration,
-        signal_threshold_bps=signal_threshold_bps,
+        signal_policy=signal_policy,
         evaluation_metrics=metrics,
         model_strings=model_strings,
         dataset_fingerprint=dataset_fingerprint,
@@ -705,6 +847,11 @@ def score_tape_depth_evaluation(
         raise ValueError("tape/depth artifact schema is unsupported")
     if artifact.trading_authority or artifact.execution_claim:
         raise ValueError("gross tape/depth artifacts cannot carry execution authority")
+    if artifact.risk_level not in _RISK_LEVELS:
+        raise ValueError("tape/depth artifact risk level is unsupported")
+    _validate_signal_policy(artifact.signal_policy)
+    if artifact.signal_policy.risk_level != artifact.risk_level:
+        raise ValueError("tape/depth artifact risk policy differs from its risk level")
     if (
         artifact.symbol != dataset.symbol
         or artifact.feature_version != dataset.feature_version
@@ -761,24 +908,59 @@ def score_tape_depth_evaluation(
         dataset.features[segments["calibration"]][:, feature_indexes],
         dtype=np.float32,
     )
-    replayed_threshold = float(
-        np.quantile(
-            np.abs(
-                np.asarray(
-                    models["mean"].predict(calibration_features),
-                    dtype=np.float64,
-                )
-            ),
-            0.90,
+    calibration_labels = (
+        np.asarray(
+            dataset.gross_return_bps[segments["calibration"]],
+            dtype=np.float64,
         )
+        > 0.0
+    ).astype(np.float64)
+    replayed_probability_calibration = _fit_platt_scaling(
+        np.asarray(
+            models["direction"].predict(calibration_features),
+            dtype=np.float64,
+        ),
+        calibration_labels,
     )
-    if not math.isclose(
-        artifact.signal_threshold_bps,
-        replayed_threshold,
-        rel_tol=1e-12,
-        abs_tol=1e-12,
+    if any(
+        not math.isclose(expected, actual, rel_tol=1e-12, abs_tol=1e-12)
+        for expected, actual in zip(
+            artifact.probability_calibration,
+            replayed_probability_calibration,
+            strict=True,
+        )
     ):
-        raise ValueError("tape/depth calibration signal threshold differs")
+        raise ValueError("tape/depth probability calibration differs")
+    calibration_predictions = {
+        name: np.asarray(
+            models[name].predict(calibration_features),
+            dtype=np.float64,
+        )
+        for name in ("mean", "lower", "upper")
+    }
+    replayed_policy = _calibrated_signal_policy(
+        risk_level=artifact.risk_level,
+        calibration_targets=np.asarray(
+            dataset.gross_return_bps[segments["calibration"]],
+            dtype=np.float64,
+        ),
+        mean_prediction=calibration_predictions["mean"],
+        lower_prediction=calibration_predictions["lower"],
+        upper_prediction=calibration_predictions["upper"],
+    )
+    for name, expected in asdict(artifact.signal_policy).items():
+        actual = asdict(replayed_policy)[name]
+        if isinstance(expected, str):
+            matches = expected == actual
+        else:
+            matches = math.isclose(
+                float(expected),
+                float(actual),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+        if not matches:
+            raise ValueError(f"tape/depth calibration signal policy differs at {name}")
     features = np.asarray(
         dataset.features[evaluation][:, feature_indexes],
         dtype=np.float32,
@@ -808,7 +990,7 @@ def score_tape_depth_evaluation(
         upper_prediction_bps=np.asarray(
             models["upper"].predict(features), dtype=np.float64
         ),
-        signal_threshold_bps=artifact.signal_threshold_bps,
+        signal_policy=artifact.signal_policy,
     )
     predicted_arrays = (
         batch.direction_probability,
@@ -851,6 +1033,9 @@ def load_tape_depth_model_artifact(path: str | Path) -> TapeDepthModelArtifact:
         raise ValueError("tape/depth artifact status is unsupported")
     if payload.get("model_profile") not in _MODEL_PROFILES:
         raise ValueError("tape/depth model profile is unsupported")
+    risk_level = str(payload.get("risk_level") or "")
+    if risk_level not in _RISK_LEVELS:
+        raise ValueError("tape/depth risk level is unsupported")
     feature_set = str(payload.get("feature_set") or "")
     if feature_set not in _FEATURE_SETS:
         raise ValueError("tape/depth feature set is unsupported")
@@ -872,19 +1057,19 @@ def load_tape_depth_model_artifact(path: str | Path) -> TapeDepthModelArtifact:
         raise ValueError("tape/depth dataset summary binding is invalid")
     try:
         training_weight_scale_bps = float(payload["training_weight_scale_bps"])
-        signal_threshold_bps = float(payload["signal_threshold_bps"])
         probability_calibration = tuple(
             float(value) for value in payload["probability_calibration"]
         )
+        signal_policy = TapeDepthSignalPolicy(**dict(payload["signal_policy"]))
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("tape/depth calibration fields are incomplete") from exc
+    _validate_signal_policy(signal_policy)
     if (
         not math.isfinite(training_weight_scale_bps)
         or training_weight_scale_bps <= 0.0
-        or not math.isfinite(signal_threshold_bps)
-        or signal_threshold_bps < 0.0
         or len(probability_calibration) != 2
         or not all(math.isfinite(value) for value in probability_calibration)
+        or signal_policy.risk_level != risk_level
     ):
         raise ValueError("tape/depth calibration fields are invalid")
     try:
@@ -898,7 +1083,7 @@ def load_tape_depth_model_artifact(path: str | Path) -> TapeDepthModelArtifact:
         )
         values["training_weight_scale_bps"] = training_weight_scale_bps
         values["probability_calibration"] = probability_calibration
-        values["signal_threshold_bps"] = signal_threshold_bps
+        values["signal_policy"] = signal_policy
         return TapeDepthModelArtifact(**values)
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("tape/depth artifact fields are incomplete") from exc
@@ -909,6 +1094,7 @@ __all__ = [
     "TapeDepthForecastMetrics",
     "TapeDepthModelArtifact",
     "TapeDepthPredictionBatch",
+    "TapeDepthSignalPolicy",
     "TapeDepthSplitEvidence",
     "load_tape_depth_model_artifact",
     "save_tape_depth_model_artifact",

@@ -266,18 +266,26 @@ then records AUC, Brier score, MAE, RMSE, Spearman information coefficient,
 interval coverage, and calibration-threshold signed gross return against simple
 baselines.
 
-The v5 learner fits every data-dependent policy statistic before evaluation.
+The v6 learner fits every data-dependent policy statistic before evaluation.
 The 90th-percentile return-magnitude scale used for sample weights comes only
 from exact float64 training targets and is then frozen for train/tune refitting;
 calibration and evaluation targets cannot alter model weights or tree strings.
-Likewise, the absolute mean-forecast action threshold is the 90th percentile of
-calibration predictions, not the evaluation prediction distribution. Both
-values are serialized, the threshold is repeated in every row-level prediction
-table, and replay recomputes them from the bound training/calibration segments.
-An evaluation regime may therefore produce any action count, including zero;
-the report no longer manufactures a fixed 10% activity rate. This follows the
-standard leakage rule that learned transforms and decision thresholds must not
-be fitted on test observations.
+The risk-specific decision policy is also calibration-only. Conservative uses
+the 95th percentile of absolute mean forecasts, a `0.60` minimum calibrated
+direction probability, and the 75th percentile of forecast-interval width.
+Regular uses `0.90`, `0.56`, and `0.90`; aggressive uses `0.80`, `0.52`, and
+`0.98`. Long and short selection require the mean forecast sign and calibrated
+direction model to agree, and interval width must remain below the frozen risk
+limit. Calibration prevalence is the fixed Brier/majority baseline; evaluation
+prevalence is never read to construct a baseline. Every policy field is
+serialized in each row-level prediction table. Replay refits the Platt transform
+and recomputes the complete policy from bound calibration rows before scoring.
+An evaluation regime may still produce zero actions and be rejected; the report
+does not manufacture activity. Per-fold viability requires only five actions or
+0.1% of decisions, whichever is larger, while long/short balance is judged over
+the multi-fold segment so a one-directional short regime does not force a bad
+countertrend trade. This follows the standard leakage rule that learned
+transforms and decision thresholds must not be fitted on test observations.
 
 ### Multi-Fidelity Candidate Search
 
@@ -614,8 +622,8 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   order: candidate screening artifacts cannot contain terminal folds, and only
   the frozen winner can open the terminal suffix:
   <https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html>
-- Scikit-learn's leakage and decision-threshold guidance also informs the v5
-  train-only sample-weight scale and calibration-only action threshold:
+- Scikit-learn's leakage and decision-threshold guidance also informs the v6
+  train-only sample-weight scale and calibration-only decision policy:
   <https://scikit-learn.org/stable/common_pitfalls.html> and
   <https://scikit-learn.org/stable/modules/classification_threshold.html>
   The same boundary applies to the general training suite: its calibration-fit,
