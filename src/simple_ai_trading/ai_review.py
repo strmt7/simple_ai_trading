@@ -468,16 +468,21 @@ def _compact_ai_uplift(raw: object) -> dict[str, object] | None:
     ai_metrics = raw.get("ai")
     deltas = raw.get("deltas")
     statistical = raw.get("statistical_evidence")
+    evidence_binding = raw.get("evidence_binding")
     policy = raw.get("policy")
     return {
+        "schema_version": _bounded_text(raw.get("schema_version")),
         "accepted": bool(raw.get("accepted")),
         "advisory_only": bool(raw.get("advisory_only")),
+        "trading_authority": raw.get("trading_authority"),
+        "profitability_claim": raw.get("profitability_claim"),
         "model_name": _bounded_text(raw.get("model_name")),
         "model_parameters_b": _optional_finite(raw.get("model_parameters_b")),
         "baseline": baseline if isinstance(baseline, Mapping) else {},
         "ai": ai_metrics if isinstance(ai_metrics, Mapping) else {},
         "deltas": deltas if isinstance(deltas, Mapping) else {},
         "statistical_evidence": statistical if isinstance(statistical, Mapping) else {},
+        "evidence_binding": evidence_binding if isinstance(evidence_binding, Mapping) else {},
         "policy": policy if isinstance(policy, Mapping) else {},
         "reasons": _bounded_list(reasons, limit=_MAX_CONCERNS),
     }

@@ -656,9 +656,16 @@ non-AI ML baseline on realized P&L and expectancy, does not worsen max
 drawdown, does not introduce liquidations, does not worsen loss-streak,
 profit-factor, win-rate, or downside return/risk evidence when those metrics are
 available, has enough closed trades, was produced by a multibillion model, and
-passes paired holdout statistical evidence. The paired gate requires enough
-trade/window return deltas, a positive-delta rate above policy, an exact
-one-sided sign-test p-value below policy, and a positive mean paired delta.
+passes paired holdout statistical evidence. Pairing uses contiguous,
+non-overlapping fixed market periods containing both strategies' returns; trade
+lists are not paired by index because vetoes and cooldowns change trade timing.
+The gate requires SHA-256 bindings for the common dataset, baseline evidence,
+AI evidence, local model artifact, and paired-period table, plus at least 30
+periods spanning at least 90 days, a positive-delta rate above policy, an exact
+one-sided sign-test
+p-value at or below 5%, and a positive 95% moving-block-bootstrap lower bound
+from at least 2,000 deterministic resamples. Artifact policy can tighten but
+cannot weaken those built-in floors.
 Missing or failed uplift evidence leaves AI in advisory/review-only mode.
 After a candidate survives selection, the suite trains a compact meta-label
 policy from the accepted model's simulated trade log. The policy
@@ -817,8 +824,9 @@ analytically incoherent artifacts before they reach an operator:
   across top-level accepted symbols, accepted outcomes, and the portfolio-risk
   report,
 - accepted AI uplift evidence must include complete finite baseline, AI, and
-  delta metrics, model-size evidence, and paired holdout statistical evidence;
-  missing or weak uplift contract fields block the model-lab artifact,
+  delta metrics, model-size evidence, hash-bound contiguous fixed-period
+  samples, and paired sign-test plus block-bootstrap evidence; missing, weak,
+  index-paired, or policy-weakened fields block the model-lab artifact,
 - accepted stress, temporal robustness, and portfolio metrics must remain in
   financial ranges such as drawdown/CVaR/deployed-weight between 0 and 1.
 

@@ -485,36 +485,70 @@ def _accepted_ai_uplift() -> dict[str, object]:
         "downside_return_risk_ratio": 1.45,
     }
     deltas = {key: float(ai[key]) - float(baseline[key]) for key in baseline}
+    paired_samples_sha256 = "e" * 64
+    first_period_ms = 1_700_000_000_000
+    period_duration_ms = 3 * 86_400_000
     return {
+        "schema_version": "ai-uplift-v2",
         "accepted": True,
         "advisory_only": False,
+        "trading_authority": False,
+        "profitability_claim": False,
         "model_name": "qwen2.5:7b",
         "model_parameters_b": 7.0,
+        "evidence_binding": {
+            "accepted": True,
+            "reasons": [],
+            "dataset_fingerprint": "d" * 64,
+            "baseline_evidence_sha256": "b" * 64,
+            "ai_evidence_sha256": "a" * 64,
+            "model_artifact_sha256": "c" * 64,
+            "paired_samples_sha256": paired_samples_sha256,
+        },
         "baseline": baseline,
         "ai": ai,
         "deltas": deltas,
         "statistical_evidence": {
             "accepted": True,
             "reasons": [],
-            "evidence_unit": "paired_trade_return_delta",
-            "sample_count": 12,
-            "min_sample_count": 8,
-            "positive_delta_count": 10,
-            "positive_delta_rate": 10 / 12,
+            "evidence_unit": "matched_fixed_period_return_delta",
+            "scope": "BTCUSDT",
+            "sample_count": 30,
+            "min_sample_count": 30,
+            "positive_delta_count": 30,
+            "positive_delta_rate": 1.0,
             "min_positive_delta_rate": 0.55,
-            "sign_test_p_value": 0.019287109375,
-            "max_sign_test_p_value": 0.40,
+            "sign_test_p_value": 2**-30,
+            "max_sign_test_p_value": 0.05,
             "mean_delta": 0.0025,
             "median_delta": 0.002,
             "min_mean_sample_delta": 0.0,
+            "paired_sample_length_mismatch": False,
+            "period_duration_ms": period_duration_ms,
+            "first_period_start_ms": first_period_ms,
+            "last_period_end_ms": first_period_ms + 30 * period_duration_ms,
+            "paired_samples_sha256": paired_samples_sha256,
+            "block_bootstrap_samples": 2_000,
+            "block_bootstrap_confidence": 0.95,
+            "block_length": 5,
+            "mean_delta_ci_lower": 0.001,
+            "mean_delta_ci_upper": 0.004,
+            "positive_mean_probability": 1.0,
+            "min_bootstrap_mean_delta_lower": 0.0,
+            "evaluation_span_ms": 30 * period_duration_ms,
+            "min_evaluation_span_ms": 90 * 86_400_000,
         },
         "reasons": [],
         "policy": {
             "min_model_parameters_b": 2.0,
-            "min_paired_samples": 8,
+            "min_paired_samples": 30,
             "min_positive_delta_rate": 0.55,
-            "max_sign_test_p_value": 0.40,
+            "max_sign_test_p_value": 0.05,
             "min_mean_sample_delta": 0.0,
+            "block_bootstrap_samples": 2_000,
+            "block_bootstrap_confidence": 0.95,
+            "min_bootstrap_mean_delta_lower": 0.0,
+            "min_evaluation_span_days": 90,
         },
     }
 
@@ -878,6 +912,22 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_model_size
     )
 
 
+def test_model_lab_financial_sanity_blocks_ai_uplift_without_hash_binding() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    del uplift["evidence_binding"]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "AI uplift evidence binding"
+        and check.path.endswith(".evidence_binding")
+        for check in report.checks
+    )
+
+
 def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_without_statistical_evidence() -> None:
     payload = _model_lab_payload_with_symbols(["BTCUSDT"])
     uplift = _accepted_ai_uplift()
@@ -907,6 +957,21 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_weak_sign_tes
     blocked_paths = {check.path for check in report.checks if check.status == "block"}
     assert "outcomes[0].ai_uplift.statistical_evidence.positive_delta_rate" in blocked_paths
     assert "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+
+
+def test_model_lab_financial_sanity_blocks_weak_ai_uplift_bootstrap() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    uplift["statistical_evidence"]["mean_delta_ci_lower"] = 0.0  # type: ignore[index]
+    uplift["statistical_evidence"]["positive_mean_probability"] = 0.7  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    blocked_paths = {check.path for check in report.checks if check.status == "block"}
+    assert "outcomes[0].ai_uplift.statistical_evidence.mean_delta_ci_lower" in blocked_paths
+    assert "outcomes[0].ai_uplift.statistical_evidence.positive_mean_probability" in blocked_paths
 
 
 def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_inconsistent_statistics() -> None:

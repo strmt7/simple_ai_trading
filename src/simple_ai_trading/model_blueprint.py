@@ -246,6 +246,10 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         execution_authority="approval_gate_only",
         validation_gates=(
             "minimum multibillion model parameter evidence",
+            "common dataset plus baseline, AI, model, and paired-table SHA-256 bindings",
+            "contiguous fixed-period returns instead of index-paired trade lists",
+            "minimum 30 periods spanning 90 days and exact one-sided sign-test p-value at or below 0.05",
+            "positive 95% moving-block-bootstrap lower mean from at least 2000 resamples",
             "AI realized PnL and expectancy exceed baseline",
             "AI drawdown does not exceed baseline",
             "minimum AI trade count",
@@ -255,6 +259,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "https://arxiv.org/abs/2303.17564",
             "https://arxiv.org/abs/2306.06031",
             "https://arxiv.org/abs/2403.07815",
+            "https://arxiv.org/abs/2605.28359",
         ),
     ),
     ModelFamilyBlueprint(
@@ -581,6 +586,22 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         usage_policy="Use only as timestamped probabilistic forecast features until ablation passes.",
     ),
     ResearchSourceBlueprint(
+        source_id="chronos2_multivariate",
+        label="Chronos-2 multivariate and covariate forecasting",
+        url="https://arxiv.org/abs/2510.15821",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster", "cross_asset_graph_sequence"),
+        usage_policy="Use native cross-series context only as a forecast feature; 120M parameters do not satisfy the multibillion risk-review requirement.",
+    ),
+    ResearchSourceBlueprint(
+        source_id="time_moe",
+        label="Time-MoE billion-scale time-series foundation model",
+        url="https://github.com/Time-MoE/Time-MoE",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster",),
+        usage_policy="Block until pinned DirectML compatibility, pretraining provenance, and post-cutoff baseline uplift pass.",
+    ),
+    ResearchSourceBlueprint(
         source_id="moirai",
         label="Moirai universal time-series transformer",
         url="https://arxiv.org/abs/2402.02592",
@@ -609,6 +630,14 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
             "Require rolling-origin and random-walk comparisons because reported "
             "forecast gains are model- and asset-specific rather than universal alpha."
         ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="ktd_fin",
+        label="Memory-controlled LLM trading benchmark",
+        url="https://arxiv.org/abs/2605.28359",
+        source_type="primary_research",
+        applied_to=("ai_risk_reviewer", "ai_uplift_gate"),
+        usage_policy="Mask identifiers and calendar cues, use normalized causal factors, and attribute same-period uplift instead of accepting raw returns.",
     ),
     ResearchSourceBlueprint(
         source_id="fin_r1",
