@@ -965,6 +965,11 @@ def test_tick_archive_full_history_plan_uses_independent_official_coverage(
         return SimpleNamespace(
             period=period,
             size_bytes=size,
+            last_modified=f"{period}T01:00:00Z",
+            etag="a" * 32,
+            checksum_size_bytes=100,
+            checksum_last_modified=f"{period}T01:00:00Z",
+            checksum_etag="b" * 32,
             url=(
                 "https://data.binance.vision/data/futures/um/daily/"
                 f"{data_type}/BTCUSDT/BTCUSDT-{data_type}-{period}.zip"
@@ -1093,6 +1098,10 @@ def test_tick_archive_full_history_rejects_inventory_change_during_sync(
             period=period,
             size_bytes=100,
             last_modified=f"{period}T01:00:00Z",
+            etag="a" * 32,
+            checksum_size_bytes=100,
+            checksum_last_modified=f"{period}T01:00:00Z",
+            checksum_etag="b" * 32,
             url=(
                 "https://data.binance.vision/data/futures/um/daily/trades/"
                 f"BTCUSDT/BTCUSDT-trades-{period}.zip"

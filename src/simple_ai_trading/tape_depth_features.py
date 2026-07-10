@@ -229,6 +229,7 @@ def tape_depth_source_evidence(
         required_start_ms=required_start_ms,
         required_end_ms=required_end_ms,
         require_full_history_inventory=True,
+        allow_official_gap_data_types=("bookDepth",) if include_book_depth else (),
     )
     data_type_filter = (
         "data_type IN ('trades', 'bookDepth')"
@@ -319,17 +320,21 @@ def tape_depth_source_evidence(
             f"{symbol} trade manifest coverage has {len(missing_trade_periods)} "
             f"missing day(s), beginning {preview}"
         )
-    if by_type["bookDepth"]:
-        depth_periods = {str(item["period"]) for item in by_type["bookDepth"]}
-        depth_cursor = datetime.strptime(min(depth_periods), "%Y-%m-%d").date()
-        depth_end = datetime.strptime(max(depth_periods), "%Y-%m-%d").date()
-        while depth_cursor <= depth_end:
-            if depth_cursor.isoformat() not in depth_periods:
-                raise ValueError(
-                    f"{symbol} bookDepth manifest coverage is missing "
-                    f"{depth_cursor.isoformat()}"
-                )
-            depth_cursor += timedelta(days=1)
+    certificate_types = corpus_certificate.get("data_types")
+    book_depth_certificate = (
+        certificate_types.get("bookDepth", {})
+        if isinstance(certificate_types, Mapping)
+        else {}
+    )
+    if not isinstance(book_depth_certificate, Mapping):
+        raise ValueError("bookDepth corpus certificate payload is invalid")
+    official_depth_gaps = tuple(
+        str(value)
+        for value in book_depth_certificate.get(
+            "requested_official_gap_periods",
+            [],
+        )
+    )
     canonical = json.dumps(
         {
             "corpus_certificate_sha256": corpus_certificate["certificate_sha256"],
@@ -377,6 +382,7 @@ def tape_depth_source_evidence(
         "corpus_certificate": corpus_certificate,
         "trades": coverage("trades"),
         "book_depth": coverage("bookDepth"),
+        "book_depth_official_gap_periods": list(official_depth_gaps),
         "verified": True,
     }
 

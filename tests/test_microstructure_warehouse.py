@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import hashlib
+import zipfile
+
 import duckdb
 import pytest
 
+from simple_ai_trading import microstructure_warehouse as warehouse_module
 from simple_ai_trading.microstructure_warehouse import MicrostructureWarehouse
 from simple_ai_trading.microstructure_warehouse import official_tick_archive_url
+
+
+_ZIP_ETAG = "a" * 32
+_CHECKSUM_ETAG = "b" * 32
+_CHECKSUM_BYTES = 100
 
 
 def _insert_complete_manifest(
@@ -74,11 +83,13 @@ def _insert_certified_manifest(
             compressed_bytes, uncompressed_bytes, source_sha256, expected_sha256,
             checksum_status, rows_read, derived_rows, first_exchange_time_ms,
             last_exchange_time_ms, invalid_rows, duplicate_ids, update_id_regressions,
-            event_time_regressions, out_of_order_rows, crossed_books, ingested_at_ms, error
+            event_time_regressions, out_of_order_rows, crossed_books, ingested_at_ms, error,
+            official_etag, checksum_object_size_bytes, checksum_last_modified,
+            checksum_etag
         ) VALUES (
             ?, 'binance-usdm-tick-v6', 'binance', 'futures', ?, ?, ?, ?, '',
             'complete', true, ?, ?, ?, ?, ?, 'verified', ?, ?, ?, ?,
-            0, 0, 0, 0, 0, 0, ?, ''
+            0, 0, 0, 0, 0, 0, ?, '', ?, ?, ?, ?
         )
         """,
         [
@@ -97,6 +108,10 @@ def _insert_certified_manifest(
             first_ms,
             last_ms,
             start_ms + 172_800_000,
+            _ZIP_ETAG,
+            _CHECKSUM_BYTES,
+            f"{period}T00:00:00Z",
+            _CHECKSUM_ETAG,
         ],
     )
     conn = warehouse.connect()
@@ -212,7 +227,11 @@ def test_corpus_certificate_binds_official_inventory_and_every_daily_manifest(tm
                             period=period,
                         ),
                         "size_bytes": size_bytes,
-                        "last_modified": f"2026-07-{period_index:02d}T00:00:00Z",
+                        "last_modified": f"{period}T00:00:00Z",
+                        "etag": _ZIP_ETAG,
+                        "checksum_size_bytes": _CHECKSUM_BYTES,
+                        "checksum_last_modified": f"{period}T00:00:00Z",
+                        "checksum_etag": _CHECKSUM_ETAG,
                     }
                 )
                 _insert_certified_manifest(
@@ -277,6 +296,10 @@ def test_corpus_certificate_rejects_missing_and_mutated_partitions(tmp_path) -> 
                 ),
                 "size_bytes": size_bytes,
                 "last_modified": "2026-07-10T00:00:00Z",
+                "etag": _ZIP_ETAG,
+                "checksum_size_bytes": _CHECKSUM_BYTES,
+                "checksum_last_modified": f"{period}T00:00:00Z",
+                "checksum_etag": _CHECKSUM_ETAG,
             }
             warehouse.record_official_archive_inventory(
                 symbol="BTCUSDT",
@@ -318,6 +341,79 @@ def test_corpus_certificate_rejects_missing_and_mutated_partitions(tmp_path) -> 
     assert any("trades:invalid_manifests" in reason for reason in mutated["reasons"])
 
 
+def test_corpus_certificate_allows_only_explicit_provider_depth_gaps(tmp_path) -> None:
+    from datetime import UTC, datetime
+
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "provider-gap.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    periods = ("2026-07-08", "2026-07-10")
+    try:
+        items = []
+        for index, period in enumerate(periods, start=1):
+            size_bytes = 100 + index
+            items.append(
+                {
+                    "period": period,
+                    "url": official_tick_archive_url(
+                        symbol="BTCUSDT",
+                        data_type="bookDepth",
+                        period=period,
+                    ),
+                    "size_bytes": size_bytes,
+                    "last_modified": f"{period}T00:00:00Z",
+                    "etag": _ZIP_ETAG,
+                    "checksum_size_bytes": _CHECKSUM_BYTES,
+                    "checksum_last_modified": f"{period}T00:00:00Z",
+                    "checksum_etag": _CHECKSUM_ETAG,
+                }
+            )
+            _insert_certified_manifest(
+                warehouse,
+                symbol="BTCUSDT",
+                data_type="bookDepth",
+                period=period,
+                size_bytes=size_bytes,
+                hash_character=str(index),
+            )
+        warehouse.record_official_archive_inventory(
+            symbol="BTCUSDT",
+            data_type="bookDepth",
+            items=items,
+            full_history=True,
+        )
+        start_ms = int(
+            datetime(2026, 7, 8, tzinfo=UTC).timestamp() * 1_000
+        )
+        end_ms = int(
+            datetime(2026, 7, 11, tzinfo=UTC).timestamp() * 1_000
+        ) - 1
+        strict = warehouse.corpus_certificate(
+            "BTCUSDT",
+            required_data_types=("bookDepth",),
+            required_start_ms=start_ms,
+            required_end_ms=end_ms,
+        )
+        allowed = warehouse.corpus_certificate(
+            "BTCUSDT",
+            required_data_types=("bookDepth",),
+            required_start_ms=start_ms,
+            required_end_ms=end_ms,
+            allow_official_gap_data_types=("bookDepth",),
+        )
+    finally:
+        warehouse.close()
+
+    assert strict["status"] == "fail"
+    assert allowed["status"] == "pass"
+    depth = allowed["data_types"]["bookDepth"]
+    assert depth["requested_official_gap_periods"] == ["2026-07-09"]
+    assert depth["official_calendar_gaps"] == ["2026-07-09"]
+
+
 def test_verified_unchanged_reuse_requires_intact_physical_partition(tmp_path) -> None:
     warehouse = MicrostructureWarehouse(
         tmp_path / "reusable-certificate.duckdb",
@@ -335,6 +431,10 @@ def test_verified_unchanged_reuse_requires_intact_physical_partition(tmp_path) -
         ),
         "size_bytes": 101,
         "last_modified": "2026-07-10T00:00:00Z",
+        "etag": _ZIP_ETAG,
+        "checksum_size_bytes": _CHECKSUM_BYTES,
+        "checksum_last_modified": f"{period}T00:00:00Z",
+        "checksum_etag": _CHECKSUM_ETAG,
     }
     try:
         _insert_certified_manifest(
@@ -379,6 +479,77 @@ def test_verified_unchanged_reuse_requires_intact_physical_partition(tmp_path) -
     corruption_reasons = certificate["data_types"]["trades"]["invalid_details"][period]
     assert "physical_raw_row_count_mismatch" in corruption_reasons
     assert "physical_raw_time_bounds_mismatch" in corruption_reasons
+
+
+def test_completed_manifest_with_corrupt_rows_is_atomically_reingested(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    period = "2026-07-09"
+    cache_root = tmp_path / "cache"
+    archive_path = (
+        cache_root
+        / "binance"
+        / "usdm"
+        / "trades"
+        / "BTCUSDT"
+        / f"BTCUSDT-trades-{period}.zip"
+    )
+    archive_path.parent.mkdir(parents=True)
+    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            f"BTCUSDT-trades-{period}.csv",
+            "id,price,qty,quote_qty,time,is_buyer_maker\n"
+            "1,100.0,1.0,100.0,1783555201000,false\n"
+            "2,101.0,2.0,202.0,1783555202000,true\n",
+        )
+    source_sha256 = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+    monkeypatch.setattr(
+        warehouse_module,
+        "_fetch_checksum",
+        lambda *_args, **_kwargs: source_sha256,
+    )
+    kwargs = {
+        "symbol": "BTCUSDT",
+        "data_type": "trades",
+        "period": period,
+        "expected_bytes": archive_path.stat().st_size,
+        "official_last_modified": "2026-07-10T00:00:00Z",
+        "official_etag": _ZIP_ETAG,
+        "checksum_object_size_bytes": _CHECKSUM_BYTES,
+        "checksum_last_modified": "2026-07-10T00:00:00Z",
+        "checksum_etag": _CHECKSUM_ETAG,
+        "session": object(),
+    }
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "repair.duckdb",
+        cache_root=cache_root,
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        first = warehouse.ingest_public_archive(**kwargs)
+        warehouse.connect().execute(
+            "DELETE FROM trade_raw WHERE archive_id = ? AND trade_id = 1",
+            [first.archive_id],
+        )
+
+        repaired = warehouse.ingest_public_archive(**kwargs)
+        raw_rows = warehouse.connect().execute(
+            "SELECT count(*) FROM trade_raw WHERE archive_id = ?",
+            [first.archive_id],
+        ).fetchone()[0]
+        derived_rows = warehouse.connect().execute(
+            "SELECT count(*) FROM trade_1s WHERE archive_id = ?",
+            [first.archive_id],
+        ).fetchone()[0]
+    finally:
+        warehouse.close()
+
+    assert first.status == "complete"
+    assert repaired.status == "complete"
+    assert raw_rows == 2
+    assert derived_rows == 2
 
 
 def test_book_ticker_ingest_canonicalizes_interleaved_source_rows(tmp_path) -> None:
