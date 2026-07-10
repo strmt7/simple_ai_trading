@@ -356,6 +356,18 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tape_prequential.model_profile == "regularized"
     assert tape_prequential.feature_set == "full"
     assert tape_prequential.maximum_cached_rows == 15_000_000
+    tape_compare = cli._parse_args(
+        [
+            "tape-depth-compare",
+            "--report",
+            "regularized.json",
+            "--report",
+            "balanced.json",
+        ]
+    )
+    assert tape_compare.report == ["regularized.json", "balanced.json"]
+    assert tape_compare.selection_fraction == 0.67
+    assert tape_compare.func is cli.command_tape_depth_compare
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
@@ -1069,6 +1081,49 @@ def test_tape_depth_prequential_plan_is_cli_and_windows_ready(
     assert run_options["compute_backend"] == "directml"
     assert run_options["plan_only"] is True
     assert "folds=6" in capsys.readouterr().out
+
+
+def test_tape_depth_compare_command_is_fail_closed(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    calls: dict[str, object] = {}
+
+    def compare(paths, **kwargs):
+        calls["paths"] = paths
+        calls["options"] = kwargs
+        return {
+            "status": "confirmed_forecast_candidate",
+            "declared_trial_count": 2,
+            "selected_trial": "regularized/core",
+            "profitability_claim": False,
+            "trading_authority": False,
+        }
+
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_comparison.load_and_compare_tape_depth_reports",
+        compare,
+    )
+    output = tmp_path / "comparison.json"
+    result = cli.command_tape_depth_compare(
+        argparse.Namespace(
+            report=["regularized.json", "balanced.json"],
+            output=str(output),
+            selection_fraction=0.6,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    assert calls["paths"] == ("regularized.json", "balanced.json")
+    assert calls["options"] == {
+        "output": str(output),
+        "selection_fraction": 0.6,
+    }
+    rendered = capsys.readouterr().out
+    assert "selected=regularized/core" in rendered
+    assert "profitability_claim=false trading_authority=false" in rendered
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:

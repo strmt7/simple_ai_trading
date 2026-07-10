@@ -52,8 +52,10 @@ def main() -> int:
         "    const wchar_t* choices;",
         "    const wchar_t* default_value;",
         "    const wchar_t* help;",
+        "    const wchar_t* value_arity;",
         "    bool required;",
         "    bool takes_value;",
+        "    bool repeatable;",
         "};",
         "",
         "struct CommandSpec {",
@@ -80,8 +82,10 @@ def main() -> int:
                 f"{_escape_wide(_join_values(option.choices))}, "
                 f"{_escape_wide(_default_string(option.default))}, "
                 f"{_escape_wide(option.help)}, "
+                f"{_escape_wide(option.value_arity)}, "
                 f"{str(bool(option.required)).lower()}, "
-                f"{str(bool(option.takes_value)).lower()}"
+                f"{str(bool(option.takes_value)).lower()}, "
+                f"{str(bool(option.repeatable)).lower()}"
                 "},"
             )
         lines.append("};")

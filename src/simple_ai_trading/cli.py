@@ -856,6 +856,25 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_prequential.add_argument("--json", action="store_true")
     parser_tape_depth_prequential.set_defaults(func=command_tape_depth_prequential)
 
+    parser_tape_depth_compare = subparsers.add_parser(
+        "tape-depth-compare",
+        help="select tape/depth ablations on early folds and confirm only the winner later",
+    )
+    parser_tape_depth_compare.add_argument(
+        "--report",
+        action="append",
+        required=True,
+        help="prequential report path; repeat for every declared trial",
+    )
+    parser_tape_depth_compare.add_argument(
+        "--output", default="data/tape-depth-comparison.json"
+    )
+    parser_tape_depth_compare.add_argument(
+        "--selection-fraction", type=float, default=0.67
+    )
+    parser_tape_depth_compare.add_argument("--json", action="store_true")
+    parser_tape_depth_compare.set_defaults(func=command_tape_depth_compare)
+
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
     parser_train.add_argument("--output", default="data/model.json")
@@ -6586,6 +6605,39 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
     if bool(getattr(args, "plan_only", False)):
         return 0
     return 0 if report.get("status") == "research_candidate" else 2
+
+
+def command_tape_depth_compare(args: argparse.Namespace) -> int:
+    """Compare declared forecast trials without exposing later folds to losers."""
+
+    from .tape_depth_comparison import load_and_compare_tape_depth_reports
+
+    paths = tuple(str(path) for path in (getattr(args, "report", None) or ()))
+    try:
+        comparison = load_and_compare_tape_depth_reports(
+            paths,
+            output=str(
+                getattr(args, "output", "data/tape-depth-comparison.json")
+            ),
+            selection_fraction=float(getattr(args, "selection_fraction", 0.67)),
+        )
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"tape-depth-compare failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(comparison, indent=2, sort_keys=True))
+    else:
+        print(
+            "tape-depth-compare: "
+            f"status={comparison['status']} "
+            f"trials={comparison['declared_trial_count']} "
+            f"selected={comparison['selected_trial']} "
+            "profitability_claim=false trading_authority=false"
+        )
+    return 0 if comparison.get("status") == "confirmed_forecast_candidate" else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:

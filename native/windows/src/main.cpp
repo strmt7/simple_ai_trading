@@ -1246,7 +1246,7 @@ class MainWindow {
         } else if (page_index_ == 1) {
             add_group(L"Run Bot", {L"connect", L"live", L"autonomous", L"spot-roundtrip", L"positions", L"reconcile", L"close"});
         } else if (page_index_ == 2) {
-            add_group(L"Research", {L"model-lab", L"microstructure-prequential", L"microstructure-promote", L"microstructure-shadow", L"tape-depth-train", L"tape-depth-prequential", L"ai-forecast-benchmark", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives", L"signals-benchmark"});
+            add_group(L"Research", {L"model-lab", L"microstructure-prequential", L"microstructure-promote", L"microstructure-shadow", L"tape-depth-train", L"tape-depth-prequential", L"tape-depth-compare", L"ai-forecast-benchmark", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives", L"signals-benchmark"});
         } else if (page_index_ == 3) {
             add_group(L"Risk Center", {L"risk", L"universe", L"audit", L"signals", L"source-grades", L"report", L"doctor"});
         } else if (page_index_ == 4) {
@@ -1395,6 +1395,9 @@ class MainWindow {
                 preview += L", ";
             }
             preview += command.options[i].flags;
+            if (command.options[i].repeatable) {
+                preview += L" (repeatable)";
+            }
         }
         if (command.option_count > shown) {
             preview += L", ... +";

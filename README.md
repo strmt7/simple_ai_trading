@@ -137,6 +137,7 @@ simple-ai-trading tick-archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --data-typ
 simple-ai-trading tape-depth-train --symbol BTCUSDT --window-days 365 --horizon-seconds 60 --model-profile regularized --feature-set full --compute-backend directml
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --plan-only
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --compute-backend directml --output-dir data/tape-depth-prequential-full
+simple-ai-trading tape-depth-compare --report data/tape-depth-regularized-core/report.json --report data/tape-depth-balanced-full/report.json --output data/tape-depth-comparison.json
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
 simple-ai-trading microstructure-prequential --input data/microstructure-model.json
 simple-ai-trading microstructure-promote --input data/microstructure-model.json
@@ -235,6 +236,13 @@ artifact serializes the exact ordered input names while its dataset fingerprint
 still binds the complete source matrix. Derived tape/activity features and
 coarse depth therefore have to beat the simpler earlier-fold baseline and
 confirm later; adding columns is not treated as automatic improvement.
+
+`tape-depth-compare` validates complete, identical fold plans and dataset
+fingerprints across every declared profile/feature trial. It ranks only the
+earlier folds, reports later-fold metrics only for that winner, and rejects the
+comparison without trying a runner-up if confirmation fails. Its strongest
+possible result is `confirmed_forecast_candidate`; it makes no profitability
+claim and grants no execution authority.
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned
 financial time-series foundation model. It requires exact BTCUSDT, ETHUSDT, and
