@@ -360,7 +360,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
             "decision_cadence_seconds": 5,
             "source_evidence": {
                 "build_id": "c" * 64,
-                "schema_version": "binance-usdm-tick-v5",
+                "schema_version": "binance-usdm-tick-v6",
                 "feature_build_version": "book-ticker-event-time-v1",
                 "availability_clock": "event_time_ms",
                 "symbol": "BTCUSDT",
@@ -728,7 +728,7 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
     alternating = np.where(np.arange(rows) % 2 == 0, 2.0, -2.0)
     source = {
         "build_id": "a" * 64,
-        "schema_version": "binance-usdm-tick-v5",
+        "schema_version": "binance-usdm-tick-v6",
         "feature_build_version": "book-ticker-event-time-v1",
         "availability_clock": "event_time_ms",
         "symbol": "BTCUSDT",

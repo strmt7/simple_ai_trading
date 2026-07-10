@@ -27,7 +27,7 @@ def _insert_complete_manifest(
             last_exchange_time_ms, invalid_rows, duplicate_ids, update_id_regressions,
             event_time_regressions, out_of_order_rows, crossed_books, ingested_at_ms, error
         ) VALUES (
-            ?, 'binance-usdm-tick-v5', 'binance', 'futures', 'BTCUSDT',
+            ?, 'binance-usdm-tick-v6', 'binance', 'futures', 'BTCUSDT',
             ?, ?, ?, '', 'complete', true, 0, 0, 0, ?, ?,
             'verified', ?, 0, ?, ?, 0, 0, 0, 0, 0, 0, 1, ''
         )
@@ -129,6 +129,81 @@ def test_book_depth_ingest_preserves_official_point_two_percent_bands(tmp_path) 
     assert metrics["derived_rows"] == 1
     assert ("-0.20",) in persisted
     assert ("0.20",) in persisted
+
+
+def test_book_depth_ingest_accepts_exact_historical_ten_band_schema(tmp_path) -> None:
+    csv_path = tmp_path / "BTCUSDT-bookDepth-2023-01-01.csv"
+    percentages = (-5, -4, -3, -2, -1, 1, 2, 3, 4, 5)
+    csv_path.write_text(
+        "timestamp,percentage,depth,notional\n"
+        + "".join(
+            f"2023-01-01 00:00:00,{percentage},100.0,10000.0\n"
+            for percentage in percentages
+        ),
+        encoding="ascii",
+    )
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "historical-depth.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        metrics = warehouse._ingest_book_depth_csv(
+            csv_path,
+            symbol="BTCUSDT",
+            archive_id="historical-depth",
+            period="2023-01-01",
+        )
+        _insert_complete_manifest(
+            warehouse,
+            archive_id="historical-depth",
+            period="2023-01-01",
+            source_hash="c" * 64,
+            rows=10,
+            first_ms=1_672_531_200_000,
+            last_ms=1_672_531_200_000,
+            data_type="bookDepth",
+        )
+        snapshot = warehouse.connect().execute(
+            "SELECT band_count, bid_notional_0_2, ask_notional_0_2 "
+            "FROM current_book_depth_snapshots"
+        ).fetchone()
+    finally:
+        warehouse.close()
+
+    assert metrics["rows_read"] == 10
+    assert metrics["derived_rows"] == 1
+    assert snapshot == (10, None, None)
+
+
+def test_book_depth_ingest_rejects_mixed_incomplete_band_schema(tmp_path) -> None:
+    csv_path = tmp_path / "BTCUSDT-bookDepth-2023-01-01.csv"
+    percentages = (-5, -4, -3, -2, -1, -0.20, 0.20, 1, 2, 3)
+    csv_path.write_text(
+        "timestamp,percentage,depth,notional\n"
+        + "".join(
+            f"2023-01-01 00:00:00,{percentage},100.0,10000.0\n"
+            for percentage in percentages
+        ),
+        encoding="ascii",
+    )
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "mixed-depth.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        with pytest.raises(ValueError, match="incomplete_groups=1"):
+            warehouse._ingest_book_depth_csv(
+                csv_path,
+                symbol="BTCUSDT",
+                archive_id="mixed-depth",
+                period="2023-01-01",
+            )
+    finally:
+        warehouse.close()
 
 
 def test_warehouse_migrates_legacy_integer_book_depth_percentage(tmp_path) -> None:

@@ -4,17 +4,20 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Callable, Mapping
 
 import lightgbm as lgb
+from lightgbm.basic import LightGBMError
 import numpy as np
 
+from .lightgbm_backend import lightgbm_backend_parameters
 from .microstructure_model import (
     _apply_platt_scaling,
     _auc,
-    _backend_parameters,
     _fit_platt_scaling,
 )
 from .storage import write_json_atomic
@@ -23,11 +26,23 @@ from .tape_depth_features import (
     TAPE_DEPTH_FEATURE_VERSION,
     TAPE_DEPTH_TARGET_MODE,
     TapeDepthForecastDataset,
+    tape_depth_dataset_fingerprint,
 )
 
 
-TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v1"
+TAPE_DEPTH_MODEL_SCHEMA_VERSION = "tape-depth-gross-forecast-v4"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
+_MODEL_PROFILES = frozenset({"regularized", "balanced", "expressive"})
+_FEATURE_SETS = frozenset({"core", "tape_derived", "full"})
+_DERIVED_PREFIXES = (
+    "vwap_deviation_bps_",
+    "price_efficiency_",
+    "trade_observation_rate_",
+    "quote_volume_rate_acceleration_",
+    "trade_rate_acceleration_",
+    "flow_price_alignment_",
+)
+_DEPTH_PREFIXES = ("depth_", "log_depth_", "log_bid_depth_", "log_ask_depth_")
 
 
 @dataclass(frozen=True)
@@ -78,8 +93,11 @@ class TapeDepthModelArtifact:
     execution_claim: bool
     symbol: str
     risk_level: str
+    model_profile: str
+    feature_set: str
     feature_version: str
     feature_names: tuple[str, ...]
+    model_feature_names: tuple[str, ...]
     target_mode: str
     horizon_seconds: int
     total_latency_ms: int
@@ -94,6 +112,7 @@ class TapeDepthModelArtifact:
     probability_calibration: tuple[float, float]
     evaluation_metrics: TapeDepthForecastMetrics
     model_strings: Mapping[str, str]
+    dataset_fingerprint: str
     dataset_summary: Mapping[str, object]
     trained_at: str
 
@@ -101,13 +120,58 @@ class TapeDepthModelArtifact:
         payload = asdict(self)
         payload["rejection_reasons"] = list(self.rejection_reasons)
         payload["feature_names"] = list(self.feature_names)
+        payload["model_feature_names"] = list(self.model_feature_names)
         return payload
 
 
-def _risk_parameters(risk_level: str, train_rows: int) -> dict[str, object]:
-    if risk_level == "conservative":
+@dataclass(frozen=True)
+class TapeDepthPredictionBatch:
+    decision_time_ms: np.ndarray
+    target_entry_time_ms: np.ndarray
+    target_exit_time_ms: np.ndarray
+    actual_gross_return_bps: np.ndarray
+    direction_probability: np.ndarray
+    mean_prediction_bps: np.ndarray
+    lower_prediction_bps: np.ndarray
+    upper_prediction_bps: np.ndarray
+
+    @property
+    def rows(self) -> int:
+        return int(len(self.decision_time_ms))
+
+    def metrics(self) -> TapeDepthForecastMetrics:
+        return _evaluation_metrics(
+            targets=self.actual_gross_return_bps,
+            direction_probability=self.direction_probability,
+            mean_prediction=self.mean_prediction_bps,
+            lower_prediction=self.lower_prediction_bps,
+            upper_prediction=self.upper_prediction_bps,
+        )
+
+    def fingerprint(self) -> str:
+        digest = hashlib.sha256()
+        arrays = (
+            ("decision_time_ms", self.decision_time_ms, "<i8"),
+            ("target_entry_time_ms", self.target_entry_time_ms, "<i8"),
+            ("target_exit_time_ms", self.target_exit_time_ms, "<i8"),
+            ("actual_gross_return_bps", self.actual_gross_return_bps, "<f8"),
+            ("direction_probability", self.direction_probability, "<f8"),
+            ("mean_prediction_bps", self.mean_prediction_bps, "<f8"),
+            ("lower_prediction_bps", self.lower_prediction_bps, "<f8"),
+            ("upper_prediction_bps", self.upper_prediction_bps, "<f8"),
+        )
+        for name, values, dtype in arrays:
+            canonical = np.ascontiguousarray(np.asarray(values, dtype=dtype))
+            digest.update(name.encode("ascii") + b"\x00")
+            digest.update(np.asarray(canonical.shape, dtype="<i8").tobytes())
+            digest.update(canonical.tobytes(order="C"))
+        return digest.hexdigest()
+
+
+def _model_parameters(model_profile: str, train_rows: int) -> dict[str, object]:
+    if model_profile == "regularized":
         leaves, depth, min_leaf, l2 = 31, 6, 256, 0.10
-    elif risk_level == "regular":
+    elif model_profile == "balanced":
         leaves, depth, min_leaf, l2 = 47, 7, 160, 0.05
     else:
         leaves, depth, min_leaf, l2 = 63, 8, 96, 0.025
@@ -125,10 +189,26 @@ def _risk_parameters(risk_level: str, train_rows: int) -> dict[str, object]:
     }
 
 
+def _selected_feature_names(feature_set: str) -> tuple[str, ...]:
+    if feature_set == "full":
+        return TAPE_DEPTH_FEATURE_NAMES
+    names = tuple(
+        name
+        for name in TAPE_DEPTH_FEATURE_NAMES
+        if not name.startswith(_DEPTH_PREFIXES)
+    )
+    if feature_set == "core":
+        names = tuple(
+            name for name in names if not name.startswith(_DERIVED_PREFIXES)
+        )
+    return names
+
+
 def _purged_segments(
     dataset: TapeDepthForecastDataset,
     *,
     minimum_segment_rows: int,
+    split_boundaries_ms: tuple[int, int, int] | None = None,
 ) -> tuple[dict[str, np.ndarray], TapeDepthSplitEvidence]:
     rows = dataset.rows
     minimum = int(minimum_segment_rows)
@@ -136,12 +216,27 @@ def _purged_segments(
         raise ValueError("minimum_segment_rows must be at least 128")
     if rows < minimum * 4 + 16:
         raise ValueError("tape/depth dataset is too small for four purged segments")
-    boundaries = (int(rows * 0.60), int(rows * 0.75), int(rows * 0.85))
+    times = np.asarray(dataset.decision_time_ms, dtype=np.int64)
+    if split_boundaries_ms is None:
+        boundaries = (int(rows * 0.60), int(rows * 0.75), int(rows * 0.85))
+    else:
+        requested = tuple(int(value) for value in split_boundaries_ms)
+        if not requested[0] < requested[1] < requested[2]:
+            raise ValueError("tape/depth split boundaries must increase")
+        boundaries = tuple(
+            int(np.searchsorted(times, value, side="left")) for value in requested
+        )
+        if any(
+            index <= 0
+            or index >= rows
+            or int(times[index]) != requested[position]
+            for position, index in enumerate(boundaries)
+        ):
+            raise ValueError("tape/depth split boundaries are absent from the dataset")
     train_raw = np.arange(0, boundaries[0], dtype=np.int64)
     tuning_raw = np.arange(boundaries[0], boundaries[1], dtype=np.int64)
     calibration_raw = np.arange(boundaries[1], boundaries[2], dtype=np.int64)
     evaluation = np.arange(boundaries[2], rows, dtype=np.int64)
-    times = np.asarray(dataset.decision_time_ms, dtype=np.int64)
     exits = np.asarray(dataset.target_exit_time_ms, dtype=np.int64)
 
     def purge_before(indexes: np.ndarray, next_start: int) -> np.ndarray:
@@ -328,9 +423,12 @@ def train_tape_depth_forecaster(
     dataset: TapeDepthForecastDataset,
     *,
     risk_level: str = "conservative",
+    model_profile: str = "regularized",
+    feature_set: str = "full",
     compute_backend: str = "auto",
     seed: int = 20260710,
     minimum_segment_rows: int = 2_000,
+    split_boundaries_ms: tuple[int, int, int] | None = None,
     progress: Callable[[str, int, int], None] | None = None,
 ) -> TapeDepthModelArtifact:
     """Train a research-only forecaster that cannot authorize execution."""
@@ -338,6 +436,12 @@ def train_tape_depth_forecaster(
     risk = str(risk_level).strip().lower()
     if risk not in _RISK_LEVELS:
         raise ValueError("risk_level must be conservative, regular, or aggressive")
+    profile = str(model_profile).strip().lower()
+    if profile not in _MODEL_PROFILES:
+        raise ValueError("model_profile must be regularized, balanced, or expressive")
+    selected_feature_set = str(feature_set).strip().lower()
+    if selected_feature_set not in _FEATURE_SETS:
+        raise ValueError("feature_set must be core, tape_derived, or full")
     if (
         dataset.feature_version != TAPE_DEPTH_FEATURE_VERSION
         or dataset.feature_names != TAPE_DEPTH_FEATURE_NAMES
@@ -349,12 +453,21 @@ def train_tape_depth_forecaster(
     segments, split = _purged_segments(
         dataset,
         minimum_segment_rows=minimum_segment_rows,
+        split_boundaries_ms=split_boundaries_ms,
     )
-    x = np.asarray(dataset.features, dtype=np.float32)
-    target = np.asarray(dataset.gross_return_bps, dtype=np.float32)
+    model_feature_names = _selected_feature_names(selected_feature_set)
+    model_feature_indexes = [
+        dataset.feature_names.index(name) for name in model_feature_names
+    ]
+    x = np.asarray(dataset.features[:, model_feature_indexes], dtype=np.float32)
+    exact_target = np.asarray(dataset.gross_return_bps, dtype=np.float64)
+    target = exact_target.astype(np.float32)
     labels = (target > 0.0).astype(np.float32)
-    backend, backend_kind, backend_device = _backend_parameters(compute_backend, seed)
-    parameters = {**backend, **_risk_parameters(risk, len(segments["train"]))}
+    backend, backend_kind, backend_device = lightgbm_backend_parameters(
+        compute_backend,
+        seed,
+    )
+    parameters = {**backend, **_model_parameters(profile, len(segments["train"]))}
     train = segments["train"]
     tuning = segments["tuning"]
     calibration = segments["calibration"]
@@ -401,9 +514,23 @@ def train_tape_depth_forecaster(
             sample_weights=economic_weights[final_fit],
         )
         completed += 1
+    model_strings = {
+        name: model.model_to_string(num_iteration=best_iterations[name])
+        for name, model in models.items()
+    }
+    try:
+        canonical_models = {
+            name: lgb.Booster(model_str=model_string)
+            for name, model_string in model_strings.items()
+        }
+    except LightGBMError as exc:
+        raise ValueError("serialized tape/depth model could not be reloaded") from exc
     if progress:
         progress("calibrate-direction", completed, total_steps)
-    raw_calibration = np.asarray(models["direction"].predict(x[calibration]), dtype=np.float64)
+    raw_calibration = np.asarray(
+        canonical_models["direction"].predict(x[calibration]),
+        dtype=np.float64,
+    )
     probability_calibration = _fit_platt_scaling(
         raw_calibration,
         labels[calibration],
@@ -412,19 +539,25 @@ def train_tape_depth_forecaster(
     if progress:
         progress("evaluate", completed, total_steps)
     probability = _apply_platt_scaling(
-        np.asarray(models["direction"].predict(x[evaluation]), dtype=np.float64),
+        np.asarray(canonical_models["direction"].predict(x[evaluation]), dtype=np.float64),
         probability_calibration,
     )
-    mean_prediction = np.asarray(models["mean"].predict(x[evaluation]), dtype=np.float64)
-    lower_prediction = np.asarray(models["lower"].predict(x[evaluation]), dtype=np.float64)
-    upper_prediction = np.asarray(models["upper"].predict(x[evaluation]), dtype=np.float64)
+    mean_prediction = np.asarray(
+        canonical_models["mean"].predict(x[evaluation]), dtype=np.float64
+    )
+    lower_prediction = np.asarray(
+        canonical_models["lower"].predict(x[evaluation]), dtype=np.float64
+    )
+    upper_prediction = np.asarray(
+        canonical_models["upper"].predict(x[evaluation]), dtype=np.float64
+    )
     if not all(
         np.all(np.isfinite(values))
         for values in (probability, mean_prediction, lower_prediction, upper_prediction)
     ):
         raise ValueError("tape/depth forecaster emitted non-finite evaluation values")
     metrics = _evaluation_metrics(
-        targets=target[evaluation],
+        targets=exact_target[evaluation],
         direction_probability=probability,
         mean_prediction=mean_prediction,
         lower_prediction=lower_prediction,
@@ -445,12 +578,12 @@ def train_tape_depth_forecaster(
         reasons.append("quantile_interval_coverage_outside_sanity_band")
     if metrics.interval_crossing_rate > 0.05:
         reasons.append("quantile_interval_crossing_rate_too_high")
-    model_strings = {
-        name: model.model_to_string(num_iteration=best_iterations[name])
-        for name, model in models.items()
-    }
     if progress:
         progress("complete", total_steps, total_steps)
+    dataset_fingerprint = tape_depth_dataset_fingerprint(dataset)
+    dataset_summary = dataset.summary()
+    if dataset_summary.get("dataset_fingerprint") != dataset_fingerprint:
+        raise ValueError("tape/depth dataset summary fingerprint drifted")
     return TapeDepthModelArtifact(
         schema_version=TAPE_DEPTH_MODEL_SCHEMA_VERSION,
         model_family="lightgbm_direction_huber_quantile_ensemble",
@@ -460,8 +593,11 @@ def train_tape_depth_forecaster(
         execution_claim=False,
         symbol=dataset.symbol,
         risk_level=risk,
+        model_profile=profile,
+        feature_set=selected_feature_set,
         feature_version=dataset.feature_version,
         feature_names=dataset.feature_names,
+        model_feature_names=model_feature_names,
         target_mode=dataset.target_mode,
         horizon_seconds=dataset.horizon_seconds,
         total_latency_ms=dataset.total_latency_ms,
@@ -476,9 +612,128 @@ def train_tape_depth_forecaster(
         probability_calibration=probability_calibration,
         evaluation_metrics=metrics,
         model_strings=model_strings,
-        dataset_summary=dataset.summary(),
+        dataset_fingerprint=dataset_fingerprint,
+        dataset_summary=dataset_summary,
         trained_at=datetime.now(tz=UTC).isoformat(),
     )
+
+
+def _metrics_match(
+    expected: TapeDepthForecastMetrics,
+    actual: TapeDepthForecastMetrics,
+) -> bool:
+    expected_values = asdict(expected)
+    actual_values = asdict(actual)
+    if expected_values.keys() != actual_values.keys():
+        return False
+    for name, expected_value in expected_values.items():
+        actual_value = actual_values[name]
+        if isinstance(expected_value, int):
+            if int(actual_value) != expected_value:
+                return False
+        elif not math.isclose(
+            float(actual_value),
+            float(expected_value),
+            rel_tol=1e-10,
+            abs_tol=1e-12,
+        ):
+            return False
+    return True
+
+
+def score_tape_depth_evaluation(
+    artifact: TapeDepthModelArtifact,
+    dataset: TapeDepthForecastDataset,
+) -> TapeDepthPredictionBatch:
+    """Reproduce the artifact's untouched evaluation segment exactly."""
+
+    if artifact.schema_version != TAPE_DEPTH_MODEL_SCHEMA_VERSION:
+        raise ValueError("tape/depth artifact schema is unsupported")
+    if artifact.trading_authority or artifact.execution_claim:
+        raise ValueError("gross tape/depth artifacts cannot carry execution authority")
+    if (
+        artifact.symbol != dataset.symbol
+        or artifact.feature_version != dataset.feature_version
+        or artifact.feature_names != dataset.feature_names
+        or artifact.target_mode != dataset.target_mode
+        or artifact.horizon_seconds != dataset.horizon_seconds
+        or artifact.total_latency_ms != dataset.total_latency_ms
+        or artifact.decision_cadence_seconds != dataset.decision_cadence_seconds
+        or artifact.maximum_depth_age_ms != dataset.maximum_depth_age_ms
+    ):
+        raise ValueError("tape/depth artifact and dataset contracts differ")
+    if artifact.feature_set not in _FEATURE_SETS:
+        raise ValueError("tape/depth artifact feature set is unsupported")
+    expected_model_features = _selected_feature_names(artifact.feature_set)
+    if artifact.model_feature_names != expected_model_features:
+        raise ValueError("tape/depth model feature names drifted")
+    fingerprint = tape_depth_dataset_fingerprint(dataset)
+    if artifact.dataset_fingerprint != fingerprint:
+        raise ValueError("tape/depth dataset fingerprint differs from the artifact")
+    segments, split = _purged_segments(
+        dataset,
+        minimum_segment_rows=128,
+        split_boundaries_ms=(
+            artifact.split.tuning_start_ms,
+            artifact.split.calibration_start_ms,
+            artifact.split.evaluation_start_ms,
+        ),
+    )
+    if split != artifact.split:
+        raise ValueError("tape/depth evaluation split differs from the artifact")
+    required_models = {"direction", "mean", "lower", "upper"}
+    if set(artifact.model_strings) != required_models:
+        raise ValueError("tape/depth artifact model ensemble is incomplete")
+    try:
+        models = {
+            name: lgb.Booster(model_str=str(artifact.model_strings[name]))
+            for name in sorted(required_models)
+        }
+    except (LightGBMError, TypeError, ValueError) as exc:
+        raise ValueError("tape/depth artifact model strings are invalid") from exc
+    evaluation = segments["evaluation"]
+    feature_indexes = [dataset.feature_names.index(name) for name in expected_model_features]
+    features = np.asarray(
+        dataset.features[evaluation][:, feature_indexes],
+        dtype=np.float32,
+    )
+    probability = _apply_platt_scaling(
+        np.asarray(models["direction"].predict(features), dtype=np.float64),
+        artifact.probability_calibration,
+    )
+    batch = TapeDepthPredictionBatch(
+        decision_time_ms=np.asarray(dataset.decision_time_ms[evaluation], dtype=np.int64),
+        target_entry_time_ms=np.asarray(
+            dataset.target_entry_time_ms[evaluation], dtype=np.int64
+        ),
+        target_exit_time_ms=np.asarray(
+            dataset.target_exit_time_ms[evaluation], dtype=np.int64
+        ),
+        actual_gross_return_bps=np.asarray(
+            dataset.gross_return_bps[evaluation], dtype=np.float64
+        ),
+        direction_probability=probability,
+        mean_prediction_bps=np.asarray(
+            models["mean"].predict(features), dtype=np.float64
+        ),
+        lower_prediction_bps=np.asarray(
+            models["lower"].predict(features), dtype=np.float64
+        ),
+        upper_prediction_bps=np.asarray(
+            models["upper"].predict(features), dtype=np.float64
+        ),
+    )
+    predicted_arrays = (
+        batch.direction_probability,
+        batch.mean_prediction_bps,
+        batch.lower_prediction_bps,
+        batch.upper_prediction_bps,
+    )
+    if not all(np.all(np.isfinite(values)) for values in predicted_arrays):
+        raise ValueError("tape/depth replay emitted non-finite predictions")
+    if not _metrics_match(artifact.evaluation_metrics, batch.metrics()):
+        raise ValueError("tape/depth replay metrics differ from the artifact")
+    return batch
 
 
 def save_tape_depth_model_artifact(
@@ -507,12 +762,32 @@ def load_tape_depth_model_artifact(path: str | Path) -> TapeDepthModelArtifact:
         raise ValueError("tape/depth target mode is unsupported")
     if payload.get("status") not in {"research_candidate", "rejected"}:
         raise ValueError("tape/depth artifact status is unsupported")
+    if payload.get("model_profile") not in _MODEL_PROFILES:
+        raise ValueError("tape/depth model profile is unsupported")
+    feature_set = str(payload.get("feature_set") or "")
+    if feature_set not in _FEATURE_SETS:
+        raise ValueError("tape/depth feature set is unsupported")
+    model_feature_names = tuple(payload.get("model_feature_names") or ())
+    if model_feature_names != _selected_feature_names(feature_set):
+        raise ValueError("tape/depth model feature names drifted")
     if payload.get("trading_authority") is not False or payload.get("execution_claim") is not False:
         raise ValueError("tape/depth gross forecast cannot authorize trading")
+    dataset_fingerprint = str(payload.get("dataset_fingerprint") or "").lower()
+    if len(dataset_fingerprint) != 64 or any(
+        character not in "0123456789abcdef" for character in dataset_fingerprint
+    ):
+        raise ValueError("tape/depth dataset fingerprint is invalid")
+    dataset_summary = payload.get("dataset_summary")
+    if (
+        not isinstance(dataset_summary, Mapping)
+        or dataset_summary.get("dataset_fingerprint") != dataset_fingerprint
+    ):
+        raise ValueError("tape/depth dataset summary binding is invalid")
     try:
         values = dict(payload)
         values["rejection_reasons"] = tuple(payload.get("rejection_reasons") or ())
         values["feature_names"] = tuple(payload.get("feature_names") or ())
+        values["model_feature_names"] = model_feature_names
         values["split"] = TapeDepthSplitEvidence(**dict(payload["split"]))
         values["evaluation_metrics"] = TapeDepthForecastMetrics(
             **dict(payload["evaluation_metrics"])
@@ -529,8 +804,10 @@ __all__ = [
     "TAPE_DEPTH_MODEL_SCHEMA_VERSION",
     "TapeDepthForecastMetrics",
     "TapeDepthModelArtifact",
+    "TapeDepthPredictionBatch",
     "TapeDepthSplitEvidence",
     "load_tape_depth_model_artifact",
     "save_tape_depth_model_artifact",
+    "score_tape_depth_evaluation",
     "train_tape_depth_forecaster",
 ]

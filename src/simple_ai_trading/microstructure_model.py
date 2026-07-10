@@ -14,7 +14,7 @@ from typing import Callable, Mapping, Sequence
 import lightgbm as lgb
 import numpy as np
 
-from .compute import resolve_backend
+from .lightgbm_backend import lightgbm_backend_parameters
 from .microstructure_features import (
     MICROSTRUCTURE_FEATURE_NAMES,
     MICROSTRUCTURE_TRADE_EMBARGO_MS,
@@ -1340,32 +1340,7 @@ def _purged_tuning_subsplit(
 
 
 def _backend_parameters(compute_backend: str, seed: int) -> tuple[dict[str, object], str, str]:
-    backend = resolve_backend(compute_backend)
-    use_gpu = backend.kind != "cpu"
-    parameters: dict[str, object] = {
-        "verbosity": -1,
-        "seed": seed,
-        "feature_fraction_seed": seed + 1,
-        "bagging_seed": seed + 2,
-        "data_random_seed": seed + 3,
-        "num_threads": max(1, min(16, os.cpu_count() or 1)),
-        "device_type": "gpu" if use_gpu else "cpu",
-    }
-    if not use_gpu:
-        return parameters, "cpu", "cpu"
-    try:
-        platform_id = int(os.getenv("SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID", "0"))
-        device_id = int(os.getenv("SIMPLE_AI_TRADING_OPENCL_DEVICE_ID", "0"))
-    except ValueError as exc:
-        raise ValueError("invalid OpenCL platform or device id") from exc
-    parameters.update(
-        {
-            "gpu_platform_id": platform_id,
-            "gpu_device_id": device_id,
-            "gpu_use_dp": False,
-        }
-    )
-    return parameters, "opencl", f"opencl:{platform_id}:{device_id}"
+    return lightgbm_backend_parameters(compute_backend, seed)
 
 
 def _risk_parameters(risk_level: str, train_rows: int) -> dict[str, object]:

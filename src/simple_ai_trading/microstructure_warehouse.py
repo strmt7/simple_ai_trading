@@ -26,7 +26,7 @@ from .assets import is_supported_major_symbol, normalize_symbol
 from .binance_archive import archive_file_url
 
 
-TICK_WAREHOUSE_SCHEMA_VERSION = "binance-usdm-tick-v5"
+TICK_WAREHOUSE_SCHEMA_VERSION = "binance-usdm-tick-v6"
 BOOK_TICKER_FEATURE_BUILD_VERSION = "book-ticker-event-time-v1"
 SUPPORTED_TICK_ARCHIVES = frozenset({"bookTicker", "trades", "bookDepth"})
 _CHECKSUM_PATTERN = re.compile(r"\b([0-9a-fA-F]{64})\b")
@@ -662,7 +662,7 @@ class MicrostructureWarehouse:
                     (bid_depth_5 - ask_depth_5)
                         / nullif(bid_depth_5 + ask_depth_5, 0) AS depth_imbalance_5
                 FROM pivoted
-                WHERE band_count = 12;
+                WHERE band_count IN (10, 12);
             CREATE OR REPLACE VIEW current_book_ticker_1s AS
                 SELECT
                     q.symbol, q.second_ms, q.open_mid, q.high_mid, q.low_mid,
@@ -2048,13 +2048,26 @@ class MicrostructureWarehouse:
         if row is None:
             raise ValueError("bookDepth validation returned no result")
         rows_read, first_ms, last_ms, invalid, duplicates = (int(value or 0) for value in row)
-        expected_groups = int(
-            conn.execute(
-                "SELECT count(*) FROM ("
-                "SELECT timestamp_ms FROM stage_book_depth "
-                "GROUP BY timestamp_ms HAVING count(*) <> 12)"
-            ).fetchone()[0]
-        )
+        group_row = conn.execute(
+            """
+            WITH grouped AS (
+                SELECT timestamp_ms, count(*) AS band_count,
+                       count(*) FILTER (WHERE abs(percentage) = 0.20) AS fine_band_count
+                FROM stage_book_depth
+                GROUP BY timestamp_ms
+            )
+            SELECT count(*) FILTER (
+                       WHERE band_count NOT IN (10, 12)
+                          OR (band_count = 10 AND fine_band_count <> 0)
+                          OR (band_count = 12 AND fine_band_count <> 2)
+                   ),
+                   count(*)
+            FROM grouped
+            """
+        ).fetchone()
+        if group_row is None:
+            raise ValueError("bookDepth group validation returned no result")
+        expected_groups, derived_rows = (int(value or 0) for value in group_row)
         if rows_read <= 0 or invalid or duplicates or expected_groups:
             raise ValueError(
                 "bookDepth validation failed: "
@@ -2071,7 +2084,7 @@ class MicrostructureWarehouse:
             )
         return {
             "rows_read": rows_read,
-            "derived_rows": rows_read // 12,
+            "derived_rows": derived_rows,
             "first_exchange_time_ms": first_ms,
             "last_exchange_time_ms": last_ms,
             "invalid_rows": invalid,

@@ -230,6 +230,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "https://research.google/blog/a-decoder-only-foundation-model-for-time-series-forecasting/",
             "https://arxiv.org/abs/2310.10688",
             "https://arxiv.org/abs/2402.02592",
+            "https://arxiv.org/abs/2510.13654",
         ),
     ),
     ModelFamilyBlueprint(
@@ -297,6 +298,10 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "checksummed official trade/depth manifests",
             "causal as-of depth join with age mask",
             "purged train/tune/calibration/evaluation split",
+            "predictor profile selected independently from execution risk tolerance",
+            "ordered core/tape-derived/full feature ablations",
+            "timestamp-defined multi-year rolling folds with non-overlapping evaluations",
+            "exact serialized-model replay against hash-bound float64 targets",
             "direction and regression baselines",
             "exact BBO or live shadow required for any execution claim",
         ),
@@ -324,6 +329,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "https://arxiv.org/abs/1808.03668",
             "https://arxiv.org/abs/2405.18938",
             "https://arxiv.org/html/2403.09267v1",
+            "https://arxiv.org/abs/2511.12563",
             (
                 "https://developers.binance.com/docs/derivatives/usds-margined-futures/"
                 "websocket-market-streams/How-to-manage-a-local-order-book-correctly"
@@ -369,6 +375,8 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         ),
         sources=(
             "https://arxiv.org/abs/2503.16252",
+            "https://arxiv.org/abs/2508.00828",
+            "https://arxiv.org/abs/2510.11695",
             "https://huggingface.co/SUFE-AIFLM-Lab/Fin-R1",
             "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/",
             "https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows",
@@ -645,6 +653,17 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         usage_policy="Use for LOB tensor architecture inspiration after L2 depth storage exists.",
     ),
     ResearchSourceBlueprint(
+        source_id="lobert",
+        label="LOBERT message-level LOB foundation model",
+        url="https://arxiv.org/abs/2511.12563",
+        source_type="primary_research",
+        applied_to=("deep_lob_microstructure",),
+        usage_policy=(
+            "Evaluate message tokenization only after synchronized L2 messages exist; "
+            "coarse percentage bands are not a substitute for the paper's input."
+        ),
+    ),
+    ResearchSourceBlueprint(
         source_id="hlob",
         label="HLOB order-book structure model",
         url="https://arxiv.org/abs/2405.18938",
@@ -672,6 +691,39 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         usage_policy=(
             "Use for cross-asset dynamic graph inspiration; output remains a "
             "logged feature until ablation passes."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="tsfm_benchmark_integrity",
+        label="Time-series foundation-model benchmark integrity requirements",
+        url="https://arxiv.org/abs/2510.13654",
+        source_type="primary_research",
+        applied_to=("foundation_forecaster",),
+        usage_policy=(
+            "Treat obscure or overlapping pretraining corpora as contamination risk; "
+            "require post-cutoff and genuinely future rolling evaluation."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="finance_agent_benchmark",
+        label="Finance Agent Benchmark",
+        url="https://arxiv.org/abs/2508.00828",
+        source_type="primary_research",
+        applied_to=("ai_risk_reviewer", "ai_uplift_gate"),
+        usage_policy=(
+            "Use as evidence that finance-agent reasoning remains fallible; "
+            "LLM output stays schema-constrained and veto/advisory only."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="agent_market_arena",
+        label="Agent Market Arena live multi-market benchmark",
+        url="https://arxiv.org/abs/2510.11695",
+        source_type="primary_research",
+        applied_to=("ai_risk_reviewer", "rl_meta_controller"),
+        usage_policy=(
+            "Test coordinator, memory, and risk-style ablations independently from "
+            "the LLM backbone; no direct order authority."
         ),
     ),
     ResearchSourceBlueprint(

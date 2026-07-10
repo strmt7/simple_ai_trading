@@ -13,6 +13,8 @@ from simple_ai_trading.tape_depth_features import (
     TAPE_DEPTH_FEATURE_NAMES,
     TAPE_DEPTH_TARGET_MODE,
     build_tape_depth_forecast_dataset,
+    slice_tape_depth_forecast_dataset,
+    tape_depth_source_evidence,
 )
 
 
@@ -72,12 +74,14 @@ def _warehouse_fixture(tmp_path) -> tuple[MicrostructureWarehouse, int, int]:
         archive_id="trades",
         data_type="trades",
         rows=seconds,
-        derived_rows=seconds,
+        derived_rows=seconds - 1,
         first_ms=base_ms,
         last_ms=base_ms + (seconds - 1) * 1_000,
     )
     trade_rows = []
     for index in range(seconds):
+        if index == 974:
+            continue
         price = 100.0 + index * 0.002 + 0.02 * math.sin(index / 10.0)
         buy = 6.0 + 0.5 * math.sin(index / 7.0)
         sell = 4.0 + 0.5 * math.cos(index / 9.0)
@@ -167,6 +171,21 @@ def test_tape_depth_dataset_is_causal_bounded_and_has_no_execution_claim(tmp_pat
     ]
     assert np.any(depth_available == 0.0)
     assert np.any(depth_available == 1.0)
+    trade_observed = dataset.features[
+        :, TAPE_DEPTH_FEATURE_NAMES.index("trade_observed")
+    ]
+    trade_age = dataset.features[:, TAPE_DEPTH_FEATURE_NAMES.index("trade_age_seconds")]
+    assert np.count_nonzero(trade_observed == 0.0) == 1
+    assert np.max(trade_age) == 1.0
+    for window in (60, 300, 900):
+        efficiency = dataset.features[
+            :, TAPE_DEPTH_FEATURE_NAMES.index(f"price_efficiency_{window}")
+        ]
+        observation_rate = dataset.features[
+            :, TAPE_DEPTH_FEATURE_NAMES.index(f"trade_observation_rate_{window}")
+        ]
+        assert np.all((efficiency >= 0.0) & (efficiency <= 1.0 + 1e-6))
+        assert np.all((observation_rate >= 0.0) & (observation_rate <= 1.0))
     first_depth = dataset.features[
         0, TAPE_DEPTH_FEATURE_NAMES.index("depth_imbalance_0_2")
     ]
@@ -190,3 +209,49 @@ def test_tape_depth_dataset_blocks_unbounded_memory_request(tmp_path) -> None:
             )
     finally:
         warehouse.close()
+
+
+def test_tape_depth_source_evidence_rejects_a_missing_trade_archive_day(tmp_path) -> None:
+    warehouse, base_ms, _seconds = _warehouse_fixture(tmp_path)
+    try:
+        with pytest.raises(ValueError, match="missing day"):
+            tape_depth_source_evidence(
+                warehouse,
+                "BTCUSDT",
+                required_start_ms=base_ms,
+                required_end_ms=base_ms + 86_400_000,
+            )
+    finally:
+        warehouse.close()
+
+
+def test_tape_depth_slice_reuses_causal_matrix_with_new_source_binding(tmp_path) -> None:
+    warehouse, base_ms, _seconds = _warehouse_fixture(tmp_path)
+    try:
+        dataset = build_tape_depth_forecast_dataset(
+            warehouse,
+            symbol="BTCUSDT",
+            start_ms=base_ms + 901_000,
+            end_ms=base_ms + 1_000_000,
+            horizon_seconds=5,
+            total_latency_ms=750,
+            decision_cadence_seconds=5,
+            maximum_rows=100,
+        )
+    finally:
+        warehouse.close()
+    evidence = {**dataset.source_evidence, "manifest_fingerprint": "c" * 64}
+
+    sliced = slice_tape_depth_forecast_dataset(
+        dataset,
+        start_ms=int(dataset.decision_time_ms[5]),
+        end_ms=int(dataset.decision_time_ms[14]),
+        source_evidence=evidence,
+    )
+
+    assert sliced.rows == 10
+    assert np.shares_memory(sliced.features, dataset.features)
+    assert sliced.source_evidence["manifest_fingerprint"] == "c" * 64
+    assert sliced.summary()["dataset_fingerprint"] != dataset.summary()[
+        "dataset_fingerprint"
+    ]

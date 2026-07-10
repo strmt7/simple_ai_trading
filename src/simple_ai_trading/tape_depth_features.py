@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 import hashlib
 import json
 import math
@@ -17,13 +18,18 @@ from .microstructure_warehouse import (
 )
 
 
-TAPE_DEPTH_FEATURE_VERSION = "tape-depth-causal-v1"
+TAPE_DEPTH_FEATURE_VERSION = "tape-depth-causal-v3"
 TAPE_DEPTH_TARGET_MODE = "gross_trade_reference_close_no_execution_claim"
 
 _RETURN_WINDOWS = (1, 5, 15, 30, 60, 120, 300, 900)
 _VOLATILITY_WINDOWS = (10, 30, 60, 120, 300, 900)
 _RANGE_WINDOWS = (5, 15, 30, 60, 300, 900)
 _FLOW_WINDOWS = (1, 5, 15, 60, 300)
+_VWAP_WINDOWS = (15, 60, 300, 900)
+_EFFICIENCY_WINDOWS = (60, 300, 900)
+_OBSERVATION_WINDOWS = (60, 300, 900)
+_ACCELERATION_WINDOWS = ((5, 60), (15, 300))
+_ALIGNMENT_WINDOWS = (15, 60, 300)
 _DEPTH_FEATURE_NAMES = (
     "depth_imbalance_0_2",
     "depth_imbalance_1",
@@ -41,7 +47,22 @@ TAPE_DEPTH_FEATURE_NAMES = (
     *(f"log_quote_volume_{window}" for window in _FLOW_WINDOWS),
     *(f"aggressor_imbalance_{window}" for window in _FLOW_WINDOWS),
     *(f"log_trade_count_{window}" for window in _FLOW_WINDOWS),
+    *(f"vwap_deviation_bps_{window}" for window in _VWAP_WINDOWS),
+    *(f"price_efficiency_{window}" for window in _EFFICIENCY_WINDOWS),
+    *(f"trade_observation_rate_{window}" for window in _OBSERVATION_WINDOWS),
+    *(
+        f"quote_volume_rate_acceleration_{short}_{long}"
+        for short, long in _ACCELERATION_WINDOWS
+    ),
+    *(
+        f"trade_rate_acceleration_{short}_{long}"
+        for short, long in _ACCELERATION_WINDOWS
+    ),
+    *(f"flow_price_alignment_{window}" for window in _ALIGNMENT_WINDOWS),
+    "trade_observed",
+    "trade_age_seconds",
     "depth_available",
+    "fine_depth_0_2_available",
     "depth_age_seconds",
     *_DEPTH_FEATURE_NAMES,
     "utc_time_sin",
@@ -80,6 +101,12 @@ class TapeDepthForecastDataset:
             if self.rows
             else 0.0
         )
+        fine_depth_index = self.feature_names.index("fine_depth_0_2_available")
+        fine_depth_ratio = (
+            float(np.mean(self.features[:, fine_depth_index] > 0.5))
+            if self.rows
+            else 0.0
+        )
         effective_entry_delay_ms = (
             int(self.target_entry_time_ms[0] - self.decision_time_ms[0])
             if self.rows
@@ -110,19 +137,67 @@ class TapeDepthForecastDataset:
                 int(self.decision_time_ms[-1]) if self.rows else None
             ),
             "depth_available_ratio": depth_ratio,
+            "fine_depth_0_2_available_ratio": fine_depth_ratio,
             "gross_return_mean_bps": (
                 float(np.mean(self.gross_return_bps)) if self.rows else None
             ),
             "gross_return_std_bps": (
                 float(np.std(self.gross_return_bps)) if self.rows else None
             ),
+            "dataset_fingerprint": tape_depth_dataset_fingerprint(self),
             "source_evidence": dict(self.source_evidence),
         }
 
 
-def _manifest_source_evidence(
+def tape_depth_dataset_fingerprint(dataset: TapeDepthForecastDataset) -> str:
+    """Hash the exact causal matrix, labels, timing, and source evidence."""
+
+    contract = {
+        "symbol": dataset.symbol,
+        "feature_version": dataset.feature_version,
+        "feature_names": list(dataset.feature_names),
+        "target_mode": dataset.target_mode,
+        "horizon_seconds": int(dataset.horizon_seconds),
+        "total_latency_ms": int(dataset.total_latency_ms),
+        "decision_cadence_seconds": int(dataset.decision_cadence_seconds),
+        "maximum_depth_age_ms": int(dataset.maximum_depth_age_ms),
+        "source_evidence": dict(dataset.source_evidence),
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            contract,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    )
+    arrays = (
+        ("decision_time_ms", dataset.decision_time_ms, "<i8"),
+        ("target_entry_time_ms", dataset.target_entry_time_ms, "<i8"),
+        ("target_exit_time_ms", dataset.target_exit_time_ms, "<i8"),
+        ("target_entry_price", dataset.target_entry_price, "<f8"),
+        ("target_exit_price", dataset.target_exit_price, "<f8"),
+        ("gross_return_bps", dataset.gross_return_bps, "<f8"),
+        ("features", dataset.features, "<f4"),
+    )
+    for name, values, dtype in arrays:
+        canonical = np.ascontiguousarray(np.asarray(values, dtype=dtype))
+        if np.issubdtype(canonical.dtype, np.floating) and np.any(np.isnan(canonical)):
+            canonical = canonical.copy()
+            canonical[np.isnan(canonical)] = np.nan
+        digest.update(name.encode("ascii") + b"\x00")
+        digest.update(np.asarray(canonical.shape, dtype="<i8").tobytes())
+        digest.update(canonical.tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def tape_depth_source_evidence(
     warehouse: MicrostructureWarehouse,
     symbol: str,
+    *,
+    required_start_ms: int,
+    required_end_ms: int,
 ) -> dict[str, object]:
     rows = warehouse.connect().execute(
         """
@@ -137,8 +212,10 @@ def _manifest_source_evidence(
         """,
         [symbol],
     ).fetchall()
-    if not rows:
-        raise ValueError(f"no complete trade/depth manifests exist for {symbol}")
+    start_date = datetime.fromtimestamp(required_start_ms / 1_000, tz=UTC).date()
+    end_date = datetime.fromtimestamp(required_end_ms / 1_000, tz=UTC).date()
+    if start_date > end_date:
+        raise ValueError("manifest evidence interval is empty")
     by_type: dict[str, list[dict[str, object]]] = {"trades": [], "bookDepth": []}
     for row in rows:
         (
@@ -156,6 +233,12 @@ def _manifest_source_evidence(
             duplicate_ids,
             out_of_order_rows,
         ) = row
+        try:
+            period_date = datetime.strptime(str(period), "%Y-%m-%d").date()
+        except ValueError as exc:
+            raise ValueError(f"manifest period is invalid: {archive_id}") from exc
+        if period_date < start_date or period_date > end_date:
+            continue
         source_hash = str(source_sha256).lower()
         expected_hash = str(expected_sha256).lower()
         if (
@@ -187,8 +270,30 @@ def _manifest_source_evidence(
         )
     if not by_type["trades"]:
         raise ValueError(f"no verified trade manifests exist for {symbol}")
-    if not by_type["bookDepth"]:
-        raise ValueError(f"no verified bookDepth manifests exist for {symbol}")
+    required_trade_periods: set[str] = set()
+    cursor = start_date
+    while cursor <= end_date:
+        required_trade_periods.add(cursor.isoformat())
+        cursor += timedelta(days=1)
+    actual_trade_periods = {str(item["period"]) for item in by_type["trades"]}
+    missing_trade_periods = sorted(required_trade_periods - actual_trade_periods)
+    if missing_trade_periods:
+        preview = ",".join(missing_trade_periods[:3])
+        raise ValueError(
+            f"{symbol} trade manifest coverage has {len(missing_trade_periods)} "
+            f"missing day(s), beginning {preview}"
+        )
+    if by_type["bookDepth"]:
+        depth_periods = {str(item["period"]) for item in by_type["bookDepth"]}
+        depth_cursor = datetime.strptime(min(depth_periods), "%Y-%m-%d").date()
+        depth_end = datetime.strptime(max(depth_periods), "%Y-%m-%d").date()
+        while depth_cursor <= depth_end:
+            if depth_cursor.isoformat() not in depth_periods:
+                raise ValueError(
+                    f"{symbol} bookDepth manifest coverage is missing "
+                    f"{depth_cursor.isoformat()}"
+                )
+            depth_cursor += timedelta(days=1)
     canonical = json.dumps(
         by_type,
         ensure_ascii=True,
@@ -199,6 +304,16 @@ def _manifest_source_evidence(
 
     def coverage(data_type: str) -> dict[str, object]:
         values = by_type[data_type]
+        if not values:
+            return {
+                "archive_count": 0,
+                "first_period": None,
+                "last_period": None,
+                "raw_rows": 0,
+                "derived_rows": 0,
+                "first_exchange_time_ms": None,
+                "last_exchange_time_ms": None,
+            }
         return {
             "archive_count": len(values),
             "first_period": min(str(item["period"]) for item in values),
@@ -217,6 +332,8 @@ def _manifest_source_evidence(
         "schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
         "symbol": symbol,
         "truth_basis": "checksummed_official_binance_data_vision_archives",
+        "required_first_period": start_date.isoformat(),
+        "required_last_period": end_date.isoformat(),
         "manifest_fingerprint": hashlib.sha256(canonical).hexdigest(),
         "trades": coverage("trades"),
         "book_depth": coverage("bookDepth"),
@@ -258,18 +375,73 @@ def _feature_sql(maximum_depth_age_ms: int) -> list[str]:
         )
         volume = _window_sql("sum", "base_volume", window)
         output.append(
-            f"{signed} / nullif({volume}, 0.0) AS aggressor_imbalance_{window}"
+            f"coalesce({signed} / nullif({volume}, 0.0), 0.0) "
+            f"AS aggressor_imbalance_{window}"
         )
     for window in _FLOW_WINDOWS:
         trades = _window_sql("sum", "trade_count", window)
         output.append(f"ln(1.0 + {trades}) AS log_trade_count_{window}")
+    for window in _VWAP_WINDOWS:
+        quote_volume = _window_sql("sum", "quote_volume", window)
+        base_volume = _window_sql("sum", "base_volume", window)
+        output.append(
+            f"coalesce((close / ({quote_volume} / nullif({base_volume}, 0.0)) "
+            f"- 1.0) * 10000.0, 0.0) AS vwap_deviation_bps_{window}"
+        )
+    for window in _EFFICIENCY_WINDOWS:
+        absolute_path = _window_sql("sum", "abs(log_return_1)", window)
+        output.append(
+            f"coalesce(abs(ln(close / lag(close, {window}) OVER ordered)) "
+            f"/ nullif({absolute_path}, 0.0), 0.0) AS price_efficiency_{window}"
+        )
+    for window in _OBSERVATION_WINDOWS:
+        observed = _window_sql(
+            "avg",
+            "CASE WHEN trade_second_ms = second_ms THEN 1.0 ELSE 0.0 END",
+            window,
+        )
+        output.append(f"{observed} AS trade_observation_rate_{window}")
+    for short, long in _ACCELERATION_WINDOWS:
+        short_volume = _window_sql("sum", "quote_volume", short)
+        long_volume = _window_sql("sum", "quote_volume", long)
+        output.append(
+            f"ln((1e-9 + {short_volume} / {short}.0) / "
+            f"(1e-9 + {long_volume} / {long}.0)) "
+            f"AS quote_volume_rate_acceleration_{short}_{long}"
+        )
+    for short, long in _ACCELERATION_WINDOWS:
+        short_trades = _window_sql("sum", "trade_count", short)
+        long_trades = _window_sql("sum", "trade_count", long)
+        output.append(
+            f"ln((1e-9 + {short_trades} / {short}.0) / "
+            f"(1e-9 + {long_trades} / {long}.0)) "
+            f"AS trade_rate_acceleration_{short}_{long}"
+        )
+    for window in _ALIGNMENT_WINDOWS:
+        signed = _window_sql(
+            "sum",
+            "aggressive_buy_volume - aggressive_sell_volume",
+            window,
+        )
+        volume = _window_sql("sum", "base_volume", window)
+        output.append(
+            f"coalesce({signed} / nullif({volume}, 0.0), 0.0) "
+            f"* (close / lag(close, {window}) OVER ordered - 1.0) * 10000.0 "
+            f"AS flow_price_alignment_{window}"
+        )
     depth_available = (
         f"depth_time_ms IS NOT NULL AND depth_age_ms BETWEEN 0 AND "
         f"{maximum_depth_age_ms}"
     )
     output.extend(
         [
+            "CASE WHEN trade_second_ms = second_ms THEN 1.0 ELSE 0.0 END "
+            "AS trade_observed",
+            "(second_ms - trade_second_ms) / 1000.0 AS trade_age_seconds",
             f"CASE WHEN {depth_available} THEN 1.0 ELSE 0.0 END AS depth_available",
+            f"CASE WHEN {depth_available} AND bid_notional_0_2 IS NOT NULL "
+            "AND ask_notional_0_2 IS NOT NULL THEN 1.0 ELSE 0.0 END "
+            "AS fine_depth_0_2_available",
             f"CASE WHEN {depth_available} THEN depth_age_ms / 1000.0 END "
             "AS depth_age_seconds",
             *(
@@ -344,7 +516,6 @@ def build_tape_depth_forecast_dataset(
         raise ValueError("maximum_depth_age_ms must lie in [1000, 300000]")
     if row_limit < 1:
         raise ValueError("maximum_rows must be positive")
-    source_evidence = _manifest_source_evidence(warehouse, normalized_symbol)
     available = warehouse.connect().execute(
         "SELECT min(second_ms), max(second_ms) FROM current_trade_1s WHERE symbol = ?",
         [normalized_symbol],
@@ -369,14 +540,88 @@ def build_tape_depth_forecast_dataset(
         )
     source_start = requested_start - 1_000 - 900_000
     source_end = requested_end - 1_000 + target_offset_seconds * 1_000
+    prior_row = warehouse.connect().execute(
+        "SELECT max(second_ms) FROM current_trade_1s "
+        "WHERE symbol = ? AND second_ms <= ?",
+        [normalized_symbol, source_start],
+    ).fetchone()
+    if prior_row is None or prior_row[0] is None:
+        raise ValueError("tape/depth interval has no prior verified trade reference")
+    evidence_start = min(source_start, int(prior_row[0]))
+    source_evidence = tape_depth_source_evidence(
+        warehouse,
+        normalized_symbol,
+        required_start_ms=evidence_start,
+        required_end_ms=source_end,
+    )
     features = _feature_sql(depth_age)
     select_features = ",\n                ".join(features)
     projected_features = ", ".join(TAPE_DEPTH_FEATURE_NAMES)
     query = f"""
-        WITH source AS (
-            SELECT *
-            FROM current_trade_depth_1s
+        WITH clock AS (
+            SELECT ?::VARCHAR AS symbol, value AS second_ms
+            FROM generate_series(?::BIGINT, ?::BIGINT, 1000) AS generated(value)
+        ), trades_in_window AS (
+            SELECT
+                symbol,
+                second_ms AS trade_second_ms,
+                open, high, low, close,
+                    base_volume, quote_volume,
+                    aggressive_buy_volume, aggressive_sell_volume,
+                    trade_imbalance AS aggressor_imbalance, trade_count
+            FROM current_trade_1s
             WHERE symbol = ? AND second_ms BETWEEN ? AND ?
+        ), prior_trade AS (
+            SELECT
+                symbol,
+                second_ms AS trade_second_ms,
+                open, high, low, close,
+                base_volume, quote_volume,
+                aggressive_buy_volume, aggressive_sell_volume,
+                trade_imbalance AS aggressor_imbalance, trade_count
+            FROM current_trade_1s
+            WHERE symbol = ? AND second_ms < ?
+            ORDER BY second_ms DESC
+            LIMIT 1
+        ), trades AS (
+            SELECT * FROM prior_trade
+            UNION ALL
+            SELECT * FROM trades_in_window
+        ), continuous AS (
+            SELECT
+                c.symbol,
+                c.second_ms,
+                t.trade_second_ms,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.open ELSE t.close END AS open,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.high ELSE t.close END AS high,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.low ELSE t.close END AS low,
+                t.close,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.base_volume ELSE 0.0 END AS base_volume,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.quote_volume ELSE 0.0 END AS quote_volume,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.aggressive_buy_volume ELSE 0.0 END AS aggressive_buy_volume,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.aggressive_sell_volume ELSE 0.0 END AS aggressive_sell_volume,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.aggressor_imbalance ELSE 0.0 END AS aggressor_imbalance,
+                CASE WHEN t.trade_second_ms = c.second_ms THEN t.trade_count ELSE 0 END AS trade_count
+            FROM clock c
+            ASOF LEFT JOIN trades t
+              ON c.symbol = t.symbol AND c.second_ms >= t.trade_second_ms
+        ), source AS (
+            SELECT
+                t.*,
+                d.timestamp_ms AS depth_time_ms,
+                t.second_ms - d.timestamp_ms AS depth_age_ms,
+                d.bid_depth_0_2, d.ask_depth_0_2,
+                d.bid_notional_0_2, d.ask_notional_0_2,
+                d.bid_depth_1, d.ask_depth_1,
+                d.bid_notional_1, d.ask_notional_1,
+                d.bid_depth_5, d.ask_depth_5,
+                d.bid_notional_5, d.ask_notional_5,
+                d.depth_imbalance_0_2,
+                d.depth_imbalance_1,
+                d.depth_imbalance_5
+            FROM continuous t
+            ASOF LEFT JOIN current_book_depth_snapshots d
+              ON t.symbol = d.symbol AND t.second_ms >= d.timestamp_ms
         ), base AS (
             SELECT *,
                    ln(close / lag(close, 1) OVER ordered) AS log_return_1,
@@ -415,6 +660,11 @@ def build_tape_depth_forecast_dataset(
             normalized_symbol,
             source_start,
             source_end,
+            normalized_symbol,
+            source_start,
+            source_end,
+            normalized_symbol,
+            source_start,
             requested_start,
             requested_end,
         ],
@@ -473,10 +723,59 @@ def build_tape_depth_forecast_dataset(
     )
 
 
+def slice_tape_depth_forecast_dataset(
+    dataset: TapeDepthForecastDataset,
+    *,
+    start_ms: int,
+    end_ms: int,
+    source_evidence: Mapping[str, object],
+) -> TapeDepthForecastDataset:
+    """Create a contiguous fold view from a larger causal feature build."""
+
+    start = int(start_ms)
+    end = int(end_ms)
+    if start > end:
+        raise ValueError("tape/depth slice interval is empty")
+    left = int(np.searchsorted(dataset.decision_time_ms, start, side="left"))
+    right = int(np.searchsorted(dataset.decision_time_ms, end, side="right"))
+    if (
+        left >= right
+        or left < 0
+        or right > dataset.rows
+        or int(dataset.decision_time_ms[left]) != start
+        or int(dataset.decision_time_ms[right - 1]) != end
+    ):
+        raise ValueError("tape/depth slice boundaries are absent from the feature build")
+    if not bool(source_evidence.get("verified")):
+        raise ValueError("tape/depth slice source evidence is not verified")
+    values = slice(left, right)
+    return TapeDepthForecastDataset(
+        symbol=dataset.symbol,
+        feature_version=dataset.feature_version,
+        feature_names=dataset.feature_names,
+        target_mode=dataset.target_mode,
+        horizon_seconds=dataset.horizon_seconds,
+        total_latency_ms=dataset.total_latency_ms,
+        decision_cadence_seconds=dataset.decision_cadence_seconds,
+        maximum_depth_age_ms=dataset.maximum_depth_age_ms,
+        decision_time_ms=dataset.decision_time_ms[values],
+        target_entry_time_ms=dataset.target_entry_time_ms[values],
+        target_exit_time_ms=dataset.target_exit_time_ms[values],
+        target_entry_price=dataset.target_entry_price[values],
+        target_exit_price=dataset.target_exit_price[values],
+        gross_return_bps=dataset.gross_return_bps[values],
+        features=dataset.features[values],
+        source_evidence=dict(source_evidence),
+    )
+
+
 __all__ = [
     "TAPE_DEPTH_FEATURE_NAMES",
     "TAPE_DEPTH_FEATURE_VERSION",
     "TAPE_DEPTH_TARGET_MODE",
     "TapeDepthForecastDataset",
     "build_tape_depth_forecast_dataset",
+    "slice_tape_depth_forecast_dataset",
+    "tape_depth_dataset_fingerprint",
+    "tape_depth_source_evidence",
 ]
