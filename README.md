@@ -206,6 +206,14 @@ not an executable fill or after-cost PnL. The artifact is therefore restricted t
 the long-history forecasting lane; the shorter exact-BBO lifecycle and current
 no-order shadow remain mandatory before any execution claim.
 
+The v5 forecast contract eliminates test-distribution tuning: return-magnitude
+sample weights use a scale learned only from exact float64 training targets,
+and the action-magnitude threshold is frozen from calibration predictions.
+Evaluation data cannot change either value. Both are serialized and recomputed
+during replay, and the threshold is embedded in every compressed prediction
+row. Consequently, an evaluation fold may emit zero qualifying forecasts; the
+software does not force an ex-post 10% activity rate.
+
 `tape-depth-prequential` is the multi-year rolling evidence path. Its default
 fold has 730 calendar days of training, separate 30-day tuning and calibration
 periods, and a non-overlapping 90-day screening evaluation period. Decisions are

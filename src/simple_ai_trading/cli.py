@@ -6526,7 +6526,8 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
             f"profile={artifact.model_profile} "
             f"auc={metrics.direction_auc:.6f} "
             f"spearman_ic={metrics.spearman_information_coefficient:+.6f} "
-            f"top_decile_gross_bps={metrics.top_decile_signed_gross_bps:+.4f} "
+            "calibration_threshold_gross_bps="
+            f"{metrics.calibration_threshold_signed_gross_bps:+.4f} "
             "trading_authority=false execution_claim=false"
         )
         if artifact.rejection_reasons:

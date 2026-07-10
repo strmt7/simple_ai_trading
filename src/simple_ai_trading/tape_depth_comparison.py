@@ -44,7 +44,7 @@ _SELECTION_METRIC_NAMES = (
     "brier_improvement_ratio",
     "mae_improvement_ratio",
     "spearman_information_coefficient",
-    "top_decile_mean_signed_gross_bps",
+    "calibration_threshold_mean_signed_gross_bps",
     "positive_ic_fold_rate",
     "positive_gross_fold_rate",
 )
@@ -286,15 +286,15 @@ def _segment_metrics(folds: Sequence[Mapping[str, object]]) -> dict[str, object]
     mae = weighted("mean_absolute_error_bps")
     zero_mae = weighted("zero_baseline_mae_bps")
     information_coefficient = weighted("spearman_information_coefficient")
-    top_decile_gross = weighted("top_decile_mean_signed_gross_bps")
+    threshold_gross = weighted("calibration_threshold_mean_signed_gross_bps")
     ic_values = [
         _finite(dict(fold["metrics"])["spearman_information_coefficient"], "ic")
         for fold in folds
     ]
     gross_values = [
         _finite(
-            dict(fold["metrics"])["top_decile_mean_signed_gross_bps"],
-            "top_decile_gross",
+            dict(fold["metrics"])["calibration_threshold_mean_signed_gross_bps"],
+            "calibration_threshold_gross",
         )
         for fold in folds
     ]
@@ -307,7 +307,7 @@ def _segment_metrics(folds: Sequence[Mapping[str, object]]) -> dict[str, object]
         / max(prevalence_brier, 1e-12),
         "mae_improvement_ratio": (zero_mae - mae) / max(zero_mae, 1e-12),
         "spearman_information_coefficient": information_coefficient,
-        "top_decile_mean_signed_gross_bps": top_decile_gross,
+        "calibration_threshold_mean_signed_gross_bps": threshold_gross,
         "positive_ic_fold_rate": sum(value > 0.0 for value in ic_values)
         / len(ic_values),
         "positive_gross_fold_rate": sum(value > 0.0 for value in gross_values)
@@ -334,8 +334,8 @@ def _passes_segment(metrics: Mapping[str, object]) -> tuple[bool, tuple[str, ...
             metrics["spearman_information_coefficient"], "ic"
         )
         > 0.0,
-        "top_decile_gross_not_positive": _finite(
-            metrics["top_decile_mean_signed_gross_bps"], "gross"
+        "calibration_threshold_gross_not_positive": _finite(
+            metrics["calibration_threshold_mean_signed_gross_bps"], "gross"
         )
         > 0.0,
         "positive_ic_fold_rate_below_half": _finite(

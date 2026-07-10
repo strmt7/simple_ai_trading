@@ -56,7 +56,7 @@ def _metrics(edge: float) -> dict[str, object]:
         "mean_absolute_error_bps": 4.0 - edge * 10.0,
         "zero_baseline_mae_bps": 4.0,
         "spearman_information_coefficient": edge,
-        "top_decile_mean_signed_gross_bps": edge * 20.0,
+        "calibration_threshold_mean_signed_gross_bps": edge * 20.0,
     }
 
 
