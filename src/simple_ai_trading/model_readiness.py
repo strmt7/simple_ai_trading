@@ -8,11 +8,12 @@ from pathlib import Path
 from typing import Mapping
 
 from .financial_sanity import build_model_financial_sanity_report
+from .microstructure_data import MICROSTRUCTURE_SCHEMA_VERSION
 from .model import ModelLoadError, TrainedModel, load_model
 
 _ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
 _LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
-_MICROSTRUCTURE_SCHEMA = "binance-usdm-l2-v2"
+_MICROSTRUCTURE_SCHEMA = MICROSTRUCTURE_SCHEMA_VERSION
 
 
 @dataclass(frozen=True)

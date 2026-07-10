@@ -136,6 +136,7 @@ simple-ai-trading data-health --interval 1s --market spot --min-rows 1000000 --r
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
 simple-ai-trading microstructure-prequential --input data/microstructure-model.json
 simple-ai-trading microstructure-promote --input data/microstructure-model.json
+simple-ai-trading microstructure-shadow --input data/microstructure-model.json
 python tools\optimization_round.py --round-id round-004 --market spot --symbols ETHUSDT --interval 1s --require-prefilled-data --min-data-rows 70000 --require-verified-checksum
 python tools\optimization_round.py --round-id round-btc-eth-sol-futures-1s --market futures --quote-asset USDT --objective conservative --promotion-grade --min-promotion-data-years 2 --require-gpu
 simple-ai-trading model-blueprint --risk-level conservative
@@ -154,17 +155,24 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
 
-The separate `microstructure-action-value-v12` path uses real Binance USD-M
+The separate `microstructure-action-value-v13` path uses real Binance USD-M
 book-ticker and trade archives to build causal one-second L1/tape features. Its
 promotion lifecycle is deliberately staged: candidate training, complete
 rolling-refit prequential evidence with the terminal period sealed, hash and
 row-level evidence verification, one-use terminal reservation, locked
-rolling-refit terminal validation, then an expiring deployment refit. The former
+rolling-refit terminal validation, an expiring deployment refit, then a locked
+six-hour no-order public-feed shadow. Shadow signals wait for the full modeled
+latency before virtual entry, recheck top-of-book participation, apply actual
+bid/ask and fee/trigger costs, censor only the planned capture tail, and reject
+any feed gap, feature reset, deadline miss, inference failure, stale pending
+entry, forced close, or order submission. Capture schema
+`binance-usdm-l2-v3` hashes the original stream, synchronized stream, REST
+snapshot, manifest, shadow trades, and report. The former
 `microstructure-train --evaluate-terminal` shortcut is disabled. Terminal,
-refit, and accepted-runtime loaders independently reject missing or drifted
-prequential evidence. No v12 artifact is currently accepted or claimed
-profitable, and mandatory exchange no-order shadow calibration remains
-incomplete; see
+refit, shadow, and accepted-runtime loaders independently reject missing or
+drifted evidence. A refit produces only `shadow_candidate`; only a passing
+`microstructure-shadow` run produces `accepted`. No v13 artifact is currently
+accepted or claimed profitable; see
 [Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned

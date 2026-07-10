@@ -223,7 +223,7 @@ def test_model_readiness_requires_substantial_hftbacktest_evidence_for_live_prom
         "immutable_market_data": True,
         "engine": "hftbacktest",
         "engine_version": "2.4.4",
-        "schema_version": "binance-usdm-l2-v2",
+        "schema_version": "binance-usdm-l2-v3",
         "symbol": "BTCUSDC",
         "queue_model": "risk_adverse_queue_model",
         "latency_model": "empirical_feed_and_order_latency",

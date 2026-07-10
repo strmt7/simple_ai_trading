@@ -432,7 +432,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "source_manifest_fingerprint": "d" * 64,
         "validation_model_sha256": _model_strings_sha256(models),
         "deployment_model_sha256": _model_strings_sha256(models),
-        "fitted_at": "2026-01-01T00:00:00+00:00",
+        "fitted_at": "2024-11-13T22:13:19+00:00",
     }
     candidate_payload = json.loads(json.dumps(payload))
     candidate_payload.update(
@@ -449,6 +449,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
             "terminal_evaluated_at": None,
             "prequential_validation": None,
             "terminal_prequential": None,
+            "shadow_validation": None,
         }
     )
     candidate_sha = hashlib.sha256(
@@ -524,6 +525,44 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "last_evaluation_ms": terminal_start_ms + 2_999,
         "latest_policy": dict(payload["threshold_policy"]),
         "folds": terminal_folds,
+    }
+    shadow_start_ms = training_cutoff_ms + 1_000
+    shadow_complete_ms = shadow_start_ms + 21_600_000
+    payload["shadow_validation"] = {
+        "version": "microstructure-public-feed-shadow-v1",
+        "report_sha256": "7" * 64,
+        "trades_sha256": "8" * 64,
+        "capture_manifest_sha256": "9" * 64,
+        "raw_capture_sha256": "a" * 64,
+        "candidate_sha256": candidate_sha,
+        "deployment_model_sha256": _model_strings_sha256(models),
+        "symbol": "BTCUSDT",
+        "provider": "binance_public_usdm_websocket",
+        "clock_offset_ms": 0.0,
+        "started_at_ms": shadow_start_ms,
+        "completed_at_ms": shadow_complete_ms,
+        "duration_seconds": 21_600.0,
+        "decisions": 200,
+        "actionable_decisions": 100,
+        "virtual_trades": 40,
+        "long_trades": 20,
+        "short_trades": 20,
+        "execution_liquidity_rejections": 0,
+        "expired_entries": 0,
+        "pending_entries_at_end": 0,
+        "end_censored_signals": 1,
+        "total_net_bps": 100.0,
+        "profit_factor": 1.5,
+        "max_drawdown_bps": 20.0,
+        "feed_sequence_gaps": 0,
+        "invalid_events": 0,
+        "late_event_resets": 0,
+        "feature_gap_resets": 0,
+        "deadline_misses": 0,
+        "inference_failures": 0,
+        "forced_closes": 0,
+        "orders_submitted": 0,
+        "attached_at": "2024-11-14T04:13:21+00:00",
     }
     return payload
 
@@ -647,6 +686,20 @@ def test_runtime_scorer_rejects_unpromoted_or_drifted_artifacts(tmp_path) -> Non
     no_prequential.write_text(json.dumps(no_prequential_payload), encoding="utf-8")
     with pytest.raises(ValueError, match="prequential validation evidence"):
         load_microstructure_action_scorer(no_prequential)
+
+    no_shadow_payload = _runtime_artifact_payload()
+    no_shadow_payload["shadow_validation"] = None
+    no_shadow = tmp_path / "no-shadow.json"
+    no_shadow.write_text(json.dumps(no_shadow_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="no-order shadow evidence"):
+        load_microstructure_action_scorer(no_shadow)
+
+    unsafe_shadow_payload = _runtime_artifact_payload()
+    unsafe_shadow_payload["shadow_validation"]["pending_entries_at_end"] = 1  # type: ignore[index]
+    unsafe_shadow = tmp_path / "unsafe-shadow.json"
+    unsafe_shadow.write_text(json.dumps(unsafe_shadow_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="shadow promotion gates"):
+        load_microstructure_action_scorer(unsafe_shadow)
 
     unprotected_payload = _runtime_artifact_payload()
     unprotected_payload["target_mode"] = "fixed_horizon"
@@ -920,30 +973,32 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         lambda _backend, _seed: ({"device_type": "cpu"}, "cpu", "cpu"),
     )
 
-    accepted = refit_validated_microstructure_model(
+    shadow_candidate = refit_validated_microstructure_model(
         artifact,
         dataset,
         compute_backend="cpu",
     )
 
-    assert accepted.status == "accepted"
+    assert shadow_candidate.status == "shadow_candidate"
+    assert shadow_candidate.promotion_eligible is False
+    assert shadow_candidate.shadow_validation is None
     assert len(calls) == 8
-    assert accepted.deployment_model_strings is not None
-    assert set(accepted.deployment_model_strings) == set(model_strings)
-    assert isinstance(accepted.deployment_refit, DeploymentRefitEvidence)
-    assert accepted.deployment_refit.training_rows == rows
-    assert accepted.deployment_refit.calibration_days == 2
-    assert accepted.deployment_refit.expires_at_ms == timestamps[-1] + 3_600_000
-    assert accepted.deployment_refit.validation_model_sha256 == _model_strings_sha256(
+    assert shadow_candidate.deployment_model_strings is not None
+    assert set(shadow_candidate.deployment_model_strings) == set(model_strings)
+    assert isinstance(shadow_candidate.deployment_refit, DeploymentRefitEvidence)
+    assert shadow_candidate.deployment_refit.training_rows == rows
+    assert shadow_candidate.deployment_refit.calibration_days == 2
+    assert shadow_candidate.deployment_refit.expires_at_ms == timestamps[-1] + 3_600_000
+    assert shadow_candidate.deployment_refit.validation_model_sha256 == _model_strings_sha256(
         model_strings
     )
-    path = tmp_path / "accepted-microstructure.json"
-    save_microstructure_model_artifact(accepted, path)
+    path = tmp_path / "shadow-candidate-microstructure.json"
+    save_microstructure_model_artifact(shadow_candidate, path)
     reloaded = load_microstructure_model_artifact(path)
-    assert reloaded.status == "accepted"
+    assert reloaded.status == "shadow_candidate"
     assert reloaded.max_quote_age_ms == 1_000
     assert reloaded.deployment_refit is not None
     assert (
         reloaded.deployment_refit.deployment_model_sha256
-        == accepted.deployment_refit.deployment_model_sha256
+        == shadow_candidate.deployment_refit.deployment_model_sha256
     )

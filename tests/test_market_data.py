@@ -278,7 +278,7 @@ def test_market_data_store_catalogues_only_valid_microstructure_capture_evidence
         "capture_id": "capture-1",
         "provider": "binance",
         "market_type": "futures",
-        "schema_version": "binance-usdm-l2-v2",
+        "schema_version": "binance-usdm-l2-v3",
         "status": "pass",
         "started_at_ms": 100,
         "completed_at_ms": 200,
