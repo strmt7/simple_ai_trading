@@ -92,6 +92,36 @@ def _rows(n: int) -> list[ModelRow]:
     return [ModelRow(timestamp=i, close=1.0, features=(0.1, 0.2), label=i % 2) for i in range(n)]
 
 
+@pytest.fixture
+def _passing_selection_risk_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+    def report(best, _ranked_pool, **counts):
+        selected = float(best.get("score", 1.0))
+        effective_trials = max(1, sum(int(value) for value in counts.values()))
+        return {
+            "passed": True,
+            "reason": None,
+            "reasons": [],
+            "effective_trials": effective_trials,
+            "selected_score": selected,
+            "trial_penalty": 0.0,
+            "deflated_score": selected,
+            "overfit_diagnostics": {
+                "status": "available",
+                "method": "two_panel_cscv_proxy",
+                "passed": True,
+                "reason": None,
+                "probability_backtest_overfit": 0.0,
+                "max_probability_backtest_overfit": 0.5,
+                "candidate_count": 3,
+                "split_count": 2,
+                "overfit_splits": 0,
+                "splits": [],
+            },
+        }
+
+    monkeypatch.setattr(training_suite, "_selection_risk_report", report)
+
+
 # ----- CandidateParams ------------------------------------------------------
 
 
@@ -941,10 +971,18 @@ def test_selection_risk_report_deflates_tiny_scores_under_large_trial_count() ->
     assert tiny_report["deflated_score"] < 0.0
     assert tiny_report["overfit_diagnostics"]["status"] == "skipped"
 
-    stronger_best = {"score": 0.12}
+    stronger_best = {
+        "score": 0.12,
+        "selection_score": 0.12,
+        "validation_score": 0.11,
+    }
     stronger_report = training_suite._selection_risk_report(
         stronger_best,
-        [stronger_best, {"score": 0.09}, {"score": 0.07}],
+        [
+            stronger_best,
+            {"score": 0.09, "selection_score": 0.09, "validation_score": 0.08},
+            {"score": 0.07, "selection_score": 0.07, "validation_score": 0.06},
+        ],
         base_candidate_count=2000,
         local_refinement_candidates=20,
         ensemble_refinement_candidates=3,
@@ -953,6 +991,17 @@ def test_selection_risk_report_deflates_tiny_scores_under_large_trial_count() ->
 
     assert stronger_report["passed"] is True
     assert stronger_report["deflated_score"] > 0.0
+
+    missing_panels = training_suite._selection_risk_report(
+        {"score": 1.0},
+        [{"score": 1.0}, {"score": 0.8}, {"score": 0.7}],
+        base_candidate_count=3,
+        local_refinement_candidates=0,
+        ensemble_refinement_candidates=0,
+        hybrid_rescue_candidates=0,
+    )
+    assert missing_panels["passed"] is False
+    assert missing_panels["reason"] == "requires_selection_and_validation_scores"
 
 
 def test_selection_risk_report_blocks_severe_pbo_overfit() -> None:
@@ -1291,7 +1340,10 @@ def test_evaluate_candidate_can_skip_full_fit_fallback(
     assert result["threshold_source"] == "classification_f1"
 
 
-def test_train_for_objective_happy_with_fake_runner(tmp_path: Path) -> None:
+def test_train_for_objective_happy_with_fake_runner(
+    tmp_path: Path,
+    _passing_selection_risk_stub: None,
+) -> None:
     candles = _synthetic_candles(n=200)
     strategy = StrategyConfig()
     objective = get_objective("default")
@@ -1322,7 +1374,7 @@ def test_train_for_objective_happy_with_fake_runner(tmp_path: Path) -> None:
     saved_model = json.loads(model_file.read_text(encoding="utf-8"))
     assert saved_model["selection_risk"]["passed"] is True
     assert saved_model["selection_risk"]["effective_trials"] >= outcome.explored_candidates
-    assert saved_model["selection_risk"]["overfit_diagnostics"]["status"] == "skipped"
+    assert saved_model["selection_risk"]["overfit_diagnostics"]["status"] == "available"
     # rejected counts entries scored as -inf
     assert outcome.rejected_candidates >= 1
     assert outcome.validation_rows >= 0
@@ -1467,6 +1519,7 @@ def test_train_for_objective_rejects_failed_walk_forward_gate(
 def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     feature_cfg = default_config_for("conservative", ())
@@ -1559,6 +1612,7 @@ def test_train_for_objective_rescues_rejected_candidate_with_hybrid(
 def test_train_for_objective_persists_walk_forward_gate(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     candidate = CandidateParams(
@@ -1659,6 +1713,7 @@ def test_train_for_objective_empty_candidate_grid(
 def test_train_for_objective_promotes_better_seed_ensemble(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     candidate = CandidateParams(
@@ -1714,6 +1769,7 @@ def test_train_for_objective_promotes_better_seed_ensemble(
 def test_train_for_objective_gpu_backend_forces_sequential_workers(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     default_objective = get_objective("default")
     objective = ObjectiveSpec(
@@ -1783,6 +1839,7 @@ def test_train_for_objective_gpu_backend_forces_sequential_workers(
 def test_train_for_objective_defaults_to_auto_backend(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     candidate = CandidateParams(
@@ -1837,6 +1894,7 @@ def test_train_for_objective_defaults_to_auto_backend(
 def test_train_for_objective_rejects_weaker_seed_ensemble(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     candidate = CandidateParams(
@@ -1891,6 +1949,7 @@ def test_train_for_objective_rejects_weaker_seed_ensemble(
 def test_train_for_objective_promotes_better_local_refinement(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     candidate = CandidateParams(
@@ -1938,10 +1997,10 @@ def test_train_for_objective_promotes_better_local_refinement(
         max_workers=1,
     )
 
-    assert len(_local_refinement_candidates(candidate)) == 24
+    assert len(_local_refinement_candidates(candidate)) == 26
     assert outcome.best_score == 2.0
     assert outcome.best_params["risk_per_trade"] == pytest.approx(0.005)
-    assert outcome.local_refinement_candidates == 24
+    assert outcome.local_refinement_candidates == 26
     assert outcome.ensemble_refined is False
 
 
@@ -1986,6 +2045,7 @@ def test_risk_aware_best_refuses_fragile_higher_score() -> None:
 def test_train_for_objective_checks_top_candidates_for_seed_ensembles(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    _passing_selection_risk_stub: None,
 ) -> None:
     objective = get_objective("default")
     candidates = [

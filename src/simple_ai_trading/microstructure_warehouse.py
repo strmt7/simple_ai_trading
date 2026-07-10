@@ -6,16 +6,14 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
-import io
 import json
-import math
 import os
 from pathlib import Path
 import re
 import shutil
 import socket
 import time
-from typing import Callable, Iterator, Mapping, Sequence
+from typing import Callable, Iterator, Mapping
 from urllib.parse import urlparse
 import zipfile
 
@@ -25,7 +23,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .assets import is_supported_major_symbol, normalize_symbol
-from .binance_archive import archive_file_url, archive_url_period
+from .binance_archive import archive_file_url
 
 
 TICK_WAREHOUSE_SCHEMA_VERSION = "binance-usdm-tick-v4"
@@ -561,6 +559,7 @@ class MicrostructureWarehouse:
                 source_feature_build_id VARCHAR NOT NULL,
                 feature_version VARCHAR NOT NULL,
                 model_schema_version VARCHAR NOT NULL,
+                prequential_report_sha256 VARCHAR NOT NULL,
                 status VARCHAR NOT NULL,
                 reserved_at_ms BIGINT NOT NULL,
                 completed_at_ms BIGINT,
@@ -704,6 +703,17 @@ class MicrostructureWarehouse:
         if "event_time_regressions" not in manifest_columns:
             conn.execute(
                 "ALTER TABLE archive_manifest ADD COLUMN event_time_regressions UBIGINT DEFAULT 0"
+            )
+        terminal_columns = {
+            str(row[1])
+            for row in conn.execute(
+                "PRAGMA table_info('terminal_holdout_audit')"
+            ).fetchall()
+        }
+        if "prequential_report_sha256" not in terminal_columns:
+            conn.execute(
+                "ALTER TABLE terminal_holdout_audit "
+                "ADD COLUMN prequential_report_sha256 VARCHAR DEFAULT ''"
             )
 
     def reconcile_orphan_rows(self) -> dict[str, int]:
@@ -1682,6 +1692,7 @@ class MicrostructureWarehouse:
         source_feature_build_id: str,
         feature_version: str,
         model_schema_version: str,
+        prequential_report_sha256: str,
     ) -> dict[str, object]:
         """Irreversibly reserve a non-overlapping terminal market period once."""
 
@@ -1696,6 +1707,7 @@ class MicrostructureWarehouse:
             "candidate_sha256": str(candidate_sha256).lower(),
             "source_manifest_fingerprint": str(source_manifest_fingerprint).lower(),
             "source_feature_build_id": str(source_feature_build_id).lower(),
+            "prequential_report_sha256": str(prequential_report_sha256).lower(),
         }
         for label, digest in digests.items():
             if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
@@ -1733,8 +1745,15 @@ class MicrostructureWarehouse:
                     )
                 conn.execute(
                     """
-                    INSERT INTO terminal_holdout_audit VALUES (
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?, NULL, '', ''
+                    INSERT INTO terminal_holdout_audit (
+                        reservation_id, symbol, first_utc_day, last_utc_day,
+                        candidate_sha256, source_manifest_fingerprint,
+                        source_feature_build_id, feature_version,
+                        model_schema_version, prequential_report_sha256,
+                        status, reserved_at_ms, completed_at_ms,
+                        result_status, error
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?, NULL, '', ''
                     )
                     """,
                     [
@@ -1747,6 +1766,7 @@ class MicrostructureWarehouse:
                         digests["source_feature_build_id"],
                         feature_contract,
                         model_contract,
+                        digests["prequential_report_sha256"],
                         now_ms,
                     ],
                 )
@@ -1760,6 +1780,7 @@ class MicrostructureWarehouse:
             "first_utc_day": first_day,
             "last_utc_day": last_day,
             "candidate_sha256": digests["candidate_sha256"],
+            "prequential_report_sha256": digests["prequential_report_sha256"],
             "status": "reserved",
             "reserved_at_ms": now_ms,
         }
@@ -1775,7 +1796,7 @@ class MicrostructureWarehouse:
         if len(reservation) != 64 or any(char not in "0123456789abcdef" for char in reservation):
             raise ValueError("terminal holdout reservation_id is invalid")
         result = str(result_status).strip().lower()
-        if result not in {"accepted", "rejected", "evaluation_error"}:
+        if result not in {"accepted", "validated", "rejected", "evaluation_error"}:
             raise ValueError("terminal holdout result_status is invalid")
         detail = str(error).strip()[:2_000]
         status = "failed" if result == "evaluation_error" else "complete"

@@ -26,10 +26,10 @@ operator docs all agree.
 
 ## Causal L1/Tape Action-Value Model
 
-The `microstructure-action-value-v10` workflow is a separate, fail-closed
+The `microstructure-action-value-v11` workflow is a separate, fail-closed
 research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
 feed the legacy candle autonomous loop, and the repository currently has no
-accepted v10 artifact or profitability result.
+accepted v11 artifact or profitability result.
 
 Its implemented lifecycle is:
 
@@ -41,18 +41,30 @@ Its implemented lifecycle is:
    policy, selection, and terminal regions. Every adjacent use of labels is
    separated by the horizon/latency purge. Early stopping and Platt calibration
    no longer share rows.
-3. A selection pass produces only `candidate`. The terminal range is reserved
-   in the warehouse and may be consumed once. A terminal pass produces
-   `validated`, not a live model.
-4. Deployment refit fixes the already selected hyperparameters, tree counts,
-   and policy thresholds. Provisional classifiers learn calibration on a
-   purged recent tail; six final estimators then refit on all labeled rows. No
-   terminal metric is used to retune the model.
-5. Only a successful refit produces `accepted`. It records validation and
+3. A selection pass produces only `candidate`. `microstructure-prequential`
+   then performs complete rolling full retrains with fixed selected tree counts
+   and hyperparameters. Each fold uses disjoint training, probability-
+   calibration, policy-selection, and untouched evaluation intervals. The
+   terminal region remains inaccessible.
+4. Promotion evidence is canonical JSON plus row-level CSV and SVG. The report
+   must use the locked protocol, cover every expected selection row exactly
+   once, use the candidate's backend and source build, and pass after-cost,
+   drawdown, confidence, baseline, AUC, trade-count, and profitable-fold gates.
+   Changing protocol options produces diagnostic evidence that cannot promote.
+5. `microstructure-promote` reconstructs the exact dataset, verifies every CSV
+   action and non-overlapping fill against the source-bound targets, checks all
+   artifact hashes, embeds a typed evidence binding, and only then reserves the
+   one-use terminal range. Direct terminal evaluation, deployment refit, and
+   accepted-model loading all reject a missing or drifted binding.
+6. A terminal pass produces `validated`, not a live model. Deployment refit
+   fixes the selected hyperparameters and tree counts. Provisional classifiers
+   learn calibration on a purged recent tail; six final estimators then refit
+   on all labeled rows. No terminal metric is used to retune the model.
+7. Only a successful refit produces `accepted`. It records validation and
    deployment estimator hashes, source build/fingerprint, backend, row counts,
    calibration span, training cutoff, and a hard expiry. A failed refit leaves
    the atomic `validated` artifact available for `microstructure-refit`.
-6. Streaming features use only closed seconds, while liquidity eligibility uses
+8. Streaming features use only closed seconds, while liquidity eligibility uses
    the newest independently tracked BBO known at inference time. The scorer
    blocks stale quotes, crossed/invalid books, excess L1 participation,
    unvalidated notional, cadence violations, expired models, and late signals.
@@ -62,12 +74,41 @@ Candidate generation does not consume terminal evidence:
 ```powershell
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only `
   --stop-loss-bps 25 --take-profit-bps 40
+simple-ai-trading microstructure-prequential `
+  --input data/microstructure-model.json
+simple-ai-trading microstructure-promote `
+  --input data/microstructure-model.json `
+  --prequential-report data/microstructure-prequential.json `
+  --prequential-predictions data/microstructure-prequential-predictions.csv `
+  --prequential-chart data/microstructure-prequential.svg
 ```
 
-`--evaluate-terminal` is appropriate only after model-family and contract
-selection is finished. `microstructure-refit --input PATH` is a recovery path
-for a terminal-validated artifact; it refuses a rebuilt or changed source even
-when filenames are unchanged.
+The old `microstructure-train --evaluate-terminal` path is disabled because it
+could retrain a different candidate before terminal access. The promotion
+command is the only CLI terminal path. `microstructure-refit --input PATH` is a
+recovery path for a terminal-validated artifact; it requires the same embedded
+prequential binding and refuses a rebuilt or changed source even when filenames
+are unchanged.
+
+Current limitation: prequential selection evidence validates the rolling-refit
+protocol, while terminal scoring still evaluates the frozen candidate
+estimators and policy. Operational rolling-refit terminal replay and exchange
+shadow calibration remain required before this research path can be described
+as execution-parity complete. This limitation is one reason no v11 artifact is
+currently accepted or claimed profitable.
+
+The fold, queue, and latency design follows the documented limits of market-
+data replay: a replay cannot infer the strategy's own market impact, queue
+position matters, and feed, order-entry, and response latency are distinct.
+LightGBM's leaf-only `Booster.refit` is not used because it does not rebuild tree
+structure; every validation fold performs a full fixed-protocol retrain.
+
+- HftBacktest order-fill and queue assumptions:
+  <https://hftbacktest.readthedocs.io/en/latest/order_fill.html>
+- HftBacktest latency components:
+  <https://hftbacktest.readthedocs.io/en/v1.8.4/latency_models.html>
+- LightGBM `Booster.refit` semantics:
+  <https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.Booster.html>
 
 Promotion-grade optimization is also data-health gated. If
 `tools/optimization_round.py` is run without explicit symbols and with hard

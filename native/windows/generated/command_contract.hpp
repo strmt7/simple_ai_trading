@@ -261,6 +261,42 @@ inline constexpr CommandOptionSpec kOptions_microstructure_capture[] = {
     {L"--json", L"json", L"", L"false", L"", false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_microstructure_prequential[] = {
+    {L"--input", L"input", L"", L"data/microstructure-model.json", L"", false, true},
+    {L"--warehouse", L"warehouse", L"", L"data/microstructure.duckdb", L"", false, true},
+    {L"--cache-root", L"cache_root", L"", L"data/archive-cache", L"", false, true},
+    {L"--output", L"output", L"", L"data/microstructure-prequential.json", L"", false, true},
+    {L"--predictions", L"predictions", L"", L"data/microstructure-prequential-predictions.csv", L"", false, true},
+    {L"--chart", L"chart", L"", L"data/microstructure-prequential.svg", L"", false, true},
+    {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"auto", L"", false, true},
+    {L"--training-window-days", L"training_window_days", L"", L"180", L"", false, true},
+    {L"--minimum-training-days", L"minimum_training_days", L"", L"60", L"", false, true},
+    {L"--calibration-days", L"calibration_days", L"", L"14", L"", false, true},
+    {L"--policy-days", L"policy_days", L"", L"14", L"", false, true},
+    {L"--evaluation-block-days", L"evaluation_block_days", L"", L"7", L"", false, true},
+    {L"--minimum-segment-rows", L"minimum_segment_rows", L"", L"256", L"", false, true},
+    {L"--minimum-class-rows", L"minimum_class_rows", L"", L"128", L"", false, true},
+    {L"--bootstrap-samples", L"bootstrap_samples", L"", L"2000", L"", false, true},
+    {L"--max-folds", L"max_folds", L"", L"0", L"diagnostic cap; any truncated run is ineligible to pass", false, true},
+    {L"--memory-limit", L"memory_limit", L"", L"8GB", L"", false, true},
+    {L"--threads", L"threads", L"", L"8", L"", false, true},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_microstructure_promote[] = {
+    {L"--input", L"input", L"", L"data/microstructure-model.json", L"", false, true},
+    {L"--prequential-report", L"prequential_report", L"", L"data/microstructure-prequential.json", L"", false, true},
+    {L"--prequential-predictions", L"prequential_predictions", L"", L"data/microstructure-prequential-predictions.csv", L"", false, true},
+    {L"--prequential-chart", L"prequential_chart", L"", L"data/microstructure-prequential.svg", L"", false, true},
+    {L"--warehouse", L"warehouse", L"", L"data/microstructure.duckdb", L"", false, true},
+    {L"--cache-root", L"cache_root", L"", L"data/archive-cache", L"", false, true},
+    {L"--output", L"output", L"", L"", L"", false, true},
+    {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"auto", L"", false, true},
+    {L"--memory-limit", L"memory_limit", L"", L"8GB", L"", false, true},
+    {L"--threads", L"threads", L"", L"8", L"", false, true},
+    {L"--json", L"json", L"", L"false", L"", false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_microstructure_refit[] = {
     {L"--input", L"input", L"", L"data/microstructure-model.json", L"", false, true},
     {L"--output", L"output", L"", L"", L"", false, true},
@@ -292,7 +328,7 @@ inline constexpr CommandOptionSpec kOptions_microstructure_train[] = {
     {L"--minimum-promotion-days", L"minimum_promotion_days", L"", L"365", L"", false, true},
     {L"--deployment-calibration-days", L"deployment_calibration_days", L"", L"14", L"recent purged tail used only to calibrate the post-validation deployment refit", false, true},
     {L"--maximum-model-age-seconds", L"maximum_model_age_seconds", L"", L"86400", L"hard live-inference expiry measured from the latest labeled refit row", false, true},
-    {L"--evaluate-terminal", L"evaluate_terminal", L"", L"false", L"irreversibly consume one unused terminal holdout after selection gates pass", false, false},
+    {L"--evaluate-terminal", L"evaluate_terminal", L"", L"false", L"disabled compatibility flag; use hash-bound microstructure-promote", false, false},
     {L"--candidate-only", L"evaluate_terminal", L"", L"false", L"emit a selection-stage candidate without consuming the terminal holdout (default)", false, false},
     {L"--memory-limit", L"memory_limit", L"", L"8GB", L"", false, true},
     {L"--threads", L"threads", L"", L"8", L"", false, true},
@@ -608,6 +644,8 @@ inline constexpr CommandSpec kCommands[] = {
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"microstructure-capture", L"usage: simple-ai-trading microstructure-capture [-h] [--symbols SYMBOLS]                                                 [--seconds SECONDS]                                                 [--output-root OUTPUT_ROOT]                                                 [--db DB] [--timeout TIMEOUT]                                                 [--no-convert] [--json]", kOptions_microstructure_capture, 7},
+    {L"microstructure-prequential", L"usage: simple-ai-trading microstructure-prequential [-h] [--input INPUT]                                                     [--warehouse WAREHOUSE]                                                     [--cache-root CACHE_ROOT]                                                     [--output OUTPUT]                                                     [--predictions PREDICTIONS]                                                     [--chart CHART]                                                     [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                                     [--training-window-days TRAINING_WINDOW_DAYS]                                                     [--minimum-training-days MINIMUM_TRAINING_DAYS]                                                     [--calibration-days CALIBRATION_DAYS]                                                     [--policy-days POLICY_DAYS]                                                     [--evaluation-block-days EVALUATION_BLOCK_DAYS]                                                     [--minimum-segment-rows MINIMUM_SEGMENT_ROWS]                                                     [--minimum-class-rows MINIMUM_CLASS_ROWS]                                                     [--bootstrap-samples BOOTSTRAP_SAMPLES]                                                     [--max-folds MAX_FOLDS]                                                     [--memory-limit MEMORY_LIMIT]                                                     [--threads THREADS]                                                     [--json]", kOptions_microstructure_prequential, 19},
+    {L"microstructure-promote", L"usage: simple-ai-trading microstructure-promote [-h] [--input INPUT]                                                 [--prequential-report PREQUENTIAL_REPORT]                                                 [--prequential-predictions PREQUENTIAL_PREDICTIONS]                                                 [--prequential-chart PREQUENTIAL_CHART]                                                 [--warehouse WAREHOUSE]                                                 [--cache-root CACHE_ROOT]                                                 [--output OUTPUT]                                                 [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                                 [--memory-limit MEMORY_LIMIT]                                                 [--threads THREADS] [--json]", kOptions_microstructure_promote, 11},
     {L"microstructure-refit", L"usage: simple-ai-trading microstructure-refit [-h] [--input INPUT]                                               [--output OUTPUT]                                               [--warehouse WAREHOUSE]                                               [--cache-root CACHE_ROOT]                                               [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                               [--memory-limit MEMORY_LIMIT]                                               [--threads THREADS] [--json]", kOptions_microstructure_refit, 8},
     {L"microstructure-train", L"usage: simple-ai-trading microstructure-train [-h] [--symbol SYMBOL]                                               [--warehouse WAREHOUSE]                                               [--cache-root CACHE_ROOT]                                               [--output OUTPUT]                                               [--horizon-seconds HORIZON_SECONDS]                                               [--decision-cadence-seconds DECISION_CADENCE_SECONDS]                                               [--total-latency-ms TOTAL_LATENCY_MS]                                               [--taker-fee-bps TAKER_FEE_BPS]                                               [--max-quote-age-ms MAX_QUOTE_AGE_MS]                                               [--reference-order-notional-quote REFERENCE_ORDER_NOTIONAL_QUOTE]                                               [--max-l1-participation MAX_L1_PARTICIPATION]                                               [--stop-loss-bps STOP_LOSS_BPS]                                               [--take-profit-bps TAKE_PROFIT_BPS]                                               [--trigger-slippage-bps TRIGGER_SLIPPAGE_BPS]                                               [--risk-level {conservative,regular,aggressive}]                                               [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                               [--minimum-promotion-days MINIMUM_PROMOTION_DAYS]                                               [--deployment-calibration-days DEPLOYMENT_CALIBRATION_DAYS]                                               [--maximum-model-age-seconds MAXIMUM_MODEL_AGE_SECONDS]                                               [--evaluate-terminal | --candidate-only]                                               [--memory-limit MEMORY_LIMIT]                                               [--threads THREADS] [--json]", kOptions_microstructure_train, 24},
     {L"model-blueprint", L"usage: simple-ai-trading model-blueprint [-h]                                          [--risk-level {conservative,regular,aggressive,default,balanced,risky}]                                          [--implemented-only] [--json]", kOptions_model_blueprint, 3},

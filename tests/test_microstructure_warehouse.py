@@ -166,9 +166,10 @@ def test_terminal_holdout_reservation_blocks_all_overlapping_reuse(tmp_path) -> 
         "candidate_sha256": "a" * 64,
         "source_manifest_fingerprint": "b" * 64,
         "source_feature_build_id": "c" * 64,
-        "feature_version": "l1-tape-causal-v5",
-        "model_schema_version": "microstructure-action-value-v9",
-    }
+            "feature_version": "l1-tape-causal-v5",
+            "model_schema_version": "microstructure-action-value-v9",
+            "prequential_report_sha256": "d" * 64,
+        }
     try:
         first = warehouse.reserve_terminal_holdout(
             first_utc_day=100,

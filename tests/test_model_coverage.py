@@ -86,6 +86,9 @@ def test_polyak_averaged_candidate_is_only_promoted_when_loss_improves() -> None
         [4.0],
         0.0,
         1,
+        class_weight_pos=1.0,
+        class_weight_neg=1.0,
+        focal_gamma=0.0,
         min_delta=1e-9,
     )
     assert promoted_weights == [4.0]
@@ -101,6 +104,9 @@ def test_polyak_averaged_candidate_is_only_promoted_when_loss_improves() -> None
         [-4.0],
         0.0,
         1,
+        class_weight_pos=1.0,
+        class_weight_neg=1.0,
+        focal_gamma=0.0,
         min_delta=1e-9,
     )
     assert kept_weights == [4.0]
@@ -116,6 +122,9 @@ def test_polyak_averaged_candidate_is_only_promoted_when_loss_improves() -> None
         [0.0],
         0.0,
         0,
+        class_weight_pos=1.0,
+        class_weight_neg=1.0,
+        focal_gamma=0.0,
         min_delta=1e-9,
     )
     assert no_average_weights == [1.0]
@@ -425,8 +434,9 @@ def test_model_class_weights_and_metrics() -> None:
         SimpleNamespace(features=(0.0,), label=0),
     ]
     pos, neg = _class_weights(rows)
-    assert pos == 2 / 3
-    assert neg == 1 / 3
+    assert pos == 1.5
+    assert neg == 0.75
+    assert (pos + 2.0 * neg) / 3.0 == 1.0
     assert _f1(0, 0, 0) == 0.0
 
     model = TrainedModel(

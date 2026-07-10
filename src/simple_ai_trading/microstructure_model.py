@@ -27,7 +27,10 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v10"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v11"
+MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
+    "microstructure-prequential-fixed-refit-v1"
+)
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 ModelProgressCallback = Callable[[str, int, int], None]
 
@@ -128,6 +131,29 @@ class DeploymentRefitEvidence:
 
 
 @dataclass(frozen=True)
+class PrequentialValidationEvidence:
+    version: str
+    report_sha256: str
+    predictions_sha256: str
+    chart_sha256: str
+    candidate_sha256: str
+    protocol_sha256: str
+    fold_models_sha256: str
+    source_feature_build_id: str
+    source_manifest_fingerprint: str
+    generated_at_ms: int
+    planned_folds: int
+    complete_folds: int
+    evaluated_rows: int
+    selection_coverage_ratio: float
+    total_net_bps: float
+    profit_factor: float
+    max_drawdown_bps: float
+    mean_daily_net_bps_ci_lower: float
+    attached_at: str
+
+
+@dataclass(frozen=True)
 class MicrostructureModelArtifact:
     schema_version: str
     model_family: str
@@ -186,6 +212,7 @@ class MicrostructureModelArtifact:
     dataset_summary: Mapping[str, object]
     trained_at: str
     terminal_evaluated_at: str | None
+    prequential_validation: PrequentialValidationEvidence | None = None
 
     @property
     def promotion_eligible(self) -> bool:
@@ -655,6 +682,16 @@ def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelA
             "deployment refit evidence",
         )
     )
+    raw_prequential = payload.get("prequential_validation")
+    values["prequential_validation"] = (
+        None
+        if raw_prequential is None
+        else _record_from_mapping(
+            PrequentialValidationEvidence,
+            raw_prequential,
+            "prequential validation evidence",
+        )
+    )
     values["probability_calibration"] = {
         str(key): tuple(item)
         for key, item in dict(payload.get("probability_calibration") or {}).items()
@@ -962,6 +999,7 @@ def load_microstructure_action_scorer(
         active_models = deployment_models
         calibration = deployment_calibration
         enforce_model_freshness = True
+        _validated_prequential_binding(load_microstructure_model_artifact(target))
     models: dict[str, lgb.Booster] = {}
     try:
         for name in _RUNTIME_MODEL_NAMES:
@@ -2078,19 +2116,95 @@ def train_microstructure_action_value_model(
     return artifact
 
 
-def microstructure_candidate_sha256(artifact: MicrostructureModelArtifact) -> str:
-    if artifact.status != "candidate" or artifact.rejection_reasons:
-        raise ValueError("only an unrejected candidate can be fingerprinted for terminal evaluation")
-    if artifact.terminal_evaluated_at is not None or artifact.terminal_metrics is not None:
-        raise ValueError("terminal-evaluated artifacts cannot be candidate fingerprints")
+def _candidate_payload_sha256(artifact: MicrostructureModelArtifact) -> str:
+    payload = artifact.asdict()
+    payload.update(
+        {
+            "status": "candidate",
+            "rejection_reasons": [],
+            "terminal_auc": None,
+            "terminal_brier": None,
+            "terminal_metrics": None,
+            "terminal_confidence": None,
+            "terminal_baselines": None,
+            "deployment_model_strings": None,
+            "deployment_refit": None,
+            "terminal_evaluated_at": None,
+            "prequential_validation": None,
+        }
+    )
     encoded = json.dumps(
-        artifact.asdict(),
+        payload,
         ensure_ascii=True,
         separators=(",", ":"),
         sort_keys=True,
         allow_nan=False,
     ).encode("ascii")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def microstructure_candidate_sha256(artifact: MicrostructureModelArtifact) -> str:
+    if artifact.status != "candidate" or artifact.rejection_reasons:
+        raise ValueError("only an unrejected candidate can be fingerprinted for terminal evaluation")
+    if artifact.terminal_evaluated_at is not None or artifact.terminal_metrics is not None:
+        raise ValueError("terminal-evaluated artifacts cannot be candidate fingerprints")
+    return _candidate_payload_sha256(artifact)
+
+
+def _validated_prequential_binding(
+    artifact: MicrostructureModelArtifact,
+) -> PrequentialValidationEvidence:
+    evidence = artifact.prequential_validation
+    if evidence is None:
+        raise ValueError("microstructure model is missing prequential validation evidence")
+    if evidence.version != MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION:
+        raise ValueError("microstructure prequential evidence version is unsupported")
+    for label, digest in (
+        ("report", evidence.report_sha256),
+        ("predictions", evidence.predictions_sha256),
+        ("chart", evidence.chart_sha256),
+        ("candidate", evidence.candidate_sha256),
+        ("protocol", evidence.protocol_sha256),
+        ("fold models", evidence.fold_models_sha256),
+        ("source feature build", evidence.source_feature_build_id),
+        ("source manifest", evidence.source_manifest_fingerprint),
+    ):
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            raise ValueError(f"microstructure prequential {label} digest is invalid")
+    if evidence.candidate_sha256 != _candidate_payload_sha256(artifact):
+        raise ValueError("microstructure prequential candidate fingerprint drifted")
+    source = _validated_source_evidence(
+        artifact.dataset_summary.get("source_evidence"),
+        symbol=artifact.symbol,
+    )
+    if (
+        evidence.source_feature_build_id != source["build_id"]
+        or evidence.source_manifest_fingerprint != source["manifest_fingerprint"]
+    ):
+        raise ValueError("microstructure prequential source provenance drifted")
+    numeric = (
+        evidence.selection_coverage_ratio,
+        evidence.total_net_bps,
+        evidence.profit_factor,
+        evidence.max_drawdown_bps,
+        evidence.mean_daily_net_bps_ci_lower,
+    )
+    if not all(math.isfinite(float(value)) for value in numeric):
+        raise ValueError("microstructure prequential financial evidence is non-finite")
+    if (
+        evidence.generated_at_ms <= 0
+        or evidence.planned_folds < 3
+        or evidence.complete_folds != evidence.planned_folds
+        or evidence.evaluated_rows <= 0
+        or evidence.selection_coverage_ratio != 1.0
+        or evidence.total_net_bps <= 0.0
+        or evidence.profit_factor <= 1.0
+        or evidence.max_drawdown_bps < 0.0
+        or evidence.mean_daily_net_bps_ci_lower <= 0.0
+        or not evidence.attached_at.strip()
+    ):
+        raise ValueError("microstructure prequential promotion gates are not satisfied")
+    return evidence
 
 
 def refit_validated_microstructure_model(
@@ -2106,6 +2220,7 @@ def refit_validated_microstructure_model(
         raise ValueError("deployment refit requires a terminal-validated artifact")
     if artifact.terminal_metrics is None or artifact.terminal_evaluated_at is None:
         raise ValueError("deployment refit requires terminal evaluation evidence")
+    _validated_prequential_binding(artifact)
     if artifact.deployment_refit is not None or artifact.deployment_model_strings is not None:
         raise ValueError("deployment refit has already been applied")
     if (
@@ -2161,7 +2276,7 @@ def refit_validated_microstructure_model(
     )
     parameters = {
         **backend_parameters,
-        **_risk_parameters(artifact.risk_level, len(provisional_indexes)),
+        **_risk_parameters(artifact.risk_level, int(artifact.split.train_rows)),
     }
     targets = {"long": dataset.long_net_bps, "short": dataset.short_net_bps}
     eligible = {
@@ -2290,6 +2405,7 @@ def evaluate_microstructure_model_terminal(
         raise ValueError("only an unrejected candidate can consume the terminal holdout")
     if artifact.terminal_evaluated_at is not None or artifact.terminal_metrics is not None:
         raise ValueError("terminal holdout has already been evaluated")
+    _validated_prequential_binding(artifact)
     artifact_source = _validated_source_evidence(
         artifact.dataset_summary.get("source_evidence"),
         symbol=artifact.symbol,
@@ -2489,12 +2605,14 @@ def save_microstructure_model_artifact(
 
 __all__ = [
     "MICROSTRUCTURE_MODEL_SCHEMA_VERSION",
+    "MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION",
     "DeploymentRefitEvidence",
     "MicrostructureActionPrediction",
     "MicrostructureActionScorer",
     "MicrostructureModelExpiredError",
     "MicrostructureModelArtifact",
     "PurgedSplitEvidence",
+    "PrequentialValidationEvidence",
     "ThresholdPolicy",
     "ThresholdSearchEvidence",
     "TradingMetrics",

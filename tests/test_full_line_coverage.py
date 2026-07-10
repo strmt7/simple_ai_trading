@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 from simple_ai_trading import api, cli, features, model
-from simple_ai_trading.api import BinanceAPIError, Candle, SymbolConstraints
+from simple_ai_trading.api import BinanceAPIError, Candle, CommissionRates, SymbolConstraints
 from simple_ai_trading.backtest import run_backtest
 from simple_ai_trading.config import RuntimeConfig, save_runtime, save_strategy
 from simple_ai_trading.dashboard import load_artifact_preview
@@ -198,6 +198,27 @@ def _flat_model(
                 "largest_gap_intervals": 1.0,
                 "coverage_ratio": 1.0,
             },
+            "microstructure_replay": {
+                "passed": True,
+                "strategy_replay_passed": True,
+                "replay_smoke_passed": True,
+                "artifact_hashes_verified": True,
+                "immutable_market_data": True,
+                "engine": "hftbacktest",
+                "engine_version": "2.4.4",
+                "schema_version": "binance-usdm-l2-v2",
+                "symbol": "BTCUSDC",
+                "queue_model": "risk_adverse_queue_model",
+                "latency_model": "empirical_feed_and_order_latency",
+                "captured_seconds": 20 * 86_400,
+                "span_days": 400,
+                "unique_days": 20,
+                "normalized_rows": 20_000_000,
+                "sequence_gap_count": 0,
+                "crossed_book_count": 0,
+                "invalid_event_count": 0,
+                "clock_sync_samples": 100,
+            },
         },
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
@@ -216,6 +237,7 @@ def _flat_model(
         model_candidate_count=3,
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
+        strategy_overrides={"taker_fee_bps": 4.0},
     )
 
 
@@ -322,6 +344,15 @@ class _LiveClient:
             "balances": [{"asset": "USDC", "free": "1000", "locked": "0"}],
             "assets": [{"asset": "USDC", "availableBalance": "1000"}],
         }
+
+    def get_commission_rates(self, symbol):
+        return CommissionRates(
+            symbol=symbol,
+            market_type="futures",
+            maker_rate=0.0002,
+            taker_rate=0.0004,
+            source="test_fixture",
+        )
 
     def place_order(self, symbol, side, size, *, dry_run, leverage, reduce_only=False):
         payload = {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run, "leverage": leverage}

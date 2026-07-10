@@ -570,7 +570,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--evaluate-terminal",
         action="store_true",
         dest="evaluate_terminal",
-        help="irreversibly consume one unused terminal holdout after selection gates pass",
+        help="disabled compatibility flag; use hash-bound microstructure-promote",
     )
     terminal_mode.add_argument(
         "--candidate-only",
@@ -582,6 +582,82 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_train.add_argument("--threads", type=int, default=8)
     parser_micro_train.add_argument("--json", action="store_true")
     parser_micro_train.set_defaults(evaluate_terminal=False, func=command_microstructure_train)
+
+    parser_micro_prequential = subparsers.add_parser(
+        "microstructure-prequential",
+        help="run causal rolling-refit selection evidence before terminal evaluation",
+    )
+    parser_micro_prequential.add_argument(
+        "--input", default="data/microstructure-model.json"
+    )
+    parser_micro_prequential.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_micro_prequential.add_argument("--cache-root", default="data/archive-cache")
+    parser_micro_prequential.add_argument(
+        "--output", default="data/microstructure-prequential.json"
+    )
+    parser_micro_prequential.add_argument(
+        "--predictions", default="data/microstructure-prequential-predictions.csv"
+    )
+    parser_micro_prequential.add_argument(
+        "--chart", default="data/microstructure-prequential.svg"
+    )
+    parser_micro_prequential.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_micro_prequential.add_argument("--training-window-days", type=int, default=180)
+    parser_micro_prequential.add_argument("--minimum-training-days", type=int, default=60)
+    parser_micro_prequential.add_argument("--calibration-days", type=int, default=14)
+    parser_micro_prequential.add_argument("--policy-days", type=int, default=14)
+    parser_micro_prequential.add_argument("--evaluation-block-days", type=int, default=7)
+    parser_micro_prequential.add_argument("--minimum-segment-rows", type=int, default=256)
+    parser_micro_prequential.add_argument("--minimum-class-rows", type=int, default=128)
+    parser_micro_prequential.add_argument("--bootstrap-samples", type=int, default=2000)
+    parser_micro_prequential.add_argument(
+        "--max-folds",
+        type=int,
+        default=0,
+        help="diagnostic cap; any truncated run is ineligible to pass",
+    )
+    parser_micro_prequential.add_argument("--memory-limit", default="8GB")
+    parser_micro_prequential.add_argument("--threads", type=int, default=8)
+    parser_micro_prequential.add_argument("--json", action="store_true")
+    parser_micro_prequential.set_defaults(func=command_microstructure_prequential)
+
+    parser_micro_promote = subparsers.add_parser(
+        "microstructure-promote",
+        help="verify prequential evidence, consume the terminal holdout, and refit",
+    )
+    parser_micro_promote.add_argument(
+        "--input", default="data/microstructure-model.json"
+    )
+    parser_micro_promote.add_argument(
+        "--prequential-report", default="data/microstructure-prequential.json"
+    )
+    parser_micro_promote.add_argument(
+        "--prequential-predictions",
+        default="data/microstructure-prequential-predictions.csv",
+    )
+    parser_micro_promote.add_argument(
+        "--prequential-chart", default="data/microstructure-prequential.svg"
+    )
+    parser_micro_promote.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_micro_promote.add_argument("--cache-root", default="data/archive-cache")
+    parser_micro_promote.add_argument("--output", default=None)
+    parser_micro_promote.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_micro_promote.add_argument("--memory-limit", default="8GB")
+    parser_micro_promote.add_argument("--threads", type=int, default=8)
+    parser_micro_promote.add_argument("--json", action="store_true")
+    parser_micro_promote.set_defaults(func=command_microstructure_promote)
 
     parser_micro_refit = subparsers.add_parser(
         "microstructure-refit",
@@ -5618,9 +5694,6 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
         build_executable_microstructure_dataset,
     )
     from .microstructure_model import (
-        evaluate_microstructure_model_terminal,
-        microstructure_candidate_sha256,
-        refit_validated_microstructure_model,
         save_microstructure_model_artifact,
         train_microstructure_action_value_model,
     )
@@ -5640,13 +5713,19 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
         if configured_participation is None
         else float(configured_participation)
     )
-    terminal_reservation: dict[str, object] | None = None
-    deployment_refit_error: str | None = None
     output = str(getattr(args, "output", "data/microstructure-model.json"))
     if evaluate_terminal and (stop is None or take is None):
         print(
             "microstructure-train --evaluate-terminal requires explicit path-aware "
             "--stop-loss-bps and --take-profit-bps",
+            file=sys.stderr,
+        )
+        return 2
+    if evaluate_terminal:
+        print(
+            "microstructure-train --evaluate-terminal is disabled: train the exact "
+            "candidate, run microstructure-prequential, then use "
+            "microstructure-promote with the hash-bound evidence",
             file=sys.stderr,
         )
         return 2
@@ -5721,53 +5800,6 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                 evaluate_terminal=False,
                 progress=model_progress,
             )
-            if evaluate_terminal and artifact.status == "candidate":
-                source_evidence = dict(dataset.source_evidence or {})
-                reservation = warehouse.reserve_terminal_holdout(
-                    symbol=dataset.symbol,
-                    first_utc_day=artifact.split.terminal_start_ms // 86_400_000,
-                    last_utc_day=int(dataset.decision_time_ms[-1]) // 86_400_000,
-                    candidate_sha256=microstructure_candidate_sha256(artifact),
-                    source_manifest_fingerprint=str(
-                        source_evidence["manifest_fingerprint"]
-                    ),
-                    source_feature_build_id=str(source_evidence["build_id"]),
-                    feature_version=artifact.feature_version,
-                    model_schema_version=artifact.schema_version,
-                )
-                terminal_reservation = dict(reservation)
-                try:
-                    artifact = evaluate_microstructure_model_terminal(
-                        artifact,
-                        dataset,
-                        progress=model_progress,
-                    )
-                except Exception as exc:
-                    terminal_reservation.update(
-                        warehouse.finalize_terminal_holdout(
-                            str(reservation["reservation_id"]),
-                            result_status="evaluation_error",
-                            error=f"{type(exc).__name__}: {exc}",
-                        )
-                    )
-                    raise
-                save_microstructure_model_artifact(artifact, output)
-                terminal_reservation.update(
-                    warehouse.finalize_terminal_holdout(
-                        str(reservation["reservation_id"]),
-                        result_status=artifact.status,
-                    )
-                )
-                if artifact.status == "validated":
-                    try:
-                        artifact = refit_validated_microstructure_model(
-                            artifact,
-                            dataset,
-                            compute_backend=str(getattr(args, "compute_backend", "auto")),
-                            progress=model_progress,
-                        )
-                    except (OSError, RuntimeError, ValueError) as exc:
-                        deployment_refit_error = f"{type(exc).__name__}: {exc}"
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"microstructure-train failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
@@ -5778,8 +5810,6 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
     payload["artifact_path"] = output
     payload["artifact_sha256"] = digest
     payload["path_target_evidence"] = asdict(path_evidence) if path_evidence is not None else None
-    payload["terminal_holdout_reservation"] = terminal_reservation
-    payload["deployment_refit_error"] = deployment_refit_error
     if json_mode:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
@@ -5812,11 +5842,8 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
             )
         if artifact.rejection_reasons:
             print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
-        if deployment_refit_error:
-            print("deployment refit failed: " + deployment_refit_error, file=sys.stderr)
         print(f"artifact={output} sha256={digest}")
-    successful_statuses = {"accepted"} if evaluate_terminal else {"candidate"}
-    return 0 if artifact.status in successful_statuses else 2
+    return 0 if artifact.status == "candidate" else 2
 
 
 def command_microstructure_refit(args: argparse.Namespace) -> int:
@@ -6645,6 +6672,350 @@ def command_backtest(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_microstructure_prequential(args: argparse.Namespace) -> int:
+    from .microstructure_features import (
+        apply_path_aware_lifecycle_targets,
+        build_executable_microstructure_dataset,
+    )
+    from .microstructure_model import load_microstructure_model_artifact
+    from .microstructure_prequential import (
+        PrequentialConfig,
+        evaluate_prequential_microstructure_model,
+    )
+    from .microstructure_warehouse import MicrostructureWarehouse
+
+    json_mode = bool(getattr(args, "json", False))
+
+    def model_progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(
+                f"microstructure-prequential {phase}: {completed}/{total}",
+                flush=True,
+            )
+
+    try:
+        artifact = load_microstructure_model_artifact(
+            Path(str(getattr(args, "input", "data/microstructure-model.json")))
+        )
+        if artifact.status != "candidate" or artifact.rejection_reasons:
+            raise ValueError(
+                "microstructure-prequential requires an unrejected candidate artifact"
+            )
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            warehouse.rebuild_causal_feature_bars(artifact.symbol)
+            dataset = build_executable_microstructure_dataset(
+                warehouse,
+                symbol=artifact.symbol,
+                horizon_seconds=artifact.horizon_seconds,
+                total_latency_ms=artifact.total_latency_ms,
+                taker_fee_bps=artifact.taker_fee_bps,
+                max_quote_age_ms=artifact.max_quote_age_ms,
+                reference_order_notional_quote=(
+                    artifact.reference_order_notional_quote
+                ),
+                max_l1_participation=artifact.max_l1_participation,
+                decision_cadence_seconds=artifact.decision_cadence_seconds,
+            )
+            if artifact.stop_loss_bps is not None or artifact.take_profit_bps is not None:
+                if (
+                    artifact.stop_loss_bps is None
+                    or artifact.take_profit_bps is None
+                    or artifact.trigger_execution_slippage_bps is None
+                ):
+                    raise ValueError("candidate path-aware target contract is incomplete")
+                dataset, _path_evidence = apply_path_aware_lifecycle_targets(
+                    warehouse,
+                    dataset,
+                    stop_loss_bps=artifact.stop_loss_bps,
+                    take_profit_bps=artifact.take_profit_bps,
+                    trigger_execution_slippage_bps=(
+                        artifact.trigger_execution_slippage_bps
+                    ),
+                )
+            report = evaluate_prequential_microstructure_model(
+                artifact,
+                dataset,
+                config=PrequentialConfig(
+                    training_window_days=int(
+                        getattr(args, "training_window_days", 180)
+                    ),
+                    minimum_training_days=int(
+                        getattr(args, "minimum_training_days", 60)
+                    ),
+                    calibration_days=int(getattr(args, "calibration_days", 14)),
+                    policy_days=int(getattr(args, "policy_days", 14)),
+                    evaluation_block_days=int(
+                        getattr(args, "evaluation_block_days", 7)
+                    ),
+                    minimum_segment_rows=int(
+                        getattr(args, "minimum_segment_rows", 256)
+                    ),
+                    minimum_class_rows=int(
+                        getattr(args, "minimum_class_rows", 128)
+                    ),
+                    bootstrap_samples=int(
+                        getattr(args, "bootstrap_samples", 2000)
+                    ),
+                    max_folds=int(getattr(args, "max_folds", 0)),
+                ),
+                compute_backend=str(getattr(args, "compute_backend", "auto")),
+                predictions_path=Path(
+                    str(
+                        getattr(
+                            args,
+                            "predictions",
+                            "data/microstructure-prequential-predictions.csv",
+                        )
+                    )
+                ),
+                chart_path=Path(
+                    str(
+                        getattr(
+                            args,
+                            "chart",
+                            "data/microstructure-prequential.svg",
+                        )
+                    )
+                ),
+                report_path=Path(
+                    str(
+                        getattr(
+                            args,
+                            "output",
+                            "data/microstructure-prequential.json",
+                        )
+                    )
+                ),
+                progress=model_progress,
+            )
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"microstructure-prequential failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        metrics = report.aggregate["metrics"]
+        confidence = report.aggregate["confidence"]
+        print(
+            "microstructure-prequential: "
+            f"status={report.status} folds={report.coverage['complete_folds']}/"
+            f"{report.coverage['planned_folds']} rows={report.coverage['evaluated_rows']} "
+            f"trades={metrics['trades']} net_bps={float(metrics['total_net_bps']):+.4f} "
+            f"max_dd_bps={float(metrics['max_drawdown_bps']):.4f} "
+            f"daily_ci95=[{float(confidence['mean_daily_net_bps_ci_lower']):+.4f},"
+            f"{float(confidence['mean_daily_net_bps_ci_upper']):+.4f}]"
+        )
+        if report.reasons:
+            print(f"  first_rejection={report.reasons[0]}")
+        print(f"  predictions -> {report.predictions_path}")
+        print(f"  chart -> {report.chart_path}")
+        print(f"  report -> {getattr(args, 'output', 'data/microstructure-prequential.json')}")
+        print("  terminal_holdout=not_accessed trading_authority=false")
+    return 0 if report.passed else 2
+
+
+def command_microstructure_promote(args: argparse.Namespace) -> int:
+    from .microstructure_features import (
+        apply_path_aware_lifecycle_targets,
+        build_executable_microstructure_dataset,
+    )
+    from .microstructure_model import (
+        evaluate_microstructure_model_terminal,
+        load_microstructure_model_artifact,
+        microstructure_candidate_sha256,
+        refit_validated_microstructure_model,
+        save_microstructure_model_artifact,
+    )
+    from .microstructure_prequential import attach_verified_prequential_evidence
+    from .microstructure_warehouse import MicrostructureWarehouse
+
+    input_path = Path(str(getattr(args, "input", "data/microstructure-model.json")))
+    output_value = getattr(args, "output", None)
+    output_path = Path(str(output_value)) if output_value else input_path
+    json_mode = bool(getattr(args, "json", False))
+    terminal_reservation: dict[str, object] | None = None
+    deployment_refit_error: str | None = None
+
+    def progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(f"microstructure-promote {phase}: {completed}/{total}", flush=True)
+
+    try:
+        artifact = load_microstructure_model_artifact(input_path)
+        if artifact.status != "candidate" or artifact.rejection_reasons:
+            raise ValueError(
+                "microstructure-promote requires an unrejected candidate artifact"
+            )
+        if artifact.prequential_validation is not None:
+            raise ValueError(
+                "microstructure-promote requires the original unattached candidate"
+            )
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            warehouse.require_causal_feature_bars(artifact.symbol)
+            dataset = build_executable_microstructure_dataset(
+                warehouse,
+                symbol=artifact.symbol,
+                horizon_seconds=artifact.horizon_seconds,
+                total_latency_ms=artifact.total_latency_ms,
+                taker_fee_bps=artifact.taker_fee_bps,
+                max_quote_age_ms=artifact.max_quote_age_ms,
+                reference_order_notional_quote=(
+                    artifact.reference_order_notional_quote
+                ),
+                max_l1_participation=artifact.max_l1_participation,
+                decision_cadence_seconds=artifact.decision_cadence_seconds,
+            )
+            if (
+                artifact.stop_loss_bps is None
+                or artifact.take_profit_bps is None
+                or artifact.trigger_execution_slippage_bps is None
+            ):
+                raise ValueError(
+                    "microstructure-promote requires a path-aware protective-exit candidate"
+                )
+            dataset, _path_evidence = apply_path_aware_lifecycle_targets(
+                warehouse,
+                dataset,
+                stop_loss_bps=artifact.stop_loss_bps,
+                take_profit_bps=artifact.take_profit_bps,
+                trigger_execution_slippage_bps=(
+                    artifact.trigger_execution_slippage_bps
+                ),
+            )
+            artifact = attach_verified_prequential_evidence(
+                artifact,
+                dataset,
+                report_path=Path(
+                    str(
+                        getattr(
+                            args,
+                            "prequential_report",
+                            "data/microstructure-prequential.json",
+                        )
+                    )
+                ),
+                predictions_path=Path(
+                    str(
+                        getattr(
+                            args,
+                            "prequential_predictions",
+                            "data/microstructure-prequential-predictions.csv",
+                        )
+                    )
+                ),
+                chart_path=Path(
+                    str(
+                        getattr(
+                            args,
+                            "prequential_chart",
+                            "data/microstructure-prequential.svg",
+                        )
+                    )
+                ),
+            )
+            save_microstructure_model_artifact(artifact, output_path)
+            source_evidence = dict(dataset.source_evidence or {})
+            reservation = warehouse.reserve_terminal_holdout(
+                symbol=dataset.symbol,
+                first_utc_day=artifact.split.terminal_start_ms // 86_400_000,
+                last_utc_day=int(dataset.decision_time_ms[-1]) // 86_400_000,
+                candidate_sha256=microstructure_candidate_sha256(artifact),
+                source_manifest_fingerprint=str(
+                    source_evidence["manifest_fingerprint"]
+                ),
+                source_feature_build_id=str(source_evidence["build_id"]),
+                feature_version=artifact.feature_version,
+                model_schema_version=artifact.schema_version,
+                prequential_report_sha256=(
+                    artifact.prequential_validation.report_sha256
+                    if artifact.prequential_validation is not None
+                    else ""
+                ),
+            )
+            terminal_reservation = dict(reservation)
+            try:
+                artifact = evaluate_microstructure_model_terminal(
+                    artifact,
+                    dataset,
+                    progress=progress,
+                )
+                save_microstructure_model_artifact(artifact, output_path)
+            except Exception as exc:
+                terminal_reservation.update(
+                    warehouse.finalize_terminal_holdout(
+                        str(reservation["reservation_id"]),
+                        result_status="evaluation_error",
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                )
+                raise
+            terminal_reservation.update(
+                warehouse.finalize_terminal_holdout(
+                    str(reservation["reservation_id"]),
+                    result_status=artifact.status,
+                )
+            )
+            if artifact.status == "validated":
+                try:
+                    artifact = refit_validated_microstructure_model(
+                        artifact,
+                        dataset,
+                        compute_backend=str(
+                            getattr(args, "compute_backend", "auto")
+                        ),
+                        progress=progress,
+                    )
+                    save_microstructure_model_artifact(artifact, output_path)
+                except (OSError, RuntimeError, ValueError) as exc:
+                    deployment_refit_error = f"{type(exc).__name__}: {exc}"
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"microstructure-promote failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+
+    digest = save_microstructure_model_artifact(artifact, output_path)
+    payload = artifact.asdict()
+    payload.pop("model_strings", None)
+    payload.pop("deployment_model_strings", None)
+    payload["artifact_path"] = str(output_path)
+    payload["artifact_sha256"] = digest
+    payload["terminal_holdout_reservation"] = terminal_reservation
+    payload["deployment_refit_error"] = deployment_refit_error
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        terminal_metrics = artifact.terminal_metrics
+        print(
+            "microstructure-promote: "
+            f"status={artifact.status} "
+            f"terminal_trades={terminal_metrics.trades if terminal_metrics else 0} "
+            f"terminal_net_bps="
+            f"{terminal_metrics.total_net_bps if terminal_metrics else 0.0:+.4f}"
+        )
+        if artifact.rejection_reasons:
+            print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
+        if deployment_refit_error:
+            print("deployment refit failed: " + deployment_refit_error, file=sys.stderr)
+        print(f"artifact={output_path} sha256={digest}")
+    return 0 if artifact.status == "accepted" and deployment_refit_error is None else 2
+
+
 def command_backtest_chart(args: argparse.Namespace) -> int:
     from .performance_charts import EquityPoint, write_equity_svg
 
@@ -7267,6 +7638,15 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if model_notice is not None:
         print(model_notice, file=sys.stderr)
 
+    constraints = _resolve_symbol_constraints(runtime, client)
+    if constraints is None and not effective_dry_run:
+        print(
+            f"Authenticated live mode requires {runtime.symbol} exchange filters "
+            "before any order is allowed.",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
         if effective_dry_run:
             cfg, commission_assumption = apply_offline_commission_floor(
@@ -7340,10 +7720,6 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
 
     fee_rate = max(0.0, cfg.taker_fee_bps) / 10_000.0
     slippage = max(0.0, cfg.slippage_bps) / 10_000.0
-    constraints = _resolve_symbol_constraints(runtime, client)
-    if constraints is None and not effective_dry_run:
-        print(f"Authenticated live mode requires {runtime.symbol} exchange filters before any order is allowed.", file=sys.stderr)
-        return 2
     max_daily_trades = int(cfg.max_trades_per_day)
     max_daily_trades = max(max_daily_trades, 0)
     daily_trade_count: dict[int, int] = {}

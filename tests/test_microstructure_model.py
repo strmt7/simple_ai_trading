@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import numpy as np
@@ -16,11 +18,13 @@ from simple_ai_trading.microstructure_model import (
     MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
     MicrostructureModelArtifact,
     PerformanceConfidence,
+    PrequentialValidationEvidence,
     PurgedSplitEvidence,
     ThresholdPolicy,
     ThresholdSearchEvidence,
     TradingMetrics,
     _apply_platt_scaling,
+    _candidate_payload_sha256,
     _fit_platt_scaling,
     _model_strings_sha256,
     _performance_confidence,
@@ -225,8 +229,39 @@ def test_threshold_search_uses_base_rate_relative_probability_tails() -> None:
 
 
 def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
+    metrics = {
+        "trades": 40,
+        "total_net_bps": 100.0,
+        "mean_net_bps": 2.5,
+        "median_net_bps": 2.0,
+        "win_rate": 0.6,
+        "profit_factor": 1.5,
+        "max_drawdown_bps": 20.0,
+        "worst_trade_bps": -5.0,
+        "best_trade_bps": 8.0,
+        "long_trades": 20,
+        "short_trades": 20,
+        "active_days": 20,
+        "trades_per_active_day": 2.0,
+    }
+    no_trade = {
+        "trades": 0,
+        "total_net_bps": 0.0,
+        "mean_net_bps": 0.0,
+        "median_net_bps": 0.0,
+        "win_rate": 0.0,
+        "profit_factor": None,
+        "max_drawdown_bps": 0.0,
+        "worst_trade_bps": 0.0,
+        "best_trade_bps": 0.0,
+        "long_trades": 0,
+        "short_trades": 0,
+        "active_days": 0,
+        "trades_per_active_day": 0.0,
+    }
     payload: dict[str, object] = {
         "schema_version": MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
+        "model_family": "side_specific_hurdle_expected_value",
         "status": status,
         "rejection_reasons": [] if status == "accepted" else ["selection_failed"],
         "symbol": "BTCUSDT",
@@ -245,18 +280,39 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "take_profit_bps": 40.0,
         "trigger_execution_slippage_bps": 1.0,
         "path_resolution_ms": 1_000,
+        "training_backend_kind": "opencl",
+        "training_backend_device": "opencl:0:0",
+        "lightgbm_version": "4.6.0",
+        "seed": 17,
         "unique_utc_days": 365,
+        "calendar_span_days": 365,
         "minimum_promotion_days": 365,
         "deployment_calibration_days": 14,
         "maximum_model_age_seconds": 86_400,
         "calendar_day_coverage_ratio": 1.0,
-        "terminal_evaluated_at": "2026-01-01T00:00:00+00:00",
-        "terminal_metrics": {
-            "trades": 40,
-            "total_net_bps": 100.0,
-            "max_drawdown_bps": 20.0,
-            "profit_factor": 1.5,
+        "minimum_rows_per_utc_day": 100,
+        "daily_rows_p10": 100.0,
+        "median_rows_per_utc_day": 100.0,
+        "split": {
+            "train_rows": 55_000,
+            "tuning_rows": 15_000,
+            "policy_rows": 10_000,
+            "selection_rows": 10_000,
+            "terminal_rows": 10_000,
+            "train_end_ms": 1_715_000_000_000,
+            "tuning_start_ms": 1_715_000_001_000,
+            "policy_start_ms": 1_720_000_000_000,
+            "selection_start_ms": 1_725_000_000_000,
+            "terminal_start_ms": 1_730_000_000_000,
+            "purge_ms": 61_000,
+            "purged_rows": 100,
+            "tuning_early_stop_rows": 7_000,
+            "tuning_calibration_rows": 7_000,
+            "tuning_calibration_start_ms": 1_717_500_000_000,
+            "tuning_internal_purged_rows": 1_000,
         },
+        "terminal_evaluated_at": "2026-01-01T00:00:00+00:00",
+        "terminal_metrics": dict(metrics),
         "selection_confidence": {
             "calendar_days": 55,
             "active_days": 40,
@@ -287,6 +343,14 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         },
         "terminal_auc": {"long": 0.60, "short": 0.58},
         "terminal_brier": {"long": 0.20, "short": 0.21},
+        "tuning_auc": {"long": 0.61, "short": 0.59},
+        "tuning_brier": {"long": 0.19, "short": 0.20},
+        "selection_auc": {"long": 0.60, "short": 0.58},
+        "selection_brier": {"long": 0.20, "short": 0.21},
+        "policy_metrics": dict(metrics),
+        "selection_metrics": dict(metrics),
+        "selection_baselines": {"no_trade": dict(no_trade)},
+        "terminal_baselines": {"no_trade": dict(no_trade)},
         "dataset_summary": {
             "trade_feature_embargo_ms": 1_000,
             "reference_order_notional_quote": 1_000.0,
@@ -320,7 +384,18 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
             "minimum_profitable_probability": 0.60,
             "selection_utility_bps": 1.0,
         },
+        "policy_search": {
+            "rows": 10_000,
+            "long_positive_edge_rows": 2_000,
+            "short_positive_edge_rows": 2_000,
+            "minimum_required_trades": 20,
+            "evaluated_policy_count": 25,
+            "policies_meeting_trade_minimum": 10,
+            "best_observed_utility_bps": 60.0,
+            "best_observed_metrics": dict(metrics),
+        },
         "probability_calibration": {"long": [1.0, 0.0], "short": [1.0, 0.0]},
+        "trained_at": "2025-12-01T00:00:00+00:00",
     }
     models = {
         "long_probability": "0.80",
@@ -331,6 +406,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "short_loss_magnitude": "2.0",
     }
     payload["model_strings"] = models
+    payload["best_iterations"] = {name: 1 for name in models}
     payload["deployment_model_strings"] = dict(models)
     training_cutoff_ms = 1_731_535_999_000
     payload["deployment_refit"] = {
@@ -356,6 +432,52 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "validation_model_sha256": _model_strings_sha256(models),
         "deployment_model_sha256": _model_strings_sha256(models),
         "fitted_at": "2026-01-01T00:00:00+00:00",
+    }
+    candidate_payload = json.loads(json.dumps(payload))
+    candidate_payload.update(
+        {
+            "status": "candidate",
+            "rejection_reasons": [],
+            "terminal_auc": None,
+            "terminal_brier": None,
+            "terminal_metrics": None,
+            "terminal_confidence": None,
+            "terminal_baselines": None,
+            "deployment_model_strings": None,
+            "deployment_refit": None,
+            "terminal_evaluated_at": None,
+            "prequential_validation": None,
+        }
+    )
+    candidate_sha = hashlib.sha256(
+        json.dumps(
+            candidate_payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    payload["prequential_validation"] = {
+        "version": "microstructure-prequential-fixed-refit-v1",
+        "report_sha256": "e" * 64,
+        "predictions_sha256": "f" * 64,
+        "chart_sha256": "1" * 64,
+        "candidate_sha256": candidate_sha,
+        "protocol_sha256": "2" * 64,
+        "fold_models_sha256": "3" * 64,
+        "source_feature_build_id": "c" * 64,
+        "source_manifest_fingerprint": "d" * 64,
+        "generated_at_ms": 1_765_000_000_000,
+        "planned_folds": 8,
+        "complete_folds": 8,
+        "evaluated_rows": 10_000,
+        "selection_coverage_ratio": 1.0,
+        "total_net_bps": 100.0,
+        "profit_factor": 1.5,
+        "max_drawdown_bps": 20.0,
+        "mean_daily_net_bps_ci_lower": 0.4,
+        "attached_at": "2026-01-01T00:00:00+00:00",
     }
     return payload
 
@@ -472,6 +594,13 @@ def test_runtime_scorer_rejects_unpromoted_or_drifted_artifacts(tmp_path) -> Non
     unproven.write_text(json.dumps(unproven_payload), encoding="utf-8")
     with pytest.raises(ValueError, match="source provenance"):
         load_microstructure_action_scorer(unproven)
+
+    no_prequential_payload = _runtime_artifact_payload()
+    no_prequential_payload["prequential_validation"] = None
+    no_prequential = tmp_path / "no-prequential.json"
+    no_prequential.write_text(json.dumps(no_prequential_payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="prequential validation evidence"):
+        load_microstructure_action_scorer(no_prequential)
 
     unprotected_payload = _runtime_artifact_payload()
     unprotected_payload["target_mode"] = "fixed_horizon"
@@ -647,6 +776,30 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         dataset_summary=dataset.summary(),
         trained_at=datetime.now(timezone.utc).isoformat(),
         terminal_evaluated_at=datetime.now(timezone.utc).isoformat(),
+    )
+    artifact = replace(
+        artifact,
+        prequential_validation=PrequentialValidationEvidence(
+            version="microstructure-prequential-fixed-refit-v1",
+            report_sha256="d" * 64,
+            predictions_sha256="e" * 64,
+            chart_sha256="f" * 64,
+            candidate_sha256=_candidate_payload_sha256(artifact),
+            protocol_sha256="1" * 64,
+            fold_models_sha256="2" * 64,
+            source_feature_build_id="a" * 64,
+            source_manifest_fingerprint="b" * 64,
+            generated_at_ms=1_700_000_000_000,
+            planned_folds=5,
+            complete_folds=5,
+            evaluated_rows=1_000,
+            selection_coverage_ratio=1.0,
+            total_net_bps=100.0,
+            profit_factor=1.5,
+            max_drawdown_bps=20.0,
+            mean_daily_net_bps_ci_lower=0.5,
+            attached_at=datetime.now(timezone.utc).isoformat(),
+        ),
     )
 
     class _Booster:

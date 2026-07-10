@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import zipfile
-from pathlib import Path
-
 from simple_ai_trading import binance_archive
 from simple_ai_trading.api import Candle
 from simple_ai_trading.binance_archive import (

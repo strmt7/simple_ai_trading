@@ -11,7 +11,7 @@ from .data_coverage import DataCoverageReport, describe_candle_coverage
 from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
 from .intervals import max_limit
 from .market_store import MarketDataStore
-from .market_universe import MarketEligibility, UniverseSelection, rank_high_liquidity_universe
+from .market_universe import MarketEligibility, rank_high_liquidity_universe
 from .market_data import clean_candles
 from .model import ModelLoadError, load_model, serialize_model
 from .portfolio_risk import PortfolioRiskReport, build_portfolio_risk_report

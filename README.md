@@ -133,6 +133,9 @@ simple-ai-trading archive-sync --symbol BTCUSDC --interval 1s --cadence monthly
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --plan-only --require-checksum --json
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --require-checksum
 simple-ai-trading data-health --interval 1s --market spot --min-rows 1000000 --require-verified-checksum --json
+simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
+simple-ai-trading microstructure-prequential --input data/microstructure-model.json
+simple-ai-trading microstructure-promote --input data/microstructure-model.json
 python tools\optimization_round.py --round-id round-004 --market spot --symbols ETHUSDT --interval 1s --require-prefilled-data --min-data-rows 70000 --require-verified-checksum
 python tools\optimization_round.py --round-id round-btc-eth-sol-futures-1s --market futures --quote-asset USDT --objective conservative --promotion-grade --min-promotion-data-years 2 --require-gpu
 simple-ai-trading model-blueprint --risk-level conservative
@@ -150,6 +153,19 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. When timestamps are present, the chart labels the UTC start/end dates and the simulated duration in days/years instead of presenting an unlabeled sample index. The same command appears in the Windows app.
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
+
+The separate `microstructure-action-value-v11` path uses real Binance USD-M
+book-ticker and trade archives to build causal one-second L1/tape features. Its
+promotion lifecycle is deliberately staged: candidate training, complete
+rolling-refit prequential evidence with the terminal period sealed, hash and
+row-level evidence verification, one-use terminal reservation, terminal
+validation, then an expiring deployment refit. The former
+`microstructure-train --evaluate-terminal` shortcut is disabled. Terminal,
+refit, and accepted-runtime loaders independently reject missing or drifted
+prequential evidence. No v11 artifact is currently accepted or claimed
+profitable, and rolling-refit terminal replay plus exchange shadow calibration
+remain incomplete; see
+[Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned
 financial time-series foundation model. It requires exact BTCUSDT, ETHUSDT, and

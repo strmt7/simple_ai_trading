@@ -243,9 +243,6 @@ class PositionsStore:
         return [ClosedTrade(**entry) for entry in self._load(self.ledger_path)
                 if self._valid_closed_entry(entry)]
 
-    def open_integrity_errors(self) -> tuple[str, ...]:
-        return self._open_file_integrity_errors(self.open_path)
-
     def record_open(self, position: OpenPosition) -> OpenPosition:
         existing = self.load_open()
         existing = [p for p in existing if p.id != position.id]
