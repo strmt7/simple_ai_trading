@@ -59,6 +59,10 @@ class ArchiveListingItem:
     period: str
     size_bytes: int = 0
     last_modified: str = ""
+    etag: str = ""
+    checksum_size_bytes: int = 0
+    checksum_last_modified: str = ""
+    checksum_etag: str = ""
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -69,6 +73,7 @@ class _ListingEntry:
     key: str
     size_bytes: int = 0
     last_modified: str = ""
+    etag: str = ""
 
 
 _ARCHIVE_LISTING_ITEM_CACHE: dict[str, ArchiveListingItem] = {}
@@ -215,7 +220,7 @@ def list_archive_items(
     html_loader: Callable[[str], str] | None = None,
 ) -> list[ArchiveListingItem]:
     origin = base_url.rstrip("/").removesuffix("/data")
-    items: list[ArchiveListingItem] = []
+    entries_by_key: dict[str, _ListingEntry] = {}
     marker: str | None = None
     while True:
         listing = archive_listing_url(
@@ -234,24 +239,35 @@ def list_archive_items(
             listing_text = html_loader(listing)
         entries, next_marker, truncated = _parse_listing_entries(listing_text)
         keys = [entry.key for entry in entries]
-        for entry in entries:
-            key = entry.key
-            if key.endswith(".zip") and not key.endswith(".zip.CHECKSUM"):
-                url = _archive_url_from_key(origin, key)
-                items.append(
-                    ArchiveListingItem(
-                        url=url,
-                        key=key,
-                        period=archive_url_period(url),
-                        size_bytes=max(0, int(entry.size_bytes)),
-                        last_modified=entry.last_modified,
-                    )
-                )
+        entries_by_key.update((entry.key, entry) for entry in entries)
         if not truncated:
             break
         marker = next_marker or (keys[-1] if keys else None)
         if marker is None:
             break
+    items: list[ArchiveListingItem] = []
+    for key, entry in entries_by_key.items():
+        if not key.endswith(".zip") or key.endswith(".zip.CHECKSUM"):
+            continue
+        url = _archive_url_from_key(origin, key)
+        checksum = entries_by_key.get(f"{key}.CHECKSUM")
+        items.append(
+            ArchiveListingItem(
+                url=url,
+                key=key,
+                period=archive_url_period(url),
+                size_bytes=max(0, int(entry.size_bytes)),
+                last_modified=entry.last_modified,
+                etag=entry.etag,
+                checksum_size_bytes=(
+                    max(0, int(checksum.size_bytes)) if checksum is not None else 0
+                ),
+                checksum_last_modified=(
+                    checksum.last_modified if checksum is not None else ""
+                ),
+                checksum_etag=(checksum.etag if checksum is not None else ""),
+            )
+        )
     unique = {item.url: item for item in items}
     selected = [unique[url] for url in sorted(unique)]
     _remember_archive_listing_items(selected)
@@ -387,6 +403,7 @@ def _parse_listing_entries(listing_text: str) -> tuple[list[_ListingEntry], str 
                     key=key,
                     size_bytes=_parse_int(_xml_text(contents, "Size")),
                     last_modified=_xml_text(contents, "LastModified"),
+                    etag=_xml_text(contents, "ETag").strip().strip('"').lower(),
                 )
             )
     next_marker = _xml_text(root, "NextMarker") or None

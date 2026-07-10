@@ -165,7 +165,9 @@ is in progress; the compact listing plan is not a claim that all files are
 already present in the local warehouse.
 
 The warehouse persists each official S3 listing as an immutable inventory
-snapshot before ingestion. A full-history run succeeds only after a corpus
+snapshot before and after ingestion. Every inventory item includes the ZIP and
+`.CHECKSUM` object's opaque S3 ETag, `LastModified`, and exact byte size; the two
+snapshots must be identical. A full-history run succeeds only after a corpus
 certificate reconciles every listed UTC-day partition against one current
 manifest with the exact official URL and compressed byte count, a matching
 Binance SHA-256 sidecar, a supported schema, positive raw and derived row
@@ -173,19 +175,28 @@ counts, valid exchange-time bounds, and no invalid, duplicate, crossed-book, or
 uncanonicalized trade/depth rows. It also reconciles manifest counts and time
 bounds against the physical raw and derived DuckDB partitions, validates the
 materialized 100 ms BBO execution path, and rechecks coarse-depth band groups.
-The certificate records per-product launch and end dates and computes the exact
-common calendar intersection; it never assumes that BBO, trades, and coarse
-depth share coverage. Both the executable L1 dataset and the long-history
+The certificate records per-product launch and end dates, each provider-side
+calendar gap, and the exact common calendar intersection; it never assumes that
+BBO, trades, and coarse depth share coverage. The live 2026-07-10 inventory is
+calendar-complete for all three trade feeds, while Binance omits some coarse
+`bookDepth` dates (including 2023-02-08 and 2023-02-09 for all three symbols).
+Those gaps remain explicit in requested-window certification. The tape/depth
+builder can admit them only through its `bookDepth`-specific,
+provider-proven gap exception. It records the exact dates and emits unavailable
+depth after the age limit; it never fills them with synthetic data or stale
+liquidity. Both the executable L1 dataset and the long-history
 tape/depth dataset require this certificate. An archive plan, downloaded ZIP,
 or manifest count alone is insufficient.
 
 Repeat syncs do not redownload an unchanged 275 GiB corpus. Before reuse, the
 warehouse batches one physical integrity scan per symbol/product and requires
-the exact official URL and byte size, an S3 `LastModified` time no newer than
-the verified ingestion, matching source/sidecar hashes, current schema, intact
-row counts and bounds, and valid derived partitions. Changed or damaged
-partitions are excluded from reuse and are fetched again; the final corpus
-certificate remains the authority.
+the exact official URL and byte size, matching ZIP and checksum-object ETags, S3
+`LastModified` times no newer than the verified ingestion, matching
+source/sidecar hashes, current schema, intact row counts and bounds, and valid
+derived partitions. Changed or damaged partitions are excluded from reuse. The
+fallback path revalidates physical evidence again and atomically replaces the
+partition from the checksummed ZIP; it can no longer return a corrupt completed
+manifest as `skipped`. The final corpus certificate remains the authority.
 
 This closes a previous provenance weakness: a missing trade archive can no
 longer be interpreted as a day of genuine zero order flow, and a complete BBO
@@ -326,6 +337,10 @@ The implementation adapts, rather than blindly invokes, the following methods:
 - Binance's [official public-data repository](https://github.com/binance/binance-public-data)
   documents daily/monthly archives, timestamp changes, archive corrections,
   and SHA-256 sidecars used by the corpus certificate.
+- AWS's [official S3 ListObjects reference](https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/list_objects.html)
+  defines `ETag`, `LastModified`, and `Size`. The implementation treats ETag as
+  an opaque content-version identifier because multipart ETags are not MD5
+  digests.
 
 ```powershell
 simple-ai-trading tape-depth-train `

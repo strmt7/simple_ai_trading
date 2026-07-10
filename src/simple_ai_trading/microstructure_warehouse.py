@@ -140,6 +140,15 @@ def _listing_last_modified_ms(value: str) -> int | None:
     return int(parsed.astimezone(timezone.utc).timestamp() * 1_000)
 
 
+def _normalize_s3_etag(value: object) -> str:
+    """Treat S3 entity tags as opaque version identifiers, not MD5 digests."""
+
+    text = str(value or "").strip().strip('"').lower()
+    if len(text) > 256 or any(ord(character) < 0x20 for character in text):
+        raise ValueError("official archive inventory ETag is invalid")
+    return text
+
+
 def _inventory_snapshot_id(
     *,
     symbol: str,
@@ -151,7 +160,7 @@ def _inventory_snapshot_id(
 ) -> str:
     return _canonical_sha256(
         {
-            "contract": "official-binance-daily-inventory-v1",
+            "contract": "official-binance-daily-inventory-v2",
             "data_type": data_type,
             "full_history": bool(full_history),
             "listing_sha256": listing_sha256,
@@ -510,7 +519,11 @@ class MicrostructureWarehouse:
                 out_of_order_rows UBIGINT NOT NULL,
                 crossed_books UBIGINT NOT NULL,
                 ingested_at_ms BIGINT NOT NULL,
-                error VARCHAR NOT NULL
+                error VARCHAR NOT NULL,
+                official_etag VARCHAR NOT NULL DEFAULT '',
+                checksum_object_size_bytes UBIGINT NOT NULL DEFAULT 0,
+                checksum_last_modified VARCHAR NOT NULL DEFAULT '',
+                checksum_etag VARCHAR NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS archive_inventory_snapshot (
@@ -539,6 +552,10 @@ class MicrostructureWarehouse:
                 url VARCHAR NOT NULL,
                 expected_bytes UBIGINT NOT NULL,
                 last_modified VARCHAR NOT NULL,
+                etag VARCHAR NOT NULL DEFAULT '',
+                checksum_expected_bytes UBIGINT NOT NULL DEFAULT 0,
+                checksum_last_modified VARCHAR NOT NULL DEFAULT '',
+                checksum_etag VARCHAR NOT NULL DEFAULT '',
                 PRIMARY KEY (snapshot_id, period)
             );
 
@@ -830,6 +847,34 @@ class MicrostructureWarehouse:
             conn.execute(
                 "ALTER TABLE archive_manifest ADD COLUMN event_time_regressions UBIGINT DEFAULT 0"
             )
+        manifest_metadata_columns = {
+            "official_etag": "VARCHAR DEFAULT ''",
+            "checksum_object_size_bytes": "UBIGINT DEFAULT 0",
+            "checksum_last_modified": "VARCHAR DEFAULT ''",
+            "checksum_etag": "VARCHAR DEFAULT ''",
+        }
+        for name, definition in manifest_metadata_columns.items():
+            if name not in manifest_columns:
+                conn.execute(
+                    f"ALTER TABLE archive_manifest ADD COLUMN {name} {definition}"
+                )
+        inventory_columns = {
+            str(row[1])
+            for row in conn.execute(
+                "PRAGMA table_info('archive_inventory_item')"
+            ).fetchall()
+        }
+        inventory_metadata_columns = {
+            "etag": "VARCHAR DEFAULT ''",
+            "checksum_expected_bytes": "UBIGINT DEFAULT 0",
+            "checksum_last_modified": "VARCHAR DEFAULT ''",
+            "checksum_etag": "VARCHAR DEFAULT ''",
+        }
+        for name, definition in inventory_metadata_columns.items():
+            if name not in inventory_columns:
+                conn.execute(
+                    f"ALTER TABLE archive_inventory_item ADD COLUMN {name} {definition}"
+                )
         book_depth_columns = {
             str(row[1]): str(row[2]).upper()
             for row in conn.execute(
@@ -927,11 +972,25 @@ class MicrostructureWarehouse:
         url: str,
         expected_bytes: int,
         expected_last_modified: str,
+        expected_etag: str,
+        checksum_expected_bytes: int,
+        checksum_last_modified: str,
+        checksum_etag: str,
     ) -> Mapping[str, object] | None:
         """Reuse only evidence ingested after the currently listed S3 object version."""
 
         modified_ms = _listing_last_modified_ms(expected_last_modified)
-        if modified_ms is None or int(expected_bytes) <= 0:
+        checksum_modified_ms = _listing_last_modified_ms(checksum_last_modified)
+        normalized_etag = _normalize_s3_etag(expected_etag)
+        normalized_checksum_etag = _normalize_s3_etag(checksum_etag)
+        if (
+            modified_ms is None
+            or checksum_modified_ms is None
+            or int(expected_bytes) <= 0
+            or int(checksum_expected_bytes) <= 0
+            or not normalized_etag
+            or not normalized_checksum_etag
+        ):
             return None
         row = self.connect().execute(
             """
@@ -943,6 +1002,10 @@ class MicrostructureWarehouse:
               AND checksum_status = 'verified'
               AND length(source_sha256) = 64
               AND lower(source_sha256) = lower(expected_sha256)
+              AND coalesce(official_etag, '') IN ('', ?)
+              AND coalesce(checksum_object_size_bytes, 0) IN (0, ?)
+              AND coalesce(checksum_last_modified, '') IN ('', ?)
+              AND coalesce(checksum_etag, '') IN ('', ?)
               AND ingested_at_ms >= ?
             """,
             [
@@ -953,7 +1016,11 @@ class MicrostructureWarehouse:
                 TICK_WAREHOUSE_SCHEMA_VERSION,
                 int(expected_bytes),
                 int(expected_bytes),
-                modified_ms,
+                normalized_etag,
+                int(checksum_expected_bytes),
+                checksum_last_modified,
+                normalized_checksum_etag,
+                max(modified_ms, checksum_modified_ms),
             ],
         ).fetchone()
         if row is None:
@@ -966,6 +1033,7 @@ class MicrostructureWarehouse:
         *,
         symbol: str,
         data_type: str,
+        archive_id: str | None = None,
     ) -> dict[str, dict[str, int]]:
         table_contract = {
             "bookTicker": (
@@ -1020,20 +1088,27 @@ class MicrostructureWarehouse:
         }
         invalid_expression, crossed_expression = raw_quality[data_type]
         conn = self.connect()
+        archive_clause = " AND r.archive_id = ?" if archive_id is not None else ""
+        parameters: list[object] = [symbol, data_type]
+        if archive_id is not None:
+            parameters.append(archive_id)
         raw_rows = conn.execute(
             f"""
             SELECT r.archive_id, count(*)::UBIGINT,
                    min(r.{raw_clock})::BIGINT, max(r.{raw_clock})::BIGINT,
-                   count(*) FILTER (WHERE {invalid_expression})::UBIGINT,
+                   count(*) FILTER (
+                       WHERE ({invalid_expression}) OR r.symbol <> m.symbol
+                   )::UBIGINT,
                    0::UBIGINT,
                    count(*) FILTER (WHERE {crossed_expression})::UBIGINT
             FROM {raw_table} r
             JOIN archive_manifest m USING (archive_id)
             WHERE m.symbol = ? AND m.data_type = ?
               AND m.status = 'complete' AND m.is_current
+              {archive_clause}
             GROUP BY r.archive_id
             """,
-            [symbol, data_type],
+            parameters,
         ).fetchall()
         output = {
             str(row[0]): {
@@ -1055,7 +1130,7 @@ class MicrostructureWarehouse:
         }
         if data_type == "bookDepth":
             derived_rows = conn.execute(
-                """
+                f"""
                 WITH grouped AS (
                     SELECT r.archive_id, r.timestamp_ms, count(*) AS band_count,
                            count(*) FILTER (WHERE abs(r.percentage) = 0.20) AS fine_band_count
@@ -1063,6 +1138,7 @@ class MicrostructureWarehouse:
                     JOIN archive_manifest m USING (archive_id)
                     WHERE m.symbol = ? AND m.data_type = 'bookDepth'
                       AND m.status = 'complete' AND m.is_current
+                      {archive_clause}
                     GROUP BY r.archive_id, r.timestamp_ms
                 )
                 SELECT archive_id, count(*)::UBIGINT,
@@ -1074,7 +1150,7 @@ class MicrostructureWarehouse:
                        )::UBIGINT
                 FROM grouped GROUP BY archive_id
                 """,
-                [symbol],
+                [symbol, *([archive_id] if archive_id is not None else [])],
             ).fetchall()
         else:
             derived_rows = conn.execute(
@@ -1085,9 +1161,10 @@ class MicrostructureWarehouse:
                 JOIN archive_manifest m USING (archive_id)
                 WHERE m.symbol = ? AND m.data_type = ?
                   AND m.status = 'complete' AND m.is_current
+                  {archive_clause}
                 GROUP BY r.archive_id
                 """,
-                [symbol, data_type],
+                parameters,
             ).fetchall()
         for row in derived_rows:
             archive_id, row_count, first_ms, last_ms = row[:4]
@@ -1110,9 +1187,10 @@ class MicrostructureWarehouse:
                 JOIN archive_manifest m USING (archive_id)
                 WHERE m.symbol = ? AND m.data_type = ?
                   AND m.status = 'complete' AND m.is_current
+                  {archive_clause}
                 GROUP BY r.archive_id
                 """,
-                [symbol, data_type],
+                parameters,
             ).fetchall()
             for archive_id, row_count, first_ms, last_ms in auxiliary_rows:
                 stats = output.setdefault(str(archive_id), {})
@@ -1134,6 +1212,14 @@ class MicrostructureWarehouse:
         first_ms = manifest.get("first_exchange_time_ms")
         last_ms = manifest.get("last_exchange_time_ms")
         if first_ms is None or last_ms is None:
+            return False
+        if any(
+            int(manifest.get(name) or 0) != 0
+            for name in ("invalid_rows", "duplicate_ids", "crossed_books")
+        ) or (
+            data_type != "bookTicker"
+            and int(manifest.get("out_of_order_rows") or 0) != 0
+        ):
             return False
         first_value = int(first_ms)
         last_value = int(last_ms)
@@ -1184,6 +1270,7 @@ class MicrostructureWarehouse:
             data_type=normalized_type,
         )
         output: dict[str, TickArchiveIngestResult] = {}
+        metadata_bindings: list[tuple[str, int, str, str, str]] = []
         for item in items:
             period = str(
                 item.get("period") if isinstance(item, Mapping) else getattr(item, "period", "")
@@ -1198,6 +1285,26 @@ class MicrostructureWarehouse:
                 item.get("last_modified", "")
                 if isinstance(item, Mapping)
                 else getattr(item, "last_modified", "")
+            )
+            etag = str(
+                item.get("etag", "")
+                if isinstance(item, Mapping)
+                else getattr(item, "etag", "")
+            )
+            checksum_size_bytes = int(
+                item.get("checksum_size_bytes", 0)
+                if isinstance(item, Mapping)
+                else getattr(item, "checksum_size_bytes", 0)
+            )
+            checksum_last_modified = str(
+                item.get("checksum_last_modified", "")
+                if isinstance(item, Mapping)
+                else getattr(item, "checksum_last_modified", "")
+            )
+            checksum_etag = str(
+                item.get("checksum_etag", "")
+                if isinstance(item, Mapping)
+                else getattr(item, "checksum_etag", "")
             )
             normalized_period = _normalize_tick_request(
                 normalized_symbol,
@@ -1217,6 +1324,10 @@ class MicrostructureWarehouse:
                 url=url,
                 expected_bytes=expected_bytes,
                 expected_last_modified=last_modified,
+                expected_etag=etag,
+                checksum_expected_bytes=checksum_size_bytes,
+                checksum_last_modified=checksum_last_modified,
+                checksum_etag=checksum_etag,
             )
             if manifest is None:
                 continue
@@ -1235,10 +1346,38 @@ class MicrostructureWarehouse:
             stats = physical.get(str(manifest.get("archive_id") or ""), {})
             if not self._manifest_matches_physical_rows(normalized_type, manifest, stats):
                 continue
+            metadata_bindings.append(
+                (
+                    _normalize_s3_etag(etag),
+                    checksum_size_bytes,
+                    checksum_last_modified,
+                    _normalize_s3_etag(checksum_etag),
+                    str(manifest.get("archive_id") or ""),
+                )
+            )
             output[normalized_period] = self._result_from_manifest(
                 manifest,
                 status="skipped_verified_unchanged",
             )
+        if metadata_bindings:
+            lock_path = self.path.with_suffix(self.path.suffix + ".writer.lock")
+            with _exclusive_operation_lock(lock_path):
+                conn = self.connect()
+                conn.execute("BEGIN TRANSACTION")
+                try:
+                    conn.executemany(
+                        """
+                        UPDATE archive_manifest
+                        SET official_etag = ?, checksum_object_size_bytes = ?,
+                            checksum_last_modified = ?, checksum_etag = ?
+                        WHERE archive_id = ? AND status = 'complete' AND is_current
+                        """,
+                        metadata_bindings,
+                    )
+                    conn.execute("COMMIT")
+                except Exception:
+                    conn.execute("ROLLBACK")
+                    raise
         return output
 
     def record_official_archive_inventory(
@@ -1265,11 +1404,27 @@ class MicrostructureWarehouse:
                 url = str(item.get("url") or "")
                 size_bytes = int(item.get("size_bytes") or 0)
                 last_modified = str(item.get("last_modified") or "")
+                etag = _normalize_s3_etag(item.get("etag"))
+                checksum_size_bytes = int(item.get("checksum_size_bytes") or 0)
+                checksum_last_modified = str(
+                    item.get("checksum_last_modified") or ""
+                )
+                checksum_etag = _normalize_s3_etag(item.get("checksum_etag"))
             else:
                 period = str(getattr(item, "period", "") or "")
                 url = str(getattr(item, "url", "") or "")
                 size_bytes = int(getattr(item, "size_bytes", 0) or 0)
                 last_modified = str(getattr(item, "last_modified", "") or "")
+                etag = _normalize_s3_etag(getattr(item, "etag", ""))
+                checksum_size_bytes = int(
+                    getattr(item, "checksum_size_bytes", 0) or 0
+                )
+                checksum_last_modified = str(
+                    getattr(item, "checksum_last_modified", "") or ""
+                )
+                checksum_etag = _normalize_s3_etag(
+                    getattr(item, "checksum_etag", "")
+                )
             _period_bounds_ms(period)
             _validate_official_url(
                 url,
@@ -1277,14 +1432,27 @@ class MicrostructureWarehouse:
                 data_type=normalized_type,
                 period=period,
             )
-            if size_bytes < 0:
-                raise ValueError("official archive inventory size cannot be negative")
+            if (
+                size_bytes <= 0
+                or checksum_size_bytes <= 0
+                or _listing_last_modified_ms(last_modified) is None
+                or _listing_last_modified_ms(checksum_last_modified) is None
+                or not etag
+                or not checksum_etag
+            ):
+                raise ValueError(
+                    "official archive inventory lacks ZIP or CHECKSUM object metadata"
+                )
             normalized_items.append(
                 {
                     "period": period,
                     "url": url,
                     "expected_bytes": size_bytes,
                     "last_modified": last_modified,
+                    "etag": etag,
+                    "checksum_expected_bytes": checksum_size_bytes,
+                    "checksum_last_modified": checksum_last_modified,
+                    "checksum_etag": checksum_etag,
                 }
             )
         normalized_items.sort(key=lambda value: (str(value["period"]), str(value["url"])))
@@ -1361,7 +1529,14 @@ class MicrostructureWarehouse:
                         ],
                     )
                     conn.executemany(
-                        "INSERT INTO archive_inventory_item VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        """
+                        INSERT INTO archive_inventory_item (
+                            snapshot_id, symbol, data_type, period, url,
+                            expected_bytes, last_modified, etag,
+                            checksum_expected_bytes, checksum_last_modified,
+                            checksum_etag
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
                         [
                             (
                                 snapshot_id,
@@ -1371,6 +1546,10 @@ class MicrostructureWarehouse:
                                 item["url"],
                                 item["expected_bytes"],
                                 item["last_modified"],
+                                item["etag"],
+                                item["checksum_expected_bytes"],
+                                item["checksum_last_modified"],
+                                item["checksum_etag"],
                             )
                             for item in normalized_items
                         ],
@@ -1394,7 +1573,9 @@ class MicrostructureWarehouse:
                         raise ValueError("immutable official inventory snapshot metadata changed")
                     persisted_items = conn.execute(
                         """
-                        SELECT period, url, expected_bytes, last_modified
+                        SELECT period, url, expected_bytes, last_modified, etag,
+                               checksum_expected_bytes, checksum_last_modified,
+                               checksum_etag
                         FROM archive_inventory_item
                         WHERE snapshot_id = ? ORDER BY period, url
                         """,
@@ -1406,6 +1587,10 @@ class MicrostructureWarehouse:
                             item["url"],
                             item["expected_bytes"],
                             item["last_modified"],
+                            item["etag"],
+                            item["checksum_expected_bytes"],
+                            item["checksum_last_modified"],
+                            item["checksum_etag"],
                         )
                         for item in normalized_items
                     ]
@@ -1441,6 +1626,7 @@ class MicrostructureWarehouse:
         required_start_ms: int | None = None,
         required_end_ms: int | None = None,
         require_full_history_inventory: bool = True,
+        allow_official_gap_data_types: Sequence[str] = (),
     ) -> dict[str, object]:
         """Prove official-listing, checksum, partition, and time-range completeness."""
 
@@ -1450,6 +1636,13 @@ class MicrostructureWarehouse:
         types = tuple(dict.fromkeys(str(value).strip() for value in required_data_types))
         if not types or any(value not in SUPPORTED_TICK_ARCHIVES for value in types):
             raise ValueError("corpus certificate data types are invalid")
+        allowed_official_gap_types = tuple(
+            dict.fromkeys(str(value).strip() for value in allow_official_gap_data_types)
+        )
+        if any(value not in types for value in allowed_official_gap_types):
+            raise ValueError(
+                "allowed official-gap data types must be required certificate types"
+            )
         if (required_start_ms is None) != (required_end_ms is None):
             raise ValueError("corpus certificate requires both start and end timestamps")
         required_periods: set[str] | None = None
@@ -1509,7 +1702,9 @@ class MicrostructureWarehouse:
             ) = snapshots[0]
             inventory_rows = conn.execute(
                 """
-                SELECT period, url, expected_bytes, last_modified
+                SELECT period, url, expected_bytes, last_modified, etag,
+                       checksum_expected_bytes, checksum_last_modified,
+                       checksum_etag
                 FROM archive_inventory_item
                 WHERE snapshot_id = ?
                 ORDER BY period, url
@@ -1522,18 +1717,51 @@ class MicrostructureWarehouse:
                     "url": str(row[1]),
                     "expected_bytes": int(row[2] or 0),
                     "last_modified": str(row[3] or ""),
+                    "etag": _normalize_s3_etag(row[4]),
+                    "checksum_expected_bytes": int(row[5] or 0),
+                    "checksum_last_modified": str(row[6] or ""),
+                    "checksum_etag": _normalize_s3_etag(row[7]),
                 }
                 for row in inventory_rows
             }
             expected = set(inventory)
             expected_sets.append(expected)
             type_reasons: list[str] = []
+            official_calendar_gaps: list[str] = []
+            if expected:
+                calendar_cursor = datetime.strptime(min(expected), "%Y-%m-%d").date()
+                calendar_end = datetime.strptime(max(expected), "%Y-%m-%d").date()
+                while calendar_cursor <= calendar_end:
+                    calendar_period = calendar_cursor.isoformat()
+                    if calendar_period not in expected:
+                        official_calendar_gaps.append(calendar_period)
+                    calendar_cursor += timedelta(days=1)
             if str(schema_version) != TICK_WAREHOUSE_SCHEMA_VERSION:
                 type_reasons.append("inventory_schema_mismatch")
             if require_full_history_inventory and not bool(full_history):
                 type_reasons.append("inventory_is_not_full_history")
             if len(inventory_rows) != int(item_count or 0) or len(inventory) != len(inventory_rows):
                 type_reasons.append("inventory_row_count_mismatch")
+            invalid_inventory_metadata = [
+                period
+                for period, item in inventory.items()
+                if (
+                    int(item["expected_bytes"]) <= 0
+                    or int(item["checksum_expected_bytes"]) <= 0
+                    or _listing_last_modified_ms(str(item["last_modified"])) is None
+                    or _listing_last_modified_ms(
+                        str(item["checksum_last_modified"])
+                    )
+                    is None
+                    or not str(item["etag"])
+                    or not str(item["checksum_etag"])
+                )
+            ]
+            if invalid_inventory_metadata:
+                type_reasons.append(
+                    "inventory_object_metadata_invalid="
+                    + ",".join(invalid_inventory_metadata[:3])
+                )
             if _canonical_sha256([inventory[key] for key in sorted(inventory)]) != str(
                 listing_sha256
             ):
@@ -1556,7 +1784,7 @@ class MicrostructureWarehouse:
                 type_reasons.append("inventory_identity_mismatch")
             scope = expected if required_periods is None else set(required_periods)
             absent_from_listing = sorted(scope - expected)
-            if absent_from_listing:
+            if absent_from_listing and data_type not in allowed_official_gap_types:
                 type_reasons.append(
                     f"official_listing_missing_periods={','.join(absent_from_listing[:3])}"
                 )
@@ -1566,7 +1794,10 @@ class MicrostructureWarehouse:
                        source_sha256, expected_sha256, checksum_status,
                        rows_read, derived_rows, first_exchange_time_ms,
                        last_exchange_time_ms, invalid_rows, duplicate_ids,
-                       out_of_order_rows, crossed_books, schema_version
+                       out_of_order_rows, crossed_books, schema_version,
+                       ingested_at_ms, official_etag,
+                       checksum_object_size_bytes, checksum_last_modified,
+                       checksum_etag
                 FROM archive_manifest
                 WHERE symbol = ? AND data_type = ?
                   AND status = 'complete' AND is_current
@@ -1611,10 +1842,23 @@ class MicrostructureWarehouse:
                     out_of_order_rows,
                     crossed_books,
                     manifest_schema,
+                    ingested_at_ms,
+                    official_etag,
+                    checksum_object_size_bytes,
+                    manifest_checksum_last_modified,
+                    manifest_checksum_etag,
                 ) = row
                 expected_item = inventory[period]
                 period_start_ms, period_end_ms = _period_bounds_ms(period)
                 expected_size = int(expected_item["expected_bytes"])
+                expected_etag = str(expected_item["etag"])
+                expected_checksum_size = int(
+                    expected_item["checksum_expected_bytes"]
+                )
+                expected_checksum_last_modified = str(
+                    expected_item["checksum_last_modified"]
+                )
+                expected_checksum_etag = str(expected_item["checksum_etag"])
                 source_hash = str(source_sha256).lower()
                 expected_hash = str(expected_sha256).lower()
                 physical = physical_by_archive.get(str(archive_id), {})
@@ -1644,6 +1888,30 @@ class MicrostructureWarehouse:
                     or int(compressed_bytes or 0) != expected_size
                 ):
                     failures.append("official_byte_size_mismatch")
+                archive_modified_ms = _listing_last_modified_ms(
+                    str(expected_item["last_modified"])
+                )
+                checksum_modified_ms = _listing_last_modified_ms(
+                    expected_checksum_last_modified
+                )
+                if (
+                    archive_modified_ms is None
+                    or checksum_modified_ms is None
+                    or int(ingested_at_ms or 0)
+                    < max(archive_modified_ms or 0, checksum_modified_ms or 0)
+                ):
+                    failures.append("manifest_predates_official_object_version")
+                if _normalize_s3_etag(official_etag) != expected_etag:
+                    failures.append("official_etag_mismatch")
+                if int(checksum_object_size_bytes or 0) != expected_checksum_size:
+                    failures.append("checksum_object_size_mismatch")
+                if str(manifest_checksum_last_modified or "") != expected_checksum_last_modified:
+                    failures.append("checksum_object_last_modified_mismatch")
+                if (
+                    _normalize_s3_etag(manifest_checksum_etag)
+                    != expected_checksum_etag
+                ):
+                    failures.append("checksum_object_etag_mismatch")
                 if int(physical.get("raw_rows", 0)) != int(rows_read or 0):
                     failures.append("physical_raw_row_count_mismatch")
                 if int(physical.get("derived_rows", 0)) != int(derived_rows or 0):
@@ -1718,12 +1986,16 @@ class MicrostructureWarehouse:
                 "missing_periods": missing,
                 "invalid_periods": invalid,
                 "invalid_details": invalid_details,
+                "official_calendar_gaps": official_calendar_gaps,
+                "requested_official_gap_periods": absent_from_listing,
                 "reasons": type_reasons,
             }
             canonical_types[data_type] = {
                 "inventory": [inventory[key] for key in sorted(inventory)],
                 "invalid_details": invalid_details,
                 "missing_periods": missing,
+                "official_calendar_gaps": official_calendar_gaps,
+                "requested_official_gap_periods": absent_from_listing,
                 "snapshot_id": str(snapshot_id),
                 "verified": verified,
             }
@@ -1744,8 +2016,9 @@ class MicrostructureWarehouse:
         elif required_periods is None and common_calendar_gaps:
             reasons.append(f"common_calendar_gaps={','.join(common_calendar_gaps[:3])}")
         canonical_payload = {
-            "contract": "official-binance-corpus-certificate-v1",
+            "contract": "official-binance-corpus-certificate-v2",
             "required_data_types": list(types),
+            "allowed_official_gap_data_types": list(allowed_official_gap_types),
             "required_first_period": required_first_period,
             "required_last_period": required_last_period,
             "symbol": normalized,
@@ -1753,15 +2026,19 @@ class MicrostructureWarehouse:
         }
         certificate_sha256 = _canonical_sha256(canonical_payload)
         return {
-            "contract": "official-binance-corpus-certificate-v1",
+            "contract": "official-binance-corpus-certificate-v2",
             "status": "pass" if not reasons else "fail",
             "verified": not reasons,
             "schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
             "provider": "binance",
             "market_type": "futures",
             "symbol": normalized,
-            "truth_basis": "official_listing_plus_checksum_bound_daily_manifests",
+            "truth_basis": (
+                "two_object_s3_inventory_plus_sha256_bound_daily_manifests_"
+                "and_physical_partitions"
+            ),
             "required_data_types": list(types),
+            "allowed_official_gap_data_types": list(allowed_official_gap_types),
             "required_first_period": required_first_period,
             "required_last_period": required_last_period,
             "require_full_history_inventory": bool(require_full_history_inventory),
@@ -1789,6 +2066,11 @@ class MicrostructureWarehouse:
         period: str,
         url: str | None = None,
         expected_bytes: int = 0,
+        official_last_modified: str = "",
+        official_etag: str = "",
+        checksum_object_size_bytes: int = 0,
+        checksum_last_modified: str = "",
+        checksum_etag: str = "",
         timeout_seconds: float = 180.0,
         max_download_bytes: int = 8 * 1024**3,
         max_uncompressed_bytes: int = 64 * 1024**3,
@@ -1803,6 +2085,27 @@ class MicrostructureWarehouse:
             period=period,
         )
         _validate_official_url(source_url, symbol=symbol, data_type=data_type, period=period)
+        normalized_official_etag = _normalize_s3_etag(official_etag)
+        normalized_checksum_etag = _normalize_s3_etag(checksum_etag)
+        version_metadata = (
+            _listing_last_modified_ms(official_last_modified),
+            normalized_official_etag,
+            int(checksum_object_size_bytes),
+            _listing_last_modified_ms(checksum_last_modified),
+            normalized_checksum_etag,
+        )
+        has_version_metadata = any(
+            value not in (None, "", 0) for value in version_metadata
+        )
+        complete_version_metadata = (
+            version_metadata[0] is not None
+            and bool(version_metadata[1])
+            and int(version_metadata[2]) > 0
+            and version_metadata[3] is not None
+            and bool(version_metadata[4])
+        )
+        if has_version_metadata and not complete_version_metadata:
+            raise ValueError("official archive object-version metadata is incomplete")
         active_session = session or _resilient_http_session()
         own_session = session is None
         csv_path: Path | None = None
@@ -1827,7 +2130,35 @@ class MicrostructureWarehouse:
                 archive_id = _archive_id(source_url, expected_sha256)
                 completed = self._completed_manifest(archive_id)
                 if completed is not None:
-                    return self._result_from_manifest(completed, status="skipped")
+                    reusable = None
+                    if complete_version_metadata:
+                        reusable = self._unchanged_listing_manifest(
+                            symbol=symbol,
+                            data_type=data_type,
+                            period=period,
+                            url=source_url,
+                            expected_bytes=max(0, int(expected_bytes)),
+                            expected_last_modified=official_last_modified,
+                            expected_etag=normalized_official_etag,
+                            checksum_expected_bytes=int(checksum_object_size_bytes),
+                            checksum_last_modified=checksum_last_modified,
+                            checksum_etag=normalized_checksum_etag,
+                        )
+                    physical = self._physical_archive_stats(
+                        symbol=symbol,
+                        data_type=data_type,
+                        archive_id=archive_id,
+                    )
+                    if (
+                        reusable is not None
+                        and str(reusable.get("archive_id") or "") == archive_id
+                        and self._manifest_matches_physical_rows(
+                            data_type,
+                            reusable,
+                            physical.get(archive_id, {}),
+                        )
+                    ):
+                        return self._result_from_manifest(completed, status="skipped")
                 compressed_bytes, source_sha256 = _download_verified_archive(
                     active_session,
                     source_url,
@@ -1865,6 +2196,12 @@ class MicrostructureWarehouse:
                     source_sha256=source_sha256,
                     expected_sha256=expected_sha256,
                     expected_bytes=max(0, int(expected_bytes)),
+                    official_etag=normalized_official_etag,
+                    checksum_object_size_bytes=max(
+                        0, int(checksum_object_size_bytes)
+                    ),
+                    checksum_last_modified=checksum_last_modified,
+                    checksum_etag=normalized_checksum_etag,
                     compressed_bytes=compressed_bytes,
                     uncompressed_bytes=member.file_size,
                     progress=progress,
@@ -1895,6 +2232,10 @@ class MicrostructureWarehouse:
         source_sha256: str,
         expected_sha256: str,
         expected_bytes: int,
+        official_etag: str,
+        checksum_object_size_bytes: int,
+        checksum_last_modified: str,
+        checksum_etag: str,
         compressed_bytes: int,
         uncompressed_bytes: int,
         progress: ProgressCallback | None,
@@ -1928,10 +2269,7 @@ class MicrostructureWarehouse:
                     archive_id=archive_id,
                     period=period,
                 )
-            conn.execute(
-                "DELETE FROM archive_manifest WHERE archive_id = ? AND status <> 'complete'",
-                [archive_id],
-            )
+            conn.execute("DELETE FROM archive_manifest WHERE archive_id = ?", [archive_id])
             conn.execute(
                 "UPDATE archive_manifest SET is_current = false WHERE url = ? AND is_current",
                 [url],
@@ -1945,9 +2283,12 @@ class MicrostructureWarehouse:
                     checksum_status, rows_read, derived_rows, first_exchange_time_ms,
                     last_exchange_time_ms, invalid_rows, duplicate_ids, update_id_regressions,
                     event_time_regressions, out_of_order_rows, crossed_books, ingested_at_ms, error
+                    , official_etag, checksum_object_size_bytes,
+                    checksum_last_modified, checksum_etag
                 ) VALUES (
                     ?, ?, 'binance', 'futures', ?, ?, ?, ?, ?, 'complete', true,
-                    ?, ?, ?, ?, ?, 'verified', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ''
+                    ?, ?, ?, ?, ?, 'verified', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '',
+                    ?, ?, ?, ?
                 )
                 """,
                 [
@@ -1974,6 +2315,10 @@ class MicrostructureWarehouse:
                     metrics["out_of_order_rows"],
                     metrics["crossed_books"],
                     now_ms,
+                    official_etag,
+                    checksum_object_size_bytes,
+                    checksum_last_modified,
+                    checksum_etag,
                 ],
             )
             if data_type == "bookTicker":

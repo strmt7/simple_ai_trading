@@ -55,11 +55,12 @@ def _manifest(
             checksum_status, rows_read, derived_rows, first_exchange_time_ms,
             last_exchange_time_ms, invalid_rows, duplicate_ids, update_id_regressions,
             event_time_regressions, out_of_order_rows, crossed_books, ingested_at_ms,
-            error
+            error, official_etag, checksum_object_size_bytes,
+            checksum_last_modified, checksum_etag
         ) VALUES (
             ?, ?, 'binance', 'futures', ?, ?, ?, ?, '',
-            'complete', true, 0, 0, 0, ?, ?, 'verified', ?, ?, ?, ?,
-            0, 0, 0, 0, 0, 0, 1, ''
+            'complete', true, 1, 1, 1, ?, ?, 'verified', ?, ?, ?, ?,
+            0, 0, 0, 0, 0, 0, ?, '', ?, 100, ?, ?
         )
         """,
         [
@@ -75,6 +76,10 @@ def _manifest(
             derived_rows,
             first_ms,
             last_ms,
+            last_ms + 86_400_000,
+            "c" * 32,
+            f"{period}T00:00:00Z",
+            "d" * 32,
         ],
     )
     inventory_rows = warehouse.connect().execute(
@@ -93,8 +98,12 @@ def _manifest(
             {
                 "period": item_period,
                 "url": item_url,
-                "size_bytes": 0,
-                "last_modified": "test-fixture",
+                "size_bytes": 1,
+                "last_modified": f"{item_period}T00:00:00Z",
+                "etag": "c" * 32,
+                "checksum_size_bytes": 100,
+                "checksum_last_modified": f"{item_period}T00:00:00Z",
+                "checksum_etag": "d" * 32,
             }
             for item_period, item_url in inventory_rows
         ],

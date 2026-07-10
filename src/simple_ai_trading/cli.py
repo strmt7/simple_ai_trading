@@ -6007,7 +6007,39 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     data_type=data_type,
                     timeout=max(1, min(60, int(float(getattr(args, "timeout", 240.0))))),
                 )
+                incomplete_object_metadata = [
+                    item.period
+                    for item in items
+                    if (
+                        int(getattr(item, "size_bytes", 0) or 0) <= 0
+                        or not str(getattr(item, "last_modified", "") or "")
+                        or not str(getattr(item, "etag", "") or "")
+                        or int(getattr(item, "checksum_size_bytes", 0) or 0) <= 0
+                        or not str(
+                            getattr(item, "checksum_last_modified", "") or ""
+                        )
+                        or not str(getattr(item, "checksum_etag", "") or "")
+                    )
+                ]
+                if incomplete_object_metadata:
+                    raise ValueError(
+                        f"{symbol} {data_type} official listing lacks ZIP/CHECKSUM "
+                        f"metadata for {incomplete_object_metadata[0]}"
+                    )
                 by_period = {item.period: item for item in items}
+                official_calendar_gaps: list[str] = []
+                if by_period:
+                    calendar_cursor = datetime.strptime(
+                        min(by_period), "%Y-%m-%d"
+                    ).date()
+                    calendar_end = datetime.strptime(
+                        max(by_period), "%Y-%m-%d"
+                    ).date()
+                    while calendar_cursor <= calendar_end:
+                        calendar_period = calendar_cursor.isoformat()
+                        if calendar_period not in by_period:
+                            official_calendar_gaps.append(calendar_period)
+                        calendar_cursor += timedelta(days=1)
                 selected_periods = (
                     sorted(by_period)
                     if requested_periods is None
@@ -6034,6 +6066,8 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                         "available_files": len(items),
                         "available_first_period": min(by_period) if by_period else None,
                         "available_last_period": max(by_period) if by_period else None,
+                        "official_calendar_gap_count": len(official_calendar_gaps),
+                        "official_calendar_gaps": official_calendar_gaps,
                         "selected_files": len(selected_items),
                         "selected_first_period": (
                             selected_items[0].period if selected_items else None
@@ -6102,6 +6136,7 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     f"  {item['symbol']} {item['data_type']}: "
                     f"{item['selected_first_period']}..{item['selected_last_period']} "
                     f"files={item['selected_files']} "
+                    f"provider_gaps={item['official_calendar_gap_count']} "
                     f"compressed_gb={int(item['selected_bytes']) / 1024**3:.3f}"
                 )
         return 0 if plan_payload["status"] == "ok" else 2
@@ -6181,6 +6216,11 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                         period=item.period,
                         url=item.url,
                         expected_bytes=item.size_bytes,
+                        official_last_modified=item.last_modified,
+                        official_etag=item.etag,
+                        checksum_object_size_bytes=item.checksum_size_bytes,
+                        checksum_last_modified=item.checksum_last_modified,
+                        checksum_etag=item.checksum_etag,
                         timeout_seconds=float(getattr(args, "timeout", 240.0)),
                         retain_archive=not bool(getattr(args, "no_retain_archive", False)),
                         progress=progress,

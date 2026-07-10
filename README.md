@@ -190,14 +190,20 @@ stop on 2024-03-30. The app does not disguise coarse `bookDepth` percentage band
 as a current best bid/ask history.
 
 Full-history tick sync snapshots the official Binance listing before ingestion
-and exits nonzero until every listed daily archive has a matching checksum-bound
-warehouse manifest. Model datasets require a corpus certificate covering the
-exact requested UTC days and quote/trade/depth products; a missing day cannot
-silently become zero flow. Certification also reconciles physical raw/derived
-partition counts and time bounds, the 100 ms BBO path, and coarse-depth band
-groups. Repeat syncs reuse an archive only when S3 `LastModified`, official byte
-size, verified source/sidecar hashes, schema, and physical partitions remain
-unchanged; damaged or replaced partitions are fetched again. Candidate research
+and again after ingestion. The immutable snapshot binds both the ZIP and its
+`.CHECKSUM` object's S3 ETag, `LastModified`, and byte size. It exits nonzero
+until both inventories are identical and every listed daily archive has a
+matching SHA-256-bound warehouse manifest. Model datasets require a corpus
+certificate covering the exact requested UTC days and quote/trade/depth
+products; a missing day cannot silently become zero flow. Certification also
+reconciles physical raw/derived partition counts and time bounds, the 100 ms BBO
+path, and coarse-depth band groups. Repeat syncs reuse an archive only when both
+S3 object versions, verified source/sidecar hashes, schema, and physical
+partitions remain unchanged. A physically damaged completed partition is
+transactionally rebuilt from the official ZIP instead of being returned as
+`skipped`; a failed repair leaves the previous partition uncertified. Binance's
+own missing `bookDepth` dates are reported as provider gaps and are never
+synthesized or silently forward-filled. Candidate research
 has a fingerprinted Latin-hypercube design and chronological successive-halving
 contract to avoid retraining every correlated variant at full scale; integration
 with the sealed prequential selector remains in progress. Short-window survivors

@@ -56,8 +56,8 @@ def test_archive_url_builders_and_listing_parser() -> None:
     html = """<?xml version="1.0" encoding="UTF-8"?>
     <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
       <IsTruncated>false</IsTruncated>
-      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip</Key><LastModified>2026-02-01T00:00:00.000Z</LastModified><Size>12345</Size></Contents>
-      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip.CHECKSUM</Key><Size>100</Size></Contents>
+      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip</Key><LastModified>2026-02-01T00:00:00.000Z</LastModified><ETag>&quot;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&quot;</ETag><Size>12345</Size></Contents>
+      <Contents><Key>data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip.CHECKSUM</Key><LastModified>2026-02-01T00:00:01.000Z</LastModified><ETag>&quot;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&quot;</ETag><Size>100</Size></Contents>
     </ListBucketResult>"""
     seen_listing_urls: list[str] = []
     assert list_archive_urls(symbol="BTCUSDC", interval="1s", html_loader=lambda url: seen_listing_urls.append(url) or html) == [
@@ -67,10 +67,45 @@ def test_archive_url_builders_and_listing_parser() -> None:
     assert item.period == "2026-01"
     assert item.size_bytes == 12345
     assert item.last_modified == "2026-02-01T00:00:00.000Z"
+    assert item.etag == "a" * 32
+    assert item.checksum_size_bytes == 100
+    assert item.checksum_last_modified == "2026-02-01T00:00:01.000Z"
+    assert item.checksum_etag == "b" * 32
     assert archive_listing_items_by_url([item.url])[item.url].size_bytes == 12345
     assert seen_listing_urls == [
         "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=%2F&prefix=data%2Fspot%2Fmonthly%2Fklines%2FBTCUSDC%2F1s%2F"
     ]
+
+
+def test_archive_listing_pairs_checksum_across_pagination_boundary() -> None:
+    archive_key = (
+        "data/futures/um/daily/trades/BTCUSDT/"
+        "BTCUSDT-trades-2026-07-09.zip"
+    )
+    first_page = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <IsTruncated>true</IsTruncated><NextMarker>{archive_key}</NextMarker>
+      <Contents><Key>{archive_key}</Key><LastModified>2026-07-10T01:00:00.000Z</LastModified><ETag>&quot;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&quot;</ETag><Size>12345</Size></Contents>
+    </ListBucketResult>"""
+    second_page = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <IsTruncated>false</IsTruncated>
+      <Contents><Key>{archive_key}.CHECKSUM</Key><LastModified>2026-07-10T01:00:01.000Z</LastModified><ETag>&quot;bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&quot;</ETag><Size>100</Size></Contents>
+    </ListBucketResult>"""
+
+    item = list_archive_items(
+        symbol="BTCUSDT",
+        interval="tick",
+        market_type="futures",
+        cadence="daily",
+        data_type="trades",
+        html_loader=lambda url: second_page if "marker=" in url else first_page,
+    )[0]
+
+    assert item.size_bytes == 12345
+    assert item.etag == "a" * 32
+    assert item.checksum_size_bytes == 100
+    assert item.checksum_etag == "b" * 32
 
 
 def test_archive_period_filtering_supports_daily_and_monthly_windows() -> None:
