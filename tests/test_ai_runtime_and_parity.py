@@ -271,6 +271,16 @@ def test_generated_native_contract_matches_cli() -> None:
             if option.choices:
                 assert _wide(", ".join(option.choices)) in text
 
+    compare = next(spec for spec in command_specs() if spec.name == "tape-depth-compare")
+    reports = next(option for option in compare.options if option.dest == "report")
+    assert reports.repeatable is True
+    assert reports.value_arity == "1"
+    assert (
+        '{L"--report", L"report", L"", L"", '
+        'L"prequential report path; repeat for every declared trial", '
+        'L"1", true, true, true}'
+    ) in text
+
 
 def test_native_window_initializes_hwnd_during_create() -> None:
     source = (windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp").read_text(encoding="utf-8")
@@ -300,6 +310,7 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "runtime_summary()" in source
     assert "repo_root()" in source
     assert "SIMPLE_AI_TRADING_GUI_SMOKE" in source
+    assert 'preview += L" (repeatable)";' in source
 
 
 def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:

@@ -306,6 +306,29 @@ serialized model contract, parses the complete gzip table, and recomputes its
 prediction fingerprint and metrics before skipping work. A complete report is
 immutable and cannot be resumed.
 
+Profile and feature-set selection is a separate fail-closed step. Supply every
+declared trial exactly once; the comparison requires complete reports with the
+same symbols, plan fingerprints, chronological fold identities, and dataset
+fingerprints:
+
+```powershell
+simple-ai-trading tape-depth-compare `
+  --report data/tape-depth-regularized-core/report.json `
+  --report data/tape-depth-balanced-tape/report.json `
+  --report data/tape-depth-expressive-full/report.json `
+  --selection-fraction 0.67 `
+  --output data/tape-depth-comparison.json
+```
+
+Selection aggregates baseline-relative AUC, Brier, MAE, rank IC, gross
+top-decile return, and fold-positivity measures over the earlier folds. Every
+symbol must beat the direction, prevalence, and zero-return baselines. Only the
+selected trial is summarized on the later folds. A failed winner rejects the
+experiment; a runner-up is not substituted after seeing confirmation results.
+This controls one obvious adaptive-selection path, but it does not prove that
+an operator never inspected later data. The output remains forecast evidence,
+not executable PnL, trading authority, or a profitability claim.
+
 For non-CPU LightGBM work, DirectML remains the general Windows tensor backend
 while LightGBM itself uses its OpenCL trainer. Automatic selection now delegates
 to the installed OpenCL driver instead of assuming platform/device `0:0`.

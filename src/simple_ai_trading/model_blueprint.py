@@ -300,6 +300,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "purged train/tune/calibration/evaluation split",
             "predictor profile selected independently from execution risk tolerance",
             "ordered core/tape-derived/full feature ablations",
+            "earlier-fold trial selection and later winner-only confirmation with no fallback",
             "timestamp-defined multi-year rolling folds with non-overlapping evaluations",
             "exact serialized-model replay against hash-bound float64 targets",
             "direction and regression baselines",

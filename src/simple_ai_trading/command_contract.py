@@ -18,6 +18,8 @@ class CommandOption:
     choices: tuple[str, ...]
     help: str
     takes_value: bool
+    value_arity: str
+    repeatable: bool
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -47,7 +49,17 @@ def _option_from_action(action: argparse.Action) -> CommandOption | None:
     if action.dest in {"help", "func"}:
         return None
     flags = tuple(action.option_strings)
-    takes_value = not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction))  # noqa: SLF001
+    takes_value = action.nargs != 0
+    value_arity = str(action.nargs if action.nargs is not None else 1)
+    repeatable = isinstance(
+        action,
+        (
+            argparse._AppendAction,  # noqa: SLF001
+            argparse._AppendConstAction,  # noqa: SLF001
+            argparse._CountAction,  # noqa: SLF001
+            argparse._ExtendAction,  # noqa: SLF001
+        ),
+    )
     default: Any = None if action.default is argparse.SUPPRESS else action.default
     choices = tuple(str(choice) for choice in (action.choices or ()))
     return CommandOption(
@@ -58,6 +70,8 @@ def _option_from_action(action: argparse.Action) -> CommandOption | None:
         choices=choices,
         help=str(action.help or ""),
         takes_value=takes_value,
+        value_arity=value_arity,
+        repeatable=repeatable,
     )
 
 
