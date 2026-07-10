@@ -200,6 +200,15 @@ def test_load_open_filters_dicts_only(tmp_path):
     assert store.load_open() == []
 
 
+def test_open_integrity_errors_do_not_silently_treat_corruption_as_empty(tmp_path):
+    store = PositionsStore(root=tmp_path)
+    store.open_path.parent.mkdir(parents=True, exist_ok=True)
+    store.open_path.write_text("{invalid", encoding="utf-8")
+
+    assert store.load_open() == []
+    assert store.open_integrity_errors()[0].startswith("open_positions_json_invalid:")
+
+
 def test_new_position_id_shape():
     a, b = new_position_id(), new_position_id()
     assert len(a) == 12

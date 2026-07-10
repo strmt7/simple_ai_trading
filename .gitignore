@@ -17,6 +17,7 @@ data/
 coverage*.json
 coverage.xml
 htmlcov/
+logs/
 .pytest_cache/
 src/*.egg-info/
 build/
@@ -24,6 +25,7 @@ dist/
 out/
 *_raw_payloads/
 artifacts/native-windows-layout-audit.png
+artifacts/dependency-audit/
 .mypy_cache/
 .ruff_cache/
 

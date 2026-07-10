@@ -22,7 +22,7 @@ Use this skill whenever you touch `api.py`, `config.py`, `cli.py`, live-order pa
 - **Emergency / close-out orders** on futures must use `reduceOnly=true` and market type `RESULT`. A close path that could increase exposure is a bug.
 - **Live mode preflight** fails fast when credentials are missing or the loaded model is incompatible. Never silently fall back to paper when the user asked for live.
 - **Environment overrides** (`BINANCE_BASE_URL`, `BINANCE_SPOT_BASE_URL`, `BINANCE_FUTURES_BASE_URL`) are trusted only within the session that reads them. Do not persist env-resolved hostnames back into config.
-- **Config files** (`~/.config/simple_ai_bitcoin_trading_binance/runtime.json`) are written with mode `0o600`. A new writer must call `chmod` explicitly.
+- **Config files** (`~/.config/simple_ai_trading/runtime.json`) are written with mode `0o600`. A new writer must call `chmod` explicitly.
 
 ## Never
 

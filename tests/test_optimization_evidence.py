@@ -13,6 +13,7 @@ import pytest
 from simple_ai_trading.api import Candle
 from simple_ai_trading.assets import DEFAULT_REGULAR_LEVERAGE
 from simple_ai_trading.backtest import BacktestResult
+from simple_ai_trading.execution_simulation import SymbolExecutionProfile
 from simple_ai_trading.features import FeatureAccelerationError, ModelRow
 from simple_ai_trading import optimization_evidence as oe
 from simple_ai_trading.market_store import MarketDataStore
@@ -112,45 +113,286 @@ def _evidence(
     )
 
 
-def test_round_model_candidates_prioritize_intraday_search_for_default_promotion_count() -> None:
+def test_round_model_candidates_prioritize_path_aware_scalps_for_default_promotion_count() -> None:
     objective = get_objective("conservative")
     strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 3)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 5)
     names = [candidate.name for candidate in candidates]
 
     assert names == [
         "default",
-        "day_trade_frequency_probe_forward",
-        "day_trade_frequency_probe_downside",
+        "path_scalp_30s_forward",
+        "path_scalp_30s_downside",
+        "path_scalp_90s_forward",
+        "path_scalp_90s_downside",
     ]
-    assert candidates[1].feature_cfg.label_mode == "forward_return"
+    assert candidates[1].feature_cfg.label_mode == "triple_barrier"
     assert candidates[1].focal_gamma == pytest.approx(0.0)
     assert candidates[1].feature_cfg.label_lookahead >= 30
     assert candidates[1].feature_cfg.label_volatility_window == 0
     assert candidates[1].feature_cfg.label_volatility_multiplier == pytest.approx(0.0)
-    assert candidates[2].feature_cfg.label_mode == "downside_forward_return"
+    assert candidates[2].feature_cfg.label_mode == "downside_triple_barrier"
     assert candidates[2].focal_gamma == pytest.approx(0.0)
     assert candidates[2].feature_cfg.label_lookahead >= 30
+    assert candidates[3].feature_cfg.label_mode == "triple_barrier"
+    assert candidates[3].feature_cfg.label_lookahead >= 90
+    assert candidates[4].feature_cfg.label_mode == "downside_triple_barrier"
     cost_floor = oe._round_trip_cost_label_floor(strategy)
     assert candidates[1].feature_cfg.label_threshold >= cost_floor
     assert candidates[2].feature_cfg.label_threshold >= cost_floor
     assert candidates[1].min_position_hold_bars == 2
-    assert candidates[1].flat_signal_exit_grace_bars == 0
+    assert candidates[1].flat_signal_exit_grace_bars == 2
+    assert candidates[1].max_position_hold_bars == candidates[1].feature_cfg.label_lookahead
     assert candidates[2].min_position_hold_bars == 2
-    assert candidates[2].flat_signal_exit_grace_bars == 0
+    assert candidates[2].flat_signal_exit_grace_bars == 2
     assert all(candidate.signal_threshold >= 0.56 for candidate in candidates)
     activity_strategy = oe._strategy_for_round_candidate(strategy, candidates[1])
     downside_strategy = oe._strategy_for_round_candidate(strategy, candidates[2])
     assert activity_strategy.cooldown_minutes == 0
+    assert activity_strategy.liquidity_lookback_bars >= 96
     assert activity_strategy.min_position_hold_bars == 2
-    assert activity_strategy.flat_signal_exit_grace_bars == 0
+    assert activity_strategy.flat_signal_exit_grace_bars == candidates[1].feature_cfg.label_lookahead
+    assert activity_strategy.max_position_hold_bars == candidates[1].feature_cfg.label_lookahead
     assert downside_strategy.stop_loss_pct < strategy.stop_loss_pct
     assert downside_strategy.take_profit_pct < strategy.take_profit_pct
     assert downside_strategy.cooldown_minutes == 0
     assert downside_strategy.min_position_hold_bars == 2
-    assert downside_strategy.flat_signal_exit_grace_bars == 0
+    assert downside_strategy.flat_signal_exit_grace_bars == candidates[2].feature_cfg.label_lookahead
+    assert downside_strategy.max_position_hold_bars == candidates[2].feature_cfg.label_lookahead
+
+    wider = oe._round_model_candidates(objective, strategy, feature_cfg, 7)
+    assert [candidate.name for candidate in wider[5:7]] == [
+        "day_trade_frequency_probe_forward",
+        "day_trade_frequency_probe_downside",
+    ]
+    assert wider[5].feature_cfg.label_mode == "forward_return"
+    assert wider[6].feature_cfg.label_mode == "downside_forward_return"
+
+
+def test_round_model_candidates_enable_trade_tape_only_with_real_rows() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    without_tape = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        9,
+        market_type="futures",
+        has_trade_tape=False,
+    )
+    with_tape = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        9,
+        market_type="futures",
+        has_trade_tape=True,
+    )
+
+    assert all("trade_tape" not in candidate.name for candidate in without_tape)
+    assert [candidate.name for candidate in with_tape[:7]] == [
+        "trade_tape_trend_5m_forward",
+        "trade_tape_trend_5m_downside",
+        "trade_tape_trend_15m_forward",
+        "trade_tape_trend_15m_downside",
+        "trade_tape_path_90s_forward",
+        "trade_tape_path_90s_downside",
+        "trade_tape_imbalance_60s_forward",
+    ]
+    tape_candidates = [candidate for candidate in with_tape if candidate.name.startswith("trade_tape")]
+    assert tape_candidates
+    assert all(candidate.feature_cfg.trade_tape_windows for candidate in tape_candidates)
+    assert all(
+        candidate.feature_cfg.trade_tape_features_per_window == oe.TRADE_TAPE_FEATURES_PER_WINDOW
+        for candidate in tape_candidates
+    )
+
+
+def test_round_model_candidates_support_exact_ordered_research_selection() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    candidates = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        requested=1,
+        market_type="futures",
+        has_trade_tape=True,
+        requested_names=("trade_tape_scalp_15s_forward", "trade_tape_imbalance_60s_forward"),
+    )
+
+    assert [candidate.name for candidate in candidates] == [
+        "trade_tape_scalp_15s_forward",
+        "trade_tape_imbalance_60s_forward",
+    ]
+    with pytest.raises(ValueError, match="Unknown round model candidate"):
+        oe._round_model_candidates(
+            objective,
+            strategy,
+            feature_cfg,
+            requested=1,
+            requested_names=("not-a-real-candidate",),
+        )
+
+
+def test_named_duration_candidates_scale_seconds_to_observed_candle_bars() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    per_second = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        requested=1,
+        requested_names=("cost_aware_60m_forward",),
+        bar_interval_ms=1_000,
+    )[0]
+    per_minute = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        requested=1,
+        requested_names=("cost_aware_60m_forward",),
+        bar_interval_ms=60_000,
+    )[0]
+
+    assert per_second.feature_cfg.label_lookahead == 3_600
+    assert per_second.min_position_hold_bars == 300
+    assert per_second.flat_signal_exit_grace_bars == 90
+    assert per_minute.feature_cfg.label_lookahead == 60
+    assert per_minute.max_position_hold_bars == 60
+    assert per_minute.min_position_hold_bars == 5
+    assert per_minute.flat_signal_exit_grace_bars == 2
+    assert oe._median_candle_interval_ms([_candle(index, interval_ms=60_000) for index in range(8)]) == 60_000
+
+
+def test_edge_preflight_excludes_severe_regime_locked_labels() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(
+        StrategyConfig(max_regime_unpredictability=0.60, liquidity_lookback_bars=8),
+        objective,
+    )
+    feature_cfg = replace(
+        oe.default_config_for(objective.name, strategy.enabled_features),
+        label_lookahead=1,
+        label_mode="forward_return",
+        label_threshold=0.0001,
+    )
+    candidate = oe.RoundModelCandidate(
+        name="severe-regime-preflight",
+        feature_cfg=feature_cfg,
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.60,
+    )
+    rows = [
+        ModelRow(timestamp=index * 1000, close=100.0 + index * 0.1, features=(1.0,), label=1)
+        for index in range(20)
+    ]
+
+    stats = oe._candidate_edge_preflight_stats(
+        rows,
+        candidate,
+        strategy,
+        regime_scores=[0.95] * len(rows),
+    )
+
+    assert stats["signal_count"] == 0
+    assert stats["severe_regime_blocked_signal_count"] > 0
+
+
+def test_round_feature_cache_key_separates_trade_tape_feature_space() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    tape_cfg = replace(feature_cfg, trade_tape_windows=(3, 10, 30), trade_tape_features_per_window=12)
+
+    assert oe._round_feature_cache_key(feature_cfg) != oe._round_feature_cache_key(tape_cfg)
+
+
+def test_objective_defaults_use_day_trading_regime_cooldown() -> None:
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), get_objective("conservative"))
+
+    assert strategy.unpredictability_cooldown_minutes == 12
+    assert strategy.max_regime_unpredictability == pytest.approx(0.68)
+
+
+def test_round_candidate_regime_lookback_scales_with_label_horizon() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(liquidity_lookback_bars=96), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 19)
+    long_horizon = next(candidate for candidate in candidates if candidate.name == "cost_aware_30m_forward")
+
+    candidate_strategy = oe._strategy_for_round_candidate(strategy, long_horizon)
+
+    assert long_horizon.feature_cfg.label_lookahead >= 1800
+    assert candidate_strategy.liquidity_lookback_bars >= 600
+    assert candidate_strategy.liquidity_lookback_bars <= 1800
+
+
+def test_round_candidate_price_barriers_do_not_shrink_with_leverage() -> None:
+    objective = get_objective("conservative")
+    feature_cfg = oe.default_config_for(objective.name, StrategyConfig().enabled_features)
+    low_leverage = oe.strategy_with_objective_defaults(StrategyConfig(leverage=1.0), objective)
+    high_leverage = replace(low_leverage, leverage=15.0)
+    candidate = oe._round_model_candidates(
+        objective,
+        low_leverage,
+        feature_cfg,
+        1,
+        market_type="futures",
+    )[0]
+
+    low = oe._strategy_for_round_candidate_market(low_leverage, candidate, market_type="futures")
+    high = oe._strategy_for_round_candidate_market(high_leverage, candidate, market_type="futures")
+
+    assert high.stop_loss_pct == pytest.approx(low.stop_loss_pct)
+    assert high.take_profit_pct == pytest.approx(low.take_profit_pct)
+
+
+def test_chronological_calibration_sample_spans_selection_without_randomness() -> None:
+    rows = [
+        ModelRow(timestamp=index, close=100.0, features=(float(index),), label=index % 2)
+        for index in range(101)
+    ]
+
+    sample = oe._chronological_calibration_sample(rows, max_rows=11)
+    second = oe._chronological_calibration_sample(rows, max_rows=11)
+
+    assert [row.timestamp for row in sample] == [row.timestamp for row in second]
+    assert len(sample) == 11
+    assert sample[0].timestamp == 0
+    assert sample[-1].timestamp == 100
+    assert all(left.timestamp < right.timestamp for left, right in zip(sample, sample[1:]))
+
+
+def test_chronological_split_purges_future_label_overlap() -> None:
+    rows = [
+        ModelRow(timestamp=index, close=100.0, features=(float(index),), label=index % 2)
+        for index in range(100)
+    ]
+
+    training, selection, validation, purge_bars = oe._purged_train_selection_validation_split(
+        rows,
+        label_lookahead=8,
+        label_entry_offset=1,
+    )
+
+    assert purge_bars == 9
+    assert len(training) == 41
+    assert len(selection) == 16
+    assert len(validation) == 25
+    assert training[-1].timestamp + purge_bars < selection[0].timestamp
+    assert selection[-1].timestamp + purge_bars < validation[0].timestamp
 
 
 def test_round_model_candidates_cover_order_flow_before_micro_family() -> None:
@@ -158,23 +400,28 @@ def test_round_model_candidates_cover_order_flow_before_micro_family() -> None:
     strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 6)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 9)
     names = [candidate.name for candidate in candidates]
 
     assert names == [
         "default",
+        "path_scalp_30s_forward",
+        "path_scalp_30s_downside",
+        "path_scalp_90s_forward",
+        "path_scalp_90s_downside",
         "day_trade_frequency_probe_forward",
         "day_trade_frequency_probe_downside",
-        "intraday_activity_triple_barrier",
-        "intraday_downside_triple_barrier",
-        "focal_positive_information_event_barrier",
+        "cost_aware_5m_forward",
+        "cost_aware_5m_downside",
     ]
-    assert candidates[1].feature_cfg.label_mode == "forward_return"
-    assert candidates[2].feature_cfg.label_mode == "downside_forward_return"
-    assert candidates[3].feature_cfg.label_mode == "triple_barrier"
-    assert candidates[4].feature_cfg.label_mode == "downside_triple_barrier"
-    assert candidates[5].feature_cfg.label_mode == "event_volatility_triple_barrier"
-    assert candidates[5].focal_gamma == pytest.approx(2.0)
+    assert candidates[1].feature_cfg.label_mode == "triple_barrier"
+    assert candidates[2].feature_cfg.label_mode == "downside_triple_barrier"
+    assert candidates[5].feature_cfg.label_mode == "forward_return"
+    assert candidates[6].feature_cfg.label_mode == "downside_forward_return"
+    assert candidates[7].feature_cfg.label_mode == "forward_return"
+    assert candidates[7].feature_cfg.label_lookahead >= 300
+    assert candidates[8].feature_cfg.label_mode == "downside_forward_return"
+    assert candidates[8].feature_cfg.label_lookahead >= 300
 
 
 def test_downside_positive_labels_are_oriented_to_short_side() -> None:
@@ -233,7 +480,7 @@ def test_downside_candidates_skip_generic_probability_inversion_variant(
 ) -> None:
     rows = [
         ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=index % 2)
-        for index in range(80)
+        for index in range(120)
     ]
     objective = get_objective("conservative")
     strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
@@ -271,10 +518,13 @@ def test_downside_candidates_skip_generic_probability_inversion_variant(
         "calibrate_probability_temperature",
         lambda *_args, **_kwargs: SimpleNamespace(status="fail"),
     )
-    monkeypatch.setattr(
-        oe,
-        "calibrate_threshold_for_backtest",
-        lambda *_args, **_kwargs: SimpleNamespace(
+    observed: dict[str, object] = {}
+
+    def fake_threshold(_rows, threshold_model, *_args, **_kwargs):
+        observed["allowed_sides"] = _kwargs.get("allowed_sides")
+        observed["long_threshold"] = getattr(threshold_model, "long_decision_threshold", "missing")
+        observed["short_threshold"] = getattr(threshold_model, "short_decision_threshold", "missing")
+        return SimpleNamespace(
             accepted=False,
             threshold=0.56,
             score=-1.0,
@@ -289,8 +539,9 @@ def test_downside_candidates_skip_generic_probability_inversion_variant(
             scoring_backend_kind="directml",
             scoring_backend_device="privateuseone:0",
             scoring_backend_reason="",
-        ),
-    )
+        )
+
+    monkeypatch.setattr(oe, "calibrate_threshold_for_backtest", fake_threshold)
 
     def fake_run_backtest(_rows, candidate_model, *_args, **_kwargs):
         backtest_inversions.append(bool(getattr(candidate_model, "probability_inverted", False)))
@@ -321,7 +572,7 @@ def test_downside_candidates_skip_generic_probability_inversion_variant(
     monkeypatch.setattr(oe, "run_backtest", fake_run_backtest)
 
     result = oe._evaluate_round_model_candidate(
-        [_candle(index) for index in range(80)],
+        [_candle(index) for index in range(120)],
         strategy,
         objective,
         candidate,
@@ -337,6 +588,250 @@ def test_downside_candidates_skip_generic_probability_inversion_variant(
     assert "inversion_backtest_skipped" in phases
     assert "inversion_backtest_complete" not in phases
     assert result.model.probability_inverted is True
+    assert observed["allowed_sides"] == "short"
+    assert observed["long_threshold"] is None
+    assert observed["short_threshold"] == pytest.approx(0.44)
+
+
+def test_sparse_label_candidate_skips_training_and_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index * 1000, close=100.0, features=(0.0,), label=0)
+        for index in range(120)
+    ]
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    candidate = oe.RoundModelCandidate(
+        name="sparse-test",
+        feature_cfg=feature_cfg,
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.56,
+    )
+    phases: list[str] = []
+
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda *_args, **_kwargs: list(rows))
+
+    def fail_train(*_args, **_kwargs):
+        raise AssertionError("sparse labels must not reach train_advanced")
+
+    monkeypatch.setattr(oe, "train_advanced", fail_train)
+
+    result = oe._evaluate_round_model_candidate(
+        [_candle(index) for index in range(120)],
+        strategy,
+        objective,
+        candidate,
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="directml",
+        batch_size=1024,
+        require_gpu=False,
+        status_callback=lambda phase, _payload: phases.append(phase),
+    )
+
+    assert "training_skipped_sparse_label" in phases
+    assert result.score == float("-inf")
+    assert result.selection_reject_reason == f"training_positive_rows<{oe.MIN_TRAINING_CLASS_ROWS}"
+    assert result.report.row_count == len(result.training_rows)
+    assert result.report.positive_rate == pytest.approx(0.0)
+    assert result.selection_result.closed_trades == 0
+    assert result.selection_result.starting_cash == pytest.approx(1000.0)
+    assert result.selection_result.ending_cash == pytest.approx(1000.0)
+    assert result.model.decision_threshold == pytest.approx(1.0)
+    assert result.model.long_decision_threshold == pytest.approx(1.0)
+    assert result.model.threshold_source == "round_selection_rejected_sparse_label_no_entry"
+    assert "round_candidate_sparse_label_training_skipped" in result.model.quality_warnings
+
+
+def test_no_edge_candidate_skips_training_and_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(
+            timestamp=index * 1000,
+            close=200.0 - index * 0.01,
+            features=(1.0,),
+            label=1 if index % 2 == 0 else 0,
+        )
+        for index in range(1_500)
+    ]
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(taker_fee_bps=0.0, slippage_bps=0.0), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    candidate = oe.RoundModelCandidate(
+        name="no-edge-test",
+        feature_cfg=replace(feature_cfg, label_mode="forward_return", label_lookahead=8),
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.56,
+    )
+    phases: list[tuple[str, dict[str, object]]] = []
+
+    monkeypatch.setattr(oe, "make_advanced_rows", lambda *_args, **_kwargs: list(rows))
+
+    def fail_train(*_args, **_kwargs):
+        raise AssertionError("no-edge labels must not reach train_advanced")
+
+    monkeypatch.setattr(oe, "train_advanced", fail_train)
+
+    result = oe._evaluate_round_model_candidate(
+        [_candle(index) for index in range(1_500)],
+        strategy,
+        objective,
+        candidate,
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="directml",
+        batch_size=1024,
+        require_gpu=False,
+        status_callback=lambda phase, payload: phases.append((phase, dict(payload))),
+    )
+
+    phase_names = [phase for phase, _payload in phases]
+    preflight = next(payload for phase, payload in phases if phase == "training_edge_preflight_complete")
+    assert "training_skipped_edge_preflight" in phase_names
+    assert preflight["evaluated"] is True
+    assert preflight["training_net_edge_bps"] < 0.0
+    assert result.score == float("-inf")
+    assert result.selection_reject_reason == "edge_preflight_training_net_edge<=0"
+    assert result.model.threshold_source == "round_selection_rejected_edge_preflight_no_entry"
+    assert result.model.model_family == "advanced_logistic:edge_preflight_no_entry"
+    assert result.model.edge_preflight_evaluated is True
+    assert result.model.edge_preflight_training_signal_count >= oe.MIN_EDGE_PREFLIGHT_SIGNAL_ROWS
+    assert result.model.edge_preflight_selection_signal_count >= objective.min_closed_trades
+    assert result.model.edge_preflight_training_net_edge_bps < 0.0
+    assert "round_candidate_edge_preflight_training_skipped" in result.model.quality_warnings
+
+
+def test_triple_barrier_edge_preflight_uses_path_payoff_not_horizon_close() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(
+        StrategyConfig(taker_fee_bps=0.0, slippage_bps=0.0),
+        objective,
+    )
+    feature_cfg = replace(
+        oe.default_config_for(objective.name, strategy.enabled_features),
+        label_mode="triple_barrier",
+        label_threshold=0.006,
+        label_lookahead=8,
+    )
+    candidate = oe.RoundModelCandidate(
+        name="path-payoff-test",
+        feature_cfg=feature_cfg,
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.56,
+    )
+    rows = [
+        ModelRow(
+            timestamp=index * 1000,
+            close=200.0 - index * 0.05,
+            features=(1.0,),
+            label=1 if index < 80 else 0,
+        )
+        for index in range(120)
+    ]
+
+    stats = oe._candidate_edge_preflight_stats(rows, candidate, strategy)
+
+    assert stats["path_barrier_label"] is True
+    assert stats["signal_count"] >= 70
+    assert stats["net_mean_edge_bps"] < 0.0
+    assert stats["hit_rate"] == pytest.approx(0.0)
+
+
+def test_edge_preflight_uses_symbol_profile_cost_floor_for_barrier_labels() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(
+        StrategyConfig(taker_fee_bps=1.0, slippage_bps=5.0),
+        objective,
+    )
+    feature_cfg = replace(
+        oe.default_config_for(objective.name, strategy.enabled_features),
+        label_mode="triple_barrier",
+        label_threshold=0.0017,
+        label_lookahead=8,
+    )
+    candidate = oe.RoundModelCandidate(
+        name="profile-floor-test",
+        feature_cfg=feature_cfg,
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.56,
+    )
+    rows = [
+        ModelRow(
+            timestamp=index * 1000,
+            close=100.0 * (1.0 + 0.0003 * index),
+            features=(1.0,),
+            label=1,
+            quote_volume=2_000_000.0,
+            trade_count=1_000,
+        )
+        for index in range(120)
+    ]
+    profile = SymbolExecutionProfile(
+        "BTCUSDT",
+        spread_bps=0.1,
+        quote_volume=2_000_000_000.0,
+        trade_count=2_000_000,
+        liquidity_score=1.0,
+        latency_ms=0,
+        liquidity_haircut=0.0,
+    )
+
+    generic = oe._candidate_edge_preflight_stats(rows, candidate, strategy)
+    profiled = oe._candidate_edge_preflight_stats(rows, candidate, strategy, symbol_profile=profile)
+
+    assert generic["net_mean_edge_bps"] < 0.0
+    assert profiled["net_mean_edge_bps"] > 0.0
+    assert profiled["cost_floor_bps"] < generic["cost_floor_bps"]
+
+
+def test_forward_edge_preflight_uses_next_executable_entry_price() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(
+        StrategyConfig(taker_fee_bps=1.0, slippage_bps=1.0),
+        objective,
+    )
+    feature_cfg = replace(
+        oe.default_config_for(objective.name, strategy.enabled_features),
+        label_mode="forward_return",
+        label_threshold=0.001,
+        label_lookahead=2,
+        label_entry_offset=1,
+    )
+    candidate = oe.RoundModelCandidate(
+        name="next-entry-preflight-test",
+        feature_cfg=feature_cfg,
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.56,
+    )
+    closes = [100.0, 110.0, 105.0, 100.0, 99.0, 98.0, 97.0, 96.0]
+    rows = [
+        ModelRow(
+            timestamp=index * 1000,
+            close=close,
+            features=(1.0,),
+            label=1 if index == 0 else 0,
+        )
+        for index, close in enumerate(closes)
+    ]
+
+    stats = oe._candidate_edge_preflight_stats(rows, candidate, strategy)
+
+    assert stats["signal_count"] == 1
+    assert stats["label_entry_offset"] == 1
+    assert stats["net_mean_edge_bps"] < 0.0
 
 
 def test_round_model_candidates_do_not_train_on_sub_cost_intraday_labels() -> None:
@@ -349,19 +844,113 @@ def test_round_model_candidates_do_not_train_on_sub_cost_intraday_labels() -> No
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
     candidates = oe._round_model_candidates(objective, strategy, feature_cfg, 3)
-    cost_floor = oe._round_trip_cost_label_floor(strategy)
+    round_trip_floor = oe._round_trip_cost_label_floor(strategy)
+    execution_floor = oe.rule_alpha_take_profit_floor_pct(strategy)
+    cost_floor = max(round_trip_floor, execution_floor)
 
-    assert cost_floor == pytest.approx(0.0015)
+    assert round_trip_floor == pytest.approx(0.0015)
+    assert execution_floor > round_trip_floor
     assert [candidate.name for candidate in candidates] == [
         "default",
-        "day_trade_frequency_probe_forward",
-        "day_trade_frequency_probe_downside",
+        "path_scalp_30s_forward",
+        "path_scalp_30s_downside",
     ]
     assert all(candidate.feature_cfg.label_threshold >= cost_floor for candidate in candidates)
-    assert candidates[1].feature_cfg.label_threshold == pytest.approx(cost_floor)
-    assert candidates[2].feature_cfg.label_threshold == pytest.approx(cost_floor)
+    assert candidates[1].feature_cfg.label_threshold == pytest.approx(cost_floor + 0.0002)
+    assert candidates[2].feature_cfg.label_threshold == pytest.approx(cost_floor + 0.0002)
     assert candidates[1].feature_cfg.label_lookahead >= 30
     assert candidates[2].feature_cfg.label_lookahead >= 30
+
+
+def test_round_candidate_execution_uses_cost_aware_stop_take_floor() -> None:
+    objective = get_objective("conservative")
+    strategy = StrategyConfig(
+        stop_loss_pct=0.010,
+        take_profit_pct=0.022,
+        taker_fee_bps=1.0,
+        slippage_bps=5.0,
+    )
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    candidate = oe._round_model_candidates(objective, strategy, feature_cfg, 3)[1]
+
+    candidate_strategy = oe._strategy_for_round_candidate(strategy, candidate)
+
+    assert strategy.take_profit_pct * candidate.take_profit_multiplier < oe.rule_alpha_take_profit_floor_pct(strategy)
+    assert candidate_strategy.stop_loss_pct >= oe.rule_alpha_stop_loss_floor_pct(strategy)
+    assert candidate_strategy.take_profit_pct >= oe.rule_alpha_take_profit_floor_pct(strategy)
+    assert candidate_strategy.take_profit_pct > candidate_strategy.stop_loss_pct
+
+
+def test_futures_round_candidates_keep_price_barriers_independent_from_leverage() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+
+    spot_candidates = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        24,
+        market_type="spot",
+    )
+    futures_candidates = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        24,
+        market_type="futures",
+    )
+    spot_candidate = next(candidate for candidate in spot_candidates if candidate.name == "cost_aware_5m_forward")
+    futures_candidate = next(candidate for candidate in futures_candidates if candidate.name == "cost_aware_5m_forward")
+    spot_strategy = oe._strategy_for_round_candidate_market(strategy, spot_candidate, market_type="spot")
+    futures_strategy = oe._strategy_for_round_candidate_market(strategy, futures_candidate, market_type="futures")
+
+    assert strategy.leverage == pytest.approx(5.0)
+    assert futures_candidate.feature_cfg.label_threshold == pytest.approx(spot_candidate.feature_cfg.label_threshold)
+    assert futures_strategy.stop_loss_pct == pytest.approx(spot_strategy.stop_loss_pct)
+    assert futures_strategy.take_profit_pct == pytest.approx(spot_strategy.take_profit_pct)
+    assert futures_strategy.stop_loss_pct >= oe.rule_alpha_stop_loss_floor_pct(strategy)
+    assert futures_strategy.take_profit_pct >= oe.rule_alpha_take_profit_floor_pct(strategy)
+    assert futures_strategy.take_profit_pct > futures_strategy.stop_loss_pct
+
+
+def test_round_candidates_use_symbol_specific_execution_cost_floor() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    profile = SymbolExecutionProfile(
+        "BTCUSDT",
+        spread_bps=0.02,
+        quote_volume=10_000_000_000.0,
+        trade_count=4_000_000,
+        liquidity_score=1.0,
+        latency_ms=strategy.latency_buffer_ms,
+        liquidity_haircut=strategy.testnet_liquidity_haircut,
+    )
+
+    generic_candidates = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        24,
+        market_type="futures",
+    )
+    specific_candidates = oe._round_model_candidates(
+        objective,
+        strategy,
+        feature_cfg,
+        24,
+        market_type="futures",
+        symbol_profile=profile,
+    )
+    generic = next(candidate for candidate in generic_candidates if candidate.name == "path_scalp_30s_forward")
+    specific = next(candidate for candidate in specific_candidates if candidate.name == "path_scalp_30s_forward")
+
+    assert specific.feature_cfg.label_threshold < generic.feature_cfg.label_threshold
+    assert specific.feature_cfg.label_threshold >= oe.rule_alpha_take_profit_floor_pct(
+        strategy,
+        symbol_profile=profile,
+    )
 
 
 def test_futures_one_second_optimization_requires_prefilled_agg_trades_data(tmp_path: Path) -> None:
@@ -1083,7 +1672,7 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
             timestamp=index * 60_000,
             close=100.0 + index,
             features=(1.0,),
-            label=1,
+            label=index % 2,
         )
         for index in range(100)
     ]
@@ -1097,6 +1686,8 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
     )
     observed: dict[str, object] = {"run_lengths": [], "phases": []}
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
 
     def fake_train_advanced(train_rows, _feature_cfg, **kwargs):
         observed["train_rows"] = len(train_rows)
@@ -1112,6 +1703,19 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
 
     def fake_threshold(selection_rows, _model, _strategy, **_kwargs):
         observed["threshold_rows"] = len(selection_rows)
+        if _kwargs.get("status_callback") is not None:
+            _kwargs["status_callback"](
+                "threshold_calibration_progress",
+                {
+                    "threshold_count": 1,
+                    "seen_variants": 1,
+                    "replayed_variants": 1,
+                    "skipped_sparse_variants": 0,
+                    "current_threshold": 0.77,
+                    "long_threshold": 0.77,
+                    "short_threshold": None,
+                },
+            )
         return SimpleNamespace(
             accepted=True,
             threshold=0.77,
@@ -1206,37 +1810,201 @@ def test_train_round_model_uses_selection_slice_not_holdout_for_threshold_and_in
         compute_backend="auto",
         batch_size=1024,
         status_callback=status_callback,
+        model_candidate_count=1,
     )
 
-    assert observed["train_rows"] == 60
-    assert observed["train_validation_rows"] == 15
-    assert observed["threshold_rows"] == 15
-    assert observed["run_lengths"] == [15, 15]
+    assert observed["train_rows"] == 41
+    assert observed["train_validation_rows"] == 16
+    assert observed["threshold_rows"] == 16
+    assert observed["run_lengths"] == [16, 16]
     assert len(holdout_rows) == 25
     assert selected_model.decision_threshold == pytest.approx(0.77)
     assert selected_model.threshold_source == "round_selection_backtest"
     assert selected_model.probability_inverted is True
     phases = [item[0] for item in observed["phases"]]  # type: ignore[index]
-    assert phases == [
-        "feature_generation_started",
+    ordered_phases = [phase for phase in phases if phase != "threshold_calibration_progress"]
+    assert ordered_phases[:14] == [
+        "feature_cache_generation_started",
+        "feature_cache_generation_complete",
+        "feature_relabel_started",
         "feature_generation_complete",
+        "chronological_split_complete",
+        "training_edge_preflight_complete",
         "training_started",
         "training_complete",
+        "probability_calibration_started",
+        "probability_calibration_complete",
         "threshold_calibration_started",
         "threshold_calibration_complete",
         "selection_backtest_complete",
         "inversion_backtest_complete",
-        "hybrid_model_zoo_skipped",
-        "rule_alpha_model_zoo_started",
-        "rule_alpha_model_zoo_complete",
     ]
+    assert "threshold_calibration_progress" in phases
+    assert "hybrid_model_zoo_skipped" in phases
+    assert "rule_alpha_model_zoo_started" in phases
+    assert "rule_alpha_model_zoo_complete" in phases
+
+
+def test_rule_alpha_zoo_skips_hard_no_entry_base_without_scored_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    candidate = oe._round_model_candidates(objective, strategy, feature_cfg, 1)[0]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    model.round_selection_gate_passed = False
+    model.threshold_evaluated_thresholds = 0
+    model.threshold_diagnostic_best_trades = 0
+    selection_result = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=1000.0,
+        realized_pnl=0.0,
+        win_rate=0.0,
+        trades=0,
+        max_drawdown=0.0,
+        closed_trades=0,
+        gross_exposure=0.0,
+        total_fees=0.0,
+        stopped_by_drawdown=False,
+        max_exposure=0.0,
+        trades_per_day_cap_hit=0,
+    )
+    candidate_result = oe.RoundModelCandidateResult(
+        candidate=candidate,
+        score=0.0,
+        model=model,
+        report=SimpleNamespace(row_count=1000, positive_rate=0.05),
+        selection_result=selection_result,
+        selection_reject_reason="edge_preflight_training_net_edge<=0",
+        training_rows=[],
+        selection_rows=[ModelRow(timestamp=0, close=100.0, features=(0.0,), label=0)],
+        rows=[],
+        validation_rows=[],
+    )
+    phases: list[tuple[str, dict[str, object]]] = []
+
+    def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("rule-alpha search should not run for a hard no-entry base")
+
+    monkeypatch.setattr(oe, "optimize_rule_alpha_model_zoo", fail_if_called)
+
+    updated = oe._select_rule_alpha_model_zoo_if_accepted(
+        candidate_result,
+        strategy,
+        objective,
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+        status_callback=lambda phase, payload: phases.append((phase, dict(payload))),
+    )
+
+    assert updated.model is model
+    assert "rule_alpha_model_zoo_skipped_hard_no_entry_base" in updated.model.quality_warnings
+    assert phases == [
+        (
+            "rule_alpha_model_zoo_skipped",
+            {
+                "reason": "base_candidate_has_no_scored_selection_evidence",
+                "selection_rows": 1,
+            },
+        )
+    ]
+
+
+def test_rule_alpha_zoo_uses_requested_candidate_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    candidate = oe._round_model_candidates(objective, strategy, feature_cfg, 1)[0]
+    model = TrainedModel(
+        weights=[1.0],
+        bias=0.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    model.round_selection_gate_passed = False
+    model.threshold_evaluated_thresholds = 3
+    selection_result = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=999.0,
+        realized_pnl=-1.0,
+        win_rate=0.0,
+        trades=3,
+        max_drawdown=0.01,
+        closed_trades=3,
+        gross_exposure=100.0,
+        total_fees=1.0,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        buy_hold_pnl=0.0,
+        edge_vs_buy_hold=-1.0,
+    )
+    rows = [ModelRow(timestamp=index, close=100.0 + index, features=(1.0,), label=index % 2) for index in range(20)]
+    result = oe.RoundModelCandidateResult(
+        candidate=candidate,
+        score=-1.0,
+        model=model,
+        report=SimpleNamespace(row_count=20, positive_rate=0.5),
+        selection_result=selection_result,
+        selection_reject_reason="test",
+        training_rows=rows,
+        selection_rows=rows,
+        rows=rows,
+        validation_rows=rows,
+    )
+    observed: dict[str, object] = {}
+
+    def fake_optimize(*_args, **kwargs):
+        observed["max_candidates"] = kwargs["max_candidates"]
+        observed["empirical_max_feature_count"] = kwargs["empirical_max_feature_count"]
+        return SimpleNamespace(
+            evaluated_candidates=0,
+            candidate_results=[],
+            candidate_summary={},
+            best_candidate=None,
+            best_result=None,
+            best_score=float("-inf"),
+            best_reject_reason="none",
+            best_probability_inverted=False,
+            accepted=False,
+            model=None,
+        )
+
+    monkeypatch.setattr(oe, "optimize_rule_alpha_model_zoo", fake_optimize)
+
+    oe._select_rule_alpha_model_zoo_if_accepted(
+        result,
+        strategy,
+        objective,
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+        rule_alpha_max_candidates=17,
+        rule_alpha_empirical_max_features=29,
+    )
+
+    assert observed["max_candidates"] == 17
+    assert observed["empirical_max_feature_count"] == 29
 
 
 def test_train_round_model_parks_rejected_selection_in_no_entry_state(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rows = [
-        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=1)
+        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=index % 2)
         for index in range(100)
     ]
     model = TrainedModel(
@@ -1248,6 +2016,8 @@ def test_train_round_model_parks_rejected_selection_in_no_entry_state(
         feature_stds=[1.0],
     )
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -1325,7 +2095,7 @@ def test_train_round_model_uses_rejected_best_threshold_for_diagnostics(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rows = [
-        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=1)
+        ModelRow(timestamp=index * 60_000, close=100.0 + index, features=(1.0,), label=index % 2)
         for index in range(100)
     ]
     model = TrainedModel(
@@ -1337,6 +2107,8 @@ def test_train_round_model_uses_rejected_best_threshold_for_diagnostics(
         feature_stds=[1.0],
     )
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -1441,6 +2213,8 @@ def test_train_round_model_promotes_accepted_hybrid_model_zoo(
     observed: dict[str, object] = {}
 
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -1545,7 +2319,21 @@ def test_train_round_model_promotes_accepted_hybrid_model_zoo(
         model.model_family = "adaptive_hybrid_model_zoo"
         model.hybrid_base_weight = 0.68
         model.hybrid_experts = [
-            HybridExpert(name="near", kind="lorentzian_knn", weight=0.16, prototypes=[], k=13)
+            HybridExpert(
+                name="dense",
+                kind="dense_mlp",
+                weight=0.25,
+                prototypes=[],
+                k=13,
+                params={
+                    "training_backend_kind": "directml",
+                    "training_rows": 50,
+                    "validation_rows": 25,
+                    "sampled_rows": 75,
+                    "positive_rows": 30,
+                    "validation_loss": 0.42,
+                },
+            )
         ]
         return SimpleNamespace(
             accepted=True,
@@ -1571,7 +2359,7 @@ def test_train_round_model_promotes_accepted_hybrid_model_zoo(
     )
 
     assert len(holdout_rows) == 25
-    assert observed == {"training_rows": 60, "selection_rows": 15, "market_type": "futures"}
+    assert observed == {"training_rows": 47, "selection_rows": 22, "market_type": "futures"}
     assert selected_model.round_selection_gate_passed is True
     assert selected_model.round_selection_reject_reason == ""
     assert selected_model.model_family == "adaptive_hybrid_model_zoo"
@@ -1580,10 +2368,17 @@ def test_train_round_model_promotes_accepted_hybrid_model_zoo(
     assert selected_model.hybrid_evaluated_profiles == 4
     assert selected_model.model_selection_score == pytest.approx(0.25)
     assert "round_hybrid_model_zoo_selected" in selected_model.quality_warnings
-    diagnostic = selected_model.round_candidate_diagnostics[0]
+    diagnostic = next(item for item in selected_model.round_candidate_diagnostics if item["selected"] is True)
     assert diagnostic["model_family"] == "adaptive_hybrid_model_zoo"
     assert diagnostic["hybrid_profile"] == "guarded_neighbors"
     assert diagnostic["hybrid_expert_count"] == 1
+    assert diagnostic["hybrid_dense_mlp_attempted"] is True
+    assert diagnostic["hybrid_dense_mlp_selected"] is True
+    assert diagnostic["hybrid_dense_mlp_present"] is True
+    assert diagnostic["hybrid_dense_mlp_backend_kind"] == "directml"
+    assert diagnostic["hybrid_dense_mlp_training_rows"] == 50
+    assert diagnostic["hybrid_dense_mlp_positive_rate_pct"] == pytest.approx(40.0)
+    assert diagnostic["hybrid_dense_mlp_validation_loss"] == pytest.approx(0.42)
     assert diagnostic["selection_realized_pnl"] == pytest.approx(24.0)
 
 
@@ -1677,12 +2472,185 @@ def test_hybrid_model_zoo_rejection_is_recorded(
     assert updated.model.hybrid_base_score == pytest.approx(-1.0)
     assert updated.model.hybrid_best_score is None
     assert updated.model.hybrid_evaluated_profiles == 4
+    assert oe._hybrid_model_zoo_was_evaluated(updated.model) is True
     assert "round_hybrid_model_zoo_rejected" in updated.model.quality_warnings
     assert [phase for phase, _payload in phases] == [
         "hybrid_model_zoo_started",
         "hybrid_model_zoo_complete",
     ]
     assert phases[-1][1]["accepted"] is False
+
+
+def test_train_round_model_does_not_repeat_candidate_hybrid_search(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [
+        ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0, -1.0), label=index % 2)
+        for index in range(100)
+    ]
+    model = TrainedModel(
+        weights=[0.1, -0.1],
+        bias=0.0,
+        feature_dim=2,
+        epochs=1,
+        feature_means=[0.0, 0.0],
+        feature_stds=[1.0, 1.0],
+    )
+    model.round_selection_gate_passed = False
+    model.threshold_diagnostic_best_trades = 6
+    model.edge_preflight_training_net_edge_bps = 1.0
+    model.edge_preflight_selection_net_edge_bps = 1.0
+    selection_result = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=999.0,
+        realized_pnl=-1.0,
+        win_rate=0.0,
+        trades=6,
+        max_drawdown=0.01,
+        closed_trades=6,
+        gross_exposure=100.0,
+        total_fees=1.0,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        buy_hold_pnl=0.0,
+        edge_vs_buy_hold=-1.0,
+        profit_factor=0.0,
+        expectancy=-1.0 / 6.0,
+        max_consecutive_losses=2,
+    )
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda *_args, **_kwargs: list(rows))
+
+    def fake_evaluate(_candles, _strategy, _objective, candidate, **_kwargs):
+        return oe.RoundModelCandidateResult(
+            candidate=candidate,
+            score=-1.0,
+            model=model,
+            report=SimpleNamespace(row_count=len(rows), positive_rate=0.5),
+            selection_result=selection_result,
+            selection_reject_reason="selection_gate_failed",
+            training_rows=rows[:50],
+            selection_rows=rows[50:75],
+            rows=rows,
+            validation_rows=rows[75:],
+        )
+
+    calls = 0
+
+    def fake_hybrid(result, *_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        result.model.hybrid_evaluated_profiles = 4
+        result.model.hybrid_profile_attempts = [{"profile": "base_only", "accepted": False}]
+        return result
+
+    monkeypatch.setattr(oe, "_evaluate_round_model_candidate", fake_evaluate)
+    monkeypatch.setattr(oe, "_select_hybrid_model_zoo_if_accepted", fake_hybrid)
+    monkeypatch.setattr(oe, "_select_rule_alpha_model_zoo_if_accepted", lambda result, *_args, **_kwargs: result)
+    phases: list[str] = []
+
+    oe.train_round_model(
+        [_candle(index, interval_ms=60_000) for index in range(100)],
+        StrategyConfig(),
+        get_objective("conservative"),
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="auto",
+        batch_size=1024,
+        model_candidate_count=1,
+        status_callback=lambda phase, _payload: phases.append(phase),
+    )
+
+    assert calls == 1
+    assert "hybrid_model_zoo_reused_candidate_result" in phases
+
+
+def test_hybrid_model_zoo_uses_expanded_feature_count(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    feature_dim = 231
+    rows = [
+        ModelRow(
+            timestamp=index * 1000,
+            close=100.0,
+            features=tuple([0.0] * feature_dim),
+            label=index % 2,
+        )
+        for index in range(90)
+    ]
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    candidate = oe.RoundModelCandidate(
+        name="expanded-feature-hybrid",
+        feature_cfg=oe.default_config_for(objective.name, strategy.enabled_features),
+        epochs=1,
+        learning_rate=0.01,
+        l2_penalty=0.0,
+        signal_threshold=0.66,
+    )
+    model = TrainedModel(
+        weights=[0.0] * feature_dim,
+        bias=0.0,
+        feature_dim=feature_dim,
+        epochs=1,
+        feature_means=[0.0] * feature_dim,
+        feature_stds=[1.0] * feature_dim,
+    )
+    result = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=999.0,
+        realized_pnl=-1.0,
+        win_rate=0.0,
+        trades=1,
+        max_drawdown=0.01,
+        closed_trades=1,
+        gross_exposure=100.0,
+        total_fees=1.0,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        buy_hold_pnl=0.0,
+        edge_vs_buy_hold=-1.0,
+    )
+    candidate_result = oe.RoundModelCandidateResult(
+        candidate=candidate,
+        score=-1.0,
+        model=model,
+        report=SimpleNamespace(),
+        selection_result=result,
+        selection_reject_reason="selection_gate_failed",
+        training_rows=rows[:60],
+        selection_rows=rows[60:80],
+        rows=[],
+        validation_rows=rows[80:],
+    )
+    observed: dict[str, object] = {}
+
+    def rejected_hybrid(_model, _training_rows, _selection_rows, _strategy, **kwargs):
+        observed["feature_count"] = kwargs["feature_count"]
+        return SimpleNamespace(
+            accepted=False,
+            model=model,
+            base_score=-1.0,
+            best_score=float("-inf"),
+            best_profile="base_only",
+            evaluated_profiles=1,
+            best_result=None,
+        )
+
+    monkeypatch.setattr(oe, "optimize_hybrid_model_zoo", rejected_hybrid)
+
+    oe._select_hybrid_model_zoo_if_accepted(
+        candidate_result,
+        strategy,
+        objective,
+        market_type="futures",
+        starting_cash=1000.0,
+        compute_backend="directml",
+        batch_size=1024,
+    )
+
+    assert observed["feature_count"] == feature_dim
 
 
 def test_hybrid_model_zoo_can_rescue_rejected_base_candidate_from_diagnostic_threshold(
@@ -1818,21 +2786,35 @@ def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
     objective = get_objective("conservative")
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
 
-    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=16)
+    candidates = oe._round_model_candidates(objective, strategy, feature_cfg, requested=oe.DEFAULT_ROUND_MODEL_CANDIDATES)
 
     assert [candidate.name for candidate in candidates[:3]] == [
         "default",
-        "day_trade_frequency_probe_forward",
-        "day_trade_frequency_probe_downside",
+        "path_scalp_30s_forward",
+        "path_scalp_30s_downside",
     ]
-    assert len(candidates) == 16
+    assert len(candidates) == oe.DEFAULT_ROUND_MODEL_CANDIDATES
     assert candidates[1].stop_loss_multiplier < 1.0
     assert candidates[1].take_profit_multiplier < 1.0
     assert candidates[1].cooldown_multiplier < 1.0
+    assert any(candidate.name == "path_scalp_90s_forward" for candidate in candidates)
+    assert any(candidate.name == "path_scalp_90s_downside" for candidate in candidates)
     assert any(candidate.name == "focal_positive_information_event_barrier" for candidate in candidates)
     assert any(candidate.name == "focal_downside_information_event_barrier" for candidate in candidates)
     assert any(candidate.name == "day_trade_frequency_probe_forward" for candidate in candidates)
     assert any(candidate.name == "day_trade_frequency_probe_downside" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_5m_forward" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_5m_downside" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_15m_forward" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_15m_downside" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_30m_forward" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_30m_downside" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_60m_forward" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_60m_downside" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_2h_forward" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_2h_downside" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_4h_forward" for candidate in candidates)
+    assert any(candidate.name == "cost_aware_4h_downside" for candidate in candidates)
     assert any(candidate.focal_gamma > 0.0 for candidate in candidates)
     assert any(candidate.name == "session_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.name == "session_downside_volatility_triple_barrier" for candidate in candidates)
@@ -1848,16 +2830,20 @@ def test_round_model_candidates_include_risk_gated_signal_diversity() -> None:
         candidate.name != "default" and candidate.signal_threshold == pytest.approx(0.56)
         for candidate in candidates
     )
-    assert any(candidate.name == "frequency_probe_forward" for candidate in candidates)
+    assert any(candidate.feature_cfg.label_lookahead >= 900 for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "event_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "downside_event_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "downside_volatility_triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "triple_barrier" for candidate in candidates)
     assert any(candidate.feature_cfg.label_mode == "downside_triple_barrier" for candidate in candidates)
+    names = [candidate.name for candidate in oe._round_model_candidates(objective, strategy, feature_cfg, 19)]
+    assert "high_conviction_60m_forward" in names
+    assert "high_conviction_90m_forward" in names
+    assert "high_conviction_120m_forward" in names
 
 
-def test_failed_candidate_ranking_prefers_no_loss_over_losing_trade() -> None:
+def test_failed_candidate_ranking_prefers_informative_trade_evidence_over_no_entry_placeholder() -> None:
     objective = get_objective("conservative")
     strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
     feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
@@ -1931,7 +2917,144 @@ def test_failed_candidate_ranking_prefers_no_loss_over_losing_trade() -> None:
         score=0.1,
     )
 
-    assert oe._round_candidate_rank_key(no_loss) > oe._round_candidate_rank_key(losing)
+    assert oe._round_candidate_rank_key(losing) > oe._round_candidate_rank_key(no_loss)
+
+
+def test_failed_candidate_ranking_prefers_scored_evidence_over_placeholder_no_entry() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    placeholder_candidate, scored_candidate = oe._round_model_candidates(objective, strategy, feature_cfg, 2)
+
+    def model(*, evaluated_thresholds: int, diagnostic_trades: int) -> TrainedModel:
+        trained = TrainedModel(
+            weights=[1.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+        )
+        trained.round_selection_gate_passed = False
+        trained.threshold_diagnostic_best_pnl = 0.0
+        trained.threshold_diagnostic_best_trades = diagnostic_trades
+        trained.threshold_evaluated_thresholds = evaluated_thresholds
+        return trained
+
+    def result(
+        candidate: oe.RoundModelCandidate,
+        candidate_model: TrainedModel,
+        *,
+        realized_pnl: float,
+        closed_trades: int,
+    ) -> oe.RoundModelCandidateResult:
+        return oe.RoundModelCandidateResult(
+            candidate=candidate,
+            score=realized_pnl,
+            model=candidate_model,
+            report=SimpleNamespace(row_count=1000, positive_rate=0.05),
+            selection_result=BacktestResult(
+                starting_cash=1000.0,
+                ending_cash=1000.0 + realized_pnl,
+                realized_pnl=realized_pnl,
+                win_rate=0.0,
+                trades=closed_trades,
+                max_drawdown=0.01 if closed_trades else 0.0,
+                closed_trades=closed_trades,
+                gross_exposure=100.0 if closed_trades else 0.0,
+                total_fees=0.1 if closed_trades else 0.0,
+                stopped_by_drawdown=False,
+                max_exposure=100.0 if closed_trades else 0.0,
+                trades_per_day_cap_hit=0,
+                buy_hold_pnl=-1.0,
+                edge_vs_buy_hold=realized_pnl + 1.0,
+                profit_factor=0.0,
+                expectancy=realized_pnl / closed_trades if closed_trades else 0.0,
+            ),
+            selection_reject_reason="realized_pnl<=0.0",
+            training_rows=[],
+            selection_rows=[],
+            rows=[],
+            validation_rows=[],
+        )
+
+    placeholder = result(
+        placeholder_candidate,
+        model(evaluated_thresholds=0, diagnostic_trades=0),
+        realized_pnl=0.0,
+        closed_trades=0,
+    )
+    scored = result(
+        scored_candidate,
+        model(evaluated_thresholds=120, diagnostic_trades=0),
+        realized_pnl=-0.1,
+        closed_trades=1,
+    )
+
+    assert oe._round_candidate_rank_key(scored) > oe._round_candidate_rank_key(placeholder)
+
+
+def test_failed_candidate_ranking_rejects_untrainable_label_balance() -> None:
+    objective = get_objective("conservative")
+    strategy = oe.strategy_with_objective_defaults(StrategyConfig(), objective)
+    feature_cfg = oe.default_config_for(objective.name, strategy.enabled_features)
+    sparse_candidate, viable_candidate = oe._round_model_candidates(objective, strategy, feature_cfg, 2)
+
+    def model() -> TrainedModel:
+        trained = TrainedModel(
+            weights=[1.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+        )
+        trained.round_selection_gate_passed = False
+        trained.threshold_diagnostic_best_pnl = -0.5
+        trained.threshold_diagnostic_best_trades = 1
+        return trained
+
+    def result(
+        candidate: oe.RoundModelCandidate,
+        *,
+        row_count: int,
+        positive_rate: float,
+        realized_pnl: float,
+    ) -> oe.RoundModelCandidateResult:
+        return oe.RoundModelCandidateResult(
+            candidate=candidate,
+            score=realized_pnl,
+            model=model(),
+            report=SimpleNamespace(row_count=row_count, positive_rate=positive_rate),
+            selection_result=BacktestResult(
+                starting_cash=1000.0,
+                ending_cash=1000.0 + realized_pnl,
+                realized_pnl=realized_pnl,
+                win_rate=0.0,
+                trades=1,
+                max_drawdown=0.01,
+                closed_trades=1,
+                gross_exposure=100.0,
+                total_fees=0.1,
+                stopped_by_drawdown=False,
+                max_exposure=100.0,
+                trades_per_day_cap_hit=0,
+                buy_hold_pnl=-1.0,
+                edge_vs_buy_hold=realized_pnl + 1.0,
+                profit_factor=0.0,
+                expectancy=realized_pnl,
+            ),
+            selection_reject_reason="realized_pnl<=0.0",
+            training_rows=[],
+            selection_rows=[],
+            rows=[],
+            validation_rows=[],
+        )
+
+    sparse = result(sparse_candidate, row_count=1000, positive_rate=0.0, realized_pnl=-0.1)
+    viable = result(viable_candidate, row_count=1000, positive_rate=0.05, realized_pnl=-0.2)
+
+    assert oe._round_candidate_rank_key(viable) > oe._round_candidate_rank_key(sparse)
 
 
 def test_train_round_model_selects_best_scored_candidate(
@@ -1943,6 +3066,8 @@ def test_train_round_model_selects_best_scored_candidate(
     ]
     calls = {"train": 0}
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
 
     def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
         calls["train"] += 1
@@ -2028,7 +3153,7 @@ def test_train_round_model_selects_best_scored_candidate(
     assert selected_model.round_candidate_diagnostics[1]["focal_gamma"] == pytest.approx(0.0)
     assert selected_model.round_candidate_diagnostics[1]["selected"] is True
     assert selected_model.round_candidate_diagnostics[1]["threshold_diagnostic_best_trades"] == 0
-    assert report.row_count == 60
+    assert report.row_count == 50
     assert len(holdout_rows) == 25
 
 
@@ -2041,6 +3166,8 @@ def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
     ]
     calls = {"train": 0}
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
 
     def fake_train_advanced(train_rows, _feature_cfg, **_kwargs):
         calls["train"] += 1
@@ -2127,7 +3254,7 @@ def test_train_round_model_tie_breaks_failed_candidates_by_diagnostic_pnl(
 def test_train_round_model_require_gpu_rejects_training_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=1) for index in range(100)]
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=index % 2) for index in range(100)]
     model = TrainedModel(
         weights=[1.0],
         bias=0.0,
@@ -2141,6 +3268,8 @@ def test_train_round_model_require_gpu_rejects_training_fallback(
         training_backend_reason="DirectML training failed in test",
     )
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -2170,6 +3299,7 @@ def test_train_round_model_require_gpu_rejects_feature_generation_fallback(
         raise FeatureAccelerationError("feature_acceleration_required_but_directml_feature_generation_failed")
 
     monkeypatch.setattr(oe, "make_advanced_rows", fail_feature_generation)
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", fail_feature_generation)
 
     with pytest.raises(FeatureAccelerationError, match="feature_generation_failed"):
         oe.train_round_model(
@@ -2189,7 +3319,7 @@ def test_train_round_model_require_gpu_rejects_feature_generation_fallback(
 def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=1) for index in range(100)]
+    rows = [ModelRow(timestamp=index * 60_000, close=100.0, features=(1.0,), label=index % 2) for index in range(100)]
     model = TrainedModel(
         weights=[1.0],
         bias=0.0,
@@ -2202,6 +3332,8 @@ def test_train_round_model_require_gpu_rejects_threshold_scoring_fallback(
         training_backend_device="privateuseone:0",
     )
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",
@@ -2256,6 +3388,8 @@ def test_train_round_model_require_gpu_rejects_probability_calibration_fallback(
         training_backend_device="privateuseone:0",
     )
     monkeypatch.setattr(oe, "make_advanced_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "make_advanced_inference_rows", lambda _candles, _cfg, **_kwargs: list(rows))
+    monkeypatch.setattr(oe, "label_advanced_rows", lambda _candles, _cfg, _feature_rows, **_kwargs: list(rows))
     monkeypatch.setattr(
         oe,
         "train_advanced",

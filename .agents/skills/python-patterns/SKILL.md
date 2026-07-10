@@ -6,11 +6,11 @@ origin: adapted from ZMB-UZH/omero-docker-extended python-patterns (ECC v1.10.0)
 
 # Python Patterns
 
-Use this skill whenever you add or refactor Python in `src/simple_ai_bitcoin_trading_binance/`, `tests/`, or `tools/`.
+Use this skill whenever you add or refactor Python in `src/simple_ai_trading/`, `tests/`, or `tools/`.
 
 ## Ground rules
 
-- The trading core is **pure stdlib + `requests` + `textual`**. Do not introduce numpy, pandas, scikit-learn, or any ML framework; if you feel you need one, stop and ask first.
+- Keep exchange, risk, accounting, and artifact contracts lightweight and deterministic. Optional model acceleration may use the declared NumPy/PyTorch/DirectML stack, but every runtime dependency must be explicit and every accelerated inference path needs a CPU parity test.
 - Every module exposes **frozen dataclasses** for data-in-motion (`Candle`, `ModelRow`, `BacktestResult`, `ClassificationReport`, …) and regular dataclasses for config. Keep that split.
 - New public functions must carry type hints and a one-line docstring when the "why" is non-obvious. Do not document obvious behavior.
 - Avoid hidden globals. Pass configuration explicitly. If you need a session-lived object (e.g. the shell state), inject it through the constructor.
@@ -21,7 +21,7 @@ Use this skill whenever you add or refactor Python in `src/simple_ai_bitcoin_tra
 - **Credential redaction is a contract**, not a formatting choice. Any payload that could be printed, logged, or persisted runs through the existing redaction helpers (`RuntimeConfig.public_dict`, `_redact_request_url`, `_redact_sensitive_text`). New printable surfaces that skip this are blocking bugs.
 - **Deterministic artifacts**: JSON written under `data/` must use `sort_keys=True` and keep a stable top-level schema (`command`, `timestamp`, `runtime`, …). Never embed raw API keys.
 - **No side effects at import time** — no network calls, no file writes, no environment variable mutation. Tests rely on import being free.
-- **Safety defaults survive**: `testnet=True`, `dry_run=True`, BTCUSDC-only. A change that weakens any of these requires an explicit user opt-in path with a test.
+- **Safety defaults survive**: `testnet=True`, `dry_run=True`, conservative risk, and the BTC/ETH/SOL major-asset scope. A change that weakens any of these requires an explicit user opt-in path with a test.
 
 ## Formatting / lint
 

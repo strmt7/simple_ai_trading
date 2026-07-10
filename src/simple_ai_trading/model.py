@@ -13,6 +13,12 @@ from .compute import BackendInfo, resolve_backend
 from .features import FEATURE_VERSION, ModelRow, feature_dimension as _feature_dimension
 from .storage import write_json_atomic
 from .strategy_overrides import StrategyOverrideValue, clean_strategy_overrides
+from .trade_tape_features import TRADE_TAPE_FEATURES_PER_WINDOW
+
+
+MAX_SERIALIZED_LIGHTGBM_TREES = 512
+MAX_SERIALIZED_LIGHTGBM_NODES = 300_000
+MAX_SERIALIZED_LIGHTGBM_DEPTH = 64
 
 
 def feature_dimension(enabled_features: Sequence[str] | None = None) -> int:
@@ -149,6 +155,71 @@ def _higher_timeframe_summary(values: Sequence[float], params: dict[str, Any] | 
     }
 
 
+def _trade_tape_summary(values: Sequence[float], params: dict[str, Any] | None) -> dict[str, float]:
+    start = _param_int(params, "trade_tape_start", -1, low=-1, high=100_000)
+    width = _param_int(params, "trade_tape_width", TRADE_TAPE_FEATURES_PER_WINDOW, low=1, high=64)
+    count = _param_int(params, "trade_tape_window_count", 0, low=0, high=32)
+    fallback = {
+        "available": 0.0,
+        "quality": 0.0,
+        "buy_notional_ratio": 0.5,
+        "signed_notional": 0.0,
+        "signed_count": 0.0,
+        "notional_impulse": 0.0,
+        "count_impulse": 0.0,
+        "large_trade_share": 0.0,
+        "vwap_gap": 0.0,
+        "micro_range": 0.0,
+        "micro_drift": 0.0,
+        "no_tape_ratio": 1.0,
+        "signed_acceleration": 0.0,
+        "flow_return_alignment": 0.0,
+    }
+    if start < 0 or count <= 0 or len(values) <= start:
+        return fallback
+    groups: list[Sequence[float]] = []
+    for index in range(count):
+        group_start = start + index * width
+        group_end = group_start + width
+        if group_end <= len(values):
+            groups.append(values[group_start:group_end])
+    if not groups:
+        return fallback
+
+    def mean_at(offset: int, default: float = 0.0) -> float:
+        items = [
+            float(group[offset])
+            for group in groups
+            if len(group) > offset and math.isfinite(float(group[offset]))
+        ]
+        return sum(items) / len(items) if items else default
+
+    no_tape = _clamp(mean_at(9, 1.0), 0.0, 1.0)
+    quality = 1.0 - no_tape
+    return {
+        "available": 1.0,
+        "quality": quality,
+        "buy_notional_ratio": _clamp(mean_at(0, 0.5), 0.0, 1.0),
+        "signed_notional": _clamp(mean_at(1, 0.0) * quality, -1.0, 1.0),
+        "signed_count": _clamp(mean_at(2, 0.0) * quality, -1.0, 1.0),
+        "notional_impulse": _clamp(mean_at(3, 0.0) * quality, -1.0, 1.0),
+        "count_impulse": _clamp(mean_at(4, 0.0) * quality, -1.0, 1.0),
+        "large_trade_share": _clamp(mean_at(5, 0.0), 0.0, 1.0),
+        "vwap_gap": _clamp(mean_at(6, 0.0), -1.0, 1.0),
+        "micro_range": _clamp(mean_at(7, 0.0), 0.0, 1.0),
+        "micro_drift": _clamp(mean_at(8, 0.0), -1.0, 1.0),
+        "no_tape_ratio": no_tape,
+        "signed_acceleration": _clamp(mean_at(10, 0.0) * quality, -1.0, 1.0),
+        "flow_return_alignment": _clamp(mean_at(11, 0.0), -1.0, 1.0),
+    }
+
+
+def _blend(left: float, right: float, weight: float) -> float:
+    weight = _clamp(weight, 0.0, 1.0)
+    value = (left * (1.0 - weight)) + (right * weight)
+    return value if math.isfinite(value) else 0.0
+
+
 def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any] | None) -> float:
     """Return an interpretable long/short alpha score from raw base features.
 
@@ -203,6 +274,71 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
     volume_trend = padded[12]
     order_flow = _order_flow_summary(values, params)
     higher_timeframe = _higher_timeframe_summary(values, params)
+    trade_tape = _trade_tape_summary(values, params)
+    if trade_tape["available"] > 0.0:
+        tape_weight = _clamp(0.35 + 0.45 * trade_tape["quality"], 0.0, 0.80)
+        order_flow = dict(order_flow)
+        order_flow["taker_buy_ratio"] = _clamp(
+            _blend(order_flow["taker_buy_ratio"], trade_tape["buy_notional_ratio"], tape_weight),
+            0.0,
+            1.0,
+        )
+        order_flow["signed_base"] = _clamp(
+            _blend(order_flow["signed_base"], trade_tape["signed_notional"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["signed_quote"] = _clamp(
+            _blend(order_flow["signed_quote"], trade_tape["signed_notional"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["trade_impulse"] = _clamp(
+            _blend(order_flow["trade_impulse"], trade_tape["count_impulse"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["quote_impulse"] = _clamp(
+            _blend(order_flow["quote_impulse"], trade_tape["notional_impulse"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["quote_per_trade_impulse"] = _clamp(
+            _blend(order_flow["quote_per_trade_impulse"], trade_tape["large_trade_share"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["no_trade_ratio"] = min(order_flow["no_trade_ratio"], trade_tape["no_tape_ratio"])
+        order_flow["flow_return_alignment"] = _clamp(
+            _blend(order_flow["flow_return_alignment"], trade_tape["flow_return_alignment"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["signed_ratio_delta"] = _clamp(
+            _blend(order_flow["signed_ratio_delta"], trade_tape["signed_acceleration"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        order_flow["mean_abs_signed_ratio"] = _clamp(
+            max(order_flow["mean_abs_signed_ratio"], abs(trade_tape["signed_notional"])),
+            0.0,
+            1.0,
+        )
+        order_flow["flow_acceleration"] = _clamp(
+            _blend(order_flow["flow_acceleration"], trade_tape["signed_acceleration"], tape_weight),
+            -1.0,
+            1.0,
+        )
+        tape_divergence = math.tanh(
+            (trade_tape["signed_notional"] * 2.0)
+            - (trade_tape["micro_drift"] * 1.4)
+            - (trade_tape["vwap_gap"] * 0.8)
+        )
+        order_flow["price_flow_divergence"] = _clamp(
+            _blend(order_flow["price_flow_divergence"], tape_divergence, tape_weight),
+            -1.0,
+            1.0,
+        )
 
     if family == "mean_reversion_vwap":
         score = (
@@ -458,6 +594,37 @@ def _rule_alpha_score_from_values(values: Sequence[float], params: dict[str, Any
                 * flow_quality
                 * (0.54 * local_direction + 0.46 * broad_direction)
             )
+    elif family == "directional_regime_rider":
+        broad_direction = (
+            0.28 * math.tanh(momentum_20 * 115.0)
+            + 0.20 * math.tanh(momentum_10 * 135.0)
+            + 0.16 * math.tanh(ema_gap * 125.0)
+        )
+        if higher_timeframe["available"] > 0.0:
+            broad_direction = (
+                0.42 * math.tanh(higher_timeframe["return"] * 130.0)
+                + 0.18 * math.tanh(higher_timeframe["mean_gap"] * 150.0)
+                + 0.12 * math.tanh(higher_timeframe["volume_impulse"] * 1.4)
+                + 0.12 * math.tanh(higher_timeframe["trade_impulse"] * 1.4)
+                + 0.16 * broad_direction
+            )
+        local_confirmation = (
+            0.30 * math.tanh(momentum_3 * 220.0)
+            + 0.20 * math.tanh(momentum_1 * 320.0)
+            + 0.18 * math.tanh(order_flow["signed_base"] * 2.6)
+            + 0.14 * math.tanh(order_flow["flow_acceleration"] * 2.8)
+            + 0.10 * math.tanh(order_flow["flow_persistence"] * 2.0)
+            + 0.08 * math.tanh((order_flow["taker_buy_ratio"] - 0.5) * 5.0)
+        )
+        agreement = 0.55 + 0.45 * math.tanh((broad_direction * local_confirmation) * 5.0)
+        liquidity_quality = 1.0 - _clamp(order_flow["no_trade_ratio"], 0.0, 1.0)
+        volatility_drag = 0.30 * math.tanh((relative_atr + volatility_20 + higher_timeframe["realized_volatility"]) * 90.0)
+        score = (
+            max(0.25, 1.0 - volatility_drag)
+            * (0.70 * broad_direction + 0.30 * local_confirmation)
+            * (0.70 + 0.30 * agreement)
+            * (0.55 + 0.45 * liquidity_quality)
+        )
     else:
         score = (
             0.32 * math.tanh(momentum_20 * 90.0)
@@ -576,6 +743,10 @@ class TrainedModel:
     training_backend_device: str = "cpu"
     training_backend_vendor: str = "Python stdlib"
     training_backend_reason: str = ""
+    feature_stats_backend_requested: str = "cpu"
+    feature_stats_backend_kind: str = "cpu"
+    feature_stats_backend_device: str = "cpu"
+    feature_stats_backend_reason: str = ""
     model_family: str = "advanced_logistic"
     model_candidate_count: int = 1
     model_selected_candidate: str = "default"
@@ -587,6 +758,10 @@ class TrainedModel:
     hybrid_base_score: float | None = None
     hybrid_best_score: float | None = None
     hybrid_evaluated_profiles: int = 0
+    hybrid_dense_mlp_attempt: dict[str, Any] = field(default_factory=dict)
+    hybrid_payoff_ranker_attempt: list[dict[str, Any]] = field(default_factory=list)
+    hybrid_payoff_ranker_failures: list[dict[str, Any]] = field(default_factory=list)
+    hybrid_profile_attempts: list[dict[str, Any]] = field(default_factory=list)
     rule_alpha_profile: str = ""
     rule_alpha_family: str = ""
     rule_alpha_best_score: float | None = None
@@ -737,6 +912,279 @@ class TrainedModel:
         bias = _param_float(expert.params, "bias", 0.0, low=-5.0, high=5.0)
         return _clamp(_sigmoid(score * sensitivity + bias), 0.0, 1.0)
 
+    def _serialized_mlp_output(self, params: dict[str, Any], features: Tuple[float, ...]) -> float | None:
+        layers = params.get("layers")
+        if not isinstance(layers, list) or not layers:
+            return None
+        input_dim = _param_int(params, "input_dim", self.feature_dim, low=1, high=max(1, self.feature_dim))
+        values = self._normalized_for_expert(features)[:input_dim]
+        if len(values) != input_dim:
+            return None
+        for layer in layers:
+            if not isinstance(layer, dict):
+                return None
+            raw_weights = layer.get("weights")
+            raw_bias = layer.get("bias")
+            if not isinstance(raw_weights, list) or not isinstance(raw_bias, list):
+                return None
+            try:
+                bias_values = [float(value) for value in raw_bias]
+                output_dim = len(bias_values)
+                next_values: list[float] = []
+                for output_index in range(output_dim):
+                    score = bias_values[output_index]
+                    for input_index, input_value in enumerate(values):
+                        column = raw_weights[input_index]
+                        if not isinstance(column, list) or output_index >= len(column):
+                            return None
+                        weight = float(column[output_index])
+                        if not math.isfinite(weight):
+                            return None
+                        score += weight * float(input_value)
+                    next_values.append(max(-50.0, min(50.0, score)))
+            except (TypeError, ValueError, OverflowError):
+                return None
+            activation = str(layer.get("activation", "relu") or "relu").lower()
+            if activation == "sigmoid":
+                values = [_sigmoid(value) for value in next_values]
+            elif activation == "tanh":
+                values = [math.tanh(value) for value in next_values]
+            elif activation == "linear":
+                values = next_values
+            else:
+                values = [value if value > 0.0 else 0.0 for value in next_values]
+            if not values:
+                return None
+        return float(values[0])
+
+    def _dense_mlp_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        """Run a serialized dense MLP expert with stdlib math for live parity."""
+
+        params = expert.params if isinstance(expert.params, dict) else {}
+        raw_probability = self._serialized_mlp_output(params, features)
+        if raw_probability is None:
+            return None
+        activation = str(params.get("output_activation", "sigmoid") or "sigmoid").lower()
+        probability = raw_probability if activation == "sigmoid" else _sigmoid(raw_probability)
+        return _clamp(float(probability), 0.0, 1.0)
+
+    def _signed_payoff_mlp_ranker_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        """Score a serialized nonlinear signed-payoff network as long/short probability."""
+
+        params = expert.params if isinstance(expert.params, dict) else {}
+        raw_score = self._serialized_mlp_output(params, features)
+        if raw_score is None or not math.isfinite(raw_score):
+            return None
+        score = _clamp(float(raw_score), -1.0, 1.0)
+        clip_bps = _param_float(params, "clip_bps", 25.0, low=0.1, high=10_000.0)
+        deadband_bps = _param_float(params, "deadband_bps", 0.0, low=0.0, high=clip_bps)
+        deadband = min(0.95, deadband_bps / max(1e-9, clip_bps))
+        magnitude = abs(score)
+        if magnitude <= deadband:
+            adjusted = 0.0
+        else:
+            adjusted = math.copysign((magnitude - deadband) / max(1e-9, 1.0 - deadband), score)
+        sensitivity = _param_float(params, "sensitivity", 6.0, low=0.1, high=30.0)
+        probability_bias = _param_float(params, "probability_bias", 0.0, low=-5.0, high=5.0)
+        return _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.0, 1.0)
+
+    def _signed_payoff_ranker_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
+        """Score signed after-cost payoff estimates as long/short probabilities."""
+
+        params = expert.params if isinstance(expert.params, dict) else {}
+        raw_weights = params.get("weights")
+        if not isinstance(raw_weights, list) or not raw_weights:
+            return None
+        input_dim = _param_int(
+            params,
+            "input_dim",
+            min(len(raw_weights), self.feature_dim),
+            low=1,
+            high=max(1, self.feature_dim),
+        )
+        if len(raw_weights) < input_dim:
+            return None
+        normalized = self._normalized_for_expert(features)[:input_dim]
+        if len(normalized) != input_dim:
+            return None
+        try:
+            score = float(params.get("bias", 0.0) or 0.0)
+            for weight, value in zip(raw_weights[:input_dim], normalized, strict=True):
+                weight_value = float(weight)
+                if not math.isfinite(weight_value):
+                    return None
+                score += weight_value * float(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if not math.isfinite(score):
+            return None
+        score = _clamp(score, -1.0, 1.0)
+        clip_bps = _param_float(params, "clip_bps", 25.0, low=0.1, high=10_000.0)
+        deadband_bps = _param_float(params, "deadband_bps", 0.0, low=0.0, high=clip_bps)
+        deadband = min(0.95, deadband_bps / max(1e-9, clip_bps))
+        magnitude = abs(score)
+        if magnitude <= deadband:
+            adjusted = 0.0
+        else:
+            adjusted = math.copysign((magnitude - deadband) / max(1e-9, 1.0 - deadband), score)
+        sensitivity = _param_float(params, "sensitivity", 6.0, low=0.1, high=30.0)
+        probability_bias = _param_float(params, "probability_bias", 0.0, low=-5.0, high=5.0)
+        return _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.0, 1.0)
+
+    @staticmethod
+    def _lightgbm_tree_value(tree: Any, values: Sequence[float]) -> float | None:
+        node = tree
+        for _depth in range(MAX_SERIALIZED_LIGHTGBM_DEPTH):
+            if not isinstance(node, dict):
+                return None
+            if "leaf_value" in node:
+                try:
+                    leaf = float(node["leaf_value"])
+                except (TypeError, ValueError, OverflowError):
+                    return None
+                return leaf if math.isfinite(leaf) else None
+            try:
+                feature_index = int(node["split_feature"])
+                threshold = float(node["threshold"])
+            except (KeyError, TypeError, ValueError, OverflowError):
+                return None
+            if feature_index < 0 or feature_index >= len(values) or not math.isfinite(threshold):
+                return None
+            decision_type = str(node.get("decision_type", "<=") or "<=")
+            if decision_type != "<=":
+                return None
+            value = float(values[feature_index])
+            go_left = bool(node.get("default_left", True)) if not math.isfinite(value) else value <= threshold
+            node = node.get("left_child" if go_left else "right_child")
+        return None
+
+    def _signed_payoff_lightgbm_ranker_probability(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
+        """Evaluate a numeric LightGBM ensemble without a runtime LightGBM dependency."""
+
+        params = expert.params if isinstance(expert.params, dict) else {}
+        input_dim = _param_int(params, "input_dim", self.feature_dim, low=1, high=max(1, self.feature_dim))
+        normalized = self._normalized_for_expert(features)[:input_dim]
+        if len(normalized) != input_dim:
+            return None
+
+        def ensemble_value(
+            tree_key: str,
+            average_key: str,
+            *,
+            clamp_action_value: bool = True,
+        ) -> float | None:
+            tree_info = params.get(tree_key)
+            if (
+                not isinstance(tree_info, list)
+                or not tree_info
+                or len(tree_info) > MAX_SERIALIZED_LIGHTGBM_TREES
+            ):
+                return None
+            score = 0.0
+            tree_count = 0
+            for item in tree_info:
+                if not isinstance(item, dict):
+                    return None
+                value = self._lightgbm_tree_value(item.get("tree_structure"), normalized)
+                if value is None:
+                    return None
+                score += value
+                tree_count += 1
+            if bool(params.get(average_key, False)) and tree_count > 0:
+                score /= float(tree_count)
+            if not math.isfinite(score):
+                return None
+            return _clamp(score, -1.0, 1.0) if clamp_action_value else score
+
+        clip_bps = _param_float(params, "clip_bps", 25.0, low=0.1, high=10_000.0)
+        deadband_bps = _param_float(params, "deadband_bps", 0.0, low=0.0, high=clip_bps)
+        deadband = min(0.95, deadband_bps / max(1e-9, clip_bps))
+        sensitivity = _param_float(params, "sensitivity", 6.0, low=0.1, high=30.0)
+        probability_bias = _param_float(params, "probability_bias", 0.0, low=-5.0, high=5.0)
+        payoff_tree_schema = str(params.get("payoff_tree_schema", "") or "")
+        if payoff_tree_schema == "action_value_hurdle_v1":
+            long_margin = ensemble_value(
+                "long_classifier_tree_info",
+                "long_classifier_average_output",
+                clamp_action_value=False,
+            )
+            short_margin = ensemble_value(
+                "short_classifier_tree_info",
+                "short_classifier_average_output",
+                clamp_action_value=False,
+            )
+            if long_margin is None or short_margin is None:
+                return None
+
+            def calibrated_action_value(side: str, raw_margin: float) -> float:
+                if not bool(params.get(f"{side}_enabled", False)):
+                    return -1.0
+                slope = _param_float(params, f"{side}_calibration_slope", 0.0, low=0.0, high=100.0)
+                intercept = _param_float(
+                    params,
+                    f"{side}_calibration_intercept",
+                    0.0,
+                    low=-100.0,
+                    high=100.0,
+                )
+                positive_mean = _param_float(
+                    params,
+                    f"{side}_positive_mean",
+                    0.0,
+                    low=0.0,
+                    high=1.0,
+                )
+                nonpositive_mean = _param_float(
+                    params,
+                    f"{side}_nonpositive_mean",
+                    -1.0,
+                    low=-1.0,
+                    high=0.0,
+                )
+                profitable_probability = _sigmoid(slope * raw_margin + intercept)
+                return _clamp(
+                    profitable_probability * positive_mean
+                    + (1.0 - profitable_probability) * nonpositive_mean,
+                    -1.0,
+                    1.0,
+                )
+
+            long_score = calibrated_action_value("long", long_margin)
+            short_score = calibrated_action_value("short", short_margin)
+            best_score = max(long_score, short_score)
+            if best_score <= deadband or abs(long_score - short_score) <= 1e-12:
+                return 0.5
+            adjusted = (best_score - deadband) / max(1e-9, 1.0 - deadband)
+            action_confidence = _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.5, 1.0)
+            return action_confidence if long_score > short_score else 1.0 - action_confidence
+
+        if payoff_tree_schema == "action_value_v1":
+            long_score = ensemble_value("long_tree_info", "long_average_output")
+            short_score = ensemble_value("short_tree_info", "short_average_output")
+            if long_score is None or short_score is None:
+                return None
+            best_score = max(long_score, short_score)
+            if best_score <= deadband or abs(long_score - short_score) <= 1e-12:
+                return 0.5
+            adjusted = (best_score - deadband) / max(1e-9, 1.0 - deadband)
+            action_confidence = _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.5, 1.0)
+            return action_confidence if long_score > short_score else 1.0 - action_confidence
+
+        score = ensemble_value("tree_info", "average_output")
+        if score is None:
+            return None
+        magnitude = abs(score)
+        adjusted = (
+            0.0
+            if magnitude <= deadband
+            else math.copysign((magnitude - deadband) / max(1e-9, 1.0 - deadband), score)
+        )
+        return _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.0, 1.0)
+
     def _expert_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
         if expert.kind == "lorentzian_knn":
             return self._lorentzian_probability(expert, features)
@@ -746,6 +1194,14 @@ class TrainedModel:
             return self._technical_probability(expert, features)
         if expert.kind == "rule_alpha":
             return self._rule_alpha_probability(expert, features)
+        if expert.kind == "dense_mlp":
+            return self._dense_mlp_probability(expert, features)
+        if expert.kind == "signed_payoff_ranker":
+            return self._signed_payoff_ranker_probability(expert, features)
+        if expert.kind == "signed_payoff_mlp_ranker":
+            return self._signed_payoff_mlp_ranker_probability(expert, features)
+        if expert.kind == "signed_payoff_lightgbm_ranker":
+            return self._signed_payoff_lightgbm_ranker_probability(expert, features)
         return None
 
     def predict_proba(self, features: Tuple[float, ...]) -> float:
@@ -790,20 +1246,119 @@ def _linear_score_with_stats(
     return max(-50.0, min(50.0, score))
 
 
+def _collect_feature_stats_cpu(rows: Sequence[ModelRow]) -> tuple[List[float], List[float]]:
+    if not rows:
+        raise ValueError("No rows to collect statistics")
+    dim = len(rows[0].features)
+    means = [0.0] * dim
+    m2 = [0.0] * dim
+    count = 0
+    for row in rows:
+        if len(row.features) != dim:
+            raise ValueError("Feature dimension mismatch while collecting statistics")
+        count += 1
+        for index, raw_value in enumerate(row.features):
+            value = float(raw_value)
+            if not math.isfinite(value):
+                raise ValueError("Non-finite feature while collecting statistics")
+            delta = value - means[index]
+            means[index] += delta / float(count)
+            m2[index] += delta * (value - means[index])
+    stds = [
+        math.sqrt(max(0.0, value / float(count))) if value > 1e-24 else 1.0
+        for value in m2
+    ]
+    return [float(value) for value in means], [float(value) for value in stds]
+
+
+def _collect_feature_stats_torch(
+    rows: Sequence[ModelRow],
+    *,
+    backend: BackendInfo,
+    batch_size: int,
+) -> tuple[List[float], List[float]]:
+    import torch  # type: ignore
+
+    if not rows:
+        raise ValueError("No rows to collect statistics")
+    dim = len(rows[0].features)
+    device = _torch_device_for_backend(backend)
+    running_mean = torch.zeros(dim, dtype=torch.float32, device=device)
+    running_m2 = torch.zeros(dim, dtype=torch.float32, device=device)
+    count = 0
+    batch = max(1, min(int(batch_size or len(rows)), len(rows)))
+    for start in range(0, len(rows), batch):
+        values = torch.tensor(
+            [row.features for row in rows[start : start + batch]],
+            dtype=torch.float32,
+            device=device,
+        )
+        if values.ndim != 2 or int(values.shape[1]) != dim:
+            raise ValueError("Feature dimension mismatch while collecting accelerated statistics")
+        batch_count = int(values.shape[0])
+        batch_mean = values.mean(dim=0)
+        centered = values - batch_mean
+        batch_m2 = torch.sum(centered * centered, dim=0)
+        if count == 0:
+            running_mean = batch_mean
+            running_m2 = batch_m2
+            count = batch_count
+            continue
+        total = count + batch_count
+        delta = batch_mean - running_mean
+        running_mean = running_mean + delta * (float(batch_count) / float(total))
+        running_m2 = (
+            running_m2
+            + batch_m2
+            + delta * delta * (float(count * batch_count) / float(total))
+        )
+        count = total
+    variance = running_m2 / float(max(1, count))
+    stds_t = torch.sqrt(torch.clamp(variance, min=0.0))
+    stds_t = torch.where(torch.abs(stds_t) > 1e-12, stds_t, torch.ones_like(stds_t))
+    means = [float(value) for value in running_mean.detach().cpu().tolist()]
+    stds = [float(value) for value in stds_t.detach().cpu().tolist()]
+    if not all(math.isfinite(value) for value in (*means, *stds)):
+        raise ValueError("Accelerated feature statistics contain non-finite values")
+    return means, stds
+
+
+def collect_feature_stats(
+    rows: Sequence[ModelRow],
+    *,
+    compute_backend: str | None = "cpu",
+    batch_size: int = 8192,
+    require_accelerated: bool = False,
+) -> tuple[List[float], List[float], BackendInfo]:
+    """Collect stable population statistics, using the requested accelerator when available."""
+
+    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    if backend.kind != "cpu":
+        try:
+            means, stds = _collect_feature_stats_torch(
+                rows,
+                backend=backend,
+                batch_size=batch_size,
+            )
+            return means, stds, backend
+        except Exception as exc:
+            if require_accelerated:
+                raise RuntimeError(
+                    f"{backend.kind} feature-statistics collection failed: {type(exc).__name__}: {exc}"
+                ) from exc
+            backend = _fallback_backend(
+                backend,
+                f"{backend.kind} feature-statistics collection failed ({type(exc).__name__}); fell back to CPU",
+            )
+    elif require_accelerated:
+        raise RuntimeError(backend.reason or "accelerated feature-statistics backend is unavailable")
+    means, stds = _collect_feature_stats_cpu(rows)
+    return means, stds, backend
+
+
 def _collect_feature_stats(rows: Iterable[ModelRow]) -> tuple[List[float], List[float]]:
     rows_list = list(rows)
-    if not rows_list:
-        raise ValueError("No rows to collect statistics")
-    dim = len(rows_list[0].features)
-    means = [0.0] * dim
-    stds = [1.0] * dim
-
-    columns = list(zip(*[r.features for r in rows_list], strict=True))
-    for i, col in enumerate(columns):
-        m = mean(col)
-        s = pstdev(col)
-        means[i] = float(m)
-        stds[i] = float(s if s and abs(s) > 1e-12 else 1.0)
+    means, stds, _backend = collect_feature_stats(rows_list, compute_backend="cpu")
     return means, stds
 
 
@@ -965,6 +1520,8 @@ def _sigmoid(x: float) -> float:
 
 
 def _class_weights(rows: List[ModelRow]) -> tuple[float, float]:
+    """Return balanced class weights with unit mean over the training sample."""
+
     positives = sum(1 for row in rows if row.label == 1)
     negatives = len(rows) - positives
     if positives == 0:
@@ -972,8 +1529,8 @@ def _class_weights(rows: List[ModelRow]) -> tuple[float, float]:
     if negatives == 0:
         return 1.0, 1.0
     total = len(rows)
-    pos_weight = float(negatives) / float(total)
-    neg_weight = float(positives) / float(total)
+    pos_weight = float(total) / (2.0 * float(positives))
+    neg_weight = float(total) / (2.0 * float(negatives))
     return pos_weight, neg_weight
 
 
@@ -1037,6 +1594,54 @@ def _log_loss(
             total -= math.log(probability)
         else:
             total -= math.log(1.0 - probability)
+    return total / len(rows)
+
+
+def _focal_bce_loss_from_probability(probability: float, label: int, gamma: float) -> float:
+    p = _clamp(float(probability), 1e-12, 1.0 - 1e-12)
+    g = max(0.0, float(gamma))
+    if int(label) == 1:
+        return -math.log(p) * ((1.0 - p) ** g)
+    return -math.log(1.0 - p) * (p ** g)
+
+
+def _weighted_focal_log_loss(
+    rows: List[ModelRow],
+    weights: List[float],
+    bias: float,
+    means: List[float],
+    stds: List[float],
+    *,
+    class_weight_pos: float,
+    class_weight_neg: float,
+    focal_gamma: float,
+) -> float:
+    """Training-selection objective for imbalanced cost-adjusted labels."""
+
+    if not rows:
+        return 0.0
+    try:
+        pos_weight = float(class_weight_pos)
+    except (TypeError, ValueError, OverflowError):
+        pos_weight = 1.0
+    try:
+        neg_weight = float(class_weight_neg)
+    except (TypeError, ValueError, OverflowError):
+        neg_weight = 1.0
+    if not math.isfinite(pos_weight) or pos_weight <= 0.0:
+        pos_weight = 1.0
+    if not math.isfinite(neg_weight) or neg_weight <= 0.0:
+        neg_weight = 1.0
+    focal = max(0.0, float(focal_gamma))
+    total = 0.0
+    for row in rows:
+        score = bias
+        for weight, value, mean_, std_ in zip(weights, row.features, means, stds, strict=True):
+            normalized = (value - mean_) / std_ if std_ != 0 else (value - mean_)
+            score += weight * normalized
+        probability = _sigmoid(score)
+        sample_weight = pos_weight if int(row.label) == 1 else neg_weight
+        total += sample_weight * _focal_bce_loss_from_probability(probability, int(row.label), focal)
     return total / len(rows)
 
 
@@ -1656,6 +2261,38 @@ def model_direction_thresholds(
     )
 
 
+def market_direction_from_probability(
+    probability: float,
+    long_threshold: float | None,
+    *,
+    market_type: str,
+    short_threshold: float | None = None,
+    infer_symmetric_short: bool = False,
+) -> int:
+    """Map one probability to flat/long/short with shared fail-closed semantics."""
+
+    try:
+        score = float(probability)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+    if not math.isfinite(score) or abs(score - 0.5) <= 1e-12:
+        return 0
+    if str(market_type).lower() != "futures":
+        if long_threshold is None:
+            return 0
+        return 1 if score >= _clamp(float(long_threshold), 0.0, 1.0) else 0
+
+    long_cutoff = max(0.5, _clamp(float(long_threshold), 0.0, 1.0)) if long_threshold is not None else None
+    short_cutoff = min(0.5, _clamp(float(short_threshold), 0.0, 1.0)) if short_threshold is not None else None
+    if short_cutoff is None and infer_symmetric_short and long_cutoff is not None:
+        short_cutoff = min(0.5, 1.0 - long_cutoff)
+    if long_cutoff is not None and score >= long_cutoff:
+        return 1
+    if short_cutoff is not None and score <= short_cutoff:
+        return -1
+    return 0
+
+
 def temporal_validation_split(
     rows: List[ModelRow],
     *,
@@ -1766,6 +2403,9 @@ def _maybe_promote_averaged_params(
     averaged_bias: float,
     averaged_count: int,
     *,
+    class_weight_pos: float,
+    class_weight_neg: float,
+    focal_gamma: float,
     min_delta: float,
 ) -> tuple[List[float], float]:
     if averaged_count <= 0:
@@ -1773,8 +2413,26 @@ def _maybe_promote_averaged_params(
     candidate_weights = [value / averaged_count for value in averaged_weights]
     candidate_bias = averaged_bias / averaged_count
     selector_rows = validation_rows if validation_rows else rows
-    current_loss = _log_loss(selector_rows, weights, bias, means, stds)
-    candidate_loss = _log_loss(selector_rows, candidate_weights, candidate_bias, means, stds)
+    current_loss = _weighted_focal_log_loss(
+        selector_rows,
+        weights,
+        bias,
+        means,
+        stds,
+        class_weight_pos=class_weight_pos,
+        class_weight_neg=class_weight_neg,
+        focal_gamma=focal_gamma,
+    )
+    candidate_loss = _weighted_focal_log_loss(
+        selector_rows,
+        candidate_weights,
+        candidate_bias,
+        means,
+        stds,
+        class_weight_pos=class_weight_pos,
+        class_weight_neg=class_weight_neg,
+        focal_gamma=focal_gamma,
+    )
     if candidate_loss < current_loss - float(min_delta):
         return candidate_weights, candidate_bias
     return weights, bias
@@ -1847,6 +2505,17 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
         per_row_loss = torch.clamp(logits, min=0.0) - logits * y_values + torch.log1p(torch.exp(-torch.abs(logits)))
         return per_row_loss.mean()
 
+    def tensor_selection_loss(x_values, y_values, weight_values, bias_value):
+        logits = x_values.matmul(weight_values.reshape(-1, 1)).reshape(-1) + bias_value
+        logits = torch.clamp(logits, min=-50.0, max=50.0)
+        per_row_loss = torch.clamp(logits, min=0.0) - logits * y_values + torch.log1p(torch.exp(-torch.abs(logits)))
+        if focal > 0.0:
+            probabilities = torch.sigmoid(logits)
+            pt = torch.where(y_values > 0.5, probabilities, 1.0 - probabilities)
+            per_row_loss = per_row_loss * torch.pow(torch.clamp(1.0 - pt, min=0.0, max=1.0), focal)
+        sample_weights = torch.where(y_values > 0.5, pos_weight, neg_weight)
+        return (per_row_loss * sample_weights).mean()
+
     for epoch_index in range(1, int(epochs) + 1):
         for start in range(0, len(rows), batch):
             end = min(start + batch, len(rows))
@@ -1873,7 +2542,7 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
             averaged_count += 1
         if x_validation is not None and y_validation is not None:
             current_loss = float(
-                tensor_log_loss(x_validation, y_validation, current_weights_t, current_bias_t)
+                tensor_selection_loss(x_validation, y_validation, current_weights_t, current_bias_t)
                 .detach()
                 .cpu()
                 .item()
@@ -1900,8 +2569,8 @@ def _train_torch(  # pragma: no cover - exercised by GPU smoke verification, not
         candidate_bias_t = averaged_bias_t / float(averaged_count)
         selector_x = x_validation if x_validation is not None else x_train
         selector_y = y_validation if y_validation is not None else y_train
-        current_selector_loss = tensor_log_loss(selector_x, selector_y, final_weights_t, final_bias_t)
-        candidate_selector_loss = tensor_log_loss(selector_x, selector_y, candidate_weights_t, candidate_bias_t)
+        current_selector_loss = tensor_selection_loss(selector_x, selector_y, final_weights_t, final_bias_t)
+        candidate_selector_loss = tensor_selection_loss(selector_x, selector_y, candidate_weights_t, candidate_bias_t)
         if float(candidate_selector_loss.detach().cpu().item()) < float(current_selector_loss.detach().cpu().item()) - float(min_delta):
             final_weights_t = candidate_weights_t.detach().clone()
             final_bias_t = candidate_bias_t.detach().clone()
@@ -2022,7 +2691,16 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
             averaged_bias += bias
             averaged_count += 1
         if validation_rows:
-            current_loss = _log_loss(validation_rows, weights, bias, means, stds)
+            current_loss = _weighted_focal_log_loss(
+                validation_rows,
+                weights,
+                bias,
+                means,
+                stds,
+                class_weight_pos=class_weight_pos,
+                class_weight_neg=class_weight_neg,
+                focal_gamma=focal,
+            )
             if current_loss < best_validation_loss - float(min_delta):
                 best_validation_loss = current_loss
                 best_weights = list(weights)
@@ -2047,6 +2725,9 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
         averaged_weights,
         averaged_bias,
         averaged_count,
+        class_weight_pos=class_weight_pos,
+        class_weight_neg=class_weight_neg,
+        focal_gamma=focal,
         min_delta=min_delta,
     )
 
@@ -2282,6 +2963,122 @@ def _load_hybrid_prototypes(raw: Any, feature_dim: int) -> list[HybridPrototype]
     return prototypes
 
 
+def _validate_lightgbm_expert_params(
+    params: dict[str, Any],
+    feature_dim: int,
+    expert_index: int,
+    *,
+    tree_key: str = "tree_info",
+) -> None:
+    """Bound and validate serialized trees before they enter live inference."""
+
+    try:
+        input_dim = int(params.get("input_dim", feature_dim))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ModelLoadError(
+            f"Model payload hybrid expert {expert_index} LightGBM input dimension is invalid"
+        ) from exc
+    if input_dim < 1 or input_dim > feature_dim:
+        raise ModelLoadError(
+            f"Model payload hybrid expert {expert_index} LightGBM input dimension mismatch"
+        )
+    tree_info = params.get(tree_key)
+    if not isinstance(tree_info, list) or not tree_info:
+        raise ModelLoadError(
+            f"Model payload hybrid expert {expert_index} LightGBM trees are missing: {tree_key}"
+        )
+    if len(tree_info) > MAX_SERIALIZED_LIGHTGBM_TREES:
+        raise ModelLoadError(
+            f"Model payload hybrid expert {expert_index} exceeds the LightGBM tree limit"
+        )
+
+    total_nodes = 0
+    for tree_index, tree in enumerate(tree_info):
+        if not isinstance(tree, dict) or not isinstance(tree.get("tree_structure"), dict):
+            raise ModelLoadError(
+                f"Model payload hybrid expert {expert_index} LightGBM tree {tree_index} is invalid"
+            )
+        stack: list[tuple[dict[str, Any], int]] = [(tree["tree_structure"], 0)]
+        while stack:
+            node, depth = stack.pop()
+            total_nodes += 1
+            if total_nodes > MAX_SERIALIZED_LIGHTGBM_NODES:
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} exceeds the LightGBM node limit"
+                )
+            if depth >= MAX_SERIALIZED_LIGHTGBM_DEPTH:
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} exceeds the LightGBM depth limit"
+                )
+            if "leaf_value" in node:
+                try:
+                    leaf = float(node["leaf_value"])
+                except (TypeError, ValueError, OverflowError) as exc:
+                    raise ModelLoadError(
+                        f"Model payload hybrid expert {expert_index} has an invalid LightGBM leaf"
+                    ) from exc
+                if not math.isfinite(leaf):
+                    raise ModelLoadError(
+                        f"Model payload hybrid expert {expert_index} has a non-finite LightGBM leaf"
+                    )
+                continue
+            try:
+                split_feature = int(node["split_feature"])
+                threshold = float(node["threshold"])
+            except (KeyError, TypeError, ValueError, OverflowError) as exc:
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} has an invalid LightGBM split"
+                ) from exc
+            if split_feature < 0 or split_feature >= input_dim or not math.isfinite(threshold):
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} has an out-of-range LightGBM split"
+                )
+            if str(node.get("decision_type", "<=") or "<=") != "<=":
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} uses an unsupported LightGBM split"
+                )
+            left = node.get("left_child")
+            right = node.get("right_child")
+            if not isinstance(left, dict) or not isinstance(right, dict):
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} has incomplete LightGBM children"
+                )
+            stack.append((right, depth + 1))
+            stack.append((left, depth + 1))
+
+
+def _validate_action_value_hurdle_params(params: dict[str, Any], expert_index: int) -> None:
+    """Reject incomplete or unsafe hurdle calibration metadata at load time."""
+
+    for side in ("long", "short"):
+        enabled = params.get(f"{side}_enabled")
+        if not isinstance(enabled, bool):
+            raise ModelLoadError(
+                f"Model payload hybrid expert {expert_index} has an invalid {side} hurdle enable flag"
+            )
+        bounds = {
+            f"{side}_calibration_slope": (0.0, 100.0),
+            f"{side}_calibration_intercept": (-100.0, 100.0),
+            f"{side}_positive_mean": (0.0, 1.0),
+            f"{side}_nonpositive_mean": (-1.0, 0.0),
+        }
+        for key, (low, high) in bounds.items():
+            try:
+                value = float(params[key])
+            except (KeyError, TypeError, ValueError, OverflowError) as exc:
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} has invalid hurdle metadata: {key}"
+                ) from exc
+            if not math.isfinite(value) or value < low or value > high:
+                raise ModelLoadError(
+                    f"Model payload hybrid expert {expert_index} has out-of-range hurdle metadata: {key}"
+                )
+        if enabled and float(params[f"{side}_calibration_slope"]) <= 0.0:
+            raise ModelLoadError(
+                f"Model payload hybrid expert {expert_index} enables an uncalibrated {side} hurdle"
+            )
+
+
 def _load_hybrid_experts(raw: Any, feature_dim: int) -> list[HybridExpert]:
     if raw is None:
         return []
@@ -2292,7 +3089,7 @@ def _load_hybrid_experts(raw: Any, feature_dim: int) -> list[HybridExpert]:
         if not isinstance(entry, dict):
             raise ModelLoadError(f"Model payload hybrid expert {index} is not an object")
         try:
-            experts.append(HybridExpert(
+            expert = HybridExpert(
                 name=str(entry.get("name", f"expert_{index}") or f"expert_{index}"),
                 kind=str(entry["kind"]),
                 weight=max(0.0, float(entry.get("weight", 0.0) or 0.0)),
@@ -2303,9 +3100,41 @@ def _load_hybrid_experts(raw: Any, feature_dim: int) -> list[HybridExpert]:
                 feature_count=max(1, int(entry.get("feature_count", feature_dim) or feature_dim)),
                 notes=str(entry.get("notes", "") or ""),
                 params=dict(entry.get("params", {})) if isinstance(entry.get("params", {}), dict) else {},
-            ))
+            )
         except (KeyError, TypeError, ValueError) as exc:
             raise ModelLoadError(f"Model payload hybrid expert {index} is invalid") from exc
+        if expert.kind == "signed_payoff_lightgbm_ranker":
+            payoff_tree_schema = str(expert.params.get("payoff_tree_schema", "") or "")
+            if payoff_tree_schema == "action_value_hurdle_v1":
+                _validate_lightgbm_expert_params(
+                    expert.params,
+                    feature_dim,
+                    index,
+                    tree_key="long_classifier_tree_info",
+                )
+                _validate_lightgbm_expert_params(
+                    expert.params,
+                    feature_dim,
+                    index,
+                    tree_key="short_classifier_tree_info",
+                )
+                _validate_action_value_hurdle_params(expert.params, index)
+            elif payoff_tree_schema == "action_value_v1":
+                _validate_lightgbm_expert_params(
+                    expert.params,
+                    feature_dim,
+                    index,
+                    tree_key="long_tree_info",
+                )
+                _validate_lightgbm_expert_params(
+                    expert.params,
+                    feature_dim,
+                    index,
+                    tree_key="short_tree_info",
+                )
+            else:
+                _validate_lightgbm_expert_params(expert.params, feature_dim, index)
+        experts.append(expert)
     return experts
 
 
@@ -2516,6 +3345,10 @@ def load_model(
         training_backend_device=str(payload.get("training_backend_device", "cpu") or "cpu"),
         training_backend_vendor=str(payload.get("training_backend_vendor", "Python stdlib") or "Python stdlib"),
         training_backend_reason=str(payload.get("training_backend_reason", "") or ""),
+        feature_stats_backend_requested=str(payload.get("feature_stats_backend_requested", "cpu") or "cpu"),
+        feature_stats_backend_kind=str(payload.get("feature_stats_backend_kind", "cpu") or "cpu"),
+        feature_stats_backend_device=str(payload.get("feature_stats_backend_device", "cpu") or "cpu"),
+        feature_stats_backend_reason=str(payload.get("feature_stats_backend_reason", "") or ""),
         model_family=str(payload.get("model_family", "advanced_logistic") or "advanced_logistic"),
         model_candidate_count=max(1, int(payload.get("model_candidate_count", 1) or 1)),
         model_selected_candidate=str(payload.get("model_selected_candidate", "default") or "default"),
@@ -2550,6 +3383,26 @@ def load_model(
             else None
         ),
         hybrid_evaluated_profiles=max(0, int(payload.get("hybrid_evaluated_profiles", 0) or 0)),
+        hybrid_dense_mlp_attempt=(
+            dict(payload["hybrid_dense_mlp_attempt"])
+            if isinstance(payload.get("hybrid_dense_mlp_attempt"), dict)
+            else {}
+        ),
+        hybrid_payoff_ranker_attempt=[
+            dict(item)
+            for item in payload.get("hybrid_payoff_ranker_attempt", [])
+            if isinstance(item, dict)
+        ],
+        hybrid_payoff_ranker_failures=[
+            dict(item)
+            for item in payload.get("hybrid_payoff_ranker_failures", [])
+            if isinstance(item, dict)
+        ],
+        hybrid_profile_attempts=[
+            dict(item)
+            for item in payload.get("hybrid_profile_attempts", [])
+            if isinstance(item, dict)
+        ],
         rule_alpha_profile=str(payload.get("rule_alpha_profile", "") or ""),
         rule_alpha_family=str(payload.get("rule_alpha_family", "") or ""),
         rule_alpha_best_score=(

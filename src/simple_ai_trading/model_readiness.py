@@ -12,6 +12,7 @@ from .model import ModelLoadError, TrainedModel, load_model
 
 _ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
 _LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
+_MICROSTRUCTURE_SCHEMA = "binance-usdm-l2-v1"
 
 
 @dataclass(frozen=True)
@@ -229,6 +230,109 @@ def _live_data_evidence_check(
     )
 
 
+def _microstructure_replay_evidence_check(
+    execution_validation: Mapping[str, object] | None,
+    *,
+    expected_symbol: str | None,
+    min_captured_seconds: float,
+    min_span_days: float,
+    min_unique_days: int,
+    min_normalized_rows: int,
+) -> ModelReadinessCheck:
+    if not isinstance(execution_validation, dict):
+        return _check("block", "microstructure replay", "missing execution validation")
+    raw = execution_validation.get("microstructure_replay")
+    if not isinstance(raw, dict) or not raw:
+        return _check("block", "microstructure replay", "missing HftBacktest replay evidence")
+
+    passed = raw.get("passed") is True
+    strategy_replay_passed = raw.get("strategy_replay_passed") is True
+    replay_smoke_passed = raw.get("replay_smoke_passed") is True
+    artifact_hashes_verified = raw.get("artifact_hashes_verified") is True
+    immutable_market_data = raw.get("immutable_market_data") is True
+    engine = str(raw.get("engine") or "").strip().lower()
+    engine_version = str(raw.get("engine_version") or "").strip()
+    schema_version = str(raw.get("schema_version") or "").strip()
+    symbol = str(raw.get("symbol") or "").strip().upper()
+    queue_model = str(raw.get("queue_model") or "").strip()
+    latency_model = str(raw.get("latency_model") or "").strip()
+    captured_seconds = _finite(raw.get("captured_seconds"))
+    span_days = _finite(raw.get("span_days"))
+    unique_days = _finite(raw.get("unique_days"))
+    normalized_rows = _finite(raw.get("normalized_rows"))
+    sequence_gaps = _finite(raw.get("sequence_gap_count"))
+    crossed_books = _finite(raw.get("crossed_book_count"))
+    invalid_events = _finite(raw.get("invalid_event_count"))
+    clock_samples = _finite(raw.get("clock_sync_samples"))
+
+    seconds_floor = max(0.0, float(min_captured_seconds))
+    span_floor = max(0.0, float(min_span_days))
+    day_floor = max(1, int(min_unique_days))
+    row_floor = max(1, int(min_normalized_rows))
+    reasons: list[str] = []
+    if not passed:
+        reasons.append("passed=false")
+    if not strategy_replay_passed:
+        reasons.append("strategy_replay_passed=false")
+    if not replay_smoke_passed:
+        reasons.append("replay_smoke_passed=false")
+    if engine != "hftbacktest" or not engine_version:
+        reasons.append(f"engine={engine or 'missing'} version={engine_version or 'missing'}")
+    if schema_version != _MICROSTRUCTURE_SCHEMA:
+        reasons.append(f"schema={schema_version or 'missing'}!={_MICROSTRUCTURE_SCHEMA}")
+    if expected_symbol and symbol != expected_symbol.strip().upper():
+        reasons.append(f"symbol={symbol or 'missing'}!={expected_symbol.strip().upper()}")
+    elif not symbol:
+        reasons.append("symbol=missing")
+    if not queue_model:
+        reasons.append("queue_model=missing")
+    if not latency_model:
+        reasons.append("latency_model=missing")
+    if not immutable_market_data:
+        reasons.append("immutable_market_data=false")
+    if not artifact_hashes_verified:
+        reasons.append("artifact_hashes_verified=false")
+    if captured_seconds is None or captured_seconds < seconds_floor:
+        reasons.append(
+            f"captured_seconds={captured_seconds if captured_seconds is not None else 'missing'}<{seconds_floor:.0f}"
+        )
+    if span_days is None or span_days < span_floor:
+        reasons.append(f"span_days={span_days if span_days is not None else 'missing'}<{span_floor:.1f}")
+    if unique_days is None or int(unique_days) < day_floor:
+        reasons.append(f"unique_days={unique_days if unique_days is not None else 'missing'}<{day_floor}")
+    if normalized_rows is None or int(normalized_rows) < row_floor:
+        reasons.append(
+            f"normalized_rows={normalized_rows if normalized_rows is not None else 'missing'}<{row_floor}"
+        )
+    if sequence_gaps is None or int(sequence_gaps) != 0:
+        reasons.append(f"sequence_gap_count={sequence_gaps if sequence_gaps is not None else 'missing'}")
+    if crossed_books is None or int(crossed_books) != 0:
+        reasons.append(f"crossed_book_count={crossed_books if crossed_books is not None else 'missing'}")
+    if invalid_events is None or int(invalid_events) != 0:
+        reasons.append(f"invalid_event_count={invalid_events if invalid_events is not None else 'missing'}")
+    if clock_samples is None or int(clock_samples) < 3:
+        reasons.append(f"clock_sync_samples={clock_samples if clock_samples is not None else 'missing'}<3")
+
+    if reasons:
+        return _check(
+            "block",
+            "microstructure replay",
+            "failed promotion-grade L2 contract: " + "; ".join(reasons),
+            metric=captured_seconds if captured_seconds is not None else "missing",
+            limit=f">={seconds_floor:.0f}s across >={day_floor} days and >={span_floor:.1f}d span",
+        )
+    return _check(
+        "ok",
+        "microstructure replay",
+        (
+            f"{symbol} hftbacktest={engine_version} rows={int(normalized_rows or 0)} "
+            f"captured_days={float(captured_seconds or 0.0) / 86400.0:.1f} span_days={float(span_days or 0.0):.1f}"
+        ),
+        metric=captured_seconds,
+        limit=f">={seconds_floor:.0f}",
+    )
+
+
 def build_model_readiness_report(
     model: TrainedModel,
     *,
@@ -245,6 +349,11 @@ def build_model_readiness_report(
     min_live_data_years: float = 1.0,
     min_live_coverage_ratio: float = 0.995,
     max_live_gap_count: int = 0,
+    require_microstructure_evidence: bool = False,
+    min_microstructure_captured_seconds: float = 20.0 * 86_400.0,
+    min_microstructure_span_days: float = 365.0,
+    min_microstructure_unique_days: int = 20,
+    min_microstructure_normalized_rows: int = 1_000_000,
 ) -> ModelReadinessReport:
     checks: list[ModelReadinessCheck] = []
     selection_risk = getattr(model, "selection_risk", None)
@@ -411,6 +520,18 @@ def build_model_readiness_report(
             )
         )
 
+    if require_microstructure_evidence:
+        checks.append(
+            _microstructure_replay_evidence_check(
+                execution_validation if isinstance(execution_validation, dict) else None,
+                expected_symbol=expected_symbol,
+                min_captured_seconds=min_microstructure_captured_seconds,
+                min_span_days=min_microstructure_span_days,
+                min_unique_days=min_microstructure_unique_days,
+                min_normalized_rows=min_microstructure_normalized_rows,
+            )
+        )
+
     policy = getattr(model, "meta_label_policy", None)
     if isinstance(policy, dict) and policy.get("enabled") is True:
         checks.append(_check("ok", "meta-label policy", str(policy.get("mode") or "enabled")))
@@ -461,6 +582,11 @@ def assert_model_promoted(
     min_live_data_years: float = 1.0,
     min_live_coverage_ratio: float = 0.995,
     max_live_gap_count: int = 0,
+    require_microstructure_evidence: bool = False,
+    min_microstructure_captured_seconds: float = 20.0 * 86_400.0,
+    min_microstructure_span_days: float = 365.0,
+    min_microstructure_unique_days: int = 20,
+    min_microstructure_normalized_rows: int = 1_000_000,
 ) -> ModelReadinessReport:
     report = build_model_readiness_report(
         model,
@@ -477,6 +603,11 @@ def assert_model_promoted(
         min_live_data_years=min_live_data_years,
         min_live_coverage_ratio=min_live_coverage_ratio,
         max_live_gap_count=max_live_gap_count,
+        require_microstructure_evidence=require_microstructure_evidence,
+        min_microstructure_captured_seconds=min_microstructure_captured_seconds,
+        min_microstructure_span_days=min_microstructure_span_days,
+        min_microstructure_unique_days=min_microstructure_unique_days,
+        min_microstructure_normalized_rows=min_microstructure_normalized_rows,
     )
     if not report.allowed:
         reasons = "; ".join(f"{check.label}: {check.detail}" for check in report.checks if check.status == "block")
@@ -499,6 +630,11 @@ def load_model_readiness_report(
     min_live_data_years: float = 1.0,
     min_live_coverage_ratio: float = 0.995,
     max_live_gap_count: int = 0,
+    require_microstructure_evidence: bool = False,
+    min_microstructure_captured_seconds: float = 20.0 * 86_400.0,
+    min_microstructure_span_days: float = 365.0,
+    min_microstructure_unique_days: int = 20,
+    min_microstructure_normalized_rows: int = 1_000_000,
 ) -> ModelReadinessReport:
     path = Path(model_path)
     model = load_model(path, expected_feature_version=None, expected_feature_dim=None, expected_feature_signature=None)
@@ -517,4 +653,9 @@ def load_model_readiness_report(
         min_live_data_years=min_live_data_years,
         min_live_coverage_ratio=min_live_coverage_ratio,
         max_live_gap_count=max_live_gap_count,
+        require_microstructure_evidence=require_microstructure_evidence,
+        min_microstructure_captured_seconds=min_microstructure_captured_seconds,
+        min_microstructure_span_days=min_microstructure_span_days,
+        min_microstructure_unique_days=min_microstructure_unique_days,
+        min_microstructure_normalized_rows=min_microstructure_normalized_rows,
     )

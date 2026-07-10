@@ -191,15 +191,33 @@ def test_ingest_agg_trades_archive_aggregates_real_trades_to_one_second_candles(
             fill_period_edges=False,
         )
         candles = store.fetch_candles("BTCUSDT", "futures", "1s")
+        raw_trades = store.fetch_agg_trades("BTCUSDT", "futures")
+        raw_coverage = store.agg_trade_coverage("BTCUSDT", "futures")
         sources = [
             row["source"]
             for row in store.connect().execute("SELECT DISTINCT source FROM candles ORDER BY source").fetchall()
+        ]
+        raw_sources = [
+            row["source"]
+            for row in store.connect().execute("SELECT DISTINCT source FROM agg_trades ORDER BY source").fetchall()
         ]
 
     assert result.status == "complete"
     assert result.data_type == "aggTrades"
     assert result.rows_read == 4
     assert len(candles) == 4
+    assert [trade.agg_trade_id for trade in raw_trades] == [1, 2, 3]
+    assert [trade.trade_time_ms for trade in raw_trades] == [base_ts, base_ts + 333, base_ts + 3000]
+    assert raw_trades[0].price == 100.0
+    assert raw_trades[0].quantity == 0.5
+    assert raw_trades[0].first_trade_id == 10
+    assert raw_trades[0].last_trade_id == 12
+    assert raw_trades[0].is_buyer_maker is False
+    assert raw_trades[0].best_match is True
+    assert raw_trades[1].is_buyer_maker is True
+    assert raw_coverage.count == 3
+    assert raw_coverage.first_agg_trade_id == 1
+    assert raw_coverage.last_agg_trade_id == 3
     assert candles[0].open == 100.0
     assert candles[0].high == 101.0
     assert candles[0].low == 100.0
@@ -217,6 +235,50 @@ def test_ingest_agg_trades_archive_aggregates_real_trades_to_one_second_candles(
     assert candles[3].open == 99.0
     assert candles[3].trade_count == 3
     assert sources == ["binance_public_archive_aggTrades"]
+    assert raw_sources == ["binance_public_archive_aggTrades"]
+
+
+def test_ingest_agg_trades_archive_can_skip_raw_trade_duplication(tmp_path, monkeypatch) -> None:
+    zip_path = tmp_path / "BTCUSDT-aggTrades-2024-05.zip"
+    base_ts = 1_714_521_600_123
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr(
+            "BTCUSDT-aggTrades-2024-05.csv",
+            "\n".join(
+                [
+                    "agg_trade_id,price,quantity,first_trade_id,last_trade_id,transact_time,is_buyer_maker",
+                    f"1,100,0.5,10,10,{base_ts},false",
+                    f"2,101,0.25,11,11,{base_ts + 500},true",
+                ]
+            ),
+        )
+
+    monkeypatch.setattr(
+        binance_archive,
+        "_download_to_temp",
+        lambda *_args, **_kwargs: (zip_path, zip_path.stat().st_size, "sha"),
+    )
+    monkeypatch.setattr(binance_archive, "_fetch_archive_checksum", lambda _url, *, timeout: None)
+
+    with MarketDataStore(tmp_path / "market.sqlite") as store:
+        result = ingest_archive_url(
+            store,
+            url="https://data.binance.vision/data/futures/um/monthly/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-05.zip",
+            symbol="BTCUSDT",
+            interval="1s",
+            market_type="futures",
+            data_type="aggTrades",
+            period="2024-05",
+            fill_period_edges=False,
+            store_raw_agg_trades=False,
+        )
+        candles = store.fetch_candles("BTCUSDT", "futures", "1s")
+        raw_trades = store.fetch_agg_trades("BTCUSDT", "futures")
+
+    assert result.status == "complete"
+    assert len(candles) == 1
+    assert candles[0].trade_count == 2
+    assert raw_trades == []
 
 
 def test_ingest_agg_trades_archive_fills_period_edges_from_known_close(tmp_path, monkeypatch) -> None:
@@ -272,9 +334,12 @@ def test_ingest_agg_trades_archive_fills_period_edges_from_known_close(tmp_path,
             period="2024-06-03",
         )
         candles = store.fetch_candles("SOLUSDT", "futures", "1s", start_ms=1000, end_ms=5000)
+        raw_trades = store.fetch_agg_trades("SOLUSDT", "futures")
 
     assert result.status == "complete"
     assert result.rows_read == 5
+    assert [trade.agg_trade_id for trade in raw_trades] == [1]
+    assert raw_trades[0].trade_time_ms == 3000
     assert [candle.open_time for candle in candles] == [1000, 2000, 3000, 4000, 5000]
     assert [candle.close for candle in candles] == [99.0, 99.0, 100.0, 100.0, 100.0]
     assert [candle.volume for candle in candles] == [0.0, 0.0, 0.5, 0.0, 0.0]

@@ -9,6 +9,8 @@
 #include <array>
 #include <atomic>
 #include <cstdio>
+#include <cwctype>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -50,6 +52,11 @@ enum ControlId : int {
     kModelLabId = 109,
     kBacktestChartId = 110,
     kStatusBarId = 111,
+    kProfileComboId = 112,
+    kLeverageComboId = 113,
+    kAiToggleId = 114,
+    kReinvestToggleId = 115,
+    kModeComboId = 116,
     kQuickBaseId = 200,
 };
 
@@ -162,6 +169,11 @@ class MainWindow {
     HWND model_lab_{};
     HWND backtest_chart_{};
     HWND status_bar_{};
+    HWND profile_combo_{};
+    HWND leverage_combo_{};
+    HWND mode_combo_{};
+    HWND ai_toggle_{};
+    HWND reinvest_toggle_{};
     std::array<HWND, 12> quick_buttons_{};
     HFONT title_font_{};
     HFONT body_font_{};
@@ -178,29 +190,46 @@ class MainWindow {
     std::wstring api_budget_{L"API budget: loading"};
     std::mutex output_mutex_;
     std::mutex api_budget_mutex_;
+    std::mutex operator_status_mutex_;
     std::atomic_bool running_{false};
+    std::atomic_bool control_running_{false};
     std::atomic_bool api_budget_running_{false};
+    std::atomic_bool operator_status_running_{false};
+    std::wstring environment_state_{L"Environment pending"};
+    std::wstring bot_state_{L"State pending"};
+    std::wstring persisted_profile_{L"Conservative"};
+    std::wstring persisted_leverage_{L"5x"};
+    std::wstring persisted_execution_{L"Paper"};
+    std::wstring compute_state_{L"Checking"};
+    std::wstring ledger_state_{L"Not checked"};
+    std::wstring api_reserve_state_{L"Loading"};
+    std::wstring network_state_{L"Not checked"};
+    bool persisted_ai_enabled_ = true;
+    bool persisted_reinvest_ = false;
+    bool operator_status_initialized_ = false;
+    bool ai_enabled_ = true;
+    bool reinvest_enabled_ = false;
     bool smoke_ = false;
     bool dry_run_ = false;
 
     static constexpr std::array<const wchar_t*, 7> kPages{
-        L"Home",
-        L"Run Bot",
+        L"Overview",
+        L"Trading",
         L"Research",
-        L"Risk Center",
-        L"Data Center",
+        L"Risk",
+        L"Data",
+        L"System",
         L"Settings",
-        L"Command Browser",
     };
 
     static constexpr std::array<const wchar_t*, 7> kPageSummaries{
-        L"Start with system checks, paper trials, research, and backtest graphs.",
-        L"Launch guarded paper/live runs. Emergency controls stay pinned below.",
+        L"Verified performance, bot-owned positions, and safety state at a glance.",
+        L"Launch guarded testnet runs and inspect autonomous lifecycle state.",
         L"Train, evaluate, review, and preserve optimization evidence artifacts.",
         L"Inspect universe eligibility, audits, signals, readiness, and risk gates.",
         L"Ingest archives, audit database health, monitor rate limits, and sync data.",
-        L"Configure AI, compute backend, strategy defaults, and expert tools.",
-        L"Full CLI parity surface for advanced operations and future commands.",
+        L"Inspect compute, GPU, network, API budget, and data-pipeline health.",
+        L"Configure trading defaults and use the generated expert command surface.",
     };
 
     static void log_startup_failure(const wchar_t* stage) {
@@ -251,6 +280,7 @@ class MainWindow {
         case WM_TIMER:
             if (wparam == kApiBudgetTimerId) {
                 refresh_api_budget_async(false);
+                refresh_operator_status_async();
                 return 0;
             }
             return DefWindowProcW(hwnd_, message, wparam, lparam);
@@ -271,6 +301,9 @@ class MainWindow {
             return 0;
         case WM_APP + 2:
             sync_api_budget();
+            return 0;
+        case WM_APP + 3:
+            sync_operator_status();
             return 0;
         case WM_DESTROY:
             cleanup();
@@ -297,6 +330,7 @@ class MainWindow {
         layout();
         SetTimer(hwnd_, kApiBudgetTimerId, kApiBudgetRefreshMs, nullptr);
         refresh_api_budget_async(false);
+        refresh_operator_status_async();
     }
 
     void cleanup() {
@@ -361,6 +395,7 @@ class MainWindow {
             quick_label_, tools_label_,   output_label_,
             output_edit_, run_selected_, selected_help_, stop_all_,     ai_preflight_,
             risk_report_, model_lab_,    backtest_chart_,
+            profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_,
         };
         for (HWND button : quick_buttons_) {
             controls.push_back(button);
@@ -422,6 +457,47 @@ class MainWindow {
         model_lab_ = create_control(L"BUTTON", L"Positions", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
         backtest_chart_ = create_control(L"BUTTON", L"Reconcile", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
         status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, kStatusBarId);
+        profile_combo_ = create_control(
+            L"COMBOBOX",
+            L"",
+            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            kProfileComboId);
+        leverage_combo_ = create_control(
+            L"COMBOBOX",
+            L"",
+            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            kLeverageComboId);
+        mode_combo_ = create_control(
+            L"COMBOBOX",
+            L"",
+            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            kModeComboId);
+        ai_toggle_ = create_control(
+            L"BUTTON",
+            L"AI enabled",
+            BS_AUTOCHECKBOX | BS_OWNERDRAW | WS_TABSTOP,
+            kAiToggleId);
+        reinvest_toggle_ = create_control(
+            L"BUTTON",
+            L"Reinvest off",
+            BS_AUTOCHECKBOX | BS_OWNERDRAW | WS_TABSTOP,
+            kReinvestToggleId);
+        for (const wchar_t* value : {L"Conservative", L"Regular", L"Aggressive"}) {
+            SendMessageW(profile_combo_, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
+        }
+        for (const wchar_t* value : {L"1x", L"2x", L"3x", L"5x", L"10x", L"15x", L"20x"}) {
+            SendMessageW(leverage_combo_, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
+        }
+        for (const wchar_t* value : {L"Paper", L"Testnet live"}) {
+            SendMessageW(mode_combo_, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
+        }
+        SendMessageW(profile_combo_, CB_SETCURSEL, 0, 0);
+        SendMessageW(leverage_combo_, CB_SETCURSEL, 3, 0);
+        SendMessageW(mode_combo_, CB_SETCURSEL, 0, 0);
+        SendMessageW(ai_toggle_, BM_SETCHECK, BST_CHECKED, 0);
+        SendMessageW(reinvest_toggle_, BM_SETCHECK, BST_UNCHECKED, 0);
+        ai_enabled_ = true;
+        reinvest_enabled_ = false;
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             quick_buttons_[static_cast<std::size_t>(i)] =
                 create_control(L"BUTTON", L"", BS_OWNERDRAW | WS_TABSTOP, kQuickBaseId + i);
@@ -437,10 +513,83 @@ class MainWindow {
         SendMessageW(page_list_, LB_SETCURSEL, 0, 0);
     }
 
+    static void set_visible(HWND control, bool visible) {
+        if (control) {
+            ShowWindow(control, visible ? SW_SHOW : SW_HIDE);
+        }
+    }
+
+    void layout_overview(const RECT& client) {
+        const int sidebar = scale(220);
+        const int header_h = scale(60);
+        const int footer_h = scale(64);
+        const int pad = scale(20);
+        const int gap = scale(14);
+        const int main_left = sidebar + scale(28);
+        const int right = client.right - pad;
+        const int footer_top = client.bottom - footer_h;
+        const int settings_top = footer_top - scale(62);
+
+        MoveWindow(title_, scale(58), scale(13), sidebar - scale(76), scale(34), TRUE);
+        MoveWindow(page_list_, scale(10), header_h + scale(18), sidebar - scale(20), footer_top - header_h - scale(36), TRUE);
+        MoveWindow(status_bar_, scale(148), footer_top + scale(18), scale(190), scale(30), TRUE);
+
+        const int stop_w = scale(150);
+        const int pause_w = scale(100);
+        const int start_w = scale(112);
+        const int action_gap = scale(12);
+        const int stop_left = right - stop_w;
+        const int pause_left = stop_left - action_gap - pause_w;
+        const int start_left = pause_left - action_gap - start_w;
+        MoveWindow(run_selected_, start_left, header_h + scale(18), start_w, scale(48), TRUE);
+        MoveWindow(ai_preflight_, pause_left, header_h + scale(18), pause_w, scale(48), TRUE);
+        MoveWindow(stop_all_, stop_left, header_h + scale(18), stop_w, scale(48), TRUE);
+
+        const int control_top = settings_top + scale(10);
+        MoveWindow(mode_combo_, main_left + scale(42), control_top, scale(120), scale(220), TRUE);
+        MoveWindow(profile_combo_, main_left + scale(222), control_top, scale(160), scale(220), TRUE);
+        MoveWindow(leverage_combo_, main_left + scale(468), control_top, scale(120), scale(220), TRUE);
+        MoveWindow(ai_toggle_, main_left + scale(630), control_top, scale(150), scale(40), TRUE);
+        MoveWindow(reinvest_toggle_, main_left + scale(810), control_top, scale(180), scale(40), TRUE);
+
+        for (HWND control : {subtitle_, safety_, page_title_, page_summary_, command_label_, command_combo_,
+                             args_label_, args_edit_, help_label_, quick_label_, tools_label_, output_label_,
+                             output_edit_, selected_help_, risk_report_, model_lab_, backtest_chart_}) {
+            set_visible(control, false);
+        }
+        for (HWND button : quick_buttons_) {
+            set_visible(button, false);
+        }
+        for (HWND control : {title_, page_list_, run_selected_, ai_preflight_, stop_all_, status_bar_,
+                             profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_}) {
+            set_visible(control, true);
+        }
+        SetWindowTextW(run_selected_, L"Start");
+        SetWindowTextW(ai_preflight_, L"Pause");
+        SetWindowTextW(stop_all_, L"Stop + Close");
+        (void)gap;
+    }
+
     void layout() {
         if (!hwnd_ || !title_) return;
         RECT client{};
         GetClientRect(hwnd_, &client);
+        if (page_index_ == 0) {
+            layout_overview(client);
+            return;
+        }
+        for (HWND control : {title_, subtitle_, safety_, page_title_, page_summary_, page_list_, command_label_,
+                             command_combo_, args_label_, args_edit_, help_label_, quick_label_, tools_label_,
+                             output_label_, output_edit_, run_selected_, selected_help_, stop_all_, ai_preflight_,
+                             risk_report_, model_lab_, backtest_chart_, status_bar_}) {
+            set_visible(control, true);
+        }
+        for (HWND control : {profile_combo_, leverage_combo_, mode_combo_, ai_toggle_, reinvest_toggle_}) {
+            set_visible(control, false);
+        }
+        SetWindowTextW(run_selected_, L"Run Command");
+        SetWindowTextW(ai_preflight_, L"Pause");
+        SetWindowTextW(stop_all_, L"Stop + Close");
         const int pad = scale(20);
         const int sidebar = scale(236);
         const int header_h = scale(86);
@@ -516,12 +665,178 @@ class MainWindow {
         MoveWindow(status_bar_, scale(28), footer_top + scale(24), client.right - scale(56), scale(30), TRUE);
     }
 
+    void paint_overview(HDC dc, const RECT& client) {
+        const int sidebar = scale(220);
+        const int header_h = scale(60);
+        const int footer_h = scale(64);
+        const int footer_top = client.bottom - footer_h;
+        const int main_left = sidebar + scale(28);
+        const int right = client.right - scale(20);
+        const int content_width = right - main_left;
+        const int settings_top = footer_top - scale(62);
+
+        fill_rect(dc, RECT{0, 0, sidebar, footer_top}, RGB(18, 26, 31));
+        fill_rect(dc, RECT{0, 0, client.right, header_h}, RGB(15, 22, 27));
+        fill_rect(dc, RECT{0, footer_top, client.right, client.bottom}, RGB(17, 25, 30));
+        fill_rect(dc, RECT{0, header_h - scale(1), client.right, header_h}, RGB(48, 62, 69));
+        fill_rect(dc, RECT{sidebar, header_h, sidebar + scale(1), footer_top}, RGB(48, 62, 69));
+        fill_rect(dc, RECT{0, footer_top, client.right, footer_top + scale(1)}, RGB(48, 62, 69));
+
+        RECT logo{scale(24), scale(17), scale(47), scale(40)};
+        draw_simple_icon(dc, logo, RGB(67, 214, 211), 2);
+
+        const int stop_left = right - scale(150);
+        const int pause_left = stop_left - scale(112);
+        const int start_left = pause_left - scale(124);
+        RECT state_band{main_left, header_h + scale(18), start_left - scale(16), header_h + scale(66)};
+        round_rect(dc, state_band, RGB(22, 31, 36), RGB(49, 65, 73), scale(4));
+        std::wstring profile_state = combo_text(profile_combo_);
+        std::wstring leverage_state = combo_text(leverage_combo_) + L" limit";
+        std::wstring execution_state = combo_text(mode_combo_);
+        std::wstring environment_state;
+        std::wstring bot_state;
+        std::wstring compute_state;
+        std::wstring ledger_state;
+        std::wstring api_reserve_state;
+        std::wstring network_state;
+        {
+            std::lock_guard lock(operator_status_mutex_);
+            environment_state = environment_state_;
+            bot_state = bot_state_;
+            compute_state = compute_state_;
+            ledger_state = ledger_state_;
+            api_reserve_state = api_reserve_state_;
+            network_state = network_state_;
+        }
+        const bool ai_enabled = ai_enabled_;
+        const std::array<std::wstring, 6> states{
+            environment_state, bot_state, execution_state, profile_state,
+            ai_enabled ? L"AI enabled" : L"AI disabled", leverage_state};
+        const int state_width = std::max(scale(84), static_cast<int>(state_band.right - state_band.left) / 6);
+        for (int index = 0; index < static_cast<int>(states.size()); ++index) {
+            RECT cell{state_band.left + index * state_width, state_band.top, state_band.left + (index + 1) * state_width, state_band.bottom};
+            if (index > 0) {
+                fill_rect(dc, RECT{cell.left, cell.top + scale(12), cell.left + scale(1), cell.bottom - scale(12)}, RGB(58, 72, 79));
+            }
+            RECT dot{cell.left + scale(14), cell.top + scale(19), cell.left + scale(22), cell.top + scale(27)};
+            HBRUSH dot_brush = CreateSolidBrush(index == 4 && ai_enabled ? RGB(68, 207, 137) : RGB(145, 158, 165));
+            HGDIOBJ old = SelectObject(dc, dot_brush);
+            Ellipse(dc, dot.left, dot.top, dot.right, dot.bottom);
+            SelectObject(dc, old);
+            DeleteObject(dot_brush);
+            RECT text_rect{cell.left + scale(30), cell.top, cell.right - scale(8), cell.bottom};
+            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, index == 4 && ai_enabled ? RGB(86, 210, 155) : RGB(222, 229, 232),
+                      DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        }
+
+        const int workspace_top = header_h + scale(86);
+        const int available_height = std::max(scale(420), settings_top - workspace_top - scale(14));
+        const int chart_height = std::max(scale(240), std::min(scale(330), available_height * 54 / 100));
+        const int chart_width = content_width * 64 / 100;
+        RECT chart{main_left, workspace_top, main_left + chart_width, workspace_top + chart_height};
+        RECT gates{chart.right + scale(14), workspace_top, right, chart.bottom};
+        round_rect(dc, chart, RGB(20, 29, 34), RGB(48, 64, 72), scale(4));
+        round_rect(dc, gates, RGB(20, 29, 34), RGB(48, 64, 72), scale(4));
+
+        draw_text(dc, L"Verified performance", RECT{chart.left + scale(16), chart.top + scale(12), chart.right - scale(16), chart.top + scale(38)},
+                  body_font_, kText, DT_LEFT | DT_SINGLELINE);
+        RECT plot{chart.left + scale(64), chart.top + scale(62), chart.right - scale(20), chart.bottom - scale(38)};
+        for (int line = 0; line <= 4; ++line) {
+            int y = plot.top + (plot.bottom - plot.top) * line / 4;
+            fill_rect(dc, RECT{plot.left, y, plot.right, y + scale(1)}, RGB(48, 61, 68));
+        }
+        for (int line = 0; line <= 6; ++line) {
+            int x = plot.left + (plot.right - plot.left) * line / 6;
+            fill_rect(dc, RECT{x, plot.top, x + scale(1), plot.bottom}, RGB(42, 55, 62));
+        }
+        draw_text(dc, L"No verified run yet", plot, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        draw_text(dc, L"UTC time", RECT{plot.left, plot.bottom + scale(8), plot.right, chart.bottom - scale(6)}, small_font_, kSubtle,
+                  DT_CENTER | DT_SINGLELINE);
+
+        draw_text(dc, L"Risk gates", RECT{gates.left + scale(16), gates.top + scale(12), gates.right - scale(16), gates.top + scale(38)},
+                  body_font_, kText, DT_LEFT | DT_SINGLELINE);
+        fill_rect(dc, RECT{gates.left, gates.top + scale(48), gates.right, gates.top + scale(49)}, RGB(48, 64, 72));
+        const std::array<const wchar_t*, 5> gate_names{L"Bot ledger", L"Market regime", L"Data freshness", L"API reserve", L"Reconciliation"};
+        const std::array<std::wstring, 5> gate_values{
+            ledger_state, L"Not evaluated", L"Not checked", api_reserve_state, L"Not checked"};
+        const int gate_row_h = std::max(scale(36), static_cast<int>(gates.bottom - gates.top - scale(49)) / 5);
+        for (int index = 0; index < 5; ++index) {
+            int top = gates.top + scale(49) + index * gate_row_h;
+            if (index > 0) fill_rect(dc, RECT{gates.left, top, gates.right, top + scale(1)}, RGB(43, 57, 64));
+            RECT name_rect{gates.left + scale(18), top, gates.left + (gates.right - gates.left) * 62 / 100, top + gate_row_h};
+            RECT value_rect{name_rect.right, top, gates.right - scale(14), top + gate_row_h};
+            draw_text(dc, gate_names[static_cast<std::size_t>(index)], name_rect, small_font_, kText,
+                      DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+            draw_text(dc, gate_values[static_cast<std::size_t>(index)], value_rect, small_font_, kMuted,
+                      DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        }
+
+        RECT positions{main_left, chart.bottom + scale(14), right, settings_top - scale(12)};
+        round_rect(dc, positions, RGB(20, 29, 34), RGB(48, 64, 72), scale(4));
+        draw_text(dc, L"Bot-owned positions", RECT{positions.left + scale(16), positions.top + scale(10), positions.right - scale(16), positions.top + scale(36)},
+                  body_font_, kText, DT_LEFT | DT_SINGLELINE);
+        const int header_top = positions.top + scale(46);
+        fill_rect(dc, RECT{positions.left, header_top, positions.right, header_top + scale(1)}, RGB(48, 64, 72));
+        const std::array<const wchar_t*, 8> columns{L"Symbol", L"Side", L"Size", L"Entry", L"Mark", L"Stop", L"P&L", L"Age"};
+        const int column_width = (positions.right - positions.left - scale(28)) / 8;
+        for (int index = 0; index < 8; ++index) {
+            RECT column{positions.left + scale(14) + index * column_width, header_top + scale(8),
+                        positions.left + scale(14) + (index + 1) * column_width, header_top + scale(32)};
+            draw_text(dc, columns[static_cast<std::size_t>(index)], column, small_font_, kMuted,
+                      DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        }
+        RECT empty{positions.left + scale(20), header_top + scale(34), positions.right - scale(20), positions.bottom - scale(12)};
+        draw_text(dc, L"No bot-owned positions", empty, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+        draw_text(dc, L"Mode", RECT{main_left, settings_top + scale(18), main_left + scale(38), settings_top + scale(44)}, small_font_, kMuted,
+                   DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        draw_text(dc, L"Profile", RECT{main_left + scale(172), settings_top + scale(18), main_left + scale(218), settings_top + scale(44)}, small_font_, kMuted,
+                   DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        draw_text(dc, L"Leverage", RECT{main_left + scale(394), settings_top + scale(18), main_left + scale(464), settings_top + scale(44)}, small_font_, kMuted,
+                   DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+        const std::array<std::wstring, 4> telemetry_names{
+            L"API budget", L"Compute backend", L"Network", L"Data freshness"};
+        const std::array<std::wstring, 4> telemetry_values{
+            api_reserve_state, compute_state, network_state, L"Not checked"};
+        const int telemetry_left = scale(28);
+        const int telemetry_right = client.right - scale(118);
+        const int telemetry_width = (telemetry_right - telemetry_left) / 4;
+        for (int index = 0; index < 4; ++index) {
+            RECT cell{telemetry_left + index * telemetry_width, footer_top, telemetry_left + (index + 1) * telemetry_width, client.bottom};
+            if (index > 0) fill_rect(dc, RECT{cell.left, cell.top + scale(16), cell.left + scale(1), cell.bottom - scale(16)}, RGB(54, 69, 76));
+            RECT dot{cell.left + scale(4), cell.top + scale(27), cell.left + scale(12), cell.top + scale(35)};
+            const std::wstring& value = telemetry_values[static_cast<std::size_t>(index)];
+            const bool confirmed = value != L"Not checked" && value != L"Checking" && value != L"Unavailable" && value != L"Loading";
+            HBRUSH brush = CreateSolidBrush(confirmed ? RGB(68, 207, 137) : RGB(126, 139, 146));
+            HGDIOBJ old = SelectObject(dc, brush);
+            Ellipse(dc, dot.left, dot.top, dot.right, dot.bottom);
+            SelectObject(dc, old);
+            DeleteObject(brush);
+            draw_text(dc, telemetry_names[static_cast<std::size_t>(index)],
+                      RECT{cell.left + scale(20), cell.top, cell.left + telemetry_width * 62 / 100, cell.bottom}, small_font_, kText,
+                      DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+            if (index > 0) {
+                draw_text(dc, value,
+                          RECT{cell.left + telemetry_width * 62 / 100, cell.top, cell.right - scale(8), cell.bottom}, small_font_, kMuted,
+                          DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+            }
+        }
+        draw_text(dc, L"Details  >", RECT{client.right - scale(110), footer_top, client.right - scale(20), client.bottom}, small_font_, kText,
+                  DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
+    }
+
     void paint() {
         PAINTSTRUCT ps{};
         HDC dc = BeginPaint(hwnd_, &ps);
         RECT client{};
         GetClientRect(hwnd_, &client);
         fill_rect(dc, client, kBg);
+        if (page_index_ == 0) {
+            paint_overview(dc, client);
+            EndPaint(hwnd_, &ps);
+            return;
+        }
 
         const int pad = scale(20);
         const int sidebar = scale(236);
@@ -553,8 +868,13 @@ class MainWindow {
         round_rect(dc, config_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         RECT health_title{health_box.left + scale(16), health_box.top + scale(10), health_box.right - scale(12), health_box.top + scale(31)};
         RECT health_status{health_box.left + scale(16), health_box.top + scale(34), health_box.right - scale(12), health_box.bottom - scale(8)};
-        draw_text(dc, L"System Health", health_title, small_font_, kText, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-        draw_text(dc, L"Healthy", health_status, small_font_, RGB(85, 206, 116), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        std::wstring runtime_state;
+        {
+            std::lock_guard lock(operator_status_mutex_);
+            runtime_state = bot_state_;
+        }
+        draw_text(dc, L"Operator state", health_title, small_font_, kText, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        draw_text(dc, runtime_state, health_status, small_font_, kMuted, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         SYSTEMTIME local_time{};
         GetLocalTime(&local_time);
         wchar_t time_value[16]{};
@@ -700,16 +1020,19 @@ class MainWindow {
         const bool focused = (item->itemState & ODS_FOCUS) != 0;
         const bool danger = id == kStopAllId;
         const bool primary = id == kRunSelectedId;
+        const bool toggle = id == kAiToggleId || id == kReinvestToggleId;
+        const bool checked = id == kAiToggleId ? ai_enabled_ : (id == kReinvestToggleId ? reinvest_enabled_ : false);
         const bool workflow_card = id >= kQuickBaseId;
         const bool safety_card = id == kStopAllId || id == kAiPreflightId || id == kRiskReportId || id == kModelLabId || id == kBacktestChartId;
-        COLORREF fill = danger ? RGB(57, 31, 36) : (primary ? RGB(29, 86, 80) : RGB(28, 36, 42));
+        const bool compact_overview_action = page_index_ == 0 && (primary || id == kStopAllId || id == kAiPreflightId);
+        COLORREF fill = danger ? RGB(57, 31, 36) : (primary ? RGB(29, 86, 80) : (checked ? RGB(24, 76, 72) : RGB(28, 36, 42)));
         if (selected) {
             fill = danger ? RGB(80, 38, 43) : (primary ? RGB(38, 103, 96) : RGB(36, 46, 53));
         }
         if (disabled) {
             fill = RGB(24, 30, 34);
         }
-        COLORREF border = focused ? RGB(60, 213, 218) : (danger ? RGB(169, 73, 82) : RGB(57, 72, 82));
+        COLORREF border = focused ? RGB(60, 213, 218) : (danger ? RGB(169, 73, 82) : (checked ? RGB(61, 189, 180) : RGB(57, 72, 82)));
         COLORREF text = disabled ? kSubtle : kText;
         round_rect(item->hDC, item->rcItem, fill, border, scale(workflow_card || safety_card ? 8 : 4));
         RECT label = item->rcItem;
@@ -718,7 +1041,21 @@ class MainWindow {
             OffsetRect(&label, scale(1), scale(1));
         }
         std::wstring text_value = edit_text(item->hwndItem);
-        if (workflow_card || safety_card) {
+        if (toggle) {
+            RECT indicator{label.left + scale(8), label.top + scale(12), label.left + scale(34), label.bottom - scale(12)};
+            round_rect(item->hDC, indicator, checked ? RGB(56, 196, 184) : RGB(48, 58, 64), checked ? RGB(102, 230, 218) : RGB(86, 99, 106), scale(12));
+            if (checked) {
+                HPEN mark_pen = CreatePen(PS_SOLID, scale(2), RGB(10, 45, 43));
+                HGDIOBJ previous_pen = SelectObject(item->hDC, mark_pen);
+                MoveToEx(item->hDC, indicator.left + scale(6), indicator.top + scale(9), nullptr);
+                LineTo(item->hDC, indicator.left + scale(11), indicator.bottom - scale(6));
+                LineTo(item->hDC, indicator.right - scale(5), indicator.top + scale(6));
+                SelectObject(item->hDC, previous_pen);
+                DeleteObject(mark_pen);
+            }
+            label.left += scale(44);
+            draw_text(item->hDC, text_value, label, small_font_, text, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        } else if ((workflow_card || safety_card) && !compact_overview_action) {
             RECT icon{label.left + scale(10), label.top + scale(14), label.left + scale(34), label.top + scale(38)};
             draw_simple_icon(item->hDC, icon, danger ? RGB(255, 92, 104) : (primary ? RGB(61, 210, 184) : RGB(67, 188, 220)), id);
             label.left += scale(54);
@@ -799,21 +1136,73 @@ class MainWindow {
             update_selected_help();
             return;
         }
+        if (id == kProfileComboId && notification == CBN_SELCHANGE) {
+            int profile = static_cast<int>(SendMessageW(profile_combo_, CB_GETCURSEL, 0, 0));
+            const int leverage_index = profile == 1 ? 4 : (profile == 2 ? 5 : 3);
+            SendMessageW(leverage_combo_, CB_SETCURSEL, leverage_index, 0);
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            return;
+        }
+        if (id == kModeComboId && notification == CBN_SELCHANGE) {
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            return;
+        }
         if (notification != BN_CLICKED) {
+            return;
+        }
+        if (id == kAiToggleId) {
+            ai_enabled_ = !ai_enabled_;
+            SendMessageW(ai_toggle_, BM_SETCHECK, ai_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
+            SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI enabled" : L"AI disabled");
+            InvalidateRect(ai_toggle_, nullptr, TRUE);
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            return;
+        }
+        if (id == kReinvestToggleId) {
+            bool enabled = !reinvest_enabled_;
+            if (enabled && !dry_run_enabled()) {
+                const int answer = MessageBoxW(
+                    hwnd_,
+                    L"Reinvesting profits compounds both gains and losses and increases capital at risk. Continue?",
+                    L"Enable profit reinvestment",
+                    MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2);
+                if (answer != IDYES) {
+                    SendMessageW(reinvest_toggle_, BM_SETCHECK, BST_UNCHECKED, 0);
+                    enabled = false;
+                }
+            }
+            reinvest_enabled_ = enabled;
+            SendMessageW(reinvest_toggle_, BM_SETCHECK, enabled ? BST_CHECKED : BST_UNCHECKED, 0);
+            SetWindowTextW(reinvest_toggle_, enabled ? L"Reinvest on" : L"Reinvest off");
+            InvalidateRect(reinvest_toggle_, nullptr, TRUE);
             return;
         }
         switch (id) {
         case kRunSelectedId:
-            run_selected();
+            if (page_index_ == 0) {
+                run_overview_start();
+            } else {
+                run_selected();
+            }
             return;
         case kSelectedHelpId:
             run_selected_help();
             return;
         case kStopAllId:
-            run_sequence({L"autonomous stop", L"close all"});
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                bot_state_ = L"Stop requested";
+            }
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            run_control_sequence({L"autonomous stop"});
             return;
         case kAiPreflightId:
-            run_sequence({L"autonomous pause"});
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                bot_state_ = L"Pause requested";
+            }
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            run_control_sequence({L"autonomous pause"});
             return;
         case kRiskReportId:
             run_sequence({L"risk --paper"});
@@ -845,6 +1234,8 @@ class MainWindow {
         refresh_command_combo();
         refresh_quick_actions();
         update_selected_help();
+        layout();
+        InvalidateRect(hwnd_, nullptr, TRUE);
     }
 
     void refresh_command_combo() {
@@ -861,7 +1252,7 @@ class MainWindow {
         } else if (page_index_ == 4) {
             add_group(L"Data Center", {L"data-health", L"archive-sync", L"data-sync", L"fetch", L"api-budget", L"signals", L"source-grades"});
         } else if (page_index_ == 5) {
-            add_group(L"Settings", {L"ai", L"compute", L"configure", L"strategy", L"menu", L"shell"});
+            add_group(L"System", {L"status", L"compute", L"api-budget", L"doctor", L"data-health", L"connect"});
         } else {
             for (int i = 0; i < kCommandCount; ++i) {
                 add_command_entry(L"CLI", kCommands[i].name);
@@ -942,17 +1333,17 @@ class MainWindow {
             };
         } else if (page_index_ == 5) {
             quick_actions_ = {
-                {L"AI Check", {L"ai"}},
                 {L"Compute Backend", {L"compute"}},
-                {L"Strategy Help", {L"strategy --help"}},
-                {L"Shell Help", {L"shell --help"}},
+                {L"API Budget", {L"api-budget --compact"}},
+                {L"System Doctor", {L"doctor"}},
+                {L"Runtime Status", {L"status"}},
             };
         } else {
             quick_actions_ = {
-                {L"Selected Help", {}},
-                {L"Objectives", {L"objectives"}},
-                {L"Doctor", {L"doctor"}},
-                {L"Compute", {L"compute"}},
+                {L"Configure", {L"configure"}},
+                {L"Strategy", {L"strategy --help"}},
+                {L"AI Settings", {L"ai"}},
+                {L"CLI Shell", {L"shell --help"}},
             };
         }
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
@@ -1010,6 +1401,63 @@ class MainWindow {
             preview += std::to_wstring(command.option_count - shown);
         }
         return preview;
+    }
+
+    static std::wstring combo_text(HWND combo) {
+        const int selection = static_cast<int>(SendMessageW(combo, CB_GETCURSEL, 0, 0));
+        if (selection < 0) {
+            return L"";
+        }
+        const int length = static_cast<int>(SendMessageW(combo, CB_GETLBTEXTLEN, selection, 0));
+        if (length < 0) {
+            return L"";
+        }
+        std::wstring value(static_cast<std::size_t>(length) + 1, L'\0');
+        SendMessageW(combo, CB_GETLBTEXT, selection, reinterpret_cast<LPARAM>(value.data()));
+        value.resize(static_cast<std::size_t>(length));
+        return value;
+    }
+
+    void run_overview_start() {
+        std::wstring profile = combo_text(profile_combo_);
+        std::transform(profile.begin(), profile.end(), profile.begin(), [](wchar_t value) {
+            return static_cast<wchar_t>(towlower(value));
+        });
+        if (profile.empty()) {
+            profile = L"conservative";
+        }
+        std::wstring leverage = combo_text(leverage_combo_);
+        if (!leverage.empty() && leverage.back() == L'x') {
+            leverage.pop_back();
+        }
+        if (leverage.empty()) {
+            leverage = L"5";
+        }
+        const bool testnet_live = combo_text(mode_combo_) == L"Testnet live";
+        if (testnet_live && !dry_run_enabled()) {
+            const int answer = MessageBoxW(
+                hwnd_,
+                L"Testnet live mode submits real orders to the configured Binance testnet account. Continue?",
+                L"Start testnet trading",
+                MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2);
+            if (answer != IDYES) {
+                return;
+            }
+        }
+        const bool ai_enabled = ai_enabled_;
+        const bool reinvest = reinvest_enabled_;
+        std::wstring strategy_command = L"strategy --profile " + profile + L" --leverage " + leverage;
+        strategy_command += reinvest ? L" --reinvest-profits" : L" --no-reinvest-profits";
+        {
+            std::lock_guard lock(operator_status_mutex_);
+            bot_state_ = L"Start requested";
+        }
+        InvalidateRect(hwnd_, nullptr, FALSE);
+        run_sequence({
+            strategy_command,
+            ai_enabled ? L"ai --enable" : L"ai --disable",
+            L"autonomous start --objective " + profile + (testnet_live ? L" --live" : L" --paper"),
+        });
     }
 
     void run_selected() {
@@ -1072,6 +1520,7 @@ class MainWindow {
             }
             running_ = false;
             refresh_api_budget_async(true);
+            refresh_operator_status_async();
             if (smoke_) {
                 write_smoke_log();
             }
@@ -1079,6 +1528,26 @@ class MainWindow {
             if (smoke_) {
                 PostMessageW(hwnd_, WM_CLOSE, 0, 0);
             }
+        }).detach();
+    }
+
+    void run_control_sequence(std::vector<std::wstring> commands) {
+        if (commands.empty()) {
+            return;
+        }
+        if (control_running_.exchange(true)) {
+            append_output(L"\r\nA safety control is already being processed.\r\n");
+            return;
+        }
+        std::thread([this, commands = std::move(commands)] {
+            for (const std::wstring& command : commands) {
+                append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
+                append_output(execute_cli(command));
+            }
+            control_running_ = false;
+            refresh_api_budget_async(true);
+            refresh_operator_status_async();
+            PostMessageW(hwnd_, WM_APP + 1, 0, 0);
         }).detach();
     }
 
@@ -1117,9 +1586,26 @@ class MainWindow {
             if (text.empty()) {
                 text = L"API budget: unavailable";
             }
+            std::wstring reserve = L"Unavailable";
+            const std::size_t remaining_at = text.find(L"remaining=");
+            if (remaining_at != std::wstring::npos) {
+                const std::size_t value_start = remaining_at + std::wstring(L"remaining=").size();
+                const std::size_t value_end = text.find(L' ', value_start);
+                reserve = text.substr(value_start, value_end == std::wstring::npos ? std::wstring::npos : value_end - value_start);
+                reserve += L" remaining";
+            } else if (text.find(L"dry-run") != std::wstring::npos) {
+                reserve = L"Dry-run";
+            }
             {
                 std::lock_guard lock(api_budget_mutex_);
                 api_budget_ = text;
+            }
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                api_reserve_state_ = reserve;
+                if (!cached_only) {
+                    network_state_ = remaining_at == std::wstring::npos ? L"Unavailable" : L"Exchange queried";
+                }
             }
             api_budget_running_ = false;
             PostMessageW(hwnd_, WM_APP + 2, 0, 0);
@@ -1132,11 +1618,136 @@ class MainWindow {
             std::lock_guard lock(api_budget_mutex_);
             snapshot = api_budget_;
         }
+        if (page_index_ == 0) {
+            std::lock_guard lock(operator_status_mutex_);
+            snapshot = api_reserve_state_;
+        }
         SetWindowTextW(status_bar_, snapshot.c_str());
+        InvalidateRect(hwnd_, nullptr, FALSE);
+    }
+
+    static std::wstring compact_status_value(const std::wstring& line, const std::wstring& key) {
+        const std::wstring prefix = key + L"=";
+        std::size_t start = line.find(prefix);
+        if (start == std::wstring::npos) {
+            return L"";
+        }
+        start += prefix.size();
+        const std::size_t end = line.find(L' ', start);
+        return line.substr(start, end == std::wstring::npos ? std::wstring::npos : end - start);
+    }
+
+    static std::wstring display_token(std::wstring value) {
+        if (!value.empty()) {
+            value.front() = static_cast<wchar_t>(towupper(value.front()));
+        }
+        return value;
+    }
+
+    void refresh_operator_status_async() {
+        if (operator_status_running_.exchange(true)) {
+            return;
+        }
+        std::thread([this] {
+            const std::wstring line = execute_cli_first_line(L"status --compact");
+            const std::wstring compute_line = execute_cli_first_line(L"compute");
+            const std::wstring environment = compact_status_value(line, L"environment");
+            const std::wstring state = compact_status_value(line, L"bot_state");
+            const std::wstring profile = compact_status_value(line, L"risk");
+            const std::wstring leverage = compact_status_value(line, L"leverage");
+            const std::wstring ai = compact_status_value(line, L"ai");
+            const std::wstring reinvest = compact_status_value(line, L"reinvest");
+            const std::wstring execution = compact_status_value(line, L"execution");
+            const std::wstring positions = compact_status_value(line, L"positions");
+            const std::wstring ledger = compact_status_value(line, L"ledger");
+            const std::wstring compute = compact_status_value(compute_line, L"compute");
+            {
+                std::lock_guard lock(operator_status_mutex_);
+                environment_state_ = environment.empty() ? L"Environment unavailable" : display_token(environment);
+                bot_state_ = state.empty() ? L"State unavailable" : L"Bot " + display_token(state);
+                if (!profile.empty()) persisted_profile_ = display_token(profile);
+                if (!leverage.empty()) persisted_leverage_ = leverage + L"x";
+                if (!ai.empty()) persisted_ai_enabled_ = ai == L"enabled";
+                if (!reinvest.empty()) persisted_reinvest_ = reinvest == L"on";
+                if (!execution.empty()) persisted_execution_ = execution == L"live" ? L"Testnet live" : L"Paper";
+                if (ledger == L"invalid") {
+                    ledger_state_ = L"Integrity failure";
+                } else if (ledger == L"tracked") {
+                    ledger_state_ = (positions.empty() ? L"Open positions" : positions + L" tracked");
+                } else if (ledger == L"clear") {
+                    ledger_state_ = L"Clear - 0 open";
+                } else {
+                    ledger_state_ = L"Unavailable";
+                }
+                if (compute.empty()) {
+                    compute_state_ = L"Unavailable";
+                } else if (compute == L"cpu") {
+                    compute_state_ = L"CPU";
+                } else if (compute == L"directml") {
+                    compute_state_ = L"DirectML GPU";
+                } else if (compute == L"cuda") {
+                    compute_state_ = L"CUDA GPU";
+                } else if (compute == L"rocm") {
+                    compute_state_ = L"ROCm GPU";
+                } else if (compute == L"mps") {
+                    compute_state_ = L"MPS GPU";
+                } else {
+                    compute_state_ = display_token(compute) + L" GPU";
+                }
+            }
+            operator_status_running_ = false;
+            PostMessageW(hwnd_, WM_APP + 3, 0, 0);
+        }).detach();
+    }
+
+    void sync_operator_status() {
+        std::wstring profile;
+        std::wstring leverage;
+        std::wstring execution;
+        bool ai = true;
+        bool reinvest = false;
+        {
+            std::lock_guard lock(operator_status_mutex_);
+            profile = persisted_profile_;
+            leverage = persisted_leverage_;
+            execution = persisted_execution_;
+            ai = persisted_ai_enabled_;
+            reinvest = persisted_reinvest_;
+        }
+        if (!operator_status_initialized_) {
+            const int profile_index = static_cast<int>(SendMessageW(
+                profile_combo_, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(profile.c_str())));
+            if (profile_index >= 0) SendMessageW(profile_combo_, CB_SETCURSEL, profile_index, 0);
+            const int leverage_index = static_cast<int>(SendMessageW(
+                leverage_combo_, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(leverage.c_str())));
+            if (leverage_index >= 0) SendMessageW(leverage_combo_, CB_SETCURSEL, leverage_index, 0);
+            const int execution_index = static_cast<int>(SendMessageW(
+                mode_combo_, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(execution.c_str())));
+            if (execution_index >= 0) SendMessageW(mode_combo_, CB_SETCURSEL, execution_index, 0);
+            ai_enabled_ = ai;
+            reinvest_enabled_ = reinvest;
+            SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI enabled" : L"AI disabled");
+            SetWindowTextW(reinvest_toggle_, reinvest_enabled_ ? L"Reinvest on" : L"Reinvest off");
+            operator_status_initialized_ = true;
+        }
+        InvalidateRect(hwnd_, nullptr, FALSE);
+        InvalidateRect(ai_toggle_, nullptr, TRUE);
+        InvalidateRect(reinvest_toggle_, nullptr, TRUE);
     }
 
     std::wstring execute_cli(const std::wstring& args) {
         if (dry_run_enabled()) {
+            if (args.rfind(L"autonomous start", 0) == 0) {
+                const std::wstring delay_text = env_string(L"SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS");
+                if (!delay_text.empty()) {
+                    try {
+                        const int delay_ms = std::clamp(std::stoi(delay_text), 0, 10000);
+                        Sleep(static_cast<DWORD>(delay_ms));
+                    } catch (const std::exception&) {
+                        // Invalid test-hook values intentionally behave like zero delay.
+                    }
+                }
+            }
             return L"dry-run: simple-ai-trading " + args + L"\r\n\r\n(exit 0)\r\n";
         }
         std::wstring command = shell_command_for_cli(args);
@@ -1156,6 +1767,10 @@ class MainWindow {
 
     std::wstring execute_cli_first_line(const std::wstring& args) {
         if (dry_run_enabled()) {
+            if (args == L"status --compact") {
+                return L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled reinvest=off "
+                       L"symbol=BTCUSDT market=futures execution=paper positions=0 ledger=clear";
+            }
             return L"API budget: dry-run";
         }
         std::wstring command = shell_command_for_cli(args);

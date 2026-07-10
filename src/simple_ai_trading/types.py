@@ -26,6 +26,10 @@ from .compute import default_compute_backend
 from .features import FEATURE_NAMES, FEATURE_VERSION, normalize_enabled_features
 
 
+DEFAULT_SPOT_TAKER_FEE_BPS = 10.0
+DEFAULT_FUTURES_TAKER_FEE_BPS = 4.0
+
+
 def _coerce_bool(value: object, default: bool) -> bool:
     if isinstance(value, bool):
         return value
@@ -191,6 +195,7 @@ class StrategyConfig:
     cooldown_minutes: int = 20
     min_position_hold_bars: int = 0
     flat_signal_exit_grace_bars: int = 0
+    max_position_hold_bars: int = 0
     max_trades_per_day: int = 6
     max_drawdown_limit: float = 0.10
     max_daily_loss_pct: float = 0.006
@@ -200,7 +205,7 @@ class StrategyConfig:
     recovery_cooldown_seconds: int = 60
     training_epochs: int = 180
     confidence_beta: float = 0.90
-    taker_fee_bps: float = 1.0
+    taker_fee_bps: float = DEFAULT_SPOT_TAKER_FEE_BPS
     slippage_bps: float = 5.0
     liquidity_risk_enabled: bool = True
     liquidity_lookback_bars: int = 96
@@ -280,8 +285,13 @@ class StrategyConfig:
         self.signal_threshold = min(0.99, max(0.01, _finite_float(self.signal_threshold, 0.66)))
         self.model_lookback = max(1, _coerce_int(self.model_lookback, 250))
         self.cooldown_minutes = max(0, _coerce_int(self.cooldown_minutes, 20))
-        self.min_position_hold_bars = max(0, min(10_000, _coerce_int(self.min_position_hold_bars, 0)))
-        self.flat_signal_exit_grace_bars = max(0, min(10_000, _coerce_int(self.flat_signal_exit_grace_bars, 0)))
+        lifecycle_bar_limit = 604_800
+        self.min_position_hold_bars = max(0, min(lifecycle_bar_limit, _coerce_int(self.min_position_hold_bars, 0)))
+        self.flat_signal_exit_grace_bars = max(
+            0,
+            min(lifecycle_bar_limit, _coerce_int(self.flat_signal_exit_grace_bars, 0)),
+        )
+        self.max_position_hold_bars = max(0, min(lifecycle_bar_limit, _coerce_int(self.max_position_hold_bars, 0)))
         self.max_trades_per_day = max(0, _coerce_int(self.max_trades_per_day, 6))
         self.max_drawdown_limit = _finite_nonnegative(self.max_drawdown_limit, 0.10)
         self.max_daily_loss_pct = min(0.25, max(0.0, _finite_float(self.max_daily_loss_pct, 0.006)))
@@ -291,7 +301,7 @@ class StrategyConfig:
         self.recovery_cooldown_seconds = max(0, min(3600, _coerce_int(self.recovery_cooldown_seconds, 60)))
         self.training_epochs = max(1, _coerce_int(self.training_epochs, 180))
         self.confidence_beta = min(1.0, max(0.0, _finite_float(self.confidence_beta, 0.90)))
-        self.taker_fee_bps = _finite_nonnegative(self.taker_fee_bps, 1.0)
+        self.taker_fee_bps = _finite_nonnegative(self.taker_fee_bps, DEFAULT_SPOT_TAKER_FEE_BPS)
         self.slippage_bps = _finite_nonnegative(self.slippage_bps, 5.0)
         self.liquidity_risk_enabled = _coerce_bool(self.liquidity_risk_enabled, True)
         self.liquidity_lookback_bars = max(8, min(10_000, _coerce_int(self.liquidity_lookback_bars, 96)))

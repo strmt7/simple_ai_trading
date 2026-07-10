@@ -22,7 +22,7 @@ from defusedxml import ElementTree
 
 from .api import Candle
 from .market_data import clean_candles
-from .market_store import MarketDataStore
+from .market_store import AggTrade, MarketDataStore
 
 
 BINANCE_ARCHIVE_BASE_URL = "https://data.binance.vision/data"
@@ -85,11 +85,11 @@ def _archive_market_segment(market_type: str) -> str:
 
 def _normalize_archive_data_type(data_type: str = "klines") -> str:
     value = str(data_type or "klines").strip()
-    if value == "klines":
-        return "klines"
-    if value == "aggTrades":
-        return "aggTrades"
-    raise ValueError("data_type must be 'klines' or 'aggTrades'")
+    supported = {"klines", "aggTrades", "trades", "bookTicker", "bookDepth"}
+    if value in supported:
+        return value
+    choices = ", ".join(repr(item) for item in sorted(supported))
+    raise ValueError(f"data_type must be one of: {choices}")
 
 
 def archive_directory_url(
@@ -106,8 +106,8 @@ def archive_directory_url(
         raise ValueError("cadence must be 'daily' or 'monthly'")
     segment = _archive_market_segment(market_type)
     kind = _normalize_archive_data_type(data_type)
-    if kind == "aggTrades":
-        return f"{base_url.rstrip('/')}/{segment}/{cadence}/aggTrades/{symbol.upper()}/"
+    if kind != "klines":
+        return f"{base_url.rstrip('/')}/{segment}/{cadence}/{kind}/{symbol.upper()}/"
     return f"{base_url.rstrip('/')}/{segment}/{cadence}/klines/{symbol.upper()}/{interval}/"
 
 
@@ -126,8 +126,8 @@ def archive_listing_url(
         raise ValueError("cadence must be 'daily' or 'monthly'")
     segment = _archive_market_segment(market_type)
     kind = _normalize_archive_data_type(data_type)
-    if kind == "aggTrades":
-        prefix = f"data/{segment}/{cadence}/aggTrades/{symbol.upper()}/"
+    if kind != "klines":
+        prefix = f"data/{segment}/{cadence}/{kind}/{symbol.upper()}/"
     else:
         prefix = f"data/{segment}/{cadence}/klines/{symbol.upper()}/{interval}/"
     params = {"delimiter": "/", "prefix": prefix}
@@ -154,8 +154,9 @@ def archive_file_url(
         data_type=data_type,
         base_url=base_url,
     )
-    if _normalize_archive_data_type(data_type) == "aggTrades":
-        return f"{directory}{symbol.upper()}-aggTrades-{period}.zip"
+    kind = _normalize_archive_data_type(data_type)
+    if kind != "klines":
+        return f"{directory}{symbol.upper()}-{kind}-{period}.zip"
     return f"{directory}{symbol.upper()}-{interval}-{period}.zip"
 
 
@@ -460,22 +461,39 @@ def _parse_bool(value: str) -> bool:
     return str(value).strip().lower() in {"true", "1", "yes"}
 
 
-def _parse_agg_trade_row(row: Sequence[str]) -> tuple[int, float, float, int, bool] | None:
+def _parse_agg_trade_row(
+    row: Sequence[str],
+    *,
+    symbol: str = "",
+    market_type: str = "",
+) -> AggTrade | None:
     if len(row) < 6:
         return None
     try:
+        agg_trade_id = int(float(row[0]))
         price = float(row[1])
         quantity = float(row[2])
         first_id = int(float(row[3])) if len(row) > 3 and row[3] != "" else 0
         last_id = int(float(row[4])) if len(row) > 4 and row[4] != "" else first_id
         timestamp = _normalize_archive_timestamp(row[5])
         buyer_is_maker = _parse_bool(row[6]) if len(row) > 6 else False
+        best_match = _parse_bool(row[7]) if len(row) > 7 and str(row[7]).strip() else True
     except (TypeError, ValueError, OverflowError):
         return None
-    if price <= 0.0 or quantity <= 0.0 or timestamp <= 0:
+    if agg_trade_id < 0 or price <= 0.0 or quantity <= 0.0 or timestamp <= 0 or last_id < first_id:
         return None
-    trade_count = max(1, last_id - first_id + 1)
-    return timestamp, price, quantity, trade_count, buyer_is_maker
+    return AggTrade(
+        symbol=symbol.upper(),
+        market_type=market_type,
+        agg_trade_id=agg_trade_id,
+        price=price,
+        quantity=quantity,
+        first_trade_id=first_id,
+        last_trade_id=last_id,
+        trade_time_ms=timestamp,
+        is_buyer_maker=buyer_is_maker,
+        best_match=best_match,
+    )
 
 
 def _agg_second_to_candle(second: _AggTradeSecond) -> Candle:
@@ -510,58 +528,85 @@ def _no_trade_candle(open_time: int, price: float) -> Candle:
     )
 
 
-def _iter_zip_agg_trade_candles(path: Path) -> Iterable[Candle]:
-    """Stream aggregate trades and emit deterministic 1-second OHLCV candles."""
+def _iter_zip_agg_trades(
+    path: Path,
+    *,
+    symbol: str = "",
+    market_type: str = "",
+) -> Iterable[AggTrade]:
+    """Stream normalized Binance aggregate-trade archive rows."""
 
     with zipfile.ZipFile(path) as archive:
         names = [name for name in archive.namelist() if name.lower().endswith(".csv")]
         for name in sorted(names):
-            current: _AggTradeSecond | None = None
             with archive.open(name) as raw:
                 text = io.TextIOWrapper(raw, encoding="utf-8", newline="")
                 reader = csv.reader(text)
                 for row in reader:
-                    parsed = _parse_agg_trade_row(row)
-                    if parsed is None:
+                    trade = _parse_agg_trade_row(row, symbol=symbol, market_type=market_type)
+                    if trade is None:
                         continue
-                    timestamp, price, quantity, trade_count, buyer_is_maker = parsed
-                    open_time = (timestamp // 1000) * 1000
-                    quote_volume = price * quantity
-                    taker_buy_base = 0.0 if buyer_is_maker else quantity
-                    taker_buy_quote = 0.0 if buyer_is_maker else quote_volume
-                    if current is not None and open_time != current.open_time:
-                        previous_close = current.close
-                        previous_open_time = current.open_time
-                        yield _agg_second_to_candle(current)
-                        gap_time = previous_open_time + 1000
-                        while gap_time < open_time:
-                            yield _no_trade_candle(gap_time, previous_close)
-                            gap_time += 1000
-                        current = None
-                    if current is None:
-                        current = _AggTradeSecond(
-                            open_time=open_time,
-                            open=price,
-                            high=price,
-                            low=price,
-                            close=price,
-                            volume=quantity,
-                            quote_volume=quote_volume,
-                            trade_count=trade_count,
-                            taker_buy_base_volume=taker_buy_base,
-                            taker_buy_quote_volume=taker_buy_quote,
-                        )
-                    else:
-                        current.high = max(current.high, price)
-                        current.low = min(current.low, price)
-                        current.close = price
-                        current.volume += quantity
-                        current.quote_volume += quote_volume
-                        current.trade_count += trade_count
-                        current.taker_buy_base_volume += taker_buy_base
-                        current.taker_buy_quote_volume += taker_buy_quote
-            if current is not None:
-                yield _agg_second_to_candle(current)
+                    yield trade
+
+
+def _iter_agg_trade_candles(trades: Iterable[AggTrade]) -> Iterable[Candle]:
+    """Aggregate normalized trades into deterministic 1-second OHLCV candles."""
+
+    current: _AggTradeSecond | None = None
+    for trade in trades:
+        timestamp = int(trade.trade_time_ms)
+        price = float(trade.price)
+        quantity = float(trade.quantity)
+        trade_count = max(1, int(trade.last_trade_id) - int(trade.first_trade_id) + 1)
+        buyer_is_maker = bool(trade.is_buyer_maker)
+        open_time = (timestamp // 1000) * 1000
+        quote_volume = price * quantity
+        taker_buy_base = 0.0 if buyer_is_maker else quantity
+        taker_buy_quote = 0.0 if buyer_is_maker else quote_volume
+        if current is not None and open_time != current.open_time:
+            previous_close = current.close
+            previous_open_time = current.open_time
+            yield _agg_second_to_candle(current)
+            gap_time = previous_open_time + 1000
+            while gap_time < open_time:
+                yield _no_trade_candle(gap_time, previous_close)
+                gap_time += 1000
+            current = None
+        if current is None:
+            current = _AggTradeSecond(
+                open_time=open_time,
+                open=price,
+                high=price,
+                low=price,
+                close=price,
+                volume=quantity,
+                quote_volume=quote_volume,
+                trade_count=trade_count,
+                taker_buy_base_volume=taker_buy_base,
+                taker_buy_quote_volume=taker_buy_quote,
+            )
+        else:
+            current.high = max(current.high, price)
+            current.low = min(current.low, price)
+            current.close = price
+            current.volume += quantity
+            current.quote_volume += quote_volume
+            current.trade_count += trade_count
+            current.taker_buy_base_volume += taker_buy_base
+            current.taker_buy_quote_volume += taker_buy_quote
+    if current is not None:
+        yield _agg_second_to_candle(current)
+
+
+def _iter_zip_agg_trade_candles(
+    path: Path,
+    *,
+    symbol: str = "",
+    market_type: str = "",
+) -> Iterable[Candle]:
+    """Stream aggregate trades and emit deterministic 1-second OHLCV candles."""
+
+    return _iter_agg_trade_candles(_iter_zip_agg_trades(path, symbol=symbol, market_type=market_type))
 
 
 def _iter_period_bounded_agg_trade_candles(
@@ -656,9 +701,14 @@ def ingest_archive_url(
     verify_checksum: bool = True,
     require_checksum: bool = False,
     fill_period_edges: bool = True,
+    store_raw_agg_trades: bool = True,
 ) -> ArchiveIngestResult:
     symbol = symbol.upper()
     kind = _normalize_archive_data_type(data_type)
+    if kind not in {"klines", "aggTrades"}:
+        raise ValueError(
+            f"{kind} is a tick-warehouse product and cannot be ingested as candles"
+        )
     if kind == "aggTrades" and str(interval) != "1s":
         raise ValueError("aggTrades archive ingestion currently emits 1s candles; interval must be '1s'")
     if not force and store.archive_file_status(url) == "complete":
@@ -704,8 +754,56 @@ def ingest_archive_url(
                 checksum_status = "unavailable"
         batch: list[Candle] = []
         ingested_at_ms = int(time.time() * 1000)
+        source = "binance_public_archive_aggTrades" if kind == "aggTrades" else "binance_public_archive"
         if kind == "aggTrades":
-            candle_iterable = _iter_zip_agg_trade_candles(zip_path)
+            raw_trades_inserted = 0
+
+            def _store_trades_while_streaming(trades: Iterable[AggTrade]) -> Iterable[AggTrade]:
+                nonlocal raw_trades_inserted
+                raw_batch: list[AggTrade] = []
+                try:
+                    for trade in trades:
+                        normalized = AggTrade(
+                            symbol=symbol,
+                            market_type=market_type,
+                            agg_trade_id=trade.agg_trade_id,
+                            price=trade.price,
+                            quantity=trade.quantity,
+                            first_trade_id=trade.first_trade_id,
+                            last_trade_id=trade.last_trade_id,
+                            trade_time_ms=trade.trade_time_ms,
+                            is_buyer_maker=trade.is_buyer_maker,
+                            best_match=trade.best_match,
+                        )
+                        raw_batch.append(normalized)
+                        if len(raw_batch) >= max(1, int(chunk_size)):
+                            raw_trades_inserted += store.upsert_agg_trades(
+                                symbol,
+                                market_type,
+                                raw_batch,
+                                source=source,
+                                ingested_at_ms=ingested_at_ms,
+                            )
+                            raw_batch.clear()
+                        yield normalized
+                finally:
+                    if raw_batch:
+                        raw_trades_inserted += store.upsert_agg_trades(
+                            symbol,
+                            market_type,
+                            raw_batch,
+                            source=source,
+                            ingested_at_ms=ingested_at_ms,
+                        )
+                        raw_batch.clear()
+
+            archive_trades = _iter_zip_agg_trades(zip_path, symbol=symbol, market_type=market_type)
+            trade_iterable = (
+                _store_trades_while_streaming(archive_trades)
+                if store_raw_agg_trades
+                else archive_trades
+            )
+            candle_iterable = _iter_agg_trade_candles(trade_iterable)
             period_bounds = _period_ms_bounds(period or archive_url_period(url)) if fill_period_edges else None
             if period_bounds is not None:
                 period_start_ms, period_end_ms = period_bounds
@@ -729,7 +827,6 @@ def ingest_archive_url(
                 )
         else:
             candle_iterable = _iter_zip_candles(zip_path)
-        source = "binance_public_archive_aggTrades" if kind == "aggTrades" else "binance_public_archive"
         for candle in candle_iterable:
             rows_read += 1
             batch.append(candle)
@@ -825,6 +922,7 @@ def ingest_archive_urls(
     force: bool = False,
     verify_checksum: bool = True,
     require_checksum: bool = False,
+    store_raw_agg_trades: bool = True,
 ) -> list[ArchiveIngestResult]:
     results: list[ArchiveIngestResult] = []
     kind = _normalize_archive_data_type(data_type)
@@ -846,6 +944,7 @@ def ingest_archive_urls(
                     force=force,
                     verify_checksum=verify_checksum,
                     require_checksum=require_checksum,
+                    store_raw_agg_trades=store_raw_agg_trades,
                 )
             )
     return results

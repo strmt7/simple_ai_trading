@@ -153,6 +153,34 @@ def market_regime_unpredictability(
     return max(0.0, min(1.0, float(score)))
 
 
+def regime_unpredictability_requires_cooldown(
+    score: float | int | None,
+    limit: float | int | None,
+    *,
+    severe_floor: float = 0.90,
+    severe_margin: float = 0.25,
+) -> bool:
+    """Return True when a regime score is severe enough to start a cooldown.
+
+    A single over-limit tick should block that entry, but it should not suppress
+    the next hour of second-level day-trading candidates unless the market state
+    is severely disorderly or data-poor.  This keeps cooldowns as a capital
+    protection tool instead of turning noisy short windows into a no-trade mode.
+    """
+
+    regime_score = _metric_float(score)
+    regime_limit = _metric_float(limit)
+    if not math.isfinite(regime_score) or not math.isfinite(regime_limit):
+        return True
+    regime_score = max(0.0, min(1.0, regime_score))
+    regime_limit = max(0.0, min(1.0, regime_limit))
+    threshold = max(
+        max(0.0, min(1.0, float(severe_floor))),
+        min(1.0, regime_limit + max(0.0, float(severe_margin))),
+    )
+    return regime_score >= threshold
+
+
 def stop_loss_sized_notional_pct(
     strategy: StrategyConfig,
     market_type: str,
@@ -217,6 +245,7 @@ def build_risk_policy_report(
     require_model_candidate_search: bool = False,
     require_accelerator_evidence: bool = False,
     require_live_data_evidence: bool = False,
+    require_microstructure_evidence: bool = False,
     expected_symbol: str | None = None,
     expected_market_type: str | None = None,
     expected_interval: str | None = None,
@@ -571,6 +600,7 @@ def build_risk_policy_report(
                     require_model_candidate_search=require_model_candidate_search,
                     require_accelerator_evidence=require_accelerator_evidence,
                     require_live_data_evidence=require_live_data_evidence,
+                    require_microstructure_evidence=require_microstructure_evidence,
                     expected_symbol=expected_symbol,
                     expected_market_type=expected_market_type,
                     expected_interval=expected_interval,

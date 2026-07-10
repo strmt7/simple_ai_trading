@@ -40,6 +40,63 @@ class CandleCoverageQuality:
 
 
 @dataclass(frozen=True)
+class AggTrade:
+    symbol: str
+    market_type: str
+    agg_trade_id: int
+    price: float
+    quantity: float
+    first_trade_id: int
+    last_trade_id: int
+    trade_time_ms: int
+    is_buyer_maker: bool
+    best_match: bool = True
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class AggTradeCoverage:
+    symbol: str
+    market_type: str
+    count: int
+    first_trade_time_ms: int | None
+    last_trade_time_ms: int | None
+    first_agg_trade_id: int | None
+    last_agg_trade_id: int | None
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class AggTradeBucket:
+    symbol: str
+    market_type: str
+    open_time: int
+    first_time_ms: int
+    last_time_ms: int
+    first_price: float
+    last_price: float
+    high_price: float
+    low_price: float
+    total_quantity: float
+    total_notional: float
+    buy_quantity: float
+    buy_notional: float
+    sell_quantity: float
+    sell_notional: float
+    aggregate_count: int
+    buyer_taker_count: int
+    seller_taker_count: int
+    max_trade_notional: float
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class TopOfBookSnapshot:
     symbol: str
     market_type: str
@@ -167,6 +224,26 @@ class MarketDataStore:
             CREATE INDEX IF NOT EXISTS idx_top_of_book_lookup
                 ON top_of_book_snapshots(symbol, market_type, ts_ms);
 
+            CREATE TABLE IF NOT EXISTS agg_trades (
+                symbol TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                agg_trade_id INTEGER NOT NULL,
+                price REAL NOT NULL,
+                quantity REAL NOT NULL,
+                first_trade_id INTEGER NOT NULL,
+                last_trade_id INTEGER NOT NULL,
+                trade_time_ms INTEGER NOT NULL,
+                is_buyer_maker INTEGER NOT NULL,
+                best_match INTEGER NOT NULL,
+                source TEXT NOT NULL,
+                ingested_at_ms INTEGER NOT NULL,
+                PRIMARY KEY (symbol, market_type, agg_trade_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_agg_trades_time_lookup
+                ON agg_trades(symbol, market_type, trade_time_ms);
+            CREATE INDEX IF NOT EXISTS idx_agg_trades_id_lookup
+                ON agg_trades(symbol, market_type, agg_trade_id);
+
             CREATE TABLE IF NOT EXISTS sync_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at_ms INTEGER NOT NULL,
@@ -201,6 +278,45 @@ class MarketDataStore:
             );
             CREATE INDEX IF NOT EXISTS idx_archive_files_lookup
                 ON archive_files(symbol, market_type, interval, status);
+
+            CREATE TABLE IF NOT EXISTS microstructure_captures (
+                capture_id TEXT PRIMARY KEY,
+                provider TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                schema_version TEXT NOT NULL,
+                status TEXT NOT NULL,
+                started_at_ms INTEGER NOT NULL,
+                completed_at_ms INTEGER NOT NULL,
+                output_dir TEXT NOT NULL,
+                manifest_path TEXT NOT NULL,
+                payload_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_microstructure_captures_status
+                ON microstructure_captures(status, completed_at_ms);
+
+            CREATE TABLE IF NOT EXISTS microstructure_capture_symbols (
+                capture_id TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                raw_path TEXT NOT NULL,
+                normalized_path TEXT NOT NULL,
+                initial_snapshot_path TEXT NOT NULL,
+                raw_sha256 TEXT NOT NULL,
+                normalized_sha256 TEXT NOT NULL,
+                raw_messages INTEGER NOT NULL,
+                normalized_rows INTEGER NOT NULL,
+                depth_messages INTEGER NOT NULL,
+                trade_messages INTEGER NOT NULL,
+                book_ticker_messages INTEGER NOT NULL,
+                sequence_gap_count INTEGER NOT NULL,
+                crossed_book_count INTEGER NOT NULL,
+                invalid_event_count INTEGER NOT NULL,
+                replay_smoke_passed INTEGER NOT NULL,
+                error TEXT NOT NULL,
+                PRIMARY KEY (capture_id, symbol),
+                FOREIGN KEY (capture_id) REFERENCES microstructure_captures(capture_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_microstructure_symbols_lookup
+                ON microstructure_capture_symbols(symbol, capture_id);
             """
         )
         self._ensure_archive_file_columns(conn)
@@ -217,6 +333,128 @@ class MarketDataStore:
             conn.execute("ALTER TABLE archive_files ADD COLUMN checksum_sha256 TEXT NOT NULL DEFAULT ''")
         if "checksum_status" not in columns:
             conn.execute("ALTER TABLE archive_files ADD COLUMN checksum_status TEXT NOT NULL DEFAULT 'unverified'")
+
+    def record_microstructure_capture(self, payload: Mapping[str, object]) -> int:
+        """Persist one immutable L2 capture manifest and its per-symbol evidence."""
+
+        capture_id = str(payload.get("capture_id", "")).strip()
+        evidence = payload.get("evidence")
+        if not capture_id or not isinstance(evidence, list):
+            raise ValueError("microstructure capture requires capture_id and evidence")
+        encoded = json.dumps(dict(payload), sort_keys=True, separators=(",", ":"))
+        conn = self.connect()
+        existing = conn.execute(
+            "SELECT payload_json FROM microstructure_captures WHERE capture_id = ?",
+            (capture_id,),
+        ).fetchone()
+        if existing is not None:
+            if str(existing["payload_json"]) == encoded:
+                return 0
+            raise ValueError(f"microstructure capture_id is immutable: {capture_id}")
+        before_changes = conn.total_changes
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO microstructure_captures (
+                    capture_id, provider, market_type, schema_version, status,
+                    started_at_ms, completed_at_ms, output_dir, manifest_path, payload_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    capture_id,
+                    str(payload.get("provider", "")),
+                    str(payload.get("market_type", "")),
+                    str(payload.get("schema_version", "")),
+                    str(payload.get("status", "")),
+                    int(payload.get("started_at_ms", 0)),
+                    int(payload.get("completed_at_ms", 0)),
+                    str(payload.get("output_dir", "")),
+                    str(payload.get("manifest_path", "")),
+                    encoded,
+                ),
+            )
+            conn.execute(
+                "DELETE FROM microstructure_capture_symbols WHERE capture_id = ?",
+                (capture_id,),
+            )
+            rows: list[tuple[object, ...]] = []
+            for item in evidence:
+                if not isinstance(item, Mapping):
+                    raise ValueError("microstructure symbol evidence must be an object")
+                symbol = str(item.get("symbol", "")).strip().upper()
+                if not symbol:
+                    raise ValueError("microstructure symbol evidence requires symbol")
+                rows.append(
+                    (
+                        capture_id,
+                        symbol,
+                        str(item.get("raw_path", "")),
+                        str(item.get("normalized_path", "")),
+                        str(item.get("initial_snapshot_path", "")),
+                        str(item.get("raw_sha256", "")),
+                        str(item.get("normalized_sha256", "")),
+                        int(item.get("raw_messages", 0)),
+                        int(item.get("normalized_rows", 0)),
+                        int(item.get("depth_messages", 0)),
+                        int(item.get("trade_messages", 0)),
+                        int(item.get("book_ticker_messages", 0)),
+                        int(item.get("sequence_gap_count", 0)),
+                        int(item.get("crossed_book_count", 0)),
+                        int(item.get("invalid_event_count", 0)),
+                        1 if bool(item.get("replay_smoke_passed", False)) else 0,
+                        str(item.get("error", "")),
+                    )
+                )
+            conn.executemany(
+                """
+                INSERT INTO microstructure_capture_symbols (
+                    capture_id, symbol, raw_path, normalized_path, initial_snapshot_path,
+                    raw_sha256, normalized_sha256, raw_messages, normalized_rows,
+                    depth_messages, trade_messages, book_ticker_messages,
+                    sequence_gap_count, crossed_book_count, invalid_event_count,
+                    replay_smoke_passed, error
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                rows,
+            )
+        return conn.total_changes - before_changes
+
+    def latest_microstructure_capture(
+        self,
+        symbol: str,
+        *,
+        require_passed: bool = True,
+    ) -> dict[str, object] | None:
+        """Return the newest catalogued capture containing one symbol."""
+
+        conditions = ["s.symbol = ?"]
+        parameters: list[object] = [str(symbol).upper()]
+        if require_passed:
+            conditions.extend(
+                (
+                    "c.status = 'pass'",
+                    "s.replay_smoke_passed = 1",
+                    "s.sequence_gap_count = 0",
+                    "s.crossed_book_count = 0",
+                    "s.invalid_event_count = 0",
+                    "s.error = ''",
+                )
+            )
+        row = self.connect().execute(
+            f"""
+            SELECT c.payload_json
+            FROM microstructure_captures c
+            JOIN microstructure_capture_symbols s ON s.capture_id = c.capture_id
+            WHERE {' AND '.join(conditions)}
+            ORDER BY c.completed_at_ms DESC
+            LIMIT 1
+            """,
+            parameters,
+        ).fetchone()
+        if row is None:
+            return None
+        payload = json.loads(str(row["payload_json"]))
+        return cast(dict[str, object], payload)
 
     @staticmethod
     def _now_ms() -> int:
@@ -485,6 +723,263 @@ class MarketDataStore:
 
     def latest_open_time(self, symbol: str, market_type: str, interval: str) -> int | None:
         return self.coverage(symbol, market_type, interval).last_open_time
+
+    def upsert_agg_trades(
+        self,
+        symbol: str,
+        market_type: str,
+        trades: Sequence[AggTrade],
+        *,
+        source: str = "binance_public_archive_aggTrades",
+        ingested_at_ms: int | None = None,
+    ) -> int:
+        if not trades:
+            return 0
+        normalized_symbol = symbol.upper()
+        ingested = self._now_ms() if ingested_at_ms is None else int(ingested_at_ms)
+        rows: list[tuple[object, ...]] = []
+        for trade in trades:
+            price = float(trade.price)
+            quantity = float(trade.quantity)
+            trade_time_ms = int(trade.trade_time_ms)
+            if price <= 0.0 or quantity <= 0.0 or trade_time_ms <= 0:
+                raise ValueError("aggregate trade rows require positive price, quantity, and trade_time_ms")
+            first_trade_id = int(trade.first_trade_id)
+            last_trade_id = int(trade.last_trade_id)
+            if last_trade_id < first_trade_id:
+                raise ValueError("aggregate trade last_trade_id must be greater than or equal to first_trade_id")
+            rows.append(
+                (
+                    normalized_symbol,
+                    market_type,
+                    int(trade.agg_trade_id),
+                    price,
+                    quantity,
+                    first_trade_id,
+                    last_trade_id,
+                    trade_time_ms,
+                    1 if bool(trade.is_buyer_maker) else 0,
+                    1 if bool(trade.best_match) else 0,
+                    source,
+                    ingested,
+                )
+            )
+        conn = self.connect()
+        before_changes = conn.total_changes
+        conn.executemany(
+            """
+            INSERT INTO agg_trades (
+                symbol, market_type, agg_trade_id, price, quantity, first_trade_id, last_trade_id,
+                trade_time_ms, is_buyer_maker, best_match, source, ingested_at_ms
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(symbol, market_type, agg_trade_id) DO UPDATE SET
+                price=excluded.price,
+                quantity=excluded.quantity,
+                first_trade_id=excluded.first_trade_id,
+                last_trade_id=excluded.last_trade_id,
+                trade_time_ms=excluded.trade_time_ms,
+                is_buyer_maker=excluded.is_buyer_maker,
+                best_match=excluded.best_match,
+                source=excluded.source,
+                ingested_at_ms=excluded.ingested_at_ms
+            WHERE
+                agg_trades.price IS NOT excluded.price OR
+                agg_trades.quantity IS NOT excluded.quantity OR
+                agg_trades.first_trade_id IS NOT excluded.first_trade_id OR
+                agg_trades.last_trade_id IS NOT excluded.last_trade_id OR
+                agg_trades.trade_time_ms IS NOT excluded.trade_time_ms OR
+                agg_trades.is_buyer_maker IS NOT excluded.is_buyer_maker OR
+                agg_trades.best_match IS NOT excluded.best_match OR
+                agg_trades.source IS NOT excluded.source
+            """,
+            rows,
+        )
+        conn.commit()
+        return max(0, conn.total_changes - before_changes)
+
+    @staticmethod
+    def _agg_trade_from_row(row: sqlite3.Row) -> AggTrade:
+        return AggTrade(
+            symbol=str(row["symbol"]),
+            market_type=str(row["market_type"]),
+            agg_trade_id=int(row["agg_trade_id"]),
+            price=float(row["price"]),
+            quantity=float(row["quantity"]),
+            first_trade_id=int(row["first_trade_id"]),
+            last_trade_id=int(row["last_trade_id"]),
+            trade_time_ms=int(row["trade_time_ms"]),
+            is_buyer_maker=bool(int(row["is_buyer_maker"])),
+            best_match=bool(int(row["best_match"])),
+        )
+
+    def fetch_agg_trades(
+        self,
+        symbol: str,
+        market_type: str,
+        *,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+        limit: int | None = None,
+    ) -> list[AggTrade]:
+        params: list[object] = [symbol.upper(), market_type]
+        where = ["symbol = ?", "market_type = ?"]
+        if start_ms is not None:
+            where.append("trade_time_ms >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("trade_time_ms <= ?")
+            params.append(int(end_ms))
+        query = f"""
+            SELECT symbol, market_type, agg_trade_id, price, quantity, first_trade_id, last_trade_id,
+                   trade_time_ms, is_buyer_maker, best_match
+            FROM agg_trades
+            WHERE {' AND '.join(where)}
+            ORDER BY trade_time_ms DESC, agg_trade_id DESC
+            """
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(max(0, int(limit)))
+        rows = self.connect().execute(query, params).fetchall()
+        return [self._agg_trade_from_row(row) for row in reversed(rows)]
+
+    def agg_trade_coverage(
+        self,
+        symbol: str,
+        market_type: str,
+        *,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+    ) -> AggTradeCoverage:
+        params: list[object] = [symbol.upper(), market_type]
+        where = ["symbol = ?", "market_type = ?"]
+        if start_ms is not None:
+            where.append("trade_time_ms >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("trade_time_ms <= ?")
+            params.append(int(end_ms))
+        row = self.connect().execute(
+            f"""
+            SELECT COUNT(*) AS count,
+                   MIN(trade_time_ms) AS first_trade_time_ms,
+                   MAX(trade_time_ms) AS last_trade_time_ms,
+                   MIN(agg_trade_id) AS first_agg_trade_id,
+                   MAX(agg_trade_id) AS last_agg_trade_id
+            FROM agg_trades
+            WHERE {' AND '.join(where)}
+            """,
+            params,
+        ).fetchone()
+        return AggTradeCoverage(
+            symbol=symbol.upper(),
+            market_type=market_type,
+            count=int(row["count"]),
+            first_trade_time_ms=row["first_trade_time_ms"],
+            last_trade_time_ms=row["last_trade_time_ms"],
+            first_agg_trade_id=row["first_agg_trade_id"],
+            last_agg_trade_id=row["last_agg_trade_id"],
+        )
+
+    def fetch_agg_trade_buckets(
+        self,
+        symbol: str,
+        market_type: str,
+        *,
+        bucket_ms: int = 1000,
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+        limit: int | None = None,
+    ) -> list[AggTradeBucket]:
+        width = max(1, int(bucket_ms))
+        params: list[object] = [width, width, symbol.upper(), market_type]
+        where = ["symbol = ?", "market_type = ?"]
+        if start_ms is not None:
+            where.append("trade_time_ms >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("trade_time_ms <= ?")
+            params.append(int(end_ms))
+        query = f"""
+            WITH normalized AS (
+                SELECT
+                    ((trade_time_ms / ?) * ?) AS bucket_open_time,
+                    symbol,
+                    market_type,
+                    agg_trade_id,
+                    price,
+                    quantity,
+                    price * quantity AS notional,
+                    trade_time_ms,
+                    is_buyer_maker
+                FROM agg_trades
+                WHERE {' AND '.join(where)}
+            ),
+            ranked AS (
+                SELECT
+                    *,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY bucket_open_time
+                        ORDER BY trade_time_ms ASC, agg_trade_id ASC
+                    ) AS rn_first,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY bucket_open_time
+                        ORDER BY trade_time_ms DESC, agg_trade_id DESC
+                    ) AS rn_last
+                FROM normalized
+            )
+            SELECT
+                bucket_open_time,
+                MIN(symbol) AS symbol,
+                MIN(market_type) AS market_type,
+                MIN(trade_time_ms) AS first_time_ms,
+                MAX(trade_time_ms) AS last_time_ms,
+                MAX(CASE WHEN rn_first = 1 THEN price END) AS first_price,
+                MAX(CASE WHEN rn_last = 1 THEN price END) AS last_price,
+                MAX(price) AS high_price,
+                MIN(price) AS low_price,
+                SUM(quantity) AS total_quantity,
+                SUM(notional) AS total_notional,
+                SUM(CASE WHEN is_buyer_maker = 0 THEN quantity ELSE 0 END) AS buy_quantity,
+                SUM(CASE WHEN is_buyer_maker = 0 THEN notional ELSE 0 END) AS buy_notional,
+                SUM(CASE WHEN is_buyer_maker != 0 THEN quantity ELSE 0 END) AS sell_quantity,
+                SUM(CASE WHEN is_buyer_maker != 0 THEN notional ELSE 0 END) AS sell_notional,
+                COUNT(*) AS aggregate_count,
+                SUM(CASE WHEN is_buyer_maker = 0 THEN 1 ELSE 0 END) AS buyer_taker_count,
+                SUM(CASE WHEN is_buyer_maker != 0 THEN 1 ELSE 0 END) AS seller_taker_count,
+                MAX(notional) AS max_trade_notional
+            FROM ranked
+            GROUP BY bucket_open_time
+            ORDER BY bucket_open_time DESC
+            """
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(max(0, int(limit)))
+        rows = self.connect().execute(query, params).fetchall()
+        return [
+            AggTradeBucket(
+                symbol=str(row["symbol"]),
+                market_type=str(row["market_type"]),
+                open_time=int(row["bucket_open_time"]),
+                first_time_ms=int(row["first_time_ms"]),
+                last_time_ms=int(row["last_time_ms"]),
+                first_price=float(row["first_price"]),
+                last_price=float(row["last_price"]),
+                high_price=float(row["high_price"]),
+                low_price=float(row["low_price"]),
+                total_quantity=float(row["total_quantity"]),
+                total_notional=float(row["total_notional"]),
+                buy_quantity=float(row["buy_quantity"]),
+                buy_notional=float(row["buy_notional"]),
+                sell_quantity=float(row["sell_quantity"]),
+                sell_notional=float(row["sell_notional"]),
+                aggregate_count=int(row["aggregate_count"]),
+                buyer_taker_count=int(row["buyer_taker_count"]),
+                seller_taker_count=int(row["seller_taker_count"]),
+                max_trade_notional=float(row["max_trade_notional"]),
+            )
+            for row in reversed(rows)
+        ]
 
     @staticmethod
     def _finite_positive(payload: Mapping[str, object], key: str) -> float:

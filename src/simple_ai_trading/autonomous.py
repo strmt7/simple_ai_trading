@@ -39,6 +39,7 @@ from .api_budget import (
 )
 from .api import BinanceAPIError, BinanceClient
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
+from .intervals import interval_milliseconds
 from .logging_ext import configure as configure_logging
 from .objective import ObjectiveSpec, get_objective
 from .positions import (
@@ -51,6 +52,7 @@ from .positions import (
     new_position_id,
     now_ms,
 )
+from .position_lifecycle import evaluate_position_exit
 from .reconciliation import ReconciliationReport, reconcile_account_positions
 from .risk_controls import market_regime_unpredictability, stop_loss_sized_notional_pct
 from .storage import write_json_atomic
@@ -194,6 +196,7 @@ class Decision:
     regime_confidence: float = 0.0
     regime_notes: tuple[str, ...] = ()
     regime_unpredictability_score: float | None = None
+    observed_at_ms: int = 0
 
 
 DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
@@ -297,6 +300,10 @@ def _evaluate_auto_close(
     mark_price: float,
     cfg: AutonomousConfig,
     strategy: StrategyConfig,
+    *,
+    decision_side: str = "FLAT",
+    observed_at_ms: int = 0,
+    interval_ms: int = 1_000,
 ) -> tuple[bool, str]:
     """Return (should_close, reason) for an open position at the given mark."""
 
@@ -305,11 +312,32 @@ def _evaluate_auto_close(
         return True, f"auto-take-profit@{cfg.max_unrealized_close_pct:+.2%}"
     if cfg.min_unrealized_close_pct is not None and pnl_pct <= cfg.min_unrealized_close_pct:
         return True, f"auto-stop-loss@{cfg.min_unrealized_close_pct:+.2%}"
-    if strategy.take_profit_pct > 0 and pnl_pct >= strategy.take_profit_pct:
-        return True, f"take-profit@{strategy.take_profit_pct:+.2%}"
-    if strategy.stop_loss_pct > 0 and pnl_pct <= -strategy.stop_loss_pct:
-        return True, f"stop-loss@{strategy.stop_loss_pct:+.2%}"
-    return False, ""
+    signal_direction = {"LONG": 1, "SHORT": -1}.get(str(decision_side).upper(), 0)
+    elapsed_ms = max(0, int(observed_at_ms) - int(position.opened_at_ms)) if observed_at_ms > 0 else 0
+    bars_held = elapsed_ms // max(1, int(interval_ms))
+    lifecycle_exit = evaluate_position_exit(
+        position_side=1 if str(position.side).upper() == "LONG" else -1,
+        signal_direction=signal_direction,
+        current_pnl_pct=pnl_pct,
+        bars_held=bars_held,
+        flat_signal_streak=0,
+        stop_loss_pct=strategy.stop_loss_pct,
+        take_profit_pct=strategy.take_profit_pct,
+        min_position_hold_bars=strategy.min_position_hold_bars,
+        flat_signal_exit_grace_bars=strategy.flat_signal_exit_grace_bars,
+        max_position_hold_bars=strategy.max_position_hold_bars,
+        allow_flat_signal_exit=False,
+    )
+    reason = lifecycle_exit.reason
+    if reason == "take_profit_close":
+        reason = f"take-profit@{strategy.take_profit_pct:+.2%}"
+    elif reason == "stop_loss_close":
+        reason = f"stop-loss@{strategy.stop_loss_pct:+.2%}"
+    elif reason == "time_limit":
+        reason = f"time-limit@{bars_held}bars"
+    elif reason == "signal_reverse":
+        reason = "signal-reverse"
+    return lifecycle_exit.should_close, reason
 
 
 def _open_position_from_decision(
@@ -1182,7 +1210,16 @@ def run_loop(
 
             # Close any open position that meets auto-close thresholds first
             for position in store.load_open():
-                should_close, reason = _evaluate_auto_close(position, decision.mark_price, cfg, strategy)
+                observed_at_ms = int(decision.observed_at_ms) if int(decision.observed_at_ms) > 0 else int(clock() * 1000)
+                should_close, reason = _evaluate_auto_close(
+                    position,
+                    decision.mark_price,
+                    cfg,
+                    strategy,
+                    decision_side=decision.side,
+                    observed_at_ms=observed_at_ms,
+                    interval_ms=interval_milliseconds(runtime.interval),
+                )
                 if should_close:
                     if not cfg.dry_run:
                         try:

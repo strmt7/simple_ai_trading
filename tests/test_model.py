@@ -10,6 +10,7 @@ from pathlib import Path
 from simple_ai_trading.model import (
     TrainedModel,
     EnsembleMember,
+    HybridExpert,
     ClassificationReport,
     calibrate_probability_temperature,
     confidence_adjusted_probability,
@@ -17,6 +18,7 @@ from simple_ai_trading.model import (
     ModelFeatureMismatchError,
     ModelLoadError,
     load_model,
+    market_direction_from_probability,
     model_decision_threshold,
     model_direction_thresholds,
     evaluate_classification,
@@ -29,6 +31,7 @@ from simple_ai_trading.model import (
 )
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.strategy_overrides import clean_strategy_overrides
+from simple_ai_trading.trade_tape_features import TRADE_TAPE_FEATURES_PER_WINDOW
 
 
 def _rows() -> list[ModelRow]:
@@ -45,6 +48,30 @@ def test_effective_training_backend_defaults_to_gpu_first_auto() -> None:
     assert effective_training_backend_name("") == "auto"
     assert effective_training_backend_name("directml") == "directml"
     assert effective_training_backend_name("cpu") == "cpu"
+
+
+def test_market_direction_from_probability_fails_closed_on_neutral_and_nonfinite_scores() -> None:
+    direction = market_direction_from_probability
+
+    assert direction(0.5, 0.5, market_type="futures", short_threshold=0.5) == 0
+    assert direction(float("nan"), 0.5, market_type="futures", short_threshold=0.5) == 0
+    assert direction(0.6, 0.55, market_type="futures", short_threshold=0.45) == 1
+    assert direction(0.4, 0.55, market_type="futures", short_threshold=0.45) == -1
+    assert direction(0.4, 0.55, market_type="futures", infer_symmetric_short=False) == 0
+    assert direction(0.4, 0.55, market_type="futures", infer_symmetric_short=True) == -1
+
+
+def test_collect_feature_stats_uses_population_statistics() -> None:
+    rows = [
+        ModelRow(timestamp=index, close=1.0, features=(value, value * 2.0), label=0)
+        for index, value in enumerate((1.0, 2.0, 3.0))
+    ]
+
+    means, stds, backend = model_module.collect_feature_stats(rows, compute_backend="cpu")
+
+    assert backend.kind == "cpu"
+    assert means == pytest.approx([2.0, 4.0])
+    assert stds == pytest.approx([(2.0 / 3.0) ** 0.5, (8.0 / 3.0) ** 0.5])
 
 
 def test_train_and_evaluate() -> None:
@@ -64,6 +91,54 @@ def test_focal_gradient_matches_bce_when_gamma_zero() -> None:
     assert model_module._focal_bce_logit_gradient(0.2, 0, 0.0) == pytest.approx(0.2)
     assert model_module._focal_bce_logit_gradient(0.99, 0, 2.0) > model_module._focal_bce_logit_gradient(0.2, 0, 2.0)
     assert abs(model_module._focal_bce_logit_gradient(0.99, 1, 2.0)) < abs(model_module._focal_bce_logit_gradient(0.8, 1, 2.0))
+
+
+def test_class_weights_keep_unit_mean_for_rare_profit_labels() -> None:
+    rows = [
+        ModelRow(timestamp=i, close=100.0, features=(0.0,), label=0)
+        for i in range(99)
+    ]
+    rows.append(ModelRow(timestamp=99, close=101.0, features=(1.0,), label=1))
+
+    pos_weight, neg_weight = model_module._class_weights(rows)
+
+    assert pos_weight == pytest.approx(50.0)
+    assert neg_weight == pytest.approx(100.0 / 198.0)
+    mean_weight = (pos_weight + 99 * neg_weight) / 100.0
+    assert mean_weight == pytest.approx(1.0)
+    assert pos_weight / neg_weight == pytest.approx(99.0)
+
+
+def test_weighted_focal_loss_penalizes_missing_rare_profit_label() -> None:
+    rows = [
+        ModelRow(timestamp=i, close=100.0, features=(0.0,), label=0)
+        for i in range(99)
+    ]
+    rows.append(ModelRow(timestamp=99, close=101.0, features=(1.0,), label=1))
+    pos_weight, neg_weight = model_module._class_weights(rows)
+
+    all_negative_loss = model_module._weighted_focal_log_loss(
+        rows,
+        weights=[0.0],
+        bias=-4.0,
+        means=[0.0],
+        stds=[1.0],
+        class_weight_pos=pos_weight,
+        class_weight_neg=neg_weight,
+        focal_gamma=2.0,
+    )
+    rare_signal_loss = model_module._weighted_focal_log_loss(
+        rows,
+        weights=[8.0],
+        bias=-4.0,
+        means=[0.0],
+        stds=[1.0],
+        class_weight_pos=pos_weight,
+        class_weight_neg=neg_weight,
+        focal_gamma=2.0,
+    )
+
+    assert rare_signal_loss < all_negative_loss
 
 
 def test_train_records_focal_gamma_and_roundtrips(tmp_path: Path) -> None:
@@ -103,6 +178,116 @@ def test_probability_inversion_roundtrip(tmp_path: Path) -> None:
     loaded = load_model(path)
     assert loaded.probability_inverted is True
     assert loaded.predict_proba((1.0,)) == pytest.approx(inverted.predict_proba((1.0,)))
+
+
+def test_dense_mlp_hybrid_expert_roundtrip_preserves_probability(tmp_path: Path) -> None:
+    trained = TrainedModel(
+        weights=[0.0, 0.0],
+        bias=0.0,
+        feature_dim=2,
+        epochs=1,
+        feature_means=[0.0, 0.0],
+        feature_stds=[1.0, 1.0],
+        hybrid_base_weight=0.0,
+        hybrid_experts=[
+            HybridExpert(
+                name="dense",
+                kind="dense_mlp",
+                weight=1.0,
+                feature_count=2,
+                params={
+                    "input_dim": 2,
+                    "output_activation": "sigmoid",
+                    "layers": [
+                        {
+                            "weights": [[1.0, 0.0], [0.0, 1.0]],
+                            "bias": [0.0, 0.0],
+                            "activation": "relu",
+                        },
+                        {
+                            "weights": [[1.0], [1.0]],
+                            "bias": [0.0],
+                            "activation": "sigmoid",
+                        },
+                    ],
+                },
+            )
+        ],
+    )
+
+    before = trained.predict_proba((1.0, 2.0))
+    path = tmp_path / "dense.json"
+    serialize_model(trained, path)
+    loaded = load_model(path, expected_feature_dim=2)
+
+    assert before == pytest.approx(0.9525741268)
+    assert loaded.hybrid_experts[0].kind == "dense_mlp"
+    assert loaded.predict_proba((1.0, 2.0)) == pytest.approx(before)
+
+
+def test_rule_alpha_trade_tape_default_width_tracks_feature_schema() -> None:
+    width = TRADE_TAPE_FEATURES_PER_WINDOW
+    start = 13
+    feature_dim = start + width * 2
+    features = [0.0] * feature_dim
+    features[0] = 0.0012
+    features[1] = 0.0008
+    for group_start in (start, start + width):
+        features[group_start + 0] = 0.77
+        features[group_start + 1] = 0.61
+        features[group_start + 2] = 0.54
+        features[group_start + 3] = 0.33
+        features[group_start + 4] = 0.28
+        features[group_start + 8] = 0.12
+        features[group_start + 9] = 0.0
+        features[group_start + 10] = 0.26
+        features[group_start + 11] = 0.29
+    params = {
+        "family": "micro_flow_scalp",
+        "sensitivity": 8.0,
+        "deadband": 0.01,
+        "trade_tape_start": start,
+        "trade_tape_window_count": 2,
+    }
+
+    implicit = TrainedModel(
+        weights=[0.0] * feature_dim,
+        bias=0.0,
+        feature_dim=feature_dim,
+        epochs=0,
+        feature_means=[0.0] * feature_dim,
+        feature_stds=[1.0] * feature_dim,
+        hybrid_base_weight=0.0,
+        hybrid_experts=[
+            HybridExpert(
+                name="implicit",
+                kind="rule_alpha",
+                weight=1.0,
+                feature_count=feature_dim,
+                params=params,
+            )
+        ],
+    )
+    explicit = TrainedModel(
+        weights=[0.0] * feature_dim,
+        bias=0.0,
+        feature_dim=feature_dim,
+        epochs=0,
+        feature_means=[0.0] * feature_dim,
+        feature_stds=[1.0] * feature_dim,
+        hybrid_base_weight=0.0,
+        hybrid_experts=[
+            HybridExpert(
+                name="explicit",
+                kind="rule_alpha",
+                weight=1.0,
+                feature_count=feature_dim,
+                params={**params, "trade_tape_width": width},
+            )
+        ],
+    )
+
+    assert implicit.predict_proba(tuple(features)) == pytest.approx(explicit.predict_proba(tuple(features)))
 
 
 def test_train_records_requested_backend_fallback_when_unavailable() -> None:
@@ -588,6 +773,37 @@ def test_load_model_rejects_invalid_ensemble_members(tmp_path: Path) -> None:
         model_path.write_text(json.dumps(payload), encoding="utf-8")
         with pytest.raises(ModelLoadError, match=match):
             load_model(model_path, expected_feature_dim=1)
+
+
+def test_load_model_rejects_oversized_lightgbm_tree_payload(tmp_path: Path) -> None:
+    model_path = tmp_path / "oversized_lightgbm.json"
+    payload: dict[str, object] = {
+        "weights": [0.1],
+        "feature_version": "v1",
+        "bias": 0.0,
+        "feature_dim": 1,
+        "epochs": 1,
+        "feature_means": [0.0],
+        "feature_stds": [1.0],
+        "hybrid_experts": [
+            {
+                "name": "oversized",
+                "kind": "signed_payoff_lightgbm_ranker",
+                "weight": 1.0,
+                "params": {
+                    "input_dim": 1,
+                    "tree_info": [
+                        {"tree_structure": {"leaf_value": 0.0}}
+                        for _ in range(model_module.MAX_SERIALIZED_LIGHTGBM_TREES + 1)
+                    ],
+                },
+            }
+        ],
+    }
+    model_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ModelLoadError, match="tree limit"):
+        load_model(model_path, expected_feature_version="v1", expected_feature_dim=1)
 
 
 def test_temperature_calibration_softens_overconfident_probabilities() -> None:

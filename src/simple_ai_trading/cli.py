@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import argparse
 import builtins
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
+import importlib.util
 import json
 import math
 import random
@@ -47,10 +48,12 @@ from .binance_archive import (
     archive_url_period,
     filter_archive_urls_by_period,
     ingest_archive_urls,
+    list_archive_items,
     list_archive_urls,
     validate_archive_period_window,
 )
 from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
+from .commission import apply_offline_commission_floor, apply_verified_commission_rate
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
 from . import data_workflows
@@ -64,8 +67,10 @@ from .liquidity_session import apply_liquidity_session_meta, liquidity_session_a
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
 from .market_store import MarketDataStore
+from .microstructure_data import capture_binance_futures_microstructure
 from .optimization_evidence import select_top_liquidity_symbols
 from .meta_label import apply_meta_label_policy
+from .position_lifecycle import evaluate_position_exit
 from .model import (
     assess_probability_calibration,
     build_model_quality_report,
@@ -78,6 +83,7 @@ from .model import (
     ModelFeatureMismatchError,
     ModelLoadError,
     load_model,
+    market_direction_from_probability,
     model_decision_threshold,
     model_direction_thresholds,
     serialize_model,
@@ -102,6 +108,7 @@ from .risk_controls import (
     assess_entry_risk,
     build_risk_policy_report,
     market_regime_unpredictability,
+    regime_unpredictability_requires_cooldown,
     render_risk_policy_report,
     stop_loss_sized_notional_pct,
 )
@@ -438,10 +445,131 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_archive_sync.add_argument("--timeout", type=int, default=120)
     parser_archive_sync.add_argument("--force", action="store_true")
+    parser_archive_sync.add_argument(
+        "--aggregate-only",
+        action="store_true",
+        help="for aggTrades, persist derived 1s candles without duplicating raw trades",
+    )
     parser_archive_sync.add_argument("--no-verify-checksum", action="store_true", help="skip Binance .CHECKSUM sidecar verification")
     parser_archive_sync.add_argument("--require-checksum", action="store_true", help="fail archive files without a readable .CHECKSUM sidecar")
     parser_archive_sync.add_argument("--json", action="store_true")
     parser_archive_sync.set_defaults(func=command_archive_sync)
+
+    parser_microstructure = subparsers.add_parser(
+        "microstructure-capture",
+        help="capture real Binance futures L2, trades, and BBO data for HftBacktest replay",
+    )
+    parser_microstructure.add_argument(
+        "--symbols",
+        default=None,
+        help="comma-separated supported futures symbols; defaults to configured BTC/ETH/SOL symbols",
+    )
+    parser_microstructure.add_argument("--seconds", type=float, default=60.0)
+    parser_microstructure.add_argument("--output-root", default="data/microstructure")
+    parser_microstructure.add_argument("--db", default="data/market_data.sqlite")
+    parser_microstructure.add_argument("--timeout", type=float, default=10.0)
+    parser_microstructure.add_argument(
+        "--no-convert",
+        action="store_false",
+        dest="convert",
+        help="capture and validate raw feeds without producing HftBacktest NPZ files",
+    )
+    parser_microstructure.add_argument("--json", action="store_true")
+    parser_microstructure.set_defaults(convert=True, func=command_microstructure_capture)
+
+    parser_tick_archive = subparsers.add_parser(
+        "tick-archive-sync",
+        help="ingest checksummed Binance futures BBO/trade archives into DuckDB",
+    )
+    parser_tick_archive.add_argument(
+        "--symbols",
+        default=None,
+        help="comma-separated BTC/ETH/SOL futures symbols; defaults to runtime symbols",
+    )
+    parser_tick_archive.add_argument(
+        "--data-types",
+        default="bookTicker,trades",
+        help="comma-separated official products: bookTicker,trades,bookDepth",
+    )
+    parser_tick_archive.add_argument("--start-date", required=True, help="inclusive UTC date, YYYY-MM-DD")
+    parser_tick_archive.add_argument("--end-date", required=True, help="inclusive UTC date, YYYY-MM-DD")
+    parser_tick_archive.add_argument("--warehouse", default="data/microstructure.duckdb")
+    parser_tick_archive.add_argument("--cache-root", default="data/archive-cache")
+    parser_tick_archive.add_argument("--memory-limit", default="8GB")
+    parser_tick_archive.add_argument("--threads", type=int, default=8)
+    parser_tick_archive.add_argument("--timeout", type=float, default=240.0)
+    parser_tick_archive.add_argument("--no-retain-archive", action="store_true")
+    parser_tick_archive.add_argument("--json", action="store_true")
+    parser_tick_archive.set_defaults(func=command_tick_archive_sync)
+
+    parser_micro_train = subparsers.add_parser(
+        "microstructure-train",
+        help="train a purged cost-aware L1/tape model from the tick warehouse",
+    )
+    parser_micro_train.add_argument("--symbol", default="BTCUSDT")
+    parser_micro_train.add_argument("--warehouse", default="data/microstructure.duckdb")
+    parser_micro_train.add_argument("--cache-root", default="data/archive-cache")
+    parser_micro_train.add_argument("--output", default="data/microstructure-model.json")
+    parser_micro_train.add_argument("--horizon-seconds", type=int, default=900)
+    parser_micro_train.add_argument(
+        "--decision-cadence-seconds",
+        type=int,
+        default=5,
+        help="evaluate one decision candidate every N seconds while retaining 1s features",
+    )
+    parser_micro_train.add_argument("--total-latency-ms", type=int, default=750)
+    parser_micro_train.add_argument("--taker-fee-bps", type=float, default=5.0)
+    parser_micro_train.add_argument("--max-quote-age-ms", type=int, default=1000)
+    parser_micro_train.add_argument(
+        "--reference-order-notional-quote",
+        type=float,
+        default=1_000.0,
+        help="reference quote-currency order size used for L1 executability labels",
+    )
+    parser_micro_train.add_argument(
+        "--max-l1-participation",
+        type=float,
+        default=None,
+        help="maximum share of displayed top-of-book quantity; defaults by risk profile",
+    )
+    parser_micro_train.add_argument("--stop-loss-bps", type=float, default=None)
+    parser_micro_train.add_argument("--take-profit-bps", type=float, default=None)
+    parser_micro_train.add_argument(
+        "--trigger-slippage-bps",
+        "--stop-slippage-bps",
+        dest="trigger_slippage_bps",
+        type=float,
+        default=1.0,
+        help="Extra adverse execution cost after a stop/take trigger (default: 1 bps)",
+    )
+    parser_micro_train.add_argument(
+        "--risk-level",
+        choices=["conservative", "regular", "aggressive"],
+        default="conservative",
+    )
+    parser_micro_train.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_micro_train.add_argument("--minimum-promotion-days", type=int, default=365)
+    terminal_mode = parser_micro_train.add_mutually_exclusive_group()
+    terminal_mode.add_argument(
+        "--evaluate-terminal",
+        action="store_true",
+        dest="evaluate_terminal",
+        help="irreversibly consume one unused terminal holdout after selection gates pass",
+    )
+    terminal_mode.add_argument(
+        "--candidate-only",
+        action="store_false",
+        dest="evaluate_terminal",
+        help="emit a selection-stage candidate without consuming the terminal holdout (default)",
+    )
+    parser_micro_train.add_argument("--memory-limit", default="8GB")
+    parser_micro_train.add_argument("--threads", type=int, default=8)
+    parser_micro_train.add_argument("--json", action="store_true")
+    parser_micro_train.set_defaults(evaluate_terminal=False, func=command_microstructure_train)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_btcusdc.json")
@@ -683,6 +811,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_live.set_defaults(func=command_live)
 
     parser_status = subparsers.add_parser("status", help="show persisted runtime and strategy config")
+    parser_status.add_argument("--compact", action="store_true", help="print one secret-free operator status line")
     parser_status.set_defaults(func=command_status)
 
     parser_compute = subparsers.add_parser("compute", help="show or set the model-training compute backend")
@@ -739,6 +868,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_strategy.add_argument("--stop", type=float, default=None)
     parser_strategy.add_argument("--take", type=float, default=None)
     parser_strategy.add_argument("--cooldown", type=int, default=None)
+    parser_strategy.add_argument("--min-position-hold-bars", type=int, default=None)
+    parser_strategy.add_argument("--flat-signal-exit-grace-bars", type=int, default=None)
+    parser_strategy.add_argument("--max-position-hold-bars", type=int, default=None)
     parser_strategy.add_argument("--max-open", type=int, default=None)
     parser_strategy.add_argument("--min-diversified-assets", type=int, default=None)
     parser_strategy.add_argument("--max-asset-allocation", type=float, default=None)
@@ -987,6 +1119,28 @@ def _has_api_credentials(runtime) -> bool:
     return bool(api_key and api_secret)
 
 
+def _model_taker_fee_compatibility_error(
+    model: TrainedModel | None,
+    required_taker_fee_bps: float,
+) -> str | None:
+    if model is None:
+        return None
+    raw_fee = getattr(model, "strategy_overrides", {}).get("taker_fee_bps")
+    try:
+        model_fee = float(raw_fee)
+    except (TypeError, ValueError, OverflowError):
+        return "Model promotion evidence does not record its taker-fee assumption."
+    if not math.isfinite(model_fee) or model_fee < 0.0:
+        return "Model promotion evidence contains an invalid taker-fee assumption."
+    required = max(0.0, float(required_taker_fee_bps))
+    if model_fee + 1e-12 < required:
+        return (
+            f"Model was evaluated at {model_fee:.4f} bps taker fees, below the required "
+            f"{required:.4f} bps. Retrain and promote under current execution costs."
+        )
+    return None
+
+
 def _credential_required_message(action: str) -> str:
     return f"{action} requires Binance API key and secret in Connection settings."
 
@@ -1138,6 +1292,13 @@ def _parse_strategy_profile(raw: str) -> str:
         choices = "/".join(sorted(_STRATEGY_PROFILES))
         raise ValueError(f"Profile must be one of: {choices}.")
     return profile
+
+
+def _strategy_with_profile(strategy: StrategyConfig, profile: str) -> StrategyConfig:
+    """Return a strategy with one canonical risk profile applied."""
+
+    canonical = _parse_strategy_profile(profile)
+    return StrategyConfig(**{**strategy.asdict(), **_STRATEGY_PROFILES[canonical]})
 
 
 def _apply_training_preset(args: argparse.Namespace) -> argparse.Namespace:
@@ -3270,6 +3431,7 @@ def _load_live_start_model(
     require_model_candidate_search: bool = False,
     require_accelerator_evidence: bool = False,
     require_live_data_evidence: bool = False,
+    require_microstructure_evidence: bool = False,
     expected_symbol: str | None = None,
     expected_market_type: str | None = None,
     expected_interval: str | None = None,
@@ -3287,6 +3449,7 @@ def _load_live_start_model(
                     require_model_candidate_search=require_model_candidate_search,
                     require_accelerator_evidence=require_accelerator_evidence,
                     require_live_data_evidence=require_live_data_evidence,
+                    require_microstructure_evidence=require_microstructure_evidence,
                     expected_symbol=expected_symbol,
                     expected_market_type=expected_market_type,
                     expected_interval=expected_interval,
@@ -3467,17 +3630,13 @@ def _score_to_direction(
     side_thresholds_explicit: bool = False,
 ) -> int:
     threshold = cfg.signal_threshold if threshold is None else _clamp(float(threshold), 0.0, 1.0)
-    if market_type == "futures":
-        long_threshold = max(0.5, threshold) if threshold is not None else None
-        short_cutoff = min(0.5, float(short_threshold)) if short_threshold is not None else None
-        if short_cutoff is None and not side_thresholds_explicit and long_threshold is not None:
-            short_cutoff = min(0.5, 1.0 - long_threshold)
-        if long_threshold is not None and score >= long_threshold:
-            return 1
-        if short_cutoff is not None and score <= short_cutoff:
-            return -1
-        return 0
-    return 1 if score >= threshold else 0
+    return market_direction_from_probability(
+        score,
+        threshold,
+        market_type=market_type,
+        short_threshold=short_threshold,
+        infer_symmetric_short=not side_thresholds_explicit,
+    )
 
 
 def _live_entry_risk_skip(
@@ -4310,9 +4469,35 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     return 0
 
 
-def command_status(_: argparse.Namespace) -> int:
+def command_status(args: argparse.Namespace) -> int:
+    from .autonomous import AutonomousControl
+    from .positions import PositionsStore
+
     runtime = load_runtime()
     strategy = load_strategy()
+    if bool(getattr(args, "compact", False)):
+        if runtime.testnet:
+            environment = "testnet"
+        elif runtime.demo:
+            environment = "demo"
+        elif runtime.dry_run:
+            environment = "paper"
+        else:
+            environment = "non-mainnet"
+        execution = "paper" if runtime.dry_run else "live"
+        state = str(AutonomousControl().read().get("state") or "UNKNOWN").lower()
+        position_store = PositionsStore()
+        ledger_errors = position_store.open_integrity_errors()
+        position_count = len(position_store.load_open()) if not ledger_errors else 0
+        ledger_state = "invalid" if ledger_errors else ("tracked" if position_count else "clear")
+        print(
+            f"environment={environment} bot_state={state} risk={strategy.risk_level} "
+            f"leverage={strategy.leverage:g} ai={'enabled' if runtime.ai_enabled else 'disabled'} "
+            f"reinvest={'on' if strategy.reinvest_profits else 'off'} symbol={runtime.symbol} "
+            f"market={runtime.market_type} execution={execution} positions={position_count} "
+            f"ledger={ledger_state}"
+        )
+        return 0
     print(json.dumps({"runtime": _public_runtime_payload(runtime), "strategy": strategy.asdict()}, indent=2))
     return 0
 
@@ -4555,6 +4740,12 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         updates["max_trades_per_day"] = max(0, args.max_trades_per_day)
     if args.cooldown is not None:
         updates["cooldown_minutes"] = max(0, args.cooldown)
+    if getattr(args, "min_position_hold_bars", None) is not None:
+        updates["min_position_hold_bars"] = max(0, int(args.min_position_hold_bars))
+    if getattr(args, "flat_signal_exit_grace_bars", None) is not None:
+        updates["flat_signal_exit_grace_bars"] = max(0, int(args.flat_signal_exit_grace_bars))
+    if getattr(args, "max_position_hold_bars", None) is not None:
+        updates["max_position_hold_bars"] = max(0, int(args.max_position_hold_bars))
     if args.signal_threshold is not None:
         updates["signal_threshold"] = _clamp(args.signal_threshold, 0.01, 0.99)
     if args.max_drawdown is not None:
@@ -5025,6 +5216,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                     force=bool(getattr(args, "force", False)),
                     verify_checksum=not bool(getattr(args, "no_verify_checksum", False)),
                     require_checksum=bool(getattr(args, "require_checksum", False)),
+                    store_raw_agg_trades=not bool(getattr(args, "aggregate_only", False)),
                 )
             )
     payload = {
@@ -5079,6 +5271,389 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             if item.status == "error":
                 print(f"warning: {item.url} {item.error}", file=sys.stderr)
     return 0 if payload["status"] == "ok" else 2
+
+
+def command_microstructure_capture(args: argparse.Namespace) -> int:
+    raw_symbols = str(getattr(args, "symbols", "") or "")
+    symbols = tuple(item.strip().upper() for item in raw_symbols.split(",") if item.strip())
+    if not symbols:
+        symbols = tuple(load_runtime().symbols)
+    convert = bool(getattr(args, "convert", True))
+    if convert and importlib.util.find_spec("hftbacktest") is None:
+        print(
+            "microstructure-capture requires the microstructure extra: "
+            "python -m pip install -e .[microstructure]",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        result = capture_binance_futures_microstructure(
+            symbols,
+            duration_seconds=float(getattr(args, "seconds", 60.0)),
+            output_root=str(getattr(args, "output_root", "data/microstructure")),
+            timeout_seconds=float(getattr(args, "timeout", 10.0)),
+            convert=convert,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"microstructure-capture failed: {exc}", file=sys.stderr)
+        return 2
+    catalog_changes = 0
+    try:
+        with MarketDataStore(str(getattr(args, "db", "data/market_data.sqlite"))) as store:
+            catalog_changes = store.record_microstructure_capture(result.asdict())
+    except (OSError, ValueError) as exc:
+        print(f"microstructure-capture catalog registration failed: {exc}", file=sys.stderr)
+        return 2
+    payload = result.asdict()
+    payload["catalog_changes"] = int(catalog_changes)
+    payload["catalog_db"] = str(getattr(args, "db", "data/market_data.sqlite"))
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "microstructure-capture: "
+            f"status={result.status} capture_id={result.capture_id} "
+            f"symbols={len(result.evidence)} catalog_changes={catalog_changes}"
+        )
+        for item in result.evidence:
+            print(
+                f"  {item.symbol}: raw_messages={item.raw_messages} depth_messages={item.depth_messages} "
+                f"trades={item.trade_messages} bbo={item.book_ticker_messages} "
+                f"gaps={item.sequence_gap_count} invalid={item.invalid_event_count} "
+                f"normalized_rows={item.normalized_rows} replay={item.replay_smoke_passed}"
+            )
+            if item.error:
+                print(f"    error={item.error}", file=sys.stderr)
+        if result.errors:
+            for error in result.errors:
+                print(f"warning: {error}", file=sys.stderr)
+        print(f"manifest={result.manifest_path}")
+    return 0 if result.status == "pass" else 2
+
+
+def _parse_cli_utc_date(value: object, label: str):
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError(f"{label} must be YYYY-MM-DD") from exc
+
+
+def command_tick_archive_sync(args: argparse.Namespace) -> int:
+    import duckdb
+    import requests
+
+    from .microstructure_warehouse import MicrostructureWarehouse, SUPPORTED_TICK_ARCHIVES
+
+    recoverable_errors = (OSError, RuntimeError, ValueError, requests.RequestException, duckdb.Error)
+
+    raw_symbols = str(getattr(args, "symbols", "") or "")
+    symbols = tuple(item.strip().upper() for item in raw_symbols.split(",") if item.strip())
+    if not symbols:
+        symbols = tuple(load_runtime().symbols)
+    data_types = tuple(
+        item.strip() for item in str(getattr(args, "data_types", "") or "").split(",") if item.strip()
+    )
+    unsupported = sorted(set(data_types) - set(SUPPORTED_TICK_ARCHIVES))
+    if not data_types or unsupported:
+        detail = ",".join(unsupported) if unsupported else "missing"
+        print(f"tick-archive-sync unsupported data types: {detail}", file=sys.stderr)
+        return 2
+    try:
+        start = _parse_cli_utc_date(getattr(args, "start_date", None), "start-date")
+        end = _parse_cli_utc_date(getattr(args, "end_date", None), "end-date")
+    except ValueError as exc:
+        print(f"tick-archive-sync: {exc}", file=sys.stderr)
+        return 2
+    if start > end:
+        print("tick-archive-sync: start-date must not be after end-date", file=sys.stderr)
+        return 2
+    requested_periods = {
+        (start + timedelta(days=offset)).isoformat() for offset in range((end - start).days + 1)
+    }
+    plan: list[tuple[str, str, object]] = []
+    missing: list[dict[str, str]] = []
+    try:
+        for symbol in symbols:
+            for data_type in data_types:
+                items = list_archive_items(
+                    symbol=symbol,
+                    interval="tick",
+                    market_type="futures",
+                    cadence="daily",
+                    data_type=data_type,
+                    timeout=max(1, min(60, int(float(getattr(args, "timeout", 240.0))))),
+                )
+                by_period = {item.period: item for item in items}
+                for period in sorted(requested_periods):
+                    item = by_period.get(period)
+                    if item is None:
+                        missing.append({"symbol": symbol, "data_type": data_type, "period": period})
+                    else:
+                        plan.append((symbol, data_type, item))
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"tick-archive-sync planning failed: {exc}", file=sys.stderr)
+        return 2
+    json_mode = bool(getattr(args, "json", False))
+    results: list[dict[str, object]] = []
+    errors: list[dict[str, str]] = []
+    try:
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            for symbol, data_type, item in plan:
+                if not json_mode:
+                    print(f"tick-archive-sync start {symbol} {data_type} {item.period}", flush=True)
+
+                def progress(phase: str, completed: int, total: int | None) -> None:
+                    if not json_mode:
+                        print(
+                            f"  {phase}: {completed}/{total if total is not None else '?'}",
+                            flush=True,
+                        )
+
+                try:
+                    result = warehouse.ingest_public_archive(
+                        symbol=symbol,
+                        data_type=data_type,
+                        period=item.period,
+                        url=item.url,
+                        expected_bytes=item.size_bytes,
+                        timeout_seconds=float(getattr(args, "timeout", 240.0)),
+                        retain_archive=not bool(getattr(args, "no_retain_archive", False)),
+                        progress=progress,
+                    )
+                    results.append(result.asdict())
+                except recoverable_errors as exc:
+                    errors.append(
+                        {
+                            "symbol": symbol,
+                            "data_type": data_type,
+                            "period": item.period,
+                            "error": f"{type(exc).__name__}: {exc}",
+                        }
+                    )
+                    if not json_mode:
+                        print(f"  failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+                    continue
+                if not json_mode:
+                    print(
+                        f"tick-archive-sync complete {symbol} {data_type} {item.period}: "
+                        f"status={result.status} rows={result.rows_read}",
+                        flush=True,
+                    )
+    except recoverable_errors as exc:
+        print(f"tick-archive-sync warehouse failed: {exc}", file=sys.stderr)
+        return 2
+    payload = {
+        "status": "ok" if not errors and not missing else "incomplete",
+        "warehouse": str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+        "symbols": list(symbols),
+        "data_types": list(data_types),
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "planned_files": len(plan),
+        "planned_bytes": sum(int(item.size_bytes) for _, _, item in plan),
+        "completed_files": len(results),
+        "missing": missing,
+        "errors": errors,
+        "results": results,
+    }
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "tick-archive-sync: "
+            f"status={payload['status']} planned={len(plan)} completed={len(results)} "
+            f"missing={len(missing)} errors={len(errors)}"
+        )
+    return 0 if payload["status"] == "ok" else 2
+
+
+def command_microstructure_train(args: argparse.Namespace) -> int:
+    from .microstructure_features import (
+        apply_path_aware_lifecycle_targets,
+        build_executable_microstructure_dataset,
+    )
+    from .microstructure_model import (
+        evaluate_microstructure_model_terminal,
+        microstructure_candidate_sha256,
+        save_microstructure_model_artifact,
+        train_microstructure_action_value_model,
+    )
+    from .microstructure_warehouse import MicrostructureWarehouse
+
+    json_mode = bool(getattr(args, "json", False))
+    stop = getattr(args, "stop_loss_bps", None)
+    take = getattr(args, "take_profit_bps", None)
+    if (stop is None) != (take is None):
+        print("microstructure-train requires both --stop-loss-bps and --take-profit-bps", file=sys.stderr)
+        return 2
+    evaluate_terminal = bool(getattr(args, "evaluate_terminal", False))
+    risk_level = str(getattr(args, "risk_level", "conservative"))
+    configured_participation = getattr(args, "max_l1_participation", None)
+    max_l1_participation = (
+        {"conservative": 0.05, "regular": 0.10, "aggressive": 0.15}[risk_level]
+        if configured_participation is None
+        else float(configured_participation)
+    )
+    terminal_reservation: dict[str, object] | None = None
+    if evaluate_terminal and (stop is None or take is None):
+        print(
+            "microstructure-train --evaluate-terminal requires explicit path-aware "
+            "--stop-loss-bps and --take-profit-bps",
+            file=sys.stderr,
+        )
+        return 2
+
+    def model_progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(f"microstructure-train {phase}: {completed}/{total}", flush=True)
+
+    def warehouse_progress(phase: str, completed: int, total: int | None) -> None:
+        if not json_mode:
+            print(f"microstructure-train {phase}: {completed}/{total}", flush=True)
+
+    try:
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            backfilled = warehouse.backfill_book_ticker_paths(progress=warehouse_progress)
+            if not json_mode and backfilled:
+                print(f"microstructure-train backfilled_archives={len(backfilled)}", flush=True)
+            causal_evidence = warehouse.rebuild_causal_feature_bars(
+                str(getattr(args, "symbol", "BTCUSDT")),
+                progress=warehouse_progress,
+            )
+            if not json_mode:
+                print(
+                    "microstructure-train causal_feature_bars="
+                    f"{causal_evidence['feature_rows']} "
+                    f"source_rows={causal_evidence['source_raw_rows']} "
+                    f"build={str(causal_evidence['build_id'])[:12]}",
+                    flush=True,
+                )
+            dataset = build_executable_microstructure_dataset(
+                warehouse,
+                symbol=str(getattr(args, "symbol", "BTCUSDT")),
+                horizon_seconds=int(getattr(args, "horizon_seconds", 900)),
+                total_latency_ms=int(getattr(args, "total_latency_ms", 750)),
+                taker_fee_bps=float(getattr(args, "taker_fee_bps", 5.0)),
+                max_quote_age_ms=int(getattr(args, "max_quote_age_ms", 1000)),
+                reference_order_notional_quote=float(
+                    getattr(args, "reference_order_notional_quote", 1_000.0)
+                ),
+                max_l1_participation=max_l1_participation,
+                decision_cadence_seconds=int(
+                    getattr(args, "decision_cadence_seconds", 5)
+                ),
+            )
+            path_evidence = None
+            if stop is not None and take is not None:
+                dataset, path_evidence = apply_path_aware_lifecycle_targets(
+                    warehouse,
+                    dataset,
+                    stop_loss_bps=float(stop),
+                    take_profit_bps=float(take),
+                    trigger_execution_slippage_bps=float(
+                        getattr(args, "trigger_slippage_bps", 1.0)
+                    ),
+                )
+            artifact = train_microstructure_action_value_model(
+                dataset,
+                risk_level=risk_level,
+                compute_backend=str(getattr(args, "compute_backend", "auto")),
+                minimum_promotion_days=int(getattr(args, "minimum_promotion_days", 365)),
+                evaluate_terminal=False,
+                progress=model_progress,
+            )
+            if evaluate_terminal and artifact.status == "candidate":
+                source_evidence = dict(dataset.source_evidence or {})
+                reservation = warehouse.reserve_terminal_holdout(
+                    symbol=dataset.symbol,
+                    first_utc_day=artifact.split.terminal_start_ms // 86_400_000,
+                    last_utc_day=int(dataset.decision_time_ms[-1]) // 86_400_000,
+                    candidate_sha256=microstructure_candidate_sha256(artifact),
+                    source_manifest_fingerprint=str(
+                        source_evidence["manifest_fingerprint"]
+                    ),
+                    source_feature_build_id=str(source_evidence["build_id"]),
+                    feature_version=artifact.feature_version,
+                    model_schema_version=artifact.schema_version,
+                )
+                terminal_reservation = dict(reservation)
+                try:
+                    artifact = evaluate_microstructure_model_terminal(
+                        artifact,
+                        dataset,
+                        progress=model_progress,
+                    )
+                except Exception as exc:
+                    terminal_reservation.update(
+                        warehouse.finalize_terminal_holdout(
+                            str(reservation["reservation_id"]),
+                            result_status="evaluation_error",
+                            error=f"{type(exc).__name__}: {exc}",
+                        )
+                    )
+                    raise
+                terminal_reservation.update(
+                    warehouse.finalize_terminal_holdout(
+                        str(reservation["reservation_id"]),
+                        result_status=artifact.status,
+                    )
+                )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"microstructure-train failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+    output = str(getattr(args, "output", "data/microstructure-model.json"))
+    digest = save_microstructure_model_artifact(artifact, output)
+    payload = artifact.asdict()
+    payload.pop("model_strings", None)
+    payload["artifact_path"] = output
+    payload["artifact_sha256"] = digest
+    payload["path_target_evidence"] = asdict(path_evidence) if path_evidence is not None else None
+    payload["terminal_holdout_reservation"] = terminal_reservation
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "microstructure-train: "
+            f"status={artifact.status} rows={dataset.rows} days={artifact.unique_utc_days} "
+            f"policy_trades={artifact.policy_metrics.trades} "
+            f"selection_trades={artifact.selection_metrics.trades} "
+            f"selection_net_bps={artifact.selection_metrics.total_net_bps:+.4f} "
+            f"selection_daily_ci95=["
+            f"{artifact.selection_confidence.mean_daily_net_bps_ci_lower:+.4f},"
+            f"{artifact.selection_confidence.mean_daily_net_bps_ci_upper:+.4f}] "
+            f"l1_eligible_long={float(artifact.dataset_summary['long_liquidity_eligible_ratio'] or 0.0):.3f} "
+            f"l1_eligible_short={float(artifact.dataset_summary['short_liquidity_eligible_ratio'] or 0.0):.3f}"
+        )
+        if artifact.terminal_metrics is not None:
+            terminal_confidence = artifact.terminal_confidence
+            terminal_ci = (
+                "unavailable"
+                if terminal_confidence is None
+                else "["
+                f"{terminal_confidence.mean_daily_net_bps_ci_lower:+.4f},"
+                f"{terminal_confidence.mean_daily_net_bps_ci_upper:+.4f}]"
+            )
+            print(
+                "terminal: "
+                f"trades={artifact.terminal_metrics.trades} "
+                f"net_bps={artifact.terminal_metrics.total_net_bps:+.4f} "
+                f"daily_ci95={terminal_ci}"
+            )
+        if artifact.rejection_reasons:
+            print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
+        print(f"artifact={output} sha256={digest}")
+    successful_statuses = {"accepted"} if evaluate_terminal else {"candidate"}
+    return 0 if artifact.status in successful_statuses else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:
@@ -6423,6 +6998,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         require_model_candidate_search=not effective_dry_run,
         require_accelerator_evidence=not effective_dry_run and _backend_info.kind != "cpu",
         require_live_data_evidence=not effective_dry_run,
+        require_microstructure_evidence=not effective_dry_run and runtime.market_type == "futures",
         expected_symbol=runtime.symbol,
         expected_market_type=runtime.market_type,
         expected_interval=runtime.interval,
@@ -6440,6 +7016,30 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if model_notice is not None:
         print(model_notice, file=sys.stderr)
 
+    try:
+        if effective_dry_run:
+            cfg, commission_assumption = apply_offline_commission_floor(
+                cfg,
+                market_type=runtime.market_type,
+                symbol=runtime.symbol,
+            )
+        else:
+            cfg, commission_assumption, _commission_rates = apply_verified_commission_rate(
+                cfg,
+                client=client,
+                symbol=runtime.symbol,
+            )
+    except (BinanceAPIError, ValueError) as exc:
+        print(f"Live startup blocked: commission-rate verification failed: {exc}", file=sys.stderr)
+        return 2
+    model_fee_error = _model_taker_fee_compatibility_error(
+        model,
+        commission_assumption.modeled_taker_fee_bps,
+    )
+    if not effective_dry_run and model_fee_error is not None:
+        print(f"Live startup blocked: {model_fee_error}", file=sys.stderr)
+        return 2
+
     leverage = _resolve_futures_leverage(runtime, cfg)
     position_notional = 0.0
     position_side = 0
@@ -6449,7 +7049,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     wait_ticks = cfg.cooldown_minutes
     min_position_hold_bars = max(0, int(getattr(cfg, "min_position_hold_bars", 0) or 0))
     flat_signal_exit_grace_bars = max(0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0))
-    entry_step_index = 0
+    max_position_hold_bars = max(0, int(getattr(cfg, "max_position_hold_bars", 0) or 0))
+    entry_market_timestamp_ms = 0
     flat_signal_streak = 0
     cooldown_left = 0
     unpredictability_cooldown_left = 0
@@ -6474,6 +7075,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     print(f"Starting {mode_label} loop for {args.steps} steps on {runtime.symbol} {runtime.interval} [{runtime.market_type}]")
     if runtime.market_type == "futures":
         print(f"effective leverage: {leverage:.1f}x")
+    print(
+        "taker fee: "
+        f"{commission_assumption.modeled_taker_fee_bps:.4f} bps "
+        f"source={commission_assumption.source} verified={str(commission_assumption.verified).lower()}"
+    )
     if cfg.external_signals_enabled:
         print(
             "external signals: enabled "
@@ -6629,6 +7235,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             current_open_client_order_id = ledger_position.open_client_order_id
             current_open_exchange_order_id = ledger_position.open_exchange_order_id
             current_opened_at_ms = int(ledger_position.opened_at_ms)
+            entry_market_timestamp_ms = int(ledger_position.opened_at_ms)
     drawdown_limit = float(cfg.max_drawdown_limit)
     halt_reason = "completed"
     steps_executed = 0
@@ -6946,7 +7553,10 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             regime_evidence.notes,
         )
         regime_limit = float(cfg.max_regime_unpredictability)
-        if regime_score > regime_limit:
+        if (
+            regime_score > regime_limit
+            and regime_unpredictability_requires_cooldown(regime_score, regime_limit)
+        ):
             unpredictability_cooldown_left = max(
                 unpredictability_cooldown_left,
                 max(1, int(cfg.unpredictability_cooldown_minutes)),
@@ -7366,7 +7976,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             position_notional = direction * notional
             qty = abs(qty)
             entry_price = fill
-            entry_step_index = int(i)
+            entry_market_timestamp_ms = int(latest.timestamp)
             flat_signal_streak = 0
             position_leverage = entry_leverage
             margin_used = margin
@@ -7408,17 +8018,25 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             pnl = position_side * (price - entry_price) * qty
             pnl_pct = ((price - entry_price) / entry_price) if position_side > 0 else ((entry_price - price) / entry_price)
 
-            flat_signal = direction == 0
-            reverse_signal = direction not in (0, position_side) if runtime.market_type == "futures" else False
-            flat_signal_streak = flat_signal_streak + 1 if flat_signal else 0
-            bars_held = max(0, int(i) - int(entry_step_index))
-            flat_exit_allowed = (
-                flat_signal
-                and bars_held >= min_position_hold_bars
-                and flat_signal_streak > flat_signal_exit_grace_bars
+            interval_ms = max(1, interval_milliseconds(runtime.interval))
+            bars_held = max(
+                0,
+                (int(latest.timestamp) - int(entry_market_timestamp_ms)) // interval_ms,
             )
-            opposite_signal = reverse_signal or flat_exit_allowed
-            should_close = opposite_signal or pnl_pct >= cfg.take_profit_pct or pnl_pct <= -cfg.stop_loss_pct
+            lifecycle_exit = evaluate_position_exit(
+                position_side=position_side,
+                signal_direction=direction,
+                current_pnl_pct=pnl_pct,
+                bars_held=bars_held,
+                flat_signal_streak=flat_signal_streak,
+                stop_loss_pct=cfg.stop_loss_pct,
+                take_profit_pct=cfg.take_profit_pct,
+                min_position_hold_bars=min_position_hold_bars,
+                flat_signal_exit_grace_bars=flat_signal_exit_grace_bars,
+                max_position_hold_bars=max_position_hold_bars,
+            )
+            flat_signal_streak = lifecycle_exit.flat_signal_streak
+            should_close = lifecycle_exit.should_close
 
             if should_close:
                 fill = price * (1.0 - position_side * slippage)
@@ -7462,7 +8080,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 close_ratio = min(1.0, closed_qty / abs(qty)) if qty else 1.0
                 cash += margin_used * close_ratio + realized - exit_fee
                 record_signed_live_close(
-                    reason="signal_or_stop",
+                    reason=lifecycle_exit.reason,
                     closed_qty=closed_qty,
                     fill_price=fill,
                     realized_pnl=realized,
@@ -7490,6 +8108,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "fill_source": fill_source,
                         "bars_held": int(bars_held),
                         "flat_signal_streak": int(flat_signal_streak),
+                        "exit_reason": lifecycle_exit.reason,
                         "position_id": close_position_id,
                         "close_client_order_id": str(close_client_order_id or ""),
                     }
@@ -7502,6 +8121,7 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     qty = 0.0
                     margin_used = 0.0
                     entry_price = 0.0
+                    entry_market_timestamp_ms = 0
                     position_leverage = leverage
                     flat_signal_streak = 0
                     cooldown_left = max(0, wait_ticks)
@@ -8062,9 +8682,11 @@ def _build_autonomous_decision_fn(
     require_model_candidate_search: bool = False,
     require_accelerator_evidence: bool = False,
     require_live_data_evidence: bool = False,
+    require_microstructure_evidence: bool = False,
     expected_symbol: str | None = None,
     expected_market_type: str | None = None,
     expected_interval: str | None = None,
+    minimum_model_taker_fee_bps: float | None = None,
 ):
     from .autonomous import Decision
 
@@ -8075,6 +8697,7 @@ def _build_autonomous_decision_fn(
         require_model_candidate_search=require_model_candidate_search,
         require_accelerator_evidence=require_accelerator_evidence,
         require_live_data_evidence=require_live_data_evidence,
+        require_microstructure_evidence=require_microstructure_evidence,
         expected_symbol=expected_symbol,
         expected_market_type=expected_market_type,
         expected_interval=expected_interval,
@@ -8083,6 +8706,11 @@ def _build_autonomous_decision_fn(
         return None, model_error, model_notice
     if model is None and not effective_dry_run:
         return None, f"Autonomous live mode requires a compatible model: {model_path}", model_notice
+    if not effective_dry_run and minimum_model_taker_fee_bps is not None:
+        fee_error = _model_taker_fee_compatibility_error(model, minimum_model_taker_fee_bps)
+        if fee_error is not None:
+            return None, f"Autonomous startup blocked: {fee_error}", model_notice
+    effective_strategy = apply_model_strategy_overrides(strategy, model) if model is not None else strategy
     state: dict[str, object] = {"model": model, "step": 0}
 
     def decide(client, runtime: RuntimeConfig, current_strategy: StrategyConfig, _objective) -> Decision:
@@ -8096,14 +8724,24 @@ def _build_autonomous_decision_fn(
             else _build_model_rows(candles, current_strategy, compute_backend=runtime.compute_backend)
         )
         if not rows:
-            price, _ts = client.get_symbol_price(runtime.symbol)
-            return Decision(side="FLAT", confidence=0.0, mark_price=float(price))
+            price, observed_at_ms = client.get_symbol_price(runtime.symbol)
+            return Decision(
+                side="FLAT",
+                confidence=0.0,
+                mark_price=float(price),
+                observed_at_ms=int(observed_at_ms),
+            )
         if current_model is None:
             if not effective_dry_run:  # pragma: no cover - rejected before the decision function is returned
                 raise RuntimeError(f"Autonomous live mode requires a compatible model: {model_path}")
             if not training_rows:
-                price, _ts = client.get_symbol_price(runtime.symbol)
-                return Decision(side="FLAT", confidence=0.0, mark_price=float(price))
+                price, observed_at_ms = client.get_symbol_price(runtime.symbol)
+                return Decision(
+                    side="FLAT",
+                    confidence=0.0,
+                    mark_price=float(price),
+                    observed_at_ms=int(observed_at_ms),
+                )
             current_model = train(
                 training_rows,
                 epochs=40,
@@ -8216,8 +8854,12 @@ def _build_autonomous_decision_fn(
             regime_confidence=float(regime_evidence.confidence),
             regime_notes=tuple(regime_evidence.notes),
             regime_unpredictability_score=float(regime_score),
+            observed_at_ms=int(latest.timestamp),
         )
 
+    # Carry the model's tested execution contract into the coordinator without
+    # breaking the public three-value return shape used by integrations.
+    setattr(decide, "_effective_strategy", effective_strategy)
     return decide, None, model_notice
 
 
@@ -8243,7 +8885,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
             print(str(exc), file=sys.stderr)
             return 2
         runtime = load_runtime()
-        strategy = load_strategy()
+        strategy = _strategy_with_profile(load_strategy(), objective.name)
         if getattr(args, "live", False):
             effective_dry_run = False
         elif getattr(args, "paper", False):
@@ -8256,6 +8898,23 @@ def command_autonomous(args: argparse.Namespace) -> int:
         if not effective_dry_run and not _has_api_credentials(runtime):
             print(_credential_required_message("Autonomous live mode"), file=sys.stderr)
             return 2
+        try:
+            client = _build_client(runtime)
+            if effective_dry_run:
+                strategy, commission_assumption = apply_offline_commission_floor(
+                    strategy,
+                    market_type=runtime.market_type,
+                    symbol=runtime.symbol,
+                )
+            else:
+                strategy, commission_assumption, _commission_rates = apply_verified_commission_rate(
+                    strategy,
+                    client=client,
+                    symbol=runtime.symbol,
+                )
+        except (BinanceAPIError, ValueError) as exc:
+            print(f"Autonomous startup blocked: commission-rate verification failed: {exc}", file=sys.stderr)
+            return 2
         model_path = Path(getattr(args, "model", "data/model.json"))
         decision_fn, model_error, model_notice = _build_autonomous_decision_fn(
             model_path=model_path,
@@ -8263,15 +8922,20 @@ def command_autonomous(args: argparse.Namespace) -> int:
             effective_dry_run=effective_dry_run,
             require_model_candidate_search=not effective_dry_run,
             require_live_data_evidence=not effective_dry_run,
+            require_microstructure_evidence=not effective_dry_run and runtime.market_type == "futures",
             expected_symbol=runtime.symbol,
             expected_market_type=runtime.market_type,
             expected_interval=runtime.interval,
+            minimum_model_taker_fee_bps=commission_assumption.modeled_taker_fee_bps,
         )
         if model_error is not None or decision_fn is None:
             print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)
             return 2
         if model_notice is not None:
             print(model_notice, file=sys.stderr)
+        model_strategy = getattr(decision_fn, "_effective_strategy", None)
+        if isinstance(model_strategy, StrategyConfig):
+            strategy = model_strategy
         cfg = AutonomousConfig(
             objective=objective.name,
             poll_seconds=max(0.0, float(getattr(args, "poll_seconds", 30.0))),
@@ -8280,11 +8944,11 @@ def command_autonomous(args: argparse.Namespace) -> int:
             dry_run=effective_dry_run,
             starting_reference_cash=max(0.0, float(getattr(args, "starting_cash", 1000.0))),
         )
-        try:
-            client = _build_client(runtime)
-        except BinanceAPIError as exc:
-            print(f"Autonomous startup blocked: {exc}", file=sys.stderr)
-            return 2
+        print(
+            "taker fee: "
+            f"{commission_assumption.modeled_taker_fee_bps:.4f} bps "
+            f"source={commission_assumption.source} verified={str(commission_assumption.verified).lower()}"
+        )
         result = run_loop(
             client,
             runtime,

@@ -303,6 +303,11 @@ class PositionsStore:
                 return position
         return None
 
+    def open_integrity_errors(self) -> tuple[str, ...]:
+        """Return lossless validation errors for the durable open-position ledger."""
+
+        return self._open_file_integrity_errors(self.open_path)
+
     # ---- validation helpers -------------------------------------------------
 
     @staticmethod

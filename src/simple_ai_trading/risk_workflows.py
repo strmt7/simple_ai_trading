@@ -42,6 +42,7 @@ def command_risk(
         require_model_candidate_search=strict_model_evidence,
         require_accelerator_evidence=strict_model_evidence and backend.kind != "cpu",
         require_live_data_evidence=strict_model_evidence,
+        require_microstructure_evidence=strict_model_evidence and runtime.market_type == "futures",
         expected_symbol=runtime.symbol,
         expected_market_type=runtime.market_type,
         expected_interval=runtime.interval,

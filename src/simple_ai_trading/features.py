@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from array import array
 import math
 from dataclasses import dataclass
 from typing import Sequence, Tuple
@@ -106,6 +107,9 @@ class ModelRow:
     low: float | None = None
     quote_volume: float = 0.0
     trade_count: int = 0
+    trailing_quote_volume_24h_estimate: float = 0.0
+    trailing_trade_count_24h_estimate: int = 0
+    trailing_activity_observed_ms: int = 0
 
 
 class FeatureAccelerationError(RuntimeError):
@@ -135,6 +139,15 @@ def _sma(values: Sequence[float], window: int) -> float:
 def _prefix_sum(values: Sequence[float]) -> list[float]:
     total = 0.0
     prefix = [0.0]
+    for value in values:
+        total += value
+        prefix.append(total)
+    return prefix
+
+
+def _compact_prefix_sum(values: Sequence[float]) -> array:
+    total = 0.0
+    prefix = array("d", [0.0])
     for value in values:
         total += value
         prefix.append(total)
@@ -204,24 +217,59 @@ def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optio
 @dataclass(frozen=True)
 class _FeatureCache:
     candles: list[Candle]
-    closes: list[float]
-    volumes: list[float]
-    close_prefix: list[float]
-    volume_prefix: list[float]
-    abs_change_prefix: list[float]
-    true_range_prefix: list[float]
-    gain_prefix: list[float]
-    loss_prefix: list[float]
+    closes: array
+    volumes: array
+    close_prefix: array
+    volume_prefix: array
+    abs_change_prefix: array
+    true_range_prefix: array
+    gain_prefix: array
+    loss_prefix: array
+    trailing_quote_volume_24h_estimate: array
+    trailing_trade_count_24h_estimate: array
+    trailing_activity_observed_ms: array
+
+
+def _causal_24h_activity_estimates(candles: Sequence[Candle]) -> tuple[array, array, array]:
+    """Estimate trailing 24h activity using only observations available at each row."""
+
+    window_ms = 24 * 60 * 60 * 1000
+    minimum_observed_ms = 5 * 60 * 1000
+    quote_estimates = array("d")
+    trade_estimates = array("q")
+    observed_windows = array("q")
+    start = 0
+    quote_sum = 0.0
+    trade_sum = 0
+    for index, candle in enumerate(candles):
+        quote_sum += max(0.0, float(getattr(candle, "quote_volume", 0.0) or 0.0))
+        trade_sum += max(0, int(getattr(candle, "trade_count", 0) or 0))
+        cutoff = int(candle.close_time) - window_ms
+        while start < index and int(candles[start].close_time) < cutoff:
+            quote_sum -= max(0.0, float(getattr(candles[start], "quote_volume", 0.0) or 0.0))
+            trade_sum -= max(0, int(getattr(candles[start], "trade_count", 0) or 0))
+            start += 1
+        observed_ms = max(1, int(candle.close_time) - int(candles[start].open_time) + 1)
+        observed_windows.append(min(window_ms, observed_ms))
+        if observed_ms < minimum_observed_ms:
+            quote_estimates.append(0.0)
+            trade_estimates.append(0)
+            continue
+        scale = float(window_ms) / float(min(window_ms, observed_ms))
+        quote_estimates.append(max(0.0, float(quote_sum) * scale))
+        trade_estimates.append(max(0, int(round(float(trade_sum) * scale))))
+    return quote_estimates, trade_estimates, observed_windows
 
 
 def _build_feature_cache(candles: Sequence[Candle]) -> _FeatureCache:
     cleaned = [candle for candle in clean_candles(candles) if _valid_ohlcv(candle)]
-    closes = [candle.close for candle in cleaned]
-    volumes = [candle.volume for candle in cleaned]
-    abs_changes = [0.0]
-    true_ranges = [0.0]
-    gains = [0.0]
-    losses = [0.0]
+    closes = array("d", (candle.close for candle in cleaned))
+    volumes = array("d", (candle.volume for candle in cleaned))
+    abs_changes = array("d", [0.0])
+    true_ranges = array("d", [0.0])
+    gains = array("d", [0.0])
+    losses = array("d", [0.0])
+    trailing_quote_volume, trailing_trade_count, trailing_observed_ms = _causal_24h_activity_estimates(cleaned)
     for index in range(1, len(cleaned)):
         previous = closes[index - 1]
         current = closes[index]
@@ -234,12 +282,15 @@ def _build_feature_cache(candles: Sequence[Candle]) -> _FeatureCache:
         candles=cleaned,
         closes=closes,
         volumes=volumes,
-        close_prefix=_prefix_sum(closes),
-        volume_prefix=_prefix_sum(volumes),
-        abs_change_prefix=_prefix_sum(abs_changes),
-        true_range_prefix=_prefix_sum(true_ranges),
-        gain_prefix=_prefix_sum(gains),
-        loss_prefix=_prefix_sum(losses),
+        close_prefix=_compact_prefix_sum(closes),
+        volume_prefix=_compact_prefix_sum(volumes),
+        abs_change_prefix=_compact_prefix_sum(abs_changes),
+        true_range_prefix=_compact_prefix_sum(true_ranges),
+        gain_prefix=_compact_prefix_sum(gains),
+        loss_prefix=_compact_prefix_sum(losses),
+        trailing_quote_volume_24h_estimate=trailing_quote_volume,
+        trailing_trade_count_24h_estimate=trailing_trade_count,
+        trailing_activity_observed_ms=trailing_observed_ms,
     )
 
 
@@ -428,6 +479,9 @@ def _make_rows_tensor(
                 low=cache.candles[index].low,
                 quote_volume=cache.candles[index].quote_volume,
                 trade_count=cache.candles[index].trade_count,
+                trailing_quote_volume_24h_estimate=cache.trailing_quote_volume_24h_estimate[index],
+                trailing_trade_count_24h_estimate=cache.trailing_trade_count_24h_estimate[index],
+                trailing_activity_observed_ms=cache.trailing_activity_observed_ms[index],
             )
         )
     return rows
@@ -601,6 +655,9 @@ def make_rows(
                 low=cache.candles[i].low,
                 quote_volume=cache.candles[i].quote_volume,
                 trade_count=cache.candles[i].trade_count,
+                trailing_quote_volume_24h_estimate=cache.trailing_quote_volume_24h_estimate[i],
+                trailing_trade_count_24h_estimate=cache.trailing_trade_count_24h_estimate[i],
+                trailing_activity_observed_ms=cache.trailing_activity_observed_ms[i],
             )
         )
 
@@ -657,6 +714,9 @@ def make_inference_rows(
                 low=cache.candles[i].low,
                 quote_volume=cache.candles[i].quote_volume,
                 trade_count=cache.candles[i].trade_count,
+                trailing_quote_volume_24h_estimate=cache.trailing_quote_volume_24h_estimate[i],
+                trailing_trade_count_24h_estimate=cache.trailing_trade_count_24h_estimate[i],
+                trailing_activity_observed_ms=cache.trailing_activity_observed_ms[i],
             )
         )
 

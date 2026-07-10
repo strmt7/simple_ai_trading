@@ -160,6 +160,30 @@ class SymbolConstraints:
     max_notional: float
 
 
+@dataclass(frozen=True)
+class CommissionRates:
+    """Account- and symbol-specific commission rates returned by Binance."""
+
+    symbol: str
+    market_type: str
+    maker_rate: float
+    taker_rate: float
+    source: str
+    rpi_rate: float = 0.0
+
+    @property
+    def maker_bps(self) -> float:
+        return self.maker_rate * 10_000.0
+
+    @property
+    def taker_bps(self) -> float:
+        return self.taker_rate * 10_000.0
+
+    @property
+    def rpi_bps(self) -> float:
+        return self.rpi_rate * 10_000.0
+
+
 class BinanceClient:
     """Small HTTP client wrapping only the endpoints required by this tool."""
 
@@ -741,6 +765,93 @@ class BinanceClient:
     def get_account(self) -> Dict[str, object]:
         endpoint = "/api/v3/account" if self.market_type == "spot" else "/fapi/v2/account"
         return self._request_dict("GET", endpoint, {}, signed=True, label="account")
+
+    @staticmethod
+    def _validated_commission_rate(value: Any, label: str) -> float:
+        rate = BinanceClient._parse_required_float(value, label)
+        if rate < 0.0 or rate > 1.0:
+            raise BinanceAPIError(f"Unexpected commission rate for {label}")
+        return rate
+
+    def get_commission_rates(self, symbol: str) -> CommissionRates:
+        """Return conservative effective maker/taker rates for one account symbol."""
+
+        normalized_symbol = str(symbol or "").strip().upper()
+        if not normalized_symbol:
+            raise BinanceAPIError("Commission-rate query requires a symbol")
+        if self.market_type == "futures":
+            payload = self._request_dict(
+                "GET",
+                "/fapi/v1/commissionRate",
+                {"symbol": normalized_symbol},
+                signed=True,
+                label="futures commission rate",
+            )
+            response_symbol = str(payload.get("symbol") or "").strip().upper()
+            if response_symbol != normalized_symbol:
+                raise BinanceAPIError("Unexpected symbol in futures commission-rate response")
+            maker_rate = self._validated_commission_rate(
+                payload.get("makerCommissionRate"),
+                "makerCommissionRate",
+            )
+            taker_rate = self._validated_commission_rate(
+                payload.get("takerCommissionRate"),
+                "takerCommissionRate",
+            )
+            rpi_rate = self._validated_commission_rate(
+                payload.get("rpiCommissionRate", 0.0),
+                "rpiCommissionRate",
+            )
+            return CommissionRates(
+                symbol=normalized_symbol,
+                market_type="futures",
+                maker_rate=maker_rate,
+                taker_rate=taker_rate,
+                rpi_rate=rpi_rate,
+                source="binance_futures_user_commission_rate",
+            )
+
+        payload = self._request_dict(
+            "GET",
+            "/api/v3/account/commission",
+            {"symbol": normalized_symbol},
+            signed=True,
+            label="spot commission rate",
+        )
+        response_symbol = str(payload.get("symbol") or "").strip().upper()
+        if response_symbol != normalized_symbol:
+            raise BinanceAPIError("Unexpected symbol in spot commission-rate response")
+
+        def total_rate(order_role: str) -> float:
+            total = 0.0
+            for component_name in ("standardCommission", "specialCommission", "taxCommission"):
+                component = payload.get(component_name)
+                if not isinstance(component, Mapping):
+                    raise BinanceAPIError(f"Unexpected {component_name} commission payload")
+                role_rate = self._validated_commission_rate(
+                    component.get(order_role),
+                    f"{component_name}.{order_role}",
+                )
+                buyer_rate = self._validated_commission_rate(
+                    component.get("buyer"),
+                    f"{component_name}.buyer",
+                )
+                seller_rate = self._validated_commission_rate(
+                    component.get("seller"),
+                    f"{component_name}.seller",
+                )
+                total += role_rate + max(buyer_rate, seller_rate)
+            if total > 1.0:
+                raise BinanceAPIError(f"Unexpected aggregate spot {order_role} commission rate")
+            return total
+
+        return CommissionRates(
+            symbol=normalized_symbol,
+            market_type="spot",
+            maker_rate=total_rate("maker"),
+            taker_rate=total_rate("taker"),
+            source="binance_spot_user_commission_rate_conservative",
+        )
 
     def get_symbol_price(self, symbol: str) -> Tuple[float, int]:
         endpoint = "/api/v3/ticker/price" if self.market_type == "spot" else "/fapi/v1/ticker/price"

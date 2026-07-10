@@ -3,7 +3,7 @@
 from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass, replace
-from typing import Dict, List, Sequence
+from typing import Callable, Dict, List, Mapping, Sequence
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .compute import BackendInfo, resolve_backend
@@ -11,22 +11,35 @@ from .execution_simulation import (
     ExecutionAssumptions,
     SimulatedFill,
     SymbolExecutionProfile,
-    execution_assumptions_for_symbol,
+    market_row_execution_assumptions,
+    market_row_quote_volume_notional,
+    market_row_reported_quote_volume_notional,
+    market_row_trailing_quote_volume_24h_estimate,
     simulate_market_fill,
 )
 from .features import ModelRow
 from .financial_sanity import blocking_reasons, build_backtest_financial_sanity_report
 from .liquidity_session import LiquiditySessionAdjustment, apply_liquidity_session_meta, liquidity_session_adjustment
 from .meta_label import MetaLabelDecision, apply_meta_label_policy
+from .position_lifecycle import evaluate_position_exit
 from .model import (
+    MAX_SERIALIZED_LIGHTGBM_DEPTH,
+    MAX_SERIALIZED_LIGHTGBM_NODES,
+    MAX_SERIALIZED_LIGHTGBM_TREES,
     TrainedModel,
     confidence_adjusted_probability,
     effective_training_backend_name,
+    market_direction_from_probability,
     model_direction_thresholds,
     model_decision_threshold,
 )
 from .regime import classify_market_regime
-from .risk_controls import market_regime_unpredictability, stop_loss_sized_notional_pct
+from .risk_controls import (
+    market_regime_unpredictability,
+    regime_unpredictability_requires_cooldown,
+    stop_loss_sized_notional_pct,
+)
+from .trade_tape_features import TRADE_TAPE_FEATURES_PER_WINDOW
 from .types import StrategyConfig
 
 
@@ -64,6 +77,7 @@ class BacktestResult:
     meta_label_skips: int = 0
     meta_label_downsizes: int = 0
     regime_entry_skips: int = 0
+    regime_entry_downsizes: int = 0
     stopped_by_liquidation: bool = False
     liquidation_events: int = 0
     liquidation_loss: float = 0.0
@@ -260,6 +274,43 @@ def risk_adjusted_backtest_score(result: object, *, starting_cash: float = 1000.
     return float(score)
 
 
+def threshold_backtest_selection_score(
+    result: object,
+    *,
+    starting_cash: float = 1000.0,
+    min_closed_trades: int = 0,
+    min_trades_per_day: float = 0.0,
+    duration_days: float | None = None,
+) -> float:
+    """Score threshold candidates while discouraging one-trade overfit."""
+
+    score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
+    cash = max(1.0, _finite_float(starting_cash, 1000.0))
+    closed = max(0, int(_finite_float(getattr(result, "closed_trades", 0), 0.0)))
+    days = max(1.0, _finite_float(duration_days, backtest_result_duration_days(result)))
+    min_closed = max(0, int(min_closed_trades))
+    min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
+    required_daily = int(math.ceil(min_daily * days)) if min_daily > 0.0 else 0
+    required = max(min_closed, required_daily)
+    missing = max(0, required - closed)
+    if missing > 0 and not risk_gated_activity_explains_shortfall(
+        result,
+        min_closed_trades=min_closed,
+        min_trades_per_day=min_daily,
+        duration_days=days,
+    ):
+        score -= cash * (0.02 + 0.006 * float(missing))
+    if required >= 3 and closed == 1:
+        score -= cash * 0.035
+    realized = _finite_float(getattr(result, "realized_pnl", 0.0), 0.0)
+    if closed > 0 and realized <= 0.0:
+        score -= cash * 0.015
+    profit_factor = _finite_float(getattr(result, "profit_factor", 0.0), 0.0)
+    if closed > 0 and 0.0 < profit_factor < 1.0:
+        score -= cash * 0.015
+    return float(score)
+
+
 def _bps_to_rate(bps: float) -> float:
     return max(0.0, bps) / 10_000.0
 
@@ -271,6 +322,7 @@ def _fill_price(
     *,
     notional: float = 0.0,
     volume: float = 0.0,
+    daily_volume: float = 0.0,
     symbol_profile: SymbolExecutionProfile | None = None,
     assumptions: ExecutionAssumptions | None = None,
 ) -> float:
@@ -280,6 +332,7 @@ def _fill_price(
         cfg,
         notional=notional,
         volume=volume,
+        daily_volume=daily_volume,
         symbol_profile=symbol_profile,
         assumptions=assumptions,
     ).fill_price
@@ -292,6 +345,7 @@ def _simulate_fill(
     *,
     notional: float = 0.0,
     volume: float = 0.0,
+    daily_volume: float = 0.0,
     symbol_profile: SymbolExecutionProfile | None = None,
     assumptions: ExecutionAssumptions | None = None,
 ) -> SimulatedFill:
@@ -301,32 +355,22 @@ def _simulate_fill(
         notional,
         cfg,
         bar_volume_notional=volume,
+        daily_volume_notional=daily_volume,
         symbol_profile=symbol_profile,
         assumptions=assumptions,
     )
 
 
 def _row_quote_volume_notional(row: ModelRow, price: float) -> float:
-    quote_volume = _finite_float(getattr(row, "quote_volume", 0.0), 0.0)
-    if quote_volume > 0.0:
-        return quote_volume
-    return max(0.0, _finite_float(getattr(row, "volume", 0.0), 0.0) * max(0.0, price))
+    return market_row_quote_volume_notional(row, price)
 
 
 def _row_reported_quote_volume_notional(row: ModelRow) -> float:
-    return max(0.0, _finite_float(getattr(row, "quote_volume", 0.0), 0.0))
+    return market_row_reported_quote_volume_notional(row)
 
 
-def _row_trade_count(row: ModelRow) -> int:
-    return max(0, int(_finite_float(getattr(row, "trade_count", 0), 0.0)))
-
-
-def _row_range_bps(row: ModelRow, price: float) -> float:
-    high = _finite_float(getattr(row, "high", price), price)
-    low = _finite_float(getattr(row, "low", price), price)
-    midpoint = max(1e-12, (max(high, low, price) + min(high, low, price)) / 2.0)
-    observed_range = max(0.0, high - low)
-    return max(0.0, min(10_000.0, observed_range / midpoint * 10_000.0))
+def _row_trailing_quote_volume_24h_estimate(row: ModelRow) -> float:
+    return market_row_trailing_quote_volume_24h_estimate(row)
 
 
 def _row_execution_assumptions(
@@ -336,50 +380,11 @@ def _row_execution_assumptions(
     symbol_profile: SymbolExecutionProfile | None = None,
     include_range: bool = True,
 ) -> ExecutionAssumptions:
-    """Return per-row adverse execution assumptions from real bar evidence.
-
-    This is still an L1/candle proxy, not a queue-position simulator. It makes
-    second-level backtests more honest by charging wider fills during high
-    intrabar range or sparse-trade seconds when no top-of-book/L2 tape exists.
-    """
-
-    price = max(0.0, _finite_float(getattr(row, "close", 0.0), 0.0))
-    base = execution_assumptions_for_symbol(cfg, symbol_profile)
-    has_activity_evidence = (
-        _finite_float(getattr(row, "quote_volume", 0.0), 0.0) > 0.0
-        or _row_trade_count(row) > 0
-    )
-    range_bps = _row_range_bps(row, price) if include_range and has_activity_evidence and price > 0.0 else 0.0
-    has_range_evidence = range_bps > 0.0
-    if not has_range_evidence and not has_activity_evidence:
-        return base
-
-    trade_count = _row_trade_count(row)
-    sparse_trade_multiplier = 1.0
-    if has_activity_evidence:
-        if trade_count <= 0:
-            sparse_trade_multiplier = 2.0
-        else:
-            sparse_trade_multiplier = 1.0 + min(1.0, 1.0 / math.sqrt(float(trade_count)))
-
-    spread_bps = max(base.spread_bps, min(250.0, range_bps * 0.12))
-    volatility_buffer_bps = max(base.volatility_buffer_bps, min(500.0, range_bps * 0.35))
-    liquidity_haircut = max(
-        base.liquidity_haircut,
-        min(1.0, base.liquidity_haircut + max(0.0, sparse_trade_multiplier - 1.0) * 0.25),
-    )
-    impact_coefficient = max(base.impact_coefficient, base.impact_coefficient * sparse_trade_multiplier)
-    testnet_to_live_buffer_bps = max(
-        base.testnet_to_live_buffer_bps,
-        spread_bps * (1.0 + liquidity_haircut),
-    )
-    return ExecutionAssumptions(
-        spread_bps=float(spread_bps),
-        latency_ms=int(base.latency_ms),
-        liquidity_haircut=float(liquidity_haircut),
-        impact_coefficient=float(impact_coefficient),
-        volatility_buffer_bps=float(volatility_buffer_bps),
-        testnet_to_live_buffer_bps=float(testnet_to_live_buffer_bps),
+    return market_row_execution_assumptions(
+        row,
+        cfg,
+        symbol_profile=symbol_profile,
+        include_range=include_range,
     )
 
 
@@ -390,15 +395,56 @@ def _normalize_market_direction(
     *,
     short_threshold: float | None = None,
 ) -> int:
-    if market_type == "futures":
-        long_threshold = max(0.5, float(threshold)) if threshold is not None else None
-        short_cutoff = min(0.5, float(short_threshold)) if short_threshold is not None else None
-        if long_threshold is not None and signal_score >= long_threshold:
-            return 1
-        if short_cutoff is not None and signal_score <= short_cutoff:
-            return -1
-        return 0
-    return 1 if threshold is not None and signal_score >= threshold else 0
+    return market_direction_from_probability(
+        signal_score,
+        threshold,
+        market_type=market_type,
+        short_threshold=short_threshold,
+    )
+
+
+def _regime_soft_gate_size_multiplier(
+    *,
+    regime_score: float,
+    regime_limit: float,
+    signal_score: float,
+    direction: int,
+    long_threshold: float | None,
+    short_threshold: float | None,
+    market_type: str,
+) -> float:
+    """Return a reduced entry size for borderline unpredictable regimes."""
+
+    score = _finite_float(regime_score, float("nan"))
+    limit = _finite_float(regime_limit, float("nan"))
+    if not math.isfinite(score) or not math.isfinite(limit):
+        return 0.0
+    score = max(0.0, min(1.0, score))
+    limit = max(0.0, min(1.0, limit))
+    if score <= limit:
+        return 1.0
+    if regime_unpredictability_requires_cooldown(score, limit):
+        return 0.0
+    if direction == 0:
+        return 0.0
+
+    if direction > 0:
+        threshold = max(0.5, float(long_threshold)) if long_threshold is not None else None
+        margin = _finite_float(signal_score, 0.5) - float(threshold if threshold is not None else 1.0)
+    elif str(market_type).lower() == "futures":
+        threshold = min(0.5, float(short_threshold)) if short_threshold is not None else None
+        margin = float(threshold if threshold is not None else 0.0) - _finite_float(signal_score, 0.5)
+    else:
+        return 0.0
+    if threshold is None:
+        return 0.0
+
+    severity = (score - limit) / max(1e-9, 1.0 - limit)
+    severity = max(0.0, min(1.0, severity))
+    required_margin = 0.01 + 0.06 * severity
+    if margin < required_margin:
+        return 0.0
+    return max(0.20, 1.0 - 0.70 * severity)
 
 
 def _close_position(
@@ -412,6 +458,7 @@ def _close_position(
     *,
     symbol_profile: SymbolExecutionProfile | None = None,
     fill_volume_notional: float = 0.0,
+    daily_volume_notional: float = 0.0,
     execution_assumptions: ExecutionAssumptions | None = None,
 ) -> tuple[float, float, float, float, float]:
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
@@ -421,6 +468,7 @@ def _close_position(
         cfg,
         notional=abs(notional),
         volume=fill_volume_notional if fill_volume_notional > 0.0 else abs(notional) * 20.0,
+        daily_volume=daily_volume_notional,
         symbol_profile=symbol_profile,
         assumptions=execution_assumptions,
     )
@@ -593,6 +641,7 @@ def _buy_hold_pnl(
         cfg,
         notional=baseline_notional,
         volume=first_volume_notional if first_volume_notional > 0.0 else baseline_notional * 20.0,
+        daily_volume=_row_trailing_quote_volume_24h_estimate(first_row),
         symbol_profile=symbol_profile,
         assumptions=_row_execution_assumptions(first_row, cfg, symbol_profile=symbol_profile),
     )
@@ -602,6 +651,7 @@ def _buy_hold_pnl(
         cfg,
         notional=baseline_notional,
         volume=last_volume_notional if last_volume_notional > 0.0 else baseline_notional * 20.0,
+        daily_volume=_row_trailing_quote_volume_24h_estimate(last_row),
         symbol_profile=symbol_profile,
         assumptions=_row_execution_assumptions(last_row, cfg, symbol_profile=symbol_profile),
     )
@@ -708,6 +758,227 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
     probabilities: list[float] = []
     temperature = max(1e-6, float(getattr(model, "probability_temperature", 1.0) or 1.0))
 
+    def mlp_spec_from_params(params: Mapping[str, object], input_dim_default: int):
+        raw_layers = params.get("layers")
+        if not isinstance(raw_layers, list) or not raw_layers:
+            return None
+        input_dim = max(1, min(
+            int(_clamp_float(params.get("input_dim", input_dim_default), 1, max(1, model.feature_dim), input_dim_default)),
+            max(1, model.feature_dim),
+        ))
+        expected_inputs = input_dim
+        layer_specs = []
+        for raw_layer in raw_layers:
+            if not isinstance(raw_layer, dict):
+                return None
+            raw_weights = raw_layer.get("weights")
+            raw_bias = raw_layer.get("bias")
+            if not isinstance(raw_weights, list) or not isinstance(raw_bias, list):
+                return None
+            try:
+                bias_values = [float(value) for value in raw_bias]
+            except (TypeError, ValueError, OverflowError):
+                return None
+            output_dim = len(bias_values)
+            if output_dim <= 0 or len(raw_weights) != expected_inputs:
+                return None
+            matrix: list[list[float]] = []
+            try:
+                for raw_column in raw_weights:
+                    if not isinstance(raw_column, list) or len(raw_column) < output_dim:
+                        return None
+                    column = [float(raw_column[index]) for index in range(output_dim)]
+                    if any(not math.isfinite(value) for value in column):
+                        return None
+                    matrix.append(column)
+            except (TypeError, ValueError, OverflowError):
+                return None
+            if any(not math.isfinite(value) for value in bias_values):
+                return None
+            layer_specs.append((
+                torch.tensor(matrix, dtype=torch.float32, device=device),
+                torch.tensor(bias_values, dtype=torch.float32, device=device),
+                str(raw_layer.get("activation", "relu") or "relu").lower(),
+            ))
+            expected_inputs = output_dim
+        return input_dim, layer_specs
+
+    def mlp_output(input_values, layer_specs):
+        values = input_values
+        for weights_t, bias_t, activation in layer_specs:
+            values = torch.clamp(values.matmul(weights_t) + bias_t, min=-50.0, max=50.0)
+            if activation == "sigmoid":
+                values = torch.sigmoid(values)
+            elif activation == "tanh":
+                values = torch.tanh(values)
+            elif activation == "linear":
+                values = values
+            else:
+                values = torch.relu(values)
+        return values[:, 0]
+
+    def lightgbm_spec_from_params(
+        params: Mapping[str, object],
+        input_dim_default: int,
+        *,
+        tree_key: str = "tree_info",
+        average_output_key: str = "average_output",
+    ):
+        tree_info = params.get(tree_key)
+        if (
+            not isinstance(tree_info, list)
+            or not tree_info
+            or len(tree_info) > MAX_SERIALIZED_LIGHTGBM_TREES
+        ):
+            return None
+        try:
+            input_dim = max(
+                1,
+                min(
+                    int(params.get("input_dim", input_dim_default) or input_dim_default),
+                    int(model.feature_dim),
+                ),
+            )
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+        serialized_trees: list[list[tuple[int, float, int, int, bool, bool, float]]] = []
+        max_nodes = 0
+        max_depth = 0
+        total_nodes = 0
+        for tree in tree_info:
+            if not isinstance(tree, dict) or not isinstance(tree.get("tree_structure"), dict):
+                return None
+            pending: list[tuple[dict[str, object], int]] = [(tree["tree_structure"], 0)]
+            nodes: list[tuple[int, float, int, int, bool, bool, float]] = []
+            cursor = 0
+            while cursor < len(pending):
+                node, depth = pending[cursor]
+                cursor += 1
+                total_nodes += 1
+                if total_nodes > MAX_SERIALIZED_LIGHTGBM_NODES or depth >= MAX_SERIALIZED_LIGHTGBM_DEPTH:
+                    return None
+                max_depth = max(max_depth, depth)
+                if "leaf_value" in node:
+                    try:
+                        leaf_value = float(node["leaf_value"])
+                    except (TypeError, ValueError, OverflowError):
+                        return None
+                    if not math.isfinite(leaf_value):
+                        return None
+                    nodes.append((0, 0.0, len(nodes), len(nodes), True, True, leaf_value))
+                    continue
+                try:
+                    split_feature = int(node["split_feature"])
+                    threshold = float(node["threshold"])
+                except (KeyError, TypeError, ValueError, OverflowError):
+                    return None
+                if (
+                    split_feature < 0
+                    or split_feature >= input_dim
+                    or not math.isfinite(threshold)
+                    or str(node.get("decision_type", "<=") or "<=") != "<="
+                ):
+                    return None
+                left = node.get("left_child")
+                right = node.get("right_child")
+                if not isinstance(left, dict) or not isinstance(right, dict):
+                    return None
+                left_index = len(pending)
+                pending.append((left, depth + 1))
+                right_index = len(pending)
+                pending.append((right, depth + 1))
+                nodes.append(
+                    (
+                        split_feature,
+                        threshold,
+                        left_index,
+                        right_index,
+                        bool(node.get("default_left", True)),
+                        False,
+                        0.0,
+                    )
+                )
+            serialized_trees.append(nodes)
+            max_nodes = max(max_nodes, len(nodes))
+        if not serialized_trees or max_nodes <= 0:
+            return None
+
+        split_features: list[int] = []
+        thresholds: list[float] = []
+        left_children: list[int] = []
+        right_children: list[int] = []
+        default_left: list[float] = []
+        is_leaf: list[float] = []
+        leaf_values: list[float] = []
+        for nodes in serialized_trees:
+            padded = [*nodes]
+            padded.extend([(0, 0.0, 0, 0, True, True, 0.0)] * (max_nodes - len(nodes)))
+            for feature, threshold, left, right, default, leaf, leaf_value in padded:
+                split_features.append(int(feature))
+                thresholds.append(float(threshold))
+                left_children.append(int(left))
+                right_children.append(int(right))
+                default_left.append(1.0 if default else 0.0)
+                is_leaf.append(1.0 if leaf else 0.0)
+                leaf_values.append(float(leaf_value))
+
+        return {
+            "input_dim": int(input_dim),
+            "tree_count": int(len(serialized_trees)),
+            "max_nodes": int(max_nodes),
+            "max_depth": int(max_depth),
+            "tree_offsets": torch.arange(
+                len(serialized_trees),
+                dtype=torch.int64,
+                device=device,
+            ) * int(max_nodes),
+            "split_features": torch.tensor(split_features, dtype=torch.int64, device=device),
+            "thresholds": torch.tensor(thresholds, dtype=torch.float32, device=device),
+            "left_children": torch.tensor(left_children, dtype=torch.int64, device=device),
+            "right_children": torch.tensor(right_children, dtype=torch.int64, device=device),
+            "default_left": torch.tensor(default_left, dtype=torch.float32, device=device),
+            "is_leaf": torch.tensor(is_leaf, dtype=torch.float32, device=device),
+            "leaf_values": torch.tensor(leaf_values, dtype=torch.float32, device=device),
+            "average_output": bool(params.get(average_output_key, False)),
+        }
+
+    def lightgbm_output(expert_features, spec):
+        row_count = int(expert_features.shape[0])
+        tree_count = int(spec["tree_count"])
+        node_indexes = torch.zeros(
+            (row_count, tree_count),
+            dtype=torch.int64,
+            device=device,
+        )
+        offsets = spec["tree_offsets"].reshape(1, -1)
+        for _depth in range(int(spec["max_depth"]) + 1):
+            flat_indexes = node_indexes + offsets
+            leaf_mask = spec["is_leaf"][flat_indexes] > 0.5
+            split_indexes = spec["split_features"][flat_indexes]
+            feature_values = torch.gather(
+                expert_features[:, : int(spec["input_dim"])],
+                1,
+                split_indexes,
+            )
+            thresholds = spec["thresholds"][flat_indexes]
+            default_left = spec["default_left"][flat_indexes] > 0.5
+            go_left = torch.where(torch.isfinite(feature_values), feature_values <= thresholds, default_left)
+            next_indexes = torch.where(
+                go_left,
+                spec["left_children"][flat_indexes],
+                spec["right_children"][flat_indexes],
+            )
+            node_indexes = torch.where(leaf_mask, node_indexes, next_indexes)
+        flat_indexes = node_indexes + offsets
+        final_leaf_mask = spec["is_leaf"][flat_indexes] > 0.5
+        if not bool(torch.all(final_leaf_mask).detach().cpu().item()):
+            raise RuntimeError("LightGBM tensor traversal did not terminate at leaves")
+        output = torch.sum(spec["leaf_values"][flat_indexes], dim=1)
+        if bool(spec["average_output"]):
+            output = output / float(max(1, tree_count))
+        return output
+
     members = list(model.ensemble_members)
     model_specs = []
     if members:
@@ -728,10 +999,12 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
     base_std_t = torch.tensor(list(model.feature_stds), dtype=torch.float32, device=device)
     base_std_t = torch.where(torch.abs(base_std_t) > 0.0, base_std_t, torch.ones_like(base_std_t))
     hybrid_specs = []
+    positive_weight_expert_count = 0
     for expert in getattr(model, "hybrid_experts", []) or []:
         expert_weight = max(0.0, float(expert.weight))
         if expert_weight <= 0.0:
             continue
+        positive_weight_expert_count += 1
         if expert.kind in {"lorentzian_knn", "rational_quadratic_kernel"}:
             prototypes = [
                 prototype
@@ -739,7 +1012,7 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                 if len(prototype.features) == model.feature_dim
             ]
             if not prototypes:
-                continue
+                raise ValueError(f"Accelerated scorer cannot load prototypes for {expert.name}")
             proto_features = torch.tensor(
                 [prototype.features for prototype in prototypes],
                 dtype=torch.float32,
@@ -785,6 +1058,118 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                 max(1, int(expert.feature_count)),
                 dict(getattr(expert, "params", {}) or {}),
             ))
+        elif expert.kind in {"dense_mlp", "signed_payoff_mlp_ranker"}:
+            params = dict(getattr(expert, "params", {}) or {})
+            spec = mlp_spec_from_params(params, max(1, min(int(expert.feature_count), model.feature_dim)))
+            if spec is None:
+                raise ValueError(f"Accelerated scorer cannot load MLP expert {expert.name}")
+            input_dim, layer_specs = spec
+            hybrid_specs.append((
+                expert.kind,
+                expert_weight,
+                layer_specs,
+                None,
+                0,
+                1.0,
+                1.0,
+                input_dim,
+                params,
+            ))
+        elif expert.kind == "signed_payoff_ranker":
+            params = dict(getattr(expert, "params", {}) or {})
+            weights = params.get("weights")
+            if not isinstance(weights, list) or not weights:
+                raise ValueError(f"Accelerated scorer cannot load payoff expert {expert.name}")
+            input_dim = max(1, min(int(params.get("input_dim", len(weights)) or len(weights)), model.feature_dim, len(weights)))
+            payoff_weights = torch.tensor([float(value) for value in weights[:input_dim]], dtype=torch.float32, device=device)
+            hybrid_specs.append((
+                expert.kind,
+                expert_weight,
+                payoff_weights,
+                None,
+                0,
+                1.0,
+                1.0,
+                input_dim,
+                params,
+            ))
+        elif expert.kind == "signed_payoff_lightgbm_ranker":
+            params = dict(getattr(expert, "params", {}) or {})
+            default_input_dim = max(1, min(int(expert.feature_count), model.feature_dim))
+            payoff_tree_schema = str(params.get("payoff_tree_schema", "") or "")
+            if payoff_tree_schema == "action_value_hurdle_v1":
+                long_spec = lightgbm_spec_from_params(
+                    params,
+                    default_input_dim,
+                    tree_key="long_classifier_tree_info",
+                    average_output_key="long_classifier_average_output",
+                )
+                short_spec = lightgbm_spec_from_params(
+                    params,
+                    default_input_dim,
+                    tree_key="short_classifier_tree_info",
+                    average_output_key="short_classifier_average_output",
+                )
+                spec = (
+                    {
+                        "input_dim": int(long_spec["input_dim"]),
+                        "long": long_spec,
+                        "short": short_spec,
+                        "action_hurdle": True,
+                    }
+                    if long_spec is not None
+                    and short_spec is not None
+                    and int(long_spec["input_dim"]) == int(short_spec["input_dim"])
+                    else None
+                )
+            elif payoff_tree_schema == "action_value_v1":
+                long_spec = lightgbm_spec_from_params(
+                    params,
+                    default_input_dim,
+                    tree_key="long_tree_info",
+                    average_output_key="long_average_output",
+                )
+                short_spec = lightgbm_spec_from_params(
+                    params,
+                    default_input_dim,
+                    tree_key="short_tree_info",
+                    average_output_key="short_average_output",
+                )
+                spec = (
+                    {
+                        "input_dim": int(long_spec["input_dim"]),
+                        "long": long_spec,
+                        "short": short_spec,
+                        "action_value": True,
+                    }
+                    if long_spec is not None
+                    and short_spec is not None
+                    and int(long_spec["input_dim"]) == int(short_spec["input_dim"])
+                    else None
+                )
+            else:
+                spec = lightgbm_spec_from_params(params, default_input_dim)
+            if spec is None:
+                raise ValueError(f"Accelerated scorer cannot load LightGBM expert {expert.name}")
+            hybrid_specs.append((
+                expert.kind,
+                expert_weight,
+                spec,
+                None,
+                0,
+                1.0,
+                1.0,
+                int(spec["input_dim"]),
+                params,
+            ))
+        else:
+            raise ValueError(
+                f"Accelerated scorer does not support positive-weight expert kind {expert.kind}"
+            )
+    if len(hybrid_specs) != positive_weight_expert_count:
+        raise RuntimeError(
+            f"Accelerated scorer expert coverage mismatch: {len(hybrid_specs)}/{positive_weight_expert_count}"
+        )
 
     for start in range(0, len(rows), batch):
         chunk = rows[start:start + batch]
@@ -864,6 +1249,168 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         - 0.04 * torch.tanh(torch.abs(ema_gap) * 150.0)
                     )
                     expert_probs = torch.clamp(torch.sigmoid((trend + mean_reversion + breakout) * 2.2), min=0.0, max=1.0)
+                elif kind == "dense_mlp" and proto_features is not None:
+                    count = max(1, min(int(feature_count), int(expert_features.shape[1])))
+                    raw_output = mlp_output(expert_features[:, :count], proto_features)
+                    output_activation = str(params.get("output_activation", "sigmoid") or "sigmoid").lower()
+                    if output_activation == "sigmoid":
+                        expert_probs = torch.clamp(raw_output, min=0.0, max=1.0)
+                    else:
+                        expert_probs = torch.clamp(torch.sigmoid(raw_output), min=0.0, max=1.0)
+                elif kind == "signed_payoff_ranker" and proto_features is not None:
+                    count = max(1, min(int(feature_count), int(expert_features.shape[1]), int(proto_features.shape[0])))
+                    raw_score = expert_features[:, :count].matmul(proto_features[:count].reshape(-1, 1)).reshape(-1)
+                    raw_score = raw_score + float(_clamp_float(params.get("bias", 0.0), -10.0, 10.0, 0.0))
+                    clipped = torch.clamp(raw_score, min=-1.0, max=1.0)
+                    clip_bps = _clamp_float(params.get("clip_bps", 25.0), 0.1, 10_000.0, 25.0)
+                    deadband_bps = _clamp_float(params.get("deadband_bps", 0.0), 0.0, clip_bps, 0.0)
+                    deadband = min(0.95, float(deadband_bps) / max(1e-9, float(clip_bps)))
+                    magnitude = torch.abs(clipped)
+                    adjusted = torch.where(
+                        magnitude <= float(deadband),
+                        torch.zeros_like(clipped),
+                        torch.sign(clipped) * ((magnitude - float(deadband)) / max(1e-9, 1.0 - float(deadband))),
+                    )
+                    sensitivity = _clamp_float(params.get("sensitivity", 6.0), 0.1, 30.0, 6.0)
+                    probability_bias = _clamp_float(params.get("probability_bias", 0.0), -5.0, 5.0, 0.0)
+                    expert_probs = torch.clamp(
+                        torch.sigmoid(adjusted * float(sensitivity) + float(probability_bias)),
+                        min=0.0,
+                        max=1.0,
+                    )
+                elif kind == "signed_payoff_mlp_ranker" and proto_features is not None:
+                    count = max(1, min(int(feature_count), int(expert_features.shape[1])))
+                    raw_score = torch.clamp(mlp_output(expert_features[:, :count], proto_features), min=-1.0, max=1.0)
+                    clip_bps = _clamp_float(params.get("clip_bps", 25.0), 0.1, 10_000.0, 25.0)
+                    deadband_bps = _clamp_float(params.get("deadband_bps", 0.0), 0.0, clip_bps, 0.0)
+                    deadband = min(0.95, float(deadband_bps) / max(1e-9, float(clip_bps)))
+                    magnitude = torch.abs(raw_score)
+                    adjusted = torch.where(
+                        magnitude <= float(deadband),
+                        torch.zeros_like(raw_score),
+                        torch.sign(raw_score) * ((magnitude - float(deadband)) / max(1e-9, 1.0 - float(deadband))),
+                    )
+                    sensitivity = _clamp_float(params.get("sensitivity", 6.0), 0.1, 30.0, 6.0)
+                    probability_bias = _clamp_float(params.get("probability_bias", 0.0), -5.0, 5.0, 0.0)
+                    expert_probs = torch.clamp(
+                        torch.sigmoid(adjusted * float(sensitivity) + float(probability_bias)),
+                        min=0.0,
+                        max=1.0,
+                    )
+                elif kind == "signed_payoff_lightgbm_ranker" and proto_features is not None:
+                    clip_bps = _clamp_float(params.get("clip_bps", 25.0), 0.1, 10_000.0, 25.0)
+                    deadband_bps = _clamp_float(params.get("deadband_bps", 0.0), 0.0, clip_bps, 0.0)
+                    deadband = min(0.95, float(deadband_bps) / max(1e-9, float(clip_bps)))
+                    sensitivity = _clamp_float(params.get("sensitivity", 6.0), 0.1, 30.0, 6.0)
+                    probability_bias = _clamp_float(params.get("probability_bias", 0.0), -5.0, 5.0, 0.0)
+                    if bool(proto_features.get("action_hurdle", False)):
+                        long_margin = lightgbm_output(expert_features, proto_features["long"])
+                        short_margin = lightgbm_output(expert_features, proto_features["short"])
+
+                        def hurdle_action_value(side, margin):
+                            if not bool(params.get(f"{side}_enabled", False)):
+                                return torch.full_like(margin, -1.0)
+                            slope = _clamp_float(
+                                params.get(f"{side}_calibration_slope", 0.0),
+                                0.0,
+                                100.0,
+                                0.0,
+                            )
+                            intercept = _clamp_float(
+                                params.get(f"{side}_calibration_intercept", 0.0),
+                                -100.0,
+                                100.0,
+                                0.0,
+                            )
+                            positive_mean = _clamp_float(
+                                params.get(f"{side}_positive_mean", 0.0),
+                                0.0,
+                                1.0,
+                                0.0,
+                            )
+                            nonpositive_mean = _clamp_float(
+                                params.get(f"{side}_nonpositive_mean", -1.0),
+                                -1.0,
+                                0.0,
+                                -1.0,
+                            )
+                            profitable_probability = torch.sigmoid(
+                                margin * float(slope) + float(intercept)
+                            )
+                            return torch.clamp(
+                                profitable_probability * float(positive_mean)
+                                + (1.0 - profitable_probability) * float(nonpositive_mean),
+                                min=-1.0,
+                                max=1.0,
+                            )
+
+                        long_score = hurdle_action_value("long", long_margin)
+                        short_score = hurdle_action_value("short", short_margin)
+                        best_score = torch.maximum(long_score, short_score)
+                        actionable = (best_score > float(deadband)) & (torch.abs(long_score - short_score) > 1e-12)
+                        adjusted = (best_score - float(deadband)) / max(1e-9, 1.0 - float(deadband))
+                        action_confidence = torch.clamp(
+                            torch.sigmoid(adjusted * float(sensitivity) + float(probability_bias)),
+                            min=0.5,
+                            max=1.0,
+                        )
+                        directional_probability = torch.where(
+                            long_score > short_score,
+                            action_confidence,
+                            1.0 - action_confidence,
+                        )
+                        expert_probs = torch.where(
+                            actionable,
+                            directional_probability,
+                            torch.full_like(directional_probability, 0.5),
+                        )
+                    elif bool(proto_features.get("action_value", False)):
+                        long_score = torch.clamp(
+                            lightgbm_output(expert_features, proto_features["long"]),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        short_score = torch.clamp(
+                            lightgbm_output(expert_features, proto_features["short"]),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        best_score = torch.maximum(long_score, short_score)
+                        actionable = (best_score > float(deadband)) & (torch.abs(long_score - short_score) > 1e-12)
+                        adjusted = (best_score - float(deadband)) / max(1e-9, 1.0 - float(deadband))
+                        action_confidence = torch.clamp(
+                            torch.sigmoid(adjusted * float(sensitivity) + float(probability_bias)),
+                            min=0.5,
+                            max=1.0,
+                        )
+                        directional_probability = torch.where(
+                            long_score > short_score,
+                            action_confidence,
+                            1.0 - action_confidence,
+                        )
+                        expert_probs = torch.where(
+                            actionable,
+                            directional_probability,
+                            torch.full_like(directional_probability, 0.5),
+                        )
+                    else:
+                        raw_score = torch.clamp(
+                            lightgbm_output(expert_features, proto_features),
+                            min=-1.0,
+                            max=1.0,
+                        )
+                        magnitude = torch.abs(raw_score)
+                        adjusted = torch.where(
+                            magnitude <= float(deadband),
+                            torch.zeros_like(raw_score),
+                            torch.sign(raw_score)
+                            * ((magnitude - float(deadband)) / max(1e-9, 1.0 - float(deadband))),
+                        )
+                        expert_probs = torch.clamp(
+                            torch.sigmoid(adjusted * float(sensitivity) + float(probability_bias)),
+                            min=0.0,
+                            max=1.0,
+                        )
                 elif kind == "rule_alpha":
                     count = max(1, min(int(feature_count), int(features.shape[1])))
                     raw_values = features[:, :count]
@@ -936,6 +1483,14 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     htf_start = int(_clamp_float(params.get("higher_timeframe_start", -1), -1, 100000, -1))
                     htf_width = int(_clamp_float(params.get("higher_timeframe_width", 8), 1, 64, 8))
                     htf_count = int(_clamp_float(params.get("higher_timeframe_window_count", 0), 0, 32, 0))
+                    tape_start = int(_clamp_float(params.get("trade_tape_start", -1), -1, 100000, -1))
+                    tape_width = int(_clamp_float(
+                        params.get("trade_tape_width", TRADE_TAPE_FEATURES_PER_WINDOW),
+                        1,
+                        64,
+                        TRADE_TAPE_FEATURES_PER_WINDOW,
+                    ))
+                    tape_count = int(_clamp_float(params.get("trade_tape_window_count", 0), 0, 32, 0))
                     taker_buy_ratio = torch.full_like(momentum_1, 0.5)
                     signed_base = torch.zeros_like(momentum_1)
                     signed_quote = torch.zeros_like(momentum_1)
@@ -957,6 +1512,18 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     htf_bounce = torch.zeros_like(momentum_1)
                     htf_volume_impulse = torch.zeros_like(momentum_1)
                     htf_trade_impulse = torch.zeros_like(momentum_1)
+                    tape_available = False
+                    tape_buy_notional_ratio = torch.full_like(momentum_1, 0.5)
+                    tape_signed_notional = torch.zeros_like(momentum_1)
+                    tape_count_signed = torch.zeros_like(momentum_1)
+                    tape_notional_impulse = torch.zeros_like(momentum_1)
+                    tape_count_impulse = torch.zeros_like(momentum_1)
+                    tape_large_share = torch.zeros_like(momentum_1)
+                    tape_vwap_gap = torch.zeros_like(momentum_1)
+                    tape_micro_drift = torch.zeros_like(momentum_1)
+                    tape_no_tape = torch.ones_like(momentum_1)
+                    tape_signed_acceleration = torch.zeros_like(momentum_1)
+                    tape_flow_return_alignment = torch.zeros_like(momentum_1)
                     flow_groups = []
                     if order_start >= 0 and order_count > 0:
                         for order_index in range(order_count):
@@ -997,6 +1564,52 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                         htf_bounce = torch.clamp(torch.mean(htf_stack[:, 5, :], dim=1), min=0.0, max=2.0) if htf_width > 5 else htf_bounce
                         htf_volume_impulse = torch.clamp(torch.mean(htf_stack[:, 6, :], dim=1), min=-5.0, max=5.0) if htf_width > 6 else htf_volume_impulse
                         htf_trade_impulse = torch.clamp(torch.mean(htf_stack[:, 7, :], dim=1), min=-5.0, max=5.0) if htf_width > 7 else htf_trade_impulse
+                    tape_groups = []
+                    if tape_start >= 0 and tape_count > 0:
+                        for tape_index in range(tape_count):
+                            group_start = tape_start + tape_index * tape_width
+                            group_end = group_start + tape_width
+                            if group_end <= raw_values.shape[1]:
+                                tape_groups.append(raw_values[:, group_start:group_end])
+                    if tape_groups:
+                        tape_stack = torch.stack(tape_groups, dim=2)
+                        tape_available = True
+                        tape_no_tape = torch.clamp(torch.mean(tape_stack[:, 9, :], dim=1), min=0.0, max=1.0) if tape_width > 9 else tape_no_tape
+                        tape_quality = 1.0 - tape_no_tape
+                        tape_buy_notional_ratio = torch.clamp(torch.mean(tape_stack[:, 0, :], dim=1), min=0.0, max=1.0)
+                        tape_signed_notional = torch.clamp(torch.mean(tape_stack[:, 1, :], dim=1) * tape_quality, min=-1.0, max=1.0) if tape_width > 1 else tape_signed_notional
+                        tape_count_signed = torch.clamp(torch.mean(tape_stack[:, 2, :], dim=1) * tape_quality, min=-1.0, max=1.0) if tape_width > 2 else tape_count_signed
+                        tape_notional_impulse = torch.clamp(torch.mean(tape_stack[:, 3, :], dim=1) * tape_quality, min=-1.0, max=1.0) if tape_width > 3 else tape_notional_impulse
+                        tape_count_impulse = torch.clamp(torch.mean(tape_stack[:, 4, :], dim=1) * tape_quality, min=-1.0, max=1.0) if tape_width > 4 else tape_count_impulse
+                        tape_large_share = torch.clamp(torch.mean(tape_stack[:, 5, :], dim=1), min=0.0, max=1.0) if tape_width > 5 else tape_large_share
+                        tape_vwap_gap = torch.clamp(torch.mean(tape_stack[:, 6, :], dim=1), min=-1.0, max=1.0) if tape_width > 6 else tape_vwap_gap
+                        tape_micro_drift = torch.clamp(torch.mean(tape_stack[:, 8, :], dim=1), min=-1.0, max=1.0) if tape_width > 8 else tape_micro_drift
+                        tape_signed_acceleration = torch.clamp(torch.mean(tape_stack[:, 10, :], dim=1) * tape_quality, min=-1.0, max=1.0) if tape_width > 10 else tape_signed_acceleration
+                        tape_flow_return_alignment = torch.clamp(torch.mean(tape_stack[:, 11, :], dim=1), min=-1.0, max=1.0) if tape_width > 11 else tape_flow_return_alignment
+                    if tape_available:
+                        tape_quality = 1.0 - tape_no_tape
+                        tape_weight = torch.clamp(0.35 + 0.45 * tape_quality, min=0.0, max=0.80)
+
+                        def blend(left, right):
+                            return left * (1.0 - tape_weight) + right * tape_weight
+
+                        taker_buy_ratio = torch.clamp(blend(taker_buy_ratio, tape_buy_notional_ratio), min=0.0, max=1.0)
+                        signed_base = torch.clamp(blend(signed_base, tape_signed_notional), min=-1.0, max=1.0)
+                        signed_quote = torch.clamp(blend(signed_quote, tape_signed_notional), min=-1.0, max=1.0)
+                        trade_impulse = torch.clamp(blend(trade_impulse, tape_count_impulse), min=-1.0, max=1.0)
+                        quote_impulse = torch.clamp(blend(quote_impulse, tape_notional_impulse), min=-1.0, max=1.0)
+                        quote_per_trade_impulse = torch.clamp(blend(quote_per_trade_impulse, tape_large_share), min=-1.0, max=1.0)
+                        no_trade_ratio = torch.minimum(no_trade_ratio, tape_no_tape)
+                        flow_return_alignment = torch.clamp(blend(flow_return_alignment, tape_flow_return_alignment), min=-1.0, max=1.0)
+                        signed_ratio_delta = torch.clamp(blend(signed_ratio_delta, tape_signed_acceleration), min=-1.0, max=1.0)
+                        mean_abs_signed_ratio = torch.clamp(torch.maximum(mean_abs_signed_ratio, torch.abs(tape_signed_notional)), min=0.0, max=1.0)
+                        flow_acceleration = torch.clamp(blend(flow_acceleration, tape_signed_acceleration), min=-1.0, max=1.0)
+                        tape_divergence = torch.tanh(
+                            (tape_signed_notional * 2.0)
+                            - (tape_micro_drift * 1.4)
+                            - (tape_vwap_gap * 0.8)
+                        )
+                        price_flow_divergence = torch.clamp(blend(price_flow_divergence, tape_divergence), min=-1.0, max=1.0)
                     if family == "mean_reversion_vwap":
                         score = (
                             0.36 * torch.tanh((0.42 - rsi) * 5.4)
@@ -1258,6 +1871,39 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                                 * flow_quality
                                 * (0.54 * local_direction + 0.46 * broad_direction)
                             )
+                    elif family == "directional_regime_rider":
+                        broad_direction = (
+                            0.28 * torch.tanh(momentum_20 * 115.0)
+                            + 0.20 * torch.tanh(momentum_10 * 135.0)
+                            + 0.16 * torch.tanh(ema_gap * 125.0)
+                        )
+                        if htf_groups:
+                            broad_direction = (
+                                0.42 * torch.tanh(htf_return * 130.0)
+                                + 0.18 * torch.tanh(htf_mean_gap * 150.0)
+                                + 0.12 * torch.tanh(htf_volume_impulse * 1.4)
+                                + 0.12 * torch.tanh(htf_trade_impulse * 1.4)
+                                + 0.16 * broad_direction
+                            )
+                        local_confirmation = (
+                            0.30 * torch.tanh(momentum_3 * 220.0)
+                            + 0.20 * torch.tanh(momentum_1 * 320.0)
+                            + 0.18 * torch.tanh(signed_base * 2.6)
+                            + 0.14 * torch.tanh(flow_acceleration * 2.8)
+                            + 0.10 * torch.tanh(flow_persistence * 2.0)
+                            + 0.08 * torch.tanh((taker_buy_ratio - 0.5) * 5.0)
+                        )
+                        agreement = 0.55 + 0.45 * torch.tanh((broad_direction * local_confirmation) * 5.0)
+                        liquidity_quality = 1.0 - torch.clamp(no_trade_ratio, min=0.0, max=1.0)
+                        volatility_drag = 0.30 * torch.tanh(
+                            (relative_atr + volatility_20 + htf_realized_volatility) * 90.0
+                        )
+                        score = (
+                            torch.clamp(1.0 - volatility_drag, min=0.25)
+                            * (0.70 * broad_direction + 0.30 * local_confirmation)
+                            * (0.70 + 0.30 * agreement)
+                            * (0.55 + 0.45 * liquidity_quality)
+                        )
                     else:
                         score = (
                             0.32 * torch.tanh(momentum_20 * 90.0)
@@ -1276,7 +1922,7 @@ def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smok
                     adjusted = torch.clamp(adjusted, min=-1.0, max=1.0)
                     expert_probs = torch.clamp(torch.sigmoid(adjusted * sensitivity + bias), min=0.0, max=1.0)
                 if expert_probs is None:
-                    continue
+                    raise RuntimeError(f"Accelerated scorer produced no output for expert kind {kind}")
                 weighted = weighted + float(expert_weight) * expert_probs
                 total = total + float(expert_weight)
             chunk_probs = weighted / torch.clamp(total, min=1e-12)
@@ -1319,6 +1965,179 @@ def _threshold_grid(start: float, end: float, steps: int, baseline: float) -> li
     return sorted(set(round(_clamp_threshold(value), 12) for value in values))
 
 
+def _probability_adaptive_threshold_grid(
+    probabilities: Sequence[float],
+    *,
+    start: float,
+    end: float,
+    baseline: float,
+    market_type: str,
+    max_thresholds: int,
+    base_thresholds: Sequence[float] = (),
+) -> list[float]:
+    """Add model-rank thresholds so calibration searches active trade bands.
+
+    The fixed grid is stable and reproducible, but it can be almost empty when
+    a model's scores are tightly compressed.  This helper adds cutoffs at the
+    empirical score tails that would actually produce entries, while preserving
+    the original grid and the caller's baseline.
+    """
+
+    clean = sorted(
+        _clamp_threshold(float(value))
+        for value in probabilities
+        if isinstance(value, (int, float)) and math.isfinite(float(value))
+    )
+    start = _clamp_threshold(start)
+    end = _clamp_threshold(end)
+    if str(market_type).lower() == "futures":
+        start = max(0.5, start)
+    if end <= start:
+        end = min(1.0, start + 0.01)
+    thresholds = {round(_clamp_threshold(value), 12) for value in base_thresholds}
+    thresholds.add(round(_clamp_threshold(baseline), 12))
+    if not clean:
+        return sorted(thresholds)
+    row_count = len(clean)
+    tail_rates = (
+        0.001,
+        0.0025,
+        0.005,
+        0.0075,
+        0.01,
+        0.015,
+        0.02,
+        0.03,
+        0.05,
+        0.075,
+        0.10,
+        0.15,
+        0.20,
+        0.30,
+        0.40,
+    )
+    for rate in tail_rates:
+        tail_count = max(1, min(row_count, int(math.ceil(row_count * rate))))
+        long_threshold = clean[max(0, row_count - tail_count)]
+        if start <= long_threshold <= end:
+            thresholds.add(round(_clamp_threshold(long_threshold), 12))
+        if str(market_type).lower() == "futures":
+            short_probability_cutoff = clean[min(row_count - 1, tail_count - 1)]
+            symmetric_threshold = 1.0 - short_probability_cutoff
+            if start <= symmetric_threshold <= end:
+                thresholds.add(round(_clamp_threshold(symmetric_threshold), 12))
+    ordered = sorted(thresholds)
+    limit = max(1, int(max_thresholds))
+    if len(ordered) <= limit:
+        return ordered
+    keep = {ordered[0], ordered[-1], round(_clamp_threshold(baseline), 12)}
+    remaining = max(0, limit - len(keep))
+    if remaining > 0:
+        denominator = max(1, remaining - 1)
+        for slot in range(remaining):
+            index = int(round(slot * (len(ordered) - 1) / denominator))
+            keep.add(ordered[min(len(ordered) - 1, max(0, index))])
+    if len(keep) < limit:
+        for value in ordered:
+            keep.add(value)
+            if len(keep) >= limit:
+                break
+    return sorted(keep)
+
+
+def _approximate_threshold_signal_count(
+    probabilities: Sequence[float],
+    *,
+    cfg: StrategyConfig,
+    market_type: str,
+    long_threshold: float | None,
+    short_threshold: float | None,
+    regime_scores: Sequence[float] | None = None,
+    liquidity_adjustments: Sequence[tuple[float, float, bool, bool]] | None = None,
+    timestamps: Sequence[int] | None = None,
+) -> int:
+    """Cheaply count rows that could enter before running full lifecycle replay."""
+
+    count = 0
+    futures = str(market_type).lower() == "futures"
+    max_daily: int | None = int(cfg.max_trades_per_day)
+    if max_daily <= 0:
+        max_daily = None
+    daily_counts: dict[int, int] = {}
+    cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
+    last_entry_timestamp: int | None = None
+    regime_cooldown_ms = max(0, int(cfg.unpredictability_cooldown_minutes)) * 60 * 1000
+    regime_cooldown_until: int | None = None
+    regime_limit = max(0.0, min(1.0, float(cfg.max_regime_unpredictability)))
+    for index, raw_probability in enumerate(probabilities):
+        timestamp = (
+            int(timestamps[index])
+            if timestamps is not None and index < len(timestamps)
+            else int(index)
+        )
+        if regime_cooldown_until is not None and timestamp < regime_cooldown_until:
+            continue
+        regime_score = 0.0
+        if regime_scores is not None and index < len(regime_scores):
+            regime_score = max(0.0, min(1.0, _finite_float(regime_scores[index], 1.0)))
+        threshold_add = 0.0
+        size_multiplier = 1.0
+        if liquidity_adjustments is not None and index < len(liquidity_adjustments):
+            threshold_add = _finite_float(liquidity_adjustments[index][0], 0.0)
+            size_multiplier = _finite_float(liquidity_adjustments[index][1], 1.0)
+            if size_multiplier <= 0.0:
+                continue
+        adjusted_long, adjusted_short = _adjusted_side_thresholds(
+            long_threshold,
+            short_threshold,
+            threshold_add,
+        )
+        probability = confidence_adjusted_probability(_finite_float(raw_probability, 0.5), cfg.confidence_beta)
+        direction = _normalize_market_direction(
+            probability,
+            adjusted_long,
+            market_type,
+            short_threshold=adjusted_short,
+        )
+        if direction == 0:
+            continue
+        if not futures and direction < 0:
+            continue
+        if regime_score > regime_limit:
+            if (
+                regime_cooldown_ms > 0
+                and regime_unpredictability_requires_cooldown(regime_score, regime_limit)
+            ):
+                regime_cooldown_until = max(
+                    int(regime_cooldown_until or timestamp),
+                    int(timestamp) + regime_cooldown_ms,
+                )
+                continue
+            regime_size_multiplier = _regime_soft_gate_size_multiplier(
+                regime_score=regime_score,
+                regime_limit=regime_limit,
+                signal_score=probability,
+                direction=direction,
+                long_threshold=adjusted_long,
+                short_threshold=adjusted_short,
+                market_type=market_type,
+            )
+            if regime_size_multiplier <= 0.0:
+                continue
+        if cooldown_ms > 0 and last_entry_timestamp is not None and timestamp - last_entry_timestamp < cooldown_ms:
+            continue
+        day = _safe_day(timestamp)
+        if max_daily is not None and daily_counts.get(day, 0) >= max_daily:
+            continue
+        daily_counts[day] = daily_counts.get(day, 0) + 1
+        last_entry_timestamp = timestamp
+        if long_threshold is not None and direction > 0:
+            count += 1
+        elif futures and short_threshold is not None and direction < 0:
+            count += 1
+    return count
+
+
 def _result_payload(result: BacktestResult) -> dict[str, float | int | bool]:
     return {
         "realized_pnl": float(result.realized_pnl),
@@ -1335,6 +2154,7 @@ def _result_payload(result: BacktestResult) -> dict[str, float | int | bool]:
         "average_trade_return": float(getattr(result, "average_trade_return", 0.0)),
         "max_consecutive_losses": int(getattr(result, "max_consecutive_losses", 0)),
         "regime_entry_skips": int(getattr(result, "regime_entry_skips", 0)),
+        "regime_entry_downsizes": int(getattr(result, "regime_entry_downsizes", 0)),
     }
 
 
@@ -1519,6 +2339,11 @@ def calibrate_threshold_for_backtest(
     min_trades_per_day: float = 0.0,
     compute_backend: str | None = None,
     score_batch_size: int = 8192,
+    symbol_profile: SymbolExecutionProfile | None = None,
+    adaptive_probability_thresholds: bool = False,
+    max_adaptive_thresholds: int = 96,
+    allowed_sides: str = "both",
+    status_callback: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> ThresholdBacktestCalibration:
     baseline_threshold = _clamp_threshold(
         _finite_float(baseline_threshold, model_decision_threshold(model, cfg.signal_threshold))
@@ -1534,8 +2359,27 @@ def calibrate_threshold_for_backtest(
         compute_backend=compute_backend,
         batch_size=score_batch_size,
     )
+    if status_callback is not None:
+        status_callback(
+            "threshold_probability_scoring_complete",
+            {
+                "rows": int(len(rows)),
+                "probability_count": int(len(probabilities)),
+                "scoring_backend_kind": str(score_backend.kind),
+                "scoring_backend_device": str(score_backend.device),
+            },
+        )
     regime_scores = precompute_backtest_regime_scores(rows, cfg)
     liquidity_adjustments = precompute_backtest_liquidity_adjustments(rows, cfg)
+    if status_callback is not None:
+        status_callback(
+            "threshold_precompute_complete",
+            {
+                "rows": int(len(rows)),
+                "regime_scores": int(len(regime_scores)),
+                "liquidity_adjustments": int(len(liquidity_adjustments)),
+            },
+        )
     baseline_long, baseline_short = model_direction_thresholds(
         replace(model, decision_threshold=baseline_threshold),
         cfg.signal_threshold,
@@ -1555,31 +2399,80 @@ def calibrate_threshold_for_backtest(
         market_type=market_type,
         compute_backend=compute_backend,
         score_batch_size=score_batch_size,
+        symbol_profile=symbol_profile,
         precomputed_probabilities=probabilities,
         precomputed_score_backend=score_backend,
         precomputed_regime_scores=regime_scores,
         precomputed_liquidity_adjustments=liquidity_adjustments,
     )
-    baseline_score = risk_adjusted_backtest_score(baseline_result, starting_cash=starting_cash)
+    span_days = row_span_days(rows)
+    min_closed = max(0, int(min_closed_trades))
+    min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
+    baseline_score = threshold_backtest_selection_score(
+        baseline_result,
+        starting_cash=starting_cash,
+        min_closed_trades=min_closed,
+        min_trades_per_day=min_daily,
+        duration_days=span_days,
+    )
+    if status_callback is not None:
+        status_callback(
+            "threshold_baseline_complete",
+            {
+                "baseline_realized_pnl": float(baseline_result.realized_pnl),
+                "baseline_closed_trades": int(baseline_result.closed_trades),
+                "baseline_score": float(baseline_score),
+            },
+        )
     best_threshold = _threshold_confidence(baseline_long, baseline_short, baseline_threshold)
     best_long_threshold = baseline_long
     best_short_threshold = baseline_short
     best_score = baseline_score
     best_result = baseline_result
-    thresholds = _threshold_grid(start, end, steps, baseline_threshold)
-    span_days = row_span_days(rows)
-    min_closed = max(0, int(min_closed_trades))
-    min_daily = max(0.0, _finite_float(min_trades_per_day, 0.0))
-
+    fixed_thresholds = _threshold_grid(start, end, steps, baseline_threshold)
+    thresholds = (
+        _probability_adaptive_threshold_grid(
+            probabilities,
+            start=start,
+            end=end,
+            baseline=baseline_threshold,
+            market_type=market_type,
+            max_thresholds=max_adaptive_thresholds,
+            base_thresholds=fixed_thresholds,
+        )
+        if adaptive_probability_thresholds
+        else fixed_thresholds
+    )
     seen_variants: set[tuple[float | None, float | None]] = set()
+    replayed_variants = 0
+    skipped_sparse_variants = 0
+    required_signal_floor = max(min_closed, int(math.ceil(min_daily * span_days)) if min_daily > 0.0 else 0)
+    total_thresholds = len(thresholds)
+    row_timestamps = [int(row.timestamp) for row in rows]
+    if status_callback is not None:
+        status_callback(
+            "threshold_grid_complete",
+            {
+                "threshold_count": int(total_thresholds),
+                "required_signal_floor": int(required_signal_floor),
+                "market_type": str(market_type),
+                "allowed_sides": str(allowed_sides or "both"),
+            },
+        )
     for threshold in thresholds:
         if market_type == "futures":
             threshold = max(0.5, float(threshold))
-            variants = (
-                (threshold, 1.0 - threshold),
-                (threshold, None),
-                (None, 1.0 - threshold),
-            )
+            side_mode = str(allowed_sides or "both").strip().lower()
+            if side_mode == "long":
+                variants = ((threshold, None),)
+            elif side_mode == "short":
+                variants = ((None, 1.0 - threshold),)
+            else:
+                variants = (
+                    (threshold, 1.0 - threshold),
+                    (threshold, None),
+                    (None, 1.0 - threshold),
+                )
         else:
             variants = ((float(threshold), None),)
         for long_threshold, short_threshold in variants:
@@ -1590,12 +2483,40 @@ def calibrate_threshold_for_backtest(
             if key in seen_variants:
                 continue
             seen_variants.add(key)
+            if required_signal_floor > 0:
+                approximate_signals = _approximate_threshold_signal_count(
+                    probabilities,
+                    cfg=cfg,
+                    market_type=market_type,
+                    long_threshold=long_threshold if market_type == "futures" else float(threshold),
+                    short_threshold=short_threshold if market_type == "futures" else None,
+                    regime_scores=regime_scores,
+                    liquidity_adjustments=liquidity_adjustments,
+                    timestamps=row_timestamps,
+                )
+                if approximate_signals < required_signal_floor:
+                    skipped_sparse_variants += 1
+                    continue
             candidate_model = replace(
                 model,
                 decision_threshold=_threshold_confidence(long_threshold, short_threshold, threshold),
                 long_decision_threshold=long_threshold if market_type == "futures" else None,
                 short_decision_threshold=short_threshold if market_type == "futures" else None,
             )
+            replayed_variants += 1
+            if status_callback is not None and (replayed_variants == 1 or replayed_variants % 5 == 0):
+                status_callback(
+                    "threshold_calibration_progress",
+                    {
+                        "threshold_count": int(total_thresholds),
+                        "seen_variants": int(len(seen_variants)),
+                        "replayed_variants": int(replayed_variants),
+                        "skipped_sparse_variants": int(skipped_sparse_variants),
+                        "current_threshold": float(threshold),
+                        "long_threshold": long_threshold,
+                        "short_threshold": short_threshold,
+                    },
+                )
             result = run_backtest(
                 rows,
                 candidate_model,
@@ -1604,12 +2525,19 @@ def calibrate_threshold_for_backtest(
                 market_type=market_type,
                 compute_backend=compute_backend,
                 score_batch_size=score_batch_size,
+                symbol_profile=symbol_profile,
                 precomputed_probabilities=probabilities,
                 precomputed_score_backend=score_backend,
                 precomputed_regime_scores=regime_scores,
                 precomputed_liquidity_adjustments=liquidity_adjustments,
             )
-            score = risk_adjusted_backtest_score(result, starting_cash=starting_cash)
+            score = threshold_backtest_selection_score(
+                result,
+                starting_cash=starting_cash,
+                min_closed_trades=min_closed,
+                min_trades_per_day=min_daily,
+                duration_days=span_days,
+            )
             if (
                 score > best_score + 1e-12
                 or (
@@ -1675,7 +2603,7 @@ def calibrate_threshold_for_backtest(
         best_win_rate=float(best_payload["win_rate"]),
         best_closed_trades=int(best_payload["closed_trades"]),
         best_edge_vs_buy_hold=float(best_payload["edge_vs_buy_hold"]),
-        evaluated_thresholds=len(seen_variants),
+        evaluated_thresholds=int(replayed_variants),
         rows=len(rows),
         stopped_by_liquidation=bool(payload["stopped_by_liquidation"]),
         liquidation_events=int(payload["liquidation_events"]),
@@ -1749,6 +2677,7 @@ def run_backtest(
     meta_label_skips = 0
     meta_label_downsizes = 0
     regime_entry_skips = 0
+    regime_entry_downsizes = 0
     stopped_by_liquidation = False
     liquidation_events = 0
     liquidation_loss = 0.0
@@ -1766,11 +2695,13 @@ def run_backtest(
     flat_signal_streak = 0
     entry_meta = MetaLabelDecision(False, "take", 1.0, 0.0, "initial")
     pending_signal = 0
+    pending_signal_score = 0.5
     pending_meta = MetaLabelDecision(False, "no_signal", 0.0, 0.0, "initial")
     last_close_timestamp: int | None = None
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
     min_position_hold_bars = max(0, int(getattr(cfg, "min_position_hold_bars", 0) or 0))
     flat_signal_exit_grace_bars = max(0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0))
+    max_position_hold_bars = max(0, int(getattr(cfg, "max_position_hold_bars", 0) or 0))
     unpredictability_cooldown_ms = max(0, int(cfg.unpredictability_cooldown_minutes)) * 60 * 1000
     regime_cooldown_until: int | None = None
     final_mark_price = rows[-1].close
@@ -1826,6 +2757,7 @@ def run_backtest(
     for row_index, (row, raw_score) in enumerate(zip(rows, probabilities, strict=True)):
         entry_opened_this_bar = False
         execution_signal = pending_signal
+        execution_signal_score = pending_signal_score
         execution_meta = pending_meta
         score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
         threshold_add, size_multiplier, low_liquidity, low_dynamic_session = liquidity_adjustments[row_index]
@@ -1851,6 +2783,7 @@ def run_backtest(
             market_type,
             short_threshold=adjusted_short_threshold,
         )
+        pending_signal_score = score
         meta_threshold = (
             1.0 - adjusted_short_threshold
             if market_type == "futures" and pending_signal < 0 and adjusted_short_threshold is not None
@@ -1871,12 +2804,25 @@ def run_backtest(
         regime_score = float(regime_scores[row_index]) if regime_gate_ready else 0.0
         regime_limit = float(cfg.max_regime_unpredictability)
         regime_score_over_limit = regime_score > regime_limit
-        if regime_score_over_limit and unpredictability_cooldown_ms > 0:
+        if (
+            regime_score_over_limit
+            and unpredictability_cooldown_ms > 0
+            and regime_unpredictability_requires_cooldown(regime_score, regime_limit)
+        ):
             regime_cooldown_until = max(
                 int(regime_cooldown_until or row.timestamp),
                 int(row.timestamp) + unpredictability_cooldown_ms,
             )
         regime_cooldown_active = regime_cooldown_until is not None and int(row.timestamp) < regime_cooldown_until
+        regime_size_multiplier = _regime_soft_gate_size_multiplier(
+            regime_score=regime_score,
+            regime_limit=regime_limit,
+            signal_score=execution_signal_score,
+            direction=execution_signal,
+            long_threshold=adjusted_long_threshold,
+            short_threshold=adjusted_short_threshold,
+            market_type=market_type,
+        )
         day = _safe_day(row.timestamp)
         if day not in daily_trade_count:
             daily_trade_count[day] = 0
@@ -1891,7 +2837,7 @@ def run_backtest(
                 if execution_meta.enabled:
                     meta_label_skips += 1
                 continue
-            if regime_score_over_limit or regime_cooldown_active:
+            if regime_cooldown_active or regime_size_multiplier <= 0.0:
                 regime_entry_skips += 1
                 continue
             if cooldown_active:
@@ -1910,6 +2856,10 @@ def run_backtest(
                 multiplier = max(0.0, min(1.0, float(execution_meta.size_multiplier)))
                 gross *= multiplier
                 effective_margin *= multiplier
+            if regime_score_over_limit and regime_size_multiplier < 1.0:
+                regime_entry_downsizes += 1
+                gross *= regime_size_multiplier
+                effective_margin *= regime_size_multiplier
 
             if gross <= 0 or effective_margin >= cash:
                 continue
@@ -1932,6 +2882,7 @@ def run_backtest(
                 cfg,
                 notional=gross,
                 volume=row_volume_notional,
+                daily_volume=_row_trailing_quote_volume_24h_estimate(row),
                 symbol_profile=symbol_profile,
                 assumptions=row_execution_assumptions,
             )
@@ -2033,27 +2984,24 @@ def run_backtest(
                     low=bar_low,
                     cfg=cfg,
                 )
-                flat_signal = execution_signal == 0
-                reverse_signal = execution_signal == (-position_side)
-                flat_signal_streak = flat_signal_streak + 1 if flat_signal else 0
                 bars_held = max(0, int(row_index) - int(entry_row_index))
-                flat_exit_allowed = (
-                    flat_signal
-                    and bars_held >= min_position_hold_bars
-                    and flat_signal_streak > flat_signal_exit_grace_bars
+                lifecycle_exit = evaluate_position_exit(
+                    position_side=position_side,
+                    signal_direction=execution_signal,
+                    current_pnl_pct=current_pnl_pct,
+                    bars_held=bars_held,
+                    flat_signal_streak=flat_signal_streak,
+                    stop_loss_pct=cfg.stop_loss_pct,
+                    take_profit_pct=cfg.take_profit_pct,
+                    min_position_hold_bars=min_position_hold_bars,
+                    flat_signal_exit_grace_bars=flat_signal_exit_grace_bars,
+                    max_position_hold_bars=max_position_hold_bars,
                 )
-                close_signal_exit = flat_exit_allowed or reverse_signal
+                flat_signal_streak = lifecycle_exit.flat_signal_streak
                 if not intrabar_close:
                     close_mark_price = price
-                    if current_pnl_pct >= cfg.take_profit_pct:
-                        close_reason = "take_profit_close"
-                    elif current_pnl_pct <= -cfg.stop_loss_pct:
-                        close_reason = "stop_loss_close"
-                    elif flat_exit_allowed:
-                        close_reason = "signal_flat"
-                    elif reverse_signal:
-                        close_reason = "signal_reverse"
-                should_close = bool(intrabar_close or close_reason or close_signal_exit)
+                    close_reason = lifecycle_exit.reason
+                should_close = bool(intrabar_close or lifecycle_exit.should_close)
 
                 if should_close:
                     closed_side = position_side
@@ -2071,6 +3019,7 @@ def run_backtest(
                         cfg=cfg,
                         symbol_profile=symbol_profile,
                         fill_volume_notional=row_quote_volume_notional,
+                        daily_volume_notional=_row_trailing_quote_volume_24h_estimate(row),
                         execution_assumptions=row_execution_assumptions,
                     )
                     cash += cash_delta
@@ -2155,6 +3104,7 @@ def run_backtest(
                     cfg=cfg,
                     symbol_profile=symbol_profile,
                     fill_volume_notional=row_quote_volume_notional,
+                    daily_volume_notional=_row_trailing_quote_volume_24h_estimate(row),
                     execution_assumptions=row_execution_assumptions,
                 )
                 cash += drawdown_delta
@@ -2228,6 +3178,7 @@ def run_backtest(
             cfg=cfg,
             symbol_profile=symbol_profile,
             fill_volume_notional=final_volume_notional,
+            daily_volume_notional=_row_trailing_quote_volume_24h_estimate(final_row),
             execution_assumptions=final_execution_assumptions,
         )
         cash += final_delta
@@ -2317,6 +3268,7 @@ def run_backtest(
         meta_label_skips=int(meta_label_skips),
         meta_label_downsizes=int(meta_label_downsizes),
         regime_entry_skips=int(regime_entry_skips),
+        regime_entry_downsizes=int(regime_entry_downsizes),
         stopped_by_liquidation=bool(stopped_by_liquidation),
         liquidation_events=int(liquidation_events),
         liquidation_loss=float(liquidation_loss),

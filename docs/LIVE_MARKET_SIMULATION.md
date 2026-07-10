@@ -11,6 +11,9 @@ Primary references used for the current design:
 - Binance rate-limit guidance for backing off on `429`/`418` and tracking request weight: https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/rate-limits
 - Binance WebSocket stream constraints: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams
 - Binance USD-M futures leverage endpoints: https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Notional-and-Leverage-Brackets and https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Change-Initial-Leverage
+- Binance account commission endpoints: https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/User-Commission-Rate and https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints#query-commission-rates-user_data
+- Cont, Kukanov, and Stoikov on order-flow imbalance and price impact: https://arxiv.org/abs/1011.6402
+- Almgren and Chriss on participation-aware execution impact: https://doi.org/10.3905/jpm.2001.319476
 - NautilusTrader backtesting concepts: https://nautilustrader.io/docs/latest/concepts/backtesting/
 - QuantConnect slippage modeling concepts: https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/slippage/key-concepts
 
@@ -20,6 +23,12 @@ Execution cost is symbol-specific where market data exists:
 
 - `ticker/24hr` supplies quote volume and trade count.
 - `ticker/bookTicker` supplies bid/ask spread.
+- Authenticated startup queries the account- and symbol-specific commission
+  endpoint. A promoted model is rejected when its recorded taker-fee
+  assumption is below the current account rate. Offline futures research uses
+  a 4 bps taker floor and offline spot research uses a 10 bps floor unless a
+  higher stress rate is configured. These are unverified fallback assumptions,
+  not claims about a particular account.
 - `data-sync` now persists a typed top-of-book history with bid/ask price,
   bid/ask quantity, mid price, spread bps, and top-level notional depth in
   SQLite, while still retaining the raw exchange payload for audit.
@@ -108,21 +117,27 @@ Backtest fill price uses:
 - optional symbol-specific spread and top-of-book depth from SQLite,
 - configured slippage,
 - latency buffer,
-- market-impact cost based on order participation versus candle-volume notional,
+- square-root market impact based on order participation versus a causal
+  trailing-24h quote-volume estimate,
 - testnet liquidity haircut,
 - volatility buffer,
 - taker fees.
 
-DB-backed `ModelRow` objects now preserve each candle's quote volume and trade
-count. When full top-of-book/L2 rows are unavailable, the fill model uses those
-fields plus the candle high-low range as a conservative per-row execution proxy:
-quote volume is preferred over `base_volume * close` for participation impact,
-sparse trade-count seconds increase fill uncertainty, and high-low range widens
-exit-side spread/latency buffers. Entry fills deliberately do not use the
-current bar's full high-low range because that would let pre-entry intrabar
-extremes leak into the simulated market order; entries use activity evidence
-and configured/symbol-level assumptions until quote-timestamped L1/L2 data is
-available.
+DB-backed `ModelRow` objects preserve each candle's quote volume and trade
+count, plus a causal trailing-24h quote-volume and trade-count estimate. Before
+24 hours of history are available, the estimate is annualized only after five
+minutes of observations; before that it is unavailable. Impact uses
+participation in that trailing activity estimate, with the configured liquidity
+haircut reducing executable volume. It does **not** equate a no-print second
+with an empty order book. If the causal estimate is unavailable, the simulator
+retains the fail-closed candle-volume or maximum-participation fallback.
+
+The activity estimate is still not historical L2 depth. Candle high-low range
+and sparse trade count widen exit-side spread/latency uncertainty, while entry
+fills deliberately do not use the current bar's full high-low range because
+that would leak pre-entry intrabar extremes. The execution model is versioned
+as `causal-adv-square-root-v2`; evidence generated under an older impact model
+must not be compared as if its assumptions were identical.
 
 When model rows carry candle high/low data, backtests use those intrabar bounds
 for stop-loss, take-profit, liquidation, and drawdown checks. If a single bar
@@ -379,8 +394,9 @@ Known limitations:
   and columnar/time-series storage become operational requirements.
 - Free VRAM is not exposed reliably by DirectML; the app verifies GPU backend functionality and reports unknown VRAM as a warning.
 - External news/sentiment sources are still broad crypto-oriented; the liquidity gate is the primary automatic asset filter.
-- The current stress model uses top-of-book and candle-volume proxies. It is
-  stricter than flat slippage, but still weaker than full L2 order-book replay.
+- The current stress model uses sparse top-of-book evidence, causal trailing
+  activity, and candle-range proxies. It is stricter than flat slippage, but
+  it cannot prove historical queue position or full L2 fills.
 - Very small datasets are marked as insufficient for purged walk-forward gates;
   they are useful for unit tests and smoke checks, not production acceptance.
 - Recent-limit kline pulls are useful for smoke checks, but they are not

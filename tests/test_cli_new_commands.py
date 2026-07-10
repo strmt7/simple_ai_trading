@@ -590,7 +590,11 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
 
     def fake_decision_fn(**kwargs):
         calls["decision_kwargs"] = kwargs
-        return lambda *_args: None, None, None
+        decision_fn = lambda *_args: None
+        decision_fn._effective_strategy = StrategyConfig(
+            **{**kwargs["strategy"].asdict(), "leverage": 7.0}
+        )
+        return decision_fn, None, None
 
     def fake_run_loop(client, runtime, strategy, cfg, *, decision_fn):
         calls["client"] = client
@@ -636,6 +640,9 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
     assert calls["cfg"].dry_run is True
     assert calls["decision_kwargs"]["model_path"] == Path("data/model.json")
     assert calls["decision_kwargs"]["effective_dry_run"] is True
+    assert calls["decision_kwargs"]["strategy"].risk_level == "regular"
+    assert calls["decision_kwargs"]["strategy"].leverage == 10.0
+    assert calls["strategy"].leverage == 7.0
     assert "autonomous: iteration-cap iterations=2 opened=1 closed=0 skipped=3" in capsys.readouterr().out
 
     args_pause = argparse.Namespace(action="pause", objective="regular")

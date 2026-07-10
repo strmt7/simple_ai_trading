@@ -368,13 +368,22 @@ def _candidate_grid(training: ObjectiveTraining) -> list[CandidateParams]:
     return unique
 
 
-def _calibration_split(rows: Sequence[ModelRow], *, ratio: float = 0.20) -> tuple[list[ModelRow], list[ModelRow]]:
+def _calibration_split(
+    rows: Sequence[ModelRow],
+    *,
+    ratio: float = 0.20,
+    purge_gap: int = 0,
+) -> tuple[list[ModelRow], list[ModelRow]]:
     ordered = list(rows)
     if len(ordered) < 30:
         return ordered, []
     calibration_size = max(8, int(len(ordered) * max(0.05, min(0.40, ratio))))
     calibration_size = min(calibration_size, len(ordered) - 10)
-    return ordered[:-calibration_size], ordered[-calibration_size:]
+    calibration_start = len(ordered) - calibration_size
+    fit_end = calibration_start - max(0, int(purge_gap))
+    if fit_end < 10:
+        return [], ordered[calibration_start:]
+    return ordered[:fit_end], ordered[calibration_start:]
 
 
 def _threshold_guard(baseline: object, candidate: object) -> bool:
@@ -576,12 +585,27 @@ def _threshold_values(start: float, end: float, steps: int, baseline: float) -> 
     return sorted(set(round(value, 12) for value in values))
 
 
-def _walk_forward_split(rows: Sequence[ModelRow], *, eval_ratio: float = 0.25) -> tuple[list[ModelRow], list[ModelRow]]:
+def _label_purge_gap(feature_cfg: AdvancedFeatureConfig) -> int:
+    return max(1, int(feature_cfg.label_lookahead)) + max(
+        0,
+        int(getattr(feature_cfg, "label_entry_offset", 0) or 0),
+    )
+
+
+def _walk_forward_split(
+    rows: Sequence[ModelRow],
+    *,
+    eval_ratio: float = 0.25,
+    purge_gap: int = 0,
+) -> tuple[list[ModelRow], list[ModelRow]]:
     if len(rows) < 10:
         return list(rows), list(rows)
     split = int(len(rows) * (1.0 - eval_ratio))
     split = max(5, min(len(rows) - 5, split))
-    return list(rows[:split]), list(rows[split:])
+    train_end = split - max(0, int(purge_gap))
+    if train_end < 5:
+        return [], list(rows[split:])
+    return list(rows[:train_end]), list(rows[split:])
 
 
 def _purged_walk_forward_splits(
@@ -593,7 +617,7 @@ def _purged_walk_forward_splits(
     row_count = len(ordered)
     if row_count < 320:
         return []
-    purge_gap = max(1, int(feature_cfg.label_lookahead))
+    purge_gap = _label_purge_gap(feature_cfg)
     train_window = min(max(80, int(training.walk_forward_train)), max(80, int(row_count * 0.60)))
     remaining = row_count - train_window - purge_gap
     if remaining < 40:
@@ -825,7 +849,7 @@ def _overfit_diagnostics(best: dict[str, Any], ranked_pool: Sequence[dict[str, A
             "method": "two_panel_cscv_proxy",
             "candidate_count": len(entries),
             "min_candidates": _PBO_MIN_CANDIDATES,
-            "passed": True,
+            "passed": False,
         }
 
     split_specs = (
@@ -1208,7 +1232,10 @@ def _purged_walk_forward_gate(
             "test_rows": len(test_rows),
         }
         try:
-            fit_rows, calibration_rows = _calibration_split(train_rows)
+            fit_rows, calibration_rows = _calibration_split(
+                train_rows,
+                purge_gap=_label_purge_gap(feature_cfg),
+            )
             model, _report = train_advanced(
                 fit_rows,
                 feature_cfg,
@@ -1454,7 +1481,10 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         )
         if not all_rows:
             raise ValueError("Candidate label profile produced zero advanced training rows")
-        rows_train, rows_eval = _walk_forward_split(all_rows)
+        rows_train, rows_eval = _walk_forward_split(
+            all_rows,
+            purge_gap=_label_purge_gap(feature_cfg),
+        )
     else:
         rows_train = list(base_rows_train)
         rows_eval = list(base_rows_eval)
@@ -1462,8 +1492,9 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
 
     objective = get_objective(objective_name)
     training = _default_training(objective)
-    model_train_rows, selection_rows = _walk_forward_split(rows_train)
-    fit_rows, calibration_rows = _calibration_split(model_train_rows)
+    purge_gap = _label_purge_gap(feature_cfg)
+    model_train_rows, selection_rows = _walk_forward_split(rows_train, purge_gap=purge_gap)
+    fit_rows, calibration_rows = _calibration_split(model_train_rows, purge_gap=purge_gap)
     model, report = train_advanced(
         fit_rows,
         feature_cfg,
@@ -1807,7 +1838,7 @@ def train_for_objective(
         candidates = candidates[:max(1, int(max_candidates))]
     if not candidates:
         raise ValueError("Candidate grid produced zero evaluable entries")
-    train_rows, eval_rows = _walk_forward_split(rows)
+    train_rows, eval_rows = _walk_forward_split(rows, purge_gap=_label_purge_gap(feature_cfg))
     effective_score_batch_size = int(score_batch_size if score_batch_size is not None else batch_size)
 
     if runner is not None:
@@ -1979,8 +2010,15 @@ def train_for_objective(
                     candidate_result["candidate"],
                     compute_backend=effective_compute_backend,
                 )
-                rescue_train_rows, rescue_eval_rows = _walk_forward_split(rescue_rows)
-                rescue_model_train_rows, rescue_selection_rows = _walk_forward_split(rescue_train_rows)
+                rescue_purge_gap = _label_purge_gap(rescue_feature_cfg)
+                rescue_train_rows, rescue_eval_rows = _walk_forward_split(
+                    rescue_rows,
+                    purge_gap=rescue_purge_gap,
+                )
+                rescue_model_train_rows, rescue_selection_rows = _walk_forward_split(
+                    rescue_train_rows,
+                    purge_gap=rescue_purge_gap,
+                )
                 rescue_model = candidate_result.get("model")
                 rescue_strategy = candidate_result.get("strategy")
                 if (
@@ -2102,8 +2140,15 @@ def train_for_objective(
             best["candidate"],
             compute_backend=effective_compute_backend,
         )
-        best_train_rows, best_eval_rows = _walk_forward_split(best_rows)
-        model_train_rows, selection_rows = _walk_forward_split(best_train_rows)
+        best_purge_gap = _label_purge_gap(best_feature_cfg)
+        best_train_rows, best_eval_rows = _walk_forward_split(
+            best_rows,
+            purge_gap=best_purge_gap,
+        )
+        model_train_rows, selection_rows = _walk_forward_split(
+            best_train_rows,
+            purge_gap=best_purge_gap,
+        )
         can_optimize_hybrid = (
             math.isfinite(float(best["score"]))
             and bool(model_train_rows)

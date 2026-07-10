@@ -27,6 +27,15 @@ component, not as authority to override deterministic risk controls.
   constrained settings, but they are treated here as fallback/latency options,
   not primary live-risk reviewers:
   https://www.mccormick.northwestern.edu/computer-science/documents/dong-shu-nu-cs-2025-14.pdf
+- Kronos is a finance-native time-series foundation model pretrained on more
+  than 12 billion K-line records. Its open 102.3M-parameter base model is a
+  forecast-feature candidate, not the required multibillion risk reviewer:
+  https://arxiv.org/abs/2508.02739
+- A June 2026 return-forecasting comparison found that pretrained time-series
+  models often ranked well but produced sparse, asset-specific gains over a
+  random-walk baseline. Foundation forecasts therefore require rolling-origin,
+  random-walk, after-cost, and ablation evidence here:
+  https://arxiv.org/abs/2606.27100
 
 ## Implemented Policy
 
@@ -51,6 +60,11 @@ hidden reasoning.
 
 Latest committed local benchmark summary:
 `docs/ai_model_benchmark_latest.json`.
+
+The 2026-07-10 host run loaded `qwen3:8b` at 11 GB with Ollama reporting 100%
+GPU processing on the AMD host. It matched all four synthetic governance cases
+with valid JSON, score `0.9925`, and average latency `5.53525` seconds. This is
+provider/risk-review evidence only, not AI trading uplift.
 
 Current local priority order favors `qwen3:8b` as the installed structured
 risk-review baseline, `deepseek-r1:8b` as a reasoning second opinion, and

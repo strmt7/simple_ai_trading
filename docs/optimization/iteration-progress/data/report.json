@@ -2,12 +2,12 @@
   "artifact_class": "exchange_sourced_backtest_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1503,
+      "bytes": 2795,
       "path": "docs/optimization/iteration-progress/charts/progress.svg",
-      "sha256": "f043afa82668b913a6ed9da042488544264a1ea17b73f8419a214596f8da5aeb"
+      "sha256": "b6034c2c64c9b1d9d82de2f492b4698575dfc8e085c58740d119cf5200600b24"
     },
     {
-      "bytes": 552,
+      "bytes": 7983,
       "columns": [
         "round_id",
         "generated_at_utc",
@@ -26,15 +26,15 @@
         "total_closed_trades"
       ],
       "path": "docs/optimization/iteration-progress/data/progress.csv",
-      "row_count": 2,
-      "sha256": "2e6d55412dea78e0bb8e3cf1eeb4ff031f29a6c0ff6fd9450aac9164f5e54139"
+      "row_count": 48,
+      "sha256": "5ba0ba3656dfeb7dfbbba93afabd25b261c8b9c1da8b1c6be405304052b738d1"
     }
   ],
   "data_source": "derived_from_tracked_exchange_sourced_optimization_reports",
-  "generated_at_utc": "2026-07-07T07:41:53.458901Z",
-  "latest_round_id": "round-broad-rule-alpha-1d-smoke",
+  "generated_at_utc": "2026-07-10T01:34:17.062165Z",
+  "latest_round_id": "round-action-value-btc-1m-2020-2026-v73",
   "round_id": "iteration-progress",
-  "source_report_count": 2,
+  "source_report_count": 48,
   "tracked_artifacts": [
     "docs/optimization/iteration-progress/data/report.json",
     "docs/optimization/iteration-progress/data/progress.csv",

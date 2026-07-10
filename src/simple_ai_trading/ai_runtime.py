@@ -43,6 +43,9 @@ class AICapabilityReport:
     model_parameters_b: float | None
     messages: tuple[str, ...]
     warnings: tuple[str, ...]
+    provider_available: bool = False
+    model_available: bool = False
+    model_local: bool = False
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -123,6 +126,27 @@ def _run_capture(command: list[str], timeout: float = 5.0) -> str:
     except (OSError, subprocess.SubprocessError):
         return ""
     return completed.stdout.strip()
+
+
+def _ollama_inventory() -> dict[str, bool] | None:
+    """Return model-name -> local-weights availability, or None when Ollama is unavailable."""
+
+    exe = shutil.which("ollama")
+    if not exe:
+        return None
+    output = _run_capture([exe, "list"], timeout=10.0)
+    if not output:
+        return None
+    inventory: dict[str, bool] = {}
+    for line in output.splitlines()[1:]:
+        columns = re.split(r"\s{2,}", line.strip())
+        if len(columns) < 3:
+            continue
+        name = columns[0].strip()
+        size = columns[2].strip()
+        if name:
+            inventory[name] = size not in {"", "-"} and not name.lower().endswith(":cloud")
+    return inventory
 
 
 def _nvidia_free_vram_gb() -> float | None:
@@ -220,14 +244,33 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
             messages.append(f"free VRAM {free_vram:.1f} GiB is below required {cfg.min_free_vram_gb:.1f} GiB")
 
     provider = cfg.provider
-    if provider == "auto":
-        provider = "local-gpu" if backend.kind != "cpu" else "cpu-only"
+    if provider in {"auto", "local-gpu"}:
+        provider = "ollama"
     model = cfg.model
     if model == "auto":
         model = "operator-selected-local-llm"
     model_parameters_b = estimate_model_parameters_b(model)
+    provider_available = False
+    model_available = False
+    model_local = False
 
     if cfg.enabled:
+        if provider == "ollama":
+            inventory = _ollama_inventory()
+            provider_available = inventory is not None
+            if inventory is None:
+                messages.append("Ollama is not installed, not running, or returned no model inventory")
+            else:
+                candidates = {model, f"{model}:latest"} if ":" not in model else {model}
+                selected = next((name for name in candidates if name in inventory), None)
+                model_available = selected is not None
+                model_local = bool(selected is not None and inventory[selected])
+                if not model_available:
+                    messages.append(f"AI model {model} is not installed in Ollama")
+                elif not model_local:
+                    messages.append(f"AI model {model} has no local weights and cannot satisfy local GPU AI")
+        else:
+            messages.append(f"AI provider {provider} cannot be verified as a supported local provider")
         minimum_parameters_b = max(0.0, float(cfg.min_model_parameters_b))
         if model_parameters_b is None:
             warnings.append(
@@ -257,6 +300,9 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
         model_parameters_b=model_parameters_b,
         messages=tuple(messages),
         warnings=tuple(warnings),
+        provider_available=provider_available,
+        model_available=model_available,
+        model_local=model_local,
     )
 
 
@@ -268,6 +314,8 @@ def render_ai_capability_report(report: AICapabilityReport) -> str:
         f"free_vram_gb={report.free_vram_gb if report.free_vram_gb is not None else 'unknown'}",
         f"free_ram_gb={report.free_ram_gb if report.free_ram_gb is not None else 'unknown'}",
         f"model_parameters_b={report.model_parameters_b if report.model_parameters_b is not None else 'unknown'}",
+        f"provider_available={report.provider_available} model_available={report.model_available} "
+        f"model_local={report.model_local}",
     ]
     for message in report.messages:
         lines.append(f"blocked: {message}")

@@ -37,12 +37,19 @@ def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
         "simple_ai_trading.ai_runtime.resolve_backend",
         lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
     )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._ollama_inventory",
+        lambda: {"qwen3:8b": True},
+    )
 
     report = detect_ai_capabilities(AIRuntimeConfig(enabled=True, require_gpu=True))
 
     assert report.ok is True
     assert report.gpu_vendor == "nvidia"
     assert report.model_parameters_b == 8.0
+    assert report.provider_available is True
+    assert report.model_available is True
+    assert report.model_local is True
 
 
 def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
@@ -53,6 +60,10 @@ def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
         "simple_ai_trading.ai_runtime.resolve_backend",
         lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
     )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._ollama_inventory",
+        lambda: {"tiny-560m": True},
+    )
 
     report = detect_ai_capabilities(
         AIRuntimeConfig(enabled=True, require_gpu=True, model="tiny-560m")
@@ -60,6 +71,30 @@ def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
 
     assert report.ok is False
     assert any("below required" in message for message in report.messages)
+
+
+def test_ai_runtime_blocks_missing_or_cloud_only_ollama_models(monkeypatch) -> None:
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime.resolve_backend",
+        lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._ollama_inventory",
+        lambda: {"deepseek-v3.1:671b-cloud": False},
+    )
+
+    missing = detect_ai_capabilities(AIRuntimeConfig(model="qwen3:8b"))
+    cloud = detect_ai_capabilities(AIRuntimeConfig(model="deepseek-v3.1:671b-cloud"))
+
+    assert missing.ok is False
+    assert any("not installed" in message for message in missing.messages)
+    assert cloud.ok is False
+    assert cloud.model_available is True
+    assert cloud.model_local is False
+    assert any("no local weights" in message for message in cloud.messages)
 
 
 def test_ai_runtime_parses_e_size_model_names() -> None:
@@ -242,19 +277,25 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "self->hwnd_ = hwnd;" in source
     assert 'create_control(L"LISTBOX"' in source
     assert 'L"COMBOBOX"' in source
-    assert 'L"Home"' in source
-    assert 'L"Data Center"' in source
+    assert 'L"Overview"' in source
+    assert 'L"Trading"' in source
+    assert 'L"Research"' in source
+    assert 'L"System"' in source
+    assert 'L"Settings"' in source
     assert 'L"Stop + Close"' in source
-    assert 'L"Backtest Graph"' in source
-    assert 'L"Recommended Workflows"' in source
-    assert 'L"Activity Log"' in source
+    assert 'L"Paper"' in source
+    assert 'L"Testnet live"' in source
+    assert 'run_control_sequence({L"autonomous stop"})' in source
+    assert 'run_control_sequence({L"autonomous stop", L"close all"})' not in source
     assert "status_bar_" in source
     assert "kStatusBarId = 111" in source
+    assert "kModeComboId = 116" in source
     assert "page_summary_" in source
     assert "kApiBudgetRefreshMs = 90000" in source
     assert 'L"api-budget --compact"' in source
     assert "SIMPLE_AI_TRADING_REPO_ROOT" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in source
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS" in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
     assert "runtime_summary()" in source
     assert "repo_root()" in source
@@ -269,14 +310,17 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
 
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
     assert "Stop + Close" in smoke
-    assert "Backtest Graph" in smoke
+    assert "Testnet live" in smoke
+    assert "independent pause/stop" in smoke
+    assert "unsafe ledger-only close all" in smoke
     assert "SetProcessDPIAware" in capture
     assert "PrintWindow" in capture
     assert "Captured window is too small" in capture
-    assert "$StatusBarId = 111" in layout
-    assert "dashboard workflow card" in layout
+    assert "$StatusId = 111" in layout
+    assert "$ModeId = 116" in layout
+    assert "overview settings overlap telemetry footer" in layout
     assert "Assert-PixelHealth" in layout
-    assert "API budget footer" in layout
+    assert "API budget value" in layout
 
 
 def _wide(text: str) -> str:

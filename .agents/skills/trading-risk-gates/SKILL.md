@@ -1,7 +1,7 @@
 ---
 name: trading-risk-gates
 description: Risk guardrails that must survive any CLI, strategy, or live-loop change — drawdown caps, daily trade caps, position sanity, leverage clamps.
-origin: repo-local skill for simple_ai_bitcoin_trading_binance
+origin: repo-local skill for simple_ai_trading
 ---
 
 # Trading Risk Gates
@@ -10,10 +10,10 @@ Use this skill whenever you touch the backtest engine, the live loop, the strate
 
 ## Invariants that must hold
 
-1. **Leverage clamp.** Futures paths clamp effective leverage to `min(strategy.leverage, client.get_max_leverage(symbol), 125)` before any order submission. A bug that submits uncapped leverage is a security-class incident — add a regression test.
+1. **Leverage clamp.** Futures paths clamp effective leverage to `min(strategy.leverage, client.get_max_leverage(symbol), MAX_AUTONOMOUS_LEVERAGE)`, where the app cap is `20x`, before any order submission. A bug that submits uncapped leverage is a security-class incident — add a regression test.
 2. **Drawdown circuit breaker.** Both backtest and live loops honor `cfg.max_drawdown_limit`. When `0 < limit ≤ drawdown`, stop entering new positions and emit a `stopped_by_drawdown` marker. Do not swallow this signal silently.
 3. **Daily trade cap.** `cfg.max_trades_per_day > 0` is enforced per-UTC-day. A value of `0` is an explicit opt-out (no cap) and must be tested as such.
-4. **Max open positions.** `cfg.max_open_positions` defaults to `1`. Any path that would exceed it without the user changing the setting is a bug.
+4. **Max open positions.** `cfg.max_open_positions` defaults to the three supported major assets. Any path that exceeds the configured cap or opens an unsupported symbol is a bug.
 5. **No live real-money execution this phase.** `testnet=True` is required before any authenticated live run. Add a preflight that fails loud if someone disables it.
 6. **Position resume parity.** Authenticated live runs read exchange account state before the loop and hydrate the run state from it. Do not assume the previous process exited flat.
 
