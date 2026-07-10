@@ -280,6 +280,33 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         ),
     ),
     ModelFamilyBlueprint(
+        family="tape_depth_gross_forecaster",
+        role=(
+            "Long-history trade-flow and coarse-depth forecaster with explicit "
+            "gross-return labels and uncertainty bounds."
+        ),
+        status="implemented_evidence",
+        training_target=(
+            "Future real trade-reference return after a latency delay; never an "
+            "executable fill or after-cost PnL label."
+        ),
+        gpu_path="LightGBM OpenCL on AMD/NVIDIA; bounded CPU fallback for parity tests.",
+        risk_levels=RISK_LEVELS,
+        execution_authority="none_gross_forecast_feature_only",
+        validation_gates=(
+            "checksummed official trade/depth manifests",
+            "causal as-of depth join with age mask",
+            "purged train/tune/calibration/evaluation split",
+            "direction and regression baselines",
+            "exact BBO or live shadow required for any execution claim",
+        ),
+        sources=(
+            "https://arxiv.org/abs/1011.6402",
+            "https://arxiv.org/abs/1803.06917",
+            "https://github.com/binance/binance-public-data",
+        ),
+    ),
+    ModelFamilyBlueprint(
         family="deep_lob_microstructure",
         role="Limit-order-book model family for spread, depth, queue, and short-horizon mid-price dynamics.",
         status="blocked_until_depth_store",
@@ -433,14 +460,16 @@ TRAINING_LANES: tuple[TrainingLaneBlueprint, ...] = (
     ),
     TrainingLaneBlueprint(
         lane="microstructure_depth_research",
-        families=("deep_lob_microstructure",),
+        families=("tape_depth_gross_forecaster", "deep_lob_microstructure"),
         research_takeaway=(
-            "Order-book models need actual quote/depth tensors and a fill "
-            "simulator; candle proxies are not enough for HFT claims."
+            "Long trade/depth history can support gross forecast research, but "
+            "executable order-book models still need actual quote/depth tensors "
+            "and a fill simulator; candle or percentage-band proxies are not enough."
         ),
         next_build_step=(
-            "Extend typed top-of-book storage into L2 depth snapshots, quote "
-            "update-rate evidence, microprice, and queue/fill uncertainty labels."
+            "Benchmark the gross forecaster across the full official corpus, then "
+            "add current L2 captures, quote update-rate evidence, microprice, and "
+            "queue/fill uncertainty labels without relabeling coarse depth as BBO."
         ),
         promotion_gates=(
             "symbol-specific spread and depth data exists",

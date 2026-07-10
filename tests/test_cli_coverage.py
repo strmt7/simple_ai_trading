@@ -332,6 +332,17 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert micro_shadow.input == "shadow-candidate.json"
     assert micro_shadow.output is None
     assert micro_shadow.seconds == 21_660.0
+    tick_plan = cli._parse_args(
+        ["tick-archive-sync", "--full-history", "--plan-only"]
+    )
+    assert tick_plan.full_history is True
+    assert tick_plan.plan_only is True
+    assert tick_plan.start_date is None
+    assert tick_plan.end_date is None
+    tape_train = cli._parse_args(["tape-depth-train", "--window-days", "365"])
+    assert tape_train.window_days == 365
+    assert tape_train.horizon_seconds == 60
+    assert tape_train.compute_backend == "auto"
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
@@ -807,6 +818,174 @@ def test_command_microstructure_shadow_is_no_order_and_saves_only_acceptance(
     rendered = capsys.readouterr().out
     assert "trading_authority=true" in rendered
     assert "net_bps=+25.0000" in rendered
+
+
+def test_tick_archive_full_history_plan_uses_independent_official_coverage(
+    monkeypatch,
+    capsys,
+) -> None:
+    def item(data_type: str, period: str, size: int):
+        return SimpleNamespace(
+            period=period,
+            size_bytes=size,
+            url=(
+                "https://data.binance.vision/data/futures/um/daily/"
+                f"{data_type}/BTCUSDT/BTCUSDT-{data_type}-{period}.zip"
+            ),
+        )
+
+    listings = {
+        "bookTicker": [
+            item("bookTicker", "2023-05-16", 100),
+            item("bookTicker", "2024-03-30", 200),
+        ],
+        "trades": [
+            item("trades", "2019-09-08", 300),
+            item("trades", "2026-07-09", 400),
+        ],
+    }
+    monkeypatch.setattr(
+        cli,
+        "list_archive_items",
+        lambda **kwargs: listings[kwargs["data_type"]],
+    )
+
+    result = cli.command_tick_archive_sync(
+        argparse.Namespace(
+            symbols="BTCUSDT",
+            data_types="bookTicker,trades",
+            start_date=None,
+            end_date=None,
+            full_history=True,
+            available_only=False,
+            plan_only=True,
+            max_planned_gb=500.0,
+            warehouse="unused.duckdb",
+            cache_root="unused-cache",
+            memory_limit="1GB",
+            threads=1,
+            timeout=10.0,
+            no_retain_archive=True,
+            json=True,
+        )
+    )
+
+    assert result == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "ok"
+    assert payload["full_history"] is True
+    assert payload["available_only"] is True
+    assert payload["planned_files"] == 4
+    assert payload["missing"] == []
+    by_type = {item["data_type"]: item for item in payload["coverage"]}
+    assert by_type["bookTicker"]["selected_last_period"] == "2024-03-30"
+    assert by_type["trades"]["selected_last_period"] == "2026-07-09"
+
+
+def test_tape_depth_train_remains_research_only(tmp_path, monkeypatch, capsys) -> None:
+    calls: dict[str, object] = {}
+    dataset = SimpleNamespace()
+    metrics = SimpleNamespace(
+        rows=10_000,
+        direction_auc=0.60,
+        spearman_information_coefficient=0.10,
+        top_decile_signed_gross_bps=50.0,
+    )
+    artifact = SimpleNamespace(
+        status="research_candidate",
+        rejection_reasons=(),
+        trading_authority=False,
+        execution_claim=False,
+        evaluation_metrics=metrics,
+        asdict=lambda: {
+            "status": "research_candidate",
+            "trading_authority": False,
+            "execution_claim": False,
+            "model_strings": {"hidden": "value"},
+        },
+    )
+
+    class Connection:
+        def execute(self, _query, parameters):
+            calls["latest_symbol"] = parameters[0]
+            return self
+
+        def fetchone(self):
+            return (1_800_000_000_000,)
+
+    class Warehouse:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def connect(self):
+            return Connection()
+
+    def build(_warehouse, **kwargs):
+        calls["build"] = kwargs
+        return dataset
+
+    def train(value, **kwargs):
+        calls["train"] = (value, kwargs)
+        return artifact
+
+    def save(value, path):
+        calls["save"] = (value, Path(path))
+        Path(path).write_text('{"research":true}\n', encoding="utf-8")
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_warehouse.MicrostructureWarehouse",
+        Warehouse,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_features.build_tape_depth_forecast_dataset",
+        build,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_model.train_tape_depth_forecaster",
+        train,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.tape_depth_model.save_tape_depth_model_artifact",
+        save,
+    )
+    output = tmp_path / "tape-depth.json"
+
+    result = cli.command_tape_depth_train(
+        argparse.Namespace(
+            symbol="BTCUSDT",
+            warehouse="ticks.duckdb",
+            cache_root="cache",
+            output=str(output),
+            window_days=180,
+            end_date=None,
+            horizon_seconds=60,
+            total_latency_ms=750,
+            decision_cadence_seconds=5,
+            maximum_depth_age_ms=60_000,
+            risk_level="conservative",
+            compute_backend="cpu",
+            minimum_segment_rows=2_000,
+            maximum_rows=5_000_000,
+            memory_limit="1GB",
+            threads=1,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    assert calls["latest_symbol"] == "BTCUSDT"
+    assert calls["build"]["symbol"] == "BTCUSDT"  # type: ignore[index]
+    assert calls["train"][0] is dataset  # type: ignore[index]
+    assert calls["save"] == (artifact, output)
+    rendered = capsys.readouterr().out
+    assert "trading_authority=false" in rendered
+    assert "execution_claim=false" in rendered
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:

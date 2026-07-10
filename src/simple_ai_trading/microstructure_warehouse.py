@@ -26,7 +26,7 @@ from .assets import is_supported_major_symbol, normalize_symbol
 from .binance_archive import archive_file_url
 
 
-TICK_WAREHOUSE_SCHEMA_VERSION = "binance-usdm-tick-v4"
+TICK_WAREHOUSE_SCHEMA_VERSION = "binance-usdm-tick-v5"
 BOOK_TICKER_FEATURE_BUILD_VERSION = "book-ticker-event-time-v1"
 SUPPORTED_TICK_ARCHIVES = frozenset({"bookTicker", "trades", "bookDepth"})
 _CHECKSUM_PATTERN = re.compile(r"\b([0-9a-fA-F]{64})\b")
@@ -410,6 +410,7 @@ class MicrostructureWarehouse:
             self._conn = duckdb.connect(str(self.path))
             self._conn.execute(f"SET memory_limit='{self.memory_limit}'")
             self._conn.execute(f"SET threads={self.threads}")
+            self._conn.execute("SET TimeZone='UTC'")
             self._conn.execute("SET preserve_insertion_order=false")
             self._init_schema()
         return self._conn
@@ -491,7 +492,7 @@ class MicrostructureWarehouse:
                 archive_id VARCHAR NOT NULL,
                 symbol VARCHAR NOT NULL,
                 timestamp_ms BIGINT NOT NULL,
-                percentage SMALLINT NOT NULL,
+                percentage DECIMAL(4,2) NOT NULL,
                 depth DOUBLE NOT NULL,
                 notional DOUBLE NOT NULL
             );
@@ -631,6 +632,37 @@ class MicrostructureWarehouse:
                 SELECT d.* FROM book_depth_aggregate_raw d
                 JOIN archive_manifest m USING (archive_id)
                 WHERE m.status = 'complete' AND m.is_current;
+            CREATE OR REPLACE VIEW current_book_depth_snapshots AS
+                WITH pivoted AS (
+                    SELECT
+                        symbol,
+                        timestamp_ms,
+                        max(depth) FILTER (WHERE percentage = -0.20) AS bid_depth_0_2,
+                        max(depth) FILTER (WHERE percentage = 0.20) AS ask_depth_0_2,
+                        max(notional) FILTER (WHERE percentage = -0.20) AS bid_notional_0_2,
+                        max(notional) FILTER (WHERE percentage = 0.20) AS ask_notional_0_2,
+                        max(depth) FILTER (WHERE percentage = -1.00) AS bid_depth_1,
+                        max(depth) FILTER (WHERE percentage = 1.00) AS ask_depth_1,
+                        max(notional) FILTER (WHERE percentage = -1.00) AS bid_notional_1,
+                        max(notional) FILTER (WHERE percentage = 1.00) AS ask_notional_1,
+                        max(depth) FILTER (WHERE percentage = -5.00) AS bid_depth_5,
+                        max(depth) FILTER (WHERE percentage = 5.00) AS ask_depth_5,
+                        max(notional) FILTER (WHERE percentage = -5.00) AS bid_notional_5,
+                        max(notional) FILTER (WHERE percentage = 5.00) AS ask_notional_5,
+                        count(*) AS band_count
+                    FROM current_book_depth_aggregate_raw
+                    GROUP BY symbol, timestamp_ms
+                )
+                SELECT
+                    *,
+                    (bid_depth_0_2 - ask_depth_0_2)
+                        / nullif(bid_depth_0_2 + ask_depth_0_2, 0) AS depth_imbalance_0_2,
+                    (bid_depth_1 - ask_depth_1)
+                        / nullif(bid_depth_1 + ask_depth_1, 0) AS depth_imbalance_1,
+                    (bid_depth_5 - ask_depth_5)
+                        / nullif(bid_depth_5 + ask_depth_5, 0) AS depth_imbalance_5
+                FROM pivoted
+                WHERE band_count = 12;
             CREATE OR REPLACE VIEW current_book_ticker_1s AS
                 SELECT
                     q.symbol, q.second_ms, q.open_mid, q.high_mid, q.low_mid,
@@ -658,6 +690,23 @@ class MicrostructureWarehouse:
                 SELECT t.* FROM trade_1s t
                 JOIN archive_manifest m USING (archive_id)
                 WHERE m.status = 'complete' AND m.is_current;
+            CREATE OR REPLACE VIEW current_trade_depth_1s AS
+                SELECT
+                    t.*,
+                    d.timestamp_ms AS depth_time_ms,
+                    t.second_ms - d.timestamp_ms AS depth_age_ms,
+                    d.bid_depth_0_2, d.ask_depth_0_2,
+                    d.bid_notional_0_2, d.ask_notional_0_2,
+                    d.bid_depth_1, d.ask_depth_1,
+                    d.bid_notional_1, d.ask_notional_1,
+                    d.bid_depth_5, d.ask_depth_5,
+                    d.bid_notional_5, d.ask_notional_5,
+                    d.depth_imbalance_0_2,
+                    d.depth_imbalance_1,
+                    d.depth_imbalance_5
+                FROM current_trade_1s t
+                ASOF LEFT JOIN current_book_depth_snapshots d
+                  ON t.symbol = d.symbol AND t.second_ms >= d.timestamp_ms;
             CREATE OR REPLACE VIEW microstructure_1s AS
                 SELECT
                     q.symbol,
@@ -703,6 +752,17 @@ class MicrostructureWarehouse:
         if "event_time_regressions" not in manifest_columns:
             conn.execute(
                 "ALTER TABLE archive_manifest ADD COLUMN event_time_regressions UBIGINT DEFAULT 0"
+            )
+        book_depth_columns = {
+            str(row[1]): str(row[2]).upper()
+            for row in conn.execute(
+                "PRAGMA table_info('book_depth_aggregate_raw')"
+            ).fetchall()
+        }
+        if book_depth_columns.get("percentage") != "DECIMAL(4,2)":
+            conn.execute(
+                "ALTER TABLE book_depth_aggregate_raw "
+                "ALTER COLUMN percentage TYPE DECIMAL(4,2)"
             )
         terminal_columns = {
             str(row[1])
@@ -1959,12 +2019,15 @@ class MicrostructureWarehouse:
             CREATE TEMP TABLE stage_book_depth AS
             SELECT
                 epoch_ms(strptime(timestamp, '%Y-%m-%d %H:%M:%S'))::BIGINT AS timestamp_ms,
-                percentage::SMALLINT AS percentage,
+                percentage::DECIMAL(4,2) AS percentage,
                 depth::DOUBLE AS depth,
                 notional::DOUBLE AS notional
             FROM read_csv(
                 ?, header=true, strict_mode=true,
-                columns={'timestamp':'VARCHAR','percentage':'SMALLINT','depth':'DOUBLE','notional':'DOUBLE'}
+                columns={
+                    'timestamp':'VARCHAR','percentage':'DECIMAL(4,2)',
+                    'depth':'DOUBLE','notional':'DOUBLE'
+                }
             )
             """,
             [str(csv_path)],
@@ -1973,7 +2036,7 @@ class MicrostructureWarehouse:
             """
             SELECT count(*)::UBIGINT, min(timestamp_ms), max(timestamp_ms),
                 count(*) FILTER (
-                    WHERE percentage NOT IN (-5,-4,-3,-2,-1,1,2,3,4,5)
+                    WHERE percentage NOT IN (-5,-4,-3,-2,-1,-0.20,0.20,1,2,3,4,5)
                        OR NOT isfinite(depth) OR NOT isfinite(notional)
                        OR depth < 0 OR notional < 0 OR timestamp_ms NOT BETWEEN ? AND ?
                 )::UBIGINT,
@@ -1987,7 +2050,9 @@ class MicrostructureWarehouse:
         rows_read, first_ms, last_ms, invalid, duplicates = (int(value or 0) for value in row)
         expected_groups = int(
             conn.execute(
-                "SELECT count(*) FROM (SELECT timestamp_ms FROM stage_book_depth GROUP BY timestamp_ms HAVING count(*) <> 10)"
+                "SELECT count(*) FROM ("
+                "SELECT timestamp_ms FROM stage_book_depth "
+                "GROUP BY timestamp_ms HAVING count(*) <> 12)"
             ).fetchone()[0]
         )
         if rows_read <= 0 or invalid or duplicates or expected_groups:
@@ -2006,7 +2071,7 @@ class MicrostructureWarehouse:
             )
         return {
             "rows_read": rows_read,
-            "derived_rows": rows_read // 10,
+            "derived_rows": rows_read // 12,
             "first_exchange_time_ms": first_ms,
             "last_exchange_time_ms": last_ms,
             "invalid_rows": invalid,

@@ -133,6 +133,8 @@ simple-ai-trading archive-sync --symbol BTCUSDC --interval 1s --cadence monthly
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --plan-only --require-checksum --json
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --require-checksum
 simple-ai-trading data-health --interval 1s --market spot --min-rows 1000000 --require-verified-checksum --json
+simple-ai-trading tick-archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --data-types bookTicker,trades,bookDepth --full-history --plan-only --plan-output docs/microstructure/availability.json
+simple-ai-trading tape-depth-train --symbol BTCUSDT --window-days 365 --horizon-seconds 60 --compute-backend directml
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
 simple-ai-trading microstructure-prequential --input data/microstructure-model.json
 simple-ai-trading microstructure-promote --input data/microstructure-model.json
@@ -174,6 +176,20 @@ drifted evidence. A refit produces only `shadow_candidate`; only a passing
 `microstructure-shadow` run produces `accepted`. No v13 artifact is currently
 accepted or claimed profitable; see
 [Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
+The official compact tick plan is tracked at
+[`docs/microstructure/availability.json`](docs/microstructure/availability.json):
+trade data spans multiple years through 2026-07-09, while official BBO archives
+stop on 2024-03-30. The app does not disguise coarse `bookDepth` percentage bands
+as a current best bid/ask history.
+
+`tape-depth-train` builds a bounded, purged LightGBM direction/return/uncertainty
+ensemble from checksummed one-second trade tape and causally joined coarse depth.
+Its label is the future real trade-reference return after the configured latency,
+not an executable fill or after-cost PnL. The artifact is therefore restricted to
+`research_candidate` or `rejected`, records `trading_authority=false` and
+`execution_claim=false`, and cannot be loaded as an accepted trading model. It is
+the long-history forecasting lane; the shorter exact-BBO lifecycle and current
+no-order shadow remain mandatory before any execution claim.
 
 `ai-forecast-benchmark` is a no-order research workflow for a hash-pinned
 financial time-series foundation model. It requires exact BTCUSDT, ETHUSDT, and

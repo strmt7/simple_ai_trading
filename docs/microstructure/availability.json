@@ -1,0 +1,127 @@
+{
+  "available_only": true,
+  "coverage": [
+    {
+      "available_files": 320,
+      "available_first_period": "2023-05-16",
+      "available_last_period": "2024-03-30",
+      "data_type": "bookTicker",
+      "selected_bytes": 52578851529,
+      "selected_files": 320,
+      "selected_first_period": "2023-05-16",
+      "selected_last_period": "2024-03-30",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "available_files": 2497,
+      "available_first_period": "2019-09-08",
+      "available_last_period": "2026-07-09",
+      "data_type": "trades",
+      "selected_bytes": 67168799868,
+      "selected_files": 2497,
+      "selected_first_period": "2019-09-08",
+      "selected_last_period": "2026-07-09",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "available_files": 1283,
+      "available_first_period": "2023-01-01",
+      "available_last_period": "2026-07-09",
+      "data_type": "bookDepth",
+      "selected_bytes": 595354195,
+      "selected_files": 1283,
+      "selected_first_period": "2023-01-01",
+      "selected_last_period": "2026-07-09",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "available_files": 320,
+      "available_first_period": "2023-05-16",
+      "available_last_period": "2024-03-30",
+      "data_type": "bookTicker",
+      "selected_bytes": 43271625770,
+      "selected_files": 320,
+      "selected_first_period": "2023-05-16",
+      "selected_last_period": "2024-03-30",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "available_files": 2417,
+      "available_first_period": "2019-11-27",
+      "available_last_period": "2026-07-09",
+      "data_type": "trades",
+      "selected_bytes": 79330262368,
+      "selected_files": 2417,
+      "selected_first_period": "2019-11-27",
+      "selected_last_period": "2026-07-09",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "available_files": 1284,
+      "available_first_period": "2023-01-01",
+      "available_last_period": "2026-07-09",
+      "data_type": "bookDepth",
+      "selected_bytes": 620635972,
+      "selected_files": 1284,
+      "selected_first_period": "2023-01-01",
+      "selected_last_period": "2026-07-09",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "available_files": 320,
+      "available_first_period": "2023-05-16",
+      "available_last_period": "2024-03-30",
+      "data_type": "bookTicker",
+      "selected_bytes": 23507704936,
+      "selected_files": 320,
+      "selected_first_period": "2023-05-16",
+      "selected_last_period": "2024-03-30",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "available_files": 2125,
+      "available_first_period": "2020-09-14",
+      "available_last_period": "2026-07-09",
+      "data_type": "trades",
+      "selected_bytes": 27609910980,
+      "selected_files": 2125,
+      "selected_first_period": "2020-09-14",
+      "selected_last_period": "2026-07-09",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "available_files": 1281,
+      "available_first_period": "2023-01-01",
+      "available_last_period": "2026-07-09",
+      "data_type": "bookDepth",
+      "selected_bytes": 541885792,
+      "selected_files": 1281,
+      "selected_first_period": "2023-01-01",
+      "selected_last_period": "2026-07-09",
+      "symbol": "SOLUSDT"
+    }
+  ],
+  "data_types": [
+    "bookTicker",
+    "trades",
+    "bookDepth"
+  ],
+  "end_date": null,
+  "full_history": true,
+  "generated_at": "2026-07-10T13:07:26.552522+00:00",
+  "max_planned_gb": 500.0,
+  "missing": [],
+  "plan_only": true,
+  "planned_bytes": 295225031410,
+  "planned_files": 11847,
+  "planned_gb": 274.9497363436967,
+  "start_date": null,
+  "status": "ok",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "truth_basis": "official_binance_data_vision_s3_listing",
+  "warehouse": "data/microstructure.duckdb"
+}

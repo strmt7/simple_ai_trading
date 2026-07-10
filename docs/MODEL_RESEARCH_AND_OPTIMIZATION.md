@@ -123,6 +123,79 @@ or partial fills because it submits zero orders. Historical and shadow success
 therefore do not guarantee live profitability. This limitation is one reason no
 v13 artifact is currently accepted or claimed profitable.
 
+### Official Tick-Source Coverage
+
+`tick-archive-sync --full-history --plan-only` enumerates the official Binance
+Data Vision S3 index independently for every symbol and product. It does not
+assume that all products share a launch date or continue through the same day.
+The machine-readable 2026-07-10 plan is
+[`docs/microstructure/availability.json`](microstructure/availability.json).
+
+The verified listing contains 11,847 files and 295,225,031,410 compressed bytes
+(274.950 GiB). BTCUSDT and ETHUSDT trades begin in 2019, SOLUSDT trades begin in
+2020, and all three continue through 2026-07-09. Coarse `bookDepth` snapshots
+span 2023-01-01 through 2026-07-09. Exact `bookTicker` archives contain only 320
+days for each symbol, from 2023-05-16 through 2024-03-30. Binance returns no
+official BBO archive after that date.
+
+`bookDepth` rows contain cumulative depth/notional at percentage bands such as
+`-0.20%` and `+0.20%`; they are real liquidity observations but are not best bid,
+best ask, queue, or spread observations. The software must not relabel them as
+BBO or interpolate an invented spread. Long-history research therefore keeps
+trade-tape/depth features separate from the shorter BBO model, and any current
+execution claim still requires a fresh public-feed shadow. Full corpus ingestion
+is in progress; the compact listing plan is not a claim that all files are
+already present in the local warehouse.
+
+Reproduce the plan without downloading data:
+
+```powershell
+simple-ai-trading tick-archive-sync `
+  --symbols BTCUSDT,ETHUSDT,SOLUSDT `
+  --data-types bookTicker,trades,bookDepth `
+  --full-history --plan-only `
+  --plan-output docs/microstructure/availability.json
+```
+
+### Long-History Tape/Depth Forecasting
+
+`tape-depth-train` is the implemented research lane for the longer trade and
+coarse-depth history. It builds a causal one-second feature matrix with trade
+returns, realized volatility, aggressor flow, trade counts, volume, exact UTC
+cycle features, the observed `0.20%`, `1%`, and `5%` cumulative depth bands, a
+depth-age mask, and depth-curve shape. The depth join is backward-looking only;
+a depth snapshot newer than the decision second is never used.
+
+The target is deliberately narrow: the real trade-reference return from the end
+of the configured latency delay, rounded up to the next observable one-second
+boundary, to the exact future horizon. The effective delay and complete target
+span are persisted with the artifact. It is a gross
+forecast target, not a synthetic spread, executable fill, queue estimate, or
+after-cost PnL. A purged chronological train/tune/calibration/evaluation split
+fits LightGBM direction, Huber mean-return, and 10th/90th-percentile models,
+then records AUC, Brier score, MAE, RMSE, Spearman information coefficient,
+interval coverage, and top-decile signed gross return against simple baselines.
+
+```powershell
+simple-ai-trading tape-depth-train `
+  --symbol BTCUSDT `
+  --warehouse data/microstructure.duckdb `
+  --window-days 365 `
+  --horizon-seconds 60 `
+  --total-latency-ms 750 `
+  --decision-cadence-seconds 5 `
+  --compute-backend directml
+```
+
+The row limit, DuckDB memory limit, thread count, progress phases, and optional
+end date keep training bounded and reproducible. Every source manifest and
+archive checksum contributing to the window is embedded in the dataset evidence.
+Artifacts can only be `research_candidate` or `rejected`; both carry
+`trading_authority=false` and `execution_claim=false`, and the loader rejects a
+forged authority field. Model selection still requires full-corpus,
+cross-symbol, rolling out-of-sample comparison. Any order-capable descendant
+must independently pass exact-BBO replay and the current no-order shadow.
+
 The fold, queue, and latency design follows the documented limits of market-
 data replay: a replay cannot infer the strategy's own market impact, queue
 position matters, and feed, order-entry, and response latency are distinct.

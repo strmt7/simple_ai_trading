@@ -491,8 +491,34 @@ def _build_parser() -> argparse.ArgumentParser:
         default="bookTicker,trades",
         help="comma-separated official products: bookTicker,trades,bookDepth",
     )
-    parser_tick_archive.add_argument("--start-date", required=True, help="inclusive UTC date, YYYY-MM-DD")
-    parser_tick_archive.add_argument("--end-date", required=True, help="inclusive UTC date, YYYY-MM-DD")
+    parser_tick_archive.add_argument("--start-date", default=None, help="inclusive UTC date, YYYY-MM-DD")
+    parser_tick_archive.add_argument("--end-date", default=None, help="inclusive UTC date, YYYY-MM-DD")
+    parser_tick_archive.add_argument(
+        "--full-history",
+        action="store_true",
+        help="discover and select every official file independently for each symbol/data type",
+    )
+    parser_tick_archive.add_argument(
+        "--available-only",
+        action="store_true",
+        help="record but do not fail on unavailable symbol/data-type dates",
+    )
+    parser_tick_archive.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="report official file coverage and compressed bytes without downloading",
+    )
+    parser_tick_archive.add_argument(
+        "--plan-output",
+        default=None,
+        help="optional atomic JSON path for the compact official coverage plan",
+    )
+    parser_tick_archive.add_argument(
+        "--max-planned-gb",
+        type=float,
+        default=500.0,
+        help="block downloads above this official compressed-byte plan; use 0 to disable",
+    )
     parser_tick_archive.add_argument("--warehouse", default="data/microstructure.duckdb")
     parser_tick_archive.add_argument("--cache-root", default="data/archive-cache")
     parser_tick_archive.add_argument("--memory-limit", default="8GB")
@@ -705,6 +731,49 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_shadow.add_argument("--timeout", type=float, default=10.0)
     parser_micro_shadow.add_argument("--json", action="store_true")
     parser_micro_shadow.set_defaults(func=command_microstructure_shadow)
+
+    parser_tape_depth_train = subparsers.add_parser(
+        "tape-depth-train",
+        help="train a purged research-only gross forecaster from real trade/depth history",
+    )
+    parser_tape_depth_train.add_argument("--symbol", default="BTCUSDT")
+    parser_tape_depth_train.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_tape_depth_train.add_argument("--cache-root", default="data/archive-cache")
+    parser_tape_depth_train.add_argument(
+        "--output", default="data/tape-depth-model.json"
+    )
+    parser_tape_depth_train.add_argument("--window-days", type=int, default=180)
+    parser_tape_depth_train.add_argument(
+        "--end-date",
+        default=None,
+        help="optional inclusive UTC evaluation date; defaults to latest covered target",
+    )
+    parser_tape_depth_train.add_argument("--horizon-seconds", type=int, default=60)
+    parser_tape_depth_train.add_argument("--total-latency-ms", type=int, default=750)
+    parser_tape_depth_train.add_argument(
+        "--decision-cadence-seconds", type=int, default=5
+    )
+    parser_tape_depth_train.add_argument(
+        "--maximum-depth-age-ms", type=int, default=60_000
+    )
+    parser_tape_depth_train.add_argument(
+        "--risk-level",
+        choices=["conservative", "regular", "aggressive"],
+        default="conservative",
+    )
+    parser_tape_depth_train.add_argument(
+        "--compute-backend",
+        choices=_COMPUTE_BACKEND_CHOICES,
+        default="auto",
+    )
+    parser_tape_depth_train.add_argument("--minimum-segment-rows", type=int, default=2_000)
+    parser_tape_depth_train.add_argument("--maximum-rows", type=int, default=5_000_000)
+    parser_tape_depth_train.add_argument("--memory-limit", default="8GB")
+    parser_tape_depth_train.add_argument("--threads", type=int, default=8)
+    parser_tape_depth_train.add_argument("--json", action="store_true")
+    parser_tape_depth_train.set_defaults(func=command_tape_depth_train)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
@@ -5613,20 +5682,45 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         detail = ",".join(unsupported) if unsupported else "missing"
         print(f"tick-archive-sync unsupported data types: {detail}", file=sys.stderr)
         return 2
-    try:
-        start = _parse_cli_utc_date(getattr(args, "start_date", None), "start-date")
-        end = _parse_cli_utc_date(getattr(args, "end_date", None), "end-date")
-    except ValueError as exc:
-        print(f"tick-archive-sync: {exc}", file=sys.stderr)
+    full_history = bool(getattr(args, "full_history", False))
+    available_only = bool(getattr(args, "available_only", False)) or full_history
+    plan_only = bool(getattr(args, "plan_only", False))
+    start_value = getattr(args, "start_date", None)
+    end_value = getattr(args, "end_date", None)
+    if full_history and (start_value or end_value):
+        print(
+            "tick-archive-sync: --full-history cannot be combined with "
+            "--start-date or --end-date",
+            file=sys.stderr,
+        )
         return 2
-    if start > end:
-        print("tick-archive-sync: start-date must not be after end-date", file=sys.stderr)
+    if not full_history and (not start_value or not end_value):
+        print(
+            "tick-archive-sync: provide both --start-date and --end-date or "
+            "use --full-history",
+            file=sys.stderr,
+        )
         return 2
-    requested_periods = {
-        (start + timedelta(days=offset)).isoformat() for offset in range((end - start).days + 1)
-    }
+    start = None
+    end = None
+    requested_periods: set[str] | None = None
+    if not full_history:
+        try:
+            start = _parse_cli_utc_date(start_value, "start-date")
+            end = _parse_cli_utc_date(end_value, "end-date")
+        except ValueError as exc:
+            print(f"tick-archive-sync: {exc}", file=sys.stderr)
+            return 2
+        if start > end:
+            print("tick-archive-sync: start-date must not be after end-date", file=sys.stderr)
+            return 2
+        requested_periods = {
+            (start + timedelta(days=offset)).isoformat()
+            for offset in range((end - start).days + 1)
+        }
     plan: list[tuple[str, str, object]] = []
     missing: list[dict[str, str]] = []
+    coverage: list[dict[str, object]] = []
     try:
         for symbol in symbols:
             for data_type in data_types:
@@ -5639,16 +5733,111 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     timeout=max(1, min(60, int(float(getattr(args, "timeout", 240.0))))),
                 )
                 by_period = {item.period: item for item in items}
-                for period in sorted(requested_periods):
+                selected_periods = (
+                    sorted(by_period)
+                    if requested_periods is None
+                    else sorted(requested_periods)
+                )
+                selected_items = []
+                for period in selected_periods:
                     item = by_period.get(period)
                     if item is None:
-                        missing.append({"symbol": symbol, "data_type": data_type, "period": period})
+                        missing.append(
+                            {
+                                "symbol": symbol,
+                                "data_type": data_type,
+                                "period": period,
+                            }
+                        )
                     else:
+                        selected_items.append(item)
                         plan.append((symbol, data_type, item))
+                coverage.append(
+                    {
+                        "symbol": symbol,
+                        "data_type": data_type,
+                        "available_files": len(items),
+                        "available_first_period": min(by_period) if by_period else None,
+                        "available_last_period": max(by_period) if by_period else None,
+                        "selected_files": len(selected_items),
+                        "selected_first_period": (
+                            selected_items[0].period if selected_items else None
+                        ),
+                        "selected_last_period": (
+                            selected_items[-1].period if selected_items else None
+                        ),
+                        "selected_bytes": sum(
+                            int(item.size_bytes) for item in selected_items
+                        ),
+                    }
+                )
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"tick-archive-sync planning failed: {exc}", file=sys.stderr)
         return 2
+    plan.sort(key=lambda value: (value[0], value[1], value[2].period))
     json_mode = bool(getattr(args, "json", False))
+    planned_bytes = sum(int(item.size_bytes) for _, _, item in plan)
+    max_planned_gb = float(getattr(args, "max_planned_gb", 500.0))
+    if not math.isfinite(max_planned_gb) or max_planned_gb < 0.0:
+        print("tick-archive-sync: --max-planned-gb must be finite and non-negative", file=sys.stderr)
+        return 2
+    plan_payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "truth_basis": "official_binance_data_vision_s3_listing",
+        "status": (
+            "ok"
+            if plan and (available_only or not missing)
+            else "incomplete"
+        ),
+        "plan_only": plan_only,
+        "full_history": full_history,
+        "available_only": available_only,
+        "warehouse": str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+        "symbols": list(symbols),
+        "data_types": list(data_types),
+        "start_date": start.isoformat() if start is not None else None,
+        "end_date": end.isoformat() if end is not None else None,
+        "planned_files": len(plan),
+        "planned_bytes": planned_bytes,
+        "planned_gb": planned_bytes / 1024**3,
+        "max_planned_gb": max_planned_gb,
+        "coverage": coverage,
+        "missing": missing,
+    }
+    plan_output = getattr(args, "plan_output", None)
+    if plan_output:
+        write_json_atomic(
+            Path(str(plan_output)),
+            plan_payload,
+            indent=2,
+            sort_keys=True,
+        )
+    if plan_only:
+        if json_mode:
+            print(json.dumps(plan_payload, indent=2, sort_keys=True))
+        else:
+            print(
+                "tick-archive-sync plan: "
+                f"status={plan_payload['status']} files={len(plan)} "
+                f"compressed_gb={float(plan_payload['planned_gb']):.3f} "
+                f"missing={len(missing)}"
+            )
+            for item in coverage:
+                print(
+                    f"  {item['symbol']} {item['data_type']}: "
+                    f"{item['selected_first_period']}..{item['selected_last_period']} "
+                    f"files={item['selected_files']} "
+                    f"compressed_gb={int(item['selected_bytes']) / 1024**3:.3f}"
+                )
+        return 0 if plan_payload["status"] == "ok" else 2
+    if max_planned_gb > 0.0 and planned_bytes > max_planned_gb * 1024**3:
+        print(
+            "tick-archive-sync: official compressed-byte plan exceeds "
+            f"--max-planned-gb ({planned_bytes / 1024**3:.3f} > {max_planned_gb:.3f}); "
+            "run --plan-only, raise the limit, or use 0 to disable",
+            file=sys.stderr,
+        )
+        return 2
     results: list[dict[str, object]] = []
     errors: list[dict[str, str]] = []
     try:
@@ -5703,16 +5892,13 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         print(f"tick-archive-sync warehouse failed: {exc}", file=sys.stderr)
         return 2
     payload = {
-        "status": "ok" if not errors and not missing else "incomplete",
-        "warehouse": str(getattr(args, "warehouse", "data/microstructure.duckdb")),
-        "symbols": list(symbols),
-        "data_types": list(data_types),
-        "start_date": start.isoformat(),
-        "end_date": end.isoformat(),
-        "planned_files": len(plan),
-        "planned_bytes": sum(int(item.size_bytes) for _, _, item in plan),
+        **plan_payload,
+        "status": (
+            "ok"
+            if plan and not errors and (available_only or not missing)
+            else "incomplete"
+        ),
         "completed_files": len(results),
-        "missing": missing,
         "errors": errors,
         "results": results,
     }
@@ -6097,6 +6283,121 @@ def command_microstructure_shadow(args: argparse.Namespace) -> int:
         if digest is not None:
             print(f"artifact={output_path} sha256={digest}")
     return 0 if accepted is not None and report.passed else 2
+
+
+def command_tape_depth_train(args: argparse.Namespace) -> int:
+    """Train a bounded gross forecaster without creating execution authority."""
+
+    from .microstructure_warehouse import MicrostructureWarehouse
+    from .tape_depth_features import build_tape_depth_forecast_dataset
+    from .tape_depth_model import (
+        save_tape_depth_model_artifact,
+        train_tape_depth_forecaster,
+    )
+
+    json_mode = bool(getattr(args, "json", False))
+    symbol = str(getattr(args, "symbol", "BTCUSDT")).upper()
+    horizon = int(getattr(args, "horizon_seconds", 60))
+    latency = int(getattr(args, "total_latency_ms", 750))
+    cadence = int(getattr(args, "decision_cadence_seconds", 5))
+    window_days = int(getattr(args, "window_days", 180))
+    output_path = Path(str(getattr(args, "output", "data/tape-depth-model.json")))
+    if not 30 <= window_days <= 730:
+        print("tape-depth-train: --window-days must lie in [30, 730]", file=sys.stderr)
+        return 2
+
+    def progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(f"tape-depth-train {phase}: {completed}/{total}", flush=True)
+
+    try:
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            latest_row = warehouse.connect().execute(
+                "SELECT max(second_ms) FROM current_trade_1s WHERE symbol = ?",
+                [symbol],
+            ).fetchone()
+            if latest_row is None or latest_row[0] is None:
+                raise ValueError(f"no one-second trade rows exist for {symbol}")
+            target_offset_seconds = max(1, int(math.ceil(latency / 1_000.0))) + horizon
+            last_possible_decision_ms = (
+                int(latest_row[0]) - target_offset_seconds * 1_000 + 1_000
+            )
+            end_value = getattr(args, "end_date", None)
+            if end_value:
+                end_date = _parse_cli_utc_date(end_value, "end-date")
+                requested_end_ms = int(
+                    datetime.combine(
+                        end_date + timedelta(days=1),
+                        datetime.min.time(),
+                        tzinfo=timezone.utc,
+                    ).timestamp()
+                    * 1_000
+                ) - 1
+                end_ms = min(requested_end_ms, last_possible_decision_ms)
+            else:
+                end_ms = last_possible_decision_ms
+            start_ms = end_ms - window_days * 86_400_000 + cadence * 1_000
+            if not json_mode:
+                print(
+                    "tape-depth-train dataset: "
+                    f"symbol={symbol} start_ms={start_ms} end_ms={end_ms} "
+                    f"execution_claim=false",
+                    flush=True,
+                )
+            dataset = build_tape_depth_forecast_dataset(
+                warehouse,
+                symbol=symbol,
+                start_ms=start_ms,
+                end_ms=end_ms,
+                horizon_seconds=horizon,
+                total_latency_ms=latency,
+                decision_cadence_seconds=cadence,
+                maximum_depth_age_ms=int(
+                    getattr(args, "maximum_depth_age_ms", 60_000)
+                ),
+                maximum_rows=int(getattr(args, "maximum_rows", 5_000_000)),
+            )
+        artifact = train_tape_depth_forecaster(
+            dataset,
+            risk_level=str(getattr(args, "risk_level", "conservative")),
+            compute_backend=str(getattr(args, "compute_backend", "auto")),
+            minimum_segment_rows=int(getattr(args, "minimum_segment_rows", 2_000)),
+            progress=progress,
+        )
+        save_tape_depth_model_artifact(artifact, output_path)
+        digest = hashlib.sha256(output_path.read_bytes()).hexdigest()
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"tape-depth-train failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+
+    payload = artifact.asdict()
+    payload.pop("model_strings", None)
+    payload["artifact_path"] = str(output_path)
+    payload["artifact_sha256"] = digest
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        metrics = artifact.evaluation_metrics
+        print(
+            "tape-depth-train: "
+            f"status={artifact.status} rows={metrics.rows} "
+            f"auc={metrics.direction_auc:.6f} "
+            f"spearman_ic={metrics.spearman_information_coefficient:+.6f} "
+            f"top_decile_gross_bps={metrics.top_decile_signed_gross_bps:+.4f} "
+            "trading_authority=false execution_claim=false"
+        )
+        if artifact.rejection_reasons:
+            print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
+        print(f"artifact={output_path} sha256={digest}")
+    return 0 if artifact.status == "research_candidate" else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:
