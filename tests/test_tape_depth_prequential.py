@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 from datetime import UTC, datetime
 import gzip
 import json
@@ -122,6 +123,64 @@ def test_tape_depth_prediction_table_is_complete_and_deterministic(tmp_path) -> 
     assert len(rows) == 2
     assert rows[0]["decision_time_ms"] == "1000"
     assert rows[1]["actual_gross_return_bps"] == "-0.75"
+
+
+def test_dataset_range_source_evidence_uses_exact_causal_boundaries(monkeypatch) -> None:
+    class Connection:
+        prior = (9_098_000,)
+
+        def execute(self, _query, _parameters):
+            return self
+
+        def fetchone(self):
+            return self.prior
+
+    class Warehouse:
+        connection = Connection()
+
+        def connect(self):
+            return self.connection
+
+    captured: dict[str, object] = {}
+
+    def source_evidence(_warehouse, symbol, **kwargs):
+        captured["symbol"] = symbol
+        captured.update(kwargs)
+        return {"verified": True, "manifest_fingerprint": "a" * 64}
+
+    monkeypatch.setattr(
+        prequential,
+        "tape_depth_dataset_source_evidence",
+        source_evidence,
+    )
+    warehouse = Warehouse()
+    evidence = prequential._dataset_range_source_evidence(
+        warehouse,
+        symbol="BTCUSDT",
+        start_ms=10_000_000,
+        end_ms=20_000_000,
+        horizon_seconds=60,
+        total_latency_ms=750,
+    )
+
+    assert evidence["verified"] is True
+    assert captured == {
+        "symbol": "BTCUSDT",
+        "required_start_ms": 9_098_000,
+        "required_end_ms": 20_060_000,
+        "peer_feature_start_ms": 9_999_000,
+        "peer_feature_end_ms": 19_999_000,
+    }
+    warehouse.connection.prior = (None,)
+    with pytest.raises(ValueError, match="no prior verified trade"):
+        prequential._dataset_range_source_evidence(
+            warehouse,
+            symbol="BTCUSDT",
+            start_ms=10_000_000,
+            end_ms=20_000_000,
+            horizon_seconds=60,
+            total_latency_ms=750,
+        )
 
 
 def test_tape_depth_prequential_plan_only_writes_no_model_claim(tmp_path) -> None:
@@ -271,6 +330,26 @@ def test_tape_depth_resume_rejects_path_escape_and_skips_verified_fold(
         max_folds=1,
         plan_only=True,
     )
+    cache_events_path = tmp_path / "dataset-cache-events.json"
+    cache_events_path.write_text("{", encoding="utf-8")
+    with pytest.raises(ValueError, match="cache events are unreadable"):
+        prequential.run_tape_depth_prequential(
+            object(),
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path,
+            max_folds=1,
+            resume=True,
+        )
+    cache_events_path.write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid contract"):
+        prequential.run_tape_depth_prequential(
+            object(),
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path,
+            max_folds=1,
+            resume=True,
+        )
+    cache_events_path.unlink()
     artifact_relative = Path("models") / "btcusdt-fold-0000.json"
     predictions_relative = Path("predictions") / "btcusdt-fold-0000.csv.gz"
     artifact_path = tmp_path / artifact_relative
@@ -328,4 +407,214 @@ def test_tape_depth_resume_rejects_path_escape_and_skips_verified_fold(
             output_dir=tmp_path,
             max_folds=1,
             resume=True,
+        )
+
+
+def test_tape_depth_prequential_reuses_verified_dataset_cache(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    dataset = _resume_dataset()
+    artifact = train_tape_depth_forecaster(
+        dataset,
+        compute_backend="cpu",
+        minimum_segment_rows=128,
+    )
+    predictions = score_tape_depth_evaluation(artifact, dataset)
+    fold = TapeDepthFoldPlan(
+        symbol="BTCUSDT",
+        fold_index=0,
+        dataset_start_ms=int(dataset.decision_time_ms[0]),
+        tuning_start_ms=artifact.split.tuning_start_ms,
+        calibration_start_ms=artifact.split.calibration_start_ms,
+        evaluation_start_ms=artifact.split.evaluation_start_ms,
+        evaluation_end_ms=int(predictions.decision_time_ms[-1]),
+        estimated_dataset_rows=dataset.rows,
+        estimated_evaluation_rows=predictions.rows,
+    )
+    symbol_plan = TapeDepthSymbolPlan(
+        schema_version=prequential.TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION,
+        symbol="BTCUSDT",
+        source_first_second_ms=int(dataset.decision_time_ms[0] - 901_000),
+        source_last_second_ms=int(dataset.target_exit_time_ms[-1]),
+        first_eligible_decision_ms=int(dataset.decision_time_ms[0]),
+        last_eligible_decision_ms=int(dataset.decision_time_ms[-1]),
+        training_window_days=730,
+        tuning_window_days=30,
+        calibration_window_days=30,
+        evaluation_window_days=90,
+        horizon_seconds=60,
+        total_latency_ms=750,
+        decision_cadence_seconds=20,
+        maximum_rows=dataset.rows,
+        max_folds=1,
+        folds=(fold,),
+        plan_fingerprint="e" * 64,
+    )
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(
+        prequential,
+        "plan_tape_depth_warehouse",
+        lambda *_args, **_kwargs: (symbol_plan,),
+    )
+    monkeypatch.setattr(
+        prequential,
+        "_dataset_range_source_evidence",
+        lambda *_args, **_kwargs: dict(dataset.source_evidence),
+    )
+    monkeypatch.setattr(
+        prequential,
+        "train_tape_depth_forecaster",
+        lambda *_args, **_kwargs: artifact,
+    )
+    monkeypatch.setattr(
+        prequential,
+        "score_tape_depth_evaluation",
+        lambda *_args, **_kwargs: predictions,
+    )
+    direct = prequential.evaluate_tape_depth_fold(
+        object(),
+        plan=fold,
+        horizon_seconds=60,
+        total_latency_ms=750,
+        decision_cadence_seconds=20,
+        maximum_depth_age_ms=60_000,
+        maximum_rows=dataset.rows,
+        risk_level="conservative",
+        model_profile="regularized",
+        feature_set="full",
+        compute_backend="cpu",
+        minimum_segment_rows=128,
+        prefetched_dataset=dataset,
+    )
+    assert direct.artifact is artifact
+
+    def load_cache(_warehouse, **kwargs):
+        captured["cache_load"] = kwargs
+        return dataset
+
+    def evaluate(_warehouse, **kwargs):
+        captured["prefetched"] = kwargs["prefetched_dataset"]
+        return TapeDepthFoldEvaluation(
+            plan=fold,
+            artifact=artifact,
+            predictions=predictions,
+        )
+
+    monkeypatch.setattr(prequential, "load_tape_depth_dataset_cache", load_cache)
+    monkeypatch.setattr(
+        prequential,
+        "tape_depth_dataset_cache_key",
+        lambda **_kwargs: "f" * 64,
+    )
+    monkeypatch.setattr(
+        prequential,
+        "build_tape_depth_forecast_dataset",
+        lambda *_args, **_kwargs: pytest.fail("cache hit rebuilt feature matrix"),
+    )
+    monkeypatch.setattr(
+        prequential,
+        "save_tape_depth_dataset_cache",
+        lambda *_args, **_kwargs: pytest.fail("cache hit rewrote feature matrix"),
+    )
+    monkeypatch.setattr(prequential, "evaluate_tape_depth_fold", evaluate)
+
+    report = prequential.run_tape_depth_prequential(
+        object(),
+        symbols=("BTCUSDT",),
+        output_dir=tmp_path,
+        maximum_cached_rows=dataset.rows,
+        max_folds=1,
+        dataset_cache=True,
+    )
+
+    assert captured["prefetched"] is dataset
+    assert captured["cache_load"]["source_evidence"] == dataset.source_evidence  # type: ignore[index]
+    assert report["dataset_cache"]["enabled"] is True  # type: ignore[index]
+    cache_event = report["dataset_cache"]["events"][0]  # type: ignore[index]
+    assert cache_event["state"] == "hit"
+    assert cache_event["cache_key"] == "f" * 64
+    assert (tmp_path / "dataset-cache-events.json").is_file()
+
+    def build_cache_miss(_warehouse, **kwargs):
+        captured["cache_build"] = kwargs
+        return dataset
+
+    def save_cache_miss(_warehouse, cached_dataset):
+        captured["cache_save"] = cached_dataset
+        return "a" * 64
+
+    monkeypatch.setattr(
+        prequential,
+        "load_tape_depth_dataset_cache",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        prequential,
+        "build_tape_depth_forecast_dataset",
+        build_cache_miss,
+    )
+    monkeypatch.setattr(
+        prequential,
+        "save_tape_depth_dataset_cache",
+        save_cache_miss,
+    )
+    miss_report = prequential.run_tape_depth_prequential(
+        object(),
+        symbols=("BTCUSDT",),
+        output_dir=tmp_path / "cache-miss",
+        maximum_cached_rows=dataset.rows,
+        max_folds=1,
+        dataset_cache=True,
+    )
+
+    assert captured["cache_save"] is dataset
+    assert captured["cache_build"]["maximum_rows"] == dataset.rows  # type: ignore[index]
+    miss_event = miss_report["dataset_cache"]["events"][0]  # type: ignore[index]
+    assert miss_event["state"] == "written"
+    assert miss_event["cache_key"] == "a" * 64
+
+    bad_times = dataset.decision_time_ms.copy()
+    bad_times[-1] += 20_000
+    bad_dataset = replace(dataset, decision_time_ms=bad_times)
+    monkeypatch.setattr(
+        prequential,
+        "load_tape_depth_dataset_cache",
+        lambda *_args, **_kwargs: bad_dataset,
+    )
+    with pytest.raises(ValueError, match="planned row/time interval"):
+        prequential.run_tape_depth_prequential(
+            object(),
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "bad-cache-hit",
+            maximum_cached_rows=dataset.rows,
+            max_folds=1,
+            dataset_cache=True,
+        )
+
+    drifted_dataset = replace(
+        dataset,
+        source_evidence={
+            **dataset.source_evidence,
+            "manifest_fingerprint": "b" * 64,
+        },
+    )
+    monkeypatch.setattr(
+        prequential,
+        "load_tape_depth_dataset_cache",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        prequential,
+        "build_tape_depth_forecast_dataset",
+        lambda *_args, **_kwargs: drifted_dataset,
+    )
+    with pytest.raises(ValueError, match="source evidence drifted"):
+        prequential.run_tape_depth_prequential(
+            object(),
+            symbols=("BTCUSDT",),
+            output_dir=tmp_path / "drifted-build",
+            maximum_cached_rows=dataset.rows,
+            max_folds=1,
+            dataset_cache=True,
         )

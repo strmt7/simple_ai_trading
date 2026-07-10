@@ -21,6 +21,12 @@ import numpy as np
 from .assets import is_supported_major_symbol, normalize_symbol
 from .microstructure_warehouse import MicrostructureWarehouse
 from .storage import write_json_atomic
+from .tape_depth_cache import (
+    TAPE_DEPTH_CACHE_SCHEMA_VERSION,
+    load_tape_depth_dataset_cache,
+    save_tape_depth_dataset_cache,
+    tape_depth_dataset_cache_key,
+)
 from .tape_depth_features import (
     TapeDepthForecastDataset,
     build_tape_depth_forecast_dataset,
@@ -266,6 +272,40 @@ def plan_tape_depth_warehouse(
     return tuple(plans)
 
 
+def _dataset_range_source_evidence(
+    warehouse: MicrostructureWarehouse,
+    *,
+    symbol: str,
+    start_ms: int,
+    end_ms: int,
+    horizon_seconds: int,
+    total_latency_ms: int,
+) -> dict[str, object]:
+    entry_delay_seconds = max(
+        1,
+        int(math.ceil(int(total_latency_ms) / 1_000.0)),
+    )
+    target_offset_seconds = entry_delay_seconds + int(horizon_seconds)
+    source_start_ms = int(start_ms) - 901_000
+    prior = warehouse.connect().execute(
+        "SELECT max(second_ms) FROM current_trade_1s "
+        "WHERE symbol = ? AND second_ms <= ?",
+        [symbol, source_start_ms],
+    ).fetchone()
+    if prior is None or prior[0] is None:
+        raise ValueError("tape/depth interval has no prior verified trade reference")
+    return tape_depth_dataset_source_evidence(
+        warehouse,
+        symbol,
+        required_start_ms=min(source_start_ms, int(prior[0])),
+        required_end_ms=(
+            int(end_ms) - 1_000 + target_offset_seconds * 1_000
+        ),
+        peer_feature_start_ms=int(start_ms) - 1_000,
+        peer_feature_end_ms=int(end_ms) - 1_000,
+    )
+
+
 def evaluate_tape_depth_fold(
     warehouse: MicrostructureWarehouse,
     *,
@@ -305,22 +345,13 @@ def evaluate_tape_depth_fold(
             or prefetched_dataset.maximum_depth_age_ms != int(maximum_depth_age_ms)
         ):
             raise ValueError("prefetched tape/depth dataset contract differs from fold")
-        entry_delay_seconds = max(
-            1,
-            int(math.ceil(int(total_latency_ms) / 1_000.0)),
-        )
-        target_offset_seconds = entry_delay_seconds + int(horizon_seconds)
-        source_evidence = tape_depth_dataset_source_evidence(
+        source_evidence = _dataset_range_source_evidence(
             warehouse,
-            plan.symbol,
-            required_start_ms=plan.dataset_start_ms - 901_000,
-            required_end_ms=(
-                plan.evaluation_end_ms
-                - 1_000
-                + target_offset_seconds * 1_000
-            ),
-            peer_feature_start_ms=plan.dataset_start_ms - 1_000,
-            peer_feature_end_ms=plan.evaluation_end_ms - 1_000,
+            symbol=plan.symbol,
+            start_ms=plan.dataset_start_ms,
+            end_ms=plan.evaluation_end_ms,
+            horizon_seconds=horizon_seconds,
+            total_latency_ms=total_latency_ms,
         )
         dataset = slice_tape_depth_forecast_dataset(
             prefetched_dataset,
@@ -789,6 +820,7 @@ def run_tape_depth_prequential(
     maximum_depth_age_ms: int = 60_000,
     maximum_rows: int = 5_000_000,
     maximum_cached_rows: int = 15_000_000,
+    dataset_cache: bool = True,
     max_folds: int = 0,
     risk_level: str = "conservative",
     model_profile: str = "regularized",
@@ -829,6 +861,7 @@ def run_tape_depth_prequential(
         "maximum_depth_age_ms": int(maximum_depth_age_ms),
         "maximum_rows": int(maximum_rows),
         "maximum_cached_rows": int(maximum_cached_rows),
+        "dataset_cache": bool(dataset_cache),
         "max_folds": int(max_folds),
         "risk_level": str(risk_level),
         "model_profile": str(model_profile),
@@ -876,7 +909,9 @@ def run_tape_depth_prequential(
     status_path = destination / "run-status.json"
     started_at = datetime.now(tz=UTC).isoformat()
     summaries_path = destination / "fold-summaries.json"
+    cache_events_path = destination / "dataset-cache-events.json"
     fold_summaries: list[dict[str, object]] = []
+    dataset_cache_events: list[dict[str, object]] = []
     if resume and summaries_path.exists():
         try:
             loaded_summaries = json.loads(summaries_path.read_text(encoding="utf-8"))
@@ -887,6 +922,24 @@ def run_tape_depth_prequential(
         ):
             raise ValueError("resume fold summaries must be a JSON list")
         fold_summaries = [dict(item) for item in loaded_summaries]
+    if resume and cache_events_path.exists():
+        try:
+            loaded_cache_events = json.loads(cache_events_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("resume dataset cache events are unreadable") from exc
+        if (
+            not isinstance(loaded_cache_events, dict)
+            or loaded_cache_events.get("schema_version")
+            != TAPE_DEPTH_CACHE_SCHEMA_VERSION
+            or not isinstance(loaded_cache_events.get("events"), list)
+            or not all(
+                isinstance(item, dict) for item in loaded_cache_events["events"]
+            )
+        ):
+            raise ValueError("resume dataset cache events have an invalid contract")
+        dataset_cache_events = [
+            dict(item) for item in loaded_cache_events["events"]
+        ]
 
     flat_folds = tuple(fold for plan in plans for fold in plan.folds)
     if len(fold_summaries) > len(flat_folds):
@@ -1006,17 +1059,18 @@ def run_tape_depth_prequential(
                     f"{estimated_cached_rows} rows; maximum_cached_rows="
                     f"{int(maximum_cached_rows)}"
                 )
+            feature_phase = "cache-lookup" if dataset_cache else "feature-build"
             persist_status(
                 "running",
                 symbol=symbol_plan.symbol,
-                model_phase="feature-build",
+                model_phase=feature_phase,
                 cached_start_ms=cached_start_ms,
                 cached_end_ms=cached_end_ms,
                 estimated_cached_rows=estimated_cached_rows,
             )
             if progress:
                 progress(
-                    f"{symbol_plan.symbol}-feature-build",
+                    f"{symbol_plan.symbol}-{feature_phase}",
                     global_offset + first_unfinished,
                     total_folds,
                 )
@@ -1029,7 +1083,7 @@ def run_tape_depth_prequential(
                     persist_status(
                         "running",
                         symbol=symbol_plan.symbol,
-                        model_phase="feature-build",
+                        model_phase=feature_phase,
                         feature_build_elapsed_seconds=elapsed_seconds,
                         estimated_cached_rows=estimated_cached_rows,
                     )
@@ -1047,31 +1101,120 @@ def run_tape_depth_prequential(
                 daemon=True,
             )
             heartbeat_thread.start()
+            dataset_cache_key: str | None = None
+            dataset_cache_state = "disabled"
+
+            def validate_prefetched_dataset(
+                candidate: TapeDepthForecastDataset,
+            ) -> None:
+                if (
+                    candidate.rows != estimated_cached_rows
+                    or int(candidate.decision_time_ms[0]) != cached_start_ms
+                    or int(candidate.decision_time_ms[-1]) != cached_end_ms
+                ):
+                    raise ValueError(
+                        f"{symbol_plan.symbol} cached feature build differs from "
+                        "the planned row/time interval"
+                    )
+
             try:
-                prefetched_dataset = build_tape_depth_forecast_dataset(
+                expected_source_evidence = _dataset_range_source_evidence(
                     warehouse,
                     symbol=symbol_plan.symbol,
                     start_ms=cached_start_ms,
                     end_ms=cached_end_ms,
                     horizon_seconds=horizon_seconds,
                     total_latency_ms=total_latency_ms,
-                    decision_cadence_seconds=decision_cadence_seconds,
-                    maximum_depth_age_ms=maximum_depth_age_ms,
-                    maximum_rows=int(maximum_cached_rows),
                 )
+                prefetched_dataset = None
+                if dataset_cache:
+                    prefetched_dataset = load_tape_depth_dataset_cache(
+                        warehouse,
+                        symbol=symbol_plan.symbol,
+                        requested_start_ms=cached_start_ms,
+                        requested_end_ms=cached_end_ms,
+                        horizon_seconds=horizon_seconds,
+                        total_latency_ms=total_latency_ms,
+                        decision_cadence_seconds=decision_cadence_seconds,
+                        maximum_depth_age_ms=maximum_depth_age_ms,
+                        source_evidence=expected_source_evidence,
+                    )
+                    if prefetched_dataset is not None:
+                        validate_prefetched_dataset(prefetched_dataset)
+                        dataset_cache_state = "hit"
+                        feature_phase = "cache-hit"
+                if prefetched_dataset is None:
+                    feature_phase = "feature-build"
+                    prefetched_dataset = build_tape_depth_forecast_dataset(
+                        warehouse,
+                        symbol=symbol_plan.symbol,
+                        start_ms=cached_start_ms,
+                        end_ms=cached_end_ms,
+                        horizon_seconds=horizon_seconds,
+                        total_latency_ms=total_latency_ms,
+                        decision_cadence_seconds=decision_cadence_seconds,
+                        maximum_depth_age_ms=maximum_depth_age_ms,
+                        maximum_rows=int(maximum_cached_rows),
+                    )
+                    if dict(prefetched_dataset.source_evidence) != dict(
+                        expected_source_evidence
+                    ):
+                        raise ValueError(
+                            "tape/depth feature build source evidence drifted"
+                        )
+                    validate_prefetched_dataset(prefetched_dataset)
+                    if dataset_cache:
+                        feature_phase = "cache-write"
+                        dataset_cache_key = save_tape_depth_dataset_cache(
+                            warehouse,
+                            prefetched_dataset,
+                        )
+                        dataset_cache_state = "written"
+                elif dataset_cache:
+                    dataset_cache_key = tape_depth_dataset_cache_key(
+                        symbol=symbol_plan.symbol,
+                        requested_start_ms=cached_start_ms,
+                        requested_end_ms=cached_end_ms,
+                        horizon_seconds=horizon_seconds,
+                        total_latency_ms=total_latency_ms,
+                        decision_cadence_seconds=decision_cadence_seconds,
+                        maximum_depth_age_ms=maximum_depth_age_ms,
+                        source_evidence=expected_source_evidence,
+                    )
             finally:
                 heartbeat_stop.set()
                 heartbeat_thread.join(timeout=5.0)
-            if prefetched_dataset.rows != estimated_cached_rows:
-                raise ValueError(
-                    f"{symbol_plan.symbol} cached feature build has "
-                    f"{prefetched_dataset.rows} rows; expected {estimated_cached_rows}"
-                )
+            dataset_cache_events.append(
+                {
+                    "symbol": symbol_plan.symbol,
+                    "requested_start_ms": cached_start_ms,
+                    "requested_end_ms": cached_end_ms,
+                    "state": dataset_cache_state,
+                    "cache_key": dataset_cache_key,
+                    "rows": prefetched_dataset.rows,
+                    "feature_version": prefetched_dataset.feature_version,
+                    "source_manifest_fingerprint": prefetched_dataset.source_evidence[
+                        "manifest_fingerprint"
+                    ],
+                }
+            )
+            write_json_atomic(
+                cache_events_path,
+                {
+                    "schema_version": TAPE_DEPTH_CACHE_SCHEMA_VERSION,
+                    "truth_basis": "verified_derived_dataset_cache_events",
+                    "events": dataset_cache_events,
+                },
+                indent=2,
+                sort_keys=True,
+            )
             persist_status(
                 "running",
                 symbol=symbol_plan.symbol,
                 model_phase="feature-build-complete",
                 cached_rows=prefetched_dataset.rows,
+                dataset_cache_state=dataset_cache_state,
+                dataset_cache_key=dataset_cache_key,
             )
             if progress:
                 progress(
@@ -1193,6 +1336,12 @@ def run_tape_depth_prequential(
         "forecast_diagnostics_path": diagnostics_path.name,
         "forecast_diagnostics_sha256": diagnostics_sha256,
         "aggregate_forecast_metrics": _aggregate_fold_metrics(fold_summaries),
+        "dataset_cache": {
+            "enabled": bool(dataset_cache),
+            "schema_version": TAPE_DEPTH_CACHE_SCHEMA_VERSION,
+            "truth_basis": "transactional_source_bound_duckdb_derived_dataset_cache",
+            "events": dataset_cache_events,
+        },
         "folds": fold_summaries,
         "limitations": [
             "gross trade-reference targets are not executable fills or after-cost PnL",

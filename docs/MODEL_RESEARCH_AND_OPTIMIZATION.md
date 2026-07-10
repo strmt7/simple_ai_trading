@@ -288,6 +288,16 @@ but its dataset fingerprint is rebuilt with the fold's exact checksummed
 manifest subset. Feature reuse therefore removes redundant computation without
 reusing a later label, calibration row, or source binding.
 
+The complete prefetched matrix is also stored by default as a derived dataset in
+the same DuckDB warehouse. The version-specific cache table uses DuckDB's
+persistent column compression; no loose NumPy dataset is created. Its SHA-256
+key includes the exact target and peer manifests, feature names/version, UTC
+range, horizon, latency, cadence, and depth-age contract. A single transaction
+writes rows and manifest, and every load recomputes the complete dataset
+fingerprint before training. `dataset-cache-events.json` survives resume and
+records hit/write/disabled state. `--no-dataset-cache` disables persistence but
+does not weaken source verification or the in-memory row bound.
+
 ```powershell
 simple-ai-trading tape-depth-prequential `
   --symbols BTCUSDT,ETHUSDT,SOLUSDT `

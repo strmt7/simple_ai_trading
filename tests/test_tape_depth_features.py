@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import math
 
 import numpy as np
 import pytest
 
 from simple_ai_trading import tape_depth_features as feature_module
+from simple_ai_trading import tape_depth_cache as cache_module
 from simple_ai_trading.microstructure_warehouse import (
     MicrostructureWarehouse,
     TICK_WAREHOUSE_SCHEMA_VERSION,
+)
+from simple_ai_trading.tape_depth_cache import (
+    load_tape_depth_dataset_cache,
+    save_tape_depth_dataset_cache,
 )
 from simple_ai_trading.tape_depth_features import (
     TAPE_DEPTH_FEATURE_NAMES,
@@ -16,6 +22,7 @@ from simple_ai_trading.tape_depth_features import (
     build_tape_depth_forecast_dataset,
     slice_tape_depth_forecast_dataset,
     tape_depth_dataset_source_evidence,
+    tape_depth_dataset_fingerprint,
     tape_depth_source_evidence,
 )
 
@@ -255,6 +262,182 @@ def test_tape_depth_dataset_is_causal_bounded_and_has_no_execution_claim(tmp_pat
     assert np.all(np.isfinite(peer_return))
     assert np.any(np.abs(peer_return) > 0.0)
     assert np.any(np.abs(relative_return) > 0.0)
+
+
+def test_tape_depth_dataset_cache_is_transactional_bound_and_replayable(tmp_path) -> None:
+    warehouse, base_ms, _seconds = _warehouse_fixture(tmp_path)
+    options = {
+        "symbol": "BTCUSDT",
+        "start_ms": base_ms + 901_000,
+        "end_ms": base_ms + 1_000_000,
+        "horizon_seconds": 5,
+        "decision_cadence_seconds": 5,
+        "maximum_rows": 100,
+    }
+    try:
+        dataset = build_tape_depth_forecast_dataset(warehouse, **options)
+        cache_key = save_tape_depth_dataset_cache(warehouse, dataset)
+        assert save_tape_depth_dataset_cache(warehouse, dataset) == cache_key
+
+        load_options = {
+            "symbol": dataset.symbol,
+            "requested_start_ms": int(dataset.decision_time_ms[0]),
+            "requested_end_ms": int(dataset.decision_time_ms[-1]),
+            "horizon_seconds": dataset.horizon_seconds,
+            "total_latency_ms": dataset.total_latency_ms,
+            "decision_cadence_seconds": dataset.decision_cadence_seconds,
+            "maximum_depth_age_ms": dataset.maximum_depth_age_ms,
+            "source_evidence": dataset.source_evidence,
+        }
+        loaded = load_tape_depth_dataset_cache(warehouse, **load_options)
+        assert loaded is not None
+        assert tape_depth_dataset_fingerprint(loaded) == tape_depth_dataset_fingerprint(
+            dataset
+        )
+        assert np.array_equal(loaded.features, dataset.features, equal_nan=True)
+
+        changed_evidence = {
+            **dataset.source_evidence,
+            "manifest_fingerprint": "f" * 64,
+        }
+        assert (
+            load_tape_depth_dataset_cache(
+                warehouse,
+                **{**load_options, "source_evidence": changed_evidence},
+            )
+            is None
+        )
+
+        rows_table = warehouse.connect().execute(
+            "SELECT rows_table FROM tape_depth_dataset_cache_manifest "
+            "WHERE cache_key = ?",
+            [cache_key],
+        ).fetchone()[0]
+        warehouse.connect().execute(
+            f"UPDATE {rows_table} SET return_bps_1 = return_bps_1 + 1.0 "
+            "WHERE cache_key = ? AND decision_time_ms = ?",
+            [cache_key, int(dataset.decision_time_ms[0])],
+        )
+        with pytest.raises(ValueError, match="fingerprint differs"):
+            load_tape_depth_dataset_cache(warehouse, **load_options)
+    finally:
+        warehouse.close()
+
+
+def test_tape_depth_dataset_cache_rejects_contract_and_storage_drift(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    warehouse, base_ms, _seconds = _warehouse_fixture(tmp_path)
+    try:
+        dataset = build_tape_depth_forecast_dataset(
+            warehouse,
+            symbol="BTCUSDT",
+            start_ms=base_ms + 901_000,
+            end_ms=base_ms + 1_000_000,
+            horizon_seconds=5,
+            decision_cadence_seconds=5,
+            maximum_rows=100,
+        )
+        with pytest.raises(ValueError, match="verified source evidence"):
+            cache_module.tape_depth_dataset_cache_key(
+                symbol=dataset.symbol,
+                requested_start_ms=int(dataset.decision_time_ms[0]),
+                requested_end_ms=int(dataset.decision_time_ms[-1]),
+                horizon_seconds=dataset.horizon_seconds,
+                total_latency_ms=dataset.total_latency_ms,
+                decision_cadence_seconds=dataset.decision_cadence_seconds,
+                maximum_depth_age_ms=dataset.maximum_depth_age_ms,
+                source_evidence={"verified": False},
+            )
+        with pytest.raises(ValueError, match="interval is empty"):
+            cache_module.tape_depth_dataset_cache_key(
+                symbol=dataset.symbol,
+                requested_start_ms=2,
+                requested_end_ms=1,
+                horizon_seconds=dataset.horizon_seconds,
+                total_latency_ms=dataset.total_latency_ms,
+                decision_cadence_seconds=dataset.decision_cadence_seconds,
+                maximum_depth_age_ms=dataset.maximum_depth_age_ms,
+                source_evidence=dataset.source_evidence,
+            )
+        empty = replace(
+            dataset,
+            decision_time_ms=dataset.decision_time_ms[:0],
+            target_entry_time_ms=dataset.target_entry_time_ms[:0],
+            target_exit_time_ms=dataset.target_exit_time_ms[:0],
+            target_entry_price=dataset.target_entry_price[:0],
+            target_exit_price=dataset.target_exit_price[:0],
+            gross_return_bps=dataset.gross_return_bps[:0],
+            features=dataset.features[:0],
+        )
+        with pytest.raises(ValueError, match="cannot cache an empty"):
+            cache_module.save_tape_depth_dataset_cache(warehouse, empty)
+        with pytest.raises(ValueError, match="cannot be stored"):
+            cache_module.save_tape_depth_dataset_cache(
+                warehouse,
+                replace(dataset, features=dataset.features.astype(np.float64)),
+            )
+
+        cache_key = cache_module.save_tape_depth_dataset_cache(warehouse, dataset)
+        original_fingerprint = tape_depth_dataset_fingerprint(dataset)
+        warehouse.connect().execute(
+            "UPDATE tape_depth_dataset_cache_manifest "
+            "SET dataset_fingerprint = ? WHERE cache_key = ?",
+            ["b" * 64, cache_key],
+        )
+        with pytest.raises(ValueError, match="collides"):
+            cache_module.save_tape_depth_dataset_cache(warehouse, dataset)
+        warehouse.connect().execute(
+            "UPDATE tape_depth_dataset_cache_manifest "
+            "SET dataset_fingerprint = ? WHERE cache_key = ?",
+            [original_fingerprint, cache_key],
+        )
+
+        load_options = {
+            "symbol": dataset.symbol,
+            "requested_start_ms": int(dataset.decision_time_ms[0]),
+            "requested_end_ms": int(dataset.decision_time_ms[-1]),
+            "horizon_seconds": dataset.horizon_seconds,
+            "total_latency_ms": dataset.total_latency_ms,
+            "decision_cadence_seconds": dataset.decision_cadence_seconds,
+            "maximum_depth_age_ms": dataset.maximum_depth_age_ms,
+            "source_evidence": dataset.source_evidence,
+        }
+        warehouse.connect().execute(
+            "UPDATE tape_depth_dataset_cache_manifest "
+            "SET schema_version = 'drifted' WHERE cache_key = ?",
+            [cache_key],
+        )
+        with pytest.raises(ValueError, match="manifest failed"):
+            cache_module.load_tape_depth_dataset_cache(warehouse, **load_options)
+        warehouse.connect().execute(
+            "UPDATE tape_depth_dataset_cache_manifest "
+            "SET schema_version = ?, row_count = row_count + 1 WHERE cache_key = ?",
+            [cache_module.TAPE_DEPTH_CACHE_SCHEMA_VERSION, cache_key],
+        )
+        with pytest.raises(ValueError, match="rows are incomplete"):
+            cache_module.load_tape_depth_dataset_cache(warehouse, **load_options)
+
+        monkeypatch.setattr(cache_module, "_ROWS_TABLE", "unsafe-table")
+        with pytest.raises(ValueError, match="unsafe identifier"):
+            cache_module._ensure_cache_schema(warehouse)
+        monkeypatch.setattr(cache_module, "_ROWS_TABLE", cache_module._MANIFEST_TABLE)
+        monkeypatch.setattr(cache_module, "_table_schema", lambda *_args: ())
+        with pytest.raises(ValueError, match="manifest schema drifted"):
+            cache_module._ensure_cache_schema(warehouse)
+
+        def row_schema_drift(_warehouse, table):
+            if table == cache_module._MANIFEST_TABLE:
+                return cache_module._MANIFEST_COLUMNS
+            return ()
+
+        monkeypatch.setattr(cache_module, "_ROWS_TABLE", "cache_rows_safe")
+        monkeypatch.setattr(cache_module, "_table_schema", row_schema_drift)
+        with pytest.raises(ValueError, match="row schema drifted"):
+            cache_module._ensure_cache_schema(warehouse)
+    finally:
+        warehouse.close()
 
 
 def test_tape_depth_dataset_blocks_unbounded_memory_request(tmp_path) -> None:
