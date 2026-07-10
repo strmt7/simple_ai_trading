@@ -26,10 +26,15 @@ _AI_UPLIFT_REQUIRED_METRICS = (
     "downside_return_risk_ratio",
 )
 _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B = 2.0
-_AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES = 8
-_AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P = 0.40
+_AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES = 30
+_AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P = 0.05
 _AI_UPLIFT_DEFAULT_MIN_POSITIVE_DELTA_RATE = 0.55
 _AI_UPLIFT_DEFAULT_MIN_MEAN_SAMPLE_DELTA = 0.0
+_AI_UPLIFT_DEFAULT_BOOTSTRAP_SAMPLES = 2_000
+_AI_UPLIFT_DEFAULT_BOOTSTRAP_CONFIDENCE = 0.95
+_AI_UPLIFT_DEFAULT_MIN_BOOTSTRAP_LOWER = 0.0
+_AI_UPLIFT_DEFAULT_MIN_EVALUATION_SPAN_DAYS = 90
+_DAY_MS = 86_400_000
 _REQUIRED_DATA_COVERAGE_TRUTH_BASIS = (
     "prices_from_timestamped_closed_candles",
     "coverage_measured_from_candle_close_time",
@@ -96,6 +101,11 @@ def _finite(value: object) -> float | None:
     return parsed if math.isfinite(parsed) else None
 
 
+def _is_sha256(value: object) -> bool:
+    text = str(value or "").lower()
+    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+
+
 def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
     n = max(0, int(trials))
     k = max(0, min(n, int(successes)))
@@ -106,6 +116,151 @@ def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
     for hits in range(k, n + 1):
         total += math.comb(n, hits) * (probability ** hits) * ((1.0 - probability) ** (n - hits))
     return max(0.0, min(1.0, total))
+
+
+def _ai_uplift_period_evidence_checks(
+    statistical: Mapping[str, object],
+    evidence_binding: object,
+    *,
+    prefix: str,
+    min_bootstrap_samples: int,
+    min_bootstrap_confidence: float,
+    min_bootstrap_lower: float,
+    min_evaluation_span_ms: int,
+) -> list[FinancialSanityCheck]:
+    checks: list[FinancialSanityCheck] = []
+    base_path = f"{prefix}.ai_uplift.statistical_evidence"
+    if statistical.get("evidence_unit") != "matched_fixed_period_return_delta":
+        checks.append(
+            _check(
+                "block",
+                "AI uplift statistical evidence",
+                "accepted AI uplift does not use fixed-period matched returns",
+                path=f"{base_path}.evidence_unit",
+                metric=statistical.get("evidence_unit", "missing"),
+                limit="matched_fixed_period_return_delta",
+            )
+        )
+    paired_sha256 = statistical.get("paired_samples_sha256")
+    if not _is_sha256(paired_sha256):
+        checks.append(
+            _check(
+                "block",
+                "AI uplift statistical evidence",
+                "accepted AI uplift has no paired-period table fingerprint",
+                path=f"{base_path}.paired_samples_sha256",
+                metric=paired_sha256 or "missing",
+                limit="64 lowercase hex characters",
+            )
+        )
+    if isinstance(evidence_binding, Mapping) and paired_sha256 != evidence_binding.get("paired_samples_sha256"):
+        checks.append(
+            _check(
+                "block",
+                "AI uplift statistical evidence",
+                "paired-period table hash disagrees with evidence binding",
+                path=f"{base_path}.paired_samples_sha256",
+                metric=paired_sha256 or "missing",
+                limit=evidence_binding.get("paired_samples_sha256", "missing"),
+            )
+        )
+    sample_count = _finite(statistical.get("sample_count"))
+    duration_ms = _finite(statistical.get("period_duration_ms"))
+    first_ms = _finite(statistical.get("first_period_start_ms"))
+    last_ms = _finite(statistical.get("last_period_end_ms"))
+    scope = str(statistical.get("scope") or "")
+    period_contract_valid = (
+        bool(scope)
+        and sample_count is not None
+        and sample_count > 0.0
+        and float(sample_count).is_integer()
+        and duration_ms is not None
+        and duration_ms > 0.0
+        and float(duration_ms).is_integer()
+        and first_ms is not None
+        and last_ms is not None
+        and last_ms > first_ms
+        and abs((last_ms - first_ms) - sample_count * duration_ms) <= 0.5
+        and last_ms - first_ms >= min_evaluation_span_ms
+    )
+    if not period_contract_valid:
+        checks.append(
+            _check(
+                "block",
+                "AI uplift statistical evidence",
+                "accepted AI uplift has inconsistent fixed-period coverage",
+                path=f"{base_path}.period_duration_ms",
+                metric=duration_ms if duration_ms is not None else "missing",
+                limit="contiguous sample_count * positive fixed duration",
+            )
+        )
+    bootstrap_samples = _finite(statistical.get("block_bootstrap_samples"))
+    bootstrap_confidence = _finite(statistical.get("block_bootstrap_confidence"))
+    bootstrap_lower = _finite(statistical.get("mean_delta_ci_lower"))
+    bootstrap_upper = _finite(statistical.get("mean_delta_ci_upper"))
+    bootstrap_positive = _finite(statistical.get("positive_mean_probability"))
+    if (
+        bootstrap_samples is None
+        or not float(bootstrap_samples).is_integer()
+        or bootstrap_samples < min_bootstrap_samples
+    ):
+        checks.append(
+            _check(
+                "block",
+                "AI uplift block bootstrap",
+                "accepted AI uplift has too few block-bootstrap resamples",
+                path=f"{base_path}.block_bootstrap_samples",
+                metric=bootstrap_samples if bootstrap_samples is not None else "missing",
+                limit=f">={min_bootstrap_samples}",
+            )
+        )
+    if (
+        bootstrap_confidence is None
+        or bootstrap_confidence < min_bootstrap_confidence
+        or bootstrap_confidence >= 1.0
+    ):
+        checks.append(
+            _check(
+                "block",
+                "AI uplift block bootstrap",
+                "accepted AI uplift confidence level is too weak",
+                path=f"{base_path}.block_bootstrap_confidence",
+                metric=bootstrap_confidence if bootstrap_confidence is not None else "missing",
+                limit=f"[{min_bootstrap_confidence:g},1)",
+            )
+        )
+    if (
+        bootstrap_lower is None
+        or bootstrap_lower <= min_bootstrap_lower
+        or bootstrap_upper is None
+        or bootstrap_upper < bootstrap_lower
+    ):
+        checks.append(
+            _check(
+                "block",
+                "AI uplift block bootstrap",
+                "accepted AI uplift confidence interval does not prove positive mean uplift",
+                path=f"{base_path}.mean_delta_ci_lower",
+                metric=bootstrap_lower if bootstrap_lower is not None else "missing",
+                limit=f">{min_bootstrap_lower:g}",
+            )
+        )
+    if (
+        bootstrap_positive is None
+        or bootstrap_positive < min_bootstrap_confidence
+        or bootstrap_positive > 1.0
+    ):
+        checks.append(
+            _check(
+                "block",
+                "AI uplift block bootstrap",
+                "accepted AI uplift has weak positive-mean probability",
+                path=f"{base_path}.positive_mean_probability",
+                metric=bootstrap_positive if bootstrap_positive is not None else "missing",
+                limit=f">={min_bootstrap_confidence:g}",
+            )
+        )
+    return checks
 
 
 def _finite_sequence(values: Sequence[object], *, path: str, label: str) -> list[FinancialSanityCheck]:
@@ -1414,28 +1569,59 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     )
                 )
             if ai_uplift_accepted:
+                if (
+                    ai_uplift.get("schema_version") != "ai-uplift-v2"
+                    or ai_uplift.get("trading_authority") is not False
+                    or ai_uplift.get("profitability_claim") is not False
+                ):
+                    checks.append(
+                        _check(
+                            "block",
+                            "AI uplift evidence",
+                            "accepted AI uplift has an unsafe or unsupported authority contract",
+                            path=f"{prefix}.ai_uplift.schema_version",
+                            metric=ai_uplift.get("schema_version", "missing"),
+                            limit="ai-uplift-v2 with no authority or profitability claim",
+                        )
+                    )
                 policy = ai_uplift.get("policy")
                 min_parameters_b = _AI_UPLIFT_DEFAULT_MIN_MODEL_PARAMETERS_B
                 min_paired_samples = _AI_UPLIFT_DEFAULT_MIN_PAIRED_SAMPLES
                 max_sign_test_p = _AI_UPLIFT_DEFAULT_MAX_SIGN_TEST_P
                 min_positive_delta_rate = _AI_UPLIFT_DEFAULT_MIN_POSITIVE_DELTA_RATE
                 min_mean_sample_delta = _AI_UPLIFT_DEFAULT_MIN_MEAN_SAMPLE_DELTA
+                min_bootstrap_samples = _AI_UPLIFT_DEFAULT_BOOTSTRAP_SAMPLES
+                min_bootstrap_confidence = _AI_UPLIFT_DEFAULT_BOOTSTRAP_CONFIDENCE
+                min_bootstrap_lower = _AI_UPLIFT_DEFAULT_MIN_BOOTSTRAP_LOWER
+                min_evaluation_span_days = _AI_UPLIFT_DEFAULT_MIN_EVALUATION_SPAN_DAYS
                 if isinstance(policy, Mapping):
                     parsed_min = _finite(policy.get("min_model_parameters_b"))
                     if parsed_min is not None:
-                        min_parameters_b = max(0.0, parsed_min)
+                        min_parameters_b = max(min_parameters_b, parsed_min)
                     parsed_samples = _finite(policy.get("min_paired_samples"))
                     if parsed_samples is not None:
-                        min_paired_samples = max(0, int(parsed_samples))
+                        min_paired_samples = max(min_paired_samples, int(parsed_samples))
                     parsed_sign_p = _finite(policy.get("max_sign_test_p_value"))
                     if parsed_sign_p is not None:
-                        max_sign_test_p = max(0.0, min(1.0, parsed_sign_p))
+                        max_sign_test_p = min(max_sign_test_p, max(0.0, min(1.0, parsed_sign_p)))
                     parsed_rate = _finite(policy.get("min_positive_delta_rate"))
                     if parsed_rate is not None:
-                        min_positive_delta_rate = max(0.0, min(1.0, parsed_rate))
+                        min_positive_delta_rate = max(min_positive_delta_rate, max(0.0, min(1.0, parsed_rate)))
                     parsed_mean_delta = _finite(policy.get("min_mean_sample_delta"))
                     if parsed_mean_delta is not None:
-                        min_mean_sample_delta = parsed_mean_delta
+                        min_mean_sample_delta = max(min_mean_sample_delta, parsed_mean_delta)
+                    parsed_bootstrap_samples = _finite(policy.get("block_bootstrap_samples"))
+                    if parsed_bootstrap_samples is not None:
+                        min_bootstrap_samples = max(min_bootstrap_samples, int(parsed_bootstrap_samples))
+                    parsed_bootstrap_confidence = _finite(policy.get("block_bootstrap_confidence"))
+                    if parsed_bootstrap_confidence is not None:
+                        min_bootstrap_confidence = max(min_bootstrap_confidence, parsed_bootstrap_confidence)
+                    parsed_bootstrap_lower = _finite(policy.get("min_bootstrap_mean_delta_lower"))
+                    if parsed_bootstrap_lower is not None:
+                        min_bootstrap_lower = max(min_bootstrap_lower, parsed_bootstrap_lower)
+                    parsed_span_days = _finite(policy.get("min_evaluation_span_days"))
+                    if parsed_span_days is not None:
+                        min_evaluation_span_days = max(min_evaluation_span_days, int(parsed_span_days))
                 model_parameters_b = _finite(ai_uplift.get("model_parameters_b"))
                 if model_parameters_b is None or model_parameters_b < min_parameters_b:
                     checks.append(
@@ -1448,6 +1634,58 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             limit=f">={min_parameters_b:g}",
                         )
                     )
+                evidence_binding = ai_uplift.get("evidence_binding")
+                if not isinstance(evidence_binding, Mapping):
+                    checks.append(
+                        _check(
+                            "block",
+                            "AI uplift evidence binding",
+                            "accepted AI uplift is missing hash-bound evidence",
+                            path=f"{prefix}.ai_uplift.evidence_binding",
+                            metric="missing",
+                            limit="accepted hash binding",
+                        )
+                    )
+                else:
+                    if evidence_binding.get("accepted") is not True:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift evidence binding",
+                                "accepted AI uplift has a failed evidence binding",
+                                path=f"{prefix}.ai_uplift.evidence_binding.accepted",
+                                metric=evidence_binding.get("accepted"),
+                                limit=True,
+                            )
+                        )
+                    binding_reasons = evidence_binding.get("reasons")
+                    if isinstance(binding_reasons, list) and binding_reasons:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift evidence binding",
+                                "accepted AI uplift binding contains rejection reasons",
+                                path=f"{prefix}.ai_uplift.evidence_binding.reasons",
+                            )
+                        )
+                    for hash_name in (
+                        "dataset_fingerprint",
+                        "baseline_evidence_sha256",
+                        "ai_evidence_sha256",
+                        "model_artifact_sha256",
+                        "paired_samples_sha256",
+                    ):
+                        if not _is_sha256(evidence_binding.get(hash_name)):
+                            checks.append(
+                                _check(
+                                    "block",
+                                    "AI uplift evidence binding",
+                                    "accepted AI uplift has an invalid SHA-256 binding",
+                                    path=f"{prefix}.ai_uplift.evidence_binding.{hash_name}",
+                                    metric=evidence_binding.get(hash_name, "missing"),
+                                    limit="64 lowercase hex characters",
+                                )
+                            )
                 for group_name in ("baseline", "ai", "deltas"):
                     checks.extend(
                         _required_metric_checks(
@@ -1470,6 +1708,27 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                         )
                     )
                 else:
+                    checks.extend(
+                        _ai_uplift_period_evidence_checks(
+                            statistical,
+                            evidence_binding,
+                            prefix=prefix,
+                            min_bootstrap_samples=min_bootstrap_samples,
+                            min_bootstrap_confidence=min_bootstrap_confidence,
+                            min_bootstrap_lower=min_bootstrap_lower,
+                            min_evaluation_span_ms=min_evaluation_span_days * _DAY_MS,
+                        )
+                    )
+                    statistical_reasons = statistical.get("reasons")
+                    if isinstance(statistical_reasons, list) and statistical_reasons:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift statistics contain rejection reasons",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.reasons",
+                            )
+                        )
                     if statistical.get("accepted") is not True:
                         checks.append(
                             _check(

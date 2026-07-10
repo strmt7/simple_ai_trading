@@ -36,6 +36,21 @@ component, not as authority to override deterministic risk controls.
   random-walk baseline. Foundation forecasts therefore require rolling-origin,
   random-walk, after-cost, and ablation evidence here:
   https://arxiv.org/abs/2606.27100
+- Time-MoE is a genuine 2.4B-parameter time-series MoE candidate, but its
+  official implementation still lists covariate support as future work and its
+  accelerated examples are CUDA-oriented. It is not treated as AMD/DirectML
+  compatible until a pinned live-host worker proves that exact path:
+  https://github.com/Time-MoE/Time-MoE
+- Chronos-2 is a 120M-parameter multivariate/covariate forecaster. Its native
+  cross-series contract is more relevant to BTC/ETH/SOL context than parameter
+  count alone, but it is a specialized forecast candidate rather than the
+  required multibillion risk reviewer:
+  https://github.com/amazon-science/chronos-forecasting
+- KTD-Fin shows that identifier/date leakage and passive factor exposure can
+  make LLM trading backtests look more intelligent than they are. Historical
+  LLM prompts must therefore mask symbol and calendar identity, use normalized
+  causal factors only, and attribute uplift against the same-period ML path:
+  https://arxiv.org/abs/2605.28359
 
 ## Implemented Policy
 
@@ -52,6 +67,16 @@ by default. Passing this benchmark does not promote a trading model. It only
 selects an AI reviewer candidate. Actual AI use remains blocked unless
 model-lab deterministic gates pass and accepted symbols include positive
 AI-vs-ML uplift evidence.
+
+Uplift evidence uses a common fixed-period return table rather than pairing
+trades by list index. The baseline and AI strategies may enter different
+trades, but every statistical observation covers the same contiguous market
+period. Dataset, baseline, AI, local-model, and paired-table SHA-256 values are
+mandatory. The built-in minimum is 30 periods spanning at least 90 days, a
+one-sided sign-test p-value no
+greater than 0.05, and a positive 95% moving-block-bootstrap lower mean from at
+least 2,000 deterministic resamples. Serialized policy can make these gates
+stricter, never weaker.
 
 The benchmark sends Ollama chat requests with `think: false`. Thinking traces
 are useful for manual analysis, but they can consume the response budget and

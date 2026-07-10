@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
+import random
 from dataclasses import asdict, dataclass, field
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from .ai_runtime import estimate_model_parameters_b
 
@@ -24,14 +27,26 @@ _DOWNSIDE_RETURN_RISK_KEYS = (
     "profit_drawdown_ratio",
     "calmar_ratio",
 )
-_RETURN_SAMPLE_KEYS = ("trade_returns", "returns", "return_samples")
-_PNL_SAMPLE_KEYS = ("trade_pnls", "pnl_samples", "net_pnls")
-_PAIRED_DELTA_KEYS = (
+_LEGACY_UNBOUND_SAMPLE_KEYS = (
+    "trade_returns",
+    "returns",
+    "return_samples",
+    "trade_pnls",
+    "pnl_samples",
+    "net_pnls",
     "paired_return_deltas",
     "return_deltas",
     "trade_return_deltas",
     "uplift_return_deltas",
 )
+_MIN_MODEL_PARAMETERS_B = 2.0
+_MIN_PAIRED_SAMPLES = 30
+_MAX_SIGN_TEST_P_VALUE = 0.05
+_MIN_POSITIVE_DELTA_RATE = 0.55
+_MIN_BLOCK_BOOTSTRAP_SAMPLES = 2_000
+_MIN_BLOCK_BOOTSTRAP_CONFIDENCE = 0.95
+_MIN_EVALUATION_SPAN_DAYS = 90
+_DAY_MS = 86_400_000
 
 
 @dataclass(frozen=True)
@@ -40,9 +55,9 @@ class AIUpliftPolicy:
 
     min_model_parameters_b: float = 2.0
     min_ai_closed_trades: int = 5
-    min_paired_samples: int = 8
+    min_paired_samples: int = 30
     min_positive_delta_rate: float = 0.55
-    max_sign_test_p_value: float = 0.40
+    max_sign_test_p_value: float = 0.05
     min_pnl_delta: float = 0.0
     min_expectancy_delta: float = 0.0
     min_mean_sample_delta: float = 0.0
@@ -53,6 +68,62 @@ class AIUpliftPolicy:
     require_non_degrading_profit_factor: bool = True
     require_non_degrading_win_rate: bool = True
     require_positive_ai_pnl: bool = True
+    block_bootstrap_samples: int = 2_000
+    block_bootstrap_confidence: float = 0.95
+    min_bootstrap_mean_delta_lower: float = 0.0
+    min_evaluation_span_days: int = 90
+    require_evidence_binding: bool = True
+
+    def __post_init__(self) -> None:
+        numeric_values = (
+            self.min_model_parameters_b,
+            self.min_positive_delta_rate,
+            self.max_sign_test_p_value,
+            self.min_pnl_delta,
+            self.min_expectancy_delta,
+            self.min_mean_sample_delta,
+            self.max_drawdown_delta,
+            self.min_downside_return_risk_delta,
+            self.max_loss_streak_delta,
+            self.block_bootstrap_confidence,
+            self.min_bootstrap_mean_delta_lower,
+        )
+        if any(not math.isfinite(float(value)) for value in numeric_values):
+            raise ValueError("AI uplift policy values must be finite")
+        if self.min_model_parameters_b < _MIN_MODEL_PARAMETERS_B:
+            raise ValueError("AI uplift model-size policy cannot weaken the 2B floor")
+        if self.min_ai_closed_trades < 5 or self.min_paired_samples < _MIN_PAIRED_SAMPLES:
+            raise ValueError("AI uplift sample policy cannot weaken built-in floors")
+        if self.min_evaluation_span_days < _MIN_EVALUATION_SPAN_DAYS:
+            raise ValueError("AI uplift evaluation span cannot be shorter than 90 days")
+        if not 0.0 <= self.max_sign_test_p_value <= _MAX_SIGN_TEST_P_VALUE:
+            raise ValueError("AI uplift sign-test policy cannot exceed 0.05")
+        if not _MIN_POSITIVE_DELTA_RATE <= self.min_positive_delta_rate <= 1.0:
+            raise ValueError("AI uplift positive-delta policy cannot weaken 0.55")
+        if self.block_bootstrap_samples < _MIN_BLOCK_BOOTSTRAP_SAMPLES:
+            raise ValueError("AI uplift bootstrap policy cannot use fewer than 2000 samples")
+        if not _MIN_BLOCK_BOOTSTRAP_CONFIDENCE <= self.block_bootstrap_confidence < 1.0:
+            raise ValueError("AI uplift bootstrap confidence cannot be below 0.95")
+        if self.min_bootstrap_mean_delta_lower < 0.0:
+            raise ValueError("AI uplift bootstrap lower-bound requirement cannot be negative")
+        if (
+            self.min_pnl_delta < 0.0
+            or self.min_expectancy_delta < 0.0
+            or self.min_mean_sample_delta < 0.0
+            or self.max_ai_liquidation_events > 0
+        ):
+            raise ValueError("AI uplift improvement policy cannot permit degradation")
+        if self.max_drawdown_delta > 0.0 or self.max_loss_streak_delta > 0.0:
+            raise ValueError("AI uplift tail-risk policy cannot permit deterioration")
+        if self.min_downside_return_risk_delta < 0.0:
+            raise ValueError("AI uplift downside-risk policy cannot permit deterioration")
+        if not (
+            self.require_non_degrading_profit_factor
+            and self.require_non_degrading_win_rate
+            and self.require_positive_ai_pnl
+            and self.require_evidence_binding
+        ):
+            raise ValueError("AI uplift mandatory safety gates cannot be disabled")
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -70,8 +141,12 @@ class AIUpliftReport:
     ai: dict[str, float]
     deltas: dict[str, float]
     statistical_evidence: dict[str, object]
+    evidence_binding: dict[str, object]
     reasons: tuple[str, ...] = field(default_factory=tuple)
     policy: dict[str, object] = field(default_factory=dict)
+    schema_version: str = "ai-uplift-v2"
+    trading_authority: bool = False
+    profitability_claim: bool = False
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -92,49 +167,114 @@ def _first_metric(metrics: Mapping[str, object], keys: tuple[str, ...]) -> float
     return 0.0
 
 
-def _numeric_sequence(metrics: Mapping[str, object], keys: tuple[str, ...]) -> tuple[float, ...]:
-    for key in keys:
-        raw = metrics.get(key)
-        if not isinstance(raw, (tuple, list)):
+def _required_source_metric_reasons(
+    metrics: Mapping[str, object],
+    prefix: str,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    for name, keys in (
+        ("realized_pnl", _PNL_KEYS),
+        ("max_drawdown", _DRAWDOWN_KEYS),
+        ("expectancy", _EXPECTANCY_KEYS),
+        ("closed_trades", _TRADES_KEYS),
+    ):
+        key = next((candidate for candidate in keys if candidate in metrics), None)
+        if key is None:
+            reasons.append(f"ai_uplift_{prefix}_{name}_missing")
             continue
-        values: list[float] = []
-        for value in raw:
-            parsed = _finite(value, default=float("nan"))
-            if not math.isfinite(parsed):
-                values = []
-                break
-            values.append(float(parsed))
-        if values:
-            return tuple(values)
-    return ()
+        try:
+            parsed = float(metrics[key])
+        except (TypeError, ValueError, OverflowError):
+            parsed = float("nan")
+        if not math.isfinite(parsed):
+            reasons.append(f"ai_uplift_{prefix}_{name}_nonfinite")
+    return tuple(reasons)
 
 
-def _paired_sample_deltas(
-    baseline_metrics: Mapping[str, object],
-    ai_metrics: Mapping[str, object],
-) -> tuple[tuple[float, ...], bool, str]:
-    direct = _numeric_sequence(ai_metrics, _PAIRED_DELTA_KEYS)
-    if direct:
-        return direct, False, "paired_trade_return_delta"
-    baseline_returns = _numeric_sequence(baseline_metrics, _RETURN_SAMPLE_KEYS)
-    ai_returns = _numeric_sequence(ai_metrics, _RETURN_SAMPLE_KEYS)
-    if baseline_returns and ai_returns:
-        count = min(len(baseline_returns), len(ai_returns))
-        return (
-            tuple(ai_returns[index] - baseline_returns[index] for index in range(count)),
-            len(baseline_returns) != len(ai_returns),
-            "paired_trade_return_delta",
+def _is_sha256(value: object) -> bool:
+    text = str(value or "").lower()
+    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+
+
+def _matched_period_deltas(
+    periods: Sequence[Mapping[str, object]] | None,
+) -> tuple[tuple[float, ...], dict[str, object], tuple[str, ...]]:
+    rows = tuple(periods or ())
+    reasons: list[str] = []
+    canonical: list[dict[str, object]] = []
+    expected_scope = ""
+    expected_duration = 0
+    previous_end = -1
+    for index, raw in enumerate(rows):
+        if not isinstance(raw, Mapping):
+            reasons.append(f"ai_uplift_period_{index}_not_mapping")
+            continue
+        scope = str(raw.get("scope") or "").strip()
+        try:
+            start_ms = int(raw.get("period_start_ms"))
+            end_ms = int(raw.get("period_end_ms"))
+            baseline_return = float(raw.get("baseline_return"))
+            ai_return = float(raw.get("ai_return"))
+        except (TypeError, ValueError, OverflowError):
+            reasons.append(f"ai_uplift_period_{index}_invalid")
+            continue
+        if (
+            not scope
+            or start_ms < 0
+            or end_ms <= start_ms
+            or not math.isfinite(baseline_return)
+            or not math.isfinite(ai_return)
+        ):
+            reasons.append(f"ai_uplift_period_{index}_invalid")
+            continue
+        duration = end_ms - start_ms
+        if not expected_scope:
+            expected_scope = scope
+            expected_duration = duration
+        if scope != expected_scope:
+            reasons.append("ai_uplift_period_scope_mismatch")
+        if duration != expected_duration:
+            reasons.append("ai_uplift_period_duration_mismatch")
+        if previous_end >= 0 and start_ms != previous_end:
+            reasons.append("ai_uplift_periods_not_contiguous")
+        previous_end = end_ms
+        canonical.append(
+            {
+                "scope": scope,
+                "period_start_ms": start_ms,
+                "period_end_ms": end_ms,
+                "baseline_return": baseline_return,
+                "ai_return": ai_return,
+            }
         )
-    baseline_pnls = _numeric_sequence(baseline_metrics, _PNL_SAMPLE_KEYS)
-    ai_pnls = _numeric_sequence(ai_metrics, _PNL_SAMPLE_KEYS)
-    if baseline_pnls and ai_pnls:
-        count = min(len(baseline_pnls), len(ai_pnls))
-        return (
-            tuple(ai_pnls[index] - baseline_pnls[index] for index in range(count)),
-            len(baseline_pnls) != len(ai_pnls),
-            "paired_trade_pnl_delta",
-        )
-    return (), False, "none"
+    if len(canonical) != len(rows):
+        reasons.append("ai_uplift_period_rows_invalid")
+    if not canonical:
+        reasons.append("ai_uplift_matched_periods_missing")
+        fingerprint = ""
+    else:
+        encoded = json.dumps(
+            canonical,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+        fingerprint = hashlib.sha256(encoded).hexdigest()
+    deltas = tuple(
+        float(row["ai_return"]) - float(row["baseline_return"])
+        for row in canonical
+    )
+    binding = {
+        "evidence_unit": "matched_fixed_period_return_delta",
+        "scope": expected_scope,
+        "sample_count": len(canonical),
+        "period_duration_ms": expected_duration,
+        "first_period_start_ms": int(canonical[0]["period_start_ms"]) if canonical else None,
+        "last_period_end_ms": int(canonical[-1]["period_end_ms"]) if canonical else None,
+        "paired_samples_sha256": fingerprint,
+    }
+    return deltas, binding, tuple(dict.fromkeys(reasons))
 
 
 def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
@@ -159,20 +299,94 @@ def _median(values: tuple[float, ...]) -> float:
     return float((ordered[middle - 1] + ordered[middle]) / 2.0)
 
 
+def _quantile(values: Sequence[float], probability: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(float(value) for value in values)
+    position = max(0.0, min(1.0, float(probability))) * (len(ordered) - 1)
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return ordered[lower]
+    weight = position - lower
+    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+
+
+def _moving_block_bootstrap(
+    deltas: tuple[float, ...],
+    *,
+    samples: int,
+    confidence: float,
+    seed_material: str,
+) -> dict[str, object]:
+    count = len(deltas)
+    repetitions = max(200, int(samples))
+    confidence_level = max(0.80, min(0.999, float(confidence)))
+    if count <= 0:
+        return {
+            "samples": repetitions,
+            "confidence": confidence_level,
+            "block_length": 0,
+            "mean_delta_ci_lower": 0.0,
+            "mean_delta_ci_upper": 0.0,
+            "positive_mean_probability": 0.0,
+        }
+    block_length = max(1, min(count, int(round(math.sqrt(count)))))
+    maximum_start = max(0, count - block_length)
+    seed = int(hashlib.sha256(seed_material.encode("ascii")).hexdigest()[:16], 16)
+    rng = random.Random(seed)
+    means: list[float] = []
+    for _ in range(repetitions):
+        sample: list[float] = []
+        while len(sample) < count:
+            start = rng.randint(0, maximum_start) if maximum_start else 0
+            sample.extend(deltas[start : start + block_length])
+        means.append(sum(sample[:count]) / count)
+    tail = (1.0 - confidence_level) / 2.0
+    return {
+        "samples": repetitions,
+        "confidence": confidence_level,
+        "block_length": block_length,
+        "mean_delta_ci_lower": _quantile(means, tail),
+        "mean_delta_ci_upper": _quantile(means, 1.0 - tail),
+        "positive_mean_probability": sum(value > 0.0 for value in means) / repetitions,
+    }
+
+
 def _statistical_evidence(
     baseline_metrics: Mapping[str, object],
     ai_metrics: Mapping[str, object],
     policy: AIUpliftPolicy,
+    matched_periods: Sequence[Mapping[str, object]] | None,
 ) -> dict[str, object]:
-    deltas, length_mismatch, evidence_unit = _paired_sample_deltas(baseline_metrics, ai_metrics)
+    deltas, period_binding, period_reasons = _matched_period_deltas(matched_periods)
     sample_count = len(deltas)
     positive_count = sum(1 for value in deltas if value > 0.0)
     sign_p_value = _binomial_upper_tail(sample_count, positive_count)
     mean_delta = sum(deltas) / sample_count if sample_count else 0.0
     positive_rate = positive_count / sample_count if sample_count else 0.0
-    reasons: list[str] = []
-    if length_mismatch:
-        reasons.append("ai_uplift_paired_sample_length_mismatch")
+    bootstrap = _moving_block_bootstrap(
+        deltas,
+        samples=policy.block_bootstrap_samples,
+        confidence=policy.block_bootstrap_confidence,
+        seed_material=str(period_binding["paired_samples_sha256"] or "missing"),
+    )
+    reasons = list(period_reasons)
+    first_period_ms = period_binding.get("first_period_start_ms")
+    last_period_ms = period_binding.get("last_period_end_ms")
+    evaluation_span_ms = (
+        int(last_period_ms) - int(first_period_ms)
+        if first_period_ms is not None and last_period_ms is not None
+        else 0
+    )
+    minimum_span_ms = int(policy.min_evaluation_span_days) * _DAY_MS
+    if evaluation_span_ms < minimum_span_ms:
+        reasons.append(f"ai_uplift_evaluation_span_days<{int(policy.min_evaluation_span_days)}")
+    if matched_periods is None and any(
+        key in baseline_metrics or key in ai_metrics
+        for key in _LEGACY_UNBOUND_SAMPLE_KEYS
+    ):
+        reasons.append("ai_uplift_unbound_trade_sequence_rejected")
     if sample_count < max(0, int(policy.min_paired_samples)):
         reasons.append(f"ai_uplift_paired_samples<{int(policy.min_paired_samples)}")
     if positive_rate < max(0.0, min(1.0, float(policy.min_positive_delta_rate))):
@@ -181,11 +395,17 @@ def _statistical_evidence(
         reasons.append(f"ai_uplift_sign_test_p_value>{float(policy.max_sign_test_p_value):.4f}")
     if mean_delta <= float(policy.min_mean_sample_delta):
         reasons.append(f"ai_uplift_mean_sample_delta<={float(policy.min_mean_sample_delta):g}")
+    bootstrap_lower = float(bootstrap["mean_delta_ci_lower"])
+    if bootstrap_lower <= float(policy.min_bootstrap_mean_delta_lower):
+        reasons.append(
+            "ai_uplift_block_bootstrap_lower_mean_delta<="
+            f"{float(policy.min_bootstrap_mean_delta_lower):g}"
+        )
     return {
         "accepted": not reasons,
-        "reasons": reasons,
-        "evidence_unit": evidence_unit if deltas else "none",
-        "paired_sample_length_mismatch": length_mismatch,
+        "reasons": list(dict.fromkeys(reasons)),
+        **period_binding,
+        "paired_sample_length_mismatch": False,
         "sample_count": sample_count,
         "min_sample_count": max(0, int(policy.min_paired_samples)),
         "positive_delta_count": positive_count,
@@ -196,6 +416,52 @@ def _statistical_evidence(
         "mean_delta": mean_delta,
         "median_delta": _median(deltas),
         "min_mean_sample_delta": float(policy.min_mean_sample_delta),
+        "block_bootstrap_samples": int(bootstrap["samples"]),
+        "block_bootstrap_confidence": float(bootstrap["confidence"]),
+        "block_length": int(bootstrap["block_length"]),
+        "mean_delta_ci_lower": bootstrap_lower,
+        "mean_delta_ci_upper": float(bootstrap["mean_delta_ci_upper"]),
+        "positive_mean_probability": float(bootstrap["positive_mean_probability"]),
+        "min_bootstrap_mean_delta_lower": float(policy.min_bootstrap_mean_delta_lower),
+        "evaluation_span_ms": evaluation_span_ms,
+        "min_evaluation_span_ms": minimum_span_ms,
+    }
+
+
+def _uplift_evidence_binding(
+    baseline_metrics: Mapping[str, object],
+    ai_metrics: Mapping[str, object],
+    *,
+    model_artifact_sha256: str,
+    paired_samples_sha256: object,
+) -> dict[str, object]:
+    baseline_dataset = str(baseline_metrics.get("dataset_fingerprint") or "").lower()
+    ai_dataset = str(ai_metrics.get("dataset_fingerprint") or "").lower()
+    baseline_artifact = str(baseline_metrics.get("evidence_sha256") or "").lower()
+    ai_artifact = str(ai_metrics.get("evidence_sha256") or "").lower()
+    model_artifact = str(model_artifact_sha256 or "").lower()
+    paired_artifact = str(paired_samples_sha256 or "").lower()
+    reasons: list[str] = []
+    for label, value in (
+        ("baseline_dataset_fingerprint", baseline_dataset),
+        ("ai_dataset_fingerprint", ai_dataset),
+        ("baseline_evidence_sha256", baseline_artifact),
+        ("ai_evidence_sha256", ai_artifact),
+        ("model_artifact_sha256", model_artifact),
+        ("paired_samples_sha256", paired_artifact),
+    ):
+        if not _is_sha256(value):
+            reasons.append(f"ai_uplift_{label}_invalid")
+    if baseline_dataset != ai_dataset:
+        reasons.append("ai_uplift_dataset_fingerprint_mismatch")
+    return {
+        "accepted": not reasons,
+        "reasons": list(dict.fromkeys(reasons)),
+        "dataset_fingerprint": baseline_dataset if baseline_dataset == ai_dataset else "",
+        "baseline_evidence_sha256": baseline_artifact,
+        "ai_evidence_sha256": ai_artifact,
+        "model_artifact_sha256": model_artifact,
+        "paired_samples_sha256": paired_artifact,
     }
 
 
@@ -222,6 +488,8 @@ def assess_ai_uplift(
     *,
     model_name: str = "",
     model_parameters_b: float | None = None,
+    model_artifact_sha256: str = "",
+    matched_periods: Sequence[Mapping[str, object]] | None = None,
     policy: AIUpliftPolicy | None = None,
 ) -> AIUpliftReport:
     """Return whether AI-assisted evidence beats the non-AI ML baseline."""
@@ -232,6 +500,15 @@ def assess_ai_uplift(
     parameters_b = model_parameters_b
     if parameters_b is None:
         parameters_b = estimate_model_parameters_b(model_name)
+    try:
+        parsed_parameters_b = float(parameters_b) if parameters_b is not None else None
+    except (TypeError, ValueError, OverflowError):
+        parsed_parameters_b = None
+    parameters_b = (
+        parsed_parameters_b
+        if parsed_parameters_b is not None and math.isfinite(parsed_parameters_b)
+        else None
+    )
     deltas = {
         "realized_pnl": ai["realized_pnl"] - baseline["realized_pnl"],
         "roi_pct": ai["roi_pct"] - baseline["roi_pct"],
@@ -244,8 +521,20 @@ def assess_ai_uplift(
         "max_consecutive_losses": ai["max_consecutive_losses"] - baseline["max_consecutive_losses"],
         "downside_return_risk_ratio": ai["downside_return_risk_ratio"] - baseline["downside_return_risk_ratio"],
     }
-    statistical = _statistical_evidence(baseline_metrics, ai_metrics, cfg)
-    reasons: list[str] = []
+    statistical = _statistical_evidence(
+        baseline_metrics,
+        ai_metrics,
+        cfg,
+        matched_periods,
+    )
+    evidence_binding = _uplift_evidence_binding(
+        baseline_metrics,
+        ai_metrics,
+        model_artifact_sha256=model_artifact_sha256,
+        paired_samples_sha256=statistical.get("paired_samples_sha256"),
+    )
+    reasons = list(_required_source_metric_reasons(baseline_metrics, "baseline"))
+    reasons.extend(_required_source_metric_reasons(ai_metrics, "ai"))
     if parameters_b is None:
         reasons.append("model_parameter_count_unknown")
     elif parameters_b < max(0.0, float(cfg.min_model_parameters_b)):
@@ -258,6 +547,10 @@ def assess_ai_uplift(
         reasons.append(f"ai_closed_trades<{int(cfg.min_ai_closed_trades)}")
     if not bool(statistical.get("accepted")):
         reasons.extend(str(reason) for reason in statistical.get("reasons", ()) if str(reason))
+    if cfg.require_evidence_binding and not bool(evidence_binding.get("accepted")):
+        reasons.extend(
+            str(reason) for reason in evidence_binding.get("reasons", ()) if str(reason)
+        )
     if deltas["realized_pnl"] <= float(cfg.min_pnl_delta):
         reasons.append("ai_pnl_not_above_baseline")
     if deltas["expectancy"] <= float(cfg.min_expectancy_delta):
@@ -295,7 +588,8 @@ def assess_ai_uplift(
         ai=ai,
         deltas=deltas,
         statistical_evidence=statistical,
-        reasons=tuple(reasons),
+        evidence_binding=evidence_binding,
+        reasons=tuple(dict.fromkeys(reasons)),
         policy=cfg.asdict(),
     )
 

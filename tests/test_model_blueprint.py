@@ -52,6 +52,8 @@ def test_model_blueprint_source_catalog_blocks_copying_community_scripts() -> No
 
     assert "patchtst" in sources
     assert sources["moirai"].applied_to == ("foundation_forecaster", "cross_asset_graph_sequence")
+    assert sources["time_moe"].applied_to == ("foundation_forecaster",)
+    assert sources["ktd_fin"].applied_to == ("ai_risk_reviewer", "ai_uplift_gate")
     assert sources["bloomberggpt"].applied_to == ("ai_risk_reviewer", "ai_uplift_gate")
     assert sources["fingpt"].source_type == "primary_research"
     assert sources["hmm_regime_filter"].applied_to == ("regime_gate", "meta_label_gate")
