@@ -34,7 +34,7 @@ from .autonomous import (
     AutonomousControl,
 )
 from .backtest_panel import describe_supported_intervals, list_reports
-from .objective import available_objectives, describe_objectives, get_objective
+from .objective import describe_objectives, get_objective
 from .positions import (
     PositionsStore,
     bot_ownership_rejection_reason,

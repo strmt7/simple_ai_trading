@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Mapping
 
 from .financial_sanity import build_model_financial_sanity_report
 from .model import ModelLoadError, TrainedModel, load_model

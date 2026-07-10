@@ -558,8 +558,11 @@ def _ablation_precheck_warnings(compact: Mapping[str, object]) -> list[str]:
         if not isinstance(item, Mapping):
             continue
         symbol = str(item.get("symbol") or "unknown")
-        for field, label in (("hybrid_ablation", "hybrid"), ("feature_ablation", "feature")):
-            raw_map = item.get(field)
+        for evidence_field, label in (
+            ("hybrid_ablation", "hybrid"),
+            ("feature_ablation", "feature"),
+        ):
+            raw_map = item.get(evidence_field)
             if not isinstance(raw_map, Mapping):
                 continue
             for objective, raw_items in raw_map.items():

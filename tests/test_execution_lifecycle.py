@@ -4,8 +4,6 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-import pytest
-
 from simple_ai_trading.api_budget import build_api_budget_report
 from simple_ai_trading.execution_lifecycle import (
     build_execution_lifecycle_plan,

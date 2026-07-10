@@ -7,7 +7,6 @@ from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from .assets import MAX_AUTONOMOUS_LEVERAGE
 from .model import TrainedModel
 
 _PREFERRED_PROBABILITY_BRIER_MAX = 0.30

@@ -8,6 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from simple_ai_trading import cli
@@ -144,7 +145,18 @@ def _promoted_execution_validation(
     return payload
 
 
-class _FakeClient:
+class _SignedCommissionClientEvidence:
+    def get_commission_rates(self, symbol: str):
+        return CommissionRates(
+            symbol=symbol,
+            market_type="futures",
+            maker_rate=0.0002,
+            taker_rate=0.0004,
+            source="test_fixture",
+        )
+
+
+class _FakeClient(_SignedCommissionClientEvidence):
     def __init__(self) -> None:
         self.base_url = "https://api.testnet.binance.vision"
         self.orders = []
@@ -161,15 +173,6 @@ class _FakeClient:
     def get_account(self):
         return _exchange_account()
 
-    def get_commission_rates(self, symbol: str):
-        return CommissionRates(
-            symbol=symbol,
-            market_type="futures",
-            maker_rate=0.0002,
-            taker_rate=0.0004,
-            source="test_fixture",
-        )
-
     def get_max_leverage(self, symbol: str) -> int:
         return 10
 
@@ -182,6 +185,10 @@ class _FakeClient:
     def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
         self.orders.append((symbol, side, size, dry_run, leverage))
         return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run, "leverage": leverage}
+
+
+class _SignedFeeModelEvidence:
+    strategy_overrides = {"taker_fee_bps": 4.0}
 
 
 def _simple_candles(n: int = 320) -> list[Candle]:
@@ -304,6 +311,18 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert micro_candidate.maximum_model_age_seconds == 86_400
     micro_terminal = cli._parse_args(["microstructure-train", "--evaluate-terminal"])
     assert micro_terminal.evaluate_terminal is True
+    micro_prequential = cli._parse_args(
+        ["microstructure-prequential", "--max-folds", "2"]
+    )
+    assert micro_prequential.training_window_days == 180
+    assert micro_prequential.evaluation_block_days == 7
+    assert micro_prequential.max_folds == 2
+    micro_promote = cli._parse_args(
+        ["microstructure-promote", "--input", "candidate.json"]
+    )
+    assert micro_promote.input == "candidate.json"
+    assert micro_promote.output is None
+    assert micro_promote.prequential_report == "data/microstructure-prequential.json"
     micro_refit = cli._parse_args(["microstructure-refit", "--input", "validated.json"])
     assert micro_refit.input == "validated.json"
     assert micro_refit.output is None
@@ -415,6 +434,268 @@ def test_microstructure_terminal_evaluation_requires_protective_exits(capsys) ->
 
     assert result == 2
     assert "requires explicit path-aware" in capsys.readouterr().err
+
+
+def test_command_microstructure_prequential_rebuilds_exact_candidate_contract(
+    monkeypatch,
+    capsys,
+) -> None:
+    from types import SimpleNamespace
+
+    artifact = SimpleNamespace(
+        status="candidate",
+        rejection_reasons=(),
+        symbol="BTCUSDT",
+        horizon_seconds=60,
+        total_latency_ms=250,
+        taker_fee_bps=5.0,
+        max_quote_age_ms=1_000,
+        reference_order_notional_quote=1_000.0,
+        max_l1_participation=0.05,
+        decision_cadence_seconds=5,
+        stop_loss_bps=None,
+        take_profit_bps=None,
+        trigger_execution_slippage_bps=None,
+    )
+    dataset = object()
+    calls: dict[str, object] = {}
+
+    class Warehouse:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def rebuild_causal_feature_bars(self, symbol: str) -> None:
+            calls["rebuild"] = symbol
+
+    def build(_warehouse, **kwargs):
+        calls["build"] = kwargs
+        return dataset
+
+    report = SimpleNamespace(
+        status="passed",
+        passed=True,
+        reasons=(),
+        aggregate={
+            "metrics": {"trades": 10, "total_net_bps": 20.0, "max_drawdown_bps": 2.0},
+            "confidence": {
+                "mean_daily_net_bps_ci_lower": 0.1,
+                "mean_daily_net_bps_ci_upper": 1.0,
+            },
+        },
+        coverage={
+            "complete_folds": 3,
+            "planned_folds": 3,
+            "evaluated_rows": 100,
+        },
+        predictions_path="predictions.csv",
+        chart_path="chart.svg",
+        asdict=lambda: {"status": "passed"},
+    )
+
+    def evaluate(candidate, source, **kwargs):
+        calls["evaluate"] = (candidate, source, kwargs)
+        return report
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.load_microstructure_model_artifact",
+        lambda _path: artifact,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_warehouse.MicrostructureWarehouse",
+        Warehouse,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_features.build_executable_microstructure_dataset",
+        build,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_prequential.evaluate_prequential_microstructure_model",
+        evaluate,
+    )
+
+    result = cli.command_microstructure_prequential(
+        argparse.Namespace(
+            input="candidate.json",
+            warehouse="warehouse.duckdb",
+            cache_root="cache",
+            output="report.json",
+            predictions="predictions.csv",
+            chart="chart.svg",
+            compute_backend="cpu",
+            training_window_days=30,
+            minimum_training_days=10,
+            calibration_days=3,
+            policy_days=3,
+            evaluation_block_days=2,
+            minimum_segment_rows=32,
+            minimum_class_rows=16,
+            bootstrap_samples=1_000,
+            max_folds=0,
+            memory_limit="1GB",
+            threads=1,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    assert calls["rebuild"] == "BTCUSDT"
+    assert calls["build"]["reference_order_notional_quote"] == 1_000.0  # type: ignore[index]
+    assert calls["evaluate"][0] is artifact  # type: ignore[index]
+    assert calls["evaluate"][1] is dataset  # type: ignore[index]
+    assert "terminal_holdout=not_accessed trading_authority=false" in capsys.readouterr().out
+
+
+def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    from types import SimpleNamespace
+
+    split = SimpleNamespace(terminal_start_ms=200 * 86_400_000)
+    candidate = SimpleNamespace(
+        status="candidate",
+        rejection_reasons=(),
+        prequential_validation=None,
+        symbol="BTCUSDT",
+        horizon_seconds=60,
+        total_latency_ms=250,
+        taker_fee_bps=5.0,
+        max_quote_age_ms=1_000,
+        reference_order_notional_quote=1_000.0,
+        max_l1_participation=0.05,
+        decision_cadence_seconds=5,
+        stop_loss_bps=25.0,
+        take_profit_bps=40.0,
+        trigger_execution_slippage_bps=1.0,
+        feature_version="fixture-v1",
+        schema_version="fixture-model-v1",
+        split=split,
+    )
+    attached = SimpleNamespace(
+        **{**vars(candidate), "prequential_validation": SimpleNamespace(report_sha256="e" * 64)}
+    )
+    terminal_metrics = SimpleNamespace(trades=40, total_net_bps=120.0)
+    validated = SimpleNamespace(
+        **{
+            **vars(attached),
+            "status": "validated",
+            "terminal_metrics": terminal_metrics,
+            "rejection_reasons": (),
+        }
+    )
+    accepted = SimpleNamespace(
+        **{
+            **vars(validated),
+            "status": "accepted",
+            "asdict": lambda: {
+                "status": "accepted",
+                "model_strings": {"hidden": "value"},
+                "deployment_model_strings": {"hidden": "value"},
+            },
+        }
+    )
+    dataset = SimpleNamespace(
+        symbol="BTCUSDT",
+        decision_time_ms=np.asarray([200 * 86_400_000, 201 * 86_400_000]),
+        source_evidence={"manifest_fingerprint": "a" * 64, "build_id": "b" * 64},
+    )
+    calls: list[tuple[str, object]] = []
+
+    class Warehouse:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def require_causal_feature_bars(self, symbol: str) -> None:
+            calls.append(("require", symbol))
+
+        def reserve_terminal_holdout(self, **kwargs):
+            calls.append(("reserve", kwargs))
+            return {"reservation_id": "f" * 64, "status": "reserved"}
+
+        def finalize_terminal_holdout(self, reservation_id: str, **kwargs):
+            calls.append(("finalize", (reservation_id, kwargs)))
+            return {"status": "complete", "result_status": kwargs["result_status"]}
+
+    def save(artifact, path):
+        calls.append(("save", (artifact.status, Path(path))))
+        return "9" * 64
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.load_microstructure_model_artifact",
+        lambda _path: candidate,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.microstructure_candidate_sha256",
+        lambda _artifact: "c" * 64,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.evaluate_microstructure_model_terminal",
+        lambda _artifact, _dataset, **_kwargs: validated,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.refit_validated_microstructure_model",
+        lambda _artifact, _dataset, **_kwargs: accepted,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.save_microstructure_model_artifact",
+        save,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_warehouse.MicrostructureWarehouse",
+        Warehouse,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_features.build_executable_microstructure_dataset",
+        lambda *_args, **_kwargs: dataset,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_features.apply_path_aware_lifecycle_targets",
+        lambda _warehouse, value, **_kwargs: (value, SimpleNamespace()),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_prequential.attach_verified_prequential_evidence",
+        lambda _artifact, _dataset, **_kwargs: attached,
+    )
+    output = tmp_path / "accepted.json"
+
+    result = cli.command_microstructure_promote(
+        argparse.Namespace(
+            input="candidate.json",
+            output=str(output),
+            prequential_report="report.json",
+            prequential_predictions="predictions.csv",
+            prequential_chart="chart.svg",
+            warehouse="warehouse.duckdb",
+            cache_root="cache",
+            compute_backend="cpu",
+            memory_limit="1GB",
+            threads=1,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    reserve = next(value for name, value in calls if name == "reserve")
+    assert reserve["candidate_sha256"] == "c" * 64
+    assert reserve["prequential_report_sha256"] == "e" * 64
+    finalize = next(value for name, value in calls if name == "finalize")
+    assert finalize[1]["result_status"] == "validated"
+    saved_statuses = [value[0] for name, value in calls if name == "save"]
+    assert saved_statuses == ["candidate", "validated", "accepted", "accepted"]
+    assert "status=accepted" in capsys.readouterr().out
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:
@@ -1718,6 +1999,7 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
         model_candidate_count=3,
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
+        strategy_overrides={"taker_fee_bps": 4.0},
     )
     model_file = tmp_path / "model_default.json"
     serialize_model(model, model_file)
@@ -2596,7 +2878,7 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
 
-    class _LoadedModel:
+    class _LoadedModel(_SignedFeeModelEvidence):
         feature_signature = "sig"
 
         def predict_proba(self, _features) -> float:
@@ -2618,7 +2900,7 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
     assert cli.command_live(args) == 2
     assert "positive USDC trading cap" in capsys.readouterr().err
 
-    class _RiskModel:
+    class _RiskModel(_SignedFeeModelEvidence):
         feature_signature = "sig"
 
         def predict_proba(self, _features) -> float:
@@ -3477,7 +3759,7 @@ def test_command_live_paper_flag_overrides_runtime_live_without_credentials(tmp_
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -3518,7 +3800,7 @@ def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, 
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -3775,7 +4057,7 @@ def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -3827,7 +4109,7 @@ def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, mon
             self.orders.append((symbol, side, size))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -3920,7 +4202,7 @@ def test_command_live_artifact_is_emitted(tmp_path, monkeypatch) -> None:
             self.orders.append((symbol, side, size))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -4013,7 +4295,7 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
             self.orders.append((symbol, side, size))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -4049,7 +4331,7 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
     assert cli.command_live(_live_args(tmp_path, steps=3, sleep=0)) == 0
 
     assert client.kline_calls == 3
-    assert client.orders == [("BTCUSDC", "BUY", pytest.approx(0.616, rel=1e-4))]
+    assert client.orders == [("BTCUSDC", "BUY", pytest.approx(0.5338, rel=1e-4))]
     statuses = [event.get("status") for event in captured[0]["events"] if isinstance(event, dict)]
     assert "market_error_retry" in statuses
     assert "skip_risk_recovery_pending" in statuses
@@ -4148,7 +4430,7 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-    class _StepModel:
+    class _StepModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
             self.calls = 0
 
@@ -4347,7 +4629,7 @@ def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, c
     model_dir.mkdir(parents=True, exist_ok=True)
     (model_dir / "model.json").write_text("{}", encoding="utf-8")
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -4398,7 +4680,7 @@ def test_command_live_strictly_requires_valid_model_for_authenticated_live(tmp_p
 def test_command_live_loaded_model_signature_and_authenticated_sleep_floor(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
 
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features: tuple[float, ...]) -> float:
@@ -4584,6 +4866,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
         model_candidate_count=3,
         model_selected_candidate="triple_barrier_base",
         model_selection_score=0.42,
+        strategy_overrides={"taker_fee_bps": 4.0},
     )
 
     def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
@@ -4713,7 +4996,7 @@ def test_paper_or_live_order_passes_reduce_only_for_authenticated_futures(capsys
 
 
 def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypatch, capsys) -> None:
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -4795,7 +5078,7 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
         for index in range(20)
     ]
 
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -4912,7 +5195,7 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
         for index in range(20)
     ]
 
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -5012,7 +5295,7 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
 
 
 def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatch, capsys) -> None:
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -5049,7 +5332,7 @@ def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatc
 
 
 def test_command_live_uses_runtime_quote_asset_for_cash_cap(tmp_path, monkeypatch, capsys) -> None:
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -5098,7 +5381,7 @@ def test_command_live_uses_runtime_quote_asset_for_cash_cap(tmp_path, monkeypatc
 
 
 def test_command_live_blocks_when_exchange_has_no_available_usdc(tmp_path, monkeypatch, capsys) -> None:
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -5134,7 +5417,7 @@ def test_command_live_blocks_when_exchange_has_no_available_usdc(tmp_path, monke
 
 
 def test_command_live_reports_risk_policy_after_balance_check(tmp_path, monkeypatch, capsys) -> None:
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -5168,7 +5451,7 @@ def test_command_live_reports_risk_policy_after_balance_check(tmp_path, monkeypa
 
 
 def test_command_live_reconciliation_mismatch_after_balance(tmp_path, monkeypatch, capsys) -> None:
-    class _SignedModel:
+    class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
         def predict_proba(self, _features):
@@ -5237,7 +5520,7 @@ def test_command_tune_saves_candidate(monkeypatch, tmp_path) -> None:
     data = tmp_path / "history.json"
     data.write_text(json.dumps(candles), encoding="utf-8")
 
-    class _Model:
+    class _Model(_SignedFeeModelEvidence):
         def __init__(self, score: float) -> None:
             self.score = score
 
@@ -5432,7 +5715,7 @@ def test_command_strategy_covers_full_update_path(tmp_path, monkeypatch) -> None
     save_runtime(RuntimeConfig(market_type="futures", api_key="k", api_secret="s"))
     save_strategy(StrategyConfig())
 
-    class _LeverageClient:
+    class _LeverageClient(_SignedCommissionClientEvidence):
         def get_max_leverage(self, symbol: str) -> int:
             return 3
 
@@ -5959,7 +6242,7 @@ def test_command_tune_uses_default_leverage_when_no_api_keys(tmp_path, monkeypat
     history = tmp_path / "history.json"
     history.write_text(json.dumps(candles), encoding="utf-8")
 
-    class _Model:
+    class _Model(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.6
 
@@ -6014,7 +6297,7 @@ def test_command_tune_falls_back_to_drawdown_fallback(tmp_path, monkeypatch, cap
     history = tmp_path / "history.json"
     history.write_text(json.dumps(candles), encoding="utf-8")
 
-    class _Model:
+    class _Model(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.6
 
@@ -6057,7 +6340,7 @@ def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path,
     model_file.parent.mkdir(parents=True, exist_ok=True)
     model_file.write_text("{invalid-json}", encoding="utf-8")
 
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return [
                 Candle(open_time=i * 60_000, open=100.0 + i, high=101.0 + i, low=99.0 + i, close=100.0 + i, volume=1.0, close_time=(i + 1) * 60_000)
@@ -6086,7 +6369,7 @@ def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path,
                 "leverage": leverage,
             }
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6102,7 +6385,7 @@ def test_command_live_skips_entry_when_cash_is_insufficient_after_fees(tmp_path,
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
     save_strategy(StrategyConfig(risk_per_trade=1.0, max_position_pct=1.0, taker_fee_bps=20000.0))
 
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return [
                 Candle(
@@ -6130,7 +6413,7 @@ def test_command_live_skips_entry_when_cash_is_insufficient_after_fees(tmp_path,
         def normalize_quantity(self, symbol: str, quantity: float):
             return (max(0.01, round(quantity, 2)), self.get_symbol_constraints(symbol))
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6143,7 +6426,7 @@ def test_command_live_skips_entry_when_cash_is_insufficient_after_fees(tmp_path,
 def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
 
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_account(self):
             return _exchange_account()
 
@@ -6164,7 +6447,7 @@ def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_p
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-    class _BadRuntimeModel:
+    class _BadRuntimeModel(_SignedFeeModelEvidence):
         feature_signature = "test-signature"
 
         def predict_proba(self, _features: tuple[float, ...]) -> float:
@@ -6217,7 +6500,7 @@ def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_p
 
 
 def test_command_live_paper_retrains_incompatible_model(tmp_path, monkeypatch, capsys) -> None:
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
@@ -6235,11 +6518,11 @@ def test_command_live_paper_retrains_incompatible_model(tmp_path, monkeypatch, c
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-    class _BadRuntimeModel:
+    class _BadRuntimeModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             raise ValueError("feature vector changed")
 
-    class _RecoveredModel:
+    class _RecoveredModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.5
 
@@ -6280,7 +6563,7 @@ def test_command_live_paper_retrains_incompatible_model(tmp_path, monkeypatch, c
 
 
 def test_command_live_reports_no_training_rows_when_model_cannot_be_built(tmp_path, monkeypatch, capsys) -> None:
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
@@ -6302,14 +6585,14 @@ def test_command_live_reports_no_training_rows_when_model_cannot_be_built(tmp_pa
 
 
 def test_command_live_paper_incompatible_model_without_training_rows_halts(tmp_path, monkeypatch, capsys) -> None:
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
             return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
 
-    class _BadRuntimeModel:
+    class _BadRuntimeModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             raise ValueError("feature vector changed")
 
@@ -6334,7 +6617,7 @@ def test_command_live_paper_incompatible_model_without_training_rows_halts(tmp_p
 def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
 
-    class _RejectEntryClient:
+    class _RejectEntryClient(_SignedCommissionClientEvidence):
         def get_account(self):
             return _exchange_account()
 
@@ -6367,7 +6650,7 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
         ):
             raise BinanceAPIError("Filter failure: NOTIONAL")
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6411,7 +6694,7 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
 def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
 
-    class _RejectCloseClient:
+    class _RejectCloseClient(_SignedCommissionClientEvidence):
         def __init__(self) -> None:
             self.order_calls = 0
 
@@ -6450,7 +6733,7 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
                 raise BinanceAPIError("close rejected")
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100", "dry_run": dry_run}
 
-    class _OpenThenCloseModel:
+    class _OpenThenCloseModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
             self.calls = 0
 
@@ -6499,7 +6782,7 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
 def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
 
-    class _RejectEmergencyCloseClient:
+    class _RejectEmergencyCloseClient(_SignedCommissionClientEvidence):
         def __init__(self) -> None:
             self.market_calls = 0
             self.order_calls = 0
@@ -6552,7 +6835,7 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
                 raise BinanceAPIError("emergency close rejected")
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100", "dry_run": dry_run}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6640,7 +6923,7 @@ def test_command_live_records_malformed_entry_fill_response(tmp_path, monkeypatc
         ):
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6689,7 +6972,7 @@ def test_command_live_records_malformed_regular_close_fill_response(tmp_path, mo
         def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
-    class _OpenThenFlatModel:
+    class _OpenThenFlatModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
             self.calls = 0
 
@@ -6750,7 +7033,7 @@ def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, 
         def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6805,7 +7088,7 @@ def test_command_live_handles_partial_regular_close(tmp_path, monkeypatch) -> No
             executed = size if self.order_calls == 1 else size / 2.0
             return {"symbol": symbol, "side": side, "executedQty": str(executed), "avgPrice": "100"}
 
-    class _OpenThenFlatModel:
+    class _OpenThenFlatModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
             self.calls = 0
 
@@ -6878,7 +7161,7 @@ def test_command_live_handles_partial_emergency_close(tmp_path, monkeypatch) -> 
             executed = size if self.order_calls == 1 else size / 2.0
             return {"symbol": symbol, "side": side, "executedQty": str(executed), "avgPrice": "100"}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -6923,7 +7206,7 @@ def test_command_live_handles_partial_emergency_close(tmp_path, monkeypatch) -> 
 def test_command_live_skips_entry_when_cash_is_insufficient_before_fill(tmp_path, monkeypatch, capsys) -> None:
     captured: list[dict[str, object]] = []
 
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
@@ -6937,7 +7220,7 @@ def test_command_live_skips_entry_when_cash_is_insufficient_before_fill(tmp_path
                 max_notional=0.0,
             )
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -7004,7 +7287,7 @@ def test_command_live_retrain_interval_rebuilds_model_in_loop(tmp_path, monkeypa
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
@@ -7025,7 +7308,7 @@ def test_command_live_retrain_interval_rebuilds_model_in_loop(tmp_path, monkeypa
         def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def __init__(self):
             self.calls = 0
 
@@ -7196,7 +7479,7 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    class _FlowClient:
+    class _FlowClient(_SignedCommissionClientEvidence):
         def __init__(self):
             self.orders = []
 
@@ -7225,7 +7508,7 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
             self.orders.append((side, size))
             return {"symbol": symbol, "side": side, "size": size}
 
-    class _ScoredModel:
+    class _ScoredModel(_SignedFeeModelEvidence):
         def __init__(self):
             self.calls = 0
 
@@ -7263,7 +7546,7 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
 
 
 def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -> None:
-    class _LeverageClient:
+    class _LeverageClient(_SignedCommissionClientEvidence):
         def __init__(self) -> None:
             self.set_calls: list[int] = []
             self.bracket_queries: list[tuple[str, float]] = []
@@ -7326,7 +7609,7 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
             self.orders.append((side, size, dry_run, leverage, notional))
             return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -7395,7 +7678,7 @@ def test_command_live_spot_leverage_override_is_logged(tmp_path, monkeypatch, ca
         def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
             return {"symbol": symbol, "side": side, "size": size}
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -7471,7 +7754,7 @@ def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatc
                 "leverage": leverage,
             }
 
-    class _AlwaysLongModel:
+    class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 1.0
 
@@ -7503,7 +7786,7 @@ def test_build_autonomous_decision_fn_error_and_flat_no_row_paths(tmp_path, monk
     assert error == "bad model"
     assert notice == "notice"
 
-    class _Model:
+    class _Model(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
@@ -7526,7 +7809,7 @@ def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_pa
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
-    class _Model:
+    class _Model(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.90
 
@@ -7561,7 +7844,7 @@ def test_build_autonomous_decision_fn_applies_liquidity_guard(tmp_path, monkeypa
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
-    class _Model:
+    class _Model(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.95
 
@@ -7608,7 +7891,7 @@ def test_build_autonomous_decision_fn_loaded_model_short_without_external_signal
         def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
             return _simple_candles(limit)
 
-    class _ShortModel:
+    class _ShortModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.01
 
