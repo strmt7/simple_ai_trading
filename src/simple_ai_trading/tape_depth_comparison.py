@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from itertools import combinations
 import json
 import math
 from pathlib import Path
@@ -18,8 +19,8 @@ from .tape_depth_prequential import (
 )
 
 
-TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v1"
-TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v1"
+TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v2"
+TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v2"
 _TRIAL_CONFIG_KEYS = frozenset({"model_profile", "feature_set"})
 _STAGE_CONFIG_KEYS = frozenset(
     {
@@ -36,6 +37,17 @@ _STAGE_CONFIG_KEYS = frozenset(
 _PROFILE_COMPLEXITY = {"regularized": 0, "balanced": 1, "expressive": 2}
 _FEATURE_COMPLEXITY = {"core": 0, "tape_derived": 1, "cross_asset": 2, "full": 3}
 _MAX_JSON_EVIDENCE_BYTES = 64 * 1024 * 1024
+_SCREENING_FOLD_COUNTS = frozenset({4, 6, 8, 10})
+_FORECAST_SELECTION_PBO_LIMIT = 0.20
+_SELECTION_METRIC_NAMES = (
+    "auc_edge",
+    "brier_improvement_ratio",
+    "mae_improvement_ratio",
+    "spearman_information_coefficient",
+    "top_decile_mean_signed_gross_bps",
+    "positive_ic_fold_rate",
+    "positive_gross_fold_rate",
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -344,19 +356,10 @@ def _passes_segment(metrics: Mapping[str, object]) -> tuple[bool, tuple[str, ...
 
 
 def _rank_scores(trials: Sequence[dict[str, object]]) -> dict[str, float]:
-    metric_names = (
-        "auc_edge",
-        "brier_improvement_ratio",
-        "mae_improvement_ratio",
-        "spearman_information_coefficient",
-        "top_decile_mean_signed_gross_bps",
-        "positive_ic_fold_rate",
-        "positive_gross_fold_rate",
-    )
     if len(trials) == 1:
         return {str(trials[0]["trial"]): 1.0}
     accumulated = {str(trial["trial"]): 0.0 for trial in trials}
-    for metric_name in metric_names:
+    for metric_name in _SELECTION_METRIC_NAMES:
         values = np.asarray(
             [
                 _finite(dict(trial["screening_overall"])[metric_name], metric_name)
@@ -375,7 +378,132 @@ def _rank_scores(trials: Sequence[dict[str, object]]) -> dict[str, float]:
             cursor = end
         for index, trial in enumerate(trials):
             accumulated[str(trial["trial"])] += float(ranks[index] / (len(trials) - 1))
-    return {label: score / len(metric_names) for label, score in accumulated.items()}
+    return {
+        label: score / len(_SELECTION_METRIC_NAMES)
+        for label, score in accumulated.items()
+    }
+
+
+def _average_zero_based_ranks(values: np.ndarray) -> np.ndarray:
+    order = np.argsort(values, kind="stable")
+    ranks = np.empty(len(values), dtype=np.float64)
+    cursor = 0
+    while cursor < len(order):
+        end = cursor + 1
+        while end < len(order) and values[order[end]] == values[order[cursor]]:
+            end += 1
+        ranks[order[cursor:end]] = (cursor + end - 1) / 2.0
+        cursor = end
+    return ranks
+
+
+def _forecast_selection_overfit_diagnostic(
+    validated: Sequence[tuple[TrialKey, list[dict[str, object]]]],
+    *,
+    symbols: Sequence[str],
+    screening_fold_count: int,
+) -> dict[str, object]:
+    """Apply symmetric fold CV to the relative forecast-metric leaderboard."""
+
+    trial_count = len(validated)
+    if trial_count == 1:
+        return {
+            "method": "cscv_relative_forecast_metric_ranks",
+            "status": "not_applicable_single_declared_trial",
+            "passed": True,
+            "threshold": _FORECAST_SELECTION_PBO_LIMIT,
+            "estimated_probability": None,
+            "screening_blocks": screening_fold_count,
+            "declared_trials": 1,
+            "symmetric_splits": 0,
+            "splits": [],
+            "limitations": [
+                "PBO is not identified from a single declared trial",
+                "the diagnostic ranks forecast metrics and is not a PnL or Sharpe PBO",
+            ],
+        }
+    block_scores = np.zeros(
+        (screening_fold_count, trial_count),
+        dtype=np.float64,
+    )
+    for fold_index in range(screening_fold_count):
+        block_metrics = [
+            _segment_metrics(
+                tuple(
+                    fold
+                    for fold in folds
+                    if int(fold["fold_index"]) == fold_index
+                    and str(fold["symbol"]) in symbols
+                )
+            )
+            for _key, folds in validated
+        ]
+        for metric_name in _SELECTION_METRIC_NAMES:
+            values = np.asarray(
+                [
+                    _finite(metrics[metric_name], metric_name)
+                    for metrics in block_metrics
+                ],
+                dtype=np.float64,
+            )
+            block_scores[fold_index] += _average_zero_based_ranks(values) / (
+                trial_count - 1
+            )
+    block_scores /= len(_SELECTION_METRIC_NAMES)
+    trial_keys = tuple(key for key, _folds in validated)
+    all_blocks = frozenset(range(screening_fold_count))
+    split_rows: list[dict[str, object]] = []
+    overfit_count = 0
+    for split_index, training_blocks_raw in enumerate(
+        combinations(range(screening_fold_count), screening_fold_count // 2)
+    ):
+        training_blocks = tuple(training_blocks_raw)
+        validation_blocks = tuple(sorted(all_blocks.difference(training_blocks)))
+        in_sample = np.mean(block_scores[list(training_blocks)], axis=0)
+        out_of_sample = np.mean(block_scores[list(validation_blocks)], axis=0)
+        winner_index = max(
+            range(trial_count),
+            key=lambda index: (
+                float(in_sample[index]),
+                -trial_keys[index].complexity,
+                trial_keys[index].label,
+            ),
+        )
+        out_ranks = _average_zero_based_ranks(out_of_sample)
+        percentile = float((out_ranks[winner_index] + 1.0) / (trial_count + 1.0))
+        logit = float(math.log(percentile / (1.0 - percentile)))
+        overfit = logit < 0.0
+        overfit_count += int(overfit)
+        split_rows.append(
+            {
+                "split_index": split_index,
+                "selection_fold_indices": list(training_blocks),
+                "validation_fold_indices": list(validation_blocks),
+                "selected_trial": trial_keys[winner_index].label,
+                "selection_score": float(in_sample[winner_index]),
+                "validation_score": float(out_of_sample[winner_index]),
+                "validation_rank_percentile": percentile,
+                "logit": logit,
+                "overfit": overfit,
+            }
+        )
+    probability = overfit_count / len(split_rows)
+    return {
+        "method": "cscv_relative_forecast_metric_ranks",
+        "status": "passed" if probability <= _FORECAST_SELECTION_PBO_LIMIT else "rejected",
+        "passed": probability <= _FORECAST_SELECTION_PBO_LIMIT,
+        "threshold": _FORECAST_SELECTION_PBO_LIMIT,
+        "estimated_probability": probability,
+        "screening_blocks": screening_fold_count,
+        "declared_trials": trial_count,
+        "symmetric_splits": len(split_rows),
+        "splits": split_rows,
+        "limitations": [
+            "non-overlapping outer folds are the symmetric CV blocks",
+            "the diagnostic ranks forecast metrics and is not a PnL or Sharpe PBO",
+            "terminal confirmation remains separately sealed and is never part of CSCV",
+        ],
+    }
 
 
 def select_tape_depth_screening_reports(
@@ -393,8 +521,13 @@ def select_tape_depth_screening_reports(
     if base_config.get("study_stage") != "screening":
         raise ValueError("selection accepts screening-stage reports only")
     screening_fold_count = int(base_config["max_folds"])
-    if int(base_config["fold_start"]) != 0 or screening_fold_count < 2:
-        raise ValueError("screening reports must contain a declared initial fold window")
+    if (
+        int(base_config["fold_start"]) != 0
+        or screening_fold_count not in _SCREENING_FOLD_COUNTS
+    ):
+        raise ValueError(
+            "screening reports must contain 4, 6, 8, or 10 initial folds"
+        )
     base_common_config = _config_without(base_config, _TRIAL_CONFIG_KEYS)
     base_modeling_config = _config_without(base_config, _STAGE_CONFIG_KEYS)
     base_plans = reports[0].get("plan_fingerprints")
@@ -468,7 +601,7 @@ def select_tape_depth_screening_reports(
     for trial in screening_trials:
         trial["screening_rank_score"] = rank_scores[str(trial["trial"])]
     eligible = [trial for trial in screening_trials if bool(trial["eligible"])]
-    selected = (
+    ranked_winner = (
         max(
             eligible,
             key=lambda trial: (
@@ -480,6 +613,12 @@ def select_tape_depth_screening_reports(
         if eligible
         else None
     )
+    overfit_diagnostic = _forecast_selection_overfit_diagnostic(
+        validated,
+        symbols=symbols,
+        screening_fold_count=screening_fold_count,
+    )
+    selected = ranked_winner if bool(overfit_diagnostic["passed"]) else None
     boundaries = {
         symbol: max(
             int(fold["evaluation_end_ms"])
@@ -491,7 +630,17 @@ def select_tape_depth_screening_reports(
     payload: dict[str, object] = {
         "schema_version": TAPE_DEPTH_SELECTION_SCHEMA_VERSION,
         "status": "winner_frozen" if selected is not None else "rejected",
-        "rejection_reasons": [] if selected is not None else ["no_screening_trial_passed"],
+        "rejection_reasons": (
+            []
+            if selected is not None
+            else [
+                (
+                    "no_screening_trial_passed"
+                    if ranked_winner is None
+                    else "forecast_selection_pbo_above_0_20"
+                )
+            ]
+        ),
         "trading_authority": False,
         "execution_claim": False,
         "profitability_claim": False,
@@ -508,6 +657,10 @@ def select_tape_depth_screening_reports(
             symbol: base_available[symbol] - screening_fold_count for symbol in symbols
         },
         "screening_trials": screening_trials,
+        "forecast_selection_overfit_diagnostic": overfit_diagnostic,
+        "ranked_winner_trial": (
+            str(ranked_winner["trial"]) if ranked_winner else None
+        ),
         "selected_trial": str(selected["trial"]) if selected else None,
         "selected_model_profile": str(selected["model_profile"]) if selected else None,
         "selected_feature_set": str(selected["feature_set"]) if selected else None,
@@ -565,10 +718,26 @@ def _validate_selection_payload(selection: Mapping[str, object]) -> None:
         screening_count = int(selection.get("screening_fold_count", -1))
     except (TypeError, ValueError) as exc:
         raise ValueError("selection lock fold boundary is invalid") from exc
-    if fold_start != screening_count or screening_count < 2 or any(
+    if (
+        fold_start != screening_count
+        or screening_count not in _SCREENING_FOLD_COUNTS
+        or any(
         available[symbol] - fold_start < 2 for symbol in normalized_symbols
+        )
     ):
         raise ValueError("selection lock does not preserve two confirmation folds")
+    diagnostic = selection.get("forecast_selection_overfit_diagnostic")
+    if (
+        not isinstance(diagnostic, Mapping)
+        or diagnostic.get("method") != "cscv_relative_forecast_metric_ranks"
+        or diagnostic.get("passed") is not True
+        or int(diagnostic.get("screening_blocks", -1)) != screening_count
+        or int(diagnostic.get("declared_trials", -1))
+        != int(selection.get("declared_trial_count", -2))
+        or float(diagnostic.get("threshold", -1.0))
+        != _FORECAST_SELECTION_PBO_LIMIT
+    ):
+        raise ValueError("selection lock overfit diagnostic is invalid")
 
 
 def validate_tape_depth_confirmation_request(

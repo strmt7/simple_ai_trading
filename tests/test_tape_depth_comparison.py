@@ -21,8 +21,8 @@ from simple_ai_trading.tape_depth_prequential import (
 
 
 _SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
-_AVAILABLE_FOLDS = 6
-_SCREENING_FOLDS = 2
+_AVAILABLE_FOLDS = 8
+_SCREENING_FOLDS = 4
 
 
 def _refingerprint(payload: dict[str, object], field: str) -> None:
@@ -158,8 +158,32 @@ def test_screening_freezes_winner_without_confirmation_metrics() -> None:
     assert selection["confirmation_fold_start"] == _SCREENING_FOLDS
     assert "confirmation" not in selection
     assert len(str(selection["selection_fingerprint"])) == 64
+    diagnostic = selection["forecast_selection_overfit_diagnostic"]
+    assert diagnostic["estimated_probability"] == 0.0  # type: ignore[index]
+    assert diagnostic["symmetric_splits"] == 6  # type: ignore[index]
     assert selection["trading_authority"] is False
     assert selection["profitability_claim"] is False
+
+
+def test_screening_rejects_fold_unstable_leaderboard_as_overfit() -> None:
+    early = _report("regularized", "core", stage="screening", edge=0.02)
+    late = _report("expressive", "full", stage="screening", edge=0.02)
+    for fold in early["folds"]:  # type: ignore[union-attr]
+        fold["metrics"] = _metrics(0.04 if int(fold["fold_index"]) < 2 else 0.005)
+    for fold in late["folds"]:  # type: ignore[union-attr]
+        fold["metrics"] = _metrics(0.005 if int(fold["fold_index"]) < 2 else 0.04)
+
+    selection = select_tape_depth_screening_reports([early, late])
+
+    assert selection["status"] == "rejected"
+    assert selection["ranked_winner_trial"] == "regularized/core"
+    assert selection["selected_trial"] is None
+    assert selection["rejection_reasons"] == [
+        "forecast_selection_pbo_above_0_20"
+    ]
+    diagnostic = selection["forecast_selection_overfit_diagnostic"]
+    assert diagnostic["estimated_probability"] == pytest.approx(2 / 6)  # type: ignore[index]
+    assert diagnostic["passed"] is False  # type: ignore[index]
 
 
 def test_confirmation_rejects_failed_winner_without_runner_up() -> None:
@@ -476,11 +500,11 @@ def test_screening_selection_rejects_invalid_trial_sets_and_seal_depth() -> None
 
     one_declared = copy.deepcopy(report)
     one_declared["config"]["max_folds"] = 1  # type: ignore[index]
-    with pytest.raises(ValueError, match="initial fold window"):
+    with pytest.raises(ValueError, match="4, 6, 8, or 10"):
         select_tape_depth_screening_reports([one_declared])
 
     shallow = copy.deepcopy(report)
-    shallow["available_fold_counts"] = {symbol: 3 for symbol in _SYMBOLS}
+    shallow["available_fold_counts"] = {symbol: 5 for symbol in _SYMBOLS}
     with pytest.raises(ValueError, match="fewer than two sealed folds"):
         select_tape_depth_screening_reports([shallow])
 
@@ -488,7 +512,7 @@ def test_screening_selection_rejects_invalid_trial_sets_and_seal_depth() -> None
     uneven["folds"] = [
         fold
         for fold in uneven["folds"]  # type: ignore[union-attr]
-        if not (fold["symbol"] == "SOLUSDT" and fold["fold_index"] == 1)
+        if not (fold["symbol"] == "SOLUSDT" and fold["fold_index"] == 3)
     ]
     uneven["total_folds"] = len(uneven["folds"])  # type: ignore[arg-type]
     uneven["completed_folds"] = len(uneven["folds"])  # type: ignore[arg-type]
@@ -504,6 +528,7 @@ def test_screening_selection_rejects_invalid_trial_sets_and_seal_depth() -> None
         ("winner", "winner is invalid"),
         ("boundary_type", "fold boundary is invalid"),
         ("shallow_suffix", "preserve two confirmation folds"),
+        ("overfit_diagnostic", "overfit diagnostic is invalid"),
     ],
 )
 def test_selection_lock_rejects_malformed_contract(case: str, message: str) -> None:
@@ -520,7 +545,10 @@ def test_selection_lock_rejects_malformed_contract(case: str, message: str) -> N
         selection["confirmation_fold_start"] = "bad"
         _refingerprint(selection, "selection_fingerprint")
     elif case == "shallow_suffix":
-        selection["available_fold_counts"] = {symbol: 3 for symbol in _SYMBOLS}
+        selection["available_fold_counts"] = {symbol: 5 for symbol in _SYMBOLS}
+        _refingerprint(selection, "selection_fingerprint")
+    elif case == "overfit_diagnostic":
+        selection["forecast_selection_overfit_diagnostic"]["passed"] = False  # type: ignore[index]
         _refingerprint(selection, "selection_fingerprint")
 
     with pytest.raises(ValueError, match=message):

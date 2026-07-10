@@ -257,9 +257,11 @@ automatic improvement.
 
 Tape/depth model selection is physically split into screening and confirmation.
 Every candidate run must use `--study-stage screening`, start at fold zero, and
-declare at least two screening folds while leaving at least two later folds
-untouched. `tape-depth-select` verifies identical datasets and full-corpus
-coverage fingerprints, recomputes all candidate metrics, and writes a
+declare 4, 6, 8, or 10 non-overlapping screening folds while leaving at least
+two later folds untouched. `tape-depth-select` verifies identical datasets and
+full-corpus coverage fingerprints, recomputes all candidate metrics, and runs a
+complete symmetric-fold forecast-rank PBO diagnostic with a fail-closed 0.20
+limit. This is not a PnL/Sharpe PBO or profitability claim. It then writes a
 source-report-bound winner lock. A confirmation run accepts that lock, derives
 the winning profile/feature set and terminal fold boundary from it, and fails if
 the corpus, modeling configuration, winner, or source reports changed.
