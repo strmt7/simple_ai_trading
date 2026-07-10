@@ -26,10 +26,10 @@ operator docs all agree.
 
 ## Causal L1/Tape Action-Value Model
 
-The `microstructure-action-value-v11` workflow is a separate, fail-closed
+The `microstructure-action-value-v12` workflow is a separate, fail-closed
 research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
 feed the legacy candle autonomous loop, and the repository currently has no
-accepted v11 artifact or profitability result.
+accepted v12 artifact or profitability result.
 
 Its implemented lifecycle is:
 
@@ -56,15 +56,20 @@ Its implemented lifecycle is:
    artifact hashes, embeds a typed evidence binding, and only then reserves the
    one-use terminal range. Direct terminal evaluation, deployment refit, and
    accepted-model loading all reject a missing or drifted binding.
-6. A terminal pass produces `validated`, not a live model. Deployment refit
-   fixes the selected hyperparameters and tree counts. Provisional classifiers
-   learn calibration on a purged recent tail; six final estimators then refit
-   on all labeled rows. No terminal metric is used to retune the model.
-7. Only a successful refit produces `accepted`. It records validation and
+6. The terminal pass replays the same locked rolling full-retrain,
+   recalibration, and prior-policy-selection protocol over the one-use terminal
+   interval. Earlier terminal labels may enter later folds only after their
+   exits and embargoes are available. A passing terminal replay produces
+   `validated`, not a live model.
+7. Deployment refit fixes the selected hyperparameters and tree counts.
+   Provisional classifiers learn calibration on a purged recent tail; six final
+   estimators then refit on all labeled rows. No terminal metric is used to
+   retune the model.
+8. Only a successful refit produces `accepted`. It records validation and
    deployment estimator hashes, source build/fingerprint, backend, row counts,
    calibration span, training cutoff, and a hard expiry. A failed refit leaves
    the atomic `validated` artifact available for `microstructure-refit`.
-8. Streaming features use only closed seconds, while liquidity eligibility uses
+9. Streaming features use only closed seconds, while liquidity eligibility uses
    the newest independently tracked BBO known at inference time. The scorer
    blocks stale quotes, crossed/invalid books, excess L1 participation,
    unvalidated notional, cadence violations, expired models, and late signals.
@@ -90,12 +95,11 @@ recovery path for a terminal-validated artifact; it requires the same embedded
 prequential binding and refuses a rebuilt or changed source even when filenames
 are unchanged.
 
-Current limitation: prequential selection evidence validates the rolling-refit
-protocol, while terminal scoring still evaluates the frozen candidate
-estimators and policy. Operational rolling-refit terminal replay and exchange
-shadow calibration remain required before this research path can be described
-as execution-parity complete. This limitation is one reason no v11 artifact is
-currently accepted or claimed profitable.
+Current limitation: exchange no-order shadow calibration is not yet a mandatory
+promotion stage. Historical selection and terminal replay cannot measure the
+strategy's own market impact or guarantee that current feed/response latency
+matches the archived distribution. This limitation is one reason no v12
+artifact is currently accepted or claimed profitable.
 
 The fold, queue, and latency design follows the documented limits of market-
 data replay: a replay cannot infer the strategy's own market impact, queue

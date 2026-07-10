@@ -27,7 +27,7 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v11"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v12"
 MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
     "microstructure-prequential-fixed-refit-v1"
 )
@@ -154,6 +154,23 @@ class PrequentialValidationEvidence:
 
 
 @dataclass(frozen=True)
+class TerminalPrequentialEvidence:
+    version: str
+    protocol_sha256: str
+    fold_models_sha256: str
+    backend_kind: str
+    backend_device: str
+    planned_folds: int
+    complete_folds: int
+    expected_rows: int
+    evaluated_rows: int
+    first_evaluation_ms: int
+    last_evaluation_ms: int
+    latest_policy: ThresholdPolicy
+    folds: tuple[Mapping[str, object], ...]
+
+
+@dataclass(frozen=True)
 class MicrostructureModelArtifact:
     schema_version: str
     model_family: str
@@ -213,6 +230,7 @@ class MicrostructureModelArtifact:
     trained_at: str
     terminal_evaluated_at: str | None
     prequential_validation: PrequentialValidationEvidence | None = None
+    terminal_prequential: TerminalPrequentialEvidence | None = None
 
     @property
     def promotion_eligible(self) -> bool:
@@ -692,6 +710,29 @@ def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelA
             "prequential validation evidence",
         )
     )
+    raw_terminal_prequential = payload.get("terminal_prequential")
+    if raw_terminal_prequential is None:
+        values["terminal_prequential"] = None
+    elif isinstance(raw_terminal_prequential, Mapping):
+        terminal_values = dict(raw_terminal_prequential)
+        terminal_values["latest_policy"] = _record_from_mapping(
+            ThresholdPolicy,
+            terminal_values.get("latest_policy"),
+            "terminal prequential latest policy",
+        )
+        raw_folds = terminal_values.get("folds")
+        if not isinstance(raw_folds, list) or any(
+            not isinstance(item, Mapping) for item in raw_folds
+        ):
+            raise ValueError("microstructure terminal prequential folds are invalid")
+        terminal_values["folds"] = tuple(dict(item) for item in raw_folds)
+        values["terminal_prequential"] = _record_from_mapping(
+            TerminalPrequentialEvidence,
+            terminal_values,
+            "terminal prequential evidence",
+        )
+    else:
+        raise ValueError("microstructure terminal prequential evidence is invalid")
     values["probability_calibration"] = {
         str(key): tuple(item)
         for key, item in dict(payload.get("probability_calibration") or {}).items()
@@ -999,7 +1040,13 @@ def load_microstructure_action_scorer(
         active_models = deployment_models
         calibration = deployment_calibration
         enforce_model_freshness = True
-        _validated_prequential_binding(load_microstructure_model_artifact(target))
+        terminal_evidence = _validated_terminal_prequential_binding(
+            load_microstructure_model_artifact(target)
+        )
+        edge_threshold = terminal_evidence.latest_policy.minimum_predicted_edge_bps
+        probability_threshold = (
+            terminal_evidence.latest_policy.minimum_profitable_probability
+        )
     models: dict[str, lgb.Booster] = {}
     try:
         for name in _RUNTIME_MODEL_NAMES:
@@ -1820,6 +1867,11 @@ def train_microstructure_action_value_model(
     risk = str(risk_level).strip().lower()
     if risk not in _RISK_LEVELS:
         raise ValueError("risk_level must be conservative, regular, or aggressive")
+    if evaluate_terminal:
+        raise ValueError(
+            "inline terminal evaluation is disabled; persist the candidate, run "
+            "prequential validation, then use the hash-bound promotion workflow"
+        )
     if dataset.rows <= 0 or not np.all(np.isfinite(dataset.features)):
         raise ValueError("microstructure dataset is empty or non-finite")
     calibration_days = int(deployment_calibration_days)
@@ -2099,20 +2151,6 @@ def train_microstructure_action_value_model(
         trained_at=datetime.now(timezone.utc).isoformat(),
         terminal_evaluated_at=None,
     )
-    if evaluate_terminal and artifact.status == "candidate":
-        validated = evaluate_microstructure_model_terminal(
-            artifact,
-            dataset,
-            progress=progress,
-        )
-        if validated.status == "validated":
-            return refit_validated_microstructure_model(
-                validated,
-                dataset,
-                compute_backend=compute_backend,
-                progress=progress,
-            )
-        return validated
     return artifact
 
 
@@ -2131,6 +2169,7 @@ def _candidate_payload_sha256(artifact: MicrostructureModelArtifact) -> str:
             "deployment_refit": None,
             "terminal_evaluated_at": None,
             "prequential_validation": None,
+            "terminal_prequential": None,
         }
     )
     encoded = json.dumps(
@@ -2207,6 +2246,108 @@ def _validated_prequential_binding(
     return evidence
 
 
+def _validated_terminal_prequential_binding(
+    artifact: MicrostructureModelArtifact,
+) -> TerminalPrequentialEvidence:
+    evidence = artifact.terminal_prequential
+    if evidence is None:
+        raise ValueError("microstructure model is missing terminal prequential evidence")
+    selection_evidence = _validated_prequential_binding(artifact)
+    if evidence.version != MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION:
+        raise ValueError("microstructure terminal prequential version is unsupported")
+    for label, digest in (
+        ("protocol", evidence.protocol_sha256),
+        ("fold models", evidence.fold_models_sha256),
+    ):
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            raise ValueError(f"microstructure terminal prequential {label} digest is invalid")
+    if evidence.protocol_sha256 != selection_evidence.protocol_sha256:
+        raise ValueError("microstructure terminal protocol drifted from selection evidence")
+    if (
+        evidence.backend_kind != artifact.training_backend_kind
+        or evidence.backend_device != artifact.training_backend_device
+    ):
+        raise ValueError("microstructure terminal prequential backend drifted")
+    if (
+        evidence.planned_folds < 3
+        or evidence.complete_folds != evidence.planned_folds
+        or evidence.expected_rows != artifact.split.terminal_rows
+        or evidence.evaluated_rows != evidence.expected_rows
+        or evidence.first_evaluation_ms != artifact.split.terminal_start_ms
+        or evidence.last_evaluation_ms < evidence.first_evaluation_ms
+        or len(evidence.folds) != evidence.planned_folds
+    ):
+        raise ValueError("microstructure terminal prequential coverage is inconsistent")
+    policy = evidence.latest_policy
+    if (
+        not math.isfinite(policy.minimum_predicted_edge_bps)
+        or policy.minimum_predicted_edge_bps < 0.0
+        or not math.isfinite(policy.minimum_profitable_probability)
+        or not 0.0 <= policy.minimum_profitable_probability <= 1.0
+        or not math.isfinite(policy.selection_utility_bps)
+    ):
+        raise ValueError("microstructure terminal prequential policy is invalid")
+    fold_models: list[dict[str, object]] = []
+    previous_end = evidence.first_evaluation_ms
+    fold_rows = 0
+    for expected_fold, fold in enumerate(evidence.folds, start=1):
+        model_sha = str(fold.get("model_sha256") or "")
+        start_ms = _artifact_int(
+            fold.get("evaluation_start_ms"),
+            f"terminal fold {expected_fold} start",
+        )
+        end_ms = _artifact_int(
+            fold.get("evaluation_end_exclusive_ms"),
+            f"terminal fold {expected_fold} end",
+        )
+        if (
+            _artifact_int(fold.get("fold"), "terminal fold number") != expected_fold
+            or fold.get("status") != "complete"
+            or fold.get("error") is not None
+            or fold.get("backend_kind") != evidence.backend_kind
+            or fold.get("backend_device") != evidence.backend_device
+            or start_ms != previous_end
+            or end_ms <= start_ms
+            or len(model_sha) != 64
+            or any(char not in "0123456789abcdef" for char in model_sha)
+        ):
+            raise ValueError("microstructure terminal prequential fold is invalid")
+        evaluation_rows = _artifact_int(
+            fold.get("evaluation_rows"),
+            f"terminal fold {expected_fold} rows",
+        )
+        metrics = fold.get("evaluation_metrics")
+        if evaluation_rows <= 0 or not isinstance(metrics, Mapping):
+            raise ValueError("microstructure terminal fold evidence is incomplete")
+        _artifact_float(
+            metrics.get("total_net_bps"),
+            f"terminal fold {expected_fold} net bps",
+        )
+        fold_rows += evaluation_rows
+        fold_models.append({"fold": expected_fold, "model_sha256": model_sha})
+        previous_end = end_ms
+    latest_fold_policy = evidence.folds[-1].get("policy")
+    if (
+        previous_end <= evidence.last_evaluation_ms
+        or fold_rows != evidence.expected_rows
+        or not isinstance(latest_fold_policy, Mapping)
+        or latest_fold_policy != asdict(evidence.latest_policy)
+    ):
+        raise ValueError("microstructure terminal prequential terminal boundary drifted")
+    expected_fold_sha = hashlib.sha256(
+        json.dumps(
+            fold_models,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    if expected_fold_sha != evidence.fold_models_sha256:
+        raise ValueError("microstructure terminal fold-model fingerprint drifted")
+    return evidence
+
+
 def refit_validated_microstructure_model(
     artifact: MicrostructureModelArtifact,
     dataset: MicrostructureDataset,
@@ -2220,7 +2361,7 @@ def refit_validated_microstructure_model(
         raise ValueError("deployment refit requires a terminal-validated artifact")
     if artifact.terminal_metrics is None or artifact.terminal_evaluated_at is None:
         raise ValueError("deployment refit requires terminal evaluation evidence")
-    _validated_prequential_binding(artifact)
+    _validated_terminal_prequential_binding(artifact)
     if artifact.deployment_refit is not None or artifact.deployment_model_strings is not None:
         raise ValueError("deployment refit has already been applied")
     if (
@@ -2395,6 +2536,7 @@ def evaluate_microstructure_model_terminal(
     artifact: MicrostructureModelArtifact,
     dataset: MicrostructureDataset,
     *,
+    compute_backend: str = "auto",
     progress: ModelProgressCallback | None = None,
 ) -> MicrostructureModelArtifact:
     """Evaluate one selected candidate exactly once on its terminal segment."""
@@ -2461,60 +2603,52 @@ def evaluate_microstructure_model_terminal(
     splits, split_evidence = _purged_split(dataset)
     if split_evidence != artifact.split:
         raise ValueError("terminal dataset does not reproduce the recorded purged split")
+    coverage = _calendar_coverage(dataset.decision_time_ms)
+    recorded_coverage = (
+        artifact.unique_utc_days,
+        artifact.calendar_span_days,
+        artifact.calendar_day_coverage_ratio,
+        artifact.minimum_rows_per_utc_day,
+        artifact.daily_rows_p10,
+        artifact.median_rows_per_utc_day,
+    )
+    if any(
+        not math.isclose(float(actual), float(recorded), rel_tol=0.0, abs_tol=1e-12)
+        for actual, recorded in zip(coverage, recorded_coverage, strict=True)
+    ):
+        raise ValueError("terminal dataset does not reproduce recorded calendar coverage")
 
-    x = np.asarray(dataset.features, dtype=np.float32)
     indexes = splits["terminal"]
-    try:
-        models = {
-            name: lgb.Booster(model_str=artifact.model_strings[name])
-            for side in ("long", "short")
-            for name in (
-                f"{side}_probability",
-                f"{side}_win_magnitude",
-                f"{side}_loss_magnitude",
-            )
-        }
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError("candidate artifact contains invalid model payloads") from exc
-    predictions: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    for side in ("long", "short"):
-        calibration_values = artifact.probability_calibration.get(side)
-        if calibration_values is None or len(calibration_values) != 2:
-            raise ValueError(f"candidate artifact is missing {side} probability calibration")
-        probability = _apply_platt_scaling(
-            models[f"{side}_probability"].predict(x[indexes]),
-            (float(calibration_values[0]), float(calibration_values[1])),
-        )
-        win = np.maximum(0.0, models[f"{side}_win_magnitude"].predict(x[indexes]))
-        loss = np.maximum(0.0, models[f"{side}_loss_magnitude"].predict(x[indexes]))
-        predictions[side] = (probability * win - (1.0 - probability) * loss, probability)
-    terminal_trace = _simulate_non_overlapping_trace(
-        timestamps=dataset.decision_time_ms[indexes],
-        long_exit_times=dataset.long_exit_time_ms[indexes],
-        short_exit_times=dataset.short_exit_time_ms[indexes],
-        long_targets=dataset.long_net_bps[indexes],
-        short_targets=dataset.short_net_bps[indexes],
-        long_edge=predictions["long"][0],
-        short_edge=predictions["short"][0],
-        long_probability=predictions["long"][1],
-        short_probability=predictions["short"][1],
-        edge_threshold=artifact.threshold_policy.minimum_predicted_edge_bps,
-        probability_threshold=artifact.threshold_policy.minimum_profitable_probability,
-        long_eligible=dataset.long_liquidity_eligible[indexes],
-        short_eligible=dataset.short_liquidity_eligible[indexes],
-    )
-    terminal_metrics = terminal_trace.metrics
-    terminal_confidence = _performance_confidence(
-        terminal_trace,
-        dataset.decision_time_ms[indexes],
-    )
-    terminal_auc, terminal_brier = _side_probability_quality(
+    from .microstructure_prequential import evaluate_terminal_prequential_protocol
+
+    terminal_protocol = evaluate_terminal_prequential_protocol(
+        artifact,
         dataset,
-        indexes,
-        predictions["long"][1],
-        predictions["short"][1],
+        compute_backend=compute_backend,
+        progress=progress,
     )
-    terminal_baselines = _baseline_metrics(dataset, indexes)
+    if terminal_protocol.expected_rows != len(indexes):
+        raise ValueError("terminal prequential rows do not reproduce the purged split")
+    terminal_metrics = terminal_protocol.metrics
+    terminal_confidence = terminal_protocol.confidence
+    terminal_auc = dict(terminal_protocol.auc)
+    terminal_brier = dict(terminal_protocol.brier)
+    terminal_baselines = dict(terminal_protocol.baselines)
+    terminal_prequential = TerminalPrequentialEvidence(
+        version=terminal_protocol.version,
+        protocol_sha256=terminal_protocol.protocol_sha256,
+        fold_models_sha256=terminal_protocol.fold_models_sha256,
+        backend_kind=terminal_protocol.backend_kind,
+        backend_device=terminal_protocol.backend_device,
+        planned_folds=terminal_protocol.planned_folds,
+        complete_folds=terminal_protocol.complete_folds,
+        expected_rows=terminal_protocol.expected_rows,
+        evaluated_rows=terminal_protocol.evaluated_rows,
+        first_evaluation_ms=terminal_protocol.first_evaluation_ms,
+        last_evaluation_ms=terminal_protocol.last_evaluation_ms,
+        latest_policy=terminal_protocol.latest_policy,
+        folds=tuple(dict(fold) for fold in terminal_protocol.folds),
+    )
     reasons: list[str] = []
     if (
         artifact.target_mode != "exchange_trigger_market_exit_1s_adverse_first"
@@ -2569,6 +2703,18 @@ def evaluate_microstructure_model_terminal(
         reasons.append("terminal_long_action_auc_not_above_random")
     if terminal_metrics.short_trades and terminal_auc["short"] <= 0.5:
         reasons.append("terminal_short_action_auc_not_above_random")
+    profitable_folds = sum(
+        float(fold["evaluation_metrics"]["total_net_bps"]) > 0.0
+        for fold in terminal_prequential.folds
+    )
+    profitable_fold_ratio = profitable_folds / terminal_prequential.complete_folds
+    minimum_profitable_fold_ratio = {
+        "conservative": 0.70,
+        "regular": 0.60,
+        "aggressive": 0.50,
+    }[artifact.risk_level]
+    if profitable_fold_ratio < minimum_profitable_fold_ratio:
+        reasons.append("terminal_profitable_fold_ratio_below_risk_gate")
     if progress:
         progress("terminal-evaluation", 6, 6)
     return replace(
@@ -2580,6 +2726,7 @@ def evaluate_microstructure_model_terminal(
         terminal_metrics=terminal_metrics,
         terminal_confidence=terminal_confidence,
         terminal_baselines=terminal_baselines,
+        terminal_prequential=terminal_prequential,
         terminal_evaluated_at=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -2613,6 +2760,7 @@ __all__ = [
     "MicrostructureModelArtifact",
     "PurgedSplitEvidence",
     "PrequentialValidationEvidence",
+    "TerminalPrequentialEvidence",
     "ThresholdPolicy",
     "ThresholdSearchEvidence",
     "TradingMetrics",

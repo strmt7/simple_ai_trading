@@ -14,18 +14,23 @@ from simple_ai_trading.microstructure_model import (
     MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
     MicrostructureModelArtifact,
     PerformanceConfidence,
+    PrequentialValidationEvidence,
     PurgedSplitEvidence,
     ThresholdPolicy,
     ThresholdSearchEvidence,
     TradingMetrics,
+    _purged_split,
     evaluate_microstructure_model_terminal,
+    microstructure_candidate_sha256,
 )
 from simple_ai_trading import microstructure_prequential as prequential
 from simple_ai_trading.microstructure_prequential import (
     PrequentialConfig,
     attach_verified_prequential_evidence,
     evaluate_prequential_microstructure_model,
+    evaluate_terminal_prequential_protocol,
     plan_prequential_folds,
+    prequential_protocol_sha256,
 )
 from simple_ai_trading.microstructure_warehouse import (
     BOOK_TICKER_FEATURE_BUILD_VERSION,
@@ -37,7 +42,7 @@ _DAY_MS = 86_400_000
 
 
 def _dataset_and_artifact() -> tuple[MicrostructureDataset, MicrostructureModelArtifact]:
-    days = 260
+    days = 280
     rows_per_day = 80
     first_day = 20_000
     timestamps = np.concatenate(
@@ -168,7 +173,7 @@ def _dataset_and_artifact() -> tuple[MicrostructureDataset, MicrostructureModelA
             tuning_rows=2_000,
             policy_rows=2_000,
             selection_rows=2_400,
-            terminal_rows=800,
+            terminal_rows=(days - 250) * rows_per_day,
             train_end_ms=(first_day + 149) * _DAY_MS,
             tuning_start_ms=(first_day + 150) * _DAY_MS,
             policy_start_ms=(first_day + 190) * _DAY_MS,
@@ -306,6 +311,139 @@ def test_real_lightgbm_prequential_fold_executes_as_diagnostic(
     assert len(str(report.folds[0]["model_sha256"])) == 64
     assert "max_folds_truncated_selection_coverage" in report.reasons
     assert "prequential_protocol_deviates_from_locked_promotion_config" in report.reasons
+
+
+def test_terminal_protocol_retrains_sequentially_over_every_terminal_row(
+    monkeypatch,
+) -> None:
+    dataset, artifact = _dataset_and_artifact()
+
+    def fake_fit(_artifact, _dataset, plan, _config, **_kwargs):
+        return prequential._FoldModels(
+            models={},
+            calibration={"long": (1.0, 0.0), "short": (1.0, 0.0)},
+            model_sha256=hashlib.sha256(str(plan.fold).encode("ascii")).hexdigest(),
+            backend_kind="cpu",
+            backend_device="cpu",
+            side_training_rows={
+                "long": len(plan.training_indexes),
+                "short": len(plan.training_indexes),
+            },
+            side_calibration_rows={
+                "long": len(plan.calibration_indexes),
+                "short": len(plan.calibration_indexes),
+            },
+        )
+
+    def fake_predict(_artifact, source, _fitted, indexes):
+        long_wins = source.long_net_bps[indexes] > 0.0
+        return prequential._PredictionBatch(
+            long_edge=np.where(long_wins, 3.0, -1.0),
+            short_edge=np.where(long_wins, -1.0, 3.0),
+            long_probability=np.where(long_wins, 0.90, 0.10),
+            short_probability=np.where(long_wins, 0.10, 0.90),
+        )
+
+    monkeypatch.setattr(prequential, "_fit_fold_models", fake_fit)
+    monkeypatch.setattr(prequential, "_predict_models", fake_predict)
+    result = evaluate_terminal_prequential_protocol(
+        artifact,
+        dataset,
+        compute_backend="cpu",
+    )
+    expected = np.flatnonzero(
+        dataset.decision_time_ms >= artifact.split.terminal_start_ms
+    )
+
+    assert result.planned_folds == 5
+    assert result.complete_folds == result.planned_folds
+    assert result.expected_rows == len(expected)
+    assert result.evaluated_rows == len(expected)
+    assert result.first_evaluation_ms == int(dataset.decision_time_ms[expected[0]])
+    assert result.last_evaluation_ms == int(dataset.decision_time_ms[expected[-1]])
+    assert result.metrics.total_net_bps > 0.0
+    assert all(fold["status"] == "complete" for fold in result.folds)
+    assert int(result.folds[0]["evaluation_start_ms"]) == artifact.split.terminal_start_ms
+    assert all(
+        int(current["evaluation_end_exclusive_ms"])
+        == int(following["evaluation_start_ms"])
+        for current, following in zip(result.folds, result.folds[1:])
+    )
+
+
+def test_terminal_model_evaluation_persists_adaptive_protocol_evidence(
+    monkeypatch,
+) -> None:
+    dataset, artifact = _dataset_and_artifact()
+    _splits, split = _purged_split(dataset)
+    artifact = replace(artifact, split=split)
+    candidate_sha = microstructure_candidate_sha256(artifact)
+    artifact = replace(
+        artifact,
+        prequential_validation=PrequentialValidationEvidence(
+            version=prequential.PREQUENTIAL_EVIDENCE_VERSION,
+            report_sha256="c" * 64,
+            predictions_sha256="d" * 64,
+            chart_sha256="e" * 64,
+            candidate_sha256=candidate_sha,
+            protocol_sha256=prequential_protocol_sha256(PrequentialConfig()),
+            fold_models_sha256="f" * 64,
+            source_feature_build_id="a" * 64,
+            source_manifest_fingerprint="b" * 64,
+            generated_at_ms=1_800_000_000_000,
+            planned_folds=5,
+            complete_folds=5,
+            evaluated_rows=split.selection_rows,
+            selection_coverage_ratio=1.0,
+            total_net_bps=100.0,
+            profit_factor=1.5,
+            max_drawdown_bps=20.0,
+            mean_daily_net_bps_ci_lower=0.5,
+            attached_at="2027-01-01T00:00:00+00:00",
+        ),
+    )
+
+    def fake_fit(_artifact, _dataset, plan, _config, **_kwargs):
+        return prequential._FoldModels(
+            models={},
+            calibration={"long": (1.0, 0.0), "short": (1.0, 0.0)},
+            model_sha256=hashlib.sha256(str(plan.fold).encode("ascii")).hexdigest(),
+            backend_kind="cpu",
+            backend_device="cpu",
+            side_training_rows={
+                "long": len(plan.training_indexes),
+                "short": len(plan.training_indexes),
+            },
+            side_calibration_rows={
+                "long": len(plan.calibration_indexes),
+                "short": len(plan.calibration_indexes),
+            },
+        )
+
+    def fake_predict(_artifact, source, _fitted, indexes):
+        long_wins = source.long_net_bps[indexes] > 0.0
+        return prequential._PredictionBatch(
+            long_edge=np.where(long_wins, 3.0, -1.0),
+            short_edge=np.where(long_wins, -1.0, 3.0),
+            long_probability=np.where(long_wins, 0.90, 0.10),
+            short_probability=np.where(long_wins, 0.10, 0.90),
+        )
+
+    monkeypatch.setattr(prequential, "_fit_fold_models", fake_fit)
+    monkeypatch.setattr(prequential, "_predict_models", fake_predict)
+    evaluated = evaluate_microstructure_model_terminal(
+        artifact,
+        dataset,
+        compute_backend="cpu",
+    )
+
+    assert evaluated.status == "rejected"
+    assert evaluated.terminal_prequential is not None
+    assert evaluated.terminal_prequential.complete_folds >= 3
+    assert evaluated.terminal_prequential.expected_rows == split.terminal_rows
+    assert evaluated.terminal_metrics is not None
+    assert evaluated.terminal_metrics.total_net_bps > 0.0
+    assert any("daily_rows_p10" in reason for reason in evaluated.rejection_reasons)
 
 
 def test_prequential_evaluation_persists_truthful_no_order_evidence(

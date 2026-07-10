@@ -6951,6 +6951,9 @@ def command_microstructure_promote(args: argparse.Namespace) -> int:
                 artifact = evaluate_microstructure_model_terminal(
                     artifact,
                     dataset,
+                    compute_backend=str(
+                        getattr(args, "compute_backend", "auto")
+                    ),
                     progress=progress,
                 )
                 save_microstructure_model_artifact(artifact, output_path)
