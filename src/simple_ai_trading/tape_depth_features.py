@@ -18,7 +18,7 @@ from .microstructure_warehouse import (
 )
 
 
-TAPE_DEPTH_FEATURE_VERSION = "tape-depth-causal-v3"
+TAPE_DEPTH_FEATURE_VERSION = "tape-depth-causal-v4"
 TAPE_DEPTH_TARGET_MODE = "gross_trade_reference_close_no_execution_claim"
 
 _RETURN_WINDOWS = (1, 5, 15, 30, 60, 120, 300, 900)
@@ -30,6 +30,8 @@ _EFFICIENCY_WINDOWS = (60, 300, 900)
 _OBSERVATION_WINDOWS = (60, 300, 900)
 _ACCELERATION_WINDOWS = ((5, 60), (15, 300))
 _ALIGNMENT_WINDOWS = (15, 60, 300)
+_CROSS_ASSET_WINDOWS = (1, 5, 15, 60, 300)
+_CROSS_ASSET_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 _DEPTH_FEATURE_NAMES = (
     "depth_imbalance_0_2",
     "depth_imbalance_1",
@@ -40,7 +42,16 @@ _DEPTH_FEATURE_NAMES = (
     "log_bid_depth_curve_5_to_0_2",
     "log_ask_depth_curve_5_to_0_2",
 )
-TAPE_DEPTH_FEATURE_NAMES = (
+_CROSS_ASSET_FEATURE_NAMES = (
+    "cross_asset_context_available",
+    "peer_max_trade_age_seconds",
+    *(f"peer_mean_return_bps_{window}" for window in _CROSS_ASSET_WINDOWS),
+    *(f"peer_return_dispersion_bps_{window}" for window in _CROSS_ASSET_WINDOWS),
+    *(f"relative_return_vs_peers_bps_{window}" for window in _CROSS_ASSET_WINDOWS),
+    *(f"btc_anchor_return_bps_{window}" for window in _CROSS_ASSET_WINDOWS),
+    *(f"relative_return_vs_btc_bps_{window}" for window in _CROSS_ASSET_WINDOWS),
+)
+_TAPE_DEPTH_LOCAL_FEATURE_NAMES = (
     *(f"return_bps_{window}" for window in _RETURN_WINDOWS),
     *(f"realized_vol_bps_{window}" for window in _VOLATILITY_WINDOWS),
     *(f"range_bps_{window}" for window in _RANGE_WINDOWS),
@@ -68,6 +79,10 @@ TAPE_DEPTH_FEATURE_NAMES = (
     "utc_time_sin",
     "utc_time_cos",
     "utc_weekend",
+)
+TAPE_DEPTH_FEATURE_NAMES = (
+    *_TAPE_DEPTH_LOCAL_FEATURE_NAMES,
+    *_CROSS_ASSET_FEATURE_NAMES,
 )
 
 
@@ -107,6 +122,12 @@ class TapeDepthForecastDataset:
             if self.rows
             else 0.0
         )
+        cross_asset_index = self.feature_names.index("cross_asset_context_available")
+        cross_asset_ratio = (
+            float(np.mean(self.features[:, cross_asset_index] > 0.5))
+            if self.rows
+            else 0.0
+        )
         effective_entry_delay_ms = (
             int(self.target_entry_time_ms[0] - self.decision_time_ms[0])
             if self.rows
@@ -138,6 +159,7 @@ class TapeDepthForecastDataset:
             ),
             "depth_available_ratio": depth_ratio,
             "fine_depth_0_2_available_ratio": fine_depth_ratio,
+            "cross_asset_context_available_ratio": cross_asset_ratio,
             "gross_return_mean_bps": (
                 float(np.mean(self.gross_return_bps)) if self.rows else None
             ),
@@ -198,15 +220,21 @@ def tape_depth_source_evidence(
     *,
     required_start_ms: int,
     required_end_ms: int,
+    include_book_depth: bool = True,
 ) -> dict[str, object]:
+    data_type_filter = (
+        "data_type IN ('trades', 'bookDepth')"
+        if include_book_depth
+        else "data_type = 'trades'"
+    )
     rows = warehouse.connect().execute(
-        """
+        f"""
         SELECT archive_id, data_type, period, source_sha256, expected_sha256,
                checksum_status, rows_read, derived_rows, first_exchange_time_ms,
                last_exchange_time_ms, invalid_rows, duplicate_ids,
                out_of_order_rows
         FROM archive_manifest
-        WHERE symbol = ? AND data_type IN ('trades', 'bookDepth')
+        WHERE symbol = ? AND {data_type_filter}
           AND status = 'complete' AND is_current
         ORDER BY data_type, period, archive_id
         """,
@@ -337,6 +365,109 @@ def tape_depth_source_evidence(
         "manifest_fingerprint": hashlib.sha256(canonical).hexdigest(),
         "trades": coverage("trades"),
         "book_depth": coverage("bookDepth"),
+        "verified": True,
+    }
+
+
+def tape_depth_dataset_source_evidence(
+    warehouse: MicrostructureWarehouse,
+    symbol: str,
+    *,
+    required_start_ms: int,
+    required_end_ms: int,
+    peer_feature_start_ms: int,
+    peer_feature_end_ms: int,
+) -> dict[str, object]:
+    """Bind target tape/depth and every causally consumed peer trade archive."""
+
+    normalized = normalize_symbol(symbol)
+    target = tape_depth_source_evidence(
+        warehouse,
+        normalized,
+        required_start_ms=required_start_ms,
+        required_end_ms=required_end_ms,
+    )
+    peers: dict[str, object] = {}
+    feature_start_ms = int(peer_feature_start_ms)
+    feature_end_ms = int(peer_feature_end_ms)
+    peer_source_start_ms = feature_start_ms - max(_CROSS_ASSET_WINDOWS) * 1_000
+    if (
+        peer_source_start_ms < int(required_start_ms)
+        or feature_end_ms > int(required_end_ms)
+        or feature_start_ms > feature_end_ms
+    ):
+        raise ValueError("cross-asset evidence interval is outside target evidence")
+    for peer in _CROSS_ASSET_SYMBOLS:
+        if peer == normalized:
+            continue
+        coverage = warehouse.connect().execute(
+            "SELECT min(second_ms), max(second_ms) FROM current_trade_1s "
+            "WHERE symbol = ?",
+            [peer],
+        ).fetchone()
+        if coverage is None or coverage[0] is None or coverage[1] is None:
+            raise ValueError(f"cross-asset context has no one-second rows for {peer}")
+        first_ms = int(coverage[0])
+        last_ms = int(coverage[1])
+        if feature_end_ms > last_ms:
+            raise ValueError(
+                f"cross-asset context ends before the target interval for {peer}"
+            )
+        if first_ms > feature_end_ms:
+            peers[peer] = {
+                "verified": True,
+                "status": "not_listed_during_interval",
+                "first_available_second_ms": first_ms,
+                "last_available_second_ms": last_ms,
+                "required_start_ms": peer_source_start_ms,
+                "required_end_ms": feature_end_ms,
+            }
+            continue
+        evidence_start_ms = max(peer_source_start_ms, first_ms)
+        prior = warehouse.connect().execute(
+            "SELECT max(second_ms) FROM current_trade_1s "
+            "WHERE symbol = ? AND second_ms < ?",
+            [peer, evidence_start_ms],
+        ).fetchone()
+        if prior is not None and prior[0] is not None:
+            evidence_start_ms = min(evidence_start_ms, int(prior[0]))
+        peer_evidence = tape_depth_source_evidence(
+            warehouse,
+            peer,
+            required_start_ms=evidence_start_ms,
+            required_end_ms=feature_end_ms,
+            include_book_depth=False,
+        )
+        peers[peer] = {
+            **peer_evidence,
+            "required_start_ms": evidence_start_ms,
+            "required_end_ms": feature_end_ms,
+        }
+    combined = {
+        "target": target,
+        "peers": peers,
+        "context_symbols": list(_CROSS_ASSET_SYMBOLS),
+        "peer_feature_start_ms": feature_start_ms,
+        "peer_feature_end_ms": feature_end_ms,
+    }
+    canonical = json.dumps(
+        combined,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return {
+        **target,
+        "truth_basis": "checksummed_target_tape_depth_and_peer_trade_archives",
+        "manifest_fingerprint": hashlib.sha256(canonical).hexdigest(),
+        "cross_asset_context": {
+            "symbols": list(_CROSS_ASSET_SYMBOLS),
+            "peers": peers,
+            "causal_join": "asof_at_or_before_feature_second",
+            "required_feature_start_ms": feature_start_ms,
+            "required_feature_end_ms": feature_end_ms,
+        },
         "verified": True,
     }
 
@@ -480,8 +611,173 @@ def _feature_sql(maximum_depth_age_ms: int) -> list[str]:
 
 def _as_float_array(value: object) -> np.ndarray:
     if isinstance(value, np.ma.MaskedArray):
-        return np.asarray(value.filled(np.nan), dtype=np.float64)
+        return np.asarray(
+            np.ma.asarray(value, dtype=np.float64).filled(np.nan),
+            dtype=np.float64,
+        )
     return np.asarray(value, dtype=np.float64)
+
+
+def _peer_return_context(
+    warehouse: MicrostructureWarehouse,
+    *,
+    symbol: str,
+    feature_seconds_ms: np.ndarray,
+) -> tuple[dict[int, np.ndarray], dict[int, np.ndarray], np.ndarray]:
+    if len(feature_seconds_ms) < 1:
+        raise ValueError("cross-asset context has no feature seconds")
+    cadence_ms = (
+        int(feature_seconds_ms[1] - feature_seconds_ms[0])
+        if len(feature_seconds_ms) > 1
+        else 1_000
+    )
+    if cadence_ms <= 0 or np.any(np.diff(feature_seconds_ms) != cadence_ms):
+        raise ValueError("cross-asset feature seconds are not regularly spaced")
+    joins: list[str] = []
+    projections = ["d.second_ms", "p0.second_ms AS current_trade_second_ms", "p0.close AS current_close"]
+    source_start_ms = int(feature_seconds_ms[0]) - max(_CROSS_ASSET_WINDOWS) * 1_000
+    parameters: list[object] = [
+        symbol,
+        source_start_ms,
+        int(feature_seconds_ms[-1]),
+        symbol,
+        source_start_ms,
+        int(feature_seconds_ms[0]),
+        int(feature_seconds_ms[-1]),
+        cadence_ms,
+    ]
+    joins.append(
+        """
+        ASOF LEFT JOIN peer_trades p0
+          ON d.second_ms >= p0.second_ms
+        """
+    )
+    for window in _CROSS_ASSET_WINDOWS:
+        alias = f"p{window}"
+        projections.append(f"{alias}.close AS close_{window}")
+        joins.append(
+            f"""
+            ASOF LEFT JOIN peer_trades {alias}
+              ON d.second_ms - {window * 1_000} >= {alias}.second_ms
+            """
+        )
+    query = f"""
+        WITH peer_source AS MATERIALIZED (
+            SELECT second_ms, close FROM current_trade_1s
+            WHERE symbol = ? AND second_ms BETWEEN ? AND ?
+            UNION ALL
+            (SELECT second_ms, close FROM current_trade_1s
+             WHERE symbol = ? AND second_ms < ?
+             ORDER BY second_ms DESC LIMIT 1)
+        ), peer_trades AS MATERIALIZED (
+            SELECT * FROM peer_source ORDER BY second_ms
+        ), decisions AS (
+            SELECT value AS second_ms
+            FROM generate_series(?::BIGINT, ?::BIGINT, ?::BIGINT) AS generated(value)
+        )
+        SELECT {', '.join(projections)}
+        FROM decisions d
+        {' '.join(joins)}
+        ORDER BY d.second_ms
+    """
+    values = warehouse.connect().execute(query, parameters).fetchnumpy()
+    seconds = np.asarray(values.pop("second_ms"), dtype=np.int64)
+    if not np.array_equal(seconds, feature_seconds_ms):
+        raise ValueError(f"cross-asset context clock drifted for {symbol}")
+    current_seconds = _as_float_array(values.pop("current_trade_second_ms"))
+    current_close = _as_float_array(values.pop("current_close"))
+    current_valid = (
+        np.isfinite(current_seconds)
+        & np.isfinite(current_close)
+        & (current_close > 0.0)
+        & (current_seconds <= feature_seconds_ms)
+    )
+    trade_age = np.where(
+        current_valid,
+        (feature_seconds_ms - current_seconds) / 1_000.0,
+        0.0,
+    ).astype(np.float32)
+    returns: dict[int, np.ndarray] = {}
+    validity: dict[int, np.ndarray] = {}
+    for window in _CROSS_ASSET_WINDOWS:
+        lagged = _as_float_array(values.pop(f"close_{window}"))
+        valid = current_valid & np.isfinite(lagged) & (lagged > 0.0)
+        returns[window] = np.where(
+            valid,
+            (current_close / lagged - 1.0) * 10_000.0,
+            0.0,
+        ).astype(np.float32)
+        validity[window] = valid
+    return returns, validity, trade_age
+
+
+def _write_cross_asset_features(
+    warehouse: MicrostructureWarehouse,
+    *,
+    symbol: str,
+    decision_times_ms: np.ndarray,
+    target_features: np.ndarray,
+    output: np.ndarray,
+) -> None:
+    feature_seconds = np.asarray(decision_times_ms, dtype=np.int64) - 1_000
+    expected_shape = (len(feature_seconds), len(_CROSS_ASSET_FEATURE_NAMES))
+    if output.shape != expected_shape or output.dtype != np.float32:
+        raise ValueError("cross-asset output buffer has the wrong contract")
+    peers = tuple(peer for peer in _CROSS_ASSET_SYMBOLS if peer != symbol)
+    peer_context = {
+        peer: _peer_return_context(
+            warehouse,
+            symbol=peer,
+            feature_seconds_ms=feature_seconds,
+        )
+        for peer in peers
+    }
+    context_valid = np.ones(len(feature_seconds), dtype=bool)
+    for peer in peers:
+        for window in _CROSS_ASSET_WINDOWS:
+            context_valid &= peer_context[peer][1][window]
+    peer_age = np.maximum(peer_context[peers[0]][2], peer_context[peers[1]][2])
+
+    def assign(name: str, value: np.ndarray) -> None:
+        output[:, _CROSS_ASSET_FEATURE_NAMES.index(name)] = value
+
+    assign("cross_asset_context_available", context_valid.astype(np.float32))
+    assign(
+        "peer_max_trade_age_seconds",
+        np.where(context_valid, peer_age, 0.0),
+    )
+    for window in _CROSS_ASSET_WINDOWS:
+        first = peer_context[peers[0]][0][window]
+        second = peer_context[peers[1]][0][window]
+        valid = (
+            peer_context[peers[0]][1][window]
+            & peer_context[peers[1]][1][window]
+        )
+        peer_mean = np.where(valid, (first + second) / 2.0, 0.0)
+        peer_dispersion = np.where(valid, np.abs(first - second), 0.0)
+        target_return = target_features[
+            :, _TAPE_DEPTH_LOCAL_FEATURE_NAMES.index(f"return_bps_{window}")
+        ]
+        if symbol == "BTCUSDT":
+            btc_return = target_return
+            btc_valid = np.ones(len(target_return), dtype=bool)
+        else:
+            btc_return = peer_context["BTCUSDT"][0][window]
+            btc_valid = peer_context["BTCUSDT"][1][window]
+        assign(f"peer_mean_return_bps_{window}", peer_mean)
+        assign(f"peer_return_dispersion_bps_{window}", peer_dispersion)
+        assign(
+            f"relative_return_vs_peers_bps_{window}",
+            np.where(valid, target_return - peer_mean, 0.0),
+        )
+        assign(
+            f"btc_anchor_return_bps_{window}",
+            np.where(btc_valid, btc_return, 0.0),
+        )
+        assign(
+            f"relative_return_vs_btc_bps_{window}",
+            np.where(btc_valid, target_return - btc_return, 0.0),
+        )
 
 
 def build_tape_depth_forecast_dataset(
@@ -548,15 +844,20 @@ def build_tape_depth_forecast_dataset(
     if prior_row is None or prior_row[0] is None:
         raise ValueError("tape/depth interval has no prior verified trade reference")
     evidence_start = min(source_start, int(prior_row[0]))
-    source_evidence = tape_depth_source_evidence(
+    source_evidence = tape_depth_dataset_source_evidence(
         warehouse,
         normalized_symbol,
         required_start_ms=evidence_start,
         required_end_ms=source_end,
+        peer_feature_start_ms=requested_start - 1_000,
+        peer_feature_end_ms=requested_end - 1_000,
     )
     features = _feature_sql(depth_age)
     select_features = ",\n                ".join(features)
-    projected_features = ", ".join(TAPE_DEPTH_FEATURE_NAMES)
+    projected_features = ", ".join(
+        f"CAST({name} AS FLOAT) AS {name}"
+        for name in _TAPE_DEPTH_LOCAL_FEATURE_NAMES
+    )
     query = f"""
         WITH clock AS (
             SELECT ?::VARCHAR AS symbol, value AS second_ms
@@ -669,17 +970,29 @@ def build_tape_depth_forecast_dataset(
             requested_end,
         ],
     ).fetchnumpy()
-    decision_times = np.asarray(values["decision_time_ms"], dtype=np.int64)
+    decision_times = np.asarray(values.pop("decision_time_ms"), dtype=np.int64)
     if decision_times.size == 0:
         raise ValueError("tape/depth query produced no fully covered rows")
-    feature_matrix = np.column_stack(
-        [_as_float_array(values[name]) for name in TAPE_DEPTH_FEATURE_NAMES]
-    ).astype(np.float32)
-    target_entry_times = np.asarray(values["target_entry_time_ms"], dtype=np.int64)
-    target_exit_times = np.asarray(values["target_exit_time_ms"], dtype=np.int64)
-    entry_prices = _as_float_array(values["target_entry_price"])
-    exit_prices = _as_float_array(values["target_exit_price"])
-    targets = _as_float_array(values["gross_return_bps"])
+    target_entry_times = np.asarray(values.pop("target_entry_time_ms"), dtype=np.int64)
+    target_exit_times = np.asarray(values.pop("target_exit_time_ms"), dtype=np.int64)
+    entry_prices = _as_float_array(values.pop("target_entry_price"))
+    exit_prices = _as_float_array(values.pop("target_exit_price"))
+    targets = _as_float_array(values.pop("gross_return_bps"))
+    feature_matrix = np.empty(
+        (decision_times.size, len(TAPE_DEPTH_FEATURE_NAMES)),
+        dtype=np.float32,
+    )
+    for index, name in enumerate(_TAPE_DEPTH_LOCAL_FEATURE_NAMES):
+        feature_matrix[:, index] = _as_float_array(values.pop(name))
+    if values:
+        raise ValueError("tape/depth query returned unexpected projected columns")
+    _write_cross_asset_features(
+        warehouse,
+        symbol=normalized_symbol,
+        decision_times_ms=decision_times,
+        target_features=feature_matrix[:, : len(_TAPE_DEPTH_LOCAL_FEATURE_NAMES)],
+        output=feature_matrix[:, len(_TAPE_DEPTH_LOCAL_FEATURE_NAMES) :],
+    )
     effective_entry_delay_ms = entry_delay_seconds * 1_000
     target_span_ms = target_offset_seconds * 1_000
     depth_indexes = {
@@ -777,5 +1090,6 @@ __all__ = [
     "build_tape_depth_forecast_dataset",
     "slice_tape_depth_forecast_dataset",
     "tape_depth_dataset_fingerprint",
+    "tape_depth_dataset_source_evidence",
     "tape_depth_source_evidence",
 ]

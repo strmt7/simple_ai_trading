@@ -167,11 +167,24 @@ def test_tape_depth_predictor_is_independent_from_execution_risk_level() -> None
 def test_tape_depth_feature_sets_are_ordered_explicit_ablations() -> None:
     core = _selected_feature_names("core")
     derived = _selected_feature_names("tape_derived")
+    cross_asset = _selected_feature_names("cross_asset")
     full = _selected_feature_names("full")
 
-    assert set(core) < set(derived) < set(full)
+    assert set(core) < set(derived) < set(cross_asset) < set(full)
     assert tuple(name for name in full if name in core) == core
     assert tuple(name for name in full if name in derived) == derived
+    assert tuple(name for name in full if name in cross_asset) == cross_asset
     assert not any(name.startswith("depth_") for name in derived)
     assert any(name.startswith("vwap_deviation_bps_") for name in derived)
+    assert not any(name.startswith("peer_mean_return_bps_") for name in derived)
+    assert any(name.startswith("peer_mean_return_bps_") for name in cross_asset)
     assert any(name.startswith("depth_") for name in full)
+
+
+def test_tape_depth_forecaster_rejects_an_unknown_feature_ablation() -> None:
+    with pytest.raises(ValueError, match="feature_set must be"):
+        train_tape_depth_forecaster(
+            _predictive_dataset(10),
+            feature_set="unknown",
+            compute_backend="cpu",
+        )

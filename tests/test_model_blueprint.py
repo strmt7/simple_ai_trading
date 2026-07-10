@@ -58,6 +58,8 @@ def test_model_blueprint_source_catalog_blocks_copying_community_scripts() -> No
     assert sources["fingpt"].source_type == "primary_research"
     assert sources["hmm_regime_filter"].applied_to == ("regime_gate", "meta_label_gate")
     assert sources["finmamba"].applied_to == ("cross_asset_graph_sequence",)
+    assert "tape_depth_gross_forecaster" in sources["cross_impact_ofi"].applied_to
+    assert sources["cryptogat"].applied_to == ("cross_asset_graph_sequence",)
     assert sources["boe_agentic_ai"].source_type == "governance"
     assert sources["lightgbm_opencl"].source_type == "official_docs"
     assert sources["tradingview_lorentzian"].source_type == "community_inspiration"

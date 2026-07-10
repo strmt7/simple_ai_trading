@@ -192,6 +192,11 @@ zero-count row carrying only the last verified trade reference; `trade_observed`
 and trade-age features distinguish those rows, and a verified daily trade
 manifest is required for every requested date so a missing archive cannot look
 like an inactive market.
+The v4 matrix also joins lagged BTCUSDT, ETHUSDT, and SOLUSDT returns at or
+before each feature second. Peer context has an explicit availability mask,
+never reads through the forecast horizon, and is checksum-bound only through
+the last observable feature timestamp. It is an ablation candidate, not a
+claim that cross-asset context has predictive value.
 Its label is the future real trade-reference return after the configured latency,
 not an executable fill or after-cost PnL. The artifact is therefore restricted to
 `research_candidate` or `rejected`, records `trading_authority=false` and
@@ -231,11 +236,13 @@ regular, and aggressive remain execution-policy settings for drawdown, cooldown,
 leverage, and sizing; changing risk level with the same model profile produces
 the same serialized predictor.
 
-`core`, `tape_derived`, and `full` are ordered feature-set ablations. The model
-artifact serializes the exact ordered input names while its dataset fingerprint
-still binds the complete source matrix. Derived tape/activity features and
-coarse depth therefore have to beat the simpler earlier-fold baseline and
-confirm later; adding columns is not treated as automatic improvement.
+`core`, `tape_derived`, `cross_asset`, and `full` are ordered feature-set
+ablations. `cross_asset` adds point-in-time peer and BTC-anchor returns to the
+local derived tape, while `full` adds coarse depth last. The model artifact
+serializes the exact ordered input names while its dataset fingerprint still
+binds the complete source matrix. Every added group must beat the simpler
+earlier-fold baseline and confirm later; adding columns is not treated as
+automatic improvement.
 
 `tape-depth-compare` validates complete, identical fold plans and dataset
 fingerprints across every declared profile/feature trial. It ranks only the
@@ -410,6 +417,13 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 .\.venv311\Scripts\python.exe -m pytest -q
 powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
 ```
+
+CI enforces two non-substitutable coverage gates: the current whole-repository
+branch-coverage ratchet is `83%`, and every changed executable Python line must
+be at least `95%` covered through `diff-cover`. The broader floor is explicit
+technical debt, not a 95% claim; it must only move upward as older modules gain
+tests. A change cannot pass by preserving the legacy baseline while leaving its
+new paths untested.
 
 Focused checks used during this revamp:
 

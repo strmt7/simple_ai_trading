@@ -6,10 +6,10 @@ coverage:
         threshold: 0.5%
     patch:
       default:
-        target: 0%
-        threshold: 0.2%
+        target: 95%
+        threshold: 0%
 ignore:
-  - "src/simple_ai_bitcoin_trading_binance/__main__.py"
+  - "src/simple_ai_trading/__main__.py"
   - "tests/"
 
 comment:

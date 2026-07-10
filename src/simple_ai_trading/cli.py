@@ -770,7 +770,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_tape_depth_train.add_argument(
         "--feature-set",
-        choices=["core", "tape_derived", "full"],
+        choices=["core", "tape_derived", "cross_asset", "full"],
         default="full",
     )
     parser_tape_depth_train.add_argument(
@@ -838,7 +838,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_tape_depth_prequential.add_argument(
         "--feature-set",
-        choices=["core", "tape_derived", "full"],
+        choices=["core", "tape_derived", "cross_asset", "full"],
         default="full",
     )
     parser_tape_depth_prequential.add_argument(

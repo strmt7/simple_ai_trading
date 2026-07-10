@@ -283,13 +283,14 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "https://arxiv.org/html/2502.06707v2",
             "https://arxiv.org/abs/2402.18959",
             "https://arxiv.org/abs/1912.09363",
+            "https://arxiv.org/abs/2606.27670",
         ),
     ),
     ModelFamilyBlueprint(
         family="tape_depth_gross_forecaster",
         role=(
-            "Long-history trade-flow and coarse-depth forecaster with explicit "
-            "gross-return labels and uncertainty bounds."
+            "Long-history local/peer trade-flow and coarse-depth forecaster with "
+            "explicit gross-return labels and uncertainty bounds."
         ),
         status="implemented_evidence",
         training_target=(
@@ -304,7 +305,8 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "causal as-of depth join with age mask",
             "purged train/tune/calibration/evaluation split",
             "predictor profile selected independently from execution risk tolerance",
-            "ordered core/tape-derived/full feature ablations",
+            "ordered core/tape-derived/cross-asset/full feature ablations",
+            "point-in-time peer joins with exact source-manifest boundaries",
             "earlier-fold trial selection and later winner-only confirmation with no fallback",
             "timestamp-defined multi-year rolling folds with non-overlapping evaluations",
             "exact serialized-model replay against hash-bound float64 targets",
@@ -314,6 +316,8 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
         sources=(
             "https://arxiv.org/abs/1011.6402",
             "https://arxiv.org/abs/1803.06917",
+            "https://arxiv.org/abs/2112.13213",
+            "https://arxiv.org/abs/2606.27670",
             "https://github.com/binance/binance-public-data",
         ),
     ),
@@ -459,9 +463,9 @@ TRAINING_LANES: tuple[TrainingLaneBlueprint, ...] = (
             "promising for longer context, but forecasts must first be logged features."
         ),
         next_build_step=(
-            "Build a timestamped forecast-feature store with ablation replay, "
-            "including cross-symbol graph features, before allowing sequence "
-            "forecasts to influence position sizing."
+            "Run the implemented timestamped forecast-feature store through the "
+            "ordered tabular cross-asset ablation; graph/sequence forecasts remain "
+            "blocked until they independently beat that baseline."
         ),
         promotion_gates=(
             "forecast timestamp audit proves no lookahead",
@@ -721,6 +725,28 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         usage_policy=(
             "Use for cross-asset dynamic graph inspiration; output remains a "
             "logged feature until ablation passes."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="cross_impact_ofi",
+        label="Cross-impact of order flow imbalance in equity markets",
+        url="https://arxiv.org/abs/2112.13213",
+        source_type="primary_research",
+        applied_to=("tape_depth_gross_forecaster", "cross_asset_graph_sequence"),
+        usage_policy=(
+            "Test lagged cross-asset context at short horizons, but retain strong "
+            "local-flow baselines and reject the added block without rolling uplift."
+        ),
+    ),
+    ResearchSourceBlueprint(
+        source_id="cryptogat",
+        label="CryptoGAT cross-asset cryptocurrency forecasting",
+        url="https://arxiv.org/abs/2606.27670",
+        source_type="primary_research",
+        applied_to=("cross_asset_graph_sequence",),
+        usage_policy=(
+            "Use as graph-ablation inspiration only; reported paper performance is "
+            "not evidence for this repository or an execution claim."
         ),
     ),
     ResearchSourceBlueprint(
