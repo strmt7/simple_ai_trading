@@ -111,6 +111,36 @@ def _walk_forward_gate_passed(raw: object) -> bool:
     )
 
 
+def _terminal_holdout_passed(raw: object) -> bool:
+    if not isinstance(raw, dict):
+        return False
+    result = raw.get("result")
+    fingerprint = str(raw.get("dataset_fingerprint") or "").lower()
+    try:
+        evaluation_count = int(raw.get("evaluation_count", 0) or 0)
+        rows = int(raw.get("rows", 0) or 0)
+        score = float(raw.get("score", 0.0) or 0.0)
+        realized_pnl = float(result.get("realized_pnl", 0.0)) if isinstance(result, dict) else 0.0
+        liquidation_events = int(result.get("liquidation_events", 0) or 0) if isinstance(result, dict) else 1
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return (
+        raw.get("schema_version") == "terminal-holdout-v1"
+        and raw.get("passed") is True
+        and raw.get("reason") in (None, "")
+        and evaluation_count == 1
+        and rows > 0
+        and score > 0.0
+        and realized_pnl > 0.0
+        and liquidation_events == 0
+        and len(fingerprint) == 64
+        and all(character in "0123456789abcdef" for character in fingerprint)
+        and isinstance(result, dict)
+        and result.get("accepted") is True
+        and result.get("stopped_by_liquidation") is False
+    )
+
+
 def _accelerator_check(
     model: TrainedModel,
     *,
@@ -366,7 +396,14 @@ def build_model_readiness_report(
             deflated_score = _finite(selection_risk.get("deflated_score"))
             selected_score = _finite(selection_risk.get("selected_score"))
             effective_trials = int(_finite(selection_risk.get("effective_trials")) or 0)
-            if passed and deflated_score is not None and deflated_score > 0.0 and effective_trials > 0:
+            terminal_holdout_passed = _terminal_holdout_passed(selection_risk.get("terminal_holdout"))
+            if (
+                passed
+                and deflated_score is not None
+                and deflated_score > 0.0
+                and effective_trials > 0
+                and terminal_holdout_passed
+            ):
                 checks.append(
                     _check(
                         "ok",
@@ -383,7 +420,8 @@ def build_model_readiness_report(
                         "selection risk",
                         (
                             "failed promotion evidence "
-                            f"passed={passed} deflated_score={deflated_score} trials={effective_trials}"
+                            f"passed={passed} deflated_score={deflated_score} trials={effective_trials} "
+                            f"terminal={terminal_holdout_passed}"
                         ),
                         metric=deflated_score if deflated_score is not None else "missing",
                         limit=">0",

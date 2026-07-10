@@ -502,7 +502,12 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   The same boundary applies to the general training suite: its calibration-fit,
   full-fit fallback, and probability-inversion variants are compared only on
   the chronological selection panel. The winning internal variant is frozen
-  before a single validation replay is allowed.
+  before a single validation replay is allowed. A further purged terminal
+  suffix is sealed before the search begins and is opened only after the final
+  model, hybrid experts, thresholds, and meta-label policy are frozen. The
+  purge gap follows the time-series split principle of excluding observations
+  between training and test boundaries:
+  <https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html>
 - Bailey and Lopez de Prado's Deflated Sharpe Ratio work influenced the
   project policy of treating high backtest scores as suspect unless the
   selection process and holdout evidence are visible in the artifact:
@@ -738,9 +743,9 @@ hybrid expert or feature group improves the selected score, the AI review
 deterministically vetoes before calling the local model.
 The training suite also writes a `selection_risk` report for the selected
 candidate and serialized model. This deterministic multiple-trials haircut uses
-the explored candidate count plus local, ensemble, hybrid-rescue, full-fit, and
-probability-inversion checks to deflate the selected score by observed score
-dispersion. `internal_variants_evaluated` and
+the explored candidate count plus local, ensemble, hybrid-profile, full-fit,
+and probability-inversion checks to deflate the selected score by observed
+score dispersion. `internal_variants_evaluated`, `hybrid_profile_trials`, and
 `internal_variant_extra_trials` make those formerly implicit trials auditable.
 A candidate is not promoted unless the deflated score remains positive.
 
@@ -758,6 +763,22 @@ variant, inversion source, every internal selection result, and exact internal
 trial count. The full-sample replay is a conservative consistency check, not an
 independent out-of-sample estimate; purged walk-forward and model-lab gates
 remain required before promotion.
+
+The general suite additionally reserves the latest 20% of every candidate's
+chronological rows as a terminal holdout, with the label horizon purged from
+the end of development data. Candidate ranking, local/ensemble refinement,
+walk-forward screening, hybrid search, meta-label fitting, and feature ablation
+cannot access those rows. After all predictive mutations are complete, the
+exact serialized model configuration is replayed on the terminal suffix once.
+The evidence records `evaluation_count=1`, row count and UTC-compatible bounds,
+the full model-row SHA-256 fingerprint, final model family, inversion state,
+hybrid profile, meta-label state, objective score, and compact financial result.
+Any missing rows, exception, nonpositive score/P&L, objective rejection,
+drawdown stop, or liquidation blocks serialization. The final reported score
+and deflated score are capped by this sealed result. Model readiness, financial
+sanity, and compact AI review all reject missing or malformed terminal evidence.
+The old zero-fold hybrid rescue path was removed: failed walk-forward evidence
+cannot be replaced with a synthetic passing gate.
 AI-assisted alpha has a separate deterministic uplift gate. When AI is enabled,
 `ai-review` will not call the local LLM unless every accepted AI-assisted symbol
 includes an `ai_uplift` artifact showing the AI-assisted holdout beats the
@@ -776,14 +797,17 @@ p-value at or below 5%, and a positive 95% moving-block-bootstrap lower bound
 from at least 2,000 deterministic resamples. Artifact policy can tighten but
 cannot weaken those built-in floors.
 Missing or failed uplift evidence leaves AI in advisory/review-only mode.
-After a candidate survives selection, the suite trains a compact meta-label
-policy from the accepted model's simulated trade log. The policy
+After a candidate survives development selection, the suite trains a compact
+meta-label policy from the accepted model's development-only simulated trade
+log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
 under the current objective precision target and is persisted in both the model
 artifact and `training_suite_summary.json`. Backtests, the legacy live loop, and
 the autonomous loop now apply that policy as a deterministic pre-entry
 skip/downsize gate. It cannot create entries or override exits, and malformed
-enabled policies fail closed by skipping the entry.
+enabled policies fail closed by skipping the entry. The policy is attached
+before the one-shot terminal replay, so its effect is included in sealed final
+evidence rather than added after validation.
 For host smoke checks, `train-suite` and `model-lab` expose `--max-candidates`;
 this caps candidate count per objective only when explicitly set and should not
 be used to claim a full optimization result.
@@ -803,11 +827,12 @@ stay within tolerance, and P&L plus buy-and-hold edge cannot materially worsen.
 
 Accepted hybrid candidates must improve or preserve the objective score and pass
 the profitability, drawdown, and minimum-trade gates in
-`ObjectiveSpec.accepts`. If no base candidate survives the hard gates, the
-training suite now attempts a small fail-closed hybrid rescue pass over the top
-rejected base candidates. A rescued hybrid is serialized only when it passes the
-hybrid selection window, the final chronological holdout, and the full-sample
-objective gates; otherwise the objective remains rejected.
+`ObjectiveSpec.accepts` on development selection and validation, then pass the
+sealed exact-model terminal gate. If no base candidate survives the purged
+walk-forward gates, the objective remains rejected; a hybrid cannot manufacture
+or inherit a zero-fold passing gate. Offline hybrid rescue research remains in
+the optimization workflow, where the selected model is still subjected to that
+workflow's separate final holdout and cannot become live authority by itself.
 Accepted hybrid reports also include an ablation table. The optimizer replays
 the selected hybrid as base-only and with each expert family removed, then
 records acceptance, score, and delta versus the selected hybrid. This makes

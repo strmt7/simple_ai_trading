@@ -161,6 +161,21 @@ def _flat_model(
             "selected_score": 0.12,
             "trial_penalty": 0.03,
             "deflated_score": 0.09,
+            "terminal_holdout": {
+                "schema_version": "terminal-holdout-v1",
+                "passed": True,
+                "reason": None,
+                "evaluation_count": 1,
+                "rows": 100,
+                "score": 0.10,
+                "dataset_fingerprint": "a" * 64,
+                "result": {
+                    "accepted": True,
+                    "realized_pnl": 10.0,
+                    "stopped_by_liquidation": False,
+                    "liquidation_events": 0,
+                },
+            },
         },
         execution_validation={
             "passed": True,

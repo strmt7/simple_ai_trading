@@ -145,6 +145,37 @@ def _promoted_execution_validation(
     return payload
 
 
+def _promoted_selection_risk(
+    *,
+    effective_trials: int = 12,
+    selected_score: float = 0.12,
+    trial_penalty: float = 0.03,
+    deflated_score: float = 0.09,
+) -> dict[str, object]:
+    return {
+        "passed": True,
+        "effective_trials": effective_trials,
+        "selected_score": selected_score,
+        "trial_penalty": trial_penalty,
+        "deflated_score": deflated_score,
+        "terminal_holdout": {
+            "schema_version": "terminal-holdout-v1",
+            "passed": True,
+            "reason": None,
+            "evaluation_count": 1,
+            "rows": 100,
+            "score": 0.10,
+            "dataset_fingerprint": "a" * 64,
+            "result": {
+                "accepted": True,
+                "realized_pnl": 10.0,
+                "stopped_by_liquidation": False,
+                "liquidation_events": 0,
+            },
+        },
+    }
+
+
 class _SignedCommissionClientEvidence:
     def get_commission_rates(self, symbol: str):
         return CommissionRates(
@@ -2532,13 +2563,11 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path) -> None:
         feature_means=[0.0] * len(advanced_rows[0].features),
         feature_stds=[1.0] * len(advanced_rows[0].features),
         feature_signature=advanced_feature_signature(feature_cfg),
-        selection_risk={
-            "passed": True,
-            "effective_trials": 24,
-            "selected_score": 0.12,
-            "trial_penalty": 0.01,
-            "deflated_score": 0.11,
-        },
+        selection_risk=_promoted_selection_risk(
+            effective_trials=24,
+            trial_penalty=0.01,
+            deflated_score=0.11,
+        ),
         execution_validation=_promoted_execution_validation(market_type="spot", interval="1s"),
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
@@ -2789,13 +2818,7 @@ def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence
             feature_means=[0.0],
             feature_stds=[1.0],
             feature_signature=cli._strategy_feature_signature(strategy),
-            selection_risk={
-                "passed": True,
-                "effective_trials": 12,
-                "selected_score": 0.12,
-                "trial_penalty": 0.03,
-                "deflated_score": 0.09,
-            },
+            selection_risk=_promoted_selection_risk(),
             execution_validation=_promoted_execution_validation(market_type="futures", interval="1s"),
             probability_calibration_size=128,
             probability_log_loss_before=0.62,
@@ -5114,13 +5137,7 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
             feature_means=[0.0] * 13,
             feature_stds=[1.0] * 13,
             feature_signature=cli._strategy_feature_signature(strategy),
-            selection_risk={
-                "passed": True,
-                "effective_trials": 12,
-                "selected_score": 0.12,
-                "trial_penalty": 0.03,
-                "deflated_score": 0.09,
-            },
+            selection_risk=_promoted_selection_risk(),
             execution_validation=_promoted_execution_validation(market_type="futures", interval="1s"),
             probability_calibration_size=128,
             probability_log_loss_before=0.62,
@@ -5399,13 +5416,7 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
         epochs=1,
         feature_means=[0.0],
         feature_stds=[1.0],
-        selection_risk={
-            "passed": True,
-            "effective_trials": 12,
-            "selected_score": 0.12,
-            "trial_penalty": 0.03,
-            "deflated_score": 0.09,
-        },
+        selection_risk=_promoted_selection_risk(),
         execution_validation=_promoted_execution_validation(market_type="spot", interval="1s"),
         probability_calibration_size=128,
         probability_log_loss_before=0.62,

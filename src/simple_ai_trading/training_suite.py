@@ -2,13 +2,14 @@
 
 For every registered objective (Conservative / Regular / Aggressive) the suite:
 
-1. Expands candles into an advanced feature vector **once** per objective.
-2. Splits the rows into train/eval **once**.
-3. Evaluates a curated hyperparameter grid — each candidate is an independent,
+1. Expands candles into candidate-specific advanced feature vectors.
+2. Seals a purged terminal suffix before any model or policy selection.
+3. Splits development rows into fit/calibration, selection, and validation.
+4. Evaluates a curated hyperparameter grid; each candidate is an independent,
    picklable unit of work dispatched through a ``ProcessPoolExecutor`` when
    more than one worker is available.
-4. Picks the highest-scoring candidate under the objective's own scorer.
-5. Writes ``data/model_<objective>.json`` plus a suite-level summary report.
+5. Applies walk-forward, multiple-trial, and exact final-model terminal gates.
+6. Writes ``data/model_<objective>.json`` only after every gate passes.
 
 Each worker process imports this package and calls :func:`_evaluate_candidate`
 with a fully self-contained payload; there are no shared globals or closures in
@@ -22,8 +23,10 @@ spawning subprocesses.
 from __future__ import annotations
 
 import copy
+import hashlib
 import math
 import os
+import struct
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field, replace
 from itertools import product
@@ -76,12 +79,13 @@ from .types import StrategyConfig
 
 _DEFAULT_OUTPUT_DIR = Path("data")
 _ENSEMBLE_REFINEMENT_CANDIDATES = 3
-_HYBRID_RESCUE_CANDIDATES = 3
 _SELECTION_RISK_DISPERSION_FLOOR = 1e-4
 _SELECTION_RISK_RELATIVE_FLOOR = 0.03
 _PBO_MAX_PROBABILITY = 0.50
 _PBO_MIN_CANDIDATES = 3
 _PBO_EPSILON = 1e-6
+_TERMINAL_HOLDOUT_RATIO = 0.20
+_TERMINAL_HOLDOUT_SCHEMA = "terminal-holdout-v1"
 
 
 # ==========================================================================
@@ -608,6 +612,30 @@ def _walk_forward_split(
     return list(rows[:train_end]), list(rows[split:])
 
 
+def _reserve_terminal_holdout(
+    rows: Sequence[ModelRow],
+    *,
+    purge_gap: int,
+) -> tuple[list[ModelRow], list[ModelRow]]:
+    """Seal the terminal suffix before any candidate or policy selection."""
+
+    ordered = list(rows)
+    if any(
+        int(current.timestamp) <= int(previous.timestamp)
+        for previous, current in zip(ordered, ordered[1:])
+    ):
+        raise ValueError("terminal holdout rows must be strictly chronological")
+    if len(ordered) < 10:
+        # The generic walk-forward helper mirrors tiny inputs on both sides.
+        # A terminal holdout must instead fail closed without any row overlap.
+        return [], ordered
+    return _walk_forward_split(
+        ordered,
+        eval_ratio=_TERMINAL_HOLDOUT_RATIO,
+        purge_gap=purge_gap,
+    )
+
+
 def _purged_walk_forward_splits(
     rows: Sequence[ModelRow],
     training: ObjectiveTraining,
@@ -689,6 +717,95 @@ def _finite_number_or_none(value: object) -> float | None:
         return None
     parsed = float(value)
     return parsed if math.isfinite(parsed) else None
+
+
+def _model_rows_fingerprint(rows: Sequence[ModelRow]) -> str:
+    digest = hashlib.sha256(_TERMINAL_HOLDOUT_SCHEMA.encode("ascii"))
+    feature_format = ""
+    feature_count = -1
+    for row in rows:
+        features = tuple(float(value) for value in row.features)
+        if len(features) != feature_count:
+            feature_count = len(features)
+            feature_format = f"<{feature_count}d"
+        digest.update(struct.pack("<qdqI", int(row.timestamp), float(row.close), int(row.label), feature_count))
+        if features:
+            digest.update(struct.pack(feature_format, *features))
+    return digest.hexdigest()
+
+
+def _terminal_holdout_gate(
+    rows: Sequence[ModelRow],
+    model: TrainedModel,
+    strategy: StrategyConfig,
+    objective: ObjectiveSpec,
+    *,
+    market_type: str,
+    starting_cash: float,
+    purge_gap: int,
+    compute_backend: str | None = None,
+    score_batch_size: int = 8192,
+) -> tuple[float, dict[str, object]]:
+    terminal_rows = list(rows)
+    if not terminal_rows:
+        return float("-inf"), {
+            "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+            "passed": False,
+            "reason": "terminal_holdout_missing",
+            "evaluation_count": 0,
+            "rows": 0,
+            "purge_gap": int(purge_gap),
+            "dataset_fingerprint": "",
+        }
+    try:
+        result = run_backtest(
+            terminal_rows,
+            model,
+            strategy,
+            starting_cash=starting_cash,
+            market_type=market_type,
+            compute_backend=compute_backend,
+            score_batch_size=score_batch_size,
+        )
+    except Exception as exc:
+        return float("-inf"), {
+            "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+            "passed": False,
+            "reason": "terminal_holdout_evaluation_error",
+            "error": f"{exc.__class__.__name__}: {exc}",
+            "evaluation_count": 1,
+            "rows": len(terminal_rows),
+            "start_timestamp": int(terminal_rows[0].timestamp),
+            "end_timestamp": int(terminal_rows[-1].timestamp),
+            "purge_gap": int(purge_gap),
+            "dataset_fingerprint": _model_rows_fingerprint(terminal_rows),
+        }
+    reasons = _rejection_reasons(objective, result)
+    raw_score = objective.score(result) if not reasons else float("-inf")
+    if not math.isfinite(raw_score) or raw_score <= 0.0:
+        reasons.append("terminal_objective_score<=0")
+    passed = not reasons
+    score = float(raw_score) if passed else float("-inf")
+    return float(score), {
+        "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+        "passed": bool(passed),
+        "reason": None if passed else "; ".join(dict.fromkeys(reasons)),
+        "evaluation_count": 1,
+        "rows": len(terminal_rows),
+        "start_timestamp": int(terminal_rows[0].timestamp),
+        "end_timestamp": int(terminal_rows[-1].timestamp),
+        "purge_gap": int(purge_gap),
+        "dataset_fingerprint": _model_rows_fingerprint(terminal_rows),
+        "model_family": str(getattr(model, "model_family", "")),
+        "probability_inverted": bool(getattr(model, "probability_inverted", False)),
+        "hybrid_profile": str(getattr(model, "hybrid_profile", "base_only") or "base_only"),
+        "meta_label_enabled": bool(
+            isinstance(getattr(model, "meta_label_policy", None), dict)
+            and getattr(model, "meta_label_policy", {}).get("enabled") is True
+        ),
+        "score": _finite_number_or_none(score),
+        "result": _gate_result_payload(result, objective),
+    }
 
 
 def _payload_float(payload: object, key: str, default: float = 0.0) -> float:
@@ -937,6 +1054,7 @@ def _selection_risk_report(
     local_refinement_candidates: int,
     ensemble_refinement_candidates: int,
     hybrid_rescue_candidates: int,
+    hybrid_profile_trials: int = 0,
 ) -> dict[str, object]:
     """Estimate whether the selected score survives the number of tried models.
 
@@ -966,6 +1084,7 @@ def _selection_risk_report(
         + int(local_refinement_candidates)
         + int(ensemble_refinement_candidates)
         + int(hybrid_rescue_candidates)
+        + int(hybrid_profile_trials)
         + internal_variant_extra_trials,
         len(entries) + internal_variant_extra_trials,
     )
@@ -980,6 +1099,7 @@ def _selection_risk_report(
             "local_refinement_candidates": int(local_refinement_candidates),
             "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
             "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
+            "hybrid_profile_trials": int(hybrid_profile_trials),
             "internal_variants_evaluated": int(internal_variants_evaluated),
             "internal_variant_extra_trials": int(internal_variant_extra_trials),
             "finite_candidate_scores": len(scores),
@@ -1017,6 +1137,7 @@ def _selection_risk_report(
         "local_refinement_candidates": int(local_refinement_candidates),
         "ensemble_refinement_candidates": int(ensemble_refinement_candidates),
         "hybrid_rescue_candidates": int(hybrid_rescue_candidates),
+        "hybrid_profile_trials": int(hybrid_profile_trials),
         "internal_variants_evaluated": int(internal_variants_evaluated),
         "internal_variant_extra_trials": int(internal_variant_extra_trials),
         "finite_candidate_scores": len(scores),
@@ -1501,9 +1622,14 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         )
         if not all_rows:
             raise ValueError("Candidate label profile produced zero advanced training rows")
-        rows_train, rows_eval = _walk_forward_split(
+        purge_gap = _label_purge_gap(feature_cfg)
+        development_rows, _terminal_rows = _reserve_terminal_holdout(
             all_rows,
-            purge_gap=_label_purge_gap(feature_cfg),
+            purge_gap=purge_gap,
+        )
+        rows_train, rows_eval = _walk_forward_split(
+            development_rows,
+            purge_gap=purge_gap,
         )
     else:
         rows_train = list(base_rows_train)
@@ -1832,7 +1958,18 @@ def train_for_objective(
         candidates = candidates[:max(1, int(max_candidates))]
     if not candidates:
         raise ValueError("Candidate grid produced zero evaluable entries")
-    train_rows, eval_rows = _walk_forward_split(rows, purge_gap=_label_purge_gap(feature_cfg))
+    base_purge_gap = _label_purge_gap(feature_cfg)
+    if runner is None:
+        development_rows, _terminal_rows = _reserve_terminal_holdout(
+            rows,
+            purge_gap=base_purge_gap,
+        )
+        train_rows, eval_rows = _walk_forward_split(
+            development_rows,
+            purge_gap=base_purge_gap,
+        )
+    else:
+        train_rows, eval_rows = _walk_forward_split(rows, purge_gap=base_purge_gap)
     effective_score_batch_size = int(score_batch_size if score_batch_size is not None else batch_size)
 
     if runner is not None:
@@ -1897,6 +2034,7 @@ def train_for_objective(
     ensemble_refinement_candidates = 0
     local_refinement_candidates = 0
     hybrid_rescue_candidates = 0
+    hybrid_profile_trials = 0
     local_results: list[dict[str, Any]] = []
     if runner is None:
         for local_candidate in _local_refinement_candidates(best["candidate"]):
@@ -1949,7 +2087,6 @@ def train_for_objective(
 
         gated_best: dict[str, Any] | None = None
         last_gate: dict[str, object] | None = None
-        hybrid_rescue_best: dict[str, Any] | None = None
         for candidate_result in ranked_pool:
             if not math.isfinite(float(candidate_result["score"])):
                 continue
@@ -1973,9 +2110,13 @@ def train_for_objective(
                 }
                 last_gate = candidate_result["walk_forward_gate"]
                 continue
+            gate_development_rows, _gate_terminal_rows = _reserve_terminal_holdout(
+                gate_rows,
+                purge_gap=_label_purge_gap(gate_feature_cfg),
+            )
             gate = _purged_walk_forward_gate(
                 candidate_result["candidate"],
-                gate_rows,
+                gate_development_rows,
                 base_strategy,
                 gate_feature_cfg,
                 objective,
@@ -1995,134 +2136,11 @@ def train_for_objective(
                 gated_best = candidate_result
                 break
         if gated_best is None:
-            for candidate_result in ranked_pool[:_HYBRID_RESCUE_CANDIDATES]:
-                hybrid_rescue_candidates += 1
-                rescue_rows, rescue_feature_cfg = _rows_for_candidate(
-                    candle_list,
-                    rows,
-                    feature_cfg,
-                    candidate_result["candidate"],
-                    compute_backend=effective_compute_backend,
-                )
-                rescue_purge_gap = _label_purge_gap(rescue_feature_cfg)
-                rescue_train_rows, rescue_eval_rows = _walk_forward_split(
-                    rescue_rows,
-                    purge_gap=rescue_purge_gap,
-                )
-                rescue_model_train_rows, rescue_selection_rows = _walk_forward_split(
-                    rescue_train_rows,
-                    purge_gap=rescue_purge_gap,
-                )
-                rescue_model = candidate_result.get("model")
-                rescue_strategy = candidate_result.get("strategy")
-                if (
-                    not rescue_rows
-                    or not rescue_model_train_rows
-                    or not rescue_selection_rows
-                    or rescue_model is None
-                    or rescue_strategy is None
-                    or int(getattr(rescue_model, "feature_dim", -1)) != len(rescue_model_train_rows[0].features)
-                ):
-                    continue
-                rescue_report = optimize_hybrid_model_zoo(
-                    rescue_model,
-                    rescue_model_train_rows,
-                    rescue_selection_rows,
-                    rescue_strategy,
-                    objective_name=objective.name,
-                    market_type=market_type,
-                    starting_cash=starting_cash,
-                    compute_backend=effective_compute_backend,
-                    score_batch_size=effective_score_batch_size,
-                    feature_count=len(base_strategy.enabled_features),
-                )
-                if rescue_report is None or not rescue_report.accepted:
-                    continue
-                rescue_holdout_result = run_backtest(
-                    rescue_eval_rows,
-                    rescue_report.model,
-                    rescue_strategy,
-                    starting_cash=starting_cash,
-                    market_type=market_type,
-                    compute_backend=effective_compute_backend,
-                    score_batch_size=effective_score_batch_size,
-                )
-                rescue_holdout_score = (
-                    objective.score(rescue_holdout_result)
-                    if objective.accepts(rescue_holdout_result)
-                    else float("-inf")
-                )
-                rescue_full_result = run_backtest(
-                    rescue_rows,
-                    rescue_report.model,
-                    rescue_strategy,
-                    starting_cash=starting_cash,
-                    market_type=market_type,
-                    compute_backend=effective_compute_backend,
-                    score_batch_size=effective_score_batch_size,
-                )
-                rescue_full_score = (
-                    objective.score(rescue_full_result)
-                    if objective.accepts(rescue_full_result)
-                    else float("-inf")
-                )
-                rescue_selection_score = float(rescue_report.best_score)
-                rescue_score = min(rescue_selection_score, float(rescue_holdout_score), float(rescue_full_score))
-                if not math.isfinite(rescue_score):
-                    continue
-                rescue_candidate_result = {
-                    **candidate_result,
-                    "score": float(rescue_score),
-                    "model": rescue_report.model,
-                    "feature_cfg": rescue_feature_cfg,
-                    "feature_dim": advanced_feature_dimension(rescue_feature_cfg),
-                    "feature_signature": advanced_feature_signature(rescue_feature_cfg),
-                    "selection_score": float(rescue_selection_score),
-                    "validation_score": float(rescue_holdout_score),
-                    "full_sample_score": float(rescue_full_score),
-                    "selection_result": (
-                        _gate_result_payload(rescue_report.best_result, objective)
-                        if rescue_report.best_result is not None
-                        else candidate_result.get("selection_result")
-                    ),
-                    "validation_result": _gate_result_payload(rescue_holdout_result, objective),
-                    "full_sample_result": _gate_result_payload(rescue_full_result, objective),
-                    "hybrid_model": True,
-                    "hybrid_rescue": True,
-                    "hybrid_profile": rescue_report.best_profile,
-                    "hybrid_base_score": rescue_report.base_score,
-                    "hybrid_best_score": rescue_report.best_score,
-                    "hybrid_evaluated_profiles": rescue_report.evaluated_profiles,
-                    "hybrid_ablation": [
-                        item.asdict()
-                        for item in getattr(rescue_report, "ablation_results", ()) or ()
-                    ],
-                    "walk_forward_gate": {
-                        "passed": True,
-                        "reason": "hybrid_rescue_selection_holdout_full_passed",
-                        "fold_count": 0,
-                        "accepted_folds": 0,
-                        "worst_score": float(rescue_score),
-                        "worst_realized_pnl": None,
-                        "worst_max_drawdown": None,
-                        "folds": [],
-                    },
-                }
-                if hybrid_rescue_best is None:
-                    hybrid_rescue_best = rescue_candidate_result
-                elif (
-                    rescue_score > float(hybrid_rescue_best["score"]) + 1e-12
-                    and _risk_non_degrading(rescue_candidate_result, hybrid_rescue_best)
-                ):
-                    hybrid_rescue_best = rescue_candidate_result
-            if hybrid_rescue_best is None:
-                best = {
-                    **best,
-                    "score": float("-inf"),
-                    "walk_forward_gate": last_gate,
-                }
-            else:
-                best = hybrid_rescue_best
+            best = {
+                **best,
+                "score": float("-inf"),
+                "walk_forward_gate": last_gate,
+            }
         else:
             best = gated_best
 
@@ -2135,8 +2153,12 @@ def train_for_objective(
             compute_backend=effective_compute_backend,
         )
         best_purge_gap = _label_purge_gap(best_feature_cfg)
-        best_train_rows, best_eval_rows = _walk_forward_split(
+        best_development_rows, best_terminal_rows = _reserve_terminal_holdout(
             best_rows,
+            purge_gap=best_purge_gap,
+        )
+        best_train_rows, best_eval_rows = _walk_forward_split(
+            best_development_rows,
             purge_gap=best_purge_gap,
         )
         model_train_rows, selection_rows = _walk_forward_split(
@@ -2166,6 +2188,11 @@ def train_for_objective(
             )
         else:
             hybrid_report = None
+        if hybrid_report is not None:
+            hybrid_profile_trials = max(
+                hybrid_profile_trials,
+                int(getattr(hybrid_report, "evaluated_profiles", 0) or 0),
+            )
         if hybrid_report is not None and hybrid_report.accepted:
             holdout_result = run_backtest(
                 best_eval_rows,
@@ -2178,7 +2205,7 @@ def train_for_objective(
             )
             holdout_score = objective.score(holdout_result) if objective.accepts(holdout_result) else float("-inf")
             full_result = run_backtest(
-                best_rows,
+                best_development_rows,
                 hybrid_report.model,
                 best_strategy,
                 starting_cash=starting_cash,
@@ -2222,6 +2249,7 @@ def train_for_objective(
         local_refinement_candidates=local_refinement_candidates,
         ensemble_refinement_candidates=ensemble_refinement_candidates,
         hybrid_rescue_candidates=hybrid_rescue_candidates,
+        hybrid_profile_trials=hybrid_profile_trials,
     )
     best["selection_risk"] = selection_risk
     if not selection_risk.get("passed"):
@@ -2246,13 +2274,7 @@ def train_for_objective(
     meta_label_report: dict[str, object] | None = None
     if runner is None:
         try:
-            meta_rows, _meta_feature_cfg = _rows_for_candidate(
-                candle_list,
-                rows,
-                feature_cfg,
-                best["candidate"],
-                compute_backend=effective_compute_backend,
-            )
+            meta_rows = list(best_development_rows)
             if meta_rows:
                 meta_result = run_backtest(
                     meta_rows,
@@ -2291,18 +2313,11 @@ def train_for_objective(
     feature_ablation: list[dict[str, object]] = []
     if runner is None:
         try:
-            ablation_rows, ablation_feature_cfg = _rows_for_candidate(
-                candle_list,
-                rows,
-                feature_cfg,
-                best["candidate"],
-                compute_backend=effective_compute_backend,
-            )
             feature_ablation = _feature_ablation_report(
-                ablation_rows,
+                best_development_rows,
                 best["model"],
                 best["strategy"],
-                ablation_feature_cfg,
+                best_feature_cfg,
                 objective,
                 market_type=market_type,
                 starting_cash=starting_cash,
@@ -2314,6 +2329,59 @@ def train_for_objective(
                 "reason": str(exc),
                 "objective": objective.name,
             }]
+    if runner is None:
+        development_selected_score = float(best["score"])
+        terminal_score, terminal_holdout = _terminal_holdout_gate(
+            best_terminal_rows,
+            best["model"],
+            best["strategy"],
+            objective,
+            market_type=market_type,
+            starting_cash=starting_cash,
+            purge_gap=best_purge_gap,
+            compute_backend=effective_compute_backend,
+            score_batch_size=effective_score_batch_size,
+        )
+        selection_risk["development_selected_score"] = development_selected_score
+        selection_risk["terminal_holdout"] = terminal_holdout
+        if terminal_holdout.get("passed") is True and math.isfinite(terminal_score):
+            best["score"] = min(development_selected_score, float(terminal_score))
+            selection_risk["selected_score"] = float(best["score"])
+            deflated_score = _finite_number_or_none(selection_risk.get("deflated_score"))
+            if deflated_score is not None:
+                selection_risk["deflated_score"] = min(deflated_score, float(terminal_score))
+        else:
+            terminal_reason = str(terminal_holdout.get("reason") or "terminal_holdout_failed")
+            raw_reasons = selection_risk.get("reasons")
+            reasons = [str(item) for item in raw_reasons] if isinstance(raw_reasons, list) else []
+            reasons.append(terminal_reason)
+            selection_risk["passed"] = False
+            selection_risk["reason"] = terminal_reason
+            selection_risk["reasons"] = list(dict.fromkeys(reasons))
+            best["selection_risk"] = selection_risk
+            best["score"] = float("-inf")
+            diagnostics = {
+                "objective": objective.name,
+                "row_count": len(rows),
+                "candidate_count": len(ranked_pool),
+                "terminal_holdout": terminal_holdout,
+                "top_candidates": [_candidate_diagnostics(best)],
+            }
+            raise TrainingSuiteRejected(
+                f"Selected {objective.name} model failed sealed terminal holdout",
+                row_count=len(rows),
+                diagnostics=diagnostics,
+            )
+    else:
+        selection_risk["terminal_holdout"] = {
+            "schema_version": _TERMINAL_HOLDOUT_SCHEMA,
+            "passed": None,
+            "reason": "runner_path",
+            "evaluation_count": 0,
+            "rows": 0,
+            "dataset_fingerprint": "",
+        }
+    best["selection_risk"] = selection_risk
     model_path = output_dir / f"model_{objective.name}.json"
     best["model"].selection_risk = dict(selection_risk)
     serialize_model(best["model"], model_path)

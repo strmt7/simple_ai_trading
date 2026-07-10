@@ -424,6 +424,21 @@ def _accepted_selection_risk() -> dict[str, object]:
         "selected_score": 0.15,
         "trial_penalty": 0.04,
         "deflated_score": 0.11,
+        "terminal_holdout": {
+            "schema_version": "terminal-holdout-v1",
+            "passed": True,
+            "reason": None,
+            "evaluation_count": 1,
+            "rows": 100,
+            "score": 0.10,
+            "dataset_fingerprint": "a" * 64,
+            "result": {
+                "accepted": True,
+                "realized_pnl": 10.0,
+                "stopped_by_liquidation": False,
+                "liquidation_events": 0,
+            },
+        },
         "overfit_diagnostics": {
             "status": "skipped",
             "reason": "requires_selection_and_validation_scores",
@@ -701,6 +716,21 @@ def test_model_lab_financial_sanity_blocks_failed_selection_risk_evidence() -> N
     assert report.allowed is False
     assert any(
         check.label == "selection risk" and check.path.endswith(".deflated_score")
+        for check in report.checks
+    )
+
+
+def test_model_lab_financial_sanity_blocks_missing_terminal_holdout() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    risk = _accepted_selection_risk()
+    del risk["terminal_holdout"]
+    payload["outcomes"][0]["selection_risk"] = {"regular": risk}  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.label == "sealed terminal holdout" and check.status == "block"
         for check in report.checks
     )
 

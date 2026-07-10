@@ -211,6 +211,21 @@ def _selection_risk(*, passed: bool = True) -> dict[str, object]:
         "selected_score": 0.12,
         "trial_penalty": 0.01 if passed else 0.14,
         "deflated_score": 0.11 if passed else -0.02,
+        "terminal_holdout": {
+            "schema_version": "terminal-holdout-v1",
+            "passed": bool(passed),
+            "reason": None if passed else "terminal_holdout_failed",
+            "evaluation_count": 1,
+            "rows": 100,
+            "score": 0.10 if passed else None,
+            "dataset_fingerprint": "a" * 64,
+            "result": {
+                "accepted": bool(passed),
+                "realized_pnl": 10.0 if passed else -10.0,
+                "stopped_by_liquidation": False,
+                "liquidation_events": 0,
+            },
+        },
         "overfit_diagnostics": {
             "status": "skipped",
             "reason": "requires_selection_and_validation_scores",
