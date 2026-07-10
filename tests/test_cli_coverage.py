@@ -129,7 +129,7 @@ def _promoted_execution_validation(
             "immutable_market_data": True,
             "engine": "hftbacktest",
             "engine_version": "2.4.4",
-            "schema_version": "binance-usdm-l2-v2",
+            "schema_version": "binance-usdm-l2-v3",
             "symbol": symbol,
             "queue_model": "risk_adverse_queue_model",
             "latency_model": "empirical_feed_and_order_latency",
@@ -326,6 +326,12 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     micro_refit = cli._parse_args(["microstructure-refit", "--input", "validated.json"])
     assert micro_refit.input == "validated.json"
     assert micro_refit.output is None
+    micro_shadow = cli._parse_args(
+        ["microstructure-shadow", "--input", "shadow-candidate.json"]
+    )
+    assert micro_shadow.input == "shadow-candidate.json"
+    assert micro_shadow.output is None
+    assert micro_shadow.seconds == 21_660.0
     signals_args = cli._parse_args([
         "signals",
         "--compute-backend",
@@ -590,12 +596,12 @@ def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit
             "rejection_reasons": (),
         }
     )
-    accepted = SimpleNamespace(
+    shadow_candidate = SimpleNamespace(
         **{
             **vars(validated),
-            "status": "accepted",
+            "status": "shadow_candidate",
             "asdict": lambda: {
-                "status": "accepted",
+                "status": "shadow_candidate",
                 "model_strings": {"hidden": "value"},
                 "deployment_model_strings": {"hidden": "value"},
             },
@@ -647,7 +653,7 @@ def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit
     )
     monkeypatch.setattr(
         "simple_ai_trading.microstructure_model.refit_validated_microstructure_model",
-        lambda _artifact, _dataset, **_kwargs: accepted,
+        lambda _artifact, _dataset, **_kwargs: shadow_candidate,
     )
     monkeypatch.setattr(
         "simple_ai_trading.microstructure_model.save_microstructure_model_artifact",
@@ -669,7 +675,7 @@ def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit
         "simple_ai_trading.microstructure_prequential.attach_verified_prequential_evidence",
         lambda _artifact, _dataset, **_kwargs: attached,
     )
-    output = tmp_path / "accepted.json"
+    output = tmp_path / "shadow-candidate.json"
 
     result = cli.command_microstructure_promote(
         argparse.Namespace(
@@ -694,8 +700,113 @@ def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit
     finalize = next(value for name, value in calls if name == "finalize")
     assert finalize[1]["result_status"] == "validated"
     saved_statuses = [value[0] for name, value in calls if name == "save"]
-    assert saved_statuses == ["candidate", "validated", "accepted", "accepted"]
-    assert "status=accepted" in capsys.readouterr().out
+    assert saved_statuses == [
+        "candidate",
+        "validated",
+        "shadow_candidate",
+        "shadow_candidate",
+    ]
+    output_text = capsys.readouterr().out
+    assert "status=shadow_candidate" in output_text
+    assert "trading_authority=false" in output_text
+    assert "shadow_required=true" in output_text
+
+
+def test_command_microstructure_shadow_is_no_order_and_saves_only_acceptance(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    refit = SimpleNamespace(expires_at_ms=9_999_999_999_999)
+    artifact = SimpleNamespace(
+        status="shadow_candidate",
+        rejection_reasons=(),
+        deployment_refit=refit,
+        symbol="BTCUSDT",
+    )
+    accepted = SimpleNamespace(status="accepted")
+    capture = SimpleNamespace(asdict=lambda: {"capture_id": "fixture"})
+    report = SimpleNamespace(
+        status="passed",
+        symbol="BTCUSDT",
+        replay={"decisions": 150, "orders_submitted": 0},
+        metrics={"trades": 20, "total_net_bps": 25.0},
+        trading_authority=True,
+        reasons=(),
+        passed=True,
+        asdict=lambda: {
+            "status": "passed",
+            "trading_authority": True,
+            "orders_submitted": 0,
+        },
+    )
+    calls: dict[str, object] = {}
+
+    class Store:
+        def __init__(self, path: str) -> None:
+            calls["db"] = path
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def record_microstructure_capture(self, payload) -> int:
+            calls["catalog_payload"] = payload
+            return 1
+
+    def capture_feed(symbols, **kwargs):
+        calls["symbols"] = symbols
+        calls["capture_kwargs"] = kwargs
+        return capture
+
+    def evaluate(candidate, artifact_path, captured, **kwargs):
+        calls["evaluate"] = (candidate, artifact_path, captured, kwargs)
+        return report, accepted
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.load_microstructure_model_artifact",
+        lambda _path: artifact,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.save_microstructure_model_artifact",
+        lambda value, path: (
+            calls.update({"saved": (value, Path(path))}) or "a" * 64
+        ),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_shadow.evaluate_shadow_capture",
+        evaluate,
+    )
+    monkeypatch.setattr(cli, "capture_binance_futures_microstructure", capture_feed)
+    monkeypatch.setattr(cli, "MarketDataStore", Store)
+    output = tmp_path / "accepted.json"
+
+    result = cli.command_microstructure_shadow(
+        argparse.Namespace(
+            input="shadow-candidate.json",
+            output=str(output),
+            seconds=21_660.0,
+            output_root=str(tmp_path / "captures"),
+            report=str(tmp_path / "report.json"),
+            trades=str(tmp_path / "trades.csv"),
+            db=str(tmp_path / "catalog.sqlite"),
+            timeout=10.0,
+            json=False,
+        )
+    )
+
+    assert result == 0
+    assert calls["symbols"] == ("BTCUSDT",)
+    capture_kwargs = calls["capture_kwargs"]
+    assert capture_kwargs["convert"] is False  # type: ignore[index]
+    assert capture_kwargs["duration_seconds"] == 21_660.0  # type: ignore[index]
+    assert "orders" not in capture_kwargs  # type: ignore[operator]
+    assert calls["saved"] == (accepted, output)
+    rendered = capsys.readouterr().out
+    assert "trading_authority=true" in rendered
+    assert "net_bps=+25.0000" in rendered
 
 
 def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:

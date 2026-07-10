@@ -27,10 +27,11 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v12"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v13"
 MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
     "microstructure-prequential-fixed-refit-v1"
 )
+MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION = "microstructure-public-feed-shadow-v1"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 ModelProgressCallback = Callable[[str, int, int], None]
 
@@ -171,6 +172,44 @@ class TerminalPrequentialEvidence:
 
 
 @dataclass(frozen=True)
+class ShadowValidationEvidence:
+    version: str
+    report_sha256: str
+    trades_sha256: str
+    capture_manifest_sha256: str
+    raw_capture_sha256: str
+    candidate_sha256: str
+    deployment_model_sha256: str
+    symbol: str
+    provider: str
+    clock_offset_ms: float
+    started_at_ms: int
+    completed_at_ms: int
+    duration_seconds: float
+    decisions: int
+    actionable_decisions: int
+    virtual_trades: int
+    long_trades: int
+    short_trades: int
+    execution_liquidity_rejections: int
+    expired_entries: int
+    pending_entries_at_end: int
+    end_censored_signals: int
+    total_net_bps: float
+    profit_factor: float
+    max_drawdown_bps: float
+    feed_sequence_gaps: int
+    invalid_events: int
+    late_event_resets: int
+    feature_gap_resets: int
+    deadline_misses: int
+    inference_failures: int
+    forced_closes: int
+    orders_submitted: int
+    attached_at: str
+
+
+@dataclass(frozen=True)
 class MicrostructureModelArtifact:
     schema_version: str
     model_family: str
@@ -231,6 +270,7 @@ class MicrostructureModelArtifact:
     terminal_evaluated_at: str | None
     prequential_validation: PrequentialValidationEvidence | None = None
     terminal_prequential: TerminalPrequentialEvidence | None = None
+    shadow_validation: ShadowValidationEvidence | None = None
 
     @property
     def promotion_eligible(self) -> bool:
@@ -608,7 +648,13 @@ def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelA
     if payload.get("schema_version") != MICROSTRUCTURE_MODEL_SCHEMA_VERSION:
         raise ValueError("microstructure model schema is not supported")
     status = str(payload.get("status") or "")
-    if status not in {"candidate", "validated", "accepted", "rejected"}:
+    if status not in {
+        "candidate",
+        "validated",
+        "shadow_candidate",
+        "accepted",
+        "rejected",
+    }:
         raise ValueError("microstructure model artifact status is unsupported")
     feature_names = tuple(payload.get("feature_names") or ())
     if feature_names != MICROSTRUCTURE_FEATURE_NAMES:
@@ -733,6 +779,16 @@ def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelA
         )
     else:
         raise ValueError("microstructure terminal prequential evidence is invalid")
+    raw_shadow = payload.get("shadow_validation")
+    values["shadow_validation"] = (
+        None
+        if raw_shadow is None
+        else _record_from_mapping(
+            ShadowValidationEvidence,
+            raw_shadow,
+            "shadow validation evidence",
+        )
+    )
     values["probability_calibration"] = {
         str(key): tuple(item)
         for key, item in dict(payload.get("probability_calibration") or {}).items()
@@ -772,7 +828,7 @@ def load_microstructure_action_scorer(
     rejection_reasons = payload.get("rejection_reasons")
     if status == "rejected" or rejection_reasons:
         raise ValueError("rejected microstructure artifacts cannot be loaded for inference")
-    if status not in {"candidate", "validated", "accepted"}:
+    if status not in {"candidate", "validated", "shadow_candidate", "accepted"}:
         raise ValueError("microstructure model artifact status is unsupported")
     if require_accepted and (status != "accepted" or rejection_reasons):
         raise ValueError("live microstructure inference requires an accepted artifact")
@@ -944,11 +1000,11 @@ def load_microstructure_action_scorer(
     training_cutoff_ms: int | None = None
     expires_at_ms: int | None = None
     enforce_model_freshness = False
-    if status == "accepted":
+    if status in {"shadow_candidate", "accepted"}:
         refit = payload.get("deployment_refit")
         deployment_models = payload.get("deployment_model_strings")
         if not isinstance(refit, Mapping) or not isinstance(deployment_models, Mapping):
-            raise ValueError("accepted microstructure model is missing deployment refit evidence")
+            raise ValueError("microstructure model is missing deployment refit evidence")
         if refit.get("refit_mode") != "full_history_fixed_hyperparameters":
             raise ValueError("microstructure deployment refit mode is unsupported")
         if (
@@ -1047,6 +1103,8 @@ def load_microstructure_action_scorer(
         probability_threshold = (
             terminal_evidence.latest_policy.minimum_profitable_probability
         )
+        if status == "accepted":
+            _validated_shadow_binding(load_microstructure_model_artifact(target))
     models: dict[str, lgb.Booster] = {}
     try:
         for name in _RUNTIME_MODEL_NAMES:
@@ -2170,6 +2228,7 @@ def _candidate_payload_sha256(artifact: MicrostructureModelArtifact) -> str:
             "terminal_evaluated_at": None,
             "prequential_validation": None,
             "terminal_prequential": None,
+            "shadow_validation": None,
         }
     )
     encoded = json.dumps(
@@ -2345,6 +2404,101 @@ def _validated_terminal_prequential_binding(
     ).hexdigest()
     if expected_fold_sha != evidence.fold_models_sha256:
         raise ValueError("microstructure terminal fold-model fingerprint drifted")
+    return evidence
+
+
+def _validated_shadow_binding(
+    artifact: MicrostructureModelArtifact,
+) -> ShadowValidationEvidence:
+    evidence = artifact.shadow_validation
+    if evidence is None:
+        raise ValueError("microstructure model is missing no-order shadow evidence")
+    _validated_terminal_prequential_binding(artifact)
+    if evidence.version != MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION:
+        raise ValueError("microstructure shadow evidence version is unsupported")
+    for label, digest in (
+        ("report", evidence.report_sha256),
+        ("trades", evidence.trades_sha256),
+        ("capture manifest", evidence.capture_manifest_sha256),
+        ("raw capture", evidence.raw_capture_sha256),
+        ("candidate", evidence.candidate_sha256),
+        ("deployment model", evidence.deployment_model_sha256),
+    ):
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            raise ValueError(f"microstructure shadow {label} digest is invalid")
+    if evidence.candidate_sha256 != _candidate_payload_sha256(artifact):
+        raise ValueError("microstructure shadow candidate fingerprint drifted")
+    refit = artifact.deployment_refit
+    if refit is None or evidence.deployment_model_sha256 != refit.deployment_model_sha256:
+        raise ValueError("microstructure shadow deployment estimator drifted")
+    try:
+        fitted_at = datetime.fromisoformat(refit.fitted_at)
+        attached_at = datetime.fromisoformat(evidence.attached_at)
+    except ValueError as exc:
+        raise ValueError("microstructure shadow lifecycle timestamps are invalid") from exc
+    if fitted_at.tzinfo is None or attached_at.tzinfo is None:
+        raise ValueError("microstructure shadow lifecycle timestamps must include a timezone")
+    fitted_at_ms = int(fitted_at.timestamp() * 1_000)
+    attached_at_ms = int(attached_at.timestamp() * 1_000)
+    numeric = (
+        evidence.duration_seconds,
+        evidence.clock_offset_ms,
+        evidence.total_net_bps,
+        evidence.profit_factor,
+        evidence.max_drawdown_bps,
+    )
+    if not all(math.isfinite(float(value)) for value in numeric):
+        raise ValueError("microstructure shadow financial evidence is non-finite")
+    if (
+        evidence.symbol != artifact.symbol
+        or evidence.provider != "binance_public_usdm_websocket"
+        or abs(evidence.clock_offset_ms) > 60_000.0
+        or evidence.started_at_ms <= 0
+        or evidence.completed_at_ms <= evidence.started_at_ms
+        or abs(
+            evidence.duration_seconds
+            - (evidence.completed_at_ms - evidence.started_at_ms) / 1_000.0
+        )
+        > 1e-6
+        or evidence.started_at_ms < fitted_at_ms
+        or evidence.started_at_ms < refit.training_cutoff_ms
+        or evidence.completed_at_ms > refit.expires_at_ms
+        or attached_at_ms + evidence.clock_offset_ms < evidence.completed_at_ms
+        or evidence.duration_seconds < 21_600.0
+        or evidence.decisions < 100
+        or not evidence.decisions >= evidence.actionable_decisions >= evidence.virtual_trades
+        or evidence.virtual_trades < 20
+        or evidence.long_trades + evidence.short_trades != evidence.virtual_trades
+        or any(
+            value < 0
+            for value in (
+                evidence.execution_liquidity_rejections,
+                evidence.expired_entries,
+                evidence.pending_entries_at_end,
+                evidence.end_censored_signals,
+            )
+        )
+        or evidence.total_net_bps <= 0.0
+        or evidence.profit_factor <= 1.0
+        or evidence.max_drawdown_bps < 0.0
+        or any(
+            value != 0
+            for value in (
+                evidence.feed_sequence_gaps,
+                evidence.invalid_events,
+                evidence.late_event_resets,
+                evidence.feature_gap_resets,
+                evidence.deadline_misses,
+                evidence.inference_failures,
+                evidence.forced_closes,
+                evidence.expired_entries,
+                evidence.pending_entries_at_end,
+                evidence.orders_submitted,
+            )
+        )
+        or not evidence.attached_at.strip()
+    ):
+        raise ValueError("microstructure no-order shadow promotion gates are not satisfied")
     return evidence
 
 
@@ -2526,7 +2680,7 @@ def refit_validated_microstructure_model(
         progress("deployment-refit-complete", total_steps, total_steps)
     return replace(
         artifact,
-        status="accepted",
+        status="shadow_candidate",
         deployment_model_strings=deployment_model_strings,
         deployment_refit=evidence,
     )
@@ -2753,6 +2907,7 @@ def save_microstructure_model_artifact(
 __all__ = [
     "MICROSTRUCTURE_MODEL_SCHEMA_VERSION",
     "MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION",
+    "MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION",
     "DeploymentRefitEvidence",
     "MicrostructureActionPrediction",
     "MicrostructureActionScorer",
@@ -2760,6 +2915,7 @@ __all__ = [
     "MicrostructureModelArtifact",
     "PurgedSplitEvidence",
     "PrequentialValidationEvidence",
+    "ShadowValidationEvidence",
     "TerminalPrequentialEvidence",
     "ThresholdPolicy",
     "ThresholdSearchEvidence",

@@ -26,10 +26,10 @@ operator docs all agree.
 
 ## Causal L1/Tape Action-Value Model
 
-The `microstructure-action-value-v12` workflow is a separate, fail-closed
+The `microstructure-action-value-v13` workflow is a separate, fail-closed
 research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
 feed the legacy candle autonomous loop, and the repository currently has no
-accepted v12 artifact or profitability result.
+accepted v13 artifact or profitability result.
 
 Its implemented lifecycle is:
 
@@ -65,11 +65,27 @@ Its implemented lifecycle is:
    Provisional classifiers learn calibration on a purged recent tail; six final
    estimators then refit on all labeled rows. No terminal metric is used to
    retune the model.
-8. Only a successful refit produces `accepted`. It records validation and
+8. A successful refit produces only `shadow_candidate`. It records validation and
    deployment estimator hashes, source build/fingerprint, backend, row counts,
    calibration span, training cutoff, and a hard expiry. A failed refit leaves
    the atomic `validated` artifact available for `microstructure-refit`.
-9. Streaming features use only closed seconds, while liquidity eligibility uses
+9. `microstructure-shadow` captures at least 21,660 seconds from the locked
+   Binance USD-M public depth, BBO, and aggregate-trade streams without loading
+   credentials or exposing an order API. Capture schema `binance-usdm-l2-v3`
+   hashes the original stream, synchronized stream, REST snapshot, and manifest.
+10. Shadow replay uses the production streaming coordinator. A virtual entry is
+    queued until the model's full exchange-time latency deadline, top-of-book
+    participation is rechecked at that deadline, and exits use observed bid/ask,
+    fees, adverse trigger slippage, stop/take barriers, and the validated horizon.
+    The planned tail is entry-censored so every evaluated position can close
+    naturally. Any feed gap, invalid event, feature reset, deadline miss,
+    inference failure, expired/pending entry, forced close, or nonzero order count
+    rejects promotion.
+11. Only a profitable, positive-utility shadow with at least six complete hours,
+    100 decisions, and 20 completed virtual trades produces `accepted`. Report,
+    trade-table, capture, candidate, and deployment-estimator hashes are embedded
+    in typed evidence and revalidated by the accepted runtime loader.
+12. Streaming features use only closed seconds, while liquidity eligibility uses
    the newest independently tracked BBO known at inference time. The scorer
    blocks stale quotes, crossed/invalid books, excess L1 participation,
    unvalidated notional, cadence violations, expired models, and late signals.
@@ -86,6 +102,10 @@ simple-ai-trading microstructure-promote `
   --prequential-report data/microstructure-prequential.json `
   --prequential-predictions data/microstructure-prequential-predictions.csv `
   --prequential-chart data/microstructure-prequential.svg
+simple-ai-trading microstructure-shadow `
+  --input data/microstructure-model.json `
+  --report data/microstructure-shadow/report.json `
+  --trades data/microstructure-shadow/trades.csv
 ```
 
 The old `microstructure-train --evaluate-terminal` path is disabled because it
@@ -93,13 +113,15 @@ could retrain a different candidate before terminal access. The promotion
 command is the only CLI terminal path. `microstructure-refit --input PATH` is a
 recovery path for a terminal-validated artifact; it requires the same embedded
 prequential binding and refuses a rebuilt or changed source even when filenames
-are unchanged.
+are unchanged. Both promotion and recovery refits stop at `shadow_candidate`;
+they never grant trading authority.
 
-Current limitation: exchange no-order shadow calibration is not yet a mandatory
-promotion stage. Historical selection and terminal replay cannot measure the
-strategy's own market impact or guarantee that current feed/response latency
-matches the archived distribution. This limitation is one reason no v12
-artifact is currently accepted or claimed profitable.
+The mandatory no-order shadow measures current public-feed timing and virtual
+cross-spread execution, but it still cannot measure the strategy's own market
+impact, private order-entry latency, exchange acknowledgements, queue position,
+or partial fills because it submits zero orders. Historical and shadow success
+therefore do not guarantee live profitability. This limitation is one reason no
+v13 artifact is currently accepted or claimed profitable.
 
 The fold, queue, and latency design follows the documented limits of market-
 data replay: a replay cannot infer the strategy's own market impact, queue

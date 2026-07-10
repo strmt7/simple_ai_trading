@@ -629,7 +629,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser_micro_promote = subparsers.add_parser(
         "microstructure-promote",
-        help="verify prequential evidence, consume the terminal holdout, and refit",
+        help="verify prequential evidence, consume terminal replay, and create a shadow candidate",
     )
     parser_micro_promote.add_argument(
         "--input", default="data/microstructure-model.json"
@@ -676,6 +676,35 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_refit.add_argument("--threads", type=int, default=8)
     parser_micro_refit.add_argument("--json", action="store_true")
     parser_micro_refit.set_defaults(func=command_microstructure_refit)
+
+    parser_micro_shadow = subparsers.add_parser(
+        "microstructure-shadow",
+        help="run the locked no-order public-feed shadow gate for a deployment refit",
+    )
+    parser_micro_shadow.add_argument("--input", default="data/microstructure-model.json")
+    parser_micro_shadow.add_argument("--output", default=None)
+    parser_micro_shadow.add_argument(
+        "--seconds",
+        type=float,
+        default=21_660.0,
+        help="public-feed capture duration; promotion requires at least six complete hours",
+    )
+    parser_micro_shadow.add_argument(
+        "--output-root",
+        default="data/microstructure-shadow/captures",
+    )
+    parser_micro_shadow.add_argument(
+        "--report",
+        default="data/microstructure-shadow/report.json",
+    )
+    parser_micro_shadow.add_argument(
+        "--trades",
+        default="data/microstructure-shadow/trades.csv",
+    )
+    parser_micro_shadow.add_argument("--db", default="data/market_data.sqlite")
+    parser_micro_shadow.add_argument("--timeout", type=float, default=10.0)
+    parser_micro_shadow.add_argument("--json", action="store_true")
+    parser_micro_shadow.set_defaults(func=command_microstructure_shadow)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
@@ -5495,6 +5524,7 @@ def command_microstructure_capture(args: argparse.Namespace) -> int:
     if not symbols:
         symbols = tuple(load_runtime().symbols)
     convert = bool(getattr(args, "convert", True))
+    json_mode = bool(getattr(args, "json", False))
     if convert and importlib.util.find_spec("hftbacktest") is None:
         print(
             "microstructure-capture requires the microstructure extra: "
@@ -5503,12 +5533,21 @@ def command_microstructure_capture(args: argparse.Namespace) -> int:
         )
         return 2
     try:
+        def progress(completed: float, total: float) -> None:
+            if not json_mode:
+                print(
+                    "microstructure-capture stream: "
+                    f"{completed:.0f}/{total:.0f}s",
+                    flush=True,
+                )
+
         result = capture_binance_futures_microstructure(
             symbols,
             duration_seconds=float(getattr(args, "seconds", 60.0)),
             output_root=str(getattr(args, "output_root", "data/microstructure")),
             timeout_seconds=float(getattr(args, "timeout", 10.0)),
             convert=convert,
+            progress=progress,
         )
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"microstructure-capture failed: {exc}", file=sys.stderr)
@@ -5523,7 +5562,7 @@ def command_microstructure_capture(args: argparse.Namespace) -> int:
     payload = result.asdict()
     payload["catalog_changes"] = int(catalog_changes)
     payload["catalog_db"] = str(getattr(args, "db", "data/market_data.sqlite"))
-    if bool(getattr(args, "json", False)):
+    if json_mode:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
         print(
@@ -5898,40 +5937,166 @@ def command_microstructure_refit(args: argparse.Namespace) -> int:
                     artifact.trigger_execution_slippage_bps or 0.0
                 ),
             )
-            accepted = refit_validated_microstructure_model(
+            shadow_candidate = refit_validated_microstructure_model(
                 artifact,
                 dataset,
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
                 progress=progress,
             )
-        digest = save_microstructure_model_artifact(accepted, output_path)
+        digest = save_microstructure_model_artifact(shadow_candidate, output_path)
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"microstructure-refit failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
 
     payload = {
-        "status": accepted.status,
+        "status": shadow_candidate.status,
+        "trading_authority": False,
+        "shadow_required": True,
         "artifact_path": str(output_path),
         "artifact_sha256": digest,
-        "symbol": accepted.symbol,
+        "symbol": shadow_candidate.symbol,
         "deployment_refit": (
-            asdict(accepted.deployment_refit)
-            if accepted.deployment_refit is not None
+            asdict(shadow_candidate.deployment_refit)
+            if shadow_candidate.deployment_refit is not None
             else None
         ),
     }
     if json_mode:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        refit = accepted.deployment_refit
+        refit = shadow_candidate.deployment_refit
         print(
             "microstructure-refit: "
-            f"status={accepted.status} symbol={accepted.symbol} "
+            f"status={shadow_candidate.status} symbol={shadow_candidate.symbol} "
             f"cutoff_ms={refit.training_cutoff_ms if refit else 'n/a'} "
-            f"expires_at_ms={refit.expires_at_ms if refit else 'n/a'}"
+            f"expires_at_ms={refit.expires_at_ms if refit else 'n/a'} "
+            "trading_authority=false shadow_required=true"
         )
         print(f"artifact={output_path} sha256={digest}")
-    return 0 if accepted.status == "accepted" else 2
+    return 0 if shadow_candidate.status == "shadow_candidate" else 2
+
+
+def command_microstructure_shadow(args: argparse.Namespace) -> int:
+    """Capture public market data and run the locked no-order promotion gate."""
+
+    from .microstructure_model import (
+        load_microstructure_model_artifact,
+        save_microstructure_model_artifact,
+    )
+    from .microstructure_shadow import (
+        PROMOTION_SHADOW_CONFIG,
+        evaluate_shadow_capture,
+    )
+
+    input_path = Path(str(getattr(args, "input", "data/microstructure-model.json")))
+    output_value = getattr(args, "output", None)
+    output_path = Path(str(output_value)) if output_value else input_path
+    report_path = Path(
+        str(getattr(args, "report", "data/microstructure-shadow/report.json"))
+    )
+    trades_path = Path(
+        str(getattr(args, "trades", "data/microstructure-shadow/trades.csv"))
+    )
+    duration_seconds = float(getattr(args, "seconds", 21_660.0))
+    json_mode = bool(getattr(args, "json", False))
+    catalog_changes = 0
+
+    def progress(completed: float, total: float) -> None:
+        if not json_mode:
+            print(
+                f"microstructure-shadow capture: {completed:.0f}/{total:.0f}s",
+                flush=True,
+            )
+
+    try:
+        artifact = load_microstructure_model_artifact(input_path)
+        if artifact.status != "shadow_candidate" or artifact.rejection_reasons:
+            raise ValueError(
+                "microstructure-shadow requires an unrejected shadow_candidate"
+            )
+        if artifact.deployment_refit is None:
+            raise ValueError("microstructure-shadow candidate has no deployment refit")
+        minimum_capture = PROMOTION_SHADOW_CONFIG.minimum_duration_seconds + 60.0
+        if not math.isfinite(duration_seconds) or duration_seconds < minimum_capture:
+            raise ValueError(
+                "microstructure-shadow requires at least 21660 seconds so the "
+                "event-time replay contains six complete hours"
+            )
+        now_ms = int(time.time() * 1_000)
+        required_lifetime_ms = int(
+            (
+                duration_seconds
+                + PROMOTION_SHADOW_CONFIG.maximum_capture_age_seconds
+                + 120.0
+            )
+            * 1_000
+        )
+        if artifact.deployment_refit.expires_at_ms - now_ms < required_lifetime_ms:
+            raise ValueError(
+                "deployment refit will expire before the shadow capture and evaluation "
+                "can complete; rebuild current features and refit first"
+            )
+        capture = capture_binance_futures_microstructure(
+            (artifact.symbol,),
+            duration_seconds=duration_seconds,
+            output_root=str(
+                getattr(args, "output_root", "data/microstructure-shadow/captures")
+            ),
+            timeout_seconds=float(getattr(args, "timeout", 10.0)),
+            convert=False,
+            progress=progress,
+        )
+        with MarketDataStore(
+            str(getattr(args, "db", "data/market_data.sqlite"))
+        ) as store:
+            catalog_changes = store.record_microstructure_capture(capture.asdict())
+        report, accepted = evaluate_shadow_capture(
+            artifact,
+            input_path,
+            capture,
+            report_path=report_path,
+            trades_path=trades_path,
+            config=PROMOTION_SHADOW_CONFIG,
+        )
+        digest = (
+            save_microstructure_model_artifact(accepted, output_path)
+            if accepted is not None
+            else None
+        )
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            f"microstructure-shadow failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+
+    payload = report.asdict()
+    payload.update(
+        {
+            "artifact_path": str(output_path),
+            "artifact_sha256": digest,
+            "catalog_changes": int(catalog_changes),
+            "catalog_db": str(getattr(args, "db", "data/market_data.sqlite")),
+            "report_path": str(report_path),
+        }
+    )
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "microstructure-shadow: "
+            f"status={report.status} symbol={report.symbol} "
+            f"decisions={report.replay['decisions']} "
+            f"trades={report.metrics['trades']} "
+            f"net_bps={float(report.metrics['total_net_bps']):+.4f} "
+            f"trading_authority={str(report.trading_authority).lower()}"
+        )
+        if report.reasons:
+            print("rejected: " + "; ".join(report.reasons), file=sys.stderr)
+        print(f"report={report_path} trades={trades_path}")
+        if digest is not None:
+            print(f"artifact={output_path} sha256={digest}")
+    return 0 if accepted is not None and report.passed else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:
@@ -7000,6 +7165,8 @@ def command_microstructure_promote(args: argparse.Namespace) -> int:
     payload["artifact_sha256"] = digest
     payload["terminal_holdout_reservation"] = terminal_reservation
     payload["deployment_refit_error"] = deployment_refit_error
+    payload["trading_authority"] = artifact.status == "accepted"
+    payload["shadow_required"] = artifact.status == "shadow_candidate"
     if json_mode:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
@@ -7009,14 +7176,20 @@ def command_microstructure_promote(args: argparse.Namespace) -> int:
             f"status={artifact.status} "
             f"terminal_trades={terminal_metrics.trades if terminal_metrics else 0} "
             f"terminal_net_bps="
-            f"{terminal_metrics.total_net_bps if terminal_metrics else 0.0:+.4f}"
+            f"{terminal_metrics.total_net_bps if terminal_metrics else 0.0:+.4f} "
+            f"trading_authority={str(artifact.status == 'accepted').lower()} "
+            f"shadow_required={str(artifact.status == 'shadow_candidate').lower()}"
         )
         if artifact.rejection_reasons:
             print("rejected: " + "; ".join(artifact.rejection_reasons), file=sys.stderr)
         if deployment_refit_error:
             print("deployment refit failed: " + deployment_refit_error, file=sys.stderr)
         print(f"artifact={output_path} sha256={digest}")
-    return 0 if artifact.status == "accepted" and deployment_refit_error is None else 2
+    return (
+        0
+        if artifact.status == "shadow_candidate" and deployment_refit_error is None
+        else 2
+    )
 
 
 def command_backtest_chart(args: argparse.Namespace) -> int:

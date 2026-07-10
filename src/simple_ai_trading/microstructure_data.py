@@ -26,7 +26,7 @@ from .assets import is_supported_major_symbol, normalize_symbol
 BINANCE_FUTURES_REST_URL = "https://fapi.binance.com"
 BINANCE_FUTURES_PUBLIC_STREAM_URL = "wss://fstream.binance.com/public/stream"
 BINANCE_FUTURES_MARKET_STREAM_URL = "wss://fstream.binance.com/market/stream"
-MICROSTRUCTURE_SCHEMA_VERSION = "binance-usdm-l2-v2"
+MICROSTRUCTURE_SCHEMA_VERSION = "binance-usdm-l2-v3"
 MAX_LATENCY_SAMPLES = 100_000
 _STREAM_REORDER_WINDOW_NS = 20_000_000
 _STREAM_QUEUE_CAPACITY = 32_768
@@ -54,6 +54,8 @@ class SymbolMicrostructureEvidence:
     initial_snapshot_path: str
     normalized_path: str
     raw_sha256: str
+    synchronized_raw_sha256: str
+    snapshot_json_sha256: str
     normalized_sha256: str
     raw_bytes: int
     normalized_bytes: int
@@ -695,6 +697,7 @@ def capture_binance_futures_microstructure(
     timeout_seconds: float = 10.0,
     convert: bool = True,
     capture_id: str | None = None,
+    progress: Callable[[float, float], None] | None = None,
 ) -> MicrostructureCaptureResult:
     """Capture real L2/trade/BBO events and produce promotion-grade replay evidence."""
 
@@ -840,7 +843,14 @@ def capture_binance_futures_microstructure(
             snapshots[symbol] = snapshot
             _write_json(snapshot_paths[symbol], snapshot)
         deadline = time.perf_counter() + requested_duration
+        last_progress_at = 0.0
+        if progress is not None:
+            progress(0.0, requested_duration)
         while time.perf_counter() < deadline and not stop_streams.is_set():
+            elapsed = max(0.0, requested_duration - (deadline - time.perf_counter()))
+            if progress is not None and elapsed - last_progress_at >= 30.0:
+                progress(min(elapsed, requested_duration), requested_duration)
+                last_progress_at = elapsed
             stream_failure = first_stream_failure()
             if stream_failure is not None:
                 raise RuntimeError(stream_failure)
@@ -853,6 +863,8 @@ def capture_binance_futures_microstructure(
         stream_failure = first_stream_failure()
         if stream_failure is not None:
             raise RuntimeError(stream_failure)
+        if progress is not None:
+            progress(requested_duration, requested_duration)
     except Exception as exc:  # capture failures are persisted and fail closed
         errors.append(f"capture:{type(exc).__name__}:{str(exc)[:500]}")
     finally:
@@ -939,6 +951,16 @@ def capture_binance_futures_microstructure(
                 initial_snapshot_path=(str(initial_snapshot_paths[symbol]) if convert else ""),
                 normalized_path=(str(normalized_path) if convert else ""),
                 raw_sha256=(_sha256(raw_path) if raw_path.exists() else ""),
+                synchronized_raw_sha256=(
+                    _sha256(synchronized_paths[symbol])
+                    if synchronized_paths[symbol].exists()
+                    else ""
+                ),
+                snapshot_json_sha256=(
+                    _sha256(snapshot_paths[symbol])
+                    if snapshot_paths[symbol].exists()
+                    else ""
+                ),
                 normalized_sha256=(_sha256(normalized_path) if normalized_path.exists() else ""),
                 raw_bytes=(raw_path.stat().st_size if raw_path.exists() else 0),
                 normalized_bytes=(normalized_path.stat().st_size if normalized_path.exists() else 0),
