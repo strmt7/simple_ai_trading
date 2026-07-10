@@ -1,4 +1,4 @@
-﻿"""CLI-facing data download and training-data loading workflows."""
+"""CLI-facing data download and training-data loading workflows."""
 
 from __future__ import annotations
 
@@ -286,7 +286,7 @@ def load_training_candles(
     download_fn: Callable[..., bool],
 ) -> tuple[list | None, str]:
     source = str(getattr(args, "source", "file") or "file")
-    input_path = Path(getattr(args, "input", "data/historical_btcusdc.json"))
+    input_path = Path(getattr(args, "input", "data/historical_market.json"))
     interval = getattr(args, "interval", None) or runtime.interval
     market_type = getattr(args, "market", None) or runtime.market_type
     min_rows = max(1, int(getattr(args, "min_rows", 120)))

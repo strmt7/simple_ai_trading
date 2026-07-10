@@ -291,13 +291,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "doctor",
         help="run local readiness checks before paper or non-mainnet trading",
     )
-    parser_doctor.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_doctor.add_argument("--input", default="data/historical_market.json")
     parser_doctor.add_argument("--model", default="data/model.json")
     parser_doctor.add_argument("--online", action="store_true", help="also check exchange connectivity")
     parser_doctor.set_defaults(func=command_doctor)
 
     parser_audit = subparsers.add_parser("audit", help="run local data/model/risk diagnostics without network calls")
-    parser_audit.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_audit.add_argument("--input", default="data/historical_market.json")
     parser_audit.add_argument("--model", default="data/model.json")
     parser_audit.set_defaults(func=command_audit)
 
@@ -328,7 +328,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_report.add_argument("--doctor", action="store_true", help="include readiness checks")
     parser_report.add_argument("--no-doctor", action="store_false", dest="doctor", help="omit readiness checks")
     parser_report.add_argument("--online", action="store_true", help="include exchange connectivity in readiness checks")
-    parser_report.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_report.add_argument("--input", default="data/historical_market.json")
     parser_report.add_argument("--model", default="data/model.json")
     parser_report.set_defaults(doctor=True)
     parser_report.set_defaults(func=command_report)
@@ -350,7 +350,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_fetch.add_argument("--interval", default=None)
     parser_fetch.add_argument("--limit", type=int, default=500)
     parser_fetch.add_argument("--batch-size", type=int, default=1000, help="klines per request (spot max 1000, futures max 1500)")
-    parser_fetch.add_argument("--output", default="data/historical_btcusdc.json")
+    parser_fetch.add_argument("--output", default="data/historical_market.json")
     parser_fetch.set_defaults(func=command_fetch)
 
     parser_data_sync = subparsers.add_parser(
@@ -572,7 +572,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_train.set_defaults(evaluate_terminal=False, func=command_microstructure_train)
 
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
-    parser_train.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_train.add_argument("--input", default="data/historical_market.json")
     parser_train.add_argument("--output", default="data/model.json")
     parser_train.add_argument("--source", choices=["auto", "file", "db"], default="auto")
     parser_train.add_argument("--db", default="data/market_data.sqlite")
@@ -600,7 +600,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_train.set_defaults(func=command_train)
 
     parser_prepare = subparsers.add_parser("prepare", help="fetch, train, evaluate, backtest, then run readiness checks")
-    parser_prepare.add_argument("--historical", default="data/historical_btcusdc.json")
+    parser_prepare.add_argument("--historical", default="data/historical_market.json")
     parser_prepare.add_argument("--model", default="data/model.json")
     parser_prepare.add_argument("--limit", type=int, default=500)
     parser_prepare.add_argument("--batch-size", type=int, default=1000, help="klines per fetch request (spot max 1000, futures max 1500)")
@@ -622,7 +622,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_prepare.set_defaults(func=command_prepare)
 
     parser_tune = subparsers.add_parser("tune", help="perform a focused walk-forward tune over few risk parameters")
-    parser_tune.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_tune.add_argument("--input", default="data/historical_market.json")
     parser_tune.add_argument("--save-best", action="store_true")
     parser_tune.add_argument("--min-risk", type=float, default=0.002)
     parser_tune.add_argument("--max-risk", type=float, default=0.02)
@@ -643,7 +643,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tune.set_defaults(func=command_tune)
 
     parser_backtest = subparsers.add_parser("backtest", help="run backtest against cached data")
-    parser_backtest.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_backtest.add_argument("--input", default="data/historical_market.json")
     parser_backtest.add_argument("--model", default="data/model.json")
     parser_backtest.add_argument("--start-cash", type=float, default=1000.0)
     parser_backtest.add_argument(
@@ -666,7 +666,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest.set_defaults(func=command_backtest)
 
     parser_backtest_chart = subparsers.add_parser("backtest-chart", help="run backtest and save an SVG performance chart")
-    parser_backtest_chart.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_backtest_chart.add_argument("--input", default="data/historical_market.json")
     parser_backtest_chart.add_argument("--model", default="data/model.json")
     parser_backtest_chart.add_argument("--output", default="data/backtest_performance.svg")
     parser_backtest_chart.add_argument("--start-cash", type=float, default=1000.0)
@@ -680,7 +680,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest_chart.set_defaults(func=command_backtest_chart)
 
     parser_evaluate = subparsers.add_parser("evaluate", help="evaluate saved model against cached candles")
-    parser_evaluate.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_evaluate.add_argument("--input", default="data/historical_market.json")
     parser_evaluate.add_argument("--model", default="data/model.json")
     parser_evaluate.add_argument("--threshold", type=float, default=None)
     parser_evaluate.add_argument("--calibrate-threshold", action="store_true")
@@ -953,7 +953,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_train_suite = subparsers.add_parser(
         "train-suite", help="train one advanced model per objective (Conservative/Regular/Aggressive)",
     )
-    parser_train_suite.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_train_suite.add_argument("--input", default="data/historical_market.json")
     parser_train_suite.add_argument("--output-dir", default="data")
     parser_train_suite.add_argument("--starting-cash", type=float, default=1000.0)
     parser_train_suite.add_argument(
@@ -1035,7 +1035,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest_panel.add_argument("--market", default=None, help="override runtime market type")
     parser_backtest_panel.add_argument("--from-date", default=None)
     parser_backtest_panel.add_argument("--to-date", default=None)
-    parser_backtest_panel.add_argument("--input", default="data/historical_btcusdc.json")
+    parser_backtest_panel.add_argument("--input", default="data/historical_market.json")
     parser_backtest_panel.add_argument("--model", default=None)
     parser_backtest_panel.add_argument("--objective", default=None)
     parser_backtest_panel.add_argument("--tag", default="")
@@ -2554,7 +2554,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Readiness check",
             [
-                FormField("input", "Training input path", "data/historical_btcusdc.json"),
+                FormField("input", "Training input path", "data/historical_market.json"),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("online", "Include exchange connectivity [yes/no]", "yes"),
             ],
@@ -2565,7 +2565,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_doctor,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 model=payload["model"].strip() or "data/model.json",
                 online=_parse_form_bool(payload["online"], True),
             ),
@@ -2580,7 +2580,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Data/model audit",
             [
-                FormField("input", "Training input path", "data/historical_btcusdc.json"),
+                FormField("input", "Training input path", "data/historical_market.json"),
                 FormField("model", "Model path", "data/model.json"),
             ],
         )
@@ -2590,7 +2590,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_audit,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 model=payload["model"].strip() or "data/model.json",
             ),
         )
@@ -2603,7 +2603,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             [
                 FormField("limit", "Fetch limit", "500"),
                 FormField("batch_size", f"Klines per request [max {max_batch_size}]", "1000"),
-                FormField("output", "Candle output path", "data/historical_btcusdc.json"),
+                FormField("output", "Candle output path", "data/historical_market.json"),
             ],
         )
         if payload is None:
@@ -2622,7 +2622,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                 interval=runtime.interval,
                 limit=limit,
                 batch_size=batch_size,
-                output=payload["output"].strip() or "data/historical_btcusdc.json",
+                output=payload["output"].strip() or "data/historical_market.json",
             ),
         )
 
@@ -2630,7 +2630,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Train AI model",
             [
-                FormField("input", "Training input path", "data/historical_btcusdc.json"),
+                FormField("input", "Training input path", "data/historical_market.json"),
                 FormField("output", "Model output path", "data/model.json"),
                 FormField("preset", "Preset [custom/quick/balanced/thorough]", "custom"),
                 FormField("epochs", "Training epochs", "250"),
@@ -2662,7 +2662,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_train,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 output=payload["output"].strip() or "data/model.json",
                 preset=preset,
                 epochs=epochs,
@@ -2681,7 +2681,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Optimize strategy",
             [
-                FormField("input", "Tune input path", "data/historical_btcusdc.json"),
+                FormField("input", "Tune input path", "data/historical_market.json"),
                 FormField("window_mode", "Window mode [all/lookback/range]", "all"),
                 FormField("lookback_days", "Lookback days", "30"),
                 FormField("from_date", "From date YYYY-MM-DD", ""),
@@ -2732,7 +2732,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_tune,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 save_best=_parse_form_bool(payload["save_best"], False),
                 min_risk=min_risk,
                 max_risk=max_risk,
@@ -2755,7 +2755,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Backtest strategy",
             [
-                FormField("input", "Backtest input path", "data/historical_btcusdc.json"),
+                FormField("input", "Backtest input path", "data/historical_market.json"),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("start_cash", "Starting cash", "1000"),
             ],
@@ -2771,7 +2771,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_backtest,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 model=payload["model"].strip() or "data/model.json",
                 start_cash=start_cash,
             ),
@@ -2781,7 +2781,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Evaluate model",
             [
-                FormField("input", "Evaluation input path", "data/historical_btcusdc.json"),
+                FormField("input", "Evaluation input path", "data/historical_market.json"),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("threshold", "Evaluation threshold [blank=strategy default]", ""),
                 FormField("calibrate_threshold", "Calibrate threshold [yes/no]", "no"),
@@ -2799,7 +2799,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_evaluate,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 model=payload["model"].strip() or "data/model.json",
                 threshold=threshold,
                 calibrate_threshold=_parse_form_bool(payload["calibrate_threshold"], False),
@@ -2812,7 +2812,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Build full setup",
             [
-                FormField("historical", "Historical candle path", "data/historical_btcusdc.json"),
+                FormField("historical", "Historical candle path", "data/historical_market.json"),
                 FormField("model", "Model artifact path", "data/model.json"),
                 FormField("limit", "Fetch limit", "500"),
                 FormField("batch_size", f"Klines per request [max {max_batch_size}]", "1000"),
@@ -2833,7 +2833,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         if payload is None:
             print("Build full setup cancelled.")
             return 0
-        historical = payload["historical"].strip() or "data/historical_btcusdc.json"
+        historical = payload["historical"].strip() or "data/historical_market.json"
         model = payload["model"].strip() or "data/model.json"
         try:
             limit = _parse_form_int(payload["limit"], label="Fetch limit", default=500, minimum=1)
@@ -2999,7 +2999,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Full report",
             [
-                FormField("input", "Training input path", "data/historical_btcusdc.json"),
+                FormField("input", "Training input path", "data/historical_market.json"),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("readiness", "Include readiness report [yes/no]", "yes"),
                 FormField("online", "Include exchange connectivity [yes/no]", "no"),
@@ -3015,7 +3015,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return await ui.run_blocking(
             command_report,
             argparse.Namespace(
-                input=payload["input"].strip() or "data/historical_btcusdc.json",
+                input=payload["input"].strip() or "data/historical_market.json",
                 model=payload["model"].strip() or "data/model.json",
                 doctor=_parse_form_bool(payload["readiness"], True),
                 online=_parse_form_bool(payload["online"], False),

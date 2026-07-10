@@ -50,7 +50,7 @@ class BacktestRequest:
     start_ms: int | None = None
     end_ms: int | None = None
     model_path: str | None = None
-    data_path: str = "data/historical_btcusdc.json"
+    data_path: str = "data/historical_market.json"
     execution_db: str | None = None
     compute_backend: str | None = None
     starting_cash: float = 1000.0

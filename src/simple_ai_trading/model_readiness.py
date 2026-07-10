@@ -12,7 +12,7 @@ from .model import ModelLoadError, TrainedModel, load_model
 
 _ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
 _LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
-_MICROSTRUCTURE_SCHEMA = "binance-usdm-l2-v1"
+_MICROSTRUCTURE_SCHEMA = "binance-usdm-l2-v2"
 
 
 @dataclass(frozen=True)
