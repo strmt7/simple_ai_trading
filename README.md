@@ -223,6 +223,15 @@ in memory but receive their own exact source-manifest binding and dataset hash.
 This removes repeated multi-year window calculations without allowing future
 features or labels into an earlier fold.
 
+Completed matrices are cached by default inside the same DuckDB warehouse in a
+feature-versioned column table. A cache key binds the exact requested UTC range,
+target/cadence contract, ordered feature contract, and complete target/peer
+source evidence. Writes are transactional; loads reconstruct the matrix and
+recompute its dataset fingerprint before use. Cache misses, hits, keys, and
+source fingerprints are checkpointed in `dataset-cache-events.json` and the
+final report. Use `--no-dataset-cache` only when disk writes are intentionally
+undesired; `--maximum-cached-rows` is enforced and forwarded by both CLI and app.
+
 Long rolling runs persist an atomic fold summary after every completed model.
 `--resume` reopens only a matching plan, reloads each serialized model, parses
 each compressed prediction table, recomputes its metrics and fingerprints, and

@@ -364,6 +364,10 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tape_prequential.model_profile == "regularized"
     assert tape_prequential.feature_set == "full"
     assert tape_prequential.maximum_cached_rows == 15_000_000
+    assert tape_prequential.dataset_cache is True
+    assert cli._parse_args(
+        ["tape-depth-prequential", "--no-dataset-cache"]
+    ).dataset_cache is False
     tape_compare = cli._parse_args(
         [
             "tape-depth-compare",
@@ -1087,6 +1091,8 @@ def test_tape_depth_prequential_plan_is_cli_and_windows_ready(
     run_options = calls["run"][1]  # type: ignore[index]
     assert run_options["symbols"] == ("BTCUSDT", "ETHUSDT", "SOLUSDT")
     assert run_options["compute_backend"] == "directml"
+    assert run_options["maximum_cached_rows"] == 15_000_000
+    assert run_options["dataset_cache"] is True
     assert run_options["plan_only"] is True
     assert "folds=6" in capsys.readouterr().out
 

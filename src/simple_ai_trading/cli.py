@@ -825,6 +825,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_prequential.add_argument(
         "--maximum-cached-rows", type=int, default=15_000_000
     )
+    parser_tape_depth_prequential.add_argument(
+        "--no-dataset-cache",
+        action="store_false",
+        dest="dataset_cache",
+        help="disable the verified DuckDB derived-dataset cache",
+    )
     parser_tape_depth_prequential.add_argument("--max-folds", type=int, default=0)
     parser_tape_depth_prequential.add_argument(
         "--risk-level",
@@ -854,7 +860,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_prequential.add_argument("--plan-only", action="store_true")
     parser_tape_depth_prequential.add_argument("--resume", action="store_true")
     parser_tape_depth_prequential.add_argument("--json", action="store_true")
-    parser_tape_depth_prequential.set_defaults(func=command_tape_depth_prequential)
+    parser_tape_depth_prequential.set_defaults(
+        dataset_cache=True,
+        func=command_tape_depth_prequential,
+    )
 
     parser_tape_depth_compare = subparsers.add_parser(
         "tape-depth-compare",
@@ -6564,6 +6573,10 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
                     getattr(args, "maximum_depth_age_ms", 60_000)
                 ),
                 maximum_rows=int(getattr(args, "maximum_rows", 5_000_000)),
+                maximum_cached_rows=int(
+                    getattr(args, "maximum_cached_rows", 15_000_000)
+                ),
+                dataset_cache=bool(getattr(args, "dataset_cache", True)),
                 max_folds=int(getattr(args, "max_folds", 0)),
                 risk_level=str(getattr(args, "risk_level", "conservative")),
                 model_profile=str(
