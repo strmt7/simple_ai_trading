@@ -335,7 +335,7 @@ immutable and cannot be resumed.
 
 Profile and feature-set selection is a physically separate fail-closed stage.
 Each candidate run receives only the declared initial screening folds. The
-runner refuses a screening window with fewer than two folds or fewer than two
+runner requires 4, 6, 8, or 10 non-overlapping screening folds and at least two
 untouched later folds per symbol. Supply every screening report exactly once;
 selection requires the same symbols, coverage fingerprints, chronological fold
 identities, and dataset fingerprints:
@@ -371,6 +371,13 @@ simple-ai-trading tape-depth-confirm `
 Selection aggregates baseline-relative AUC, Brier, MAE, rank IC, gross
 top-decile return, and fold-positivity measures over screening only. Every
 symbol must beat the direction, prevalence, and zero-return baselines. The
+selector also applies deterministic combinatorially symmetric cross-validation
+to each declared trial's relative forecast-metric rank across screening folds.
+It rejects the study when the estimated probability that an in-sample fold
+winner ranks below the median on its symmetric validation folds exceeds 0.20.
+This is explicitly a forecast-selection overfit diagnostic, not PnL, Sharpe, or
+proof of profitability. The bounded even fold counts keep the complete split
+table auditable while preserving the separately sealed terminal suffix. The
 winner lock hashes every source report and records the full-corpus coverage
 fingerprint, winning profile/feature set, exact terminal boundary, and trial
 count. Loading it recomputes selection from unchanged sources. Confirmation

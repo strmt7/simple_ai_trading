@@ -308,6 +308,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
             "ordered core/tape-derived/cross-asset/full feature ablations",
             "point-in-time peer joins with exact source-manifest boundaries",
             "source-bound screening lock and untouched winner-only terminal confirmation",
+            "symmetric-fold forecast-rank PBO gate across every declared trial",
             "timestamp-defined multi-year rolling folds with non-overlapping evaluations",
             "exact serialized-model replay against hash-bound float64 targets",
             "direction and regression baselines",

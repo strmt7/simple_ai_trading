@@ -1062,10 +1062,10 @@ def run_tape_depth_prequential(
         )
     elif selection_lock is not None:
         raise ValueError("selection_lock is valid only for confirmation")
-    if stage == "screening" and (
-        requested_fold_start != 0 or requested_max_folds < 2
-    ):
-        raise ValueError("screening must start at fold 0 and include at least two folds")
+    if stage == "screening" and requested_max_folds not in {4, 6, 8, 10}:
+        raise ValueError(
+            "screening must start at fold 0 and include 4, 6, 8, or 10 folds"
+        )
 
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)

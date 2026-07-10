@@ -131,7 +131,7 @@ def test_tape_depth_plan_requires_clock_aligned_cadence(cadence: int) -> None:
 
 
 def test_tape_depth_study_stages_fail_before_accessing_unsealed_data(tmp_path) -> None:
-    with pytest.raises(ValueError, match="at least two folds"):
+    with pytest.raises(ValueError, match="4, 6, 8, or 10 folds"):
         run_tape_depth_prequential(
             object(),  # type: ignore[arg-type]
             symbols=("BTCUSDT",),
@@ -180,12 +180,12 @@ def test_tape_depth_confirmation_derives_frozen_winner_and_suffix(
         symbol="BTCUSDT",
         source_first_second_ms=_ms("2019-01-01T00:00:00"),
         source_last_second_ms=_ms("2026-07-09T23:59:59"),
-        fold_start=2,
+        fold_start=4,
     )
     selection = {
         "selected_model_profile": "expressive",
         "selected_feature_set": "cross_asset",
-        "confirmation_fold_start": 2,
+        "confirmation_fold_start": 4,
     }
     calls: dict[str, object] = {}
 
@@ -218,7 +218,7 @@ def test_tape_depth_confirmation_derives_frozen_winner_and_suffix(
 
     plan_options = calls["plan_options"]
     assert isinstance(plan_options, dict)
-    assert plan_options["fold_start"] == 2
+    assert plan_options["fold_start"] == 4
     assert plan_options["max_folds"] == 0
     assert report["config"]["model_profile"] == "expressive"  # type: ignore[index]
     assert report["config"]["feature_set"] == "cross_asset"  # type: ignore[index]
@@ -243,7 +243,7 @@ def test_tape_depth_confirmation_rejects_manual_winner_override(
     selection = {
         "selected_model_profile": "expressive",
         "selected_feature_set": "full",
-        "confirmation_fold_start": 2,
+        "confirmation_fold_start": 4,
     }
     monkeypatch.setattr(
         "simple_ai_trading.tape_depth_comparison.load_verified_tape_depth_selection",
@@ -271,9 +271,9 @@ def test_tape_depth_study_rejects_insufficient_screening_and_confirmation_plans(
         symbol="BTCUSDT",
         source_first_second_ms=_ms("2019-01-01T00:00:00"),
         source_last_second_ms=_ms("2026-07-09T23:59:59"),
-        max_folds=2,
+        max_folds=4,
     )
-    shallow_screening = replace(base, available_fold_count=3)
+    shallow_screening = replace(base, available_fold_count=5)
     monkeypatch.setattr(
         prequential,
         "plan_tape_depth_warehouse",
@@ -285,21 +285,21 @@ def test_tape_depth_study_rejects_insufficient_screening_and_confirmation_plans(
             symbols=("BTCUSDT",),
             output_dir=tmp_path / "shallow-screening",
             study_stage="screening",
-            max_folds=2,
+            max_folds=4,
             plan_only=True,
         )
 
     one_fold = replace(
         base,
-        fold_start=2,
+        fold_start=4,
         max_folds=0,
-        available_fold_count=3,
-        folds=(replace(base.folds[0], fold_index=2),),
+        available_fold_count=5,
+        folds=(replace(base.folds[0], fold_index=4),),
     )
     selection = {
         "selected_model_profile": "regularized",
         "selected_feature_set": "full",
-        "confirmation_fold_start": 2,
+        "confirmation_fold_start": 4,
     }
     monkeypatch.setattr(
         prequential,
