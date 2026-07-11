@@ -747,11 +747,13 @@ def build_executable_microstructure_dataset(
         source_evidence=source_evidence,
         trade_feature_embargo_ms=MICROSTRUCTURE_TRADE_EMBARGO_MS,
     )
-    _validate_dataset(dataset)
+    validate_microstructure_dataset(dataset)
     return dataset
 
 
-def _validate_dataset(dataset: MicrostructureDataset) -> None:
+def validate_microstructure_dataset(dataset: MicrostructureDataset) -> None:
+    """Validate the complete causal feature, label, and execution contract."""
+
     rows = dataset.rows
     if dataset.features.ndim != 2 or dataset.features.shape[1] != len(dataset.feature_names):
         raise ValueError("microstructure feature matrix shape is inconsistent")
@@ -810,6 +812,14 @@ def _validate_dataset(dataset: MicrostructureDataset) -> None:
     )
     if any(not np.all(np.isfinite(value)) for value in numeric):
         raise ValueError("microstructure dataset contains non-finite values")
+    prices = (
+        dataset.entry_bid_price,
+        dataset.entry_ask_price,
+        dataset.fixed_exit_bid_price,
+        dataset.fixed_exit_ask_price,
+    )
+    if any(np.any(value <= 0.0) for value in prices):
+        raise ValueError("microstructure execution prices must be positive")
     if np.any(dataset.entry_spread_bps < 0.0) or np.any(dataset.exit_spread_bps < 0.0):
         raise ValueError("microstructure dataset contains crossed execution quotes")
     if (
@@ -1096,7 +1106,7 @@ def apply_path_aware_lifecycle_targets(
         long_net_bps=long_targets,
         short_net_bps=short_targets,
     )
-    _validate_dataset(output)
+    validate_microstructure_dataset(output)
 
     def count(values: np.ndarray, code: int) -> int:
         return int(np.sum(values == code))
@@ -1133,4 +1143,5 @@ __all__ = [
     "PathTargetEvidence",
     "apply_path_aware_lifecycle_targets",
     "build_executable_microstructure_dataset",
+    "validate_microstructure_dataset",
 ]
