@@ -77,6 +77,10 @@ _PROGRESS_IDENTITIES = {
         "bounded causal temporal-attention ablation",
         "three-seed causal-temporal-attention outcome-mixture",
     ),
+    24: (
+        "UTC-session-local ranking ablation",
+        "three-seed session-local-ranked causal-attention outcome-mixture",
+    ),
 }
 
 
@@ -146,6 +150,12 @@ def _publication_narrative(
             "causal temporal-attention outcome model abstained",
             "The bounded 30-second context improved the policy-window long top-100 mean net return under stress, but the gain did not persist in the calibration window or broader ranked tails, signal eligibility fell sharply, and every nonempty threshold-selection simulation lost money after stress costs.",
             "The next precommitted change must test regime- or horizon-conditioned target formation and ranking stability without relaxing any risk control; the isolated positive policy tail is insufficient evidence of an edge.",
+        )
+    if round_number == 24:
+        return (
+            "session-local ranking model abstained",
+            "Restricting both ranking regularizers to one UTC risk session improved several threshold-selection information-coefficient and short-tail diagnostics, but those gains reversed out of sample, all threshold-selection eligibility disappeared, and the best out-of-sample long top-100 mean net return fell below zero.",
+            "Session-local ranking is rejected; the next precommitted change must restore global ranking and test market-state-conditioned representation without relaxing any execution or risk control.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
