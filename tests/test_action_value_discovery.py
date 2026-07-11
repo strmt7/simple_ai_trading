@@ -5,6 +5,11 @@ from pathlib import Path
 
 import pytest
 
+from tools.publish_action_value_discovery import (
+    _compact_candidate_label,
+    _economics_svg,
+    _forecast_svg,
+)
 from tools.run_action_value_discovery import (
     _canonical_sha256,
     discovery_candidates,
@@ -109,3 +114,29 @@ def test_round_eleven_design_rejects_consumed_registry_tampering(tmp_path) -> No
 
     with pytest.raises(ValueError, match="registry binding"):
         load_discovery_design(design_path)
+
+
+def test_action_value_charts_fit_twelve_candidates_and_high_auc_values() -> None:
+    rows = []
+    for horizon in (300, 600, 900, 1800):
+        for risk in ("conservative", "regular", "aggressive"):
+            rows.append(
+                {
+                    "candidate_id": f"{risk}-h{horizon}",
+                    "fit_status": "trained",
+                    "selection_long_auc": 0.798,
+                    "selection_short_auc": 0.764,
+                    "mean_long_net_bps": -12.2,
+                    "mean_short_net_bps": -12.0,
+                }
+            )
+
+    forecast = _forecast_svg(rows, round_number=11)
+    economics = _economics_svg(rows, round_number=11)
+
+    assert _compact_candidate_label("conservative-h1800") == "C 1800s"
+    assert ">0.9</text>" in forecast
+    assert "conservative-h300" not in forecast
+    assert "conservative-h300" not in economics
+    assert forecast.count(">C 300s</text>") == 1
+    assert economics.count(">A 1800s</text>") == 1

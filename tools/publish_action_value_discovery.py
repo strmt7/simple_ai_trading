@@ -269,6 +269,17 @@ def _svg_header(title: str, subtitle: str, *, width: int = 1120, height: int = 6
     ]
 
 
+def _compact_candidate_label(candidate_id: object) -> str:
+    value = str(candidate_id)
+    risk, separator, horizon = value.rpartition("-h")
+    risk_label = {
+        "conservative": "C",
+        "regular": "R",
+        "aggressive": "A",
+    }.get(risk, risk[:1].upper())
+    return f"{risk_label} {horizon}s" if separator and horizon.isdigit() else value
+
+
 def _forecast_svg(
     rows: Sequence[Mapping[str, object]],
     *,
@@ -277,26 +288,36 @@ def _forecast_svg(
     trained = [row for row in rows if row["fit_status"] == "trained"]
     lines = _svg_header(
         f"Round {round_number} forecast quality",
-        "Selection AUC only; values above 0.5 did not produce positive expected-value actions.",
+        "Selection AUC only; C/R/A denote conservative, regular, and aggressive risk profiles.",
     )
     left, top, chart_width, chart_height = 90, 120, 960, 380
+    auc_values = [
+        _finite(row[field])
+        for row in trained
+        for field in ("selection_long_auc", "selection_short_auc")
+    ]
+    axis_upper = min(
+        1.0,
+        max(0.7, math.ceil((max(auc_values, default=0.7) + 0.03) * 10.0) / 10.0),
+    )
     lines.append(f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>')
-    for tick in range(0, 8):
+    for tick in range(0, int(round(axis_upper * 10.0)) + 1):
         value = tick / 10.0
-        y = top + chart_height - value / 0.7 * chart_height
+        y = top + chart_height - value / axis_upper * chart_height
         lines.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + chart_width}" y2="{y:.1f}" stroke="#e5ebf0"/>')
         lines.append(f'<text x="{left - 14}" y="{y + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:.1f}</text>')
-    y_half = top + chart_height - 0.5 / 0.7 * chart_height
+    y_half = top + chart_height - 0.5 / axis_upper * chart_height
     lines.append(f'<line x1="{left}" y1="{y_half:.1f}" x2="{left + chart_width}" y2="{y_half:.1f}" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/>')
     group = chart_width / max(1, len(trained))
     for index, row in enumerate(trained):
         center = left + group * (index + 0.5)
-        for offset, field, color in ((-20, "selection_long_auc", "#218c8c"), (20, "selection_short_auc", "#d59b2d")):
+        for offset, field, color in ((-14, "selection_long_auc", "#218c8c"), (14, "selection_short_auc", "#d59b2d")):
             value = _finite(row[field])
-            height = value / 0.7 * chart_height
-            lines.append(f'<rect x="{center + offset - 15:.1f}" y="{top + chart_height - height:.1f}" width="30" height="{height:.1f}" fill="{color}"/>')
+            height = value / axis_upper * chart_height
+            lines.append(f'<rect x="{center + offset - 10:.1f}" y="{top + chart_height - height:.1f}" width="20" height="{height:.1f}" fill="{color}"/>')
             lines.append(f'<text x="{center + offset:.1f}" y="{top + chart_height - height - 7:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">{value:.3f}</text>')
-        lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(str(row["candidate_id"]))}</text>')
+        label = _compact_candidate_label(row["candidate_id"])
+        lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(label)}</text>')
     lines.extend([
         '<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long AUC</text>',
         '<rect x="525" y="560" width="16" height="16" fill="#d59b2d"/><text x="549" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short AUC</text>',
@@ -343,7 +364,8 @@ def _economics_svg(
             lines.append(f'<rect x="{center + offset - 11:.1f}" y="{y:.1f}" width="22" height="{height:.1f}" fill="{color}"/>')
             label_y = value_y - 7 if value >= 0 else value_y + 17
             lines.append(f'<text x="{center + offset:.1f}" y="{label_y:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">{value:.2f}</text>')
-        lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(str(row["candidate_id"]))}</text>')
+        label = _compact_candidate_label(row["candidate_id"])
+        lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(label)}</text>')
     lines.extend([
         '<text x="52" y="330" transform="rotate(-90 52 330)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Basis points per trade</text>',
         '<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long executable label</text>',

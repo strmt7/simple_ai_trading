@@ -9,3 +9,4 @@ round,stage,periods,selection_contaminated,horizon_seconds,feature_set,risk_leve
 8,untouched exact-BBO confirmation,2023-07-08;2023-10-21;2024-02-05,False,20,cross_asset,conservative,0.5556768464568986,0.09683608419758453,19,12,0.1608861428941307,-11.83934747255543,rejected,confirmation report + period checkpoints
 9,exact-BBO action-value discovery,2023-08-14..2023-08-20,True,60;120;300;900,l1-tape-causal-v6,conservative;regular;aggressive,0.5746323903348888,,0,0,,,rejected,action-value Round 9 report
 10,exact-BBO action-value discovery,2023-09-04..2023-09-10,True,300;600;900;1800,l1-tape-causal-v6,conservative;regular;aggressive,0.5127146961205787,,0,0,,,rejected,action-value Round 10 report
+11,exact-BBO action-value discovery,2023-08-14..2023-09-24,True,300;600;900;1800,l1-tape-causal-v7,conservative;regular;aggressive,0.7807461844758865,,0,0,,,rejected,action-value Round 11 report
