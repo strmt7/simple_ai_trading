@@ -392,9 +392,9 @@ to `-10.78` bps. Although 17,858 short rows had positive model-predicted edge,
 every non-overlapping threshold policy that used those rows had non-positive
 realized drawdown-adjusted utility on its policy segment. The fitted policy
 therefore abstained, all five artifacts were rejected, and no zero-trade return
-or equity curve was fabricated. The checksummed tables and current graphs are
-retained in
-[`model-research/action-value/latest`](model-research/action-value/latest/README.md).
+or equity curve was fabricated. Its immutable publication is commit `da8f9f5`;
+the cumulative progress table retains the round while the `latest` directory
+contains only the newest round, as required by the repository policy.
 
 This result is consistent with two constraints used in the implementation:
 [LOBFrame](https://arxiv.org/abs/2403.09267) cautions that predictive scores do
@@ -407,6 +407,35 @@ parameter bounds instead of improving calibration. That defect is remediated
 with base-rate initialization and loss-decreasing damped Newton steps, but the
 sealed Round 9 evidence remains unchanged and the dates are permanently
 selection-consumed.
+
+Round 10 was precommitted in `6f291ff` and pinned the calibration repair at
+`58e6ac5` before opening `2023-09-04` through `2023-09-10`. Corpus certificate
+`5782bd80...39ab` reconciles exactly seven official BBO and seven official
+trade archives against full inventories of 320 and 2,497 files. The bounded
+window contains 50,579,048 BBO events and 14,341,489 trades; every sidecar hash
+matched and every invalid, duplicate, ordering, crossed-book, and update-ID
+regression count was zero.
+
+Nine candidates failed before fitting because the old support gate required
+256 examples of both outcomes in each train, early-stop, and calibration role.
+This was not a general data shortage. For example, regular 900 seconds had
+5,353 profitable long training rows and 2,126 calibration rows, but only 201
+long and 116 short early-stop positives. The three 1,800-second candidates
+trained successfully. Selection long AUC ranged from `0.46421` to `0.60627`
+and short AUC from `0.28943` to `0.56122`; all mean long/short executable labels
+remained below `-12.28` bps. The models produced 158 positive predicted-edge
+policy rows, but no policy met the 20-trade minimum with positive
+drawdown-adjusted utility, so all artifacts abstained and were rejected.
+
+The deterministic post-round diagnostic does not reclassify top-score rows as
+trades and does not access terminal data. It shows why threshold relaxation
+would be wrong: the regular 1,800-second model's top 100 selection rows predicted
+`+1.8338` bps mean edge but realized `-15.5390` bps with zero profitable rows.
+The aggressive top 100 realized `-27.0188` bps with zero profitable rows. These
+counts, class-support tables, model hashes, and top-score outcomes are retained
+in
+[`model-research/action-value/latest`](model-research/action-value/latest/README.md)
+under diagnostic SHA-256 `7ca872c2...ea90`. Round 10 is not profitable evidence.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

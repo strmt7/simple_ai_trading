@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620">
 <rect width="100%" height="100%" fill="#f7f9fb"/>
-<text x="52" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#18242f">Round 9 forecast quality</text>
+<text x="52" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#18242f">Round 10 forecast quality</text>
 <text x="52" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#51606d">Selection AUC only; values above 0.5 did not produce positive expected-value actions.</text>
 <rect x="90" y="120" width="960" height="380" fill="#ffffff" stroke="#d8e0e7"/>
 <line x1="90" y1="500.0" x2="1050" y2="500.0" stroke="#e5ebf0"/>
@@ -20,31 +20,21 @@
 <line x1="90" y1="120.0" x2="1050" y2="120.0" stroke="#e5ebf0"/>
 <text x="76" y="125.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.7</text>
 <line x1="90" y1="228.6" x2="1050" y2="228.6" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/>
-<rect x="151.0" y="194.3" width="30" height="305.7" fill="#218c8c"/>
-<text x="166.0" y="187.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.563</text>
-<rect x="191.0" y="172.7" width="30" height="327.3" fill="#d59b2d"/>
-<text x="206.0" y="165.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.603</text>
-<text x="186.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">regular-h300</text>
-<rect x="343.0" y="174.5" width="30" height="325.5" fill="#218c8c"/>
-<text x="358.0" y="167.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.600</text>
-<rect x="383.0" y="183.4" width="30" height="316.6" fill="#d59b2d"/>
-<text x="398.0" y="176.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.583</text>
-<text x="378.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">aggressive-h300</text>
-<rect x="535.0" y="192.8" width="30" height="307.2" fill="#218c8c"/>
-<text x="550.0" y="185.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.566</text>
-<rect x="575.0" y="187.1" width="30" height="312.9" fill="#d59b2d"/>
-<text x="590.0" y="180.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.576</text>
-<text x="570.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">conservative-h900</text>
-<rect x="727.0" y="181.1" width="30" height="318.9" fill="#218c8c"/>
-<text x="742.0" y="174.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.588</text>
-<rect x="767.0" y="197.4" width="30" height="302.6" fill="#d59b2d"/>
-<text x="782.0" y="190.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.557</text>
-<text x="762.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">regular-h900</text>
-<rect x="919.0" y="206.3" width="30" height="293.7" fill="#218c8c"/>
-<text x="934.0" y="199.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.541</text>
-<rect x="959.0" y="191.0" width="30" height="309.0" fill="#d59b2d"/>
-<text x="974.0" y="184.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.569</text>
-<text x="954.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">aggressive-h900</text>
+<rect x="215.0" y="248.0" width="30" height="252.0" fill="#218c8c"/>
+<text x="230.0" y="241.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.464</text>
+<rect x="255.0" y="195.3" width="30" height="304.7" fill="#d59b2d"/>
+<text x="270.0" y="188.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.561</text>
+<text x="250.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">conservative-h1800</text>
+<rect x="535.0" y="170.9" width="30" height="329.1" fill="#218c8c"/>
+<text x="550.0" y="163.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.606</text>
+<rect x="575.0" y="269.6" width="30" height="230.4" fill="#d59b2d"/>
+<text x="590.0" y="262.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.424</text>
+<text x="570.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">regular-h1800</text>
+<rect x="855.0" y="178.1" width="30" height="321.9" fill="#218c8c"/>
+<text x="870.0" y="171.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.593</text>
+<rect x="895.0" y="342.9" width="30" height="157.1" fill="#d59b2d"/>
+<text x="910.0" y="335.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.289</text>
+<text x="890.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">aggressive-h1800</text>
 <rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long AUC</text>
 <rect x="525" y="560" width="16" height="16" fill="#d59b2d"/><text x="549" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short AUC</text>
 <line x1="675" y1="568" x2="705" y2="568" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/><text x="713" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Random</text>

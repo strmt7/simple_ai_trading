@@ -1,27 +1,26 @@
-# Action-Value Round 9 Evidence
+# Action-Value Round 10 Evidence
 
 Status: **rejected**. This is checksummed Binance USD-M discovery evidence, not
 a profitability, execution, or trading-authority claim.
 
-- UTC window: 2023-08-14 through 2023-08-20 (now consumed for selection)
+- UTC window: 2023-09-04 through 2023-09-10 (now consumed for selection)
 - Precommitted candidates: 12
-- Statistical fit failures: 7
-- Trained candidates: 5
+- Statistical fit failures: 9
+- Trained candidates: 3
 - Unrejected candidates: 0
-- Policy and selection trades: 0
-- Design SHA-256: `a6ac6be9d4322f1b78a5894c72e131b5ef596712dfd2decaff32c969373e76e6`
-- Corpus certificate SHA-256: `4d03bd2ae6e2b19f2fbdfb5bd6d3c0b3dc89020346cdb3ac435acc253c492edd`
-- Implementation commit: `8a0eec2f56b8a4a727a5dacdea098ed51b9ba917`
+- Policy trades across trained candidates: 0
+- Selection trades across trained candidates: 0
+- Positive predicted-edge policy rows: 158
+- Design SHA-256: `a2aa45f8245a12a85ea94365333f621fc2824a425ad6731105253a138fb0e049`
+- Corpus certificate SHA-256: `5782bd80e2de50fe651471d5fb7e89b4449c584299731fb80967378e732639ab`
+- Implementation commit: `58e6ac5f75bccb75739c6084c4861ba2ecc981fe`
 
-The 60/120-second candidates and conservative 300-second candidate lacked the
-minimum profitable/non-profitable class support after actual spread, 5 bps
-taker fee per side, and 1 bps additional slippage per side. The five remaining
-models produced some short-side positive predicted-edge rows, but every
-non-overlapping threshold policy using them had non-positive realized
-drawdown-adjusted utility on the policy segment, so abstention was financially
-correct under the fitted policy. A post-round
-diagnostic found a bounded-Newton calibration collapse; it is fixed separately
-and does not retroactively alter this evidence.
+No trained candidate selected an executable trade; per-trade mean return
+is undefined and no equity curve is generated.
+
+Fit errors and every trained artifact hash are retained verbatim
+in the source table. A failed fit is not counted as a zero-return model, and an
+abstaining model is not presented as profitable.
 
 ## Charts
 
@@ -34,6 +33,9 @@ and does not retroactively alter this evidence.
 ![Research progress](charts/research-progress.svg)
 
 The source tables are [candidates.csv](candidates.csv) and
-[progress.csv](progress.csv). Every trained artifact SHA-256 and every fit error
-is retained in `candidates.csv`; no zero-trade equity curve is fabricated.
-Regenerate with `python tools/publish_action_value_discovery.py`.
+[progress.csv](progress.csv); reconstructed class support and top-score outcomes
+are in [diagnostics.json](diagnostics.json) when required by the round. Every
+trained artifact SHA-256 and every fit error is retained in `candidates.csv`;
+no zero-trade equity curve is fabricated.
+Regenerate by passing this round's `--design`, `--evidence-root`, and required
+`--diagnostics` to `python tools/publish_action_value_discovery.py`.
