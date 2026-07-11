@@ -1525,7 +1525,7 @@ def _apply_platt_scaling(
 
 
 def _fit_platt_scaling(probabilities: np.ndarray, labels: np.ndarray) -> tuple[float, float]:
-    """Fit a bounded logistic calibration on the chronological tuning segment."""
+    """Fit bounded Platt scaling with damped, loss-decreasing Newton steps."""
 
     values = np.clip(np.asarray(probabilities, dtype=np.float64), 1e-6, 1.0 - 1e-6)
     outcomes = np.asarray(labels, dtype=np.float64)
@@ -1535,21 +1535,44 @@ def _fit_platt_scaling(probabilities: np.ndarray, labels: np.ndarray) -> tuple[f
         raise ValueError("probability calibration requires both outcomes")
     logits = np.log(values / (1.0 - values))
     slope = 1.0
-    intercept = 0.0
-    regularization = 1e-3
-    for _ in range(50):
-        linear = np.clip(slope * logits + intercept, -30.0, 30.0)
-        fitted = 1.0 / (1.0 + np.exp(-linear))
+    base_rate = float(np.clip(np.mean(outcomes), 1e-6, 1.0 - 1e-6))
+    intercept = float(
+        np.clip(
+            math.log(base_rate / (1.0 - base_rate)) - np.mean(logits),
+            -10.0,
+            10.0,
+        )
+    )
+    regularization = 1e-3 * len(values)
+    intercept_regularization = 0.01 * regularization
+
+    def objective(candidate_slope: float, candidate_intercept: float) -> float:
+        linear = candidate_slope * logits + candidate_intercept
+        return float(
+            np.sum(np.logaddexp(0.0, linear) - outcomes * linear)
+            + 0.5 * regularization * (candidate_slope - 1.0) ** 2
+            + 0.5 * intercept_regularization * candidate_intercept**2
+        )
+
+    for _ in range(100):
+        linear = slope * logits + intercept
+        fitted = np.exp(-np.logaddexp(0.0, -linear))
         residual = fitted - outcomes
         weights = np.maximum(fitted * (1.0 - fitted), 1e-8)
         gradient = np.asarray(
-            [np.sum(residual * logits) + regularization * (slope - 1.0), np.sum(residual)],
+            [
+                np.sum(residual * logits) + regularization * (slope - 1.0),
+                np.sum(residual) + intercept_regularization * intercept,
+            ],
             dtype=np.float64,
         )
         hessian = np.asarray(
             [
                 [np.sum(weights * logits * logits) + regularization, np.sum(weights * logits)],
-                [np.sum(weights * logits), np.sum(weights) + regularization],
+                [
+                    np.sum(weights * logits),
+                    np.sum(weights) + intercept_regularization,
+                ],
             ],
             dtype=np.float64,
         )
@@ -1557,9 +1580,22 @@ def _fit_platt_scaling(probabilities: np.ndarray, labels: np.ndarray) -> tuple[f
             step = np.linalg.solve(hessian, gradient)
         except np.linalg.LinAlgError:
             break
-        slope = float(np.clip(slope - step[0], 0.05, 10.0))
-        intercept = float(np.clip(intercept - step[1], -10.0, 10.0))
-        if float(np.max(np.abs(step))) < 1e-8:
+        current_objective = objective(slope, intercept)
+        accepted_scale = 0.0
+        for line_search_step in range(25):
+            scale = 2.0 ** (-line_search_step)
+            candidate_slope = float(np.clip(slope - scale * step[0], 0.05, 10.0))
+            candidate_intercept = float(
+                np.clip(intercept - scale * step[1], -10.0, 10.0)
+            )
+            if objective(candidate_slope, candidate_intercept) <= current_objective:
+                slope = candidate_slope
+                intercept = candidate_intercept
+                accepted_scale = scale
+                break
+        if accepted_scale == 0.0 or float(
+            np.max(np.abs(accepted_scale * step))
+        ) < 1e-8:
             break
     return slope, intercept
 
