@@ -50,6 +50,7 @@ _BETA_1 = 0.9
 _BETA_2 = 0.99
 _EPSILON = 1.0e-7
 _OUTPUTS_PER_SIDE = 5
+_UTC_DAY_MS = 86_400_000
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ class OutcomeMixtureArchitectureSpec:
     ranking_loss_mode: str = "correlation"
     pairwise_ranking_loss_weight: float = 0.0
     temporal_pooling_mode: str = "endpoint"
+    ranking_scope: str = "global_batch"
 
     def __post_init__(self) -> None:
         weights = (
@@ -87,6 +89,7 @@ class OutcomeMixtureArchitectureSpec:
             self.side_tower_mode not in {"shared", "independent"}
             or self.ranking_loss_mode not in {"correlation", "pairwise_net_return"}
             or self.temporal_pooling_mode not in {"endpoint", "causal_attention"}
+            or self.ranking_scope not in {"global_batch", "utc_session"}
             or (self.temporal_pooling_mode == "endpoint" and self.sequence_length != 1)
             or (
                 self.temporal_pooling_mode == "causal_attention"
@@ -221,6 +224,8 @@ def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
         contract.pop("pairwise_ranking_loss_weight")
     if spec.temporal_pooling_mode == "endpoint":
         contract.pop("temporal_pooling_mode")
+    if spec.ranking_scope == "global_batch":
+        contract.pop("ranking_scope")
     return contract
 
 
@@ -402,7 +407,83 @@ def _weighted_pairwise_ranking_loss(prediction, target, sample_weight):
     return numerator / torch.clamp(denominator, min=1.0e-8)
 
 
-def _loss(output, target, sample_weight, prevalence, spec):
+def _contiguous_group_slices(group_ids: np.ndarray) -> tuple[tuple[int, int], ...]:
+    groups = np.asarray(group_ids, dtype=np.int64)
+    if groups.ndim != 1 or groups.size == 0:
+        raise ValueError("outcome-mixture ranking groups are invalid")
+    boundaries = np.flatnonzero(groups[1:] != groups[:-1]) + 1
+    starts = np.concatenate(([0], boundaries))
+    ends = np.concatenate((boundaries, [len(groups)]))
+    if len(np.unique(groups)) != len(starts):
+        raise ValueError("outcome-mixture ranking groups are not contiguous")
+    slices = tuple(
+        (int(start), int(end))
+        for start, end in zip(starts, ends, strict=True)
+        if end - start >= 2
+    )
+    return slices
+
+
+def _session_grouped_training_order(
+    session_ids: np.ndarray, rng: np.random.Generator
+) -> np.ndarray:
+    sessions = np.asarray(session_ids, dtype=np.int64)
+    if sessions.ndim != 1 or sessions.size == 0 or np.any(np.diff(sessions) < 0):
+        raise ValueError("outcome-mixture training sessions are invalid")
+    boundaries = np.flatnonzero(sessions[1:] != sessions[:-1]) + 1
+    chunks = np.split(np.arange(len(sessions), dtype=np.int64), boundaries)
+    session_order = rng.permutation(len(chunks))
+    shuffled: list[np.ndarray] = []
+    for index in session_order:
+        chunk = chunks[int(index)].copy()
+        rng.shuffle(chunk)
+        shuffled.append(chunk)
+    order = np.concatenate(shuffled)
+    if not np.array_equal(np.sort(order), np.arange(len(sessions), dtype=np.int64)):
+        raise ValueError("outcome-mixture training session order is invalid")
+    return order
+
+
+def _scoped_ranking_loss(
+    prediction,
+    target,
+    sample_weight,
+    *,
+    mode: str,
+    group_slices: tuple[tuple[int, int], ...] | None,
+):
+    torch, _nn, _functional = _torch_modules()
+    loss_function = (
+        _weighted_ranking_loss
+        if mode == "correlation"
+        else _weighted_pairwise_ranking_loss
+    )
+    if group_slices is None:
+        return loss_function(prediction, target, sample_weight)
+    if not group_slices:
+        return prediction.new_zeros(())
+    numerator = prediction.new_zeros(())
+    denominator = prediction.new_zeros(())
+    for start, end in group_slices:
+        group_weight = torch.sum(sample_weight[start:end])
+        numerator = numerator + group_weight * loss_function(
+            prediction[start:end],
+            target[start:end],
+            sample_weight[start:end],
+        )
+        denominator = denominator + group_weight
+    return numerator / torch.clamp(denominator, min=1.0e-8)
+
+
+def _loss(
+    output,
+    target,
+    sample_weight,
+    prevalence,
+    spec,
+    *,
+    ranking_group_slices: tuple[tuple[int, int], ...] | None = None,
+):
     torch, _nn, functional = _torch_modules()
     (
         probability,
@@ -455,16 +536,24 @@ def _loss(output, target, sample_weight, prevalence, spec):
     )
     weighted = torch.sum(per_row * sample_weight) / torch.sum(sample_weight)
     if spec.ranking_loss_weight > 0.0:
-        ranking_loss = (
-            _weighted_ranking_loss(expected, target, sample_weight)
-            if spec.ranking_loss_mode == "correlation"
-            else _weighted_pairwise_ranking_loss(expected, target, sample_weight)
+        ranking_loss = _scoped_ranking_loss(
+            expected,
+            target,
+            sample_weight,
+            mode=spec.ranking_loss_mode,
+            group_slices=ranking_group_slices,
         )
         weighted = weighted + spec.ranking_loss_weight * ranking_loss
     if spec.pairwise_ranking_loss_weight > 0.0:
         weighted = weighted + (
             spec.pairwise_ranking_loss_weight
-            * _weighted_pairwise_ranking_loss(expected, target, sample_weight)
+            * _scoped_ranking_loss(
+                expected,
+                target,
+                sample_weight,
+                mode="pairwise_net_return",
+                group_slices=ranking_group_slices,
+            )
         )
     if probability.shape != target.shape:
         raise ValueError("outcome-mixture decoded head shape is invalid")
@@ -770,10 +859,16 @@ def train_outcome_mixture_model(
     prepared_train = prepared_split(train, train_weights)
     prepared_tuning = prepared_split(tuning, tuning_weights)
 
+    def epoch_order(endpoints: np.ndarray, training: bool) -> np.ndarray:
+        if not training:
+            return np.arange(len(endpoints), dtype=np.int64)
+        if spec.ranking_scope == "global_batch":
+            return rng.permutation(len(endpoints))
+        session_ids = dataset.decision_time_ms[endpoints] // _UTC_DAY_MS
+        return _session_grouped_training_order(session_ids, rng)
+
     def epoch_loss(endpoints, weights, training, prepared) -> float:
-        order = (
-            rng.permutation(len(endpoints)) if training else np.arange(len(endpoints))
-        )
+        order = epoch_order(endpoints, training)
         total = 0.0
         total_weight = 0.0
         network.train(training)
@@ -804,13 +899,27 @@ def train_outcome_mixture_model(
                 x = prepared[0].index_select(0, device_positions)
                 y = prepared[1].index_select(0, device_positions)
                 weight = prepared[2].index_select(0, device_positions)
+            ranking_group_slices = (
+                _contiguous_group_slices(
+                    dataset.decision_time_ms[batch_endpoints] // _UTC_DAY_MS
+                )
+                if spec.ranking_scope == "utc_session"
+                else None
+            )
             if training:
                 optimizer.zero_grad(set_to_none=True)
             with (
                 torch.set_grad_enabled(training),
                 _directml_cpu_fallback_guard(backend.kind),
             ):
-                loss = _loss(network(x), y, weight, prevalence, spec)
+                loss = _loss(
+                    network(x),
+                    y,
+                    weight,
+                    prevalence,
+                    spec,
+                    ranking_group_slices=ranking_group_slices,
+                )
                 if not bool(torch.isfinite(loss).detach().cpu().item()):
                     raise ValueError("outcome-mixture loss became non-finite")
                 if training:

@@ -425,6 +425,43 @@ _ROUND_CONTRACTS = {
             },
         },
     },
+    24: {
+        "purpose": "consumed_data_utc_session_local_ranking_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "ranking_scope": "utc_session",
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 146_090,
+        "predecessor": {
+            "round": 23,
+            "design_sha256": (
+                "cb65cb8d0e0f56763dca31e88b7cd572f826534c4bbf36200207ef8e1bb5a207"
+            ),
+            "source_report_canonical_sha256": (
+                "0696a6253ccea7048da72180db9ee94ed430d979956d24319c74c816711213fb"
+            ),
+            "publication_sha256": (
+                "d0b589af0b339ac0e76ff098e687175cabcc3233acbbf28784a6efff91762c80"
+            ),
+            "finding": (
+                "Round 23 improved the out-of-sample long top-100 mean net "
+                "return to +0.940312 bps under stress, but the corresponding "
+                "threshold-selection tail and every broader ranked tail remained "
+                "negative, signal eligibility fell sharply, and every nonempty "
+                "threshold-selection simulation lost money. Round 24 preserves "
+                "the model, data, targets, costs, and risk controls while limiting "
+                "both ranking regularizers to comparisons within the same UTC risk "
+                "session used by the mandatory same-day exit contract."
+            ),
+        },
+    },
 }
 
 
@@ -584,6 +621,8 @@ def load_outcome_mixture_design(
         != round_contract.get("pairwise_ranking_loss_weight", 0.0)
         or model_spec.temporal_pooling_mode
         != round_contract.get("temporal_pooling_mode", "endpoint")
+        or model_spec.ranking_scope
+        != round_contract.get("ranking_scope", "global_batch")
         or model_spec.sequence_length != round_contract.get("sequence_length", 1)
         or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
         or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
