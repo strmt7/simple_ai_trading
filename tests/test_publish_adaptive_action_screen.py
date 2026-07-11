@@ -134,7 +134,9 @@ def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
     namespace = "{http://www.w3.org/2000/svg}"
     texts = [node for node in tail.findall(f"{namespace}text") if node.text]
     value_label = next(node for node in texts if node.text == "-21.99")
-    category_label = next(node for node in texts if node.text == "Out-of-sample short")
+    category_label = next(
+        node for node in texts if node.text == "Policy validation short"
+    )
 
     assert float(value_label.attrib["y"]) + 20.0 < float(category_label.attrib["y"])
     assert tail.find(f"{namespace}title").text.startswith("Round 17")
