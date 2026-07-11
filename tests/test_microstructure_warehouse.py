@@ -563,6 +563,76 @@ def test_completed_manifest_with_corrupt_rows_is_atomically_reingested(
     assert derived_rows == 2
 
 
+def test_legacy_manifest_reingest_skips_unused_physical_scan(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    period = "2026-07-09"
+    cache_root = tmp_path / "cache"
+    archive_path = (
+        cache_root
+        / "binance"
+        / "usdm"
+        / "trades"
+        / "BTCUSDT"
+        / f"BTCUSDT-trades-{period}.zip"
+    )
+    archive_path.parent.mkdir(parents=True)
+    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            f"BTCUSDT-trades-{period}.csv",
+            "id,price,qty,quote_qty,time,is_buyer_maker\n"
+            "1,100.0,1.0,100.0,1783555201000,false\n"
+            "2,101.0,2.0,202.0,1783555202000,true\n",
+        )
+    source_sha256 = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+    monkeypatch.setattr(
+        warehouse_module,
+        "_fetch_checksum",
+        lambda *_args, **_kwargs: source_sha256,
+    )
+    kwargs = {
+        "symbol": "BTCUSDT",
+        "data_type": "trades",
+        "period": period,
+        "expected_bytes": archive_path.stat().st_size,
+        "official_last_modified": "2026-07-10T00:00:00Z",
+        "official_etag": _ZIP_ETAG,
+        "checksum_object_size_bytes": _CHECKSUM_BYTES,
+        "checksum_last_modified": "2026-07-10T00:00:00Z",
+        "checksum_etag": _CHECKSUM_ETAG,
+        "session": object(),
+    }
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "legacy-repair.duckdb",
+        cache_root=cache_root,
+        memory_limit="256MB",
+        threads=1,
+    )
+    try:
+        first = warehouse.ingest_public_archive(**kwargs)
+        warehouse.connect().execute(
+            "UPDATE archive_manifest SET schema_version = 'legacy-v1' "
+            "WHERE archive_id = ?",
+            [first.archive_id],
+        )
+
+        def fail_unused_scan(**_kwargs):
+            raise AssertionError("legacy manifests must not trigger an unused physical scan")
+
+        monkeypatch.setattr(warehouse, "_physical_archive_stats", fail_unused_scan)
+        repaired = warehouse.ingest_public_archive(**kwargs)
+        schema_version = warehouse.connect().execute(
+            "SELECT schema_version FROM archive_manifest WHERE archive_id = ?",
+            [first.archive_id],
+        ).fetchone()[0]
+    finally:
+        warehouse.close()
+
+    assert repaired.status == "complete"
+    assert schema_version == warehouse_module.TICK_WAREHOUSE_SCHEMA_VERSION
+
+
 def test_book_ticker_ingest_canonicalizes_interleaved_source_rows(tmp_path) -> None:
     csv_path = tmp_path / "BTCUSDT-bookTicker-2024-02-15.csv"
     csv_path.write_text(
