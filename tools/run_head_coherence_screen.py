@@ -40,7 +40,9 @@ from simple_ai_trading.microstructure_cache import (  # noqa: E402
     save_microstructure_dataset_cache,
 )
 from simple_ai_trading.microstructure_features import (  # noqa: E402
+    MICROSTRUCTURE_FEATURE_VERSION,
     build_executable_microstructure_dataset,
+    microstructure_feature_source_contract,
 )
 from simple_ai_trading.microstructure_warehouse import (  # noqa: E402
     MicrostructureWarehouse,
@@ -414,6 +416,7 @@ def _load_corpus(
     memory_limit: str,
     threads: int,
     progress,
+    feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
 ):
     data = design["data"]
     execution = design["execution"]
@@ -444,6 +447,11 @@ def _load_corpus(
             ),
         )
         source_evidence["corpus_certificate"] = certificate
+        feature_source_contract = microstructure_feature_source_contract(
+            feature_version
+        )
+        if feature_source_contract is not None:
+            source_evidence["feature_source_contract"] = feature_source_contract
         cache_parameters = {
             "symbol": str(data["symbol"]),
             "requested_start_ms": start_ms,
@@ -464,6 +472,7 @@ def _load_corpus(
                 data["full_history_inventory_required"]
             ),
             "source_evidence": source_evidence,
+            "feature_version": feature_version,
         }
         cache_key = microstructure_dataset_cache_key(**cache_parameters)
         progress("cache-lookup")
@@ -471,7 +480,7 @@ def _load_corpus(
         cache_state = "hit"
         if dataset is None:
             cache_state = "build"
-            progress("exact-bbo-dataset-build")
+            progress("microstructure-dataset-build", feature_version=feature_version)
             dataset = build_executable_microstructure_dataset(
                 warehouse,
                 symbol=str(data["symbol"]),
@@ -492,6 +501,7 @@ def _load_corpus(
                 require_full_history_inventory=bool(
                     data["full_history_inventory_required"]
                 ),
+                feature_version=feature_version,
             )
             progress("cache-write", dataset_rows=dataset.rows)
             cache_key = save_microstructure_dataset_cache(

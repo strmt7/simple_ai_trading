@@ -15,10 +15,13 @@ from simple_ai_trading.microstructure_cache import (
     save_microstructure_dataset_cache,
 )
 from simple_ai_trading.microstructure_features import (
+    AGGREGATE_DEPTH_FEATURE_NAMES,
+    AGGREGATE_DEPTH_FEATURE_VERSION,
     MICROSTRUCTURE_FEATURE_NAMES,
     MICROSTRUCTURE_FEATURE_VERSION,
     MICROSTRUCTURE_TRADE_EMBARGO_MS,
     MicrostructureDataset,
+    microstructure_feature_source_contract,
 )
 from simple_ai_trading.microstructure_warehouse import MicrostructureWarehouse
 
@@ -99,15 +102,14 @@ def _parameters(dataset: MicrostructureDataset) -> dict[str, object]:
         "horizon_seconds": dataset.horizon_seconds,
         "total_latency_ms": dataset.total_latency_ms,
         "taker_fee_bps": dataset.taker_fee_bps,
-        "additional_slippage_bps_per_side": (
-            dataset.additional_slippage_bps_per_side
-        ),
+        "additional_slippage_bps_per_side": (dataset.additional_slippage_bps_per_side),
         "reference_order_notional_quote": dataset.reference_order_notional_quote,
         "max_l1_participation": dataset.max_l1_participation,
         "max_quote_age_ms": dataset.max_quote_age_ms,
         "decision_cadence_seconds": dataset.decision_cadence_seconds,
         "require_full_history_inventory": False,
         "source_evidence": dataset.source_evidence,
+        "feature_version": dataset.feature_version,
     }
 
 
@@ -163,6 +165,49 @@ def test_exact_bbo_cache_round_trip_and_collision_detection(tmp_path) -> None:
             )
 
 
+def test_versioned_cache_isolates_sampled_aggregate_depth_features(tmp_path) -> None:
+    base = _dataset()
+    depth_features = np.zeros(
+        (base.rows, len(AGGREGATE_DEPTH_FEATURE_NAMES)), dtype=np.float32
+    )
+    depth_features[:, : len(base.feature_names)] = base.features
+    depth_features[
+        :, AGGREGATE_DEPTH_FEATURE_NAMES.index("aggregate_depth_available")
+    ] = 1.0
+    source_evidence = dict(base.source_evidence or {})
+    source_evidence["feature_source_contract"] = microstructure_feature_source_contract(
+        AGGREGATE_DEPTH_FEATURE_VERSION
+    )
+    depth = replace(
+        base,
+        feature_version=AGGREGATE_DEPTH_FEATURE_VERSION,
+        feature_names=AGGREGATE_DEPTH_FEATURE_NAMES,
+        features=depth_features,
+        source_evidence=source_evidence,
+    )
+    with MicrostructureWarehouse(tmp_path / "warehouse.duckdb") as warehouse:
+        base_key = save_microstructure_dataset_cache(
+            warehouse,
+            base,
+            requested_start_ms=0,
+            requested_end_ms=1_000_000,
+            require_full_history_inventory=False,
+        )
+        depth_key = save_microstructure_dataset_cache(
+            warehouse,
+            depth,
+            requested_start_ms=0,
+            requested_end_ms=1_000_000,
+            require_full_history_inventory=False,
+        )
+        assert base_key != depth_key
+        loaded = load_microstructure_dataset_cache(warehouse, **_parameters(depth))
+        assert loaded is not None
+        assert loaded.feature_version == AGGREGATE_DEPTH_FEATURE_VERSION
+        assert loaded.feature_names == AGGREGATE_DEPTH_FEATURE_NAMES
+        np.testing.assert_array_equal(loaded.features, depth.features)
+
+
 def test_exact_bbo_cache_detects_row_tampering(tmp_path) -> None:
     dataset = _dataset()
     with MicrostructureWarehouse(tmp_path / "warehouse.duckdb") as warehouse:
@@ -204,7 +249,9 @@ def test_exact_bbo_cache_key_rejects_empty_interval() -> None:
         microstructure_dataset_cache_key(**parameters)
 
 
-def test_exact_bbo_cache_rejects_missing_evidence_and_non_base_dataset(tmp_path) -> None:
+def test_exact_bbo_cache_rejects_missing_evidence_and_non_base_dataset(
+    tmp_path,
+) -> None:
     dataset = _dataset()
     with MicrostructureWarehouse(tmp_path / "warehouse.duckdb") as warehouse:
         with pytest.raises(ValueError, match="cannot be cached"):
@@ -228,10 +275,13 @@ def test_exact_bbo_cache_rejects_missing_evidence_and_non_base_dataset(tmp_path)
 def test_exact_bbo_cache_miss_and_manifest_drift(tmp_path) -> None:
     dataset = _dataset()
     with MicrostructureWarehouse(tmp_path / "warehouse.duckdb") as warehouse:
-        assert load_microstructure_dataset_cache(
-            warehouse,
-            **_parameters(dataset),
-        ) is None
+        assert (
+            load_microstructure_dataset_cache(
+                warehouse,
+                **_parameters(dataset),
+            )
+            is None
+        )
         cache_key = save_microstructure_dataset_cache(
             warehouse,
             dataset,
