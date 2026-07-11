@@ -9,6 +9,7 @@ import json
 import math
 import os
 from pathlib import Path
+import struct
 from typing import Callable, Mapping
 from uuid import uuid4
 import warnings
@@ -984,6 +985,39 @@ def _artifact_metadata(model: TrainedOutcomeMixtureModel) -> dict[str, str]:
     }
 
 
+def _canonicalize_safetensors_header(path: Path) -> None:
+    with path.open("r+b") as handle:
+        prefix = handle.read(8)
+        if len(prefix) != 8:
+            raise ValueError("outcome-mixture artifact header is truncated")
+        header_bytes = int(struct.unpack("<Q", prefix)[0])
+        if header_bytes <= 0 or header_bytes > 16 * 1024 * 1024:
+            raise ValueError("outcome-mixture artifact header size is invalid")
+        raw_header = handle.read(header_bytes)
+        if len(raw_header) != header_bytes:
+            raise ValueError("outcome-mixture artifact header is truncated")
+        try:
+            header = json.loads(raw_header)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("outcome-mixture artifact header is invalid") from exc
+        if not isinstance(header, dict):
+            raise ValueError("outcome-mixture artifact header is invalid")
+        canonical = json.dumps(
+            header,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        ).encode("ascii")
+        if len(canonical) > header_bytes:
+            raise ValueError("outcome-mixture canonical artifact header does not fit")
+        handle.seek(8)
+        handle.write(canonical)
+        handle.write(b" " * (header_bytes - len(canonical)))
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
 def save_outcome_mixture_model(
     path: str | Path, model: TrainedOutcomeMixtureModel
 ) -> None:
@@ -1003,8 +1037,7 @@ def save_outcome_mixture_model(
     temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
     try:
         save_safetensors(arrays, str(temporary), metadata=_artifact_metadata(model))
-        with temporary.open("r+b") as handle:
-            os.fsync(handle.fileno())
+        _canonicalize_safetensors_header(temporary)
         os.replace(temporary, target)
     finally:
         temporary.unlink(missing_ok=True)

@@ -813,10 +813,13 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
         patience=1,
     )
     path = tmp_path / "independent-towers.safetensors"
+    repeated_path = tmp_path / "independent-towers-repeated.safetensors"
 
     save_outcome_mixture_model(path, model)
+    save_outcome_mixture_model(repeated_path, model)
     loaded = load_outcome_mixture_model(path)
 
+    assert path.read_bytes() == repeated_path.read_bytes()
     assert loaded.spec.side_tower_mode == "independent"
     assert loaded.spec.ranking_loss_mode == "pairwise_net_return"
     assert loaded.model_sha256 == model.model_sha256
