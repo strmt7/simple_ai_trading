@@ -33,9 +33,8 @@ from .microstructure_barriers import (
     validate_adaptive_barrier_targets,
 )
 from .microstructure_features import (
-    MICROSTRUCTURE_FEATURE_NAMES,
-    MICROSTRUCTURE_FEATURE_VERSION,
     MicrostructureDataset,
+    microstructure_feature_names,
     validate_microstructure_dataset,
 )
 
@@ -411,6 +410,10 @@ def _model_hash(model: TrainedOutcomeMixtureModel) -> str:
 
 
 def _validate_model_contract(model: TrainedOutcomeMixtureModel) -> None:
+    try:
+        expected_feature_names = microstructure_feature_names(model.feature_version)
+    except ValueError as exc:
+        raise ValueError("outcome-mixture feature contract is unsupported") from exc
     expected_target_contract = hashlib.sha256(
         _canonical_json(
             {
@@ -427,8 +430,7 @@ def _validate_model_contract(model: TrainedOutcomeMixtureModel) -> None:
         or model.portfolio_claim
         or model.leverage_applied
         or model.schema_version != OUTCOME_MIXTURE_SCHEMA_VERSION
-        or model.feature_version != MICROSTRUCTURE_FEATURE_VERSION
-        or model.feature_names != MICROSTRUCTURE_FEATURE_NAMES
+        or model.feature_names != expected_feature_names
         or model.target_mode != ADAPTIVE_BARRIER_TARGET_MODE
         or expected_target_contract != model.target_contract_sha256
         or model.target_scenario not in {"base", "stress"}

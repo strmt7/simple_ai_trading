@@ -1,4 +1,4 @@
-"""Run the precommitted Round 17 conditional outcome-mixture screen."""
+"""Run precommitted conditional outcome-mixture research screens."""
 
 from __future__ import annotations
 
@@ -40,6 +40,9 @@ from simple_ai_trading.microstructure_barriers import (  # noqa: E402
     ADAPTIVE_BARRIER_TARGET_MODE,
     AdaptiveBarrierSpec,
     build_adaptive_barrier_targets,
+)
+from simple_ai_trading.microstructure_features import (  # noqa: E402
+    MICROSTRUCTURE_FEATURE_VERSION,
 )
 from simple_ai_trading.microstructure_outcome_mixture import (  # noqa: E402
     OUTCOME_MIXTURE_SCHEMA_VERSION,
@@ -119,6 +122,7 @@ _ROUND_CONTRACTS = {
         "purpose": "consumed_data_conditional_outcome_mixture_screen",
         "design_revisions": {1, 2},
         "ranking_loss_weight": 0.0,
+        "feature_version": "l1-tape-causal-v7",
         "predecessor": {
             "round": 16,
             "design_sha256": (
@@ -143,6 +147,7 @@ _ROUND_CONTRACTS = {
         "purpose": "consumed_data_rank_regularized_outcome_mixture_screen",
         "design_revisions": {1},
         "ranking_loss_weight": 0.1,
+        "feature_version": "l1-tape-causal-v7",
         "predecessor": {
             "round": 17,
             "design_sha256": (
@@ -159,6 +164,31 @@ _ROUND_CONTRACTS = {
                 "calibration than prevalence and negative realized top tails. Round "
                 "18 isolates a 0.10 continuous-value ranking regularizer while "
                 "leaving every data, execution, threshold, and risk contract fixed."
+            ),
+        },
+    },
+    19: {
+        "purpose": "consumed_data_pressure_capacity_outcome_mixture_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "feature_version": "l1-tape-causal-v8",
+        "predecessor": {
+            "round": 18,
+            "design_sha256": (
+                "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40"
+            ),
+            "source_report_canonical_sha256": (
+                "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676"
+            ),
+            "publication_sha256": (
+                "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
+            ),
+            "finding": (
+                "Round 18 improved the least-negative policy tail and produced 24 "
+                "aggressive calibration-eligible rows, but all four threshold traces "
+                "lost money after stress costs. Round 19 keeps the model, data, risk, "
+                "and ranking settings fixed while adding causal trade-pressure versus "
+                "opposing displayed-depth inputs."
             ),
         },
     },
@@ -303,6 +333,10 @@ def load_outcome_mixture_design(
     if (
         model_spec.family != "conditional_outcome_mixture_residual_mlp"
         or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
+        or (
+            require_current
+            and MICROSTRUCTURE_FEATURE_VERSION != round_contract["feature_version"]
+        )
     ):
         raise ValueError("outcome-mixture model family is invalid")
     urls: set[str] = set()

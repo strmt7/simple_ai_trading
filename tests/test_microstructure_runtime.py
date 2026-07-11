@@ -7,7 +7,9 @@ import duckdb
 import numpy as np
 import pytest
 
-from simple_ai_trading.microstructure_features import build_executable_microstructure_dataset
+from simple_ai_trading.microstructure_features import (
+    build_executable_microstructure_dataset,
+)
 from simple_ai_trading.microstructure_runtime import (
     MicrostructureSecond,
     StreamingMicrostructureFeatureEngine,
@@ -17,7 +19,9 @@ from simple_ai_trading.microstructure_runtime import (
 def _second(index: int, *, second_ms: int | None = None) -> MicrostructureSecond:
     timestamp = index * 1_000 if second_ms is None else second_ms
     mid = 100.0 + index * 0.001 + math.sin(index / 17.0) * 0.02
-    prior_mid = 100.0 + max(0, index - 1) * 0.001 + math.sin(max(0, index - 1) / 17.0) * 0.02
+    prior_mid = (
+        100.0 + max(0, index - 1) * 0.001 + math.sin(max(0, index - 1) / 17.0) * 0.02
+    )
     open_mid = prior_mid
     high_mid = max(open_mid, mid) + 0.006 + (index % 3) * 0.0002
     low_mid = min(open_mid, mid) - 0.005 - (index % 5) * 0.0001
@@ -175,7 +179,9 @@ def test_streaming_features_match_offline_duckdb_contract() -> None:
             max_l1_participation=0.50,
             decision_cadence_seconds=1,
         )
-        engine = StreamingMicrostructureFeatureEngine("BTCUSDT", decision_cadence_seconds=1)
+        engine = StreamingMicrostructureFeatureEngine(
+            "BTCUSDT", decision_cadence_seconds=1
+        )
         online = {}
         for second in seconds:
             emitted = engine.append(second)
@@ -203,6 +209,29 @@ def test_streaming_features_match_offline_duckdb_contract() -> None:
         )
         assert latest.as_mapping()["trade_imbalance"] != pytest.approx(
             seconds[source_index].trade_imbalance
+        )
+        mapping = latest.as_mapping()
+        signed_flow_10s = sum(
+            row.aggressive_buy_volume - row.aggressive_sell_volume
+            for row in seconds[source_index - 10 : source_index]
+        )
+        opposing_depth = (
+            latest.close_ask_qty if signed_flow_10s >= 0.0 else latest.close_bid_qty
+        )
+        expected_pressure = (
+            math.copysign(
+                math.log1p(abs(signed_flow_10s) / opposing_depth), signed_flow_10s
+            )
+            if signed_flow_10s
+            else 0.0
+        )
+        assert mapping["signed_pressure_to_opposing_depth_10s"] == pytest.approx(
+            expected_pressure,
+            rel=3e-5,
+            abs=3e-5,
+        )
+        assert mapping["log_bid_l1_depth_quote"] == pytest.approx(
+            math.log1p(latest.close_bid * latest.close_bid_qty), rel=3e-5
         )
     finally:
         warehouse.connection.close()
