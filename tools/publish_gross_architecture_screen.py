@@ -822,7 +822,7 @@ def publish(
         for row in final_rows
     )
     _write_text(
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         _funnel_svg(
             neural_screened=len(stage_rows),
             final_models=len(final_rows),
@@ -861,7 +861,7 @@ def publish(
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-![Promotion funnel](charts/action-funnel.svg)
+![Model selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 
@@ -878,7 +878,7 @@ Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnos
         output_dir / "diagnostics.json",
         charts / "after-cost-performance.svg",
         charts / "forecast-quality.svg",
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         charts / "research-progress.svg",
     ]
     publication: dict[str, object] = {

@@ -120,8 +120,12 @@ def _implementation_commit(design: Mapping[str, object]) -> str:
         else ""
     )
     commit = commit or _LEGACY_IMPLEMENTATION_COMMITS.get(round_number, "")
-    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
-        raise ValueError("action-value design does not pin a full implementation commit")
+    if len(commit) != 40 or any(
+        character not in "0123456789abcdef" for character in commit
+    ):
+        raise ValueError(
+            "action-value design does not pin a full implementation commit"
+        )
     return commit
 
 
@@ -132,7 +136,9 @@ def _write_text(path: Path, content: str) -> None:
     os.replace(temporary, path)
 
 
-def _write_csv(path: Path, rows: Sequence[Mapping[str, object]], fields: Sequence[str]) -> None:
+def _write_csv(
+    path: Path, rows: Sequence[Mapping[str, object]], fields: Sequence[str]
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".partial")
     with temporary.open("w", encoding="utf-8", newline="") as handle:
@@ -175,7 +181,9 @@ def _candidate_rows(
         completed_value = by_completed.get(candidate_id)
         error_value = by_error.get(candidate_id)
         if (completed_value is None) == (error_value is None):
-            raise ValueError(f"candidate outcome is missing or ambiguous: {candidate_id}")
+            raise ValueError(
+                f"candidate outcome is missing or ambiguous: {candidate_id}"
+            )
         row = {**candidate}
         if error_value is not None:
             row.update(
@@ -234,9 +242,7 @@ def _candidate_rows(
                 ),
                 "policy_trades": int(policy["trades"]),
                 "selection_trades": selection_trades,
-                "selection_total_net_bps": _finite(
-                    selection_metrics["total_net_bps"]
-                ),
+                "selection_total_net_bps": _finite(selection_metrics["total_net_bps"]),
                 "selection_mean_net_bps": (
                     ""
                     if selection_trades == 0
@@ -260,7 +266,9 @@ def _candidate_rows(
     return rows
 
 
-def _svg_header(title: str, subtitle: str, *, width: int = 1120, height: int = 620) -> list[str]:
+def _svg_header(
+    title: str, subtitle: str, *, width: int = 1120, height: int = 620
+) -> list[str]:
     return [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#f7f9fb"/>',
@@ -300,30 +308,49 @@ def _forecast_svg(
         1.0,
         max(0.7, math.ceil((max(auc_values, default=0.7) + 0.03) * 10.0) / 10.0),
     )
-    lines.append(f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>')
+    lines.append(
+        f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>'
+    )
     for tick in range(0, int(round(axis_upper * 10.0)) + 1):
         value = tick / 10.0
         y = top + chart_height - value / axis_upper * chart_height
-        lines.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + chart_width}" y2="{y:.1f}" stroke="#e5ebf0"/>')
-        lines.append(f'<text x="{left - 14}" y="{y + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:.1f}</text>')
+        lines.append(
+            f'<line x1="{left}" y1="{y:.1f}" x2="{left + chart_width}" y2="{y:.1f}" stroke="#e5ebf0"/>'
+        )
+        lines.append(
+            f'<text x="{left - 14}" y="{y + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:.1f}</text>'
+        )
     y_half = top + chart_height - 0.5 / axis_upper * chart_height
-    lines.append(f'<line x1="{left}" y1="{y_half:.1f}" x2="{left + chart_width}" y2="{y_half:.1f}" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/>')
+    lines.append(
+        f'<line x1="{left}" y1="{y_half:.1f}" x2="{left + chart_width}" y2="{y_half:.1f}" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/>'
+    )
     group = chart_width / max(1, len(trained))
     for index, row in enumerate(trained):
         center = left + group * (index + 0.5)
-        for offset, field, color in ((-14, "selection_long_auc", "#218c8c"), (14, "selection_short_auc", "#d59b2d")):
+        for offset, field, color in (
+            (-14, "selection_long_auc", "#218c8c"),
+            (14, "selection_short_auc", "#d59b2d"),
+        ):
             value = _finite(row[field])
             height = value / axis_upper * chart_height
-            lines.append(f'<rect x="{center + offset - 10:.1f}" y="{top + chart_height - height:.1f}" width="20" height="{height:.1f}" fill="{color}"/>')
-            lines.append(f'<text x="{center + offset:.1f}" y="{top + chart_height - height - 7:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">{value:.3f}</text>')
+            lines.append(
+                f'<rect x="{center + offset - 10:.1f}" y="{top + chart_height - height:.1f}" width="20" height="{height:.1f}" fill="{color}"/>'
+            )
+            lines.append(
+                f'<text x="{center + offset:.1f}" y="{top + chart_height - height - 7:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">{value:.3f}</text>'
+            )
         label = _compact_candidate_label(row["candidate_id"])
-        lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(label)}</text>')
-    lines.extend([
-        '<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long AUC</text>',
-        '<rect x="525" y="560" width="16" height="16" fill="#d59b2d"/><text x="549" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short AUC</text>',
-        '<line x1="675" y1="568" x2="705" y2="568" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/><text x="713" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Random</text>',
-        "</svg>",
-    ])
+        lines.append(
+            f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(label)}</text>'
+        )
+    lines.extend(
+        [
+            '<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long AUC</text>',
+            '<rect x="525" y="560" width="16" height="16" fill="#d59b2d"/><text x="549" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short AUC</text>',
+            '<line x1="675" y1="568" x2="705" y2="568" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/><text x="713" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Random</text>',
+            "</svg>",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -347,8 +374,12 @@ def _economics_svg(
     left, top, chart_width, chart_height = 90, 120, 960, 380
     scale = chart_height / (upper - lower)
     zero_y = top + upper * scale
-    lines.append(f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>')
-    lines.append(f'<line x1="{left}" y1="{zero_y:.1f}" x2="{left + chart_width}" y2="{zero_y:.1f}" stroke="#526674" stroke-width="2"/>')
+    lines.append(
+        f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>'
+    )
+    lines.append(
+        f'<line x1="{left}" y1="{zero_y:.1f}" x2="{left + chart_width}" y2="{zero_y:.1f}" stroke="#526674" stroke-width="2"/>'
+    )
     group = chart_width / max(1, len(trained))
     bars = (
         (-24, "mean_long_net_bps", "#218c8c"),
@@ -361,17 +392,25 @@ def _economics_svg(
             value_y = zero_y - value * scale
             y = min(zero_y, value_y)
             height = max(1.0, abs(value_y - zero_y))
-            lines.append(f'<rect x="{center + offset - 11:.1f}" y="{y:.1f}" width="22" height="{height:.1f}" fill="{color}"/>')
+            lines.append(
+                f'<rect x="{center + offset - 11:.1f}" y="{y:.1f}" width="22" height="{height:.1f}" fill="{color}"/>'
+            )
             label_y = value_y - 7 if value >= 0 else value_y + 17
-            lines.append(f'<text x="{center + offset:.1f}" y="{label_y:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">{value:.2f}</text>')
+            lines.append(
+                f'<text x="{center + offset:.1f}" y="{label_y:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">{value:.2f}</text>'
+            )
         label = _compact_candidate_label(row["candidate_id"])
-        lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(label)}</text>')
-    lines.extend([
-        '<text x="52" y="330" transform="rotate(-90 52 330)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Basis points per trade</text>',
-        '<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long executable label</text>',
-        '<rect x="610" y="560" width="16" height="16" fill="#d59b2d"/><text x="634" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short executable label</text>',
-        "</svg>",
-    ])
+        lines.append(
+            f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(label)}</text>'
+        )
+    lines.extend(
+        [
+            '<text x="52" y="330" transform="rotate(-90 52 330)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Basis points per trade</text>',
+            '<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long executable label</text>',
+            '<rect x="610" y="560" width="16" height="16" fill="#d59b2d"/><text x="634" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short executable label</text>',
+            "</svg>",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -387,25 +426,47 @@ def _funnel_svg(
     )
     stages = (
         ("Precommitted candidates", len(rows), "#287f9e"),
-        ("Statistically trainable", sum(row["fit_status"] == "trained" for row in rows), "#218c8c"),
-        ("Policy-viable candidates", sum(int(row.get("policy_trades") or 0) > 0 for row in rows), "#d59b2d"),
-        ("Selection-active candidates", sum(int(row.get("selection_trades") or 0) > 0 for row in rows), "#b44b4b"),
-        ("Unrejected candidates", sum(row.get("artifact_status") == "candidate" for row in rows), "#7b559c"),
+        (
+            "Statistically trainable",
+            sum(row["fit_status"] == "trained" for row in rows),
+            "#218c8c",
+        ),
+        (
+            "Policy-viable candidates",
+            sum(int(row.get("policy_trades") or 0) > 0 for row in rows),
+            "#d59b2d",
+        ),
+        (
+            "Selection-active candidates",
+            sum(int(row.get("selection_trades") or 0) > 0 for row in rows),
+            "#b44b4b",
+        ),
+        (
+            "Unrejected candidates",
+            sum(row.get("artifact_status") == "candidate" for row in rows),
+            "#7b559c",
+        ),
     )
     lines = _svg_header(
-        f"Round {round_number} action funnel",
+        f"Round {round_number} signal selection",
         f"Candidate-level stages only; artifacts separately record {positive_edge_rows} positive predicted-edge rows.",
     )
     maximum = max(value for _label, value, _color in stages)
     for index, (label, value, color) in enumerate(stages):
         y = 130 + index * 82
         width = 760 * value / max(1, maximum)
-        lines.append(f'<text x="52" y="{y + 27}" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">{html.escape(label)}</text>')
+        lines.append(
+            f'<text x="52" y="{y + 27}" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">{html.escape(label)}</text>'
+        )
         lines.append(f'<rect x="300" y="{y}" width="760" height="44" fill="#e6ebef"/>')
         if width > 0:
-            lines.append(f'<rect x="300" y="{y}" width="{width:.1f}" height="44" fill="{color}"/>')
-        lines.append(f'<text x="{min(1045, 318 + width):.1f}" y="{y + 29}" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">{value}</text>')
-    lines.append('</svg>')
+            lines.append(
+                f'<rect x="300" y="{y}" width="{width:.1f}" height="44" fill="{color}"/>'
+            )
+        lines.append(
+            f'<text x="{min(1045, 318 + width):.1f}" y="{y + 29}" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">{value}</text>'
+        )
+    lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
 
@@ -427,37 +488,61 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     upper = max(2.0, max(values, default=0.0) + 1.0)
     scale = chart_height / (upper - lower)
     zero_y = top + upper * scale
-    lines.append(f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>')
+    lines.append(
+        f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>'
+    )
     for value in (-15.0, -10.0, -5.0, 0.0):
         if lower <= value <= upper:
             y = zero_y - value * scale
             color = "#526674" if value == 0.0 else "#e5ebf0"
             width = 2 if value == 0.0 else 1
-            lines.append(f'<line x1="{left}" y1="{y:.1f}" x2="{left + chart_width}" y2="{y:.1f}" stroke="{color}" stroke-width="{width}"/>')
-            lines.append(f'<text x="{left - 14}" y="{y + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:.0f}</text>')
+            lines.append(
+                f'<line x1="{left}" y1="{y:.1f}" x2="{left + chart_width}" y2="{y:.1f}" stroke="{color}" stroke-width="{width}"/>'
+            )
+            lines.append(
+                f'<text x="{left - 14}" y="{y + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:.0f}</text>'
+            )
     measured_points: list[tuple[float, float, Mapping[str, object]]] = []
     for index, row in enumerate(after_cost):
         x = left + chart_width * (index + 0.5) / max(1, len(after_cost))
         text_value = str(row.get("mean_net_bps", "")).strip()
         if not text_value or int(row.get("executable_trades") or 0) <= 0:
-            lines.append(f'<line x1="{x:.1f}" y1="{top + 35}" x2="{x:.1f}" y2="{top + chart_height - 35}" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>')
-            lines.append(f'<rect x="{x - 7:.1f}" y="{top + chart_height / 2 - 7:.1f}" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 {x:.1f} {top + chart_height / 2:.1f})"/>')
-            lines.append(f'<text x="{x:.1f}" y="{top + chart_height / 2 - 24:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>')
+            lines.append(
+                f'<line x1="{x:.1f}" y1="{top + 35}" x2="{x:.1f}" y2="{top + chart_height - 35}" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>'
+            )
+            lines.append(
+                f'<rect x="{x - 7:.1f}" y="{top + chart_height / 2 - 7:.1f}" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 {x:.1f} {top + chart_height / 2:.1f})"/>'
+            )
+            lines.append(
+                f'<text x="{x:.1f}" y="{top + chart_height / 2 - 24:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>'
+            )
             continue
         value = _finite(row["mean_net_bps"])
         y = zero_y - value * scale
         measured_points.append((x, y, row))
     if len(measured_points) > 1:
-        lines.append('<polyline points="' + " ".join(f"{x:.1f},{y:.1f}" for x, y, _row in measured_points) + '" fill="none" stroke="#287f9e" stroke-width="4"/>')
+        lines.append(
+            '<polyline points="'
+            + " ".join(f"{x:.1f},{y:.1f}" for x, y, _row in measured_points)
+            + '" fill="none" stroke="#287f9e" stroke-width="4"/>'
+        )
     for x, y, row in measured_points:
         value = _finite(row["mean_net_bps"])
-        lines.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="8" fill="#b44b4b" stroke="#ffffff" stroke-width="3"/>')
-        lines.append(f'<text x="{x:.1f}" y="{y - 16:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">{value:+.2f} bps</text>')
+        lines.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="8" fill="#b44b4b" stroke="#ffffff" stroke-width="3"/>'
+        )
+        lines.append(
+            f'<text x="{x:.1f}" y="{y - 16:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">{value:+.2f} bps</text>'
+        )
     for index, row in enumerate(after_cost):
         x = left + chart_width * (index + 0.5) / max(1, len(after_cost))
-        lines.append(f'<text x="{x:.1f}" y="{top + chart_height + 30}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round {row["round"]}</text>')
-    lines.append('<text x="42" y="310" transform="rotate(-90 42 310)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Mean net basis points per trade</text>')
-    lines.append('</svg>')
+        lines.append(
+            f'<text x="{x:.1f}" y="{top + chart_height + 30}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round {row["round"]}</text>'
+        )
+    lines.append(
+        '<text x="42" y="310" transform="rotate(-90 42 310)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Mean net basis points per trade</text>'
+    )
+    lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
 
@@ -479,8 +564,7 @@ def publish(
         or report.get("terminal_holdout_accessed") is not False
         or report.get("trading_authority") is not False
         or report.get("profitability_claim") is not False
-        or int(report.get("candidate_count") or 0)
-        != int(design["candidate_count"])
+        or int(report.get("candidate_count") or 0) != int(design["candidate_count"])
     ):
         raise ValueError(f"Round {round_number} report contract is invalid")
     rows = _candidate_rows(evidence_root, design, report)
@@ -529,7 +613,9 @@ def publish(
             f"prior progress table does not end at Round {round_number - 1}"
         )
     best = ranked_results[0] if ranked_results else None
-    best_selection = best.get("selection_metrics") if isinstance(best, Mapping) else None
+    best_selection = (
+        best.get("selection_metrics") if isinstance(best, Mapping) else None
+    )
     best_policy = best.get("policy_metrics") if isinstance(best, Mapping) else None
     best_auc = best.get("selection_auc") if isinstance(best, Mapping) else None
     if not all(
@@ -565,11 +651,7 @@ def publish(
             "feature_set": str(training["feature_version"]),
             "risk_level": ";".join(str(value) for value in risk_profiles),
             "direction_auc": (
-                (
-                    _finite(best_auc["long"])
-                    + _finite(best_auc["short"])
-                )
-                / 2.0
+                (_finite(best_auc["long"]) + _finite(best_auc["short"])) / 2.0
                 if isinstance(best_auc, Mapping)
                 else ""
             ),
@@ -604,7 +686,7 @@ def publish(
         _economics_svg(rows, round_number=round_number),
     )
     _write_text(
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         _funnel_svg(rows, round_number=round_number),
     )
     _write_text(charts / "research-progress.svg", _progress_svg(progress))
@@ -639,7 +721,7 @@ def publish(
 Status: **{semantic_status}**. This is checksummed Binance USD-M discovery evidence, not
 a profitability, execution, or trading-authority claim.
 
-- UTC window: {data['start_date']} through {data['end_date']} (now consumed for selection)
+- UTC window: {data["start_date"]} through {data["end_date"]} (now consumed for selection)
 - Precommitted candidates: {len(rows)}
 - Statistical fit failures: {fit_error_count}
 - Trained candidates: {len(trained)}
@@ -647,7 +729,7 @@ a profitability, execution, or trading-authority claim.
 - Policy trades across trained candidates: {policy_trades}
 - Selection trades across trained candidates: {selection_trades}
 - Positive predicted-edge policy rows: {positive_edge_rows}
-- Design SHA-256: `{design['design_sha256']}`
+- Design SHA-256: `{design["design_sha256"]}`
 - Corpus certificate SHA-256: `{certificate}`
 - Implementation commit: `{implementation_commit}`
 
@@ -663,7 +745,7 @@ abstaining model is not presented as profitable.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-![Action funnel](charts/action-funnel.svg)
+![Signal selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 
@@ -682,7 +764,7 @@ Regenerate by passing this round's `--design`, `--evidence-root`, and required
         output_dir / "progress.csv",
         charts / "after-cost-performance.svg",
         charts / "forecast-quality.svg",
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         charts / "research-progress.svg",
     ]
     if diagnostic is not None:
@@ -702,9 +784,7 @@ Regenerate by passing this round's `--design`, `--evidence-root`, and required
         "implementation_commit": implementation_commit,
         "corpus_certificate_sha256": certificate,
         "diagnostic_sha256": (
-            diagnostic.get("diagnostic_sha256")
-            if diagnostic is not None
-            else None
+            diagnostic.get("diagnostic_sha256") if diagnostic is not None else None
         ),
         "actual": {
             "candidate_count": len(rows),

@@ -67,7 +67,7 @@ workers: one initial worker, 25 planned rotations, and one replacement after a
 real DirectML fault. The replacement reproduced the failed batch from the same
 seed. Exact same-worker seeded repeatability passed, and no in-process retry was
 used. This recovery evidence supports the worker architecture only; it cannot
-rescue the rejected forecast.
+reverse the forecast rejection.
 
 ## Artifacts
 

@@ -715,7 +715,7 @@ def publish(
     _write_text(charts / "after-cost-performance.svg", _economics_svg(candidates))
     _write_text(charts / "forecast-quality.svg", _forecast_svg(candidates))
     _write_text(
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         _funnel_svg(action_rows=candidates),
     )
     _write_text(
@@ -756,7 +756,7 @@ def publish(
 
 ![Forecast and coherence quality](charts/forecast-quality.svg)
 
-![Action funnel](charts/action-funnel.svg)
+![Signal selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 
@@ -772,7 +772,7 @@ Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnos
         output_dir / "diagnostics.json",
         charts / "after-cost-performance.svg",
         charts / "forecast-quality.svg",
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         charts / "research-progress.svg",
     ]
     implementation = design["implementation"]

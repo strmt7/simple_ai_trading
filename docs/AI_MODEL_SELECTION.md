@@ -64,7 +64,7 @@ structured finance-risk cases:
 
 The command writes machine-readable evidence to `data/ai_model_benchmark.json`
 by default. Passing this benchmark does not promote a trading model. It only
-selects an AI reviewer candidate. Actual AI use remains blocked unless
+selects an LLM risk-assessment candidate. Actual AI use remains blocked unless
 model-lab deterministic gates pass and accepted symbols include positive
 AI-vs-ML uplift evidence.
 

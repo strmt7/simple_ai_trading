@@ -386,7 +386,7 @@ def barrier_trace_gate_reasons(
     gates: Mapping[str, object],
 ) -> list[str]:
     if set(gates) != _GATE_FIELDS:
-        raise ValueError("adaptive action risk gates are incomplete")
+        raise ValueError("adaptive action risk controls are incomplete")
     values = tuple(float(gates[name]) for name in _GATE_FIELDS)
     if (
         not all(math.isfinite(value) for value in values)
@@ -397,7 +397,7 @@ def barrier_trace_gate_reasons(
         or float(gates["minimum_worst_trade_bps"]) >= 0.0
         or float(gates["minimum_profit_factor"]) < 1.0
     ):
-        raise ValueError("adaptive action risk gates are invalid")
+        raise ValueError("adaptive action risk controls are invalid")
     metrics = trace.metrics
     reasons: list[str] = []
     if metrics.trades < int(gates["minimum_trades"]):

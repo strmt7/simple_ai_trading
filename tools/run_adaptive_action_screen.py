@@ -1041,7 +1041,7 @@ def run_adaptive_action_screen(
             "the 100 ms BBO path cannot resolve queue position or hidden depth",
             "base and adverse scenarios are research replays, not fill guarantees",
             "all returns are unleveraged and no profile may apply leverage before edge validation",
-            "the local neural ensemble is machine learning and is not the optional language-model AI reviewer",
+            "the local neural ensemble is machine learning and is not the optional LLM risk-assessment overlay",
             "the reserved terminal date was neither loaded nor labeled",
         ],
     }

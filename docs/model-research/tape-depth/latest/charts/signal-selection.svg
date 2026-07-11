@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="460" viewBox="0 0 1100 460">
   <rect width="1100" height="460" fill="#ffffff"/>
-  <text x="52" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Round 8 action funnel</text>
+  <text x="52" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Round 8 signal selection</text>
   <text x="52" y="73" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Untouched UTC dates; no minimum trade quota is forced.</text>
 
   <line x1="90" y1="370" x2="1040" y2="370" stroke="#94a3b8"/>

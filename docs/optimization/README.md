@@ -151,22 +151,22 @@ fewer than 20 positive or 20 negative labels; diagnostics preserve the
 label failures cannot masquerade as model evidence. When every candidate fails hard gates,
 selection is still rejected for promotion/live use, but the optimizer now
 breaks ties toward non-losing/no-trade selection evidence and enforces no-entry
-thresholds on the rejected executable model. The hybrid model-zoo overlay is
+thresholds on the rejected executable model. The hybrid-candidate overlay is
 searched even after a rejected base selection by using a copied model at the
-best diagnostic threshold. Conservative hybrid search includes low-base rescue
-profiles plus neural committee/rescue profiles. The dense neural expert is a
+best diagnostic threshold. Conservative hybrid search includes reduced-base-model-weight fallback
+profiles plus neural ensemble fallback profiles. The dense neural expert is a
 compact GPU-trained MLP serialized into the same model JSON and replayed through
 the same stdlib inference path as CLI/app/live scoring, but a hybrid model can
 replace the selected base model only when its chronological selection replay
 passes the same objective gates; rejected hybrid attempts never alter
-executable thresholds. On large second-level windows the hybrid profile zoo uses
+executable thresholds. On large second-level windows the hybrid candidate search uses
 an even chronological sample for profile search, then replays only the winning
 hybrid profile on the full selection slice before accepting it. Reports include
 the sampled and full selection row counts so a sampled search cannot be mistaken
 for final promotion evidence.
 
 After the classifier/hybrid pass, the optimizer runs an interpretable
-rule-alpha model zoo. This is the missing research layer used by many stronger
+interpretable signal-model library. This is the missing research layer used by many stronger
 open-source trading systems: broad entry/exit template sweeps happen before any
 template is allowed into live execution. The current templates are original
 implementations of momentum breakout, VWAP/RSI mean reversion, trend-pullback,
@@ -197,7 +197,7 @@ two-feature interaction tail candidates, but only when chronological mining and
 validation slices both show positive net edge after the cost floor. Rejected alpha searches record best rejected profile, family,
 score, P&L, closed trades, win rate, profit factor, max drawdown, exit-reason
 counts, side counts, reject reason, orientation, and candidate count in
-`candidate-diagnostics.csv`. They also record the full zoo's active candidate
+`candidate-diagnostics.csv`. They also record the complete candidate set's active
 count, profitable candidate count, accepted candidate count, static-template
 candidate count, empirical mined candidate count, empirical interaction count,
 forward-event signal count, positive after-cost forward-event count, best raw event candidate,
@@ -209,7 +209,7 @@ Round 8 is the latest retained model iteration. Its source dates are
 2023-07-08, 2023-10-21, and 2024-02-05. All three forecast artifacts failed at
 least one gross-forecast gate; the aggregate also failed forecast-candidate,
 positive-period, action-count, mean-net-return, and hit-rate gates. The exact
-result, source hashes, action funnel, forecast quality, and row-level trades are
+result, source hashes, signal-selection flow, forecast quality, and row-level trades are
 published under [`tape-depth/latest`](../model-research/tape-depth/latest/README.md).
 These dates are consumed confirmation evidence and cannot become future tuning
 data.

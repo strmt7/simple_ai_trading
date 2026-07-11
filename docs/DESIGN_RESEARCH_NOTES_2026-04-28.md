@@ -49,7 +49,7 @@ the source-backed design pass used for the 2026-04-28 hardening work.
   diagnostics.
 - Bounded EMA history in the feature pipeline so latest features match across
   full and live-sized caches.
-- Added autonomous pre-entry risk gates with durable skip reasons in the
+- Added autonomous pre-entry risk controls with durable skip reasons in the
   heartbeat.
 - Added buy-and-hold baseline P&L and edge reporting to backtests.
 - Moved walk-forward threshold calibration off the reported test window.

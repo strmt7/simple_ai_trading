@@ -49,7 +49,7 @@ def _git(*arguments: str) -> bytes:
     ).stdout
 
 
-def _binding(*, path: str = "README.md", sha256: str | None = None):
+def _binding(*, path: str = "pyproject.toml", sha256: str | None = None):
     commit = _git("rev-parse", "HEAD").decode("ascii").strip()
     digest = hashlib.sha256(_git("show", f"{commit}:{path}")).hexdigest()
     return {
@@ -140,16 +140,20 @@ def test_round18_design_is_historical_and_changes_only_the_ranking_ablation() ->
 def test_round19_contract_changes_only_the_causal_feature_family() -> None:
     contract = screen._ROUND_CONTRACTS[19]
 
+    assert contract["design_revisions"] == {1, 2}
+    assert contract["purposes"][2] == (
+        "consumed_data_depth_normalized_order_flow_outcome_mixture_screen"
+    )
     assert contract["ranking_loss_weight"] == 0.1
     assert contract["feature_version"] == "l1-tape-causal-v8"
-    assert contract["predecessor"]["round"] == 18
-    assert contract["predecessor"]["publication_sha256"] == (
+    assert contract["predecessors"][2]["round"] == 18
+    assert contract["predecessors"][2]["publication_sha256"] == (
         "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
     )
 
 
-def test_round19_design_is_current_and_preserves_sealed_controls() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN19)
+def test_round19_revision1_design_is_historical_and_preserves_sealed_controls() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN19, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN18, require_current=False
     )

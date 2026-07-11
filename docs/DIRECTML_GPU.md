@@ -73,7 +73,7 @@ CPU-only mode is allowed. When selected or when GPU probing fails:
   When the resolved runtime backend is DirectML/CUDA/ROCm/MPS, the same gate
   also requires non-CPU training and probability-calibration backend evidence
   before orders can be submitted.
-- Hybrid model-zoo backtest scoring keeps Lorentzian nearest-neighbor,
+- Hybrid-candidate backtest scoring keeps Lorentzian nearest-neighbor,
   rational-quadratic kernel, and technical-confluence expert math on the tensor
   backend when the backend supports the required operations.
 - Feature generation uses tensor prefix/window operations on the resolved
