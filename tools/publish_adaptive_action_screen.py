@@ -1236,7 +1236,7 @@ def publish(
 | Best policy-validation top-100 mean net return (reused window) | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
 | Largest pre-threshold eligible signal set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
-| Policy-validation simulated trades | {int(gate_summary["policy_trades"]):,} |
+| Policy-validation simulated trades (reused window) | {int(gate_summary["policy_trades"]):,} |
 | Authorized / live-executed trades | 0 / 0 |
 {depth_table_row}
 

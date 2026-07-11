@@ -760,6 +760,7 @@ def _funnel_svg(
 
 def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     rows = [row for row in progress if int(row["round"]) >= 7]
+    compact_labels = len(rows) > 18
     width, height = 1500, 620
     left, right, top, chart_height = 120, 70, 158, 330
     chart_width = width - left - right
@@ -816,8 +817,9 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
             lines.append(
                 f'<rect x="{x - 7:.1f}" y="{y - 7:.1f}" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 {x:.1f} {y:.1f})"/>'
             )
+        round_label = f'R{row["round"]}' if compact_labels else f'Round {row["round"]}'
         lines.append(
-            f'<text x="{x:.1f}" y="{top + chart_height + 32}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round {row["round"]}</text>'
+            f'<text x="{x:.1f}" y="{top + chart_height + 32}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="{11 if compact_labels else 13}" fill="#334653">{round_label}</text>'
         )
     if len(executed_points) > 1:
         lines.append(
@@ -828,7 +830,7 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     lines.extend(
         [
             '<text x="42" y="323" transform="rotate(-90 42 323)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">After-cost basis points</text>',
-            '<text x="56" y="574" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Windows and units differ by round. This is evidence lineage, not a continuous equity curve or portfolio return series.</text>',
+            f'<text x="56" y="574" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">{"R denotes research round. " if compact_labels else ""}Windows and units differ by round. This is evidence lineage, not a continuous equity curve or portfolio return series.</text>',
             "</svg>",
         ]
     )

@@ -154,6 +154,25 @@ def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
     )
 
 
+def test_long_research_progress_uses_compact_nonoverlapping_round_labels() -> None:
+    progress = [
+        {
+            "round": round_number,
+            "mean_net_bps": "",
+            "best_top_500_exact_after_cost_bps": -8.0,
+            "executable_trades": 0,
+        }
+        for round_number in range(7, 30)
+    ]
+
+    chart = _research_progress_svg(progress, round_number=29)
+
+    assert ">R7<" in chart
+    assert ">R29<" in chart
+    assert ">Round 7<" not in chart
+    assert "R denotes research round" in chart
+
+
 def test_ranked_tail_chart_handles_a_positive_subset_without_invalid_geometry() -> None:
     rows = _forecast_rows()
     rows[2]["top_100_mean_net_bps"] = 0.94
