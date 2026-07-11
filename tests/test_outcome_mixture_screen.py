@@ -24,6 +24,13 @@ DESIGN = (
     / "action-value"
     / "round-017-outcome-mixture-design.json"
 )
+DESIGN18 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-018-ranked-outcome-mixture-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -94,6 +101,33 @@ def test_round17_design_rejects_hash_tampering(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="design hash is invalid"):
         load_outcome_mixture_design(source, require_current=False)
+
+
+def test_round18_design_is_current_and_changes_only_the_ranking_ablation() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN18)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN, require_current=False
+    )
+
+    assert (
+        design_sha256
+        == "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40"
+    )
+    assert design["round"] == 18
+    assert design["model"]["ranking_loss_weight"] == 0.1
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
