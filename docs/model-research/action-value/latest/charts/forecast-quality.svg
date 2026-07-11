@@ -1,62 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="520" viewBox="0 0 1500 520" role="img" aria-labelledby="title desc">
-<title id="title">Coherence loss did not improve final head agreement</title>
-<desc id="desc">Development AUC, Spearman information coefficient and mean-direction head agreement for the two neural finalists and LightGBM baseline.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="930" viewBox="0 0 1600 930" role="img" aria-labelledby="title desc">
+<title id="title">Round 15 daily forecast quality</title>
+<desc id="desc">Daily direction AUC and Spearman information coefficient for three policy refit schedules and the selected development schedule.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Coherence loss did not improve final head agreement</text>
-<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">The 0.25 coherence model also missed the zero-MAE baseline; complexity was not promoted on intent.</text>
-<text x="80" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Direction AUC</text>
-<line x1="80" y1="388.0" x2="490" y2="388.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="70" y="392.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.500</text>
-<line x1="80" y1="308.0" x2="490" y2="308.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="70" y="312.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.527</text>
-<line x1="80" y1="228.0" x2="490" y2="228.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="70" y="232.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.553</text>
-<line x1="80" y1="148.0" x2="490" y2="148.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="70" y="152.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.580</text>
-<rect x="121.0" y="183.5" width="82" height="204.5" rx="3" fill="#287f9e"/>
-<text x="162.0" y="174.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.568</text>
-<text x="162.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">Huber</text>
-<rect x="244.0" y="188.0" width="82" height="200.0" rx="3" fill="#4c7b52"/>
-<text x="285.0" y="179.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.567</text>
-<text x="285.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">Coherence</text>
-<rect x="367.0" y="210.2" width="82" height="177.8" rx="3" fill="#6e7781"/>
-<text x="408.0" y="201.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.559</text>
-<text x="408.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">LightGBM</text>
-<text x="555" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Spearman IC</text>
-<line x1="555" y1="388.0" x2="965" y2="388.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="545" y="392.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.000</text>
-<line x1="555" y1="308.0" x2="965" y2="308.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="545" y="312.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.047</text>
-<line x1="555" y1="228.0" x2="965" y2="228.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="545" y="232.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.093</text>
-<line x1="555" y1="148.0" x2="965" y2="148.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="545" y="152.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.140</text>
-<rect x="596.0" y="209.3" width="82" height="178.7" rx="3" fill="#287f9e"/>
-<text x="637.0" y="200.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.104</text>
-<text x="637.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">Huber</text>
-<rect x="719.0" y="221.8" width="82" height="166.2" rx="3" fill="#4c7b52"/>
-<text x="760.0" y="212.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.097</text>
-<text x="760.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">Coherence</text>
-<rect x="842.0" y="183.1" width="82" height="204.9" rx="3" fill="#6e7781"/>
-<text x="883.0" y="174.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.120</text>
-<text x="883.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">LightGBM</text>
-<text x="1030" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Head agreement</text>
-<line x1="1030" y1="388.0" x2="1440" y2="388.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="1020" y="392.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.700</text>
-<line x1="1030" y1="308.0" x2="1440" y2="308.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="1020" y="312.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.780</text>
-<line x1="1030" y1="228.0" x2="1440" y2="228.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="1020" y="232.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.860</text>
-<line x1="1030" y1="148.0" x2="1440" y2="148.0" stroke="#dce3e8" stroke-width="1"/>
-<text x="1020" y="152.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#65727d">0.940</text>
-<rect x="1071.0" y="294.2" width="82" height="93.8" rx="3" fill="#287f9e"/>
-<text x="1112.0" y="285.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.794</text>
-<text x="1112.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">Huber</text>
-<rect x="1194.0" y="316.8" width="82" height="71.2" rx="3" fill="#4c7b52"/>
-<text x="1235.0" y="307.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.771</text>
-<text x="1235.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">Coherence</text>
-<rect x="1317.0" y="187.9" width="82" height="200.1" rx="3" fill="#6e7781"/>
-<text x="1358.0" y="178.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263746">0.900</text>
-<text x="1358.0" y="412" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">LightGBM</text>
-<text x="56" y="482" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Consumed development window: 2023-07-01 through 2023-07-06 UTC. It was not used for selection.</text>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Daily forecast quality did not become tradable</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Forecast association remained positive on many days, but every prior calibration threshold failed exact after-cost risk gates.</text>
+<line x1="120" y1="120" x2="148" y2="120" stroke="#147d8f" stroke-width="4"/>
+<text x="158" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">rolling 10d policy</text>
+<line x1="475" y1="120" x2="503" y2="120" stroke="#315d9b" stroke-width="4"/>
+<text x="513" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">rolling 25d policy</text>
+<line x1="830" y1="120" x2="858" y2="120" stroke="#b66b16" stroke-width="4"/>
+<text x="868" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">expanding 7d half-life policy</text>
+<line x1="1185" y1="120" x2="1213" y2="120" stroke="#a23b55" stroke-width="4"/>
+<text x="1223" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">selected development</text>
+<text x="120" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Direction AUC (0.50 is chance)</text>
+<rect x="120" y="180" width="1410" height="260" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="120" y1="440.0" x2="1530" y2="440.0" stroke="#e4eaef"/>
+<text x="106" y="445.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.48</text>
+<line x1="120" y1="310.0" x2="1530" y2="310.0" stroke="#e4eaef"/>
+<text x="106" y="315.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.55</text>
+<line x1="120" y1="180.0" x2="1530" y2="180.0" stroke="#e4eaef"/>
+<text x="106" y="185.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.62</text>
+<line x1="120" y1="402.9" x2="1530" y2="402.9" stroke="#6b7780" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="120.0,346.8 261.0,260.3 402.0,293.1 543.0,285.4 684.0,367.0" fill="none" stroke="#147d8f" stroke-width="3"/>
+<circle cx="120.0" cy="346.8" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="261.0" cy="260.3" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="402.0" cy="293.1" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="543.0" cy="285.4" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="684.0" cy="367.0" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<polyline points="120.0,315.2 261.0,246.5 402.0,276.7 543.0,271.4 684.0,367.6" fill="none" stroke="#315d9b" stroke-width="3"/>
+<circle cx="120.0" cy="315.2" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="261.0" cy="246.5" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="402.0" cy="276.7" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="543.0" cy="271.4" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="684.0" cy="367.6" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<polyline points="120.0,324.1 261.0,250.2 402.0,275.3 543.0,241.5 684.0,369.1" fill="none" stroke="#b66b16" stroke-width="3"/>
+<circle cx="120.0" cy="324.1" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="261.0" cy="250.2" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="402.0" cy="275.3" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="543.0" cy="241.5" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="684.0" cy="369.1" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<polyline points="825.0,261.7 966.0,203.8 1107.0,269.7 1248.0,327.3 1389.0,315.9 1530.0,375.2" fill="none" stroke="#a23b55" stroke-width="3"/>
+<circle cx="825.0" cy="261.7" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="966.0" cy="203.8" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1107.0" cy="269.7" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1248.0" cy="327.3" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1389.0" cy="315.9" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1530.0" cy="375.2" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<text x="120" y="518" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Spearman information coefficient (0.00 is no rank association)</text>
+<rect x="120" y="540" width="1410" height="275" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="120" y1="815.0" x2="1530" y2="815.0" stroke="#e4eaef"/>
+<text x="106" y="820.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-0.03</text>
+<line x1="120" y1="677.5" x2="1530" y2="677.5" stroke="#e4eaef"/>
+<text x="106" y="682.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.09</text>
+<line x1="120" y1="540.0" x2="1530" y2="540.0" stroke="#e4eaef"/>
+<text x="106" y="545.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.20</text>
+<line x1="120" y1="779.1" x2="1530" y2="779.1" stroke="#6b7780" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="120.0,714.6 261.0,646.1 402.0,619.7 543.0,664.1 684.0,775.2" fill="none" stroke="#147d8f" stroke-width="3"/>
+<circle cx="120.0" cy="714.6" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="261.0" cy="646.1" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="402.0" cy="619.7" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="543.0" cy="664.1" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<circle cx="684.0" cy="775.2" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
+<polyline points="120.0,682.3 261.0,636.0 402.0,613.8 543.0,665.6 684.0,784.3" fill="none" stroke="#315d9b" stroke-width="3"/>
+<circle cx="120.0" cy="682.3" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="261.0" cy="636.0" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="402.0" cy="613.8" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="543.0" cy="665.6" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<circle cx="684.0" cy="784.3" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
+<polyline points="120.0,704.0 261.0,627.2 402.0,591.4 543.0,640.0 684.0,773.2" fill="none" stroke="#b66b16" stroke-width="3"/>
+<circle cx="120.0" cy="704.0" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="261.0" cy="627.2" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="402.0" cy="591.4" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="543.0" cy="640.0" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<circle cx="684.0" cy="773.2" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
+<polyline points="825.0,710.3 966.0,559.7 1107.0,657.3 1248.0,636.2 1389.0,679.4 1530.0,799.5" fill="none" stroke="#a23b55" stroke-width="3"/>
+<circle cx="825.0" cy="710.3" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="966.0" cy="559.7" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1107.0" cy="657.3" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1248.0" cy="636.2" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1389.0" cy="679.4" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<circle cx="1530.0" cy="799.5" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
+<text x="120.0" y="850" transform="rotate(35 120.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-26</text>
+<text x="261.0" y="850" transform="rotate(35 261.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-27</text>
+<text x="402.0" y="850" transform="rotate(35 402.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-28</text>
+<text x="543.0" y="850" transform="rotate(35 543.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-29</text>
+<text x="684.0" y="850" transform="rotate(35 684.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-30</text>
+<text x="825.0" y="850" transform="rotate(35 825.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-01</text>
+<text x="966.0" y="850" transform="rotate(35 966.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-02</text>
+<text x="1107.0" y="850" transform="rotate(35 1107.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-03</text>
+<text x="1248.0" y="850" transform="rotate(35 1248.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-04</text>
+<text x="1389.0" y="850" transform="rotate(35 1389.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-05</text>
+<text x="1530.0" y="850" transform="rotate(35 1530.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-06</text>
 </svg>
