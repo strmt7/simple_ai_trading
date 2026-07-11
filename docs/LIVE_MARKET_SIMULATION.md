@@ -329,7 +329,7 @@ Autonomous network-interruption recovery:
   nonzero with `market_recovery_pending`.
 - The first successful `live` market read after an interruption is an observation
   step, not entry permission. Fresh entries are blocked through the shared entry
-  risk gate with `recovery_pending=true`, a `recovery_observation` event is
+  risk control with `recovery_pending=true`, a `recovery_observation` event is
   persisted, and the loop waits through `recovery_cooldown_seconds` when
   configured. Existing open positions still pass through the normal stop,
   take-profit, and emergency drawdown logic on the recovered quote.
@@ -370,7 +370,7 @@ correct action is to wait. That wait can last for many days if the configured
 cooldowns and repeated checks keep failing; the UI should show a simple
 waiting/blocked state while the detailed evidence remains in reports.
 
-The live and autonomous loops now apply this as an explicit entry-risk gate.
+The live and autonomous loops now apply this as an explicit pre-entry risk control.
 On every step, they classify the rolling point-in-time model rows, compute a
 deterministic `regime_unpredictability_score`, and compare that score with
 `StrategyConfig.max_regime_unpredictability`. The live loop also records

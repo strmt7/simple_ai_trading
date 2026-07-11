@@ -12,9 +12,9 @@
   "artifact_class": "exchange_sourced_model_confirmation_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1419,
+      "bytes": 1425,
       "path": "docs/model-research/tape-depth/latest/README.md",
-      "sha256": "4e0f6d4d4728ee8e535312338db6f29405ef6dabda189d567214e7117ec54abe"
+      "sha256": "44df6132bfdf0355f77d0696000a1308b9cfbac5c71f5168321c10718b874196"
     },
     {
       "bytes": 1349,
@@ -107,9 +107,9 @@
       "sha256": "f98ec7b9f405f7dc884fec09a71a6ffa556a45a24a07d01663e0063c3a0ccc4a"
     },
     {
-      "bytes": 3279,
-      "path": "docs/model-research/tape-depth/latest/charts/action-funnel.svg",
-      "sha256": "6fb714f4ded80454bbb3faf25923cf4f6248748260978cce87036a24c71463d1"
+      "bytes": 3282,
+      "path": "docs/model-research/tape-depth/latest/charts/signal-selection.svg",
+      "sha256": "b62d438e6225f29124d826529f4b7979dc2d38b5b6429f84efbd344178252d02"
     },
     {
       "bytes": 4718,
@@ -146,6 +146,13 @@
     "ETHUSDT",
     "SOLUSDT"
   ],
+  "presentation_revision": {
+    "date_utc": "2026-07-11",
+    "numerical_evidence_changed": false,
+    "prior_chart_sha256": "6fb714f4ded80454bbb3faf25923cf4f6248748260978cce87036a24c71463d1",
+    "prior_readme_sha256": "4e0f6d4d4728ee8e535312338db6f29405ef6dabda189d567214e7117ec54abe",
+    "reason": "Standardized authored financial terminology; CSV evidence and reported financial results are unchanged."
+  },
   "profitability_claim": false,
   "regeneration_command": "python tools/publish_tape_depth_confirmation.py --confirmation-root <local-confirmation-root> --discovery-root <local-discovery-root> --design docs/model-research/tape-depth/confirmation-design.json --availability docs/microstructure/availability.json --output-dir docs/model-research/tape-depth/latest",
   "rejection_reasons": [
@@ -186,7 +193,7 @@
     "docs/model-research/tape-depth/latest/progress.csv",
     "docs/model-research/tape-depth/latest/charts/after-cost-performance.svg",
     "docs/model-research/tape-depth/latest/charts/forecast-quality.svg",
-    "docs/model-research/tape-depth/latest/charts/action-funnel.svg",
+    "docs/model-research/tape-depth/latest/charts/signal-selection.svg",
     "docs/model-research/tape-depth/latest/charts/research-progress.svg"
   ],
   "tracked_repo_artifact": true,

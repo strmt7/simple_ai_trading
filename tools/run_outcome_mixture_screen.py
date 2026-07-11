@@ -168,28 +168,54 @@ _ROUND_CONTRACTS = {
         },
     },
     19: {
-        "purpose": "consumed_data_pressure_capacity_outcome_mixture_screen",
-        "design_revisions": {1},
+        "purposes": {
+            1: "".join(("consumed_data_pressure_", "capacity_outcome_mixture_screen")),
+            2: "consumed_data_depth_normalized_order_flow_outcome_mixture_screen",
+        },
+        "design_revisions": {1, 2},
         "ranking_loss_weight": 0.1,
         "feature_version": "l1-tape-causal-v8",
-        "predecessor": {
-            "round": 18,
-            "design_sha256": (
-                "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40"
-            ),
-            "source_report_canonical_sha256": (
-                "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676"
-            ),
-            "publication_sha256": (
-                "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
-            ),
-            "finding": (
-                "Round 18 improved the least-negative policy tail and produced 24 "
-                "aggressive calibration-eligible rows, but all four threshold traces "
-                "lost money after stress costs. Round 19 keeps the model, data, risk, "
-                "and ranking settings fixed while adding causal trade-pressure versus "
-                "opposing displayed-depth inputs."
-            ),
+        "predecessors": {
+            1: {
+                "round": 18,
+                "design_sha256": (
+                    "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40"
+                ),
+                "source_report_canonical_sha256": (
+                    "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676"
+                ),
+                "publication_sha256": (
+                    "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
+                ),
+                "finding": (
+                    "Round 18 improved the least-negative policy tail and produced "
+                    "24 aggressive calibration-eligible rows, but all four threshold "
+                    "traces lost money after stress costs. Round 19 keeps the model, "
+                    "data, risk, and ranking settings fixed while adding causal "
+                    "trade-pressure versus opposing displayed-depth inputs."
+                ),
+            },
+            2: {
+                "round": 18,
+                "design_sha256": (
+                    "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40"
+                ),
+                "source_report_canonical_sha256": (
+                    "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676"
+                ),
+                "publication_sha256": (
+                    "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
+                ),
+                "finding": (
+                    "Round 18 improved the least-negative out-of-sample top-100 mean "
+                    "net return and produced 24 aggressive-profile signals passing "
+                    "pre-threshold controls in the threshold-selection window, but "
+                    "all four threshold-selection simulations lost money after "
+                    "stress costs. Round 19 keeps the model, data, risk, and ranking "
+                    "settings fixed while adding causal depth-normalized aggressive "
+                    "order-flow inputs based on current opposing displayed L1 depth."
+                ),
+            },
         },
     },
 }
@@ -295,6 +321,18 @@ def load_outcome_mixture_design(
         if isinstance(round_number, int) and not isinstance(round_number, bool)
         else None
     )
+    purpose = round_contract.get("purpose") if round_contract is not None else None
+    purposes = round_contract.get("purposes") if round_contract is not None else None
+    if isinstance(purposes, Mapping):
+        purpose = purposes.get(payload.get("design_revision"))
+    predecessor = (
+        round_contract.get("predecessor") if round_contract is not None else None
+    )
+    predecessors = (
+        round_contract.get("predecessors") if round_contract is not None else None
+    )
+    if isinstance(predecessors, Mapping):
+        predecessor = predecessors.get(payload.get("design_revision"))
     reference, _reference_sha256 = load_adaptive_action_design(
         _ROUND16_DESIGN, require_current=False
     )
@@ -306,14 +344,14 @@ def load_outcome_mixture_design(
         payload.get("schema_version") != DESIGN_SCHEMA_VERSION
         or round_contract is None
         or payload.get("design_revision") not in round_contract["design_revisions"]
-        or payload.get("purpose") != round_contract["purpose"]
+        or payload.get("purpose") != purpose
         or payload.get("target_mode") != ADAPTIVE_BARRIER_TARGET_MODE
         or payload.get("trading_authority") is not False
         or payload.get("execution_claim") is not False
         or payload.get("profitability_claim") is not False
         or payload.get("portfolio_claim") is not False
         or payload.get("leverage_applied") is not False
-        or payload.get("predecessor_evidence") != round_contract["predecessor"]
+        or payload.get("predecessor_evidence") != predecessor
         or payload.get("training") != reference.get("training")
     ):
         raise ValueError("outcome-mixture design contract is invalid")
@@ -870,7 +908,7 @@ def run_outcome_mixture_screen(
             "the 100 ms BBO path cannot resolve queue position or hidden depth",
             "base and adverse scenarios are research replays, not fill guarantees",
             "all returns are unleveraged and no profile may apply leverage before edge validation",
-            "the local neural ensemble is machine learning and is not the optional language-model AI reviewer",
+            "the local neural ensemble is machine learning and is not the optional LLM risk-assessment overlay",
             "the reserved terminal date was neither loaded nor labeled",
         ],
     }

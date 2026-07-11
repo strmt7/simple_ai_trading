@@ -94,6 +94,8 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
         assert ">nan<" not in chart.lower()
         assert '="nan"' not in chart.lower()
     assert "Every displayed mean is negative" in charts[1]
+    assert "action funnel" not in charts[2].lower()
+    assert "Pre-trade risk controls" in charts[2]
     assert "2023-06-21" in charts[2]
     assert "Rounds 15 through 16" in charts[4]
 
@@ -105,7 +107,7 @@ def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
     namespace = "{http://www.w3.org/2000/svg}"
     texts = [node for node in tail.findall(f"{namespace}text") if node.text]
     value_label = next(node for node in texts if node.text == "-21.99")
-    category_label = next(node for node in texts if node.text == "Policy short")
+    category_label = next(node for node in texts if node.text == "Out-of-sample short")
 
     assert float(value_label.attrib["y"]) + 20.0 < float(category_label.attrib["y"])
     assert tail.find(f"{namespace}title").text.startswith("Round 17")
@@ -166,4 +168,4 @@ def test_round18_gate_summary_preserves_nonzero_candidates() -> None:
     assert summary["accepted_count"] == 0
     assert summary["all_candidate_stress_nets_negative"] is True
     assert "Aggressive (24)" in str(summary["sentence"])
-    assert "all failed the stress gates" in str(summary["sentence"])
+    assert "all failed the stress-test acceptance criteria" in str(summary["sentence"])

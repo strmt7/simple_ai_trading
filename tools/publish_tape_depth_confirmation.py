@@ -163,11 +163,9 @@ def _load_confirmation(
         availability_path=availability_path,
     )
     report = _read_json(root / "report.json")
-    if (
-        report.get("design_sha256") != design_sha256
-        or report.get("confirmation_fingerprint")
-        != _canonical_sha256(report, omit="confirmation_fingerprint")
-    ):
+    if report.get("design_sha256") != design_sha256 or report.get(
+        "confirmation_fingerprint"
+    ) != _canonical_sha256(report, omit="confirmation_fingerprint"):
         raise ValueError("confirmation report failed fingerprint validation")
     periods = [str(value) for value in design["confirmation_periods"]]
     period_reports = [
@@ -184,7 +182,9 @@ def _load_confirmation(
         for item in report.get("periods", [])
         if isinstance(item, Mapping)
     ]
-    if final_fingerprints != [str(item["period_fingerprint"]) for item in period_reports]:
+    if final_fingerprints != [
+        str(item["period_fingerprint"]) for item in period_reports
+    ]:
         raise ValueError("confirmation report differs from period checkpoints")
     return report, period_reports, design, design_sha256
 
@@ -199,7 +199,9 @@ def _period_and_trade_rows(
         forecast = report["forecast"]
         execution = report["execution"]
         evidence = report["evidence"]
-        if not all(isinstance(value, Mapping) for value in (forecast, execution, evidence)):
+        if not all(
+            isinstance(value, Mapping) for value in (forecast, execution, evidence)
+        ):
             raise ValueError("confirmation period sections are invalid")
         forecast = dict(forecast)  # type: ignore[arg-type]
         execution = dict(execution)  # type: ignore[arg-type]
@@ -211,18 +213,12 @@ def _period_and_trade_rows(
                 "period": period,
                 "forecast_status": forecast["status"],
                 "direction_auc": forecast_metrics["direction_auc"],
-                "spearman_ic": forecast_metrics[
-                    "spearman_information_coefficient"
-                ],
+                "spearman_ic": forecast_metrics["spearman_information_coefficient"],
                 "mae_bps": forecast_metrics["mean_absolute_error_bps"],
                 "zero_baseline_mae_bps": forecast_metrics["zero_baseline_mae_bps"],
                 "selected_signals": execution_metrics["selected_signal_rows"],
-                "long_signals": forecast_metrics[
-                    "calibration_threshold_long_rows"
-                ],
-                "short_signals": forecast_metrics[
-                    "calibration_threshold_short_rows"
-                ],
+                "long_signals": forecast_metrics["calibration_threshold_long_rows"],
+                "short_signals": forecast_metrics["calibration_threshold_short_rows"],
                 "overlap_suppressed": execution_metrics["overlap_suppressed_rows"],
                 "scheduled_signals": execution_metrics["scheduled_signal_rows"],
                 "participation_rejections": execution_metrics[
@@ -230,9 +226,7 @@ def _period_and_trade_rows(
                 ],
                 "quote_rejections": execution_metrics["rejected_quote_rows"],
                 "executable_trades": execution_metrics["executable_rows"],
-                "mean_quote_gross_bps": execution_metrics[
-                    "mean_quote_path_gross_bps"
-                ],
+                "mean_quote_gross_bps": execution_metrics["mean_quote_path_gross_bps"],
                 "mean_net_bps": execution_metrics["mean_net_return_bps"],
                 "positive_net_rate": execution_metrics["positive_net_rate"],
                 "model_sha256": evidence["model_sha256"],
@@ -406,7 +400,9 @@ def _progress_rows(
     if not isinstance(forecast, Mapping) or not isinstance(scenarios, Mapping):
         raise ValueError("after-cost discovery evidence is invalid")
     stressed = scenarios.get("observed_bbo_plus_1bps_each_side")
-    if not isinstance(stressed, Mapping) or not isinstance(stressed.get("report"), Mapping):
+    if not isinstance(stressed, Mapping) or not isinstance(
+        stressed.get("report"), Mapping
+    ):
         raise ValueError("stressed discovery execution evidence is invalid")
     stressed_report = dict(stressed["report"])
     stressed_metrics = dict(stressed_report["metrics"])
@@ -430,30 +426,39 @@ def _progress_rows(
             "source_file": "after-cost-taker-diagnostic.json",
         }
     )
-    weights = [int(dict(dict(report["forecast"])["metrics"])["rows"]) for report in period_reports]
+    weights = [
+        int(dict(dict(report["forecast"])["metrics"])["rows"])
+        for report in period_reports
+    ]
     total_weight = sum(weights)
-    weighted_auc = sum(
-        weight * _finite(dict(dict(report["forecast"])["metrics"])["direction_auc"])
-        for weight, report in zip(weights, period_reports, strict=True)
-    ) / total_weight
-    weighted_ic = sum(
-        weight
-        * _finite(
-            dict(dict(report["forecast"])["metrics"])[
-                "spearman_information_coefficient"
-            ]
+    weighted_auc = (
+        sum(
+            weight * _finite(dict(dict(report["forecast"])["metrics"])["direction_auc"])
+            for weight, report in zip(weights, period_reports, strict=True)
         )
-        for weight, report in zip(weights, period_reports, strict=True)
-    ) / total_weight
+        / total_weight
+    )
+    weighted_ic = (
+        sum(
+            weight
+            * _finite(
+                dict(dict(report["forecast"])["metrics"])[
+                    "spearman_information_coefficient"
+                ]
+            )
+            for weight, report in zip(weights, period_reports, strict=True)
+        )
+        / total_weight
+    )
     all_execution_rows = [
         row
         for report in period_reports
         for row in report["execution_rows"]  # type: ignore[union-attr]
         if isinstance(row, Mapping) and row.get("status") == "executable"
     ]
-    mean_gross = sum(_finite(row["quote_path_gross_bps"]) for row in all_execution_rows) / len(
-        all_execution_rows
-    )
+    mean_gross = sum(
+        _finite(row["quote_path_gross_bps"]) for row in all_execution_rows
+    ) / len(all_execution_rows)
     actual = dict(confirmation_report["actual"])
     rows.append(
         {
@@ -559,7 +564,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]]) -> str:
         _svg_header(
             width,
             height,
-            "Round 8 action funnel",
+            "Round 8 signal selection",
             "Untouched UTC dates; no minimum trade quota is forced.",
         )
     ]
@@ -607,7 +612,9 @@ def _quality_svg(rows: Sequence[Mapping[str, object]]) -> str:
         ("direction_auc", 0.48, 0.59, 0.5, "Direction AUC", "#2563eb"),
         ("spearman_ic", 0.0, 0.14, 0.0, "Spearman IC", "#0f766e"),
     )
-    for panel_index, (field, low, high, baseline_value, label, color) in enumerate(panels):
+    for panel_index, (field, low, high, baseline_value, label, color) in enumerate(
+        panels
+    ):
         x0 = 70 + panel_index * 530
         y0, panel_width, panel_height = 120, 470, 260
 
@@ -647,7 +654,9 @@ def _progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
             "Rounds 1-7 used the contaminated discovery date; Round 8 is untouched confirmation.",
         )
     ]
-    x_values = [left + chart_width * index / (len(rows) - 1) for index in range(len(rows))]
+    x_values = [
+        left + chart_width * index / (len(rows) - 1) for index in range(len(rows))
+    ]
     auc_top, auc_height = 105, 175
     econ_top, econ_height = 330, 150
 
@@ -712,8 +721,7 @@ def _validate_publication(report_path: Path, *, repo_root: Path) -> None:
     manifest = report.get("artifact_integrity")
     tracked = report.get("tracked_artifacts")
     if (
-        report.get("artifact_class")
-        != "exchange_sourced_model_confirmation_graph_data"
+        report.get("artifact_class") != "exchange_sourced_model_confirmation_graph_data"
         or report.get("tracked_repo_artifact") is not True
         or report.get("trading_authority") is not False
         or report.get("execution_claim") is not False
@@ -748,8 +756,13 @@ def _validate_publication(report_path: Path, *, repo_root: Path) -> None:
                 reader = csv.reader(handle)
                 columns = next(reader)
                 rows = sum(1 for _ in reader)
-            if entry.get("columns") != columns or int(entry.get("row_count", -1)) != rows:
-                raise ValueError(f"published confirmation CSV shape differs: {relative}")
+            if (
+                entry.get("columns") != columns
+                or int(entry.get("row_count", -1)) != rows
+            ):
+                raise ValueError(
+                    f"published confirmation CSV shape differs: {relative}"
+                )
 
 
 def main() -> int:
@@ -770,7 +783,7 @@ def main() -> int:
     progress_path = output_dir / "progress.csv"
     after_cost_path = output_dir / "charts" / "after-cost-performance.svg"
     quality_path = output_dir / "charts" / "forecast-quality.svg"
-    funnel_path = output_dir / "charts" / "action-funnel.svg"
+    funnel_path = output_dir / "charts" / "signal-selection.svg"
     progress_chart_path = output_dir / "charts" / "research-progress.svg"
     readme_path = output_dir / "README.md"
     report_path = output_dir / "report.json"
@@ -820,7 +833,7 @@ evidence and cannot be reused for model selection.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-![Action funnel](charts/action-funnel.svg)
+![Signal selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 
@@ -869,9 +882,12 @@ the arguments recorded in `report.json`.
             "period_fingerprints": [
                 value["period_fingerprint"] for value in period_reports
             ],
-            "model_sha256": [value["evidence"]["model_sha256"] for value in period_reports],  # type: ignore[index]
+            "model_sha256": [
+                value["evidence"]["model_sha256"] for value in period_reports
+            ],  # type: ignore[index]
             "predictions_sha256": [
-                value["evidence"]["predictions_sha256"] for value in period_reports  # type: ignore[index]
+                value["evidence"]["predictions_sha256"]
+                for value in period_reports  # type: ignore[index]
             ],
         },
         "regeneration_command": (

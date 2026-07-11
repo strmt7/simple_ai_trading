@@ -44,7 +44,7 @@ that leverage or a lower threshold would create alpha.
    inputs/outputs, and is rejected unless it improves after-cost returns without
    worsening drawdown or tail loss.
 
-## Multi-Fidelity Funnel
+## Multi-Fidelity Evaluation Sequence
 
 ### Stage 0 - Contract and Feasibility
 

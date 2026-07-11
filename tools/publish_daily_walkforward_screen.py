@@ -666,7 +666,7 @@ def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
         '<desc id="desc">Daily direction AUC and Spearman information coefficient for three policy refit schedules and the selected development schedule.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Daily forecast quality did not become tradable</text>',
-        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Forecast association remained positive on many days, but every prior calibration threshold failed exact after-cost risk gates.</text>',
+        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Forecast association remained positive on many days, but every threshold-selection candidate failed the precommitted net-of-cost acceptance criteria.</text>',
     ]
     for index, (_, _, color, label) in enumerate(_SERIES):
         x = 120 + index * 355
@@ -728,11 +728,11 @@ def _funnel_svg(
     start = (width - (box_width * len(stages) + gap * (len(stages) - 1))) / 2
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        '<title id="title">Round 15 action funnel</title>',
+        '<title id="title">Round 15 signal selection</title>',
         '<desc id="desc">Twenty-one model fits produced eighty-four threshold traces. None passed, so evaluation remained in abstention and no candidate was created.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Mandatory abstention stopped failed thresholds</text>',
-        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">The funnel reports operational evidence; zero evaluation trades is a safety outcome, not a profitability result.</text>',
+        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">The selection sequence reports operational evidence; zero evaluation trades is an abstention result, not profitability evidence.</text>',
     ]
     for index, (value, label) in enumerate(stages):
         x = start + index * (box_width + gap)
@@ -945,7 +945,7 @@ def publish(
     _write_text(charts / "after-cost-performance.svg", _economics_svg(rows))
     _write_text(charts / "forecast-quality.svg", _forecast_svg(rows))
     _write_text(
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         _funnel_svg(
             model_fits=len(rows),
             threshold_traces=threshold_traces,
@@ -963,7 +963,7 @@ def publish(
     )
     readme = f"""# Round 15: daily refits abstained
 
-**Rejected safely.** All **{threshold_traces}** prior-only threshold traces from **{len(rows)}** causal daily model fits failed the after-cost risk gates. No threshold was allowed to trade an evaluation day.
+**Rejected without trading authority.** All **{threshold_traces}** prior-only threshold traces from **{len(rows)}** causal daily model fits failed the precommitted net-of-cost acceptance criteria. No threshold was allowed to trade an evaluation day.
 
 | Evidence | Result |
 | --- | ---: |
@@ -977,7 +977,7 @@ def publish(
 
 ![Daily forecast quality](charts/forecast-quality.svg)
 
-![Action funnel](charts/action-funnel.svg)
+![Signal selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 
@@ -995,7 +995,7 @@ Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnos
         output_dir / "diagnostics.json",
         charts / "after-cost-performance.svg",
         charts / "forecast-quality.svg",
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         charts / "research-progress.svg",
     ]
     implementation = design["implementation"]

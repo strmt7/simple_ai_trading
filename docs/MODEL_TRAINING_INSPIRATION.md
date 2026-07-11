@@ -221,7 +221,7 @@ weakening risk controls.
   loss is reserved for sparse hard-event labels so easy no-trade bars do not
   dominate training.
 - Implemented update: optimization rounds now attempt the adaptive hybrid
-  model-zoo overlay from rejected base selections by searching a copied model at
+  hybrid-candidate overlay from rejected base selections by searching a copied model at
   the best diagnostic threshold. The hybrid uses chronological
   training/selection rows, records hybrid profile/score evidence, emits
   long-run status phases, and can replace the base model only if the hybrid
@@ -230,7 +230,7 @@ weakening risk controls.
   thresholds unless a hybrid replay passes; diagnostics cannot become
   executable trades.
 - Implemented update: optimization rounds now run an interpretable rule-alpha
-  template zoo after classifier/hybrid selection. The templates cover momentum
+  strategy-template library after classifier/hybrid selection. The templates cover momentum
   breakout, VWAP/RSI mean reversion, trend-pullback, volatility breakout, and
   volume-flow proxy families with normal and inverted orientation. The latest
   implementation adds order-flow momentum, flow-reversion, flow-consensus
@@ -239,14 +239,14 @@ weakening risk controls.
   volume-synchronized flow, adaptive tape-regime, and higher-timeframe
   alignment families that use serialized offsets into the advanced order-flow
   and higher-timeframe context feature blocks, plus short-hold and longer-hold
-  profiles to test activity without changing risk gates. The rule-alpha prefix is
+  profiles to test activity without changing risk controls. The rule-alpha prefix is
   now stratified into a larger cheap event-rank pool before the bounded replay
   set is chosen; the default path still runs 225 static-template lifecycle
   replays, but picks them by after-cost forward-event edge, signal count, and
   hit rate. CPU/live scoring preserves the full
   serialized feature vector for advanced rule-alpha templates, and DirectML
   batch scoring is tested for parity. Regime and liquidity-session arrays are
-  cached across candidate replays without changing risk gates. Rejected alpha
+  cached across candidate replays without changing risk controls. Rejected alpha
   searches record best active profile, family, score, P&L, closed trades, win
   rate, profit factor, max drawdown, exit-reason counts, side counts, reject
   reason, orientation, evaluated candidate count, active/profitable/accepted
@@ -270,8 +270,8 @@ weakening risk controls.
   promotion, not merely being hidden by no-entry thresholds. None were
   profitable after costs. The support is implemented and exercised by real-data
   smoke evidence, but it is not profitable evidence.
-- FinMamba/Mamba-style research is useful inspiration for "trade anything"
-  workflows because cross-asset relationships and market regimes can change
+- FinMamba/Mamba-style research is useful inspiration for cross-asset modeling
+  because cross-asset relationships and market regimes can change
   quickly. In this repo, those models should begin as point-in-time
   cross-symbol context features for rank, correlation-shock, and diversification
   evidence; they must not directly emit orders.
@@ -442,7 +442,7 @@ day-trading system needs to understand when assets move together, when
 correlations break, and when diversification is fake because the whole accepted
 set is one crowded trade. FinMamba-style market-aware graphs and selective
 state-space models are useful inspiration for this, but they should not be
-treated as magic alpha engines.
+treated as validated sources of alpha without independent evidence.
 
 Implementation direction:
 
@@ -638,7 +638,7 @@ Implemented objective gates:
 
 ## Prioritized Backlog
 
-1. Expand meta-label validation with cross-symbol, out-of-sample policy replay
+1. Expand meta-label validation with cross-symbol, out-of-sample strategy simulation
    and per-risk-level precision/drift dashboards.
 2. Microstructure feature block from typed top-of-book samples, then L2 depth
    snapshots for queue/fill simulation.

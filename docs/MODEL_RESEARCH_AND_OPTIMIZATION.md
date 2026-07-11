@@ -945,7 +945,7 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   and the risk-level policy can reject a portfolio whose nominal symbol count
   is diversified but whose correlation-adjusted count is not:
   <https://www.bis.org/bcbs/publ/d352.pdf>
-- The Basel market-risk backtesting framework influenced the tail-risk gate:
+- The Basel market-risk backtesting framework informed the tail-risk controls:
   the portfolio report measures VaR/CVaR-style losses and drawdown from the
   same aligned returns used for model-lab acceptance. Portfolio weights are
   actual cap-constrained equity weights, so any undeployed allocation remains
@@ -978,7 +978,7 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   `Retry-After` on retryable rate-limit responses:
   <https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/rate-limits>
 
-## Implemented Model Zoo
+## Implemented Candidate Models
 
 The base classifier remains the advanced logistic/GPU training path already
 used by the CLI. The advanced feature vector now includes:
@@ -1024,7 +1024,7 @@ model:
 The optimizer evaluates risk-level-specific weight profiles:
 
 - `conservative`: starts with base-model agreement profiles, then also tests
-  low-base rescue profiles where technical confluence, neighbor voting, and
+  reduced-base-model-weight fallback profiles where technical confluence, neighbor voting, and
   kernel smoothing can dominate if selection evidence supports them.
 - `regular`: balances base probability, Lorentzian neighbor structure, kernel
   smoothness, and confluence.
@@ -1032,7 +1032,7 @@ The optimizer evaluates risk-level-specific weight profiles:
   backtest gates and drawdown limits.
 
 After classifier and hybrid selection, the optimization evidence path now runs
-an interpretable rule-alpha template zoo. This implements the open-source
+an interpretable strategy-template library. This implements the open-source
 pattern seen in stronger bots: broad, cheap entry/exit template sweeps happen
 before any template is promoted into the same serialized model path. The current
 templates are original momentum breakout, VWAP/RSI mean reversion,
@@ -1067,7 +1067,7 @@ the modeled cost floor; mined candidates still use the same serialized
 `rule_alpha` path and replay gates. Rejected searches record the
 best rejected active profile, P&L, closed-trade count, win rate, profit factor,
 max drawdown, exit-reason counts, side counts, reject reason, orientation, and
-candidate count. Candidate diagnostics also persist the full zoo's
+candidate count. Candidate diagnostics also persist the complete candidate set's
 active/profitable/accepted candidate counts, static-template candidate count,
 empirical mined candidate count, empirical interaction count, forward-event signal count, positive
 after-cost forward-event count, best raw event candidate, maximum
@@ -1075,7 +1075,7 @@ closed trades, most-active candidate, best-PnL candidate, and active
 family/profile coverage so failed research cannot hide whether it was inactive,
 active-but-losing, or directionally negative before full trade replay.
 
-The optimization-round evidence path now runs the same adaptive hybrid model-zoo
+The optimization-round evidence path now runs the same adaptive hybrid candidate set
 as a post-base-candidate selection step even when the selected base candidate
 failed, but only from a copied model reset to the best diagnostic threshold. It
 uses the existing chronological training/selection split, records hybrid
@@ -1165,7 +1165,7 @@ Any missing rows, exception, nonpositive score/P&L, objective rejection,
 drawdown stop, or liquidation blocks serialization. The final reported score
 and deflated score are capped by this sealed result. Model readiness, financial
 sanity, and compact AI review all reject missing or malformed terminal evidence.
-The old zero-fold hybrid rescue path was removed: failed walk-forward evidence
+The old zero-fold hybrid fallback path was removed: failed walk-forward evidence
 cannot be replaced with a synthetic passing gate.
 
 The general suite also has a durable cross-run boundary. `train-suite` requires
@@ -1273,7 +1273,7 @@ the profitability, drawdown, and minimum-trade gates in
 `ObjectiveSpec.accepts` on development selection and validation, then pass the
 sealed exact-model terminal gate. If no base candidate survives the purged
 walk-forward gates, the objective remains rejected; a hybrid cannot manufacture
-or inherit a zero-fold passing gate. Offline hybrid rescue research remains in
+or inherit a zero-fold passing result. Offline hybrid fallback research remains in
 the optimization workflow, where the selected model is still subjected to that
 workflow's separate final holdout and cannot become live authority by itself.
 Accepted hybrid reports also include an ablation table. The optimizer replays
@@ -1457,10 +1457,10 @@ finance evidence.
 11. Writes a JSON report plus per-symbol `stress_validation.json`,
    `temporal_robustness.json`, and `portfolio_risk.json`. An outcome is
    accepted only when all objective scores are positive, selection-risk
-   deflation passes, every stress replay passes the objective risk gates,
+   deflation passes, every stress simulation passes the objective risk controls,
    temporal robustness passes, data coverage has no hard integrity failure,
    learning feedback has no unresolved repeated-loss block, and the accepted
-   set passes the portfolio diversification and tail-risk gates.
+   set passes the portfolio diversification and tail-risk controls.
 
 Every outcome now includes a `data_coverage` evidence block. It records symbol,
 market type, interval, source scope, requested and used UTC date span, candle
@@ -1522,7 +1522,7 @@ from reaching signed execution.
 The same readiness gate now requires `execution_validation` on signed live
 artifacts. `model-lab` stamps each serialized model after it runs
 symbol-specific stress validation and final-model temporal robustness against
-the selected liquid symbol, then after the portfolio risk gate is known. The
+the selected liquid symbol, then after the portfolio risk assessment is known. The
 stamp records the symbol, market type, liquidity measurements, data-coverage
 integrity, stress report path, temporal-robustness report path, portfolio report
 path, accepted scenario/window counts, portfolio effective-symbol,

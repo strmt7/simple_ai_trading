@@ -434,18 +434,24 @@ def _progress_rows(
         {
             "round": round_number,
             "stage": (
-                "rank-regularized conditional outcome-mixture ensemble"
-                if round_number >= 18
+                "depth-normalized order-flow conditional distribution model"
+                if round_number >= 19
                 else (
-                    "conditional win/loss outcome-mixture ensemble"
-                    if round_number >= 17
-                    else "adaptive 100 ms barrier action-value ensemble"
+                    "rank-regularized conditional outcome-mixture ensemble"
+                    if round_number >= 18
+                    else (
+                        "conditional win/loss outcome-mixture ensemble"
+                        if round_number >= 17
+                        else "adaptive 100 ms barrier action-value ensemble"
+                    )
                 )
             ),
             "periods": "2023-05-16..2023-07-06",
             "selection_contaminated": True,
             "horizon_seconds": 900,
-            "feature_set": "l1-tape-causal-v7",
+            "feature_set": (
+                "l1-tape-causal-v8" if round_number >= 19 else "l1-tape-causal-v7"
+            ),
             "risk_level": "conservative;regular;aggressive",
             "direction_auc": max(float(value["auc"]) for value in policy_stress),
             "spearman_ic": "",
@@ -456,12 +462,16 @@ def _progress_rows(
             "status": "rejected",
             "source_file": f"adaptive action-value Round {round_number} report",
             "best_model_id": (
-                "three-seed rank-regularized-outcome-mixture-shared-residual"
-                if round_number >= 18
+                "three-seed depth-normalized-order-flow outcome-mixture"
+                if round_number >= 19
                 else (
-                    "three-seed conditional-outcome-mixture-shared-residual"
-                    if round_number >= 17
-                    else "three-seed adaptive-barrier-shared-residual"
+                    "three-seed rank-regularized-outcome-mixture-shared-residual"
+                    if round_number >= 18
+                    else (
+                        "three-seed conditional-outcome-mixture-shared-residual"
+                        if round_number >= 17
+                        else "three-seed adaptive-barrier-shared-residual"
+                    )
                 )
             ),
             "best_top_500_exact_after_cost_bps": max(
@@ -515,11 +525,11 @@ def _forecast_svg(
     colors = {"long": "#16827a", "short": "#8d5aa7"}
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        f'<title id="title">Round {round_number} profitable-outcome AUC by prior role</title>',
-        '<desc id="desc">Long and short adverse-stress AUC for calibration June 21 to 25 and policy June 26 to 30, 2023. A dashed line marks random ranking at 0.5.</desc>',
+        f'<title id="title">Round {round_number} probability-of-profit discrimination by evaluation window</title>',
+        '<desc id="desc">Long and short adverse-stress ROC AUC for threshold selection from June 21 to 25 and out-of-sample validation from June 26 to 30, 2023. A dashed line marks random discrimination at 0.5.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Profitable-outcome ranking</text>',
-        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Adverse-stress targets; values above 0.5 rank positive outcomes better than chance.</text>',
+        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Probability-of-profit discrimination</text>',
+        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Adverse-stress outcomes; ROC AUC above 0.5 indicates discrimination better than chance.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
     for value in (0.0, 0.25, 0.5, 0.75, 1.0):
@@ -533,6 +543,10 @@ def _forecast_svg(
     for index, row in enumerate(selected):
         x = left + 135 + index * 240
         value = float(row["auc"])
+        role_label = {
+            "calibration": "Threshold selection",
+            "policy": "Out-of-sample",
+        }[str(row["role"])]
         y = top + chart_height * (1.0 - value)
         h = top + chart_height - y
         color = colors[str(row["side"])]
@@ -540,14 +554,14 @@ def _forecast_svg(
             [
                 f'<rect x="{x - bar_width / 2:.1f}" y="{y:.1f}" width="{bar_width}" height="{h:.1f}" fill="{color}"/>',
                 f'<text x="{x:.1f}" y="{y - 10:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">{value:.3f}</text>',
-                f'<text x="{x:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">{html.escape(str(row["role"]).title())} {html.escape(str(row["side"]))}</text>',
+                f'<text x="{x:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">{role_label} {html.escape(str(row["side"]))}</text>',
                 f'<text x="{x:.1f}" y="{top + chart_height + 48}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">{html.escape(str(row["start_date"]))} to {html.escape(str(row["end_date"]))}</text>',
             ]
         )
     lines.extend(
         [
             '<text x="34" y="285" transform="rotate(-90 34 285)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">ROC AUC</text>',
-            '<text x="48" y="532" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">AUC alone does not establish an after-cost edge; the locked action gates remained mandatory.</text>',
+            '<text x="48" y="532" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">ROC AUC alone does not establish a net-of-cost edge; all precommitted risk controls remained binding.</text>',
             "</svg>",
         ]
     )
@@ -570,11 +584,11 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        f'<title id="title">Round {round_number} ranked after-cost tail economics</title>',
-        '<desc id="desc">Mean adverse-stress net basis points for the top 100 and top 500 predictions in calibration and policy during June 2023. Every displayed mean is negative.</desc>',
+        f'<title id="title">Round {round_number} net returns for highest-ranked signals</title>',
+        '<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and out-of-sample validation windows during June 2023. Every displayed mean is negative.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Ranked after-cost tail remained negative</text>',
-        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Actual 100 ms barrier outcomes, including fees, latency and adverse protection delay.</text>',
+        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Highest-ranked signals remained negative net of costs</text>',
+        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Realized 100 ms BBO-path outcomes include fees, latency, slippage and delayed stop execution.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
     for value in (-20.0, -15.0, -10.0, -5.0, 0.0):
@@ -588,6 +602,10 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     colors = ("#c64c3f", "#e3a229")
     for index, row in enumerate(selected):
         center = left + 140 + index * 240
+        role_label = {
+            "calibration": "Threshold selection",
+            "policy": "Out-of-sample",
+        }[str(row["role"])]
         for offset, (field, label, color) in enumerate(
             zip(
                 ("top_100_mean_net_bps", "top_500_mean_net_bps"),
@@ -608,7 +626,7 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
                 ]
             )
         lines.append(
-            f'<text x="{center:.1f}" y="{top + chart_height + 27}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">{html.escape(str(row["role"]).title())} {html.escape(str(row["side"]))}</text>'
+            f'<text x="{center:.1f}" y="{top + chart_height + 27}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">{role_label} {html.escape(str(row["side"]))}</text>'
         )
     lines.extend(
         [
@@ -627,11 +645,11 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
     colors = {"calibration": "#16827a", "policy": "#8d5aa7"}
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        f'<title id="title">Round {round_number} profile eligibility funnel</title>',
-        '<desc id="desc">Fully eligible calibration and policy action counts for conservative, regular and aggressive risk profiles. Policy cannot open without an accepted calibration threshold.</desc>',
+        f'<title id="title">Round {round_number} signals passing pre-trade risk controls</title>',
+        '<desc id="desc">Signal counts passing pre-threshold controls in threshold-selection and out-of-sample validation windows for conservative, regular and aggressive risk profiles. No simulated trade is permitted without an accepted threshold.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Mandatory gates stopped the action funnel</text>',
-        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Counts require positive uncertainty-adjusted mean, probability, member agreement, tail and dispersion gates.</text>',
+        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Pre-trade risk controls rejected every candidate signal</text>',
+        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Signals require positive uncertainty-adjusted expected return, probability of profit, ensemble agreement and lower-tail controls.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
     for value in range(0, max_value + 1, max(1, math.ceil(max_value / 5))):
@@ -644,10 +662,10 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
         )
     for index, row in enumerate(rows):
         center = left + 170 + index * 300
-        for offset, (field, label) in enumerate(
+        for offset, (field, color_key, label) in enumerate(
             (
-                ("calibration_eligible_rows", "calibration"),
-                ("policy_eligible_rows", "policy"),
+                ("calibration_eligible_rows", "calibration", "selection"),
+                ("policy_eligible_rows", "policy", "validation"),
             )
         ):
             value = int(row[field])
@@ -656,7 +674,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
             yy = top + chart_height - bar_height
             lines.extend(
                 [
-                    f'<rect x="{xx - 34:.1f}" y="{yy:.1f}" width="68" height="{bar_height:.1f}" fill="{colors[label]}"/>',
+                    f'<rect x="{xx - 34:.1f}" y="{yy:.1f}" width="68" height="{bar_height:.1f}" fill="{colors[color_key]}"/>',
                     f'<text x="{xx:.1f}" y="{yy - 10:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">{value}</text>',
                     f'<text x="{xx:.1f}" y="{top + chart_height + 46}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">{label}</text>',
                 ]
@@ -785,18 +803,18 @@ def _gate_summary(
         )
         candidate_clause = (
             f"The {candidate_count} resulting threshold candidates all failed the "
-            "stress gates"
+            "stress-test acceptance criteria"
             if candidate_count
             else "No threshold candidate could be constructed"
         )
         sentence = (
-            f"Calibration-eligible rows appeared only for {eligible_text}; "
+            f"Signals meeting pre-threshold controls appeared only for {eligible_text}; "
             f"{empty_clause}{candidate_clause}, so no policy trade, development access, "
             "leverage, or trading authority was permitted."
         )
     else:
         sentence = (
-            "All three risk profiles had zero eligible calibration rows, so no "
+            "All three risk profiles had zero signals meeting pre-threshold controls, so no "
             "threshold, policy trade, development access, leverage, or trading "
             "authority was permitted."
         )
@@ -881,7 +899,7 @@ def publish(
         _tail_svg(forecast_rows, round_number=int(report["round"])),
     )
     _write_text(
-        charts / "profile-gate-funnel.svg",
+        charts / "pre-trade-risk-controls.svg",
         _funnel_svg(profile_rows, round_number=int(report["round"])),
     )
     round_number = int(report["round"])
@@ -911,51 +929,63 @@ def publish(
     execution = design["execution"]
     assert isinstance(execution, Mapping)
     title = (
-        "rank-regularized outcome mixture abstained"
-        if round_number >= 18
+        "depth-normalized order-flow model abstained"
+        if round_number >= 19
         else (
-            "conditional outcome mixture abstained"
-            if round_number >= 17
-            else "action-value ensemble abstained"
+            "rank-regularized net-return model abstained"
+            if round_number >= 18
+            else (
+                "conditional net-return distribution model abstained"
+                if round_number >= 17
+                else "action-value ensemble abstained"
+            )
         )
     )
     summary = (
-        (
-            "The added ranking objective produced a small aggressive-profile candidate set, but every calibration threshold trace lost money after stress costs."
-            if gate_summary["all_candidate_stress_nets_negative"]
-            else "The added ranking objective produced calibration candidates, but none passed the precommitted stress gates."
-        )
-        if round_number >= 18
+        "Depth-normalized aggressive order-flow inputs increased signal counts under the aggressive risk profile, but every threshold-selection simulation lost money after stress costs."
+        if round_number >= 19
         else (
-            "The conditional win/loss decomposition improved point-error metrics versus the zero predictor, but probability calibration was mostly worse than prevalence and it did not rank a positive after-cost action tail."
-            if round_number >= 17
-            else "The three-seed DirectML ensemble improved error and profitable-outcome ranking in places, but it did not rank a positive after-cost action tail."
+            (
+                "The added ranking objective produced a small aggressive-profile candidate set, but every calibration threshold trace lost money after stress costs."
+                if gate_summary["all_candidate_stress_nets_negative"]
+                else "The added ranking objective produced calibration candidates, but none passed the precommitted stress gates."
+            )
+            if round_number >= 18
+            else (
+                "The conditional profit/loss decomposition improved point-error metrics versus the zero-return benchmark, but probability calibration was mostly worse than the prevalence benchmark and the highest-ranked signals remained negative net of costs."
+                if round_number >= 17
+                else "The three-seed DirectML ensemble improved forecast error and probability-of-profit discrimination in places, but the highest-ranked signals remained negative net of costs."
+            )
         )
     )
     next_step = (
-        "The next precommitted model change must target regime-conditioned tail ranking and calibration rather than relax these gates."
-        if round_number >= 17
-        else "The next model change must estimate conditional win/loss outcomes rather than relax these gates."
+        "The next precommitted model change must address direction-specific net-return ranking and probability calibration rather than add further depth-normalized inputs or relax the risk controls."
+        if round_number >= 19
+        else (
+            "The next precommitted model change must target regime-conditioned net-return ranking and probability calibration rather than relax the risk controls."
+            if round_number >= 17
+            else "The next model change must estimate conditional profit/loss outcomes rather than relax the risk controls."
+        )
     )
     readme = f"""# Round {round_number}: {title}
 
-**Rejected safely.** {summary} {gate_summary["sentence"]}
+**Rejected without trading authority.** {summary} {gate_summary["sentence"]}
 
 | Evidence | Result |
 | --- | ---: |
-| Best calibration stress AUC | {float(best_calibration_auc["auc"]):.3f} ({best_calibration_auc["side"]}) |
-| Best policy stress AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
-| Least-negative policy top-100 mean | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
-| Highest calibration eligible set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
-| Threshold candidates / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
-| Policy replay trades | {int(gate_summary["policy_trades"]):,} |
+| Best threshold-selection stress ROC AUC | {float(best_calibration_auc["auc"]):.3f} ({best_calibration_auc["side"]}) |
+| Best out-of-sample stress ROC AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
+| Least-negative out-of-sample top-100 mean net return | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
+| Largest pre-threshold eligible signal set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
+| Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
+| Out-of-sample simulated trades | {int(gate_summary["policy_trades"]):,} |
 | Authorized / live-executed trades | 0 / 0 |
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-![Ranked tail economics](charts/ranked-tail-economics.svg)
+![Net returns for highest-ranked signals](charts/ranked-tail-economics.svg)
 
-![Profile gate funnel](charts/profile-gate-funnel.svg)
+![Signals passing pre-trade risk controls](charts/pre-trade-risk-controls.svg)
 
 ![Barrier outcomes](charts/barrier-outcomes.svg)
 
@@ -963,7 +993,7 @@ def publish(
 
 BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} exact-BBO rows. The replay uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.
 
-The classifier signal did not translate into a usable mean-action rank: calibration stress AUC reached {float(best_calibration_auc["auc"]):.3f}, while every top-100 and top-500 realized mean stayed negative. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
+Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached {float(best_calibration_auc["auc"]):.3f}, while every top-100 and top-500 realized mean net return remained negative. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
 
 Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
 """
@@ -978,7 +1008,7 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         output_dir / "diagnostics.json",
         charts / "forecast-quality.svg",
         charts / "ranked-tail-economics.svg",
-        charts / "profile-gate-funnel.svg",
+        charts / "pre-trade-risk-controls.svg",
         charts / "barrier-outcomes.svg",
         charts / "research-progress.svg",
     ]

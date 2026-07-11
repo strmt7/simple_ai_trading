@@ -405,13 +405,13 @@ def test_target_day_gate_and_threshold_contracts_fail_closed() -> None:
         scenario="base",
         strength_threshold_bps=0.0,
     )
-    with pytest.raises(ValueError, match="risk gates are incomplete"):
+    with pytest.raises(ValueError, match="risk controls are incomplete"):
         barrier_trace_gate_reasons(
             trace,
             expected_days=(0,),
             gates={},
         )
-    with pytest.raises(ValueError, match="risk gates are invalid"):
+    with pytest.raises(ValueError, match="risk controls are invalid"):
         barrier_trace_gate_reasons(
             trace,
             expected_days=(0,),

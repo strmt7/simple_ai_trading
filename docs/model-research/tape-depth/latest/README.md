@@ -22,7 +22,7 @@ evidence and cannot be reused for model selection.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-![Action funnel](charts/action-funnel.svg)
+![Signal selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 

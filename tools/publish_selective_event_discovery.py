@@ -191,12 +191,12 @@ def _validated_evidence(
                     raise ValueError(f"selective-event outcome is invalid: {fit_id}")
                 candidate_id = str(raw.get("candidate_id") or "")
                 report_outcome = report_outcomes.get(candidate_id)
-                if (
-                    report_outcome is None
-                    or _canonical_sha256(dict(raw))
-                    != _canonical_sha256(dict(report_outcome))
-                ):
-                    raise ValueError(f"selective-event report/artifact drift: {candidate_id}")
+                if report_outcome is None or _canonical_sha256(
+                    dict(raw)
+                ) != _canonical_sha256(dict(report_outcome)):
+                    raise ValueError(
+                        f"selective-event report/artifact drift: {candidate_id}"
+                    )
                 policy = raw.get("policy")
                 selection = raw.get("selection_metrics")
                 confidence = raw.get("selection_confidence")
@@ -205,14 +205,18 @@ def _validated_evidence(
                     isinstance(value, Mapping)
                     for value in (policy, selection, confidence, event_rows)
                 ):
-                    raise ValueError(f"selective-event metrics are incomplete: {candidate_id}")
+                    raise ValueError(
+                        f"selective-event metrics are incomplete: {candidate_id}"
+                    )
                 assert isinstance(policy, Mapping)
                 assert isinstance(selection, Mapping)
                 assert isinstance(confidence, Mapping)
                 assert isinstance(event_rows, Mapping)
                 policy_metrics = policy.get("best_observed_metrics")
                 if not isinstance(policy_metrics, Mapping):
-                    raise ValueError(f"selective-event policy evidence is missing: {candidate_id}")
+                    raise ValueError(
+                        f"selective-event policy evidence is missing: {candidate_id}"
+                    )
                 policy_trades = int(policy_metrics.get("trades") or 0)
                 policy_total = _finite(
                     policy_metrics.get("total_net_bps"),
@@ -334,8 +338,8 @@ def _negative_bar_svg(
     zero_x = left + chart_width
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        f"<title id=\"title\">{html.escape(title)}</title>",
-        f"<desc id=\"desc\">{html.escape(subtitle)} {html.escape(footer)}</desc>",
+        f'<title id="title">{html.escape(title)}</title>',
+        f'<desc id="desc">{html.escape(subtitle)} {html.escape(footer)}</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         f'<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">{html.escape(title)}</text>',
         f'<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">{html.escape(subtitle)}</text>',
@@ -351,7 +355,9 @@ def _negative_bar_svg(
         )
     for index, (row, value) in enumerate(zip(rows, values, strict=True)):
         y = top + index * row_height
-        if index and int(row["horizon_seconds"]) != int(rows[index - 1]["horizon_seconds"]):
+        if index and int(row["horizon_seconds"]) != int(
+            rows[index - 1]["horizon_seconds"]
+        ):
             lines.append(
                 f'<line x1="56" y1="{y - 6}" x2="{width - 56}" y2="{y - 6}" stroke="#8d9aa5" stroke-width="2"/>'
             )
@@ -427,7 +433,9 @@ def _funnel_svg(*, fits: int, candidates: int, evaluable: int, accepted: int) ->
     return "\n".join(lines) + "\n"
 
 
-def _progress_rows(path: Path, design: Mapping[str, object], best: Mapping[str, object]) -> list[dict[str, object]]:
+def _progress_rows(
+    path: Path, design: Mapping[str, object], best: Mapping[str, object]
+) -> list[dict[str, object]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         rows = [dict(row) for row in csv.DictReader(handle)]
     if rows and int(rows[-1]["round"]) == int(design["round"]):
@@ -544,7 +552,7 @@ def publish(
     evaluable = sum(bool(row["policy_trades"]) for row in candidates)
     accepted = sum(bool(row["policy_accepted"]) for row in candidates)
     _write_text(
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         _funnel_svg(
             fits=len(artifacts),
             candidates=len(candidates),
@@ -562,17 +570,17 @@ def publish(
     assert isinstance(change_control, Mapping)
     readme = f"""# Round 12: bounded viability
 
-**Rejected.** All 18 candidates completed; none had positive after-cost policy utility. The best policy trace lost **{float(best['policy_total_net_bps']):.2f} bps** over **{int(best['policy_trades'])} trades** with **{float(best['policy_max_drawdown_bps']):.2f} bps** max drawdown.
+**Rejected.** All 18 candidates completed; none had positive after-cost policy utility. The best policy trace lost **{float(best["policy_total_net_bps"]):.2f} bps** over **{int(best["policy_trades"])} trades** with **{float(best["policy_max_drawdown_bps"]):.2f} bps** max drawdown.
 
 ![Policy economics](charts/after-cost-performance.svg)
 
 ![Top-score reality check](charts/forecast-quality.svg)
 
-![Action funnel](charts/action-funnel.svg)
+![Signal selection](charts/signal-selection.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-BTCUSDT, {data['start_date']} through {data['end_date']} UTC. The window is consumed; the {reserved['start_date']} terminal day remains untouched. This is research evidence, not profitability or trading authority.
+BTCUSDT, {data["start_date"]} through {data["end_date"]} UTC. The window is consumed; the {reserved["start_date"]} terminal day remains untouched. This is research evidence, not profitability or trading authority.
 
 Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
 """
@@ -585,7 +593,7 @@ Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnos
         output_dir / "diagnostics.json",
         charts / "after-cost-performance.svg",
         charts / "forecast-quality.svg",
-        charts / "action-funnel.svg",
+        charts / "signal-selection.svg",
         charts / "research-progress.svg",
     ]
     publication: dict[str, object] = {
@@ -624,7 +632,9 @@ Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnos
             {
                 "name": f"{artifact['model_fit_id']}.json",
                 "sha256": artifact["artifact_sha256"],
-                "bytes": (evidence_root / f"{artifact['model_fit_id']}.json").stat().st_size,
+                "bytes": (evidence_root / f"{artifact['model_fit_id']}.json")
+                .stat()
+                .st_size,
             }
             for artifact in artifacts
         ],

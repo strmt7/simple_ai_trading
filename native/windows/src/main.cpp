@@ -226,7 +226,7 @@ class MainWindow {
         L"Verified performance, bot-owned positions, and safety state at a glance.",
         L"Launch guarded testnet runs and inspect autonomous lifecycle state.",
         L"Train, evaluate, review, and preserve optimization evidence artifacts.",
-        L"Inspect universe eligibility, audits, signals, readiness, and risk gates.",
+        L"Inspect universe eligibility, audits, signals, readiness, and risk controls.",
         L"Ingest archives, audit database health, monitor rate limits, and sync data.",
         L"Inspect compute, GPU, network, API budget, and data-pipeline health.",
         L"Configure trading defaults and use the generated expert command surface.",
@@ -753,7 +753,7 @@ class MainWindow {
         draw_text(dc, L"UTC time", RECT{plot.left, plot.bottom + scale(8), plot.right, chart.bottom - scale(6)}, small_font_, kSubtle,
                   DT_CENTER | DT_SINGLELINE);
 
-        draw_text(dc, L"Risk gates", RECT{gates.left + scale(16), gates.top + scale(12), gates.right - scale(16), gates.top + scale(38)},
+        draw_text(dc, L"Risk controls", RECT{gates.left + scale(16), gates.top + scale(12), gates.right - scale(16), gates.top + scale(38)},
                   body_font_, kText, DT_LEFT | DT_SINGLELINE);
         fill_rect(dc, RECT{gates.left, gates.top + scale(48), gates.right, gates.top + scale(49)}, RGB(48, 64, 72));
         const std::array<const wchar_t*, 5> gate_names{L"Bot ledger", L"Market regime", L"Data freshness", L"API reserve", L"Reconciliation"};
