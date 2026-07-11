@@ -19,6 +19,10 @@ from simple_ai_trading.microstructure_features import (
 from simple_ai_trading.microstructure_model import (
     MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
     MicrostructureClassSupportError,
+    _MINIMUM_CALIBRATION_CLASS_ROWS,
+    _MINIMUM_EARLY_STOP_CLASS_ROWS,
+    _MINIMUM_TRAIN_CLASS_ROWS,
+    _purged_split,
     save_microstructure_model_artifact,
     train_microstructure_action_value_model,
 )
@@ -35,6 +39,16 @@ _SUPPORTED_MODEL_SCHEMA_VERSIONS = frozenset(
 )
 _SUPPORTED_FEATURE_VERSIONS = frozenset(
     {"l1-tape-causal-v6", MICROSTRUCTURE_FEATURE_VERSION}
+)
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+_IMPLEMENTATION_FILES = (
+    "pyproject.toml",
+    "src/simple_ai_trading/lightgbm_backend.py",
+    "src/simple_ai_trading/microstructure_features.py",
+    "src/simple_ai_trading/microstructure_model.py",
+    "src/simple_ai_trading/microstructure_runtime.py",
+    "src/simple_ai_trading/microstructure_warehouse.py",
+    "tools/run_action_value_discovery.py",
 )
 _RISK_LEVELS = ("conservative", "regular", "aggressive")
 _RISK_PENALTY = {"conservative": 2.0, "regular": 1.5, "aggressive": 1.0}
@@ -57,6 +71,122 @@ def _file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1_048_576), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _parse_utc_date(value: object, *, label: str):
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError(f"{label} must be a YYYY-MM-DD UTC date") from exc
+
+
+def _utc_date_strings(start, end) -> tuple[str, ...]:
+    values: list[str] = []
+    cursor = start
+    while cursor <= end:
+        values.append(cursor.isoformat())
+        cursor += timedelta(days=1)
+    return tuple(values)
+
+
+def _load_consumed_registry(path: Path, expected_sha256: str) -> set[str]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("action-value consumed-period registry is unreadable") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("action-value consumed-period registry must be an object")
+    claimed_sha256 = str(payload.get("registry_sha256") or "")
+    canonical = dict(payload)
+    canonical.pop("registry_sha256", None)
+    if (
+        payload.get("schema_version") != "action-value-consumed-periods-v1"
+        or claimed_sha256 != _canonical_sha256(canonical)
+        or claimed_sha256 != expected_sha256
+    ):
+        raise ValueError("action-value consumed-period registry binding is invalid")
+    records = payload.get("records")
+    if not isinstance(records, list) or not records:
+        raise ValueError("action-value consumed-period registry has no records")
+    consumed: set[str] = set()
+    prior_round = 0
+    for record in records:
+        if not isinstance(record, Mapping):
+            raise ValueError("action-value consumed-period record is invalid")
+        round_number = int(record.get("round") or 0)
+        windows = record.get("windows")
+        if (
+            round_number <= prior_round
+            or record.get("status") != "consumed"
+            or not isinstance(windows, list)
+            or not windows
+        ):
+            raise ValueError("action-value consumed-period record is inconsistent")
+        prior_round = round_number
+        for window in windows:
+            if not isinstance(window, Mapping):
+                raise ValueError("action-value consumed-period window is invalid")
+            first = _parse_utc_date(
+                window.get("start_date"),
+                label="consumed start_date",
+            )
+            last = _parse_utc_date(
+                window.get("end_date"),
+                label="consumed end_date",
+            )
+            if first > last:
+                raise ValueError("action-value consumed-period window is reversed")
+            consumed.update(_utc_date_strings(first, last))
+    return consumed
+
+
+def _validate_expected_split_days(
+    data: Mapping[str, object],
+    *,
+    start,
+    end,
+) -> dict[str, tuple[str, ...]]:
+    raw = data.get("expected_split_days")
+    names = ("train", "tuning", "policy", "selection", "terminal")
+    if not isinstance(raw, Mapping) or set(raw) != set(names):
+        raise ValueError("action-value v2 design split calendar is incomplete")
+    output: dict[str, tuple[str, ...]] = {}
+    combined: list[str] = []
+    for name in names:
+        value = raw[name]
+        if not isinstance(value, Mapping):
+            raise ValueError(f"action-value {name} split calendar is invalid")
+        first = _parse_utc_date(value.get("start_date"), label=f"{name} start_date")
+        last = _parse_utc_date(value.get("end_date"), label=f"{name} end_date")
+        periods = _utc_date_strings(first, last) if first <= last else ()
+        if not periods or int(value.get("day_count") or 0) != len(periods):
+            raise ValueError(f"action-value {name} split day count is invalid")
+        output[name] = periods
+        combined.extend(periods)
+    if tuple(combined) != _utc_date_strings(start, end):
+        raise ValueError("action-value split calendar does not exactly partition the window")
+    return output
+
+
+def _validate_current_implementation(change_control: object) -> None:
+    if not isinstance(change_control, Mapping):
+        raise ValueError("action-value v2 change control is missing")
+    commit = str(change_control.get("implementation_commit") or "")
+    expected = change_control.get("implementation_files_sha256")
+    if (
+        len(commit) != 40
+        or any(character not in "0123456789abcdef" for character in commit)
+        or not isinstance(expected, Mapping)
+        or set(expected) != set(_IMPLEMENTATION_FILES)
+    ):
+        raise ValueError("action-value implementation binding is incomplete")
+    for relative_path in _IMPLEMENTATION_FILES:
+        claimed = str(expected[relative_path])
+        path = _REPOSITORY_ROOT / relative_path
+        if len(claimed) != 64 or claimed != _file_sha256(path):
+            raise ValueError(
+                f"action-value implementation file drifted from design: {relative_path}"
+            )
 
 
 def load_discovery_design(
@@ -118,12 +248,38 @@ def load_discovery_design(
         raise ValueError("action-value discovery date window is invalid") from exc
     if start > end or (end - start).days + 1 < 5:
         raise ValueError("action-value discovery window must contain at least five UTC days")
-    consumed = {str(value) for value in data.get("excluded_consumed_dates") or ()}
-    cursor = start
-    while cursor <= end:
-        if cursor.isoformat() in consumed:
-            raise ValueError("action-value discovery window intersects consumed evidence")
-        cursor += timedelta(days=1)
+    if payload.get("schema_version") == DESIGN_SCHEMA_VERSION:
+        registry_name = str(data.get("consumed_registry") or "")
+        if not registry_name or Path(registry_name).name != registry_name:
+            raise ValueError("action-value v2 consumed registry must be an adjacent file")
+        consumed = _load_consumed_registry(
+            target.parent / registry_name,
+            str(data.get("consumed_registry_sha256") or ""),
+        )
+        expected_days = _validate_expected_split_days(data, start=start, end=end)
+        preselection = set(
+            expected_days["train"]
+            + expected_days["tuning"]
+            + expected_days["policy"]
+        )
+        window_consumed = consumed.intersection(_utc_date_strings(start, end))
+        if not window_consumed.issubset(preselection):
+            raise ValueError(
+                "action-value selection or terminal calendar intersects consumed evidence"
+            )
+        if (
+            data.get("selection_dates_previously_untouched") is not True
+            or data.get("terminal_dates_previously_untouched") is not True
+            or data.get("all_window_dates_consumed_after_run") is not True
+        ):
+            raise ValueError("action-value v2 date-consumption declarations are invalid")
+    else:
+        consumed = {str(value) for value in data.get("excluded_consumed_dates") or ()}
+        cursor = start
+        while cursor <= end:
+            if cursor.isoformat() in consumed:
+                raise ValueError("action-value discovery window intersects consumed evidence")
+            cursor += timedelta(days=1)
 
     if (
         training.get("model_schema_version") not in _SUPPORTED_MODEL_SCHEMA_VERSIONS
@@ -139,6 +295,17 @@ def load_discovery_design(
         or training.get("feature_version") != MICROSTRUCTURE_FEATURE_VERSION
     ):
         raise ValueError("action-value execution requires the current design and model schemas")
+    if require_current:
+        _validate_current_implementation(payload.get("change_control"))
+    if payload.get("schema_version") == DESIGN_SCHEMA_VERSION:
+        support_minimums = training.get("class_support_minimums")
+        expected_minimums = {
+            "train_each_class": _MINIMUM_TRAIN_CLASS_ROWS,
+            "early_stop_each_class": _MINIMUM_EARLY_STOP_CLASS_ROWS,
+            "calibration_each_class": _MINIMUM_CALIBRATION_CLASS_ROWS,
+        }
+        if support_minimums != expected_minimums:
+            raise ValueError("action-value class-support design drifted from the learner")
     if tuple(risk_profiles) != _RISK_LEVELS:
         raise ValueError("action-value discovery risk profiles are missing or out of order")
     for risk_level in _RISK_LEVELS:
@@ -218,6 +385,45 @@ def _date_bounds(design: Mapping[str, object]) -> tuple[int, int]:
     return int(start.timestamp() * 1_000), int((end + timedelta(days=1)).timestamp() * 1_000) - 1
 
 
+def _split_calendar_evidence(
+    dataset,
+    design: Mapping[str, object],
+) -> dict[str, object] | None:
+    data = design["data"]
+    assert isinstance(data, Mapping)
+    if design.get("schema_version") != DESIGN_SCHEMA_VERSION:
+        return None
+    start = _parse_utc_date(data["start_date"], label="start_date")
+    end = _parse_utc_date(data["end_date"], label="end_date")
+    expected = _validate_expected_split_days(data, start=start, end=end)
+    splits, split = _purged_split(dataset)
+    actual: dict[str, tuple[str, ...]] = {}
+    for name in ("train", "tuning", "policy", "selection", "terminal"):
+        day_ids = np.unique(dataset.decision_time_ms[splits[name]] // 86_400_000)
+        actual[name] = tuple(
+            datetime.fromtimestamp(int(day_id) * 86_400, tz=UTC).date().isoformat()
+            for day_id in day_ids
+        )
+        if actual[name] != expected[name]:
+            raise ValueError(
+                f"action-value actual {name} calendar drifted from the precommit"
+            )
+    return {
+        "status": "pass",
+        "target_labels_accessed": False,
+        "purge_ms": split.purge_ms,
+        "segments": {
+            name: {
+                "start_date": dates[0],
+                "end_date": dates[-1],
+                "day_count": len(dates),
+                "rows": int(len(splits[name])),
+            }
+            for name, dates in actual.items()
+        },
+    }
+
+
 def _result_from_artifact(
     candidate: Mapping[str, object],
     artifact,
@@ -289,6 +495,7 @@ def run_discovery(
     start_ms, end_ms = _date_bounds(design)
     completed: list[dict[str, object]] = []
     errors: list[dict[str, object]] = []
+    split_calendars: dict[str, object] = {}
 
     def persist_status(phase: str, current: str | None = None) -> None:
         write_json_atomic(
@@ -349,6 +556,9 @@ def run_discovery(
                 start_ms=start_ms,
                 end_ms=end_ms,
             )
+            split_calendar = _split_calendar_evidence(base_dataset, design)
+            if split_calendar is not None:
+                split_calendars[str(horizon)] = split_calendar
             for candidate in horizon_candidates:
                 candidate_id = str(candidate["candidate_id"])
                 artifact_path = output / f"{candidate_id}.json"
@@ -464,6 +674,10 @@ def run_discovery(
         "profitability_claim": False,
         "terminal_holdout_accessed": False,
         "selection_window_is_consumed": True,
+        "all_window_dates_consumed_after_run": bool(
+            data.get("all_window_dates_consumed_after_run", True)
+        ),
+        "split_calendar_evidence": split_calendars,
         "warehouse": str(warehouse_path),
         "candidate_count": len(candidates),
         "completed_candidate_count": len(completed),
