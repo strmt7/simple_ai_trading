@@ -492,6 +492,48 @@ def test_verified_unchanged_reuse_requires_intact_physical_partition(tmp_path) -
     assert "physical_raw_time_bounds_mismatch" in corruption_reasons
 
 
+def test_reusable_archive_batch_skips_physical_scan_without_candidates(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "no-reusable-candidates.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    period = "2026-07-09"
+    item = {
+        "period": period,
+        "url": official_tick_archive_url(
+            symbol="BTCUSDT",
+            data_type="trades",
+            period=period,
+        ),
+        "size_bytes": 101,
+        "last_modified": "2026-07-10T00:00:00Z",
+        "etag": _ZIP_ETAG,
+        "checksum_size_bytes": _CHECKSUM_BYTES,
+        "checksum_last_modified": "2026-07-10T00:00:00Z",
+        "checksum_etag": _CHECKSUM_ETAG,
+    }
+
+    def fail_unused_scan(**_kwargs):
+        raise AssertionError("a batch without reusable manifests must not scan fact tables")
+
+    monkeypatch.setattr(warehouse, "_physical_archive_stats", fail_unused_scan)
+    try:
+        reusable = warehouse.reusable_official_archives(
+            symbol="BTCUSDT",
+            data_type="trades",
+            items=[item],
+        )
+    finally:
+        warehouse.close()
+
+    assert reusable == {}
+
+
 def test_completed_manifest_with_corrupt_rows_is_atomically_reingested(
     tmp_path,
     monkeypatch,
