@@ -500,6 +500,46 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    26: {
+        "purpose": "consumed_data_nested_multiscale_soft_expert_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "ranking_scope": "global_batch",
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "representation_mode": "soft_mixture_of_experts",
+        "expert_count": 2,
+        "router_balance_loss_weight": 0.02,
+        "expert_temporal_context_mode": "nested_recent_full",
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 146_974,
+        "predecessor": {
+            "round": 25,
+            "design_sha256": (
+                "b6fda893c8b615e0aa754e733103ec6d65e41ba8c7bfefd1618add7780f0fe71"
+            ),
+            "source_report_canonical_sha256": (
+                "ad1135f6fb3fc6d70128e73f30e3940106202327d278356250d3fb08fcb93b25"
+            ),
+            "publication_sha256": (
+                "b3ef88b0273f80ec4245531962af1711661479a53f111c3ac9e5c1e059b73b80"
+            ),
+            "finding": (
+                "Round 25 restored global ranking and increased the largest "
+                "threshold-selection eligible set from 0 to 26 rows, but every "
+                "displayed top-100 and top-500 realized mean net return remained "
+                "negative and all eight threshold candidates lost under stress. "
+                "Mean normalized routing entropy remained between 0.986 and 0.992, "
+                "showing that homogeneous experts learned little specialization. "
+                "Round 26 changes only their causal context spans to 15 and 30 seconds."
+            ),
+        },
+    },
 }
 
 
@@ -666,6 +706,8 @@ def load_outcome_mixture_design(
         or model_spec.expert_count != round_contract.get("expert_count", 1)
         or model_spec.router_balance_loss_weight
         != round_contract.get("router_balance_loss_weight", 0.0)
+        or model_spec.expert_temporal_context_mode
+        != round_contract.get("expert_temporal_context_mode", "shared_full")
         or model_spec.sequence_length != round_contract.get("sequence_length", 1)
         or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
         or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
