@@ -6,6 +6,7 @@ from pathlib import Path
 
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
+    _result_from_case_results,
     merge_finance_ai_benchmark_payloads,
 )
 
@@ -48,6 +49,42 @@ def test_tracked_ai_benchmark_rebuilds_from_hash_bound_source_responses() -> Non
     assert results["fino1:8b"]["failures"] == [
         "veto_liquidation_hidden_by_roi: missing_terms=leverage"
     ]
+
+
+def test_aggregate_score_is_stable_across_python_float_sum_changes() -> None:
+    scores = (
+        0.9974999999999999,
+        0.9824999999999999,
+        0.9974999999999999,
+        0.955,
+        0.9974999999999999,
+        0.9974999999999999,
+        0.955,
+        0.985,
+        0.9974999999999999,
+        0.955,
+        0.9974999999999999,
+    )
+    case_results = tuple(
+        {
+            "name": f"case-{index}",
+            "score": score,
+            "valid_json": True,
+            "action_match": True,
+            "latency_seconds": 1.0,
+            "failure": "",
+        }
+        for index, score in enumerate(scores)
+    )
+
+    result = _result_from_case_results(
+        model="qwen3:8b",
+        installed=True,
+        case_results=case_results,
+        minimum_score=0.78,
+    )
+
+    assert result.score == 0.983409090909091
 
 
 def test_tracked_ai_model_provenance_binds_reports_and_weight_blobs() -> None:

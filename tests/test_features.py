@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import replace
 import math
@@ -119,12 +119,17 @@ def test_trailing_activity_estimate_is_causal() -> None:
     assert modified[0].trailing_quote_volume_24h_estimate == pytest.approx(
         original[0].trailing_quote_volume_24h_estimate
     )
-    assert modified[0].trailing_trade_count_24h_estimate == original[0].trailing_trade_count_24h_estimate
+    assert (
+        modified[0].trailing_trade_count_24h_estimate
+        == original[0].trailing_trade_count_24h_estimate
+    )
 
 
 def test_make_rows_respects_enabled_feature_subset() -> None:
     selected = ("momentum_1", "rsi", "volume_ratio")
-    rows = make_rows(_fake_candles(), short_window=10, long_window=30, enabled_features=selected)
+    rows = make_rows(
+        _fake_candles(), short_window=10, long_window=30, enabled_features=selected
+    )
     assert rows
     assert len(rows[0].features) == 3
 
@@ -135,9 +140,17 @@ def test_make_rows_directml_matches_cpu_when_available() -> None:
 
     candles = _fake_candles()
     cpu_rows = make_rows(candles, short_window=10, long_window=30, lookahead=3)
-    gpu_rows = make_rows(candles, short_window=10, long_window=30, lookahead=3, compute_backend="directml")
+    gpu_rows = make_rows(
+        candles,
+        short_window=10,
+        long_window=30,
+        lookahead=3,
+        compute_backend="directml",
+    )
     cpu_inference = make_inference_rows(candles, short_window=10, long_window=30)
-    gpu_inference = make_inference_rows(candles, short_window=10, long_window=30, compute_backend="directml")
+    gpu_inference = make_inference_rows(
+        candles, short_window=10, long_window=30, compute_backend="directml"
+    )
 
     assert len(gpu_rows) == len(cpu_rows)
     assert len(gpu_inference) == len(cpu_inference)
@@ -157,9 +170,17 @@ def test_make_rows_directml_matches_cpu_on_long_series_when_available() -> None:
 
     candles = _volatile_candles()
     cpu_rows = make_rows(candles, short_window=10, long_window=40, lookahead=3)
-    gpu_rows = make_rows(candles, short_window=10, long_window=40, lookahead=3, compute_backend="directml")
+    gpu_rows = make_rows(
+        candles,
+        short_window=10,
+        long_window=40,
+        lookahead=3,
+        compute_backend="directml",
+    )
     cpu_inference = make_inference_rows(candles, short_window=10, long_window=40)
-    gpu_inference = make_inference_rows(candles, short_window=10, long_window=40, compute_backend="directml")
+    gpu_inference = make_inference_rows(
+        candles, short_window=10, long_window=40, compute_backend="directml"
+    )
 
     assert len(gpu_rows) == len(cpu_rows)
     assert len(gpu_inference) == len(cpu_inference)
@@ -167,7 +188,9 @@ def test_make_rows_directml_matches_cpu_on_long_series_when_available() -> None:
         assert right.timestamp == left.timestamp
         assert right.label == left.label
         assert right.features == pytest.approx(left.features, abs=5e-5)
-    assert gpu_inference[-1].features == pytest.approx(cpu_inference[-1].features, abs=5e-5)
+    assert gpu_inference[-1].features == pytest.approx(
+        cpu_inference[-1].features, abs=5e-5
+    )
 
 
 def test_make_rows_directml_matches_cpu_for_small_windows_when_available() -> None:
@@ -176,7 +199,9 @@ def test_make_rows_directml_matches_cpu_for_small_windows_when_available() -> No
 
     candles = _fake_candles()
     cpu_rows = make_rows(candles, short_window=2, long_window=5, lookahead=1)
-    gpu_rows = make_rows(candles, short_window=2, long_window=5, lookahead=1, compute_backend="directml")
+    gpu_rows = make_rows(
+        candles, short_window=2, long_window=5, lookahead=1, compute_backend="directml"
+    )
 
     assert len(gpu_rows) == len(cpu_rows)
     assert gpu_rows[0].timestamp == cpu_rows[0].timestamp
@@ -189,7 +214,9 @@ def test_make_rows_accelerated_path_falls_back_to_cpu(monkeypatch) -> None:
 
     monkeypatch.setattr(features_mod, "_make_rows_tensor", fail_tensor)
     cpu_rows = make_rows(_fake_candles(), short_window=10, long_window=30)
-    fallback_rows = make_rows(_fake_candles(), short_window=10, long_window=30, compute_backend="directml")
+    fallback_rows = make_rows(
+        _fake_candles(), short_window=10, long_window=30, compute_backend="directml"
+    )
 
     assert fallback_rows == cpu_rows
 
@@ -209,6 +236,13 @@ def test_make_rows_require_accelerated_rejects_tensor_failure(monkeypatch) -> No
     def fail_tensor(*_args, **_kwargs):
         raise RuntimeError("accelerator unavailable in test")
 
+    monkeypatch.setattr(
+        features_mod,
+        "resolve_backend",
+        lambda requested: features_mod.BackendInfo(
+            requested, "directml", "privateuseone:0", "Test DirectML", ""
+        ),
+    )
     monkeypatch.setattr(features_mod, "_make_rows_tensor", fail_tensor)
 
     with pytest.raises(FeatureAccelerationError, match="feature_generation_failed"):
@@ -223,7 +257,12 @@ def test_make_rows_require_accelerated_rejects_tensor_failure(monkeypatch) -> No
 
 def test_make_rows_preserves_candle_execution_bounds() -> None:
     candles = [
-        replace(candle, high=candle.close * 1.01, low=candle.close * 0.99, volume=10.0 + index)
+        replace(
+            candle,
+            high=candle.close * 1.01,
+            low=candle.close * 0.99,
+            volume=10.0 + index,
+        )
         for index, candle in enumerate(_fake_candles())
     ]
     rows = make_rows(candles, short_window=10, long_window=30)
@@ -232,12 +271,20 @@ def test_make_rows_preserves_candle_execution_bounds() -> None:
 
     assert rows
     assert inference_rows
-    assert rows[0].volume == pytest.approx(candle_by_timestamp[rows[0].timestamp].volume)
+    assert rows[0].volume == pytest.approx(
+        candle_by_timestamp[rows[0].timestamp].volume
+    )
     assert rows[0].high == pytest.approx(candle_by_timestamp[rows[0].timestamp].high)
     assert rows[0].low == pytest.approx(candle_by_timestamp[rows[0].timestamp].low)
-    assert inference_rows[-1].volume == pytest.approx(candle_by_timestamp[inference_rows[-1].timestamp].volume)
-    assert inference_rows[-1].high == pytest.approx(candle_by_timestamp[inference_rows[-1].timestamp].high)
-    assert inference_rows[-1].low == pytest.approx(candle_by_timestamp[inference_rows[-1].timestamp].low)
+    assert inference_rows[-1].volume == pytest.approx(
+        candle_by_timestamp[inference_rows[-1].timestamp].volume
+    )
+    assert inference_rows[-1].high == pytest.approx(
+        candle_by_timestamp[inference_rows[-1].timestamp].high
+    )
+    assert inference_rows[-1].low == pytest.approx(
+        candle_by_timestamp[inference_rows[-1].timestamp].low
+    )
 
 
 def test_normalize_enabled_features_validates_input() -> None:
@@ -290,25 +337,48 @@ def test_make_rows_filters_invalid_candles_and_stable_signature() -> None:
     ]
     rows = make_rows(candles, short_window=5, long_window=10)
     assert rows == []
-    assert feature_signature(10, 20, 0.001) == "feature_version=v1|feature_count=13|feature_names=momentum_1,momentum_3,momentum_10,momentum_20,ema_spread,rsi,ema_gap,relative_atr,volatility_20,volume_ratio,trend_acceleration,gap_to_vwap,volume_trend|short_window=10|long_window=20|label_threshold=0.001"
+    assert (
+        feature_signature(10, 20, 0.001)
+        == "feature_version=v1|feature_count=13|feature_names=momentum_1,momentum_3,momentum_10,momentum_20,ema_spread,rsi,ema_gap,relative_atr,volatility_20,volume_ratio,trend_acceleration,gap_to_vwap,volume_trend|short_window=10|long_window=20|label_threshold=0.001"
+    )
 
 
 def test_make_rows_rejects_invalid_windows() -> None:
-    candle = Candle(open_time=0, open=100.0, high=101.0, low=99.0, close=100.0, volume=1.0, close_time=60_000)
+    candle = Candle(
+        open_time=0,
+        open=100.0,
+        high=101.0,
+        low=99.0,
+        close=100.0,
+        volume=1.0,
+        close_time=60_000,
+    )
     with pytest.raises(ValueError, match="short_window"):
         make_rows([candle], short_window=0, long_window=10)
     with pytest.raises(ValueError, match="long_window"):
         make_rows([candle], short_window=20, long_window=10)
 
 
-def test_make_inference_rows_rejects_invalid_windows_and_skips_missing_features(monkeypatch) -> None:
-    candle = Candle(open_time=0, open=100.0, high=101.0, low=99.0, close=100.0, volume=1.0, close_time=60_000)
+def test_make_inference_rows_rejects_invalid_windows_and_skips_missing_features(
+    monkeypatch,
+) -> None:
+    candle = Candle(
+        open_time=0,
+        open=100.0,
+        high=101.0,
+        low=99.0,
+        close=100.0,
+        volume=1.0,
+        close_time=60_000,
+    )
     with pytest.raises(ValueError, match="short_window"):
         make_inference_rows([candle], short_window=0, long_window=10)
     with pytest.raises(ValueError, match="long_window"):
         make_inference_rows([candle], short_window=20, long_window=10)
 
-    monkeypatch.setattr(features_mod, "_build_full_features", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        features_mod, "_build_full_features", lambda *_args, **_kwargs: None
+    )
     assert make_inference_rows(_fake_candles(), short_window=10, long_window=30) == []
 
 
@@ -338,7 +408,12 @@ def test_true_range_with_non_positive_prev_close() -> None:
 
 def test_feature_edge_helpers_cover_short_and_nonfinite_inputs() -> None:
     assert math.isnan(_ema([1.0], 3))
-    assert _safe_features([1.0, float("nan"), float("inf"), 2.0]) == [1.0, 0.0, 0.0, 2.0]
+    assert _safe_features([1.0, float("nan"), float("inf"), 2.0]) == [
+        1.0,
+        0.0,
+        0.0,
+        2.0,
+    ]
 
 
 def test_valid_ohlcv_rejects_invalid_shapes() -> None:
@@ -353,17 +428,27 @@ def test_valid_ohlcv_rejects_invalid_shapes() -> None:
 
 def test_make_rows_sorts_input_and_applies_label_threshold() -> None:
     candles = list(reversed(_fake_candles()))
-    rows_low_threshold = make_rows(candles, short_window=10, long_window=30, label_threshold=0.0)
-    rows_high_threshold = make_rows(candles, short_window=10, long_window=30, label_threshold=0.5)
+    rows_low_threshold = make_rows(
+        candles, short_window=10, long_window=30, label_threshold=0.0
+    )
+    rows_high_threshold = make_rows(
+        candles, short_window=10, long_window=30, label_threshold=0.5
+    )
     assert rows_low_threshold
-    assert rows_low_threshold == sorted(rows_low_threshold, key=lambda row: row.timestamp)
-    assert sum(row.label for row in rows_low_threshold) >= sum(row.label for row in rows_high_threshold)
+    assert rows_low_threshold == sorted(
+        rows_low_threshold, key=lambda row: row.timestamp
+    )
+    assert sum(row.label for row in rows_low_threshold) >= sum(
+        row.label for row in rows_high_threshold
+    )
 
 
 def test_make_rows_legacy_matches_default_feature_shape() -> None:
     candles = _fake_candles()
     legacy_rows = make_rows_legacy(candles, short_window=10, long_window=30)
-    default_rows = make_rows(candles, short_window=10, long_window=30, label_threshold=0.001)
+    default_rows = make_rows(
+        candles, short_window=10, long_window=30, label_threshold=0.001
+    )
     assert len(legacy_rows) == len(default_rows)
     assert legacy_rows[0].features == default_rows[0].features
     assert legacy_rows[0].label == default_rows[0].label

@@ -41,7 +41,7 @@ jobs:
 
       - name: Install project and test dependencies
         run: |
-          python3 -m pip install -q -e ".[foundation-ai]"
+          python3 -m pip install -q -e ".[foundation-ai,gpu]"
           python3 -m pip install -q pytest coverage diff-cover==10.3.0
 
       - name: Run tests with coverage

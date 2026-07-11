@@ -124,10 +124,10 @@ def test_all_remote_github_actions_are_commit_pinned() -> None:
 
 
 def test_full_test_workflows_install_required_foundation_extra() -> None:
-    assert 'python3 -m pip install -q -e ".[foundation-ai]"' in _read(
+    assert 'python3 -m pip install -q -e ".[foundation-ai,gpu]"' in _read(
         ".github/workflows/ci.yml"
     )
-    assert 'python -m pip install -q -e ".[foundation-ai]"' in _read(
+    assert 'python -m pip install -q -e ".[foundation-ai,gpu]"' in _read(
         ".github/actions/windows-beta-release/action.yml"
     )
 
