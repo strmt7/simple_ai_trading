@@ -164,13 +164,13 @@ def _publication_narrative(
     if round_number == 21:
         return (
             "pairwise net-return ranking model abstained",
-            "Sampled pairwise net-return ranking improved several discrimination and short-side tail diagnostics, but worsened the best out-of-sample tail and eliminated threshold-selection eligibility across all risk profiles.",
+            "Sampled pairwise net-return ranking improved several discrimination and short-side tail diagnostics, but worsened the best policy-validation tail and eliminated threshold-selection eligibility across all risk profiles.",
             "The next precommitted change must restore calibrated positive expected-return separation while retaining net-return ordering and the existing risk controls.",
         )
     if round_number == 22:
         return (
             "additive net-return ranking model abstained",
-            "The bounded additive pairwise term restored Round 20-like signal eligibility but did not improve the best out-of-sample tail, and every threshold-selection simulation remained negative net of stress costs.",
+            "The bounded additive pairwise term restored Round 20-like signal eligibility but did not improve the best policy-validation tail, and every threshold-selection simulation remained negative net of stress costs.",
             "Further ranking-loss tuning is not justified; the next precommitted change must address target horizon or regime conditioning without relaxing the risk controls.",
         )
     if round_number == 23:
@@ -182,7 +182,7 @@ def _publication_narrative(
     if round_number == 24:
         return (
             "session-local ranking model abstained",
-            "Restricting both ranking regularizers to one UTC risk session improved several threshold-selection information-coefficient and short-tail diagnostics, but those gains reversed out of sample, all threshold-selection eligibility disappeared, and the best out-of-sample long top-100 mean net return fell below zero.",
+            "Restricting both ranking regularizers to one UTC risk session improved several threshold-selection information-coefficient and short-tail diagnostics, but those gains reversed in policy validation, all threshold-selection eligibility disappeared, and the best policy-validation long top-100 mean net return fell below zero.",
             "Session-local ranking is rejected; the next precommitted change must restore global ranking and test market-state-conditioned representation without relaxing any execution or risk control.",
         )
     if round_number == 25:
@@ -194,7 +194,7 @@ def _publication_narrative(
     if round_number == 26:
         return (
             "nested-context soft-expert outcome model abstained",
-            "Separating 15-second and 30-second causal contexts improved the best out-of-sample long top-100 mean net return and reduced the least-negative threshold-selection loss, but all eight threshold candidates still lost under stress, every displayed ranked tail remained negative, and routing remained close to uniform.",
+            "Separating 15-second and 30-second causal contexts improved the best policy-validation long top-100 mean net return and reduced the least-negative threshold-selection loss, but all eight threshold candidates still lost under stress, every displayed ranked tail remained negative, and routing remained close to uniform.",
             "Further representation-only tuning is not justified; the next precommitted change must address the mismatch between short-lived microstructure information and the 900-second holding horizon without relaxing any execution or risk control.",
         )
     if round_number == 27:
@@ -206,7 +206,7 @@ def _publication_narrative(
     if round_number == 28:
         return (
             "sampled aggregate-depth outcome model abstained",
-            "The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best out-of-sample long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline.",
+            "The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best policy-validation long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline.",
             "Static sampled aggregate depth is rejected as a sufficient edge; the next precommitted change must target cost-aware action formation or higher-frequency depth dynamics, and maker-order economics remain blocked until event-level queue evidence can support fill modeling.",
         )
     raise ValueError(
@@ -504,7 +504,7 @@ def _profile_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                 "policy_trades": int(raw["policy_stress_trace"]["metrics"]["trades"]),
                 "policy_total_net_bps": _finite(
                     raw["policy_stress_trace"]["metrics"]["total_net_bps"],
-                    label="out-of-sample net",
+                    label="policy-validation net",
                 ),
                 "development_evaluated": bool(raw["development_evaluated"]),
             }
@@ -729,7 +729,7 @@ def _forecast_svg(
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">Round {round_number} probability-of-profit discrimination by evaluation window</title>',
-        '<desc id="desc">Long and short adverse-stress ROC AUC for threshold selection from June 21 to 25 and out-of-sample validation from June 26 to 30, 2023. A dashed line marks random discrimination at 0.5.</desc>',
+        '<desc id="desc">Long and short adverse-stress ROC AUC for threshold selection from June 21 to 25 and policy validation from June 26 to 30, 2023. The policy window has been reused across research rounds. A dashed line marks random discrimination at 0.5.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Probability-of-profit discrimination</text>',
         '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Adverse-stress outcomes; ROC AUC above 0.5 indicates discrimination better than chance.</text>',
@@ -748,7 +748,7 @@ def _forecast_svg(
         value = float(row["auc"])
         role_label = {
             "calibration": "Threshold selection",
-            "policy": "Out-of-sample",
+            "policy": "Policy validation",
         }[str(row["role"])]
         y = top + chart_height * (1.0 - value)
         h = top + chart_height - y
@@ -801,7 +801,7 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">Round {round_number} net returns for highest-ranked signals</title>',
-        f'<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and out-of-sample validation windows during June 2023. {description}</desc>',
+        f'<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and policy-validation windows during June 2023. The policy window has been reused across research rounds. {description}</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         f'<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">{headline}</text>',
         '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Realized 100 ms BBO-path outcomes include fees, latency, slippage and delayed stop execution.</text>',
@@ -823,7 +823,7 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
         center = left + 140 + index * 240
         role_label = {
             "calibration": "Threshold selection",
-            "policy": "Out-of-sample",
+            "policy": "Policy validation",
         }[str(row["role"])]
         for offset, (field, label, color) in enumerate(
             zip(
@@ -869,7 +869,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">Round {round_number} signals passing pre-trade risk controls</title>',
-        '<desc id="desc">Signal counts passing pre-threshold controls in threshold-selection and out-of-sample validation windows for conservative, regular and aggressive risk profiles. No simulated trade is permitted without an accepted threshold.</desc>',
+        '<desc id="desc">Signal counts passing pre-threshold controls in threshold-selection and policy-validation windows for conservative, regular and aggressive risk profiles. The policy window has been reused across research rounds. No simulated trade is permitted without an accepted threshold.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">No candidate threshold passed all pre-trade risk controls</text>',
         '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Signals require positive uncertainty-adjusted expected return, probability of profit, ensemble agreement and lower-tail controls.</text>',
@@ -907,7 +907,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
         )
     lines.extend(
         [
-            '<text x="48" y="510" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Threshold selection: 2023-06-21 to 2023-06-25 UTC. Out-of-sample validation: 2023-06-26 to 2023-06-30 UTC.</text>',
+            '<text x="48" y="510" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Threshold selection: 2023-06-21 to 2023-06-25 UTC. Policy validation (reused): 2023-06-26 to 2023-06-30 UTC.</text>',
             "</svg>",
         ]
     )
@@ -1032,13 +1032,13 @@ def _gate_summary(
         )
         sentence = (
             f"Signals meeting pre-threshold controls appeared only for {eligible_text}; "
-            f"{empty_clause}{candidate_clause}, so no out-of-sample simulated trade, development access, "
+            f"{empty_clause}{candidate_clause}, so no policy-validation simulated trade, development access, "
             "leverage, or trading authority was permitted."
         )
     else:
         sentence = (
             "All three risk profiles had zero signals meeting pre-threshold controls, so no "
-            "threshold, out-of-sample simulated trade, development access, leverage, or trading "
+            "threshold, policy-validation simulated trade, development access, leverage, or trading "
             "authority was permitted."
         )
     return {
@@ -1179,7 +1179,7 @@ def publish(
         )
     else:
         tail_evidence = (
-            f"the best out-of-sample top-100 mean was {float(best_policy_tail['top_100_mean_net_bps']):+.3f} bps, "
+            f"the best policy-validation top-100 mean was {float(best_policy_tail['top_100_mean_net_bps']):+.3f} bps, "
             f"but {negative_tail_count} of {len(displayed_tail_values)} displayed top-100/top-500 means were negative and no threshold was accepted"
         )
     execution = design["execution"]
@@ -1220,11 +1220,11 @@ def publish(
 | Evidence | Result |
 | --- | ---: |
 | Best threshold-selection stress ROC AUC | {float(best_calibration_auc["auc"]):.3f} ({best_calibration_auc["side"]}) |
-| Best out-of-sample stress ROC AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
-| Best out-of-sample top-100 mean net return | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
+| Best policy-validation stress ROC AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
+| Best policy-validation top-100 mean net return | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
 | Largest pre-threshold eligible signal set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
-| Out-of-sample simulated trades | {int(gate_summary["policy_trades"]):,} |
+| Policy-validation simulated trades | {int(gate_summary["policy_trades"]):,} |
 | Authorized / live-executed trades | 0 / 0 |
 {depth_table_row}
 
