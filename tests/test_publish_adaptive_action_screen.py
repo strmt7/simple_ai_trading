@@ -176,7 +176,7 @@ def test_round18_gate_summary_preserves_nonzero_candidates() -> None:
     assert "all failed the stress-test acceptance criteria" in str(summary["sentence"])
 
 
-def test_round20_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round20_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(20)
     title, summary, next_step = _publication_narrative(
         20, all_candidate_stress_nets_negative=True
@@ -187,7 +187,22 @@ def test_round20_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert title == "direction-specific outcome model abstained"
     assert "independent long and short representations" in summary
     assert "decision-objective alignment" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 21"):
-        _progress_identity(21)
-    with pytest.raises(ValueError, match="undefined for Round 21"):
-        _publication_narrative(21, all_candidate_stress_nets_negative=True)
+
+
+def test_round21_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(21)
+    title, summary, next_step = _publication_narrative(
+        21, all_candidate_stress_nets_negative=False
+    )
+
+    assert stage == "sampled pairwise net-return ranking ablation"
+    assert model_id == (
+        "three-seed independent-long-short pairwise-ranked outcome-mixture"
+    )
+    assert title == "pairwise net-return ranking model abstained"
+    assert "eliminated threshold-selection eligibility" in summary
+    assert "calibrated positive expected-return separation" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 22"):
+        _progress_identity(22)
+    with pytest.raises(ValueError, match="undefined for Round 22"):
+        _publication_narrative(22, all_candidate_stress_nets_negative=False)
