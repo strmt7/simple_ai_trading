@@ -94,6 +94,13 @@ DESIGN24 = (
     / "action-value"
     / "round-024-utc-session-local-ranking-design.json"
 )
+DESIGN25 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-025-soft-mixture-of-experts-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -589,8 +596,10 @@ def test_round23_revision2_is_historical_and_preserves_experiment_contract() -> 
         assert design[section] == revision1[section]
 
 
-def test_round24_design_is_current_and_changes_only_ranking_scope() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN24)
+def test_round24_design_is_historical_and_changes_only_ranking_scope() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN24, require_current=False
+    )
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN23_V2, require_current=False
     )
@@ -626,6 +635,64 @@ def test_round24_design_is_current_and_changes_only_ranking_scope() -> None:
     research = {item["url"]: item["use"] for item in design["research_basis"]}
     assert "natural crypto market close" in research[
         "https://proceedings.mlr.press/v267/liu25cb.html"
+    ]
+
+
+def test_round25_design_is_current_parameter_matched_and_globally_ranked() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN25)
+    round23, _round23_sha256 = load_outcome_mixture_design(
+        DESIGN23_V2, require_current=False
+    )
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN24, require_current=False
+    )
+
+    assert design_sha256 == (
+        "b6fda893c8b615e0aa754e733103ec6d65e41ba8c7bfefd1618add7780f0fe71"
+    )
+    assert design["round"] == 25
+    assert design["implementation"]["commit"] == (
+        "b8a2a38be90374e3fdf67a04e93773b28c32a766"
+    )
+    assert design["model"]["candidate_id"] == (
+        "soft-mixture-of-experts-temporal-outcome-mixture"
+    )
+    assert design["model"]["representation_mode"] == "soft_mixture_of_experts"
+    assert design["model"]["expert_count"] == 2
+    assert design["model"]["router_balance_loss_weight"] == 0.02
+    assert "ranking_scope" not in design["model"]
+    assert screen._ROUND_CONTRACTS[25]["ranking_scope"] == "global_batch"
+    assert screen._ROUND_CONTRACTS[25]["trainable_parameter_count"] == 146_974
+    assert set(design["model"]) == set(round23["model"]) | {
+        "representation_mode",
+        "expert_count",
+        "router_balance_loss_weight",
+    }
+    for name, value in round23["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    assert "mechanism-level motivation rather than model validation" in research[
+        "https://proceedings.mlr.press/v267/liu25an.html"
+    ]
+    assert "do not establish a high-frequency financial or after-cost edge" in research[
+        "https://proceedings.mlr.press/v238/ni24a.html"
+    ]
+    assert "Recent non-peer-reviewed evidence" in research[
+        "https://arxiv.org/abs/2603.01820"
     ]
 
 
