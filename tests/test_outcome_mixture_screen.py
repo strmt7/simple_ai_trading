@@ -103,8 +103,8 @@ def test_round17_design_rejects_hash_tampering(tmp_path: Path) -> None:
         load_outcome_mixture_design(source, require_current=False)
 
 
-def test_round18_design_is_current_and_changes_only_the_ranking_ablation() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN18)
+def test_round18_design_is_historical_and_changes_only_the_ranking_ablation() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN18, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN, require_current=False
     )
@@ -128,6 +128,17 @@ def test_round18_design_is_current_and_changes_only_the_ranking_ablation() -> No
         "reserved_terminal",
     ):
         assert design[section] == predecessor[section]
+
+
+def test_round19_contract_changes_only_the_causal_feature_family() -> None:
+    contract = screen._ROUND_CONTRACTS[19]
+
+    assert contract["ranking_loss_weight"] == 0.1
+    assert contract["feature_version"] == "l1-tape-causal-v8"
+    assert contract["predecessor"]["round"] == 18
+    assert contract["predecessor"]["publication_sha256"] == (
+        "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
+    )
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:

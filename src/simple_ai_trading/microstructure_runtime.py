@@ -91,7 +91,9 @@ def _tail_sum(values: np.ndarray, size: int) -> float:
 
 def _validate_second(row: MicrostructureSecond, expected_symbol: str) -> None:
     if normalize_symbol(row.symbol) != expected_symbol:
-        raise ValueError(f"streaming feature symbol mismatch: {row.symbol} != {expected_symbol}")
+        raise ValueError(
+            f"streaming feature symbol mismatch: {row.symbol} != {expected_symbol}"
+        )
     if int(row.second_ms) < 0 or int(row.second_ms) % 1_000 != 0:
         raise ValueError("second_ms must be a non-negative UTC-second boundary")
     finite_values = (
@@ -119,32 +121,52 @@ def _validate_second(row: MicrostructureSecond, expected_symbol: str) -> None:
     )
     if not all(math.isfinite(float(value)) for value in finite_values):
         raise ValueError("microstructure second contains a non-finite value")
-    if min(row.open_mid, row.high_mid, row.low_mid, row.close_mid, row.close_bid, row.close_ask) <= 0.0:
+    if (
+        min(
+            row.open_mid,
+            row.high_mid,
+            row.low_mid,
+            row.close_mid,
+            row.close_bid,
+            row.close_ask,
+        )
+        <= 0.0
+    ):
         raise ValueError("microstructure prices must be positive")
-    if row.low_mid > min(row.open_mid, row.close_mid) or row.high_mid < max(row.open_mid, row.close_mid):
+    if row.low_mid > min(row.open_mid, row.close_mid) or row.high_mid < max(
+        row.open_mid, row.close_mid
+    ):
         raise ValueError("microstructure OHLC bounds are inconsistent")
     if row.close_bid >= row.close_ask:
         raise ValueError("microstructure close quote is crossed")
     if min(row.close_bid_qty, row.close_ask_qty) <= 0.0:
         raise ValueError("microstructure close quantities must be positive")
-    if min(
-        row.spread_bps,
-        row.max_spread_bps,
-        row.event_delay_p50_ms,
-        row.event_delay_p99_ms,
-        row.base_volume,
-        row.quote_volume,
-        row.aggressive_buy_volume,
-        row.aggressive_sell_volume,
-    ) < 0.0:
-        raise ValueError("microstructure costs, delays, and volumes must be non-negative")
+    if (
+        min(
+            row.spread_bps,
+            row.max_spread_bps,
+            row.event_delay_p50_ms,
+            row.event_delay_p99_ms,
+            row.base_volume,
+            row.quote_volume,
+            row.aggressive_buy_volume,
+            row.aggressive_sell_volume,
+        )
+        < 0.0
+    ):
+        raise ValueError(
+            "microstructure costs, delays, and volumes must be non-negative"
+        )
     if row.max_spread_bps < row.spread_bps:
         raise ValueError("max_spread_bps cannot be below event-weighted spread")
     if row.event_delay_p99_ms < row.event_delay_p50_ms:
         raise ValueError("event delay p99 cannot be below p50")
     if row.quote_updates <= 0 or row.trade_count < 0:
         raise ValueError("quote_updates must be positive and trade_count non-negative")
-    if not all(-1.0 <= value <= 1.0 for value in (row.l1_imbalance, row.close_l1_imbalance, row.trade_imbalance)):
+    if not all(
+        -1.0 <= value <= 1.0
+        for value in (row.l1_imbalance, row.close_l1_imbalance, row.trade_imbalance)
+    ):
         raise ValueError("imbalance values must lie in [-1, 1]")
 
 
@@ -193,18 +215,24 @@ class StreamingMicrostructureFeatureEngine:
         current_rows = rows[1:]
 
         def vector(name: str) -> np.ndarray:
-            return np.asarray([float(getattr(item, name)) for item in current_rows], dtype=np.float64)
+            return np.asarray(
+                [float(getattr(item, name)) for item in current_rows], dtype=np.float64
+            )
 
         def embargoed_trade_vector(name: str) -> np.ndarray:
             if MICROSTRUCTURE_TRADE_EMBARGO_MS != 1_000:
-                raise RuntimeError("streaming tape embargo implementation requires one second")
+                raise RuntimeError(
+                    "streaming tape embargo implementation requires one second"
+                )
             return np.asarray(
                 [float(getattr(item, name)) for item in previous_rows],
                 dtype=np.float64,
             )
 
         mids = vector("close_mid")
-        previous_mids = np.asarray([float(item.close_mid) for item in previous_rows], dtype=np.float64)
+        previous_mids = np.asarray(
+            [float(item.close_mid) for item in previous_rows], dtype=np.float64
+        )
         log_returns = np.log(mids / previous_mids)
         highs = vector("high_mid")
         lows = vector("low_mid")
@@ -212,10 +240,18 @@ class StreamingMicrostructureFeatureEngine:
         asks = vector("close_ask")
         bid_qty = vector("close_bid_qty")
         ask_qty = vector("close_ask_qty")
-        previous_bids = np.asarray([float(item.close_bid) for item in previous_rows], dtype=np.float64)
-        previous_asks = np.asarray([float(item.close_ask) for item in previous_rows], dtype=np.float64)
-        previous_bid_qty = np.asarray([float(item.close_bid_qty) for item in previous_rows], dtype=np.float64)
-        previous_ask_qty = np.asarray([float(item.close_ask_qty) for item in previous_rows], dtype=np.float64)
+        previous_bids = np.asarray(
+            [float(item.close_bid) for item in previous_rows], dtype=np.float64
+        )
+        previous_asks = np.asarray(
+            [float(item.close_ask) for item in previous_rows], dtype=np.float64
+        )
+        previous_bid_qty = np.asarray(
+            [float(item.close_bid_qty) for item in previous_rows], dtype=np.float64
+        )
+        previous_ask_qty = np.asarray(
+            [float(item.close_ask_qty) for item in previous_rows], dtype=np.float64
+        )
         normalized_ofi = (
             np.where(bids >= previous_bids, bid_qty, 0.0)
             - np.where(bids <= previous_bids, previous_bid_qty, 0.0)
@@ -236,6 +272,9 @@ class StreamingMicrostructureFeatureEngine:
         signed_flow = buy_volume - sell_volume
         base_volume = embargoed_trade_vector("base_volume")
         delay_p99 = vector("event_delay_p99_ms")
+        bid_depth_quote = bids * bid_qty
+        ask_depth_quote = asks * ask_qty
+        total_depth_quote = bid_depth_quote + ask_depth_quote
 
         return_bps = {
             size: _tail_sum(log_returns, size) * 10_000.0
@@ -266,6 +305,12 @@ class StreamingMicrostructureFeatureEngine:
 
         def delta(values: np.ndarray, lag: int) -> float:
             return float(values[-1] - values[-1 - lag])
+
+        def signed_pressure_to_opposing_depth(size: int) -> float:
+            flow = _tail_sum(signed_flow, size)
+            capacity = ask_qty[-1] if flow >= 0.0 else bid_qty[-1]
+            magnitude = math.log1p(abs(flow) / max(float(capacity), 1e-12))
+            return math.copysign(magnitude, flow) if flow else 0.0
 
         epoch_second = current.second_ms // 1_000
         week_second = (epoch_second + 3 * 86_400) % 604_800
@@ -312,8 +357,12 @@ class StreamingMicrostructureFeatureEngine:
             current.event_delay_p50_ms,
             current.event_delay_p99_ms,
             _safe_ratio(current.event_delay_p99_ms, _tail_mean(delay_p99, 60)),
-            _safe_ratio(abs(_tail_sum(log_returns, 60)), _tail_sum(np.abs(log_returns), 60)),
-            _safe_ratio(abs(_tail_sum(log_returns, 300)), _tail_sum(np.abs(log_returns), 300)),
+            _safe_ratio(
+                abs(_tail_sum(log_returns, 60)), _tail_sum(np.abs(log_returns), 60)
+            ),
+            _safe_ratio(
+                abs(_tail_sum(log_returns, 300)), _tail_sum(np.abs(log_returns), 300)
+            ),
             *[delta(close_l1_imbalance, lag) for lag in (5, 15, 30, 60)],
             *[delta(microprice, lag) for lag in (5, 15, 30, 60)],
             _safe_ratio(return_bps[60] / 10_000.0, volatility[60] * math.sqrt(60.0)),
@@ -325,14 +374,25 @@ class StreamingMicrostructureFeatureEngine:
             normalized_ofi[-1] * current_trade.trade_imbalance,
             math.log1p(current.quote_updates) - math.log1p(current_trade.trade_count),
             (
-                2.0 * (current.close_mid - current.low_mid) / (current.high_mid - current.low_mid) - 1.0
+                2.0
+                * (current.close_mid - current.low_mid)
+                / (current.high_mid - current.low_mid)
+                - 1.0
                 if current.high_mid > current.low_mid
                 else 0.0
             ),
-            math.sin(2.0 * math.pi * ((current.second_ms // 1_000) % 86_400) / 86_400.0),
-            math.cos(2.0 * math.pi * ((current.second_ms // 1_000) % 86_400) / 86_400.0),
-            math.sin(2.0 * math.pi * ((current.second_ms // 1_000) % 28_800) / 28_800.0),
-            math.cos(2.0 * math.pi * ((current.second_ms // 1_000) % 28_800) / 28_800.0),
+            math.sin(
+                2.0 * math.pi * ((current.second_ms // 1_000) % 86_400) / 86_400.0
+            ),
+            math.cos(
+                2.0 * math.pi * ((current.second_ms // 1_000) % 86_400) / 86_400.0
+            ),
+            math.sin(
+                2.0 * math.pi * ((current.second_ms // 1_000) % 28_800) / 28_800.0
+            ),
+            math.cos(
+                2.0 * math.pi * ((current.second_ms // 1_000) % 28_800) / 28_800.0
+            ),
             return_bps[1_800],
             return_bps[3_600],
             volatility[1_800] * 10_000.0,
@@ -343,7 +403,9 @@ class StreamingMicrostructureFeatureEngine:
             _safe_ratio(current.quote_updates, quote_mean_900),
             _safe_ratio(current_trade.base_volume, base_volume_mean_900),
             _safe_ratio(current_trade.trade_count, trade_count_mean_900),
-            _safe_ratio(abs(_tail_sum(log_returns, 900)), _tail_sum(np.abs(log_returns), 900)),
+            _safe_ratio(
+                abs(_tail_sum(log_returns, 900)), _tail_sum(np.abs(log_returns), 900)
+            ),
             _safe_ratio(
                 abs(_tail_sum(log_returns, 3_600)),
                 _tail_sum(np.abs(log_returns), 3_600),
@@ -361,12 +423,21 @@ class StreamingMicrostructureFeatureEngine:
             math.sin(2.0 * math.pi * week_second / 604_800.0),
             math.cos(2.0 * math.pi * week_second / 604_800.0),
             1.0 if utc_weekday >= 5 else 0.0,
+            math.log1p(bid_depth_quote[-1]),
+            math.log1p(ask_depth_quote[-1]),
+            _safe_ratio(total_depth_quote[-1], _tail_mean(total_depth_quote, 60)),
+            _safe_ratio(total_depth_quote[-1], _tail_mean(total_depth_quote, 300)),
+            *[signed_pressure_to_opposing_depth(size) for size in (10, 60, 300)],
         ]
         features = np.asarray(values, dtype=np.float32)
         if features.shape != (len(MICROSTRUCTURE_FEATURE_NAMES),):
-            raise RuntimeError("streaming microstructure feature count drifted from the offline contract")
+            raise RuntimeError(
+                "streaming microstructure feature count drifted from the offline contract"
+            )
         if not np.all(np.isfinite(features)):
-            raise ValueError("streaming microstructure features contain non-finite values")
+            raise ValueError(
+                "streaming microstructure features contain non-finite values"
+            )
         return StreamingFeatureRow(
             symbol=self.symbol,
             feature_version=MICROSTRUCTURE_FEATURE_VERSION,

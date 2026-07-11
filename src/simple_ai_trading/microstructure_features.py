@@ -13,7 +13,7 @@ from .assets import normalize_symbol
 from .microstructure_warehouse import MicrostructureWarehouse
 
 
-MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v7"
+MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v8"
 MICROSTRUCTURE_TRADE_EMBARGO_MS = 1_000
 
 
@@ -91,14 +91,16 @@ class MicrostructureDataset:
             "feature_version": self.feature_version,
             "rows": self.rows,
             "feature_count": len(self.feature_names),
-            "first_decision_time_ms": int(self.decision_time_ms[0]) if self.rows else None,
-            "last_decision_time_ms": int(self.decision_time_ms[-1]) if self.rows else None,
+            "first_decision_time_ms": int(self.decision_time_ms[0])
+            if self.rows
+            else None,
+            "last_decision_time_ms": int(self.decision_time_ms[-1])
+            if self.rows
+            else None,
             "horizon_seconds": self.horizon_seconds,
             "total_latency_ms": self.total_latency_ms,
             "taker_fee_bps": self.taker_fee_bps,
-            "additional_slippage_bps_per_side": (
-                self.additional_slippage_bps_per_side
-            ),
+            "additional_slippage_bps_per_side": (self.additional_slippage_bps_per_side),
             "reference_order_notional_quote": self.reference_order_notional_quote,
             "max_l1_participation": self.max_l1_participation,
             "max_quote_age_ms": self.max_quote_age_ms,
@@ -119,8 +121,12 @@ class MicrostructureDataset:
                 if self.rows
                 else None
             ),
-            "mean_long_net_bps": float(np.mean(self.long_net_bps)) if self.rows else None,
-            "mean_short_net_bps": float(np.mean(self.short_net_bps)) if self.rows else None,
+            "mean_long_net_bps": float(np.mean(self.long_net_bps))
+            if self.rows
+            else None,
+            "mean_short_net_bps": float(np.mean(self.short_net_bps))
+            if self.rows
+            else None,
             "mean_oracle_best_side_net_bps": (
                 float(np.mean(executable_best)) if executable_best.size else None
             ),
@@ -128,7 +134,9 @@ class MicrostructureDataset:
                 float(np.mean(long_executable > 0.0)) if long_executable.size else None
             ),
             "positive_short_ratio": (
-                float(np.mean(short_executable > 0.0)) if short_executable.size else None
+                float(np.mean(short_executable > 0.0))
+                if short_executable.size
+                else None
             ),
             "positive_oracle_ratio": (
                 float(np.mean(executable_best > 0.0)) if executable_best.size else None
@@ -140,18 +148,28 @@ class MicrostructureDataset:
                 float(np.mean(self.short_liquidity_eligible)) if self.rows else None
             ),
             "long_l1_participation_p99": (
-                float(np.quantile(self.long_l1_participation, 0.99)) if self.rows else None
+                float(np.quantile(self.long_l1_participation, 0.99))
+                if self.rows
+                else None
             ),
             "short_l1_participation_p99": (
-                float(np.quantile(self.short_l1_participation, 0.99)) if self.rows else None
+                float(np.quantile(self.short_l1_participation, 0.99))
+                if self.rows
+                else None
             ),
-            "entry_quote_age_p99_ms": float(np.quantile(self.entry_quote_age_ms, 0.99)) if self.rows else None,
-            "exit_quote_age_p99_ms": float(np.quantile(self.exit_quote_age_ms, 0.99)) if self.rows else None,
-            "source_evidence": dict(self.source_evidence) if self.source_evidence is not None else None,
+            "entry_quote_age_p99_ms": float(np.quantile(self.entry_quote_age_ms, 0.99))
+            if self.rows
+            else None,
+            "exit_quote_age_p99_ms": float(np.quantile(self.exit_quote_age_ms, 0.99))
+            if self.rows
+            else None,
+            "source_evidence": dict(self.source_evidence)
+            if self.source_evidence is not None
+            else None,
         }
 
 
-_FEATURE_COLUMNS = (
+_FEATURE_COLUMNS_V7 = (
     "return_1s_bps",
     "return_5s_bps",
     "return_15s_bps",
@@ -253,7 +271,32 @@ _FEATURE_COLUMNS = (
     "utc_week_cos",
     "weekend_flag",
 )
+_FEATURE_COLUMNS = (
+    *_FEATURE_COLUMNS_V7,
+    "log_bid_l1_depth_quote",
+    "log_ask_l1_depth_quote",
+    "l1_depth_vs_60s_mean",
+    "l1_depth_vs_300s_mean",
+    "signed_pressure_to_opposing_depth_10s",
+    "signed_pressure_to_opposing_depth_60s",
+    "signed_pressure_to_opposing_depth_300s",
+)
 MICROSTRUCTURE_FEATURE_NAMES = _FEATURE_COLUMNS
+
+
+def microstructure_feature_names(feature_version: str) -> tuple[str, ...]:
+    """Return an immutable, versioned feature contract."""
+
+    contracts = {
+        "l1-tape-causal-v7": _FEATURE_COLUMNS_V7,
+        MICROSTRUCTURE_FEATURE_VERSION: MICROSTRUCTURE_FEATURE_NAMES,
+    }
+    try:
+        return contracts[str(feature_version)]
+    except KeyError as exc:
+        raise ValueError(
+            f"unsupported microstructure feature version: {feature_version}"
+        ) from exc
 
 
 def build_executable_microstructure_dataset(
@@ -317,9 +360,7 @@ def build_executable_microstructure_dataset(
         if callable(require_corpus):
             certificate_kwargs: dict[str, object] = {
                 "required_data_types": ("bookTicker", "trades"),
-                "require_full_history_inventory": bool(
-                    require_full_history_inventory
-                ),
+                "require_full_history_inventory": bool(require_full_history_inventory),
             }
             if start_ms is not None and end_ms is not None:
                 certificate_kwargs.update(
@@ -391,7 +432,11 @@ def build_executable_microstructure_dataset(
         stationary AS (
             SELECT *,
                 lag(log_return_1s) OVER (ORDER BY second_ms) AS previous_log_return_1s,
-                aggressive_buy_volume - aggressive_sell_volume AS signed_base_flow
+                aggressive_buy_volume - aggressive_sell_volume AS signed_base_flow,
+                close_bid * close_bid_qty AS bid_l1_depth_quote,
+                close_ask * close_ask_qty AS ask_l1_depth_quote,
+                close_bid * close_bid_qty + close_ask * close_ask_qty
+                    AS total_l1_depth_quote
             FROM instantaneous
         ),
         rolling AS (
@@ -444,10 +489,15 @@ def build_executable_microstructure_dataset(
                     / greatest(sum(base_volume) OVER range_60s, 1e-12) AS signed_flow_60s,
                 sum(signed_base_flow) OVER range_300s
                     / greatest(sum(base_volume) OVER range_300s, 1e-12) AS signed_flow_300s,
+                sum(signed_base_flow) OVER range_10s AS signed_base_flow_10s,
+                sum(signed_base_flow) OVER range_60s AS signed_base_flow_60s,
+                sum(signed_base_flow) OVER range_300s AS signed_base_flow_300s,
                 avg(base_volume) OVER range_60s AS base_volume_60s_mean,
                 avg(base_volume) OVER range_300s AS base_volume_300s_mean,
                 avg(base_volume) OVER range_900s AS base_volume_900s_mean,
                 avg(trade_count) OVER range_900s AS trade_count_900s_mean,
+                avg(total_l1_depth_quote) OVER range_60s AS l1_depth_60s_mean,
+                avg(total_l1_depth_quote) OVER range_300s AS l1_depth_300s_mean,
                 avg(event_delay_p99_ms) OVER range_60s AS event_delay_60s_mean,
                 abs(sum(log_return_1s) OVER range_60s)
                     / greatest(sum(abs(log_return_1s)) OVER range_60s, 1e-12) AS return_efficiency_60s,
@@ -580,7 +630,25 @@ def build_executable_microstructure_dataset(
                 sin(2.0 * pi() * (((second_ms // 1000) + 259200) % 604800) / 604800.0) AS utc_week_sin,
                 cos(2.0 * pi() * (((second_ms // 1000) + 259200) % 604800) / 604800.0) AS utc_week_cos,
                 CASE WHEN (((second_ms // 1000) // 86400) + 3) % 7 >= 5
-                     THEN 1.0 ELSE 0.0 END AS weekend_flag
+                     THEN 1.0 ELSE 0.0 END AS weekend_flag,
+                ln(1.0 + bid_l1_depth_quote) AS log_bid_l1_depth_quote,
+                ln(1.0 + ask_l1_depth_quote) AS log_ask_l1_depth_quote,
+                total_l1_depth_quote / greatest(l1_depth_60s_mean, 1e-12)
+                    AS l1_depth_vs_60s_mean,
+                total_l1_depth_quote / greatest(l1_depth_300s_mean, 1e-12)
+                    AS l1_depth_vs_300s_mean,
+                CASE WHEN signed_base_flow_10s >= 0.0
+                     THEN ln(1.0 + signed_base_flow_10s / greatest(close_ask_qty, 1e-12))
+                     ELSE -ln(1.0 - signed_base_flow_10s / greatest(close_bid_qty, 1e-12))
+                     END AS signed_pressure_to_opposing_depth_10s,
+                CASE WHEN signed_base_flow_60s >= 0.0
+                     THEN ln(1.0 + signed_base_flow_60s / greatest(close_ask_qty, 1e-12))
+                     ELSE -ln(1.0 - signed_base_flow_60s / greatest(close_bid_qty, 1e-12))
+                     END AS signed_pressure_to_opposing_depth_60s,
+                CASE WHEN signed_base_flow_300s >= 0.0
+                     THEN ln(1.0 + signed_base_flow_300s / greatest(close_ask_qty, 1e-12))
+                     ELSE -ln(1.0 - signed_base_flow_300s / greatest(close_bid_qty, 1e-12))
+                     END AS signed_pressure_to_opposing_depth_300s
             FROM temporal
             WHERE observations_60s >= 55
               AND observations_900s >= 840
@@ -631,6 +699,11 @@ def build_executable_microstructure_dataset(
             d.return_1800s_vol_units, d.return_3600s_vol_units,
             d.volatility_300s_vs_3600s, d.volatility_900s_vs_3600s,
             d.utc_week_sin, d.utc_week_cos, d.weekend_flag,
+            d.log_bid_l1_depth_quote, d.log_ask_l1_depth_quote,
+            d.l1_depth_vs_60s_mean, d.l1_depth_vs_300s_mean,
+            d.signed_pressure_to_opposing_depth_10s,
+            d.signed_pressure_to_opposing_depth_60s,
+            d.signed_pressure_to_opposing_depth_300s,
             (entry_quote.close_ask - entry_quote.close_bid) * 10000.0
                 / ((entry_quote.close_ask + entry_quote.close_bid) / 2.0) AS entry_spread_bps,
             (exit_quote.close_ask - exit_quote.close_bid) * 10000.0
@@ -755,7 +828,9 @@ def validate_microstructure_dataset(dataset: MicrostructureDataset) -> None:
     """Validate the complete causal feature, label, and execution contract."""
 
     rows = dataset.rows
-    if dataset.features.ndim != 2 or dataset.features.shape[1] != len(dataset.feature_names):
+    if dataset.features.ndim != 2 or dataset.features.shape[1] != len(
+        dataset.feature_names
+    ):
         raise ValueError("microstructure feature matrix shape is inconsistent")
     arrays = (
         dataset.decision_time_ms,
@@ -783,16 +858,24 @@ def validate_microstructure_dataset(dataset: MicrostructureDataset) -> None:
     if any(len(value) != rows for value in arrays):
         raise ValueError("microstructure dataset arrays have inconsistent lengths")
     if rows and np.any(np.diff(dataset.decision_time_ms) <= 0):
-        raise ValueError("microstructure decision timestamps are not strictly increasing")
+        raise ValueError(
+            "microstructure decision timestamps are not strictly increasing"
+        )
     earliest_exit = dataset.decision_time_ms + dataset.total_latency_ms
-    latest_exit = earliest_exit + dataset.horizon_seconds * 1000 + int(dataset.path_resolution_ms or 0)
+    latest_exit = (
+        earliest_exit
+        + dataset.horizon_seconds * 1000
+        + int(dataset.path_resolution_ms or 0)
+    )
     if (
         np.any(dataset.long_exit_time_ms < earliest_exit)
         or np.any(dataset.short_exit_time_ms < earliest_exit)
         or np.any(dataset.long_exit_time_ms > latest_exit)
         or np.any(dataset.short_exit_time_ms > latest_exit)
     ):
-        raise ValueError("microstructure exit timestamps fall outside the lifecycle window")
+        raise ValueError(
+            "microstructure exit timestamps fall outside the lifecycle window"
+        )
     numeric = (
         dataset.features,
         dataset.long_net_bps,
@@ -896,14 +979,8 @@ def _net_cross_spread_cash_returns_bps(
         entry_bid,
         dtype=np.float64,
     )
-    long_net = (
-        (long_exit_ratio - 1.0) * 10_000.0
-        - cost * (1.0 + long_exit_ratio)
-    )
-    short_net = (
-        (1.0 - short_exit_ratio) * 10_000.0
-        - cost * (1.0 + short_exit_ratio)
-    )
+    long_net = (long_exit_ratio - 1.0) * 10_000.0 - cost * (1.0 + long_exit_ratio)
+    short_net = (1.0 - short_exit_ratio) * 10_000.0 - cost * (1.0 + short_exit_ratio)
     return long_net, short_net
 
 
@@ -974,13 +1051,11 @@ def _first_barrier_outcomes(
         long_exit_ratio = long_exit / entry_ask[index]
         short_exit_ratio = short_exit / entry_bid[index]
         long_targets[index] = (
-            (long_exit_ratio - 1.0) * 10000.0
-            - execution_cost_bps_per_side * (1.0 + long_exit_ratio)
-        )
+            long_exit_ratio - 1.0
+        ) * 10000.0 - execution_cost_bps_per_side * (1.0 + long_exit_ratio)
         short_targets[index] = (
-            (1.0 - short_exit_ratio) * 10000.0
-            - execution_cost_bps_per_side * (1.0 + short_exit_ratio)
-        )
+            1.0 - short_exit_ratio
+        ) * 10000.0 - execution_cost_bps_per_side * (1.0 + short_exit_ratio)
     return (
         long_targets,
         short_targets,
@@ -1027,9 +1102,13 @@ def apply_path_aware_lifecycle_targets(
     if dataset.rows <= 0:
         raise ValueError("path-aware targets require a non-empty dataset")
     if not all(math.isfinite(value) and value > 0.0 for value in (stop, take)):
-        raise ValueError("stop_loss_bps and take_profit_bps must be finite and positive")
+        raise ValueError(
+            "stop_loss_bps and take_profit_bps must be finite and positive"
+        )
     if not math.isfinite(slippage) or slippage < 0.0:
-        raise ValueError("trigger_execution_slippage_bps must be finite and non-negative")
+        raise ValueError(
+            "trigger_execution_slippage_bps must be finite and non-negative"
+        )
     first_ms = int(dataset.decision_time_ms[0]) - 2_000
     last_ms = int(dataset.decision_time_ms[-1]) + dataset.horizon_seconds * 1000 + 2_000
     cursor = warehouse.connect().execute(
@@ -1056,9 +1135,15 @@ def apply_path_aware_lifecycle_targets(
         exit_arrival,
         resolution_ms=1_000,
     )
-    valid = (start_indexes < end_indexes) & (start_indexes < len(path_times)) & (end_indexes > 0)
+    valid = (
+        (start_indexes < end_indexes)
+        & (start_indexes < len(path_times))
+        & (end_indexes > 0)
+    )
     if not np.all(valid):
-        raise ValueError(f"path-aware BBO coverage missing for {int(np.sum(~valid))} decision rows")
+        raise ValueError(
+            f"path-aware BBO coverage missing for {int(np.sum(~valid))} decision rows"
+        )
     (
         long_targets,
         short_targets,
@@ -1143,5 +1228,6 @@ __all__ = [
     "PathTargetEvidence",
     "apply_path_aware_lifecycle_targets",
     "build_executable_microstructure_dataset",
+    "microstructure_feature_names",
     "validate_microstructure_dataset",
 ]
