@@ -250,8 +250,11 @@ _ROUND_CONTRACTS = {
         },
     },
     21: {
-        "purpose": "consumed_data_pairwise_net_return_ranking_screen",
-        "design_revisions": {1},
+        "purposes": {
+            1: "consumed_data_pairwise_net_return_ranking_screen",
+            2: "consumed_data_pairwise_net_return_ranking_gpu_native_screen",
+        },
+        "design_revisions": {1, 2},
         "ranking_loss_weight": 0.1,
         "ranking_loss_mode": "pairwise_net_return",
         "feature_version": "l1-tape-causal-v8",
@@ -259,26 +262,50 @@ _ROUND_CONTRACTS = {
         "hidden_dim": 88,
         "residual_blocks": 2,
         "trainable_parameter_count": 145_914,
-        "predecessor": {
-            "round": 20,
-            "design_sha256": (
-                "a6f4e82d82474d673c8495f9775f9d974b95a9cc2a8d497f7f45bce29ad965bb"
-            ),
-            "source_report_canonical_sha256": (
-                "f7b4aeb6c4d52b49bce53468eeb13f03e0c2441d426ec0c3de8338e96f0e5885"
-            ),
-            "publication_sha256": (
-                "3e8a22398871f80020743ee9987a670cfbf50292e351fa018f513c3c535c2033"
-            ),
-            "finding": (
-                "Round 20 increased the largest threshold-selection eligible set "
-                "from 55 to 147 rows, but all eight threshold candidates lost money "
-                "under stress and the least-negative out-of-sample top-100 mean net "
-                "return was -6.733319 bps. Round 21 keeps the independent long/short "
-                "architecture, parameter budget, data, targets, costs, and risk "
-                "controls fixed while replacing the global Pearson-correlation "
-                "ranking surrogate with sampled pairwise net-return ranking."
-            ),
+        "predecessors": {
+            1: {
+                "round": 20,
+                "design_sha256": (
+                    "a6f4e82d82474d673c8495f9775f9d974b95a9cc2a8d497f7f45bce29ad965bb"
+                ),
+                "source_report_canonical_sha256": (
+                    "f7b4aeb6c4d52b49bce53468eeb13f03e0c2441d426ec0c3de8338e96f0e5885"
+                ),
+                "publication_sha256": (
+                    "3e8a22398871f80020743ee9987a670cfbf50292e351fa018f513c3c535c2033"
+                ),
+                "finding": (
+                    "Round 20 increased the largest threshold-selection eligible set "
+                    "from 55 to 147 rows, but all eight threshold candidates lost "
+                    "money under stress and the least-negative out-of-sample top-100 "
+                    "mean net return was -6.733319 bps. Round 21 keeps the independent "
+                    "long/short architecture, parameter budget, data, targets, costs, "
+                    "and risk controls fixed while replacing the global Pearson-"
+                    "correlation ranking surrogate with sampled pairwise net-return "
+                    "ranking."
+                ),
+            },
+            2: {
+                "round": 20,
+                "design_sha256": (
+                    "a6f4e82d82474d673c8495f9775f9d974b95a9cc2a8d497f7f45bce29ad965bb"
+                ),
+                "source_report_canonical_sha256": (
+                    "f7b4aeb6c4d52b49bce53468eeb13f03e0c2441d426ec0c3de8338e96f0e5885"
+                ),
+                "publication_sha256": (
+                    "3e8a22398871f80020743ee9987a670cfbf50292e351fa018f513c3c535c2033"
+                ),
+                "finding": (
+                    "Round 21 revision 1 canonical report "
+                    "2fcad6c998d169c4bcaa540be0b0edab7e11c325e9a29b4f7ee15f1ea2500a99 "
+                    "is excluded because DirectML reported an aten::roll CPU "
+                    "fallback, violating the GPU-native experiment contract. "
+                    "Revision 2 preserves every economic and model setting while "
+                    "using DirectML-supported concatenation for cyclic pair sampling "
+                    "and making CPU-fallback warnings test failures."
+                ),
+            },
         },
     },
 }
