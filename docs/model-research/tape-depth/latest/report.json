@@ -1,0 +1,194 @@
+{
+  "actual": {
+    "combined_executable_rows": 12,
+    "combined_mean_net_return_bps": -11.83934747255543,
+    "combined_positive_net_rate": 0.0,
+    "completed_periods": 3,
+    "forecast_candidate_periods": 0,
+    "liquidation_events": 0,
+    "positive_mean_net_periods": 0,
+    "quote_rejection_rows": 0
+  },
+  "artifact_class": "exchange_sourced_model_confirmation_graph_data",
+  "artifact_integrity": [
+    {
+      "bytes": 1419,
+      "path": "docs/model-research/tape-depth/latest/README.md",
+      "sha256": "4e0f6d4d4728ee8e535312338db6f29405ef6dabda189d567214e7117ec54abe"
+    },
+    {
+      "bytes": 1349,
+      "columns": [
+        "period",
+        "forecast_status",
+        "direction_auc",
+        "spearman_ic",
+        "mae_bps",
+        "zero_baseline_mae_bps",
+        "selected_signals",
+        "long_signals",
+        "short_signals",
+        "overlap_suppressed",
+        "scheduled_signals",
+        "participation_rejections",
+        "quote_rejections",
+        "executable_trades",
+        "mean_quote_gross_bps",
+        "mean_net_bps",
+        "positive_net_rate",
+        "model_sha256",
+        "predictions_sha256",
+        "period_fingerprint"
+      ],
+      "path": "docs/model-research/tape-depth/latest/periods.csv",
+      "row_count": 3,
+      "sha256": "075f145afa17c0a84d2633044726ac88ed3ce65df619b5781012798071e88ac2"
+    },
+    {
+      "bytes": 3732,
+      "columns": [
+        "period",
+        "signal_index",
+        "side",
+        "decision_time_utc",
+        "entry_time_utc",
+        "exit_time_utc",
+        "entry_bid",
+        "entry_ask",
+        "exit_bid",
+        "exit_ask",
+        "entry_quote_age_ms",
+        "exit_quote_age_ms",
+        "maximum_l1_participation",
+        "trade_reference_gross_bps",
+        "quote_path_gross_bps",
+        "spread_cost_bps",
+        "fee_cost_bps",
+        "slippage_cost_bps",
+        "net_return_bps",
+        "status",
+        "rejection_reason"
+      ],
+      "path": "docs/model-research/tape-depth/latest/trades.csv",
+      "row_count": 12,
+      "sha256": "6103c06baebdeb284577a8df1e81aae8e1303101f794caa54db32429b978d031"
+    },
+    {
+      "bytes": 1570,
+      "columns": [
+        "round",
+        "stage",
+        "periods",
+        "selection_contaminated",
+        "horizon_seconds",
+        "feature_set",
+        "risk_level",
+        "direction_auc",
+        "spearman_ic",
+        "selected_signals",
+        "executable_trades",
+        "mean_gross_bps",
+        "mean_net_bps",
+        "status",
+        "source_file"
+      ],
+      "path": "docs/model-research/tape-depth/latest/progress.csv",
+      "row_count": 8,
+      "sha256": "1d3e274ca6bc388a96c1c4325aef300e9d0dd48d477989eb537b32c052265d6a"
+    },
+    {
+      "bytes": 2630,
+      "path": "docs/model-research/tape-depth/latest/charts/after-cost-performance.svg",
+      "sha256": "398f9cfb7af43b69000bb02d584bcaefb46aa3197e885c6cb3dad5a4ef090536"
+    },
+    {
+      "bytes": 3034,
+      "path": "docs/model-research/tape-depth/latest/charts/forecast-quality.svg",
+      "sha256": "f98ec7b9f405f7dc884fec09a71a6ffa556a45a24a07d01663e0063c3a0ccc4a"
+    },
+    {
+      "bytes": 3279,
+      "path": "docs/model-research/tape-depth/latest/charts/action-funnel.svg",
+      "sha256": "6fb714f4ded80454bbb3faf25923cf4f6248748260978cce87036a24c71463d1"
+    },
+    {
+      "bytes": 4718,
+      "path": "docs/model-research/tape-depth/latest/charts/research-progress.svg",
+      "sha256": "b349de97e9b7e15f9eb0d44482969b968d141b5cfba71dad9f7e96c017137778"
+    }
+  ],
+  "assumptions": {
+    "additional_slippage_bps_per_side": 1.0,
+    "leverage": 1.0,
+    "maker_fill_claim": false,
+    "max_l1_participation": 0.1,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "schema_version": "tape-depth-taker-diagnostic-v2",
+    "suppress_overlapping_positions": true,
+    "taker_fee_bps_per_side": 5.0
+  },
+  "availability_sha256": "e8061cc87cbc826e660179a126741eb1e9e5f242cd8b3aad3a35b167d24ef1af",
+  "confirmation_fingerprint": "18bffa88a885703e3e88113f436c43903309160d57f0fb4a2fcad79d8e6ae6f8",
+  "confirmation_periods": [
+    "2023-07-08",
+    "2023-10-21",
+    "2024-02-05"
+  ],
+  "design_sha256": "03d0391d1001eb184c3dc5a500124b605141596f619286c217f1ab5a6b36ca94",
+  "drawdown_claim": false,
+  "execution_claim": false,
+  "execution_quote_interval": "100ms",
+  "feature_interval": "1s",
+  "generated_at_utc": "2026-07-11T00:53:02.028828+00:00",
+  "market_type": "Binance USD-M futures",
+  "peer_symbols": [
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "profitability_claim": false,
+  "regeneration_command": "python tools/publish_tape_depth_confirmation.py --confirmation-root <local-confirmation-root> --discovery-root <local-discovery-root> --design docs/model-research/tape-depth/confirmation-design.json --availability docs/microstructure/availability.json --output-dir docs/model-research/tape-depth/latest",
+  "rejection_reasons": [
+    "forecast_candidate_periods",
+    "positive_mean_net_periods",
+    "combined_executable_rows",
+    "combined_mean_net_return_bps",
+    "combined_positive_net_rate"
+  ],
+  "roi_claim": false,
+  "schema_version": "tape-depth-research-publication-v1",
+  "source": {
+    "checksums": "official per-archive SHA-256 sidecars",
+    "model_sha256": [
+      "599a19bd63401572568c1e808ef26cbf8a97a428ec1ec20f08e94a876b9fa9e1",
+      "0d9d79e1e573a5d786908ad7e23677d13094b144e0d935e3185879a95ee1a961",
+      "0722f3e8667cdef6dd6f40abd596189bf417c22868a4207b35bc4b7cadd3b0ac"
+    ],
+    "period_fingerprints": [
+      "760febbf517646444edae8133937a8e5439a2c8a892654f3eb8a2d6a8ffccee3",
+      "c9db909bb55ef82423cfe3ac239eee91d948edc465bb484938b1840b8cf16824",
+      "ba2e3c14a1f9487ef8ee577cefa1643b0e6acfaf4871ea21fd12e509ff3ed958"
+    ],
+    "predictions_sha256": [
+      "03e4ce0828d8271ed33da1d24f67577139307327b76759eca6d20811f18b02f6",
+      "509d05e2b3a728a627cd0b443df4e23c7350814e1f585046f77663df33104463",
+      "4bd1c40782db7d32dc18c023098ca676ce613a9a6fad34410ab1293895d5ae0d"
+    ],
+    "provider": "Binance public Data Vision S3"
+  },
+  "status": "rejected",
+  "symbol": "BTCUSDT",
+  "tracked_artifacts": [
+    "docs/model-research/tape-depth/latest/report.json",
+    "docs/model-research/tape-depth/latest/README.md",
+    "docs/model-research/tape-depth/latest/periods.csv",
+    "docs/model-research/tape-depth/latest/trades.csv",
+    "docs/model-research/tape-depth/latest/progress.csv",
+    "docs/model-research/tape-depth/latest/charts/after-cost-performance.svg",
+    "docs/model-research/tape-depth/latest/charts/forecast-quality.svg",
+    "docs/model-research/tape-depth/latest/charts/action-funnel.svg",
+    "docs/model-research/tape-depth/latest/charts/research-progress.svg"
+  ],
+  "tracked_repo_artifact": true,
+  "trading_authority": false
+}

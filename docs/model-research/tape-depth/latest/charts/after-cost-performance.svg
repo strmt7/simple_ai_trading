@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="470" viewBox="0 0 1100 470">
+  <rect width="1100" height="470" fill="#ffffff"/>
+  <text x="52" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Round 8 exact-BBO after-cost confirmation</text>
+  <text x="52" y="73" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">BTCUSDT, 20-second horizon, 100 ms BBO, $1,000 reference notional, leverage 1x.</text>
+
+  <line x1="110" y1="173.17" x2="1030" y2="173.17" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="199.33" y="141.15" width="58" height="32.01" fill="#0f766e"/>
+  <text x="228.33" y="133.15" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">+2.191</text>
+  <rect x="269.33" y="173.17" width="58" height="143.30" fill="#b91c1c"/>
+  <text x="298.33" y="334.46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">-9.808</text>
+  <text x="263.33" y="414" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">2023-07-08</text>
+  <rect x="506.00" y="173.17" width="58" height="1.00" fill="#0f766e"/>
+  <text x="535.00" y="165.17" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">+0.000</text>
+  <rect x="576.00" y="173.17" width="58" height="1.00" fill="#b91c1c"/>
+  <text x="605.00" y="165.17" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">+0.000</text>
+  <text x="570.00" y="414" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">2023-10-21</text>
+  <rect x="812.67" y="173.17" width="58" height="1.00" fill="#0f766e"/>
+  <text x="841.67" y="191.51" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">-0.024</text>
+  <rect x="882.67" y="173.17" width="58" height="175.68" fill="#b91c1c"/>
+  <text x="911.67" y="366.85" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">-12.024</text>
+  <text x="876.67" y="414" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">2024-02-05</text>
+  <rect x="110" y="440" width="14" height="14" fill="#0f766e"/><text x="132" y="452" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">observed quote-path gross</text>
+  <rect x="330" y="440" width="14" height="14" fill="#b91c1c"/><text x="352" y="452" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">net after fees + 1 bps slippage per leg</text>
+</svg>
