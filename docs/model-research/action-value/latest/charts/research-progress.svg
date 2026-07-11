@@ -9,24 +9,28 @@
 <text x="86" y="291.2" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-5</text>
 <line x1="100" y1="167.5" x2="1030" y2="167.5" stroke="#526674" stroke-width="2"/>
 <text x="86" y="172.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0</text>
-<line x1="565.0" y1="155" x2="565.0" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
-<rect x="558.0" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 565.0 310.0)"/>
-<text x="565.0" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
-<line x1="751.0" y1="155" x2="751.0" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
-<rect x="744.0" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 751.0 310.0)"/>
-<text x="751.0" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
-<line x1="937.0" y1="155" x2="937.0" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
-<rect x="930.0" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 937.0 310.0)"/>
-<text x="937.0" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
-<polyline points="193.0,348.9 379.0,448.7" fill="none" stroke="#287f9e" stroke-width="4"/>
-<circle cx="193.0" cy="348.9" r="8" fill="#b44b4b" stroke="#ffffff" stroke-width="3"/>
-<text x="193.0" y="332.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">-7.64 bps</text>
-<circle cx="379.0" cy="448.7" r="8" fill="#b44b4b" stroke="#ffffff" stroke-width="3"/>
-<text x="379.0" y="432.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">-11.84 bps</text>
-<text x="193.0" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 7</text>
-<text x="379.0" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 8</text>
-<text x="565.0" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 9</text>
-<text x="751.0" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 10</text>
-<text x="937.0" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 11</text>
+<line x1="487.5" y1="155" x2="487.5" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
+<rect x="480.5" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 487.5 310.0)"/>
+<text x="487.5" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
+<line x1="642.5" y1="155" x2="642.5" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
+<rect x="635.5" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 642.5 310.0)"/>
+<text x="642.5" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
+<line x1="797.5" y1="155" x2="797.5" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
+<rect x="790.5" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 797.5 310.0)"/>
+<text x="797.5" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
+<line x1="952.5" y1="155" x2="952.5" y2="465" stroke="#a7b2bb" stroke-width="2" stroke-dasharray="5 6"/>
+<rect x="945.5" y="303.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 952.5 310.0)"/>
+<text x="952.5" y="286.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">No executable trades</text>
+<polyline points="177.5,348.9 332.5,448.7" fill="none" stroke="#287f9e" stroke-width="4"/>
+<circle cx="177.5" cy="348.9" r="8" fill="#b44b4b" stroke="#ffffff" stroke-width="3"/>
+<text x="177.5" y="332.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">-7.64 bps</text>
+<circle cx="332.5" cy="448.7" r="8" fill="#b44b4b" stroke="#ffffff" stroke-width="3"/>
+<text x="332.5" y="432.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263744">-11.84 bps</text>
+<text x="177.5" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 7</text>
+<text x="332.5" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 8</text>
+<text x="487.5" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 9</text>
+<text x="642.5" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 10</text>
+<text x="797.5" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 11</text>
+<text x="952.5" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 12</text>
 <text x="42" y="310" transform="rotate(-90 42 310)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Mean net basis points per trade</text>
 </svg>

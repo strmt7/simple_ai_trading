@@ -1,22 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620">
-<rect width="100%" height="100%" fill="#f7f9fb"/>
-<text x="52" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#18242f">Round 11 action funnel</text>
-<text x="52" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#51606d">Candidate-level stages only; artifacts separately record 1468 positive predicted-edge rows.</text>
-<text x="52" y="157" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">Precommitted candidates</text>
-<rect x="300" y="130" width="760" height="44" fill="#e6ebef"/>
-<rect x="300" y="130" width="760.0" height="44" fill="#287f9e"/>
-<text x="1045.0" y="159" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">12</text>
-<text x="52" y="239" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">Statistically trainable</text>
-<rect x="300" y="212" width="760" height="44" fill="#e6ebef"/>
-<rect x="300" y="212" width="760.0" height="44" fill="#218c8c"/>
-<text x="1045.0" y="241" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">12</text>
-<text x="52" y="321" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">Policy-viable candidates</text>
-<rect x="300" y="294" width="760" height="44" fill="#e6ebef"/>
-<text x="318.0" y="323" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">0</text>
-<text x="52" y="403" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">Selection-active candidates</text>
-<rect x="300" y="376" width="760" height="44" fill="#e6ebef"/>
-<text x="318.0" y="405" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">0</text>
-<text x="52" y="485" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334653">Unrejected candidates</text>
-<rect x="300" y="458" width="760" height="44" fill="#e6ebef"/>
-<text x="318.0" y="487" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#18242f">0</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="410" viewBox="0 0 1500 410" role="img" aria-labelledby="title desc">
+<title id="title">Prediction never cleared the policy economics gate</title>
+<desc id="desc">Six verified fits produced eighteen scored candidates. All were policy-evaluable, none had positive after-cost policy utility, no selection trade was permitted, and no candidate survived.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Prediction never cleared the policy economics gate</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Counts are exact Round 12 v6 artifacts; the terminal holdout was not accessed.</text>
+<rect x="56" y="142" width="200" height="136" rx="6" fill="#f4f7f9" stroke="#9aa8b3" stroke-width="2"/>
+<text x="156.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#9aa8b3">6</text>
+<text x="156.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Verified model fits</text>
+<line x1="263" y1="210" x2="285" y2="210" stroke="#7b8994" stroke-width="2"/>
+<path d="M 285 204 L 294 210 L 285 216 Z" fill="#7b8994"/>
+<rect x="294" y="142" width="200" height="136" rx="6" fill="#f4f7f9" stroke="#9aa8b3" stroke-width="2"/>
+<text x="394.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#9aa8b3">18</text>
+<text x="394.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Scored candidates</text>
+<line x1="501" y1="210" x2="523" y2="210" stroke="#7b8994" stroke-width="2"/>
+<path d="M 523 204 L 532 210 L 523 216 Z" fill="#7b8994"/>
+<rect x="532" y="142" width="200" height="136" rx="6" fill="#f4f7f9" stroke="#9aa8b3" stroke-width="2"/>
+<text x="632.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#9aa8b3">18</text>
+<text x="632.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Policy-evaluable</text>
+<line x1="739" y1="210" x2="761" y2="210" stroke="#7b8994" stroke-width="2"/>
+<path d="M 761 204 L 770 210 L 761 216 Z" fill="#7b8994"/>
+<rect x="770" y="142" width="200" height="136" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="870.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#b42318">0</text>
+<text x="870.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Positive policy utility</text>
+<line x1="977" y1="210" x2="999" y2="210" stroke="#7b8994" stroke-width="2"/>
+<path d="M 999 204 L 1008 210 L 999 216 Z" fill="#7b8994"/>
+<rect x="1008" y="142" width="200" height="136" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="1108.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#b42318">0</text>
+<text x="1108.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Selection trades</text>
+<line x1="1215" y1="210" x2="1237" y2="210" stroke="#7b8994" stroke-width="2"/>
+<path d="M 1237 204 L 1246 210 L 1237 216 Z" fill="#7b8994"/>
+<rect x="1246" y="142" width="200" height="136" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="1346.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#b42318">0</text>
+<text x="1346.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Unrejected</text>
+<text x="56" y="348" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Activity floors are evidence requirements, not trade quotas. Zero selection trades is the correct result after a negative policy screen.</text>
 </svg>

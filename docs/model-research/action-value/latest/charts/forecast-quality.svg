@@ -1,90 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620">
-<rect width="100%" height="100%" fill="#f7f9fb"/>
-<text x="52" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#18242f">Round 11 forecast quality</text>
-<text x="52" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#51606d">Selection AUC only; C/R/A denote conservative, regular, and aggressive risk profiles.</text>
-<rect x="90" y="120" width="960" height="380" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="90" y1="500.0" x2="1050" y2="500.0" stroke="#e5ebf0"/>
-<text x="76" y="505.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.0</text>
-<line x1="90" y1="457.8" x2="1050" y2="457.8" stroke="#e5ebf0"/>
-<text x="76" y="462.8" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.1</text>
-<line x1="90" y1="415.6" x2="1050" y2="415.6" stroke="#e5ebf0"/>
-<text x="76" y="420.6" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.2</text>
-<line x1="90" y1="373.3" x2="1050" y2="373.3" stroke="#e5ebf0"/>
-<text x="76" y="378.3" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.3</text>
-<line x1="90" y1="331.1" x2="1050" y2="331.1" stroke="#e5ebf0"/>
-<text x="76" y="336.1" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.4</text>
-<line x1="90" y1="288.9" x2="1050" y2="288.9" stroke="#e5ebf0"/>
-<text x="76" y="293.9" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.5</text>
-<line x1="90" y1="246.7" x2="1050" y2="246.7" stroke="#e5ebf0"/>
-<text x="76" y="251.7" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.6</text>
-<line x1="90" y1="204.4" x2="1050" y2="204.4" stroke="#e5ebf0"/>
-<text x="76" y="209.4" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.7</text>
-<line x1="90" y1="162.2" x2="1050" y2="162.2" stroke="#e5ebf0"/>
-<text x="76" y="167.2" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.8</text>
-<line x1="90" y1="120.0" x2="1050" y2="120.0" stroke="#e5ebf0"/>
-<text x="76" y="125.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.9</text>
-<line x1="90" y1="288.9" x2="1050" y2="288.9" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/>
-<rect x="106.0" y="163.2" width="20" height="336.8" fill="#218c8c"/>
-<text x="116.0" y="156.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.798</text>
-<rect x="134.0" y="177.5" width="20" height="322.5" fill="#d59b2d"/>
-<text x="144.0" y="170.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.764</text>
-<text x="130.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 300s</text>
-<rect x="186.0" y="167.4" width="20" height="332.6" fill="#218c8c"/>
-<text x="196.0" y="160.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.788</text>
-<rect x="214.0" y="178.6" width="20" height="321.4" fill="#d59b2d"/>
-<text x="224.0" y="171.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.761</text>
-<text x="210.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 300s</text>
-<rect x="266.0" y="170.2" width="20" height="329.8" fill="#218c8c"/>
-<text x="276.0" y="163.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.781</text>
-<rect x="294.0" y="178.8" width="20" height="321.2" fill="#d59b2d"/>
-<text x="304.0" y="171.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.761</text>
-<text x="290.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 300s</text>
-<rect x="346.0" y="201.1" width="20" height="298.9" fill="#218c8c"/>
-<text x="356.0" y="194.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.708</text>
-<rect x="374.0" y="212.7" width="20" height="287.3" fill="#d59b2d"/>
-<text x="384.0" y="205.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.680</text>
-<text x="370.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 600s</text>
-<rect x="426.0" y="206.1" width="20" height="293.9" fill="#218c8c"/>
-<text x="436.0" y="199.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.696</text>
-<rect x="454.0" y="207.9" width="20" height="292.1" fill="#d59b2d"/>
-<text x="464.0" y="200.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.692</text>
-<text x="450.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 600s</text>
-<rect x="506.0" y="207.3" width="20" height="292.7" fill="#218c8c"/>
-<text x="516.0" y="200.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.693</text>
-<rect x="534.0" y="205.6" width="20" height="294.4" fill="#d59b2d"/>
-<text x="544.0" y="198.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.697</text>
-<text x="530.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 600s</text>
-<rect x="586.0" y="229.5" width="20" height="270.5" fill="#218c8c"/>
-<text x="596.0" y="222.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.641</text>
-<rect x="614.0" y="228.1" width="20" height="271.9" fill="#d59b2d"/>
-<text x="624.0" y="221.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.644</text>
-<text x="610.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 900s</text>
-<rect x="666.0" y="233.7" width="20" height="266.3" fill="#218c8c"/>
-<text x="676.0" y="226.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.631</text>
-<rect x="694.0" y="223.0" width="20" height="277.0" fill="#d59b2d"/>
-<text x="704.0" y="216.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.656</text>
-<text x="690.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 900s</text>
-<rect x="746.0" y="231.7" width="20" height="268.3" fill="#218c8c"/>
-<text x="756.0" y="224.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.635</text>
-<rect x="774.0" y="223.3" width="20" height="276.7" fill="#d59b2d"/>
-<text x="784.0" y="216.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.655</text>
-<text x="770.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 900s</text>
-<rect x="826.0" y="260.8" width="20" height="239.2" fill="#218c8c"/>
-<text x="836.0" y="253.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.566</text>
-<rect x="854.0" y="251.6" width="20" height="248.4" fill="#d59b2d"/>
-<text x="864.0" y="244.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.588</text>
-<text x="850.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 1800s</text>
-<rect x="906.0" y="251.1" width="20" height="248.9" fill="#218c8c"/>
-<text x="916.0" y="244.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.589</text>
-<rect x="934.0" y="254.1" width="20" height="245.9" fill="#d59b2d"/>
-<text x="944.0" y="247.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.582</text>
-<text x="930.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 1800s</text>
-<rect x="986.0" y="253.2" width="20" height="246.8" fill="#218c8c"/>
-<text x="996.0" y="246.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.584</text>
-<rect x="1014.0" y="245.1" width="20" height="254.9" fill="#d59b2d"/>
-<text x="1024.0" y="238.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#263744">0.604</text>
-<text x="1010.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 1800s</text>
-<rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long AUC</text>
-<rect x="525" y="560" width="16" height="16" fill="#d59b2d"/><text x="549" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short AUC</text>
-<line x1="675" y1="568" x2="705" y2="568" stroke="#b44b4b" stroke-width="2" stroke-dasharray="7 5"/><text x="713" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Random</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="867" viewBox="0 0 1500 867" role="img" aria-labelledby="title desc">
+<title id="title">Top-ranked selection rows still had negative mean returns</title>
+<desc id="desc">Consumed six-day selection window; mean realized after-cost outcome among each candidate&#x27;s 100 strongest scored rows. Diagnostic ranking only: rows can overlap and do not form an equity curve or executable trade series.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Top-ranked selection rows still had negative mean returns</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Consumed six-day selection window; mean realized after-cost outcome among each candidate&#x27;s 100 strongest scored rows.</text>
+<line x1="390.0" y1="132" x2="390.0" y2="762" stroke="#dce3e8" stroke-width="1"/>
+<text x="390.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">-16</text>
+<line x1="647.5" y1="132" x2="647.5" y2="762" stroke="#dce3e8" stroke-width="1"/>
+<text x="647.5" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">-12</text>
+<line x1="905.0" y1="132" x2="905.0" y2="762" stroke="#dce3e8" stroke-width="1"/>
+<text x="905.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">-8</text>
+<line x1="1162.5" y1="132" x2="1162.5" y2="762" stroke="#dce3e8" stroke-width="1"/>
+<text x="1162.5" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">-4</text>
+<line x1="1420.0" y1="132" x2="1420.0" y2="762" stroke="#dce3e8" stroke-width="1"/>
+<text x="1420.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">0</text>
+<text x="372" y="171" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  conservative  mean</text>
+<rect x="697.5" y="155" width="722.5" height="22" rx="3" fill="#b42318"/>
+<text x="689.5" y="171" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-11.22</text>
+<text x="372" y="205" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  conservative  upper q</text>
+<rect x="430.9" y="189" width="989.1" height="22" rx="3" fill="#b42318"/>
+<text x="422.9" y="205" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-15.36</text>
+<text x="372" y="239" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  conservative  distribution</text>
+<rect x="598.3" y="223" width="821.7" height="22" rx="3" fill="#b42318"/>
+<text x="590.3" y="239" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-12.76</text>
+<text x="372" y="273" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  regular  mean</text>
+<rect x="833.0" y="257" width="587.0" height="22" rx="3" fill="#b42318"/>
+<text x="825.0" y="273" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-9.12</text>
+<text x="372" y="307" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  regular  upper q</text>
+<rect x="562.3" y="291" width="857.7" height="22" rx="3" fill="#b42318"/>
+<text x="554.3" y="307" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-13.32</text>
+<text x="372" y="341" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  regular  distribution</text>
+<rect x="764.8" y="325" width="655.2" height="22" rx="3" fill="#b42318"/>
+<text x="756.8" y="341" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-10.18</text>
+<text x="372" y="375" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  aggressive  mean</text>
+<rect x="723.2" y="359" width="696.8" height="22" rx="3" fill="#b42318"/>
+<text x="715.2" y="375" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-10.82</text>
+<text x="372" y="409" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  aggressive  upper q</text>
+<rect x="931.8" y="393" width="488.2" height="22" rx="3" fill="#b42318"/>
+<text x="923.8" y="409" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-7.58</text>
+<text x="372" y="443" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">300s  aggressive  distribution</text>
+<rect x="842.4" y="427" width="577.6" height="22" rx="3" fill="#b42318"/>
+<text x="834.4" y="443" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-8.97</text>
+<line x1="56" y1="450" x2="1444" y2="450" stroke="#8d9aa5" stroke-width="2"/>
+<text x="372" y="477" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  conservative  mean</text>
+<rect x="974.8" y="461" width="445.2" height="22" rx="3" fill="#b42318"/>
+<text x="966.8" y="477" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-6.92</text>
+<text x="372" y="511" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  conservative  upper q</text>
+<rect x="796.9" y="495" width="623.1" height="22" rx="3" fill="#b42318"/>
+<text x="788.9" y="511" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-9.68</text>
+<text x="372" y="545" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  conservative  distribution</text>
+<rect x="453.7" y="529" width="966.3" height="22" rx="3" fill="#b42318"/>
+<text x="445.7" y="545" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-15.01</text>
+<text x="372" y="579" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  regular  mean</text>
+<rect x="1224.3" y="563" width="195.7" height="22" rx="3" fill="#b42318"/>
+<text x="1216.3" y="579" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-3.04</text>
+<text x="372" y="613" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  regular  upper q</text>
+<rect x="879.8" y="597" width="540.2" height="22" rx="3" fill="#b42318"/>
+<text x="871.8" y="613" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-8.39</text>
+<text x="372" y="647" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  regular  distribution</text>
+<rect x="786.6" y="631" width="633.4" height="22" rx="3" fill="#b42318"/>
+<text x="778.6" y="647" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-9.84</text>
+<text x="372" y="681" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  aggressive  mean</text>
+<rect x="995.8" y="665" width="424.2" height="22" rx="3" fill="#b42318"/>
+<text x="987.8" y="681" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-6.59</text>
+<text x="372" y="715" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  aggressive  upper q</text>
+<rect x="907.6" y="699" width="512.4" height="22" rx="3" fill="#b42318"/>
+<text x="899.6" y="715" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-7.96</text>
+<text x="372" y="749" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">900s  aggressive  distribution</text>
+<rect x="756.3" y="733" width="663.7" height="22" rx="3" fill="#b42318"/>
+<text x="748.3" y="749" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#7a271a">-10.31</text>
+<line x1="1420.0" y1="132" x2="1420.0" y2="762" stroke="#17212b" stroke-width="2"/>
+<text x="905.0" y="804" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#52606d">Net basis points</text>
+<text x="56" y="837" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Diagnostic ranking only: rows can overlap and do not form an equity curve or executable trade series.</text>
 </svg>
