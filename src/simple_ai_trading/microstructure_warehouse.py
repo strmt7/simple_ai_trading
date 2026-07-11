@@ -1265,12 +1265,11 @@ class MicrostructureWarehouse:
             data_type,
             "2000-01-01",
         )
-        physical = self._physical_archive_stats(
-            symbol=normalized_symbol,
-            data_type=normalized_type,
-        )
         output: dict[str, TickArchiveIngestResult] = {}
         metadata_bindings: list[tuple[str, int, str, str, str]] = []
+        candidates: list[
+            tuple[str, str, int, str, str, Mapping[str, object]]
+        ] = []
         for item in items:
             period = str(
                 item.get("period") if isinstance(item, Mapping) else getattr(item, "period", "")
@@ -1343,6 +1342,44 @@ class MicrostructureWarehouse:
                 and int(manifest.get("out_of_order_rows") or 0) != 0
             ):
                 continue
+            candidates.append(
+                (
+                    normalized_period,
+                    etag,
+                    checksum_size_bytes,
+                    checksum_last_modified,
+                    checksum_etag,
+                    manifest,
+                )
+            )
+        if not candidates:
+            return output
+
+        physical: dict[str, dict[str, int]] = {}
+        if len(candidates) <= 16:
+            for candidate in candidates:
+                archive_id = str(candidate[5].get("archive_id") or "")
+                physical.update(
+                    self._physical_archive_stats(
+                        symbol=normalized_symbol,
+                        data_type=normalized_type,
+                        archive_id=archive_id,
+                    )
+                )
+        else:
+            physical = self._physical_archive_stats(
+                symbol=normalized_symbol,
+                data_type=normalized_type,
+            )
+
+        for (
+            normalized_period,
+            etag,
+            checksum_size_bytes,
+            checksum_last_modified,
+            checksum_etag,
+            manifest,
+        ) in candidates:
             stats = physical.get(str(manifest.get("archive_id") or ""), {})
             if not self._manifest_matches_physical_rows(normalized_type, manifest, stats):
                 continue
