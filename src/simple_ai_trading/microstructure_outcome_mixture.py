@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -10,6 +11,7 @@ import os
 from pathlib import Path
 from typing import Callable, Mapping
 from uuid import uuid4
+import warnings
 
 import numpy as np
 from safetensors import safe_open
@@ -145,6 +147,18 @@ def _canonical_json(value: object) -> str:
         sort_keys=True,
         allow_nan=False,
     )
+
+
+@contextmanager
+def _directml_cpu_fallback_guard(backend_kind: str):
+    with warnings.catch_warnings():
+        if backend_kind == "directml":
+            warnings.filterwarnings(
+                "error",
+                message=r".*will fall back to run on the CPU.*",
+                category=UserWarning,
+            )
+        yield
 
 
 def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
@@ -297,9 +311,13 @@ def _weighted_pairwise_ranking_loss(prediction, target, sample_weight):
     numerator = prediction.new_zeros(())
     denominator = prediction.new_zeros(())
     for offset in offsets:
-        paired_prediction = torch.roll(prediction, shifts=offset, dims=0)
-        paired_target = torch.roll(target, shifts=offset, dims=0)
-        paired_weight = torch.roll(sample_weight, shifts=offset, dims=0)
+        paired_prediction = torch.cat(
+            (prediction[-offset:], prediction[:-offset]), dim=0
+        )
+        paired_target = torch.cat((target[-offset:], target[:-offset]), dim=0)
+        paired_weight = torch.cat(
+            (sample_weight[-offset:], sample_weight[:-offset]), dim=0
+        )
         target_difference = target - paired_target
         direction = torch.sign(target_difference)
         informative = (target_difference != 0.0).to(dtype=prediction.dtype)
@@ -716,7 +734,10 @@ def train_outcome_mixture_model(
                 weight = prepared[2].index_select(0, device_positions)
             if training:
                 optimizer.zero_grad(set_to_none=True)
-            with torch.set_grad_enabled(training):
+            with (
+                torch.set_grad_enabled(training),
+                _directml_cpu_fallback_guard(backend.kind),
+            ):
                 loss = _loss(network(x), y, weight, prevalence, spec)
                 if not bool(torch.isfinite(loss).detach().cpu().item()):
                     raise ValueError("outcome-mixture loss became non-finite")
@@ -856,7 +877,7 @@ def predict_outcome_mixture_model(
     network.load_state_dict(state, strict=True)
     network.eval()
     outputs: list[np.ndarray] = []
-    with torch.no_grad():
+    with torch.no_grad(), _directml_cpu_fallback_guard(backend.kind):
         for start in range(0, len(selected), int(batch_size)):
             indexes = selected[start : start + int(batch_size)]
             values = torch.from_numpy(

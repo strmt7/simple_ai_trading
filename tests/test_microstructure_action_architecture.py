@@ -4,6 +4,7 @@ from dataclasses import replace
 import os
 import subprocess
 import sys
+import warnings
 
 import numpy as np
 import pytest
@@ -461,7 +462,9 @@ def test_action_value_training_and_inference_run_on_directml_when_available() ->
             timeout=120,
             check=False,
         )
-        assert result.returncode == 0, result.stdout + result.stderr
+        output = result.stdout + result.stderr
+        assert result.returncode == 0, output
+        assert "will fall back to run on the CPU" not in output
         return
     dataset, long_target, short_target = _dataset()
     model = train_action_value_model(
@@ -514,7 +517,9 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
             timeout=120,
             check=False,
         )
-        assert result.returncode == 0, result.stdout + result.stderr
+        output = result.stdout + result.stderr
+        assert result.returncode == 0, output
+        assert "will fall back to run on the CPU" not in output
         return
     dataset, long_target, short_target = _dataset()
     model = train_outcome_mixture_model(
@@ -739,6 +744,16 @@ def test_outcome_mixture_pairwise_ranking_prefers_realized_net_return_order() ->
 
     assert float(ordered_loss) < float(reversed_loss)
     assert float(tied_loss) == 0.0
+
+
+def test_outcome_mixture_directml_cpu_fallback_guard_fails_closed() -> None:
+    message = "The operator will fall back to run on the CPU."
+    with pytest.raises(UserWarning, match="fall back"):
+        with outcome_mixture._directml_cpu_fallback_guard("directml"):
+            warnings.warn(message, UserWarning, stacklevel=1)
+    with pytest.warns(UserWarning, match="fall back"):
+        with outcome_mixture._directml_cpu_fallback_guard("cpu"):
+            warnings.warn(message, UserWarning, stacklevel=1)
 
 
 def test_outcome_mixture_independent_towers_are_parameter_matched_and_isolated() -> (
