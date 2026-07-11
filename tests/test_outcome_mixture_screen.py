@@ -4,9 +4,12 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
+import tools.run_outcome_mixture_screen as screen
 from tools.run_outcome_mixture_screen import (
     _validate_git_blob_binding,
     load_outcome_mixture_design,
@@ -63,7 +66,9 @@ def test_git_blob_binding_rejects_incomplete_contract() -> None:
 
 
 def test_round17_design_is_hash_bound_current_and_terminal_sealed() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN)
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN, require_current=False
+    )
 
     assert (
         design_sha256
@@ -90,3 +95,51 @@ def test_round17_design_rejects_hash_tampering(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="design hash is invalid"):
         load_outcome_mixture_design(source, require_current=False)
+
+
+def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
+    design, _design_sha256 = load_outcome_mixture_design(DESIGN, require_current=False)
+    score = SimpleNamespace(eligible=np.zeros(4, dtype=bool))
+    selection = SimpleNamespace(
+        accepted=False,
+        threshold_bps=None,
+        asdict=lambda: {"accepted": False, "threshold_bps": None},
+    )
+    trace = SimpleNamespace(
+        metrics=SimpleNamespace(trades=0, total_net_bps=0.0),
+        asdict=lambda: {"metrics": {"trades": 0, "total_net_bps": 0.0}},
+    )
+    calls: list[tuple[tuple[float, ...], tuple[int, ...], object, float]] = []
+
+    monkeypatch.setattr(screen, "derive_action_scores", lambda *_args: score)
+
+    def select(
+        _dataset,
+        _targets,
+        _score,
+        *,
+        quantiles,
+        expected_days,
+        gates,
+        drawdown_penalty,
+    ):
+        calls.append((quantiles, expected_days, gates, drawdown_penalty))
+        return selection
+
+    monkeypatch.setattr(screen, "select_barrier_threshold", select)
+    monkeypatch.setattr(screen, "_empty_profile_trace", lambda *_args, **_kwargs: trace)
+
+    results, survivors = screen._evaluate_profiles(
+        design=design,
+        dataset=object(),
+        targets=object(),
+        calibration_prediction=object(),
+        policy_prediction=object(),
+        progress=lambda *_args, **_kwargs: None,
+    )
+
+    assert len(results) == 3
+    assert survivors == []
+    assert len(calls) == 3
+    assert all(call[0] == (0.5, 0.7, 0.85, 0.95) for call in calls)
+    assert all(call[3] == 0.5 for call in calls)

@@ -331,11 +331,10 @@ def _evaluate_profiles(
             dataset,
             targets,
             calibration_score,
-            quantiles=threshold_policy["quantiles"],
-            drawdown_penalty=float(threshold_policy["drawdown_penalty"]),
-            scenario=str(threshold_policy["selection_scenario"]),
+            quantiles=tuple(float(value) for value in threshold_policy["quantiles"]),
             expected_days=calibration_days,
             gates=raw_profile["calibration_gates"],
+            drawdown_penalty=float(threshold_policy["drawdown_penalty"]),
         )
         if selection.accepted:
             assert selection.threshold_bps is not None
