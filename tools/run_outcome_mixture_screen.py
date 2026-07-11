@@ -54,6 +54,15 @@ from simple_ai_trading.microstructure_outcome_mixture import (  # noqa: E402
     save_outcome_mixture_model,
     train_outcome_mixture_model,
 )
+from simple_ai_trading.microstructure_outcome_lightgbm import (  # noqa: E402
+    LIGHTGBM_HURDLE_SCHEMA_VERSION,
+    LightGBMHurdleSpec,
+    TrainedLightGBMHurdleModel,
+    load_lightgbm_hurdle_model,
+    predict_lightgbm_hurdle_model,
+    save_lightgbm_hurdle_model,
+    train_lightgbm_hurdle_model,
+)
 from simple_ai_trading.microstructure_warehouse import (  # noqa: E402
     MicrostructureWarehouse,
 )
@@ -665,6 +674,57 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    30: {
+        "purpose": "consumed_data_lightgbm_hurdle_architecture_screen",
+        "design_revisions": {1},
+        "horizon_seconds": 900,
+        "trainer": "lightgbm_hurdle",
+        "feature_version": "l1-tape-causal-v8",
+        "booster_count_per_member": 10,
+        "model": {
+            "candidate_id": "900s-lightgbm-hurdle-quantile-ensemble",
+            "family": "side_specific_lightgbm_hurdle_expected_value",
+            "learning_rate": 0.025,
+            "num_leaves": 47,
+            "max_depth": 7,
+            "min_data_in_leaf": 160,
+            "feature_fraction": 0.82,
+            "bagging_fraction": 0.82,
+            "bagging_freq": 1,
+            "lambda_l1": 0.005,
+            "lambda_l2": 0.025,
+            "max_bin": 127,
+            "num_boost_round": 1_500,
+            "early_stopping_rounds": 100,
+            "lower_quantile": 0.10,
+            "upper_quantile": 0.90,
+            "calibration_fraction": 0.50,
+            "gpu_use_dp_required": True,
+        },
+        "predecessor": {
+            "round": 29,
+            "design_sha256": (
+                "d76f65e2653449df40e263e98718ffea365f292e569694b0349d85c884e39163"
+            ),
+            "source_report_canonical_sha256": (
+                "bec167230a17eb85c47793adeab7bc28910f9aaf314a2244d27f2fdde122db8d"
+            ),
+            "publication_sha256": (
+                "0918377cd8b4aeb071e71f872579d2849b727384223f0f677f306af36de8ec44"
+            ),
+            "finding": (
+                "Round 29 increased calibration and policy eligibility at 1800 "
+                "seconds, but all four probability AUCs and Brier scores worsened "
+                "versus Round 26, every threshold candidate lost after stress "
+                "costs, and the least-negative candidate deteriorated from "
+                "-38.911663 to -92.246143 bps. The longer horizon is rejected. "
+                "Round 30 restores the sealed 900-second baseline and changes only "
+                "the predictor family to a side-specific LightGBM hurdle ensemble "
+                "with direct conditional quantiles. Its policy window remains "
+                "selection-contaminated and cannot establish profitability."
+            ),
+        },
+    },
 }
 
 
@@ -853,35 +913,41 @@ def load_outcome_mixture_design(
         raise ValueError("outcome-mixture design sections are incomplete")
     if require_current:
         _validate_git_blob_binding(implementation)
-    model_spec = OutcomeMixtureArchitectureSpec(**dict(model))
     expected_feature_names = microstructure_feature_names(
         str(round_contract["feature_version"])
     )
-    if (
-        model_spec.family != "conditional_outcome_mixture_residual_mlp"
-        or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
-        or model_spec.ranking_loss_mode
-        != round_contract.get("ranking_loss_mode", "correlation")
-        or model_spec.pairwise_ranking_loss_weight
-        != round_contract.get("pairwise_ranking_loss_weight", 0.0)
-        or model_spec.temporal_pooling_mode
-        != round_contract.get("temporal_pooling_mode", "endpoint")
-        or model_spec.ranking_scope
-        != round_contract.get("ranking_scope", "global_batch")
-        or model_spec.representation_mode
-        != round_contract.get("representation_mode", "single")
-        or model_spec.expert_count != round_contract.get("expert_count", 1)
-        or model_spec.router_balance_loss_weight
-        != round_contract.get("router_balance_loss_weight", 0.0)
-        or model_spec.expert_temporal_context_mode
-        != round_contract.get("expert_temporal_context_mode", "shared_full")
-        or model_spec.sequence_length != round_contract.get("sequence_length", 1)
-        or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
-        or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
-        or model_spec.residual_blocks != round_contract.get("residual_blocks", 2)
-        or not expected_feature_names
-    ):
-        raise ValueError("outcome-mixture model family is invalid")
+    if round_contract.get("trainer") == "lightgbm_hurdle":
+        model_spec = LightGBMHurdleSpec(**dict(model))
+        if asdict(model_spec) != round_contract.get("model") or not expected_feature_names:
+            raise ValueError("LightGBM hurdle model contract drifted")
+    else:
+        model_spec = OutcomeMixtureArchitectureSpec(**dict(model))
+        if (
+            model_spec.family != "conditional_outcome_mixture_residual_mlp"
+            or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
+            or model_spec.ranking_loss_mode
+            != round_contract.get("ranking_loss_mode", "correlation")
+            or model_spec.pairwise_ranking_loss_weight
+            != round_contract.get("pairwise_ranking_loss_weight", 0.0)
+            or model_spec.temporal_pooling_mode
+            != round_contract.get("temporal_pooling_mode", "endpoint")
+            or model_spec.ranking_scope
+            != round_contract.get("ranking_scope", "global_batch")
+            or model_spec.representation_mode
+            != round_contract.get("representation_mode", "single")
+            or model_spec.expert_count != round_contract.get("expert_count", 1)
+            or model_spec.router_balance_loss_weight
+            != round_contract.get("router_balance_loss_weight", 0.0)
+            or model_spec.expert_temporal_context_mode
+            != round_contract.get("expert_temporal_context_mode", "shared_full")
+            or model_spec.sequence_length != round_contract.get("sequence_length", 1)
+            or model_spec.side_tower_mode
+            != round_contract.get("side_tower_mode", "shared")
+            or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
+            or model_spec.residual_blocks != round_contract.get("residual_blocks", 2)
+            or not expected_feature_names
+        ):
+            raise ValueError("outcome-mixture model family is invalid")
     urls: set[str] = set()
     for item in research_basis:
         if (
@@ -897,13 +963,27 @@ def load_outcome_mixture_design(
 
 
 def _ensemble_for_role(
-    models: list[TrainedOutcomeMixtureModel],
+    models: list[TrainedOutcomeMixtureModel | TrainedLightGBMHurdleModel],
     dataset,
     endpoints: np.ndarray,
     *,
     compute_backend: str,
     batch_size: int,
 ) -> ActionValueEnsembleBatch:
+    if not models:
+        raise ValueError("action-value ensemble has no models")
+    lightgbm_members = [
+        model for model in models if isinstance(model, TrainedLightGBMHurdleModel)
+    ]
+    if lightgbm_members:
+        if len(lightgbm_members) != len(models):
+            raise ValueError("action-value ensemble mixes model families")
+        return ensemble_action_value_predictions(
+            [
+                predict_lightgbm_hurdle_model(model, dataset, endpoints)
+                for model in lightgbm_members
+            ]
+        )
     return ensemble_action_value_predictions(
         [
             predict_outcome_mixture_model(
@@ -1281,8 +1361,13 @@ def run_outcome_mixture_screen(
     tuning_weights = average_label_uniqueness(
         dataset.decision_time_ms, exit_full, roles["early_stop"]
     )
-    model_spec = OutcomeMixtureArchitectureSpec(**dict(design["model"]))
-    models: list[TrainedOutcomeMixtureModel] = []
+    lightgbm_trainer = round_contract.get("trainer") == "lightgbm_hurdle"
+    model_spec: OutcomeMixtureArchitectureSpec | LightGBMHurdleSpec
+    if lightgbm_trainer:
+        model_spec = LightGBMHurdleSpec(**dict(design["model"]))
+    else:
+        model_spec = OutcomeMixtureArchitectureSpec(**dict(design["model"]))
+    models: list[TrainedOutcomeMixtureModel | TrainedLightGBMHurdleModel] = []
     artifacts: list[dict[str, object]] = []
     seeds = tuple(int(value) for value in training["ensemble_seeds"])
     for member, seed in enumerate(seeds, start=1):
@@ -1290,39 +1375,75 @@ def run_outcome_mixture_screen(
         member_spec = replace(
             model_spec, candidate_id=f"{model_spec.candidate_id}-seed-{seed}"
         )
-        model = train_outcome_mixture_model(
-            dataset,
-            targets,
-            train_endpoints=roles["train"],
-            tuning_endpoints=roles["early_stop"],
-            spec=member_spec,
-            target_scenario=str(training["target_scenario"]),
-            compute_backend=effective_backend,
-            seed=seed,
-            batch_size=int(training["batch_size"]),
-            max_epochs=int(training["max_epochs"]),
-            patience=int(training["patience"]),
-            train_sample_weights=train_weights,
-            tuning_sample_weights=tuning_weights,
-            progress=lambda epoch, total, training_loss, tuning_loss, index=member, model_seed=seed: (
-                progress(
-                    "model-epoch",
-                    member=index,
-                    seed=model_seed,
-                    epoch=epoch,
-                    epochs=total,
-                    training_loss=round(training_loss, 8),
-                    tuning_loss=round(tuning_loss, 8),
-                )
-            ),
-        )
-        if model.backend_kind != effective_backend:
-            raise RuntimeError(
-                "model training did not remain on the precommitted backend"
+        if lightgbm_trainer:
+            assert isinstance(member_spec, LightGBMHurdleSpec)
+            model = train_lightgbm_hurdle_model(
+                dataset,
+                targets,
+                train_endpoints=roles["train"],
+                tuning_endpoints=roles["early_stop"],
+                spec=member_spec,
+                target_scenario=str(training["target_scenario"]),
+                compute_backend=effective_backend,
+                seed=seed,
+                train_sample_weights=train_weights,
+                tuning_sample_weights=tuning_weights,
+                progress=lambda head, step, total, index=member, model_seed=seed: (
+                    progress(
+                        "model-head",
+                        member=index,
+                        seed=model_seed,
+                        head=head,
+                        step=step,
+                        steps=total,
+                    )
+                ),
             )
-        artifact_path = destination / "models" / f"seed-{seed}.safetensors"
-        save_outcome_mixture_model(artifact_path, model)
-        reloaded = load_outcome_mixture_model(artifact_path)
+            expected_model_backend = (
+                "cpu" if effective_backend == "cpu" else "opencl"
+            )
+            if model.backend_kind != expected_model_backend:
+                raise RuntimeError(
+                    "LightGBM model training did not remain on the required backend"
+                )
+            artifact_path = destination / "models" / f"seed-{seed}.json"
+            save_lightgbm_hurdle_model(artifact_path, model)
+            reloaded = load_lightgbm_hurdle_model(artifact_path)
+        else:
+            assert isinstance(member_spec, OutcomeMixtureArchitectureSpec)
+            model = train_outcome_mixture_model(
+                dataset,
+                targets,
+                train_endpoints=roles["train"],
+                tuning_endpoints=roles["early_stop"],
+                spec=member_spec,
+                target_scenario=str(training["target_scenario"]),
+                compute_backend=effective_backend,
+                seed=seed,
+                batch_size=int(training["batch_size"]),
+                max_epochs=int(training["max_epochs"]),
+                patience=int(training["patience"]),
+                train_sample_weights=train_weights,
+                tuning_sample_weights=tuning_weights,
+                progress=lambda epoch, total, training_loss, tuning_loss, index=member, model_seed=seed: (
+                    progress(
+                        "model-epoch",
+                        member=index,
+                        seed=model_seed,
+                        epoch=epoch,
+                        epochs=total,
+                        training_loss=round(training_loss, 8),
+                        tuning_loss=round(tuning_loss, 8),
+                    )
+                ),
+            )
+            if model.backend_kind != effective_backend:
+                raise RuntimeError(
+                    "model training did not remain on the precommitted backend"
+                )
+            artifact_path = destination / "models" / f"seed-{seed}.safetensors"
+            save_outcome_mixture_model(artifact_path, model)
+            reloaded = load_outcome_mixture_model(artifact_path)
         if reloaded.model_sha256 != model.model_sha256:
             raise ValueError("saved model identity differs after reload")
         artifact = {
@@ -1331,38 +1452,84 @@ def run_outcome_mixture_screen(
             "bytes": artifact_path.stat().st_size,
             "reload_verified": True,
         }
-        summary = _artifact_summary(reloaded)
-        trainable_parameters = int(
-            sum(np.asarray(values).size for values in reloaded.state.values())
-        )
-        expected_parameters = round_contract.get("trainable_parameter_count")
-        if expected_parameters is not None and trainable_parameters != int(
-            expected_parameters
-        ):
-            raise ValueError("outcome-mixture trainable parameter count drifted")
-        summary.update(
-            {
+        if isinstance(reloaded, TrainedLightGBMHurdleModel):
+            booster_count = len(reloaded.model_strings)
+            if booster_count != int(round_contract["booster_count_per_member"]):
+                raise ValueError("LightGBM hurdle booster count drifted")
+            summary = {
+                "schema_version": reloaded.schema_version,
+                "model_family": reloaded.model_family,
+                "model_sha256": reloaded.model_sha256,
+                "spec": asdict(reloaded.spec),
+                "backend_requested": reloaded.backend_requested,
+                "backend_kind": reloaded.backend_kind,
+                "backend_device": reloaded.backend_device,
+                "lightgbm_version": reloaded.lightgbm_version,
+                "target_mode": reloaded.target_mode,
                 "target_schema_version": reloaded.target_schema_version,
                 "target_scenario": reloaded.target_scenario,
                 "target_contract_sha256": reloaded.target_contract_sha256,
-                "target_scale_bps": reloaded.target_scale_bps,
-                "positive_class_prevalence": list(reloaded.positive_class_prevalence),
-                "trainable_parameter_count": trainable_parameters,
+                "training_rows": reloaded.training_rows,
+                "requested_early_stop_rows": reloaded.requested_early_stop_rows,
+                "early_stop_rows": reloaded.early_stop_rows,
+                "calibration_rows": reloaded.calibration_rows,
+                "calibration_start_ms": reloaded.calibration_start_ms,
+                "internal_purged_rows": reloaded.internal_purged_rows,
+                "positive_class_prevalence": list(
+                    reloaded.positive_class_prevalence
+                ),
+                "class_support": reloaded.class_support,
+                "probability_calibration": reloaded.probability_calibration,
+                "best_iterations": reloaded.best_iterations,
+                "booster_count": booster_count,
+                "trading_authority": False,
+                "execution_claim": False,
+                "profitability_claim": False,
                 "portfolio_claim": False,
                 "leverage_applied": False,
             }
-        )
+        else:
+            summary = _artifact_summary(reloaded)
+            trainable_parameters = int(
+                sum(np.asarray(values).size for values in reloaded.state.values())
+            )
+            expected_parameters = round_contract.get("trainable_parameter_count")
+            if expected_parameters is not None and trainable_parameters != int(
+                expected_parameters
+            ):
+                raise ValueError("outcome-mixture trainable parameter count drifted")
+            summary.update(
+                {
+                    "target_schema_version": reloaded.target_schema_version,
+                    "target_scenario": reloaded.target_scenario,
+                    "target_contract_sha256": reloaded.target_contract_sha256,
+                    "target_scale_bps": reloaded.target_scale_bps,
+                    "positive_class_prevalence": list(
+                        reloaded.positive_class_prevalence
+                    ),
+                    "trainable_parameter_count": trainable_parameters,
+                    "portfolio_claim": False,
+                    "leverage_applied": False,
+                }
+            )
         artifacts.append({"seed": seed, "model": summary, "artifact": artifact})
         models.append(reloaded)
-        progress(
-            "model-complete",
-            member=member,
-            seed=seed,
-            best_epoch=reloaded.best_epoch,
-            tuning_loss=round(reloaded.tuning_loss, 8),
-            model_sha256=reloaded.model_sha256,
-            reload_verified=True,
-        )
+        completion: dict[str, object] = {
+            "member": member,
+            "seed": seed,
+            "model_sha256": reloaded.model_sha256,
+            "reload_verified": True,
+        }
+        if isinstance(reloaded, TrainedLightGBMHurdleModel):
+            completion["best_iterations"] = dict(reloaded.best_iterations)
+        else:
+            completion.update(
+                {
+                    "best_epoch": reloaded.best_epoch,
+                    "tuning_loss": round(reloaded.tuning_loss, 8),
+                }
+            )
+        progress("model-complete", **completion)
     batch_size = int(training["batch_size"])
     progress("calibration-predict")
     calibration_prediction = _ensemble_for_role(
@@ -1411,11 +1578,19 @@ def run_outcome_mixture_screen(
         final_profiles = []
     report: dict[str, object] = {
         "schema_version": REPORT_SCHEMA_VERSION,
-        "artifact_class": "consumed_data_conditional_outcome_mixture_evidence",
+        "artifact_class": (
+            "consumed_data_lightgbm_hurdle_evidence"
+            if lightgbm_trainer
+            else "consumed_data_conditional_outcome_mixture_evidence"
+        ),
         "status": "research_candidate" if final_profiles else "rejected",
         "round": int(design["round"]),
         "design_sha256": design_sha256,
-        "action_value_model_schema_version": OUTCOME_MIXTURE_SCHEMA_VERSION,
+        "action_value_model_schema_version": (
+            LIGHTGBM_HURDLE_SCHEMA_VERSION
+            if lightgbm_trainer
+            else OUTCOME_MIXTURE_SCHEMA_VERSION
+        ),
         "action_policy_schema_version": ACTION_POLICY_SCHEMA_VERSION,
         "barrier_schema_version": ADAPTIVE_BARRIER_SCHEMA_VERSION,
         "target_mode": ADAPTIVE_BARRIER_TARGET_MODE,
@@ -1485,7 +1660,11 @@ def run_outcome_mixture_screen(
             "the 100 ms BBO path cannot resolve queue position or hidden depth",
             "base and adverse scenarios are research replays, not fill guarantees",
             "all returns are unleveraged and no profile may apply leverage before edge validation",
-            "the local neural ensemble is machine learning and is not the optional LLM risk-assessment overlay",
+            (
+                "the local LightGBM ensemble is machine learning and is not the optional LLM risk-assessment overlay"
+                if lightgbm_trainer
+                else "the local neural ensemble is machine learning and is not the optional LLM risk-assessment overlay"
+            ),
             "the reserved terminal date was neither loaded nor labeled",
         ],
     }

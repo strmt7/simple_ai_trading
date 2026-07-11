@@ -882,8 +882,10 @@ def test_round28_design_is_historical_and_changes_only_sampled_depth_inputs() ->
     assert "does not relabel them as a full event-level order book" in official_basis
 
 
-def test_round29_design_is_current_and_changes_only_the_horizon() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN29)
+def test_round29_historical_design_changes_only_the_horizon() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN29, require_current=False
+    )
     baseline, _baseline_sha256 = load_outcome_mixture_design(
         DESIGN26, require_current=False
     )
