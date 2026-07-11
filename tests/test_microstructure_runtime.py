@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from simple_ai_trading.microstructure_features import (
+    AGGREGATE_DEPTH_FEATURE_VERSION,
     build_executable_microstructure_dataset,
 )
 from simple_ai_trading.microstructure_runtime import (
@@ -97,6 +98,11 @@ def _warehouse_for(rows: list[MicrostructureSecond]) -> _ConnectionWarehouse:
             symbol VARCHAR, available_time_ms BIGINT, last_transaction_time_ms BIGINT,
             close_bid DOUBLE, close_ask DOUBLE, close_bid_qty DOUBLE, close_ask_qty DOUBLE
         );
+        CREATE TABLE current_book_depth_snapshots (
+            symbol VARCHAR, timestamp_ms BIGINT,
+            bid_notional_1 DOUBLE, ask_notional_1 DOUBLE,
+            bid_notional_5 DOUBLE, ask_notional_5 DOUBLE
+        );
         """
     )
     quote_rows = []
@@ -163,6 +169,79 @@ def _warehouse_for(rows: list[MicrostructureSecond]) -> _ConnectionWarehouse:
         quote_rows,
     )
     return _ConnectionWarehouse(connection)
+
+
+def test_sampled_aggregate_depth_features_are_causal_and_mask_stale_rows() -> None:
+    seconds = [_second(index) for index in range(4_150)]
+    warehouse = _warehouse_for(seconds)
+    snapshots = [
+        ("BTCUSDT", index * 1_000, 100.0, 80.0, 500.0, 400.0)
+        for index in range(0, 4_150, 30)
+        if not 3_720 <= index <= 3_780
+    ]
+    warehouse.connection.executemany(
+        "INSERT INTO current_book_depth_snapshots VALUES (?, ?, ?, ?, ?, ?)",
+        snapshots,
+    )
+    try:
+        dataset = build_executable_microstructure_dataset(
+            warehouse,  # type: ignore[arg-type]
+            symbol="BTCUSDT",
+            horizon_seconds=1,
+            total_latency_ms=0,
+            taker_fee_bps=5.0,
+            reference_order_notional_quote=1.0,
+            max_l1_participation=0.50,
+            decision_cadence_seconds=1,
+            feature_version=AGGREGATE_DEPTH_FEATURE_VERSION,
+        )
+        names = dataset.feature_names
+
+        def row_at(decision_time_ms: int) -> np.ndarray:
+            positions = np.flatnonzero(dataset.decision_time_ms == decision_time_ms)
+            assert len(positions) == 1
+            return dataset.features[int(positions[0])]
+
+        current = row_at(3_601_000)
+        assert current[names.index("aggregate_depth_available")] == 1.0
+        assert current[names.index("aggregate_depth_age_seconds")] == 1.0
+        assert current[names.index("log_bid_notional_within_1pct")] == pytest.approx(
+            math.log1p(100.0), rel=1e-6
+        )
+        assert current[
+            names.index("aggregate_depth_notional_imbalance_1pct")
+        ] == pytest.approx((100.0 - 80.0) / (100.0 + 80.0), rel=1e-6)
+        assert current[
+            names.index("bid_depth_concentration_1pct_to_5pct")
+        ] == pytest.approx(0.2, rel=1e-6)
+
+        stale = row_at(3_781_000)
+        for name in names[-11:]:
+            assert stale[names.index(name)] == 0.0
+
+        warehouse.connection.execute(
+            "INSERT INTO current_book_depth_snapshots VALUES "
+            "('BTCUSDT', 3600500, 999999, 1, 9999999, 10)"
+        )
+        rebuilt = build_executable_microstructure_dataset(
+            warehouse,  # type: ignore[arg-type]
+            symbol="BTCUSDT",
+            horizon_seconds=1,
+            total_latency_ms=0,
+            taker_fee_bps=5.0,
+            reference_order_notional_quote=1.0,
+            max_l1_participation=0.50,
+            decision_cadence_seconds=1,
+            feature_version=AGGREGATE_DEPTH_FEATURE_VERSION,
+        )
+        rebuilt_position = np.flatnonzero(rebuilt.decision_time_ms == 3_601_000)
+        assert len(rebuilt_position) == 1
+        np.testing.assert_array_equal(
+            rebuilt.features[int(rebuilt_position[0])],
+            current,
+        )
+    finally:
+        warehouse.connection.close()
 
 
 def test_streaming_features_match_offline_duckdb_contract() -> None:

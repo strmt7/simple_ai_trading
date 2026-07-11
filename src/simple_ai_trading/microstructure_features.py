@@ -1,4 +1,4 @@
-"""Causal L1/tape features and executable after-cost labels from the tick warehouse."""
+"""Causal BBO, trade-tape, and sampled-depth research features."""
 
 from __future__ import annotations
 
@@ -15,6 +15,8 @@ from .microstructure_warehouse import MicrostructureWarehouse
 
 MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v8"
 MICROSTRUCTURE_TRADE_EMBARGO_MS = 1_000
+AGGREGATE_DEPTH_FEATURE_VERSION = "l1-tape-aggregate-depth-causal-v9"
+AGGREGATE_DEPTH_MAX_AGE_MS = 60_000
 
 
 @dataclass(frozen=True)
@@ -86,7 +88,7 @@ class MicrostructureDataset:
         executable_best = best[np.isfinite(best)]
         long_executable = self.long_net_bps[self.long_liquidity_eligible]
         short_executable = self.short_net_bps[self.short_liquidity_eligible]
-        return {
+        output = {
             "symbol": self.symbol,
             "feature_version": self.feature_version,
             "rows": self.rows,
@@ -167,6 +169,31 @@ class MicrostructureDataset:
             if self.source_evidence is not None
             else None,
         }
+        if "aggregate_depth_available" in self.feature_names:
+            available = (
+                self.features[:, self.feature_names.index("aggregate_depth_available")]
+                > 0.5
+            )
+            ages = self.features[
+                :, self.feature_names.index("aggregate_depth_age_seconds")
+            ][available]
+            output["aggregate_depth"] = {
+                "product": "Binance bookDepth sampled aggregate percentage bands",
+                "full_l2_order_book": False,
+                "queue_position_evidence": False,
+                "maximum_age_ms": AGGREGATE_DEPTH_MAX_AGE_MS,
+                "available_rows": int(np.sum(available)),
+                "unavailable_rows": int(self.rows - np.sum(available)),
+                "available_ratio": float(np.mean(available)) if self.rows else None,
+                "age_p50_seconds": float(np.quantile(ages, 0.50))
+                if ages.size
+                else None,
+                "age_p99_seconds": float(np.quantile(ages, 0.99))
+                if ages.size
+                else None,
+                "age_max_seconds": float(np.max(ages)) if ages.size else None,
+            }
+        return output
 
 
 _FEATURE_COLUMNS_V7 = (
@@ -282,6 +309,23 @@ _FEATURE_COLUMNS = (
     "signed_pressure_to_opposing_depth_300s",
 )
 MICROSTRUCTURE_FEATURE_NAMES = _FEATURE_COLUMNS
+_AGGREGATE_DEPTH_FEATURE_COLUMNS = (
+    "aggregate_depth_available",
+    "aggregate_depth_age_seconds",
+    "log_bid_notional_within_1pct",
+    "log_ask_notional_within_1pct",
+    "log_bid_notional_within_5pct",
+    "log_ask_notional_within_5pct",
+    "aggregate_depth_notional_imbalance_1pct",
+    "aggregate_depth_notional_imbalance_5pct",
+    "bid_depth_concentration_1pct_to_5pct",
+    "ask_depth_concentration_1pct_to_5pct",
+    "aggregate_depth_concentration_skew",
+)
+AGGREGATE_DEPTH_FEATURE_NAMES = (
+    *MICROSTRUCTURE_FEATURE_NAMES,
+    *_AGGREGATE_DEPTH_FEATURE_COLUMNS,
+)
 
 
 def microstructure_feature_names(feature_version: str) -> tuple[str, ...]:
@@ -290,6 +334,7 @@ def microstructure_feature_names(feature_version: str) -> tuple[str, ...]:
     contracts = {
         "l1-tape-causal-v7": _FEATURE_COLUMNS_V7,
         MICROSTRUCTURE_FEATURE_VERSION: MICROSTRUCTURE_FEATURE_NAMES,
+        AGGREGATE_DEPTH_FEATURE_VERSION: AGGREGATE_DEPTH_FEATURE_NAMES,
     }
     try:
         return contracts[str(feature_version)]
@@ -297,6 +342,28 @@ def microstructure_feature_names(feature_version: str) -> tuple[str, ...]:
         raise ValueError(
             f"unsupported microstructure feature version: {feature_version}"
         ) from exc
+
+
+def microstructure_feature_source_contract(
+    feature_version: str,
+) -> dict[str, object] | None:
+    """Return extra source semantics bound to a versioned feature matrix."""
+
+    version = str(feature_version)
+    microstructure_feature_names(version)
+    if version != AGGREGATE_DEPTH_FEATURE_VERSION:
+        return None
+    return {
+        "feature_version": version,
+        "data_product": "Binance bookDepth sampled aggregate percentage bands",
+        "bands_used_percent": [1.0, 5.0],
+        "maximum_age_ms": AGGREGATE_DEPTH_MAX_AGE_MS,
+        "availability_policy": "mask_and_zero_after_maximum_age",
+        "feature_observation_delay_ms": MICROSTRUCTURE_TRADE_EMBARGO_MS,
+        "full_l2_order_book": False,
+        "queue_position_evidence": False,
+        "maker_fill_evidence": False,
+    }
 
 
 def build_executable_microstructure_dataset(
@@ -314,6 +381,7 @@ def build_executable_microstructure_dataset(
     start_ms: int | None = None,
     end_ms: int | None = None,
     require_full_history_inventory: bool = True,
+    feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
 ) -> MicrostructureDataset:
     """Build strictly causal features with real bid/ask entry and exit labels."""
 
@@ -326,6 +394,11 @@ def build_executable_microstructure_dataset(
     reference_notional = float(reference_order_notional_quote)
     participation_limit = float(max_l1_participation)
     decision_cadence = int(decision_cadence_seconds)
+    selected_feature_version = str(feature_version)
+    selected_feature_names = microstructure_feature_names(selected_feature_version)
+    include_aggregate_depth = (
+        selected_feature_version == AGGREGATE_DEPTH_FEATURE_VERSION
+    )
     if horizon <= 0:
         raise ValueError("horizon_seconds must be positive")
     if latency < 0:
@@ -358,8 +431,13 @@ def build_executable_microstructure_dataset(
         source_evidence = require_causal_bars(normalized_symbol)
         require_corpus = getattr(warehouse, "require_corpus_certificate", None)
         if callable(require_corpus):
+            required_data_types = (
+                ("bookTicker", "trades", "bookDepth")
+                if include_aggregate_depth
+                else ("bookTicker", "trades")
+            )
             certificate_kwargs: dict[str, object] = {
-                "required_data_types": ("bookTicker", "trades"),
+                "required_data_types": required_data_types,
                 "require_full_history_inventory": bool(require_full_history_inventory),
             }
             if start_ms is not None and end_ms is not None:
@@ -377,8 +455,67 @@ def build_executable_microstructure_dataset(
                 **dict(source_evidence),
                 "corpus_certificate": corpus_certificate,
             }
+            feature_source_contract = microstructure_feature_source_contract(
+                selected_feature_version
+            )
+            if feature_source_contract is not None:
+                source_evidence["feature_source_contract"] = feature_source_contract
 
-    sql = """
+    depth_valid = (
+        "d.timestamp_ms IS NOT NULL "
+        f"AND q.second_ms + {MICROSTRUCTURE_TRADE_EMBARGO_MS} - d.timestamp_ms "
+        f"BETWEEN {MICROSTRUCTURE_TRADE_EMBARGO_MS} AND {AGGREGATE_DEPTH_MAX_AGE_MS} "
+        "AND d.bid_notional_1 IS NOT NULL AND d.ask_notional_1 IS NOT NULL "
+        "AND d.bid_notional_5 IS NOT NULL AND d.ask_notional_5 IS NOT NULL "
+        "AND d.bid_notional_1 + d.ask_notional_1 > 0.0 "
+        "AND d.bid_notional_5 + d.ask_notional_5 > 0.0 "
+        "AND d.bid_notional_5 >= d.bid_notional_1 "
+        "AND d.ask_notional_5 >= d.ask_notional_1"
+    )
+    depth_columns = ""
+    depth_join = ""
+    depth_projection = ""
+    if include_aggregate_depth:
+        depth_columns = f""",
+                CASE WHEN {depth_valid} THEN 1.0 ELSE 0.0 END
+                    AS aggregate_depth_available,
+                CASE WHEN {depth_valid}
+                     THEN (q.second_ms + {MICROSTRUCTURE_TRADE_EMBARGO_MS} - d.timestamp_ms) / 1000.0
+                     ELSE 0.0 END AS aggregate_depth_age_seconds,
+                CASE WHEN {depth_valid} THEN ln(1.0 + d.bid_notional_1) ELSE 0.0 END
+                    AS log_bid_notional_within_1pct,
+                CASE WHEN {depth_valid} THEN ln(1.0 + d.ask_notional_1) ELSE 0.0 END
+                    AS log_ask_notional_within_1pct,
+                CASE WHEN {depth_valid} THEN ln(1.0 + d.bid_notional_5) ELSE 0.0 END
+                    AS log_bid_notional_within_5pct,
+                CASE WHEN {depth_valid} THEN ln(1.0 + d.ask_notional_5) ELSE 0.0 END
+                    AS log_ask_notional_within_5pct,
+                CASE WHEN {depth_valid}
+                     THEN (d.bid_notional_1 - d.ask_notional_1)
+                          / (d.bid_notional_1 + d.ask_notional_1)
+                     ELSE 0.0 END AS aggregate_depth_notional_imbalance_1pct,
+                CASE WHEN {depth_valid}
+                     THEN (d.bid_notional_5 - d.ask_notional_5)
+                          / (d.bid_notional_5 + d.ask_notional_5)
+                     ELSE 0.0 END AS aggregate_depth_notional_imbalance_5pct,
+                CASE WHEN {depth_valid}
+                     THEN d.bid_notional_1 / greatest(d.bid_notional_5, 1e-12)
+                     ELSE 0.0 END AS bid_depth_concentration_1pct_to_5pct,
+                CASE WHEN {depth_valid}
+                     THEN d.ask_notional_1 / greatest(d.ask_notional_5, 1e-12)
+                     ELSE 0.0 END AS ask_depth_concentration_1pct_to_5pct,
+                CASE WHEN {depth_valid}
+                     THEN d.bid_notional_1 / greatest(d.bid_notional_5, 1e-12)
+                          - d.ask_notional_1 / greatest(d.ask_notional_5, 1e-12)
+                     ELSE 0.0 END AS aggregate_depth_concentration_skew"""
+        depth_join = """
+            ASOF LEFT JOIN current_book_depth_snapshots d
+              ON q.symbol = d.symbol AND q.second_ms >= d.timestamp_ms"""
+        depth_projection = ",\n            " + ", ".join(
+            f"d.{name}" for name in _AGGREGATE_DEPTH_FEATURE_COLUMNS
+        )
+
+    sql = f"""
         WITH joined AS (
             SELECT
                 q.symbol, q.second_ms, q.open_mid, q.high_mid, q.low_mid, q.close_mid,
@@ -396,11 +533,12 @@ def build_executable_microstructure_dataset(
                 coalesce(t.aggressive_buy_volume, 0.0) AS aggressive_buy_volume,
                 coalesce(t.aggressive_sell_volume, 0.0) AS aggressive_sell_volume,
                 coalesce(t.trade_imbalance, 0.0) AS trade_imbalance,
-                coalesce(t.trade_count, 0) AS trade_count
+                coalesce(t.trade_count, 0) AS trade_count{depth_columns}
             FROM current_book_ticker_1s q
             LEFT JOIN current_trade_1s t
               ON q.symbol = t.symbol
              AND t.second_ms + ? = q.second_ms
+            {depth_join}
             WHERE q.symbol = ? AND q.second_ms BETWEEN ? AND ?
         ),
         lagged AS (
@@ -703,7 +841,7 @@ def build_executable_microstructure_dataset(
             d.l1_depth_vs_60s_mean, d.l1_depth_vs_300s_mean,
             d.signed_pressure_to_opposing_depth_10s,
             d.signed_pressure_to_opposing_depth_60s,
-            d.signed_pressure_to_opposing_depth_300s,
+            d.signed_pressure_to_opposing_depth_300s{depth_projection},
             (entry_quote.close_ask - entry_quote.close_bid) * 10000.0
                 / ((entry_quote.close_ask + entry_quote.close_bid) / 2.0) AS entry_spread_bps,
             (exit_quote.close_ask - exit_quote.close_bid) * 10000.0
@@ -748,10 +886,13 @@ def build_executable_microstructure_dataset(
     values: Mapping[str, np.ndarray] = cursor.fetchnumpy()
     decisions = np.asarray(values["decision_time_ms"], dtype=np.int64)
     if decisions.size == 0:
-        feature_values = np.empty((0, len(_FEATURE_COLUMNS)), dtype=np.float32)
+        feature_values = np.empty((0, len(selected_feature_names)), dtype=np.float32)
     else:
         feature_values = np.column_stack(
-            [np.asarray(values[name], dtype=np.float64) for name in _FEATURE_COLUMNS]
+            [
+                np.asarray(values[name], dtype=np.float64)
+                for name in selected_feature_names
+            ]
         ).astype(np.float32, copy=False)
     entry_bid = np.asarray(values["entry_bid_price"], dtype=np.float64)
     entry_ask = np.asarray(values["entry_ask_price"], dtype=np.float64)
@@ -780,8 +921,8 @@ def build_executable_microstructure_dataset(
     )
     dataset = MicrostructureDataset(
         symbol=normalized_symbol,
-        feature_version=MICROSTRUCTURE_FEATURE_VERSION,
-        feature_names=_FEATURE_COLUMNS,
+        feature_version=selected_feature_version,
+        feature_names=selected_feature_names,
         horizon_seconds=horizon,
         total_latency_ms=latency,
         taker_fee_bps=fee,
@@ -1221,6 +1362,9 @@ def apply_path_aware_lifecycle_targets(
 
 
 __all__ = [
+    "AGGREGATE_DEPTH_FEATURE_NAMES",
+    "AGGREGATE_DEPTH_FEATURE_VERSION",
+    "AGGREGATE_DEPTH_MAX_AGE_MS",
     "MICROSTRUCTURE_FEATURE_NAMES",
     "MICROSTRUCTURE_TRADE_EMBARGO_MS",
     "MICROSTRUCTURE_FEATURE_VERSION",
@@ -1229,5 +1373,6 @@ __all__ = [
     "apply_path_aware_lifecycle_targets",
     "build_executable_microstructure_dataset",
     "microstructure_feature_names",
+    "microstructure_feature_source_contract",
     "validate_microstructure_dataset",
 ]

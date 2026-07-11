@@ -42,7 +42,8 @@ from simple_ai_trading.microstructure_barriers import (  # noqa: E402
     build_adaptive_barrier_targets,
 )
 from simple_ai_trading.microstructure_features import (  # noqa: E402
-    MICROSTRUCTURE_FEATURE_VERSION,
+    MICROSTRUCTURE_FEATURE_VERSION,  # noqa: F401 - historical contract export
+    microstructure_feature_names,
 )
 from simple_ai_trading.microstructure_outcome_mixture import (  # noqa: E402
     OUTCOME_MIXTURE_SCHEMA_VERSION,
@@ -580,6 +581,47 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    28: {
+        "purpose": "consumed_data_sampled_aggregate_depth_feature_screen",
+        "design_revisions": {1},
+        "required_data_types": ("bookTicker", "trades", "bookDepth"),
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "ranking_scope": "global_batch",
+        "feature_version": "l1-tape-aggregate-depth-causal-v9",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "representation_mode": "soft_mixture_of_experts",
+        "expert_count": 2,
+        "router_balance_loss_weight": 0.02,
+        "expert_temporal_context_mode": "nested_recent_full",
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 148_910,
+        "predecessor": {
+            "round": 27,
+            "design_sha256": (
+                "466e23010e639b5535ee10a06ea0549512b4058dc97136077a8015d712211136"
+            ),
+            "source_report_canonical_sha256": (
+                "df2d0aad09f1634092c822e2ef698214fa36bc4397f40667a7d05991f9d03c8d"
+            ),
+            "publication_sha256": (
+                "b531308bf523ad8109b64fad43287d689219c7265b7434dabb5ca458043981e5"
+            ),
+            "finding": (
+                "Round 27 shortened the holding and barrier horizon to 300 seconds. "
+                "Directional discrimination remained measurable, but every displayed "
+                "ranked tail and all eight threshold candidates lost after the "
+                "precommitted taker costs. Round 28 restores the 900-second baseline "
+                "and changes only the consumed feature matrix by adding causally "
+                "joined, checksummed Binance sampled aggregate depth bands with an "
+                "explicit 60-second staleness mask."
+            ),
+        },
+    },
 }
 
 
@@ -699,7 +741,10 @@ def load_outcome_mixture_design(
         _ROUND16_DESIGN, require_current=False
     )
     horizon_override = (
-        round_contract.get("horizon_seconds")
+        round_contract.get("horizon_seconds") if round_contract is not None else None
+    )
+    data_types_override = (
+        round_contract.get("required_data_types")
         if round_contract is not None
         else None
     )
@@ -707,6 +752,19 @@ def load_outcome_mixture_design(
     def shared_section_matches(name: str) -> bool:
         actual = payload.get(name)
         sealed = reference.get(name)
+        if name == "data" and data_types_override is not None:
+            if (
+                not isinstance(actual, Mapping)
+                or not isinstance(sealed, Mapping)
+                or set(actual) != set(sealed)
+                or tuple(actual.get("required_data_types") or ())
+                != tuple(data_types_override)
+            ):
+                return False
+            return all(
+                field == "required_data_types" or actual.get(field) == value
+                for field, value in sealed.items()
+            )
         if horizon_override is None or name not in {"execution", "barrier_targets"}:
             return actual == sealed
         if (
@@ -753,6 +811,9 @@ def load_outcome_mixture_design(
     if require_current:
         _validate_git_blob_binding(implementation)
     model_spec = OutcomeMixtureArchitectureSpec(**dict(model))
+    expected_feature_names = microstructure_feature_names(
+        str(round_contract["feature_version"])
+    )
     if (
         model_spec.family != "conditional_outcome_mixture_residual_mlp"
         or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
@@ -775,10 +836,7 @@ def load_outcome_mixture_design(
         or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
         or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
         or model_spec.residual_blocks != round_contract.get("residual_blocks", 2)
-        or (
-            require_current
-            and MICROSTRUCTURE_FEATURE_VERSION != round_contract["feature_version"]
-        )
+        or not expected_feature_names
     ):
         raise ValueError("outcome-mixture model family is invalid")
     urls: set[str] = set()
@@ -1121,6 +1179,7 @@ def run_outcome_mixture_screen(
         memory_limit=effective_memory,
         threads=effective_threads,
         progress=progress,
+        feature_version=str(round_contract["feature_version"]),
     )
     dataset = corpus["dataset"]
     event_mask = causal_cusum_event_mask(

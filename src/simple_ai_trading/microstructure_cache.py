@@ -1,4 +1,4 @@
-"""Transactional DuckDB cache for exact-BBO microstructure datasets."""
+"""Transactional DuckDB cache for source-bound microstructure datasets."""
 
 from __future__ import annotations
 
@@ -12,21 +12,25 @@ import numpy as np
 
 from .assets import normalize_symbol
 from .microstructure_features import (
+    AGGREGATE_DEPTH_FEATURE_VERSION,
     MICROSTRUCTURE_FEATURE_NAMES,
     MICROSTRUCTURE_FEATURE_VERSION,
     MICROSTRUCTURE_TRADE_EMBARGO_MS,
     MicrostructureDataset,
+    microstructure_feature_names,
     validate_microstructure_dataset,
 )
 from .microstructure_warehouse import MicrostructureWarehouse
 
 
 MICROSTRUCTURE_CACHE_SCHEMA_VERSION = "exact-bbo-dataset-cache-v1"
+AGGREGATE_DEPTH_CACHE_SCHEMA_VERSION = "aggregate-depth-dataset-cache-v1"
 _MANIFEST_TABLE = "microstructure_dataset_cache_manifest"
 _SAFE_IDENTIFIER = re.compile(r"^[a-z][a-z0-9_]*$")
-_ROWS_TABLE = "microstructure_dataset_cache_rows_" + hashlib.sha256(
-    MICROSTRUCTURE_FEATURE_VERSION.encode("ascii")
-).hexdigest()[:12]
+_ROWS_TABLE = (
+    "microstructure_dataset_cache_rows_"
+    + hashlib.sha256(MICROSTRUCTURE_FEATURE_VERSION.encode("ascii")).hexdigest()[:12]
+)
 
 _MANIFEST_COLUMNS = (
     ("cache_key", "VARCHAR"),
@@ -83,6 +87,33 @@ _ROW_COLUMNS = (
 )
 
 
+def _cache_schema_version(feature_version: str) -> str:
+    return (
+        AGGREGATE_DEPTH_CACHE_SCHEMA_VERSION
+        if feature_version == AGGREGATE_DEPTH_FEATURE_VERSION
+        else MICROSTRUCTURE_CACHE_SCHEMA_VERSION
+    )
+
+
+def _rows_table(feature_version: str) -> str:
+    if feature_version == MICROSTRUCTURE_FEATURE_VERSION:
+        return _ROWS_TABLE
+    return (
+        "microstructure_dataset_cache_rows_"
+        + hashlib.sha256(feature_version.encode("ascii")).hexdigest()[:12]
+    )
+
+
+def _row_columns(feature_version: str) -> tuple[tuple[str, str], ...]:
+    if feature_version == MICROSTRUCTURE_FEATURE_VERSION:
+        return _ROW_COLUMNS
+    return (
+        ("cache_key", "VARCHAR"),
+        *((name, data_type) for name, _attribute, data_type, _dtype in _ARRAY_FIELDS),
+        *((name, "FLOAT") for name in microstructure_feature_names(feature_version)),
+    )
+
+
 def _canonical_json(value: object) -> str:
     return json.dumps(
         value,
@@ -95,7 +126,9 @@ def _canonical_json(value: object) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "").lower()
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _validated_source_evidence(value: Mapping[str, object]) -> dict[str, object]:
@@ -110,12 +143,18 @@ def _validated_source_evidence(value: Mapping[str, object]) -> dict[str, object]
         or not certificate.get("verified")
         or not _is_sha256(certificate.get("certificate_sha256"))
     ):
-        raise ValueError("microstructure cache requires current verified source evidence")
+        raise ValueError(
+            "microstructure cache requires current verified source evidence"
+        )
     return evidence
 
 
-def _validate_identifiers() -> None:
-    identifiers = (_MANIFEST_TABLE, _ROWS_TABLE, *(name for name, _ in _ROW_COLUMNS))
+def _validate_identifiers(
+    feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
+) -> None:
+    rows_table = _rows_table(feature_version)
+    row_columns = _row_columns(feature_version)
+    identifiers = (_MANIFEST_TABLE, rows_table, *(name for name, _ in row_columns))
     if any(_SAFE_IDENTIFIER.fullmatch(name) is None for name in identifiers):
         raise ValueError("microstructure cache schema contains an unsafe identifier")
 
@@ -128,23 +167,28 @@ def _table_schema(
     return tuple((str(row[1]), str(row[2]).upper()) for row in rows)
 
 
-def _ensure_cache_schema(warehouse: MicrostructureWarehouse) -> None:
-    _validate_identifiers()
+def _ensure_cache_schema(
+    warehouse: MicrostructureWarehouse,
+    feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
+) -> None:
+    _validate_identifiers(feature_version)
+    rows_table = _rows_table(feature_version)
+    row_columns = _row_columns(feature_version)
     manifest_definitions = ",\n".join(
         f"{name} {data_type}{' PRIMARY KEY' if name == 'cache_key' else ' NOT NULL'}"
         for name, data_type in _MANIFEST_COLUMNS
     )
     row_definitions = ",\n".join(
-        f"{name} {data_type} NOT NULL" for name, data_type in _ROW_COLUMNS
+        f"{name} {data_type} NOT NULL" for name, data_type in row_columns
     )
     connection = warehouse.connect()
     connection.execute(
         f"CREATE TABLE IF NOT EXISTS {_MANIFEST_TABLE} ({manifest_definitions})"
     )
-    connection.execute(f"CREATE TABLE IF NOT EXISTS {_ROWS_TABLE} ({row_definitions})")
+    connection.execute(f"CREATE TABLE IF NOT EXISTS {rows_table} ({row_definitions})")
     if _table_schema(warehouse, _MANIFEST_TABLE) != _MANIFEST_COLUMNS:
         raise ValueError("microstructure cache manifest schema drifted")
-    if _table_schema(warehouse, _ROWS_TABLE) != _ROW_COLUMNS:
+    if _table_schema(warehouse, rows_table) != row_columns:
         raise ValueError("microstructure cache row schema drifted")
 
 
@@ -156,9 +200,7 @@ def _dataset_contract(dataset: MicrostructureDataset) -> dict[str, object]:
         "horizon_seconds": dataset.horizon_seconds,
         "total_latency_ms": dataset.total_latency_ms,
         "taker_fee_bps": dataset.taker_fee_bps,
-        "additional_slippage_bps_per_side": (
-            dataset.additional_slippage_bps_per_side
-        ),
+        "additional_slippage_bps_per_side": (dataset.additional_slippage_bps_per_side),
         "reference_order_notional_quote": dataset.reference_order_notional_quote,
         "max_l1_participation": dataset.max_l1_participation,
         "max_quote_age_ms": dataset.max_quote_age_ms,
@@ -175,7 +217,9 @@ def microstructure_dataset_fingerprint(dataset: MicrostructureDataset) -> str:
     validate_microstructure_dataset(dataset)
     digest = hashlib.sha256(_canonical_json(_dataset_contract(dataset)).encode("ascii"))
     for name, attribute, _data_type, dtype in _ARRAY_FIELDS:
-        values = np.ascontiguousarray(getattr(dataset, attribute), dtype=np.dtype(dtype))
+        values = np.ascontiguousarray(
+            getattr(dataset, attribute), dtype=np.dtype(dtype)
+        )
         digest.update(name.encode("ascii") + b"\x00")
         digest.update(np.asarray(values.shape, dtype="<i8").tobytes())
         digest.update(values.tobytes())
@@ -201,16 +245,19 @@ def microstructure_dataset_cache_key(
     decision_cadence_seconds: int,
     require_full_history_inventory: bool,
     source_evidence: Mapping[str, object],
+    feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
 ) -> str:
     evidence = _validated_source_evidence(source_evidence)
     start_ms = int(requested_start_ms)
     end_ms = int(requested_end_ms)
     if start_ms > end_ms:
         raise ValueError("microstructure cache interval is empty")
+    selected_feature_version = str(feature_version)
+    selected_feature_names = microstructure_feature_names(selected_feature_version)
     contract = {
-        "schema_version": MICROSTRUCTURE_CACHE_SCHEMA_VERSION,
-        "feature_version": MICROSTRUCTURE_FEATURE_VERSION,
-        "feature_names": list(MICROSTRUCTURE_FEATURE_NAMES),
+        "schema_version": _cache_schema_version(selected_feature_version),
+        "feature_version": selected_feature_version,
+        "feature_names": list(selected_feature_names),
         "target_mode": "fixed_horizon",
         "symbol": normalize_symbol(symbol),
         "requested_start_ms": start_ms,
@@ -218,9 +265,7 @@ def microstructure_dataset_cache_key(
         "horizon_seconds": int(horizon_seconds),
         "total_latency_ms": int(total_latency_ms),
         "taker_fee_bps": float(taker_fee_bps),
-        "additional_slippage_bps_per_side": float(
-            additional_slippage_bps_per_side
-        ),
+        "additional_slippage_bps_per_side": float(additional_slippage_bps_per_side),
         "reference_order_notional_quote": float(reference_order_notional_quote),
         "max_l1_participation": float(max_l1_participation),
         "max_quote_age_ms": int(max_quote_age_ms),
@@ -247,15 +292,14 @@ def _cache_parameters(
         "horizon_seconds": dataset.horizon_seconds,
         "total_latency_ms": dataset.total_latency_ms,
         "taker_fee_bps": dataset.taker_fee_bps,
-        "additional_slippage_bps_per_side": (
-            dataset.additional_slippage_bps_per_side
-        ),
+        "additional_slippage_bps_per_side": (dataset.additional_slippage_bps_per_side),
         "reference_order_notional_quote": dataset.reference_order_notional_quote,
         "max_l1_participation": dataset.max_l1_participation,
         "max_quote_age_ms": dataset.max_quote_age_ms,
         "decision_cadence_seconds": dataset.decision_cadence_seconds,
         "require_full_history_inventory": bool(require_full_history_inventory),
         "source_evidence": dataset.source_evidence,
+        "feature_version": dataset.feature_version,
     }
 
 
@@ -267,12 +311,12 @@ def save_microstructure_dataset_cache(
     requested_end_ms: int,
     require_full_history_inventory: bool,
 ) -> str:
-    """Atomically cache one immutable fixed-horizon exact-BBO dataset."""
+    """Atomically cache one immutable fixed-horizon microstructure dataset."""
 
+    expected_feature_names = microstructure_feature_names(dataset.feature_version)
     if (
         dataset.rows < 1
-        or dataset.feature_version != MICROSTRUCTURE_FEATURE_VERSION
-        or dataset.feature_names != MICROSTRUCTURE_FEATURE_NAMES
+        or dataset.feature_names != expected_feature_names
         or dataset.target_mode != "fixed_horizon"
         or dataset.stop_loss_bps is not None
         or dataset.take_profit_bps is not None
@@ -289,7 +333,9 @@ def save_microstructure_dataset_cache(
     )
     cache_key = microstructure_dataset_cache_key(**parameters)
     dataset_fingerprint = microstructure_dataset_fingerprint(dataset)
-    _ensure_cache_schema(warehouse)
+    _ensure_cache_schema(warehouse, dataset.feature_version)
+    rows_table = _rows_table(dataset.feature_version)
+    row_columns = _row_columns(dataset.feature_version)
     connection = warehouse.connect()
     existing = connection.execute(
         f"SELECT dataset_fingerprint, row_count FROM {_MANIFEST_TABLE} "
@@ -298,7 +344,9 @@ def save_microstructure_dataset_cache(
     ).fetchone()
     if existing is not None:
         if str(existing[0]) != dataset_fingerprint or int(existing[1]) != dataset.rows:
-            raise ValueError("microstructure cache key collides with different evidence")
+            raise ValueError(
+                "microstructure cache key collides with different evidence"
+            )
         return cache_key
 
     mapping = {
@@ -308,20 +356,20 @@ def save_microstructure_dataset_cache(
     mapping.update(
         {
             name: np.asarray(dataset.features[:, index], dtype=np.float32)
-            for index, name in enumerate(MICROSTRUCTURE_FEATURE_NAMES)
+            for index, name in enumerate(expected_feature_names)
         }
     )
     registered_name = f"microstructure_cache_input_{cache_key[:12]}"
     connection.register(registered_name, mapping)
     evidence = _validated_source_evidence(dataset.source_evidence or {})
     source_json = _canonical_json(evidence)
-    row_names = ", ".join(name for name, _data_type in _ROW_COLUMNS)
-    projected_names = ", ".join(name for name, _data_type in _ROW_COLUMNS[1:])
+    row_names = ", ".join(name for name, _data_type in row_columns)
+    projected_names = ", ".join(name for name, _data_type in row_columns[1:])
     manifest_names = ", ".join(name for name, _data_type in _MANIFEST_COLUMNS)
     manifest_values = [
         cache_key,
-        MICROSTRUCTURE_CACHE_SCHEMA_VERSION,
-        MICROSTRUCTURE_FEATURE_VERSION,
+        _cache_schema_version(dataset.feature_version),
+        dataset.feature_version,
         dataset.symbol,
         int(requested_start_ms),
         int(requested_end_ms),
@@ -340,19 +388,19 @@ def save_microstructure_dataset_cache(
         str(evidence["manifest_fingerprint"]),
         source_json,
         dataset_fingerprint,
-        _ROWS_TABLE,
+        rows_table,
         int(datetime.now(tz=UTC).timestamp() * 1_000),
     ]
     try:
         connection.execute("BEGIN TRANSACTION")
         connection.execute(
-            f"INSERT INTO {_ROWS_TABLE} ({row_names}) "
+            f"INSERT INTO {rows_table} ({row_names}) "
             f"SELECT ? AS cache_key, {projected_names} FROM {registered_name}",
             [cache_key],
         )
         inserted = connection.execute(
             f"SELECT count(*), min(decision_time_ms), max(decision_time_ms) "
-            f"FROM {_ROWS_TABLE} WHERE cache_key = ?",
+            f"FROM {rows_table} WHERE cache_key = ?",
             [cache_key],
         ).fetchone()
         if inserted != (
@@ -388,7 +436,13 @@ def load_microstructure_dataset_cache(
     """Load and re-hash one exact cache match, or return ``None`` on a miss."""
 
     cache_key = microstructure_dataset_cache_key(**parameters)  # type: ignore[arg-type]
-    _ensure_cache_schema(warehouse)
+    selected_feature_version = str(
+        parameters.get("feature_version", MICROSTRUCTURE_FEATURE_VERSION)
+    )
+    selected_feature_names = microstructure_feature_names(selected_feature_version)
+    _ensure_cache_schema(warehouse, selected_feature_version)
+    rows_table = _rows_table(selected_feature_version)
+    row_columns = _row_columns(selected_feature_version)
     connection = warehouse.connect()
     manifest = connection.execute(
         f"SELECT * FROM {_MANIFEST_TABLE} WHERE cache_key = ?",
@@ -403,7 +457,7 @@ def load_microstructure_dataset_cache(
     evidence = _validated_source_evidence(parameters["source_evidence"])  # type: ignore[arg-type]
     expected_source_json = _canonical_json(evidence)
     expected = {
-        "feature_version": MICROSTRUCTURE_FEATURE_VERSION,
+        "feature_version": selected_feature_version,
         "symbol": normalize_symbol(str(parameters["symbol"])),
         "requested_start_ms": int(parameters["requested_start_ms"]),
         "requested_end_ms": int(parameters["requested_end_ms"]),
@@ -424,19 +478,18 @@ def load_microstructure_dataset_cache(
         ),
     }
     if (
-        metadata["schema_version"] != MICROSTRUCTURE_CACHE_SCHEMA_VERSION
+        metadata["schema_version"] != _cache_schema_version(selected_feature_version)
         or any(metadata[name] != value for name, value in expected.items())
-        or metadata["source_manifest_fingerprint"]
-        != evidence["manifest_fingerprint"]
+        or metadata["source_manifest_fingerprint"] != evidence["manifest_fingerprint"]
         or metadata["source_evidence_json"] != expected_source_json
-        or metadata["rows_table"] != _ROWS_TABLE
+        or metadata["rows_table"] != rows_table
         or not _is_sha256(metadata["dataset_fingerprint"])
     ):
         raise ValueError("microstructure cache manifest failed its evidence contract")
 
-    projected_names = ", ".join(name for name, _data_type in _ROW_COLUMNS[1:])
+    projected_names = ", ".join(name for name, _data_type in row_columns[1:])
     values = connection.execute(
-        f"SELECT {projected_names} FROM {_ROWS_TABLE} "
+        f"SELECT {projected_names} FROM {rows_table} "
         "WHERE cache_key = ? ORDER BY decision_time_ms",
         [cache_key],
     ).fetchnumpy()
@@ -445,10 +498,10 @@ def load_microstructure_dataset_cache(
         for name, attribute, _data_type, dtype in _ARRAY_FIELDS
     }
     features = np.empty(
-        (len(arrays["decision_time_ms"]), len(MICROSTRUCTURE_FEATURE_NAMES)),
+        (len(arrays["decision_time_ms"]), len(selected_feature_names)),
         dtype=np.float32,
     )
-    for index, name in enumerate(MICROSTRUCTURE_FEATURE_NAMES):
+    for index, name in enumerate(selected_feature_names):
         features[:, index] = _numeric_array(values.pop(name), "<f4")
     if values:
         raise ValueError("microstructure cache returned unexpected columns")
@@ -456,22 +509,18 @@ def load_microstructure_dataset_cache(
     if (
         rows != int(metadata["row_count"])
         or rows < 1
-        or int(arrays["decision_time_ms"][0])
-        != int(metadata["first_decision_time_ms"])
-        or int(arrays["decision_time_ms"][-1])
-        != int(metadata["last_decision_time_ms"])
+        or int(arrays["decision_time_ms"][0]) != int(metadata["first_decision_time_ms"])
+        or int(arrays["decision_time_ms"][-1]) != int(metadata["last_decision_time_ms"])
     ):
         raise ValueError("microstructure cache rows are incomplete")
     dataset = MicrostructureDataset(
         symbol=expected["symbol"],
-        feature_version=MICROSTRUCTURE_FEATURE_VERSION,
-        feature_names=MICROSTRUCTURE_FEATURE_NAMES,
+        feature_version=selected_feature_version,
+        feature_names=selected_feature_names,
         horizon_seconds=expected["horizon_seconds"],
         total_latency_ms=expected["total_latency_ms"],
         taker_fee_bps=expected["taker_fee_bps"],
-        additional_slippage_bps_per_side=expected[
-            "additional_slippage_bps_per_side"
-        ],
+        additional_slippage_bps_per_side=expected["additional_slippage_bps_per_side"],
         reference_order_notional_quote=expected["reference_order_notional_quote"],
         max_l1_participation=expected["max_l1_participation"],
         max_quote_age_ms=expected["max_quote_age_ms"],
@@ -493,6 +542,7 @@ def load_microstructure_dataset_cache(
 
 
 __all__ = [
+    "AGGREGATE_DEPTH_CACHE_SCHEMA_VERSION",
     "MICROSTRUCTURE_CACHE_SCHEMA_VERSION",
     "load_microstructure_dataset_cache",
     "microstructure_dataset_cache_key",

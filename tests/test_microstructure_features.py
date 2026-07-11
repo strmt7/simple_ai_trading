@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from simple_ai_trading.microstructure_features import (
+    AGGREGATE_DEPTH_FEATURE_VERSION,
     MicrostructureDataset,
     _completed_path_index_bounds,
     _net_cross_spread_cash_returns_bps,
@@ -154,3 +155,52 @@ def test_dataset_inventory_policy_must_be_boolean() -> None:
             taker_fee_bps=5.0,
             require_full_history_inventory="false",  # type: ignore[arg-type]
         )
+
+
+def test_aggregate_depth_contract_requires_all_three_official_products() -> None:
+    class _Warehouse:
+        certificate_kwargs: dict[str, object] | None = None
+
+        def require_causal_feature_bars(self, _symbol: str) -> dict[str, object]:
+            return {
+                "verified": True,
+                "is_current": True,
+                "manifest_fingerprint": "a" * 64,
+            }
+
+        def require_corpus_certificate(
+            self, _symbol: str, **kwargs: object
+        ) -> dict[str, object]:
+            self.certificate_kwargs = kwargs
+            return {
+                "status": "pass",
+                "verified": True,
+                "certificate_sha256": "b" * 64,
+            }
+
+        def connect(self):
+            raise RuntimeError("stop after provenance checks")
+
+    warehouse = _Warehouse()
+    with pytest.raises(RuntimeError, match="stop after provenance"):
+        build_executable_microstructure_dataset(
+            warehouse,  # type: ignore[arg-type]
+            symbol="BTCUSDT",
+            horizon_seconds=300,
+            total_latency_ms=750,
+            taker_fee_bps=5.0,
+            start_ms=1_000,
+            end_ms=2_000,
+            require_full_history_inventory=False,
+            feature_version=AGGREGATE_DEPTH_FEATURE_VERSION,
+        )
+
+    assert warehouse.certificate_kwargs is not None
+    assert warehouse.certificate_kwargs["required_data_types"] == (
+        "bookTicker",
+        "trades",
+        "bookDepth",
+    )
+    assert warehouse.certificate_kwargs["required_start_ms"] == 1_000
+    assert warehouse.certificate_kwargs["required_end_ms"] == 2_000
+    assert warehouse.certificate_kwargs["require_full_history_inventory"] is False
