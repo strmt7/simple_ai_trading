@@ -172,6 +172,7 @@ def load_selective_event_design(
     assert isinstance(selection, Mapping)
     assert isinstance(reserved_terminal, Mapping)
     bounded_viability = payload.get("purpose") == _BOUNDED_VIABILITY_PURPOSE
+    runtime_resources = payload.get("runtime_resources")
     implementation_commit = str(change_control.get("implementation_commit") or "")
     if len(implementation_commit) != 40:
         raise ValueError("selective event implementation commit is invalid")
@@ -192,6 +193,16 @@ def load_selective_event_design(
             or data.get("inventory_scope") != "bounded_verified"
         ):
             raise ValueError("bounded viability inventory contract is invalid")
+        resource_contract_required = int(payload.get("design_revision") or 6) >= 6
+        if resource_contract_required and (
+            not isinstance(runtime_resources, Mapping)
+            or runtime_resources.get("duckdb_memory_limit") != "4GB"
+            or runtime_resources.get("warehouse_threads") != 8
+            or runtime_resources.get("spill_directory_policy")
+            != "warehouse_adjacent"
+            or runtime_resources.get("feature_build_chunk_clock") != "utc_event_day"
+        ):
+            raise ValueError("bounded viability runtime resource contract is invalid")
     elif data.get("full_history_inventory_required") is not True:
         raise ValueError("selective event full-history inventory is required")
     first = _parse_date(data.get("start_date"), label="start_date")
@@ -312,6 +323,42 @@ def load_selective_event_design(
     return payload
 
 
+def _resolved_runtime_settings(
+    design: Mapping[str, object],
+    *,
+    memory_limit: str | None,
+    threads: int | None,
+    compute_backend: str | None,
+) -> tuple[str, int, str]:
+    training = design.get("training")
+    resources = design.get("runtime_resources")
+    if not isinstance(training, Mapping):
+        raise ValueError("selective event training settings are missing")
+    expected_backend = str(training.get("compute_backend") or "")
+    expected_memory = (
+        str(resources.get("duckdb_memory_limit"))
+        if isinstance(resources, Mapping)
+        else "8GB"
+    )
+    expected_threads = (
+        int(resources.get("warehouse_threads") or 0)
+        if isinstance(resources, Mapping)
+        else 8
+    )
+    requested_memory = expected_memory if memory_limit is None else str(memory_limit).upper()
+    requested_threads = expected_threads if threads is None else int(threads)
+    requested_backend = (
+        expected_backend if compute_backend is None else str(compute_backend).lower()
+    )
+    if requested_memory != expected_memory:
+        raise ValueError("memory limit override violates the precommitted design")
+    if requested_threads != expected_threads:
+        raise ValueError("thread override violates the precommitted design")
+    if requested_backend != expected_backend:
+        raise ValueError("compute backend override violates the precommitted design")
+    return expected_memory, expected_threads, expected_backend
+
+
 def _role_calendar_split(
     dataset,
     roles: Mapping[str, object],
@@ -424,8 +471,8 @@ def run_selective_event_discovery(
     warehouse_path: str | Path,
     cache_root: str | Path,
     output_dir: str | Path,
-    memory_limit: str = "8GB",
-    threads: int = 8,
+    memory_limit: str | None = None,
+    threads: int | None = None,
     compute_backend: str | None = None,
     resume: bool = False,
 ) -> dict[str, object]:
@@ -446,6 +493,18 @@ def run_selective_event_discovery(
     assert isinstance(training, Mapping)
     assert isinstance(risk_profiles, Mapping)
     assert isinstance(selection_contract, Mapping)
+    effective_memory_limit, effective_threads, backend = _resolved_runtime_settings(
+        design,
+        memory_limit=memory_limit,
+        threads=threads,
+        compute_backend=compute_backend,
+    )
+    runtime_resources = {
+        "duckdb_memory_limit": effective_memory_limit,
+        "warehouse_threads": effective_threads,
+        "spill_directory_policy": "warehouse_adjacent",
+        "compute_backend_requested": backend,
+    }
     start = _parse_date(data["start_date"], label="start_date")
     end = _parse_date(data["end_date"], label="end_date")
     start_ms = int(
@@ -460,7 +519,6 @@ def run_selective_event_discovery(
         ).timestamp()
         * 1_000
     ) - 1
-    backend = str(compute_backend or training["compute_backend"])
     full_history_inventory_required = bool(
         data["full_history_inventory_required"]
     )
@@ -485,6 +543,7 @@ def run_selective_event_discovery(
                 "failed_model_fits": len(errors),
                 "total_model_fits": total_fits,
                 "total_outcomes": int(design["candidate_count"]),
+                "runtime_resources": runtime_resources,
             },
             indent=2,
             sort_keys=True,
@@ -494,8 +553,8 @@ def run_selective_event_discovery(
     with MicrostructureWarehouse(
         warehouse_path,
         cache_root=cache_root,
-        memory_limit=memory_limit,
-        threads=threads,
+        memory_limit=effective_memory_limit,
+        threads=effective_threads,
     ) as warehouse:
         warehouse.backfill_book_ticker_paths(
             progress=lambda phase, done, total: progress(
@@ -739,6 +798,7 @@ def run_selective_event_discovery(
                         "model_fit_id": fit_id,
                         "feature_version": training["feature_version"],
                         "model_family": training["model_family"],
+                        "runtime_resources": runtime_resources,
                         "source_evidence": dict(dataset.source_evidence or {}),
                         "path_target_evidence": asdict(path_evidence),
                         "role_evidence": role_evidence,
@@ -796,6 +856,7 @@ def run_selective_event_discovery(
         "terminal_holdout_accessed": False,
         "selection_window_is_consumed": True,
         "corpus_certificate_sha256": corpus_sha256,
+        "runtime_resources": runtime_resources,
         "candidate_count": int(design["candidate_count"]),
         "completed_candidate_count": len(completed),
         "failed_model_fit_count": len(errors),
@@ -820,8 +881,8 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--warehouse", type=Path, required=True)
     parser.add_argument("--cache-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--memory-limit", default="8GB")
-    parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument("--memory-limit", default=None)
+    parser.add_argument("--threads", type=int, default=None)
     parser.add_argument("--compute-backend", default=None)
     parser.add_argument("--resume", action="store_true")
     return parser.parse_args()

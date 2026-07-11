@@ -13,6 +13,7 @@ from tools.run_selective_event_discovery import (
     _ensure_causal_feature_bars,
     _file_sha256,
     _implementation_is_current,
+    _resolved_runtime_settings,
     _role_calendar_split,
     load_selective_event_design,
 )
@@ -167,6 +168,12 @@ def test_selective_event_design_accepts_bounded_viability_contract(tmp_path) -> 
     payload["purpose"] = "bounded_exact_bbo_model_viability_screen"
     payload["data"]["full_history_inventory_required"] = False
     payload["data"]["inventory_scope"] = "bounded_verified"
+    payload["runtime_resources"] = {
+        "duckdb_memory_limit": "4GB",
+        "warehouse_threads": 8,
+        "spill_directory_policy": "warehouse_adjacent",
+        "feature_build_chunk_clock": "utc_event_day",
+    }
     payload["training"]["predictor_parameter_profile"] = "shared_regularized"
     payload["horizon_seconds"] = [300, 900]
     payload["model_fit_count"] = 6
@@ -212,6 +219,12 @@ def test_selective_event_design_rejects_weakened_bounded_contract(
     payload["purpose"] = "bounded_exact_bbo_model_viability_screen"
     payload["data"]["full_history_inventory_required"] = False
     payload["data"]["inventory_scope"] = "bounded_verified"
+    payload["runtime_resources"] = {
+        "duckdb_memory_limit": "4GB",
+        "warehouse_threads": 8,
+        "spill_directory_policy": "warehouse_adjacent",
+        "feature_build_chunk_clock": "utc_event_day",
+    }
     payload["training"]["predictor_parameter_profile"] = "shared_regularized"
     payload["horizon_seconds"] = [300, 900]
     payload["model_fit_count"] = 6
@@ -230,6 +243,52 @@ def test_selective_event_design_rejects_weakened_bounded_contract(
 
     with pytest.raises(ValueError):
         load_selective_event_design(path)
+
+
+def test_bounded_runtime_settings_reject_all_operational_drift(tmp_path) -> None:
+    path = _design(tmp_path, consumed=("2023-12-31", "2023-12-31"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["training"]["compute_backend"] = "directml"
+    payload["runtime_resources"] = {
+        "duckdb_memory_limit": "4GB",
+        "warehouse_threads": 8,
+        "spill_directory_policy": "warehouse_adjacent",
+        "feature_build_chunk_clock": "utc_event_day",
+    }
+
+    assert _resolved_runtime_settings(
+        payload,
+        memory_limit=None,
+        threads=None,
+        compute_backend=None,
+    ) == ("4GB", 8, "directml")
+    assert _resolved_runtime_settings(
+        payload,
+        memory_limit="4gb",
+        threads=8,
+        compute_backend="directml",
+    ) == ("4GB", 8, "directml")
+    with pytest.raises(ValueError, match="memory limit override"):
+        _resolved_runtime_settings(
+            payload,
+            memory_limit="8GB",
+            threads=8,
+            compute_backend="directml",
+        )
+    with pytest.raises(ValueError, match="thread override"):
+        _resolved_runtime_settings(
+            payload,
+            memory_limit="4GB",
+            threads=4,
+            compute_backend="directml",
+        )
+    with pytest.raises(ValueError, match="compute backend override"):
+        _resolved_runtime_settings(
+            payload,
+            memory_limit="4GB",
+            threads=8,
+            compute_backend="cpu",
+        )
 
 
 def test_implementation_binding_is_launch_directory_agnostic(
