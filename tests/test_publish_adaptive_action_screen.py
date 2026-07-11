@@ -254,7 +254,7 @@ def test_round22_publication_copy_is_specific() -> None:
     assert "Further ranking-loss tuning is not justified" in next_step
 
 
-def test_round23_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round23_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(23)
     title, summary, next_step = _publication_narrative(
         23, all_candidate_stress_nets_negative=False
@@ -265,7 +265,22 @@ def test_round23_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert title == "causal temporal-attention outcome model abstained"
     assert "every nonempty threshold-selection simulation" in summary
     assert "isolated positive policy tail is insufficient" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 24"):
-        _progress_identity(24)
-    with pytest.raises(ValueError, match="undefined for Round 24"):
-        _publication_narrative(24, all_candidate_stress_nets_negative=True)
+
+
+def test_round24_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(24)
+    title, summary, next_step = _publication_narrative(
+        24, all_candidate_stress_nets_negative=False
+    )
+
+    assert stage == "UTC-session-local ranking ablation"
+    assert model_id == (
+        "three-seed session-local-ranked causal-attention outcome-mixture"
+    )
+    assert title == "session-local ranking model abstained"
+    assert "all threshold-selection eligibility disappeared" in summary
+    assert "Session-local ranking is rejected" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 25"):
+        _progress_identity(25)
+    with pytest.raises(ValueError, match="undefined for Round 25"):
+        _publication_narrative(25, all_candidate_stress_nets_negative=True)

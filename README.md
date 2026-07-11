@@ -528,12 +528,12 @@ required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md):
-Round 23 tested a bounded 30-second causal temporal-attention model on 229,001
-valid event labels from 877,894 exact-BBO rows. Its policy-window long top-100
-mean net return improved to `+0.940312` bps under stress, but the calibration
-tail and broader ranked tails remained negative, signal eligibility fell, and
-every nonempty threshold-selection simulation lost money. The model was
-rejected with zero out-of-sample simulated trades, no leverage, and no trading
+Round 24 tested session-local ranking with the Round 23 causal temporal model on
+229,001 valid event labels from 877,894 exact-BBO rows. Several
+threshold-selection diagnostics improved, but the gains reversed out of sample:
+all threshold-selection eligibility disappeared and the best policy-window
+top-100 mean net return fell from `+0.940312` to `-6.294386` bps under stress.
+The model was rejected with zero simulated trades, no leverage, and no trading
 authority.
 
 The latest independent execution-replay confirmation remains
