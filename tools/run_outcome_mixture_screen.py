@@ -96,8 +96,6 @@ except ModuleNotFoundError:  # pragma: no cover - direct tools directory executi
 
 
 DESIGN_SCHEMA_VERSION = "outcome-mixture-screen-design-v1"
-ROUND = 17
-PURPOSE = "consumed_data_conditional_outcome_mixture_screen"
 _ROUND16_DESIGN = (
     ROOT
     / "docs"
@@ -116,23 +114,54 @@ _SHARED_SECTIONS = (
     "evaluation",
     "reserved_terminal",
 )
-_PREDECESSOR = {
-    "round": 16,
-    "design_sha256": (
-        "15e8702999f7ed2c5acdd5ab27c19535ad87c68e476b92339b7335d98991a639"
-    ),
-    "source_report_canonical_sha256": (
-        "87e26c4e3809097d23de14e13b443ebe5cdefae3ba4beadba6b04b4c19f39229"
-    ),
-    "publication_sha256": (
-        "5c84aad13ec100882c132a92bbed838dda9caf3488760a374d06d2d87b301c89"
-    ),
-    "finding": (
-        "Round 16 ranked direction better than chance in parts of the consumed "
-        "window, but every inspected realized top tail remained negative after "
-        "exact costs; Round 17 therefore models win probability and conditional "
-        "win/loss magnitude separately before deriving expected action value."
-    ),
+_ROUND_CONTRACTS = {
+    17: {
+        "purpose": "consumed_data_conditional_outcome_mixture_screen",
+        "design_revisions": {1, 2},
+        "ranking_loss_weight": 0.0,
+        "predecessor": {
+            "round": 16,
+            "design_sha256": (
+                "15e8702999f7ed2c5acdd5ab27c19535ad87c68e476b92339b7335d98991a639"
+            ),
+            "source_report_canonical_sha256": (
+                "87e26c4e3809097d23de14e13b443ebe5cdefae3ba4beadba6b04b4c19f39229"
+            ),
+            "publication_sha256": (
+                "5c84aad13ec100882c132a92bbed838dda9caf3488760a374d06d2d87b301c89"
+            ),
+            "finding": (
+                "Round 16 ranked direction better than chance in parts of the "
+                "consumed window, but every inspected realized top tail remained "
+                "negative after exact costs; Round 17 therefore models win "
+                "probability and conditional win/loss magnitude separately before "
+                "deriving expected action value."
+            ),
+        },
+    },
+    18: {
+        "purpose": "consumed_data_rank_regularized_outcome_mixture_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "predecessor": {
+            "round": 17,
+            "design_sha256": (
+                "963ecc6d9fa384969992bed36addff0cfceb3e057fbe43a91725e15d037db1ee"
+            ),
+            "source_report_canonical_sha256": (
+                "77efd2c857e4f3cf9ea7061d7fe17d16b7f98308a6ea7a896be7d3213529ec6c"
+            ),
+            "publication_sha256": (
+                "0b77c412fa351728fbc62005e3f6a0beea1f22ead25918eb3ac111fcbe718c24"
+            ),
+            "finding": (
+                "Round 17 reduced point error but produced mostly worse probability "
+                "calibration than prevalence and negative realized top tails. Round "
+                "18 isolates a 0.10 continuous-value ranking regularizer while "
+                "leaving every data, execution, threshold, and risk contract fixed."
+            ),
+        },
+    },
 }
 
 
@@ -230,6 +259,12 @@ def load_outcome_mixture_design(
     canonical.pop("design_sha256", None)
     if not _is_sha256(claimed) or claimed != _canonical_sha256(canonical):
         raise ValueError("outcome-mixture design hash is invalid")
+    round_number = payload.get("round")
+    round_contract = (
+        _ROUND_CONTRACTS.get(round_number)
+        if isinstance(round_number, int) and not isinstance(round_number, bool)
+        else None
+    )
     reference, _reference_sha256 = load_adaptive_action_design(
         _ROUND16_DESIGN, require_current=False
     )
@@ -239,16 +274,16 @@ def load_outcome_mixture_design(
         raise ValueError("outcome-mixture shared safety contract drifted")
     if (
         payload.get("schema_version") != DESIGN_SCHEMA_VERSION
-        or payload.get("round") != ROUND
-        or payload.get("design_revision") not in {1, 2}
-        or payload.get("purpose") != PURPOSE
+        or round_contract is None
+        or payload.get("design_revision") not in round_contract["design_revisions"]
+        or payload.get("purpose") != round_contract["purpose"]
         or payload.get("target_mode") != ADAPTIVE_BARRIER_TARGET_MODE
         or payload.get("trading_authority") is not False
         or payload.get("execution_claim") is not False
         or payload.get("profitability_claim") is not False
         or payload.get("portfolio_claim") is not False
         or payload.get("leverage_applied") is not False
-        or payload.get("predecessor_evidence") != _PREDECESSOR
+        or payload.get("predecessor_evidence") != round_contract["predecessor"]
         or payload.get("training") != reference.get("training")
     ):
         raise ValueError("outcome-mixture design contract is invalid")
@@ -265,7 +300,10 @@ def load_outcome_mixture_design(
     if require_current:
         _validate_git_blob_binding(implementation)
     model_spec = OutcomeMixtureArchitectureSpec(**dict(model))
-    if model_spec.family != "conditional_outcome_mixture_residual_mlp":
+    if (
+        model_spec.family != "conditional_outcome_mixture_residual_mlp"
+        or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
+    ):
         raise ValueError("outcome-mixture model family is invalid")
     urls: set[str] = set()
     for item in research_basis:
@@ -735,7 +773,7 @@ def run_outcome_mixture_screen(
         "schema_version": REPORT_SCHEMA_VERSION,
         "artifact_class": "consumed_data_conditional_outcome_mixture_evidence",
         "status": "research_candidate" if final_profiles else "rejected",
-        "round": ROUND,
+        "round": int(design["round"]),
         "design_sha256": design_sha256,
         "action_value_model_schema_version": OUTCOME_MIXTURE_SCHEMA_VERSION,
         "action_policy_schema_version": ACTION_POLICY_SCHEMA_VERSION,

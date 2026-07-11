@@ -65,8 +65,8 @@ def test_git_blob_binding_rejects_incomplete_contract() -> None:
         _validate_git_blob_binding(binding)
 
 
-def test_round17_design_is_hash_bound_current_and_terminal_sealed() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN)
+def test_round17_design_is_hash_bound_to_historical_implementation() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN, require_current=False)
 
     assert (
         design_sha256
