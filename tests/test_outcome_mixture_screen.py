@@ -122,6 +122,13 @@ DESIGN28 = (
     / "action-value"
     / "round-028-sampled-aggregate-depth-design.json"
 )
+DESIGN29 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-029-1800s-horizon-cost-amortization-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -819,8 +826,10 @@ def test_round27_design_is_historical_and_changes_only_the_horizon() -> None:
     )
 
 
-def test_round28_design_is_current_and_changes_only_sampled_depth_inputs() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN28)
+def test_round28_design_is_historical_and_changes_only_sampled_depth_inputs() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN28, require_current=False
+    )
     baseline, _baseline_sha256 = load_outcome_mixture_design(
         DESIGN26, require_current=False
     )
@@ -871,6 +880,65 @@ def test_round28_design_is_current_and_changes_only_sampled_depth_inputs() -> No
     official_basis = research["https://github.com/binance/binance-public-data"]
     assert "sampled cumulative depth/notional percentage bands" in official_basis
     assert "does not relabel them as a full event-level order book" in official_basis
+
+
+def test_round29_design_is_current_and_changes_only_the_horizon() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN29)
+    baseline, _baseline_sha256 = load_outcome_mixture_design(
+        DESIGN26, require_current=False
+    )
+
+    assert design_sha256 == (
+        "d76f65e2653449df40e263e98718ffea365f292e569694b0349d85c884e39163"
+    )
+    assert design["round"] == 29
+    assert design["implementation"]["commit"] == (
+        "2174b7f86bdf26b1ab09313e71e62eb1a94fc45b"
+    )
+    assert design["execution"]["horizon_seconds"] == 1_800
+    assert design["barrier_targets"]["horizon_seconds"] == 1_800
+    assert design["data"]["required_data_types"] == ["bookTicker", "trades"]
+    assert design["predecessor_evidence"] == screen._ROUND_CONTRACTS[29][
+        "predecessor"
+    ]
+    assert screen._ROUND_CONTRACTS[29]["feature_version"] == "l1-tape-causal-v8"
+    assert screen._ROUND_CONTRACTS[29]["trainable_parameter_count"] == 146_974
+    assert design["model"]["candidate_id"] == (
+        "1800s-horizon-nested-soft-expert-outcome-mixture"
+    )
+    assert set(design["model"]) == set(baseline["model"])
+    for name, value in baseline["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
+    assert design["data"] == baseline["data"]
+    for section in (
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == baseline[section]
+    for section in ("execution", "barrier_targets"):
+        assert set(design[section]) == set(baseline[section])
+        for name, value in baseline[section].items():
+            if name != "horizon_seconds":
+                assert design[section][name] == value
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    assert (
+        "do not validate the precommitted 1800-second net-return target"
+        in research["https://arxiv.org/abs/2105.10430"]
+    )
+    assert (
+        "neither selects 1800 seconds nor establishes profitability"
+        in research["https://arxiv.org/abs/1409.2618"]
+    )
+    assert (
+        "reported returns are not imported as validation"
+        in research["https://doi.org/10.2139/ssrn.6795938"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -935,6 +1003,39 @@ def test_round27_horizon_override_rejects_other_safety_drift(
         ).encode("ascii")
     ).hexdigest()
     source = tmp_path / "unsafe-horizon-design.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="shared safety contract drifted"):
+        load_outcome_mixture_design(source, require_current=False)
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value"),
+    [
+        ("data", "required_data_types", ["bookTicker", "trades", "bookDepth"]),
+        ("execution", "total_latency_ms", 751),
+        ("execution", "horizon_seconds", 1_801),
+        ("barrier_targets", "horizon_seconds", 1_801),
+        ("barrier_targets", "minimum_stop_bps", 17.0),
+    ],
+)
+def test_round29_horizon_override_rejects_data_or_safety_drift(
+    tmp_path: Path, section: str, field: str, value: object
+) -> None:
+    payload = json.loads(DESIGN29.read_text(encoding="utf-8"))
+    payload[section][field] = value
+    canonical = dict(payload)
+    canonical.pop("design_sha256")
+    payload["design_sha256"] = hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    source = tmp_path / "unsafe-round29-design.json"
     source.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="shared safety contract drifted"):
