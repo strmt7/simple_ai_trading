@@ -93,6 +93,10 @@ _PROGRESS_IDENTITIES = {
         "300-second holding-horizon alignment ablation",
         "three-seed 300-second nested-context outcome-mixture",
     ),
+    28: (
+        "sampled aggregate-depth feature ablation",
+        "three-seed sampled-depth nested-context outcome-mixture",
+    ),
 }
 
 
@@ -103,6 +107,18 @@ def _progress_identity(round_number: int) -> tuple[str, str]:
         raise ValueError(
             f"adaptive action publication copy is undefined for Round {round_number}"
         ) from exc
+
+
+def _feature_set_identity(round_number: int) -> str:
+    if 16 <= round_number <= 18:
+        return "l1-tape-causal-v7"
+    if 19 <= round_number <= 27:
+        return "l1-tape-causal-v8"
+    if round_number == 28:
+        return "l1-tape-aggregate-depth-causal-v9"
+    raise ValueError(
+        f"adaptive action feature-set copy is undefined for Round {round_number}"
+    )
 
 
 def _publication_narrative(
@@ -187,6 +203,12 @@ def _publication_narrative(
             "The shorter lifecycle improved probability-of-profit discrimination and calibration metrics, but positive outcomes became rarer, every displayed ranked tail remained negative, and all eight threshold candidates failed after stress costs; the least-negative trace contained one losing trade.",
             "The 300-second fixed horizon is rejected under the retained taker-cost model; the next precommitted change must improve executable action design or cost-aware target formation without weakening fees, slippage, latency, or risk controls.",
         )
+    if round_number == 28:
+        return (
+            "sampled aggregate-depth outcome model abstained",
+            "The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best out-of-sample long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline.",
+            "Static sampled aggregate depth is rejected as a sufficient edge; the next precommitted change must target cost-aware action formation or higher-frequency depth dynamics, and maker-order economics remain blocked until event-level queue evidence can support fill modeling.",
+        )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
     )
@@ -199,6 +221,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--design", type=Path, required=True)
     parser.add_argument("--prior-progress", type=Path, required=True)
+    parser.add_argument("--depth-coverage", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
@@ -209,6 +232,53 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _validated_depth_coverage(
+    path: Path | None,
+    report_path: Path,
+    report: Mapping[str, object],
+) -> dict[str, object] | None:
+    round_number = int(report["round"])
+    if round_number != 28:
+        if path is not None:
+            raise ValueError("sampled-depth coverage is not valid for this round")
+        return None
+    if path is None:
+        raise ValueError("Round 28 publication requires sampled-depth coverage")
+    coverage = _read_json(path)
+    claimed = coverage.get("audit_sha256")
+    canonical = dict(coverage)
+    canonical.pop("audit_sha256", None)
+    dataset = report["dataset"]
+    if not isinstance(dataset, Mapping):
+        raise ValueError("sampled-depth publication dataset is invalid")
+    if (
+        coverage.get("schema_version") != "sampled-aggregate-depth-coverage-v1"
+        or coverage.get("round") != 28
+        or coverage.get("feature_version") != "l1-tape-aggregate-depth-causal-v9"
+        or coverage.get("source_report_sha256") != _sha256(report_path)
+        or coverage.get("source_report_canonical_sha256") != report.get("report_sha256")
+        or coverage.get("corpus_certificate_sha256")
+        != report.get("corpus_certificate_sha256")
+        or coverage.get("cache_key") != dataset.get("cache_key")
+        or int(coverage.get("rows") or 0) != int(dataset.get("rows") or -1)
+        or int(coverage.get("available_rows") or 0)
+        + int(coverage.get("unavailable_rows") or 0)
+        != int(dataset.get("rows") or -1)
+        or int(coverage.get("invalid_rows") or -1) != 0
+        or coverage.get("maximum_age_ms") != 60_000
+        or coverage.get("full_l2_order_book") is not False
+        or coverage.get("queue_position_evidence") is not False
+        or coverage.get("maker_fill_evidence") is not False
+        or coverage.get("trading_authority") is not False
+        or coverage.get("execution_claim") is not False
+        or coverage.get("profitability_claim") is not False
+        or not _is_sha256(claimed)
+        or claimed != _canonical_sha256(canonical)
+    ):
+        raise ValueError("sampled-depth coverage evidence is invalid")
+    return coverage
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -596,9 +666,7 @@ def _progress_rows(
             "periods": "2023-05-16..2023-07-06",
             "selection_contaminated": True,
             "horizon_seconds": horizon_seconds,
-            "feature_set": (
-                "l1-tape-causal-v8" if round_number >= 19 else "l1-tape-causal-v7"
-            ),
+            "feature_set": _feature_set_identity(round_number),
             "risk_level": "conservative;regular;aggressive",
             "direction_auc": max(float(value["auc"]) for value in policy_stress),
             "spearman_ic": "",
@@ -994,6 +1062,7 @@ def publish(
     design_path: Path,
     prior_progress_path: Path,
     output_dir: Path,
+    depth_coverage_path: Path | None = None,
 ) -> dict[str, object]:
     raw_design = _read_json(design_path)
     if raw_design.get("schema_version") == "outcome-mixture-screen-design-v1":
@@ -1005,6 +1074,11 @@ def publish(
             design_path, require_current=False
         )
     report = _validated_evidence(evidence_root, design, design_sha256)
+    depth_coverage = _validated_depth_coverage(
+        depth_coverage_path,
+        evidence_root / "report.json",
+        report,
+    )
     forecast_rows = _forecast_rows(report, design)
     profile_rows = _profile_rows(report)
     thresholds = _threshold_rows(report)
@@ -1032,6 +1106,7 @@ def publish(
         "forecast_rows": forecast_rows,
         "profile_rows": profile_rows,
         "barrier_rows": barrier_rows,
+        "sampled_aggregate_depth_coverage": depth_coverage,
         "source_report": {
             name: value
             for name, value in report.items()
@@ -1049,6 +1124,12 @@ def publish(
         output_dir / "diagnostics.json",
         json.dumps(diagnostics, indent=2, sort_keys=True, allow_nan=False) + "\n",
     )
+    if depth_coverage is not None:
+        _write_text(
+            output_dir / "depth-coverage.json",
+            json.dumps(depth_coverage, indent=2, sort_keys=True, allow_nan=False)
+            + "\n",
+        )
     _write_text(
         charts / "forecast-quality.svg",
         _forecast_svg(forecast_rows, round_number=int(report["round"])),
@@ -1098,7 +1179,7 @@ def publish(
         )
     else:
         tail_evidence = (
-            f'the best out-of-sample top-100 mean was {float(best_policy_tail["top_100_mean_net_bps"]):+.3f} bps, '
+            f"the best out-of-sample top-100 mean was {float(best_policy_tail['top_100_mean_net_bps']):+.3f} bps, "
             f"but {negative_tail_count} of {len(displayed_tail_values)} displayed top-100/top-500 means were negative and no threshold was accepted"
         )
     execution = design["execution"]
@@ -1109,6 +1190,29 @@ def publish(
             gate_summary["all_candidate_stress_nets_negative"]
         ),
     )
+    depth_table_row = ""
+    depth_method = ""
+    depth_data_link = ""
+    dataset_description = "exact-BBO rows"
+    if depth_coverage is not None:
+        available_rows = int(depth_coverage["available_rows"])
+        unavailable_rows = int(depth_coverage["unavailable_rows"])
+        available_ratio = float(depth_coverage["available_ratio"])
+        depth_table_row = (
+            "| Current sampled aggregate-depth features | "
+            f"{available_rows:,} / {int(depth_coverage['rows']):,} "
+            f"({available_ratio:.2%}) |\n"
+        )
+        depth_method = (
+            f" Official sampled 1% and 5% cumulative notional bands were current "
+            f"for {available_rows:,} rows; {unavailable_rows:,} rows were explicitly "
+            "masked after 60 seconds. These data are not a full event-level order "
+            "book and provide no queue-position or maker-fill evidence."
+        )
+        depth_data_link = " | [depth coverage](depth-coverage.json)"
+        dataset_description = (
+            "source-bound BBO/trade rows with sampled aggregate-depth features"
+        )
     readme = f"""# Round {round_number}: {title}
 
 **Rejected without trading authority.** {summary} {gate_summary["sentence"]}
@@ -1122,6 +1226,7 @@ def publish(
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
 | Out-of-sample simulated trades | {int(gate_summary["policy_trades"]):,} |
 | Authorized / live-executed trades | 0 / 0 |
+{depth_table_row}
 
 ![Forecast quality](charts/forecast-quality.svg)
 
@@ -1133,11 +1238,11 @@ def publish(
 
 ![Research progress](charts/research-progress.svg)
 
-BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} exact-BBO rows. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.
+BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} {dataset_description}. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.{depth_method}
 
 Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached {float(best_calibration_auc["auc"]):.3f}, and {tail_evidence}. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
 
-Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
+Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json){depth_data_link} | [integrity report](report.json)
 """
     _write_text(output_dir / "README.md", readme)
     generated = [
@@ -1154,6 +1259,8 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         charts / "barrier-outcomes.svg",
         charts / "research-progress.svg",
     ]
+    if depth_coverage is not None:
+        generated.append(output_dir / "depth-coverage.json")
     publication: dict[str, object] = {
         "schema_version": PUBLICATION_SCHEMA_VERSION,
         "artifact_class": "exchange_sourced_adaptive_action_graph_data",
@@ -1174,6 +1281,9 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         "corpus_certificate_sha256": report["corpus_certificate_sha256"],
         "barrier_targets_sha256": report["dataset"]["barrier_targets_sha256"],
         "diagnostic_sha256": diagnostics["diagnostic_sha256"],
+        "sampled_aggregate_depth_coverage_sha256": (
+            depth_coverage["audit_sha256"] if depth_coverage is not None else None
+        ),
         "actual": {
             "ensemble_models": len(report["ensemble_models"]),
             "valid_barrier_rows": report["dataset"]["valid_barrier_rows"],
@@ -1187,6 +1297,14 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
             "policy_trades": gate_summary["policy_trades"],
             "development_evaluated": gate_summary["development_evaluated"],
             "research_candidates": 0,
+            "sampled_aggregate_depth_available_rows": (
+                depth_coverage["available_rows"] if depth_coverage is not None else None
+            ),
+            "sampled_aggregate_depth_unavailable_rows": (
+                depth_coverage["unavailable_rows"]
+                if depth_coverage is not None
+                else None
+            ),
         },
         "source_artifacts": report["_validated_artifacts"],
         "artifact_integrity": [
@@ -1213,6 +1331,7 @@ def main() -> int:
         args.design,
         args.prior_progress,
         args.output_dir,
+        args.depth_coverage,
     )
     print(
         "adaptive-action-publication: "

@@ -6,6 +6,7 @@ import pytest
 
 from tools.publish_adaptive_action_screen import (
     _barrier_svg,
+    _feature_set_identity,
     _funnel_svg,
     _forecast_svg,
     _gate_summary,
@@ -311,7 +312,7 @@ def test_round26_publication_copy_is_specific() -> None:
     assert "900-second holding horizon" in next_step
 
 
-def test_round27_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round27_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(27)
     title, summary, next_step = _publication_narrative(
         27, all_candidate_stress_nets_negative=True
@@ -323,10 +324,27 @@ def test_round27_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert "positive outcomes became rarer" in summary
     assert "least-negative trace contained one losing trade" in summary
     assert "retained taker-cost model" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 28"):
-        _progress_identity(28)
-    with pytest.raises(ValueError, match="undefined for Round 28"):
-        _publication_narrative(28, all_candidate_stress_nets_negative=True)
+
+
+def test_round28_publication_copy_and_feature_identity_are_specific() -> None:
+    stage, model_id = _progress_identity(28)
+    title, summary, next_step = _publication_narrative(
+        28, all_candidate_stress_nets_negative=True
+    )
+
+    assert stage == "sampled aggregate-depth feature ablation"
+    assert model_id == "three-seed sampled-depth nested-context outcome-mixture"
+    assert _feature_set_identity(28) == "l1-tape-aggregate-depth-causal-v9"
+    assert title == "sampled aggregate-depth outcome model abstained"
+    assert "all eight threshold candidates lost" in summary
+    assert "least-negative aggressive trace" in summary
+    assert "maker-order economics remain blocked" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 29"):
+        _progress_identity(29)
+    with pytest.raises(ValueError, match="undefined for Round 29"):
+        _feature_set_identity(29)
+    with pytest.raises(ValueError, match="undefined for Round 29"):
+        _publication_narrative(29, all_candidate_stress_nets_negative=True)
 
 
 def test_progress_uses_verified_barrier_horizon_instead_of_a_fixed_value(
@@ -352,6 +370,28 @@ def test_progress_uses_verified_barrier_horizon_instead_of_a_fixed_value(
     rows = _progress_rows(prior, report, _forecast_rows())
 
     assert rows[-1]["horizon_seconds"] == 300
+    assert rows[-1]["feature_set"] == "l1-tape-causal-v8"
     report["dataset"]["barrier_summary"]["spec"]["horizon_seconds"] = 0
     with pytest.raises(ValueError, match="progress horizon is invalid"):
         _progress_rows(prior, report, _forecast_rows())
+
+
+def test_round28_progress_uses_sampled_depth_feature_contract(tmp_path) -> None:
+    prior = tmp_path / "progress.csv"
+    prior.write_text("round\n27\n", encoding="utf-8")
+    report = {
+        "round": 28,
+        "dataset": {
+            "valid_barrier_rows": 229_001,
+            "barrier_summary": {"spec": {"horizon_seconds": 900}},
+        },
+        "ensemble_models": [{}, {}, {}],
+        "profile_results": [
+            {"calibration_eligible_rows": 42, "policy_eligible_rows": 58}
+        ],
+    }
+
+    rows = _progress_rows(prior, report, _forecast_rows())
+
+    assert rows[-1]["feature_set"] == "l1-tape-aggregate-depth-causal-v9"
+    assert rows[-1]["horizon_seconds"] == 900
