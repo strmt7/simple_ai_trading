@@ -271,11 +271,14 @@ def _profile_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
         if not isinstance(selection, Mapping):
             raise ValueError("adaptive action threshold selection is missing")
         _require_false_claims(selection, label="threshold selection")
+        candidates = selection.get("candidates")
+        if not isinstance(candidates, list):
+            raise ValueError("adaptive action threshold candidates are invalid")
         output.append(
             {
                 "profile": raw["profile"],
                 "calibration_eligible_rows": int(raw["calibration_eligible_rows"]),
-                "calibration_threshold_candidates": len(selection["candidates"]),
+                "calibration_threshold_candidates": len(candidates),
                 "calibration_threshold_accepted": bool(selection["accepted"]),
                 "calibration_rejection_reasons": ";".join(
                     str(value) for value in selection["rejection_reasons"]
@@ -290,6 +293,76 @@ def _profile_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                 "development_evaluated": bool(raw["development_evaluated"]),
             }
         )
+    return output
+
+
+def _threshold_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
+    output: list[dict[str, object]] = []
+    for raw in report["profile_results"]:
+        if not isinstance(raw, Mapping):
+            raise ValueError("adaptive action profile result is invalid")
+        selection = raw.get("threshold_selection")
+        if not isinstance(selection, Mapping):
+            raise ValueError("adaptive action threshold selection is missing")
+        candidates = selection.get("candidates")
+        if not isinstance(candidates, list):
+            raise ValueError("adaptive action threshold candidates are invalid")
+        if not candidates:
+            output.append(
+                {
+                    "profile": raw["profile"],
+                    "candidate_available": False,
+                    "quantile": "",
+                    "threshold_bps": "",
+                    "accepted": False,
+                    "stress_trades": 0,
+                    "stress_total_net_bps": "",
+                    "stress_max_drawdown_bps": "",
+                    "stress_profit_factor": "",
+                    "stress_win_rate": "",
+                    "rejection_reasons": ";".join(
+                        str(value) for value in selection["rejection_reasons"]
+                    ),
+                }
+            )
+            continue
+        for candidate in candidates:
+            if not isinstance(candidate, Mapping):
+                raise ValueError("adaptive action threshold candidate is invalid")
+            _require_false_claims(candidate, label="threshold candidate")
+            stress = candidate.get("stress_metrics")
+            if not isinstance(stress, Mapping):
+                raise ValueError("adaptive action threshold stress metrics are missing")
+            profit_factor = stress.get("profit_factor")
+            output.append(
+                {
+                    "profile": raw["profile"],
+                    "candidate_available": True,
+                    "quantile": _finite(candidate["quantile"], label="quantile"),
+                    "threshold_bps": _finite(
+                        candidate["threshold_bps"], label="threshold"
+                    ),
+                    "accepted": bool(candidate["accepted"]),
+                    "stress_trades": int(stress["trades"]),
+                    "stress_total_net_bps": _finite(
+                        stress["total_net_bps"], label="threshold net"
+                    ),
+                    "stress_max_drawdown_bps": _finite(
+                        stress["max_drawdown_bps"], label="threshold drawdown"
+                    ),
+                    "stress_profit_factor": (
+                        ""
+                        if profit_factor is None
+                        else _finite(profit_factor, label="threshold profit factor")
+                    ),
+                    "stress_win_rate": _finite(
+                        stress["win_rate"], label="threshold win rate"
+                    ),
+                    "rejection_reasons": ";".join(
+                        str(value) for value in candidate["rejection_reasons"]
+                    ),
+                }
+            )
     return output
 
 
@@ -361,9 +434,13 @@ def _progress_rows(
         {
             "round": round_number,
             "stage": (
-                "conditional win/loss outcome-mixture ensemble"
-                if round_number >= 17
-                else "adaptive 100 ms barrier action-value ensemble"
+                "rank-regularized conditional outcome-mixture ensemble"
+                if round_number >= 18
+                else (
+                    "conditional win/loss outcome-mixture ensemble"
+                    if round_number >= 17
+                    else "adaptive 100 ms barrier action-value ensemble"
+                )
             ),
             "periods": "2023-05-16..2023-07-06",
             "selection_contaminated": True,
@@ -379,9 +456,13 @@ def _progress_rows(
             "status": "rejected",
             "source_file": f"adaptive action-value Round {round_number} report",
             "best_model_id": (
-                "three-seed conditional-outcome-mixture-shared-residual"
-                if round_number >= 17
-                else "three-seed adaptive-barrier-shared-residual"
+                "three-seed rank-regularized-outcome-mixture-shared-residual"
+                if round_number >= 18
+                else (
+                    "three-seed conditional-outcome-mixture-shared-residual"
+                    if round_number >= 17
+                    else "three-seed adaptive-barrier-shared-residual"
+                )
             ),
             "best_top_500_exact_after_cost_bps": max(
                 float(value["top_500_mean_net_bps"]) for value in policy_stress
@@ -655,16 +736,80 @@ def _barrier_svg(
 def _research_progress_svg(
     rows: Sequence[Mapping[str, object]], *, round_number: int = 16
 ) -> str:
-    output = _progress_svg(rows).replace(
+    return _progress_svg(rows).replace(
         "Round fifteen produced no evaluation trades.",
-        "Rounds fifteen and sixteen produced no evaluation trades.",
+        f"Rounds 15 through {round_number} produced no evaluation trades.",
     )
-    if round_number >= 17:
-        output = output.replace(
-            "Rounds fifteen and sixteen produced no evaluation trades.",
-            "Rounds fifteen through seventeen produced no evaluation trades.",
+
+
+def _gate_summary(
+    profile_rows: Sequence[Mapping[str, object]],
+    threshold_rows: Sequence[Mapping[str, object]] = (),
+) -> dict[str, object]:
+    if not profile_rows:
+        raise ValueError("adaptive action publication has no profile rows")
+    highest = max(profile_rows, key=lambda row: int(row["calibration_eligible_rows"]))
+    eligible = [
+        row for row in profile_rows if int(row["calibration_eligible_rows"]) > 0
+    ]
+    empty = [
+        str(row["profile"])
+        for row in profile_rows
+        if int(row["calibration_eligible_rows"]) == 0
+    ]
+    candidate_count = sum(
+        int(row["calibration_threshold_candidates"]) for row in profile_rows
+    )
+    accepted_count = sum(
+        int(bool(row["calibration_threshold_accepted"])) for row in profile_rows
+    )
+    policy_trades = sum(int(row["policy_trades"]) for row in profile_rows)
+    development_evaluated = any(
+        bool(row["development_evaluated"]) for row in profile_rows
+    )
+    candidate_rows = [
+        row for row in threshold_rows if bool(row.get("candidate_available"))
+    ]
+    all_candidate_stress_nets_negative = bool(candidate_rows) and all(
+        float(row["stress_total_net_bps"]) < 0.0 for row in candidate_rows
+    )
+    if eligible:
+        eligible_text = ", ".join(
+            f"{str(row['profile']).capitalize()} ({int(row['calibration_eligible_rows']):,})"
+            for row in eligible
         )
-    return output
+        empty_clause = (
+            f"{' and '.join(name.capitalize() for name in empty)} produced none. "
+            if empty
+            else ""
+        )
+        candidate_clause = (
+            f"The {candidate_count} resulting threshold candidates all failed the "
+            "stress gates"
+            if candidate_count
+            else "No threshold candidate could be constructed"
+        )
+        sentence = (
+            f"Calibration-eligible rows appeared only for {eligible_text}; "
+            f"{empty_clause}{candidate_clause}, so no policy trade, development access, "
+            "leverage, or trading authority was permitted."
+        )
+    else:
+        sentence = (
+            "All three risk profiles had zero eligible calibration rows, so no "
+            "threshold, policy trade, development access, leverage, or trading "
+            "authority was permitted."
+        )
+    return {
+        "highest_eligible_rows": int(highest["calibration_eligible_rows"]),
+        "highest_eligible_profile": str(highest["profile"]),
+        "candidate_count": candidate_count,
+        "accepted_count": accepted_count,
+        "policy_trades": policy_trades,
+        "development_evaluated": development_evaluated,
+        "all_candidate_stress_nets_negative": all_candidate_stress_nets_negative,
+        "sentence": sentence,
+    }
 
 
 def publish(
@@ -685,6 +830,8 @@ def publish(
     report = _validated_evidence(evidence_root, design, design_sha256)
     forecast_rows = _forecast_rows(report, design)
     profile_rows = _profile_rows(report)
+    thresholds = _threshold_rows(report)
+    gate_summary = _gate_summary(profile_rows, thresholds)
     barrier_rows = _barrier_rows(report)
     progress = _progress_rows(prior_progress_path, report, forecast_rows)
     progress_fields: list[str] = []
@@ -692,15 +839,6 @@ def publish(
         for name in row:
             if name not in progress_fields:
                 progress_fields.append(name)
-    thresholds = [
-        {
-            "profile": row["profile"],
-            "candidate_available": False,
-            "accepted": False,
-            "rejection_reasons": row["calibration_rejection_reasons"],
-        }
-        for row in profile_rows
-    ]
     diagnostics: dict[str, object] = {
         "schema_version": "adaptive-action-publication-diagnostics-v1",
         "artifact_class": "exchange_sourced_adaptive_action_evidence_no_authority",
@@ -773,14 +911,26 @@ def publish(
     execution = design["execution"]
     assert isinstance(execution, Mapping)
     title = (
-        "conditional outcome mixture abstained"
-        if round_number >= 17
-        else "action-value ensemble abstained"
+        "rank-regularized outcome mixture abstained"
+        if round_number >= 18
+        else (
+            "conditional outcome mixture abstained"
+            if round_number >= 17
+            else "action-value ensemble abstained"
+        )
     )
     summary = (
-        "The conditional win/loss decomposition improved point-error metrics versus the zero predictor, but probability calibration was mostly worse than prevalence and it did not rank a positive after-cost action tail."
-        if round_number >= 17
-        else "The three-seed DirectML ensemble improved error and profitable-outcome ranking in places, but it did not rank a positive after-cost action tail."
+        (
+            "The added ranking objective produced a small aggressive-profile candidate set, but every calibration threshold trace lost money after stress costs."
+            if gate_summary["all_candidate_stress_nets_negative"]
+            else "The added ranking objective produced calibration candidates, but none passed the precommitted stress gates."
+        )
+        if round_number >= 18
+        else (
+            "The conditional win/loss decomposition improved point-error metrics versus the zero predictor, but probability calibration was mostly worse than prevalence and it did not rank a positive after-cost action tail."
+            if round_number >= 17
+            else "The three-seed DirectML ensemble improved error and profitable-outcome ranking in places, but it did not rank a positive after-cost action tail."
+        )
     )
     next_step = (
         "The next precommitted model change must target regime-conditioned tail ranking and calibration rather than relax these gates."
@@ -789,15 +939,17 @@ def publish(
     )
     readme = f"""# Round {round_number}: {title}
 
-**Rejected safely.** {summary} All three risk profiles had zero eligible calibration rows, so no threshold, policy trade, development access, leverage, or trading authority was permitted.
+**Rejected safely.** {summary} {gate_summary["sentence"]}
 
 | Evidence | Result |
 | --- | ---: |
 | Best calibration stress AUC | {float(best_calibration_auc["auc"]):.3f} ({best_calibration_auc["side"]}) |
 | Best policy stress AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
 | Least-negative policy top-100 mean | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
-| Calibration eligible rows | 0 / {int(best_calibration_auc["rows"]):,} per side window |
-| Authorized / executed trades | 0 / 0 |
+| Highest calibration eligible set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
+| Threshold candidates / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
+| Policy replay trades | {int(gate_summary["policy_trades"]):,} |
+| Authorized / live-executed trades | 0 / 0 |
 
 ![Forecast quality](charts/forecast-quality.svg)
 
@@ -851,17 +1003,17 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         "barrier_targets_sha256": report["dataset"]["barrier_targets_sha256"],
         "diagnostic_sha256": diagnostics["diagnostic_sha256"],
         "actual": {
-            "ensemble_models": 3,
+            "ensemble_models": len(report["ensemble_models"]),
             "valid_barrier_rows": report["dataset"]["valid_barrier_rows"],
             "best_calibration_stress_auc": best_calibration_auc["auc"],
             "best_policy_stress_auc": best_policy_auc["auc"],
             "best_policy_top_100_mean_net_bps": best_policy_tail[
                 "top_100_mean_net_bps"
             ],
-            "calibration_eligible_rows": 0,
-            "accepted_thresholds": 0,
-            "policy_trades": 0,
-            "development_evaluated": False,
+            "calibration_eligible_rows": gate_summary["highest_eligible_rows"],
+            "accepted_thresholds": gate_summary["accepted_count"],
+            "policy_trades": gate_summary["policy_trades"],
+            "development_evaluated": gate_summary["development_evaluated"],
             "research_candidates": 0,
         },
         "source_artifacts": report["_validated_artifacts"],

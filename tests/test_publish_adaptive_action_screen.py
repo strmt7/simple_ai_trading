@@ -6,6 +6,7 @@ from tools.publish_adaptive_action_screen import (
     _barrier_svg,
     _funnel_svg,
     _forecast_svg,
+    _gate_summary,
     _research_progress_svg,
     _tail_svg,
 )
@@ -94,7 +95,7 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
         assert '="nan"' not in chart.lower()
     assert "Every displayed mean is negative" in charts[1]
     assert "2023-06-21" in charts[2]
-    assert "Rounds fifteen and sixteen" in charts[4]
+    assert "Rounds 15 through 16" in charts[4]
 
 
 def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
@@ -120,3 +121,49 @@ def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
         ],
         round_number=17,
     )
+
+
+def test_round18_gate_summary_preserves_nonzero_candidates() -> None:
+    rows = [
+        {
+            "profile": "conservative",
+            "calibration_eligible_rows": 0,
+            "calibration_threshold_candidates": 0,
+            "calibration_threshold_accepted": False,
+            "policy_trades": 0,
+            "development_evaluated": False,
+        },
+        {
+            "profile": "regular",
+            "calibration_eligible_rows": 0,
+            "calibration_threshold_candidates": 0,
+            "calibration_threshold_accepted": False,
+            "policy_trades": 0,
+            "development_evaluated": False,
+        },
+        {
+            "profile": "aggressive",
+            "calibration_eligible_rows": 24,
+            "calibration_threshold_candidates": 4,
+            "calibration_threshold_accepted": False,
+            "policy_trades": 0,
+            "development_evaluated": False,
+        },
+    ]
+
+    thresholds = [
+        {
+            "candidate_available": True,
+            "stress_total_net_bps": value,
+        }
+        for value in (-98.86, -103.68, -59.16, -59.16)
+    ]
+    summary = _gate_summary(rows, thresholds)
+
+    assert summary["highest_eligible_rows"] == 24
+    assert summary["highest_eligible_profile"] == "aggressive"
+    assert summary["candidate_count"] == 4
+    assert summary["accepted_count"] == 0
+    assert summary["all_candidate_stress_nets_negative"] is True
+    assert "Aggressive (24)" in str(summary["sentence"])
+    assert "all failed the stress gates" in str(summary["sentence"])

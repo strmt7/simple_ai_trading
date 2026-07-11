@@ -1,4 +1,7 @@
-profile,candidate_available,accepted,rejection_reasons
-conservative,False,False,calibration_has_no_eligible_scores
-regular,False,False,calibration_has_no_eligible_scores
-aggressive,False,False,calibration_has_no_eligible_scores
+profile,candidate_available,quantile,threshold_bps,accepted,stress_trades,stress_total_net_bps,stress_max_drawdown_bps,stress_profit_factor,stress_win_rate,rejection_reasons
+conservative,False,,,False,0,,,,,calibration_has_no_eligible_scores
+regular,False,,,False,0,,,,,calibration_has_no_eligible_scores
+aggressive,True,0.5,1.2408770818865422,False,5,-98.86481672763439,151.77219691454692,0.3485973140172785,0.2,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.7,1.9209429985769861,False,3,-103.67835883380104,103.67835883380104,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.85,2.190458294521258,False,1,-59.15963346023124,59.15963346023124,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.95,2.652768666604027,False,1,-59.15963346023124,59.15963346023124,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
