@@ -10,6 +10,7 @@ from tools.publish_adaptive_action_screen import (
     _forecast_svg,
     _gate_summary,
     _progress_identity,
+    _progress_rows,
     _publication_narrative,
     _research_progress_svg,
     _tail_svg,
@@ -296,7 +297,7 @@ def test_round25_publication_copy_is_specific() -> None:
     assert "Homogeneous experts with near-uniform routing are rejected" in next_step
 
 
-def test_round26_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round26_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(26)
     title, summary, next_step = _publication_narrative(
         26, all_candidate_stress_nets_negative=True
@@ -308,7 +309,49 @@ def test_round26_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert "all eight threshold candidates still lost" in summary
     assert "routing remained close to uniform" in summary
     assert "900-second holding horizon" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 27"):
-        _progress_identity(27)
-    with pytest.raises(ValueError, match="undefined for Round 27"):
-        _publication_narrative(27, all_candidate_stress_nets_negative=True)
+
+
+def test_round27_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(27)
+    title, summary, next_step = _publication_narrative(
+        27, all_candidate_stress_nets_negative=True
+    )
+
+    assert stage == "300-second holding-horizon alignment ablation"
+    assert model_id == "three-seed 300-second nested-context outcome-mixture"
+    assert title == "300-second horizon outcome model abstained"
+    assert "positive outcomes became rarer" in summary
+    assert "least-negative trace contained one losing trade" in summary
+    assert "retained taker-cost model" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 28"):
+        _progress_identity(28)
+    with pytest.raises(ValueError, match="undefined for Round 28"):
+        _publication_narrative(28, all_candidate_stress_nets_negative=True)
+
+
+def test_progress_uses_verified_barrier_horizon_instead_of_a_fixed_value(
+    tmp_path,
+) -> None:
+    prior = tmp_path / "progress.csv"
+    prior.write_text("round\n26\n", encoding="utf-8")
+    report = {
+        "round": 27,
+        "dataset": {
+            "valid_barrier_rows": 230_393,
+            "barrier_summary": {"spec": {"horizon_seconds": 300}},
+        },
+        "ensemble_models": [{}, {}, {}],
+        "profile_results": [
+            {
+                "calibration_eligible_rows": 40,
+                "policy_eligible_rows": 40,
+            }
+        ],
+    }
+
+    rows = _progress_rows(prior, report, _forecast_rows())
+
+    assert rows[-1]["horizon_seconds"] == 300
+    report["dataset"]["barrier_summary"]["spec"]["horizon_seconds"] = 0
+    with pytest.raises(ValueError, match="progress horizon is invalid"):
+        _progress_rows(prior, report, _forecast_rows())
