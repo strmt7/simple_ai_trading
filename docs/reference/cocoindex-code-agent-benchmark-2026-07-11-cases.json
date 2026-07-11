@@ -1,0 +1,102 @@
+[
+  {
+    "name": "execution_ownership_reconciliation",
+    "query": "bot owned positions exchange reconciliation unknown exposure close protection client order identity",
+    "rg": "bot_owned|ownership|reconcile|clientOrderId|exchange exposure",
+    "expected": [
+      "src/simple_ai_trading/reconciliation.py",
+      "src/simple_ai_trading/execution_lifecycle.py",
+      "tests/test_reconciliation.py"
+    ]
+  },
+  {
+    "name": "outage_recovery_risk",
+    "query": "network outage reconnect observation cooldown market regime risk halt autonomous recovery",
+    "rg": "reconnect|network interruption|observation cooldown|cooldown",
+    "expected": [
+      "src/simple_ai_trading/coordinator.py",
+      "src/simple_ai_trading/autonomous.py",
+      "tests/test_coordinator.py"
+    ]
+  },
+  {
+    "name": "api_budget_start_gate",
+    "query": "Binance request weight order count rate limit eighty percent live startup gate cached refresh",
+    "rg": "api.?budget|rate.?limit|Retry-After|80%",
+    "expected": [
+      "src/simple_ai_trading/api_budget.py",
+      "tests/test_api_budget.py",
+      "src/simple_ai_trading/cli.py"
+    ]
+  },
+  {
+    "name": "liquidity_universe_filter",
+    "query": "BTC ETH SOL automatic liquidity spread volume trade count universe eligibility rejection",
+    "rg": "liquidity_score|quote_volume|trade_count|spread|SUPPORTED_BASE",
+    "expected": [
+      "src/simple_ai_trading/market_universe.py",
+      "src/simple_ai_trading/liquidity_session.py",
+      "tests/test_market_universe.py"
+    ]
+  },
+  {
+    "name": "microstructure_barrier_labels",
+    "query": "causal event barrier labels modeled latency trigger fee spread long short outcome",
+    "rg": "barrier|modeled_latency|trigger|long|short",
+    "expected": [
+      "src/simple_ai_trading/microstructure_barriers.py",
+      "src/simple_ai_trading/microstructure_action_architecture.py",
+      "tests/test_microstructure_barriers.py"
+    ]
+  },
+  {
+    "name": "action_value_policy_gates",
+    "query": "adaptive action value conservative regular aggressive calibration policy eligibility abstention",
+    "rg": "action_value|calibration|policy|eligible|abstain",
+    "expected": [
+      "src/simple_ai_trading/microstructure_action_policy.py",
+      "tools/run_action_value_discovery.py",
+      "tests/test_microstructure_action_policy.py"
+    ]
+  },
+  {
+    "name": "terminal_holdout_integrity",
+    "query": "sealed terminal holdout one use reservation hash promotion evidence no peeking",
+    "rg": "terminal holdout|terminal_holdout|reservation|sealed",
+    "expected": [
+      "src/simple_ai_trading/terminal_holdout_ledger.py",
+      "src/simple_ai_trading/microstructure_walkforward.py",
+      "tests/test_microstructure_walkforward.py"
+    ]
+  },
+  {
+    "name": "directml_gpu_resolution",
+    "query": "Windows AMD DirectML GPU compute backend training fallback evidence CPU AI disabled",
+    "rg": "directml|DirectML|compute_backend|fallback|CPU-only",
+    "expected": [
+      "src/simple_ai_trading/compute.py",
+      "docs/DIRECTML_GPU.md",
+      "tests/test_compute.py"
+    ]
+  },
+  {
+    "name": "cli_windows_parity",
+    "query": "generated command manifest CLI Windows desktop functional parity options choices controls",
+    "rg": "command_manifest|Windows|parity|argparse",
+    "expected": [
+      "tools/generate_windows_contract.py",
+      "src/simple_ai_trading/windows_app.py",
+      "tests/test_ai_runtime_and_parity.py"
+    ]
+  },
+  {
+    "name": "archive_data_provenance",
+    "query": "Binance archive second data checksum gaps coverage source provenance promotion grade",
+    "rg": "archive|checksum|coverage|gap|promotion_grade",
+    "expected": [
+      "src/simple_ai_trading/binance_archive.py",
+      "docs/DATA_PROVENANCE_POLICY.md",
+      "tools/optimization_round.py"
+    ]
+  }
+]

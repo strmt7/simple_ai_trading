@@ -19,25 +19,8 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Export release inputs
-      shell: pwsh
-      env:
-        RELEASE_VERSION_INPUT: ${{ inputs.release_version }}
-        REPLACE_EXISTING: ${{ inputs.replace_existing }}
-        REPLACEMENT_ACKNOWLEDGEMENT: ${{ inputs.replacement_acknowledgement }}
-        PUBLISH_RELEASE: ${{ inputs.publish_release }}
-      run: |
-        $ErrorActionPreference = "Stop"
-        foreach ($name in @("RELEASE_VERSION_INPUT", "REPLACE_EXISTING", "REPLACEMENT_ACKNOWLEDGEMENT", "PUBLISH_RELEASE")) {
-            $value = [string](Get-Item "env:$name").Value
-            if ($value -match "[`r`n]") {
-                throw "$name must be a single-line value."
-            }
-            Add-Content -LiteralPath $env:GITHUB_ENV -Value "$name=$value"
-        }
-
     - name: Setup Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: "3.11"
         cache: pip
@@ -46,6 +29,11 @@ runs:
     - name: Resolve release metadata
       id: meta
       shell: pwsh
+      env:
+        RELEASE_VERSION_INPUT: ${{ inputs.release_version }}
+        REPLACE_EXISTING: ${{ inputs.replace_existing }}
+        REPLACEMENT_ACKNOWLEDGEMENT: ${{ inputs.replacement_acknowledgement }}
+        PUBLISH_RELEASE: ${{ inputs.publish_release }}
       run: |
         $ErrorActionPreference = "Stop"
         New-Item -ItemType Directory -Force -Path out | Out-Null
@@ -109,10 +97,6 @@ runs:
         if (($existingRelease -or $existingTag) -and -not $replaceExisting) {
             throw "Release or tag $releaseTag already exists. Re-run with replace_existing=true to replace it."
         }
-        if ($replaceExisting) {
-            "REPLACE_RELEASE_TAG=$releaseTag" | Add-Content -LiteralPath $env:GITHUB_ENV
-        }
-
     - name: Install project and release dependencies
       shell: pwsh
       run: |
@@ -189,7 +173,7 @@ runs:
             }
 
     - name: Upload release candidate artifacts
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: simple-ai-trading-beta-release-candidate
         path: |
@@ -216,6 +200,9 @@ runs:
 
     - name: Publish GitHub beta prerelease
       shell: pwsh
+      env:
+        REPLACE_EXISTING: ${{ inputs.replace_existing }}
+        PUBLISH_RELEASE: ${{ inputs.publish_release }}
       run: |
         $ErrorActionPreference = "Stop"
         $assets = @(
@@ -226,9 +213,6 @@ runs:
         $assets += @(Get-ChildItem -LiteralPath "out\python-dist" -File -Filter "*.sha256" | ForEach-Object { $_.FullName })
 
         if ($env:REPLACE_EXISTING -eq "true") {
-            if ($env:REPLACE_RELEASE_TAG -ne $env:RELEASE_TAG) {
-                throw "Replacement tag tracking mismatch."
-            }
             gh release view $env:RELEASE_TAG *> $null
             if ($LASTEXITCODE -eq 0) {
                 gh release delete $env:RELEASE_TAG --yes --cleanup-tag

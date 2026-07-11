@@ -1,0 +1,7 @@
+interface:
+  display_name: "Docs Knowledge Maintainer"
+  short_description: "Keep repo docs accurate and cross-linked when behavior changes"
+  brand_color: "#C2410C"
+  default_prompt: "Update the right docs and validate docs structure and drift checks"
+policy:
+  allow_implicit_invocation: true

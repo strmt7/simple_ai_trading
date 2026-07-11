@@ -3,7 +3,7 @@
 ## Pinned Karpathy agent baseline
 
 Adapted from
-<https://github.com/forrestchang/andrej-karpathy-skills> at
+<https://github.com/multica-ai/andrej-karpathy-skills> at
 `2c606141936f1eeef17fa3043a72095b4765b9c2`.
 Apply this agent-neutral baseline before the repo-specific rules below, but do
 not weaken stricter repository rules such as the single-session rule, commit
@@ -39,7 +39,7 @@ under the identity `AI agent` with an empty email field, and any AI
 co-author trailer must be `Co-authored-by: AI agent` with no email. The
 correct on-commit form is literally:
 
-```
+```text
 Author:     AI agent <>
 Commit:     AI agent <>
 ```
@@ -100,6 +100,11 @@ Use this order before broad reads:
 5. `docs/SIMILAR_TRADING_REPOS_REVIEW.md` before broad product, architecture, CLI, or workflow redesigns
 
 Do not expand to broad directory scans on first pass. Open more files only when the task cannot be completed safely with the above context.
+
+For broad semantic routing, use the mandatory repo-local
+`cocoindex-code-search` workflow and then confirm candidates with exact `rg`
+and direct file reads. The portable MCP/cache contract and all imported skill
+provenance are documented in `docs/AGENT_WORKFLOWS.md`.
 
 ## Mandatory constraints
 

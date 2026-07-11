@@ -1,0 +1,7 @@
+interface:
+  display_name: "Source Audit"
+  short_description: "Separate confirmed web facts from inference"
+  brand_color: "#B45309"
+  default_prompt: "Use $source-audit to weigh source quality, dates, and second-source support before making a web-backed claim."
+policy:
+  allow_implicit_invocation: true

@@ -5,9 +5,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-KARPATHY_BADGE_URL = (
-    "https://img.shields.io/static/v1?label=&message=andrej-karpathy-skills"
-    "&color=555&logo=github&logoColor=white"
+EXPECTED_BADGES = (
+    "License",
+    "CI",
+    "super-linter",
+    "Ruff",
+    "Vulture",
+    "cocoindex-code",
+    "andrej-karpathy-skills",
 )
 
 
@@ -23,11 +28,15 @@ def test_readme_badge_block_matches_generator() -> None:
     assert result.returncode == 0, result.stderr
 
 
-def test_readme_uses_github_logo_static_karpathy_badge() -> None:
+def test_readme_exposes_imported_tooling_badges_in_canonical_order() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "<!-- BEGIN GENERATED BADGES -->" in readme
     assert "<!-- END GENERATED BADGES -->" in readme
-    assert "[![andrej-karpathy-skills](" in readme
-    assert KARPATHY_BADGE_URL in readme
-    assert "https://github.com/forrestchang/andrej-karpathy-skills" in readme
-    assert "https://img.shields.io/badge/andrej-karpathy-skills" not in readme
+    positions = [readme.index(f"[![{badge}](") for badge in EXPECTED_BADGES]
+    assert positions == sorted(positions)
+    assert "actions/workflows/super-linter.yml" in readme
+    assert "actions/workflows/ruff.yml" in readme
+    assert "actions/workflows/vulture.yml" in readme
+    assert "https://github.com/cocoindex-io/cocoindex-code" in readme
+    assert "https://github.com/multica-ai/andrej-karpathy-skills" in readme
+    assert "https://github.com/forrestchang/andrej-karpathy-skills" not in readme

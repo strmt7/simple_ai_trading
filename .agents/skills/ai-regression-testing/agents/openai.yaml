@@ -1,0 +1,7 @@
+interface:
+  display_name: "AI Regression Testing"
+  short_description: "Catch partial fixes and path mismatches with narrow regression tests"
+  brand_color: "#0F766E"
+  default_prompt: "Choose or add the narrowest regression checks that prove this AI-generated fix is complete"
+policy:
+  allow_implicit_invocation: true

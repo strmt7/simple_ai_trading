@@ -1,7 +1,13 @@
 ﻿# Simple AI Trading
 
 <!-- BEGIN GENERATED BADGES -->
-[![andrej-karpathy-skills](https://img.shields.io/static/v1?label=&message=andrej-karpathy-skills&color=555&logo=github&logoColor=white)](https://github.com/forrestchang/andrej-karpathy-skills)
+[![License](https://img.shields.io/github/license/strmt7/simple_ai_trading)](https://github.com/strmt7/simple_ai_trading/blob/main/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/ci.yml?branch=main&label=CI)](https://github.com/strmt7/simple_ai_trading/actions/workflows/ci.yml)
+[![super-linter](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/super-linter.yml?branch=main&label=super-linter)](https://github.com/strmt7/simple_ai_trading/actions/workflows/super-linter.yml)
+[![Ruff](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/ruff.yml?branch=main&logo=python&label=Ruff)](https://github.com/strmt7/simple_ai_trading/actions/workflows/ruff.yml)
+[![Vulture](https://img.shields.io/github/actions/workflow/status/strmt7/simple_ai_trading/vulture.yml?branch=main&logo=python&label=Vulture)](https://github.com/strmt7/simple_ai_trading/actions/workflows/vulture.yml)
+[![cocoindex-code](https://img.shields.io/static/v1?label=&message=cocoindex-code&color=555&logo=github&logoColor=white)](https://github.com/cocoindex-io/cocoindex-code)
+[![andrej-karpathy-skills](https://img.shields.io/static/v1?label=&message=andrej-karpathy-skills&color=555&logo=github&logoColor=white)](https://github.com/multica-ai/andrej-karpathy-skills)
 <!-- END GENERATED BADGES -->
 
 Simple AI Trading is a Windows-first, testnet-first autonomous day-trading CLI and desktop app focused only on the major BTC, ETH, and SOL Binance spot/futures markets. It has been expanded from the original single-pair prototype into a tightly scoped major-asset runtime that measures per-symbol liquidity automatically, trains/retrains models, runs realistic backtests with execution frictions, and exposes the same workflows through both the CLI and Windows app.
@@ -554,6 +560,15 @@ See [docs/LIVE_MARKET_SIMULATION.md](docs/LIVE_MARKET_SIMULATION.md).
 - `reconcile` must be clean before treating the local autonomous ledger as flat or aligned with exchange state; corrupt, non-list, unknown-field, or financially invalid open-position ledger rows are hard failures.
 - `live` post-outage recovery requires a clean market observation and cooldown before any fresh entry; autonomous recovery additionally requires reconciliation and hard loss-budget checks.
 - Exchange exposure that is not represented in the bot ledger is reported as a mismatch and is not closed by the bot.
+
+## Agent Tooling
+
+The repository includes the adapted `cocoindex-code-search`,
+`karpathy-guidelines`, research, regression, and documentation skills plus
+pinned Ruff, Vulture, and Super-Linter workflows. See
+[`docs/AGENT_WORKFLOWS.md`](docs/AGENT_WORKFLOWS.md) for provenance, commands,
+and the mandatory semantic-routing contract. README badges are generated from
+`.github/readme_badges.json`.
 
 ## Test
 
