@@ -1,46 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1240" height="580" viewBox="0 0 1240 580" role="img" aria-labelledby="title desc">
-<title id="title">Round 17 ranked after-cost tail economics</title>
+<title id="title">Round 18 ranked after-cost tail economics</title>
 <desc id="desc">Mean adverse-stress net basis points for the top 100 and top 500 predictions in calibration and policy during June 2023. Every displayed mean is negative.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Ranked after-cost tail remained negative</text>
 <text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Actual 100 ms barrier outcomes, including fees, latency and adverse protection delay.</text>
 <rect x="90" y="130" width="1080" height="310" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="90" y1="382.6" x2="1170" y2="382.6" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="387.6" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-20</text>
-<line x1="90" y1="325.2" x2="1170" y2="325.2" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="330.2" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-15</text>
-<line x1="90" y1="267.8" x2="1170" y2="267.8" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="272.8" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-10</text>
-<line x1="90" y1="210.4" x2="1170" y2="210.4" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="215.4" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-5</text>
-<line x1="90" y1="153.0" x2="1170" y2="153.0" stroke="#536674" stroke-width="2"/>
-<text x="78" y="158.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0</text>
-<rect x="165.0" y="153.0" width="58" height="77.8" fill="#c64c3f"/>
-<text x="194.0" y="248.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-6.77</text>
+<line x1="90" y1="309.5" x2="1170" y2="309.5" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="314.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-20</text>
+<line x1="90" y1="268.7" x2="1170" y2="268.7" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="273.7" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-15</text>
+<line x1="90" y1="227.9" x2="1170" y2="227.9" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="232.9" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-10</text>
+<line x1="90" y1="187.1" x2="1170" y2="187.1" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="192.1" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-5</text>
+<line x1="90" y1="146.3" x2="1170" y2="146.3" stroke="#536674" stroke-width="2"/>
+<text x="78" y="151.3" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0</text>
+<rect x="165.0" y="146.3" width="58" height="96.3" fill="#c64c3f"/>
+<text x="194.0" y="260.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-11.80</text>
 <text x="194.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="237.0" y="153.0" width="58" height="134.9" fill="#e3a229"/>
-<text x="266.0" y="305.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-11.75</text>
+<rect x="237.0" y="146.3" width="58" height="90.0" fill="#e3a229"/>
+<text x="266.0" y="254.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-11.03</text>
 <text x="266.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
 <text x="230.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Calibration long</text>
-<rect x="405.0" y="153.0" width="58" height="127.0" fill="#c64c3f"/>
-<text x="434.0" y="298.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-11.06</text>
+<rect x="405.0" y="146.3" width="58" height="239.9" fill="#c64c3f"/>
+<text x="434.0" y="404.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-29.41</text>
 <text x="434.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="477.0" y="153.0" width="58" height="205.0" fill="#e3a229"/>
-<text x="506.0" y="376.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-17.86</text>
+<rect x="477.0" y="146.3" width="58" height="165.5" fill="#e3a229"/>
+<text x="506.0" y="329.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-20.29</text>
 <text x="506.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
 <text x="470.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Calibration short</text>
-<rect x="645.0" y="153.0" width="58" height="152.0" fill="#c64c3f"/>
-<text x="674.0" y="322.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-13.24</text>
+<rect x="645.0" y="146.3" width="58" height="13.8" fill="#c64c3f"/>
+<text x="674.0" y="178.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-1.70</text>
 <text x="674.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="717.0" y="153.0" width="58" height="152.2" fill="#e3a229"/>
-<text x="746.0" y="323.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-13.26</text>
+<rect x="717.0" y="146.3" width="58" height="67.8" fill="#e3a229"/>
+<text x="746.0" y="232.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-8.31</text>
 <text x="746.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
 <text x="710.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy long</text>
-<rect x="885.0" y="153.0" width="58" height="252.5" fill="#c64c3f"/>
-<text x="914.0" y="423.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-21.99</text>
+<rect x="885.0" y="146.3" width="58" height="268.2" fill="#c64c3f"/>
+<text x="914.0" y="432.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-32.88</text>
 <text x="914.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="957.0" y="153.0" width="58" height="119.9" fill="#e3a229"/>
-<text x="986.0" y="290.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-10.44</text>
+<rect x="957.0" y="146.3" width="58" height="159.7" fill="#e3a229"/>
+<text x="986.0" y="324.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-19.57</text>
 <text x="986.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
 <text x="950.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy short</text>
 <text x="34" y="295" transform="rotate(-90 34 295)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Mean net basis points</text>

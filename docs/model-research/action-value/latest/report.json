@@ -1,10 +1,10 @@
 {
   "actual": {
     "accepted_thresholds": 0,
-    "best_calibration_stress_auc": 0.6289597791911933,
-    "best_policy_stress_auc": 0.6089930411389524,
-    "best_policy_top_100_mean_net_bps": -13.2363346151516,
-    "calibration_eligible_rows": 0,
+    "best_calibration_stress_auc": 0.6261868976699829,
+    "best_policy_stress_auc": 0.6073004393768477,
+    "best_policy_top_100_mean_net_bps": -1.6952514121797173,
+    "calibration_eligible_rows": 24,
     "development_evaluated": false,
     "ensemble_models": 3,
     "policy_trades": 0,
@@ -14,24 +14,24 @@
   "artifact_class": "exchange_sourced_adaptive_action_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1841,
+      "bytes": 1961,
       "path": "README.md",
-      "sha256": "30fa29cbba4160e5f4c78f179fd907f69d27c11431df4b89b1d9ce8ac85a863e"
+      "sha256": "3f444c8fb61e6a431d4fb23c1c4f3ccd8729a687c7d94ac71146ea0f12835c21"
     },
     {
-      "bytes": 2473,
+      "bytes": 2479,
       "path": "forecast.csv",
-      "sha256": "3312c2bf9ed3556b4a380e6cd6fc3d04a21ceae883ca1c1c1260a5a67d75ff44"
+      "sha256": "2d1f7dcf9b944d5c1b95ec0a5ab1bf756333ecfed804ea6bbcb41712e47bd6dd"
     },
     {
-      "bytes": 460,
+      "bytes": 472,
       "path": "profiles.csv",
-      "sha256": "77163785e76a15f68cc69ffdb20394539f4daf50878760e4294cd23481b414f4"
+      "sha256": "69cfc5d5393e4d41ee5afc20f6fa0a75627d6be68e45f0efe8a6edf5e66bbcb6"
     },
     {
-      "bytes": 232,
+      "bytes": 1127,
       "path": "thresholds.csv",
-      "sha256": "9f6f5546fd062bbd9f8e94d380be73e305920e4d9c616bfac09cfcbc9e1458ac"
+      "sha256": "d36e88ab3dd06901e5f12e64f96f3052dcd7de3b6e92644747d9fda3296a8833"
     },
     {
       "bytes": 466,
@@ -39,74 +39,74 @@
       "sha256": "11d56124a7b72dee8a6f7146cf46ced64b6356f2a6a9e82af3e7e93c4b5c6e18"
     },
     {
-      "bytes": 4637,
+      "bytes": 4966,
       "path": "progress.csv",
-      "sha256": "d3cdff335441b8b584e01b0f49092924f7a462735dd51692541d28ebb752a7e8"
+      "sha256": "1e612288630a903c903210e5b9a38334e1104568bd77e5e3eaf4013c777d9a10"
     },
     {
-      "bytes": 51513,
+      "bytes": 59345,
       "path": "diagnostics.json",
-      "sha256": "3d8638b27a0303a362f6fa82b10e4e7d46c8bf2a7d360ab4dd5d6c78cdc4507c"
+      "sha256": "b460e86c9f6c80671e045b5f161fab1955a365387612df90e1f348fed13f248d"
     },
     {
       "bytes": 4364,
       "path": "charts/forecast-quality.svg",
-      "sha256": "3b43193042844dc5aa45b3f369fda3aecdd140ec269e4350d338b0d000d7a510"
+      "sha256": "1a8e8b982bf0550001477c6fdb2bf7b9865e7394b78154037740c1169c0c8d30"
     },
     {
-      "bytes": 5624,
+      "bytes": 5620,
       "path": "charts/ranked-tail-economics.svg",
-      "sha256": "d489e4d90a43d9c9de8131e934750f0b1a1ff009e48fd4ae2bda8937ceaa9467"
+      "sha256": "02c3f93cb5279b0212d6e528245a6cb37ea7f7136233abbee3fa26b2c84f4d2e"
     },
     {
-      "bytes": 3984,
+      "bytes": 4747,
       "path": "charts/profile-gate-funnel.svg",
-      "sha256": "5e3a9af15efb85427e1a1514fb8888a0e9854081caf6a500b0a2c1c92e59c377"
+      "sha256": "ed7716974b193406c5caa3b0b2d2fc375eb0527527be2220fb0d55693c67d892"
     },
     {
       "bytes": 5240,
       "path": "charts/barrier-outcomes.svg",
-      "sha256": "60e6c3216c9be81d3eae499e1199de08411b4a3ca9f9c1f887f1ef06118b8c45"
+      "sha256": "4e7b2fb69adc071aa51c9d71f225884343ec34d2bcd38e1e3c39305ad78b76ca"
     },
     {
-      "bytes": 5806,
+      "bytes": 6027,
       "path": "charts/research-progress.svg",
-      "sha256": "6bb6a14f7f98720a394fcc37418db90aa85315cab63fc6840ea14564c1f49823"
+      "sha256": "b0b5998f036d9863ec1f3e402bacf98ac1335843e47dd9bc244c9a40feb2b5d5"
     }
   ],
   "barrier_targets_sha256": "bde567752e0c30c49a62f73e1baa5f5618206d33a7644b2edc61e67f18143b10",
   "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
-  "design_revision": 2,
-  "design_sha256": "963ecc6d9fa384969992bed36addff0cfceb3e057fbe43a91725e15d037db1ee",
+  "design_revision": 1,
+  "design_sha256": "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40",
   "development_window_is_consumed": false,
-  "diagnostic_sha256": "7a300fe66c31a8d9d27aa9f39cecfcaaa74fbbcb6c21b005f5b5bad14f8930c3",
+  "diagnostic_sha256": "27e2dba12cc27b9d5772776d5f09b55daba7c677289ee3e828aa8b8c4d024e5a",
   "execution_claim": false,
-  "implementation_commit": "016b6890db4cf34610848aac3bf5effd428c0ef2",
+  "implementation_commit": "c0aa47f936777e2eda76ab59dddcd0d5172f0602",
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "0b77c412fa351728fbc62005e3f6a0beea1f22ead25918eb3ac111fcbe718c24",
-  "round": 17,
+  "publication_sha256": "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378",
+  "round": 18,
   "schema_version": "adaptive-action-screen-publication-v1",
   "source_artifacts": [
     {
       "bytes": 594288,
       "path": "models/seed-29.safetensors",
-      "sha256": "6aa2201aa14e96d6cea095ecdb84e97e36a14eeccfd4db5e5a4b2e05002eb8ad"
+      "sha256": "415500817358706c7e1561a68f6b2d06c61592be715779252d274e5ca9b1d1b6"
     },
     {
       "bytes": 594288,
       "path": "models/seed-43.safetensors",
-      "sha256": "6425edd9e7f7c6a412ab2c2ef57eb4c5f32706f39509ea84fc7042efd8cafe87"
+      "sha256": "3353585d9cdb65fe168acc980f8a520916660a238646b475da7789500ff49442"
     },
     {
       "bytes": 594288,
       "path": "models/seed-71.safetensors",
-      "sha256": "f9fc333581261fd4ed3581e26a614b3a24b9f882b1f891efdd421d8e59ac5fe3"
+      "sha256": "d4a25a65d46cdc753d9d82036b0133dca0b8bc26849ff75fae82a39cfa708111"
     }
   ],
-  "source_report_canonical_sha256": "77efd2c857e4f3cf9ea7061d7fe17d16b7f98308a6ea7a896be7d3213529ec6c",
-  "source_report_sha256": "2d8637f176e4ec2e2692638646e834beefca25ddae6365f7dfb5f324809b3f58",
+  "source_report_canonical_sha256": "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676",
+  "source_report_sha256": "62b6ef0b281f3c71afd8a500b6712650b891b176ec3122f61f0f10f1df7a11ec",
   "status": "rejected",
   "terminal_holdout_accessed": false,
   "trading_authority": false
