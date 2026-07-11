@@ -1,0 +1,205 @@
+{
+  "schema_version": "selective-event-discovery-design-v1",
+  "round": 12,
+  "design_revision": 2,
+  "design_sha256": "9c0e4f9bbe4e64086a5744cab2c8bc8c837ec878a5383dec292c5b757ca23d8f",
+  "status": "precommitted",
+  "purpose": "full_exact_bbo_history_event_level_distributional_discovery",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "supersession": {
+    "supersedes_design_path": "docs/model-research/action-value/round-012-design.json",
+    "supersedes_design_sha256": "1507e8e18fd1c356a89feaf85e2dfba0553dd11dfea64680360fa6106f190b76",
+    "reason": "legacy_manifests_triggered_an_unused_full_physical_partition_scan_before_mandatory_reimport",
+    "historical_data_certification_attempted": true,
+    "historical_data_certification_passed": false,
+    "model_feature_build_started": false,
+    "model_fit_started": false,
+    "role_labels_constructed": false,
+    "selection_labels_accessed": false,
+    "reserved_terminal_accessed": false
+  },
+  "change_control": {
+    "implementation_commit": "2216f2151082ca5832a59908564eedd864620edd",
+    "implementation_files_sha256": {
+      "pyproject.toml": "757d9177fc93899fa4a584ae05e58a090cc50ed2d448d70b8b1e96aab8c295b3",
+      "src/simple_ai_trading/lightgbm_backend.py": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead",
+      "src/simple_ai_trading/microstructure_features.py": "30d896d1c84e669a02e35ae0ee19afbcb0dd186f72a34161956cc03e1f4a1d11",
+      "src/simple_ai_trading/microstructure_model.py": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47",
+      "src/simple_ai_trading/microstructure_warehouse.py": "73c3ab636a536b5ebefacbf4d448dc42eef2d2229828e02d23dc83bfb1e5c4cb",
+      "tools/ablate_action_value_scores.py": "8b3bcc9864bb0a5e50e41026d39772e4067054ef3e996c205a4f33bbc878e54f",
+      "tools/run_action_value_discovery.py": "b677ed64cc5691893fef889f4c35690c5566fe3d63516ea013d34db7054cd298",
+      "tools/run_selective_event_discovery.py": "ae20c56318e484105c831d722b77e8d08275282fa2bb920ea4c1997d7529c9c6"
+    },
+    "fixed_dimensions": [
+      "official_binance_usdm_book_ticker_and_trade_archives",
+      "full_inventory_checksum_and_physical_partition_certification",
+      "one_second_causal_features_and_100ms_execution_quotes",
+      "750ms_total_latency",
+      "5bps_taker_fee_and_1bps_additional_slippage_per_side",
+      "five_second_decision_cadence",
+      "causal_volatility_scaled_cusum_events",
+      "average_label_uniqueness_weights",
+      "risk_profile_stop_take_and_l1_participation_limits",
+      "nonoverlapping_positions_and_one_times_leverage"
+    ],
+    "changed_dimensions": [
+      "296_day_exact_bbo_window",
+      "230_day_training_role",
+      "explicit_exit_time_purged_role_calendar",
+      "event_only_distributional_score_family",
+      "21_day_previously_untouched_selection",
+      "legacy_manifest_repair_skips_unusable_physical_scan"
+    ],
+    "round_11_evidence_mutable": false
+  },
+  "data": {
+    "provider": "binance",
+    "market_type": "futures",
+    "symbol": "BTCUSDT",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2024-03-06",
+    "roles": {
+      "train": {
+        "start_date": "2023-05-16",
+        "end_date": "2023-12-31",
+        "day_count": 230
+      },
+      "early_stop": {
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-10",
+        "day_count": 10
+      },
+      "calibration": {
+        "start_date": "2024-01-11",
+        "end_date": "2024-01-21",
+        "day_count": 11
+      },
+      "policy": {
+        "start_date": "2024-01-22",
+        "end_date": "2024-02-14",
+        "day_count": 24
+      },
+      "selection": {
+        "start_date": "2024-02-15",
+        "end_date": "2024-03-06",
+        "day_count": 21
+      }
+    },
+    "feature_clock": "one_second_causal_event_time",
+    "execution_clock": "official_100ms_bbo",
+    "full_history_inventory_required": true,
+    "checksum_verified_partitions_required": true,
+    "selection_dates_previously_untouched": true,
+    "selection_contaminated_after_run": true,
+    "all_window_dates_consumed_after_run": true,
+    "consumed_registry": "consumed-periods-through-round-011.json",
+    "consumed_registry_sha256": "ea6f1344c6a58e496f2f5f0f21711a05611d453db612b9b7bd043f43bf7fb898",
+    "window_selection_method": "maximum_exact_bbo_history_ending_before_reserved_terminal_interval"
+  },
+  "reserved_terminal": {
+    "start_date": "2024-03-07",
+    "end_date": "2024-03-14",
+    "day_count": 8,
+    "included_in_dataset": false,
+    "labels_constructed": false,
+    "access_allowed_in_round_12": false
+  },
+  "execution": {
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "trigger_execution_slippage_bps": 1.0,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "decision_cadence_seconds": 5,
+    "suppress_overlapping_positions": true,
+    "maker_fill_claim": false,
+    "leverage": 1.0
+  },
+  "training": {
+    "model_family": "causal_cusum_uniqueness_weighted_distributional_lgbm",
+    "feature_version": "l1-tape-causal-v7",
+    "cusum_volatility_multiplier": 1.0,
+    "cusum_minimum_threshold_bps": 1.0,
+    "score_methods": [
+      "event_direct_mean",
+      "event_upper_quantile",
+      "event_distributional_value"
+    ],
+    "compute_backend": "directml",
+    "reproducible_backend": true,
+    "seed": 20260712,
+    "evaluate_terminal": false
+  },
+  "risk_profiles": {
+    "conservative": {
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "max_l1_participation": 0.05,
+      "max_selection_drawdown_bps": 250.0
+    },
+    "regular": {
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "max_l1_participation": 0.1,
+      "max_selection_drawdown_bps": 500.0
+    },
+    "aggressive": {
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "max_l1_participation": 0.15,
+      "max_selection_drawdown_bps": 800.0
+    }
+  },
+  "horizon_seconds": [
+    300,
+    900,
+    1800
+  ],
+  "model_fit_count": 9,
+  "candidate_count": 27,
+  "selection": {
+    "primary_metric": "selection_total_net_bps_minus_risk_penalty_times_max_drawdown_bps",
+    "minimum_trades_per_selection_day": 5,
+    "positive_daily_bootstrap_lower_bound_required": true,
+    "mandatory_gates": [
+      "positive_policy_risk_utility",
+      "minimum_nonoverlapping_selection_trade_count",
+      "positive_after_cost_selection_risk_utility",
+      "selection_profit_factor_above_one",
+      "positive_block_bootstrap_daily_lower_bound",
+      "risk_profile_selection_drawdown_limit",
+      "directional_baseline_outperformance"
+    ],
+    "promotion_allowed": false,
+    "next_stage": "single_shot_reserved_terminal_evaluation_for_survivors_only"
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2110.14914",
+      "use": "selective_prediction_with_explicit_abstention"
+    },
+    {
+      "url": "https://arxiv.org/abs/1906.04404",
+      "use": "limit_order_book_return_quantile_regression"
+    },
+    {
+      "url": "https://arxiv.org/abs/2412.09631",
+      "use": "event_stream_representation_of_limit_order_book_dynamics"
+    },
+    {
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6094327",
+      "use": "overlapping_return_tail_risk_controls"
+    },
+    {
+      "url": "https://arxiv.org/abs/2602.03903",
+      "use": "regime_weighted_nonstationary_risk_calibration"
+    }
+  ]
+}

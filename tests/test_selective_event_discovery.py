@@ -21,7 +21,7 @@ def _tracked_round_twelve_design() -> Path:
         / "docs"
         / "model-research"
         / "action-value"
-        / "round-012-design.json"
+        / "round-012-design-v2.json"
     )
 
 
@@ -165,11 +165,14 @@ def test_round_twelve_design_pins_long_span_and_reserved_terminal() -> None:
     )
 
     assert design["design_sha256"] == (
-        "1507e8e18fd1c356a89feaf85e2dfba0553dd11dfea64680360fa6106f190b76"
+        "9c0e4f9bbe4e64086a5744cab2c8bc8c837ec878a5383dec292c5b757ca23d8f"
     )
     assert design["change_control"]["implementation_commit"] == (
-        "a932b417f83f7deb9938c1277fecc494ca3037de"
+        "2216f2151082ca5832a59908564eedd864620edd"
     )
+    assert design["design_revision"] == 2
+    assert design["supersession"]["model_fit_started"] is False
+    assert design["supersession"]["reserved_terminal_accessed"] is False
     assert design["data"]["roles"]["train"]["day_count"] == 230
     assert design["data"]["roles"]["selection"]["day_count"] == 21
     assert design["reserved_terminal"] == {
