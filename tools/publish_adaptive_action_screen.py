@@ -89,6 +89,10 @@ _PROGRESS_IDENTITIES = {
         "nested 15-second and 30-second expert-context ablation",
         "three-seed nested-context soft-expert outcome-mixture",
     ),
+    27: (
+        "300-second holding-horizon alignment ablation",
+        "three-seed 300-second nested-context outcome-mixture",
+    ),
 }
 
 
@@ -176,6 +180,12 @@ def _publication_narrative(
             "nested-context soft-expert outcome model abstained",
             "Separating 15-second and 30-second causal contexts improved the best out-of-sample long top-100 mean net return and reduced the least-negative threshold-selection loss, but all eight threshold candidates still lost under stress, every displayed ranked tail remained negative, and routing remained close to uniform.",
             "Further representation-only tuning is not justified; the next precommitted change must address the mismatch between short-lived microstructure information and the 900-second holding horizon without relaxing any execution or risk control.",
+        )
+    if round_number == 27:
+        return (
+            "300-second horizon outcome model abstained",
+            "The shorter lifecycle improved probability-of-profit discrimination and calibration metrics, but positive outcomes became rarer, every displayed ranked tail remained negative, and all eight threshold candidates failed after stress costs; the least-negative trace contained one losing trade.",
+            "The 300-second fixed horizon is rejected under the retained taker-cost model; the next precommitted change must improve executable action design or cost-aware target formation without weakening fees, slippage, latency, or risk controls.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
@@ -566,6 +576,18 @@ def _progress_rows(
         if row["role"] == "policy" and row["scenario"] == "stress"
     ]
     profiles = report["profile_results"]
+    dataset = report["dataset"]
+    if not isinstance(dataset, Mapping):
+        raise ValueError("adaptive action progress dataset is invalid")
+    barrier_summary = dataset.get("barrier_summary")
+    if not isinstance(barrier_summary, Mapping):
+        raise ValueError("adaptive action progress barrier summary is invalid")
+    barrier_spec = barrier_summary.get("spec")
+    if not isinstance(barrier_spec, Mapping):
+        raise ValueError("adaptive action progress barrier spec is invalid")
+    horizon_seconds = int(barrier_spec.get("horizon_seconds") or 0)
+    if horizon_seconds <= 0:
+        raise ValueError("adaptive action progress horizon is invalid")
     stage, best_model_id = _progress_identity(round_number)
     rows.append(
         {
@@ -573,7 +595,7 @@ def _progress_rows(
             "stage": stage,
             "periods": "2023-05-16..2023-07-06",
             "selection_contaminated": True,
-            "horizon_seconds": 900,
+            "horizon_seconds": horizon_seconds,
             "feature_set": (
                 "l1-tape-causal-v8" if round_number >= 19 else "l1-tape-causal-v7"
             ),

@@ -528,13 +528,13 @@ required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
   [`action-value/latest`](docs/model-research/action-value/latest/README.md):
-Round 26 gave two soft experts nested 15-second and 30-second causal contexts on
-229,001 valid event labels from 877,894 exact-BBO rows. The best policy-window
-top-100 mean improved to `-0.999418` bps and the least-negative calibration trace
-improved, but every displayed top-100/top-500 mean and all eight threshold
-candidates remained negative under stress. Routing entropy remained at
-`0.979-0.989`, so specialization was still weak. The model was rejected with
-zero simulated trades, no leverage, and no trading authority.
+Round 27 shortened the maximum holding horizon from 900 to 300 seconds on
+230,393 valid event labels from 878,025 exact-BBO rows. Stress ROC AUC increased
+to `0.700` in threshold selection and `0.682` out of sample, but positive outcomes
+became rarer and every displayed top-100/top-500 mean remained negative. All
+eight threshold candidates failed; the least-negative trace was one losing trade
+at `-1.224204` bps. The model was rejected with zero simulated trades, no
+leverage, and no trading authority.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
