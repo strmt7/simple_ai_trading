@@ -61,6 +61,8 @@ def test_ci_enforces_financial_terminology_audit() -> None:
 
     assert "python3 tools/audit_financial_terminology.py" in workflow
     assert "tools/audit_financial_terminology.py" in documentation
+    assert "env.CODECOV_TOKEN != ''" in workflow
+    assert "token: ${{ env.CODECOV_TOKEN }}" in workflow
 
 
 def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:

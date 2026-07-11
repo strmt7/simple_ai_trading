@@ -37,7 +37,9 @@ def test_round_nine_design_is_hash_bound_and_expands_to_twelve_candidates() -> N
     assert len(candidates) == 12
     assert candidates[0]["candidate_id"] == "conservative-h60"
     assert candidates[-1]["candidate_id"] == "aggressive-h900"
-    assert all(candidate["horizon_seconds"] in {60, 120, 300, 900} for candidate in candidates)
+    assert all(
+        candidate["horizon_seconds"] in {60, 120, 300, 900} for candidate in candidates
+    )
 
 
 def test_round_nine_design_rejects_post_commit_mutation(tmp_path) -> None:
@@ -94,7 +96,7 @@ def test_round_eleven_design_preserves_registry_and_split_calendar() -> None:
     assert len(candidates) == 12
     assert candidates[0]["candidate_id"] == "conservative-h300"
     assert candidates[-1]["candidate_id"] == "aggressive-h1800"
-    with pytest.raises(ValueError, match="implementation file drifted"):
+    with pytest.raises(ValueError, match="current design and model schemas"):
         load_discovery_design(_tracked_design(11), require_current=True)
 
 

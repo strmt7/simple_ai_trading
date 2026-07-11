@@ -38,7 +38,7 @@ _SUPPORTED_MODEL_SCHEMA_VERSIONS = frozenset(
     {"microstructure-action-value-v15", MICROSTRUCTURE_MODEL_SCHEMA_VERSION}
 )
 _SUPPORTED_FEATURE_VERSIONS = frozenset(
-    {"l1-tape-causal-v6", MICROSTRUCTURE_FEATURE_VERSION}
+    {"l1-tape-causal-v6", "l1-tape-causal-v7", MICROSTRUCTURE_FEATURE_VERSION}
 )
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _IMPLEMENTATION_FILES = (
@@ -164,7 +164,9 @@ def _validate_expected_split_days(
         output[name] = periods
         combined.extend(periods)
     if tuple(combined) != _utc_date_strings(start, end):
-        raise ValueError("action-value split calendar does not exactly partition the window")
+        raise ValueError(
+            "action-value split calendar does not exactly partition the window"
+        )
     return output
 
 
@@ -198,14 +200,18 @@ def load_discovery_design(
     try:
         payload = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError("action-value discovery design is not valid UTF-8 JSON") from exc
+        raise ValueError(
+            "action-value discovery design is not valid UTF-8 JSON"
+        ) from exc
     if not isinstance(payload, dict):
         raise ValueError("action-value discovery design must be a JSON object")
     expected_sha256 = str(payload.get("design_sha256") or "")
     canonical = dict(payload)
     canonical.pop("design_sha256", None)
     if expected_sha256 != _canonical_sha256(canonical):
-        raise ValueError("action-value discovery design digest does not match its payload")
+        raise ValueError(
+            "action-value discovery design digest does not match its payload"
+        )
     if payload.get("schema_version") not in _SUPPORTED_DESIGN_SCHEMA_VERSIONS:
         raise ValueError("action-value discovery design schema is unsupported")
     if (
@@ -247,20 +253,22 @@ def load_discovery_design(
     except (KeyError, ValueError) as exc:
         raise ValueError("action-value discovery date window is invalid") from exc
     if start > end or (end - start).days + 1 < 5:
-        raise ValueError("action-value discovery window must contain at least five UTC days")
+        raise ValueError(
+            "action-value discovery window must contain at least five UTC days"
+        )
     if payload.get("schema_version") == DESIGN_SCHEMA_VERSION:
         registry_name = str(data.get("consumed_registry") or "")
         if not registry_name or Path(registry_name).name != registry_name:
-            raise ValueError("action-value v2 consumed registry must be an adjacent file")
+            raise ValueError(
+                "action-value v2 consumed registry must be an adjacent file"
+            )
         consumed = _load_consumed_registry(
             target.parent / registry_name,
             str(data.get("consumed_registry_sha256") or ""),
         )
         expected_days = _validate_expected_split_days(data, start=start, end=end)
         preselection = set(
-            expected_days["train"]
-            + expected_days["tuning"]
-            + expected_days["policy"]
+            expected_days["train"] + expected_days["tuning"] + expected_days["policy"]
         )
         window_consumed = consumed.intersection(_utc_date_strings(start, end))
         if not window_consumed.issubset(preselection):
@@ -272,13 +280,17 @@ def load_discovery_design(
             or data.get("terminal_dates_previously_untouched") is not True
             or data.get("all_window_dates_consumed_after_run") is not True
         ):
-            raise ValueError("action-value v2 date-consumption declarations are invalid")
+            raise ValueError(
+                "action-value v2 date-consumption declarations are invalid"
+            )
     else:
         consumed = {str(value) for value in data.get("excluded_consumed_dates") or ()}
         cursor = start
         while cursor <= end:
             if cursor.isoformat() in consumed:
-                raise ValueError("action-value discovery window intersects consumed evidence")
+                raise ValueError(
+                    "action-value discovery window intersects consumed evidence"
+                )
             cursor += timedelta(days=1)
 
     if (
@@ -294,7 +306,9 @@ def load_discovery_design(
         or training.get("model_schema_version") != MICROSTRUCTURE_MODEL_SCHEMA_VERSION
         or training.get("feature_version") != MICROSTRUCTURE_FEATURE_VERSION
     ):
-        raise ValueError("action-value execution requires the current design and model schemas")
+        raise ValueError(
+            "action-value execution requires the current design and model schemas"
+        )
     if require_current:
         _validate_current_implementation(payload.get("change_control"))
     if payload.get("schema_version") == DESIGN_SCHEMA_VERSION:
@@ -305,9 +319,13 @@ def load_discovery_design(
             "calibration_each_class": _MINIMUM_CALIBRATION_CLASS_ROWS,
         }
         if support_minimums != expected_minimums:
-            raise ValueError("action-value class-support design drifted from the learner")
+            raise ValueError(
+                "action-value class-support design drifted from the learner"
+            )
     if tuple(risk_profiles) != _RISK_LEVELS:
-        raise ValueError("action-value discovery risk profiles are missing or out of order")
+        raise ValueError(
+            "action-value discovery risk profiles are missing or out of order"
+        )
     for risk_level in _RISK_LEVELS:
         profile = risk_profiles[risk_level]
         if not isinstance(profile, Mapping):
@@ -382,7 +400,9 @@ def _date_bounds(design: Mapping[str, object]) -> tuple[int, int]:
     assert isinstance(data, Mapping)
     start = datetime.strptime(str(data["start_date"]), "%Y-%m-%d").replace(tzinfo=UTC)
     end = datetime.strptime(str(data["end_date"]), "%Y-%m-%d").replace(tzinfo=UTC)
-    return int(start.timestamp() * 1_000), int((end + timedelta(days=1)).timestamp() * 1_000) - 1
+    return int(start.timestamp() * 1_000), int(
+        (end + timedelta(days=1)).timestamp() * 1_000
+    ) - 1
 
 
 def _split_calendar_evidence(
@@ -434,9 +454,13 @@ def _result_from_artifact(
 ) -> dict[str, object]:
     metrics = artifact.selection_metrics
     risk_level = str(candidate["risk_level"])
-    research_score = metrics.total_net_bps - _RISK_PENALTY[risk_level] * metrics.max_drawdown_bps
+    research_score = (
+        metrics.total_net_bps - _RISK_PENALTY[risk_level] * metrics.max_drawdown_bps
+    )
     source = artifact.dataset_summary.get("source_evidence")
-    certificate = source.get("corpus_certificate") if isinstance(source, Mapping) else None
+    certificate = (
+        source.get("corpus_certificate") if isinstance(source, Mapping) else None
+    )
     return {
         **dict(candidate),
         "status": artifact.status,
@@ -515,7 +539,10 @@ def run_discovery(
         )
 
     def progress(phase: str, complete: int, total: int | None) -> None:
-        print(f"action-value-discovery {phase}: {complete}/{total if total is not None else '?'}", flush=True)
+        print(
+            f"action-value-discovery {phase}: {complete}/{total if total is not None else '?'}",
+            flush=True,
+        )
 
     persist_status("initializing")
     with MicrostructureWarehouse(
@@ -535,7 +562,9 @@ def run_discovery(
         )
         by_horizon: dict[int, list[dict[str, object]]] = {}
         for candidate in candidates:
-            by_horizon.setdefault(int(candidate["horizon_seconds"]), []).append(candidate)
+            by_horizon.setdefault(int(candidate["horizon_seconds"]), []).append(
+                candidate
+            )
         for horizon, horizon_candidates in by_horizon.items():
             persist_status(f"build-h{horizon}")
             base_dataset = build_executable_microstructure_dataset(
@@ -570,13 +599,19 @@ def run_discovery(
                             isinstance(prior, dict)
                             and prior.get("design_sha256") == design_sha256
                             and prior.get("candidate_id") == candidate_id
-                            and prior.get("artifact_sha256") == _file_sha256(artifact_path)
+                            and prior.get("artifact_sha256")
+                            == _file_sha256(artifact_path)
                             and isinstance(prior.get("result"), Mapping)
                         ):
                             completed.append(dict(prior["result"]))
                             persist_status("resumed", candidate_id)
                             continue
-                    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError):
+                    except (
+                        OSError,
+                        UnicodeDecodeError,
+                        json.JSONDecodeError,
+                        KeyError,
+                    ):
                         pass
                 persist_status("training", candidate_id)
                 try:
@@ -591,14 +626,16 @@ def run_discovery(
                             np.asarray(base_dataset.short_l1_participation) <= limit
                         ),
                     )
-                    candidate_dataset, path_evidence = apply_path_aware_lifecycle_targets(
-                        warehouse,
-                        candidate_dataset,
-                        stop_loss_bps=float(candidate["stop_loss_bps"]),
-                        take_profit_bps=float(candidate["take_profit_bps"]),
-                        trigger_execution_slippage_bps=float(
-                            execution["trigger_execution_slippage_bps"]
-                        ),
+                    candidate_dataset, path_evidence = (
+                        apply_path_aware_lifecycle_targets(
+                            warehouse,
+                            candidate_dataset,
+                            stop_loss_bps=float(candidate["stop_loss_bps"]),
+                            take_profit_bps=float(candidate["take_profit_bps"]),
+                            trigger_execution_slippage_bps=float(
+                                execution["trigger_execution_slippage_bps"]
+                            ),
+                        )
                     )
                     artifact = train_microstructure_action_value_model(
                         candidate_dataset,
