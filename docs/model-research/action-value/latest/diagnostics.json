@@ -1,0 +1,2583 @@
+{
+  "artifact_class": "consumed_selection_diagnostic_no_trading_authority",
+  "candidates": [
+    {
+      "candidate_id": "conservative-h300",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7336,
+            "non_profitable_rows": 6438,
+            "profitable_ratio": 0.12241003271537623,
+            "profitable_rows": 898
+          },
+          "early_stop": {
+            "eligible_rows": 7673,
+            "non_profitable_rows": 7631,
+            "profitable_ratio": 0.00547373908510361,
+            "profitable_rows": 42
+          },
+          "policy": {
+            "eligible_rows": 15133,
+            "non_profitable_rows": 14453,
+            "profitable_ratio": 0.04493491046058283,
+            "profitable_rows": 680
+          },
+          "selection": {
+            "eligible_rows": 15831,
+            "non_profitable_rows": 15782,
+            "profitable_ratio": 0.003095192975806961,
+            "profitable_rows": 49
+          },
+          "train": {
+            "eligible_rows": 45962,
+            "non_profitable_rows": 44145,
+            "profitable_ratio": 0.03953265741264523,
+            "profitable_rows": 1817
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7338,
+            "non_profitable_rows": 6715,
+            "profitable_ratio": 0.08490051785227583,
+            "profitable_rows": 623
+          },
+          "early_stop": {
+            "eligible_rows": 7665,
+            "non_profitable_rows": 7647,
+            "profitable_ratio": 0.0023483365949119373,
+            "profitable_rows": 18
+          },
+          "policy": {
+            "eligible_rows": 15143,
+            "non_profitable_rows": 14337,
+            "profitable_ratio": 0.05322591296308525,
+            "profitable_rows": 806
+          },
+          "selection": {
+            "eligible_rows": 15807,
+            "non_profitable_rows": 15799,
+            "profitable_ratio": 0.0005061048902385019,
+            "profitable_rows": 8
+          },
+          "train": {
+            "eligible_rows": 45951,
+            "non_profitable_rows": 44157,
+            "profitable_ratio": 0.039041587778285564,
+            "profitable_rows": 1794
+          }
+        }
+      },
+      "dataset_rows": 120222,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 300,
+      "max_l1_participation": 0.05,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 117583,
+        "long_mean_holding_seconds": 297.8307235780473,
+        "long_stop_count": 2082,
+        "long_take_count": 557,
+        "path_resolution_ms": 1000,
+        "rows": 120222,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 117044,
+        "short_mean_holding_seconds": 297.4508409442531,
+        "short_stop_count": 2293,
+        "short_take_count": 885,
+        "stop_loss_bps": 25.0,
+        "take_profit_bps": 40.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "conservative",
+      "split": {
+        "policy_rows": 17158,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 360750,
+        "purged_rows": 268,
+        "selection_rows": 17060,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 17117,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694044435000,
+        "train_rows": 51498,
+        "tuning_calibration_rows": 8561,
+        "tuning_calibration_start_ms": 1694087970000,
+        "tuning_early_stop_rows": 8488,
+        "tuning_internal_purged_rows": 72,
+        "tuning_rows": 17121,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "regular-h300",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7772,
+            "non_profitable_rows": 6830,
+            "profitable_ratio": 0.12120432321152856,
+            "profitable_rows": 942
+          },
+          "early_stop": {
+            "eligible_rows": 8014,
+            "non_profitable_rows": 7970,
+            "profitable_ratio": 0.005490391814324931,
+            "profitable_rows": 44
+          },
+          "policy": {
+            "eligible_rows": 15897,
+            "non_profitable_rows": 15178,
+            "profitable_ratio": 0.045228659495502296,
+            "profitable_rows": 719
+          },
+          "selection": {
+            "eligible_rows": 16398,
+            "non_profitable_rows": 16346,
+            "profitable_ratio": 0.0031711184290767165,
+            "profitable_rows": 52
+          },
+          "train": {
+            "eligible_rows": 48745,
+            "non_profitable_rows": 46776,
+            "profitable_ratio": 0.040393886552466916,
+            "profitable_rows": 1969
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7777,
+            "non_profitable_rows": 7098,
+            "profitable_ratio": 0.08730873087308731,
+            "profitable_rows": 679
+          },
+          "early_stop": {
+            "eligible_rows": 8013,
+            "non_profitable_rows": 7995,
+            "profitable_ratio": 0.0022463496817671283,
+            "profitable_rows": 18
+          },
+          "policy": {
+            "eligible_rows": 15906,
+            "non_profitable_rows": 15041,
+            "profitable_ratio": 0.054381994216019115,
+            "profitable_rows": 865
+          },
+          "selection": {
+            "eligible_rows": 16380,
+            "non_profitable_rows": 16367,
+            "profitable_ratio": 0.0007936507936507937,
+            "profitable_rows": 13
+          },
+          "train": {
+            "eligible_rows": 48742,
+            "non_profitable_rows": 46805,
+            "profitable_ratio": 0.03973985474539411,
+            "profitable_rows": 1937
+          }
+        }
+      },
+      "dataset_rows": 120222,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 300,
+      "max_l1_participation": 0.1,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 118844,
+        "long_mean_holding_seconds": 299.27520753273114,
+        "long_stop_count": 1124,
+        "long_take_count": 254,
+        "path_resolution_ms": 1000,
+        "rows": 120222,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 119152,
+        "short_mean_holding_seconds": 299.6704596496482,
+        "short_stop_count": 812,
+        "short_take_count": 258,
+        "stop_loss_bps": 35.0,
+        "take_profit_bps": 60.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "regular",
+      "split": {
+        "policy_rows": 17158,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 360750,
+        "purged_rows": 268,
+        "selection_rows": 17060,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 17117,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694044435000,
+        "train_rows": 51498,
+        "tuning_calibration_rows": 8561,
+        "tuning_calibration_start_ms": 1694087970000,
+        "tuning_early_stop_rows": 8488,
+        "tuning_internal_purged_rows": 72,
+        "tuning_rows": 17121,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "aggressive-h300",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7957,
+            "non_profitable_rows": 7012,
+            "profitable_ratio": 0.11876335302249591,
+            "profitable_rows": 945
+          },
+          "early_stop": {
+            "eligible_rows": 8145,
+            "non_profitable_rows": 8099,
+            "profitable_ratio": 0.005647636586863106,
+            "profitable_rows": 46
+          },
+          "policy": {
+            "eligible_rows": 16213,
+            "non_profitable_rows": 15473,
+            "profitable_ratio": 0.0456423857398384,
+            "profitable_rows": 740
+          },
+          "selection": {
+            "eligible_rows": 16608,
+            "non_profitable_rows": 16555,
+            "profitable_ratio": 0.003191233140655106,
+            "profitable_rows": 53
+          },
+          "train": {
+            "eligible_rows": 49481,
+            "non_profitable_rows": 47452,
+            "profitable_ratio": 0.04100563852791981,
+            "profitable_rows": 2029
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7964,
+            "non_profitable_rows": 7241,
+            "profitable_ratio": 0.09078352586639879,
+            "profitable_rows": 723
+          },
+          "early_stop": {
+            "eligible_rows": 8145,
+            "non_profitable_rows": 8126,
+            "profitable_ratio": 0.002332719459791283,
+            "profitable_rows": 19
+          },
+          "policy": {
+            "eligible_rows": 16215,
+            "non_profitable_rows": 15326,
+            "profitable_ratio": 0.05482577860006167,
+            "profitable_rows": 889
+          },
+          "selection": {
+            "eligible_rows": 16596,
+            "non_profitable_rows": 16583,
+            "profitable_ratio": 0.0007833212822366836,
+            "profitable_rows": 13
+          },
+          "train": {
+            "eligible_rows": 49483,
+            "non_profitable_rows": 47497,
+            "profitable_ratio": 0.04013499585716307,
+            "profitable_rows": 1986
+          }
+        }
+      },
+      "dataset_rows": 120222,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 300,
+      "max_l1_participation": 0.15,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 119669,
+        "long_mean_holding_seconds": 300.20250661276634,
+        "long_stop_count": 441,
+        "long_take_count": 112,
+        "path_resolution_ms": 1000,
+        "rows": 120222,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 119781,
+        "short_mean_holding_seconds": 300.2814355941508,
+        "short_stop_count": 359,
+        "short_take_count": 82,
+        "stop_loss_bps": 50.0,
+        "take_profit_bps": 90.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "aggressive",
+      "split": {
+        "policy_rows": 17158,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 360750,
+        "purged_rows": 268,
+        "selection_rows": 17060,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 17117,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694044435000,
+        "train_rows": 51498,
+        "tuning_calibration_rows": 8561,
+        "tuning_calibration_start_ms": 1694087970000,
+        "tuning_early_stop_rows": 8488,
+        "tuning_internal_purged_rows": 72,
+        "tuning_rows": 17121,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "conservative-h600",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7311,
+            "non_profitable_rows": 5783,
+            "profitable_ratio": 0.20900013678019422,
+            "profitable_rows": 1528
+          },
+          "early_stop": {
+            "eligible_rows": 7587,
+            "non_profitable_rows": 7496,
+            "profitable_ratio": 0.01199420060630025,
+            "profitable_rows": 91
+          },
+          "policy": {
+            "eligible_rows": 15063,
+            "non_profitable_rows": 13793,
+            "profitable_ratio": 0.08431255394011818,
+            "profitable_rows": 1270
+          },
+          "selection": {
+            "eligible_rows": 15779,
+            "non_profitable_rows": 15667,
+            "profitable_ratio": 0.007098041700994993,
+            "profitable_rows": 112
+          },
+          "train": {
+            "eligible_rows": 45877,
+            "non_profitable_rows": 42243,
+            "profitable_ratio": 0.07921180547987008,
+            "profitable_rows": 3634
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7330,
+            "non_profitable_rows": 6375,
+            "profitable_ratio": 0.13028649386084584,
+            "profitable_rows": 955
+          },
+          "early_stop": {
+            "eligible_rows": 7588,
+            "non_profitable_rows": 7533,
+            "profitable_ratio": 0.007248286768581971,
+            "profitable_rows": 55
+          },
+          "policy": {
+            "eligible_rows": 15074,
+            "non_profitable_rows": 13621,
+            "profitable_ratio": 0.09639113705718455,
+            "profitable_rows": 1453
+          },
+          "selection": {
+            "eligible_rows": 15791,
+            "non_profitable_rows": 15745,
+            "profitable_ratio": 0.0029130517383319614,
+            "profitable_rows": 46
+          },
+          "train": {
+            "eligible_rows": 45873,
+            "non_profitable_rows": 41953,
+            "profitable_ratio": 0.08545331676585355,
+            "profitable_rows": 3920
+          }
+        }
+      },
+      "dataset_rows": 120162,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 600,
+      "max_l1_participation": 0.05,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 114357,
+        "long_mean_holding_seconds": 587.3689664785873,
+        "long_stop_count": 4419,
+        "long_take_count": 1386,
+        "path_resolution_ms": 1000,
+        "rows": 120162,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 113267,
+        "short_mean_holding_seconds": 584.7803735790017,
+        "short_stop_count": 5060,
+        "short_take_count": 1835,
+        "stop_loss_bps": 25.0,
+        "take_profit_bps": 40.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "conservative",
+      "split": {
+        "policy_rows": 17098,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 660750,
+        "purged_rows": 508,
+        "selection_rows": 17000,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 17057,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694044135000,
+        "train_rows": 51438,
+        "tuning_calibration_rows": 8531,
+        "tuning_calibration_start_ms": 1694087820000,
+        "tuning_early_stop_rows": 8398,
+        "tuning_internal_purged_rows": 132,
+        "tuning_rows": 17061,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "regular-h600",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7750,
+            "non_profitable_rows": 6169,
+            "profitable_ratio": 0.204,
+            "profitable_rows": 1581
+          },
+          "early_stop": {
+            "eligible_rows": 7927,
+            "non_profitable_rows": 7833,
+            "profitable_ratio": 0.011858206130944873,
+            "profitable_rows": 94
+          },
+          "policy": {
+            "eligible_rows": 15842,
+            "non_profitable_rows": 14494,
+            "profitable_ratio": 0.08509026638050751,
+            "profitable_rows": 1348
+          },
+          "selection": {
+            "eligible_rows": 16338,
+            "non_profitable_rows": 16219,
+            "profitable_ratio": 0.00728363324764353,
+            "profitable_rows": 119
+          },
+          "train": {
+            "eligible_rows": 48677,
+            "non_profitable_rows": 44778,
+            "profitable_ratio": 0.08009943094274503,
+            "profitable_rows": 3899
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7758,
+            "non_profitable_rows": 6724,
+            "profitable_ratio": 0.13328177365300334,
+            "profitable_rows": 1034
+          },
+          "early_stop": {
+            "eligible_rows": 7926,
+            "non_profitable_rows": 7870,
+            "profitable_ratio": 0.0070653545293969215,
+            "profitable_rows": 56
+          },
+          "policy": {
+            "eligible_rows": 15841,
+            "non_profitable_rows": 14257,
+            "profitable_ratio": 0.09999368726721798,
+            "profitable_rows": 1584
+          },
+          "selection": {
+            "eligible_rows": 16342,
+            "non_profitable_rows": 16296,
+            "profitable_ratio": 0.00281483294578387,
+            "profitable_rows": 46
+          },
+          "train": {
+            "eligible_rows": 48684,
+            "non_profitable_rows": 44468,
+            "profitable_ratio": 0.08659929340234984,
+            "profitable_rows": 4216
+          }
+        }
+      },
+      "dataset_rows": 120162,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 600,
+      "max_l1_participation": 0.1,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 117257,
+        "long_mean_holding_seconds": 593.9208464406385,
+        "long_stop_count": 2424,
+        "long_take_count": 481,
+        "path_resolution_ms": 1000,
+        "rows": 120162,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 117308,
+        "short_mean_holding_seconds": 594.780404786871,
+        "short_stop_count": 2177,
+        "short_take_count": 677,
+        "stop_loss_bps": 35.0,
+        "take_profit_bps": 60.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "regular",
+      "split": {
+        "policy_rows": 17098,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 660750,
+        "purged_rows": 508,
+        "selection_rows": 17000,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 17057,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694044135000,
+        "train_rows": 51438,
+        "tuning_calibration_rows": 8531,
+        "tuning_calibration_start_ms": 1694087820000,
+        "tuning_early_stop_rows": 8398,
+        "tuning_internal_purged_rows": 132,
+        "tuning_rows": 17061,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "aggressive-h600",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7934,
+            "non_profitable_rows": 6315,
+            "profitable_ratio": 0.20405848248046382,
+            "profitable_rows": 1619
+          },
+          "early_stop": {
+            "eligible_rows": 8054,
+            "non_profitable_rows": 7957,
+            "profitable_ratio": 0.012043704991308666,
+            "profitable_rows": 97
+          },
+          "policy": {
+            "eligible_rows": 16154,
+            "non_profitable_rows": 14777,
+            "profitable_ratio": 0.08524204531385415,
+            "profitable_rows": 1377
+          },
+          "selection": {
+            "eligible_rows": 16549,
+            "non_profitable_rows": 16428,
+            "profitable_ratio": 0.007311620037464499,
+            "profitable_rows": 121
+          },
+          "train": {
+            "eligible_rows": 49424,
+            "non_profitable_rows": 45442,
+            "profitable_ratio": 0.0805681450307543,
+            "profitable_rows": 3982
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7940,
+            "non_profitable_rows": 6815,
+            "profitable_ratio": 0.14168765743073047,
+            "profitable_rows": 1125
+          },
+          "early_stop": {
+            "eligible_rows": 8061,
+            "non_profitable_rows": 8003,
+            "profitable_ratio": 0.007195137079766778,
+            "profitable_rows": 58
+          },
+          "policy": {
+            "eligible_rows": 16152,
+            "non_profitable_rows": 14524,
+            "profitable_ratio": 0.10079247152055473,
+            "profitable_rows": 1628
+          },
+          "selection": {
+            "eligible_rows": 16549,
+            "non_profitable_rows": 16501,
+            "profitable_ratio": 0.002900477370233851,
+            "profitable_rows": 48
+          },
+          "train": {
+            "eligible_rows": 49417,
+            "non_profitable_rows": 45085,
+            "profitable_ratio": 0.08766214055891697,
+            "profitable_rows": 4332
+          }
+        }
+      },
+      "dataset_rows": 120162,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 600,
+      "max_l1_participation": 0.15,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 118734,
+        "long_mean_holding_seconds": 597.7209059436427,
+        "long_stop_count": 1123,
+        "long_take_count": 305,
+        "path_resolution_ms": 1000,
+        "rows": 120162,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 119200,
+        "short_mean_holding_seconds": 598.5167856726753,
+        "short_stop_count": 741,
+        "short_take_count": 221,
+        "stop_loss_bps": 50.0,
+        "take_profit_bps": 90.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "aggressive",
+      "split": {
+        "policy_rows": 17098,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 660750,
+        "purged_rows": 508,
+        "selection_rows": 17000,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 17057,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694044135000,
+        "train_rows": 51438,
+        "tuning_calibration_rows": 8531,
+        "tuning_calibration_start_ms": 1694087820000,
+        "tuning_early_stop_rows": 8398,
+        "tuning_internal_purged_rows": 132,
+        "tuning_rows": 17061,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "conservative-h900",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7284,
+            "non_profitable_rows": 5194,
+            "profitable_ratio": 0.2869302580999451,
+            "profitable_rows": 2090
+          },
+          "early_stop": {
+            "eligible_rows": 7488,
+            "non_profitable_rows": 7296,
+            "profitable_ratio": 0.02564102564102564,
+            "profitable_rows": 192
+          },
+          "policy": {
+            "eligible_rows": 15032,
+            "non_profitable_rows": 13354,
+            "profitable_ratio": 0.11162852581160192,
+            "profitable_rows": 1678
+          },
+          "selection": {
+            "eligible_rows": 15726,
+            "non_profitable_rows": 15579,
+            "profitable_ratio": 0.009347577260587561,
+            "profitable_rows": 147
+          },
+          "train": {
+            "eligible_rows": 45868,
+            "non_profitable_rows": 40814,
+            "profitable_ratio": 0.11018575041423215,
+            "profitable_rows": 5054
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7288,
+            "non_profitable_rows": 6079,
+            "profitable_ratio": 0.16588913282107573,
+            "profitable_rows": 1209
+          },
+          "early_stop": {
+            "eligible_rows": 7507,
+            "non_profitable_rows": 7401,
+            "profitable_ratio": 0.014120154522445718,
+            "profitable_rows": 106
+          },
+          "policy": {
+            "eligible_rows": 15015,
+            "non_profitable_rows": 13195,
+            "profitable_ratio": 0.12121212121212122,
+            "profitable_rows": 1820
+          },
+          "selection": {
+            "eligible_rows": 15715,
+            "non_profitable_rows": 15562,
+            "profitable_ratio": 0.009735921094495704,
+            "profitable_rows": 153
+          },
+          "train": {
+            "eligible_rows": 45832,
+            "non_profitable_rows": 40276,
+            "profitable_ratio": 0.12122534473730145,
+            "profitable_rows": 5556
+          }
+        }
+      },
+      "dataset_rows": 120102,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 900,
+      "max_l1_participation": 0.05,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 110875,
+        "long_mean_holding_seconds": 868.6776760586835,
+        "long_stop_count": 6872,
+        "long_take_count": 2355,
+        "path_resolution_ms": 1000,
+        "rows": 120102,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 109764,
+        "short_mean_holding_seconds": 863.293417261994,
+        "short_stop_count": 7581,
+        "short_take_count": 2757,
+        "stop_loss_bps": 25.0,
+        "take_profit_bps": 40.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "conservative",
+      "split": {
+        "policy_rows": 17038,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 960750,
+        "purged_rows": 748,
+        "selection_rows": 16940,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 16997,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694043835000,
+        "train_rows": 51378,
+        "tuning_calibration_rows": 8501,
+        "tuning_calibration_start_ms": 1694087670000,
+        "tuning_early_stop_rows": 8308,
+        "tuning_internal_purged_rows": 192,
+        "tuning_rows": 17001,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "regular-h900",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7721,
+            "non_profitable_rows": 5595,
+            "profitable_ratio": 0.2753529335578293,
+            "profitable_rows": 2126
+          },
+          "early_stop": {
+            "eligible_rows": 7835,
+            "non_profitable_rows": 7634,
+            "profitable_ratio": 0.025654116145500956,
+            "profitable_rows": 201
+          },
+          "policy": {
+            "eligible_rows": 15786,
+            "non_profitable_rows": 14029,
+            "profitable_ratio": 0.11130115292030913,
+            "profitable_rows": 1757
+          },
+          "selection": {
+            "eligible_rows": 16280,
+            "non_profitable_rows": 16123,
+            "profitable_ratio": 0.009643734643734643,
+            "profitable_rows": 157
+          },
+          "train": {
+            "eligible_rows": 48644,
+            "non_profitable_rows": 43291,
+            "profitable_ratio": 0.11004440424307212,
+            "profitable_rows": 5353
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7724,
+            "non_profitable_rows": 6404,
+            "profitable_ratio": 0.17089590885551528,
+            "profitable_rows": 1320
+          },
+          "early_stop": {
+            "eligible_rows": 7845,
+            "non_profitable_rows": 7729,
+            "profitable_ratio": 0.01478648820905035,
+            "profitable_rows": 116
+          },
+          "policy": {
+            "eligible_rows": 15786,
+            "non_profitable_rows": 13786,
+            "profitable_ratio": 0.12669453946534903,
+            "profitable_rows": 2000
+          },
+          "selection": {
+            "eligible_rows": 16282,
+            "non_profitable_rows": 16121,
+            "profitable_ratio": 0.009888220120378332,
+            "profitable_rows": 161
+          },
+          "train": {
+            "eligible_rows": 48637,
+            "non_profitable_rows": 42692,
+            "profitable_ratio": 0.12223204556202068,
+            "profitable_rows": 5945
+          }
+        }
+      },
+      "dataset_rows": 120102,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 900,
+      "max_l1_participation": 0.1,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 115500,
+        "long_mean_holding_seconds": 884.6637691295732,
+        "long_stop_count": 3808,
+        "long_take_count": 794,
+        "path_resolution_ms": 1000,
+        "rows": 120102,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 115490,
+        "short_mean_holding_seconds": 885.4066834857038,
+        "short_stop_count": 3549,
+        "short_take_count": 1063,
+        "stop_loss_bps": 35.0,
+        "take_profit_bps": 60.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "regular",
+      "split": {
+        "policy_rows": 17038,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 960750,
+        "purged_rows": 748,
+        "selection_rows": 16940,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 16997,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694043835000,
+        "train_rows": 51378,
+        "tuning_calibration_rows": 8501,
+        "tuning_calibration_start_ms": 1694087670000,
+        "tuning_early_stop_rows": 8308,
+        "tuning_internal_purged_rows": 192,
+        "tuning_rows": 17001,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "terminal_accessed": false
+    },
+    {
+      "candidate_id": "aggressive-h900",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7905,
+            "non_profitable_rows": 5739,
+            "profitable_ratio": 0.27400379506641365,
+            "profitable_rows": 2166
+          },
+          "early_stop": {
+            "eligible_rows": 7965,
+            "non_profitable_rows": 7761,
+            "profitable_ratio": 0.025612052730696798,
+            "profitable_rows": 204
+          },
+          "policy": {
+            "eligible_rows": 16100,
+            "non_profitable_rows": 14301,
+            "profitable_ratio": 0.1117391304347826,
+            "profitable_rows": 1799
+          },
+          "selection": {
+            "eligible_rows": 16487,
+            "non_profitable_rows": 16328,
+            "profitable_ratio": 0.00964396190938315,
+            "profitable_rows": 159
+          },
+          "train": {
+            "eligible_rows": 49372,
+            "non_profitable_rows": 43916,
+            "profitable_ratio": 0.11050798023171028,
+            "profitable_rows": 5456
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7911,
+            "non_profitable_rows": 6475,
+            "profitable_ratio": 0.18151940336240677,
+            "profitable_rows": 1436
+          },
+          "early_stop": {
+            "eligible_rows": 7978,
+            "non_profitable_rows": 7861,
+            "profitable_ratio": 0.014665329656555528,
+            "profitable_rows": 117
+          },
+          "policy": {
+            "eligible_rows": 16093,
+            "non_profitable_rows": 14026,
+            "profitable_ratio": 0.12844093705337725,
+            "profitable_rows": 2067
+          },
+          "selection": {
+            "eligible_rows": 16492,
+            "non_profitable_rows": 16329,
+            "profitable_ratio": 0.009883579917535775,
+            "profitable_rows": 163
+          },
+          "train": {
+            "eligible_rows": 49369,
+            "non_profitable_rows": 43259,
+            "profitable_ratio": 0.12376187486074257,
+            "profitable_rows": 6110
+          }
+        }
+      },
+      "dataset_rows": 120102,
+      "error": "ValueError: long hurdle classifier has insufficient class support",
+      "fit_status": "fit_error",
+      "horizon_seconds": 900,
+      "max_l1_participation": 0.15,
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 117906,
+        "long_mean_holding_seconds": 893.2044637058501,
+        "long_stop_count": 1717,
+        "long_take_count": 479,
+        "path_resolution_ms": 1000,
+        "rows": 120102,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 118361,
+        "short_mean_holding_seconds": 895.1755986578075,
+        "short_stop_count": 1312,
+        "short_take_count": 429,
+        "stop_loss_bps": 50.0,
+        "take_profit_bps": 90.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "aggressive",
+      "split": {
+        "policy_rows": 17038,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 960750,
+        "purged_rows": 748,
+        "selection_rows": 16940,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 16997,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694043835000,
+        "train_rows": 51378,
+        "tuning_calibration_rows": 8501,
+        "tuning_calibration_start_ms": 1694087670000,
+        "tuning_early_stop_rows": 8308,
+        "tuning_internal_purged_rows": 192,
+        "tuning_rows": 17001,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "terminal_accessed": false
+    },
+    {
+      "artifact_sha256": "f8b77c7302b0519a2179a107909ce4c88cb20092c04d3e552e20b66550c48c65",
+      "candidate_id": "conservative-h1800",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7203,
+            "non_profitable_rows": 4169,
+            "profitable_ratio": 0.4212133833125087,
+            "profitable_rows": 3034
+          },
+          "early_stop": {
+            "eligible_rows": 7254,
+            "non_profitable_rows": 6778,
+            "profitable_ratio": 0.06561896884477529,
+            "profitable_rows": 476
+          },
+          "policy": {
+            "eligible_rows": 14880,
+            "non_profitable_rows": 12082,
+            "profitable_ratio": 0.18803763440860216,
+            "profitable_rows": 2798
+          },
+          "selection": {
+            "eligible_rows": 15563,
+            "non_profitable_rows": 15282,
+            "profitable_ratio": 0.01805564479856069,
+            "profitable_rows": 281
+          },
+          "train": {
+            "eligible_rows": 45685,
+            "non_profitable_rows": 38113,
+            "profitable_ratio": 0.16574367954470834,
+            "profitable_rows": 7572
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7217,
+            "non_profitable_rows": 6024,
+            "profitable_ratio": 0.1653041429957046,
+            "profitable_rows": 1193
+          },
+          "early_stop": {
+            "eligible_rows": 7270,
+            "non_profitable_rows": 6750,
+            "profitable_ratio": 0.07152682255845942,
+            "profitable_rows": 520
+          },
+          "policy": {
+            "eligible_rows": 14840,
+            "non_profitable_rows": 11867,
+            "profitable_ratio": 0.20033692722371968,
+            "profitable_rows": 2973
+          },
+          "selection": {
+            "eligible_rows": 15588,
+            "non_profitable_rows": 15236,
+            "profitable_ratio": 0.02258147292789325,
+            "profitable_rows": 352
+          },
+          "train": {
+            "eligible_rows": 45703,
+            "non_profitable_rows": 37402,
+            "profitable_ratio": 0.1816292147123821,
+            "profitable_rows": 8301
+          }
+        }
+      },
+      "dataset_rows": 119922,
+      "fit_status": "trained",
+      "horizon_seconds": 1800,
+      "max_l1_participation": 0.05,
+      "model_diagnostics": {
+        "artifact_status": "rejected",
+        "policy_metrics": {
+          "active_days": 0,
+          "best_trade_bps": 0.0,
+          "long_trades": 0,
+          "max_drawdown_bps": 0.0,
+          "mean_net_bps": 0.0,
+          "median_net_bps": 0.0,
+          "profit_factor": null,
+          "short_trades": 0,
+          "total_net_bps": 0.0,
+          "trades": 0,
+          "trades_per_active_day": 0.0,
+          "win_rate": 0.0,
+          "worst_trade_bps": 0.0
+        },
+        "probability_calibration": {
+          "long": [
+            0.05,
+            -0.2848221821883981
+          ],
+          "short": [
+            0.05,
+            -1.6680712556190902
+          ]
+        },
+        "segments": {
+          "policy": {
+            "best_predicted_side": {
+              "eligible_rows": 16703,
+              "positive_predicted_edge_rows": 0,
+              "predicted_edge_actual_spearman_ic": -0.058087716122204834,
+              "top_score_rows": [
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -295.6198285662957,
+                  "mean_actual_net_bps": -14.780991428314787,
+                  "mean_predicted_edge_bps": -0.187206622114572,
+                  "requested_rows": 20,
+                  "rows": 20
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -879.3470476091551,
+                  "mean_actual_net_bps": -17.586940952183102,
+                  "mean_predicted_edge_bps": -0.3791664083265679,
+                  "requested_rows": 50,
+                  "rows": 50
+                },
+                {
+                  "actual_profitable_ratio": 0.05,
+                  "actual_total_net_bps": -1570.9726383648185,
+                  "mean_actual_net_bps": -15.709726383648185,
+                  "mean_predicted_edge_bps": -0.749538976816394,
+                  "requested_rows": 100,
+                  "rows": 100
+                },
+                {
+                  "actual_profitable_ratio": 0.124,
+                  "actual_total_net_bps": -3282.9844703102904,
+                  "mean_actual_net_bps": -13.13193788124116,
+                  "mean_predicted_edge_bps": -1.4265972914302651,
+                  "requested_rows": 250,
+                  "rows": 250
+                },
+                {
+                  "actual_profitable_ratio": 0.204,
+                  "actual_total_net_bps": -4919.846382112682,
+                  "mean_actual_net_bps": -9.839692764225363,
+                  "mean_predicted_edge_bps": -1.928047927351808,
+                  "requested_rows": 500,
+                  "rows": 500
+                },
+                {
+                  "actual_profitable_ratio": 0.248,
+                  "actual_total_net_bps": -10169.184058796933,
+                  "mean_actual_net_bps": -10.169184058796933,
+                  "mean_predicted_edge_bps": -2.458146744126356,
+                  "requested_rows": 1000,
+                  "rows": 1000
+                }
+              ]
+            },
+            "overlap_suppression_applied": false,
+            "sides": {
+              "long": {
+                "eligible_rows": 14880,
+                "mean_profitable_probability": 0.40424540722964414,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": -0.05748784814115912,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -295.6198285662957,
+                    "mean_actual_net_bps": -14.780991428314787,
+                    "mean_predicted_edge_bps": -0.187206622114572,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -879.3470476091551,
+                    "mean_actual_net_bps": -17.586940952183102,
+                    "mean_predicted_edge_bps": -0.3791664083265679,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.05,
+                    "actual_total_net_bps": -1570.9726383648185,
+                    "mean_actual_net_bps": -15.709726383648185,
+                    "mean_predicted_edge_bps": -0.749538976816394,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.124,
+                    "actual_total_net_bps": -3282.9844703102904,
+                    "mean_actual_net_bps": -13.13193788124116,
+                    "mean_predicted_edge_bps": -1.4265972914302651,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.204,
+                    "actual_total_net_bps": -4919.846382112682,
+                    "mean_actual_net_bps": -9.839692764225363,
+                    "mean_predicted_edge_bps": -1.928047927351808,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.248,
+                    "actual_total_net_bps": -10169.184058796933,
+                    "mean_actual_net_bps": -10.169184058796933,
+                    "mean_predicted_edge_bps": -2.458146744126356,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              },
+              "short": {
+                "eligible_rows": 14840,
+                "mean_profitable_probability": 0.14990352842657473,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": -0.09909158917664906,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -438.1482808970574,
+                    "mean_actual_net_bps": -21.90741404485287,
+                    "mean_predicted_edge_bps": -6.21540106823429,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.26,
+                    "actual_total_net_bps": -454.82655035179465,
+                    "mean_actual_net_bps": -9.096531007035892,
+                    "mean_predicted_edge_bps": -6.324865829217678,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.24,
+                    "actual_total_net_bps": -630.6777039810597,
+                    "mean_actual_net_bps": -6.306777039810597,
+                    "mean_predicted_edge_bps": -6.440420801930463,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.108,
+                    "actual_total_net_bps": -2976.428510189898,
+                    "mean_actual_net_bps": -11.905714040759593,
+                    "mean_predicted_edge_bps": -6.682194179241799,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.144,
+                    "actual_total_net_bps": -5311.576898816897,
+                    "mean_actual_net_bps": -10.623153797633794,
+                    "mean_predicted_edge_bps": -6.916031343098339,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.162,
+                    "actual_total_net_bps": -11386.479797613998,
+                    "mean_actual_net_bps": -11.386479797613998,
+                    "mean_predicted_edge_bps": -7.195033138178562,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              }
+            },
+            "trade_claim": false
+          },
+          "selection": {
+            "best_predicted_side": {
+              "eligible_rows": 16696,
+              "positive_predicted_edge_rows": 0,
+              "predicted_edge_actual_spearman_ic": 0.015668533958571266,
+              "top_score_rows": [
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -278.65355331596015,
+                  "mean_actual_net_bps": -13.932677665798007,
+                  "mean_predicted_edge_bps": -3.234650681030884,
+                  "requested_rows": 20,
+                  "rows": 20
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -602.3355903782473,
+                  "mean_actual_net_bps": -12.046711807564945,
+                  "mean_predicted_edge_bps": -3.3435239408830455,
+                  "requested_rows": 50,
+                  "rows": 50
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -1150.8556833459447,
+                  "mean_actual_net_bps": -11.508556833459448,
+                  "mean_predicted_edge_bps": -3.425927264243689,
+                  "requested_rows": 100,
+                  "rows": 100
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -2939.2837215681193,
+                  "mean_actual_net_bps": -11.757134886272476,
+                  "mean_predicted_edge_bps": -3.59984738684492,
+                  "requested_rows": 250,
+                  "rows": 250
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -5604.316722145205,
+                  "mean_actual_net_bps": -11.20863344429041,
+                  "mean_predicted_edge_bps": -4.049397430677118,
+                  "requested_rows": 500,
+                  "rows": 500
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -12054.432236008677,
+                  "mean_actual_net_bps": -12.054432236008678,
+                  "mean_predicted_edge_bps": -4.501879563079838,
+                  "requested_rows": 1000,
+                  "rows": 1000
+                }
+              ]
+            },
+            "overlap_suppression_applied": false,
+            "sides": {
+              "long": {
+                "eligible_rows": 15563,
+                "mean_profitable_probability": 0.40401041411872757,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": -0.09198933058934392,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -278.65355331596015,
+                    "mean_actual_net_bps": -13.932677665798007,
+                    "mean_predicted_edge_bps": -3.234650681030884,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -602.3355903782473,
+                    "mean_actual_net_bps": -12.046711807564945,
+                    "mean_predicted_edge_bps": -3.3435239408830455,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -1150.8556833459447,
+                    "mean_actual_net_bps": -11.508556833459448,
+                    "mean_predicted_edge_bps": -3.425927264243689,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -2939.2837215681193,
+                    "mean_actual_net_bps": -11.757134886272476,
+                    "mean_predicted_edge_bps": -3.59984738684492,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -5604.316722145205,
+                    "mean_actual_net_bps": -11.20863344429041,
+                    "mean_predicted_edge_bps": -4.049397430677118,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -12054.432236008677,
+                    "mean_actual_net_bps": -12.054432236008678,
+                    "mean_predicted_edge_bps": -4.501879563079838,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              },
+              "short": {
+                "eligible_rows": 15588,
+                "mean_profitable_probability": 0.14546105948320118,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": 0.03983823586292912,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -176.4111167683748,
+                    "mean_actual_net_bps": -8.82055583841874,
+                    "mean_predicted_edge_bps": -5.732869573389353,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -605.0645152469593,
+                    "mean_actual_net_bps": -12.101290304939187,
+                    "mean_predicted_edge_bps": -5.890949519167432,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -1201.9418157967764,
+                    "mean_actual_net_bps": -12.019418157967763,
+                    "mean_predicted_edge_bps": -6.047704479684561,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -2623.4867639867857,
+                    "mean_actual_net_bps": -10.493947055947142,
+                    "mean_predicted_edge_bps": -6.279434156917092,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -5770.1308912746845,
+                    "mean_actual_net_bps": -11.540261782549369,
+                    "mean_predicted_edge_bps": -6.648040579583739,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.004,
+                    "actual_total_net_bps": -13484.493342606693,
+                    "mean_actual_net_bps": -13.484493342606692,
+                    "mean_predicted_edge_bps": -7.095997167916644,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              }
+            },
+            "trade_claim": false
+          }
+        },
+        "selection_auc": {
+          "long": 0.4642138239996721,
+          "short": 0.5612155682414854
+        },
+        "selection_brier": {
+          "long": 0.16682723958710977,
+          "short": 0.03716185669881247
+        },
+        "selection_metrics": {
+          "active_days": 0,
+          "best_trade_bps": 0.0,
+          "long_trades": 0,
+          "max_drawdown_bps": 0.0,
+          "mean_net_bps": 0.0,
+          "median_net_bps": 0.0,
+          "profit_factor": null,
+          "short_trades": 0,
+          "total_net_bps": 0.0,
+          "trades": 0,
+          "trades_per_active_day": 0.0,
+          "win_rate": 0.0,
+          "worst_trade_bps": 0.0
+        },
+        "threshold_policy": {
+          "minimum_predicted_edge_bps": 1000000000000.0,
+          "minimum_profitable_probability": 1.0,
+          "selection_utility_bps": 0.0
+        }
+      },
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 101124,
+        "long_mean_holding_seconds": 1663.0731058521374,
+        "long_stop_count": 13253,
+        "long_take_count": 5545,
+        "path_resolution_ms": 1000,
+        "rows": 119922,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 99589,
+        "short_mean_holding_seconds": 1646.4894493921047,
+        "short_stop_count": 14615,
+        "short_take_count": 5718,
+        "stop_loss_bps": 25.0,
+        "take_profit_bps": 40.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "conservative",
+      "split": {
+        "policy_rows": 16858,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 1860750,
+        "purged_rows": 1454,
+        "selection_rows": 16774,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 16817,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694042935000,
+        "train_rows": 51198,
+        "tuning_calibration_rows": 8411,
+        "tuning_calibration_start_ms": 1694087220000,
+        "tuning_early_stop_rows": 8038,
+        "tuning_internal_purged_rows": 372,
+        "tuning_rows": 16821,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "terminal_accessed": false
+    },
+    {
+      "artifact_sha256": "f5d171bf6d395ec27eae15f3c9d1cb5edab10d666ec050bed4ddbefc12cd7fa0",
+      "candidate_id": "regular-h1800",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7640,
+            "non_profitable_rows": 4686,
+            "profitable_ratio": 0.3866492146596859,
+            "profitable_rows": 2954
+          },
+          "early_stop": {
+            "eligible_rows": 7585,
+            "non_profitable_rows": 7084,
+            "profitable_ratio": 0.06605141727092946,
+            "profitable_rows": 501
+          },
+          "policy": {
+            "eligible_rows": 15629,
+            "non_profitable_rows": 12779,
+            "profitable_ratio": 0.18235331755070702,
+            "profitable_rows": 2850
+          },
+          "selection": {
+            "eligible_rows": 16112,
+            "non_profitable_rows": 15813,
+            "profitable_ratio": 0.01855759682224429,
+            "profitable_rows": 299
+          },
+          "train": {
+            "eligible_rows": 48466,
+            "non_profitable_rows": 40592,
+            "profitable_ratio": 0.16246440803862502,
+            "profitable_rows": 7874
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7639,
+            "non_profitable_rows": 6319,
+            "profitable_ratio": 0.17279748658201335,
+            "profitable_rows": 1320
+          },
+          "early_stop": {
+            "eligible_rows": 7593,
+            "non_profitable_rows": 7040,
+            "profitable_ratio": 0.07283023837745292,
+            "profitable_rows": 553
+          },
+          "policy": {
+            "eligible_rows": 15610,
+            "non_profitable_rows": 12364,
+            "profitable_ratio": 0.2079436258808456,
+            "profitable_rows": 3246
+          },
+          "selection": {
+            "eligible_rows": 16130,
+            "non_profitable_rows": 15762,
+            "profitable_ratio": 0.02281463112213267,
+            "profitable_rows": 368
+          },
+          "train": {
+            "eligible_rows": 48464,
+            "non_profitable_rows": 39770,
+            "profitable_ratio": 0.1793908880818752,
+            "profitable_rows": 8694
+          }
+        }
+      },
+      "dataset_rows": 119922,
+      "fit_status": "trained",
+      "horizon_seconds": 1800,
+      "max_l1_participation": 0.1,
+      "model_diagnostics": {
+        "artifact_status": "rejected",
+        "policy_metrics": {
+          "active_days": 0,
+          "best_trade_bps": 0.0,
+          "long_trades": 0,
+          "max_drawdown_bps": 0.0,
+          "mean_net_bps": 0.0,
+          "median_net_bps": 0.0,
+          "profit_factor": null,
+          "short_trades": 0,
+          "total_net_bps": 0.0,
+          "trades": 0,
+          "trades_per_active_day": 0.0,
+          "win_rate": 0.0,
+          "worst_trade_bps": 0.0
+        },
+        "probability_calibration": {
+          "long": [
+            0.05,
+            -0.5184108625891819
+          ],
+          "short": [
+            0.742963153612611,
+            -0.6463836499907732
+          ]
+        },
+        "segments": {
+          "policy": {
+            "best_predicted_side": {
+              "eligible_rows": 16796,
+              "positive_predicted_edge_rows": 78,
+              "predicted_edge_actual_spearman_ic": -0.007801557360057045,
+              "top_score_rows": [
+                {
+                  "actual_profitable_ratio": 0.1,
+                  "actual_total_net_bps": -139.79039817715196,
+                  "mean_actual_net_bps": -6.989519908857598,
+                  "mean_predicted_edge_bps": 0.9972461774099104,
+                  "requested_rows": 20,
+                  "rows": 20
+                },
+                {
+                  "actual_profitable_ratio": 0.2,
+                  "actual_total_net_bps": -260.28162289382004,
+                  "mean_actual_net_bps": -5.205632457876401,
+                  "mean_predicted_edge_bps": 0.6833548330540775,
+                  "requested_rows": 50,
+                  "rows": 50
+                },
+                {
+                  "actual_profitable_ratio": 0.13,
+                  "actual_total_net_bps": -503.81594750910733,
+                  "mean_actual_net_bps": -5.038159475091073,
+                  "mean_predicted_edge_bps": 0.3414940658244088,
+                  "requested_rows": 100,
+                  "rows": 100
+                },
+                {
+                  "actual_profitable_ratio": 0.064,
+                  "actual_total_net_bps": -1545.8359696219195,
+                  "mean_actual_net_bps": -6.183343878487678,
+                  "mean_predicted_edge_bps": -0.259764176943469,
+                  "requested_rows": 250,
+                  "rows": 250
+                },
+                {
+                  "actual_profitable_ratio": 0.088,
+                  "actual_total_net_bps": -4393.98817827015,
+                  "mean_actual_net_bps": -8.7879763565403,
+                  "mean_predicted_edge_bps": -0.993215434355096,
+                  "requested_rows": 500,
+                  "rows": 500
+                },
+                {
+                  "actual_profitable_ratio": 0.064,
+                  "actual_total_net_bps": -14122.100535951333,
+                  "mean_actual_net_bps": -14.122100535951333,
+                  "mean_predicted_edge_bps": -2.2590222528633648,
+                  "requested_rows": 1000,
+                  "rows": 1000
+                }
+              ]
+            },
+            "overlap_suppression_applied": false,
+            "sides": {
+              "long": {
+                "eligible_rows": 15629,
+                "mean_profitable_probability": 0.3511888057109029,
+                "positive_predicted_edge_rows": 28,
+                "predicted_edge_actual_spearman_ic": -0.002834158049342391,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.4,
+                    "actual_total_net_bps": -57.41619987740853,
+                    "mean_actual_net_bps": -2.8708099938704263,
+                    "mean_predicted_edge_bps": 0.5455598973471341,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.22,
+                    "actual_total_net_bps": -222.58395583900085,
+                    "mean_actual_net_bps": -4.451679116780017,
+                    "mean_predicted_edge_bps": 0.07777801445995493,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.11,
+                    "actual_total_net_bps": -646.2698771703383,
+                    "mean_actual_net_bps": -6.4626987717033835,
+                    "mean_predicted_edge_bps": -0.3383131723924913,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.156,
+                    "actual_total_net_bps": -2451.216829149323,
+                    "mean_actual_net_bps": -9.804867316597292,
+                    "mean_predicted_edge_bps": -1.1737567250973133,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.094,
+                    "actual_total_net_bps": -8331.387722589512,
+                    "mean_actual_net_bps": -16.662775445179026,
+                    "mean_predicted_edge_bps": -2.224348908458979,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.062,
+                    "actual_total_net_bps": -16739.886231784876,
+                    "mean_actual_net_bps": -16.739886231784876,
+                    "mean_predicted_edge_bps": -3.3473583281699226,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              },
+              "short": {
+                "eligible_rows": 15610,
+                "mean_profitable_probability": 0.1648214104895056,
+                "positive_predicted_edge_rows": 50,
+                "predicted_edge_actual_spearman_ic": -0.17522309651501194,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -178.7603960202024,
+                    "mean_actual_net_bps": -8.93801980101012,
+                    "mean_predicted_edge_bps": 0.9284957945288548,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.06,
+                    "actual_total_net_bps": -279.6103653803049,
+                    "mean_actual_net_bps": -5.592207307606099,
+                    "mean_predicted_edge_bps": 0.5044486540754601,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.05,
+                    "actual_total_net_bps": -563.8534175866841,
+                    "mean_actual_net_bps": -5.638534175866841,
+                    "mean_predicted_edge_bps": 0.08239580389889685,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.02,
+                    "actual_total_net_bps": -1924.2994786163283,
+                    "mean_actual_net_bps": -7.697197914465313,
+                    "mean_predicted_edge_bps": -0.8163050449052967,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.048,
+                    "actual_total_net_bps": -4923.848711916236,
+                    "mean_actual_net_bps": -9.847697423832473,
+                    "mean_predicted_edge_bps": -2.3793054480705034,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.066,
+                    "actual_total_net_bps": -12339.76940295856,
+                    "mean_actual_net_bps": -12.33976940295856,
+                    "mean_predicted_edge_bps": -4.120018302049187,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              }
+            },
+            "trade_claim": false
+          },
+          "selection": {
+            "best_predicted_side": {
+              "eligible_rows": 16745,
+              "positive_predicted_edge_rows": 143,
+              "predicted_edge_actual_spearman_ic": 0.007210179535815198,
+              "top_score_rows": [
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -344.0228521173156,
+                  "mean_actual_net_bps": -17.20114260586578,
+                  "mean_predicted_edge_bps": 2.5628234331628397,
+                  "requested_rows": 20,
+                  "rows": 20
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -819.4237922361096,
+                  "mean_actual_net_bps": -16.388475844722194,
+                  "mean_predicted_edge_bps": 2.208835367086166,
+                  "requested_rows": 50,
+                  "rows": 50
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -1553.8961981293187,
+                  "mean_actual_net_bps": -15.538961981293188,
+                  "mean_predicted_edge_bps": 1.8337835827237836,
+                  "requested_rows": 100,
+                  "rows": 100
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -4792.8048727642135,
+                  "mean_actual_net_bps": -19.171219491056853,
+                  "mean_predicted_edge_bps": 0.3953789072785845,
+                  "requested_rows": 250,
+                  "rows": 250
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -10513.357705854885,
+                  "mean_actual_net_bps": -21.02671541170977,
+                  "mean_predicted_edge_bps": -1.043311299807619,
+                  "requested_rows": 500,
+                  "rows": 500
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -19220.46977510657,
+                  "mean_actual_net_bps": -19.22046977510657,
+                  "mean_predicted_edge_bps": -2.749798999457303,
+                  "requested_rows": 1000,
+                  "rows": 1000
+                }
+              ]
+            },
+            "overlap_suppression_applied": false,
+            "sides": {
+              "long": {
+                "eligible_rows": 16112,
+                "mean_profitable_probability": 0.3529059590056526,
+                "positive_predicted_edge_rows": 26,
+                "predicted_edge_actual_spearman_ic": -0.06683167870712295,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -405.27721875831327,
+                    "mean_actual_net_bps": -20.263860937915663,
+                    "mean_predicted_edge_bps": 1.528258398799844,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -864.278012367809,
+                    "mean_actual_net_bps": -17.28556024735618,
+                    "mean_predicted_edge_bps": -1.1246163727114635,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -1513.8205619002288,
+                    "mean_actual_net_bps": -15.138205619002287,
+                    "mean_predicted_edge_bps": -2.735693208134792,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -3741.049871474958,
+                    "mean_actual_net_bps": -14.964199485899831,
+                    "mean_predicted_edge_bps": -3.878890853150876,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -7981.957734712759,
+                    "mean_actual_net_bps": -15.963915469425517,
+                    "mean_predicted_edge_bps": -4.469040100178856,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -13281.01784595532,
+                    "mean_actual_net_bps": -13.28101784595532,
+                    "mean_predicted_edge_bps": -5.1082345506561575,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              },
+              "short": {
+                "eligible_rows": 16130,
+                "mean_profitable_probability": 0.15797549262735322,
+                "positive_predicted_edge_rows": 117,
+                "predicted_edge_actual_spearman_ic": -0.0243272694889257,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -326.9185095800596,
+                    "mean_actual_net_bps": -16.34592547900298,
+                    "mean_predicted_edge_bps": 2.4188246153279063,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -799.805588717448,
+                    "mean_actual_net_bps": -15.996111774348961,
+                    "mean_predicted_edge_bps": 2.0830419834543528,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -1507.6247881192737,
+                    "mean_actual_net_bps": -15.076247881192737,
+                    "mean_predicted_edge_bps": 1.689659460147779,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -4770.391873116266,
+                    "mean_actual_net_bps": -19.081567492465062,
+                    "mean_predicted_edge_bps": 0.05498763131121621,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -10599.667251839615,
+                    "mean_actual_net_bps": -21.199334503679232,
+                    "mean_predicted_edge_bps": -1.2989192619296963,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.01,
+                    "actual_total_net_bps": -17405.776105766196,
+                    "mean_actual_net_bps": -17.405776105766197,
+                    "mean_predicted_edge_bps": -3.2283726615631396,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              }
+            },
+            "trade_claim": false
+          }
+        },
+        "selection_auc": {
+          "long": 0.6062700411392599,
+          "short": 0.42438525098889457
+        },
+        "selection_brier": {
+          "long": 0.13002762805543255,
+          "short": 0.04416261245857776
+        },
+        "selection_metrics": {
+          "active_days": 0,
+          "best_trade_bps": 0.0,
+          "long_trades": 0,
+          "max_drawdown_bps": 0.0,
+          "mean_net_bps": 0.0,
+          "median_net_bps": 0.0,
+          "profit_factor": null,
+          "short_trades": 0,
+          "total_net_bps": 0.0,
+          "trades": 0,
+          "trades_per_active_day": 0.0,
+          "win_rate": 0.0,
+          "worst_trade_bps": 0.0
+        },
+        "threshold_policy": {
+          "minimum_predicted_edge_bps": 1000000000000.0,
+          "minimum_profitable_probability": 1.0,
+          "selection_utility_bps": 0.0
+        }
+      },
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 109982,
+        "long_mean_holding_seconds": 1730.150051700272,
+        "long_stop_count": 7502,
+        "long_take_count": 2438,
+        "path_resolution_ms": 1000,
+        "rows": 119922,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 109638,
+        "short_mean_holding_seconds": 1729.8104059305215,
+        "short_stop_count": 7957,
+        "short_take_count": 2327,
+        "stop_loss_bps": 35.0,
+        "take_profit_bps": 60.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "regular",
+      "split": {
+        "policy_rows": 16858,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 1860750,
+        "purged_rows": 1454,
+        "selection_rows": 16774,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 16817,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694042935000,
+        "train_rows": 51198,
+        "tuning_calibration_rows": 8411,
+        "tuning_calibration_start_ms": 1694087220000,
+        "tuning_early_stop_rows": 8038,
+        "tuning_internal_purged_rows": 372,
+        "tuning_rows": 16821,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "terminal_accessed": false
+    },
+    {
+      "artifact_sha256": "ea8a7272366535cc7f22ab391ef056d4c77821f95edac33e631e52bdc6a81202",
+      "candidate_id": "aggressive-h1800",
+      "class_support": {
+        "long": {
+          "calibration": {
+            "eligible_rows": 7821,
+            "non_profitable_rows": 4816,
+            "profitable_ratio": 0.3842219665004475,
+            "profitable_rows": 3005
+          },
+          "early_stop": {
+            "eligible_rows": 7710,
+            "non_profitable_rows": 7199,
+            "profitable_ratio": 0.06627756160830091,
+            "profitable_rows": 511
+          },
+          "policy": {
+            "eligible_rows": 15931,
+            "non_profitable_rows": 13015,
+            "profitable_ratio": 0.18303935722804596,
+            "profitable_rows": 2916
+          },
+          "selection": {
+            "eligible_rows": 16325,
+            "non_profitable_rows": 16021,
+            "profitable_ratio": 0.01862174578866769,
+            "profitable_rows": 304
+          },
+          "train": {
+            "eligible_rows": 49208,
+            "non_profitable_rows": 41353,
+            "profitable_ratio": 0.15962851568850595,
+            "profitable_rows": 7855
+          }
+        },
+        "short": {
+          "calibration": {
+            "eligible_rows": 7826,
+            "non_profitable_rows": 6270,
+            "profitable_ratio": 0.19882443138257092,
+            "profitable_rows": 1556
+          },
+          "early_stop": {
+            "eligible_rows": 7719,
+            "non_profitable_rows": 7155,
+            "profitable_ratio": 0.07306645938593082,
+            "profitable_rows": 564
+          },
+          "policy": {
+            "eligible_rows": 15918,
+            "non_profitable_rows": 12569,
+            "profitable_ratio": 0.21039075260711146,
+            "profitable_rows": 3349
+          },
+          "selection": {
+            "eligible_rows": 16334,
+            "non_profitable_rows": 15961,
+            "profitable_ratio": 0.022835802620301212,
+            "profitable_rows": 373
+          },
+          "train": {
+            "eligible_rows": 49194,
+            "non_profitable_rows": 40335,
+            "profitable_ratio": 0.1800829369435297,
+            "profitable_rows": 8859
+          }
+        }
+      },
+      "dataset_rows": 119922,
+      "fit_status": "trained",
+      "horizon_seconds": 1800,
+      "max_l1_participation": 0.15,
+      "model_diagnostics": {
+        "artifact_status": "rejected",
+        "policy_metrics": {
+          "active_days": 0,
+          "best_trade_bps": 0.0,
+          "long_trades": 0,
+          "max_drawdown_bps": 0.0,
+          "mean_net_bps": 0.0,
+          "median_net_bps": 0.0,
+          "profit_factor": null,
+          "short_trades": 0,
+          "total_net_bps": 0.0,
+          "trades": 0,
+          "trades_per_active_day": 0.0,
+          "win_rate": 0.0,
+          "worst_trade_bps": 0.0
+        },
+        "probability_calibration": {
+          "long": [
+            0.05,
+            -0.390789394822199
+          ],
+          "short": [
+            1.8058188836188593,
+            1.3188697027580387
+          ]
+        },
+        "segments": {
+          "policy": {
+            "best_predicted_side": {
+              "eligible_rows": 16821,
+              "positive_predicted_edge_rows": 80,
+              "predicted_edge_actual_spearman_ic": -0.04825462547781277,
+              "top_score_rows": [
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -314.52427204969126,
+                  "mean_actual_net_bps": -15.726213602484563,
+                  "mean_predicted_edge_bps": 5.052076713510707,
+                  "requested_rows": 20,
+                  "rows": 20
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -712.4906730290335,
+                  "mean_actual_net_bps": -14.24981346058067,
+                  "mean_predicted_edge_bps": 4.365696258605591,
+                  "requested_rows": 50,
+                  "rows": 50
+                },
+                {
+                  "actual_profitable_ratio": 0.27,
+                  "actual_total_net_bps": -388.1905644073834,
+                  "mean_actual_net_bps": -3.881905644073834,
+                  "mean_predicted_edge_bps": 2.7419563462582754,
+                  "requested_rows": 100,
+                  "rows": 100
+                },
+                {
+                  "actual_profitable_ratio": 0.504,
+                  "actual_total_net_bps": 585.6484385403085,
+                  "mean_actual_net_bps": 2.342593754161234,
+                  "mean_predicted_edge_bps": -0.5367670367045704,
+                  "requested_rows": 250,
+                  "rows": 250
+                },
+                {
+                  "actual_profitable_ratio": 0.378,
+                  "actual_total_net_bps": -3071.7540354542275,
+                  "mean_actual_net_bps": -6.143508070908455,
+                  "mean_predicted_edge_bps": -2.483852070274393,
+                  "requested_rows": 500,
+                  "rows": 500
+                },
+                {
+                  "actual_profitable_ratio": 0.254,
+                  "actual_total_net_bps": -11382.904954450481,
+                  "mean_actual_net_bps": -11.382904954450481,
+                  "mean_predicted_edge_bps": -3.803887431722205,
+                  "requested_rows": 1000,
+                  "rows": 1000
+                }
+              ]
+            },
+            "overlap_suppression_applied": false,
+            "sides": {
+              "long": {
+                "eligible_rows": 15931,
+                "mean_profitable_probability": 0.38078423566357156,
+                "positive_predicted_edge_rows": 80,
+                "predicted_edge_actual_spearman_ic": 0.03731727791807616,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -314.52427204969126,
+                    "mean_actual_net_bps": -15.726213602484563,
+                    "mean_predicted_edge_bps": 5.052076713510707,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -712.4906730290335,
+                    "mean_actual_net_bps": -14.24981346058067,
+                    "mean_predicted_edge_bps": 4.365696258605591,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.27,
+                    "actual_total_net_bps": -388.1905644073834,
+                    "mean_actual_net_bps": -3.881905644073834,
+                    "mean_predicted_edge_bps": 2.7419563462582754,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.504,
+                    "actual_total_net_bps": 600.1266216059073,
+                    "mean_actual_net_bps": 2.4005064864236294,
+                    "mean_predicted_edge_bps": -0.5407734408892364,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.362,
+                    "actual_total_net_bps": -2964.4684037183097,
+                    "mean_actual_net_bps": -5.928936807436619,
+                    "mean_predicted_edge_bps": -2.513942201941916,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.262,
+                    "actual_total_net_bps": -9359.310615810922,
+                    "mean_actual_net_bps": -9.359310615810923,
+                    "mean_predicted_edge_bps": -3.936125684010255,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              },
+              "short": {
+                "eligible_rows": 15918,
+                "mean_profitable_probability": 0.20332042763240932,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": -0.08879606159102613,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.2,
+                    "actual_total_net_bps": -457.69753698949444,
+                    "mean_actual_net_bps": -22.884876849474722,
+                    "mean_predicted_edge_bps": -4.20998775833989,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.28,
+                    "actual_total_net_bps": -1070.6533442234204,
+                    "mean_actual_net_bps": -21.413066884468407,
+                    "mean_predicted_edge_bps": -4.506985824816577,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.27,
+                    "actual_total_net_bps": -2405.6360855928037,
+                    "mean_actual_net_bps": -24.056360855928038,
+                    "mean_predicted_edge_bps": -4.723255121120122,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.204,
+                    "actual_total_net_bps": -5014.444752582019,
+                    "mean_actual_net_bps": -20.057779010328076,
+                    "mean_predicted_edge_bps": -5.051486892363507,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.196,
+                    "actual_total_net_bps": -8776.775541744384,
+                    "mean_actual_net_bps": -17.553551083488767,
+                    "mean_predicted_edge_bps": -5.3158866884279705,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.214,
+                    "actual_total_net_bps": -15410.865684713881,
+                    "mean_actual_net_bps": -15.410865684713881,
+                    "mean_predicted_edge_bps": -5.657607348425892,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              }
+            },
+            "trade_claim": false
+          },
+          "selection": {
+            "best_predicted_side": {
+              "eligible_rows": 16759,
+              "positive_predicted_edge_rows": 0,
+              "predicted_edge_actual_spearman_ic": -0.03699649836107199,
+              "top_score_rows": [
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -612.0658664824629,
+                  "mean_actual_net_bps": -30.603293324123143,
+                  "mean_predicted_edge_bps": -3.2257677296730476,
+                  "requested_rows": 20,
+                  "rows": 20
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -1734.2580135949895,
+                  "mean_actual_net_bps": -34.68516027189979,
+                  "mean_predicted_edge_bps": -3.488831658652141,
+                  "requested_rows": 50,
+                  "rows": 50
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -2701.880605174293,
+                  "mean_actual_net_bps": -27.01880605174293,
+                  "mean_predicted_edge_bps": -3.7137763184334194,
+                  "requested_rows": 100,
+                  "rows": 100
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -5629.262571891699,
+                  "mean_actual_net_bps": -22.517050287566796,
+                  "mean_predicted_edge_bps": -4.105260512073217,
+                  "requested_rows": 250,
+                  "rows": 250
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -9083.708860136707,
+                  "mean_actual_net_bps": -18.167417720273413,
+                  "mean_predicted_edge_bps": -4.639265921284064,
+                  "requested_rows": 500,
+                  "rows": 500
+                },
+                {
+                  "actual_profitable_ratio": 0.0,
+                  "actual_total_net_bps": -16321.711036536743,
+                  "mean_actual_net_bps": -16.321711036536744,
+                  "mean_predicted_edge_bps": -5.131744768422472,
+                  "requested_rows": 1000,
+                  "rows": 1000
+                }
+              ]
+            },
+            "overlap_suppression_applied": false,
+            "sides": {
+              "long": {
+                "eligible_rows": 16325,
+                "mean_profitable_probability": 0.3822353065433091,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": -0.17391216031819456,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -256.8338038763259,
+                    "mean_actual_net_bps": -12.841690193816294,
+                    "mean_predicted_edge_bps": -3.5906952159459626,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -638.7640120544384,
+                    "mean_actual_net_bps": -12.775280241088767,
+                    "mean_predicted_edge_bps": -3.8677407091856075,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -1246.0351702542325,
+                    "mean_actual_net_bps": -12.460351702542326,
+                    "mean_predicted_edge_bps": -4.168966686450331,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -3302.7600961275493,
+                    "mean_actual_net_bps": -13.211040384510197,
+                    "mean_predicted_edge_bps": -4.822125799303906,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -7384.412605768871,
+                    "mean_actual_net_bps": -14.768825211537742,
+                    "mean_predicted_edge_bps": -5.222732178035009,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -14448.777473709099,
+                    "mean_actual_net_bps": -14.448777473709098,
+                    "mean_predicted_edge_bps": -5.619180174163986,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              },
+              "short": {
+                "eligible_rows": 16334,
+                "mean_profitable_probability": 0.2033124327327126,
+                "positive_predicted_edge_rows": 0,
+                "predicted_edge_actual_spearman_ic": 0.06540129863283961,
+                "top_score_rows": [
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -720.4751496220084,
+                    "mean_actual_net_bps": -36.02375748110042,
+                    "mean_predicted_edge_bps": -3.5016691463210514,
+                    "requested_rows": 20,
+                    "rows": 20
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -1817.7476820251732,
+                    "mean_actual_net_bps": -36.35495364050346,
+                    "mean_predicted_edge_bps": -3.615552838731803,
+                    "requested_rows": 50,
+                    "rows": 50
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -3171.025104027206,
+                    "mean_actual_net_bps": -31.71025104027206,
+                    "mean_predicted_edge_bps": -3.846077785270479,
+                    "requested_rows": 100,
+                    "rows": 100
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -5766.873250491872,
+                    "mean_actual_net_bps": -23.067493001967488,
+                    "mean_predicted_edge_bps": -4.463792820693694,
+                    "requested_rows": 250,
+                    "rows": 250
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -8770.447957207478,
+                    "mean_actual_net_bps": -17.540895914414957,
+                    "mean_predicted_edge_bps": -5.043604853562746,
+                    "requested_rows": 500,
+                    "rows": 500
+                  },
+                  {
+                    "actual_profitable_ratio": 0.0,
+                    "actual_total_net_bps": -14769.895072944659,
+                    "mean_actual_net_bps": -14.769895072944658,
+                    "mean_predicted_edge_bps": -5.6120392984749925,
+                    "requested_rows": 1000,
+                    "rows": 1000
+                  }
+                ]
+              }
+            },
+            "trade_claim": false
+          }
+        },
+        "selection_auc": {
+          "long": 0.5929866105013486,
+          "short": 0.2894284207837032
+        },
+        "selection_brier": {
+          "long": 0.150524296415596,
+          "short": 0.05578113197086353
+        },
+        "selection_metrics": {
+          "active_days": 0,
+          "best_trade_bps": 0.0,
+          "long_trades": 0,
+          "max_drawdown_bps": 0.0,
+          "mean_net_bps": 0.0,
+          "median_net_bps": 0.0,
+          "profit_factor": null,
+          "short_trades": 0,
+          "total_net_bps": 0.0,
+          "trades": 0,
+          "trades_per_active_day": 0.0,
+          "win_rate": 0.0,
+          "worst_trade_bps": 0.0
+        },
+        "threshold_policy": {
+          "minimum_predicted_edge_bps": 1000000000000.0,
+          "minimum_profitable_probability": 1.0,
+          "selection_utility_bps": 0.0
+        }
+      },
+      "path_target_evidence": {
+        "long_ambiguous_count": 0,
+        "long_horizon_count": 115319,
+        "long_mean_holding_seconds": 1768.1100569536866,
+        "long_stop_count": 3696,
+        "long_take_count": 907,
+        "path_resolution_ms": 1000,
+        "rows": 119922,
+        "short_ambiguous_count": 0,
+        "short_horizon_count": 115363,
+        "short_mean_holding_seconds": 1771.653051566852,
+        "short_stop_count": 3637,
+        "short_take_count": 922,
+        "stop_loss_bps": 50.0,
+        "take_profit_bps": 90.0,
+        "trigger_execution_slippage_bps": 1.0
+      },
+      "risk_level": "aggressive",
+      "split": {
+        "policy_rows": 16858,
+        "policy_start_ms": 1694131200000,
+        "purge_ms": 1860750,
+        "purged_rows": 1454,
+        "selection_rows": 16774,
+        "selection_start_ms": 1694217600000,
+        "terminal_rows": 16817,
+        "terminal_start_ms": 1694304070000,
+        "train_end_ms": 1694042935000,
+        "train_rows": 51198,
+        "tuning_calibration_rows": 8411,
+        "tuning_calibration_start_ms": 1694087220000,
+        "tuning_early_stop_rows": 8038,
+        "tuning_internal_purged_rows": 372,
+        "tuning_rows": 16821,
+        "tuning_start_ms": 1694044800000
+      },
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "terminal_accessed": false
+    }
+  ],
+  "corpus_certificate_sha256": "5782bd80e2de50fe651471d5fb7e89b4449c584299731fb80967378e732639ab",
+  "design_sha256": "a2aa45f8245a12a85ea94365333f621fc2824a425ad6731105253a138fb0e049",
+  "diagnostic_sha256": "7ca872c2727bbdd1854548356eb490938003ff6c2d7794da54622e70b738ea90",
+  "profitability_claim": false,
+  "round": 10,
+  "schema_version": "action-value-discovery-diagnostic-v1",
+  "source_report_sha256": "364bd7dcb073777d63f8fa5d2a6c3e9759073f1b9300d9ed3643e0db13b7448f",
+  "terminal_holdout_accessed": false,
+  "top_score_rows_are_overlap_unsuppressed": true,
+  "trading_authority": false
+}

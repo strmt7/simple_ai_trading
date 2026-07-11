@@ -22,7 +22,9 @@ except ModuleNotFoundError:
     )
 
 
-IMPLEMENTATION_COMMIT = "8a0eec2f56b8a4a727a5dacdea098ed51b9ba917"
+_LEGACY_IMPLEMENTATION_COMMITS = {
+    9: "8a0eec2f56b8a4a727a5dacdea098ed51b9ba917",
+}
 CANDIDATE_FIELDS = (
     "candidate_id",
     "horizon_seconds",
@@ -54,13 +56,16 @@ CANDIDATE_FIELDS = (
 
 
 def _arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Publish truthful Round 9 action-value evidence")
+    parser = argparse.ArgumentParser(
+        description="Publish truthful, hash-bound action-value discovery evidence"
+    )
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--design", type=Path, required=True)
+    parser.add_argument("--diagnostics", type=Path, default=None)
     parser.add_argument(
         "--prior-progress",
         type=Path,
-        default=Path("docs/model-research/tape-depth/latest/progress.csv"),
+        default=None,
     )
     parser.add_argument(
         "--output-dir",
@@ -86,6 +91,38 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1_048_576), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _round_number(design: Mapping[str, object]) -> int:
+    value = int(design.get("round") or 0)
+    if value <= 0:
+        raise ValueError("action-value design round must be positive")
+    return value
+
+
+def _implementation_commit(design: Mapping[str, object]) -> str:
+    round_number = _round_number(design)
+    change_control = design.get("change_control")
+    commit = (
+        str(change_control.get("implementation_commit") or "")
+        if isinstance(change_control, Mapping)
+        else ""
+    )
+    commit = commit or _LEGACY_IMPLEMENTATION_COMMITS.get(round_number, "")
+    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
+        raise ValueError("action-value design does not pin a full implementation commit")
+    return commit
 
 
 def _write_text(path: Path, content: str) -> None:
@@ -232,10 +269,14 @@ def _svg_header(title: str, subtitle: str, *, width: int = 1120, height: int = 6
     ]
 
 
-def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _forecast_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    round_number: int,
+) -> str:
     trained = [row for row in rows if row["fit_status"] == "trained"]
     lines = _svg_header(
-        "Round 9 forecast quality",
+        f"Round {round_number} forecast quality",
         "Selection AUC only; values above 0.5 did not produce positive expected-value actions.",
     )
     left, top, chart_width, chart_height = 90, 120, 960, 380
@@ -265,7 +306,11 @@ def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _economics_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    round_number: int,
+) -> str:
     trained = [row for row in rows if row["fit_status"] == "trained"]
     values = [
         _finite(row[field])
@@ -275,7 +320,7 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
     lower = min(-1.0, min(values, default=-1.0) * 1.15)
     upper = max(2.0, max(values, default=0.0) * 1.15)
     lines = _svg_header(
-        "Round 9 after-cost economics",
+        f"Round {round_number} after-cost economics",
         "Mean executable labels are negative; selected-trade mean is undefined because every policy abstained.",
     )
     left, top, chart_width, chart_height = 90, 120, 960, 380
@@ -285,8 +330,8 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
     lines.append(f'<line x1="{left}" y1="{zero_y:.1f}" x2="{left + chart_width}" y2="{zero_y:.1f}" stroke="#526674" stroke-width="2"/>')
     group = chart_width / max(1, len(trained))
     bars = (
-        (-13, "mean_long_net_bps", "#218c8c"),
-        (13, "mean_short_net_bps", "#d59b2d"),
+        (-24, "mean_long_net_bps", "#218c8c"),
+        (24, "mean_short_net_bps", "#d59b2d"),
     )
     for index, row in enumerate(trained):
         center = left + group * (index + 0.5)
@@ -295,7 +340,7 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
             value_y = zero_y - value * scale
             y = min(zero_y, value_y)
             height = max(1.0, abs(value_y - zero_y))
-            lines.append(f'<rect x="{center + offset - 10:.1f}" y="{y:.1f}" width="20" height="{height:.1f}" fill="{color}"/>')
+            lines.append(f'<rect x="{center + offset - 11:.1f}" y="{y:.1f}" width="22" height="{height:.1f}" fill="{color}"/>')
             label_y = value_y - 7 if value >= 0 else value_y + 17
             lines.append(f'<text x="{center + offset:.1f}" y="{label_y:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">{value:.2f}</text>')
         lines.append(f'<text x="{center:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">{html.escape(str(row["candidate_id"]))}</text>')
@@ -308,17 +353,26 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _funnel_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _funnel_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    round_number: int,
+) -> str:
+    positive_edge_rows = sum(
+        int(row.get("policy_long_positive_edge_rows") or 0)
+        + int(row.get("policy_short_positive_edge_rows") or 0)
+        for row in rows
+    )
     stages = (
         ("Precommitted candidates", len(rows), "#287f9e"),
         ("Statistically trainable", sum(row["fit_status"] == "trained" for row in rows), "#218c8c"),
-        ("Policy positive-edge rows", sum(int(row.get("policy_long_positive_edge_rows") or 0) + int(row.get("policy_short_positive_edge_rows") or 0) for row in rows), "#d59b2d"),
-        ("Policy trades", sum(int(row.get("policy_trades") or 0) for row in rows), "#b44b4b"),
+        ("Policy-viable candidates", sum(int(row.get("policy_trades") or 0) > 0 for row in rows), "#d59b2d"),
+        ("Selection-active candidates", sum(int(row.get("selection_trades") or 0) > 0 for row in rows), "#b44b4b"),
         ("Unrejected candidates", sum(row.get("artifact_status") == "candidate" for row in rows), "#7b559c"),
     )
     lines = _svg_header(
-        "Round 9 action funnel",
-        "No stage is inferred: counts come directly from candidate artifacts and fit errors.",
+        f"Round {round_number} action funnel",
+        f"Candidate-level stages only; artifacts separately record {positive_edge_rows} positive predicted-edge rows.",
     )
     maximum = max(value for _label, value, _color in stages)
     for index, (label, value, color) in enumerate(stages):
@@ -343,7 +397,7 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     ]
     lines = _svg_header(
         "After-cost research progress",
-        "Mean net return is plotted only for rounds with executable trades; Round 9 abstained.",
+        "Mean net return is plotted only for rounds with executable trades; abstaining rounds are marked.",
     )
     left, top, chart_width, chart_height = 100, 120, 930, 380
     values = [_finite(row["mean_net_bps"]) for row in measured]
@@ -388,89 +442,198 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
 def publish(
     evidence_root: Path,
     design_path: Path,
-    prior_progress_path: Path,
+    prior_progress_path: Path | None,
     output_dir: Path,
+    diagnostics_path: Path | None = None,
 ) -> dict[str, object]:
     design = load_discovery_design(design_path)
+    round_number = _round_number(design)
+    implementation_commit = _implementation_commit(design)
     report_path = evidence_root / "report.json"
     report = _read_json(report_path)
     if (
         report.get("design_sha256") != design["design_sha256"]
-        or report.get("status") != "failed"
+        or report.get("status") not in {"completed", "failed"}
         or report.get("terminal_holdout_accessed") is not False
         or report.get("trading_authority") is not False
-        or int(report.get("candidate_count") or 0) != 12
+        or report.get("profitability_claim") is not False
+        or int(report.get("candidate_count") or 0)
+        != int(design["candidate_count"])
     ):
-        raise ValueError("Round 9 report contract is invalid")
+        raise ValueError(f"Round {round_number} report contract is invalid")
     rows = _candidate_rows(evidence_root, design, report)
     trained = [row for row in rows if row["fit_status"] == "trained"]
-    if (
-        len(trained) != 5
-        or sum(row["fit_status"] == "fit_error" for row in rows) != 7
-        or any(int(row["selection_trades"]) != 0 for row in trained)
-        or any(row["artifact_status"] != "rejected" for row in trained)
-    ):
-        raise ValueError("Round 9 actual outcomes drifted from the sealed report")
+    fit_error_count = sum(row["fit_status"] == "fit_error" for row in rows)
+    if len(trained) + fit_error_count != len(rows):
+        raise ValueError("action-value candidate outcome count is inconsistent")
+    unrejected = [row for row in trained if row["artifact_status"] == "candidate"]
+    semantic_status = "candidate" if unrejected else "rejected"
+    ranked_results = report.get("ranked_results")
+    if not isinstance(ranked_results, list) or len(ranked_results) != len(trained):
+        raise ValueError("action-value ranked result count is inconsistent")
+    diagnostic: dict[str, object] | None = None
+    if diagnostics_path is not None:
+        diagnostic = _read_json(diagnostics_path)
+        claimed_diagnostic_sha256 = str(diagnostic.get("diagnostic_sha256") or "")
+        canonical_diagnostic = dict(diagnostic)
+        canonical_diagnostic.pop("diagnostic_sha256", None)
+        if (
+            diagnostic.get("design_sha256") != design["design_sha256"]
+            or diagnostic.get("source_report_sha256") != _sha256(report_path)
+            or diagnostic.get("terminal_holdout_accessed") is not False
+            or diagnostic.get("trading_authority") is not False
+            or diagnostic.get("profitability_claim") is not False
+            or claimed_diagnostic_sha256 != _canonical_sha256(canonical_diagnostic)
+            or not isinstance(diagnostic.get("candidates"), list)
+            or len(diagnostic["candidates"]) != len(rows)
+        ):
+            raise ValueError("action-value diagnostic binding is invalid")
+    elif round_number >= 10:
+        raise ValueError("Round 10 and later publications require diagnostics")
 
-    with prior_progress_path.open("r", encoding="utf-8", newline="") as handle:
+    progress_source = prior_progress_path
+    if progress_source is None:
+        progress_source = (
+            Path("docs/model-research/tape-depth/latest/progress.csv")
+            if round_number == 9
+            else output_dir / "progress.csv"
+        )
+    with progress_source.open("r", encoding="utf-8", newline="") as handle:
         progress = list(csv.DictReader(handle))
-    if not progress or str(progress[-1].get("round")) != "8":
-        raise ValueError("prior progress table does not end at Round 8")
-    trained_auc = [
-        (_finite(row["selection_long_auc"]) + _finite(row["selection_short_auc"])) / 2.0
-        for row in trained
-    ]
+    if progress and int(progress[-1]["round"]) == round_number:
+        progress = progress[:-1]
+    if not progress or int(progress[-1]["round"]) != round_number - 1:
+        raise ValueError(
+            f"prior progress table does not end at Round {round_number - 1}"
+        )
+    best = ranked_results[0] if ranked_results else None
+    best_selection = best.get("selection_metrics") if isinstance(best, Mapping) else None
+    best_policy = best.get("policy_metrics") if isinstance(best, Mapping) else None
+    best_auc = best.get("selection_auc") if isinstance(best, Mapping) else None
+    if not all(
+        value is None or isinstance(value, Mapping)
+        for value in (best_selection, best_policy, best_auc)
+    ):
+        raise ValueError("best action-value candidate metrics are invalid")
+    best_selection_trades = (
+        int(best_selection.get("trades") or 0)
+        if isinstance(best_selection, Mapping)
+        else 0
+    )
+    best_mean_net = (
+        _finite(best_selection["mean_net_bps"])
+        if isinstance(best_selection, Mapping) and best_selection_trades > 0
+        else ""
+    )
+    data = design["data"]
+    training = design["training"]
+    horizons = design["horizon_seconds"]
+    risk_profiles = design["risk_profiles"]
+    assert isinstance(data, Mapping)
+    assert isinstance(training, Mapping)
+    assert isinstance(horizons, list)
+    assert isinstance(risk_profiles, Mapping)
     progress.append(
         {
-            "round": 9,
+            "round": round_number,
             "stage": "exact-BBO action-value discovery",
-            "periods": "2023-08-14..2023-08-20",
+            "periods": f"{data['start_date']}..{data['end_date']}",
             "selection_contaminated": True,
-            "horizon_seconds": "60;120;300;900",
-            "feature_set": "l1-tape-causal-v6",
-            "risk_level": "conservative;regular;aggressive",
-            "direction_auc": sum(trained_auc) / len(trained_auc),
+            "horizon_seconds": ";".join(str(value) for value in horizons),
+            "feature_set": str(training["feature_version"]),
+            "risk_level": ";".join(str(value) for value in risk_profiles),
+            "direction_auc": (
+                (
+                    _finite(best_auc["long"])
+                    + _finite(best_auc["short"])
+                )
+                / 2.0
+                if isinstance(best_auc, Mapping)
+                else ""
+            ),
             "spearman_ic": "",
-            "selected_signals": 0,
-            "executable_trades": 0,
+            "selected_signals": (
+                int(best_policy.get("trades") or 0)
+                if isinstance(best_policy, Mapping)
+                else 0
+            ),
+            "executable_trades": best_selection_trades,
             "mean_gross_bps": "",
-            "mean_net_bps": "",
-            "status": "rejected",
-            "source_file": "action-value Round 9 report",
+            "mean_net_bps": best_mean_net,
+            "status": semantic_status,
+            "source_file": f"action-value Round {round_number} report",
         }
     )
 
     charts = output_dir / "charts"
+    if diagnostic is not None:
+        _write_text(
+            output_dir / "diagnostics.json",
+            json.dumps(diagnostic, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        )
     _write_csv(output_dir / "candidates.csv", rows, CANDIDATE_FIELDS)
     _write_csv(output_dir / "progress.csv", progress, tuple(progress[0]))
-    _write_text(charts / "forecast-quality.svg", _forecast_svg(rows))
-    _write_text(charts / "after-cost-performance.svg", _economics_svg(rows))
-    _write_text(charts / "action-funnel.svg", _funnel_svg(rows))
+    _write_text(
+        charts / "forecast-quality.svg",
+        _forecast_svg(rows, round_number=round_number),
+    )
+    _write_text(
+        charts / "after-cost-performance.svg",
+        _economics_svg(rows, round_number=round_number),
+    )
+    _write_text(
+        charts / "action-funnel.svg",
+        _funnel_svg(rows, round_number=round_number),
+    )
     _write_text(charts / "research-progress.svg", _progress_svg(progress))
-    readme = f"""# Action-Value Round 9 Evidence
+    policy_trades = sum(int(row.get("policy_trades") or 0) for row in trained)
+    selection_trades = sum(int(row.get("selection_trades") or 0) for row in trained)
+    positive_edge_rows = sum(
+        int(row.get("policy_long_positive_edge_rows") or 0)
+        + int(row.get("policy_short_positive_edge_rows") or 0)
+        for row in trained
+    )
+    certificate_values = {
+        str(value.get("corpus_certificate_sha256") or "")
+        for value in ranked_results
+        if isinstance(value, Mapping)
+        and str(value.get("corpus_certificate_sha256") or "")
+    }
+    if len(certificate_values) > 1:
+        raise ValueError("trained candidates bind different corpus certificates")
+    certificate = next(iter(certificate_values), "unavailable-no-trained-artifact")
+    no_trade_note = (
+        "No trained candidate selected an executable trade; per-trade mean return\n"
+        "is undefined and no equity curve is generated."
+        if selection_trades == 0
+        else (
+            f"Across trained research candidates, {selection_trades} selection "
+            "trades were observed; candidate-level economics remain separate in "
+            "`candidates.csv`."
+        )
+    )
+    readme = f"""# Action-Value Round {round_number} Evidence
 
-Status: **rejected**. This is checksummed Binance USD-M discovery evidence, not
+Status: **{semantic_status}**. This is checksummed Binance USD-M discovery evidence, not
 a profitability, execution, or trading-authority claim.
 
-- UTC window: 2023-08-14 through 2023-08-20 (now consumed for selection)
-- Precommitted candidates: 12
-- Statistical fit failures: 7
-- Trained candidates: 5
-- Unrejected candidates: 0
-- Policy and selection trades: 0
+- UTC window: {data['start_date']} through {data['end_date']} (now consumed for selection)
+- Precommitted candidates: {len(rows)}
+- Statistical fit failures: {fit_error_count}
+- Trained candidates: {len(trained)}
+- Unrejected candidates: {len(unrejected)}
+- Policy trades across trained candidates: {policy_trades}
+- Selection trades across trained candidates: {selection_trades}
+- Positive predicted-edge policy rows: {positive_edge_rows}
 - Design SHA-256: `{design['design_sha256']}`
-- Corpus certificate SHA-256: `4d03bd2ae6e2b19f2fbdfb5bd6d3c0b3dc89020346cdb3ac435acc253c492edd`
-- Implementation commit: `{IMPLEMENTATION_COMMIT}`
+- Corpus certificate SHA-256: `{certificate}`
+- Implementation commit: `{implementation_commit}`
 
-The 60/120-second candidates and conservative 300-second candidate lacked the
-minimum profitable/non-profitable class support after actual spread, 5 bps
-taker fee per side, and 1 bps additional slippage per side. The five remaining
-models produced some short-side positive predicted-edge rows, but every
-non-overlapping threshold policy using them had non-positive realized
-drawdown-adjusted utility on the policy segment, so abstention was financially
-correct under the fitted policy. A post-round
-diagnostic found a bounded-Newton calibration collapse; it is fixed separately
-and does not retroactively alter this evidence.
+{no_trade_note}
+
+Fit errors and every trained artifact hash are retained verbatim
+in the source table. A failed fit is not counted as a zero-return model, and an
+abstaining model is not presented as profitable.
 
 ## Charts
 
@@ -483,9 +646,12 @@ and does not retroactively alter this evidence.
 ![Research progress](charts/research-progress.svg)
 
 The source tables are [candidates.csv](candidates.csv) and
-[progress.csv](progress.csv). Every trained artifact SHA-256 and every fit error
-is retained in `candidates.csv`; no zero-trade equity curve is fabricated.
-Regenerate with `python tools/publish_action_value_discovery.py`.
+[progress.csv](progress.csv); reconstructed class support and top-score outcomes
+are in [diagnostics.json](diagnostics.json) when required by the round. Every
+trained artifact SHA-256 and every fit error is retained in `candidates.csv`;
+no zero-trade equity curve is fabricated.
+Regenerate by passing this round's `--design`, `--evidence-root`, and required
+`--diagnostics` to `python tools/publish_action_value_discovery.py`.
 """
     _write_text(output_dir / "README.md", readme)
     generated = [
@@ -497,25 +663,35 @@ Regenerate with `python tools/publish_action_value_discovery.py`.
         charts / "action-funnel.svg",
         charts / "research-progress.svg",
     ]
+    if diagnostic is not None:
+        generated.append(output_dir / "diagnostics.json")
     publication = {
         "schema_version": "action-value-discovery-publication-v1",
         "artifact_class": "exchange_sourced_model_discovery_graph_data",
-        "round": 9,
-        "status": "rejected",
+        "round": round_number,
+        "status": semantic_status,
+        "runner_status": report["status"],
         "trading_authority": False,
         "profitability_claim": False,
         "terminal_holdout_accessed": False,
         "selection_window_is_consumed": True,
         "design_sha256": design["design_sha256"],
         "source_report_sha256": _sha256(report_path),
-        "implementation_commit": IMPLEMENTATION_COMMIT,
+        "implementation_commit": implementation_commit,
+        "corpus_certificate_sha256": certificate,
+        "diagnostic_sha256": (
+            diagnostic.get("diagnostic_sha256")
+            if diagnostic is not None
+            else None
+        ),
         "actual": {
-            "candidate_count": 12,
-            "fit_error_count": 7,
-            "trained_candidate_count": 5,
-            "unrejected_candidate_count": 0,
-            "policy_trades": 0,
-            "selection_trades": 0,
+            "candidate_count": len(rows),
+            "fit_error_count": fit_error_count,
+            "trained_candidate_count": len(trained),
+            "unrejected_candidate_count": len(unrejected),
+            "policy_positive_edge_rows": positive_edge_rows,
+            "policy_trades": policy_trades,
+            "selection_trades": selection_trades,
         },
         "artifact_integrity": [
             {
@@ -542,6 +718,7 @@ def main() -> int:
             args.design,
             args.prior_progress,
             args.output_dir,
+            args.diagnostics,
         )
     except (OSError, RuntimeError, TypeError, ValueError) as exc:
         print(f"publish-action-value-discovery failed: {type(exc).__name__}: {exc}")
