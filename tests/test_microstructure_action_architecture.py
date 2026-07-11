@@ -529,9 +529,13 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
         tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
         spec=_mixture_spec(
             sequence_length=7,
+            residual_blocks=2,
+            side_tower_mode="independent",
             pairwise_ranking_loss_weight=0.02,
             temporal_pooling_mode="causal_attention",
-            ranking_scope="utc_session",
+            representation_mode="soft_mixture_of_experts",
+            expert_count=2,
+            router_balance_loss_weight=0.02,
         ),
         target_scenario="base",
         compute_backend="directml",
@@ -556,10 +560,17 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
     assert reloaded.spec.ranking_loss_mode == "correlation"
     assert reloaded.spec.pairwise_ranking_loss_weight == 0.02
     assert reloaded.spec.temporal_pooling_mode == "causal_attention"
-    assert reloaded.spec.ranking_scope == "utc_session"
+    assert reloaded.spec.ranking_scope == "global_batch"
+    assert reloaded.spec.representation_mode == "soft_mixture_of_experts"
+    assert reloaded.spec.expert_count == 2
+    assert reloaded.spec.router_balance_loss_weight == 0.02
     assert reloaded.spec.sequence_length == 7
     assert prediction.rows == 300
     assert np.all(np.isfinite(prediction.long_mean_bps))
+    assert prediction.long_router_weights is not None
+    np.testing.assert_allclose(
+        np.sum(prediction.long_router_weights, axis=1), 1.0, atol=1.0e-6
+    )
 
 
 def _prediction(offset: float = 0.0) -> ActionValuePredictionBatch:
@@ -586,6 +597,39 @@ def test_action_value_ensemble_exposes_epistemic_dispersion_and_agreement() -> N
     assert ensemble.member_count == 2
     assert ensemble.rows == 2
     assert ensemble.trading_authority is False
+
+
+def test_action_value_ensemble_validates_and_averages_router_evidence() -> None:
+    first = replace(
+        _prediction(),
+        long_router_weights=np.asarray([[0.8, 0.2], [0.4, 0.6]]),
+        short_router_weights=np.asarray([[0.3, 0.7], [0.9, 0.1]]),
+    )
+    second = replace(
+        _prediction(2.0),
+        long_router_weights=np.asarray([[0.6, 0.4], [0.2, 0.8]]),
+        short_router_weights=np.asarray([[0.5, 0.5], [0.7, 0.3]]),
+    )
+
+    ensemble = ensemble_action_value_predictions([first, second])
+
+    np.testing.assert_allclose(
+        ensemble.long_router_weights, [[0.7, 0.3], [0.3, 0.7]]
+    )
+    np.testing.assert_allclose(
+        ensemble.short_router_weights, [[0.4, 0.6], [0.8, 0.2]]
+    )
+
+    with pytest.raises(ValueError, match="incomplete"):
+        ensemble_action_value_predictions(
+            [replace(first, short_router_weights=None), second]
+        )
+    with pytest.raises(ValueError, match="differs"):
+        ensemble_action_value_predictions([first, _prediction(2.0)])
+    with pytest.raises(ValueError, match="invalid"):
+        ensemble_action_value_predictions(
+            [first, replace(second, long_router_weights=np.ones((2, 2)))]
+        )
 
 
 def test_action_value_ensemble_and_model_contracts_fail_closed() -> None:
@@ -890,6 +934,53 @@ def test_outcome_mixture_causal_attention_uses_bounded_history() -> None:
     )
 
 
+def test_outcome_mixture_soft_experts_are_parameter_matched_and_use_history() -> None:
+    torch = pytest.importorskip("torch")
+    feature_count = len(MICROSTRUCTURE_FEATURE_NAMES)
+    network = outcome_mixture._network(
+        _mixture_spec(
+            sequence_length=7,
+            hidden_dim=88,
+            residual_blocks=2,
+            side_tower_mode="independent",
+            temporal_pooling_mode="causal_attention",
+            representation_mode="soft_mixture_of_experts",
+            expert_count=2,
+            router_balance_loss_weight=0.02,
+        ),
+        feature_count,
+    )
+    network.eval()
+    values = torch.randn(8, 7, feature_count)
+    changed_history = values.clone()
+    changed_history[:, :-1, :] += 0.5
+
+    baseline, baseline_routes = network(values)
+    changed, changed_routes = network(changed_history)
+
+    assert sum(parameter.numel() for parameter in network.parameters()) == 146_974
+    assert baseline.shape == (8, 2, 5)
+    assert baseline_routes.shape == (8, 2, 2)
+    torch.testing.assert_close(
+        torch.sum(baseline_routes, dim=2), torch.ones((8, 2))
+    )
+    assert not torch.equal(baseline, changed)
+    torch.testing.assert_close(baseline_routes, changed_routes, rtol=0.0, atol=0.0)
+
+
+def test_outcome_mixture_router_balance_loss_penalizes_collapsed_allocation() -> None:
+    torch = pytest.importorskip("torch")
+    balanced = torch.full((16, 2, 2), 0.5)
+    collapsed = torch.zeros((16, 2, 2))
+    collapsed[:, :, 0] = 1.0
+
+    balanced_loss = outcome_mixture._router_balance_loss(balanced)
+    collapsed_loss = outcome_mixture._router_balance_loss(collapsed)
+
+    assert float(balanced_loss) == 0.0
+    assert float(collapsed_loss) == pytest.approx(1.0)
+
+
 def test_outcome_mixture_sample_weights_align_by_sequence_endpoint_identity() -> None:
     requested = np.arange(100, 110, dtype=np.int64)
     selected = np.asarray([102, 105, 109], dtype=np.int64)
@@ -947,6 +1038,62 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
     assert loaded.spec.ranking_scope == "utc_session"
     assert loaded.model_sha256 == model.model_sha256
     assert loaded.state.keys() == model.state.keys()
+
+
+def test_outcome_mixture_soft_expert_artifact_round_trip_exposes_routes(
+    tmp_path,
+) -> None:
+    dataset, long_target, short_target = _dataset()
+    model = train_outcome_mixture_model(
+        dataset,
+        _barrier_targets(dataset, long_target, short_target),
+        train_endpoints=np.arange(600, dtype=np.int64),
+        tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
+        spec=_mixture_spec(
+            sequence_length=7,
+            hidden_dim=16,
+            residual_blocks=2,
+            side_tower_mode="independent",
+            temporal_pooling_mode="causal_attention",
+            representation_mode="soft_mixture_of_experts",
+            expert_count=2,
+            router_balance_loss_weight=0.02,
+        ),
+        target_scenario="base",
+        compute_backend="cpu",
+        seed=31,
+        batch_size=256,
+        max_epochs=1,
+        patience=1,
+    )
+    first_path = tmp_path / "soft-experts.safetensors"
+    second_path = tmp_path / "soft-experts-repeated.safetensors"
+
+    save_outcome_mixture_model(first_path, model)
+    save_outcome_mixture_model(second_path, model)
+    loaded = load_outcome_mixture_model(first_path)
+    prediction = predict_outcome_mixture_model(
+        loaded,
+        dataset,
+        np.arange(800, 1_100, dtype=np.int64),
+        compute_backend="cpu",
+        batch_size=128,
+    )
+
+    assert first_path.read_bytes() == second_path.read_bytes()
+    assert loaded.model_sha256 == model.model_sha256
+    assert loaded.spec.representation_mode == "soft_mixture_of_experts"
+    assert loaded.spec.expert_count == 2
+    assert loaded.spec.router_balance_loss_weight == 0.02
+    assert prediction.long_router_weights is not None
+    assert prediction.short_router_weights is not None
+    assert prediction.long_router_weights.shape == (300, 2)
+    np.testing.assert_allclose(
+        np.sum(prediction.long_router_weights, axis=1), 1.0, atol=1.0e-6
+    )
+    np.testing.assert_allclose(
+        np.sum(prediction.short_router_weights, axis=1), 1.0, atol=1.0e-6
+    )
 
 
 def test_outcome_mixture_trains_predicts_and_binds_after_cost_target(
@@ -1077,6 +1224,30 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
         ),
         ({"temporal_pooling_mode": "bidirectional"}, "unsupported"),
         ({"ranking_scope": "rolling_week"}, "unsupported"),
+        ({"expert_count": 2}, "representation contract"),
+        ({"router_balance_loss_weight": 0.02}, "representation contract"),
+        (
+            {
+                "sequence_length": 7,
+                "side_tower_mode": "independent",
+                "temporal_pooling_mode": "causal_attention",
+                "representation_mode": "soft_mixture_of_experts",
+                "expert_count": 2,
+                "router_balance_loss_weight": 0.02,
+            },
+            "representation contract",
+        ),
+        (
+            {
+                "sequence_length": 7,
+                "residual_blocks": 2,
+                "temporal_pooling_mode": "causal_attention",
+                "representation_mode": "soft_mixture_of_experts",
+                "expert_count": 2,
+                "router_balance_loss_weight": 0.02,
+            },
+            "representation contract",
+        ),
         (
             {
                 "ranking_loss_mode": "pairwise_net_return",

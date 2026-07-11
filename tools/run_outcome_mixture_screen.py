@@ -462,6 +462,44 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    25: {
+        "purpose": "consumed_data_parameter_matched_soft_mixture_of_experts_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "ranking_scope": "global_batch",
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "representation_mode": "soft_mixture_of_experts",
+        "expert_count": 2,
+        "router_balance_loss_weight": 0.02,
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 146_974,
+        "predecessor": {
+            "round": 24,
+            "design_sha256": (
+                "f7ed8bff1f1e96a0c99ae0b50dd6682f4319f9258269411f7e90fc237b01708c"
+            ),
+            "source_report_canonical_sha256": (
+                "7f1b2ed668cf6bdfa27685f42f5c22819b8e1dd36fdfae78a5d5c783d44c5c70"
+            ),
+            "publication_sha256": (
+                "4f527390e7bd94336699a7694b2a0c9f3d63cc8b3720a80969ce7f8bd14a2320"
+            ),
+            "finding": (
+                "Round 24's session-local ranking objective reversed both policy-window "
+                "information coefficients and reduced the policy long top-100 mean "
+                "net return from +0.940312 bps to -6.294386 bps under stress. Round "
+                "25 restores Round 23's global ranking scope and isolates a nearly "
+                "parameter-matched, softly routed two-expert temporal representation "
+                "with an explicit allocation-balance regularizer."
+            ),
+        },
+    },
 }
 
 
@@ -623,6 +661,11 @@ def load_outcome_mixture_design(
         != round_contract.get("temporal_pooling_mode", "endpoint")
         or model_spec.ranking_scope
         != round_contract.get("ranking_scope", "global_batch")
+        or model_spec.representation_mode
+        != round_contract.get("representation_mode", "single")
+        or model_spec.expert_count != round_contract.get("expert_count", 1)
+        or model_spec.router_balance_loss_weight
+        != round_contract.get("router_balance_loss_weight", 0.0)
         or model_spec.sequence_length != round_contract.get("sequence_length", 1)
         or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
         or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
@@ -667,6 +710,58 @@ def _ensemble_for_role(
             for model in models
         ]
     )
+
+
+def _router_diagnostics(
+    prediction: ActionValueEnsembleBatch,
+) -> dict[str, object] | None:
+    long_weights = prediction.long_router_weights
+    short_weights = prediction.short_router_weights
+    if long_weights is None and short_weights is None:
+        return None
+    if long_weights is None or short_weights is None:
+        raise ValueError("outcome-mixture router evidence is incomplete")
+
+    long_array = np.asarray(long_weights, dtype=np.float64)
+    short_array = np.asarray(short_weights, dtype=np.float64)
+    if (
+        long_array.ndim != 2
+        or short_array.shape != long_array.shape
+        or long_array.shape[0] != prediction.rows
+        or long_array.shape[1] < 2
+        or not np.all(np.isfinite(long_array))
+        or not np.all(np.isfinite(short_array))
+        or np.any(long_array < 0.0)
+        or np.any(short_array < 0.0)
+        or not np.allclose(np.sum(long_array, axis=1), 1.0, atol=1.0e-6)
+        or not np.allclose(np.sum(short_array, axis=1), 1.0, atol=1.0e-6)
+    ):
+        raise ValueError("outcome-mixture router evidence is invalid")
+
+    def side_summary(weights: np.ndarray) -> dict[str, object]:
+        expert_count = weights.shape[1]
+        assignments = np.argmax(weights, axis=1)
+        entropy = -np.sum(
+            weights * np.log(np.clip(weights, np.finfo(np.float64).tiny, 1.0)),
+            axis=1,
+        ) / np.log(float(expert_count))
+        return {
+            "mean_expert_allocation": np.mean(weights, axis=0).tolist(),
+            "dominant_expert_row_fraction": (
+                np.bincount(assignments, minlength=expert_count) / len(weights)
+            ).tolist(),
+            "mean_maximum_assignment_probability": float(
+                np.mean(np.max(weights, axis=1))
+            ),
+            "mean_normalized_routing_entropy": float(np.mean(entropy)),
+        }
+
+    return {
+        "expert_count": int(long_array.shape[1]),
+        "evidence_basis": "mean_soft_assignment_across_ensemble_members",
+        "long": side_summary(long_array),
+        "short": side_summary(short_array),
+    }
 
 
 def _evaluate_profiles(
@@ -1140,6 +1235,15 @@ def run_outcome_mixture_screen(
             "roles": role_evidence,
         },
         "ensemble_models": artifacts,
+        "representation_routing_diagnostics": {
+            "calibration": _router_diagnostics(calibration_prediction),
+            "policy": _router_diagnostics(policy_prediction),
+            "development": (
+                _router_diagnostics(development_prediction)
+                if development_prediction is not None
+                else None
+            ),
+        },
         "forecast_diagnostics": {
             "calibration_base": _forecast_diagnostics(
                 targets, calibration_prediction, scenario="base"
