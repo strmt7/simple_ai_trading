@@ -1,99 +1,102 @@
 {
   "actual": {
-    "best_development_direction_auc": 0.5705046338834519,
-    "best_development_spearman_ic": 0.11072229311866835,
-    "best_model_id": "mlp-bounded-gmadl",
-    "best_top_500_exact_after_cost_bps": -6.605292973338392,
-    "best_top_500_gross_bps": 5.439178441084853,
+    "action_candidate_count": 15,
+    "activity_qualified_candidate_count": 12,
+    "best_activity_qualified_candidate_id": "mlp-huber-direction/direction_magnitude",
+    "best_development_top_500_exact_after_cost_bps": -6.456241043522201,
+    "best_development_top_500_gross_bps": 5.594362712866569,
+    "best_policy_top_500_exact_after_cost_bps": -13.105527540852833,
+    "best_policy_top_500_gross_bps": -1.0614614099415358,
     "dataset_rows": 878025,
     "event_rows": 230999,
     "executed_trades": 0,
     "final_model_count": 3,
-    "stage_one_neural_candidates": 3,
-    "stage_two_neural_candidates": 2,
+    "neural_architectures_advanced": 2,
+    "neural_architectures_screened": 4,
+    "positive_policy_gross_candidate_count": 0,
     "unrejected_candidate_count": 0
   },
-  "artifact_class": "exchange_sourced_gross_model_graph_data",
+  "artifact_class": "exchange_sourced_head_coherence_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1129,
+      "bytes": 1311,
       "path": "docs/model-research/action-value/latest/README.md",
-      "sha256": "3d63a524174d82f0d54e5488b60603c26a762cc7c6a212974590e0b09d70497c"
+      "sha256": "c5fb2eb81f8120cf7b85512fe2a35d0cdba18a8398e731c4b22e55012b41514c"
     },
     {
-      "bytes": 3172,
+      "bytes": 12065,
       "path": "docs/model-research/action-value/latest/candidates.csv",
-      "sha256": "e44062733dfcaff6da4da47c08a86c3dcbe302f8e17d791312b98ba481522433"
+      "sha256": "e9d42b383db3f10b9bcf2f0b2f642ec35299cb100ab25f60f414a930d5efad81"
     },
     {
-      "bytes": 2992,
+      "bytes": 3408,
       "path": "docs/model-research/action-value/latest/progress.csv",
-      "sha256": "99c2662a6e4ae3c55d2395b854b2969fd4368e0d472d65c3dd34dd8b1f3fb3f9"
+      "sha256": "f13d5ddb7c203d07cd91c0aaea31bbc9d996e7e7ba72b57999ea48b92b3c7903"
     },
     {
-      "bytes": 37591,
+      "bytes": 194322,
       "path": "docs/model-research/action-value/latest/diagnostics.json",
-      "sha256": "ce845a0de64af6b0dc859aa811910b8bcd9ee4b0cf42cd53639ad5b2b712c405"
+      "sha256": "ccb791553c239ea3099fa7d3a5e7f3358e3c8e3f2f7b4389b1a6838c3c27d881"
     },
     {
-      "bytes": 3917,
+      "bytes": 10177,
       "path": "docs/model-research/action-value/latest/charts/after-cost-performance.svg",
-      "sha256": "aef6ddb54660297058f09b4f334f896ba03e0a14fb77faf8cbde049752deb769"
+      "sha256": "fe5f784974c453711af5a9479630d0ea419572ddd90f98e9fcf2326452770b37"
     },
     {
-      "bytes": 5568,
+      "bytes": 7128,
       "path": "docs/model-research/action-value/latest/charts/forecast-quality.svg",
-      "sha256": "e3c41de83691da16fa849bb392b840d43a631ae262cb8c8be34cb511011fb921"
+      "sha256": "6be8337403783aafda200ef090245a6417d926fde75998d549e63e1af229bd05"
     },
     {
-      "bytes": 3862,
+      "bytes": 4459,
       "path": "docs/model-research/action-value/latest/charts/action-funnel.svg",
-      "sha256": "50e9e878d5ad2bd54db2a0a2f90f44225769fd06f2753d4a536cea42f36df241"
+      "sha256": "f02c135b1e28e16f57018704e72b53b48d45d6af86528890146c350f5e34708c"
     },
     {
-      "bytes": 5782,
+      "bytes": 6290,
       "path": "docs/model-research/action-value/latest/charts/research-progress.svg",
-      "sha256": "6c3b651262ec52f2c071ac83635d3f9cb942fb51d62c3e4ee6c40aba2c1aff6b"
+      "sha256": "1c8dddf47ed814232e47af2b08feaad8bd9dfeeeb32f6cb09b33f05c88700e94"
     }
   ],
   "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
-  "design_revision": 2,
-  "design_sha256": "57fcf6d940810d251917961d281f96e0c3b9ac88e3bde06faa8c59cdeebcb6f7",
+  "design_revision": 1,
+  "design_sha256": "b043639d7242bd599371fd4ee44283f46dbef5663129ebd04538792b8f582a0d",
   "development_window_is_consumed": true,
-  "diagnostic_sha256": "788b009576c6a5112fb8ad625c70e9e75325fe98291675da3dff02d8f62f0202",
+  "diagnostic_sha256": "1b608e62d4a2e7ba554963bc714fd51f404c48df54bbbe1024e4dd01d825e9f0",
   "execution_claim": false,
-  "implementation_commit": "a7ee582525c346b01326cee9439418abf91d21f8",
+  "implementation_commit": "0339ac05d6ecf133e17682ca1696cc6371530147",
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "5cbcb1020e57f64d1f3b070158d46f489cc3585d342e343206c6f3bdd4080981",
-  "round": 13,
+  "publication_sha256": "f3d6f8beae7de8448b8e52b8a40b417edd6376bbac51bec781e854505786ab74",
+  "round": 14,
   "runtime_resources": {
     "compute_backend_requested": "directml",
     "duckdb_memory_limit": "4GB",
     "spill_directory_policy": "warehouse_adjacent",
     "warehouse_threads": 8
   },
-  "schema_version": "gross-architecture-screen-publication-v1",
+  "schema_version": "head-coherence-screen-publication-v1",
   "source_artifacts": [
     {
-      "bytes": 45976,
+      "bytes": 46208,
       "path": "mlp-huber-direction.safetensors",
-      "sha256": "6129caaad215802ad018d4059bf771be2f47112df81ffd7de87ae01620600451"
+      "sha256": "5048b39bc7a1205e35a88f30e8e5da4ef5f4ec1d846223ca0fce426d8ccdd7f1"
     },
     {
-      "bytes": 45976,
-      "path": "mlp-bounded-gmadl.safetensors",
-      "sha256": "64936b50a0343e493d533c187886439ae3c7eb405dcf83fbad2f0e7b76530ef2"
+      "bytes": 46216,
+      "path": "mlp-gmadl-coherence-025.safetensors",
+      "sha256": "6bbccee00a51f9eade2b07850c8b6a9b0f6ada398c1d9a61431603853b208586"
     },
     {
-      "bytes": 2637160,
+      "bytes": 2728539,
       "path": "lightgbm-baseline.json",
-      "sha256": "06b41dfede81d249fb44d615abf3459fda0a77f72d405b6d0ea4710715f69a31"
+      "sha256": "739f97b258fbc6974451e0f827ffee1ebcb9e4401a54051775f445c1c3c64d5b"
     }
   ],
-  "source_report_canonical_sha256": "0f7bb314a74a849a2fae8510793c118378f157d69d1c84d2161190f0bc573e33",
-  "source_report_sha256": "cf5013d5b85e4dbfc79de31e51e139b248f183603a449b53874ea09907490362",
+  "source_report_canonical_sha256": "b0b0323c167c90dec1353409aadb631479f14315f42f7e2f9ca3aba642a32fa7",
+  "source_report_sha256": "bc1a26000023d47b1643ffa733b86825128537b4afdd6ece1c20040ea193f7c6",
   "status": "rejected",
   "terminal_holdout_accessed": false,
   "trading_authority": false

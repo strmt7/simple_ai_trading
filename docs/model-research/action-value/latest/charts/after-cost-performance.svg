@@ -1,34 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="520" viewBox="0 0 1500 520" role="img" aria-labelledby="title desc">
-<title id="title">Gross signal did not clear taker costs</title>
-<desc id="desc">Development-window top 500 signed gross and exact after-cost means for three models. Every gross mean was positive and every after-cost mean was negative.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="850" viewBox="0 0 1500 850" role="img" aria-labelledby="title desc">
+<title id="title">No high-activity mapping cleared taker costs</title>
+<desc id="desc">Policy and development top-500 exact after-cost means for every action mapping with active rows. All values are negative.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Gross signal did not clear taker costs</text>
-<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Consumed development window; top 500 overlapping forecasts per model, not trades or portfolio ROI.</text>
-<line x1="330.0" y1="132" x2="330.0" y2="440" stroke="#dce3e8" stroke-width="1"/>
-<text x="330.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">-10</text>
-<line x1="600.0" y1="132" x2="600.0" y2="440" stroke="#dce3e8" stroke-width="1"/>
-<text x="600.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">-5</text>
-<line x1="870.0" y1="132" x2="870.0" y2="440" stroke="#dce3e8" stroke-width="1"/>
-<text x="870.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">+0</text>
-<line x1="1140.0" y1="132" x2="1140.0" y2="440" stroke="#dce3e8" stroke-width="1"/>
-<text x="1140.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">+5</text>
-<line x1="1410.0" y1="132" x2="1410.0" y2="440" stroke="#dce3e8" stroke-width="1"/>
-<text x="1410.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">+10</text>
-<text x="306" y="188" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#263746">MLP + bounded GMADL</text>
-<rect x="870.0" y="158" width="293.7" height="25" rx="3" fill="#287f9e"/>
-<text x="1172.7" y="176" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#287f9e">gross +5.44</text>
-<rect x="513.3" y="192" width="356.7" height="25" rx="3" fill="#b42318"/>
-<text x="504.3" y="210" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#b42318">exact net -6.61</text>
-<text x="306" y="280" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#263746">MLP + Huber/direction</text>
-<rect x="870.0" y="250" width="273.9" height="25" rx="3" fill="#287f9e"/>
-<text x="1152.9" y="268" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#287f9e">gross +5.07</text>
-<rect x="492.9" y="284" width="377.1" height="25" rx="3" fill="#b42318"/>
-<text x="483.9" y="302" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#b42318">exact net -6.98</text>
-<text x="306" y="372" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#263746">LightGBM baseline</text>
-<rect x="870.0" y="342" width="207.7" height="25" rx="3" fill="#287f9e"/>
-<text x="1086.7" y="360" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#287f9e">gross +3.85</text>
-<rect x="427.1" y="376" width="442.9" height="25" rx="3" fill="#b42318"/>
-<text x="418.1" y="394" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#b42318">exact net -8.20</text>
-<line x1="870.0" y1="132" x2="870.0" y2="440" stroke="#17212b" stroke-width="2"/>
-<text x="750" y="476" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Basis points; exact net includes 750 ms latency, 5 bps fee and 1 bps slippage per side.</text>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">No high-activity mapping cleared taker costs</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Top 500 overlapping forecasts per role; these are diagnostics, not executed trades or portfolio ROI.</text>
+<line x1="430.0" y1="132" x2="430.0" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="430.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">-24</text>
+<line x1="571.4" y1="132" x2="571.4" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="571.4" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">-20</text>
+<line x1="712.9" y1="132" x2="712.9" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="712.9" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">-16</text>
+<line x1="854.3" y1="132" x2="854.3" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="854.3" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">-12</text>
+<line x1="995.7" y1="132" x2="995.7" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="995.7" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">-8</text>
+<line x1="1137.1" y1="132" x2="1137.1" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="1137.1" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">-4</text>
+<line x1="1278.6" y1="132" x2="1278.6" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="1278.6" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">+0</text>
+<line x1="1420.0" y1="132" x2="1420.0" y2="778" stroke="#dce3e8" stroke-width="1"/>
+<text x="1420.0" y="122" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#65727d">+4</text>
+<text x="412" y="177" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP Huber/direction / mean</text>
+<rect x="799.8" y="158" width="478.8" height="16" rx="2" fill="#b42318"/>
+<text x="792.8" y="171" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.54</text>
+<rect x="1042.3" y="178" width="236.3" height="16" rx="2" fill="#7b559c"/>
+<text x="1035.3" y="191" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -6.68</text>
+<text x="412" y="227" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP Huber/direction / direction</text>
+<rect x="782.8" y="208" width="495.8" height="16" rx="2" fill="#b42318"/>
+<text x="775.8" y="221" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -14.02</text>
+<rect x="1018.3" y="228" width="260.3" height="16" rx="2" fill="#7b559c"/>
+<text x="1011.3" y="241" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -7.36</text>
+<text x="412" y="277" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP Huber/direction / direction x magnitude</text>
+<rect x="815.2" y="258" width="463.4" height="16" rx="2" fill="#b42318"/>
+<text x="808.2" y="271" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.11</text>
+<rect x="1050.3" y="278" width="228.3" height="16" rx="2" fill="#7b559c"/>
+<text x="1043.3" y="291" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -6.46</text>
+<text x="412" y="327" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP Huber/direction / head consensus</text>
+<rect x="815.2" y="308" width="463.4" height="16" rx="2" fill="#b42318"/>
+<text x="808.2" y="321" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.11</text>
+<rect x="1050.3" y="328" width="228.3" height="16" rx="2" fill="#7b559c"/>
+<text x="1043.3" y="341" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -6.46</text>
+<line x1="56" y1="345" x2="1444" y2="345" stroke="#9aa8b3" stroke-width="2"/>
+<text x="412" y="377" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP GMADL + coherence 0.25 / mean</text>
+<rect x="813.0" y="358" width="465.6" height="16" rx="2" fill="#b42318"/>
+<text x="806.0" y="371" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.17</text>
+<rect x="1035.4" y="378" width="243.1" height="16" rx="2" fill="#7b559c"/>
+<text x="1028.4" y="391" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -6.88</text>
+<text x="412" y="427" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP GMADL + coherence 0.25 / direction</text>
+<rect x="798.4" y="408" width="480.2" height="16" rx="2" fill="#b42318"/>
+<text x="791.4" y="421" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.58</text>
+<rect x="1004.0" y="428" width="274.5" height="16" rx="2" fill="#7b559c"/>
+<text x="997.0" y="441" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -7.76</text>
+<text x="412" y="477" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP GMADL + coherence 0.25 / direction x magnitude</text>
+<rect x="801.4" y="458" width="477.2" height="16" rx="2" fill="#b42318"/>
+<text x="794.4" y="471" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.50</text>
+<rect x="1035.2" y="478" width="243.4" height="16" rx="2" fill="#7b559c"/>
+<text x="1028.2" y="491" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -6.88</text>
+<text x="412" y="527" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">MLP GMADL + coherence 0.25 / head consensus</text>
+<rect x="801.4" y="508" width="477.2" height="16" rx="2" fill="#b42318"/>
+<text x="794.4" y="521" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -13.50</text>
+<rect x="1035.2" y="528" width="243.4" height="16" rx="2" fill="#7b559c"/>
+<text x="1028.2" y="541" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -6.88</text>
+<line x1="56" y1="545" x2="1444" y2="545" stroke="#9aa8b3" stroke-width="2"/>
+<text x="412" y="577" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">LightGBM baseline / mean</text>
+<rect x="629.6" y="558" width="649.0" height="16" rx="2" fill="#b42318"/>
+<text x="622.6" y="571" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -18.35</text>
+<rect x="990.7" y="578" width="287.8" height="16" rx="2" fill="#7b559c"/>
+<text x="983.7" y="591" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -8.14</text>
+<text x="412" y="627" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">LightGBM baseline / direction</text>
+<rect x="654.1" y="608" width="624.4" height="16" rx="2" fill="#b42318"/>
+<text x="647.1" y="621" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -17.66</text>
+<rect x="965.4" y="628" width="313.2" height="16" rx="2" fill="#7b559c"/>
+<text x="958.4" y="641" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -8.86</text>
+<text x="412" y="677" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">LightGBM baseline / direction x magnitude</text>
+<rect x="635.9" y="658" width="642.7" height="16" rx="2" fill="#b42318"/>
+<text x="628.9" y="671" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -18.18</text>
+<rect x="950.5" y="678" width="328.0" height="16" rx="2" fill="#7b559c"/>
+<text x="943.5" y="691" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -9.28</text>
+<text x="412" y="727" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746">LightGBM baseline / head consensus</text>
+<rect x="635.9" y="708" width="642.7" height="16" rx="2" fill="#b42318"/>
+<text x="628.9" y="721" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#b42318">policy -18.18</text>
+<rect x="950.5" y="728" width="328.0" height="16" rx="2" fill="#7b559c"/>
+<text x="943.5" y="741" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#7b559c">dev -9.28</text>
+<line x1="1278.6" y1="132" x2="1278.6" y2="778" stroke="#17212b" stroke-width="2"/>
+<text x="925.0" y="820" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Exact after-cost basis points; 750 ms latency and 12 bps configured round trip.</text>
 </svg>
