@@ -174,6 +174,43 @@ def _directml_cpu_fallback_guard(backend_kind: str):
         yield
 
 
+def _align_sample_weights(
+    requested_endpoints: np.ndarray,
+    selected_endpoints: np.ndarray,
+    sample_weights: np.ndarray | None,
+) -> np.ndarray:
+    """Bind optional weights to sequence-valid endpoints by exact endpoint identity."""
+
+    requested = np.asarray(requested_endpoints, dtype=np.int64)
+    selected = np.asarray(selected_endpoints, dtype=np.int64)
+    if (
+        requested.ndim != 1
+        or selected.ndim != 1
+        or np.any(np.diff(requested) <= 0)
+        or np.any(np.diff(selected) <= 0)
+    ):
+        raise ValueError("outcome-mixture sample weights are invalid")
+    if sample_weights is None:
+        return np.ones(len(selected), dtype=np.float32)
+
+    values = np.asarray(sample_weights, dtype=np.float32)
+    if values.shape == (len(selected),):
+        aligned = values
+    elif values.shape == (len(requested),):
+        positions = np.searchsorted(requested, selected)
+        if (
+            np.any(positions >= len(requested))
+            or not np.array_equal(requested[positions], selected)
+        ):
+            raise ValueError("outcome-mixture sample weights are invalid")
+        aligned = values[positions]
+    else:
+        raise ValueError("outcome-mixture sample weights are invalid")
+    if np.any(~np.isfinite(aligned)) or np.any(aligned <= 0.0):
+        raise ValueError("outcome-mixture sample weights are invalid")
+    return np.ascontiguousarray(aligned, dtype=np.float32)
+
+
 def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
     contract = asdict(spec)
     if spec.side_tower_mode == "shared":
@@ -631,15 +668,17 @@ def train_outcome_mixture_model(
     valid_source_indexes = barrier_targets.source_indexes[barrier_targets.valid]
     targets[valid_source_indexes, 0] = long_values[barrier_targets.valid]
     targets[valid_source_indexes, 1] = short_values[barrier_targets.valid]
+    requested_train = np.asarray(train_endpoints, dtype=np.int64)
+    requested_tuning = np.asarray(tuning_endpoints, dtype=np.int64)
     train = valid_sequence_endpoints(
         dataset.decision_time_ms,
-        np.asarray(train_endpoints, dtype=np.int64),
+        requested_train,
         sequence_length=spec.sequence_length,
         cadence_seconds=dataset.decision_cadence_seconds,
     )
     tuning = valid_sequence_endpoints(
         dataset.decision_time_ms,
-        np.asarray(tuning_endpoints, dtype=np.int64),
+        requested_tuning,
         sequence_length=spec.sequence_length,
         cadence_seconds=dataset.decision_cadence_seconds,
     )
@@ -676,25 +715,16 @@ def train_outcome_mixture_model(
     center, scale = _feature_scaler(dataset.features, train)
     target_scale = max(1.0, float(np.quantile(np.abs(targets[train]), 0.90)))
     prevalence_values = _positive_class_prevalence(targets[train])
-    train_weights = (
-        np.ones(len(train), dtype=np.float32)
-        if train_sample_weights is None
-        else np.asarray(train_sample_weights, dtype=np.float32)
+    train_weights = _align_sample_weights(
+        requested_train,
+        train,
+        train_sample_weights,
     )
-    tuning_weights = (
-        np.ones(len(tuning), dtype=np.float32)
-        if tuning_sample_weights is None
-        else np.asarray(tuning_sample_weights, dtype=np.float32)
+    tuning_weights = _align_sample_weights(
+        requested_tuning,
+        tuning,
+        tuning_sample_weights,
     )
-    if (
-        train_weights.shape != (len(train),)
-        or tuning_weights.shape != (len(tuning),)
-        or np.any(~np.isfinite(train_weights))
-        or np.any(~np.isfinite(tuning_weights))
-        or np.any(train_weights <= 0.0)
-        or np.any(tuning_weights <= 0.0)
-    ):
-        raise ValueError("outcome-mixture sample weights are invalid")
     backend = resolve_backend(compute_backend)
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
