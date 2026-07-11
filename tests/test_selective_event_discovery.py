@@ -78,6 +78,14 @@ def _design(tmp_path: Path, *, consumed: tuple[str, str]) -> Path:
             "consumed_registry": "registry.json",
             "consumed_registry_sha256": registry_hash,
         },
+        "reserved_terminal": {
+            "start_date": "2024-01-06",
+            "end_date": "2024-01-06",
+            "day_count": 1,
+            "included_in_dataset": False,
+            "labels_constructed": False,
+            "access_allowed_in_round_12": False,
+        },
         "execution": {
             "total_latency_ms": 750,
             "taker_fee_bps_per_side": 5.0,
@@ -110,6 +118,7 @@ def _design(tmp_path: Path, *, consumed: tuple[str, str]) -> Path:
             "aggressive": {**profile, "max_l1_participation": 0.15},
         },
         "horizon_seconds": [300, 900, 1800],
+        "model_fit_count": 9,
         "candidate_count": 27,
         "selection": {
             "promotion_allowed": False,
@@ -130,6 +139,13 @@ def test_selective_event_design_rejects_consumed_selection_date(tmp_path) -> Non
     invalid = _design(tmp_path / "invalid", consumed=("2024-01-05", "2024-01-05"))
     with pytest.raises(ValueError, match="already consumed"):
         load_selective_event_design(invalid)
+
+    terminal = _design(
+        tmp_path / "terminal",
+        consumed=("2024-01-06", "2024-01-06"),
+    )
+    with pytest.raises(ValueError, match="reserved terminal"):
+        load_selective_event_design(terminal)
 
 
 def test_role_calendar_split_purges_cross_boundary_labels() -> None:

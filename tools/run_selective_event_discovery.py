@@ -128,6 +128,7 @@ def load_selective_event_design(
     training = payload.get("training")
     risk_profiles = payload.get("risk_profiles")
     selection = payload.get("selection")
+    reserved_terminal = payload.get("reserved_terminal")
     if not all(
         isinstance(value, Mapping)
         for value in (
@@ -137,6 +138,7 @@ def load_selective_event_design(
             training,
             risk_profiles,
             selection,
+            reserved_terminal,
         )
     ):
         raise ValueError("selective event design sections are incomplete")
@@ -146,6 +148,7 @@ def load_selective_event_design(
     assert isinstance(training, Mapping)
     assert isinstance(risk_profiles, Mapping)
     assert isinstance(selection, Mapping)
+    assert isinstance(reserved_terminal, Mapping)
     implementation_commit = str(change_control.get("implementation_commit") or "")
     if len(implementation_commit) != 40:
         raise ValueError("selective event implementation commit is invalid")
@@ -189,6 +192,24 @@ def load_selective_event_design(
     consumed = _load_consumed_registry(design_path.with_name(registry_name), registry_hash)
     if consumed & role_dates["selection"]:
         raise ValueError("selective event selection calendar was already consumed")
+    terminal_start = _parse_date(
+        reserved_terminal.get("start_date"),
+        label="reserved terminal start",
+    )
+    terminal_end = _parse_date(
+        reserved_terminal.get("end_date"),
+        label="reserved terminal end",
+    )
+    terminal_dates = set(_date_strings(terminal_start, terminal_end))
+    if (
+        terminal_start != last + timedelta(days=1)
+        or int(reserved_terminal.get("day_count") or 0) != len(terminal_dates)
+        or reserved_terminal.get("included_in_dataset") is not False
+        or reserved_terminal.get("labels_constructed") is not False
+        or reserved_terminal.get("access_allowed_in_round_12") is not False
+        or consumed & terminal_dates
+    ):
+        raise ValueError("selective event reserved terminal contract is invalid")
     if (
         int(execution.get("total_latency_ms") or 0) != 750
         or float(execution.get("taker_fee_bps_per_side") or 0.0) != 5.0
@@ -227,7 +248,11 @@ def load_selective_event_design(
         ):
             raise ValueError(f"selective event {name} risk profile is invalid")
     expected_candidates = len(horizons) * len(risk_profiles) * len(_SCORE_METHODS)
-    if int(payload.get("candidate_count") or 0) != expected_candidates:
+    if (
+        int(payload.get("model_fit_count") or 0)
+        != len(horizons) * len(risk_profiles)
+        or int(payload.get("candidate_count") or 0) != expected_candidates
+    ):
         raise ValueError("selective event candidate count is invalid")
     if (
         selection.get("promotion_allowed") is not False
