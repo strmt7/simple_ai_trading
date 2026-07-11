@@ -11,13 +11,13 @@ from tools.run_action_value_discovery import (
 )
 
 
-def _tracked_design() -> Path:
+def _tracked_design(round_number: int = 9) -> Path:
     return (
         Path(__file__).resolve().parents[1]
         / "docs"
         / "model-research"
         / "action-value"
-        / "round-009-design.json"
+        / f"round-{round_number:03d}-design.json"
     )
 
 
@@ -42,3 +42,25 @@ def test_round_nine_design_rejects_post_commit_mutation(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="digest"):
         load_discovery_design(changed)
+
+
+def test_round_ten_design_pins_calibration_fix_and_medium_horizons() -> None:
+    design = load_discovery_design(_tracked_design(10))
+    candidates = discovery_candidates(design)
+
+    assert design["design_sha256"] == (
+        "a2aa45f8245a12a85ea94365333f621fc2824a425ad6731105253a138fb0e049"
+    )
+    assert design["change_control"]["implementation_commit"] == (
+        "58e6ac5f75bccb75739c6084c4861ba2ecc981fe"
+    )
+    assert design["training"]["calibration_method"] == (
+        "base_rate_initialized_damped_platt_v2"
+    )
+    assert len(candidates) == 12
+    assert candidates[0]["candidate_id"] == "conservative-h300"
+    assert candidates[-1]["candidate_id"] == "aggressive-h1800"
+    assert all(
+        candidate["horizon_seconds"] in {300, 600, 900, 1800}
+        for candidate in candidates
+    )
