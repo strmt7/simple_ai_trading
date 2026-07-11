@@ -459,6 +459,27 @@ def test_tcn_network_executes_causal_residual_path() -> None:
     assert tuple(output.shape) == (4, 4)
 
 
+def test_network_does_not_repeat_normalization_on_raw_feature_axis() -> None:
+    torch = pytest.importorskip("torch")
+    spec = GrossArchitectureSpec(
+        candidate_id="directml-portability",
+        family="tabular_mlp",
+        sequence_length=1,
+        hidden_dim=64,
+        residual_blocks=1,
+        dropout=0.0,
+        gmadl_weight=0.0,
+    )
+    network = architecture._network(spec, len(MICROSTRUCTURE_FEATURE_NAMES))
+    normalized_shapes = {
+        tuple(module.normalized_shape)
+        for module in network.modules()
+        if isinstance(module, torch.nn.LayerNorm)
+    }
+    assert (len(MICROSTRUCTURE_FEATURE_NAMES),) not in normalized_shapes
+    assert (spec.hidden_dim,) in normalized_shapes
+
+
 def test_feature_scaler_handles_constant_columns_and_rejects_nonfinite() -> None:
     features = np.ones((8, 3), dtype=np.float32)
     center, scale = architecture._feature_scaler(features, np.arange(8))

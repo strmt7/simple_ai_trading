@@ -512,7 +512,6 @@ def _network(spec: GrossArchitectureSpec, feature_count: int):
         def __init__(self) -> None:
             super().__init__()
             self.family = spec.family
-            self.input_norm = nn.LayerNorm(feature_count)
             self.projection = nn.Linear(feature_count, spec.hidden_dim)
             if spec.family == "causal_tcn":
                 self.temporal = nn.ModuleList(
@@ -534,7 +533,7 @@ def _network(spec: GrossArchitectureSpec, feature_count: int):
             self.head = nn.Linear(spec.hidden_dim, 4)
 
         def forward(self, values):
-            output = functional.gelu(self.projection(self.input_norm(values)))
+            output = functional.gelu(self.projection(values))
             if self.family == "causal_tcn":
                 output = output.transpose(1, 2)
                 for block in self.temporal:
@@ -592,11 +591,7 @@ def _torch_loss(
     upper = output[:, 3]
     labels = (target > 0.0).to(dtype=target.dtype)
     huber = functional.smooth_l1_loss(mean, target, reduction="none", beta=0.5)
-    binary = functional.binary_cross_entropy_with_logits(
-        direction,
-        labels,
-        reduction="none",
-    )
+    binary = functional.softplus(direction) - labels * direction
 
     def pinball(prediction, quantile: float):
         error = target - prediction
