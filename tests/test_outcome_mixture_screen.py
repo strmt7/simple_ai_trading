@@ -115,6 +115,13 @@ DESIGN27 = (
     / "action-value"
     / "round-027-300s-horizon-alignment-design.json"
 )
+DESIGN28 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-028-sampled-aggregate-depth-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -539,9 +546,7 @@ def test_round22_design_is_historical_and_preserves_non_loss_contracts() -> None
 
 
 def test_round23_revision1_is_historical_and_changes_only_temporal_pooling() -> None:
-    design, design_sha256 = load_outcome_mixture_design(
-        DESIGN23, require_current=False
-    )
+    design, design_sha256 = load_outcome_mixture_design(DESIGN23, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN22, require_current=False
     )
@@ -611,9 +616,7 @@ def test_round23_revision2_is_historical_and_preserves_experiment_contract() -> 
 
 
 def test_round24_design_is_historical_and_changes_only_ranking_scope() -> None:
-    design, design_sha256 = load_outcome_mixture_design(
-        DESIGN24, require_current=False
-    )
+    design, design_sha256 = load_outcome_mixture_design(DESIGN24, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN23_V2, require_current=False
     )
@@ -647,15 +650,14 @@ def test_round24_design_is_historical_and_changes_only_ranking_scope() -> None:
     ):
         assert design[section] == predecessor[section]
     research = {item["url"]: item["use"] for item in design["research_basis"]}
-    assert "natural crypto market close" in research[
-        "https://proceedings.mlr.press/v267/liu25cb.html"
-    ]
+    assert (
+        "natural crypto market close"
+        in research["https://proceedings.mlr.press/v267/liu25cb.html"]
+    )
 
 
 def test_round25_design_is_historical_parameter_matched_and_globally_ranked() -> None:
-    design, design_sha256 = load_outcome_mixture_design(
-        DESIGN25, require_current=False
-    )
+    design, design_sha256 = load_outcome_mixture_design(DESIGN25, require_current=False)
     round23, _round23_sha256 = load_outcome_mixture_design(
         DESIGN23_V2, require_current=False
     )
@@ -701,21 +703,22 @@ def test_round25_design_is_historical_parameter_matched_and_globally_ranked() ->
     ):
         assert design[section] == predecessor[section]
     research = {item["url"]: item["use"] for item in design["research_basis"]}
-    assert "mechanism-level motivation rather than model validation" in research[
-        "https://proceedings.mlr.press/v267/liu25an.html"
-    ]
-    assert "do not establish a high-frequency financial or after-cost edge" in research[
-        "https://proceedings.mlr.press/v238/ni24a.html"
-    ]
-    assert "Recent non-peer-reviewed evidence" in research[
-        "https://arxiv.org/abs/2603.01820"
-    ]
+    assert (
+        "mechanism-level motivation rather than model validation"
+        in research["https://proceedings.mlr.press/v267/liu25an.html"]
+    )
+    assert (
+        "do not establish a high-frequency financial or after-cost edge"
+        in research["https://proceedings.mlr.press/v238/ni24a.html"]
+    )
+    assert (
+        "Recent non-peer-reviewed evidence"
+        in research["https://arxiv.org/abs/2603.01820"]
+    )
 
 
 def test_round26_design_is_historical_and_changes_only_expert_context() -> None:
-    design, design_sha256 = load_outcome_mixture_design(
-        DESIGN26, require_current=False
-    )
+    design, design_sha256 = load_outcome_mixture_design(DESIGN26, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN25, require_current=False
     )
@@ -730,9 +733,7 @@ def test_round26_design_is_historical_and_changes_only_expert_context() -> None:
     assert design["model"]["candidate_id"] == (
         "nested-multiscale-soft-expert-outcome-mixture"
     )
-    assert design["model"]["expert_temporal_context_mode"] == (
-        "nested_recent_full"
-    )
+    assert design["model"]["expert_temporal_context_mode"] == ("nested_recent_full")
     assert set(design["model"]) == set(predecessor["model"]) | {
         "expert_temporal_context_mode"
     }
@@ -754,19 +755,22 @@ def test_round26_design_is_historical_and_changes_only_expert_context() -> None:
     ):
         assert design[section] == predecessor[section]
     research = {item["url"]: item["use"] for item in design["research_basis"]}
-    assert "local detail and broader temporal dependencies" in research[
-        "https://openreview.net/forum?id=lJkOCMP2aW"
-    ]
-    assert "fine and coarse temporal observations" in research[
-        "https://openreview.net/forum?id=7oLshfEIC2"
-    ]
-    assert "do not validate the fixed 900-second net-return target" in research[
-        "https://arxiv.org/abs/2105.10430"
-    ]
+    assert (
+        "local detail and broader temporal dependencies"
+        in research["https://openreview.net/forum?id=lJkOCMP2aW"]
+    )
+    assert (
+        "fine and coarse temporal observations"
+        in research["https://openreview.net/forum?id=7oLshfEIC2"]
+    )
+    assert (
+        "do not validate the fixed 900-second net-return target"
+        in research["https://arxiv.org/abs/2105.10430"]
+    )
 
 
-def test_round27_design_is_current_and_changes_only_the_horizon() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN27)
+def test_round27_design_is_historical_and_changes_only_the_horizon() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN27, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN26, require_current=False
     )
@@ -805,12 +809,104 @@ def test_round27_design_is_current_and_changes_only_the_horizon() -> None:
             if name != "horizon_seconds":
                 assert design[section][name] == value
     research = {item["url"]: item["use"] for item in design["research_basis"]}
-    assert "precommitted 300-second net-return target" in research[
-        "https://arxiv.org/abs/2105.10430"
+    assert (
+        "precommitted 300-second net-return target"
+        in research["https://arxiv.org/abs/2105.10430"]
+    )
+    assert (
+        "shorter fixed lifecycle as a falsifiable alignment change"
+        in research["https://arxiv.org/abs/1409.2618"]
+    )
+
+
+def test_round28_design_is_current_and_changes_only_sampled_depth_inputs() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN28)
+    baseline, _baseline_sha256 = load_outcome_mixture_design(
+        DESIGN26, require_current=False
+    )
+
+    assert design_sha256 == (
+        "1e2ba9a09a277587f96abd309d07d91ab61f6706ca715a4b3dca275bccd0df7d"
+    )
+    assert design["round"] == 28
+    assert design["implementation"]["commit"] == (
+        "a4a3c7f684c777558046ec00483c5da129fbbd62"
+    )
+    assert design["execution"]["horizon_seconds"] == 900
+    assert design["barrier_targets"]["horizon_seconds"] == 900
+    assert design["data"]["required_data_types"] == [
+        "bookTicker",
+        "trades",
+        "bookDepth",
     ]
-    assert "shorter fixed lifecycle as a falsifiable alignment change" in research[
-        "https://arxiv.org/abs/1409.2618"
-    ]
+    assert design["predecessor_evidence"]["round"] == 27
+    assert screen._ROUND_CONTRACTS[28]["feature_version"] == (
+        "l1-tape-aggregate-depth-causal-v9"
+    )
+    assert screen._ROUND_CONTRACTS[28]["trainable_parameter_count"] == 148_910
+    assert design["model"]["candidate_id"] == (
+        "sampled-aggregate-depth-nested-soft-expert-outcome-mixture"
+    )
+    assert set(design["model"]) == set(baseline["model"])
+    for name, value in baseline["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
+    assert set(design["data"]) == set(baseline["data"])
+    for name, value in baseline["data"].items():
+        if name != "required_data_types":
+            assert design["data"][name] == value
+    for section in (
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == baseline[section]
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    official_basis = research["https://github.com/binance/binance-public-data"]
+    assert "sampled cumulative depth/notional percentage bands" in official_basis
+    assert "does not relabel them as a full event-level order book" in official_basis
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value"),
+    [
+        ("data", "required_data_types", ["bookTicker", "trades"]),
+        (
+            "data",
+            "required_data_types",
+            ["bookTicker", "bookDepth", "trades"],
+        ),
+        ("execution", "horizon_seconds", 300),
+        ("execution", "taker_fee_bps_per_side", 4.0),
+    ],
+)
+def test_round28_depth_override_rejects_source_or_safety_drift(
+    tmp_path: Path, section: str, field: str, value: object
+) -> None:
+    payload = json.loads(DESIGN28.read_text(encoding="utf-8"))
+    payload[section][field] = value
+    canonical = dict(payload)
+    canonical.pop("design_sha256")
+    payload["design_sha256"] = hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    source = tmp_path / "unsafe-depth-design.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="shared safety contract drifted"):
+        load_outcome_mixture_design(source, require_current=False)
 
 
 @pytest.mark.parametrize(
@@ -915,9 +1011,12 @@ def test_router_diagnostics_report_allocation_concentration_and_entropy() -> Non
         diagnostics["long"]["dominant_expert_row_fraction"], [0.5, 0.5]
     )
     assert 0.0 < diagnostics["long"]["mean_normalized_routing_entropy"] < 1.0
-    assert screen._router_diagnostics(
-        SimpleNamespace(rows=4, long_router_weights=None, short_router_weights=None)
-    ) is None
+    assert (
+        screen._router_diagnostics(
+            SimpleNamespace(rows=4, long_router_weights=None, short_router_weights=None)
+        )
+        is None
+    )
     with pytest.raises(ValueError, match="incomplete"):
         screen._router_diagnostics(
             SimpleNamespace(
