@@ -1,0 +1,7 @@
+interface:
+  display_name: "Karpathy Guidelines"
+  short_description: "Reduce assumptions, bloat, and unverifiable changes"
+  brand_color: "#334155"
+  default_prompt: "Apply the four coding principles and this repository's stricter safety rules"
+policy:
+  allow_implicit_invocation: true

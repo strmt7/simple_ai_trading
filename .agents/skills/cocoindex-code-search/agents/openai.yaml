@@ -1,0 +1,7 @@
+interface:
+  display_name: "CocoIndex Code Search"
+  short_description: "Pinned host-side semantic routing before exact rg validation"
+  brand_color: "#475569"
+  default_prompt: "Use the pinned CocoIndex Code wrapper to route this broad repo search, then verify with rg"
+policy:
+  allow_implicit_invocation: true

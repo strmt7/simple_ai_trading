@@ -1,0 +1,7 @@
+interface:
+  display_name: "Search First"
+  short_description: "Check repo code, tests, and official upstream docs before coding"
+  brand_color: "#0F766E"
+  default_prompt: "Research existing repo and upstream implementations before writing new code"
+policy:
+  allow_implicit_invocation: true

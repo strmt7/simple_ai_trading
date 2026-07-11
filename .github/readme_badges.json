@@ -6,9 +6,39 @@
   "remote_name": "origin",
   "badges": [
     {
+      "alt": "License",
+      "image": "https://img.shields.io/github/license/{repo_path}",
+      "target": "https://github.com/{repo_path}/blob/{branch}/LICENSE"
+    },
+    {
+      "alt": "CI",
+      "image": "https://img.shields.io/github/actions/workflow/status/{repo_path}/ci.yml?branch={branch}&label=CI",
+      "target": "https://github.com/{repo_path}/actions/workflows/ci.yml"
+    },
+    {
+      "alt": "super-linter",
+      "image": "https://img.shields.io/github/actions/workflow/status/{repo_path}/super-linter.yml?branch={branch}&label=super-linter",
+      "target": "https://github.com/{repo_path}/actions/workflows/super-linter.yml"
+    },
+    {
+      "alt": "Ruff",
+      "image": "https://img.shields.io/github/actions/workflow/status/{repo_path}/ruff.yml?branch={branch}&logo=python&label=Ruff",
+      "target": "https://github.com/{repo_path}/actions/workflows/ruff.yml"
+    },
+    {
+      "alt": "Vulture",
+      "image": "https://img.shields.io/github/actions/workflow/status/{repo_path}/vulture.yml?branch={branch}&logo=python&label=Vulture",
+      "target": "https://github.com/{repo_path}/actions/workflows/vulture.yml"
+    },
+    {
+      "alt": "cocoindex-code",
+      "image": "https://img.shields.io/static/v1?label=&message=cocoindex-code&color=555&logo=github&logoColor=white",
+      "target": "https://github.com/cocoindex-io/cocoindex-code"
+    },
+    {
       "alt": "andrej-karpathy-skills",
       "image": "https://img.shields.io/static/v1?label=&message=andrej-karpathy-skills&color=555&logo=github&logoColor=white",
-      "target": "https://github.com/forrestchang/andrej-karpathy-skills"
+      "target": "https://github.com/multica-ai/andrej-karpathy-skills"
     }
   ]
 }

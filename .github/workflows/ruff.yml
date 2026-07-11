@@ -1,0 +1,53 @@
+name: ruff
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Ruff
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
+        with:
+          version: 0.15.21
+          args: --version
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Ruff format changed Python files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${BASE_SHA:-}"
+          if [[ -z "${base}" || "${base}" =~ ^0+$ ]] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)"
+          fi
+          changed="${RUNNER_TEMP}/ruff-python-files"
+          git diff --name-only --diff-filter=ACMR -z "${base}" HEAD -- '*.py' > "${changed}"
+          if [[ -s "${changed}" ]]; then
+            xargs -0 ruff format --check -- < "${changed}"
+          else
+            echo "No changed Python files."
+          fi

@@ -28,4 +28,5 @@ artifacts/native-windows-layout-audit.png
 artifacts/dependency-audit/
 .mypy_cache/
 .ruff_cache/
+.cocoindex_code/
 
