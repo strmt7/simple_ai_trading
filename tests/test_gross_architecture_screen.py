@@ -210,10 +210,11 @@ def test_tracked_round13_v1_design_is_preserved_but_no_longer_current() -> None:
         )
 
 
-def test_tracked_round13_v2_design_binds_directml_repair() -> None:
+def test_tracked_round13_v2_design_is_preserved_after_optimizer_repair() -> None:
     design, design_sha256 = load_gross_architecture_design(
         ROOT
-        / "docs/model-research/action-value/round-013-gross-architecture-design-v2.json"
+        / "docs/model-research/action-value/round-013-gross-architecture-design-v2.json",
+        require_current=False,
     )
     assert design_sha256 == (
         "57fcf6d940810d251917961d281f96e0c3b9ac88e3bde06faa8c59cdeebcb6f7"
@@ -227,6 +228,11 @@ def test_tracked_round13_v2_design_binds_directml_repair() -> None:
     assert supersession["model_artifacts_written"] == 0  # type: ignore[index]
     assert supersession["development_evaluation_scored"] is False  # type: ignore[index]
     assert supersession["terminal_holdout_accessed"] is False  # type: ignore[index]
+    with pytest.raises(ValueError, match="implementation changed"):
+        load_gross_architecture_design(
+            ROOT
+            / "docs/model-research/action-value/round-013-gross-architecture-design-v2.json"
+        )
 
 
 def test_round13_design_rejects_tampered_payload(tmp_path) -> None:
