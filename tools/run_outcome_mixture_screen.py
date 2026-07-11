@@ -540,6 +540,46 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    27: {
+        "purpose": "consumed_data_300s_horizon_alignment_screen",
+        "design_revisions": {1},
+        "horizon_seconds": 300,
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "ranking_scope": "global_batch",
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "representation_mode": "soft_mixture_of_experts",
+        "expert_count": 2,
+        "router_balance_loss_weight": 0.02,
+        "expert_temporal_context_mode": "nested_recent_full",
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 146_974,
+        "predecessor": {
+            "round": 26,
+            "design_sha256": (
+                "84112245cf1c6a7e93b678bdfea9f97e329772731bc2bdec97990773b6f92837"
+            ),
+            "source_report_canonical_sha256": (
+                "368fa5c3cbe7e61f93d1c0d9099f8812c5554eab423dcba61b6b9f3f65a83383"
+            ),
+            "publication_sha256": (
+                "6452bae8aa17ec25d5dbaf40956b573ae64d8ad9fceb3280e750e5617fb68ec1"
+            ),
+            "finding": (
+                "Round 26 improved the policy long top-100 mean net return from "
+                "-3.793531 to -0.999418 bps under stress, but both calibration "
+                "top-100 tails worsened, all eight threshold candidates lost, and "
+                "routing entropy remained between 0.979 and 0.989. Further "
+                "representation-only tuning is rejected. Round 27 changes only the "
+                "maximum target and holding horizon from 900 to 300 seconds."
+            ),
+        },
+    },
 }
 
 
@@ -658,8 +698,31 @@ def load_outcome_mixture_design(
     reference, _reference_sha256 = load_adaptive_action_design(
         _ROUND16_DESIGN, require_current=False
     )
+    horizon_override = (
+        round_contract.get("horizon_seconds")
+        if round_contract is not None
+        else None
+    )
+
+    def shared_section_matches(name: str) -> bool:
+        actual = payload.get(name)
+        sealed = reference.get(name)
+        if horizon_override is None or name not in {"execution", "barrier_targets"}:
+            return actual == sealed
+        if (
+            not isinstance(actual, Mapping)
+            or not isinstance(sealed, Mapping)
+            or set(actual) != set(sealed)
+            or actual.get("horizon_seconds") != horizon_override
+        ):
+            return False
+        return all(
+            field == "horizon_seconds" or actual.get(field) == value
+            for field, value in sealed.items()
+        )
+
     if set(payload) != set(reference) or any(
-        payload.get(name) != reference.get(name) for name in _SHARED_SECTIONS
+        not shared_section_matches(name) for name in _SHARED_SECTIONS
     ):
         raise ValueError("outcome-mixture shared safety contract drifted")
     if (
