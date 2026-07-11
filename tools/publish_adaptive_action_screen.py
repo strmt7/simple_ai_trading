@@ -266,7 +266,7 @@ def _validated_depth_coverage(
         or int(coverage.get("available_rows") or 0)
         + int(coverage.get("unavailable_rows") or 0)
         != int(dataset.get("rows") or -1)
-        or int(coverage.get("invalid_rows") or -1) != 0
+        or int(coverage.get("invalid_rows", -1)) != 0
         or coverage.get("maximum_age_ms") != 60_000
         or coverage.get("full_l2_order_book") is not False
         or coverage.get("queue_position_evidence") is not False

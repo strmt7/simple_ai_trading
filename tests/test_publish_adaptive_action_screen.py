@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -15,7 +17,9 @@ from tools.publish_adaptive_action_screen import (
     _publication_narrative,
     _research_progress_svg,
     _tail_svg,
+    _validated_depth_coverage,
 )
+from tools.run_gross_architecture_screen import _canonical_sha256
 
 
 def _forecast_rows() -> list[dict[str, object]]:
@@ -395,3 +399,39 @@ def test_round28_progress_uses_sampled_depth_feature_contract(tmp_path) -> None:
 
     assert rows[-1]["feature_set"] == "l1-tape-aggregate-depth-causal-v9"
     assert rows[-1]["horizon_seconds"] == 900
+
+
+def test_round28_depth_coverage_validator_accepts_zero_invalid_rows(tmp_path) -> None:
+    report_path = tmp_path / "report.json"
+    report = {
+        "round": 28,
+        "report_sha256": "a" * 64,
+        "corpus_certificate_sha256": "b" * 64,
+        "dataset": {"cache_key": "c" * 64, "rows": 10},
+    }
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    coverage = {
+        "schema_version": "sampled-aggregate-depth-coverage-v1",
+        "round": 28,
+        "feature_version": "l1-tape-aggregate-depth-causal-v9",
+        "source_report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+        "source_report_canonical_sha256": "a" * 64,
+        "corpus_certificate_sha256": "b" * 64,
+        "cache_key": "c" * 64,
+        "rows": 10,
+        "available_rows": 8,
+        "unavailable_rows": 2,
+        "invalid_rows": 0,
+        "maximum_age_ms": 60_000,
+        "full_l2_order_book": False,
+        "queue_position_evidence": False,
+        "maker_fill_evidence": False,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+    }
+    coverage["audit_sha256"] = _canonical_sha256(coverage)
+    coverage_path = tmp_path / "coverage.json"
+    coverage_path.write_text(json.dumps(coverage), encoding="utf-8")
+
+    assert _validated_depth_coverage(coverage_path, report_path, report) == coverage
