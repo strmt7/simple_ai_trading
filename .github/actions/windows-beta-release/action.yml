@@ -102,7 +102,7 @@ runs:
       run: |
         $ErrorActionPreference = "Stop"
         python -m pip install -q --upgrade pip
-        python -m pip install -q -e .
+        python -m pip install -q -e ".[foundation-ai]"
         python -m pip install -q build coverage pytest
 
     - name: Run Python tests and coverage gate
