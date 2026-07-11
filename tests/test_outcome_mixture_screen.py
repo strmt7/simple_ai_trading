@@ -950,8 +950,10 @@ def test_round29_historical_design_changes_only_the_horizon() -> None:
     )
 
 
-def test_round30_design_is_current_and_changes_only_the_model_family() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN30)
+def test_round30_revision1_design_is_historical_and_changes_only_the_model_family() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN30, require_current=False
+    )
     baseline, _baseline_sha256 = load_outcome_mixture_design(
         DESIGN26, require_current=False
     )
@@ -964,7 +966,7 @@ def test_round30_design_is_current_and_changes_only_the_model_family() -> None:
     assert design["implementation"]["commit"] == (
         "55c429e6f5960497b8615d31e52905dd3907f54b"
     )
-    assert design["predecessor_evidence"] == contract["predecessor"]
+    assert design["predecessor_evidence"] == contract["predecessors"][1]
     assert design["model"] == contract["model"]
     assert design["training"] == contract["training"]
     assert contract["trainer"] == "lightgbm_hurdle"
