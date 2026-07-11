@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import duckdb
 import numpy as np
+import pytest
 
 from simple_ai_trading.microstructure_features import (
     MicrostructureDataset,
     _completed_path_index_bounds,
+    _net_cross_spread_cash_returns_bps,
     apply_path_aware_lifecycle_targets,
 )
 
@@ -59,6 +61,7 @@ def test_path_targets_can_cross_a_utc_archive_boundary() -> None:
         horizon_seconds=4,
         total_latency_ms=0,
         taker_fee_bps=5.0,
+        additional_slippage_bps_per_side=1.0,
         reference_order_notional_quote=1.0,
         max_l1_participation=0.10,
         max_quote_age_ms=1_000,
@@ -105,3 +108,36 @@ def test_path_targets_can_cross_a_utc_archive_boundary() -> None:
     assert output.target_mode == "exchange_trigger_market_exit_1s_adverse_first"
     assert evidence.rows == 1
     assert evidence.long_horizon_count == 1
+    long_ratio = 100.0 / 100.1
+    short_ratio = 100.1 / 100.0
+    assert output.long_net_bps[0] == pytest.approx(
+        (long_ratio - 1.0) * 10_000.0 - 6.0 * (1.0 + long_ratio)
+    )
+    assert output.short_net_bps[0] == pytest.approx(
+        (1.0 - short_ratio) * 10_000.0 - 6.0 * (1.0 + short_ratio)
+    )
+
+
+def test_cross_spread_cash_returns_use_linear_short_pnl_and_actual_notionals() -> None:
+    long_net, short_net = _net_cross_spread_cash_returns_bps(
+        np.asarray([100.0]),
+        np.asarray([101.0]),
+        np.asarray([102.0]),
+        np.asarray([98.0]),
+        execution_cost_bps_per_side=6.0,
+    )
+
+    long_ratio = 102.0 / 101.0
+    short_ratio = 98.0 / 100.0
+    np.testing.assert_allclose(
+        long_net,
+        [(long_ratio - 1.0) * 10_000.0 - 6.0 * (1.0 + long_ratio)],
+        rtol=0.0,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        short_net,
+        [(1.0 - short_ratio) * 10_000.0 - 6.0 * (1.0 + short_ratio)],
+        rtol=0.0,
+        atol=1e-12,
+    )

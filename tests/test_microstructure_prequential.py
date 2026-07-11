@@ -76,12 +76,12 @@ def _dataset_and_artifact() -> tuple[MicrostructureDataset, MicrostructureModelA
         "verified": True,
         "manifest_current": True,
         "corpus_certificate": {
-            "contract": "official-binance-corpus-certificate-v1",
+            "contract": "official-binance-corpus-certificate-v3",
             "status": "pass",
             "verified": True,
             "schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
             "symbol": "BTCUSDT",
-            "required_data_types": ["bookTicker", "trades", "bookDepth"],
+            "required_data_types": ["bookTicker", "trades"],
             "certificate_sha256": "c" * 64,
         },
     }
@@ -92,6 +92,7 @@ def _dataset_and_artifact() -> tuple[MicrostructureDataset, MicrostructureModelA
         horizon_seconds=1,
         total_latency_ms=0,
         taker_fee_bps=5.0,
+        additional_slippage_bps_per_side=1.0,
         reference_order_notional_quote=1_000.0,
         max_l1_participation=0.05,
         max_quote_age_ms=1_000,
@@ -155,6 +156,9 @@ def _dataset_and_artifact() -> tuple[MicrostructureDataset, MicrostructureModelA
         horizon_seconds=dataset.horizon_seconds,
         total_latency_ms=dataset.total_latency_ms,
         taker_fee_bps=dataset.taker_fee_bps,
+        additional_slippage_bps_per_side=(
+            dataset.additional_slippage_bps_per_side
+        ),
         reference_order_notional_quote=dataset.reference_order_notional_quote,
         max_l1_participation=dataset.max_l1_participation,
         max_quote_age_ms=dataset.max_quote_age_ms,

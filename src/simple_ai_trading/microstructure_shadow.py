@@ -341,12 +341,18 @@ class _VirtualShadowLedger:
             if execution_price <= 0.0:
                 raise ValueError("shadow trigger slippage produced a non-positive price")
         if position.side == "LONG":
-            gross_bps = (execution_price / position.entry_price - 1.0) * 10_000.0
+            exit_notional_ratio = execution_price / position.entry_price
+            gross_bps = (exit_notional_ratio - 1.0) * 10_000.0
         else:
-            gross_bps = (
-                (position.entry_price - execution_price) / position.entry_price * 10_000.0
-            )
-        realized = gross_bps - 2.0 * self.scorer.taker_fee_bps
+            exit_notional_ratio = execution_price / position.entry_price
+            gross_bps = (1.0 - exit_notional_ratio) * 10_000.0
+        execution_cost_bps_per_side = (
+            self.scorer.taker_fee_bps
+            + self.scorer.additional_slippage_bps_per_side
+        )
+        realized = gross_bps - execution_cost_bps_per_side * (
+            1.0 + exit_notional_ratio
+        )
         self.trades.append(
             VirtualShadowTrade(
                 side=position.side,

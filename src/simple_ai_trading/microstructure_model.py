@@ -27,7 +27,7 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v14"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v15"
 MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
     "microstructure-prequential-fixed-refit-v1"
 )
@@ -222,6 +222,7 @@ class MicrostructureModelArtifact:
     horizon_seconds: int
     total_latency_ms: int
     taker_fee_bps: float
+    additional_slippage_bps_per_side: float
     reference_order_notional_quote: float
     max_l1_participation: float
     max_quote_age_ms: int
@@ -320,6 +321,7 @@ class MicrostructureActionScorer:
         horizon_seconds: int,
         total_latency_ms: int,
         taker_fee_bps: float,
+        additional_slippage_bps_per_side: float,
         reference_order_notional_quote: float,
         max_l1_participation: float,
         max_quote_age_ms: int,
@@ -342,6 +344,7 @@ class MicrostructureActionScorer:
         self.horizon_seconds = horizon_seconds
         self.total_latency_ms = total_latency_ms
         self.taker_fee_bps = taker_fee_bps
+        self.additional_slippage_bps_per_side = additional_slippage_bps_per_side
         self.reference_order_notional_quote = reference_order_notional_quote
         self.max_l1_participation = max_l1_participation
         self.max_quote_age_ms = max_quote_age_ms
@@ -554,14 +557,14 @@ def _validated_source_evidence(
         raise ValueError("microstructure model source is missing its corpus certificate")
     required_types = corpus.get("required_data_types")
     if (
-        corpus.get("contract") != "official-binance-corpus-certificate-v1"
+        corpus.get("contract") != "official-binance-corpus-certificate-v3"
         or corpus.get("status") != "pass"
         or corpus.get("verified") is not True
         or corpus.get("schema_version") != TICK_WAREHOUSE_SCHEMA_VERSION
         or str(corpus.get("symbol") or "").upper() != symbol
         or not isinstance(required_types, (list, tuple))
         or set(str(item) for item in required_types)
-        != {"bookTicker", "trades", "bookDepth"}
+        != {"bookTicker", "trades"}
     ):
         raise ValueError("microstructure model corpus certificate is invalid")
     certificate_sha256 = str(corpus.get("certificate_sha256") or "").lower()
@@ -679,10 +682,29 @@ def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelA
     feature_names = tuple(payload.get("feature_names") or ())
     if feature_names != MICROSTRUCTURE_FEATURE_NAMES:
         raise ValueError("microstructure model feature names do not match the current contract")
+    if payload.get("feature_version") != MICROSTRUCTURE_FEATURE_VERSION:
+        raise ValueError("microstructure model feature version is not supported")
     symbol = str(payload.get("symbol") or "").strip().upper()
     dataset_summary = payload.get("dataset_summary")
     if not isinstance(dataset_summary, Mapping):
         raise ValueError("microstructure model is missing dataset evidence")
+    taker_fee_bps = _artifact_float(payload.get("taker_fee_bps"), "taker fee")
+    additional_slippage_bps = _artifact_float(
+        payload.get("additional_slippage_bps_per_side"),
+        "additional slippage per side",
+    )
+    if taker_fee_bps < 0.0 or additional_slippage_bps < 0.0:
+        raise ValueError("microstructure model execution-cost contract is invalid")
+    if (
+        _artifact_float(dataset_summary.get("taker_fee_bps"), "dataset taker fee")
+        != taker_fee_bps
+        or _artifact_float(
+            dataset_summary.get("additional_slippage_bps_per_side"),
+            "dataset additional slippage per side",
+        )
+        != additional_slippage_bps
+    ):
+        raise ValueError("microstructure model execution-cost evidence drifted")
     _validated_source_evidence(dataset_summary.get("source_evidence"), symbol=symbol)
     model_strings = payload.get("model_strings")
     if not isinstance(model_strings, Mapping):
@@ -952,6 +974,10 @@ def load_microstructure_action_scorer(
     horizon_seconds = _artifact_int(payload.get("horizon_seconds"), "horizon")
     total_latency_ms = _artifact_int(payload.get("total_latency_ms"), "latency")
     taker_fee_bps = _artifact_float(payload.get("taker_fee_bps"), "taker fee")
+    additional_slippage_bps = _artifact_float(
+        payload.get("additional_slippage_bps_per_side"),
+        "additional slippage per side",
+    )
     reference_notional = _artifact_float(
         payload.get("reference_order_notional_quote"),
         "reference order notional",
@@ -972,8 +998,8 @@ def load_microstructure_action_scorer(
     path_resolution_ms = _artifact_int(payload.get("path_resolution_ms"), "path resolution")
     if horizon_seconds <= 0 or total_latency_ms < 0:
         raise ValueError("microstructure model timing contract is invalid")
-    if taker_fee_bps < 0.0:
-        raise ValueError("microstructure model fee contract is invalid")
+    if taker_fee_bps < 0.0 or additional_slippage_bps < 0.0:
+        raise ValueError("microstructure model execution-cost contract is invalid")
     if (
         reference_notional <= 0.0
         or not 0.0 < max_participation <= 1.0
@@ -996,6 +1022,11 @@ def load_microstructure_action_scorer(
             "dataset reference order notional",
         )
         != reference_notional
+        or _artifact_float(
+            dataset_summary.get("additional_slippage_bps_per_side"),
+            "dataset additional slippage per side",
+        )
+        != additional_slippage_bps
         or _artifact_float(
             dataset_summary.get("max_l1_participation"),
             "dataset maximum L1 participation",
@@ -1141,6 +1172,7 @@ def load_microstructure_action_scorer(
         horizon_seconds=horizon_seconds,
         total_latency_ms=total_latency_ms,
         taker_fee_bps=taker_fee_bps,
+        additional_slippage_bps_per_side=additional_slippage_bps,
         reference_order_notional_quote=reference_notional,
         max_l1_participation=max_participation,
         max_quote_age_ms=max_quote_age_ms,
@@ -1173,6 +1205,7 @@ def concatenate_microstructure_datasets(
             item.horizon_seconds,
             item.total_latency_ms,
             item.taker_fee_bps,
+            item.additional_slippage_bps_per_side,
             item.reference_order_notional_quote,
             item.max_l1_participation,
             item.max_quote_age_ms,
@@ -1192,6 +1225,7 @@ def concatenate_microstructure_datasets(
             first.horizon_seconds,
             first.total_latency_ms,
             first.taker_fee_bps,
+            first.additional_slippage_bps_per_side,
             first.reference_order_notional_quote,
             first.max_l1_participation,
             first.max_quote_age_ms,
@@ -1218,6 +1252,9 @@ def concatenate_microstructure_datasets(
         horizon_seconds=first.horizon_seconds,
         total_latency_ms=first.total_latency_ms,
         taker_fee_bps=first.taker_fee_bps,
+        additional_slippage_bps_per_side=(
+            first.additional_slippage_bps_per_side
+        ),
         reference_order_notional_quote=first.reference_order_notional_quote,
         max_l1_participation=first.max_l1_participation,
         max_quote_age_ms=first.max_quote_age_ms,
@@ -1360,7 +1397,7 @@ def _purged_tuning_subsplit(
 
 
 def _backend_parameters(compute_backend: str, seed: int) -> tuple[dict[str, object], str, str]:
-    return lightgbm_backend_parameters(compute_backend, seed)
+    return lightgbm_backend_parameters(compute_backend, seed, reproducible=True)
 
 
 def _risk_parameters(risk_level: str, train_rows: int) -> dict[str, object]:
@@ -1911,7 +1948,7 @@ def train_microstructure_action_value_model(
     risk_level: str = "conservative",
     compute_backend: str = "auto",
     seed: int = 20260710,
-    minimum_promotion_days: int = 365,
+    minimum_promotion_days: int = 240,
     deployment_calibration_days: int = 14,
     maximum_model_age_seconds: int = 86_400,
     evaluate_terminal: bool = False,
@@ -2157,6 +2194,9 @@ def train_microstructure_action_value_model(
         horizon_seconds=dataset.horizon_seconds,
         total_latency_ms=dataset.total_latency_ms,
         taker_fee_bps=dataset.taker_fee_bps,
+        additional_slippage_bps_per_side=(
+            dataset.additional_slippage_bps_per_side
+        ),
         reference_order_notional_quote=dataset.reference_order_notional_quote,
         max_l1_participation=dataset.max_l1_participation,
         max_quote_age_ms=dataset.max_quote_age_ms,
@@ -2520,6 +2560,8 @@ def refit_validated_microstructure_model(
         or dataset.horizon_seconds != artifact.horizon_seconds
         or dataset.total_latency_ms != artifact.total_latency_ms
         or dataset.taker_fee_bps != artifact.taker_fee_bps
+        or dataset.additional_slippage_bps_per_side
+        != artifact.additional_slippage_bps_per_side
         or dataset.reference_order_notional_quote
         != artifact.reference_order_notional_quote
         or dataset.max_l1_participation != artifact.max_l1_participation
@@ -2715,6 +2757,7 @@ def evaluate_microstructure_model_terminal(
         artifact.horizon_seconds,
         artifact.total_latency_ms,
         artifact.taker_fee_bps,
+        artifact.additional_slippage_bps_per_side,
         artifact.reference_order_notional_quote,
         artifact.max_l1_participation,
         artifact.max_quote_age_ms,
@@ -2736,6 +2779,7 @@ def evaluate_microstructure_model_terminal(
         dataset.horizon_seconds,
         dataset.total_latency_ms,
         dataset.taker_fee_bps,
+        dataset.additional_slippage_bps_per_side,
         dataset.reference_order_notional_quote,
         dataset.max_l1_participation,
         dataset.max_quote_age_ms,

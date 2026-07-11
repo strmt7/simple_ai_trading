@@ -10,6 +10,7 @@ import time
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from simple_ai_trading.microstructure_data import (
     BINANCE_FUTURES_MARKET_STREAM_URL,
@@ -51,6 +52,7 @@ class _AlwaysLongScorer:
     take_profit_bps = 5_000.0
     trigger_execution_slippage_bps = 1.0
     taker_fee_bps = 0.1
+    additional_slippage_bps_per_side = 0.2
 
     def score(self, _features, **_kwargs) -> MicrostructureActionPrediction:
         return MicrostructureActionPrediction(
@@ -122,7 +124,13 @@ def test_virtual_shadow_entry_waits_for_latency_deadline_and_closes_on_horizon()
     assert ledger.open_position is None
     assert len(ledger.trades) == 1
     assert ledger.trades[0].exit_reason == "horizon"
-    assert ledger.trades[0].realized_net_bps > 0.0
+    trade = ledger.trades[0]
+    exit_ratio = trade.exit_price / trade.entry_price
+    assert trade.realized_net_bps == pytest.approx(
+        (exit_ratio - 1.0) * 10_000.0
+        - (scorer.taker_fee_bps + scorer.additional_slippage_bps_per_side)
+        * (1.0 + exit_ratio)
+    )
 
 
 def _write_replay_capture(path: Path, *, seconds: int = 945) -> tuple[int, int]:

@@ -43,10 +43,10 @@ The 2026-07-10 research refresh adds three constraints to that roadmap:
 
 ## Causal L1/Tape Action-Value Model
 
-The `microstructure-action-value-v14` workflow is a separate, fail-closed
+The `microstructure-action-value-v15` workflow is a separate, fail-closed
 research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
 feed the legacy candle autonomous loop, and the repository currently has no
-accepted v14 artifact or profitability result.
+accepted v15 artifact or profitability result.
 
 Its implemented lifecycle is:
 
@@ -138,7 +138,7 @@ cross-spread execution, but it still cannot measure the strategy's own market
 impact, private order-entry latency, exchange acknowledgements, queue position,
 or partial fills because it submits zero orders. Historical and shadow success
 therefore do not guarantee live profitability. This limitation is one reason no
-v14 artifact is currently accepted or claimed profitable.
+v15 artifact is currently accepted or claimed profitable.
 
 ### Official Tick-Source Coverage
 
@@ -214,10 +214,27 @@ certificate a proof of completeness through its recorded UTC cutoff, while the
 normal incremental sync handles newly published days later.
 
 This closes a previous provenance weakness: a missing trade archive can no
-longer be interpreted as a day of genuine zero order flow, and a complete BBO
-build cannot stand in for incomplete trade/depth inputs. Existing action-value
-artifacts use schema v13 and are invalid under v14 because they lack this corpus
-binding.
+longer be interpreted as a day of genuine zero order flow. Action-value v15
+requires the exact official BBO and trade products it consumes; coarse depth is
+certified separately by the tape/depth lane instead of being imposed on a model
+that does not use it. All older action-value artifacts are invalid under v15.
+
+V15 also corrects and seals the executable target equation. For entry bid/ask
+`B0/A0` and exit bid/ask `B1/A1`, long gross return is `B1/A0 - 1` and linear
+short gross return is `1 - A1/B0`. If `c` is the per-side sum of taker fee and
+additional all-trade slippage stress in basis points, net cost is
+`c * (1 + exit_notional_ratio)`. Stop/take trigger slippage is not folded into
+`c`; it first moves the observed exit price adversely, after which the same
+notional-scaled cost equation is applied. The contract is shared by training,
+prequential validation, terminal evaluation, deployment refit, and no-order
+shadow replay. The CLI defaults the additional stress to 1 bps per side and
+serializes it in the model artifact. V15 training asks LightGBM for deterministic
+CPU execution or FP64 OpenCL accumulation to reduce accelerator variance.
+The promotion floor defaults to 240 observed UTC days because the official BBO
+archive itself spans only 320 days. This is a source-imposed bound, not a claim
+that 240 days replaces multi-year validation: multi-year trade/depth forecasts
+remain a separate research lane until they can be joined to defensible execution
+evidence without inventing historical quotes.
 
 Reproduce the plan without downloading data:
 
