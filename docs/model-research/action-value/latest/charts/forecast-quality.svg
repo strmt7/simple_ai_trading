@@ -1,94 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="930" viewBox="0 0 1600 930" role="img" aria-labelledby="title desc">
-<title id="title">Round 15 daily forecast quality</title>
-<desc id="desc">Daily direction AUC and Spearman information coefficient for three policy refit schedules and the selected development schedule.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="560" viewBox="0 0 1240 560" role="img" aria-labelledby="title desc">
+<title id="title">Round 16 profitable-outcome AUC by prior role</title>
+<desc id="desc">Long and short adverse-stress AUC for calibration June 21 to 25 and policy June 26 to 30, 2023. A dashed line marks random ranking at 0.5.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Daily forecast quality did not become tradable</text>
-<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Forecast association remained positive on many days, but every prior calibration threshold failed exact after-cost risk gates.</text>
-<line x1="120" y1="120" x2="148" y2="120" stroke="#147d8f" stroke-width="4"/>
-<text x="158" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">rolling 10d policy</text>
-<line x1="475" y1="120" x2="503" y2="120" stroke="#315d9b" stroke-width="4"/>
-<text x="513" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">rolling 25d policy</text>
-<line x1="830" y1="120" x2="858" y2="120" stroke="#b66b16" stroke-width="4"/>
-<text x="868" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">expanding 7d half-life policy</text>
-<line x1="1185" y1="120" x2="1213" y2="120" stroke="#a23b55" stroke-width="4"/>
-<text x="1223" y="125" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">selected development</text>
-<text x="120" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Direction AUC (0.50 is chance)</text>
-<rect x="120" y="180" width="1410" height="260" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="120" y1="440.0" x2="1530" y2="440.0" stroke="#e4eaef"/>
-<text x="106" y="445.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.48</text>
-<line x1="120" y1="310.0" x2="1530" y2="310.0" stroke="#e4eaef"/>
-<text x="106" y="315.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.55</text>
-<line x1="120" y1="180.0" x2="1530" y2="180.0" stroke="#e4eaef"/>
-<text x="106" y="185.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.62</text>
-<line x1="120" y1="402.9" x2="1530" y2="402.9" stroke="#6b7780" stroke-width="2" stroke-dasharray="6 6"/>
-<polyline points="120.0,346.8 261.0,260.3 402.0,293.1 543.0,285.4 684.0,367.0" fill="none" stroke="#147d8f" stroke-width="3"/>
-<circle cx="120.0" cy="346.8" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="261.0" cy="260.3" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="402.0" cy="293.1" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="543.0" cy="285.4" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="684.0" cy="367.0" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<polyline points="120.0,315.2 261.0,246.5 402.0,276.7 543.0,271.4 684.0,367.6" fill="none" stroke="#315d9b" stroke-width="3"/>
-<circle cx="120.0" cy="315.2" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="261.0" cy="246.5" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="402.0" cy="276.7" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="543.0" cy="271.4" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="684.0" cy="367.6" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<polyline points="120.0,324.1 261.0,250.2 402.0,275.3 543.0,241.5 684.0,369.1" fill="none" stroke="#b66b16" stroke-width="3"/>
-<circle cx="120.0" cy="324.1" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="261.0" cy="250.2" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="402.0" cy="275.3" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="543.0" cy="241.5" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="684.0" cy="369.1" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<polyline points="825.0,261.7 966.0,203.8 1107.0,269.7 1248.0,327.3 1389.0,315.9 1530.0,375.2" fill="none" stroke="#a23b55" stroke-width="3"/>
-<circle cx="825.0" cy="261.7" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="966.0" cy="203.8" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1107.0" cy="269.7" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1248.0" cy="327.3" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1389.0" cy="315.9" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1530.0" cy="375.2" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<text x="120" y="518" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#263746">Spearman information coefficient (0.00 is no rank association)</text>
-<rect x="120" y="540" width="1410" height="275" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="120" y1="815.0" x2="1530" y2="815.0" stroke="#e4eaef"/>
-<text x="106" y="820.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-0.03</text>
-<line x1="120" y1="677.5" x2="1530" y2="677.5" stroke="#e4eaef"/>
-<text x="106" y="682.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.09</text>
-<line x1="120" y1="540.0" x2="1530" y2="540.0" stroke="#e4eaef"/>
-<text x="106" y="545.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.20</text>
-<line x1="120" y1="779.1" x2="1530" y2="779.1" stroke="#6b7780" stroke-width="2" stroke-dasharray="6 6"/>
-<polyline points="120.0,714.6 261.0,646.1 402.0,619.7 543.0,664.1 684.0,775.2" fill="none" stroke="#147d8f" stroke-width="3"/>
-<circle cx="120.0" cy="714.6" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="261.0" cy="646.1" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="402.0" cy="619.7" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="543.0" cy="664.1" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<circle cx="684.0" cy="775.2" r="5" fill="#147d8f" stroke="#ffffff" stroke-width="2"/>
-<polyline points="120.0,682.3 261.0,636.0 402.0,613.8 543.0,665.6 684.0,784.3" fill="none" stroke="#315d9b" stroke-width="3"/>
-<circle cx="120.0" cy="682.3" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="261.0" cy="636.0" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="402.0" cy="613.8" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="543.0" cy="665.6" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<circle cx="684.0" cy="784.3" r="5" fill="#315d9b" stroke="#ffffff" stroke-width="2"/>
-<polyline points="120.0,704.0 261.0,627.2 402.0,591.4 543.0,640.0 684.0,773.2" fill="none" stroke="#b66b16" stroke-width="3"/>
-<circle cx="120.0" cy="704.0" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="261.0" cy="627.2" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="402.0" cy="591.4" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="543.0" cy="640.0" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<circle cx="684.0" cy="773.2" r="5" fill="#b66b16" stroke="#ffffff" stroke-width="2"/>
-<polyline points="825.0,710.3 966.0,559.7 1107.0,657.3 1248.0,636.2 1389.0,679.4 1530.0,799.5" fill="none" stroke="#a23b55" stroke-width="3"/>
-<circle cx="825.0" cy="710.3" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="966.0" cy="559.7" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1107.0" cy="657.3" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1248.0" cy="636.2" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1389.0" cy="679.4" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<circle cx="1530.0" cy="799.5" r="5" fill="#a23b55" stroke="#ffffff" stroke-width="2"/>
-<text x="120.0" y="850" transform="rotate(35 120.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-26</text>
-<text x="261.0" y="850" transform="rotate(35 261.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-27</text>
-<text x="402.0" y="850" transform="rotate(35 402.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-28</text>
-<text x="543.0" y="850" transform="rotate(35 543.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-29</text>
-<text x="684.0" y="850" transform="rotate(35 684.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-06-30</text>
-<text x="825.0" y="850" transform="rotate(35 825.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-01</text>
-<text x="966.0" y="850" transform="rotate(35 966.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-02</text>
-<text x="1107.0" y="850" transform="rotate(35 1107.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-03</text>
-<text x="1248.0" y="850" transform="rotate(35 1248.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-04</text>
-<text x="1389.0" y="850" transform="rotate(35 1389.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-05</text>
-<text x="1530.0" y="850" transform="rotate(35 1530.0 850)" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">2023-07-06</text>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Profitable-outcome ranking</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Adverse-stress targets; values above 0.5 rank positive outcomes better than chance.</text>
+<rect x="90" y="130" width="1080" height="300" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="90" y1="430.0" x2="1170" y2="430.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
+<text x="78" y="435.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.00</text>
+<line x1="90" y1="355.0" x2="1170" y2="355.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
+<text x="78" y="360.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.25</text>
+<line x1="90" y1="280.0" x2="1170" y2="280.0" stroke="#6e7d88" stroke-width="2" stroke-dasharray="7 6"/>
+<text x="78" y="285.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.50</text>
+<line x1="90" y1="205.0" x2="1170" y2="205.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
+<text x="78" y="210.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0.75</text>
+<line x1="90" y1="130.0" x2="1170" y2="130.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
+<text x="78" y="135.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">1.00</text>
+<rect x="181.0" y="238.6" width="88" height="191.4" fill="#16827a"/>
+<text x="225.0" y="228.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">0.638</text>
+<text x="225.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Calibration long</text>
+<text x="225.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-21 to 2023-06-25</text>
+<rect x="421.0" y="257.8" width="88" height="172.2" fill="#8d5aa7"/>
+<text x="465.0" y="247.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">0.574</text>
+<text x="465.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Calibration short</text>
+<text x="465.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-21 to 2023-06-25</text>
+<rect x="661.0" y="264.6" width="88" height="165.4" fill="#16827a"/>
+<text x="705.0" y="254.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">0.551</text>
+<text x="705.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy long</text>
+<text x="705.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-26 to 2023-06-30</text>
+<rect x="901.0" y="249.7" width="88" height="180.3" fill="#8d5aa7"/>
+<text x="945.0" y="239.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">0.601</text>
+<text x="945.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy short</text>
+<text x="945.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-26 to 2023-06-30</text>
+<text x="34" y="285" transform="rotate(-90 34 285)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">ROC AUC</text>
+<text x="48" y="532" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">AUC alone does not establish an after-cost edge; the locked action gates remained mandatory.</text>
 </svg>
