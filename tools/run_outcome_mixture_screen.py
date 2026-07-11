@@ -1,4 +1,4 @@
-"""Run precommitted conditional outcome-mixture research screens."""
+"""Run precommitted adaptive action-value research screens."""
 
 from __future__ import annotations
 
@@ -681,6 +681,21 @@ _ROUND_CONTRACTS = {
         "trainer": "lightgbm_hurdle",
         "feature_version": "l1-tape-causal-v8",
         "booster_count_per_member": 10,
+        "runtime_training_data_mode": "bounded_host_table_opencl_histogram",
+        "training": {
+            "ensemble_seeds": [29, 43, 71],
+            "prediction_batch_size": 4_096,
+            "target_scenario": "base",
+            "ensemble_method": "independent_seed_mean_and_dispersion",
+            "label_uniqueness_weighting": True,
+            "calibration_role": (
+                "chronological_second_half_of_early_stop_after_exact_exit_purge"
+            ),
+            "probability_calibration": "bounded_platt_log_odds",
+            "conditional_magnitude_objective": "l2_conditional_mean",
+            "interval_objective": "direct_q10_q90_with_monotone_rearrangement",
+            "development_candidate_count": 1,
+        },
         "model": {
             "candidate_id": "900s-lightgbm-hurdle-quantile-ensemble",
             "family": "side_specific_lightgbm_hurdle_expected_value",
@@ -851,6 +866,11 @@ def load_outcome_mixture_design(
         if round_contract is not None
         else None
     )
+    runtime_mode_override = (
+        round_contract.get("runtime_training_data_mode")
+        if round_contract is not None
+        else None
+    )
 
     def shared_section_matches(name: str) -> bool:
         actual = payload.get(name)
@@ -866,6 +886,18 @@ def load_outcome_mixture_design(
                 return False
             return all(
                 field == "required_data_types" or actual.get(field) == value
+                for field, value in sealed.items()
+            )
+        if name == "runtime_resources" and runtime_mode_override is not None:
+            if (
+                not isinstance(actual, Mapping)
+                or not isinstance(sealed, Mapping)
+                or set(actual) != set(sealed)
+                or actual.get("training_data_mode") != runtime_mode_override
+            ):
+                return False
+            return all(
+                field == "training_data_mode" or actual.get(field) == value
                 for field, value in sealed.items()
             )
         if horizon_override is None or name not in {"execution", "barrier_targets"}:
@@ -898,7 +930,8 @@ def load_outcome_mixture_design(
         or payload.get("portfolio_claim") is not False
         or payload.get("leverage_applied") is not False
         or payload.get("predecessor_evidence") != predecessor
-        or payload.get("training") != reference.get("training")
+        or payload.get("training")
+        != round_contract.get("training", reference.get("training"))
     ):
         raise ValueError("outcome-mixture design contract is invalid")
     implementation = payload.get("implementation")
@@ -1284,7 +1317,7 @@ def run_outcome_mixture_screen(
             **extra,
         }
         print(
-            "outcome-mixture "
+            "action-value-screen "
             + " ".join(
                 f"{name}={value}"
                 for name, value in payload.items()
@@ -1530,7 +1563,11 @@ def run_outcome_mixture_screen(
                 }
             )
         progress("model-complete", **completion)
-    batch_size = int(training["batch_size"])
+    batch_size = int(
+        training[
+            "prediction_batch_size" if lightgbm_trainer else "batch_size"
+        ]
+    )
     progress("calibration-predict")
     calibration_prediction = _ensemble_for_role(
         models,
@@ -1680,7 +1717,7 @@ def run_outcome_mixture_screen(
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the precommitted conditional outcome-mixture screen"
+        description="Run a precommitted adaptive action-value model screen"
     )
     parser.add_argument("--design", required=True)
     parser.add_argument("--warehouse", required=True)
