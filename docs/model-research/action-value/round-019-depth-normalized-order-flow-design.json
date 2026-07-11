@@ -1,8 +1,8 @@
 {
   "schema_version": "outcome-mixture-screen-design-v1",
   "round": 19,
-  "design_revision": 1,
-  "purpose": "consumed_data_pressure_capacity_outcome_mixture_screen",
+  "design_revision": 2,
+  "purpose": "consumed_data_depth_normalized_order_flow_outcome_mixture_screen",
   "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
   "trading_authority": false,
   "execution_claim": false,
@@ -11,7 +11,7 @@
   "leverage_applied": false,
   "implementation": {
     "hash_mode": "git_blob_sha256_v1",
-    "commit": "b5f283271a7033ad63da784f09162beb13490f78",
+    "commit": "123d6edf69411a3c942b6c7ce3a511706c5f0ccb",
     "files": [
       {
         "path": "src/simple_ai_trading/microstructure_outcome_mixture.py",
@@ -23,7 +23,7 @@
       },
       {
         "path": "src/simple_ai_trading/microstructure_action_policy.py",
-        "sha256": "9dd7d4818f4edd92c27662fc6f26033b7435b43cac88c319661122a75fec9f84"
+        "sha256": "dcbafb0a22b4dbf1346df35ce3761c901adb246e31e7946b810797471b443384"
       },
       {
         "path": "src/simple_ai_trading/microstructure_barriers.py",
@@ -71,11 +71,11 @@
       },
       {
         "path": "tools/run_adaptive_action_screen.py",
-        "sha256": "44f0059a79953fe9154a729bd7ccc2752ea096720f340b0bee496dad5f52035a"
+        "sha256": "8d596c8a5418f5fdd964aa51938d23d41887847924d96c27a374f390aaf9f9ce"
       },
       {
         "path": "tools/run_outcome_mixture_screen.py",
-        "sha256": "3c33182890f7eda1fb38a9b1100726232d85287a2f0332f48ee2e7a8fc1b8ad3"
+        "sha256": "3dbee5b619468afdeb87a391b714f10aa1b9b763a13549b66bb4e7d27a55e9f4"
       }
     ]
   },
@@ -84,7 +84,7 @@
     "design_sha256": "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40",
     "source_report_canonical_sha256": "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676",
     "publication_sha256": "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378",
-    "finding": "Round 18 improved the least-negative policy tail and produced 24 aggressive calibration-eligible rows, but all four threshold traces lost money after stress costs. Round 19 keeps the model, data, risk, and ranking settings fixed while adding causal trade-pressure versus opposing displayed-depth inputs."
+    "finding": "Round 18 improved the least-negative out-of-sample top-100 mean net return and produced 24 aggressive-profile signals passing pre-threshold controls in the threshold-selection window, but all four threshold-selection simulations lost money after stress costs. Round 19 keeps the model, data, risk, and ranking settings fixed while adding causal depth-normalized aggressive order-flow inputs based on current opposing displayed L1 depth."
   },
   "data": {
     "symbol": "BTCUSDT",
@@ -161,7 +161,7 @@
     "minimum_activity_quota": null
   },
   "model": {
-    "candidate_id": "pressure-capacity-conditional-outcome-mixture",
+    "candidate_id": "depth-normalized-order-flow-conditional-outcome-mixture",
     "family": "conditional_outcome_mixture_residual_mlp",
     "sequence_length": 1,
     "hidden_dim": 128,
@@ -336,7 +336,7 @@
     {
       "title": "The Price Impact of Order Book Events",
       "url": "https://arxiv.org/abs/1011.6402",
-      "use": "Finds that short-horizon price impact varies with order-flow imbalance and inversely with depth. Round 19 adds causal pressure-to-opposing-depth inputs but treats profitability as unproven."
+      "use": "Finds that short-horizon price impact varies with order-flow imbalance and inversely with depth. Round 19 adds causal depth-normalized aggressive order-flow inputs based on opposing displayed L1 depth; profitability remains unproven."
     },
     {
       "title": "Order Flows and Limit Order Book Resiliency on the Meso-Scale",
@@ -351,7 +351,7 @@
     {
       "title": "Do Order-Book States Predict Passive-Buy Toxicity? Evidence from BTC Perpetual Futures",
       "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6693260",
-      "use": "Recent non-peer-reviewed BTC evidence motivates testing aggressive pressure relative to near-touch absorption capacity and liquidity fragility; its reported findings are not imported as validation."
+      "use": "Recent non-peer-reviewed BTC evidence motivates testing depth-normalized aggressive order flow, near-touch displayed liquidity, and liquidity fragility; its reported findings are not imported as validation."
     },
     {
       "title": "DirectML",
@@ -359,5 +359,5 @@
       "use": "Defines the vendor-neutral DirectX 12 training path used in a clean process on this AMD host; CPU fallback remains forbidden for this experiment."
     }
   ],
-  "design_sha256": "c2c848a708e807bf66b2f95b77a155d35c2f1569f034fddb2b07ffcfff61e947"
+  "design_sha256": "2a2c2e1c52d7dd0a6c8ac1a34e26defe3ec436a5051fcc49ed2172ef9f87ca77"
 }
