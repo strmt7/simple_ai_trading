@@ -1,0 +1,461 @@
+{
+  "schema_version": "outcome-mixture-screen-design-v1",
+  "round": 26,
+  "design_revision": 1,
+  "purpose": "consumed_data_nested_multiscale_soft_expert_screen",
+  "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false,
+  "implementation": {
+    "hash_mode": "git_blob_sha256_v1",
+    "commit": "7375fc6bf77d59f68f1ff5d431ddadf9e48be8ab",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_mixture.py",
+        "sha256": "cc08b981e6d7c35018e3ae6620a34e0f2ce017cade7f8ea36a612343383c871f"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "87e99eae0530de107c206e9890e2465975607bc96f891fd39e5fa5a47f20d37e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "dcbafb0a22b4dbf1346df35ce3761c901adb246e31e7946b810797471b443384"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "8c2973f2678622bf4e09f3fdd70ad26906d057cb43d0a2b1dc29d5e8af54f752"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_runtime.py",
+        "sha256": "2087c50d1a73009068099125d917f32785c1c2df797edc2bead782c7e8b8fa2f"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "7b1d0f7b3aff5aaaa1d0b282017918c63c2f421cc982cccd602165e8925be43a"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "330832b09b5cc71d75996004fa31b4df1be6e281ab3b8aa4bae98c92d1dd8452"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "baff279e9b742ab930e50dc9508afa555a4a017fa3214c03d2dc645250e1f5c5"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "2d92c27e847374d7d9b734b074ed23837e9bc3ec3a674e175898a0ce2bf8c9bb"
+      },
+      {
+        "path": "tools/run_head_coherence_screen.py",
+        "sha256": "b7d26f3debf9fa31646649fe039bd0fd08caf379f527306209785ce916c22662"
+      },
+      {
+        "path": "tools/run_adaptive_action_screen.py",
+        "sha256": "8d596c8a5418f5fdd964aa51938d23d41887847924d96c27a374f390aaf9f9ce"
+      },
+      {
+        "path": "tools/run_outcome_mixture_screen.py",
+        "sha256": "28f620b2a5b4d23edc6c428a1061aaeef0750b46b2b8a3bbaa6ffbabf770bf62"
+      }
+    ]
+  },
+  "predecessor_evidence": {
+    "round": 25,
+    "design_sha256": "b6fda893c8b615e0aa754e733103ec6d65e41ba8c7bfefd1618add7780f0fe71",
+    "source_report_canonical_sha256": "ad1135f6fb3fc6d70128e73f30e3940106202327d278356250d3fb08fcb93b25",
+    "publication_sha256": "b3ef88b0273f80ec4245531962af1711661479a53f111c3ac9e5c1e059b73b80",
+    "finding": "Round 25 restored global ranking and increased the largest threshold-selection eligible set from 0 to 26 rows, but every displayed top-100 and top-500 realized mean net return remained negative and all eight threshold candidates lost under stress. Mean normalized routing entropy remained between 0.986 and 0.992, showing that homogeneous experts learned little specialization. Round 26 changes only their causal context spans to 15 and 30 seconds."
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "full_history_inventory_required": false,
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development_evaluation": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "barrier_targets": {
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1.0,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18.0,
+    "maximum_stop_bps": 60.0,
+    "minimum_take_bps": 27.0,
+    "maximum_take_bps": 90.0,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "compute_backend": "directml",
+    "spill_directory_policy": "warehouse_adjacent",
+    "training_worker_isolation": "clean_process",
+    "cpu_fallback_permitted": false,
+    "training_data_mode": "bounded_device_preload_when_below_512MiB"
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "model": {
+    "candidate_id": "nested-multiscale-soft-expert-outcome-mixture",
+    "family": "conditional_outcome_mixture_residual_mlp",
+    "sequence_length": 7,
+    "hidden_dim": 88,
+    "residual_blocks": 2,
+    "side_tower_mode": "independent",
+    "dropout": 0.1,
+    "probability_loss_weight": 0.25,
+    "magnitude_loss_weight": 0.35,
+    "expected_value_loss_weight": 1.0,
+    "quantile_loss_weight": 0.15,
+    "ranking_loss_weight": 0.1,
+    "ranking_loss_mode": "correlation",
+    "pairwise_ranking_loss_weight": 0.02,
+    "temporal_pooling_mode": "causal_attention",
+    "representation_mode": "soft_mixture_of_experts",
+    "expert_count": 2,
+    "router_balance_loss_weight": 0.02,
+    "expert_temporal_context_mode": "nested_recent_full"
+  },
+  "training": {
+    "ensemble_seeds": [
+      29,
+      43,
+      71
+    ],
+    "batch_size": 4096,
+    "max_epochs": 20,
+    "patience": 4,
+    "target_scenario": "base",
+    "ensemble_method": "independent_seed_mean_and_dispersion",
+    "label_uniqueness_weighting": true,
+    "development_candidate_count": 1
+  },
+  "threshold_policy": {
+    "quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "drawdown_penalty": 0.5,
+    "selection_scenario": "stress",
+    "no_passing_threshold_action": "abstain"
+  },
+  "risk_profiles": [
+    {
+      "profile": "conservative",
+      "epistemic_penalty": 1.5,
+      "minimum_profitable_probability": 0.65,
+      "minimum_member_agreement": 1.0,
+      "maximum_epistemic_std_bps": 6.0,
+      "minimum_lower_bound_bps": -35.0,
+      "calibration_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 50.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "policy_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 60.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "development_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 70.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "regular",
+      "epistemic_penalty": 1.0,
+      "minimum_profitable_probability": 0.6,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 10.0,
+      "minimum_lower_bound_bps": -45.0,
+      "calibration_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 75.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "policy_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 85.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "development_gates": {
+        "minimum_trades": 18,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 95.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "aggressive",
+      "epistemic_penalty": 0.5,
+      "minimum_profitable_probability": 0.55,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 15.0,
+      "minimum_lower_bound_bps": -60.0,
+      "calibration_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 110.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "policy_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 125.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "development_gates": {
+        "minimum_trades": 24,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 140.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "leverage_applied": false
+    }
+  ],
+  "evaluation": {
+    "calibration_used_for_threshold_selection": true,
+    "policy_used_for_profile_acceptance": true,
+    "development_used_for_selection": false,
+    "positions_must_exit_within_utc_day": true,
+    "maximum_concurrent_positions": 1,
+    "overlap_permitted": false
+  },
+  "reserved_terminal": {
+    "date": "2023-07-07",
+    "included_in_dataset": false,
+    "access_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Strictly Proper Scoring Rules, Prediction, and Estimation",
+      "url": "https://doi.org/10.1198/016214506000001437",
+      "use": "Supports the retained unweighted binary log loss for truthful profitability probabilities. The separate ranking term remains explicitly non-proper, so Brier diagnostics continue to expose calibration damage."
+    },
+    {
+      "title": "Deep Learning for Limit Order Books",
+      "url": "https://arxiv.org/abs/1601.01987",
+      "use": "Motivates modeling a conditional future distribution and inspecting its tails, while this experiment explicitly remains limited to observed best-bid/offer and trade features."
+    },
+    {
+      "title": "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1808.03668",
+      "use": "Supports shared nonlinear representations for order-book prediction but does not establish an after-cost edge for this model or corpus."
+    },
+    {
+      "title": "BDLOB: Bayesian Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1811.10041",
+      "use": "Motivates independent-seed dispersion and abstention when predictive uncertainty is high rather than forcing a trade."
+    },
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://arxiv.org/abs/1011.6402",
+      "use": "Finds that short-horizon price impact varies with order-flow imbalance and inversely with depth. Round 19 adds causal depth-normalized aggressive order-flow inputs based on opposing displayed L1 depth; profitability remains unproven."
+    },
+    {
+      "title": "Order Flows and Limit Order Book Resiliency on the Meso-Scale",
+      "url": "https://arxiv.org/abs/1708.02715",
+      "use": "Supports combining active trade flow with passive depth and resiliency rather than treating directional trade imbalance as sufficient on its own."
+    },
+    {
+      "title": "Deep Learning for Digital Asset Limit Order Books",
+      "url": "https://arxiv.org/abs/2010.01241",
+      "use": "Provides crypto-specific evidence that short-horizon order-book prediction is testable with walk-forward data, without implying execution profitability."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Shows that strong limit-order-book forecast metrics need not produce actionable transactions. Round 20 therefore retains exact after-cost threshold selection and out-of-sample risk controls rather than treating forecast discrimination as profitability."
+    },
+    {
+      "title": "Price Discovery in Bitcoin: The Role of Limit Orders",
+      "url": "https://doi.org/10.2139/ssrn.4150979",
+      "use": "Reports directional asymmetry in permanent Bitcoin price impact and material dependence on order-book state. This motivates testing separate long and short representations without importing the paper's findings as model validation."
+    },
+    {
+      "title": "The Adaptive Nature of Liquidity Taking in Limit Order Books",
+      "url": "https://arxiv.org/abs/1403.0842",
+      "use": "Documents direction-dependent interactions among order-flow predictability, opposing liquidity, and price impact. Round 20 tests whether one shared representation causes harmful coupling between directional outcomes."
+    },
+    {
+      "title": "Gradient Surgery for Multi-Task Learning",
+      "url": "https://proceedings.neurips.cc/paper/2020/hash/3fe78a8acf5fda99de95303940a2420c-Abstract.html",
+      "use": "Establishes that conflicting task gradients can cause destructive interference in shared multi-task models. Independent side towers are the smallest falsifiable separation experiment; no benefit is presumed."
+    },
+    {
+      "title": "Conflict-Averse Gradient Descent for Multi-task Learning",
+      "url": "https://proceedings.neurips.cc/paper/2021/hash/9d27fdf2477ffbff837d73ef7ae23db9-Abstract.html",
+      "use": "Shows that average-loss optimization can underperform independently learned tasks when gradients conflict. Round 20 holds losses and training capacity effectively constant while removing shared long/short parameters."
+    },
+    {
+      "title": "Learning to Rank using Gradient Descent",
+      "url": "https://www.microsoft.com/en-us/research/publication/learning-to-rank-using-gradient-descent/",
+      "use": "Introduces RankNet's probabilistic pairwise ranking loss. Round 21 applies its ordering principle to sampled pairs of realized net returns while retaining proper probability and conditional-magnitude losses."
+    },
+    {
+      "title": "Building Cross-Sectional Systematic Strategies By Learning to Rank",
+      "url": "https://arxiv.org/abs/2012.07149",
+      "use": "Provides finance-specific evidence that direct ranking objectives can differ materially from sorting ordinary regression outputs. Its cross-sectional results are motivation only and do not validate this single-instrument high-frequency experiment."
+    },
+    {
+      "title": "Joint Optimization of Ranking and Calibration with Contextualized Hybrid Model",
+      "url": "https://arxiv.org/abs/2208.06164",
+      "use": "Documents the tension between pointwise calibration and ranking objectives and motivates retaining both rather than replacing the calibrated objective. Its click-prediction results are not financial validation."
+    },
+    {
+      "title": "Getting the Target Right in Return Prediction",
+      "url": "https://doi.org/10.2139/ssrn.6615698",
+      "use": "Recent non-peer-reviewed finance evidence reports that rank-based targets can improve ordering while discarding economically relevant return magnitudes. Round 22 therefore retains absolute net-return losses and adds only a bounded pairwise regularizer."
+    },
+    {
+      "title": "TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data",
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "Provides recent evidence that temporal attention can capture dependencies missed by endpoint-only limit-order-book models, while also warning that transaction costs materially degrade predictive results. Round 23 uses a much smaller causal attention pool and retains exact after-cost gates."
+    },
+    {
+      "title": "Forecasting of Jump Arrivals in Stock Prices: New Attention-based Network Architecture using Limit Order Book Data",
+      "url": "https://arxiv.org/abs/1810.10845",
+      "use": "Supports testing bounded temporal attention for high-frequency order-book path dependence. Its equity jump-classification findings are motivation only and do not establish a BTC net-return edge."
+    },
+    {
+      "title": "Do Order-Book States Predict Passive-Buy Toxicity? Evidence from BTC Perpetual Futures",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6693260",
+      "use": "Recent non-peer-reviewed BTC evidence motivates testing depth-normalized aggressive order flow, near-touch displayed liquidity, and liquidity fragility; its reported findings are not imported as validation."
+    },
+    {
+      "title": "Mixture-of-Linear-Experts for Long-term Time Series Forecasting",
+      "url": "https://proceedings.mlr.press/v238/ni24a.html",
+      "use": "Shows that end-to-end routing can let experts specialize in different temporal patterns. Round 25 tests that architectural mechanism at a fixed residual-block budget; the paper's long-horizon benchmarks do not establish a high-frequency financial or after-cost edge."
+    },
+    {
+      "title": "Moirai-MoE: Empowering Time Series Foundation Models with Sparse Mixture of Experts",
+      "url": "https://proceedings.mlr.press/v267/liu25an.html",
+      "use": "Finds heterogeneous distributions within short windows and motivates learned specialization without predefined regime labels. Round 25 uses a much smaller dense two-expert router, so the paper is mechanism-level motivation rather than model validation."
+    },
+    {
+      "title": "TimeBridge: Non-Stationarity Matters for Long-term Time Series Forecasting",
+      "url": "https://proceedings.mlr.press/v267/liu25cb.html",
+      "use": "Separates local dependency modeling from longer-run nonstationarity and cautions against treating one stationary representation as universal. Its index-level forecasting results do not validate this 30-second BTC microstructure representation."
+    },
+    {
+      "title": "Deep Learning for Financial Time Series: A Large-Scale Benchmark of Risk-Adjusted Performance",
+      "url": "https://arxiv.org/abs/2603.01820",
+      "use": "Recent non-peer-reviewed evidence emphasizes temporal representation quality, transaction-cost breakevens, downside and tail risk, seed robustness, and computational efficiency. Its daily multi-asset futures results are not imported into this intraday BTC experiment."
+    },
+    {
+      "title": "Pathformer: Multi-scale Transformers with Adaptive Pathways for Time Series Forecasting",
+      "url": "https://openreview.net/forum?id=lJkOCMP2aW",
+      "use": "Supports adaptive combination of local detail and broader temporal dependencies rather than forcing one fixed context on every input. Round 26 tests only nested causal context spans; Pathformer's general forecasting benchmarks do not establish financial performance."
+    },
+    {
+      "title": "TimeMixer: Decomposable Multiscale Mixing for Time Series Forecasting",
+      "url": "https://openreview.net/forum?id=7oLshfEIC2",
+      "use": "Shows that fine and coarse temporal observations can carry complementary information and can be combined efficiently. Round 26 neither imports its decomposition nor treats nonfinancial benchmark accuracy as after-cost validation."
+    },
+    {
+      "title": "Multi-Horizon Forecasting for Limit Order Books: Novel Deep Learning Approaches and Hardware Acceleration using Intelligent Processing Units",
+      "url": "https://arxiv.org/abs/2105.10430",
+      "use": "Provides limit-order-book-specific motivation for representing more than one temporal horizon. Its forecast results concern different data and hardware and do not validate the fixed 900-second net-return target or this BTC corpus."
+    },
+    {
+      "title": "DirectML",
+      "url": "https://microsoft.github.io/DirectML/PyTorch.html",
+      "use": "Defines the vendor-neutral DirectX 12 training path used in a clean process on this AMD host. Any DirectML CPU-fallback warning is promoted to an exception during training and inference."
+    }
+  ],
+  "design_sha256": "84112245cf1c6a7e93b678bdfea9f97e329772731bc2bdec97990773b6f92837"
+}

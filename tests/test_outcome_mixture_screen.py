@@ -101,6 +101,13 @@ DESIGN25 = (
     / "action-value"
     / "round-025-soft-mixture-of-experts-design.json"
 )
+DESIGN26 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-026-nested-multiscale-soft-experts-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -638,8 +645,10 @@ def test_round24_design_is_historical_and_changes_only_ranking_scope() -> None:
     ]
 
 
-def test_round25_design_is_current_parameter_matched_and_globally_ranked() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN25)
+def test_round25_design_is_historical_parameter_matched_and_globally_ranked() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN25, require_current=False
+    )
     round23, _round23_sha256 = load_outcome_mixture_design(
         DESIGN23_V2, require_current=False
     )
@@ -693,6 +702,57 @@ def test_round25_design_is_current_parameter_matched_and_globally_ranked() -> No
     ]
     assert "Recent non-peer-reviewed evidence" in research[
         "https://arxiv.org/abs/2603.01820"
+    ]
+
+
+def test_round26_design_is_current_and_changes_only_expert_context() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN26)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN25, require_current=False
+    )
+
+    assert design_sha256 == (
+        "84112245cf1c6a7e93b678bdfea9f97e329772731bc2bdec97990773b6f92837"
+    )
+    assert design["round"] == 26
+    assert design["implementation"]["commit"] == (
+        "7375fc6bf77d59f68f1ff5d431ddadf9e48be8ab"
+    )
+    assert design["model"]["candidate_id"] == (
+        "nested-multiscale-soft-expert-outcome-mixture"
+    )
+    assert design["model"]["expert_temporal_context_mode"] == (
+        "nested_recent_full"
+    )
+    assert set(design["model"]) == set(predecessor["model"]) | {
+        "expert_temporal_context_mode"
+    }
+    for name, value in predecessor["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
+    assert screen._ROUND_CONTRACTS[26]["trainable_parameter_count"] == 146_974
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    assert "local detail and broader temporal dependencies" in research[
+        "https://openreview.net/forum?id=lJkOCMP2aW"
+    ]
+    assert "fine and coarse temporal observations" in research[
+        "https://openreview.net/forum?id=7oLshfEIC2"
+    ]
+    assert "do not validate the fixed 900-second net-return target" in research[
+        "https://arxiv.org/abs/2105.10430"
     ]
 
 
