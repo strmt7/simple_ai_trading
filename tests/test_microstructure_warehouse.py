@@ -394,10 +394,13 @@ def test_corpus_certificate_allows_only_explicit_provider_depth_gaps(tmp_path) -
         strict = warehouse.corpus_certificate(
             "BTCUSDT",
             required_data_types=("bookDepth",),
-            required_start_ms=start_ms,
-            required_end_ms=end_ms,
         )
         allowed = warehouse.corpus_certificate(
+            "BTCUSDT",
+            required_data_types=("bookDepth",),
+            allow_official_gap_data_types=("bookDepth",),
+        )
+        bounded_allowed = warehouse.corpus_certificate(
             "BTCUSDT",
             required_data_types=("bookDepth",),
             required_start_ms=start_ms,
@@ -409,9 +412,17 @@ def test_corpus_certificate_allows_only_explicit_provider_depth_gaps(tmp_path) -
 
     assert strict["status"] == "fail"
     assert allowed["status"] == "pass"
+    assert allowed["contract"] == "official-binance-corpus-certificate-v3"
+    assert allowed["common_gap_missing_data_types"] == {
+        "2026-07-09": ["bookDepth"]
+    }
+    assert allowed["unallowed_common_calendar_gaps"] == []
     depth = allowed["data_types"]["bookDepth"]
-    assert depth["requested_official_gap_periods"] == ["2026-07-09"]
+    assert depth["requested_official_gap_periods"] == []
     assert depth["official_calendar_gaps"] == ["2026-07-09"]
+    assert bounded_allowed["data_types"]["bookDepth"][
+        "requested_official_gap_periods"
+    ] == ["2026-07-09"]
 
 
 def test_verified_unchanged_reuse_requires_intact_physical_partition(tmp_path) -> None:

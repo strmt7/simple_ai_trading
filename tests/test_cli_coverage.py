@@ -1033,7 +1033,9 @@ def test_tick_corpus_audit_reports_each_symbol_and_writes_evidence(
     tmp_path,
     capsys,
 ) -> None:
-    calls: list[tuple[str, tuple[str, ...], int | None, int | None]] = []
+    calls: list[
+        tuple[str, tuple[str, ...], int | None, int | None, tuple[str, ...]]
+    ] = []
 
     class Warehouse:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -1052,6 +1054,7 @@ def test_tick_corpus_audit_reports_each_symbol_and_writes_evidence(
                     tuple(kwargs["required_data_types"]),
                     kwargs["required_start_ms"],
                     kwargs["required_end_ms"],
+                    tuple(kwargs["allow_official_gap_data_types"]),
                 )
             )
             return {
@@ -1086,7 +1089,11 @@ def test_tick_corpus_audit_reports_each_symbol_and_writes_evidence(
     assert result == 0
     assert len(calls) == 3
     assert calls[0][1] == ("bookTicker", "trades", "bookDepth")
-    assert calls[0][2:] == (1_783_468_800_000, 1_783_641_599_999)
+    assert calls[0][2:] == (
+        1_783_468_800_000,
+        1_783_641_599_999,
+        ("bookDepth",),
+    )
     assert json.loads(output.read_text(encoding="utf-8"))["status"] == "pass"
     assert "status=pass symbols=3" in capsys.readouterr().out
 
@@ -1152,7 +1159,9 @@ def test_tick_archive_full_history_rejects_inventory_change_during_sync(
                 },
             )
 
-        def corpus_certificate(self, symbol):
+        def corpus_certificate(self, symbol, **kwargs):
+            assert kwargs["required_data_types"] == ("trades",)
+            assert kwargs["allow_official_gap_data_types"] == ()
             return {"symbol": symbol, "status": "pass", "reasons": []}
 
     monkeypatch.setattr(cli, "list_archive_items", listing)
