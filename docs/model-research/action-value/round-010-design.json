@@ -1,0 +1,134 @@
+{
+  "schema_version": "action-value-v15-discovery-design-v1",
+  "round": 10,
+  "design_sha256": "a2aa45f8245a12a85ea94365333f621fc2824a425ad6731105253a138fb0e049",
+  "status": "precommitted",
+  "purpose": "calibration_remediation_and_medium_horizon_action_value_screen_before_multi_regime_expansion",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "terminal_holdout": false,
+  "predecessor_round": 9,
+  "change_control": {
+    "implementation_commit": "58e6ac5f75bccb75739c6084c4861ba2ecc981fe",
+    "fixed_dimensions": [
+      "official_binance_usdm_book_ticker_and_trade_archives",
+      "checksum_and_physical_partition_certification",
+      "one_second_causal_features_and_100ms_execution_quotes",
+      "750ms_total_latency",
+      "5bps_taker_fee_and_1bps_additional_slippage_per_side",
+      "five_second_decision_cadence",
+      "risk_profile_stop_take_and_l1_participation_limits",
+      "nonoverlapping_positions_and_one_times_leverage"
+    ],
+    "changed_dimensions": [
+      "new_untouched_utc_selection_window",
+      "base_rate_initialized_loss_decreasing_damped_platt_calibration",
+      "replace_untrainable_60s_and_120s_horizons_with_600s_and_1800s"
+    ],
+    "round_9_evidence_mutable": false
+  },
+  "data": {
+    "provider": "binance",
+    "market_type": "futures",
+    "symbol": "BTCUSDT",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-09-04",
+    "end_date": "2023-09-10",
+    "feature_clock": "one_second_causal_event_time",
+    "execution_clock": "official_100ms_bbo",
+    "full_history_inventory_required": true,
+    "checksum_verified_partitions_required": true,
+    "selection_contaminated_after_run": true,
+    "excluded_consumed_dates": [
+      "2023-07-08",
+      "2023-08-14",
+      "2023-08-15",
+      "2023-08-16",
+      "2023-08-17",
+      "2023-08-18",
+      "2023-08-19",
+      "2023-08-20",
+      "2023-10-21",
+      "2024-02-05",
+      "2024-03-15"
+    ],
+    "window_selection_method": "first_complete_seven_day_window_after_2023-09-03_not_intersecting_consumed_dates"
+  },
+  "execution": {
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "trigger_execution_slippage_bps": 1.0,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "decision_cadence_seconds": 5,
+    "suppress_overlapping_positions": true,
+    "maker_fill_claim": false,
+    "leverage": 1.0
+  },
+  "training": {
+    "model_schema_version": "microstructure-action-value-v15",
+    "feature_version": "l1-tape-causal-v6",
+    "model_family": "side_specific_hurdle_expected_value",
+    "calibration_method": "base_rate_initialized_damped_platt_v2",
+    "compute_backend": "auto",
+    "reproducible_backend": true,
+    "seed": 20260711,
+    "minimum_discovery_days": 5,
+    "evaluate_terminal": false
+  },
+  "risk_profiles": {
+    "conservative": {
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "max_l1_participation": 0.05
+    },
+    "regular": {
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "max_l1_participation": 0.1
+    },
+    "aggressive": {
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "max_l1_participation": 0.15
+    }
+  },
+  "horizon_seconds": [
+    300,
+    600,
+    900,
+    1800
+  ],
+  "candidate_count": 12,
+  "selection": {
+    "primary_metric": "selection_total_net_bps_minus_risk_penalty_times_max_drawdown_bps",
+    "mandatory_gates": [
+      "positive_after_cost_selection_net_bps",
+      "selection_profit_factor_above_one",
+      "positive_block_bootstrap_daily_lower_bound",
+      "minimum_nonoverlapping_trade_count",
+      "directional_baseline_outperformance"
+    ],
+    "promotion_allowed": false,
+    "next_stage": "precommitted_multi_regime_expansion_for_survivors_only"
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "cost_aware_execution_filter_and_walk_forward_evaluation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "forecast_accuracy_must_be_separated_from_actionable_transactions"
+    },
+    {
+      "url": "https://arxiv.org/abs/2112.02947",
+      "use": "causal_order_flow_imbalance_features_at_short_horizons"
+    }
+  ]
+}
