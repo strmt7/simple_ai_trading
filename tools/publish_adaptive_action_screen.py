@@ -73,6 +73,10 @@ _PROGRESS_IDENTITIES = {
         "additive pairwise net-return regularization",
         "three-seed calibration-preserving additive-pairwise outcome-mixture",
     ),
+    23: (
+        "bounded causal temporal-attention ablation",
+        "three-seed causal-temporal-attention outcome-mixture",
+    ),
 }
 
 
@@ -136,6 +140,12 @@ def _publication_narrative(
             "additive net-return ranking model abstained",
             "The bounded additive pairwise term restored Round 20-like signal eligibility but did not improve the best out-of-sample tail, and every threshold-selection simulation remained negative net of stress costs.",
             "Further ranking-loss tuning is not justified; the next precommitted change must address target horizon or regime conditioning without relaxing the risk controls.",
+        )
+    if round_number == 23:
+        return (
+            "causal temporal-attention outcome model abstained",
+            "The bounded 30-second context improved the policy-window long top-100 mean net return under stress, but the gain did not persist in the calibration window or broader ranked tails, signal eligibility fell sharply, and every nonempty threshold-selection simulation lost money after stress costs.",
+            "The next precommitted change must test regime- or horizon-conditioned target formation and ranking stability without relaxing any risk control; the isolated positive policy tail is insufficient evidence of an edge.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
@@ -645,12 +655,25 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     selected = [row for row in rows if row["scenario"] == "stress"]
     width, height = 1240, 580
     left, top, chart_width, chart_height = 90, 130, 1080, 310
-    minimum = min(
+    tail_values = [
         float(row[field])
         for row in selected
         for field in ("top_100_mean_net_bps", "top_500_mean_net_bps")
+    ]
+    minimum, maximum = min(tail_values), max(tail_values)
+    lower = min(-22.0, math.floor(minimum) - 3.0)
+    upper = max(2.0, math.ceil(maximum) + 1.0)
+    all_negative = maximum < 0.0
+    headline = (
+        "Highest-ranked signals remained negative net of costs"
+        if all_negative
+        else "Ranked-tail economics were mixed and not stable"
     )
-    lower, upper = min(-22.0, math.floor(minimum) - 3.0), 2.0
+    description = (
+        "Every displayed mean is negative."
+        if all_negative
+        else "One or more displayed means are positive, but no threshold passed the precommitted stress controls."
+    )
 
     def y(value: float) -> float:
         return top + chart_height * (upper - value) / (upper - lower)
@@ -658,13 +681,16 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">Round {round_number} net returns for highest-ranked signals</title>',
-        '<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and out-of-sample validation windows during June 2023. Every displayed mean is negative.</desc>',
+        f'<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and out-of-sample validation windows during June 2023. {description}</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Highest-ranked signals remained negative net of costs</text>',
+        f'<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">{headline}</text>',
         '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Realized 100 ms BBO-path outcomes include fees, latency, slippage and delayed stop execution.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
-    for value in (-20.0, -15.0, -10.0, -5.0, 0.0):
+    tick_step = max(5.0, math.ceil(((upper - lower) / 6.0) / 5.0) * 5.0)
+    first_tick = math.ceil(lower / tick_step) * tick_step
+    tick_count = int(math.floor((upper - first_tick) / tick_step)) + 1
+    for value in (first_tick + index * tick_step for index in range(tick_count)):
         yy = y(value)
         lines.append(
             f'<line x1="{left}" y1="{yy:.1f}" x2="{left + chart_width}" y2="{yy:.1f}" stroke="#{"536674" if value == 0 else "e6ebef"}" stroke-width="{2 if value == 0 else 1}"/>'
@@ -691,10 +717,14 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
             xx = center + (offset - 0.5) * 72
             yy = y(value)
             zero_y = y(0.0)
+            bar_y = min(yy, zero_y)
+            bar_height = abs(yy - zero_y)
+            label_y = yy - 8.0 if value >= 0.0 else yy + 18.0
+            bar_color = "#16827a" if value > 0.0 else color
             lines.extend(
                 [
-                    f'<rect x="{xx - 29:.1f}" y="{zero_y:.1f}" width="58" height="{yy - zero_y:.1f}" fill="{color}"/>',
-                    f'<text x="{xx:.1f}" y="{yy + 18:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">{value:+.2f}</text>',
+                    f'<rect x="{xx - 29:.1f}" y="{bar_y:.1f}" width="58" height="{bar_height:.1f}" fill="{bar_color}"/>',
+                    f'<text x="{xx:.1f}" y="{label_y:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">{value:+.2f}</text>',
                     f'<text x="{xx:.1f}" y="{top + chart_height + 48}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">{label}</text>',
                 ]
             )
@@ -704,7 +734,7 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     lines.extend(
         [
             '<text x="34" y="295" transform="rotate(-90 34 295)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Mean net basis points</text>',
-            '<text x="48" y="550" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Negative bars are measured outcomes, not forecasts. No threshold was relaxed after seeing them.</text>',
+            '<text x="48" y="550" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Bars are measured outcomes, not forecasts. No threshold was relaxed after seeing them.</text>',
             "</svg>",
         ]
     )
@@ -1003,6 +1033,22 @@ def publish(
     best_policy_tail = max(
         policy_stress, key=lambda row: float(row["top_100_mean_net_bps"])
     )
+    displayed_tail_values = [
+        float(row[field])
+        for row in calibration_stress + policy_stress
+        for field in ("top_100_mean_net_bps", "top_500_mean_net_bps")
+    ]
+    negative_tail_count = sum(value < 0.0 for value in displayed_tail_values)
+    if negative_tail_count == len(displayed_tail_values):
+        tail_evidence = (
+            "every displayed top-100 and top-500 realized mean net return remained "
+            "negative"
+        )
+    else:
+        tail_evidence = (
+            f'the best out-of-sample top-100 mean was {float(best_policy_tail["top_100_mean_net_bps"]):+.3f} bps, '
+            f"but {negative_tail_count} of {len(displayed_tail_values)} displayed top-100/top-500 means were negative and no threshold was accepted"
+        )
     execution = design["execution"]
     assert isinstance(execution, Mapping)
     title, summary, next_step = _publication_narrative(
@@ -1019,7 +1065,7 @@ def publish(
 | --- | ---: |
 | Best threshold-selection stress ROC AUC | {float(best_calibration_auc["auc"]):.3f} ({best_calibration_auc["side"]}) |
 | Best out-of-sample stress ROC AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
-| Least-negative out-of-sample top-100 mean net return | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
+| Best out-of-sample top-100 mean net return | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
 | Largest pre-threshold eligible signal set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
 | Out-of-sample simulated trades | {int(gate_summary["policy_trades"]):,} |
@@ -1037,7 +1083,7 @@ def publish(
 
 BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} exact-BBO rows. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.
 
-Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached {float(best_calibration_auc["auc"]):.3f}, while every top-100 and top-500 realized mean net return remained negative. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
+Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached {float(best_calibration_auc["auc"]):.3f}, and {tail_evidence}. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
 
 Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
 """

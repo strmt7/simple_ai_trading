@@ -1,10 +1,10 @@
 {
   "actual": {
     "accepted_thresholds": 0,
-    "best_calibration_stress_auc": 0.6229001507708769,
-    "best_policy_stress_auc": 0.6088093297677305,
-    "best_policy_top_100_mean_net_bps": -6.73331910833824,
-    "calibration_eligible_rows": 147,
+    "best_calibration_stress_auc": 0.6266433605331687,
+    "best_policy_stress_auc": 0.6111928007226688,
+    "best_policy_top_100_mean_net_bps": 0.9403123201030759,
+    "calibration_eligible_rows": 17,
     "development_evaluated": false,
     "ensemble_models": 3,
     "policy_trades": 0,
@@ -14,24 +14,24 @@
   "artifact_class": "exchange_sourced_adaptive_action_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 2289,
+      "bytes": 2491,
       "path": "README.md",
-      "sha256": "bb31916f9ee689cdbdd3bdd124f60138bb9d02cced7bfc605c115ec7a7acb390"
+      "sha256": "9fb7835911d570905fd8896b11c9c402e784a8e4e5775d24fba40757ea8e41b5"
     },
     {
-      "bytes": 2461,
+      "bytes": 2500,
       "path": "forecast.csv",
-      "sha256": "bf7d83b0b3761080933afaa8d646dcff2b68d87b15725188ea5d4fe887830ce9"
+      "sha256": "d2b0f79eb0106fa6d6e8b5061a684c98d2269417d16bdd80fb778faa23acea9d"
     },
     {
-      "bytes": 486,
+      "bytes": 482,
       "path": "profiles.csv",
-      "sha256": "b31e2b880342ab99c0e9eac7869b26e06a8525399ead63826111922ba598af47"
+      "sha256": "c63dc37c40acfa668e5a4ac51c471497a6ecf696f586a09da62ee126b807ba77"
     },
     {
-      "bytes": 2044,
+      "bytes": 1897,
       "path": "thresholds.csv",
-      "sha256": "5c2dbd7621393f84afd2378983929b52d62d91b1d5cf18c403e9de4922b72403"
+      "sha256": "8f6345fdbd6c48d3adb12c75bad20e01d4c4dca52ae20df730db22bc82268df1"
     },
     {
       "bytes": 466,
@@ -39,74 +39,74 @@
       "sha256": "11d56124a7b72dee8a6f7146cf46ced64b6356f2a6a9e82af3e7e93c4b5c6e18"
     },
     {
-      "bytes": 6277,
+      "bytes": 6588,
       "path": "progress.csv",
-      "sha256": "d7024401e48737040edd49234d76c309caa21a482a9aebe0f7d9c635599c8f07"
+      "sha256": "aec456a3aa29fba560c584479e847a0b1d113858c8c576431e390ab6963b491a"
     },
     {
-      "bytes": 68016,
+      "bytes": 67821,
       "path": "diagnostics.json",
-      "sha256": "6c77ba38a81a6b62edf3aa19dd3090b154d1467d329656803f0fb251a9e29f38"
+      "sha256": "23a0522c9dcc5809cdff8df0294fafa8e8f3f4986d5631979f44b159cf3e4e7f"
     },
     {
       "bytes": 4485,
       "path": "charts/forecast-quality.svg",
-      "sha256": "2b0cd787c0143eb3aaf91c429cd4021f05ac58d686664f6df1af88f43989bcc9"
+      "sha256": "7caa77f484a4c9787838aaa8810535fe58dd50ac165ffeac73bc1fa19c5d5cd9"
     },
     {
-      "bytes": 5723,
+      "bytes": 5568,
       "path": "charts/ranked-tail-economics.svg",
-      "sha256": "7d9c2c95ef820b0402ac8a063e226741871b67e93fcda66ee3bc91e1eff9af95"
+      "sha256": "496d34948d7ffb77f836248c5691e97352b0edddde998d1de6a1996419fd7584"
     },
     {
-      "bytes": 4702,
+      "bytes": 4883,
       "path": "charts/pre-trade-risk-controls.svg",
-      "sha256": "5a81257823df4932c9aa6a8be2d6b56b661a40920384bc627c8054d9d4baa4b2"
+      "sha256": "38c34beb6a1b3248b28abce5862139e2a864c953a5efb3e169190b4862d01529"
     },
     {
       "bytes": 5240,
       "path": "charts/barrier-outcomes.svg",
-      "sha256": "c2a8ff0b3657ea0a0866354f346efcf69a02b1ecb00ed4269fc3b25b0738625a"
+      "sha256": "9a34534865b11794581718ccd46726a79675908d8ec369030daf210a53af43a8"
     },
     {
-      "bytes": 6960,
+      "bytes": 7194,
       "path": "charts/research-progress.svg",
-      "sha256": "444cdb504e1265751a0666d026e19afa5e6f88529a84fd378f3012cbfb3bf426"
+      "sha256": "4387df64ee1431d24d0a6bec15fa984ee8413bdb7ee947435cddfee1e4cd87a0"
     }
   ],
   "barrier_targets_sha256": "bde567752e0c30c49a62f73e1baa5f5618206d33a7644b2edc61e67f18143b10",
   "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
-  "design_revision": 1,
-  "design_sha256": "1704a184751b473fdb550140cb3650451a535b0aeb4c696e2262941aa915f462",
+  "design_revision": 2,
+  "design_sha256": "cb65cb8d0e0f56763dca31e88b7cd572f826534c4bbf36200207ef8e1bb5a207",
   "development_window_is_consumed": false,
-  "diagnostic_sha256": "9d0684e0abfac0aaa6a5b9c96ae3870068abb2caab31600e24320481ed4c954a",
+  "diagnostic_sha256": "e60ef15e28234a0761e6cf7934b6479a204ee7e442b04deeca37adc274fe5e61",
   "execution_claim": false,
-  "implementation_commit": "aed90af9b4ab7f012e5bf874a1dcd06492567206",
+  "implementation_commit": "8968af93c78e33e59435521bc36d30da23fc6dfc",
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "85d052845e77bced2185f89078fa5f032a89ac5dfca27461a366a75e550301bf",
-  "round": 22,
+  "publication_sha256": "d0b589af0b339ac0e76ff098e687175cabcc3233acbbf28784a6efff91762c80",
+  "round": 23,
   "schema_version": "adaptive-action-screen-publication-v1",
   "source_artifacts": [
     {
-      "bytes": 592944,
+      "bytes": 593896,
       "path": "models/seed-29.safetensors",
-      "sha256": "c847c7a18462d915735972320d4731252b24812829251d253beb44c38c57a679"
+      "sha256": "c7aee3c23d49f340bc3542517ab7403c3cb82a9fabad150ebccb023d0fcc35a3"
     },
     {
-      "bytes": 592944,
+      "bytes": 593896,
       "path": "models/seed-43.safetensors",
-      "sha256": "455355c222291c0570c62b0da98faf4143864b5a05bf0ad38b7798b4c5212670"
+      "sha256": "f399ea2b33868c73a218b87087dab7cf2bac4e54c95127693295fbaa8018904c"
     },
     {
-      "bytes": 592944,
+      "bytes": 593896,
       "path": "models/seed-71.safetensors",
-      "sha256": "13f249a8964a007fbdb9b90daaf82bffed15acacf82747eb8105db82e0b70908"
+      "sha256": "77f82b19456d9400d1e5492e7cb991213521edbe58b3cd60745f75229f65d2d8"
     }
   ],
-  "source_report_canonical_sha256": "c41159014cbc6b45d80c190339e5d8485a8903aeda9aa47f0576faf61d4a7999",
-  "source_report_sha256": "f30f009767904776933d40084e5f601195cc56bf632ff457f7b06709e3371804",
+  "source_report_canonical_sha256": "0696a6253ccea7048da72180db9ee94ed430d979956d24319c74c816711213fb",
+  "source_report_sha256": "df53a29819c6f08c8533119365d3caa2e7d581f362bb5fa6d28ffddbd681e4c7",
   "status": "rejected",
   "terminal_holdout_accessed": false,
   "trading_authority": false

@@ -146,6 +146,25 @@ def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
     )
 
 
+def test_ranked_tail_chart_handles_a_positive_subset_without_invalid_geometry() -> None:
+    rows = _forecast_rows()
+    rows[2]["top_100_mean_net_bps"] = 0.94
+
+    chart = _tail_svg(rows, round_number=23)
+    root = ET.fromstring(chart)
+    namespace = "{http://www.w3.org/2000/svg}"
+    bars = [
+        node
+        for node in root.findall(f"{namespace}rect")
+        if node.attrib.get("width") == "58"
+    ]
+
+    assert "Ranked-tail economics were mixed and not stable" in chart
+    assert "Every displayed mean is negative" not in chart
+    assert len(bars) == 8
+    assert all(float(node.attrib["height"]) >= 0.0 for node in bars)
+
+
 def test_round18_gate_summary_preserves_nonzero_candidates() -> None:
     rows = [
         {
@@ -220,7 +239,7 @@ def test_round21_publication_copy_is_specific() -> None:
     assert "calibrated positive expected-return separation" in next_step
 
 
-def test_round22_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round22_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(22)
     title, summary, next_step = _publication_narrative(
         22, all_candidate_stress_nets_negative=True
@@ -233,7 +252,20 @@ def test_round22_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert title == "additive net-return ranking model abstained"
     assert "every threshold-selection simulation" in summary
     assert "Further ranking-loss tuning is not justified" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 23"):
-        _progress_identity(23)
-    with pytest.raises(ValueError, match="undefined for Round 23"):
-        _publication_narrative(23, all_candidate_stress_nets_negative=True)
+
+
+def test_round23_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(23)
+    title, summary, next_step = _publication_narrative(
+        23, all_candidate_stress_nets_negative=False
+    )
+
+    assert stage == "bounded causal temporal-attention ablation"
+    assert model_id == "three-seed causal-temporal-attention outcome-mixture"
+    assert title == "causal temporal-attention outcome model abstained"
+    assert "every nonempty threshold-selection simulation" in summary
+    assert "isolated positive policy tail is insufficient" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 24"):
+        _progress_identity(24)
+    with pytest.raises(ValueError, match="undefined for Round 24"):
+        _publication_narrative(24, all_candidate_stress_nets_negative=True)
