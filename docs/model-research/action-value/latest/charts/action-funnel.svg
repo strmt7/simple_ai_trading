@@ -1,31 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="420" viewBox="0 0 1500 420" role="img" aria-labelledby="title desc">
-<title id="title">The policy regime stopped every mapping</title>
-<desc id="desc">Four neural architectures were screened, two advanced and were compared with LightGBM, 15 mappings were evaluated, 12 had sufficient activity, 0 had positive policy gross returns, and none became a research candidate.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="470" viewBox="0 0 1600 470" role="img" aria-labelledby="title desc">
+<title id="title">Round 15 action funnel</title>
+<desc id="desc">Twenty-one model fits produced eighty-four threshold traces. None passed, so evaluation remained in abstention and no candidate was created.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">The policy regime stopped every mapping</text>
-<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">No later positive development tail was allowed to erase the earlier policy failure.</text>
-<rect x="56" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="158.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">4</text>
-<text x="158.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="158.5">Neural</tspan><tspan x="158.5" dy="18">architectures screened</tspan></text>
-<line x1="268" y1="218" x2="290" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 290 212 L 299 218 L 290 224 Z" fill="#7b8994"/>
-<rect x="299" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="401.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">3</text>
-<text x="401.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="401.5">Final models</tspan><tspan x="401.5" dy="18">with baseline</tspan></text>
-<line x1="511" y1="218" x2="533" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 533 212 L 542 218 L 533 224 Z" fill="#7b8994"/>
-<rect x="542" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="644.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">15</text>
-<text x="644.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="644.5">Action</tspan><tspan x="644.5" dy="18">mappings evaluated</tspan></text>
-<line x1="754" y1="218" x2="776" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 776 212 L 785 218 L 776 224 Z" fill="#7b8994"/>
-<rect x="785" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="887.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">12</text>
-<text x="887.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="887.5">Activity-qualified</tspan><tspan x="887.5" dy="18">mappings</tspan></text>
-<line x1="997" y1="218" x2="1019" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 1019 212 L 1028 218 L 1019 224 Z" fill="#7b8994"/>
-<rect x="1028" y="145" width="205" height="146" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="1130.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#b42318">0</text>
-<text x="1130.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="1130.5">Positive</tspan><tspan x="1130.5" dy="18">policy gross</tspan></text>
-<line x1="1240" y1="218" x2="1262" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 1262 212 L 1271 218 L 1262 224 Z" fill="#7b8994"/>
-<rect x="1271" y="145" width="205" height="146" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="1373.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#b42318">0</text>
-<text x="1373.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="1373.5">Research</tspan><tspan x="1373.5" dy="18">candidates</tspan></text>
-<text x="56" y="365" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Zero candidates means no trade, leverage, execution, portfolio, or profitability authority.</text>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Mandatory abstention stopped failed thresholds</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">The funnel reports operational evidence; zero evaluation trades is a safety outcome, not a profitability result.</text>
+<rect x="75.0" y="145" width="274" height="150" rx="6" fill="#edf6f7" stroke="#147d8f" stroke-width="2"/>
+<text x="212.0" y="215" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="700" fill="#147d8f">21</text>
+<text x="212.0" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="212.0">causal daily</tspan><tspan x="212.0" dy="19">model fits</tspan></text>
+<rect x="369.0" y="145" width="274" height="150" rx="6" fill="#edf6f7" stroke="#147d8f" stroke-width="2"/>
+<text x="506.0" y="215" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="700" fill="#147d8f">84</text>
+<text x="506.0" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="506.0">prior-only</tspan><tspan x="506.0" dy="19">threshold traces</tspan></text>
+<rect x="663.0" y="145" width="274" height="150" rx="6" fill="#fff5f4" stroke="#b44a45" stroke-width="2"/>
+<text x="800.0" y="215" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="700" fill="#b44a45">0</text>
+<text x="800.0" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="800.0">accepted</tspan><tspan x="800.0" dy="19">thresholds</tspan></text>
+<rect x="957.0" y="145" width="274" height="150" rx="6" fill="#fff5f4" stroke="#b44a45" stroke-width="2"/>
+<text x="1094.0" y="215" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="700" fill="#b44a45">0</text>
+<text x="1094.0" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="1094.0">evaluation</tspan><tspan x="1094.0" dy="19">trades</tspan></text>
+<rect x="1251.0" y="145" width="274" height="150" rx="6" fill="#fff5f4" stroke="#b44a45" stroke-width="2"/>
+<text x="1388.0" y="215" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="700" fill="#b44a45">0</text>
+<text x="1388.0" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="1388.0">research</tspan><tspan x="1388.0" dy="19">candidates</tspan></text>
+<text x="56" y="387" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">No trade, leverage, portfolio return, ROI, or profitability authority was produced.</text>
 </svg>
