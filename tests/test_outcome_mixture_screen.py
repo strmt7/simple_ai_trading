@@ -192,9 +192,9 @@ def test_round20_contract_is_parameter_matched_and_changes_only_architecture() -
 def test_round21_contract_changes_only_the_net_return_ranking_surrogate() -> None:
     contract = screen._ROUND_CONTRACTS[21]
 
-    assert contract["design_revisions"] == {1, 2}
-    assert contract["purposes"][2] == (
-        "consumed_data_pairwise_net_return_ranking_gpu_native_screen"
+    assert contract["design_revisions"] == {1, 2, 3}
+    assert contract["purposes"][3] == (
+        "consumed_data_pairwise_net_return_ranking_reproducible_artifact_screen"
     )
     assert contract["ranking_loss_mode"] == "pairwise_net_return"
     assert contract["ranking_loss_weight"] == 0.1
@@ -203,11 +203,12 @@ def test_round21_contract_changes_only_the_net_return_ranking_surrogate() -> Non
     assert contract["residual_blocks"] == 2
     assert contract["trainable_parameter_count"] == 145_914
     assert contract["feature_version"] == "l1-tape-causal-v8"
-    assert contract["predecessors"][2]["round"] == 20
-    assert contract["predecessors"][2]["publication_sha256"] == (
+    assert contract["predecessors"][3]["round"] == 20
+    assert contract["predecessors"][3]["publication_sha256"] == (
         "3e8a22398871f80020743ee9987a670cfbf50292e351fa018f513c3c535c2033"
     )
     assert "CPU fallback" in contract["predecessors"][2]["finding"]
+    assert "nonstable Safetensors" in contract["predecessors"][3]["finding"]
 
 
 def test_round19_design_is_historical_and_preserves_sealed_controls() -> None:
@@ -313,8 +314,10 @@ def test_round21_revision1_is_historical_and_changes_only_ranking_mode() -> None
         assert design[section] == predecessor[section]
 
 
-def test_round21_revision2_is_current_and_preserves_economic_contract() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN21_V2)
+def test_round21_revision2_is_historical_and_preserves_economic_contract() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN21_V2, require_current=False
+    )
     revision1, _revision1_sha256 = load_outcome_mixture_design(
         DESIGN21, require_current=False
     )

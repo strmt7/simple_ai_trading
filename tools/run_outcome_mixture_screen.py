@@ -253,8 +253,11 @@ _ROUND_CONTRACTS = {
         "purposes": {
             1: "consumed_data_pairwise_net_return_ranking_screen",
             2: "consumed_data_pairwise_net_return_ranking_gpu_native_screen",
+            3: (
+                "consumed_data_pairwise_net_return_ranking_reproducible_artifact_screen"
+            ),
         },
-        "design_revisions": {1, 2},
+        "design_revisions": {1, 2, 3},
         "ranking_loss_weight": 0.1,
         "ranking_loss_mode": "pairwise_net_return",
         "feature_version": "l1-tape-causal-v8",
@@ -304,6 +307,27 @@ _ROUND_CONTRACTS = {
                     "Revision 2 preserves every economic and model setting while "
                     "using DirectML-supported concatenation for cyclic pair sampling "
                     "and making CPU-fallback warnings test failures."
+                ),
+            },
+            3: {
+                "round": 20,
+                "design_sha256": (
+                    "a6f4e82d82474d673c8495f9775f9d974b95a9cc2a8d497f7f45bce29ad965bb"
+                ),
+                "source_report_canonical_sha256": (
+                    "f7b4aeb6c4d52b49bce53468eeb13f03e0c2441d426ec0c3de8338e96f0e5885"
+                ),
+                "publication_sha256": (
+                    "3e8a22398871f80020743ee9987a670cfbf50292e351fa018f513c3c535c2033"
+                ),
+                "finding": (
+                    "Round 21 revision 2 canonical report "
+                    "9a56fcdd94b4a5e647611c55c711b44d99700316566611cd0a0937598d184aec "
+                    "is economically valid and exactly matches revision 1 metrics, "
+                    "but identical model content serialized with nonstable "
+                    "Safetensors metadata order. Revision 3 preserves every model, "
+                    "economic, GPU, and risk setting while canonicalizing artifact "
+                    "headers before atomic replacement."
                 ),
             },
         },
