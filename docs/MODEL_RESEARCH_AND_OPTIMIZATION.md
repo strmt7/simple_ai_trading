@@ -43,10 +43,10 @@ The 2026-07-10 research refresh adds three constraints to that roadmap:
 
 ## Causal L1/Tape Action-Value Model
 
-The `microstructure-action-value-v15` workflow is a separate, fail-closed
+The `microstructure-action-value-v16` workflow is a separate, fail-closed
 research path for BTCUSDT, ETHUSDT, and SOLUSDT USD-M day trading. It does not
 feed the legacy candle autonomous loop, and the repository currently has no
-accepted v15 artifact or profitability result.
+accepted v16 artifact or profitability result.
 
 Its implemented lifecycle is:
 
@@ -86,7 +86,7 @@ Its implemented lifecycle is:
    deployment estimator hashes, source build/fingerprint, backend, row counts,
    calibration span, training cutoff, and a hard expiry. A failed refit leaves
    the atomic `validated` artifact available for `microstructure-refit`.
-9. `microstructure-shadow` captures at least 21,660 seconds from the locked
+9. `microstructure-shadow` captures at least 25,260 seconds from the locked
    Binance USD-M public depth, BBO, and aggregate-trade streams without loading
    credentials or exposing an order API. Capture schema `binance-usdm-l2-v3`
    hashes the original stream, synchronized stream, REST snapshot, and manifest.
@@ -94,6 +94,7 @@ Its implemented lifecycle is:
     queued until the model's full exchange-time latency deadline, top-of-book
     participation is rechecked at that deadline, and exits use observed bid/ask,
     fees, adverse trigger slippage, stop/take barriers, and the validated horizon.
+    A 3,600-second causal-feature warmup precedes six complete evaluated hours.
     The planned tail is entry-censored so every evaluated position can close
     naturally. Any feed gap, invalid event, feature reset, deadline miss,
     inference failure, expired/pending entry, forced close, or nonzero order count
@@ -138,7 +139,7 @@ cross-spread execution, but it still cannot measure the strategy's own market
 impact, private order-entry latency, exchange acknowledgements, queue position,
 or partial fills because it submits zero orders. Historical and shadow success
 therefore do not guarantee live profitability. This limitation is one reason no
-v15 artifact is currently accepted or claimed profitable.
+v16 artifact is currently accepted or claimed profitable.
 
 ### Official Tick-Source Coverage
 
@@ -214,12 +215,12 @@ certificate a proof of completeness through its recorded UTC cutoff, while the
 normal incremental sync handles newly published days later.
 
 This closes a previous provenance weakness: a missing trade archive can no
-longer be interpreted as a day of genuine zero order flow. Action-value v15
+longer be interpreted as a day of genuine zero order flow. Action-value v16
 requires the exact official BBO and trade products it consumes; coarse depth is
 certified separately by the tape/depth lane instead of being imposed on a model
-that does not use it. All older action-value artifacts are invalid under v15.
+that does not use it. All older action-value artifacts are invalid under v16.
 
-V15 also corrects and seals the executable target equation. For entry bid/ask
+V16 retains the executable target equation sealed in v15. For entry bid/ask
 `B0/A0` and exit bid/ask `B1/A1`, long gross return is `B1/A0 - 1` and linear
 short gross return is `1 - A1/B0`. If `c` is the per-side sum of taker fee and
 additional all-trade slippage stress in basis points, net cost is
@@ -228,13 +229,36 @@ additional all-trade slippage stress in basis points, net cost is
 notional-scaled cost equation is applied. The contract is shared by training,
 prequential validation, terminal evaluation, deployment refit, and no-order
 shadow replay. The CLI defaults the additional stress to 1 bps per side and
-serializes it in the model artifact. V15 training asks LightGBM for deterministic
+serializes it in the model artifact. V16 training asks LightGBM for deterministic
 CPU execution or FP64 OpenCL accumulation to reduce accelerator variance.
 The promotion floor defaults to 240 observed UTC days because the official BBO
 archive itself spans only 320 days. This is a source-imposed bound, not a claim
 that 240 days replaces multi-year validation: multi-year trade/depth forecasts
 remain a separate research lane until they can be joined to defensible execution
 evidence without inventing historical quotes.
+
+Feature contract `l1-tape-causal-v7` expands the shared offline/live vector to
+100 features. It adds causal 1,800/3,600-second return, volatility, range,
+path-efficiency, spread, quote-intensity, trade-intensity, and volume context,
+plus UTC weekly phase and a weekend indicator. These are context variables, not
+fixed trading-hour prohibitions. DuckDB and the streaming coordinator use the
+same ordered vector and require 3,600 consecutive closed seconds. The promotion
+shadow therefore captures at least 25,260 seconds so warmup is followed by six
+complete evaluated hours and tail margin. This responds to measured
+regime-transfer failure rather than presuming new alpha:
+[TLOB](https://arxiv.org/abs/2502.15757) reports declining cross-condition LOB
+predictability and worse results when transaction costs define the target,
+while [concept-drift research](https://arxiv.org/abs/2304.01512) motivates
+explicit adaptation to nonstationary time-series distributions.
+
+V16 also separates statistical roles in hurdle-class support. Training and
+probability calibration each require 256 profitable and 256 non-profitable
+eligible rows per side; early stopping requires 64 of each because it selects
+tree count rather than estimating the final policy. Every trained artifact
+persists all six counts and their role-specific floors. A failure reports the
+exact side, role, observed counts, and required minimum. Historical v15/v6
+designs remain readable for publication, but the execution runner refuses them;
+new experiments must use the current v16/v7 and design-v2 contract.
 
 Reproduce the plan without downloading data:
 

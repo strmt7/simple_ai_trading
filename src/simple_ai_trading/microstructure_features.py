@@ -13,7 +13,7 @@ from .assets import normalize_symbol
 from .microstructure_warehouse import MicrostructureWarehouse
 
 
-MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v6"
+MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v7"
 MICROSTRUCTURE_TRADE_EMBARGO_MS = 1_000
 
 
@@ -233,6 +233,25 @@ _FEATURE_COLUMNS = (
     "utc_day_cos",
     "funding_cycle_sin",
     "funding_cycle_cos",
+    "return_1800s_bps",
+    "return_3600s_bps",
+    "realized_volatility_1800s_bps",
+    "realized_volatility_3600s_bps",
+    "range_1800s_bps",
+    "range_3600s_bps",
+    "spread_vs_900s_mean",
+    "quote_intensity_vs_900s_mean",
+    "volume_vs_900s_mean",
+    "trade_intensity_vs_900s_mean",
+    "return_efficiency_900s",
+    "return_efficiency_3600s",
+    "return_1800s_vol_units",
+    "return_3600s_vol_units",
+    "volatility_300s_vs_3600s",
+    "volatility_900s_vs_3600s",
+    "utc_week_sin",
+    "utc_week_cos",
+    "weekend_flag",
 )
 MICROSTRUCTURE_FEATURE_NAMES = _FEATURE_COLUMNS
 
@@ -379,20 +398,29 @@ def build_executable_microstructure_dataset(
                 sum(log_return_1s) OVER range_120s AS log_return_120s,
                 sum(log_return_1s) OVER range_300s AS log_return_300s,
                 sum(log_return_1s) OVER range_900s AS log_return_900s,
+                sum(log_return_1s) OVER range_1800s AS log_return_1800s,
+                sum(log_return_1s) OVER range_3600s AS log_return_3600s,
                 stddev_pop(log_return_1s) OVER range_10s AS volatility_10s,
                 stddev_pop(log_return_1s) OVER range_30s AS volatility_30s,
                 stddev_pop(log_return_1s) OVER range_60s AS volatility_60s,
                 stddev_pop(log_return_1s) OVER range_120s AS volatility_120s,
                 stddev_pop(log_return_1s) OVER range_300s AS volatility_300s,
                 stddev_pop(log_return_1s) OVER range_900s AS volatility_900s,
+                stddev_pop(log_return_1s) OVER range_1800s AS volatility_1800s,
+                stddev_pop(log_return_1s) OVER range_3600s AS volatility_3600s,
                 (max(high_mid) OVER range_60s - min(low_mid) OVER range_60s)
                     * 10000.0 / close_mid AS range_60s_bps,
                 (max(high_mid) OVER range_300s - min(low_mid) OVER range_300s)
                     * 10000.0 / close_mid AS range_300s_bps,
                 (max(high_mid) OVER range_900s - min(low_mid) OVER range_900s)
                     * 10000.0 / close_mid AS range_900s_bps,
+                (max(high_mid) OVER range_1800s - min(low_mid) OVER range_1800s)
+                    * 10000.0 / close_mid AS range_1800s_bps,
+                (max(high_mid) OVER range_3600s - min(low_mid) OVER range_3600s)
+                    * 10000.0 / close_mid AS range_3600s_bps,
                 avg(spread_bps) OVER range_60s AS spread_60s_mean,
                 avg(spread_bps) OVER range_300s AS spread_300s_mean,
+                avg(spread_bps) OVER range_900s AS spread_900s_mean,
                 avg(l1_imbalance) OVER range_10s AS imbalance_10s_mean,
                 avg(l1_imbalance) OVER range_60s AS imbalance_60s_mean,
                 avg(l1_imbalance) OVER range_300s AS imbalance_300s_mean,
@@ -401,6 +429,7 @@ def build_executable_microstructure_dataset(
                 avg(normalized_ofi) OVER range_300s AS ofi_300s_mean,
                 avg(quote_updates) OVER range_60s AS quote_updates_60s_mean,
                 avg(quote_updates) OVER range_300s AS quote_updates_300s_mean,
+                avg(quote_updates) OVER range_900s AS quote_updates_900s_mean,
                 avg(trade_imbalance) OVER range_10s AS trade_imbalance_10s_mean,
                 avg(trade_imbalance) OVER range_60s AS trade_imbalance_60s_mean,
                 avg(trade_imbalance) OVER range_300s AS trade_imbalance_300s_mean,
@@ -412,13 +441,20 @@ def build_executable_microstructure_dataset(
                     / greatest(sum(base_volume) OVER range_300s, 1e-12) AS signed_flow_300s,
                 avg(base_volume) OVER range_60s AS base_volume_60s_mean,
                 avg(base_volume) OVER range_300s AS base_volume_300s_mean,
+                avg(base_volume) OVER range_900s AS base_volume_900s_mean,
+                avg(trade_count) OVER range_900s AS trade_count_900s_mean,
                 avg(event_delay_p99_ms) OVER range_60s AS event_delay_60s_mean,
                 abs(sum(log_return_1s) OVER range_60s)
                     / greatest(sum(abs(log_return_1s)) OVER range_60s, 1e-12) AS return_efficiency_60s,
                 abs(sum(log_return_1s) OVER range_300s)
                     / greatest(sum(abs(log_return_1s)) OVER range_300s, 1e-12) AS return_efficiency_300s,
+                abs(sum(log_return_1s) OVER range_900s)
+                    / greatest(sum(abs(log_return_1s)) OVER range_900s, 1e-12) AS return_efficiency_900s,
+                abs(sum(log_return_1s) OVER range_3600s)
+                    / greatest(sum(abs(log_return_1s)) OVER range_3600s, 1e-12) AS return_efficiency_3600s,
                 count(*) OVER range_60s AS observations_60s,
-                count(*) OVER range_900s AS observations_900s
+                count(*) OVER range_900s AS observations_900s,
+                count(*) OVER range_3600s AS observations_3600s
             FROM stationary
             WINDOW
                 range_5s AS (ORDER BY second_ms RANGE BETWEEN 4000 PRECEDING AND CURRENT ROW),
@@ -428,7 +464,9 @@ def build_executable_microstructure_dataset(
                 range_60s AS (ORDER BY second_ms RANGE BETWEEN 59000 PRECEDING AND CURRENT ROW),
                 range_120s AS (ORDER BY second_ms RANGE BETWEEN 119000 PRECEDING AND CURRENT ROW),
                  range_300s AS (ORDER BY second_ms RANGE BETWEEN 299000 PRECEDING AND CURRENT ROW),
-                 range_900s AS (ORDER BY second_ms RANGE BETWEEN 899000 PRECEDING AND CURRENT ROW)
+                 range_900s AS (ORDER BY second_ms RANGE BETWEEN 899000 PRECEDING AND CURRENT ROW),
+                 range_1800s AS (ORDER BY second_ms RANGE BETWEEN 1799000 PRECEDING AND CURRENT ROW),
+                 range_3600s AS (ORDER BY second_ms RANGE BETWEEN 3599000 PRECEDING AND CURRENT ROW)
         ),
         temporal AS (
             SELECT *,
@@ -466,22 +504,30 @@ def build_executable_microstructure_dataset(
                 log_return_120s * 10000.0 AS return_120s_bps,
                 log_return_300s * 10000.0 AS return_300s_bps,
                 log_return_900s * 10000.0 AS return_900s_bps,
+                log_return_1800s * 10000.0 AS return_1800s_bps,
+                log_return_3600s * 10000.0 AS return_3600s_bps,
                 volatility_10s * 10000.0 AS realized_volatility_10s_bps,
                 volatility_30s * 10000.0 AS realized_volatility_30s_bps,
                 volatility_60s * 10000.0 AS realized_volatility_60s_bps,
                 volatility_120s * 10000.0 AS realized_volatility_120s_bps,
                 volatility_300s * 10000.0 AS realized_volatility_300s_bps,
                 volatility_900s * 10000.0 AS realized_volatility_900s_bps,
+                volatility_1800s * 10000.0 AS realized_volatility_1800s_bps,
+                volatility_3600s * 10000.0 AS realized_volatility_3600s_bps,
                 (high_mid - low_mid) * 10000.0 / close_mid AS intrasecond_range_bps,
                 spread_bps / greatest(spread_60s_mean, 1e-12) AS spread_vs_60s_mean,
                 spread_bps / greatest(spread_300s_mean, 1e-12) AS spread_vs_300s_mean,
+                spread_bps / greatest(spread_900s_mean, 1e-12) AS spread_vs_900s_mean,
                 ln(1.0 + quote_updates) AS log_quote_updates,
                 quote_updates / greatest(quote_updates_60s_mean, 1e-12) AS quote_intensity_vs_60s_mean,
                 quote_updates / greatest(quote_updates_300s_mean, 1e-12) AS quote_intensity_vs_300s_mean,
+                quote_updates / greatest(quote_updates_900s_mean, 1e-12) AS quote_intensity_vs_900s_mean,
                 ln(1.0 + base_volume) AS log_base_volume,
                 base_volume / greatest(base_volume_60s_mean, 1e-12) AS volume_vs_60s_mean,
                 base_volume / greatest(base_volume_300s_mean, 1e-12) AS volume_vs_300s_mean,
+                base_volume / greatest(base_volume_900s_mean, 1e-12) AS volume_vs_900s_mean,
                 ln(1.0 + trade_count) AS log_trade_count,
+                trade_count / greatest(trade_count_900s_mean, 1e-12) AS trade_intensity_vs_900s_mean,
                 (trade_close / close_mid - 1.0) * 10000.0 AS trade_close_vs_mid_bps,
                 event_delay_p99_ms / greatest(event_delay_60s_mean, 1e-12) AS event_delay_vs_60s_mean,
                 normalized_ofi - ofi_lag_5s AS ofi_delta_5s,
@@ -506,8 +552,14 @@ def build_executable_microstructure_dataset(
                     AS return_300s_vol_units,
                 log_return_900s / greatest(volatility_900s * sqrt(900.0), 1e-12)
                     AS return_900s_vol_units,
+                log_return_1800s / greatest(volatility_1800s * sqrt(1800.0), 1e-12)
+                    AS return_1800s_vol_units,
+                log_return_3600s / greatest(volatility_3600s * sqrt(3600.0), 1e-12)
+                    AS return_3600s_vol_units,
                 volatility_10s / greatest(volatility_300s, 1e-12) AS volatility_10s_vs_300s,
                 volatility_60s / greatest(volatility_900s, 1e-12) AS volatility_60s_vs_900s,
+                volatility_300s / greatest(volatility_3600s, 1e-12) AS volatility_300s_vs_3600s,
+                volatility_900s / greatest(volatility_3600s, 1e-12) AS volatility_900s_vs_3600s,
                 spread_bps / greatest(volatility_10s * 10000.0, 1e-12)
                     AS spread_to_10s_volatility,
                 normalized_ofi * trade_imbalance AS ofi_trade_flow_agreement,
@@ -519,10 +571,15 @@ def build_executable_microstructure_dataset(
                 sin(2.0 * pi() * ((second_ms // 1000) % 86400) / 86400.0) AS utc_day_sin,
                 cos(2.0 * pi() * ((second_ms // 1000) % 86400) / 86400.0) AS utc_day_cos,
                 sin(2.0 * pi() * ((second_ms // 1000) % 28800) / 28800.0) AS funding_cycle_sin,
-                cos(2.0 * pi() * ((second_ms // 1000) % 28800) / 28800.0) AS funding_cycle_cos
+                cos(2.0 * pi() * ((second_ms // 1000) % 28800) / 28800.0) AS funding_cycle_cos,
+                sin(2.0 * pi() * (((second_ms // 1000) + 259200) % 604800) / 604800.0) AS utc_week_sin,
+                cos(2.0 * pi() * (((second_ms // 1000) + 259200) % 604800) / 604800.0) AS utc_week_cos,
+                CASE WHEN (((second_ms // 1000) // 86400) + 3) % 7 >= 5
+                     THEN 1.0 ELSE 0.0 END AS weekend_flag
             FROM temporal
             WHERE observations_60s >= 55
               AND observations_900s >= 840
+              AND observations_3600s >= 3360
               AND lag_60_second_ms = second_ms - 60000
               AND previous_second_ms = second_ms - 1000
               AND log_return_1s IS NOT NULL
@@ -560,6 +617,15 @@ def build_executable_microstructure_dataset(
             d.spread_to_10s_volatility, d.ofi_trade_flow_agreement,
             d.quote_trade_log_intensity_gap, d.intrasecond_close_location,
              d.utc_day_sin, d.utc_day_cos, d.funding_cycle_sin, d.funding_cycle_cos,
+            d.return_1800s_bps, d.return_3600s_bps,
+            d.realized_volatility_1800s_bps, d.realized_volatility_3600s_bps,
+            d.range_1800s_bps, d.range_3600s_bps,
+            d.spread_vs_900s_mean, d.quote_intensity_vs_900s_mean,
+            d.volume_vs_900s_mean, d.trade_intensity_vs_900s_mean,
+            d.return_efficiency_900s, d.return_efficiency_3600s,
+            d.return_1800s_vol_units, d.return_3600s_vol_units,
+            d.volatility_300s_vs_3600s, d.volatility_900s_vs_3600s,
+            d.utc_week_sin, d.utc_week_cos, d.weekend_flag,
             (entry_quote.close_ask - entry_quote.close_bid) * 10000.0
                 / ((entry_quote.close_ask + entry_quote.close_bid) / 2.0) AS entry_spread_bps,
             (exit_quote.close_ask - exit_quote.close_bid) * 10000.0

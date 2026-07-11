@@ -5,6 +5,7 @@ import math
 import numpy as np
 import pytest
 
+from simple_ai_trading.microstructure_features import MICROSTRUCTURE_FEATURE_NAMES
 from simple_ai_trading.microstructure_live import (
     LateMicrostructureEventError,
     MicrostructureFeedIntegrityError,
@@ -143,7 +144,7 @@ class _Scorer:
     max_quote_age_ms = 1_000
 
     def score(self, features, **kwargs) -> MicrostructureActionPrediction:
-        assert np.asarray(features).shape == (81,)
+        assert np.asarray(features).shape == (len(MICROSTRUCTURE_FEATURE_NAMES),)
         assert kwargs["decision_time_ms"] % 5_000 == 0
         assert kwargs["close_bid_qty"] > 0.0
         assert kwargs["quote_time_ms"] <= kwargs["observation_time_ms"]
@@ -183,7 +184,7 @@ class _Clock:
 def _warm_coordinator(
     coordinator: StreamingMicrostructureCoordinator,
     *,
-    count: int = 904,
+    count: int = 3_604,
 ) -> int:
     base_ms = 1_700_000_000_000
     for index in range(count):
@@ -201,7 +202,7 @@ def test_streaming_coordinator_preserves_warmup_cadence_and_latency_budget() -> 
     coordinator = StreamingMicrostructureCoordinator(_Scorer(), settlement_delay_ms=100)
     base_ms = 1_700_000_000_000
     predictions = []
-    for index in range(915):
+    for index in range(3_615):
         second_ms = base_ms + index * 1_000
         coordinator.ingest(_quote(second_ms, index))
         coordinator.ingest(_trade(second_ms, index))
@@ -225,8 +226,8 @@ def test_streaming_coordinator_resets_on_invalid_feed_and_fails_closed_on_scorer
     last_second_ms = _warm_coordinator(coordinator)
     assert coordinator.engine.ready
     next_second_ms = last_second_ms + 1_000
-    coordinator.ingest(_quote(next_second_ms, 904))
-    coordinator.ingest(_trade(next_second_ms, 904))
+    coordinator.ingest(_quote(next_second_ms, 3_604))
+    coordinator.ingest(_trade(next_second_ms, 3_604))
     predictions = coordinator.evaluate_ready(
         exchange_now_ms=next_second_ms + 1_100,
         order_notional_quote=500.0,
@@ -236,9 +237,9 @@ def test_streaming_coordinator_resets_on_invalid_feed_and_fails_closed_on_scorer
     assert coordinator.last_inference_error == "RuntimeError: model unavailable"
 
     with pytest.raises(MicrostructureFeedIntegrityError, match="maker flag"):
-        coordinator.ingest({**_trade(next_second_ms + 1_000, 905), "m": "false"})
+        coordinator.ingest({**_trade(next_second_ms + 1_000, 3_605), "m": "false"})
     assert coordinator.feed_integrity_resets == 1
-    assert coordinator.engine.warmup_remaining_seconds == 901
+    assert coordinator.engine.warmup_remaining_seconds == 3_601
 
 
 def test_streaming_coordinator_rejects_prediction_that_finishes_after_deadline() -> None:
@@ -250,8 +251,8 @@ def test_streaming_coordinator_rejects_prediction_that_finishes_after_deadline()
     )
     last_second_ms = _warm_coordinator(coordinator)
     next_second_ms = last_second_ms + 1_000
-    coordinator.ingest(_quote(next_second_ms, 904))
-    coordinator.ingest(_trade(next_second_ms, 904))
+    coordinator.ingest(_quote(next_second_ms, 3_604))
+    coordinator.ingest(_trade(next_second_ms, 3_604))
     clock.set_sequence(0, 450_000_000)
 
     predictions = coordinator.evaluate_ready(
@@ -268,8 +269,8 @@ def test_streaming_coordinator_validates_notional_before_consuming_ready_rows() 
     coordinator = StreamingMicrostructureCoordinator(_Scorer(), settlement_delay_ms=100)
     last_second_ms = _warm_coordinator(coordinator)
     next_second_ms = last_second_ms + 1_000
-    coordinator.ingest(_quote(next_second_ms, 904))
-    coordinator.ingest(_trade(next_second_ms, 904))
+    coordinator.ingest(_quote(next_second_ms, 3_604))
+    coordinator.ingest(_trade(next_second_ms, 3_604))
 
     with pytest.raises(ValueError, match="finite and positive"):
         coordinator.evaluate_ready(

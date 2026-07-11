@@ -401,7 +401,7 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     )
     assert micro_shadow.input == "shadow-candidate.json"
     assert micro_shadow.output is None
-    assert micro_shadow.seconds == 21_660.0
+    assert micro_shadow.seconds == 25_260.0
     tick_plan = cli._parse_args(
         ["tick-archive-sync", "--full-history", "--plan-only"]
     )
@@ -937,7 +937,7 @@ def test_command_microstructure_shadow_is_no_order_and_saves_only_acceptance(
         argparse.Namespace(
             input="shadow-candidate.json",
             output=str(output),
-            seconds=21_660.0,
+            seconds=25_260.0,
             output_root=str(tmp_path / "captures"),
             report=str(tmp_path / "report.json"),
             trades=str(tmp_path / "trades.csv"),
@@ -951,7 +951,7 @@ def test_command_microstructure_shadow_is_no_order_and_saves_only_acceptance(
     assert calls["symbols"] == ("BTCUSDT",)
     capture_kwargs = calls["capture_kwargs"]
     assert capture_kwargs["convert"] is False  # type: ignore[index]
-    assert capture_kwargs["duration_seconds"] == 21_660.0  # type: ignore[index]
+    assert capture_kwargs["duration_seconds"] == 25_260.0  # type: ignore[index]
     assert "orders" not in capture_kwargs  # type: ignore[operator]
     assert calls["saved"] == (accepted, output)
     rendered = capsys.readouterr().out

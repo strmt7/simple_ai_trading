@@ -162,7 +162,7 @@ def _warehouse_for(rows: list[MicrostructureSecond]) -> _ConnectionWarehouse:
 
 
 def test_streaming_features_match_offline_duckdb_contract() -> None:
-    seconds = [_second(index) for index in range(1_050)]
+    seconds = [_second(index) for index in range(4_150)]
     warehouse = _warehouse_for(seconds)
     try:
         offline = build_executable_microstructure_dataset(
@@ -214,7 +214,7 @@ def test_streaming_engine_resets_warmup_on_gap_and_rejects_crossed_quotes() -> N
     assert engine.append(_second(1)) is None
     assert engine.append(_second(3)) is None
     assert engine.gap_resets == 1
-    assert engine.warmup_remaining_seconds == 900
+    assert engine.warmup_remaining_seconds == 3_600
 
     crossed = _second(4)
     crossed = MicrostructureSecond(
@@ -222,3 +222,24 @@ def test_streaming_engine_resets_warmup_on_gap_and_rejects_crossed_quotes() -> N
     )
     with pytest.raises(ValueError, match="crossed"):
         engine.append(crossed)
+
+
+def test_streaming_week_context_uses_utc_exchange_time() -> None:
+    saturday_start_ms = 1_694_217_600_000
+    engine = StreamingMicrostructureFeatureEngine(
+        "BTCUSDT",
+        decision_cadence_seconds=1,
+    )
+    emitted = None
+    for index in range(3_601):
+        emitted = engine.append(
+            _second(index, second_ms=saturday_start_ms + index * 1_000)
+        )
+
+    assert emitted is not None
+    values = emitted.as_mapping()
+    assert values["weekend_flag"] == 1.0
+    assert values["utc_week_sin"] ** 2 + values["utc_week_cos"] ** 2 == pytest.approx(
+        1.0,
+        abs=1e-6,
+    )

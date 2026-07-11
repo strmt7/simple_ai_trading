@@ -69,6 +69,7 @@ from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
 from .market_store import MarketDataStore
 from .microstructure_data import capture_binance_futures_microstructure
+from .microstructure_runtime import MICROSTRUCTURE_STREAM_WARMUP_SECONDS
 from .optimization_evidence import select_top_liquidity_symbols
 from .meta_label import apply_meta_label_policy
 from .position_lifecycle import evaluate_position_exit
@@ -768,8 +769,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_shadow.add_argument(
         "--seconds",
         type=float,
-        default=21_660.0,
-        help="public-feed capture duration; promotion requires at least six complete hours",
+        default=(21_600.0 + MICROSTRUCTURE_STREAM_WARMUP_SECONDS + 60.0),
+        help=(
+            "public-feed capture duration; promotion requires feature warmup plus "
+            "six complete evaluated hours"
+        ),
     )
     parser_micro_shadow.add_argument(
         "--output-root",
@@ -6862,7 +6866,13 @@ def command_microstructure_shadow(args: argparse.Namespace) -> int:
     trades_path = Path(
         str(getattr(args, "trades", "data/microstructure-shadow/trades.csv"))
     )
-    duration_seconds = float(getattr(args, "seconds", 21_660.0))
+    duration_seconds = float(
+        getattr(
+            args,
+            "seconds",
+            21_600.0 + MICROSTRUCTURE_STREAM_WARMUP_SECONDS + 60.0,
+        )
+    )
     json_mode = bool(getattr(args, "json", False))
     catalog_changes = 0
 
@@ -6881,11 +6891,15 @@ def command_microstructure_shadow(args: argparse.Namespace) -> int:
             )
         if artifact.deployment_refit is None:
             raise ValueError("microstructure-shadow candidate has no deployment refit")
-        minimum_capture = PROMOTION_SHADOW_CONFIG.minimum_duration_seconds + 60.0
+        minimum_capture = (
+            PROMOTION_SHADOW_CONFIG.minimum_duration_seconds
+            + MICROSTRUCTURE_STREAM_WARMUP_SECONDS
+            + 60.0
+        )
         if not math.isfinite(duration_seconds) or duration_seconds < minimum_capture:
             raise ValueError(
-                "microstructure-shadow requires at least 21660 seconds so the "
-                "event-time replay contains six complete hours"
+                f"microstructure-shadow requires at least {minimum_capture:.0f} "
+                "seconds so feature warmup is followed by six complete evaluated hours"
             )
         now_ms = int(time.time() * 1_000)
         required_lifetime_ms = int(

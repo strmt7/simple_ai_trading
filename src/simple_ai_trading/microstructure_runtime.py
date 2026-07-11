@@ -17,7 +17,8 @@ from .microstructure_features import (
 )
 
 
-_HISTORY_SECONDS = 900
+MICROSTRUCTURE_STREAM_WARMUP_SECONDS = 3_600
+_HISTORY_SECONDS = MICROSTRUCTURE_STREAM_WARMUP_SECONDS
 _REQUIRED_SECONDS = _HISTORY_SECONDS + 1
 
 
@@ -148,7 +149,7 @@ def _validate_second(row: MicrostructureSecond, expected_symbol: str) -> None:
 
 
 class StreamingMicrostructureFeatureEngine:
-    """Emit the exact offline v5 feature order after 15 minutes of clean warmup."""
+    """Emit the exact offline feature order after one hour of clean warmup."""
 
     def __init__(self, symbol: str, *, decision_cadence_seconds: int = 5) -> None:
         self.symbol = normalize_symbol(symbol)
@@ -238,29 +239,37 @@ class StreamingMicrostructureFeatureEngine:
 
         return_bps = {
             size: _tail_sum(log_returns, size) * 10_000.0
-            for size in (1, 5, 15, 30, 60, 120, 300, 900)
+            for size in (1, 5, 15, 30, 60, 120, 300, 900, 1_800, 3_600)
         }
         volatility = {
             size: float(np.std(log_returns[-size:], ddof=0))
-            for size in (10, 30, 60, 120, 300, 900)
+            for size in (10, 30, 60, 120, 300, 900, 1_800, 3_600)
         }
         ranges = {
             size: (float(np.max(highs[-size:])) - float(np.min(lows[-size:])))
             * 10_000.0
             / mids[-1]
-            for size in (60, 300, 900)
+            for size in (60, 300, 900, 1_800, 3_600)
         }
         spread_mean_60 = _tail_mean(spreads, 60)
         spread_mean_300 = _tail_mean(spreads, 300)
         quote_mean_60 = _tail_mean(quote_updates, 60)
         quote_mean_300 = _tail_mean(quote_updates, 300)
+        quote_mean_900 = _tail_mean(quote_updates, 900)
         base_volume_mean_60 = _tail_mean(base_volume, 60)
         base_volume_mean_300 = _tail_mean(base_volume, 300)
+        base_volume_mean_900 = _tail_mean(base_volume, 900)
+        trade_count = embargoed_trade_vector("trade_count")
+        trade_count_mean_900 = _tail_mean(trade_count, 900)
         current = current_rows[-1]
         current_trade = previous_rows[-1]
 
         def delta(values: np.ndarray, lag: int) -> float:
             return float(values[-1] - values[-1 - lag])
+
+        epoch_second = current.second_ms // 1_000
+        week_second = (epoch_second + 3 * 86_400) % 604_800
+        utc_weekday = ((epoch_second // 86_400) + 3) % 7
 
         values = [
             *[return_bps[size] for size in (1, 5, 15, 30, 60, 120, 300, 900)],
@@ -324,6 +333,34 @@ class StreamingMicrostructureFeatureEngine:
             math.cos(2.0 * math.pi * ((current.second_ms // 1_000) % 86_400) / 86_400.0),
             math.sin(2.0 * math.pi * ((current.second_ms // 1_000) % 28_800) / 28_800.0),
             math.cos(2.0 * math.pi * ((current.second_ms // 1_000) % 28_800) / 28_800.0),
+            return_bps[1_800],
+            return_bps[3_600],
+            volatility[1_800] * 10_000.0,
+            volatility[3_600] * 10_000.0,
+            ranges[1_800],
+            ranges[3_600],
+            _safe_ratio(current.spread_bps, _tail_mean(spreads, 900)),
+            _safe_ratio(current.quote_updates, quote_mean_900),
+            _safe_ratio(current_trade.base_volume, base_volume_mean_900),
+            _safe_ratio(current_trade.trade_count, trade_count_mean_900),
+            _safe_ratio(abs(_tail_sum(log_returns, 900)), _tail_sum(np.abs(log_returns), 900)),
+            _safe_ratio(
+                abs(_tail_sum(log_returns, 3_600)),
+                _tail_sum(np.abs(log_returns), 3_600),
+            ),
+            _safe_ratio(
+                return_bps[1_800] / 10_000.0,
+                volatility[1_800] * math.sqrt(1_800.0),
+            ),
+            _safe_ratio(
+                return_bps[3_600] / 10_000.0,
+                volatility[3_600] * math.sqrt(3_600.0),
+            ),
+            _safe_ratio(volatility[300], volatility[3_600]),
+            _safe_ratio(volatility[900], volatility[3_600]),
+            math.sin(2.0 * math.pi * week_second / 604_800.0),
+            math.cos(2.0 * math.pi * week_second / 604_800.0),
+            1.0 if utc_weekday >= 5 else 0.0,
         ]
         features = np.asarray(values, dtype=np.float32)
         if features.shape != (len(MICROSTRUCTURE_FEATURE_NAMES),):
@@ -345,6 +382,7 @@ class StreamingMicrostructureFeatureEngine:
 
 
 __all__ = [
+    "MICROSTRUCTURE_STREAM_WARMUP_SECONDS",
     "MicrostructureSecond",
     "StreamingFeatureRow",
     "StreamingMicrostructureFeatureEngine",

@@ -313,7 +313,7 @@ inline constexpr CommandOptionSpec kOptions_microstructure_refit[] = {
 inline constexpr CommandOptionSpec kOptions_microstructure_shadow[] = {
     {L"--input", L"input", L"", L"data/microstructure-model.json", L"", L"1", false, true, false},
     {L"--output", L"output", L"", L"", L"", L"1", false, true, false},
-    {L"--seconds", L"seconds", L"", L"21660.0", L"public-feed capture duration; promotion requires at least six complete hours", L"1", false, true, false},
+    {L"--seconds", L"seconds", L"", L"25260.0", L"public-feed capture duration; promotion requires feature warmup plus six complete evaluated hours", L"1", false, true, false},
     {L"--output-root", L"output_root", L"", L"data/microstructure-shadow/captures", L"", L"1", false, true, false},
     {L"--report", L"report", L"", L"data/microstructure-shadow/report.json", L"", L"1", false, true, false},
     {L"--trades", L"trades", L"", L"data/microstructure-shadow/trades.csv", L"", L"1", false, true, false},

@@ -64,3 +64,6 @@ def test_round_ten_design_pins_calibration_fix_and_medium_horizons() -> None:
         candidate["horizon_seconds"] in {300, 600, 900, 1800}
         for candidate in candidates
     )
+
+    with pytest.raises(ValueError, match="current design and model schemas"):
+        load_discovery_design(_tracked_design(10), require_current=True)
