@@ -288,7 +288,7 @@ def _profile_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                 "policy_trades": int(raw["policy_stress_trace"]["metrics"]["trades"]),
                 "policy_total_net_bps": _finite(
                     raw["policy_stress_trace"]["metrics"]["total_net_bps"],
-                    label="policy net",
+                    label="out-of-sample net",
                 ),
                 "development_evaluated": bool(raw["development_evaluated"]),
             }
@@ -684,7 +684,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
         )
     lines.extend(
         [
-            '<text x="48" y="510" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Calibration: 2023-06-21 to 2023-06-25 UTC. Policy: 2023-06-26 to 2023-06-30 UTC.</text>',
+            '<text x="48" y="510" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Threshold selection: 2023-06-21 to 2023-06-25 UTC. Out-of-sample validation: 2023-06-26 to 2023-06-30 UTC.</text>',
             "</svg>",
         ]
     )
@@ -809,13 +809,13 @@ def _gate_summary(
         )
         sentence = (
             f"Signals meeting pre-threshold controls appeared only for {eligible_text}; "
-            f"{empty_clause}{candidate_clause}, so no policy trade, development access, "
+            f"{empty_clause}{candidate_clause}, so no out-of-sample simulated trade, development access, "
             "leverage, or trading authority was permitted."
         )
     else:
         sentence = (
             "All three risk profiles had zero signals meeting pre-threshold controls, so no "
-            "threshold, policy trade, development access, leverage, or trading "
+            "threshold, out-of-sample simulated trade, development access, leverage, or trading "
             "authority was permitted."
         )
     return {
@@ -946,9 +946,9 @@ def publish(
         if round_number >= 19
         else (
             (
-                "The added ranking objective produced a small aggressive-profile candidate set, but every calibration threshold trace lost money after stress costs."
+                "The added ranking objective produced a small aggressive-profile candidate set, but every threshold-selection simulation lost money after stress costs."
                 if gate_summary["all_candidate_stress_nets_negative"]
-                else "The added ranking objective produced calibration candidates, but none passed the precommitted stress gates."
+                else "The added ranking objective produced threshold-selection candidates, but none passed the precommitted stress-test acceptance criteria."
             )
             if round_number >= 18
             else (
@@ -991,7 +991,7 @@ def publish(
 
 ![Research progress](charts/research-progress.svg)
 
-BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} exact-BBO rows. The replay uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.
+BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} exact-BBO rows. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.
 
 Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached {float(best_calibration_auc["auc"]):.3f}, while every top-100 and top-500 realized mean net return remained negative. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
 

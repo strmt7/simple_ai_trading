@@ -55,6 +55,14 @@ def test_agent_workflow_doc_records_exact_tool_versions() -> None:
         assert expected in text
 
 
+def test_ci_enforces_financial_terminology_audit() -> None:
+    workflow = _read(".github/workflows/ci.yml")
+    documentation = _read("docs/AGENT_WORKFLOWS.md")
+
+    assert "python3 tools/audit_financial_terminology.py" in workflow
+    assert "tools/audit_financial_terminology.py" in documentation
+
+
 def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:
     text = _read(".github/workflows/ruff.yml")
     assert "pull_request:" in text

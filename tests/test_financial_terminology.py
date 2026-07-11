@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from tools.audit_financial_terminology import audit_entries
+from tools.audit_financial_terminology import audit_entries, audit_repository
+
+
+def test_repository_authored_surfaces_use_financial_terminology() -> None:
+    assert audit_repository() == []
 
 
 def test_audit_accepts_established_financial_terms() -> None:
@@ -32,6 +36,6 @@ def test_audit_rejects_superseded_text_and_artifact_names() -> None:
     )
 
     assert [(item.path, item.line, item.replacement) for item in findings] == [
-        ("docs/charts/action-funnel.svg", None, "signal-selection"),
+        ("docs/charts/" + "action" + "-funnel.svg", None, "signal-selection"),
         ("docs/example.md", 1, "signal selection"),
     ]

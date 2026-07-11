@@ -44,6 +44,9 @@ jobs:
           python3 -m pip install -q -e ".[foundation-ai,gpu]"
           python3 -m pip install -q pytest coverage diff-cover==10.3.0
 
+      - name: Audit financial terminology
+        run: python3 tools/audit_financial_terminology.py
+
       - name: Run tests with coverage
         run: |
           python3 -m coverage run --source=src/simple_ai_trading -m pytest -q

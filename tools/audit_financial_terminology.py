@@ -33,6 +33,9 @@ _BANNED_PHRASE_SPECS = (
     (("profitable", "-outcome"), "probability of profit"),
     (("mean", "-action"), "expected net return"),
     (("policy", " replay"), "out-of-sample simulation"),
+    (("policy", " trade"), "out-of-sample simulated trade"),
+    (("calibration threshold", " trace"), "threshold-selection simulation"),
+    (("stress", " gates"), "stress-test acceptance criteria"),
     (("pressure", "-capacity"), "depth-normalized order flow"),
     (("model", " zoo"), "candidate-model set"),
     (("model", "-zoo"), "candidate-model set"),
@@ -150,7 +153,9 @@ def audit_repository(repo_root: Path = REPO_ROOT) -> list[TerminologyFinding]:
         path = repo_root / relative_path
         if not path.is_file():
             continue
-        text = path.read_text(encoding="utf-8") if _is_authored_text(relative_path) else ""
+        text = (
+            path.read_text(encoding="utf-8") if _is_authored_text(relative_path) else ""
+        )
         entries.append((relative_path, text))
     return audit_entries(entries)
 
