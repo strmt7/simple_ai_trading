@@ -211,6 +211,18 @@ with the sealed prequential selector remains in progress. Short-window survivors
 remain research-only and cannot consume terminal evidence or gain trading
 authority.
 
+"Complete history" always means complete through the certificate's explicit
+UTC cutoff: markets continue publishing new files, so no honest system can call
+an open-ended archive permanently finished. Corpus certificate v3 distinguishes
+three states without inference: a listed and checksum/partition-verified file,
+an explicitly recorded provider-side `bookDepth` absence, and a missing or
+invalid local partition. Only the first two can pass, and the second is allowed
+only for `bookDepth`; missing listed BBO or trade data remains fatal. Run
+`tick-corpus-audit --output data/tick-corpus-certificate.json` after sync to
+write the machine-verifiable certificate. Add
+`--strict-book-depth-calendar` when an experiment requires an uninterrupted
+depth calendar and should reject even provider-proven absences.
+
 `tape-depth-train` builds a bounded, purged LightGBM direction/return/uncertainty
 ensemble from checksummed one-second trade tape and causally joined coarse depth.
 Its exact one-second clock keeps real no-trade seconds as an explicit zero-volume,

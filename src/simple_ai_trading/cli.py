@@ -546,6 +546,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tick_corpus_audit.add_argument("--start-date", default=None)
     parser_tick_corpus_audit.add_argument("--end-date", default=None)
     parser_tick_corpus_audit.add_argument(
+        "--strict-book-depth-calendar",
+        action="store_false",
+        dest="allow_provider_book_depth_gaps",
+        help=(
+            "reject dates absent from Binance's official bookDepth listing; by "
+            "default those provider-proven absences are reported but permitted"
+        ),
+    )
+    parser_tick_corpus_audit.add_argument(
         "--warehouse", default="data/microstructure.duckdb"
     )
     parser_tick_corpus_audit.add_argument("--cache-root", default="data/archive-cache")
@@ -553,7 +562,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tick_corpus_audit.add_argument("--threads", type=int, default=8)
     parser_tick_corpus_audit.add_argument("--output", default=None)
     parser_tick_corpus_audit.add_argument("--json", action="store_true")
-    parser_tick_corpus_audit.set_defaults(func=command_tick_corpus_audit)
+    parser_tick_corpus_audit.set_defaults(
+        allow_provider_book_depth_gaps=True,
+        func=command_tick_corpus_audit,
+    )
 
     parser_micro_train = subparsers.add_parser(
         "microstructure-train",
@@ -6384,7 +6396,13 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                                 }
                             )
                 for symbol in symbols:
-                    certificate = warehouse.corpus_certificate(symbol)
+                    certificate = warehouse.corpus_certificate(
+                        symbol,
+                        required_data_types=data_types,
+                        allow_official_gap_data_types=(
+                            ("bookDepth",) if "bookDepth" in data_types else ()
+                        ),
+                    )
                     corpus_certificates.append(certificate)
                     if certificate["status"] != "pass":
                         errors.append(
@@ -6490,6 +6508,12 @@ def command_tick_corpus_audit(args: argparse.Namespace) -> int:
             * 1_000
         ) - 1
     try:
+        allowed_official_gap_types = (
+            ("bookDepth",)
+            if "bookDepth" in data_types
+            and bool(getattr(args, "allow_provider_book_depth_gaps", True))
+            else ()
+        )
         with MicrostructureWarehouse(
             str(getattr(args, "warehouse", "data/microstructure.duckdb")),
             cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
@@ -6502,6 +6526,7 @@ def command_tick_corpus_audit(args: argparse.Namespace) -> int:
                     required_data_types=data_types,
                     required_start_ms=start_ms,
                     required_end_ms=end_ms,
+                    allow_official_gap_data_types=allowed_official_gap_types,
                 )
                 for symbol in symbols
             ]
@@ -6519,6 +6544,7 @@ def command_tick_corpus_audit(args: argparse.Namespace) -> int:
         "warehouse": str(getattr(args, "warehouse", "data/microstructure.duckdb")),
         "symbols": list(symbols),
         "required_data_types": list(data_types),
+        "allowed_official_gap_data_types": list(allowed_official_gap_types),
         "required_start_ms": start_ms,
         "required_end_ms": end_ms,
         "certificates": certificates,

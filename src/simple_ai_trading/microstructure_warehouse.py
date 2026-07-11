@@ -1668,6 +1668,7 @@ class MicrostructureWarehouse:
         by_type: dict[str, dict[str, object]] = {}
         canonical_types: dict[str, object] = {}
         expected_sets: list[set[str]] = []
+        expected_by_type: dict[str, set[str]] = {}
         for data_type in types:
             snapshots = conn.execute(
                 """
@@ -1687,6 +1688,7 @@ class MicrostructureWarehouse:
                     "reason": "missing_or_ambiguous_official_inventory",
                 }
                 expected_sets.append(set())
+                expected_by_type[data_type] = set()
                 continue
             (
                 snapshot_id,
@@ -1726,6 +1728,7 @@ class MicrostructureWarehouse:
             }
             expected = set(inventory)
             expected_sets.append(expected)
+            expected_by_type[data_type] = expected
             type_reasons: list[str] = []
             official_calendar_gaps: list[str] = []
             if expected:
@@ -2000,23 +2003,57 @@ class MicrostructureWarehouse:
                 "verified": verified,
             }
 
-        common_periods = set.intersection(*expected_sets) if expected_sets and all(expected_sets) else set()
-        common_first = min(common_periods) if common_periods else None
-        common_last = max(common_periods) if common_periods else None
+        common_periods = (
+            set.intersection(*expected_sets)
+            if expected_sets and all(expected_sets)
+            else set()
+        )
+        common_first = (
+            max(min(values) for values in expected_sets)
+            if expected_sets and all(expected_sets)
+            else None
+        )
+        common_last = (
+            min(max(values) for values in expected_sets)
+            if expected_sets and all(expected_sets)
+            else None
+        )
         common_calendar_gaps: list[str] = []
-        if common_first is not None and common_last is not None:
+        common_gap_missing_data_types: dict[str, list[str]] = {}
+        if (
+            common_first is not None
+            and common_last is not None
+            and common_first <= common_last
+        ):
             cursor: date = datetime.strptime(common_first, "%Y-%m-%d").date()
             final_day = datetime.strptime(common_last, "%Y-%m-%d").date()
             while cursor <= final_day:
-                if cursor.isoformat() not in common_periods:
-                    common_calendar_gaps.append(cursor.isoformat())
+                period = cursor.isoformat()
+                if period not in common_periods:
+                    common_calendar_gaps.append(period)
+                    common_gap_missing_data_types[period] = [
+                        data_type
+                        for data_type in types
+                        if period not in expected_by_type.get(data_type, set())
+                    ]
                 cursor += timedelta(days=1)
+        unallowed_common_calendar_gaps = [
+            period
+            for period in common_calendar_gaps
+            if any(
+                data_type not in allowed_official_gap_types
+                for data_type in common_gap_missing_data_types[period]
+            )
+        ]
         if not common_periods:
             reasons.append("common_inventory_periods=0")
-        elif required_periods is None and common_calendar_gaps:
-            reasons.append(f"common_calendar_gaps={','.join(common_calendar_gaps[:3])}")
+        elif required_periods is None and unallowed_common_calendar_gaps:
+            reasons.append(
+                "unallowed_common_calendar_gaps="
+                + ",".join(unallowed_common_calendar_gaps[:3])
+            )
         canonical_payload = {
-            "contract": "official-binance-corpus-certificate-v2",
+            "contract": "official-binance-corpus-certificate-v3",
             "required_data_types": list(types),
             "allowed_official_gap_data_types": list(allowed_official_gap_types),
             "required_first_period": required_first_period,
@@ -2026,7 +2063,7 @@ class MicrostructureWarehouse:
         }
         certificate_sha256 = _canonical_sha256(canonical_payload)
         return {
-            "contract": "official-binance-corpus-certificate-v2",
+            "contract": "official-binance-corpus-certificate-v3",
             "status": "pass" if not reasons else "fail",
             "verified": not reasons,
             "schema_version": TICK_WAREHOUSE_SCHEMA_VERSION,
@@ -2046,6 +2083,8 @@ class MicrostructureWarehouse:
             "common_last_period": common_last,
             "common_period_count": len(common_periods),
             "common_calendar_gaps": common_calendar_gaps,
+            "common_gap_missing_data_types": common_gap_missing_data_types,
+            "unallowed_common_calendar_gaps": unallowed_common_calendar_gaps,
             "data_types": by_type,
             "reasons": reasons,
             "certificate_sha256": certificate_sha256,

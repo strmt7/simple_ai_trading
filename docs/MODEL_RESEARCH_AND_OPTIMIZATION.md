@@ -202,6 +202,17 @@ fallback path revalidates physical evidence again and atomically replaces the
 partition from the checksummed ZIP; it can no longer return a corrupt completed
 manifest as `skipped`. The final corpus certificate remains the authority.
 
+Corpus certificate v3 computes the actual shared calendar overlap from each
+product's independent launch and end boundaries. For every hole in that overlap
+it records the exact absent product. A hole can pass only when all absent
+products are explicitly permitted provider-side `bookDepth` gaps; the exception
+never applies to BBO, trades, a listed archive missing locally, an invalid
+checksum, or damaged physical rows. Full-history sync and the default
+`tick-corpus-audit` use this provider-evidence exception and expose it in JSON;
+`tick-corpus-audit --strict-book-depth-calendar` disables it. This makes a
+certificate a proof of completeness through its recorded UTC cutoff, while the
+normal incremental sync handles newly published days later.
+
 This closes a previous provenance weakness: a missing trade archive can no
 longer be interpreted as a day of genuine zero order flow, and a complete BBO
 build cannot stand in for incomplete trade/depth inputs. Existing action-value
