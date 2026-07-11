@@ -146,6 +146,17 @@ def _payload() -> dict[str, object]:
             "require_mae_better_than_zero": True,
             "minimum_top_500_exact_after_cost_bps": 0.0,
         },
+        "ranking": {
+            "stage_one_role": "calibration",
+            "final_ranking_role": "policy",
+            "lexicographic_descending": [
+                "top_500_mean_exact_after_cost_bps",
+                "spearman_information_coefficient",
+                "direction_auc",
+            ],
+            "diagnostic_top_rows": [100, 500, 1_000],
+            "development_evaluation_used_for_selection": False,
+        },
         "reserved_terminal": {
             "date": "2023-07-07",
             "included_in_dataset": False,
@@ -209,6 +220,12 @@ def test_round13_design_rejects_tampered_payload(tmp_path) -> None:
                 {"training_stride": 1}
             ),
             "successive-halving contract",
+        ),
+        (
+            lambda payload: payload["ranking"].update(  # type: ignore[union-attr]
+                {"development_evaluation_used_for_selection": True}
+            ),
+            "ranking contract",
         ),
     ],
 )
