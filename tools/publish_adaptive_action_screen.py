@@ -69,6 +69,10 @@ _PROGRESS_IDENTITIES = {
         "sampled pairwise net-return ranking ablation",
         "three-seed independent-long-short pairwise-ranked outcome-mixture",
     ),
+    22: (
+        "additive pairwise net-return regularization",
+        "three-seed calibration-preserving additive-pairwise outcome-mixture",
+    ),
 }
 
 
@@ -126,6 +130,12 @@ def _publication_narrative(
             "pairwise net-return ranking model abstained",
             "Sampled pairwise net-return ranking improved several discrimination and short-side tail diagnostics, but worsened the best out-of-sample tail and eliminated threshold-selection eligibility across all risk profiles.",
             "The next precommitted change must restore calibrated positive expected-return separation while retaining net-return ordering and the existing risk controls.",
+        )
+    if round_number == 22:
+        return (
+            "additive net-return ranking model abstained",
+            "The bounded additive pairwise term restored Round 20-like signal eligibility but did not improve the best out-of-sample tail, and every threshold-selection simulation remained negative net of stress costs.",
+            "Further ranking-loss tuning is not justified; the next precommitted change must address target horizon or regime conditioning without relaxing the risk controls.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
