@@ -87,6 +87,13 @@ DESIGN23_V2 = (
     / "action-value"
     / "round-023-causal-temporal-attention-design-v2.json"
 )
+DESIGN24 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-024-utc-session-local-ranking-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -580,6 +587,46 @@ def test_round23_revision2_is_historical_and_preserves_experiment_contract() -> 
         "reserved_terminal",
     ):
         assert design[section] == revision1[section]
+
+
+def test_round24_design_is_current_and_changes_only_ranking_scope() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN24)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN23_V2, require_current=False
+    )
+
+    assert design_sha256 == (
+        "f7ed8bff1f1e96a0c99ae0b50dd6682f4319f9258269411f7e90fc237b01708c"
+    )
+    assert design["round"] == 24
+    assert design["implementation"]["commit"] == (
+        "80c1a7e5176a5b91c0b3ca7ab3672b7fe22c1ca6"
+    )
+    assert design["model"]["candidate_id"] == (
+        "utc-session-local-ranking-outcome-mixture"
+    )
+    assert design["model"]["ranking_scope"] == "utc_session"
+    assert set(design["model"]) == set(predecessor["model"]) | {"ranking_scope"}
+    for name, value in predecessor["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    assert "natural crypto market close" in research[
+        "https://proceedings.mlr.press/v267/liu25cb.html"
+    ]
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
