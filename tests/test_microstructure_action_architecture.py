@@ -829,6 +829,24 @@ def test_outcome_mixture_causal_attention_uses_bounded_history() -> None:
     )
 
 
+def test_outcome_mixture_sample_weights_align_by_sequence_endpoint_identity() -> None:
+    requested = np.arange(100, 110, dtype=np.int64)
+    selected = np.asarray([102, 105, 109], dtype=np.int64)
+    requested_weights = np.linspace(0.5, 1.4, len(requested), dtype=np.float32)
+
+    aligned = outcome_mixture._align_sample_weights(
+        requested, selected, requested_weights
+    )
+
+    np.testing.assert_array_equal(aligned, requested_weights[[2, 5, 9]])
+    with pytest.raises(ValueError, match="sample weights are invalid"):
+        outcome_mixture._align_sample_weights(
+            requested,
+            np.asarray([102, 111], dtype=np.int64),
+            requested_weights,
+        )
+
+
 def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None:
     dataset, long_target, short_target = _dataset()
     targets = _barrier_targets(dataset, long_target, short_target)
@@ -850,6 +868,8 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
         batch_size=256,
         max_epochs=1,
         patience=1,
+        train_sample_weights=np.linspace(0.5, 1.5, 600, dtype=np.float32),
+        tuning_sample_weights=np.linspace(0.5, 1.5, 300, dtype=np.float32),
     )
     path = tmp_path / "independent-towers.safetensors"
     repeated_path = tmp_path / "independent-towers-repeated.safetensors"

@@ -251,6 +251,10 @@ def test_round22_contract_adds_a_bounded_pairwise_ranking_term() -> None:
 def test_round23_contract_changes_only_bounded_temporal_context() -> None:
     contract = screen._ROUND_CONTRACTS[23]
 
+    assert contract["design_revisions"] == {1, 2}
+    assert contract["purposes"][2] == (
+        "consumed_data_causal_temporal_attention_aligned_weight_screen"
+    )
     assert contract["temporal_pooling_mode"] == "causal_attention"
     assert contract["sequence_length"] == 7
     assert contract["trainable_parameter_count"] == 146_090
@@ -260,10 +264,11 @@ def test_round23_contract_changes_only_bounded_temporal_context() -> None:
     assert contract["side_tower_mode"] == "independent"
     assert contract["hidden_dim"] == 88
     assert contract["feature_version"] == "l1-tape-causal-v8"
-    assert contract["predecessor"]["round"] == 22
-    assert contract["predecessor"]["publication_sha256"] == (
+    assert contract["predecessors"][2]["round"] == 22
+    assert contract["predecessors"][2]["publication_sha256"] == (
         "85d052845e77bced2185f89078fa5f032a89ac5dfca27461a366a75e550301bf"
     )
+    assert "No model artifact or report" in contract["predecessors"][2]["finding"]
 
 
 def test_round19_design_is_historical_and_preserves_sealed_controls() -> None:
@@ -478,8 +483,10 @@ def test_round22_design_is_historical_and_preserves_non_loss_contracts() -> None
         assert design[section] == predecessor[section]
 
 
-def test_round23_design_is_current_and_changes_only_temporal_pooling() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN23)
+def test_round23_revision1_is_historical_and_changes_only_temporal_pooling() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN23, require_current=False
+    )
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN22, require_current=False
     )
