@@ -267,7 +267,7 @@ def test_round23_publication_copy_is_specific() -> None:
     assert "isolated positive policy tail is insufficient" in next_step
 
 
-def test_round24_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round24_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(24)
     title, summary, next_step = _publication_narrative(
         24, all_candidate_stress_nets_negative=False
@@ -280,7 +280,21 @@ def test_round24_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert title == "session-local ranking model abstained"
     assert "all threshold-selection eligibility disappeared" in summary
     assert "Session-local ranking is rejected" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 25"):
-        _progress_identity(25)
-    with pytest.raises(ValueError, match="undefined for Round 25"):
-        _publication_narrative(25, all_candidate_stress_nets_negative=True)
+
+
+def test_round25_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(25)
+    title, summary, next_step = _publication_narrative(
+        25, all_candidate_stress_nets_negative=True
+    )
+
+    assert stage == "parameter-matched soft mixture-of-experts ablation"
+    assert model_id == "three-seed soft-expert causal-attention outcome-mixture"
+    assert title == "soft mixture-of-experts outcome model abstained"
+    assert "every threshold-selection candidate lost money" in summary
+    assert "near-maximum routing entropy" in summary
+    assert "Homogeneous experts with near-uniform routing are rejected" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 26"):
+        _progress_identity(26)
+    with pytest.raises(ValueError, match="undefined for Round 26"):
+        _publication_narrative(26, all_candidate_stress_nets_negative=True)

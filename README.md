@@ -527,14 +527,14 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
-[`action-value/latest`](docs/model-research/action-value/latest/README.md):
-Round 24 tested session-local ranking with the Round 23 causal temporal model on
-229,001 valid event labels from 877,894 exact-BBO rows. Several
-threshold-selection diagnostics improved, but the gains reversed out of sample:
-all threshold-selection eligibility disappeared and the best policy-window
-top-100 mean net return fell from `+0.940312` to `-6.294386` bps under stress.
-The model was rejected with zero simulated trades, no leverage, and no trading
-authority.
+  [`action-value/latest`](docs/model-research/action-value/latest/README.md):
+Round 25 tested a nearly parameter-matched two-expert temporal representation
+on 229,001 valid event labels from 877,894 exact-BBO rows. Global ranking and
+signal eligibility recovered, but all eight threshold-selection candidates lost
+money under stress and every displayed top-100/top-500 realized mean remained
+negative. The best policy-window top-100 mean was `-3.793531` bps; routing
+entropy remained near `0.99`, indicating little expert specialization. The model
+was rejected with zero simulated trades, no leverage, and no trading authority.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
