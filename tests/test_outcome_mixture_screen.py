@@ -73,6 +73,13 @@ DESIGN22 = (
     / "action-value"
     / "round-022-additive-pairwise-ranking-design.json"
 )
+DESIGN23 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-023-causal-temporal-attention-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -456,6 +463,43 @@ def test_round22_design_is_historical_and_preserves_non_loss_contracts() -> None
     }
     for name in unchanged_model_fields:
         assert design["model"][name] == predecessor["model"][name]
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+
+
+def test_round23_design_is_current_and_changes_only_temporal_pooling() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN23)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN22, require_current=False
+    )
+
+    assert design_sha256 == (
+        "fc2e1407de6786fcf091d5129b5fb4a76bca12e240a4086f9842ac9787f16509"
+    )
+    assert design["round"] == 23
+    assert design["implementation"]["commit"] == (
+        "2b9716d5432dbcfdbb99ba836138873c2b40aa16"
+    )
+    assert design["model"]["candidate_id"] == (
+        "causal-temporal-attention-outcome-mixture"
+    )
+    assert design["model"]["sequence_length"] == 7
+    assert design["model"]["temporal_pooling_mode"] == "causal_attention"
+    assert set(design["model"]) == set(predecessor["model"]) | {"temporal_pooling_mode"}
+    for name, value in predecessor["model"].items():
+        if name not in {"candidate_id", "sequence_length"}:
+            assert design["model"][name] == value
     for section in (
         "data",
         "execution",
