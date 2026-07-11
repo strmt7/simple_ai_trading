@@ -1,0 +1,363 @@
+{
+  "schema_version": "outcome-mixture-screen-design-v1",
+  "round": 19,
+  "design_revision": 1,
+  "purpose": "consumed_data_pressure_capacity_outcome_mixture_screen",
+  "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false,
+  "implementation": {
+    "hash_mode": "git_blob_sha256_v1",
+    "commit": "b5f283271a7033ad63da784f09162beb13490f78",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_mixture.py",
+        "sha256": "88229d4394f41a37421f0ed2a932c4e3db6c44f550e9286660912e7da54869a5"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "3f1e4d099997f5093b6746200f123c372cb9201fab5ddc2b1f86b96d899bece3"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "9dd7d4818f4edd92c27662fc6f26033b7435b43cac88c319661122a75fec9f84"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "8c2973f2678622bf4e09f3fdd70ad26906d057cb43d0a2b1dc29d5e8af54f752"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_runtime.py",
+        "sha256": "2087c50d1a73009068099125d917f32785c1c2df797edc2bead782c7e8b8fa2f"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "7b1d0f7b3aff5aaaa1d0b282017918c63c2f421cc982cccd602165e8925be43a"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "330832b09b5cc71d75996004fa31b4df1be6e281ab3b8aa4bae98c92d1dd8452"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "baff279e9b742ab930e50dc9508afa555a4a017fa3214c03d2dc645250e1f5c5"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "2d92c27e847374d7d9b734b074ed23837e9bc3ec3a674e175898a0ce2bf8c9bb"
+      },
+      {
+        "path": "tools/run_head_coherence_screen.py",
+        "sha256": "b7d26f3debf9fa31646649fe039bd0fd08caf379f527306209785ce916c22662"
+      },
+      {
+        "path": "tools/run_adaptive_action_screen.py",
+        "sha256": "44f0059a79953fe9154a729bd7ccc2752ea096720f340b0bee496dad5f52035a"
+      },
+      {
+        "path": "tools/run_outcome_mixture_screen.py",
+        "sha256": "3c33182890f7eda1fb38a9b1100726232d85287a2f0332f48ee2e7a8fc1b8ad3"
+      }
+    ]
+  },
+  "predecessor_evidence": {
+    "round": 18,
+    "design_sha256": "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40",
+    "source_report_canonical_sha256": "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676",
+    "publication_sha256": "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378",
+    "finding": "Round 18 improved the least-negative policy tail and produced 24 aggressive calibration-eligible rows, but all four threshold traces lost money after stress costs. Round 19 keeps the model, data, risk, and ranking settings fixed while adding causal trade-pressure versus opposing displayed-depth inputs."
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "full_history_inventory_required": false,
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development_evaluation": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "barrier_targets": {
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1.0,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18.0,
+    "maximum_stop_bps": 60.0,
+    "minimum_take_bps": 27.0,
+    "maximum_take_bps": 90.0,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "compute_backend": "directml",
+    "spill_directory_policy": "warehouse_adjacent",
+    "training_worker_isolation": "clean_process",
+    "cpu_fallback_permitted": false,
+    "training_data_mode": "bounded_device_preload_when_below_512MiB"
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "model": {
+    "candidate_id": "pressure-capacity-conditional-outcome-mixture",
+    "family": "conditional_outcome_mixture_residual_mlp",
+    "sequence_length": 1,
+    "hidden_dim": 128,
+    "residual_blocks": 2,
+    "dropout": 0.1,
+    "probability_loss_weight": 0.25,
+    "magnitude_loss_weight": 0.35,
+    "expected_value_loss_weight": 1.0,
+    "quantile_loss_weight": 0.15,
+    "ranking_loss_weight": 0.1
+  },
+  "training": {
+    "ensemble_seeds": [
+      29,
+      43,
+      71
+    ],
+    "batch_size": 4096,
+    "max_epochs": 20,
+    "patience": 4,
+    "target_scenario": "base",
+    "ensemble_method": "independent_seed_mean_and_dispersion",
+    "label_uniqueness_weighting": true,
+    "development_candidate_count": 1
+  },
+  "threshold_policy": {
+    "quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "drawdown_penalty": 0.5,
+    "selection_scenario": "stress",
+    "no_passing_threshold_action": "abstain"
+  },
+  "risk_profiles": [
+    {
+      "profile": "conservative",
+      "epistemic_penalty": 1.5,
+      "minimum_profitable_probability": 0.65,
+      "minimum_member_agreement": 1.0,
+      "maximum_epistemic_std_bps": 6.0,
+      "minimum_lower_bound_bps": -35.0,
+      "calibration_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 50.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "policy_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 60.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "development_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 70.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "regular",
+      "epistemic_penalty": 1.0,
+      "minimum_profitable_probability": 0.6,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 10.0,
+      "minimum_lower_bound_bps": -45.0,
+      "calibration_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 75.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "policy_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 85.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "development_gates": {
+        "minimum_trades": 18,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 95.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "aggressive",
+      "epistemic_penalty": 0.5,
+      "minimum_profitable_probability": 0.55,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 15.0,
+      "minimum_lower_bound_bps": -60.0,
+      "calibration_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 110.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "policy_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 125.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "development_gates": {
+        "minimum_trades": 24,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 140.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "leverage_applied": false
+    }
+  ],
+  "evaluation": {
+    "calibration_used_for_threshold_selection": true,
+    "policy_used_for_profile_acceptance": true,
+    "development_used_for_selection": false,
+    "positions_must_exit_within_utc_day": true,
+    "maximum_concurrent_positions": 1,
+    "overlap_permitted": false
+  },
+  "reserved_terminal": {
+    "date": "2023-07-07",
+    "included_in_dataset": false,
+    "access_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Strictly Proper Scoring Rules, Prediction, and Estimation",
+      "url": "https://doi.org/10.1198/016214506000001437",
+      "use": "Supports the retained unweighted binary log loss for truthful profitability probabilities. The separate ranking term remains explicitly non-proper, so Brier diagnostics continue to expose calibration damage."
+    },
+    {
+      "title": "Deep Learning for Limit Order Books",
+      "url": "https://arxiv.org/abs/1601.01987",
+      "use": "Motivates modeling a conditional future distribution and inspecting its tails, while this experiment explicitly remains limited to observed best-bid/offer and trade features."
+    },
+    {
+      "title": "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1808.03668",
+      "use": "Supports shared nonlinear representations for order-book prediction but does not establish an after-cost edge for this model or corpus."
+    },
+    {
+      "title": "BDLOB: Bayesian Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1811.10041",
+      "use": "Motivates independent-seed dispersion and abstention when predictive uncertainty is high rather than forcing a trade."
+    },
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://arxiv.org/abs/1011.6402",
+      "use": "Finds that short-horizon price impact varies with order-flow imbalance and inversely with depth. Round 19 adds causal pressure-to-opposing-depth inputs but treats profitability as unproven."
+    },
+    {
+      "title": "Order Flows and Limit Order Book Resiliency on the Meso-Scale",
+      "url": "https://arxiv.org/abs/1708.02715",
+      "use": "Supports combining active trade flow with passive depth and resiliency rather than treating directional trade imbalance as sufficient on its own."
+    },
+    {
+      "title": "Deep Learning for Digital Asset Limit Order Books",
+      "url": "https://arxiv.org/abs/2010.01241",
+      "use": "Provides crypto-specific evidence that short-horizon order-book prediction is testable with walk-forward data, without implying execution profitability."
+    },
+    {
+      "title": "Do Order-Book States Predict Passive-Buy Toxicity? Evidence from BTC Perpetual Futures",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6693260",
+      "use": "Recent non-peer-reviewed BTC evidence motivates testing aggressive pressure relative to near-touch absorption capacity and liquidity fragility; its reported findings are not imported as validation."
+    },
+    {
+      "title": "DirectML",
+      "url": "https://microsoft.github.io/DirectML/PyTorch.html",
+      "use": "Defines the vendor-neutral DirectX 12 training path used in a clean process on this AMD host; CPU fallback remains forbidden for this experiment."
+    }
+  ],
+  "design_sha256": "c2c848a708e807bf66b2f95b77a155d35c2f1569f034fddb2b07ffcfff61e947"
+}
