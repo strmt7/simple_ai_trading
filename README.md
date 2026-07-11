@@ -528,11 +528,12 @@ required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md):
-Round 21 evaluated sampled pairwise net-return ranking with parameter-matched
-independent long and short representations on 229,001 valid event labels from
-877,894 exact-BBO rows. Every risk profile had zero threshold-selection
-eligible signals, so no threshold was formed and the model was rejected with
-zero out-of-sample simulated trades and no trading authority.
+Round 22 evaluated a bounded additive pairwise net-return term with
+parameter-matched independent long and short representations on 229,001 valid
+event labels from 877,894 exact-BBO rows. Regular and aggressive profiles
+produced threshold candidates, but all eight lost money under stress, so the
+model was rejected with zero out-of-sample simulated trades and no trading
+authority.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

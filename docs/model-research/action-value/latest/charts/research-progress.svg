@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1500" height="620" viewBox="0 0 1500 620" role="img" aria-labelledby="title desc">
 <title id="title">After-cost evidence by research round</title>
-<desc id="desc">Executed means, overlapping-forecast diagnostics, and rounds with no executable series use distinct markers. Rounds 15 through 21 produced no evaluation trades.</desc>
+<desc id="desc">Executed means, overlapping-forecast diagnostics, and rounds with no executable series use distinct markers. Rounds 15 through 22 produced no evaluation trades.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">After-cost evidence by research round</text>
 <text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Distinct markers prevent diagnostics or abstention from being presented as an executed trade mean.</text>
@@ -16,39 +16,41 @@
 <text x="106" y="307.4" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-5</text>
 <line x1="120" y1="199.2" x2="1430" y2="199.2" stroke="#526674" stroke-width="2"/>
 <text x="106" y="204.2" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0</text>
-<circle cx="163.7" cy="356.8" r="8" fill="#b42318" stroke="#ffffff" stroke-width="3"/>
-<text x="163.7" y="340.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263744">-7.64</text>
-<text x="163.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 7</text>
-<circle cx="251.0" cy="443.4" r="8" fill="#b42318" stroke="#ffffff" stroke-width="3"/>
-<text x="251.0" y="427.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263744">-11.84</text>
-<text x="251.0" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 8</text>
-<rect x="331.3" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 338.3 323.0)"/>
-<text x="338.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 9</text>
-<rect x="418.7" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 425.7 323.0)"/>
-<text x="425.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 10</text>
-<rect x="506.0" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 513.0 323.0)"/>
-<text x="513.0" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 11</text>
-<rect x="593.3" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 600.3 323.0)"/>
-<text x="600.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 12</text>
-<rect x="679.7" y="327.5" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="687.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 13</text>
-<rect x="767.0" y="324.4" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="775.0" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 14</text>
-<rect x="855.3" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 862.3 323.0)"/>
-<text x="862.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 15</text>
-<rect x="941.7" y="450.9" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="949.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 16</text>
-<rect x="1029.0" y="406.6" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="1037.0" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 17</text>
-<rect x="1116.3" y="362.6" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="1124.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 18</text>
-<rect x="1203.7" y="403.7" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="1211.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 19</text>
-<rect x="1291.0" y="405.3" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="1299.0" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 20</text>
-<rect x="1378.3" y="443.9" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
-<text x="1386.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 21</text>
-<polyline points="163.7,356.8 251.0,443.4" fill="none" stroke="#287f9e" stroke-width="4"/>
+<circle cx="160.9" cy="356.8" r="8" fill="#b42318" stroke="#ffffff" stroke-width="3"/>
+<text x="160.9" y="340.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263744">-7.64</text>
+<text x="160.9" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 7</text>
+<circle cx="242.8" cy="443.4" r="8" fill="#b42318" stroke="#ffffff" stroke-width="3"/>
+<text x="242.8" y="427.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263744">-11.84</text>
+<text x="242.8" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 8</text>
+<rect x="317.7" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 324.7 323.0)"/>
+<text x="324.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 9</text>
+<rect x="399.6" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 406.6 323.0)"/>
+<text x="406.6" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 10</text>
+<rect x="481.4" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 488.4 323.0)"/>
+<text x="488.4" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 11</text>
+<rect x="563.3" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 570.3 323.0)"/>
+<text x="570.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 12</text>
+<rect x="644.2" y="327.5" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="652.2" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 13</text>
+<rect x="726.1" y="324.4" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="734.1" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 14</text>
+<rect x="808.9" y="316.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 815.9 323.0)"/>
+<text x="815.9" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 15</text>
+<rect x="889.8" y="450.9" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="897.8" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 16</text>
+<rect x="971.7" y="406.6" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="979.7" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 17</text>
+<rect x="1053.6" y="362.6" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="1061.6" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 18</text>
+<rect x="1135.4" y="403.7" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="1143.4" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 19</text>
+<rect x="1217.3" y="405.3" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="1225.3" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 20</text>
+<rect x="1299.2" y="443.9" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="1307.2" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 21</text>
+<rect x="1381.1" y="401.0" width="16" height="16" fill="#7b559c" stroke="#ffffff" stroke-width="2"/>
+<text x="1389.1" y="520" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Round 22</text>
+<polyline points="160.9,356.8 242.8,443.4" fill="none" stroke="#287f9e" stroke-width="4"/>
 <text x="42" y="323" transform="rotate(-90 42 323)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">After-cost basis points</text>
 <text x="56" y="574" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Windows and units differ by round. This is evidence lineage, not a continuous equity curve or portfolio return series.</text>
 </svg>
