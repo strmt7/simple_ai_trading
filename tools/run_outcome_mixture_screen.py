@@ -622,6 +622,49 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    29: {
+        "purpose": "consumed_data_1800s_horizon_cost_amortization_screen",
+        "design_revisions": {1},
+        "horizon_seconds": 1_800,
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "ranking_scope": "global_batch",
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "representation_mode": "soft_mixture_of_experts",
+        "expert_count": 2,
+        "router_balance_loss_weight": 0.02,
+        "expert_temporal_context_mode": "nested_recent_full",
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 146_974,
+        "predecessor": {
+            "round": 28,
+            "design_sha256": (
+                "1e2ba9a09a277587f96abd309d07d91ab61f6706ca715a4b3dca275bccd0df7d"
+            ),
+            "source_report_canonical_sha256": (
+                "f51e80cafd4107b86b694c1731f30c6c99bc67a5a7d13dbf629f8792f8fdd99d"
+            ),
+            "publication_sha256": (
+                "24223446c9cd74565f9be5f499139e4ab602d74e970faa34f8999ab329412375"
+            ),
+            "finding": (
+                "Round 28 added causally masked Binance sampled aggregate depth. "
+                "It improved several calibration and broader-tail diagnostics but "
+                "worsened the policy-validation long top-100 mean, and all eight "
+                "threshold candidates lost after stress costs. Static sampled depth "
+                "is rejected. Historical Round 11 diagnostics showed positive "
+                "top-100 net-return means for one aggressive 1800-second candidate "
+                "in both policy and selection windows, although that candidate still "
+                "failed promotion. Round 29 retests only the 1800-second horizon with "
+                "the current depth-free architecture and unchanged safety controls."
+            ),
+        },
+    },
 }
 
 
