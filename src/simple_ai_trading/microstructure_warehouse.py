@@ -451,6 +451,7 @@ class MicrostructureWarehouse:
         cache_root: str | Path = "data/archive-cache",
         memory_limit: str = "8GB",
         threads: int = 8,
+        read_only: bool = False,
     ) -> None:
         if not _MEMORY_LIMIT_PATTERN.fullmatch(str(memory_limit).strip()):
             raise ValueError("memory_limit must be a positive integer followed by MB or GB")
@@ -458,18 +459,24 @@ class MicrostructureWarehouse:
         self.cache_root = Path(cache_root)
         self.memory_limit = str(memory_limit).upper()
         self.threads = max(1, min(32, int(threads)))
+        self.read_only = bool(read_only)
         self._conn: duckdb.DuckDBPyConnection | None = None
         self._reconciled = False
 
     def connect(self) -> duckdb.DuckDBPyConnection:
         if self._conn is None:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self._conn = duckdb.connect(str(self.path))
+            if self.read_only:
+                if not self.path.is_file():
+                    raise FileNotFoundError(f"read-only warehouse does not exist: {self.path}")
+            else:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+            self._conn = duckdb.connect(str(self.path), read_only=self.read_only)
             self._conn.execute(f"SET memory_limit='{self.memory_limit}'")
             self._conn.execute(f"SET threads={self.threads}")
             self._conn.execute("SET TimeZone='UTC'")
             self._conn.execute("SET preserve_insertion_order=false")
-            self._init_schema()
+            if not self.read_only:
+                self._init_schema()
         return self._conn
 
     def close(self) -> None:
