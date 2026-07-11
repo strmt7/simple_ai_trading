@@ -165,7 +165,7 @@ simple-ai-trading ai-review --report data/model_lab/model_lab_report.json
 
 `data-health` audits the SQLite market database before training or optimization. It reports row counts, UTC spans, span-years, expected rows, gap count, coverage ratio, archive-file status counts, and checksum-status counts for every stored symbol/market/interval or for an explicit symbol batch. It exits nonzero when minimum rows, span, coverage, gap, archive-error, checksum-mismatch, or `--require-verified-checksum` gates fail; bounded windows count missing bars at the requested UTC start and end boundaries, not only gaps between stored rows. Promotion-grade optimization now uses the single fail-closed contract `tools/optimization_round.py --promotion-grade`, which forces the exact BTC/ETH/SOL trio for the selected quote asset, forces `1s`, disables network backfill, requires verified archive checksums, requires zero missing-second gaps, enforces the configured minimum stored history span, and writes `promotion_grade_contract` to `report.json`. If that contract or the critical-analysis layer fails, the tool exits nonzero and the artifacts cannot be treated as performance evidence. Futures `1s` optimization is allowed only with prefilled `aggTrades`-derived candles; otherwise the tool fails instead of calling a nonexistent futures `1s` kline endpoint. The tool defaults to `--model-candidates 32`, evaluating the broad profitability-search prefix of cost-aware label horizon/target/model regularization candidates per symbol before the final holdout; pass a lower `--model-candidates` value only for smoke diagnostics. During multi-candidate rounds, the optimizer builds one advanced feature matrix per symbol/feature-shape, then relabels it per candidate so second-level backtests do not recompute the same features 32 times. `report.json` and `backtest-metrics.csv` record `model_candidate_count`, `model_selected_candidate`, and `model_selection_score`. Signed live startup and `risk --live --model` now require promoted `TrainedModel` artifacts to carry multi-candidate evidence; when the resolved runtime backend is DirectML/CUDA/ROCm/MPS, they also require accelerator evidence for training and probability calibration. The round writes `round-status.json` during long runs, including per-symbol phases for data health, SQLite load, feature cache generation/reuse, candidate relabeling, DirectML training, probability-temperature calibration, threshold calibration progress, holdout scoring, and artifact streaming, plus `data-health.json` beside the graph tables. When hard data gates are active and symbols are not supplied explicitly, optimization now over-samples the live liquidity-ranked universe and keeps the first requested count that also pass local data-health; skipped candidates are recorded as `selection_health_rejections` in the round report. SVG charts are deterministic visual summaries while the full-resolution timeline CSVs remain the source of truth, avoiding multi-megabyte chart bloat without weakening evidence. Each round report records both configured leverage and effective leverage, so spot evidence cannot be misread as a futures-leverage backtest.
 
-Liquidity-session controls do not assume that "day trading hours" are fixed forever. The active defaults use observed bar volume by symbol and historical clock bucket in backtests, the `live` command, and the autonomous decision function, so low-liquidity holidays, partial days, overnight crypto liquidity drops, and future stock-market schedule changes can be reflected by the data instead of a static UTC start/end hour.
+Liquidity-session controls do not assume that "day trading hours" are fixed forever. The active defaults use observed bar volume by symbol and historical clock bucket in backtests, the `live` command, and the autonomous decision function, so low-liquidity holidays, exchange maintenance, overnight crypto liquidity drops, and changing venue participation can be reflected by the data instead of a static UTC start/end hour.
 
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. When timestamps are present, the chart labels the UTC start/end dates and the simulated duration in days/years instead of presenting an unlabeled sample index. The same command appears in the Windows app.
 
@@ -528,15 +528,18 @@ required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md): Round
-28 restored the 900-second lifecycle and added causally joined Binance sampled
-aggregate depth at 1% and 5% to the otherwise unchanged Round 26 model. The
-checksummed feature matrix contains 877,894 rows; depth was current for 867,009
-(`98.76%`) and the remaining 10,885 rows were explicitly masked after 60
-seconds. These snapshots are not full event-level L2 or queue/fill evidence.
-The best policy-validation top-100 mean was still `-5.732508` bps, all eight
-threshold candidates lost after stress costs, and the least-negative aggressive
-trace worsened to `-146.935234` bps. The model was rejected with zero simulated
-trades, no leverage, and no trading authority.
+29 changed only the depth-free Round 26 model's maximum target and holding
+horizon from 900 to 1,800 seconds. The checksummed feature matrix contains
+877,664 rows and 227,011 valid event labels. The longer horizon increased the
+largest threshold-selection eligible set to 612 signals, but that was a failure
+mode rather than an improvement: calibration rank correlations were negative,
+all eight threshold candidates lost after stress costs, and the least-negative
+trace lost `-92.246143` bps with `113.917222` bps maximum drawdown. The best
+top-100 mean in the reused policy-validation window was still `-2.016582` bps.
+The model was rejected with zero accepted thresholds, zero reused-policy
+simulated trades, no leverage, and no trading authority. That repeatedly reused
+policy window is selection-contaminated and is not independent out-of-sample or
+terminal evidence.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
