@@ -184,8 +184,8 @@ def test_design_loader_rejects_unreadable_and_nonobject_payloads(
         load_adaptive_action_design(source)
 
 
-def test_tracked_round16_design_is_hash_bound_current_and_terminal_sealed() -> None:
-    design, design_sha256 = load_adaptive_action_design(DESIGN)
+def test_tracked_round16_design_is_hash_bound_to_historical_implementation() -> None:
+    design, design_sha256 = load_adaptive_action_design(DESIGN, require_current=False)
 
     assert (
         design_sha256

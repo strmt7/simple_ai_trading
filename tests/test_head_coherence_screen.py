@@ -97,9 +97,10 @@ def test_action_gates_reject_unevaluable_and_ambiguous_evidence() -> None:
         _top_row(metrics)
 
 
-def test_tracked_round14_design_is_hash_bound_and_current() -> None:
+def test_tracked_round14_design_is_hash_bound_to_historical_implementation() -> None:
     design, design_sha256 = load_head_coherence_design(
-        ROOT / "docs/model-research/action-value/round-014-head-coherence-design.json"
+        ROOT / "docs/model-research/action-value/round-014-head-coherence-design.json",
+        require_current=False,
     )
 
     assert design_sha256 == (

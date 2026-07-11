@@ -3847,6 +3847,7 @@ def test_command_fetch_handles_binar_errors(tmp_path, monkeypatch) -> None:
 def test_command_fetch_accepts_non_default_symbol(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
+    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     output = tmp_path / "candles.json"
     assert cli.command_fetch(argparse.Namespace(symbol="ETHUSDC", interval=None, limit=10, output=str(output))) == 0
     assert output.exists()
