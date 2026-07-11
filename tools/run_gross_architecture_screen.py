@@ -84,7 +84,9 @@ def _sha256_file(path: Path) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "").lower()
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _is_git_oid(value: object) -> bool:
@@ -120,7 +122,9 @@ def _validate_implementation_binding(binding: Mapping[str, object]) -> None:
     try:
         _git_output("merge-base", "--is-ancestor", commit, "HEAD")
     except subprocess.CalledProcessError as exc:
-        raise ValueError("gross architecture implementation commit is not an ancestor") from exc
+        raise ValueError(
+            "gross architecture implementation commit is not an ancestor"
+        ) from exc
     seen: set[str] = set()
     for item in files:
         if not isinstance(item, Mapping):
@@ -213,14 +217,18 @@ def load_gross_architecture_design(
             raise ValueError(f"gross architecture {role} role is invalid")
         first = _parse_date(value.get("start"), label=f"{role} start")
         last = _parse_date(value.get("end"), label=f"{role} end")
-        if first > last or (previous_end is not None and first != previous_end + timedelta(days=1)):
+        if first > last or (
+            previous_end is not None and first != previous_end + timedelta(days=1)
+        ):
             raise ValueError("gross architecture roles must be contiguous")
         previous_end = last
     start = _parse_date(data.get("start_date"), label="data start")
     end = _parse_date(data.get("end_date"), label="data end")
     first_role = roles[_ROLE_NAMES[0]]
     last_role = roles[_ROLE_NAMES[-1]]
-    if start != _parse_date(first_role["start"], label="first role") or end != _parse_date(
+    if start != _parse_date(
+        first_role["start"], label="first role"
+    ) or end != _parse_date(
         last_role["end"],
         label="last role",
     ):
@@ -243,12 +251,10 @@ def load_gross_architecture_design(
         int(execution.get("horizon_seconds") or 0) != 300
         or int(execution.get("total_latency_ms") or -1) != 750
         or float(execution.get("taker_fee_bps_per_side") or -1.0) != 5.0
-        or float(execution.get("additional_slippage_bps_per_side") or -1.0)
-        != 1.0
+        or float(execution.get("additional_slippage_bps_per_side") or -1.0) != 1.0
         or int(execution.get("decision_cadence_seconds") or 0) != 5
         or int(execution.get("max_quote_age_ms") or 0) != 1_000
-        or float(execution.get("reference_order_notional_quote") or 0.0)
-        != 1_000.0
+        or float(execution.get("reference_order_notional_quote") or 0.0) != 1_000.0
         or float(execution.get("max_l1_participation") or 0.0) != 1.0
     ):
         raise ValueError("gross architecture execution diagnostic contract is invalid")
@@ -271,9 +277,9 @@ def load_gross_architecture_design(
     ):
         raise ValueError("gross architecture successive-halving contract is invalid")
     parsed_specs = [GrossArchitectureSpec(**dict(value)) for value in candidates]
-    if len(parsed_specs) < 3 or len({spec.candidate_id for spec in parsed_specs}) != len(
-        parsed_specs
-    ):
+    if len(parsed_specs) < 3 or len(
+        {spec.candidate_id for spec in parsed_specs}
+    ) != len(parsed_specs):
         raise ValueError("gross architecture candidates are incomplete or duplicated")
     required_gates = {
         "minimum_direction_auc",
@@ -309,14 +315,17 @@ def _utc_day_bounds(first: date, last: date) -> tuple[int, int]:
         datetime.combine(first, datetime.min.time(), tzinfo=timezone.utc).timestamp()
         * 1_000
     )
-    end_ms = int(
-        datetime.combine(
-            last + timedelta(days=1),
-            datetime.min.time(),
-            tzinfo=timezone.utc,
-        ).timestamp()
-        * 1_000
-    ) - 1
+    end_ms = (
+        int(
+            datetime.combine(
+                last + timedelta(days=1),
+                datetime.min.time(),
+                tzinfo=timezone.utc,
+            ).timestamp()
+            * 1_000
+        )
+        - 1
+    )
     return start_ms, end_ms
 
 
@@ -365,12 +374,17 @@ def _role_indexes(
     return output, evidence
 
 
-def _top_row(metrics: Mapping[str, object], requested: int = 500) -> Mapping[str, object]:
+def _top_row(
+    metrics: Mapping[str, object], requested: int = 500
+) -> Mapping[str, object]:
     rows = metrics.get("top_rows")
     if not isinstance(rows, Sequence):
         raise ValueError("gross architecture metrics have no top-row diagnostics")
     for value in rows:
-        if isinstance(value, Mapping) and int(value.get("requested_rows") or 0) == requested:
+        if (
+            isinstance(value, Mapping)
+            and int(value.get("requested_rows") or 0) == requested
+        ):
             return value
     raise ValueError(f"gross architecture metrics lack top-{requested} diagnostics")
 
@@ -428,6 +442,8 @@ def _artifact_summary(model) -> dict[str, object]:
         output.update(
             {
                 "spec": asdict(model.spec),
+                "optimizer_kind": model.optimizer_kind,
+                "optimizer_hyperparameters": dict(model.optimizer_hyperparameters),
                 "best_epoch": model.best_epoch,
                 "training_loss": model.training_loss,
                 "tuning_loss": model.tuning_loss,
@@ -456,13 +472,24 @@ def _save_neural_artifact(path: Path, model) -> dict[str, object]:
         "schema_version": model.schema_version,
         "candidate_id": model.spec.candidate_id,
         "model_sha256": model.model_sha256,
+        "optimizer_kind": model.optimizer_kind,
+        "optimizer_hyperparameters": json.dumps(
+            dict(model.optimizer_hyperparameters),
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ),
         "target_mode": model.target_mode,
         "trading_authority": "false",
         "execution_claim": "false",
         "profitability_claim": "false",
     }
     save_safetensors(arrays, str(path), metadata=metadata)
-    return {"path": path.name, "sha256": _sha256_file(path), "bytes": path.stat().st_size}
+    return {
+        "path": path.name,
+        "sha256": _sha256_file(path),
+        "bytes": path.stat().st_size,
+    }
 
 
 def run_gross_architecture_screen(
@@ -497,7 +524,9 @@ def run_gross_architecture_screen(
         or effective_threads != int(resources["warehouse_threads"])
         or effective_backend != resources["compute_backend"]
     ):
-        raise ValueError("runtime overrides differ from the precommitted resource contract")
+        raise ValueError(
+            "runtime overrides differ from the precommitted resource contract"
+        )
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     status_path = destination / "status.json"
@@ -518,7 +547,11 @@ def run_gross_architecture_screen(
         }
         print(
             "gross-architecture-screen "
-            + " ".join(f"{name}={value}" for name, value in payload.items() if name != "runtime_resources"),
+            + " ".join(
+                f"{name}={value}"
+                for name, value in payload.items()
+                if name != "runtime_resources"
+            ),
             flush=True,
         )
         write_json_atomic(status_path, payload, indent=2, sort_keys=True)
@@ -537,13 +570,17 @@ def run_gross_architecture_screen(
         threads=effective_threads,
     ) as warehouse:
         progress("verify-source")
-        source_evidence = dict(warehouse.require_causal_feature_bars(str(data["symbol"])))
+        source_evidence = dict(
+            warehouse.require_causal_feature_bars(str(data["symbol"]))
+        )
         certificate = warehouse.require_corpus_certificate(
             str(data["symbol"]),
             required_data_types=tuple(data["required_data_types"]),
             required_start_ms=start_ms,
             required_end_ms=end_ms,
-            require_full_history_inventory=bool(data["full_history_inventory_required"]),
+            require_full_history_inventory=bool(
+                data["full_history_inventory_required"]
+            ),
         )
         source_evidence["corpus_certificate"] = certificate
         cache_parameters = {
@@ -666,13 +703,15 @@ def run_gross_architecture_screen(
                 patience=int(stage_one["patience"]),
                 train_sample_weights=train_weights,
                 tuning_sample_weights=tuning_weights,
-                progress=lambda epoch, total, training_loss, tuning_loss, candidate=spec.candidate_id: progress(
-                    "stage-one-epoch",
-                    candidate=candidate,
-                    epoch=epoch,
-                    epochs=total,
-                    training_loss=round(training_loss, 8),
-                    tuning_loss=round(tuning_loss, 8),
+                progress=lambda epoch, total, training_loss, tuning_loss, candidate=spec.candidate_id: (
+                    progress(
+                        "stage-one-epoch",
+                        candidate=candidate,
+                        epoch=epoch,
+                        epochs=total,
+                        training_loss=round(training_loss, 8),
+                        tuning_loss=round(tuning_loss, 8),
+                    )
                 ),
             )
             calibration_endpoints = valid_sequence_endpoints(
@@ -813,13 +852,15 @@ def run_gross_architecture_screen(
                 patience=int(stage_two["patience"]),
                 train_sample_weights=train_weights,
                 tuning_sample_weights=tuning_weights,
-                progress=lambda epoch, total, training_loss, tuning_loss, candidate=spec.candidate_id: progress(
-                    "stage-two-epoch",
-                    candidate=candidate,
-                    epoch=epoch,
-                    epochs=total,
-                    training_loss=round(training_loss, 8),
-                    tuning_loss=round(tuning_loss, 8),
+                progress=lambda epoch, total, training_loss, tuning_loss, candidate=spec.candidate_id: (
+                    progress(
+                        "stage-two-epoch",
+                        candidate=candidate,
+                        epoch=epoch,
+                        epochs=total,
+                        training_loss=round(training_loss, 8),
+                        tuning_loss=round(tuning_loss, 8),
+                    )
                 ),
             )
             policy_endpoints = valid_sequence_endpoints(
@@ -878,9 +919,7 @@ def run_gross_architecture_screen(
                             development_metrics["spearman_information_coefficient"]
                         )
                         - float(
-                            baseline_development[
-                                "spearman_information_coefficient"
-                            ]
+                            baseline_development["spearman_information_coefficient"]
                         ),
                         "top_500_mean_exact_after_cost_bps": float(
                             candidate_top["mean_exact_after_cost_bps"]

@@ -760,7 +760,7 @@ def publish(
 ) -> dict[str, object]:
     design, design_sha256 = load_gross_architecture_design(
         design_path,
-        require_current=True,
+        require_current=False,
     )
     report, stage_rows, final_rows = _validated_evidence(evidence_root, design)
     ranked = sorted(

@@ -21,9 +21,14 @@ from .microstructure_features import (
 )
 
 
-GROSS_ARCHITECTURE_SCHEMA_VERSION = "exact-bbo-gross-architecture-v1"
+GROSS_ARCHITECTURE_SCHEMA_VERSION = "exact-bbo-gross-architecture-v2"
 GROSS_TARGET_MODE = "latency_aligned_midpoint_log_return_no_execution_claim"
 _DAY_MS = 86_400_000
+_MANUAL_ADAM_KIND = "manual_adam_tensor_native_v1"
+_MANUAL_ADAM_LEARNING_RATE = 8.0e-4
+_MANUAL_ADAM_BETA_1 = 0.9
+_MANUAL_ADAM_BETA_2 = 0.99
+_MANUAL_ADAM_EPSILON = 1.0e-7
 
 
 @dataclass(frozen=True)
@@ -117,6 +122,8 @@ class TrainedTorchGrossModel:
     backend_requested: str
     backend_kind: str
     backend_device: str
+    optimizer_kind: str
+    optimizer_hyperparameters: Mapping[str, float]
     sequence_length: int
     target_scale_bps: float
     scaler_center: np.ndarray
@@ -150,6 +157,95 @@ class TrainedLightGBMGrossModel:
     trading_authority: bool = False
     execution_claim: bool = False
     profitability_claim: bool = False
+
+
+class _ManualAdam:
+    """Adam expressed with tensor operations supported by DirectML."""
+
+    def __init__(
+        self,
+        torch,
+        parameters,
+        *,
+        learning_rate: float,
+        beta_1: float,
+        beta_2: float,
+        epsilon: float,
+    ) -> None:
+        values = tuple(parameters)
+        numeric = (learning_rate, beta_1, beta_2, epsilon)
+        if not values or not all(math.isfinite(float(value)) for value in numeric):
+            raise ValueError("manual Adam configuration is invalid")
+        if (
+            learning_rate <= 0.0
+            or not 0.0 <= beta_1 < 1.0
+            or not 0.0 <= beta_2 < 1.0
+            or epsilon <= 0.0
+        ):
+            raise ValueError("manual Adam configuration is outside bounds")
+        self._torch = torch
+        self._parameters = values
+        self._learning_rate = float(learning_rate)
+        self._beta_1 = float(beta_1)
+        self._beta_2 = float(beta_2)
+        self._epsilon = float(epsilon)
+        self._steps = [0 for _parameter in values]
+        self._first_moments = [torch.zeros_like(parameter) for parameter in values]
+        self._second_moments = [torch.zeros_like(parameter) for parameter in values]
+
+    @property
+    def kind(self) -> str:
+        return _MANUAL_ADAM_KIND
+
+    @property
+    def hyperparameters(self) -> dict[str, float]:
+        return {
+            "learning_rate": self._learning_rate,
+            "beta_1": self._beta_1,
+            "beta_2": self._beta_2,
+            "epsilon": self._epsilon,
+        }
+
+    def zero_grad(self, *, set_to_none: bool) -> None:
+        for parameter in self._parameters:
+            if parameter.grad is None:
+                continue
+            if set_to_none:
+                parameter.grad = None
+            else:
+                parameter.grad.zero_()
+
+    def step(self) -> None:
+        with self._torch.no_grad():
+            for index, parameter in enumerate(self._parameters):
+                gradient = parameter.grad
+                if gradient is None:
+                    continue
+                if gradient.is_sparse:
+                    raise ValueError("manual Adam does not support sparse gradients")
+                self._steps[index] += 1
+                step = self._steps[index]
+                first = self._first_moments[index]
+                second = self._second_moments[index]
+                first.mul_(self._beta_1).add_(
+                    gradient,
+                    alpha=1.0 - self._beta_1,
+                )
+                second.mul_(self._beta_2).addcmul_(
+                    gradient,
+                    gradient,
+                    value=1.0 - self._beta_2,
+                )
+                bias_correction_1 = 1.0 - self._beta_1**step
+                bias_correction_2 = 1.0 - self._beta_2**step
+                denominator = (
+                    second.sqrt().div_(math.sqrt(bias_correction_2)).add_(self._epsilon)
+                )
+                parameter.addcdiv_(
+                    first,
+                    denominator,
+                    value=-self._learning_rate / bias_correction_1,
+                )
 
 
 def _canonical_json(value: object) -> str:
@@ -190,9 +286,7 @@ def causal_cusum_event_mask(
         raise ValueError("CUSUM settings must be positive")
     try:
         return_index = dataset.feature_names.index("return_5s_bps")
-        volatility_index = dataset.feature_names.index(
-            "realized_volatility_60s_bps"
-        )
+        volatility_index = dataset.feature_names.index("realized_volatility_60s_bps")
     except ValueError as exc:
         raise ValueError("CUSUM event features are missing") from exc
     returns = np.asarray(dataset.features[:, return_index], dtype=np.float64)
@@ -331,9 +425,9 @@ def _auc(labels: np.ndarray, scores: np.ndarray) -> float:
         return 0.5
     ranks = _rank(np.asarray(scores, dtype=np.float64)) + 1.0
     positive_rank_sum = float(np.sum(ranks[binary == 1]))
-    return (
-        positive_rank_sum - positives * (positives + 1) / 2.0
-    ) / (positives * negatives)
+    return (positive_rank_sum - positives * (positives + 1) / 2.0) / (
+        positives * negatives
+    )
 
 
 def evaluate_gross_forecast(
@@ -390,11 +484,11 @@ def evaluate_gross_forecast(
     ).astype(bool)
     eligible_indexes = np.flatnonzero(selected_side_eligible)
     if eligible_indexes.size == 0:
-        raise ValueError("gross forecast has no exact after-cost eligible selected side")
+        raise ValueError(
+            "gross forecast has no exact after-cost eligible selected side"
+        )
     strength = np.abs(predicted)
-    ranking = eligible_indexes[
-        np.argsort(-strength[eligible_indexes], kind="stable")
-    ]
+    ranking = eligible_indexes[np.argsort(-strength[eligible_indexes], kind="stable")]
     top_rows: list[dict[str, object]] = []
     for requested in requested_top_rows:
         count = min(int(requested), len(ranking))
@@ -598,9 +692,9 @@ def _torch_loss(
         return torch.maximum(quantile * error, (quantile - 1.0) * error)
 
     quantile = pinball(lower, 0.10) + pinball(upper, 0.90)
-    directional = -(
-        torch.sigmoid(spec.gmadl_slope * target * mean) - 0.5
-    ) * torch.pow(torch.abs(target) + 1.0e-6, spec.gmadl_magnitude_power)
+    directional = -(torch.sigmoid(spec.gmadl_slope * target * mean) - 0.5) * torch.pow(
+        torch.abs(target) + 1.0e-6, spec.gmadl_magnitude_power
+    )
     crossing = functional.relu(lower - upper)
     per_row = (
         huber
@@ -617,6 +711,8 @@ def _state_hash(
     center: np.ndarray,
     scale: np.ndarray,
     target_scale_bps: float,
+    optimizer_kind: str,
+    optimizer_hyperparameters: Mapping[str, float],
     state: Mapping[str, np.ndarray],
 ) -> str:
     contract = {
@@ -626,6 +722,8 @@ def _state_hash(
         "feature_names": list(MICROSTRUCTURE_FEATURE_NAMES),
         "target_mode": GROSS_TARGET_MODE,
         "target_scale_bps": float(target_scale_bps),
+        "optimizer_kind": str(optimizer_kind),
+        "optimizer_hyperparameters": dict(optimizer_hyperparameters),
     }
     digest = hashlib.sha256(_canonical_json(contract).encode("ascii"))
     for name, values in (
@@ -707,17 +805,20 @@ def train_torch_gross_model(
     torch, _nn, _functional = _torch_modules()
     _seed_torch(torch, int(seed), backend)
     model = _network(spec, len(MICROSTRUCTURE_FEATURE_NAMES)).to(device)
-    optimizer = torch.optim.Adam(
+    optimizer = _ManualAdam(
+        torch,
         model.parameters(),
-        lr=8.0e-4,
-        betas=(0.9, 0.99),
-        eps=1.0e-7,
-        foreach=False,
+        learning_rate=_MANUAL_ADAM_LEARNING_RATE,
+        beta_1=_MANUAL_ADAM_BETA_1,
+        beta_2=_MANUAL_ADAM_BETA_2,
+        epsilon=_MANUAL_ADAM_EPSILON,
     )
     rng = np.random.default_rng(int(seed))
 
     def epoch_loss(endpoints: np.ndarray, weights: np.ndarray, training: bool) -> float:
-        order = rng.permutation(len(endpoints)) if training else np.arange(len(endpoints))
+        order = (
+            rng.permutation(len(endpoints)) if training else np.arange(len(endpoints))
+        )
         total = 0.0
         total_weight = 0.0
         model.train(training)
@@ -743,14 +844,18 @@ def train_torch_gross_model(
                     raise ValueError("gross architecture loss became non-finite")
                 if training:
                     loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+                    torch.nn.utils.clip_grad_norm_(
+                        model.parameters(),
+                        5.0,
+                        error_if_nonfinite=True,
+                    )
                     optimizer.step()
             weight_sum = float(np.sum(weights[positions]))
             total += float(loss.detach().cpu().item()) * weight_sum
             total_weight += weight_sum
         return total / total_weight
 
-    best_state: dict[str, np.ndarray] | None = None
+    best_device_state: dict[str, object] | None = None
     best_epoch = 0
     best_tuning = float("inf")
     best_training = float("inf")
@@ -764,8 +869,8 @@ def train_torch_gross_model(
             best_tuning = tuning_loss
             best_training = training_loss
             best_epoch = epoch
-            best_state = {
-                name: value.detach().cpu().numpy().astype(np.float32, copy=True)
+            best_device_state = {
+                name: value.detach().clone()
                 for name, value in model.state_dict().items()
             }
             stale = 0
@@ -773,8 +878,20 @@ def train_torch_gross_model(
             stale += 1
             if stale >= stop_patience:
                 break
-    assert best_state is not None
-    model_sha256 = _state_hash(spec, center, scale, target_scale, best_state)
+    assert best_device_state is not None
+    best_state = {
+        name: value.detach().cpu().numpy().astype(np.float32, copy=True)
+        for name, value in best_device_state.items()
+    }
+    model_sha256 = _state_hash(
+        spec,
+        center,
+        scale,
+        target_scale,
+        optimizer.kind,
+        optimizer.hyperparameters,
+        best_state,
+    )
     return TrainedTorchGrossModel(
         schema_version=GROSS_ARCHITECTURE_SCHEMA_VERSION,
         spec=spec,
@@ -784,6 +901,8 @@ def train_torch_gross_model(
         backend_requested=backend.requested,
         backend_kind=backend.kind,
         backend_device=backend.device,
+        optimizer_kind=optimizer.kind,
+        optimizer_hyperparameters=optimizer.hyperparameters,
         sequence_length=spec.sequence_length,
         target_scale_bps=target_scale,
         scaler_center=center,

@@ -494,6 +494,13 @@ def test_torch_gross_model_trains_and_reloads_on_cpu(torch_model_bundle) -> None
     dataset, _actual, model, progress = torch_model_bundle
     assert model.trading_authority is False
     assert model.target_mode == GROSS_TARGET_MODE
+    assert model.optimizer_kind == "manual_adam_tensor_native_v1"
+    assert model.optimizer_hyperparameters == {
+        "learning_rate": 8.0e-4,
+        "beta_1": 0.9,
+        "beta_2": 0.99,
+        "epsilon": 1.0e-7,
+    }
     assert len(progress) == 1
     prediction = predict_torch_gross_model(
         model,
@@ -506,7 +513,9 @@ def test_torch_gross_model_trains_and_reloads_on_cpu(torch_model_bundle) -> None
     assert np.all(np.isfinite(prediction.mean_prediction_bps))
 
 
-def test_torch_training_and_prediction_reject_invalid_contracts(torch_model_bundle) -> None:
+def test_torch_training_and_prediction_reject_invalid_contracts(
+    torch_model_bundle,
+) -> None:
     dataset, actual, model, _progress = torch_model_bundle
     spec = model.spec
     with pytest.raises(ValueError, match="targets are invalid"):
@@ -593,7 +602,9 @@ def test_directml_device_and_seed_paths_are_vendor_agnostic(monkeypatch) -> None
     seeded: list[int] = []
     fake_directml = SimpleNamespace(
         device=lambda: "privateuseone:0",
-        default_generator=SimpleNamespace(manual_seed=lambda value: seeded.append(value)),
+        default_generator=SimpleNamespace(
+            manual_seed=lambda value: seeded.append(value)
+        ),
     )
     monkeypatch.setitem(sys.modules, "torch_directml", fake_directml)
     backend = BackendInfo(
@@ -606,6 +617,38 @@ def test_directml_device_and_seed_paths_are_vendor_agnostic(monkeypatch) -> None
     assert architecture._torch_device(backend) == "privateuseone:0"
     architecture._seed_torch(torch, 19, backend)
     assert seeded == [19]
+
+
+def test_manual_adam_matches_reference_adam_on_cpu() -> None:
+    torch = pytest.importorskip("torch")
+    initial = torch.tensor([0.75, -0.25, 1.5], dtype=torch.float32)
+    manual_parameter = initial.clone().requires_grad_()
+    reference_parameter = initial.clone().requires_grad_()
+    manual = architecture._ManualAdam(
+        torch,
+        [manual_parameter],
+        learning_rate=8.0e-4,
+        beta_1=0.9,
+        beta_2=0.99,
+        epsilon=1.0e-7,
+    )
+    reference = torch.optim.Adam(
+        [reference_parameter],
+        lr=8.0e-4,
+        betas=(0.9, 0.99),
+        eps=1.0e-7,
+        foreach=False,
+    )
+
+    for _step in range(5):
+        manual.zero_grad(set_to_none=True)
+        reference.zero_grad(set_to_none=True)
+        manual_parameter.square().sum().backward()
+        reference_parameter.square().sum().backward()
+        manual.step()
+        reference.step()
+
+    torch.testing.assert_close(manual_parameter, reference_parameter)
 
 
 def test_lightgbm_gross_baseline_trains_and_reloads(lightgbm_model_bundle) -> None:
