@@ -409,6 +409,40 @@ def test_gross_metrics_cover_constant_baselines_and_crossed_intervals() -> None:
     assert metrics.interval_crossing_rate == 1.0
 
 
+def test_gross_metrics_exclude_ineligible_model_selected_sides() -> None:
+    dataset, actual = _dataset(16)
+    dataset = replace(
+        dataset,
+        long_liquidity_eligible=np.asarray([False] * 8 + [True] * 8),
+    )
+    prediction = GrossPredictionBatch(
+        endpoint_indexes=np.arange(16, dtype=np.int64),
+        mean_prediction_bps=np.arange(16, 0, -1, dtype=np.float64),
+        direction_probability=np.full(16, 0.75),
+        lower_prediction_bps=np.full(16, -1.0),
+        upper_prediction_bps=np.full(16, 1.0),
+    )
+    metrics = evaluate_gross_forecast(
+        dataset,
+        actual,
+        prediction,
+        requested_top_rows=(16,),
+    )
+    assert metrics.exact_after_cost_eligible_rows == 8
+    assert metrics.exact_after_cost_eligible_ratio == 0.5
+    assert metrics.top_rows[0]["rows"] == 8
+
+    with pytest.raises(ValueError, match="no exact after-cost eligible"):
+        evaluate_gross_forecast(
+            replace(
+                dataset,
+                long_liquidity_eligible=np.zeros(16, dtype=bool),
+            ),
+            actual,
+            prediction,
+        )
+
+
 def test_tcn_network_executes_causal_residual_path() -> None:
     torch = pytest.importorskip("torch")
     spec = GrossArchitectureSpec(
