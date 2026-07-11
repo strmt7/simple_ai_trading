@@ -81,6 +81,10 @@ _PROGRESS_IDENTITIES = {
         "UTC-session-local ranking ablation",
         "three-seed session-local-ranked causal-attention outcome-mixture",
     ),
+    25: (
+        "parameter-matched soft mixture-of-experts ablation",
+        "three-seed soft-expert causal-attention outcome-mixture",
+    ),
 }
 
 
@@ -156,6 +160,12 @@ def _publication_narrative(
             "session-local ranking model abstained",
             "Restricting both ranking regularizers to one UTC risk session improved several threshold-selection information-coefficient and short-tail diagnostics, but those gains reversed out of sample, all threshold-selection eligibility disappeared, and the best out-of-sample long top-100 mean net return fell below zero.",
             "Session-local ranking is rejected; the next precommitted change must restore global ranking and test market-state-conditioned representation without relaxing any execution or risk control.",
+        )
+    if round_number == 25:
+        return (
+            "soft mixture-of-experts outcome model abstained",
+            "The nearly parameter-matched soft experts restored global ranking and increased signals passing pre-threshold controls, but every threshold-selection candidate lost money after stress costs, every displayed ranked tail remained negative, and near-maximum routing entropy showed little expert specialization.",
+            "Homogeneous experts with near-uniform routing are rejected; the next precommitted change must test economically motivated multi-scale causal context while preserving the proper losses and every execution and risk control.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
