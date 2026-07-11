@@ -449,6 +449,7 @@ def _train_event_models(
     risk_level: str,
     compute_backend: str,
     seed: int,
+    explicit_role_indexes: Mapping[str, np.ndarray] | None = None,
 ) -> tuple[
     dict[str, lgb.Booster],
     dict[str, int],
@@ -456,13 +457,29 @@ def _train_event_models(
     dict[str, object],
 ]:
     x = np.asarray(dataset.features, dtype=np.float32)
-    train = np.asarray(splits["train"], dtype=np.int64)
-    split_evidence = _purged_split(dataset)[1]
-    early_stop, calibration = _purged_tuning_subsplit(
-        dataset.decision_time_ms,
-        splits["tuning"],
-        purge_ms=split_evidence.purge_ms,
-    )
+    if explicit_role_indexes is None:
+        train = np.asarray(splits["train"], dtype=np.int64)
+        split_evidence = _purged_split(dataset)[1]
+        early_stop, calibration = _purged_tuning_subsplit(
+            dataset.decision_time_ms,
+            splits["tuning"],
+            purge_ms=split_evidence.purge_ms,
+        )
+        base_roles = {
+            "train": train,
+            "early_stop": early_stop,
+            "calibration": calibration,
+        }
+    else:
+        if set(explicit_role_indexes) != {"train", "early_stop", "calibration"}:
+            raise ValueError("explicit event model roles are incomplete")
+        base_roles = {
+            role: np.asarray(indexes, dtype=np.int64)
+            for role, indexes in explicit_role_indexes.items()
+        }
+        if any(indexes.ndim != 1 or len(indexes) < 256 for indexes in base_roles.values()):
+            raise ValueError("explicit event model roles are too small")
+        train = base_roles["train"]
     backend, kind, device = _backend_parameters(compute_backend, seed)
     base_parameters = {**backend, **_risk_parameters(risk_level, len(train))}
     models: dict[str, lgb.Booster] = {}
@@ -482,9 +499,8 @@ def _train_event_models(
     for side, target in targets.items():
         side_mask = eligibility[side] & event_mask
         role_indexes = {
-            "train": train[side_mask[train]],
-            "early_stop": early_stop[side_mask[early_stop]],
-            "calibration": calibration[side_mask[calibration]],
+            role: indexes[side_mask[indexes]]
+            for role, indexes in base_roles.items()
         }
         role_weights = {
             role: _average_label_uniqueness(dataset, indexes, side=side)
