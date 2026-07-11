@@ -66,6 +66,13 @@ DESIGN21_V3 = (
     / "action-value"
     / "round-021-pairwise-net-return-ranking-design-v3.json"
 )
+DESIGN22 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-022-additive-pairwise-ranking-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -401,6 +408,49 @@ def test_round21_revision3_is_historical_and_preserves_economic_contract() -> No
         "reserved_terminal",
     ):
         assert design[section] == revision2[section]
+
+
+def test_round22_design_is_current_and_preserves_non_loss_contracts() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN22)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN21_V3, require_current=False
+    )
+
+    assert design_sha256 == (
+        "1704a184751b473fdb550140cb3650451a535b0aeb4c696e2262941aa915f462"
+    )
+    assert design["round"] == 22
+    assert design["implementation"]["commit"] == (
+        "aed90af9b4ab7f012e5bf874a1dcd06492567206"
+    )
+    assert design["model"]["candidate_id"] == (
+        "calibration-preserving-additive-pairwise-outcome-mixture"
+    )
+    assert design["model"]["ranking_loss_mode"] == "correlation"
+    assert design["model"]["ranking_loss_weight"] == 0.1
+    assert design["model"]["pairwise_ranking_loss_weight"] == 0.02
+    assert set(design["model"]) == set(predecessor["model"]) | {
+        "pairwise_ranking_loss_weight"
+    }
+    unchanged_model_fields = set(predecessor["model"]) - {
+        "candidate_id",
+        "ranking_loss_mode",
+    }
+    for name in unchanged_model_fields:
+        assert design["model"][name] == predecessor["model"][name]
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
