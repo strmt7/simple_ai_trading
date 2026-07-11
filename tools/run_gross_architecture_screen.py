@@ -172,9 +172,19 @@ def load_gross_architecture_design(
     gates = payload.get("development_gates")
     terminal = payload.get("reserved_terminal")
     execution = payload.get("execution")
+    ranking = payload.get("ranking")
     if not all(
         isinstance(value, Mapping)
-        for value in (data, resources, sampler, stages, gates, terminal, execution)
+        for value in (
+            data,
+            resources,
+            sampler,
+            stages,
+            gates,
+            terminal,
+            execution,
+            ranking,
+        )
     ) or not isinstance(candidates, list):
         raise ValueError("gross architecture design sections are incomplete")
     assert isinstance(data, Mapping)
@@ -184,6 +194,7 @@ def load_gross_architecture_design(
     assert isinstance(gates, Mapping)
     assert isinstance(terminal, Mapping)
     assert isinstance(execution, Mapping)
+    assert isinstance(ranking, Mapping)
     roles = data.get("roles")
     if (
         data.get("symbol") != "BTCUSDT"
@@ -272,6 +283,19 @@ def load_gross_architecture_design(
     }
     if set(gates) != required_gates:
         raise ValueError("gross architecture development gates are incomplete")
+    if (
+        ranking.get("stage_one_role") != "calibration"
+        or ranking.get("final_ranking_role") != "policy"
+        or tuple(ranking.get("lexicographic_descending") or ())
+        != (
+            "top_500_mean_exact_after_cost_bps",
+            "spearman_information_coefficient",
+            "direction_auc",
+        )
+        or tuple(ranking.get("diagnostic_top_rows") or ()) != (100, 500, 1_000)
+        or ranking.get("development_evaluation_used_for_selection") is not False
+    ):
+        raise ValueError("gross architecture ranking contract is invalid")
     implementation = payload.get("implementation")
     if not isinstance(implementation, Mapping):
         raise ValueError("gross architecture implementation binding is missing")
@@ -457,11 +481,14 @@ def run_gross_architecture_screen(
     sampler = design["event_sampler"]
     stages = design["stages"]
     gates = design["development_gates"]
+    ranking = design["ranking"]
     assert isinstance(data, Mapping)
     assert isinstance(resources, Mapping)
     assert isinstance(sampler, Mapping)
     assert isinstance(stages, Mapping)
     assert isinstance(gates, Mapping)
+    assert isinstance(ranking, Mapping)
+    requested_top_rows = tuple(int(value) for value in ranking["diagnostic_top_rows"])
     effective_memory = str(memory_limit or resources["duckdb_memory_limit"]).upper()
     effective_threads = int(threads or resources["warehouse_threads"])
     effective_backend = str(compute_backend or resources["compute_backend"]).lower()
@@ -661,7 +688,12 @@ def run_gross_architecture_screen(
                 compute_backend=effective_backend,
                 batch_size=int(stage_one["batch_size"]),
             )
-            metrics = evaluate_gross_forecast(dataset, gross_target, prediction).asdict()
+            metrics = evaluate_gross_forecast(
+                dataset,
+                gross_target,
+                prediction,
+                requested_top_rows=requested_top_rows,
+            ).asdict()
             stage_one_results.append(
                 {
                     "candidate_id": spec.candidate_id,
@@ -705,6 +737,7 @@ def run_gross_architecture_screen(
             dataset,
             gross_target,
             predict_lightgbm_gross_model(baseline, dataset, roles["policy"]),
+            requested_top_rows=requested_top_rows,
         ).asdict()
         baseline_development = evaluate_gross_forecast(
             dataset,
@@ -714,6 +747,7 @@ def run_gross_architecture_screen(
                 dataset,
                 roles["development_evaluation"],
             ),
+            requested_top_rows=requested_top_rows,
         ).asdict()
         baseline_artifact_path = destination / "lightgbm-baseline.json"
         write_json_atomic(
@@ -810,6 +844,7 @@ def run_gross_architecture_screen(
                     compute_backend=effective_backend,
                     batch_size=int(stage_two["batch_size"]),
                 ),
+                requested_top_rows=requested_top_rows,
             ).asdict()
             development_metrics = evaluate_gross_forecast(
                 dataset,
@@ -821,6 +856,7 @@ def run_gross_architecture_screen(
                     compute_backend=effective_backend,
                     batch_size=int(stage_two["batch_size"]),
                 ),
+                requested_top_rows=requested_top_rows,
             ).asdict()
             artifact_file = _save_neural_artifact(
                 destination / f"{spec.candidate_id}.safetensors",
