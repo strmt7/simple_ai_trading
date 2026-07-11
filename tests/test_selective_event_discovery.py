@@ -358,11 +358,8 @@ def test_causal_feature_build_rebuilds_stale_evidence() -> None:
     ]
 
 
-def test_round_twelve_v6_design_binds_resources_roles_and_terminal() -> None:
-    design = load_selective_event_design(
-        _tracked_round_twelve_design(),
-        require_current=True,
-    )
+def test_round_twelve_v6_design_is_preserved_but_no_longer_current() -> None:
+    design = load_selective_event_design(_tracked_round_twelve_design())
 
     assert design["design_sha256"] == (
         "933a8619248145f4fd2e433952a92cfb8b90db4429846a468a6072f18486587d"
@@ -383,6 +380,11 @@ def test_round_twelve_v6_design_binds_resources_roles_and_terminal() -> None:
     assert design["supersession"]["model_feature_build_started"] is True
     assert design["supersession"]["model_fit_started"] is False
     assert design["supersession"]["selection_labels_accessed"] is False
+    with pytest.raises(ValueError, match="implementation changed"):
+        load_selective_event_design(
+            _tracked_round_twelve_design(),
+            require_current=True,
+        )
 
 
 def test_round_twelve_v5_design_is_preserved_but_no_longer_current() -> None:
