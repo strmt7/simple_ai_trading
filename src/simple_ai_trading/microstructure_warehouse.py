@@ -2183,21 +2183,21 @@ class MicrostructureWarehouse:
                             checksum_last_modified=checksum_last_modified,
                             checksum_etag=normalized_checksum_etag,
                         )
-                    physical = self._physical_archive_stats(
-                        symbol=symbol,
-                        data_type=data_type,
-                        archive_id=archive_id,
-                    )
-                    if (
-                        reusable is not None
-                        and str(reusable.get("archive_id") or "") == archive_id
-                        and self._manifest_matches_physical_rows(
-                            data_type,
-                            reusable,
-                            physical.get(archive_id, {}),
+                    if reusable is not None:
+                        physical = self._physical_archive_stats(
+                            symbol=symbol,
+                            data_type=data_type,
+                            archive_id=archive_id,
                         )
-                    ):
-                        return self._result_from_manifest(completed, status="skipped")
+                        if (
+                            str(reusable.get("archive_id") or "") == archive_id
+                            and self._manifest_matches_physical_rows(
+                                data_type,
+                                reusable,
+                                physical.get(archive_id, {}),
+                            )
+                        ):
+                            return self._result_from_manifest(completed, status="skipped")
                 compressed_bytes, source_sha256 = _download_verified_archive(
                     active_session,
                     source_url,
