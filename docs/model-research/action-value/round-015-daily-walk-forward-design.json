@@ -1,0 +1,232 @@
+{
+  "schema_version": "daily-walk-forward-screen-design-v1",
+  "round": 15,
+  "design_revision": 1,
+  "purpose": "consumed_data_daily_walk_forward_development",
+  "seed": 29,
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "target_mode": "latency_aligned_midpoint_log_return_no_execution_claim",
+  "implementation": {
+    "commit": "df8a1591fcd9a7fd1110e5a52679245da6cf3b61",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_walkforward.py",
+        "sha256": "e13b1ee181684bd832f7430270fc6b97f3fcc60536ad4c60b8b2bd128cb44a85"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "7b1d0f7b3aff5aaaa1d0b282017918c63c2f421cc982cccd602165e8925be43a"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "4a50a675f3618ba9aba73aebf24a58349f60b2241b7af66ffdded3a91e74d71c"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "f2a29c2ec5058811f1d4dfa4d9c86eef71dbc6f6b0c1ab44535e4bc8270310aa"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "0ae026337753c7dbdb8ed4558baf2880503eb79aee991699f66bbc413fc770ef"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "2d92c27e847374d7d9b734b074ed23837e9bc3ec3a674e175898a0ce2bf8c9bb"
+      },
+      {
+        "path": "tools/run_head_coherence_screen.py",
+        "sha256": "b7d26f3debf9fa31646649fe039bd0fd08caf379f527306209785ce916c22662"
+      },
+      {
+        "path": "tools/run_daily_walkforward_screen.py",
+        "sha256": "edce4a00c98fecfb5180541826c33640d68b0cc952f45f8038c1c3ee01943c63"
+      }
+    ]
+  },
+  "predecessor_evidence": {
+    "round": 14,
+    "design_sha256": "b043639d7242bd599371fd4ee44283f46dbef5663129ebd04538792b8f582a0d",
+    "report_sha256": "b0b0323c167c90dec1353409aadb631479f14315f42f7e2f9ca3aba642a32fa7",
+    "finding": "Direction by magnitude improved the Huber model in both roles, but all policy mappings were negative gross while later development tails improved, motivating prior-only daily adaptation and mandatory abstention."
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "full_history_inventory_required": false,
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development_evaluation": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 300,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "compute_backend": "directml",
+    "spill_directory_policy": "warehouse_adjacent",
+    "training_data_mode": "bounded_device_preload_when_below_512MiB"
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "model": {
+    "candidate_id": "daily-huber-direction",
+    "family": "tabular_mlp",
+    "sequence_length": 1,
+    "hidden_dim": 64,
+    "residual_blocks": 1,
+    "dropout": 0.1,
+    "gmadl_weight": 0.0,
+    "head_coherence_weight": 0.0,
+    "gmadl_slope": 8.0,
+    "gmadl_magnitude_power": 1.0
+  },
+  "training": {
+    "batch_size": 4096,
+    "max_epochs": 10,
+    "patience": 3,
+    "minimum_role_rows": 512,
+    "action_score_method": "direction_magnitude",
+    "daily_retrain_from_scratch": true,
+    "development_candidate_count": 1
+  },
+  "fit_candidates": [
+    {
+      "candidate_id": "rolling-10d",
+      "training_window_days": 10,
+      "early_stop_days": 2,
+      "calibration_days": 2,
+      "recency_half_life_days": null
+    },
+    {
+      "candidate_id": "rolling-25d",
+      "training_window_days": 25,
+      "early_stop_days": 3,
+      "calibration_days": 2,
+      "recency_half_life_days": null
+    },
+    {
+      "candidate_id": "expanding-half-life-7d",
+      "training_window_days": 0,
+      "early_stop_days": 3,
+      "calibration_days": 2,
+      "recency_half_life_days": 7.0
+    }
+  ],
+  "threshold_policy": {
+    "quantiles": [
+      0.9,
+      0.95,
+      0.975,
+      0.99
+    ],
+    "minimum_calibration_trades": 8,
+    "maximum_calibration_drawdown_bps": 60.0,
+    "minimum_positive_day_ratio": 0.5,
+    "drawdown_penalty": 0.25,
+    "no_passing_threshold_action": "abstain_for_entire_evaluation_day"
+  },
+  "policy_gates": {
+    "minimum_trades": 10,
+    "minimum_total_net_bps": 0.0,
+    "maximum_drawdown_bps": 100.0,
+    "minimum_positive_day_ratio": 0.4,
+    "minimum_worst_trade_bps": -40.0
+  },
+  "development_gates": {
+    "minimum_trades": 12,
+    "minimum_total_net_bps": 0.0,
+    "maximum_drawdown_bps": 120.0,
+    "minimum_positive_day_ratio": 0.5,
+    "minimum_worst_trade_bps": -40.0
+  },
+  "evaluation": {
+    "policy_start": "2023-06-26",
+    "policy_end": "2023-06-30",
+    "development_start": "2023-07-01",
+    "development_end": "2023-07-06",
+    "development_used_for_candidate_selection": false,
+    "positions_must_exit_within_utc_day": true,
+    "maximum_concurrent_positions": 1,
+    "overlap_permitted": false
+  },
+  "reserved_terminal": {
+    "date": "2023-07-07",
+    "included_in_dataset": false,
+    "access_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Requires operational transaction evidence rather than forecast metrics alone."
+    },
+    {
+      "title": "Handling Concept Drift in Global Time Series",
+      "url": "https://arxiv.org/abs/2304.01512",
+      "use": "Motivates rolling, expanding and recency-weighted adaptation under drift."
+    },
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Motivates cost-aware thresholding and abstention before action."
+    },
+    {
+      "title": "MacroHFT",
+      "url": "https://arxiv.org/abs/2406.14537",
+      "use": "Supports context-aware adaptation while this experiment avoids unverified reinforcement-learning execution claims."
+    }
+  ],
+  "design_sha256": "4ff50e579bb036d3146a8ea01e8f502efea0b2a0445df8f187f612199ebbe43c"
+}

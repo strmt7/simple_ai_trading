@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 from simple_ai_trading.microstructure_walkforward import ActionTrace
@@ -8,10 +9,12 @@ from tools.run_daily_walkforward_screen import (
     _aggregate_gate_reasons,
     _aggregate_traces,
     _selection_rank,
+    load_daily_walkforward_design,
 )
 
 
 DAY_MS = 86_400_000
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _trace(day: int, pnls: tuple[float, ...], gross: tuple[float, ...]) -> ActionTrace:
@@ -99,3 +102,28 @@ def test_aggregate_rejects_gross_net_count_drift() -> None:
         assert "count drifted" in str(exc)
     else:
         raise AssertionError("gross/net count drift must be rejected")
+
+
+def test_tracked_round15_design_is_hash_bound_and_current() -> None:
+    design, design_sha256 = load_daily_walkforward_design(
+        ROOT
+        / "docs/model-research/action-value/round-015-daily-walk-forward-design.json"
+    )
+
+    assert design_sha256 == (
+        "4ff50e579bb036d3146a8ea01e8f502efea0b2a0445df8f187f612199ebbe43c"
+    )
+    assert design["implementation"]["commit"] == (  # type: ignore[index]
+        "df8a1591fcd9a7fd1110e5a52679245da6cf3b61"
+    )
+    assert (
+        design["evaluation"][  # type: ignore[index]
+            "development_used_for_candidate_selection"
+        ]
+        is False
+    )
+    assert design["reserved_terminal"] == {
+        "date": "2023-07-07",
+        "included_in_dataset": False,
+        "access_permitted": False,
+    }
