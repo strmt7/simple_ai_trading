@@ -1,15 +1,15 @@
 # Round 28: sampled aggregate-depth outcome model abstained
 
-**Rejected without trading authority.** The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best out-of-sample long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline. Signals meeting pre-threshold controls appeared only for Regular (1), Aggressive (42); Conservative produced none. The 8 resulting threshold candidates all failed the stress-test acceptance criteria, so no out-of-sample simulated trade, development access, leverage, or trading authority was permitted.
+**Rejected without trading authority.** The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best policy-validation long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline. Signals meeting pre-threshold controls appeared only for Regular (1), Aggressive (42); Conservative produced none. The 8 resulting threshold candidates all failed the stress-test acceptance criteria, so no policy-validation simulated trade, development access, leverage, or trading authority was permitted.
 
 | Evidence | Result |
 | --- | ---: |
 | Best threshold-selection stress ROC AUC | 0.605 (long) |
-| Best out-of-sample stress ROC AUC | 0.603 (short) |
-| Best out-of-sample top-100 mean net return | -5.73 bps (long) |
+| Best policy-validation stress ROC AUC | 0.603 (short) |
+| Best policy-validation top-100 mean net return | -5.73 bps (long) |
 | Largest pre-threshold eligible signal set | 42 / 28,554 (aggressive) |
 | Thresholds evaluated / accepted | 8 / 0 |
-| Out-of-sample simulated trades | 0 |
+| Policy-validation simulated trades | 0 |
 | Authorized / live-executed trades | 0 / 0 |
 | Current sampled aggregate-depth features | 867,009 / 877,894 (98.76%) |
 
