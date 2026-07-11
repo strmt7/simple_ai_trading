@@ -527,14 +527,16 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
-  [`action-value/latest`](docs/model-research/action-value/latest/README.md):
-Round 27 shortened the maximum holding horizon from 900 to 300 seconds on
-230,393 valid event labels from 878,025 exact-BBO rows. Stress ROC AUC increased
-to `0.700` in threshold selection and `0.682` out of sample, but positive outcomes
-became rarer and every displayed top-100/top-500 mean remained negative. All
-eight threshold candidates failed; the least-negative trace was one losing trade
-at `-1.224204` bps. The model was rejected with zero simulated trades, no
-leverage, and no trading authority.
+[`action-value/latest`](docs/model-research/action-value/latest/README.md): Round
+28 restored the 900-second lifecycle and added causally joined Binance sampled
+aggregate depth at 1% and 5% to the otherwise unchanged Round 26 model. The
+checksummed feature matrix contains 877,894 rows; depth was current for 867,009
+(`98.76%`) and the remaining 10,885 rows were explicitly masked after 60
+seconds. These snapshots are not full event-level L2 or queue/fill evidence.
+The best out-of-sample top-100 mean was still `-5.732508` bps, all eight
+threshold candidates lost after stress costs, and the least-negative aggressive
+trace worsened to `-146.935234` bps. The model was rejected with zero simulated
+trades, no leverage, and no trading authority.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
