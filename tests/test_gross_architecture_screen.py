@@ -185,10 +185,11 @@ def test_round13_design_validates_hash_and_current_implementation(tmp_path) -> N
     assert design_sha256 == payload["design_sha256"]
 
 
-def test_tracked_round13_design_is_hash_and_implementation_bound() -> None:
+def test_tracked_round13_v1_design_is_preserved_but_no_longer_current() -> None:
     design, design_sha256 = load_gross_architecture_design(
         ROOT
-        / "docs/model-research/action-value/round-013-gross-architecture-design.json"
+        / "docs/model-research/action-value/round-013-gross-architecture-design.json",
+        require_current=False,
     )
     assert design_sha256 == (
         "6488e119fff23a3b41dc83009d2c9dd63502efa9b62d4d1300aebfa981755540"
@@ -202,6 +203,11 @@ def test_tracked_round13_design_is_hash_and_implementation_bound() -> None:
         "included_in_dataset": False,
         "access_permitted": False,
     }
+    with pytest.raises(ValueError, match="implementation changed"):
+        load_gross_architecture_design(
+            ROOT
+            / "docs/model-research/action-value/round-013-gross-architecture-design.json"
+        )
 
 
 def test_round13_design_rejects_tampered_payload(tmp_path) -> None:
