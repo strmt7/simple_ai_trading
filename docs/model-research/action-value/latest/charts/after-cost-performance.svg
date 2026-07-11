@@ -1,24 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620">
 <rect width="100%" height="100%" fill="#f7f9fb"/>
-<text x="52" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#18242f">Round 10 after-cost economics</text>
+<text x="52" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#18242f">Round 11 after-cost economics</text>
 <text x="52" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#51606d">Mean executable labels are negative; selected-trade mean is undefined because every policy abstained.</text>
 <rect x="90" y="120" width="960" height="380" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="90" y1="166.5" x2="1050" y2="166.5" stroke="#526674" stroke-width="2"/>
-<rect x="215.0" y="166.5" width="22" height="287.6" fill="#218c8c"/>
-<text x="226.0" y="471.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.37</text>
-<rect x="263.0" y="166.5" width="22" height="287.3" fill="#d59b2d"/>
-<text x="274.0" y="470.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.36</text>
-<text x="250.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">conservative-h1800</text>
-<rect x="535.0" y="166.5" width="22" height="290.0" fill="#218c8c"/>
-<text x="546.0" y="473.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.48</text>
-<rect x="583.0" y="166.5" width="22" height="287.9" fill="#d59b2d"/>
-<text x="594.0" y="471.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.39</text>
-<text x="570.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">regular-h1800</text>
-<rect x="855.0" y="166.5" width="22" height="289.4" fill="#218c8c"/>
-<text x="866.0" y="472.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.45</text>
-<rect x="903.0" y="166.5" width="22" height="285.4" fill="#d59b2d"/>
-<text x="914.0" y="468.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.28</text>
-<text x="890.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">aggressive-h1800</text>
+<line x1="90" y1="165.4" x2="1050" y2="165.4" stroke="#526674" stroke-width="2"/>
+<rect x="95.0" y="165.4" width="22" height="276.9" fill="#218c8c"/>
+<text x="106.0" y="459.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.20</text>
+<rect x="143.0" y="165.4" width="22" height="273.4" fill="#d59b2d"/>
+<text x="154.0" y="455.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.04</text>
+<text x="130.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 300s</text>
+<rect x="175.0" y="165.4" width="22" height="276.9" fill="#218c8c"/>
+<text x="186.0" y="459.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.20</text>
+<rect x="223.0" y="165.4" width="22" height="272.5" fill="#d59b2d"/>
+<text x="234.0" y="454.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.01</text>
+<text x="210.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 300s</text>
+<rect x="255.0" y="165.4" width="22" height="276.4" fill="#218c8c"/>
+<text x="266.0" y="458.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.18</text>
+<rect x="303.0" y="165.4" width="22" height="271.8" fill="#d59b2d"/>
+<text x="314.0" y="454.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.97</text>
+<text x="290.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 300s</text>
+<rect x="335.0" y="165.4" width="22" height="279.4" fill="#218c8c"/>
+<text x="346.0" y="461.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.31</text>
+<rect x="383.0" y="165.4" width="22" height="274.1" fill="#d59b2d"/>
+<text x="394.0" y="456.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.08</text>
+<text x="370.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 600s</text>
+<rect x="415.0" y="165.4" width="22" height="280.1" fill="#218c8c"/>
+<text x="426.0" y="462.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.34</text>
+<rect x="463.0" y="165.4" width="22" height="272.0" fill="#d59b2d"/>
+<text x="474.0" y="454.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.98</text>
+<text x="450.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 600s</text>
+<rect x="495.0" y="165.4" width="22" height="279.8" fill="#218c8c"/>
+<text x="506.0" y="462.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.32</text>
+<rect x="543.0" y="165.4" width="22" height="269.9" fill="#d59b2d"/>
+<text x="554.0" y="452.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.89</text>
+<text x="530.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 600s</text>
+<rect x="575.0" y="165.4" width="22" height="281.8" fill="#218c8c"/>
+<text x="586.0" y="464.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.41</text>
+<rect x="623.0" y="165.4" width="22" height="274.7" fill="#d59b2d"/>
+<text x="634.0" y="457.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.10</text>
+<text x="610.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 900s</text>
+<rect x="655.0" y="165.4" width="22" height="282.7" fill="#218c8c"/>
+<text x="666.0" y="465.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.45</text>
+<rect x="703.0" y="165.4" width="22" height="271.7" fill="#d59b2d"/>
+<text x="714.0" y="454.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.97</text>
+<text x="690.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 900s</text>
+<rect x="735.0" y="165.4" width="22" height="282.7" fill="#218c8c"/>
+<text x="746.0" y="465.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.45</text>
+<rect x="783.0" y="165.4" width="22" height="268.5" fill="#d59b2d"/>
+<text x="794.0" y="450.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.83</text>
+<text x="770.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 900s</text>
+<rect x="815.0" y="165.4" width="22" height="286.8" fill="#218c8c"/>
+<text x="826.0" y="469.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.63</text>
+<rect x="863.0" y="165.4" width="22" height="275.6" fill="#d59b2d"/>
+<text x="874.0" y="458.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.14</text>
+<text x="850.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">C 1800s</text>
+<rect x="895.0" y="165.4" width="22" height="289.4" fill="#218c8c"/>
+<text x="906.0" y="471.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.75</text>
+<rect x="943.0" y="165.4" width="22" height="271.6" fill="#d59b2d"/>
+<text x="954.0" y="454.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.96</text>
+<text x="930.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">R 1800s</text>
+<rect x="975.0" y="165.4" width="22" height="291.0" fill="#218c8c"/>
+<text x="986.0" y="473.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-12.82</text>
+<rect x="1023.0" y="165.4" width="22" height="266.8" fill="#d59b2d"/>
+<text x="1034.0" y="449.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#263744">-11.75</text>
+<text x="1010.0" y="528" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334653">A 1800s</text>
 <text x="52" y="330" transform="rotate(-90 52 330)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Basis points per trade</text>
 <rect x="390" y="560" width="16" height="16" fill="#218c8c"/><text x="414" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Long executable label</text>
 <rect x="610" y="560" width="16" height="16" fill="#d59b2d"/><text x="634" y="573" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Short executable label</text>

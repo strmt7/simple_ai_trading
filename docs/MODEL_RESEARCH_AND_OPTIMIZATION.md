@@ -461,6 +461,40 @@ in
 [`model-research/action-value/latest`](model-research/action-value/latest/README.md)
 under diagnostic SHA-256 `7ca872c2...ea90`. Round 10 is not profitable evidence.
 
+Round 11 was precommitted in `e7ed78c` before opening its 42-day BTCUSDT
+window (`2023-08-14` through `2023-09-24`). Corpus certificate
+`3a3851f5...191e` binds 42 BBO and 42 trade partitions to stable full
+inventories of 320 and 2,497 official files. The warehouse reconciled
+423,616,292 BBO updates and 110,369,564 trades with zero missing or invalid
+scope partitions, then produced 3,601,537 causal one-second feature rows. The
+complete window is recorded as consumed in immutable registry
+`consumed-periods-through-round-011.json`; no date in it remains terminal
+evidence.
+
+All 12 v16/v7 candidates trained without class-support failures on the AMD
+OpenCL path. Selection long AUC ranged from `0.56649` to `0.79777`, and short
+AUC ranged from `0.58232` to `0.76372`. Predictive ranking still did not become
+an executable policy: mean long labels ranged from `-12.8170` to `-12.1752`
+bps, mean short labels from `-12.1421` to `-11.7518` bps, and 1,468 positive
+predicted-edge policy rows produced no threshold with the required
+non-overlapping trade count and positive drawdown-adjusted utility. Every
+candidate abstained and was rejected; selected-trade return and an equity curve
+are therefore undefined.
+
+The consumed-selection diagnostic separates an interesting ranking result from
+a valid trading result. Aggressive 900-second top-100 selection rows averaged
+`+24.1806` bps with a 77% profitable-label ratio, and aggressive 1,800-second
+top-100 rows averaged `+9.4127` bps with an 88% ratio. Their policy-period
+top-100 results were only `-1.5940` and `+1.9305` bps, respectively; after
+non-overlap, neither policy had the minimum 20 trades. Retrospectively choosing
+the better selection tail would be leakage. Two independent reconstruction
+runs were byte-identical at file SHA-256 `31a7b553...c8f6f` and canonical
+diagnostic SHA-256 `b7f67cb0...3adb`. The source tables and corrected
+dynamic-axis charts are retained in
+[`model-research/action-value/latest`](model-research/action-value/latest/README.md).
+Round 11 is evidence of regime-transfer and value-calibration failure, not
+profitability.
+
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses
 `gpu_use_dp=true`, LightGBM's

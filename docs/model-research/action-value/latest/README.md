@@ -1,19 +1,19 @@
-# Action-Value Round 10 Evidence
+# Action-Value Round 11 Evidence
 
 Status: **rejected**. This is checksummed Binance USD-M discovery evidence, not
 a profitability, execution, or trading-authority claim.
 
-- UTC window: 2023-09-04 through 2023-09-10 (now consumed for selection)
+- UTC window: 2023-08-14 through 2023-09-24 (now consumed for selection)
 - Precommitted candidates: 12
-- Statistical fit failures: 9
-- Trained candidates: 3
+- Statistical fit failures: 0
+- Trained candidates: 12
 - Unrejected candidates: 0
 - Policy trades across trained candidates: 0
 - Selection trades across trained candidates: 0
-- Positive predicted-edge policy rows: 158
-- Design SHA-256: `a2aa45f8245a12a85ea94365333f621fc2824a425ad6731105253a138fb0e049`
-- Corpus certificate SHA-256: `5782bd80e2de50fe651471d5fb7e89b4449c584299731fb80967378e732639ab`
-- Implementation commit: `58e6ac5f75bccb75739c6084c4861ba2ecc981fe`
+- Positive predicted-edge policy rows: 1468
+- Design SHA-256: `c7cfe43512104388577fc3730a6963f19253b800088eec70c3e18573d1ac5d64`
+- Corpus certificate SHA-256: `3a3851f51a117901eb414762021824aafc1e2a6f4f409c390adfb8db3b1a191e`
+- Implementation commit: `745cdb6062e0a8b6a26950053dd9db844e1b0806`
 
 No trained candidate selected an executable trade; per-trade mean return
 is undefined and no equity curve is generated.
