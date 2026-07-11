@@ -95,3 +95,28 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
     assert "Every displayed mean is negative" in charts[1]
     assert "2023-06-21" in charts[2]
     assert "Rounds fifteen and sixteen" in charts[4]
+
+
+def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
+    rows = _forecast_rows()
+    rows[-1]["top_100_mean_net_bps"] = -21.99
+    tail = ET.fromstring(_tail_svg(rows, round_number=17))
+    namespace = "{http://www.w3.org/2000/svg}"
+    texts = [node for node in tail.findall(f"{namespace}text") if node.text]
+    value_label = next(node for node in texts if node.text == "-21.99")
+    category_label = next(node for node in texts if node.text == "Policy short")
+
+    assert float(value_label.attrib["y"]) + 20.0 < float(category_label.attrib["y"])
+    assert tail.find(f"{namespace}title").text.startswith("Round 17")
+    assert "Round 17" in _forecast_svg(rows, round_number=17)
+    assert "Round 17" in _funnel_svg(
+        [
+            {
+                "profile": profile,
+                "calibration_eligible_rows": 0,
+                "policy_eligible_rows": 0,
+            }
+            for profile in ("conservative", "regular", "aggressive")
+        ],
+        round_number=17,
+    )

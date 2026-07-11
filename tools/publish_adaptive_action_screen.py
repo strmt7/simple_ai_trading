@@ -1,4 +1,4 @@
-"""Publish verified Round 16 adaptive-action evidence and graph data."""
+"""Publish verified adaptive-action evidence and graph data."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ try:
         load_adaptive_action_design,
     )
     from tools.run_gross_architecture_screen import _canonical_sha256, _is_sha256
+    from tools.run_outcome_mixture_screen import load_outcome_mixture_design
 except ModuleNotFoundError:  # pragma: no cover - direct tools directory execution
     from publish_daily_walkforward_screen import _progress_svg
     from run_adaptive_action_screen import (
@@ -32,6 +33,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct tools directory executi
         load_adaptive_action_design,
     )
     from run_gross_architecture_screen import _canonical_sha256, _is_sha256
+    from run_outcome_mixture_screen import load_outcome_mixture_design
 
 
 PUBLICATION_SCHEMA_VERSION = "adaptive-action-screen-publication-v1"
@@ -46,7 +48,7 @@ _FALSE_CLAIMS = (
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Publish verified Round 16 adaptive-action evidence"
+        description="Publish verified adaptive-action evidence"
     )
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--design", type=Path, required=True)
@@ -122,7 +124,7 @@ def _validated_evidence(
         raise ValueError("adaptive action source report hash is invalid")
     if (
         report.get("schema_version") != REPORT_SCHEMA_VERSION
-        or report.get("round") != 16
+        or report.get("round") != design.get("round")
         or report.get("design_sha256") != design_sha256
         or report.get("status") != "rejected"
         or report.get("terminal_holdout_accessed") is not False
@@ -162,7 +164,12 @@ def _validated_evidence(
         ):
             raise ValueError("adaptive action model member is invalid")
         _require_false_claims(member["model"], label="model member")
-        artifacts.append(_safe_artifact(evidence_root, member.get("artifact")))
+        artifact = member.get("artifact")
+        if not isinstance(artifact, Mapping):
+            raise ValueError("adaptive action model artifact is invalid")
+        if int(report["round"]) >= 17 and artifact.get("reload_verified") is not True:
+            raise ValueError("adaptive action model artifact reload was not verified")
+        artifacts.append(_safe_artifact(evidence_root, artifact))
     report["_validated_artifacts"] = artifacts
     return report
 
@@ -322,7 +329,7 @@ def _barrier_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
     return output
 
 
-def _read_progress(path: Path) -> list[dict[str, object]]:
+def _read_progress(path: Path, *, target_round: int = 16) -> list[dict[str, object]]:
     try:
         with path.open("r", encoding="utf-8", newline="") as stream:
             rows = [dict(value) for value in csv.DictReader(stream)]
@@ -330,8 +337,8 @@ def _read_progress(path: Path) -> list[dict[str, object]]:
         raise ValueError("adaptive action prior progress is unreadable") from exc
     if (
         not rows
-        or int(rows[-1].get("round") or 0) != 15
-        or any(int(value.get("round") or 0) == 16 for value in rows)
+        or int(rows[-1].get("round") or 0) != target_round - 1
+        or any(int(value.get("round") or 0) == target_round for value in rows)
     ):
         raise ValueError("adaptive action prior progress lineage is invalid")
     return rows
@@ -342,7 +349,8 @@ def _progress_rows(
     report: Mapping[str, object],
     forecast_rows: Sequence[Mapping[str, object]],
 ) -> list[dict[str, object]]:
-    rows = _read_progress(prior_path)
+    round_number = int(report["round"])
+    rows = _read_progress(prior_path, target_round=round_number)
     policy_stress = [
         row
         for row in forecast_rows
@@ -351,8 +359,12 @@ def _progress_rows(
     profiles = report["profile_results"]
     rows.append(
         {
-            "round": 16,
-            "stage": "adaptive 100 ms barrier action-value ensemble",
+            "round": round_number,
+            "stage": (
+                "conditional win/loss outcome-mixture ensemble"
+                if round_number >= 17
+                else "adaptive 100 ms barrier action-value ensemble"
+            ),
             "periods": "2023-05-16..2023-07-06",
             "selection_contaminated": True,
             "horizon_seconds": 900,
@@ -365,8 +377,12 @@ def _progress_rows(
             "mean_gross_bps": "",
             "mean_net_bps": "",
             "status": "rejected",
-            "source_file": "adaptive action-value Round 16 report",
-            "best_model_id": "three-seed adaptive-barrier-shared-residual",
+            "source_file": f"adaptive action-value Round {round_number} report",
+            "best_model_id": (
+                "three-seed conditional-outcome-mixture-shared-residual"
+                if round_number >= 17
+                else "three-seed adaptive-barrier-shared-residual"
+            ),
             "best_top_500_exact_after_cost_bps": max(
                 float(value["top_500_mean_net_bps"]) for value in policy_stress
             ),
@@ -408,7 +424,9 @@ def _write_text(path: Path, value: str) -> None:
     path.write_text(value, encoding="utf-8", newline="\n")
 
 
-def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _forecast_svg(
+    rows: Sequence[Mapping[str, object]], *, round_number: int = 16
+) -> str:
     selected = [row for row in rows if row["scenario"] == "stress"]
     width, height = 1240, 560
     left, top, chart_width, chart_height = 90, 130, 1080, 300
@@ -416,7 +434,7 @@ def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
     colors = {"long": "#16827a", "short": "#8d5aa7"}
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        '<title id="title">Round 16 profitable-outcome AUC by prior role</title>',
+        f'<title id="title">Round {round_number} profitable-outcome AUC by prior role</title>',
         '<desc id="desc">Long and short adverse-stress AUC for calibration June 21 to 25 and policy June 26 to 30, 2023. A dashed line marks random ranking at 0.5.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Profitable-outcome ranking</text>',
@@ -455,18 +473,23 @@ def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _tail_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -> str:
     selected = [row for row in rows if row["scenario"] == "stress"]
     width, height = 1240, 580
     left, top, chart_width, chart_height = 90, 130, 1080, 310
-    lower, upper = -22.0, 2.0
+    minimum = min(
+        float(row[field])
+        for row in selected
+        for field in ("top_100_mean_net_bps", "top_500_mean_net_bps")
+    )
+    lower, upper = min(-22.0, math.floor(minimum) - 3.0), 2.0
 
     def y(value: float) -> float:
         return top + chart_height * (upper - value) / (upper - lower)
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        '<title id="title">Round 16 ranked after-cost tail economics</title>',
+        f'<title id="title">Round {round_number} ranked after-cost tail economics</title>',
         '<desc id="desc">Mean adverse-stress net basis points for the top 100 and top 500 predictions in calibration and policy during June 2023. Every displayed mean is negative.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Ranked after-cost tail remained negative</text>',
@@ -516,15 +539,15 @@ def _tail_svg(rows: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _funnel_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -> str:
     width, height = 1120, 540
     max_value = max(1, max(int(row["policy_eligible_rows"]) for row in rows))
     left, top, chart_width, chart_height = 100, 130, 940, 270
     colors = {"calibration": "#16827a", "policy": "#8d5aa7"}
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        '<title id="title">Round 16 profile eligibility funnel</title>',
-        '<desc id="desc">Calibration had zero fully eligible actions for every risk profile. Policy had two conservative, three regular and thirteen aggressive eligible rows, but policy could not be opened without a calibration threshold.</desc>',
+        f'<title id="title">Round {round_number} profile eligibility funnel</title>',
+        '<desc id="desc">Fully eligible calibration and policy action counts for conservative, regular and aggressive risk profiles. Policy cannot open without an accepted calibration threshold.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Mandatory gates stopped the action funnel</text>',
         '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Counts require positive uncertainty-adjusted mean, probability, member agreement, tail and dispersion gates.</text>',
@@ -569,7 +592,9 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _barrier_svg(rows: Sequence[Mapping[str, object]]) -> str:
+def _barrier_svg(
+    rows: Sequence[Mapping[str, object]], *, round_number: int = 16
+) -> str:
     width, height = 1200, 560
     left, top, chart_width, chart_height = 100, 130, 1020, 280
     colors = {
@@ -582,7 +607,7 @@ def _barrier_svg(rows: Sequence[Mapping[str, object]]) -> str:
     outcomes = tuple(colors)
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
-        '<title id="title">Round 16 adaptive barrier outcome composition</title>',
+        f'<title id="title">Round {round_number} adaptive barrier outcome composition</title>',
         '<desc id="desc">Stacked percentages of horizon, stop, take, ambiguous stop and protection-gap stop outcomes for base and adverse-stress long and short paths from May 16 to July 6, 2023.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Path outcomes were predominantly horizon exits</text>',
@@ -627,11 +652,19 @@ def _barrier_svg(rows: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _research_progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
-    return _progress_svg(rows).replace(
+def _research_progress_svg(
+    rows: Sequence[Mapping[str, object]], *, round_number: int = 16
+) -> str:
+    output = _progress_svg(rows).replace(
         "Round fifteen produced no evaluation trades.",
         "Rounds fifteen and sixteen produced no evaluation trades.",
     )
+    if round_number >= 17:
+        output = output.replace(
+            "Rounds fifteen and sixteen produced no evaluation trades.",
+            "Rounds fifteen through seventeen produced no evaluation trades.",
+        )
+    return output
 
 
 def publish(
@@ -640,9 +673,15 @@ def publish(
     prior_progress_path: Path,
     output_dir: Path,
 ) -> dict[str, object]:
-    design, design_sha256 = load_adaptive_action_design(
-        design_path, require_current=False
-    )
+    raw_design = _read_json(design_path)
+    if raw_design.get("schema_version") == "outcome-mixture-screen-design-v1":
+        design, design_sha256 = load_outcome_mixture_design(
+            design_path, require_current=False
+        )
+    else:
+        design, design_sha256 = load_adaptive_action_design(
+            design_path, require_current=False
+        )
     report = _validated_evidence(evidence_root, design, design_sha256)
     forecast_rows = _forecast_rows(report, design)
     profile_rows = _profile_rows(report)
@@ -695,11 +734,27 @@ def publish(
         output_dir / "diagnostics.json",
         json.dumps(diagnostics, indent=2, sort_keys=True, allow_nan=False) + "\n",
     )
-    _write_text(charts / "forecast-quality.svg", _forecast_svg(forecast_rows))
-    _write_text(charts / "ranked-tail-economics.svg", _tail_svg(forecast_rows))
-    _write_text(charts / "profile-gate-funnel.svg", _funnel_svg(profile_rows))
-    _write_text(charts / "barrier-outcomes.svg", _barrier_svg(barrier_rows))
-    _write_text(charts / "research-progress.svg", _research_progress_svg(progress))
+    _write_text(
+        charts / "forecast-quality.svg",
+        _forecast_svg(forecast_rows, round_number=int(report["round"])),
+    )
+    _write_text(
+        charts / "ranked-tail-economics.svg",
+        _tail_svg(forecast_rows, round_number=int(report["round"])),
+    )
+    _write_text(
+        charts / "profile-gate-funnel.svg",
+        _funnel_svg(profile_rows, round_number=int(report["round"])),
+    )
+    round_number = int(report["round"])
+    _write_text(
+        charts / "barrier-outcomes.svg",
+        _barrier_svg(barrier_rows, round_number=round_number),
+    )
+    _write_text(
+        charts / "research-progress.svg",
+        _research_progress_svg(progress, round_number=round_number),
+    )
     calibration_stress = [
         row
         for row in forecast_rows
@@ -717,9 +772,24 @@ def publish(
     )
     execution = design["execution"]
     assert isinstance(execution, Mapping)
-    readme = f"""# Round 16: action-value ensemble abstained
+    title = (
+        "conditional outcome mixture abstained"
+        if round_number >= 17
+        else "action-value ensemble abstained"
+    )
+    summary = (
+        "The conditional win/loss decomposition improved point-error metrics versus the zero predictor, but probability calibration was mostly worse than prevalence and it did not rank a positive after-cost action tail."
+        if round_number >= 17
+        else "The three-seed DirectML ensemble improved error and profitable-outcome ranking in places, but it did not rank a positive after-cost action tail."
+    )
+    next_step = (
+        "The next precommitted model change must target regime-conditioned tail ranking and calibration rather than relax these gates."
+        if round_number >= 17
+        else "The next model change must estimate conditional win/loss outcomes rather than relax these gates."
+    )
+    readme = f"""# Round {round_number}: {title}
 
-**Rejected safely.** The three-seed DirectML ensemble improved error and profitable-outcome ranking in places, but it did not rank a positive after-cost action tail. All three risk profiles had zero eligible calibration rows, so no threshold, policy trade, development access, leverage, or trading authority was permitted.
+**Rejected safely.** {summary} All three risk profiles had zero eligible calibration rows, so no threshold, policy trade, development access, leverage, or trading authority was permitted.
 
 | Evidence | Result |
 | --- | ---: |
@@ -741,7 +811,7 @@ def publish(
 
 BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} exact-BBO rows. The replay uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.
 
-The classifier signal did not translate into a usable mean-action rank: calibration stress AUC reached {float(best_calibration_auc["auc"]):.3f}, while every top-100 and top-500 realized mean stayed negative. The next model change must estimate conditional win/loss outcomes rather than relax these gates. The development window and reserved 2023-07-07 terminal day remain untouched.
+The classifier signal did not translate into a usable mean-action rank: calibration stress AUC reached {float(best_calibration_auc["auc"]):.3f}, while every top-100 and top-500 realized mean stayed negative. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
 
 Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
 """
@@ -763,7 +833,7 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
     publication: dict[str, object] = {
         "schema_version": PUBLICATION_SCHEMA_VERSION,
         "artifact_class": "exchange_sourced_adaptive_action_graph_data",
-        "round": 16,
+        "round": round_number,
         "design_revision": int(design["design_revision"]),
         "status": "rejected",
         "trading_authority": False,
