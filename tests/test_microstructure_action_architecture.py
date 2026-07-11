@@ -527,7 +527,11 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
         _barrier_targets(dataset, long_target, short_target),
         train_endpoints=np.arange(600, dtype=np.int64),
         tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
-        spec=_mixture_spec(pairwise_ranking_loss_weight=0.02),
+        spec=_mixture_spec(
+            sequence_length=7,
+            pairwise_ranking_loss_weight=0.02,
+            temporal_pooling_mode="causal_attention",
+        ),
         target_scenario="base",
         compute_backend="directml",
         seed=23,
@@ -550,6 +554,8 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
     assert reloaded.backend_device == "privateuseone:0"
     assert reloaded.spec.ranking_loss_mode == "correlation"
     assert reloaded.spec.pairwise_ranking_loss_weight == 0.02
+    assert reloaded.spec.temporal_pooling_mode == "causal_attention"
+    assert reloaded.spec.sequence_length == 7
     assert prediction.rows == 300
     assert np.all(np.isfinite(prediction.long_mean_bps))
 
@@ -793,6 +799,36 @@ def test_outcome_mixture_independent_towers_are_parameter_matched_and_isolated()
     torch.testing.assert_close(before[:, 1, :], after[:, 1, :], rtol=0.0, atol=0.0)
 
 
+def test_outcome_mixture_causal_attention_uses_bounded_history() -> None:
+    torch = pytest.importorskip("torch")
+    feature_count = len(MICROSTRUCTURE_FEATURE_NAMES)
+    network = outcome_mixture._network(
+        _mixture_spec(
+            sequence_length=7,
+            hidden_dim=88,
+            residual_blocks=2,
+            side_tower_mode="independent",
+            temporal_pooling_mode="causal_attention",
+        ),
+        feature_count,
+    )
+    network.eval()
+    parameters = sum(parameter.numel() for parameter in network.parameters())
+    values = torch.randn(8, 7, feature_count)
+    changed_history = values.clone()
+    changed_history[:, :-1, :] += 0.5
+
+    baseline = network(values).detach()
+    changed = network(changed_history).detach()
+
+    assert parameters == 146_090
+    assert not torch.equal(baseline, changed)
+    assert torch.equal(values[:, -1, :], changed_history[:, -1, :])
+    assert (
+        sum("temporal_attention.weight" in name for name in network.state_dict()) == 2
+    )
+
+
 def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None:
     dataset, long_target, short_target = _dataset()
     targets = _barrier_targets(dataset, long_target, short_target)
@@ -802,9 +838,11 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
         train_endpoints=np.arange(600, dtype=np.int64),
         tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
         spec=_mixture_spec(
+            sequence_length=7,
             hidden_dim=16,
             side_tower_mode="independent",
             ranking_loss_mode="pairwise_net_return",
+            temporal_pooling_mode="causal_attention",
         ),
         target_scenario="base",
         compute_backend="cpu",
@@ -823,6 +861,7 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
     assert path.read_bytes() == repeated_path.read_bytes()
     assert loaded.spec.side_tower_mode == "independent"
     assert loaded.spec.ranking_loss_mode == "pairwise_net_return"
+    assert loaded.spec.temporal_pooling_mode == "causal_attention"
     assert loaded.model_sha256 == model.model_sha256
     assert loaded.state.keys() == model.state.keys()
 
@@ -948,6 +987,12 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
         ({"family": "shared_residual_mlp"}, "unsupported"),
         ({"side_tower_mode": "coupled"}, "unsupported"),
         ({"ranking_loss_mode": "listwise"}, "unsupported"),
+        ({"sequence_length": 7}, "unsupported"),
+        (
+            {"sequence_length": 1, "temporal_pooling_mode": "causal_attention"},
+            "unsupported",
+        ),
+        ({"temporal_pooling_mode": "bidirectional"}, "unsupported"),
         (
             {
                 "ranking_loss_mode": "pairwise_net_return",
