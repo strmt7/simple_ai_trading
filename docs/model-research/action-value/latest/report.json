@@ -1,10 +1,10 @@
 {
   "actual": {
     "accepted_thresholds": 0,
-    "best_calibration_stress_auc": 0.6261868976699829,
-    "best_policy_stress_auc": 0.6073004393768477,
-    "best_policy_top_100_mean_net_bps": -1.6952514121797173,
-    "calibration_eligible_rows": 24,
+    "best_calibration_stress_auc": 0.6257967745390184,
+    "best_policy_stress_auc": 0.608350465955932,
+    "best_policy_top_100_mean_net_bps": -5.989249212308388,
+    "calibration_eligible_rows": 55,
     "development_evaluated": false,
     "ensemble_models": 3,
     "policy_trades": 0,
@@ -14,24 +14,24 @@
   "artifact_class": "exchange_sourced_adaptive_action_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1961,
+      "bytes": 2284,
       "path": "README.md",
-      "sha256": "3f444c8fb61e6a431d4fb23c1c4f3ccd8729a687c7d94ac71146ea0f12835c21"
+      "sha256": "d72487430e311b4e1bc4ae1e96dcc5173e74c2c12c8cd7d3a6d46790f3801be4"
     },
     {
-      "bytes": 2479,
+      "bytes": 2480,
       "path": "forecast.csv",
-      "sha256": "2d1f7dcf9b944d5c1b95ec0a5ab1bf756333ecfed804ea6bbcb41712e47bd6dd"
+      "sha256": "0cda925d94c9fe5bb3be130057dcdcd138412e8af1ea0ff1812fcf6a4f89680f"
     },
     {
       "bytes": 472,
       "path": "profiles.csv",
-      "sha256": "69cfc5d5393e4d41ee5afc20f6fa0a75627d6be68e45f0efe8a6edf5e66bbcb6"
+      "sha256": "54af995ab753dfcd83048dbdbb9987e7e1bd4f8eb6270a7aea53620a1361ebe2"
     },
     {
-      "bytes": 1127,
+      "bytes": 1258,
       "path": "thresholds.csv",
-      "sha256": "d36e88ab3dd06901e5f12e64f96f3052dcd7de3b6e92644747d9fda3296a8833"
+      "sha256": "2417652a39ae766b08a98b1b743181e2f341bd0897435467d95df6c08d493726"
     },
     {
       "bytes": 466,
@@ -39,74 +39,74 @@
       "sha256": "11d56124a7b72dee8a6f7146cf46ced64b6356f2a6a9e82af3e7e93c4b5c6e18"
     },
     {
-      "bytes": 4966,
+      "bytes": 5294,
       "path": "progress.csv",
-      "sha256": "1e612288630a903c903210e5b9a38334e1104568bd77e5e3eaf4013c777d9a10"
+      "sha256": "a32e590d24a9f0059db94eff0c95921dc01b035c8b19ab1d67dd494065513309"
     },
     {
-      "bytes": 59345,
+      "bytes": 59644,
       "path": "diagnostics.json",
-      "sha256": "b460e86c9f6c80671e045b5f161fab1955a365387612df90e1f348fed13f248d"
+      "sha256": "7768ce5cfb2a42709e34dfa327a6089222726f008db992aaec0e618b99ba7f95"
     },
     {
-      "bytes": 4364,
+      "bytes": 4485,
       "path": "charts/forecast-quality.svg",
-      "sha256": "1a8e8b982bf0550001477c6fdb2bf7b9865e7394b78154037740c1169c0c8d30"
+      "sha256": "632d7392f9bd8ea022244d77aee6beea8d9f4d217f6ceb7f6168e0aa2862e598"
     },
     {
-      "bytes": 5620,
+      "bytes": 5724,
       "path": "charts/ranked-tail-economics.svg",
-      "sha256": "02c3f93cb5279b0212d6e528245a6cb37ea7f7136233abbee3fa26b2c84f4d2e"
+      "sha256": "bf69ca2a2365913fbb0ec9fef12c399f7533d9cb59a697c14e03a1ab1f7558cb"
     },
     {
-      "bytes": 4747,
-      "path": "charts/profile-gate-funnel.svg",
-      "sha256": "ed7716974b193406c5caa3b0b2d2fc375eb0527527be2220fb0d55693c67d892"
+      "bytes": 4692,
+      "path": "charts/pre-trade-risk-controls.svg",
+      "sha256": "68b783e4bc372464eb27bf9da1fb7ed7327da5e5b677fbd7f11c3b83396bc805"
     },
     {
       "bytes": 5240,
       "path": "charts/barrier-outcomes.svg",
-      "sha256": "4e7b2fb69adc071aa51c9d71f225884343ec34d2bcd38e1e3c39305ad78b76ca"
+      "sha256": "20b445751a760cfa46b197cdbf46f576a39fec648e2a375acfb373969eaf2d2b"
     },
     {
-      "bytes": 6027,
+      "bytes": 6259,
       "path": "charts/research-progress.svg",
-      "sha256": "b0b5998f036d9863ec1f3e402bacf98ac1335843e47dd9bc244c9a40feb2b5d5"
+      "sha256": "0838b47617b87e40f3b870d7bb9cb34aec8082fdb913b839780dfe1abe2679f9"
     }
   ],
   "barrier_targets_sha256": "bde567752e0c30c49a62f73e1baa5f5618206d33a7644b2edc61e67f18143b10",
   "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
-  "design_revision": 1,
-  "design_sha256": "024b1146d3330e9306470dd29a3ec7c49c686e0fb66ad9c20c7be2d02afb5c40",
+  "design_revision": 2,
+  "design_sha256": "2a2c2e1c52d7dd0a6c8ac1a34e26defe3ec436a5051fcc49ed2172ef9f87ca77",
   "development_window_is_consumed": false,
-  "diagnostic_sha256": "27e2dba12cc27b9d5772776d5f09b55daba7c677289ee3e828aa8b8c4d024e5a",
+  "diagnostic_sha256": "716e38c39f05127bd174688533e0e2838ab1671c77dbb559cb611ee0fd02844e",
   "execution_claim": false,
-  "implementation_commit": "c0aa47f936777e2eda76ab59dddcd0d5172f0602",
+  "implementation_commit": "123d6edf69411a3c942b6c7ce3a511706c5f0ccb",
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378",
-  "round": 18,
+  "publication_sha256": "2b72894744be750357c5913ffe2b71787c3f70e595e41e08753f0a93bfc61c86",
+  "round": 19,
   "schema_version": "adaptive-action-screen-publication-v1",
   "source_artifacts": [
     {
-      "bytes": 594288,
+      "bytes": 598176,
       "path": "models/seed-29.safetensors",
-      "sha256": "415500817358706c7e1561a68f6b2d06c61592be715779252d274e5ca9b1d1b6"
+      "sha256": "952cce7e8bd681901bd15847692c524fba99b1502354115806bfc04fb944cd7c"
     },
     {
-      "bytes": 594288,
+      "bytes": 598176,
       "path": "models/seed-43.safetensors",
-      "sha256": "3353585d9cdb65fe168acc980f8a520916660a238646b475da7789500ff49442"
+      "sha256": "5ab2ae7ac0cf5553bfcb742532ad493693d914e0273cd8708ac46ab33255a6d9"
     },
     {
-      "bytes": 594288,
+      "bytes": 598176,
       "path": "models/seed-71.safetensors",
-      "sha256": "d4a25a65d46cdc753d9d82036b0133dca0b8bc26849ff75fae82a39cfa708111"
+      "sha256": "cd21740c36bd6bb41e7322b614c5b73e0e1c651b2ace3a3ca39ec4e10aa6d071"
     }
   ],
-  "source_report_canonical_sha256": "4a8ac77e436e52fc0fa81ef06d131bc9abe18d857fe8e32174ae41daabdec676",
-  "source_report_sha256": "62b6ef0b281f3c71afd8a500b6712650b891b176ec3122f61f0f10f1df7a11ec",
+  "source_report_canonical_sha256": "bd1075b8155208c0d9f3dc71d42aa43a98381628e00fa41d8eb5b33e0eee4d05",
+  "source_report_sha256": "3101485367fe97b9b9385e3ece2ee2ceda90e65f36a88d080eb80759b30ec382",
   "status": "rejected",
   "terminal_holdout_accessed": false,
   "trading_authority": false

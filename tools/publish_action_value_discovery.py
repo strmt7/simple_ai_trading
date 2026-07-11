@@ -722,13 +722,13 @@ Status: **{semantic_status}**. This is checksummed Binance USD-M discovery evide
 a profitability, execution, or trading-authority claim.
 
 - UTC window: {data["start_date"]} through {data["end_date"]} (now consumed for selection)
-- Precommitted candidates: {len(rows)}
-- Statistical fit failures: {fit_error_count}
-- Trained candidates: {len(trained)}
-- Unrejected candidates: {len(unrejected)}
-- Policy trades across trained candidates: {policy_trades}
-- Selection trades across trained candidates: {selection_trades}
-- Positive predicted-edge policy rows: {positive_edge_rows}
+- Precommitted model candidates: {len(rows)}
+- Statistical model-fit failures: {fit_error_count}
+- Trained candidate models: {len(trained)}
+- Candidates passing model-fit checks: {len(unrejected)}
+- Out-of-sample simulated trades across trained candidates: {policy_trades}
+- Threshold-selection simulated trades across trained candidates: {selection_trades}
+- Out-of-sample rows with positive predicted net return: {positive_edge_rows}
 - Design SHA-256: `{design["design_sha256"]}`
 - Corpus certificate SHA-256: `{certificate}`
 - Implementation commit: `{implementation_commit}`

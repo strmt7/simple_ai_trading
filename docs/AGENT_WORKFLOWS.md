@@ -16,6 +16,11 @@ skills are intentionally not copied.
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
 
+The main CI workflow also runs `tools/audit_financial_terminology.py`. It rejects
+superseded labels in authored documentation, Windows UI text, publication
+generators, and tracked evidence filenames while preserving immutable raw model
+responses and backward-compatible serialized identifiers.
+
 The imported repo-local skills are `cocoindex-code-search`, `search-first`,
 `source-audit`, `ai-regression-testing`, `docs-knowledge-maintainer`, and
 `karpathy-guidelines`. Their overlays enforce testnet safety, reproducible

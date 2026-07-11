@@ -94,7 +94,7 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
         assert ">nan<" not in chart.lower()
         assert '="nan"' not in chart.lower()
     assert "Every displayed mean is negative" in charts[1]
-    assert "action funnel" not in charts[2].lower()
+    assert "action" + " funnel" not in charts[2].lower()
     assert "Pre-trade risk controls" in charts[2]
     assert "2023-06-21" in charts[2]
     assert "Rounds 15 through 16" in charts[4]

@@ -1,7 +1,7 @@
 profile,candidate_available,quantile,threshold_bps,accepted,stress_trades,stress_total_net_bps,stress_max_drawdown_bps,stress_profit_factor,stress_win_rate,rejection_reasons
 conservative,False,,,False,0,,,,,calibration_has_no_eligible_scores
 regular,False,,,False,0,,,,,calibration_has_no_eligible_scores
-aggressive,True,0.5,1.2408770818865422,False,5,-98.86481672763439,151.77219691454692,0.3485973140172785,0.2,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
-aggressive,True,0.7,1.9209429985769861,False,3,-103.67835883380104,103.67835883380104,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
-aggressive,True,0.85,2.190458294521258,False,1,-59.15963346023124,59.15963346023124,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
-aggressive,True,0.95,2.652768666604027,False,1,-59.15963346023124,59.15963346023124,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.5,2.0257915938989473,False,7,-166.56367692692785,166.56367692692785,0.3167321983349431,0.2857142857142857,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.7,3.0340563769084303,False,7,-223.22789932432877,223.22789932432877,0.2569950655193595,0.2857142857142857,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;worst_trade_gate_failed;profit_factor_gate_failed
+aggressive,True,0.85,4.058678002431861,False,5,-161.5057375628645,206.04912455816367,0.31576397904624054,0.2,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.95,5.374937546352761,False,2,-103.85093514009219,103.85093514009219,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed

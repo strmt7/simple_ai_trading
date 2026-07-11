@@ -1,48 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1240" height="580" viewBox="0 0 1240 580" role="img" aria-labelledby="title desc">
-<title id="title">Round 18 ranked after-cost tail economics</title>
-<desc id="desc">Mean adverse-stress net basis points for the top 100 and top 500 predictions in calibration and policy during June 2023. Every displayed mean is negative.</desc>
+<title id="title">Round 19 net returns for highest-ranked signals</title>
+<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and out-of-sample validation windows during June 2023. Every displayed mean is negative.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Ranked after-cost tail remained negative</text>
-<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Actual 100 ms barrier outcomes, including fees, latency and adverse protection delay.</text>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Highest-ranked signals remained negative net of costs</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Realized 100 ms BBO-path outcomes include fees, latency, slippage and delayed stop execution.</text>
 <rect x="90" y="130" width="1080" height="310" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="90" y1="309.5" x2="1170" y2="309.5" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="314.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-20</text>
-<line x1="90" y1="268.7" x2="1170" y2="268.7" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="273.7" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-15</text>
-<line x1="90" y1="227.9" x2="1170" y2="227.9" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="232.9" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-10</text>
-<line x1="90" y1="187.1" x2="1170" y2="187.1" stroke="#e6ebef" stroke-width="1"/>
-<text x="78" y="192.1" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-5</text>
-<line x1="90" y1="146.3" x2="1170" y2="146.3" stroke="#536674" stroke-width="2"/>
-<text x="78" y="151.3" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0</text>
-<rect x="165.0" y="146.3" width="58" height="96.3" fill="#c64c3f"/>
-<text x="194.0" y="260.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-11.80</text>
+<line x1="90" y1="288.6" x2="1170" y2="288.6" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="293.6" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-20</text>
+<line x1="90" y1="252.6" x2="1170" y2="252.6" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="257.6" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-15</text>
+<line x1="90" y1="216.5" x2="1170" y2="216.5" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="221.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-10</text>
+<line x1="90" y1="180.5" x2="1170" y2="180.5" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="185.5" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">-5</text>
+<line x1="90" y1="144.4" x2="1170" y2="144.4" stroke="#536674" stroke-width="2"/>
+<text x="78" y="149.4" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">0</text>
+<rect x="165.0" y="144.4" width="58" height="66.9" fill="#c64c3f"/>
+<text x="194.0" y="229.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-9.29</text>
 <text x="194.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="237.0" y="146.3" width="58" height="90.0" fill="#e3a229"/>
-<text x="266.0" y="254.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-11.03</text>
+<rect x="237.0" y="144.4" width="58" height="79.0" fill="#e3a229"/>
+<text x="266.0" y="241.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-10.96</text>
 <text x="266.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
-<text x="230.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Calibration long</text>
-<rect x="405.0" y="146.3" width="58" height="239.9" fill="#c64c3f"/>
-<text x="434.0" y="404.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-29.41</text>
+<text x="230.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Threshold selection long</text>
+<rect x="405.0" y="144.4" width="58" height="270.8" fill="#c64c3f"/>
+<text x="434.0" y="433.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-37.56</text>
 <text x="434.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="477.0" y="146.3" width="58" height="165.5" fill="#e3a229"/>
-<text x="506.0" y="329.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-20.29</text>
+<rect x="477.0" y="144.4" width="58" height="160.6" fill="#e3a229"/>
+<text x="506.0" y="323.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-22.28</text>
 <text x="506.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
-<text x="470.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Calibration short</text>
-<rect x="645.0" y="146.3" width="58" height="13.8" fill="#c64c3f"/>
-<text x="674.0" y="178.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-1.70</text>
+<text x="470.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Threshold selection short</text>
+<rect x="645.0" y="144.4" width="58" height="43.2" fill="#c64c3f"/>
+<text x="674.0" y="205.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-5.99</text>
 <text x="674.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="717.0" y="146.3" width="58" height="67.8" fill="#e3a229"/>
-<text x="746.0" y="232.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-8.31</text>
+<rect x="717.0" y="144.4" width="58" height="74.3" fill="#e3a229"/>
+<text x="746.0" y="236.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-10.30</text>
 <text x="746.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
-<text x="710.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy long</text>
-<rect x="885.0" y="146.3" width="58" height="268.2" fill="#c64c3f"/>
-<text x="914.0" y="432.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-32.88</text>
+<text x="710.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Out-of-sample long</text>
+<rect x="885.0" y="144.4" width="58" height="209.9" fill="#c64c3f"/>
+<text x="914.0" y="372.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-29.12</text>
 <text x="914.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 100</text>
-<rect x="957.0" y="146.3" width="58" height="159.7" fill="#e3a229"/>
-<text x="986.0" y="324.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-19.57</text>
+<rect x="957.0" y="144.4" width="58" height="146.5" fill="#e3a229"/>
+<text x="986.0" y="309.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#344652">-20.33</text>
 <text x="986.0" y="488" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">top 500</text>
-<text x="950.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy short</text>
+<text x="950.0" y="467" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Out-of-sample short</text>
 <text x="34" y="295" transform="rotate(-90 34 295)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Mean net basis points</text>
 <text x="48" y="550" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Negative bars are measured outcomes, not forecasts. No threshold was relaxed after seeing them.</text>
 </svg>
