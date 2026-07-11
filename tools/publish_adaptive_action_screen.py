@@ -883,7 +883,11 @@ def _gate_summary(
         )
     return {
         "highest_eligible_rows": int(highest["calibration_eligible_rows"]),
-        "highest_eligible_profile": str(highest["profile"]),
+        "highest_eligible_profile": (
+            str(highest["profile"])
+            if int(highest["calibration_eligible_rows"]) > 0
+            else "none"
+        ),
         "candidate_count": candidate_count,
         "accepted_count": accepted_count,
         "policy_trades": policy_trades,
