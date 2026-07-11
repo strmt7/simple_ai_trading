@@ -143,8 +143,11 @@ v14 artifact is currently accepted or claimed profitable.
 ### Official Tick-Source Coverage
 
 `tick-archive-sync --full-history --plan-only` enumerates the official Binance
-Data Vision S3 index independently for every symbol and product. It does not
-assume that all products share a launch date or continue through the same day.
+Data Vision S3 index independently for every symbol and product. It also writes
+two independently listed, immutable inventory snapshots to the selected
+warehouse without downloading an archive; a mismatch fails the plan. Date-bound
+plan mode remains read-only. The workflow does not assume that all products
+share a launch date or continue through the same day.
 The machine-readable 2026-07-10 plan is
 [`docs/microstructure/availability.json`](microstructure/availability.json).
 
@@ -165,7 +168,8 @@ is in progress; the compact listing plan is not a claim that all files are
 already present in the local warehouse.
 
 The warehouse persists each official S3 listing as an immutable inventory
-snapshot before and after ingestion. Every inventory item includes the ZIP and
+snapshot before and after ingestion, or twice during a metadata-only full-history
+plan. Every inventory item includes the ZIP and
 `.CHECKSUM` object's opaque S3 ETag, `LastModified`, and exact byte size; the two
 snapshots must be identical. A full-history run succeeds only after a corpus
 certificate reconciles every listed UTC-day partition against one current
@@ -325,6 +329,14 @@ signals at `+5.5730` bps mean trade-reference return. Overlap suppression left
 actual quote path and `-5.6385` bps after 5 bps taker fees per side. With an
 additional 1 bps slippage per side, mean net was `-7.6385` bps. Every scenario
 was rejected and carries no profitability or execution claim.
+
+`tape-depth-execution-confirm` runs the hash-bound design without accepting
+timing, cost, model, or date overrides. It writes a deterministic plan, one
+no-overwrite checkpoint per UTC period, the serialized model, compressed
+row-level predictions, actual quote-path rows, and a weighted aggregate gate
+report. Resume verifies checkpoint fingerprints and model/prediction file hashes
+before reuse. Aggregate counts, mean net return, hit rate, and rejection classes
+are recomputed from the row evidence rather than trusted from summaries.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

@@ -959,6 +959,7 @@ def test_command_microstructure_shadow_is_no_order_and_saves_only_acceptance(
 
 def test_tick_archive_full_history_plan_uses_independent_official_coverage(
     monkeypatch,
+    tmp_path,
     capsys,
 ) -> None:
     def item(data_type: str, period: str, size: int):
@@ -1002,8 +1003,8 @@ def test_tick_archive_full_history_plan_uses_independent_official_coverage(
             available_only=False,
             plan_only=True,
             max_planned_gb=500.0,
-            warehouse="unused.duckdb",
-            cache_root="unused-cache",
+            warehouse=str(tmp_path / "inventory.duckdb"),
+            cache_root=str(tmp_path / "cache"),
             memory_limit="1GB",
             threads=1,
             timeout=10.0,
@@ -1017,6 +1018,9 @@ def test_tick_archive_full_history_plan_uses_independent_official_coverage(
     assert payload["status"] == "ok"
     assert payload["full_history"] is True
     assert payload["available_only"] is True
+    assert payload["inventory_identity_verified"] is True
+    assert payload["inventory_errors"] == []
+    assert len(payload["inventory_snapshots"]) == 4
     assert payload["planned_files"] == 4
     assert payload["missing"] == []
     by_type = {item["data_type"]: item for item in payload["coverage"]}
