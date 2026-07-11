@@ -1023,6 +1023,10 @@ def test_tick_archive_full_history_plan_uses_independent_official_coverage(
     assert payload["inventory_identity_verified"] is True
     assert payload["inventory_errors"] == []
     assert len(payload["inventory_snapshots"]) == 4
+    assert [
+        snapshot["verification_phase"]
+        for snapshot in payload["inventory_snapshots"]
+    ] == ["initial", "initial", "verification_refresh", "verification_refresh"]
     assert payload["planned_files"] == 4
     assert payload["missing"] == []
     by_type = {item["data_type"]: item for item in payload["coverage"]}

@@ -6198,7 +6198,9 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                             items=items,
                             full_history=True,
                         )
-                        plan_inventory_snapshots.append(snapshot)
+                        plan_inventory_snapshots.append(
+                            {**snapshot, "verification_phase": "initial"}
+                        )
                         initial_ids[(symbol, data_type)] = str(snapshot["snapshot_id"])
                     for symbol, data_type in sorted(inventory_groups):
                         refreshed_items = list_archive_items(
@@ -6221,7 +6223,12 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                             items=refreshed_items,
                             full_history=True,
                         )
-                        plan_inventory_snapshots.append(refreshed)
+                        plan_inventory_snapshots.append(
+                            {
+                                **refreshed,
+                                "verification_phase": "verification_refresh",
+                            }
+                        )
                         if str(refreshed["snapshot_id"]) != initial_ids.get(
                             (symbol, data_type)
                         ):
@@ -6312,7 +6319,9 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     scope_start_period=(start.isoformat() if start is not None else None),
                     scope_end_period=(end.isoformat() if end is not None else None),
                 )
-                inventory_snapshots.append(snapshot)
+                inventory_snapshots.append(
+                    {**snapshot, "verification_phase": "initial"}
+                )
                 initial_inventory_ids[(symbol, data_type)] = str(snapshot["snapshot_id"])
                 reusable_archives.update(
                     {
@@ -6404,7 +6413,12 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                             items=refreshed_items,
                             full_history=True,
                         )
-                        inventory_snapshots.append(refreshed)
+                        inventory_snapshots.append(
+                            {
+                                **refreshed,
+                                "verification_phase": "verification_refresh",
+                            }
+                        )
                         if str(refreshed["snapshot_id"]) != initial_inventory_ids.get(
                             (symbol, data_type)
                         ):
