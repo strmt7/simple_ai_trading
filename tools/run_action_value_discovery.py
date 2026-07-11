@@ -18,6 +18,7 @@ from simple_ai_trading.microstructure_features import (
 )
 from simple_ai_trading.microstructure_model import (
     MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
+    MicrostructureClassSupportError,
     save_microstructure_model_artifact,
     train_microstructure_action_value_model,
 )
@@ -25,7 +26,16 @@ from simple_ai_trading.microstructure_warehouse import MicrostructureWarehouse
 from simple_ai_trading.storage import write_json_atomic
 
 
-DESIGN_SCHEMA_VERSION = "action-value-v15-discovery-design-v1"
+DESIGN_SCHEMA_VERSION = "action-value-discovery-design-v2"
+_SUPPORTED_DESIGN_SCHEMA_VERSIONS = frozenset(
+    {"action-value-v15-discovery-design-v1", DESIGN_SCHEMA_VERSION}
+)
+_SUPPORTED_MODEL_SCHEMA_VERSIONS = frozenset(
+    {"microstructure-action-value-v15", MICROSTRUCTURE_MODEL_SCHEMA_VERSION}
+)
+_SUPPORTED_FEATURE_VERSIONS = frozenset(
+    {"l1-tape-causal-v6", MICROSTRUCTURE_FEATURE_VERSION}
+)
 _RISK_LEVELS = ("conservative", "regular", "aggressive")
 _RISK_PENALTY = {"conservative": 2.0, "regular": 1.5, "aggressive": 1.0}
 
@@ -49,7 +59,11 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_discovery_design(path: str | Path) -> dict[str, object]:
+def load_discovery_design(
+    path: str | Path,
+    *,
+    require_current: bool = False,
+) -> dict[str, object]:
     target = Path(path)
     try:
         payload = json.loads(target.read_text(encoding="utf-8"))
@@ -62,7 +76,7 @@ def load_discovery_design(path: str | Path) -> dict[str, object]:
     canonical.pop("design_sha256", None)
     if expected_sha256 != _canonical_sha256(canonical):
         raise ValueError("action-value discovery design digest does not match its payload")
-    if payload.get("schema_version") != DESIGN_SCHEMA_VERSION:
+    if payload.get("schema_version") not in _SUPPORTED_DESIGN_SCHEMA_VERSIONS:
         raise ValueError("action-value discovery design schema is unsupported")
     if (
         payload.get("status") != "precommitted"
@@ -112,13 +126,19 @@ def load_discovery_design(path: str | Path) -> dict[str, object]:
         cursor += timedelta(days=1)
 
     if (
-        training.get("model_schema_version") != MICROSTRUCTURE_MODEL_SCHEMA_VERSION
-        or training.get("feature_version") != MICROSTRUCTURE_FEATURE_VERSION
+        training.get("model_schema_version") not in _SUPPORTED_MODEL_SCHEMA_VERSIONS
+        or training.get("feature_version") not in _SUPPORTED_FEATURE_VERSIONS
         or training.get("model_family") != "side_specific_hurdle_expected_value"
         or training.get("reproducible_backend") is not True
         or training.get("evaluate_terminal") is not False
     ):
         raise ValueError("action-value discovery training contract is invalid")
+    if require_current and (
+        payload.get("schema_version") != DESIGN_SCHEMA_VERSION
+        or training.get("model_schema_version") != MICROSTRUCTURE_MODEL_SCHEMA_VERSION
+        or training.get("feature_version") != MICROSTRUCTURE_FEATURE_VERSION
+    ):
+        raise ValueError("action-value execution requires the current design and model schemas")
     if tuple(risk_profiles) != _RISK_LEVELS:
         raise ValueError("action-value discovery risk profiles are missing or out of order")
     for risk_level in _RISK_LEVELS:
@@ -252,7 +272,7 @@ def run_discovery(
     compute_backend: str | None = None,
     resume: bool = False,
 ) -> dict[str, object]:
-    design = load_discovery_design(design_path)
+    design = load_discovery_design(design_path, require_current=True)
     design_sha256 = str(design["design_sha256"])
     candidates = discovery_candidates(design)
     output = Path(output_dir)
@@ -268,13 +288,13 @@ def run_discovery(
     backend = str(compute_backend or training["compute_backend"])
     start_ms, end_ms = _date_bounds(design)
     completed: list[dict[str, object]] = []
-    errors: list[dict[str, str]] = []
+    errors: list[dict[str, object]] = []
 
     def persist_status(phase: str, current: str | None = None) -> None:
         write_json_atomic(
             status_path,
             {
-                "schema_version": DESIGN_SCHEMA_VERSION,
+                "schema_version": design["schema_version"],
                 "design_sha256": design_sha256,
                 "phase": phase,
                 "current_candidate": current,
@@ -404,6 +424,14 @@ def run_discovery(
                         sort_keys=True,
                     )
                     completed.append(result)
+                except MicrostructureClassSupportError as exc:
+                    errors.append(
+                        {
+                            "candidate_id": candidate_id,
+                            "error": f"{type(exc).__name__}: {exc}",
+                            "class_support_failure": dict(exc.evidence),
+                        }
+                    )
                 except (OSError, RuntimeError, TypeError, ValueError) as exc:
                     errors.append(
                         {
@@ -422,7 +450,7 @@ def run_discovery(
         reverse=True,
     )
     report = {
-        "schema_version": DESIGN_SCHEMA_VERSION,
+        "schema_version": design["schema_version"],
         "design_sha256": design_sha256,
         "generated_at": datetime.now(UTC).isoformat(),
         "status": (
@@ -453,7 +481,9 @@ def run_discovery(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the precommitted v15 action-value discovery screen")
+    parser = argparse.ArgumentParser(
+        description="Run the current precommitted action-value discovery screen"
+    )
     parser.add_argument(
         "--design",
         default="docs/model-research/action-value/round-009-design.json",

@@ -27,13 +27,42 @@ from .microstructure_warehouse import (
 )
 
 
-MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v15"
+MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v16"
 MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
     "microstructure-prequential-fixed-refit-v1"
 )
 MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION = "microstructure-public-feed-shadow-v1"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
+_MINIMUM_TRAIN_CLASS_ROWS = 256
+_MINIMUM_EARLY_STOP_CLASS_ROWS = 64
+_MINIMUM_CALIBRATION_CLASS_ROWS = 256
 ModelProgressCallback = Callable[[str, int, int], None]
+
+
+class MicrostructureClassSupportError(ValueError):
+    """A purged estimator role lacks enough examples of one binary outcome."""
+
+    def __init__(
+        self,
+        *,
+        side: str,
+        role: str,
+        profitable_rows: int,
+        non_profitable_rows: int,
+        minimum_each_class: int,
+    ) -> None:
+        self.evidence = {
+            "side": side,
+            "role": role,
+            "profitable_rows": int(profitable_rows),
+            "non_profitable_rows": int(non_profitable_rows),
+            "minimum_each_class": int(minimum_each_class),
+        }
+        super().__init__(
+            f"{side} hurdle {role} class support is insufficient: "
+            f"profitable={profitable_rows} non_profitable={non_profitable_rows} "
+            f"required_each={minimum_each_class}"
+        )
 
 
 @dataclass(frozen=True)
@@ -1963,6 +1992,33 @@ def _minimum_evaluation_trades(timestamps: np.ndarray) -> int:
     return max(20, len(np.unique(_utc_day_ids(timestamps))) * 5)
 
 
+def _binary_class_support(labels: np.ndarray) -> dict[str, int]:
+    values = np.asarray(labels)
+    return {
+        "profitable_rows": int(np.sum(values == 1.0)),
+        "non_profitable_rows": int(np.sum(values == 0.0)),
+    }
+
+
+def _require_binary_class_support(
+    labels: np.ndarray,
+    *,
+    side: str,
+    role: str,
+    minimum_each_class: int,
+) -> dict[str, int]:
+    support = _binary_class_support(labels)
+    if min(support.values()) < minimum_each_class:
+        raise MicrostructureClassSupportError(
+            side=side,
+            role=role,
+            profitable_rows=support["profitable_rows"],
+            non_profitable_rows=support["non_profitable_rows"],
+            minimum_each_class=minimum_each_class,
+        )
+    return support
+
+
 def _calendar_coverage(timestamps: np.ndarray) -> tuple[int, int, float, int, float, float]:
     day_ids, counts = np.unique(_utc_day_ids(timestamps), return_counts=True)
     if len(day_ids) == 0:
@@ -2020,6 +2076,7 @@ def train_microstructure_action_value_model(
     models: dict[str, lgb.Booster] = {}
     iterations: dict[str, int] = {}
     probability_calibration: dict[str, tuple[float, float]] = {}
+    class_support: dict[str, dict[str, dict[str, int]]] = {}
     training_step = 0
     total_training_steps = 6
     train_indexes = splits["train"]
@@ -2039,15 +2096,26 @@ def train_microstructure_action_value_model(
         calibration_labels = (
             target[side_calibration_indexes] > 0.0
         ).astype(np.float32)
-        if min(
-            int(np.sum(train_labels == 0.0)),
-            int(np.sum(train_labels == 1.0)),
-            int(np.sum(tuning_labels == 0.0)),
-            int(np.sum(tuning_labels == 1.0)),
-            int(np.sum(calibration_labels == 0.0)),
-            int(np.sum(calibration_labels == 1.0)),
-        ) < 256:
-            raise ValueError(f"{side} hurdle classifier has insufficient class support")
+        class_support[side] = {
+            "train": _require_binary_class_support(
+                train_labels,
+                side=side,
+                role="train",
+                minimum_each_class=_MINIMUM_TRAIN_CLASS_ROWS,
+            ),
+            "early_stop": _require_binary_class_support(
+                tuning_labels,
+                side=side,
+                role="early_stop",
+                minimum_each_class=_MINIMUM_EARLY_STOP_CLASS_ROWS,
+            ),
+            "calibration": _require_binary_class_support(
+                calibration_labels,
+                side=side,
+                role="calibration",
+                minimum_each_class=_MINIMUM_CALIBRATION_CLASS_ROWS,
+            ),
+        }
         if progress:
             progress(f"train-{side}-probability", training_step, total_training_steps)
         classifier, classifier_iteration = _train_booster(
@@ -2076,8 +2144,6 @@ def train_microstructure_action_value_model(
             ("loss", train_labels == 0.0, -target[side_train_indexes]),
         ):
             tuning_keep = tuning_labels == (1.0 if outcome == "win" else 0.0)
-            if min(int(np.sum(keep)), int(np.sum(tuning_keep))) < 256:
-                raise ValueError(f"{side} conditional {outcome} regressor has insufficient rows")
             if progress:
                 progress(
                     f"train-{side}-{outcome}-magnitude",
@@ -2276,7 +2342,15 @@ def train_microstructure_action_value_model(
         model_strings=model_strings,
         deployment_model_strings=None,
         deployment_refit=None,
-        dataset_summary=dataset.summary(),
+        dataset_summary={
+            **dataset.summary(),
+            "hurdle_class_support": class_support,
+            "hurdle_class_support_minimums": {
+                "train": _MINIMUM_TRAIN_CLASS_ROWS,
+                "early_stop": _MINIMUM_EARLY_STOP_CLASS_ROWS,
+                "calibration": _MINIMUM_CALIBRATION_CLASS_ROWS,
+            },
+        },
         trained_at=datetime.now(timezone.utc).isoformat(),
         terminal_evaluated_at=None,
     )
@@ -2986,6 +3060,7 @@ __all__ = [
     "DeploymentRefitEvidence",
     "MicrostructureActionPrediction",
     "MicrostructureActionScorer",
+    "MicrostructureClassSupportError",
     "MicrostructureModelExpiredError",
     "MicrostructureModelArtifact",
     "PurgedSplitEvidence",

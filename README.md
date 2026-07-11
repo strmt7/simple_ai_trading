@@ -165,7 +165,7 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
 
-The separate `microstructure-action-value-v15` path uses real Binance USD-M
+The separate `microstructure-action-value-v16` path uses real Binance USD-M
 book-ticker and trade archives to build causal one-second L1/tape features. Its
 promotion lifecycle is deliberately staged: candidate training, complete
 rolling-refit prequential evidence with the terminal period sealed, hash and
@@ -181,12 +181,12 @@ snapshot, manifest, shadow trades, and report. The former
 `microstructure-train --evaluate-terminal` shortcut is disabled. Terminal,
 refit, shadow, and accepted-runtime loaders independently reject missing or
 drifted evidence. A refit produces only `shadow_candidate`; only a passing
-`microstructure-shadow` run produces `accepted`. No v15 artifact is currently
+`microstructure-shadow` run produces `accepted`. No v16 artifact is currently
 accepted or claimed profitable; see
 [Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
 
-V15 labels use linear cash returns at the observed executable quotes. A long
-earns `exit_bid / entry_ask - 1`; a short earns
+V16 retains the linear cash-return labels introduced in v15 at the observed
+executable quotes. A long earns `exit_bid / entry_ask - 1`; a short earns
 `1 - exit_ask / entry_bid`. Taker fees and the separate all-trade slippage
 stress are charged on the actual entry and exit notionals, so their cost is
 `cost_per_side * (1 + exit_notional / entry_notional)`, not a flat two-leg
@@ -194,6 +194,12 @@ approximation. Trigger slippage remains a distinct adverse stop/take exit-price
 adjustment. The default CLI stress is 1 bps per side in addition to the modeled
 taker fee, and every rebuild/promotion/shadow path is bound to that artifact
 value.
+Feature contract `l1-tape-causal-v7` adds causal 30/60-minute trend,
+volatility, range, path-efficiency, and liquidity baselines plus UTC weekly
+cycle and weekend context. Offline DuckDB construction and live streaming use
+the same 100-feature order and require 3,600 clean seconds before inference.
+Consequently, the default no-order promotion capture is 25,260 seconds: one
+hour of warmup, six complete evaluated hours, and one minute of tail margin.
 Because Binance's official historical BBO product contains 320 days, the exact
 BBO lane defaults to a 240-observed-day promotion floor; a 365-day floor would
 make promotion impossible. Multi-year predictiveness remains the separate

@@ -16,6 +16,7 @@ from simple_ai_trading.microstructure_features import (
 from simple_ai_trading.microstructure_model import (
     DeploymentRefitEvidence,
     MICROSTRUCTURE_MODEL_SCHEMA_VERSION,
+    MicrostructureClassSupportError,
     MicrostructureModelArtifact,
     PerformanceConfidence,
     PrequentialValidationEvidence,
@@ -31,6 +32,7 @@ from simple_ai_trading.microstructure_model import (
     _model_strings_sha256,
     _performance_confidence,
     _purged_split,
+    _require_binary_class_support,
     _select_threshold,
     _simulate_non_overlapping,
     _simulate_non_overlapping_trace,
@@ -243,6 +245,34 @@ def test_platt_scaling_does_not_collapse_when_raw_base_rate_is_too_low() -> None
     assert np.mean(np.square(calibrated - labels)) < np.mean(
         np.square(raw - labels)
     )
+
+
+def test_binary_class_support_reports_the_exact_failing_role() -> None:
+    accepted = np.concatenate((np.zeros(64), np.ones(64)))
+    support = _require_binary_class_support(
+        accepted,
+        side="long",
+        role="early_stop",
+        minimum_each_class=64,
+    )
+
+    assert support == {"profitable_rows": 64, "non_profitable_rows": 64}
+
+    with pytest.raises(MicrostructureClassSupportError) as caught:
+        _require_binary_class_support(
+            np.concatenate((np.zeros(1_000), np.ones(63))),
+            side="short",
+            role="early_stop",
+            minimum_each_class=64,
+        )
+
+    assert caught.value.evidence == {
+        "side": "short",
+        "role": "early_stop",
+        "profitable_rows": 63,
+        "non_profitable_rows": 1_000,
+        "minimum_each_class": 64,
+    }
 
 
 def test_threshold_search_uses_base_rate_relative_probability_tails() -> None:

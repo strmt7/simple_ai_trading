@@ -133,7 +133,7 @@ def test_virtual_shadow_entry_waits_for_latency_deadline_and_closes_on_horizon()
     )
 
 
-def _write_replay_capture(path: Path, *, seconds: int = 945) -> tuple[int, int]:
+def _write_replay_capture(path: Path, *, seconds: int = 3_645) -> tuple[int, int]:
     base_ms = 1_800_000_000_000
     path.parent.mkdir(parents=True, exist_ok=True)
     with gzip.open(path, "wt", encoding="utf-8", newline="\n") as handle:
