@@ -1,0 +1,106 @@
+{
+  "schema_version": "action-value-v15-discovery-design-v1",
+  "round": 9,
+  "design_sha256": "a6ac6be9d4322f1b78a5894c72e131b5ef596712dfd2decaff32c969373e76e6",
+  "status": "precommitted",
+  "purpose": "fast_after_cost_action_value_screen_before_full_corpus_evaluation",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "terminal_holdout": false,
+  "data": {
+    "provider": "binance",
+    "market_type": "futures",
+    "symbol": "BTCUSDT",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-08-14",
+    "end_date": "2023-08-20",
+    "feature_clock": "one_second_causal_event_time",
+    "execution_clock": "official_100ms_bbo",
+    "full_history_inventory_required": true,
+    "checksum_verified_partitions_required": true,
+    "selection_contaminated_after_run": true,
+    "excluded_consumed_dates": [
+      "2023-07-08",
+      "2023-10-21",
+      "2024-02-05",
+      "2024-03-15"
+    ],
+    "window_selection_method": "first_complete_seven_day_window_after_2023-08-13_not_intersecting_consumed_dates"
+  },
+  "execution": {
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "trigger_execution_slippage_bps": 1.0,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "decision_cadence_seconds": 5,
+    "suppress_overlapping_positions": true,
+    "maker_fill_claim": false,
+    "leverage": 1.0
+  },
+  "training": {
+    "model_schema_version": "microstructure-action-value-v15",
+    "feature_version": "l1-tape-causal-v6",
+    "model_family": "side_specific_hurdle_expected_value",
+    "compute_backend": "auto",
+    "reproducible_backend": true,
+    "seed": 20260711,
+    "minimum_discovery_days": 5,
+    "evaluate_terminal": false
+  },
+  "risk_profiles": {
+    "conservative": {
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "max_l1_participation": 0.05
+    },
+    "regular": {
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "max_l1_participation": 0.1
+    },
+    "aggressive": {
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "max_l1_participation": 0.15
+    }
+  },
+  "horizon_seconds": [
+    60,
+    120,
+    300,
+    900
+  ],
+  "candidate_count": 12,
+  "selection": {
+    "primary_metric": "selection_total_net_bps_minus_risk_penalty_times_max_drawdown_bps",
+    "mandatory_gates": [
+      "positive_after_cost_selection_net_bps",
+      "selection_profit_factor_above_one",
+      "positive_block_bootstrap_daily_lower_bound",
+      "minimum_nonoverlapping_trade_count",
+      "directional_baseline_outperformance"
+    ],
+    "promotion_allowed": false,
+    "next_stage": "precommitted_multi_regime_expansion_for_survivors_only"
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "cost_aware_execution_filter_and_walk_forward_evaluation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "forecast_accuracy_must_be_separated_from_actionable_transactions"
+    },
+    {
+      "url": "https://arxiv.org/abs/2112.02947",
+      "use": "causal_order_flow_imbalance_features_at_short_horizons"
+    }
+  ]
+}
