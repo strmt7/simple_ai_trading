@@ -526,13 +526,20 @@ longer publishes ROI, P&L, drawdown, or chart claims unless they come from
 exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
-the rolling progress graph. The latest retained model evidence is
+the rolling progress graph. The latest retained predictive-model evidence is
+[`action-value/latest`](docs/model-research/action-value/latest/README.md):
+Round 20 evaluated parameter-matched independent long and short representations
+on 229,001 valid event labels from 877,894 exact-BBO rows. All eight
+threshold-selection candidates lost money under stress, so the model was
+rejected with zero out-of-sample simulated trades and no trading authority.
+
+The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
 used three untouched, checksummed Binance dates and exact 100 ms BBO replay. It
 was rejected with 12 executable trades, `-11.839347` bps weighted mean net
-return, and a `0%` positive-net rate. The repo preserves the negative result,
-its CSV source tables, and hash-manifested graphs; it makes no ROI, drawdown,
-profitability, execution, or trading-authority claim.
+return, and a `0%` positive-net rate. Both evidence tracks preserve their
+negative results, source tables, and hash-manifested graphs; neither makes an
+ROI, drawdown, profitability, execution, or trading-authority claim.
 
 Round 005 separately evaluated Kronos-base as a forecast-feature candidate over
 1,536 post-pretraining BTC/ETH/SOL observations. It failed the random-walk MAE
