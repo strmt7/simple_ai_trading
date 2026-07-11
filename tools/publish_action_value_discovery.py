@@ -726,14 +726,18 @@ a profitability, execution, or trading-authority claim.
 - Statistical model-fit failures: {fit_error_count}
 - Trained candidate models: {len(trained)}
 - Candidates passing model-fit checks: {len(unrejected)}
-- Out-of-sample simulated trades across trained candidates: {policy_trades}
+- Policy-window simulated trades across trained candidates (selection-contaminated): {policy_trades}
 - Threshold-selection simulated trades across trained candidates: {selection_trades}
-- Out-of-sample rows with positive predicted net return: {positive_edge_rows}
+- Policy-window rows with positive predicted net return (selection-contaminated): {positive_edge_rows}
 - Design SHA-256: `{design["design_sha256"]}`
 - Corpus certificate SHA-256: `{certificate}`
 - Implementation commit: `{implementation_commit}`
 
 {no_trade_note}
+
+The policy window has been reused across research rounds. It is
+selection-contaminated and is not independent out-of-sample or terminal
+evidence.
 
 Fit errors and every trained artifact hash are retained verbatim
 in the source table. A failed fit is not counted as a zero-return model, and an

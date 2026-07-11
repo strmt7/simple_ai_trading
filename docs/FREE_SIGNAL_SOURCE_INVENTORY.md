@@ -1,4 +1,4 @@
-# Free Signal Source Inventory for BTCUSDC
+# Free Signal Source Inventory for BTC, ETH, and SOL
 
 Last checked: 2026-04-29.
 
@@ -31,8 +31,8 @@ they are high-signal, cheap, and fit the current repo shape.
 
 | Priority | Source | Auth / free tier | Candidate feature | Cadence | Why it matters |
 |---|---|---|---|---|---|
-| P0 | Binance Spot REST + WebSocket | Existing no-key public market data; IP weighted limits | closed candles, L1 spread, rolling volume, trade imbalance | REST per fetch; WS later | Same venue as the current BTCUSDC workflow. |
-| P0 | Binance USD-M futures public data | No key for mark price, funding, OI | BTCUSDT funding, basis, open-interest delta | 1-5 min | Derivatives positioning often leads spot BTC. |
+| P0 | Binance Spot REST + WebSocket | Existing no-key public market data; IP weighted limits | BTC/ETH/SOL closed candles, L1 spread, rolling volume, trade imbalance | REST per fetch; WS later | Same venue and supported base assets as the execution runtime. |
+| P0 | Binance USD-M futures public data | No key for mark price, funding, OI | BTCUSDT/ETHUSDT/SOLUSDT funding, basis, open-interest delta | 1-5 min | Derivatives positioning can inform spot and perpetual market regimes. |
 | P0 | CoinGecko | Public/demo free tier around 30 calls/min | BTC dominance, global cap, exchange dispersion, derivatives OI | 5-30 min | Fast multi-market confirmation without building exchange adapters. |
 | P0 | DefiLlama | Free API, no key | stablecoin supply, chain TVL, DEX volume, fees | hourly/daily | Good liquidity/risk-on proxy, especially USDC supply changes. |
 | P0 | GDELT DOC/Event/GKG | Free/open | bitcoin headline volume, tone, geopolitical stress terms | 15-60 min | Broad, timestamped event pressure signal with historical replay. |
@@ -52,7 +52,7 @@ they are high-signal, cheap, and fit the current repo shape.
 |---|---|---|---|---|
 | Binance Spot REST | No key for market data. Official docs expose `X-MBX-USED-WEIGHT-*` headers and require backoff on 429/418. | `/api/v3/klines`, `/ticker/24hr`, `/ticker/bookTicker`, `/exchangeInfo` | Native symbol candles, L1 spread, volume, symbol filters. | Already core. Add spread/volume features and persist request weight. |
 | Binance Spot WebSocket | No key for market streams. 5 incoming messages/sec, 1024 streams/connection, 24h reconnect. | `btcusdc@kline_15m`, `btcusdc@trade`, `btcusdc@bookTicker` | Lower latency closed-kline and trade-flow features. | Later streaming module; still drop unclosed klines before feature rows. |
-| Binance USD-M Futures | No key for many public endpoints. | `openInterest`, `premiumIndex`, funding, mark price | Futures basis, funding, OI trend. | Add as external confirmation, not execution expansion. |
+| Binance USD-M Futures | No key for many public endpoints. | `openInterest`, `premiumIndex`, funding, mark price | Futures basis, funding, OI trend. | Active market evidence for supported testnet/demo futures workflows. |
 | Binance announcements | Public web JSON, undocumented. | CMS article list by catalog | Listing, maintenance, BTC-related event risk. | Best-effort veto only; cache and tolerate breakage. |
 | Kraken | No key public market data. | ticker, OHLC, spread, order book | Cross-venue price dispersion. | Poll every 30-60s for BTC/USD reference. |
 | Bitstamp | No key public ticker/order book. | `/api/v2/ticker/btcusd/`, order book | Cross-venue price and volume. | Reference only. |
@@ -99,6 +99,10 @@ they are high-signal, cheap, and fit the current repo shape.
 
 ### Macro, Rates, Liquidity, And Traditional Finance
 
+Traditional-finance data in this section is exogenous regime context only. It
+does not expand the executable universe beyond supported BTC, ETH, and SOL
+Binance products.
+
 | Source | Auth / limits checked | Relevant data | Signal value | Suggested use |
 |---|---|---|---|---|
 | FRED | Free API key required for web-service requests. | Fed funds, yields, DXY proxies, M2, SOFR, stress spreads | Macro regime and liquidity. | P0 daily/hourly by release cadence. |
@@ -144,7 +148,7 @@ they are high-signal, cheap, and fit the current repo shape.
 | Group | Inputs | Example features | Notes |
 |---|---|---|---|
 | Venue quality | Binance bookTicker, trades, klines | spread_bps, quote_volume_z, taker_flow_proxy | Start here; native to current app. |
-| Derivatives pressure | Binance futures, CoinGecko derivatives, DefiLlama OI | funding_rate, mark_basis, oi_change_1h | Useful for spot BTC even if execution stays spot/testnet. |
+| Derivatives pressure | Binance futures, CoinGecko derivatives, DefiLlama OI | funding_rate, mark_basis, oi_change_1h | Cross-check spot and futures regimes for supported BTC/ETH/SOL products. |
 | Liquidity regime | DefiLlama stablecoins, FRED/Treasury, DXY proxy | usdc_supply_delta, fed_rate_level, tga_delta | Join at known timestamps only. |
 | Network stress | mempool.space, Blockchain.com | fee_zscore, mempool_vsize, difficulty_change | BTC-native, cheap. |
 | News/event pressure | GDELT, SEC, CoinPaprika events, Binance announcements | headline_count_1h, negative_tone_z, event_window_flag | Use as sizing/veto first, not directional alpha. |

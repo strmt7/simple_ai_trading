@@ -17,11 +17,25 @@ ROOT_AUTHORED_FILES = {
     "README.md",
 }
 AUTHORED_PREFIXES = (
+    ".github/",
     "docs/",
     "native/windows/",
-    "tools/publish_",
+    "src/simple_ai_trading/",
+    "tests/",
+    "tools/",
 )
-AUTHORED_SUFFIXES = (".cpp", ".h", ".hpp", ".json", ".md", ".py", ".svg")
+AUTHORED_SUFFIXES = (
+    ".cpp",
+    ".h",
+    ".hpp",
+    ".json",
+    ".md",
+    ".py",
+    ".svg",
+    ".toml",
+    ".yaml",
+    ".yml",
+)
 MACHINE_EVIDENCE_JSON_PREFIXES = ("docs/ai/risk-review/latest/",)
 TEXT_EXCLUSIONS = {"tools/audit_financial_terminology.py"}
 
@@ -32,8 +46,8 @@ _BANNED_PHRASE_SPECS = (
     (("profile gate", " funnel"), "pre-trade risk controls"),
     (("profitable", "-outcome"), "probability of profit"),
     (("mean", "-action"), "expected net return"),
-    (("policy", " replay"), "out-of-sample simulation"),
-    (("policy", " trade"), "out-of-sample simulated trade"),
+    (("policy", " replay"), "policy-validation simulation"),
+    (("policy", " trade"), "policy-validation simulated trade"),
     (("calibration threshold", " trace"), "threshold-selection simulation"),
     (("stress", " gates"), "stress-test acceptance criteria"),
     (("pressure", "-capacity"), "depth-normalized order flow"),
@@ -48,6 +62,23 @@ _BANNED_PHRASE_SPECS = (
     (("action", " gates"), "pre-trade risk controls"),
     (("mandatory", " gates"), "binding risk controls"),
     (("rejected", " safely"), "rejected without trading authority"),
+    (("10x", " maximum app-level leverage cap"), "20x maximum app-level futures leverage cap"),
+    (("default leverage", ": `1x`"), "profile-specific futures defaults; spot remains 1x"),
+    (("no static", " allowlist"), "hard BTC/ETH/SOL scope with dynamic liquidity checks"),
+    (("across all eligible", " symbols"), "across supported BTC/ETH/SOL symbols"),
+    (("future stock-market", " schedule changes"), "changing venue participation"),
+    (("multi-asset by", " design"), "BTC/ETH/SOL-only by design"),
+    (("testnet-first multi-asset", " day-trading"), "testnet-first BTC/ETH/SOL day trading"),
+    (
+        ("out-of-sample simulated trades", " across trained candidates"),
+        "policy-window simulated trades with contamination status",
+    ),
+    (
+        ("out-of-sample rows with positive", " predicted net return"),
+        "policy-window rows with contamination status",
+    ),
+    (("free signal source inventory for", " btcusdc"), "free signal source inventory for BTC, ETH, and SOL"),
+    (("current", " btcusdc workflow"), "supported BTC/ETH/SOL workflow"),
 )
 _BANNED_FILENAME_SPECS = (
     (("action", "-funnel"), "signal-selection"),

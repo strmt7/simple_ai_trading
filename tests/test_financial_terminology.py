@@ -39,3 +39,27 @@ def test_audit_rejects_superseded_text_and_artifact_names() -> None:
         ("docs/charts/" + "action" + "-funnel.svg", None, "signal-selection"),
         ("docs/example.md", 1, "signal selection"),
     ]
+
+
+def test_audit_covers_source_workflows_and_stale_scope_language() -> None:
+    model_set = "model" + "-zoo"
+    stale_scope = "multi-asset by" + " design"
+    findings = audit_entries(
+        [
+            ("src/simple_ai_trading/example.py", f'"""A {model_set}."""'),
+            (".github/workflows/example.yml", f"name: {stale_scope}"),
+        ]
+    )
+
+    assert [(item.path, item.line, item.replacement) for item in findings] == [
+        (
+            ".github/workflows/example.yml",
+            1,
+            "BTC/ETH/SOL-only by design",
+        ),
+        (
+            "src/simple_ai_trading/example.py",
+            1,
+            "candidate-model set",
+        ),
+    ]
