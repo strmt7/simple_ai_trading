@@ -80,6 +80,13 @@ DESIGN23 = (
     / "action-value"
     / "round-023-causal-temporal-attention-design.json"
 )
+DESIGN23_V2 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-023-causal-temporal-attention-design-v2.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -520,6 +527,37 @@ def test_round23_revision1_is_historical_and_changes_only_temporal_pooling() -> 
         "reserved_terminal",
     ):
         assert design[section] == predecessor[section]
+
+
+def test_round23_revision2_is_current_and_preserves_experiment_contract() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN23_V2)
+    revision1, _revision1_sha256 = load_outcome_mixture_design(
+        DESIGN23, require_current=False
+    )
+
+    assert design_sha256 == (
+        "cb65cb8d0e0f56763dca31e88b7cd572f826534c4bbf36200207ef8e1bb5a207"
+    )
+    assert design["round"] == 23
+    assert design["design_revision"] == 2
+    assert design["implementation"]["commit"] == (
+        "8968af93c78e33e59435521bc36d30da23fc6dfc"
+    )
+    assert "No model artifact or report" in design["predecessor_evidence"]["finding"]
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "model",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == revision1[section]
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
