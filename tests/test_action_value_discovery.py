@@ -75,8 +75,8 @@ def test_round_ten_design_pins_calibration_fix_and_medium_horizons() -> None:
         load_discovery_design(_tracked_design(10), require_current=True)
 
 
-def test_round_eleven_design_binds_current_code_registry_and_split_calendar() -> None:
-    design = load_discovery_design(_tracked_design(11), require_current=True)
+def test_round_eleven_design_preserves_registry_and_split_calendar() -> None:
+    design = load_discovery_design(_tracked_design(11))
     candidates = discovery_candidates(design)
 
     assert design["design_sha256"] == (
@@ -94,6 +94,8 @@ def test_round_eleven_design_binds_current_code_registry_and_split_calendar() ->
     assert len(candidates) == 12
     assert candidates[0]["candidate_id"] == "conservative-h300"
     assert candidates[-1]["candidate_id"] == "aggressive-h1800"
+    with pytest.raises(ValueError, match="implementation file drifted"):
+        load_discovery_design(_tracked_design(11), require_current=True)
 
 
 def test_round_eleven_design_rejects_consumed_registry_tampering(tmp_path) -> None:

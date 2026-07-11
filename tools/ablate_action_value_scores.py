@@ -118,6 +118,7 @@ def _select_score_threshold(
     long_scores: np.ndarray,
     short_scores: np.ndarray,
     risk_level: str,
+    minimum_trades: int | None = None,
 ) -> dict[str, object]:
     long_values = np.asarray(long_scores, dtype=np.float64)
     short_values = np.asarray(short_scores, dtype=np.float64)
@@ -132,7 +133,13 @@ def _select_score_threshold(
         short_eligible,
     )
     thresholds = _score_thresholds(strongest, risk_level)
-    minimum_trades = _minimum_evaluation_trades(dataset.decision_time_ms[indexes])
+    required_trades = (
+        _minimum_evaluation_trades(dataset.decision_time_ms[indexes])
+        if minimum_trades is None
+        else int(minimum_trades)
+    )
+    if required_trades <= 0:
+        raise ValueError("minimum_trades must be positive")
     best_trace = None
     best_threshold = None
     best_utility = -np.inf
@@ -147,7 +154,7 @@ def _select_score_threshold(
             threshold=threshold,
         )
         utility = _risk_utility(trace.metrics, risk_level)
-        qualifies = trace.metrics.trades >= minimum_trades
+        qualifies = trace.metrics.trades >= required_trades
         eligible_policies += int(qualifies)
         evaluations.append(
             {
@@ -165,7 +172,7 @@ def _select_score_threshold(
     return {
         "accepted": accepted,
         "threshold": float(best_threshold) if accepted else None,
-        "minimum_trades": minimum_trades,
+        "minimum_trades": required_trades,
         "evaluated_thresholds": len(thresholds),
         "policies_meeting_trade_minimum": eligible_policies,
         "best_observed_threshold": (
@@ -441,6 +448,18 @@ def _average_label_uniqueness(
     return (uniqueness / np.mean(uniqueness)).astype(np.float32)
 
 
+def _event_model_parameter_risk_level(
+    risk_level: str,
+    parameter_profile: str,
+) -> str:
+    normalized = str(parameter_profile).strip().lower()
+    if normalized == "risk_specific":
+        return risk_level
+    if normalized == "shared_regularized":
+        return "conservative"
+    raise ValueError("unsupported event-model parameter profile")
+
+
 def _train_event_models(
     dataset,
     splits: Mapping[str, np.ndarray],
@@ -450,6 +469,7 @@ def _train_event_models(
     compute_backend: str,
     seed: int,
     explicit_role_indexes: Mapping[str, np.ndarray] | None = None,
+    parameter_profile: str = "risk_specific",
 ) -> tuple[
     dict[str, lgb.Booster],
     dict[str, int],
@@ -481,7 +501,15 @@ def _train_event_models(
             raise ValueError("explicit event model roles are too small")
         train = base_roles["train"]
     backend, kind, device = _backend_parameters(compute_backend, seed)
-    base_parameters = {**backend, **_risk_parameters(risk_level, len(train))}
+    normalized_parameter_profile = str(parameter_profile).strip().lower()
+    parameter_risk_level = _event_model_parameter_risk_level(
+        risk_level,
+        normalized_parameter_profile,
+    )
+    base_parameters = {
+        **backend,
+        **_risk_parameters(parameter_risk_level, len(train)),
+    }
     models: dict[str, lgb.Booster] = {}
     iterations: dict[str, int] = {}
     calibrations: dict[str, tuple[float, float]] = {}
@@ -573,6 +601,7 @@ def _train_event_models(
         {
             "backend_kind": kind,
             "backend_device": device,
+            "parameter_profile": normalized_parameter_profile,
             "model_sha256": _canonical_sha256(
                 {
                     name: model.model_to_string(num_iteration=iterations[name])

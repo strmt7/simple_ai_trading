@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import json
 import math
 from pathlib import Path
@@ -93,17 +94,22 @@ def _rows(n: int) -> list[ModelRow]:
     return [ModelRow(timestamp=i, close=1.0, features=(0.1, 0.2), label=i % 2) for i in range(n)]
 
 
-def _passing_terminal_gate(*_args, **_kwargs) -> tuple[float, dict[str, object]]:
+def _passing_terminal_gate(
+    rows: Sequence[ModelRow],
+    *_args,
+    **_kwargs,
+) -> tuple[float, dict[str, object]]:
+    terminal_rows = list(rows)
     return 100.0, {
         "schema_version": "terminal-holdout-v1",
         "passed": True,
         "reason": None,
         "evaluation_count": 1,
-        "rows": 10,
-        "start_timestamp": 1_000,
-        "end_timestamp": 1_009,
+        "rows": len(terminal_rows),
+        "start_timestamp": int(terminal_rows[0].timestamp),
+        "end_timestamp": int(terminal_rows[-1].timestamp),
         "purge_gap": 1,
-        "dataset_fingerprint": "a" * 64,
+        "dataset_fingerprint": training_suite._model_rows_fingerprint(terminal_rows),
         "score": 100.0,
         "result": {
             "accepted": True,
