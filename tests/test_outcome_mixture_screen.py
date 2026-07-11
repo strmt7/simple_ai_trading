@@ -38,6 +38,13 @@ DESIGN19 = (
     / "action-value"
     / "round-019-depth-normalized-order-flow-design.json"
 )
+DESIGN20 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-020-parameter-matched-side-tower-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -186,6 +193,40 @@ def test_round19_design_is_historical_and_preserves_sealed_controls() -> None:
     assert design["model"]["candidate_id"] == (
         "depth-normalized-order-flow-conditional-outcome-mixture"
     )
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+
+
+def test_round20_design_is_current_and_changes_only_side_architecture() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN20)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN19, require_current=False
+    )
+
+    assert design_sha256 == (
+        "a6f4e82d82474d673c8495f9775f9d974b95a9cc2a8d497f7f45bce29ad965bb"
+    )
+    assert design["round"] == 20
+    assert design["implementation"]["commit"] == (
+        "99279b0c4127a04cd2d9c530b67cecdbd32815a8"
+    )
+    assert design["model"]["candidate_id"] == (
+        "parameter-matched-independent-side-outcome-mixture"
+    )
+    assert design["model"]["side_tower_mode"] == "independent"
+    assert design["model"]["hidden_dim"] == 88
+    assert design["model"]["residual_blocks"] == 2
     for section in (
         "data",
         "execution",
