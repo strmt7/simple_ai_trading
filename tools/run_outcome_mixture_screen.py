@@ -675,12 +675,16 @@ _ROUND_CONTRACTS = {
         },
     },
     30: {
-        "purpose": "consumed_data_lightgbm_hurdle_architecture_screen",
-        "design_revisions": {1},
+        "purposes": {
+            1: "consumed_data_lightgbm_hurdle_architecture_screen",
+            2: "consumed_data_lightgbm_hurdle_numeric_contract_replay",
+        },
+        "design_revisions": {1, 2},
         "horizon_seconds": 900,
         "trainer": "lightgbm_hurdle",
         "feature_version": "l1-tape-causal-v8",
         "booster_count_per_member": 10,
+        "strict_shared_json_types_from_revision": 2,
         "runtime_training_data_mode": "bounded_host_table_opencl_histogram",
         "training": {
             "ensemble_seeds": [29, 43, 71],
@@ -716,28 +720,54 @@ _ROUND_CONTRACTS = {
             "calibration_fraction": 0.50,
             "gpu_use_dp_required": True,
         },
-        "predecessor": {
-            "round": 29,
-            "design_sha256": (
-                "d76f65e2653449df40e263e98718ffea365f292e569694b0349d85c884e39163"
-            ),
-            "source_report_canonical_sha256": (
-                "bec167230a17eb85c47793adeab7bc28910f9aaf314a2244d27f2fdde122db8d"
-            ),
-            "publication_sha256": (
-                "0918377cd8b4aeb071e71f872579d2849b727384223f0f677f306af36de8ec44"
-            ),
-            "finding": (
-                "Round 29 increased calibration and policy eligibility at 1800 "
-                "seconds, but all four probability AUCs and Brier scores worsened "
-                "versus Round 26, every threshold candidate lost after stress "
-                "costs, and the least-negative candidate deteriorated from "
-                "-38.911663 to -92.246143 bps. The longer horizon is rejected. "
-                "Round 30 restores the sealed 900-second baseline and changes only "
-                "the predictor family to a side-specific LightGBM hurdle ensemble "
-                "with direct conditional quantiles. Its policy window remains "
-                "selection-contaminated and cannot establish profitability."
-            ),
+        "predecessors": {
+            1: {
+                "round": 29,
+                "design_sha256": (
+                    "d76f65e2653449df40e263e98718ffea365f292e569694b0349d85c884e39163"
+                ),
+                "source_report_canonical_sha256": (
+                    "bec167230a17eb85c47793adeab7bc28910f9aaf314a2244d27f2fdde122db8d"
+                ),
+                "publication_sha256": (
+                    "0918377cd8b4aeb071e71f872579d2849b727384223f0f677f306af36de8ec44"
+                ),
+                "finding": (
+                    "Round 29 increased calibration and policy eligibility at 1800 "
+                    "seconds, but all four probability AUCs and Brier scores worsened "
+                    "versus Round 26, every threshold candidate lost after stress "
+                    "costs, and the least-negative candidate deteriorated from "
+                    "-38.911663 to -92.246143 bps. The longer horizon is rejected. "
+                    "Round 30 restores the sealed 900-second baseline and changes "
+                    "only the predictor family to a side-specific LightGBM hurdle "
+                    "ensemble with direct conditional quantiles. Its policy window "
+                    "remains selection-contaminated and cannot establish profitability."
+                ),
+            },
+            2: {
+                "round": 30,
+                "design_revision": 1,
+                "design_sha256": (
+                    "535b11675c6c2c8563d0157b340a63d22576df932a6a40421026a08f5d357d42"
+                ),
+                "source_report_canonical_sha256": (
+                    "5ae4356bc17bd7ee9f034e8d1f30188b3f5d71e105fb01125144e39db7776150"
+                ),
+                "source_report_file_sha256": (
+                    "7c019700964824b56388e9cea7ba897d80d4a73d43cf5310aa1b7c407519e8dc"
+                ),
+                "publication_status": "not_published_intermediate_evidence",
+                "finding": (
+                    "Round 30 revision 1 was rejected because all positive stress "
+                    "threshold traces missed minimum trade-count gates. Its target "
+                    "arrays, outcome counts, quantiles, source fingerprint, corpus "
+                    "certificate, cache key, and row counts matched Round 26, but "
+                    "integral floats in sealed JSON controls were serialized as "
+                    "integers. That changed only the target-contract hash. Revision "
+                    "2 restores exact JSON numeric types and adds strict canonical "
+                    "type checks; model, data, execution, and risk values are unchanged."
+                ),
+            },
         },
     },
 }
@@ -918,6 +948,25 @@ def load_outcome_mixture_design(
         not shared_section_matches(name) for name in _SHARED_SECTIONS
     ):
         raise ValueError("outcome-mixture shared safety contract drifted")
+    strict_from = round_contract.get("strict_shared_json_types_from_revision")
+    if strict_from is not None and int(payload.get("design_revision", 0)) >= int(
+        strict_from
+    ):
+        for name in _SHARED_SECTIONS:
+            expected = reference[name]
+            if name == "data" and data_types_override is not None:
+                expected = {
+                    **expected,
+                    "required_data_types": list(data_types_override),
+                }
+            elif name in {"execution", "barrier_targets"} and horizon_override is not None:
+                expected = {**expected, "horizon_seconds": horizon_override}
+            elif name == "runtime_resources" and runtime_mode_override is not None:
+                expected = {**expected, "training_data_mode": runtime_mode_override}
+            if _canonical_sha256(payload[name]) != _canonical_sha256(expected):
+                raise ValueError(
+                    f"outcome-mixture shared JSON type contract drifted: {name}"
+                )
     if (
         payload.get("schema_version") != DESIGN_SCHEMA_VERSION
         or round_contract is None
