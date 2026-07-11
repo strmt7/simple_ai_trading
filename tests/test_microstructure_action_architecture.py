@@ -522,7 +522,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
         _barrier_targets(dataset, long_target, short_target),
         train_endpoints=np.arange(600, dtype=np.int64),
         tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
-        spec=_mixture_spec(),
+        spec=_mixture_spec(ranking_loss_mode="pairwise_net_return"),
         target_scenario="base",
         compute_backend="directml",
         seed=23,
@@ -543,6 +543,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
 
     assert reloaded.backend_kind == "directml"
     assert reloaded.backend_device == "privateuseone:0"
+    assert reloaded.spec.ranking_loss_mode == "pairwise_net_return"
     assert prediction.rows == 300
     assert np.all(np.isfinite(prediction.long_mean_bps))
 
@@ -719,6 +720,27 @@ def test_outcome_mixture_decodes_expected_value_from_conditional_identity() -> N
     assert bool(torch.all(expected <= upper))
 
 
+def test_outcome_mixture_pairwise_ranking_prefers_realized_net_return_order() -> None:
+    torch = pytest.importorskip("torch")
+    target = torch.linspace(-1.5, 1.5, 18, dtype=torch.float32)[:, None].repeat(1, 2)
+    sample_weight = torch.linspace(0.5, 1.5, 18, dtype=torch.float32)
+    ordered = target * 0.75 + 4.0
+    reversed_order = torch.flip(ordered, dims=(0,))
+
+    ordered_loss = outcome_mixture._weighted_pairwise_ranking_loss(
+        ordered, target, sample_weight
+    )
+    reversed_loss = outcome_mixture._weighted_pairwise_ranking_loss(
+        reversed_order, target, sample_weight
+    )
+    tied_loss = outcome_mixture._weighted_pairwise_ranking_loss(
+        ordered, torch.zeros_like(target), sample_weight
+    )
+
+    assert float(ordered_loss) < float(reversed_loss)
+    assert float(tied_loss) == 0.0
+
+
 def test_outcome_mixture_independent_towers_are_parameter_matched_and_isolated() -> (
     None
 ):
@@ -766,7 +788,7 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
         spec=_mixture_spec(
             hidden_dim=16,
             side_tower_mode="independent",
-            ranking_loss_weight=0.0,
+            ranking_loss_mode="pairwise_net_return",
         ),
         target_scenario="base",
         compute_backend="cpu",
@@ -781,6 +803,7 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
     loaded = load_outcome_mixture_model(path)
 
     assert loaded.spec.side_tower_mode == "independent"
+    assert loaded.spec.ranking_loss_mode == "pairwise_net_return"
     assert loaded.model_sha256 == model.model_sha256
     assert loaded.state.keys() == model.state.keys()
 
@@ -905,6 +928,7 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
         ({"candidate_id": ""}, "cannot be empty"),
         ({"family": "shared_residual_mlp"}, "unsupported"),
         ({"side_tower_mode": "coupled"}, "unsupported"),
+        ({"ranking_loss_mode": "listwise"}, "unsupported"),
         ({"hidden_dim": 8}, "dimensions"),
         ({"dropout": float("nan")}, "must be finite"),
         ({"expected_value_loss_weight": -1.0}, "outside bounds"),
