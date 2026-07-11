@@ -152,8 +152,24 @@ def test_round19_contract_changes_only_the_causal_feature_family() -> None:
     )
 
 
-def test_round19_design_is_current_and_preserves_sealed_controls() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN19)
+def test_round20_contract_is_parameter_matched_and_changes_only_architecture() -> None:
+    contract = screen._ROUND_CONTRACTS[20]
+
+    assert contract["side_tower_mode"] == "independent"
+    assert contract["hidden_dim"] == 88
+    assert contract["residual_blocks"] == 2
+    assert contract["trainable_parameter_count"] == 145_914
+    assert abs(contract["trainable_parameter_count"] / 147_722 - 1.0) < 0.02
+    assert contract["ranking_loss_weight"] == 0.1
+    assert contract["feature_version"] == "l1-tape-causal-v8"
+    assert contract["predecessor"]["round"] == 19
+    assert contract["predecessor"]["publication_sha256"] == (
+        "2b72894744be750357c5913ffe2b71787c3f70e595e41e08753f0a93bfc61c86"
+    )
+
+
+def test_round19_design_is_historical_and_preserves_sealed_controls() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN19, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN18, require_current=False
     )

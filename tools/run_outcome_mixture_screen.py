@@ -218,6 +218,37 @@ _ROUND_CONTRACTS = {
             },
         },
     },
+    20: {
+        "purpose": "consumed_data_parameter_matched_independent_side_tower_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 145_914,
+        "predecessor": {
+            "round": 19,
+            "design_sha256": (
+                "2a2c2e1c52d7dd0a6c8ac1a34e26defe3ec436a5051fcc49ed2172ef9f87ca77"
+            ),
+            "source_report_canonical_sha256": (
+                "bd1075b8155208c0d9f3dc71d42aa43a98381628e00fa41d8eb5b33e0eee4d05"
+            ),
+            "publication_sha256": (
+                "2b72894744be750357c5913ffe2b71787c3f70e595e41e08753f0a93bfc61c86"
+            ),
+            "finding": (
+                "Round 19 increased aggressive-profile signal eligibility to 55 "
+                "threshold-selection and 83 out-of-sample rows, but all four "
+                "threshold-selection simulations lost money under stress and every "
+                "highest-ranked realized mean remained negative net of costs. Round "
+                "20 isolates parameter-matched independent long/short towers while "
+                "keeping the v8 features, targets, losses, data, execution, and risk "
+                "controls fixed."
+            ),
+        },
+    },
 }
 
 
@@ -371,6 +402,9 @@ def load_outcome_mixture_design(
     if (
         model_spec.family != "conditional_outcome_mixture_residual_mlp"
         or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
+        or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
+        or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
+        or model_spec.residual_blocks != round_contract.get("residual_blocks", 2)
         or (
             require_current
             and MICROSTRUCTURE_FEATURE_VERSION != round_contract["feature_version"]
@@ -608,6 +642,7 @@ def run_outcome_mixture_screen(
     assert isinstance(sampler, Mapping)
     assert isinstance(training, Mapping)
     assert isinstance(terminal, Mapping)
+    round_contract = _ROUND_CONTRACTS[int(design["round"])]
     effective_memory = str(memory_limit or resources["duckdb_memory_limit"]).upper()
     effective_threads = int(threads or resources["warehouse_threads"])
     effective_backend = str(compute_backend or resources["compute_backend"]).lower()
@@ -773,6 +808,14 @@ def run_outcome_mixture_screen(
             "reload_verified": True,
         }
         summary = _artifact_summary(reloaded)
+        trainable_parameters = int(
+            sum(np.asarray(values).size for values in reloaded.state.values())
+        )
+        expected_parameters = round_contract.get("trainable_parameter_count")
+        if expected_parameters is not None and trainable_parameters != int(
+            expected_parameters
+        ):
+            raise ValueError("outcome-mixture trainable parameter count drifted")
         summary.update(
             {
                 "target_schema_version": reloaded.target_schema_version,
@@ -780,6 +823,7 @@ def run_outcome_mixture_screen(
                 "target_contract_sha256": reloaded.target_contract_sha256,
                 "target_scale_bps": reloaded.target_scale_bps,
                 "positive_class_prevalence": list(reloaded.positive_class_prevalence),
+                "trainable_parameter_count": trainable_parameters,
                 "portfolio_claim": False,
                 "leverage_applied": False,
             }

@@ -64,6 +64,7 @@ class OutcomeMixtureArchitectureSpec:
     expected_value_loss_weight: float
     quantile_loss_weight: float
     ranking_loss_weight: float
+    side_tower_mode: str = "shared"
 
     def __post_init__(self) -> None:
         weights = (
@@ -75,9 +76,9 @@ class OutcomeMixtureArchitectureSpec:
         )
         if not self.candidate_id.strip():
             raise ValueError("outcome-mixture candidate_id cannot be empty")
-        if (
-            self.family != "conditional_outcome_mixture_residual_mlp"
-            or self.sequence_length != 1
+        if self.family != "conditional_outcome_mixture_residual_mlp" or (
+            self.sequence_length != 1
+            or self.side_tower_mode not in {"shared", "independent"}
         ):
             raise ValueError("outcome-mixture architecture family is unsupported")
         if (
@@ -144,8 +145,15 @@ def _canonical_json(value: object) -> str:
     )
 
 
+def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
+    contract = asdict(spec)
+    if spec.side_tower_mode == "shared":
+        contract.pop("side_tower_mode")
+    return contract
+
+
 def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
-    _torch, nn, functional = _torch_modules()
+    torch, nn, functional = _torch_modules()
 
     class ResidualBlock(nn.Module):
         def __init__(self) -> None:
@@ -178,7 +186,33 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
                 -1, 2, _OUTPUTS_PER_SIDE
             )
 
-    return OutcomeMixtureNetwork()
+    class SideTower(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.projection = nn.Linear(feature_count, spec.hidden_dim)
+            self.blocks = nn.ModuleList(
+                ResidualBlock() for _index in range(spec.residual_blocks)
+            )
+            self.normalization = nn.LayerNorm(spec.hidden_dim)
+            self.head = nn.Linear(spec.hidden_dim, _OUTPUTS_PER_SIDE)
+
+        def forward(self, values):
+            output = functional.gelu(self.projection(values[:, -1, :]))
+            for block in self.blocks:
+                output = block(output)
+            return self.head(self.normalization(output))
+
+    class IndependentSideTowerNetwork(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.towers = nn.ModuleList((SideTower(), SideTower()))
+
+        def forward(self, values):
+            return torch.stack(tuple(tower(values) for tower in self.towers), dim=1)
+
+    if spec.side_tower_mode == "shared":
+        return OutcomeMixtureNetwork()
+    return IndependentSideTowerNetwork()
 
 
 def _positive_class_prevalence(targets: np.ndarray) -> tuple[float, float]:
@@ -340,7 +374,7 @@ def _state_hash(
 ) -> str:
     contract = {
         "schema_version": OUTCOME_MIXTURE_SCHEMA_VERSION,
-        "spec": asdict(spec),
+        "spec": _spec_contract(spec),
         "feature_version": feature_version,
         "feature_names": list(feature_names),
         "target_schema_version": target_schema_version,
@@ -866,7 +900,7 @@ _METADATA_KEYS = {
 def _artifact_metadata(model: TrainedOutcomeMixtureModel) -> dict[str, str]:
     return {
         "schema_version": model.schema_version,
-        "spec": _canonical_json(asdict(model.spec)),
+        "spec": _canonical_json(_spec_contract(model.spec)),
         "feature_version": model.feature_version,
         "feature_names": _canonical_json(list(model.feature_names)),
         "target_schema_version": model.target_schema_version,

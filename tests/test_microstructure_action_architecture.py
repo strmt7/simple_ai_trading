@@ -719,6 +719,72 @@ def test_outcome_mixture_decodes_expected_value_from_conditional_identity() -> N
     assert bool(torch.all(expected <= upper))
 
 
+def test_outcome_mixture_independent_towers_are_parameter_matched_and_isolated() -> (
+    None
+):
+    torch = pytest.importorskip("torch")
+    feature_count = len(MICROSTRUCTURE_FEATURE_NAMES)
+    shared = outcome_mixture._network(
+        _mixture_spec(hidden_dim=128, residual_blocks=2), feature_count
+    )
+    independent = outcome_mixture._network(
+        _mixture_spec(
+            hidden_dim=88,
+            residual_blocks=2,
+            side_tower_mode="independent",
+        ),
+        feature_count,
+    )
+    shared_parameters = sum(parameter.numel() for parameter in shared.parameters())
+    independent_parameters = sum(
+        parameter.numel() for parameter in independent.parameters()
+    )
+
+    assert shared_parameters == 147_722
+    assert independent_parameters == 145_914
+    assert abs(independent_parameters / shared_parameters - 1.0) < 0.02
+    assert all(name.startswith("towers.") for name in independent.state_dict())
+
+    values = torch.randn(8, 1, feature_count)
+    before = independent(values).detach().clone()
+    with torch.no_grad():
+        independent.towers[0].head.bias.add_(1.0)
+    after = independent(values).detach()
+
+    assert not torch.equal(before[:, 0, :], after[:, 0, :])
+    torch.testing.assert_close(before[:, 1, :], after[:, 1, :], rtol=0.0, atol=0.0)
+
+
+def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None:
+    dataset, long_target, short_target = _dataset()
+    targets = _barrier_targets(dataset, long_target, short_target)
+    model = train_outcome_mixture_model(
+        dataset,
+        targets,
+        train_endpoints=np.arange(600, dtype=np.int64),
+        tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
+        spec=_mixture_spec(
+            hidden_dim=16,
+            side_tower_mode="independent",
+            ranking_loss_weight=0.0,
+        ),
+        target_scenario="base",
+        compute_backend="cpu",
+        seed=29,
+        batch_size=256,
+        max_epochs=1,
+        patience=1,
+    )
+    path = tmp_path / "independent-towers.safetensors"
+
+    save_outcome_mixture_model(path, model)
+    loaded = load_outcome_mixture_model(path)
+
+    assert loaded.spec.side_tower_mode == "independent"
+    assert loaded.model_sha256 == model.model_sha256
+    assert loaded.state.keys() == model.state.keys()
+
+
 def test_outcome_mixture_trains_predicts_and_binds_after_cost_target(
     outcome_mixture_bundle,
 ) -> None:
@@ -838,6 +904,7 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
     [
         ({"candidate_id": ""}, "cannot be empty"),
         ({"family": "shared_residual_mlp"}, "unsupported"),
+        ({"side_tower_mode": "coupled"}, "unsupported"),
         ({"hidden_dim": 8}, "dimensions"),
         ({"dropout": float("nan")}, "must be finite"),
         ({"expected_value_loss_weight": -1.0}, "outside bounds"),
