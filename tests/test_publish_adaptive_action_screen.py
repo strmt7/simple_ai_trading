@@ -205,7 +205,7 @@ def test_round20_publication_copy_is_specific() -> None:
     assert "decision-objective alignment" in next_step
 
 
-def test_round21_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round21_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(21)
     title, summary, next_step = _publication_narrative(
         21, all_candidate_stress_nets_negative=False
@@ -218,7 +218,22 @@ def test_round21_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert title == "pairwise net-return ranking model abstained"
     assert "eliminated threshold-selection eligibility" in summary
     assert "calibrated positive expected-return separation" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 22"):
-        _progress_identity(22)
-    with pytest.raises(ValueError, match="undefined for Round 22"):
-        _publication_narrative(22, all_candidate_stress_nets_negative=False)
+
+
+def test_round22_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(22)
+    title, summary, next_step = _publication_narrative(
+        22, all_candidate_stress_nets_negative=True
+    )
+
+    assert stage == "additive pairwise net-return regularization"
+    assert model_id == (
+        "three-seed calibration-preserving additive-pairwise outcome-mixture"
+    )
+    assert title == "additive net-return ranking model abstained"
+    assert "every threshold-selection simulation" in summary
+    assert "Further ranking-loss tuning is not justified" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 23"):
+        _progress_identity(23)
+    with pytest.raises(ValueError, match="undefined for Round 23"):
+        _publication_narrative(23, all_candidate_stress_nets_negative=True)
