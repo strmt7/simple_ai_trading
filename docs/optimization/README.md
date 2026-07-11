@@ -40,43 +40,16 @@ after-cost opportunity scans, and `round-highconv-btc-pruned-v27` was stopped
 after threshold calibration again proved too slow on a single candidate. These
 artifacts must not be interpreted as profitability evidence.
 
-The current retained checkpoint is `round-broad-rule-alpha-1d-smoke`, a failed
-BTCUSDT/ETHUSDT/SOLUSDT futures research run generated from verified local
-`1s` SQLite market data. It is kept because it is truthful negative evidence:
-the default model trained on real second-level data, used DirectML for training
-and scoring, preserved rejected diagnostic threshold evidence, exercised the
-conservative hybrid model-zoo from the rejected base model's diagnostic
-threshold, then searched an interpretable order-flow-aware rule-alpha template zoo across
-momentum breakout, VWAP/RSI mean reversion, trend-pullback, volatility
-breakout, volume-flow proxy, order-flow momentum, flow-reversion,
-flow-consensus breakout, liquidity-absorption reversal, micro-flow scalp,
-VWAP snapback scalp, liquidity-sweep reversal, compression breakout scalp,
-volume-synchronized flow, and adaptive tape-regime families.
-Rule-alpha stop and take-profit distances are floored by modeled spread,
-latency, market-impact proxy, testnet/live buffer, entry/exit taker fees, and
-minimum profit/stop buffers before any replay can be scored.
-The alpha prefix is stratified so every family and execution profile is covered
-before nearby parameter variants are explored. The current default budget is
-225 static templates, which produced 450 normal/inverted replays per symbol in
-the latest evidence round.
-Normal and inverted alpha variants were evaluated. Every candidate also gets a
-forward event study before full trade-lifecycle replay, so diagnostics separate
-raw directional edge from stop/take/cooldown execution evidence. None passed the
-objective gates. Rejected candidates keep diagnostic trade thresholds, P&L
-evidence, best rejected alpha evidence, and event-edge evidence, but
-executable models are parked in a no-entry state unless a selection, hybrid, or
-rule-alpha replay passes the full profitability, activity, drawdown,
-liquidation, and path-quality gates.
-The current research path also mines simple empirical feature-edge and
-two-feature interaction candidates from chronological train/validation slices.
-Those candidates are only added when both slices show enough signals and
-positive net forward edge after the modeled cost floor, and even then they still
-have to pass the same replay gates.
-Earlier BTC-only, stale BTC/ETH-only, broader-symbol, and prior per-round smoke
-artifacts were removed because they no longer matched the active scope, data
-standard, or model selection rules. Future checkpoints must be generated from
-the current BTCUSDT/ETHUSDT/SOLUSDT database state and must commit their
-CSV/JSON graph data beside any SVG charts.
+The current retained per-iteration evidence is
+[`tape-depth/latest`](../model-research/tape-depth/latest/README.md). Round 8
+evaluated the frozen BTCUSDT 20-second tape/depth candidate on three untouched
+UTC dates using real one-second trade/depth features and exact 100 ms BBO fills.
+It was rejected: 12 executable trades averaged `-11.839347` bps net and none was
+positive after fees plus the precommitted slippage stress. The committed CSV
+tables and hash-manifested SVGs preserve this negative result without inventing
+ROI or drawdown from independent fixed-horizon trades. Earlier per-round graph
+bundles were removed; their aggregate history remains in the rolling progress
+table.
 
 GitHub retention is latest-only for per-round result graphs. `tools/optimization_round.py`
 refreshes `docs/optimization/iteration-progress/data/progress.csv` and
@@ -232,58 +205,14 @@ maximum closed trades, most-active candidate, best-PnL candidate, and active
 family/profile coverage so no round can hide a losing high-activity search
 behind a quiet no-entry final model.
 
-Latest retained local smoke evidence from 2026-07-07 is
-`round-broad-rule-alpha-1d-smoke`. It uses the verified UTC window
-2024-06-01T00:00:00Z through 2024-06-01T23:59:59Z for BTCUSDT, ETHUSDT, and
-SOLUSDT futures `1s` data. Each symbol has 86,400 expected rows, zero
-missing-second gaps, 1.0 coverage, and one verified Binance archive checksum.
-The run used DirectML with `--require-gpu`, conservative 5x futures settings,
-cost-aware labels, order-flow features built from real quote volume, trade
-count, taker-buy volume, signed flow, no-trade ratio, flow/return alignment,
-flow strength, flow persistence, flow acceleration, and price/flow divergence,
-hybrid rescue profiles, order-flow-aware rule-alpha experts serialized with the
-v9 171-feature advanced vector, cost-aware rule-alpha stop/take floors, 225
-static templates, and empirical one-feature plus two-feature interaction mining.
-The empirical miner found zero validated one-feature or two-feature interaction
-candidates under the chronological sample-count and after-cost edge gates, so
-the final search still ran 450 rule-alpha normal/inverted static-template
-replays per symbol.
-It failed the critical gate: zero accepted symbols, zero total closed holdout
-trades, mean ROI `0.0%`, median ROI `0.0%`, mean buy-and-hold ROI
-`-0.0990046820488913%`, worst drawdown `0.0%`, three rejected diagnostic
-threshold trades, and no liquidations. BTCUSDT, ETHUSDT, and SOLUSDT all stayed
-in no-entry state (`decision_threshold=1.0`, long threshold `1.0`, no executable
-short threshold). Best rejected alpha evidence was also negative: BTCUSDT's
-least-bad active alpha was `momentum_breakout:guarded:t0.54:s6.0:d0.02` with
-`-0.6405880579098948` selection P&L over 1 closed short; ETHUSDT's least-bad
-active alpha was `liquidity_sweep_reversal:scalp_3s:t0.54:s6.0:d0.02` with
-`-0.525900571656166` P&L over 1 closed long; SOLUSDT's least-bad active alpha
-was `flow_reversion:held_180s:t0.54:s6.0:d0.02` with `-0.5233335205740559`
-P&L over 1 closed long. The event-study layer measured raw directional edge
-before stop/take/cooldown replay. All 450 candidates per symbol produced event
-signals, but zero candidates had positive net forward edge after the modeled
-cost floor. The best raw event candidates were still negative: BTCUSDT
-`volume_flow_proxy:held_180s:t0.54:s6.0:d0.02` at `-33.9167073462523` bps over
-23 signals, ETHUSDT `volume_flow_proxy:held_90s:t0.54:s6.0:d0.02` at
-`-34.14643238432157` bps over 38 signals, and SOLUSDT
-`volume_flow_proxy:held_90s:t0.54:s6.0:d0.02` at `-33.786158043817835` bps
-over 77 signals. The expanded alpha search did create activity before
-the final fail-closed no-entry model: BTCUSDT had 390 active candidates,
-ETHUSDT had 416, SOLUSDT had 390, and each symbol had a 24-closed-trade
-most-active candidate. The most-active replays were still negative after costs:
-BTCUSDT `micro_flow_scalp:scalp_8s:t0.54:s8.0:d0.05` at
-`-13.698733890780659`, ETHUSDT
-`volume_synchronized_flow:scalp_3s:t0.54:s6.0:d0.02` at
-`-15.73342255896398`, and SOLUSDT
-`order_flow_momentum:scalp_8s:t0.54:s6.0:d0.05` at
-`-16.29628526423312`. None were profitable after
-modeled costs; the cost-aware floors made previously uneconomic scalp distances
-explicit instead of allowing a candidate to target less than its estimated
-round-trip cost. The
-software correctly refused promotion. This is truthful negative evidence, not promotion
-evidence: the window is one verified day, not years, every symbol failed
-selection gates, and no candidate, hybrid, or rule-alpha profile showed an
-after-cost edge that was safe to trade.
+Round 8 is the latest retained model iteration. Its source dates are
+2023-07-08, 2023-10-21, and 2024-02-05. All three forecast artifacts failed at
+least one gross-forecast gate; the aggregate also failed forecast-candidate,
+positive-period, action-count, mean-net-return, and hit-rate gates. The exact
+result, source hashes, action funnel, forecast quality, and row-level trades are
+published under [`tape-depth/latest`](../model-research/tape-depth/latest/README.md).
+These dates are consumed confirmation evidence and cannot become future tuning
+data.
 
 For promotion claims, run `tools/optimization_round.py --promotion-grade` after
 `archive-sync --require-checksum` has filled the SQLite market database. That

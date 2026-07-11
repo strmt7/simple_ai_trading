@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="460" viewBox="0 0 1100 460">
+  <rect width="1100" height="460" fill="#ffffff"/>
+  <text x="52" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Round 8 action funnel</text>
+  <text x="52" y="73" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Untouched UTC dates; no minimum trade quota is forced.</text>
+
+  <line x1="90" y1="370" x2="1040" y2="370" stroke="#94a3b8"/>
+  <rect x="162.33" y="355.28" width="52" height="14.72" fill="#0f766e"/>
+  <text x="188.33" y="348.28" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">1</text>
+  <rect x="222.33" y="355.28" width="52" height="14.72" fill="#2563eb"/>
+  <text x="248.33" y="348.28" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">1</text>
+  <rect x="282.33" y="355.28" width="52" height="14.72" fill="#b91c1c"/>
+  <text x="308.33" y="348.28" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">1</text>
+  <text x="248.33" y="400" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">2023-07-08</text>
+  <rect x="479.00" y="370.00" width="52" height="0.00" fill="#0f766e"/>
+  <text x="505.00" y="363.00" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0</text>
+  <rect x="539.00" y="370.00" width="52" height="0.00" fill="#2563eb"/>
+  <text x="565.00" y="363.00" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0</text>
+  <rect x="599.00" y="370.00" width="52" height="0.00" fill="#b91c1c"/>
+  <text x="625.00" y="363.00" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0</text>
+  <text x="565.00" y="400" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">2023-10-21</text>
+  <rect x="795.67" y="105.00" width="52" height="265.00" fill="#0f766e"/>
+  <text x="821.67" y="98.00" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">18</text>
+  <rect x="855.67" y="208.06" width="52" height="161.94" fill="#2563eb"/>
+  <text x="881.67" y="201.06" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">11</text>
+  <rect x="915.67" y="208.06" width="52" height="161.94" fill="#b91c1c"/>
+  <text x="941.67" y="201.06" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">11</text>
+  <text x="881.67" y="400" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">2024-02-05</text>
+  <rect x="90" y="430" width="14" height="14" fill="#0f766e"/><text x="112" y="442" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">selected</text>
+  <rect x="270" y="430" width="14" height="14" fill="#2563eb"/><text x="292" y="442" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">non-overlapping</text>
+  <rect x="450" y="430" width="14" height="14" fill="#b91c1c"/><text x="472" y="442" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">executable</text>
+</svg>

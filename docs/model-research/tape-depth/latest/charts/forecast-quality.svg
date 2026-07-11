@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="470" viewBox="0 0 1100 470">
+  <rect width="1100" height="470" fill="#ffffff"/>
+  <text x="52" y="46" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#111827">Round 8 forecast quality</text>
+  <text x="52" y="73" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">AUC baseline 0.5; Spearman information-coefficient baseline 0.0.</text>
+
+  <text x="70" y="105" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#111827">Direction AUC</text>
+  <line x1="70" y1="332.73" x2="540" y2="332.73" stroke="#94a3b8" stroke-dasharray="6 5"/>
+  <circle cx="148.33" cy="253.46" r="6" fill="#2563eb"/><text x="148.33" y="241.46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0.5335</text><text x="148.33" y="410" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">2023-07-08</text>
+  <circle cx="305.00" cy="175.11" r="6" fill="#2563eb"/><text x="305.00" y="163.11" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0.5667</text><text x="305.00" y="410" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">2023-10-21</text>
+  <circle cx="461.67" cy="174.81" r="6" fill="#2563eb"/><text x="461.67" y="162.81" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0.5668</text><text x="461.67" y="410" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">2024-02-05</text>
+  <polyline points="148.33,253.46 305.00,175.11 461.67,174.81" fill="none" stroke="#2563eb" stroke-width="3"/>
+  <text x="600" y="105" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#111827">Spearman IC</text>
+  <line x1="600" y1="380.00" x2="1070" y2="380.00" stroke="#94a3b8" stroke-dasharray="6 5"/>
+  <circle cx="678.33" cy="289.90" r="6" fill="#0f766e"/><text x="678.33" y="277.90" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0.0485</text><text x="678.33" y="410" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">2023-07-08</text>
+  <circle cx="835.00" cy="144.97" r="6" fill="#0f766e"/><text x="835.00" y="132.97" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0.1266</text><text x="835.00" y="410" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">2023-10-21</text>
+  <circle cx="991.67" cy="165.62" r="6" fill="#0f766e"/><text x="991.67" y="153.62" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#111827">0.1154</text><text x="991.67" y="410" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#334155">2024-02-05</text>
+  <polyline points="678.33,289.90 835.00,144.97 991.67,165.62" fill="none" stroke="#0f766e" stroke-width="3"/>
+</svg>

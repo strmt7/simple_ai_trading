@@ -338,6 +338,14 @@ report. Resume verifies checkpoint fingerprints and model/prediction file hashes
 before reuse. Aggregate counts, mean net return, hit rate, and rejection classes
 are recomputed from the row evidence rather than trusted from summaries.
 
+Round 8 opened the three frozen dates only after the design and runner were
+pushed. None of the three gross artifacts passed all forecast gates. Exact BBO
+replay produced 1, 0, and 11 executable trades; all 12 were net-negative. The
+weighted mean was `-11.839347` bps after two 5 bps taker-fee legs and 1 bps
+stress slippage per leg. The aggregate failed five precommitted gates and is
+rejected. Hash-manifested source tables and graphs are retained in
+[`model-research/tape-depth/latest`](model-research/tape-depth/latest/README.md).
+
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses
 `gpu_use_dp=true`, LightGBM's
