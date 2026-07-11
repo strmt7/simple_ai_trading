@@ -1,0 +1,177 @@
+{
+  "schema_version": "action-value-discovery-design-v2",
+  "round": 11,
+  "design_sha256": "c7cfe43512104388577fc3730a6963f19253b800088eec70c3e18573d1ac5d64",
+  "status": "precommitted",
+  "purpose": "multi_week_regime_transfer_screen_with_role_specific_support_and_weekly_context",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "terminal_holdout": false,
+  "predecessor_round": 10,
+  "change_control": {
+    "implementation_commit": "745cdb6062e0a8b6a26950053dd9db844e1b0806",
+    "implementation_files_sha256": {
+      "pyproject.toml": "757d9177fc93899fa4a584ae05e58a090cc50ed2d448d70b8b1e96aab8c295b3",
+      "src/simple_ai_trading/lightgbm_backend.py": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead",
+      "src/simple_ai_trading/microstructure_features.py": "30d896d1c84e669a02e35ae0ee19afbcb0dd186f72a34161956cc03e1f4a1d11",
+      "src/simple_ai_trading/microstructure_model.py": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47",
+      "src/simple_ai_trading/microstructure_runtime.py": "450342ed3c22c1ac1af0c5a47d20430345f841b7e2978d1ac244338a58d41e4e",
+      "src/simple_ai_trading/microstructure_warehouse.py": "09789c17e435661d7e74918da78bc758435b7db17c30ccfe298fc8abc3b9af0d",
+      "tools/run_action_value_discovery.py": "b677ed64cc5691893fef889f4c35690c5566fe3d63516ea013d34db7054cd298"
+    },
+    "fixed_dimensions": [
+      "official_binance_usdm_book_ticker_and_trade_archives",
+      "checksum_and_physical_partition_certification",
+      "one_second_causal_features_and_100ms_execution_quotes",
+      "750ms_total_latency",
+      "5bps_taker_fee_and_1bps_additional_slippage_per_side",
+      "five_second_decision_cadence",
+      "risk_profile_stop_take_and_l1_participation_limits",
+      "nonoverlapping_positions_and_one_times_leverage",
+      "side_specific_hurdle_expected_value_model_family"
+    ],
+    "changed_dimensions": [
+      "42_day_multi_week_regime_window",
+      "100_feature_l1_tape_causal_v7_context",
+      "64_row_early_stop_and_256_row_train_calibration_class_floors",
+      "hash_bound_consumed_date_registry_and_exact_split_calendar"
+    ],
+    "round_10_evidence_mutable": false
+  },
+  "data": {
+    "provider": "binance",
+    "market_type": "futures",
+    "symbol": "BTCUSDT",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-08-14",
+    "end_date": "2023-09-24",
+    "feature_clock": "one_second_causal_event_time",
+    "execution_clock": "official_100ms_bbo",
+    "full_history_inventory_required": true,
+    "checksum_verified_partitions_required": true,
+    "selection_contaminated_after_run": true,
+    "all_window_dates_consumed_after_run": true,
+    "selection_dates_previously_untouched": true,
+    "terminal_dates_previously_untouched": true,
+    "consumed_registry": "consumed-periods-through-round-010.json",
+    "consumed_registry_sha256": "22357454bd00172022f8bb6c5e5be308fc8868cfcb7e469d530558b23054d370",
+    "expected_split_days": {
+      "train": {
+        "start_date": "2023-08-14",
+        "end_date": "2023-09-03",
+        "day_count": 21
+      },
+      "tuning": {
+        "start_date": "2023-09-04",
+        "end_date": "2023-09-09",
+        "day_count": 6
+      },
+      "policy": {
+        "start_date": "2023-09-10",
+        "end_date": "2023-09-13",
+        "day_count": 4
+      },
+      "selection": {
+        "start_date": "2023-09-14",
+        "end_date": "2023-09-17",
+        "day_count": 4
+      },
+      "terminal": {
+        "start_date": "2023-09-18",
+        "end_date": "2023-09-24",
+        "day_count": 7
+      }
+    },
+    "window_selection_method": "42_contiguous_days_reusing_consumed_dates_only_before_selection_with_four_new_selection_and_seven_new_unused_suffix_days"
+  },
+  "execution": {
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "trigger_execution_slippage_bps": 1.0,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "decision_cadence_seconds": 5,
+    "suppress_overlapping_positions": true,
+    "maker_fill_claim": false,
+    "leverage": 1.0
+  },
+  "training": {
+    "model_schema_version": "microstructure-action-value-v16",
+    "feature_version": "l1-tape-causal-v7",
+    "model_family": "side_specific_hurdle_expected_value",
+    "calibration_method": "base_rate_initialized_damped_platt_v2",
+    "class_support_minimums": {
+      "train_each_class": 256,
+      "early_stop_each_class": 64,
+      "calibration_each_class": 256
+    },
+    "compute_backend": "auto",
+    "reproducible_backend": true,
+    "seed": 20260711,
+    "minimum_discovery_days": 30,
+    "evaluate_terminal": false
+  },
+  "risk_profiles": {
+    "conservative": {
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "max_l1_participation": 0.05
+    },
+    "regular": {
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "max_l1_participation": 0.1
+    },
+    "aggressive": {
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "max_l1_participation": 0.15
+    }
+  },
+  "horizon_seconds": [
+    300,
+    600,
+    900,
+    1800
+  ],
+  "candidate_count": 12,
+  "selection": {
+    "primary_metric": "selection_total_net_bps_minus_risk_penalty_times_max_drawdown_bps",
+    "mandatory_gates": [
+      "positive_after_cost_selection_net_bps",
+      "selection_profit_factor_above_one",
+      "positive_block_bootstrap_daily_lower_bound",
+      "minimum_nonoverlapping_trade_count",
+      "directional_baseline_outperformance"
+    ],
+    "promotion_allowed": false,
+    "next_stage": "precommitted_multi_symbol_prequential_expansion_for_survivors_only"
+  },
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "cost_aware_execution_filter_and_walk_forward_evaluation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "forecast_accuracy_must_be_separated_from_actionable_transactions"
+    },
+    {
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "cross_condition_lob_generalization_and_transaction_cost_degradation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2304.01512",
+      "use": "concept_drift_in_nonstationary_time_series"
+    },
+    {
+      "url": "https://arxiv.org/abs/2112.02947",
+      "use": "causal_order_flow_imbalance_features_at_short_horizons"
+    }
+  ]
+}

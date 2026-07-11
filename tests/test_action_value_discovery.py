@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from tools.run_action_value_discovery import (
+    _canonical_sha256,
     discovery_candidates,
     load_discovery_design,
 )
@@ -67,3 +68,44 @@ def test_round_ten_design_pins_calibration_fix_and_medium_horizons() -> None:
 
     with pytest.raises(ValueError, match="current design and model schemas"):
         load_discovery_design(_tracked_design(10), require_current=True)
+
+
+def test_round_eleven_design_binds_current_code_registry_and_split_calendar() -> None:
+    design = load_discovery_design(_tracked_design(11), require_current=True)
+    candidates = discovery_candidates(design)
+
+    assert design["design_sha256"] == (
+        "c7cfe43512104388577fc3730a6963f19253b800088eec70c3e18573d1ac5d64"
+    )
+    assert design["change_control"]["implementation_commit"] == (
+        "745cdb6062e0a8b6a26950053dd9db844e1b0806"
+    )
+    assert len(design["change_control"]["implementation_files_sha256"]) == 7
+    assert design["data"]["expected_split_days"]["selection"] == {
+        "start_date": "2023-09-14",
+        "end_date": "2023-09-17",
+        "day_count": 4,
+    }
+    assert len(candidates) == 12
+    assert candidates[0]["candidate_id"] == "conservative-h300"
+    assert candidates[-1]["candidate_id"] == "aggressive-h1800"
+
+
+def test_round_eleven_design_rejects_consumed_registry_tampering(tmp_path) -> None:
+    payload = json.loads(_tracked_design(11).read_text(encoding="utf-8"))
+    payload["data"]["consumed_registry"] = "registry.json"
+    canonical = dict(payload)
+    canonical.pop("design_sha256")
+    payload["design_sha256"] = _canonical_sha256(canonical)
+    design_path = tmp_path / "design.json"
+    design_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    registry_path = _tracked_design(11).with_name(
+        "consumed-periods-through-round-010.json"
+    )
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry["records"][0]["windows"][0]["start_date"] = "2024-03-14"
+    (tmp_path / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="registry binding"):
+        load_discovery_design(design_path)
