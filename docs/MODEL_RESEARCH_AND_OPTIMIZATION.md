@@ -374,6 +374,40 @@ stress slippage per leg. The aggregate failed five precommitted gates and is
 rejected. Hash-manifested source tables and graphs are retained in
 [`model-research/tape-depth/latest`](model-research/tape-depth/latest/README.md).
 
+Round 9 was precommitted at implementation commit `8a0eec2` before opening its
+seven-day BTCUSDT selection window (`2023-08-14` through `2023-08-20`). Its
+bounded corpus certificate reconciled seven official daily `bookTicker` and
+seven official daily `trades` archives, including Binance sidecar checksums and
+physical warehouse partitions. The run consumed 81,684,026 BBO events and
+20,111,284 trades to construct 604,752 causal one-second feature rows. No
+terminal interval was opened.
+
+Seven of the 12 predeclared candidates lacked the required profitable and
+non-profitable class support after executable spread, two 5 bps taker-fee legs,
+two 1 bps additional-slippage legs, and 750 ms latency. The five trainable
+300/900-second candidates had selection long AUCs from `0.54096` to `0.59962`
+and short AUCs from `0.55750` to `0.60297`, but their mean executable labels
+were all negative: long from `-13.30` to `-12.51` bps and short from `-11.62`
+to `-10.78` bps. Although 17,858 short rows had positive model-predicted edge,
+every non-overlapping threshold policy that used those rows had non-positive
+realized drawdown-adjusted utility on its policy segment. The fitted policy
+therefore abstained, all five artifacts were rejected, and no zero-trade return
+or equity curve was fabricated. The checksummed tables and current graphs are
+retained in
+[`model-research/action-value/latest`](model-research/action-value/latest/README.md).
+
+This result is consistent with two constraints used in the implementation:
+[LOBFrame](https://arxiv.org/abs/2403.09267) cautions that predictive scores do
+not by themselves establish an actionable strategy, and a recent
+[cost-aware crypto study](https://arxiv.org/abs/2606.00060) reports that
+transaction costs can reverse apparently useful short-horizon signals. A
+post-round decomposition also found that the bounded Newton implementation of
+Platt scaling could drive a badly underconfident class estimate to its lower
+parameter bounds instead of improving calibration. That defect is remediated
+with base-rate initialization and loss-decreasing damped Newton steps, but the
+sealed Round 9 evidence remains unchanged and the dates are permanently
+selection-consumed.
+
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses
 `gpu_use_dp=true`, LightGBM's
