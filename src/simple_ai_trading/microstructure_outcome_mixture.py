@@ -70,6 +70,7 @@ class OutcomeMixtureArchitectureSpec:
     side_tower_mode: str = "shared"
     ranking_loss_mode: str = "correlation"
     pairwise_ranking_loss_weight: float = 0.0
+    temporal_pooling_mode: str = "endpoint"
 
     def __post_init__(self) -> None:
         weights = (
@@ -83,9 +84,14 @@ class OutcomeMixtureArchitectureSpec:
         if not self.candidate_id.strip():
             raise ValueError("outcome-mixture candidate_id cannot be empty")
         if self.family != "conditional_outcome_mixture_residual_mlp" or (
-            self.sequence_length != 1
-            or self.side_tower_mode not in {"shared", "independent"}
+            self.side_tower_mode not in {"shared", "independent"}
             or self.ranking_loss_mode not in {"correlation", "pairwise_net_return"}
+            or self.temporal_pooling_mode not in {"endpoint", "causal_attention"}
+            or (self.temporal_pooling_mode == "endpoint" and self.sequence_length != 1)
+            or (
+                self.temporal_pooling_mode == "causal_attention"
+                and not 2 <= self.sequence_length <= 64
+            )
         ):
             raise ValueError("outcome-mixture architecture family is unsupported")
         if (
@@ -176,6 +182,8 @@ def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
         contract.pop("ranking_loss_mode")
     if spec.pairwise_ranking_loss_weight == 0.0:
         contract.pop("pairwise_ranking_loss_weight")
+    if spec.temporal_pooling_mode == "endpoint":
+        contract.pop("temporal_pooling_mode")
     return contract
 
 
@@ -203,15 +211,24 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
                 ResidualBlock() for _index in range(spec.residual_blocks)
             )
             self.normalization = nn.LayerNorm(spec.hidden_dim)
+            if spec.temporal_pooling_mode == "causal_attention":
+                self.temporal_attention = nn.Linear(spec.hidden_dim, 1, bias=False)
             self.head = nn.Linear(spec.hidden_dim, 2 * _OUTPUTS_PER_SIDE)
 
         def forward(self, values):
-            output = functional.gelu(self.projection(values[:, -1, :]))
+            source = (
+                values[:, -1, :] if spec.temporal_pooling_mode == "endpoint" else values
+            )
+            output = functional.gelu(self.projection(source))
             for block in self.blocks:
                 output = block(output)
-            return self.head(self.normalization(output)).reshape(
-                -1, 2, _OUTPUTS_PER_SIDE
-            )
+            output = self.normalization(output)
+            if spec.temporal_pooling_mode == "causal_attention":
+                attention = functional.softmax(
+                    self.temporal_attention(output).squeeze(-1), dim=1
+                )
+                output = torch.sum(output * attention.unsqueeze(-1), dim=1)
+            return self.head(output).reshape(-1, 2, _OUTPUTS_PER_SIDE)
 
     class SideTower(nn.Module):
         def __init__(self) -> None:
@@ -221,13 +238,24 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
                 ResidualBlock() for _index in range(spec.residual_blocks)
             )
             self.normalization = nn.LayerNorm(spec.hidden_dim)
+            if spec.temporal_pooling_mode == "causal_attention":
+                self.temporal_attention = nn.Linear(spec.hidden_dim, 1, bias=False)
             self.head = nn.Linear(spec.hidden_dim, _OUTPUTS_PER_SIDE)
 
         def forward(self, values):
-            output = functional.gelu(self.projection(values[:, -1, :]))
+            source = (
+                values[:, -1, :] if spec.temporal_pooling_mode == "endpoint" else values
+            )
+            output = functional.gelu(self.projection(source))
             for block in self.blocks:
                 output = block(output)
-            return self.head(self.normalization(output))
+            output = self.normalization(output)
+            if spec.temporal_pooling_mode == "causal_attention":
+                attention = functional.softmax(
+                    self.temporal_attention(output).squeeze(-1), dim=1
+                )
+                output = torch.sum(output * attention.unsqueeze(-1), dim=1)
+            return self.head(output)
 
     class IndependentSideTowerNetwork(nn.Module):
         def __init__(self) -> None:

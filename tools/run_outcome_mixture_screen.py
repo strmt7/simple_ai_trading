@@ -364,6 +364,39 @@ _ROUND_CONTRACTS = {
             ),
         },
     },
+    23: {
+        "purpose": "consumed_data_causal_temporal_attention_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "temporal_pooling_mode": "causal_attention",
+        "sequence_length": 7,
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 146_090,
+        "predecessor": {
+            "round": 22,
+            "design_sha256": (
+                "1704a184751b473fdb550140cb3650451a535b0aeb4c696e2262941aa915f462"
+            ),
+            "source_report_canonical_sha256": (
+                "c41159014cbc6b45d80c190339e5d8485a8903aeda9aa47f0576faf61d4a7999"
+            ),
+            "publication_sha256": (
+                "85d052845e77bced2185f89078fa5f032a89ac5dfca27461a366a75e550301bf"
+            ),
+            "finding": (
+                "Round 22 restored threshold-selection eligibility, but all eight "
+                "threshold candidates remained negative under stress and the best "
+                "out-of-sample top-100 mean net return remained -6.733319 bps. "
+                "Round 23 changes only endpoint pooling to causal attention over the "
+                "current event and six preceding five-second observations."
+            ),
+        },
+    },
 }
 
 
@@ -521,6 +554,9 @@ def load_outcome_mixture_design(
         != round_contract.get("ranking_loss_mode", "correlation")
         or model_spec.pairwise_ranking_loss_weight
         != round_contract.get("pairwise_ranking_loss_weight", 0.0)
+        or model_spec.temporal_pooling_mode
+        != round_contract.get("temporal_pooling_mode", "endpoint")
+        or model_spec.sequence_length != round_contract.get("sequence_length", 1)
         or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
         or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
         or model_spec.residual_blocks != round_contract.get("residual_blocks", 2)
