@@ -59,6 +59,13 @@ DESIGN21_V2 = (
     / "action-value"
     / "round-021-pairwise-net-return-ranking-design-v2.json"
 )
+DESIGN21_V3 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-021-pairwise-net-return-ranking-design-v3.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -345,6 +352,37 @@ def test_round21_revision2_is_historical_and_preserves_economic_contract() -> No
         "reserved_terminal",
     ):
         assert design[section] == revision1[section]
+
+
+def test_round21_revision3_is_current_and_preserves_economic_contract() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN21_V3)
+    revision2, _revision2_sha256 = load_outcome_mixture_design(
+        DESIGN21_V2, require_current=False
+    )
+
+    assert design_sha256 == (
+        "afcebb4d1d079bb91755bb14da4ed8684af141bf829941443509b803bbe4b9eb"
+    )
+    assert design["round"] == 21
+    assert design["design_revision"] == 3
+    assert design["implementation"]["commit"] == (
+        "53a3c8cce6f07998e89eae3622b1af8d71dc1073"
+    )
+    assert "nonstable Safetensors" in design["predecessor_evidence"]["finding"]
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "model",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == revision2[section]
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
