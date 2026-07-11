@@ -129,6 +129,13 @@ DESIGN29 = (
     / "action-value"
     / "round-029-1800s-horizon-cost-amortization-design.json"
 )
+DESIGN30 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-030-lightgbm-hurdle-architecture-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -941,6 +948,126 @@ def test_round29_historical_design_changes_only_the_horizon() -> None:
         "reported returns are not imported as validation"
         in research["https://doi.org/10.2139/ssrn.6795938"]
     )
+
+
+def test_round30_design_is_current_and_changes_only_the_model_family() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN30)
+    baseline, _baseline_sha256 = load_outcome_mixture_design(
+        DESIGN26, require_current=False
+    )
+    contract = screen._ROUND_CONTRACTS[30]
+
+    assert design_sha256 == (
+        "535b11675c6c2c8563d0157b340a63d22576df932a6a40421026a08f5d357d42"
+    )
+    assert design["round"] == 30
+    assert design["implementation"]["commit"] == (
+        "55c429e6f5960497b8615d31e52905dd3907f54b"
+    )
+    assert design["predecessor_evidence"] == contract["predecessor"]
+    assert design["model"] == contract["model"]
+    assert design["training"] == contract["training"]
+    assert contract["trainer"] == "lightgbm_hurdle"
+    assert contract["feature_version"] == "l1-tape-causal-v8"
+    assert contract["booster_count_per_member"] == 10
+    assert design["execution"]["horizon_seconds"] == 900
+    assert design["barrier_targets"]["horizon_seconds"] == 900
+    assert design["data"]["required_data_types"] == ["bookTicker", "trades"]
+    assert design["runtime_resources"]["training_data_mode"] == (
+        "bounded_host_table_opencl_histogram"
+    )
+    assert design["runtime_resources"]["compute_backend"] == "directml"
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "event_sampler",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == baseline[section]
+    for name, value in baseline["runtime_resources"].items():
+        if name != "training_data_mode":
+            assert design["runtime_resources"][name] == value
+    implementation_paths = {
+        item["path"] for item in design["implementation"]["files"]
+    }
+    assert len(implementation_paths) == len(design["implementation"]["files"])
+    assert "src/simple_ai_trading/microstructure_outcome_lightgbm.py" in (
+        implementation_paths
+    )
+    assert "src/simple_ai_trading/probability_calibration.py" in implementation_paths
+    assert "src/simple_ai_trading/lightgbm_backend.py" in implementation_paths
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    assert (
+        "do not establish a financial or after-cost edge"
+        in research[
+            "https://papers.nips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html"
+        ]
+    )
+    assert (
+        "reported returns are not imported as validation"
+        in research["https://arxiv.org/abs/2606.00060"]
+    )
+    assert (
+        "makes no distributional calibration claim"
+        in research["https://doi.org/10.3982/ECTA7880"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value", "match"),
+    [
+        (
+            "runtime_resources",
+            "training_data_mode",
+            "bounded_device_preload_when_below_512MiB",
+            "shared safety contract drifted",
+        ),
+        (
+            "runtime_resources",
+            "compute_backend",
+            "cpu",
+            "shared safety contract drifted",
+        ),
+        ("execution", "total_latency_ms", 751, "shared safety contract drifted"),
+        ("barrier_targets", "horizon_seconds", 901, "shared safety contract drifted"),
+        ("model", "num_leaves", 48, "model contract drifted"),
+        (
+            "training",
+            "calibration_role",
+            "unpurged_early_stop",
+            "design contract is invalid",
+        ),
+    ],
+)
+def test_round30_design_rejects_runtime_model_or_training_drift(
+    tmp_path: Path,
+    section: str,
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    payload = json.loads(DESIGN30.read_text(encoding="utf-8"))
+    payload[section][field] = value
+    canonical = dict(payload)
+    canonical.pop("design_sha256")
+    payload["design_sha256"] = hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    source = tmp_path / "unsafe-round30-design.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=match):
+        load_outcome_mixture_design(source, require_current=False)
 
 
 @pytest.mark.parametrize(

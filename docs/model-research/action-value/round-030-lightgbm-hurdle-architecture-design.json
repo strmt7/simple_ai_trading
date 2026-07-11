@@ -1,0 +1,375 @@
+{
+  "schema_version": "outcome-mixture-screen-design-v1",
+  "round": 30,
+  "design_revision": 1,
+  "purpose": "consumed_data_lightgbm_hurdle_architecture_screen",
+  "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false,
+  "implementation": {
+    "hash_mode": "git_blob_sha256_v1",
+    "commit": "55c429e6f5960497b8615d31e52905dd3907f54b",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_lightgbm.py",
+        "sha256": "26bd2785e5a5ebf02cb3770d31ab26324d9f4136b74925e9c4f1fc52571cf0c1"
+      },
+      {
+        "path": "src/simple_ai_trading/probability_calibration.py",
+        "sha256": "47f3cffbf0beaaaf7de2d6fb30bac754f3f1a7846cc7649879fbabf17710e18a"
+      },
+      {
+        "path": "src/simple_ai_trading/lightgbm_backend.py",
+        "sha256": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_mixture.py",
+        "sha256": "cc08b981e6d7c35018e3ae6620a34e0f2ce017cade7f8ea36a612343383c871f"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "87e99eae0530de107c206e9890e2465975607bc96f891fd39e5fa5a47f20d37e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "dcbafb0a22b4dbf1346df35ce3761c901adb246e31e7946b810797471b443384"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "f06c34f7be1df21a4a7214f92fea61dc5036013da846d682b0a2c747f8b859a0"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_runtime.py",
+        "sha256": "2087c50d1a73009068099125d917f32785c1c2df797edc2bead782c7e8b8fa2f"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "6287072ee8d3a9574215ee4e4ac8e1c05e958f78490db51b943e4b1ca7df9c35"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "330832b09b5cc71d75996004fa31b4df1be6e281ab3b8aa4bae98c92d1dd8452"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "baff279e9b742ab930e50dc9508afa555a4a017fa3214c03d2dc645250e1f5c5"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "2d92c27e847374d7d9b734b074ed23837e9bc3ec3a674e175898a0ce2bf8c9bb"
+      },
+      {
+        "path": "tools/run_head_coherence_screen.py",
+        "sha256": "0ceb18d5f0981347ea82e29614ddbbbf31c2f38c997759e1ef4ff132e677a152"
+      },
+      {
+        "path": "tools/run_adaptive_action_screen.py",
+        "sha256": "8d596c8a5418f5fdd964aa51938d23d41887847924d96c27a374f390aaf9f9ce"
+      },
+      {
+        "path": "tools/run_outcome_mixture_screen.py",
+        "sha256": "3d95ee6b9568d062d440199359b31116127a771b6f2636fd0f6843e05d84bf7e"
+      }
+    ]
+  },
+  "predecessor_evidence": {
+    "round": 29,
+    "design_sha256": "d76f65e2653449df40e263e98718ffea365f292e569694b0349d85c884e39163",
+    "source_report_canonical_sha256": "bec167230a17eb85c47793adeab7bc28910f9aaf314a2244d27f2fdde122db8d",
+    "publication_sha256": "0918377cd8b4aeb071e71f872579d2849b727384223f0f677f306af36de8ec44",
+    "finding": "Round 29 increased calibration and policy eligibility at 1800 seconds, but all four probability AUCs and Brier scores worsened versus Round 26, every threshold candidate lost after stress costs, and the least-negative candidate deteriorated from -38.911663 to -92.246143 bps. The longer horizon is rejected. Round 30 restores the sealed 900-second baseline and changes only the predictor family to a side-specific LightGBM hurdle ensemble with direct conditional quantiles. Its policy window remains selection-contaminated and cannot establish profitability."
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "full_history_inventory_required": false,
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development_evaluation": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5,
+    "additional_slippage_bps_per_side": 1,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000,
+    "max_l1_participation": 1
+  },
+  "barrier_targets": {
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18,
+    "maximum_stop_bps": 60,
+    "minimum_take_bps": 27,
+    "maximum_take_bps": 90,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "compute_backend": "directml",
+    "spill_directory_policy": "warehouse_adjacent",
+    "training_worker_isolation": "clean_process",
+    "cpu_fallback_permitted": false,
+    "training_data_mode": "bounded_host_table_opencl_histogram"
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1,
+    "minimum_activity_quota": null
+  },
+  "model": {
+    "candidate_id": "900s-lightgbm-hurdle-quantile-ensemble",
+    "family": "side_specific_lightgbm_hurdle_expected_value",
+    "learning_rate": 0.025,
+    "num_leaves": 47,
+    "max_depth": 7,
+    "min_data_in_leaf": 160,
+    "feature_fraction": 0.82,
+    "bagging_fraction": 0.82,
+    "bagging_freq": 1,
+    "lambda_l1": 0.005,
+    "lambda_l2": 0.025,
+    "max_bin": 127,
+    "num_boost_round": 1500,
+    "early_stopping_rounds": 100,
+    "lower_quantile": 0.1,
+    "upper_quantile": 0.9,
+    "calibration_fraction": 0.5,
+    "gpu_use_dp_required": true
+  },
+  "training": {
+    "ensemble_seeds": [
+      29,
+      43,
+      71
+    ],
+    "prediction_batch_size": 4096,
+    "target_scenario": "base",
+    "ensemble_method": "independent_seed_mean_and_dispersion",
+    "label_uniqueness_weighting": true,
+    "calibration_role": "chronological_second_half_of_early_stop_after_exact_exit_purge",
+    "probability_calibration": "bounded_platt_log_odds",
+    "conditional_magnitude_objective": "l2_conditional_mean",
+    "interval_objective": "direct_q10_q90_with_monotone_rearrangement",
+    "development_candidate_count": 1
+  },
+  "threshold_policy": {
+    "quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "drawdown_penalty": 0.5,
+    "selection_scenario": "stress",
+    "no_passing_threshold_action": "abstain"
+  },
+  "risk_profiles": [
+    {
+      "profile": "conservative",
+      "epistemic_penalty": 1.5,
+      "minimum_profitable_probability": 0.65,
+      "minimum_member_agreement": 1,
+      "maximum_epistemic_std_bps": 6,
+      "minimum_lower_bound_bps": -35,
+      "calibration_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 50,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50,
+        "minimum_profit_factor": 1.05
+      },
+      "policy_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 60,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50,
+        "minimum_profit_factor": 1.05
+      },
+      "development_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 70,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -50,
+        "minimum_profit_factor": 1.05
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "regular",
+      "epistemic_penalty": 1,
+      "minimum_profitable_probability": 0.6,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 10,
+      "minimum_lower_bound_bps": -45,
+      "calibration_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 75,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60,
+        "minimum_profit_factor": 1.03
+      },
+      "policy_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 85,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60,
+        "minimum_profit_factor": 1.03
+      },
+      "development_gates": {
+        "minimum_trades": 18,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 95,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60,
+        "minimum_profit_factor": 1.03
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "aggressive",
+      "epistemic_penalty": 0.5,
+      "minimum_profitable_probability": 0.55,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 15,
+      "minimum_lower_bound_bps": -60,
+      "calibration_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 110,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75,
+        "minimum_profit_factor": 1.01
+      },
+      "policy_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 125,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75,
+        "minimum_profit_factor": 1.01
+      },
+      "development_gates": {
+        "minimum_trades": 24,
+        "minimum_total_net_bps": 0,
+        "maximum_drawdown_bps": 140,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75,
+        "minimum_profit_factor": 1.01
+      },
+      "leverage_applied": false
+    }
+  ],
+  "evaluation": {
+    "calibration_used_for_threshold_selection": true,
+    "policy_used_for_profile_acceptance": true,
+    "development_used_for_selection": false,
+    "positions_must_exit_within_utc_day": true,
+    "maximum_concurrent_positions": 1,
+    "overlap_permitted": false
+  },
+  "reserved_terminal": {
+    "date": "2023-07-07",
+    "included_in_dataset": false,
+    "access_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Strictly Proper Scoring Rules, Prediction, and Estimation",
+      "url": "https://doi.org/10.1198/016214506000001437",
+      "use": "Supports proper probability scoring and retained Brier diagnostics. Round 30 fits binary log-loss heads and bounded Platt calibration without treating probability fit as trading profitability."
+    },
+    {
+      "title": "LightGBM: A Highly Efficient Gradient Boosting Decision Tree",
+      "url": "https://papers.nips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html",
+      "use": "Motivates an efficient tabular tree challenger to the neural baseline. Its general benchmark speed and accuracy results do not establish a financial or after-cost edge."
+    },
+    {
+      "title": "LightGBM Parameters",
+      "url": "https://lightgbm.readthedocs.io/en/latest/Parameters.html",
+      "use": "Defines the binary, L2 regression, quantile, OpenCL device, and double-precision accumulation controls used here. Documentation of an objective or backend is not evidence of predictive value."
+    },
+    {
+      "title": "LightGBM GPU Tutorial",
+      "url": "https://lightgbm.readthedocs.io/en/latest/GPU-Tutorial.html",
+      "use": "Documents OpenCL GPU training on modern AMD and NVIDIA hardware and automatic or explicit device selection. Round 30 still records and verifies the actual local backend instead of assuming accelerator availability."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Shows that high limit-order-book forecast quality need not imply actionable transactions. Round 30 therefore retains exact after-cost threshold traces and all abstention and drawdown gates."
+    },
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Recent non-peer-reviewed hourly BTC evidence finds naive forecast-to-trade conversion can fail after costs and reports tree boosting as descriptively stronger than neural alternatives without formal dominance. Its data resolution, execution abstraction, models, and reported returns are not imported as validation."
+    },
+    {
+      "title": "Quantile and Probability Curves Without Crossing",
+      "url": "https://doi.org/10.3982/ECTA7880",
+      "use": "Supports monotone rearrangement when independently estimated conditional quantiles cross. Round 30 applies only pairwise q10/q90 ordering and makes no distributional calibration claim from that repair."
+    },
+    {
+      "title": "Multi-Horizon Forecasting for Limit Order Books: Novel Deep Learning Approaches and Hardware Acceleration using Intelligent Processing Units",
+      "url": "https://arxiv.org/abs/2105.10430",
+      "use": "Provides limit-order-book-specific evidence that forecast behavior depends on horizon. It does not select this sealed 900-second target or validate the LightGBM architecture."
+    }
+  ],
+  "design_sha256": "535b11675c6c2c8563d0157b340a63d22576df932a6a40421026a08f5d357d42"
+}
