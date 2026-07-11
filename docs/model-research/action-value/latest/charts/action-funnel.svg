@@ -1,36 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="410" viewBox="0 0 1500 410" role="img" aria-labelledby="title desc">
-<title id="title">Prediction never cleared the policy economics gate</title>
-<desc id="desc">Six verified fits produced eighteen scored candidates. All were policy-evaluable, none had positive after-cost policy utility, no selection trade was permitted, and no candidate survived.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="420" viewBox="0 0 1500 420" role="img" aria-labelledby="title desc">
+<title id="title">The execution-cost gate stopped promotion</title>
+<desc id="desc">Three neural architectures were screened. Two advanced and were compared with LightGBM. All final models passed forecast-quality gates and none passed the after-cost gate.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Prediction never cleared the policy economics gate</text>
-<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Counts are exact Round 12 v6 artifacts; the terminal holdout was not accessed.</text>
-<rect x="56" y="142" width="200" height="136" rx="6" fill="#f4f7f9" stroke="#9aa8b3" stroke-width="2"/>
-<text x="156.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#9aa8b3">6</text>
-<text x="156.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Verified model fits</text>
-<line x1="263" y1="210" x2="285" y2="210" stroke="#7b8994" stroke-width="2"/>
-<path d="M 285 204 L 294 210 L 285 216 Z" fill="#7b8994"/>
-<rect x="294" y="142" width="200" height="136" rx="6" fill="#f4f7f9" stroke="#9aa8b3" stroke-width="2"/>
-<text x="394.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#9aa8b3">18</text>
-<text x="394.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Scored candidates</text>
-<line x1="501" y1="210" x2="523" y2="210" stroke="#7b8994" stroke-width="2"/>
-<path d="M 523 204 L 532 210 L 523 216 Z" fill="#7b8994"/>
-<rect x="532" y="142" width="200" height="136" rx="6" fill="#f4f7f9" stroke="#9aa8b3" stroke-width="2"/>
-<text x="632.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#9aa8b3">18</text>
-<text x="632.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Policy-evaluable</text>
-<line x1="739" y1="210" x2="761" y2="210" stroke="#7b8994" stroke-width="2"/>
-<path d="M 761 204 L 770 210 L 761 216 Z" fill="#7b8994"/>
-<rect x="770" y="142" width="200" height="136" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="870.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#b42318">0</text>
-<text x="870.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Positive policy utility</text>
-<line x1="977" y1="210" x2="999" y2="210" stroke="#7b8994" stroke-width="2"/>
-<path d="M 999 204 L 1008 210 L 999 216 Z" fill="#7b8994"/>
-<rect x="1008" y="142" width="200" height="136" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="1108.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#b42318">0</text>
-<text x="1108.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Selection trades</text>
-<line x1="1215" y1="210" x2="1237" y2="210" stroke="#7b8994" stroke-width="2"/>
-<path d="M 1237 204 L 1246 210 L 1237 216 Z" fill="#7b8994"/>
-<rect x="1246" y="142" width="200" height="136" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="1346.0" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#b42318">0</text>
-<text x="1346.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#263746">Unrejected</text>
-<text x="56" y="348" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Activity floors are evidence requirements, not trade quotas. Zero selection trades is the correct result after a negative policy screen.</text>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">The execution-cost gate stopped promotion</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">A positive forecast was never allowed to become trading authority without positive exact after-cost evidence.</text>
+<rect x="56" y="146" width="240" height="148" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="176.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#60717f">3</text>
+<text x="176.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="176.0" dy="0">Neural</tspan><tspan x="176.0" dy="19">architectures screened</tspan></text>
+<line x1="304" y1="220" x2="333" y2="220" stroke="#7b8994" stroke-width="2"/>
+<path d="M 333 214 L 342 220 L 333 226 Z" fill="#7b8994"/>
+<rect x="342" y="146" width="240" height="148" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="462.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#60717f">3</text>
+<text x="462.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="462.0" dy="0">Final models</tspan><tspan x="462.0" dy="19">with baseline</tspan></text>
+<line x1="590" y1="220" x2="619" y2="220" stroke="#7b8994" stroke-width="2"/>
+<path d="M 619 214 L 628 220 L 619 226 Z" fill="#7b8994"/>
+<rect x="628" y="146" width="240" height="148" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="748.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#60717f">3</text>
+<text x="748.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="748.0" dy="0">Passed</tspan><tspan x="748.0" dy="19">forecast gates</tspan></text>
+<line x1="876" y1="220" x2="905" y2="220" stroke="#7b8994" stroke-width="2"/>
+<path d="M 905 214 L 914 220 L 905 226 Z" fill="#7b8994"/>
+<rect x="914" y="146" width="240" height="148" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="1034.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#b42318">0</text>
+<text x="1034.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="1034.0" dy="0">Passed top-500</tspan><tspan x="1034.0" dy="19">cost gate</tspan></text>
+<line x1="1162" y1="220" x2="1191" y2="220" stroke="#7b8994" stroke-width="2"/>
+<path d="M 1191 214 L 1200 220 L 1191 226 Z" fill="#7b8994"/>
+<rect x="1200" y="146" width="240" height="148" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="1320.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#b42318">0</text>
+<text x="1320.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="1320.0" dy="0">Trading</tspan><tspan x="1320.0" dy="19">candidates</tspan></text>
+<text x="56" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">No trade, leverage, portfolio return, or profitability claim was produced.</text>
 </svg>
