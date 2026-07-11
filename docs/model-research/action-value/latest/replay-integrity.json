@@ -1,0 +1,58 @@
+{
+  "artifact_class": "model_and_metric_reproducibility_evidence",
+  "booster_hashes": [
+    {
+      "best_iterations_sha256": "fc95686224c587ea818df1ef15df32258513636a45a09a3e2f7d246af589155a",
+      "model_strings_sha256": "2887a55e02e62ed732d706893e6594422b8c8373d8b024981de90b3f1bc326fc",
+      "seed": 29
+    },
+    {
+      "best_iterations_sha256": "79b6724d920fb2e0cb032166f7e12fc5ef048b260bcd6671a2480ccc6204652d",
+      "model_strings_sha256": "10799074287c228a4c613d1a7663baaaa108178904b6b65fbe20587064fdb51c",
+      "seed": 43
+    },
+    {
+      "best_iterations_sha256": "f3f47a9368d628e106c0eb4310728295b36b392a5e7b2fed13f550fa9e9b8f09",
+      "model_strings_sha256": "605e2349d459c367925ec8a2e7f4c29d89ef5fac044b9c7337aa16d3b8ad5631",
+      "seed": 71
+    }
+  ],
+  "checks": {
+    "barrier_summary_equal": true,
+    "best_iterations_equal_between_revisions": true,
+    "booster_strings_equal_between_revisions": true,
+    "forecast_diagnostics_equal_between_revisions": true,
+    "revision2_target_hash_matches_round26": true,
+    "role_evidence_equal_between_revisions": true,
+    "source_identity_equal": true,
+    "threshold_and_profile_results_equal_between_revisions": true
+  },
+  "design_revision": 2,
+  "execution_claim": false,
+  "leverage_applied": false,
+  "portfolio_claim": false,
+  "profitability_claim": false,
+  "replay_sha256": "8d32cf3c8c528919f8717260f4777a3b3bcf8502236d53ef945c8a294d531ed5",
+  "revision1": {
+    "barrier_targets_sha256": "0207950a934321155837f9f0c068f24e8ff370d3e77b0678f22807ae8d52ec34",
+    "design_sha256": "535b11675c6c2c8563d0157b340a63d22576df932a6a40421026a08f5d357d42",
+    "report_canonical_sha256": "5ae4356bc17bd7ee9f034e8d1f30188b3f5d71e105fb01125144e39db7776150",
+    "report_file_sha256": "7c019700964824b56388e9cea7ba897d80d4a73d43cf5310aa1b7c407519e8dc"
+  },
+  "revision2": {
+    "barrier_targets_sha256": "bde567752e0c30c49a62f73e1baa5f5618206d33a7644b2edc61e67f18143b10",
+    "design_sha256": "2adfba2a377666e204b22d926d3d757a6b3c1a20d58c67a3455dabfedbad9623",
+    "report_canonical_sha256": "7634b03dd10805c3f45375dacc5feee3462316cd318e11e4bdd39d411a55fd23",
+    "report_file_sha256": "3a445c51fc3df205824b8edf760500a9aa86b123d2676b6b30f2a1ec289f8ec3"
+  },
+  "round": 30,
+  "round26_architecture_baseline": {
+    "barrier_targets_sha256": "bde567752e0c30c49a62f73e1baa5f5618206d33a7644b2edc61e67f18143b10",
+    "design_sha256": "84112245cf1c6a7e93b678bdfea9f97e329772731bc2bdec97990773b6f92837",
+    "report_canonical_sha256": "368fa5c3cbe7e61f93d1c0d9099f8812c5554eab423dcba61b6b9f3f65a83383",
+    "report_file_sha256": "7825247b00236494e6fbf4f864779f81e08f4f585e90e26fd239d37395ade724"
+  },
+  "schema_version": "round30-numeric-contract-replay-v1",
+  "terminal_holdout_accessed": false,
+  "trading_authority": false
+}

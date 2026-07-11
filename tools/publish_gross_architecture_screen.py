@@ -623,7 +623,7 @@ def _research_progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         '<title id="title">After-cost evidence by research round</title>',
-        '<desc id="desc">Rounds seven and eight show means from executable trade traces. Rounds nine through twelve produced no executable series. Round thirteen shows a top-500 overlapping-forecast diagnostic and is not a trade result.</desc>',
+        '<desc id="desc">Rounds seven and eight show means from executable-trade simulations. Rounds nine through twelve produced no executable series. Round thirteen shows a top-500 overlapping-forecast diagnostic and is not a trade result.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">After-cost evidence by research round</text>',
         '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Distinct markers prevent an overlapping-forecast diagnostic from being presented as an executed trade mean.</text>',

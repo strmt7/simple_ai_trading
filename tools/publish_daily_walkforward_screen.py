@@ -314,8 +314,8 @@ def _least_bad_threshold(
         raise ValueError(
             f"daily walk-forward {label} threshold quantiles differ from design"
         )
-    # This is descriptive evidence only: the least-negative calibration trace is
-    # not retroactively selected and cannot authorize an evaluation-day trade.
+    # This descriptive least-negative threshold-selection simulation is not
+    # retroactively selected and cannot authorize an evaluation-day trade.
     least_bad = max(
         found,
         key=lambda row: (
@@ -555,10 +555,10 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         '<title id="title">Round 15 prior-only calibration economics</title>',
-        '<desc id="desc">Least-negative after-cost calibration trace for each causal daily fit. Every value is negative and no threshold was selected.</desc>',
+        '<desc id="desc">Least-negative after-cost threshold-selection simulation for each causal daily fit. Every value is negative and no threshold was selected.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Prior-only calibration economics</text>',
-        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Least-negative threshold per fit; these are two-day calibration traces, not evaluation trades, ROI, or an equity curve.</text>',
+        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Least-negative threshold per fit; these are two-day threshold-selection simulations, not evaluation trades, ROI, or an equity curve.</text>',
     ]
     for tick in range(int(lower), 1, 50):
         x = x_position(float(tick))
@@ -718,7 +718,7 @@ def _funnel_svg(
 ) -> str:
     stages = (
         (model_fits, "causal daily model fits"),
-        (threshold_traces, "prior-only threshold traces"),
+        (threshold_traces, "prior-only threshold-selection simulations"),
         (accepted_thresholds, "accepted thresholds"),
         (evaluation_trades, "evaluation trades"),
         (research_candidates, "research candidates"),
@@ -729,7 +729,7 @@ def _funnel_svg(
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         '<title id="title">Round 15 signal selection</title>',
-        '<desc id="desc">Twenty-one model fits produced eighty-four threshold traces. None passed, so evaluation remained in abstention and no candidate was created.</desc>',
+        '<desc id="desc">Twenty-one model fits produced eighty-four threshold-selection simulations. None passed, so evaluation remained in abstention and no candidate was created.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Mandatory abstention stopped failed thresholds</text>',
         '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">The selection sequence reports operational evidence; zero evaluation trades is an abstention result, not profitability evidence.</text>',
@@ -965,11 +965,11 @@ def publish(
     )
     readme = f"""# Round 15: daily refits abstained
 
-**Rejected without trading authority.** All **{threshold_traces}** prior-only threshold traces from **{len(rows)}** causal daily model fits failed the precommitted net-of-cost acceptance criteria. No threshold was allowed to trade an evaluation day.
+**Rejected without trading authority.** All **{threshold_traces}** prior-only threshold-selection simulations from **{len(rows)}** causal daily model fits failed the precommitted net-of-cost acceptance criteria. No threshold was allowed to trade an evaluation day.
 
 | Evidence | Result |
 | --- | ---: |
-| Least-negative policy calibration trace | {float(least_bad_policy["least_bad_calibration_total_net_bps"]):+.2f} bps over {int(least_bad_policy["least_bad_calibration_trades"])} trades |
+| Least-negative policy threshold-selection simulation | {float(least_bad_policy["least_bad_calibration_total_net_bps"]):+.2f} bps over {int(least_bad_policy["least_bad_calibration_trades"])} trades |
 | Its maximum drawdown | {float(least_bad_policy["least_bad_calibration_max_drawdown_bps"]):.2f} bps |
 | Accepted thresholds | {accepted_thresholds} / {threshold_traces} |
 | Evaluation trades | {evaluation_trades} |
@@ -983,9 +983,9 @@ def publish(
 
 ![Research progress](charts/research-progress.svg)
 
-BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["event_rows"]):,} causal events from {int(report["dataset"]["rows"]):,} exact-BBO rows. Traces use {int(execution["total_latency_ms"])} ms latency and {round_trip_cost:.0f} bps configured taker round-trip cost. The development window is consumed; 2023-07-07 remains untouched.
+BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["event_rows"]):,} causal events from {int(report["dataset"]["rows"]):,} exact-BBO rows. Simulations use {int(execution["total_latency_ms"])} ms latency and {round_trip_cost:.0f} bps configured taker round-trip cost. The development window is consumed; 2023-07-07 remains untouched.
 
-No ROI or equity curve is shown because no evaluation trade occurred. Fixed-horizon traces still lack intrahorizon stop-loss paths, so this result cannot authorize trading, leverage, or a profitability claim.
+No ROI or equity curve is shown because no evaluation trade occurred. Fixed-horizon simulations still lack intrahorizon stop-loss paths, so this result cannot authorize trading, leverage, or a profitability claim.
 
 Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
 """

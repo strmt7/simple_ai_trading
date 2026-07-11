@@ -535,7 +535,7 @@ def publish(
             candidates,
             value_key="policy_total_net_bps",
             title="Every policy tail lost after costs",
-            subtitle="Five-day policy window; each bar is a non-overlapping trade trace selected from a fixed score threshold search.",
+            subtitle="Five-day policy window; each bar is a non-overlapping threshold simulation selected from a fixed score search.",
             footer="Fees: 5 bps/side; added slippage: 1 bps/side; latency: 750 ms. Total net bps is not portfolio ROI.",
         ),
     )
@@ -570,7 +570,7 @@ def publish(
     assert isinstance(change_control, Mapping)
     readme = f"""# Round 12: bounded viability
 
-**Rejected.** All 18 candidates completed; none had positive after-cost policy utility. The best policy trace lost **{float(best["policy_total_net_bps"]):.2f} bps** over **{int(best["policy_trades"])} trades** with **{float(best["policy_max_drawdown_bps"]):.2f} bps** max drawdown.
+**Rejected.** All 18 candidates completed; none had positive after-cost policy utility. The best policy simulation lost **{float(best["policy_total_net_bps"]):.2f} bps** over **{int(best["policy_trades"])} trades** with **{float(best["policy_max_drawdown_bps"]):.2f} bps** max drawdown.
 
 ![Policy economics](charts/after-cost-performance.svg)
 

@@ -47,7 +47,7 @@ def test_publication_charts_are_accessible_parseable_and_truthfully_labeled() ->
         assert 'role="img"' in chart
         assert "nan" not in chart.lower()
     assert "-15.00" in economics
-    assert "calibration traces, not evaluation trades" in economics
+    assert "threshold-selection simulations, not evaluation trades" in economics
     assert "Direction AUC" in forecast
     assert "2023-07-01" in forecast
     assert ">84<" in funnel

@@ -29,8 +29,8 @@ eligible, and the UTC-day bootstrap interval crossed zero. The retained SVG is
 forecast-error evidence, not a performance or P&L chart; the CSV and
 machine-readable report are the numerical authority.
 
-Latest local BTC-only profitability work is negative evidence, not a promoted
-model. `round-profitability-btc-weekday-adaptive-v25` used BTCUSDT futures
+The retained legacy BTCUSDT profitability experiment is negative evidence, not
+a promoted model. `round-profitability-btc-weekday-adaptive-v25` used BTCUSDT futures
 `1s` data for 2024-06-03 through 2024-06-07 UTC with DirectML selected. Longer
 cost-aware labels showed positive label preflight edge, but executable replay
 still produced at most one selection trade and failed the conservative
@@ -40,16 +40,20 @@ after-cost opportunity scans, and `round-highconv-btc-pruned-v27` was stopped
 after threshold calibration again proved too slow on a single candidate. These
 artifacts must not be interpreted as profitability evidence.
 
-The current retained per-iteration evidence is
-[`tape-depth/latest`](../model-research/tape-depth/latest/README.md). Round 8
-evaluated the frozen BTCUSDT 20-second tape/depth candidate on three untouched
-UTC dates using real one-second trade/depth features and exact 100 ms BBO fills.
-It was rejected: 12 executable trades averaged `-11.839347` bps net and none was
-positive after fees plus the precommitted slippage stress. The committed CSV
-tables and hash-manifested SVGs preserve this negative result without inventing
-ROI or drawdown from independent fixed-horizon trades. Earlier per-round graph
-bundles were removed; their aggregate history remains in the rolling progress
-table.
+Two latest-only research evidence tracks are retained. The predictive
+[`action-value/latest`](../model-research/action-value/latest/README.md) track is
+at Round 30: its three-seed LightGBM hurdle ensemble produced 12 positive
+threshold-selection stress simulations, but each contained only 1 to 12 trades
+and failed the precommitted sample-support gate, so it received no policy
+simulation, leverage, or trading authority. The independent execution-replay
+[`tape-depth/latest`](../model-research/tape-depth/latest/README.md) track remains
+at Round 8. It evaluated the frozen BTCUSDT 20-second candidate on three
+untouched UTC dates using real one-second trade/depth features and exact 100 ms
+BBO fills. It was rejected: 12 executable trades averaged `-11.839347` bps net
+and none was positive after fees plus the precommitted slippage stress. The
+committed CSV tables and hash-manifested SVGs preserve both decisions without
+inventing ROI or drawdown. Earlier per-round graph bundles were removed; their
+aggregate history remains in the rolling progress tables.
 
 GitHub retention is latest-only for per-round result graphs. `tools/optimization_round.py`
 refreshes `docs/optimization/iteration-progress/data/progress.csv` and
@@ -205,7 +209,7 @@ maximum closed trades, most-active candidate, best-PnL candidate, and active
 family/profile coverage so no round can hide a losing high-activity search
 behind a quiet no-entry final model.
 
-Round 8 is the latest retained model iteration. Its source dates are
+Round 8 is the latest retained tape/depth execution-confirmation iteration. Its source dates are
 2023-07-08, 2023-10-21, and 2024-02-05. All three forecast artifacts failed at
 least one gross-forecast gate; the aggregate also failed forecast-candidate,
 positive-period, action-count, mean-net-return, and hit-rate gates. The exact

@@ -79,11 +79,36 @@ _BANNED_PHRASE_SPECS = (
     ),
     (("free signal source inventory for", " btcusdc"), "free signal source inventory for BTC, ETH, and SOL"),
     (("current", " btcusdc workflow"), "supported BTC/ETH/SOL workflow"),
+    (("simple", " bitcoin trading"), "Simple AI Trading"),
+    (("simple", "_bitcoin_trading"), "simple_ai_trading"),
+    (("simple", "-bitcoin-trading"), "simple-ai-trading"),
+    (
+        ("latest local btc-only", " profitability"),
+        "retained legacy BTCUSDT profitability experiment",
+    ),
+    (
+        ("current retained per-iteration", " evidence is"),
+        "explicitly named latest-only evidence tracks",
+    ),
+    (("positive calibration", " traces"), "positive threshold-selection simulations"),
+    (
+        ("threshold-selection stress", " traces"),
+        "threshold-selection stress simulations",
+    ),
+    (("best policy", " trace"), "best policy simulation"),
+    (("executable trade", " traces"), "executable-trade simulations"),
+    (("predominantly horizon", " exits"), "predominantly time exits"),
+    (
+        ("even the best", " trace"),
+        "even the best threshold-selection simulation",
+    ),
 )
 _BANNED_FILENAME_SPECS = (
     (("action", "-funnel"), "signal-selection"),
     (("profile-gate", "-funnel"), "pre-trade-risk-controls"),
     (("pressure", "-capacity"), "depth-normalized-order-flow"),
+    (("simple", "_bitcoin_trading"), "simple_ai_trading"),
+    (("simple", "-bitcoin-trading"), "simple-ai-trading"),
 )
 
 
