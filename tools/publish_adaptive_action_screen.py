@@ -65,6 +65,10 @@ _PROGRESS_IDENTITIES = {
         "parameter-matched direction-specific representation ablation",
         "three-seed independent-long-short outcome-mixture",
     ),
+    21: (
+        "sampled pairwise net-return ranking ablation",
+        "three-seed independent-long-short pairwise-ranked outcome-mixture",
+    ),
 }
 
 
@@ -116,6 +120,12 @@ def _publication_narrative(
             "direction-specific outcome model abstained",
             "Parameter-matched independent long and short representations increased signals meeting pre-threshold controls, but every threshold-selection simulation remained negative net of stress costs.",
             "The next precommitted change must improve decision-objective alignment with realized net returns rather than add capacity or relax the risk controls.",
+        )
+    if round_number == 21:
+        return (
+            "pairwise net-return ranking model abstained",
+            "Sampled pairwise net-return ranking improved several discrimination and short-side tail diagnostics, but worsened the best out-of-sample tail and eliminated threshold-selection eligibility across all risk profiles.",
+            "The next precommitted change must restore calibrated positive expected-return separation while retaining net-return ordering and the existing risk controls.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
