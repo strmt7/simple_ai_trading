@@ -701,7 +701,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
         f'<title id="title">Round {round_number} signals passing pre-trade risk controls</title>',
         '<desc id="desc">Signal counts passing pre-threshold controls in threshold-selection and out-of-sample validation windows for conservative, regular and aggressive risk profiles. No simulated trade is permitted without an accepted threshold.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Pre-trade risk controls rejected every candidate signal</text>',
+        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">No candidate threshold passed all pre-trade risk controls</text>',
         '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Signals require positive uncertainty-adjusted expected return, probability of profit, ensemble agreement and lower-tail controls.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
