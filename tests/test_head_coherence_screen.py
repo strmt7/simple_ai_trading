@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from tools.run_head_coherence_screen import (
     _action_gate_reasons,
     _action_rank,
     _top_row,
+    load_head_coherence_design,
 )
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _action_metrics(*, gross: float, net: float, active: int = 1_000):
@@ -89,3 +95,27 @@ def test_action_gates_reject_unevaluable_and_ambiguous_evidence() -> None:
     metrics["top_rows"].append(dict(metrics["top_rows"][1]))
     with pytest.raises(ValueError, match="ambiguous"):
         _top_row(metrics)
+
+
+def test_tracked_round14_design_is_hash_bound_and_current() -> None:
+    design, design_sha256 = load_head_coherence_design(
+        ROOT / "docs/model-research/action-value/round-014-head-coherence-design.json"
+    )
+
+    assert design_sha256 == (
+        "b043639d7242bd599371fd4ee44283f46dbef5663129ebd04538792b8f582a0d"
+    )
+    assert design["implementation"]["commit"] == (  # type: ignore[index]
+        "0339ac05d6ecf133e17682ca1696cc6371530147"
+    )
+    assert design["reserved_terminal"] == {
+        "date": "2023-07-07",
+        "included_in_dataset": False,
+        "access_permitted": False,
+    }
+    assert (
+        design["ranking"][  # type: ignore[index]
+            "development_evaluation_used_for_selection"
+        ]
+        is False
+    )
