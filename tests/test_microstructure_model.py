@@ -229,6 +229,22 @@ def test_platt_scaling_corrects_probability_base_rate() -> None:
     assert np.mean(np.square(calibrated - labels)) < np.mean(np.square(raw - labels))
 
 
+def test_platt_scaling_does_not_collapse_when_raw_base_rate_is_too_low() -> None:
+    raw = np.linspace(0.02, 0.08, 10_000)
+    labels = np.zeros(10_000)
+    labels[::6] = 1.0
+
+    calibration = _fit_platt_scaling(raw, labels)
+    calibrated = _apply_platt_scaling(raw, calibration)
+
+    assert 0.05 <= calibration[0] <= 10.0
+    assert -10.0 < calibration[1] < 10.0
+    assert np.mean(calibrated) == pytest.approx(np.mean(labels), abs=0.005)
+    assert np.mean(np.square(calibrated - labels)) < np.mean(
+        np.square(raw - labels)
+    )
+
+
 def test_threshold_search_uses_base_rate_relative_probability_tails() -> None:
     rows = 500
     timestamps = np.arange(rows, dtype=np.int64) * 1_000
