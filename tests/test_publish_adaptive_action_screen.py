@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
+import pytest
+
 from tools.publish_adaptive_action_screen import (
     _barrier_svg,
     _funnel_svg,
     _forecast_svg,
     _gate_summary,
+    _progress_identity,
+    _publication_narrative,
     _research_progress_svg,
     _tail_svg,
 )
@@ -169,3 +173,20 @@ def test_round18_gate_summary_preserves_nonzero_candidates() -> None:
     assert summary["all_candidate_stress_nets_negative"] is True
     assert "Aggressive (24)" in str(summary["sentence"])
     assert "all failed the stress-test acceptance criteria" in str(summary["sentence"])
+
+
+def test_round20_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(20)
+    title, summary, next_step = _publication_narrative(
+        20, all_candidate_stress_nets_negative=True
+    )
+
+    assert stage == "parameter-matched direction-specific representation ablation"
+    assert model_id == "three-seed independent-long-short outcome-mixture"
+    assert title == "direction-specific outcome model abstained"
+    assert "independent long and short representations" in summary
+    assert "decision-objective alignment" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 21"):
+        _progress_identity(21)
+    with pytest.raises(ValueError, match="undefined for Round 21"):
+        _publication_narrative(21, all_candidate_stress_nets_negative=True)
