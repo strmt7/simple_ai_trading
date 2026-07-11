@@ -142,6 +142,7 @@ simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --stu
 simple-ai-trading tape-depth-select --design data/tape-depth-experiment-design.json --report data/tape-depth-regularized-core/report.json --report data/tape-depth-balanced-full/report.json --output data/tape-depth-selection.json
 simple-ai-trading tape-depth-prequential --symbols BTCUSDT,ETHUSDT,SOLUSDT --study-stage confirmation --selection-lock data/tape-depth-selection.json --compute-backend directml --output-dir data/tape-depth-confirmation-run
 simple-ai-trading tape-depth-confirm --selection data/tape-depth-selection.json --report data/tape-depth-confirmation-run/report.json --output data/tape-depth-confirmation.json
+simple-ai-trading tape-depth-execution-confirm --warehouse data/microstructure.duckdb --design docs/model-research/tape-depth/confirmation-design.json --availability docs/microstructure/availability.json --output-dir data/tape-depth-execution-confirmation --resume
 simple-ai-trading microstructure-train --symbol BTCUSDT --candidate-only --stop-loss-bps 25 --take-profit-bps 40
 simple-ai-trading microstructure-prequential --input data/microstructure-model.json
 simple-ai-trading microstructure-promote --input data/microstructure-model.json
@@ -279,6 +280,12 @@ rejected, not a profitability claim. The discovered
 20-second candidate is frozen for three untouched dates in the hash-bound
 [`confirmation-design.json`](docs/model-research/tape-depth/confirmation-design.json);
 those dates were committed before their archives were evaluated.
+
+`tape-depth-execution-confirm` executes that exact design as a separate workflow.
+It writes a deterministic plan, one no-overwrite checkpoint per UTC date, the
+serialized FP64 model, row-level compressed predictions, exact quote-path rows,
+and a final weighted gate report. `--resume` verifies every existing fingerprint
+and file hash; it never silently recomputes or replaces an observed period.
 
 The runner computes the causal one-second-derived matrix once per remaining
 symbol and retains only 20-second decision rows, bounded by

@@ -1019,6 +1019,35 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_confirm.add_argument("--json", action="store_true")
     parser_tape_depth_confirm.set_defaults(func=command_tape_depth_confirm)
 
+    parser_tape_depth_execution_confirm = subparsers.add_parser(
+        "tape-depth-execution-confirm",
+        help="run the frozen exact-BBO after-cost confirmation dates",
+    )
+    parser_tape_depth_execution_confirm.add_argument(
+        "--design",
+        default="docs/model-research/tape-depth/confirmation-design.json",
+    )
+    parser_tape_depth_execution_confirm.add_argument(
+        "--availability",
+        default="docs/microstructure/availability.json",
+    )
+    parser_tape_depth_execution_confirm.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
+    parser_tape_depth_execution_confirm.add_argument(
+        "--cache-root", default="data/archive-cache"
+    )
+    parser_tape_depth_execution_confirm.add_argument(
+        "--output-dir", default="data/tape-depth-execution-confirmation"
+    )
+    parser_tape_depth_execution_confirm.add_argument("--memory-limit", default="8GB")
+    parser_tape_depth_execution_confirm.add_argument("--threads", type=int, default=8)
+    parser_tape_depth_execution_confirm.add_argument("--resume", action="store_true")
+    parser_tape_depth_execution_confirm.add_argument("--json", action="store_true")
+    parser_tape_depth_execution_confirm.set_defaults(
+        func=command_tape_depth_execution_confirm
+    )
+
     parser_train = subparsers.add_parser("train", help="train model from cached candles")
     parser_train.add_argument("--input", default="data/historical_market.json")
     parser_train.add_argument("--output", default="data/model.json")
@@ -6114,14 +6143,82 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         "missing": missing,
     }
     plan_output = getattr(args, "plan_output", None)
-    if plan_output:
-        write_json_atomic(
-            Path(str(plan_output)),
-            plan_payload,
-            indent=2,
-            sort_keys=True,
-        )
     if plan_only:
+        plan_inventory_snapshots: list[dict[str, object]] = []
+        inventory_errors: list[dict[str, str]] = []
+        if full_history:
+            try:
+                with MicrostructureWarehouse(
+                    str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+                    cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+                    memory_limit=str(getattr(args, "memory_limit", "8GB")),
+                    threads=int(getattr(args, "threads", 8)),
+                ) as warehouse:
+                    inventory_groups: dict[tuple[str, str], list[object]] = {}
+                    for symbol, data_type, item in plan:
+                        inventory_groups.setdefault((symbol, data_type), []).append(item)
+                    initial_ids: dict[tuple[str, str], str] = {}
+                    for (symbol, data_type), items in sorted(inventory_groups.items()):
+                        snapshot = warehouse.record_official_archive_inventory(
+                            symbol=symbol,
+                            data_type=data_type,
+                            items=items,
+                            full_history=True,
+                        )
+                        plan_inventory_snapshots.append(snapshot)
+                        initial_ids[(symbol, data_type)] = str(snapshot["snapshot_id"])
+                    for symbol, data_type in sorted(inventory_groups):
+                        refreshed_items = list_archive_items(
+                            symbol=symbol,
+                            interval="tick",
+                            market_type="futures",
+                            cadence="daily",
+                            data_type=data_type,
+                            timeout=max(
+                                1,
+                                min(
+                                    60,
+                                    int(float(getattr(args, "timeout", 240.0))),
+                                ),
+                            ),
+                        )
+                        refreshed = warehouse.record_official_archive_inventory(
+                            symbol=symbol,
+                            data_type=data_type,
+                            items=refreshed_items,
+                            full_history=True,
+                        )
+                        plan_inventory_snapshots.append(refreshed)
+                        if str(refreshed["snapshot_id"]) != initial_ids.get(
+                            (symbol, data_type)
+                        ):
+                            inventory_errors.append(
+                                {
+                                    "symbol": symbol,
+                                    "data_type": data_type,
+                                    "error": "official_inventory_changed_during_plan",
+                                }
+                            )
+            except recoverable_errors as exc:
+                print(
+                    f"tick-archive-sync inventory plan failed: {exc}",
+                    file=sys.stderr,
+                )
+                return 2
+        plan_payload["inventory_snapshots"] = plan_inventory_snapshots
+        plan_payload["inventory_identity_verified"] = bool(
+            full_history and plan_inventory_snapshots and not inventory_errors
+        )
+        plan_payload["inventory_errors"] = inventory_errors
+        if inventory_errors:
+            plan_payload["status"] = "incomplete"
+        if plan_output:
+            write_json_atomic(
+                Path(str(plan_output)),
+                plan_payload,
+                indent=2,
+                sort_keys=True,
+            )
         if json_mode:
             print(json.dumps(plan_payload, indent=2, sort_keys=True))
         else:
@@ -6140,6 +6237,13 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     f"compressed_gb={int(item['selected_bytes']) / 1024**3:.3f}"
                 )
         return 0 if plan_payload["status"] == "ok" else 2
+    if plan_output:
+        write_json_atomic(
+            Path(str(plan_output)),
+            plan_payload,
+            indent=2,
+            sort_keys=True,
+        )
     if max_planned_gb > 0.0 and planned_bytes > max_planned_gb * 1024**3:
         print(
             "tick-archive-sync: official compressed-byte plan exceeds "
@@ -7236,6 +7340,67 @@ def command_tape_depth_confirm(args: argparse.Namespace) -> int:
             "profitability_claim=false trading_authority=false"
         )
     return 0 if confirmation.get("status") == "confirmed_forecast_candidate" else 2
+
+
+def command_tape_depth_execution_confirm(args: argparse.Namespace) -> int:
+    """Run the precommitted dates through real best-quote execution costs."""
+
+    from .microstructure_warehouse import MicrostructureWarehouse
+    from .tape_depth_execution_confirmation import (
+        run_tape_depth_execution_confirmation,
+    )
+
+    json_mode = bool(getattr(args, "json", False))
+
+    def progress(phase: str, completed: int, total: int) -> None:
+        if not json_mode:
+            print(
+                f"tape-depth-execution-confirm {phase}: {completed}/{total}",
+                flush=True,
+            )
+
+    try:
+        with MicrostructureWarehouse(
+            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+            memory_limit=str(getattr(args, "memory_limit", "8GB")),
+            threads=int(getattr(args, "threads", 8)),
+        ) as warehouse:
+            report = run_tape_depth_execution_confirmation(
+                warehouse,
+                design_path=str(getattr(args, "design", "")),
+                availability_path=str(getattr(args, "availability", "")),
+                output_dir=str(
+                    getattr(
+                        args,
+                        "output_dir",
+                        "data/tape-depth-execution-confirmation",
+                    )
+                ),
+                resume=bool(getattr(args, "resume", False)),
+                progress=progress,
+            )
+    except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        print(
+            "tape-depth-execution-confirm failed: "
+            f"{type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if json_mode:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        actual = dict(report["actual"])
+        print(
+            "tape-depth-execution-confirm: "
+            f"status={report['status']} "
+            f"periods={actual['completed_periods']} "
+            f"executable={actual['combined_executable_rows']} "
+            "mean_net_bps="
+            f"{float(actual['combined_mean_net_return_bps']):+.6f} "
+            "profitability_claim=false trading_authority=false"
+        )
+    return 0 if report.get("status") == "confirmed_after_cost_candidate" else 2
 
 
 def command_fetch(args: argparse.Namespace) -> int:
