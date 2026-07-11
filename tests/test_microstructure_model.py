@@ -25,6 +25,7 @@ from simple_ai_trading.microstructure_model import (
     TerminalPrequentialEvidence,
     TradingMetrics,
     _apply_platt_scaling,
+    _backend_parameters,
     _candidate_payload_sha256,
     _fit_platt_scaling,
     _model_strings_sha256,
@@ -54,6 +55,7 @@ def _five_day_dataset() -> MicrostructureDataset:
         horizon_seconds=60,
         total_latency_ms=100,
         taker_fee_bps=5.0,
+        additional_slippage_bps_per_side=1.0,
         reference_order_notional_quote=1.0,
         max_l1_participation=0.10,
         max_quote_age_ms=1_000,
@@ -86,6 +88,34 @@ def _five_day_dataset() -> MicrostructureDataset:
         long_liquidity_eligible=np.ones(rows, dtype=bool),
         short_liquidity_eligible=np.ones(rows, dtype=bool),
     )
+
+
+def test_action_value_backend_requests_reproducible_training(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def resolve(compute_backend, seed, **kwargs):
+        captured.update(
+            {
+                "compute_backend": compute_backend,
+                "seed": seed,
+                **kwargs,
+            }
+        )
+        return {"device_type": "cpu"}, "cpu", "cpu"
+
+    monkeypatch.setattr(
+        "simple_ai_trading.microstructure_model.lightgbm_backend_parameters",
+        resolve,
+    )
+
+    parameters, kind, device = _backend_parameters("auto", 17)
+
+    assert (parameters, kind, device) == ({"device_type": "cpu"}, "cpu", "cpu")
+    assert captured == {
+        "compute_backend": "auto",
+        "seed": 17,
+        "reproducible": True,
+    }
 
 
 def test_purged_split_separates_policy_selection_and_terminal_days() -> None:
@@ -272,6 +302,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "horizon_seconds": 60,
         "total_latency_ms": 250,
         "taker_fee_bps": 5.0,
+        "additional_slippage_bps_per_side": 1.0,
         "reference_order_notional_quote": 1_000.0,
         "max_l1_participation": 0.10,
         "max_quote_age_ms": 1_000,
@@ -354,6 +385,8 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "terminal_baselines": {"no_trade": dict(no_trade)},
         "dataset_summary": {
             "trade_feature_embargo_ms": 1_000,
+            "taker_fee_bps": 5.0,
+            "additional_slippage_bps_per_side": 1.0,
             "reference_order_notional_quote": 1_000.0,
             "max_l1_participation": 0.10,
             "max_quote_age_ms": 1_000,
@@ -379,12 +412,12 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
                 "verified": True,
                 "manifest_current": True,
                 "corpus_certificate": {
-                    "contract": "official-binance-corpus-certificate-v1",
+                    "contract": "official-binance-corpus-certificate-v3",
                     "status": "pass",
                     "verified": True,
                     "schema_version": "binance-usdm-tick-v6",
                     "symbol": "BTCUSDT",
-                    "required_data_types": ["bookTicker", "trades", "bookDepth"],
+                    "required_data_types": ["bookTicker", "trades"],
                     "certificate_sha256": "e" * 64,
                 },
             }
@@ -756,12 +789,12 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         "verified": True,
         "manifest_current": True,
         "corpus_certificate": {
-            "contract": "official-binance-corpus-certificate-v1",
+            "contract": "official-binance-corpus-certificate-v3",
             "status": "pass",
             "verified": True,
             "schema_version": "binance-usdm-tick-v6",
             "symbol": "BTCUSDT",
-            "required_data_types": ["bookTicker", "trades", "bookDepth"],
+            "required_data_types": ["bookTicker", "trades"],
             "certificate_sha256": "c" * 64,
         },
     }
@@ -772,6 +805,7 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         horizon_seconds=60,
         total_latency_ms=250,
         taker_fee_bps=5.0,
+        additional_slippage_bps_per_side=1.0,
         reference_order_notional_quote=1_000.0,
         max_l1_participation=0.05,
         max_quote_age_ms=1_000,
@@ -830,6 +864,7 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         horizon_seconds=60,
         total_latency_ms=250,
         taker_fee_bps=5.0,
+        additional_slippage_bps_per_side=1.0,
         reference_order_notional_quote=1_000.0,
         max_l1_participation=0.05,
         max_quote_age_ms=1_000,

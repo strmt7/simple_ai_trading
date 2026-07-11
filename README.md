@@ -165,7 +165,7 @@ Liquidity-session controls do not assume that "day trading hours" are fixed fore
 
 `model-blueprint` exposes the research-backed model and training roadmap as the same CLI/Windows-app parity command. It separates implemented, evidence-only, research, blocked, sandbox, and advisory model families so future model work cannot silently promote AI forecasts, RL policies, or order-book research into executable trading authority without updating tests and docs.
 
-The separate `microstructure-action-value-v14` path uses real Binance USD-M
+The separate `microstructure-action-value-v15` path uses real Binance USD-M
 book-ticker and trade archives to build causal one-second L1/tape features. Its
 promotion lifecycle is deliberately staged: candidate training, complete
 rolling-refit prequential evidence with the terminal period sealed, hash and
@@ -181,9 +181,23 @@ snapshot, manifest, shadow trades, and report. The former
 `microstructure-train --evaluate-terminal` shortcut is disabled. Terminal,
 refit, shadow, and accepted-runtime loaders independently reject missing or
 drifted evidence. A refit produces only `shadow_candidate`; only a passing
-`microstructure-shadow` run produces `accepted`. No v14 artifact is currently
+`microstructure-shadow` run produces `accepted`. No v15 artifact is currently
 accepted or claimed profitable; see
 [Model Research and Optimization](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md).
+
+V15 labels use linear cash returns at the observed executable quotes. A long
+earns `exit_bid / entry_ask - 1`; a short earns
+`1 - exit_ask / entry_bid`. Taker fees and the separate all-trade slippage
+stress are charged on the actual entry and exit notionals, so their cost is
+`cost_per_side * (1 + exit_notional / entry_notional)`, not a flat two-leg
+approximation. Trigger slippage remains a distinct adverse stop/take exit-price
+adjustment. The default CLI stress is 1 bps per side in addition to the modeled
+taker fee, and every rebuild/promotion/shadow path is bound to that artifact
+value.
+Because Binance's official historical BBO product contains 320 days, the exact
+BBO lane defaults to a 240-observed-day promotion floor; a 365-day floor would
+make promotion impossible. Multi-year predictiveness remains the separate
+checksummed trade/depth lane and is not mislabeled as exact historical BBO.
 The official compact tick plan is tracked at
 [`docs/microstructure/availability.json`](docs/microstructure/availability.json):
 trade data spans multiple years through 2026-07-09, while official BBO archives

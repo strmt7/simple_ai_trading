@@ -584,6 +584,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_micro_train.add_argument("--total-latency-ms", type=int, default=750)
     parser_micro_train.add_argument("--taker-fee-bps", type=float, default=5.0)
+    parser_micro_train.add_argument(
+        "--additional-slippage-bps-per-side",
+        type=float,
+        default=1.0,
+        help=(
+            "adverse execution stress charged on both entry and exit notionals "
+            "in addition to taker fees (default: 1 bps per side)"
+        ),
+    )
     parser_micro_train.add_argument("--max-quote-age-ms", type=int, default=1000)
     parser_micro_train.add_argument(
         "--reference-order-notional-quote",
@@ -605,7 +614,7 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="trigger_slippage_bps",
         type=float,
         default=1.0,
-        help="Extra adverse execution cost after a stop/take trigger (default: 1 bps)",
+        help="adverse exit-price adjustment after a stop/take trigger (default: 1 bps)",
     )
     parser_micro_train.add_argument(
         "--risk-level",
@@ -617,7 +626,15 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=_COMPUTE_BACKEND_CHOICES,
         default="auto",
     )
-    parser_micro_train.add_argument("--minimum-promotion-days", type=int, default=365)
+    parser_micro_train.add_argument(
+        "--minimum-promotion-days",
+        type=int,
+        default=240,
+        help=(
+            "minimum observed UTC days for exact-BBO promotion; default 240 "
+            "within Binance's 320-day official BBO history"
+        ),
+    )
     parser_micro_train.add_argument(
         "--deployment-calibration-days",
         type=int,
@@ -6647,6 +6664,9 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                 horizon_seconds=int(getattr(args, "horizon_seconds", 900)),
                 total_latency_ms=int(getattr(args, "total_latency_ms", 750)),
                 taker_fee_bps=float(getattr(args, "taker_fee_bps", 5.0)),
+                additional_slippage_bps_per_side=float(
+                    getattr(args, "additional_slippage_bps_per_side", 1.0)
+                ),
                 max_quote_age_ms=int(getattr(args, "max_quote_age_ms", 1000)),
                 reference_order_notional_quote=float(
                     getattr(args, "reference_order_notional_quote", 1_000.0)
@@ -6671,7 +6691,7 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                 dataset,
                 risk_level=risk_level,
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
-                minimum_promotion_days=int(getattr(args, "minimum_promotion_days", 365)),
+                minimum_promotion_days=int(getattr(args, "minimum_promotion_days", 240)),
                 deployment_calibration_days=int(
                     getattr(args, "deployment_calibration_days", 14)
                 ),
@@ -6765,6 +6785,9 @@ def command_microstructure_refit(args: argparse.Namespace) -> int:
                 horizon_seconds=artifact.horizon_seconds,
                 total_latency_ms=artifact.total_latency_ms,
                 taker_fee_bps=artifact.taker_fee_bps,
+                additional_slippage_bps_per_side=(
+                    artifact.additional_slippage_bps_per_side
+                ),
                 max_quote_age_ms=artifact.max_quote_age_ms,
                 reference_order_notional_quote=artifact.reference_order_notional_quote,
                 max_l1_participation=artifact.max_l1_participation,
@@ -8209,6 +8232,9 @@ def command_microstructure_prequential(args: argparse.Namespace) -> int:
                 horizon_seconds=artifact.horizon_seconds,
                 total_latency_ms=artifact.total_latency_ms,
                 taker_fee_bps=artifact.taker_fee_bps,
+                additional_slippage_bps_per_side=(
+                    artifact.additional_slippage_bps_per_side
+                ),
                 max_quote_age_ms=artifact.max_quote_age_ms,
                 reference_order_notional_quote=(
                     artifact.reference_order_notional_quote
@@ -8367,6 +8393,9 @@ def command_microstructure_promote(args: argparse.Namespace) -> int:
                 horizon_seconds=artifact.horizon_seconds,
                 total_latency_ms=artifact.total_latency_ms,
                 taker_fee_bps=artifact.taker_fee_bps,
+                additional_slippage_bps_per_side=(
+                    artifact.additional_slippage_bps_per_side
+                ),
                 max_quote_age_ms=artifact.max_quote_age_ms,
                 reference_order_notional_quote=(
                     artifact.reference_order_notional_quote

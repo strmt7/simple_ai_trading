@@ -631,6 +631,15 @@ def test_tui_settings_submenus_are_keyboard_navigable_in_textual_runtime(monkeyp
     monkeypatch.setattr("simple_ai_trading.cli.command_strategy", fake_strategy)
 
     async def drive_settings(option_index: int, *, expect_screen: str, save: bool = True) -> None:
+        async def wait_for_screen(app: OperatorApp, expected: str) -> None:
+            for _ in range(50):
+                await asyncio.sleep(0.01)
+                if type(app.screen_stack[-1]).__name__ == expected:
+                    return
+            raise AssertionError(
+                f"expected {expected}, got {type(app.screen_stack[-1]).__name__}"
+            )
+
         app = OperatorApp(
             title_text="console",
             actions=[_action("Settings")],
@@ -657,10 +666,13 @@ def test_tui_settings_submenus_are_keyboard_navigable_in_textual_runtime(monkeyp
                 await pilot.press("ctrl+s")
             else:
                 await pilot.press("escape")
-            await pilot.pause()
+            await wait_for_screen(app, "MenuScreen")
             assert type(app.screen_stack[-1]).__name__ == "MenuScreen"
             await pilot.press("escape")
-            await pilot.pause()
+            for _ in range(50):
+                await asyncio.sleep(0.01)
+                if len(app.screen_stack) == 1:
+                    break
             assert len(app.screen_stack) == 1
             assert "complete" in str(app.query_one("#status").content)
             await asyncio.wait_for(task, timeout=5)

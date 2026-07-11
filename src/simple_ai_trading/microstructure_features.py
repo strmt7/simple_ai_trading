@@ -13,7 +13,7 @@ from .assets import normalize_symbol
 from .microstructure_warehouse import MicrostructureWarehouse
 
 
-MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v5"
+MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v6"
 MICROSTRUCTURE_TRADE_EMBARGO_MS = 1_000
 
 
@@ -25,6 +25,7 @@ class MicrostructureDataset:
     horizon_seconds: int
     total_latency_ms: int
     taker_fee_bps: float
+    additional_slippage_bps_per_side: float
     reference_order_notional_quote: float
     max_l1_participation: float
     max_quote_age_ms: int
@@ -95,6 +96,9 @@ class MicrostructureDataset:
             "horizon_seconds": self.horizon_seconds,
             "total_latency_ms": self.total_latency_ms,
             "taker_fee_bps": self.taker_fee_bps,
+            "additional_slippage_bps_per_side": (
+                self.additional_slippage_bps_per_side
+            ),
             "reference_order_notional_quote": self.reference_order_notional_quote,
             "max_l1_participation": self.max_l1_participation,
             "max_quote_age_ms": self.max_quote_age_ms,
@@ -240,6 +244,7 @@ def build_executable_microstructure_dataset(
     horizon_seconds: int,
     total_latency_ms: int,
     taker_fee_bps: float,
+    additional_slippage_bps_per_side: float = 0.0,
     max_quote_age_ms: int = 1_000,
     reference_order_notional_quote: float = 1_000.0,
     max_l1_participation: float = 0.10,
@@ -253,6 +258,7 @@ def build_executable_microstructure_dataset(
     horizon = int(horizon_seconds)
     latency = int(total_latency_ms)
     fee = float(taker_fee_bps)
+    additional_slippage = float(additional_slippage_bps_per_side)
     max_age = int(max_quote_age_ms)
     reference_notional = float(reference_order_notional_quote)
     participation_limit = float(max_l1_participation)
@@ -263,6 +269,10 @@ def build_executable_microstructure_dataset(
         raise ValueError("total_latency_ms must be non-negative")
     if not math.isfinite(fee) or fee < 0.0:
         raise ValueError("taker_fee_bps must be finite and non-negative")
+    if not math.isfinite(additional_slippage) or additional_slippage < 0.0:
+        raise ValueError(
+            "additional_slippage_bps_per_side must be finite and non-negative"
+        )
     if max_age <= 0:
         raise ValueError("max_quote_age_ms must be positive")
     if not math.isfinite(reference_notional) or reference_notional <= 0.0:
@@ -284,7 +294,7 @@ def build_executable_microstructure_dataset(
         require_corpus = getattr(warehouse, "require_corpus_certificate", None)
         if callable(require_corpus):
             certificate_kwargs: dict[str, object] = {
-                "required_data_types": ("bookTicker", "trades", "bookDepth"),
+                "required_data_types": ("bookTicker", "trades"),
                 "require_full_history_inventory": True,
             }
             if start_ms is not None and end_ms is not None:
@@ -550,8 +560,6 @@ def build_executable_microstructure_dataset(
             d.spread_to_10s_volatility, d.ofi_trade_flow_agreement,
             d.quote_trade_log_intensity_gap, d.intrasecond_close_location,
              d.utc_day_sin, d.utc_day_cos, d.funding_cycle_sin, d.funding_cycle_cos,
-            (exit_quote.close_bid / entry_quote.close_ask - 1.0) * 10000.0 - 2.0 * ? AS long_net_bps,
-            (entry_quote.close_bid / exit_quote.close_ask - 1.0) * 10000.0 - 2.0 * ? AS short_net_bps,
             (entry_quote.close_ask - entry_quote.close_bid) * 10000.0
                 / ((entry_quote.close_ask + entry_quote.close_bid) / 2.0) AS entry_spread_bps,
             (exit_quote.close_ask - exit_quote.close_bid) * 10000.0
@@ -588,8 +596,6 @@ def build_executable_microstructure_dataset(
         latency,
         latency,
         horizon,
-        fee,
-        fee,
         max_age,
         max_age,
         decision_cadence,
@@ -609,6 +615,15 @@ def build_executable_microstructure_dataset(
     entry_ask_qty = np.asarray(values["entry_ask_qty"], dtype=np.float64)
     exit_bid_qty = np.asarray(values["fixed_exit_bid_qty"], dtype=np.float64)
     exit_ask_qty = np.asarray(values["fixed_exit_ask_qty"], dtype=np.float64)
+    fixed_exit_bid = np.asarray(values["fixed_exit_bid_price"], dtype=np.float64)
+    fixed_exit_ask = np.asarray(values["fixed_exit_ask_price"], dtype=np.float64)
+    long_net_bps, short_net_bps = _net_cross_spread_cash_returns_bps(
+        entry_bid,
+        entry_ask,
+        fixed_exit_bid,
+        fixed_exit_ask,
+        execution_cost_bps_per_side=fee + additional_slippage,
+    )
     long_order_qty = reference_notional / entry_ask
     short_order_qty = reference_notional / entry_bid
     long_participation = np.maximum(
@@ -626,6 +641,7 @@ def build_executable_microstructure_dataset(
         horizon_seconds=horizon,
         total_latency_ms=latency,
         taker_fee_bps=fee,
+        additional_slippage_bps_per_side=additional_slippage,
         reference_order_notional_quote=reference_notional,
         max_l1_participation=participation_limit,
         max_quote_age_ms=max_age,
@@ -639,16 +655,16 @@ def build_executable_microstructure_dataset(
         long_exit_time_ms=decisions + latency + horizon * 1000,
         short_exit_time_ms=decisions + latency + horizon * 1000,
         features=feature_values,
-        long_net_bps=np.asarray(values["long_net_bps"], dtype=np.float64),
-        short_net_bps=np.asarray(values["short_net_bps"], dtype=np.float64),
+        long_net_bps=long_net_bps,
+        short_net_bps=short_net_bps,
         entry_spread_bps=np.asarray(values["entry_spread_bps"], dtype=np.float64),
         exit_spread_bps=np.asarray(values["exit_spread_bps"], dtype=np.float64),
         entry_quote_age_ms=np.asarray(values["entry_quote_age_ms"], dtype=np.int64),
         exit_quote_age_ms=np.asarray(values["exit_quote_age_ms"], dtype=np.int64),
         entry_bid_price=entry_bid,
         entry_ask_price=entry_ask,
-        fixed_exit_bid_price=np.asarray(values["fixed_exit_bid_price"], dtype=np.float64),
-        fixed_exit_ask_price=np.asarray(values["fixed_exit_ask_price"], dtype=np.float64),
+        fixed_exit_bid_price=fixed_exit_bid,
+        fixed_exit_ask_price=fixed_exit_ask,
         entry_bid_qty=entry_bid_qty,
         entry_ask_qty=entry_ask_qty,
         fixed_exit_bid_qty=exit_bid_qty,
@@ -739,6 +755,12 @@ def _validate_dataset(dataset: MicrostructureDataset) -> None:
         raise ValueError("microstructure liquidity contract is invalid")
     if dataset.decision_cadence_seconds <= 0 or dataset.decision_cadence_seconds > 60:
         raise ValueError("microstructure decision cadence is invalid")
+    execution_costs = (
+        dataset.taker_fee_bps,
+        dataset.additional_slippage_bps_per_side,
+    )
+    if any(not math.isfinite(value) or value < 0.0 for value in execution_costs):
+        raise ValueError("microstructure execution-cost contract is invalid")
     quantities = (
         dataset.entry_bid_qty,
         dataset.entry_ask_qty,
@@ -772,6 +794,38 @@ class PathTargetEvidence:
     short_mean_holding_seconds: float
 
 
+def _net_cross_spread_cash_returns_bps(
+    entry_bid: np.ndarray,
+    entry_ask: np.ndarray,
+    exit_bid: np.ndarray,
+    exit_ask: np.ndarray,
+    *,
+    execution_cost_bps_per_side: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return linear-contract cash PnL after actual entry/exit notional costs."""
+
+    cost = float(execution_cost_bps_per_side)
+    if not math.isfinite(cost) or cost < 0.0:
+        raise ValueError("execution_cost_bps_per_side must be finite and non-negative")
+    long_exit_ratio = np.asarray(exit_bid, dtype=np.float64) / np.asarray(
+        entry_ask,
+        dtype=np.float64,
+    )
+    short_exit_ratio = np.asarray(exit_ask, dtype=np.float64) / np.asarray(
+        entry_bid,
+        dtype=np.float64,
+    )
+    long_net = (
+        (long_exit_ratio - 1.0) * 10_000.0
+        - cost * (1.0 + long_exit_ratio)
+    )
+    short_net = (
+        (1.0 - short_exit_ratio) * 10_000.0
+        - cost * (1.0 + short_exit_ratio)
+    )
+    return long_net, short_net
+
+
 @njit(cache=True, parallel=True)
 def _first_barrier_outcomes(
     start_indexes: np.ndarray,
@@ -789,7 +843,7 @@ def _first_barrier_outcomes(
     stop_fraction: float,
     take_fraction: float,
     slippage_fraction: float,
-    round_trip_fee_bps: float,
+    execution_cost_bps_per_side: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     rows = len(entry_bid)
     long_targets = np.empty(rows, dtype=np.float64)
@@ -836,8 +890,16 @@ def _first_barrier_outcomes(
                     short_open = False
             if not long_open and not short_open:
                 break
-        long_targets[index] = (long_exit / entry_ask[index] - 1.0) * 10000.0 - round_trip_fee_bps
-        short_targets[index] = (entry_bid[index] / short_exit - 1.0) * 10000.0 - round_trip_fee_bps
+        long_exit_ratio = long_exit / entry_ask[index]
+        short_exit_ratio = short_exit / entry_bid[index]
+        long_targets[index] = (
+            (long_exit_ratio - 1.0) * 10000.0
+            - execution_cost_bps_per_side * (1.0 + long_exit_ratio)
+        )
+        short_targets[index] = (
+            (1.0 - short_exit_ratio) * 10000.0
+            - execution_cost_bps_per_side * (1.0 + short_exit_ratio)
+        )
     return (
         long_targets,
         short_targets,
@@ -939,7 +1001,7 @@ def apply_path_aware_lifecycle_targets(
         stop / 10000.0,
         take / 10000.0,
         slippage / 10000.0,
-        2.0 * dataset.taker_fee_bps,
+        dataset.taker_fee_bps + dataset.additional_slippage_bps_per_side,
     )
     long_exit_times = np.where(
         long_outcomes == 0,

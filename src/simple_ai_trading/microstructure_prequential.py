@@ -301,6 +301,11 @@ def _validate_candidate_contract(
     float_fields = (
         (artifact.taker_fee_bps, dataset.taker_fee_bps, "taker fee"),
         (
+            artifact.additional_slippage_bps_per_side,
+            dataset.additional_slippage_bps_per_side,
+            "additional slippage per side",
+        ),
+        (
             artifact.reference_order_notional_quote,
             dataset.reference_order_notional_quote,
             "reference order notional",
@@ -1478,6 +1483,13 @@ def evaluate_prequential_microstructure_model(
             "feature_version": dataset.feature_version,
             "feature_names": list(dataset.feature_names),
             "target_mode": dataset.target_mode,
+            "taker_fee_bps": dataset.taker_fee_bps,
+            "additional_slippage_bps_per_side": (
+                dataset.additional_slippage_bps_per_side
+            ),
+            "trigger_execution_slippage_bps": (
+                dataset.trigger_execution_slippage_bps
+            ),
             "selection_start_ms": artifact.split.selection_start_ms,
             "terminal_start_ms": artifact.split.terminal_start_ms,
             "terminal_holdout": "not accessed",
@@ -1671,6 +1683,11 @@ def attach_verified_prequential_evidence(
         or data_contract.get("feature_version") != dataset.feature_version
         or tuple(data_contract.get("feature_names") or ()) != dataset.feature_names
         or data_contract.get("target_mode") != dataset.target_mode
+        or data_contract.get("taker_fee_bps") != dataset.taker_fee_bps
+        or data_contract.get("additional_slippage_bps_per_side")
+        != dataset.additional_slippage_bps_per_side
+        or data_contract.get("trigger_execution_slippage_bps")
+        != dataset.trigger_execution_slippage_bps
         or data_contract.get("selection_start_ms") != artifact.split.selection_start_ms
         or data_contract.get("terminal_start_ms") != artifact.split.terminal_start_ms
         or data_contract.get("terminal_holdout") != "not accessed"
