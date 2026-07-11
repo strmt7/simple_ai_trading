@@ -299,11 +299,8 @@ def test_causal_feature_build_rebuilds_stale_evidence() -> None:
     ]
 
 
-def test_round_twelve_v5_design_binds_bounded_roles_and_reserved_terminal() -> None:
-    design = load_selective_event_design(
-        _tracked_round_twelve_design(),
-        require_current=True,
-    )
+def test_round_twelve_v5_design_is_preserved_but_no_longer_current() -> None:
+    design = load_selective_event_design(_tracked_round_twelve_design())
 
     assert design["design_sha256"] == (
         "7948bf464c907a0825d62e6ad8208e183d08f6478c49c2c7c07724217c19a49f"
@@ -328,6 +325,11 @@ def test_round_twelve_v5_design_binds_bounded_roles_and_reserved_terminal() -> N
         "labels_constructed": False,
         "access_allowed_in_round_12": False,
     }
+    with pytest.raises(ValueError, match="implementation changed"):
+        load_selective_event_design(
+            _tracked_round_twelve_design(),
+            require_current=True,
+        )
 
 
 def test_round_twelve_v4_design_is_preserved_but_no_longer_current() -> None:

@@ -42,6 +42,7 @@ _BOOK_TICKER_HEADER = (
 )
 _TRADES_HEADER = ("id", "price", "qty", "quote_qty", "time", "is_buyer_maker")
 _BOOK_DEPTH_HEADER = ("timestamp", "percentage", "depth", "notional")
+_DAY_MS = 86_400_000
 
 
 ProgressCallback = Callable[[str, int, int | None], None]
@@ -113,7 +114,7 @@ def _period_bounds_ms(period: str) -> tuple[int, int]:
     except ValueError as exc:
         raise ValueError("tick archives require a daily YYYY-MM-DD period") from exc
     start = int(parsed.timestamp() * 1000)
-    return start, start + 86_400_000 - 1
+    return start, start + _DAY_MS - 1
 
 
 def _canonical_sha256(value: object) -> str:
@@ -2861,6 +2862,8 @@ class MicrostructureWarehouse:
         source_rows, source_archives, first_tx, last_tx, first_event, last_event = raw
         source_rows = int(source_rows or 0)
         source_archives = int(source_archives or 0)
+        if source_rows <= 0 or first_event is None or last_event is None:
+            raise ValueError(f"bookTicker raw-row audit is empty for {symbol}")
         if source_rows != int(snapshot["manifest_rows"]):
             raise ValueError(
                 f"bookTicker raw rows do not match manifests for {symbol}: "
@@ -2877,16 +2880,71 @@ class MicrostructureWarehouse:
             f"{snapshot['manifest_fingerprint']}\n{built_at_ms}\n{time.time_ns()}"
         ).encode("ascii")
         build_id = hashlib.sha256(build_seed).hexdigest()
-        if progress:
-            progress("causal-feature-aggregate", 0, source_rows)
-        conn.execute("DROP TABLE IF EXISTS stage_book_ticker_feature_1s")
+        first_event_day = (int(first_event) // _DAY_MS) * _DAY_MS
+        last_event_day = (int(last_event) // _DAY_MS) * _DAY_MS
+        event_day_count = ((last_event_day - first_event_day) // _DAY_MS) + 1
+        conn.execute("BEGIN TRANSACTION")
         try:
             conn.execute(
                 """
-                CREATE TEMP TABLE stage_book_ticker_feature_1s AS
-                WITH enriched AS (
-                    SELECT *,
-                        (event_time_ms // 1000) * 1000 AS second_ms,
+                DELETE FROM book_ticker_feature_1s
+                WHERE build_id IN (
+                    SELECT build_id FROM book_ticker_feature_build_audit
+                    WHERE symbol = ? AND status = 'building'
+                )
+                """,
+                [symbol],
+            )
+            conn.execute(
+                """
+                UPDATE book_ticker_feature_build_audit
+                SET status = 'failed', is_current = false,
+                    error = 'interrupted before finalization'
+                WHERE symbol = ? AND status = 'building'
+                """,
+                [symbol],
+            )
+            conn.execute(
+                """
+                INSERT INTO book_ticker_feature_build_audit VALUES (
+                    ?, ?, ?, 'event_time_ms', ?, 'building', false, ?, ?, ?, ?,
+                    ?, ?, ?, ?, 0, NULL, NULL, 0, 0, 0, ?, ''
+                )
+                """,
+                [
+                    build_id,
+                    TICK_WAREHOUSE_SCHEMA_VERSION,
+                    BOOK_TICKER_FEATURE_BUILD_VERSION,
+                    symbol,
+                    snapshot["manifest_fingerprint"],
+                    source_archives,
+                    snapshot["manifest_rows"],
+                    source_rows,
+                    int(first_tx),
+                    int(last_tx),
+                    int(first_event),
+                    int(last_event),
+                    built_at_ms,
+                ],
+            )
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+        if progress:
+            progress("causal-feature-plan", 0, event_day_count)
+            progress("causal-feature-aggregate", 0, source_rows)
+        processed_rows = 0
+        try:
+            for day_index in range(event_day_count):
+                chunk_start = first_event_day + day_index * _DAY_MS
+                chunk_end = chunk_start + _DAY_MS
+                conn.execute(
+                    """
+                    INSERT INTO book_ticker_feature_1s
+                    WITH enriched AS (
+                        SELECT *,
+                            (event_time_ms // 1000) * 1000 AS second_ms,
                         (bid_price + ask_price) / 2.0 AS mid,
                         (ask_price - bid_price) * 10000.0
                             / ((ask_price + bid_price) / 2.0) AS spread_bps,
@@ -2894,10 +2952,11 @@ class MicrostructureWarehouse:
                         (((ask_price * bid_qty + bid_price * ask_qty) / (bid_qty + ask_qty))
                             / ((ask_price + bid_price) / 2.0) - 1.0)
                             * 10000.0 AS microprice_offset_bps
-                    FROM current_book_ticker_raw
-                    WHERE symbol = ?
-                )
-                SELECT
+                        FROM current_book_ticker_raw
+                        WHERE symbol = ?
+                          AND event_time_ms >= ? AND event_time_ms < ?
+                    )
+                    SELECT
                     ?::VARCHAR AS build_id,
                     symbol,
                     second_ms,
@@ -2932,14 +2991,26 @@ class MicrostructureWarehouse:
                     last(transaction_time_ms ORDER BY event_time_ms, transaction_time_ms,
                          update_id, archive_id) AS last_transaction_time_ms,
                     count(DISTINCT archive_id)::UINTEGER AS source_archive_count
-                FROM enriched
-                GROUP BY symbol, second_ms
-                ORDER BY symbol, second_ms
-                """,
-                [symbol, build_id],
-            )
-            if progress:
-                progress("causal-feature-aggregate", source_rows, source_rows)
+                    FROM enriched
+                    GROUP BY symbol, second_ms
+                    ORDER BY symbol, second_ms
+                    """,
+                    [symbol, chunk_start, chunk_end, build_id],
+                )
+                chunk_rows = int(
+                    conn.execute(
+                        """
+                        SELECT coalesce(sum(quote_updates), 0)::UBIGINT
+                        FROM book_ticker_feature_1s
+                        WHERE build_id = ? AND second_ms >= ? AND second_ms < ?
+                        """,
+                        [build_id, chunk_start, chunk_end],
+                    ).fetchone()[0]
+                )
+                processed_rows += chunk_rows
+                if progress:
+                    progress("causal-feature-plan", day_index + 1, event_day_count)
+                    progress("causal-feature-aggregate", processed_rows, source_rows)
             audit = conn.execute(
                 """
                 SELECT count(*)::UBIGINT,
@@ -2963,8 +3034,10 @@ class MicrostructureWarehouse:
                               OR event_delay_p50_ms < 0 OR event_delay_p99_ms < 0
                               OR event_delay_max_ms < 0
                        )::UBIGINT
-                FROM stage_book_ticker_feature_1s
-                """
+                FROM book_ticker_feature_1s
+                WHERE build_id = ?
+                """,
+                [build_id],
             ).fetchone()
             if audit is None:
                 raise ValueError("causal feature-bar validation returned no result")
@@ -2993,46 +3066,61 @@ class MicrostructureWarehouse:
                     [symbol],
                 )
                 conn.execute("DROP TABLE IF EXISTS book_ticker_1s")
-                conn.execute("DELETE FROM book_ticker_feature_1s WHERE symbol = ?", [symbol])
                 conn.execute(
-                    "INSERT INTO book_ticker_feature_1s "
-                    "SELECT * FROM stage_book_ticker_feature_1s"
+                    "DELETE FROM book_ticker_feature_1s "
+                    "WHERE symbol = ? AND build_id <> ?",
+                    [symbol, build_id],
                 )
                 conn.execute(
                     """
-                    INSERT INTO book_ticker_feature_build_audit VALUES (
-                        ?, ?, ?, 'event_time_ms', ?, 'complete', true, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ''
-                    )
+                    UPDATE book_ticker_feature_build_audit
+                    SET status = 'complete', is_current = true,
+                        feature_rows = ?, first_feature_second_ms = ?,
+                        last_feature_second_ms = ?, duplicate_seconds = ?,
+                        invalid_feature_rows = ?, quote_update_sum = ?, error = ''
+                    WHERE build_id = ? AND symbol = ? AND status = 'building'
                     """,
                     [
-                        build_id,
-                        TICK_WAREHOUSE_SCHEMA_VERSION,
-                        BOOK_TICKER_FEATURE_BUILD_VERSION,
-                        symbol,
-                        snapshot["manifest_fingerprint"],
-                        source_archives,
-                        snapshot["manifest_rows"],
-                        source_rows,
-                        int(first_tx),
-                        int(last_tx),
-                        int(first_event),
-                        int(last_event),
                         feature_rows,
                         first_second,
                         last_second,
                         duplicates,
                         invalid,
                         quote_update_sum,
-                        built_at_ms,
+                        build_id,
+                        symbol,
                     ],
                 )
+                updated = conn.execute(
+                    "SELECT count(*) FROM book_ticker_feature_build_audit "
+                    "WHERE build_id = ? AND status = 'complete' AND is_current",
+                    [build_id],
+                ).fetchone()[0]
+                if int(updated) != 1:
+                    raise RuntimeError("causal feature build audit finalization failed")
                 conn.execute("COMMIT")
             except Exception:
                 conn.execute("ROLLBACK")
                 raise
-        finally:
-            conn.execute("DROP TABLE IF EXISTS stage_book_ticker_feature_1s")
+        except Exception as exc:
+            conn.execute("BEGIN TRANSACTION")
+            try:
+                conn.execute(
+                    "DELETE FROM book_ticker_feature_1s WHERE build_id = ?",
+                    [build_id],
+                )
+                conn.execute(
+                    """
+                    UPDATE book_ticker_feature_build_audit
+                    SET status = 'failed', is_current = false, error = ?
+                    WHERE build_id = ? AND status = 'building'
+                    """,
+                    [f"{type(exc).__name__}: {exc}"[:1000], build_id],
+                )
+                conn.execute("COMMIT")
+            except Exception:
+                conn.execute("ROLLBACK")
+            raise
         if progress:
             progress("causal-feature-finalize", feature_rows, feature_rows)
         return self.require_causal_feature_bars(symbol)
