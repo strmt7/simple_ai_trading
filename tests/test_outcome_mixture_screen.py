@@ -136,6 +136,13 @@ DESIGN30 = (
     / "action-value"
     / "round-030-lightgbm-hurdle-architecture-design.json"
 )
+DESIGN30_V2 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-030-lightgbm-hurdle-architecture-design-v2.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -1017,6 +1024,73 @@ def test_round30_revision1_design_is_historical_and_changes_only_the_model_famil
         "makes no distributional calibration claim"
         in research["https://doi.org/10.3982/ECTA7880"]
     )
+
+
+def test_round30_revision2_design_is_current_and_type_exact() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN30_V2)
+    revision1, _revision1_sha256 = load_outcome_mixture_design(
+        DESIGN30, require_current=False
+    )
+    baseline, _baseline_sha256 = load_outcome_mixture_design(
+        DESIGN26, require_current=False
+    )
+    contract = screen._ROUND_CONTRACTS[30]
+
+    assert design_sha256 == (
+        "2adfba2a377666e204b22d926d3d757a6b3c1a20d58c67a3455dabfedbad9623"
+    )
+    assert design["design_revision"] == 2
+    assert design["implementation"]["commit"] == (
+        "ea18acbca8244002d0e5c6910d793e303126502b"
+    )
+    assert design["predecessor_evidence"] == contract["predecessors"][2]
+    assert design["model"] == revision1["model"] == contract["model"]
+    assert design["training"] == revision1["training"] == contract["training"]
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "event_sampler",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert json.dumps(
+            design[section], sort_keys=True, separators=(",", ":")
+        ) == json.dumps(
+            baseline[section], sort_keys=True, separators=(",", ":")
+        )
+    assert isinstance(design["execution"]["taker_fee_bps_per_side"], float)
+    assert isinstance(design["barrier_targets"]["maximum_stop_bps"], float)
+    assert isinstance(
+        design["risk_profiles"][0]["calibration_gates"][
+            "maximum_drawdown_bps"
+        ],
+        float,
+    )
+
+
+def test_round30_revision2_rejects_numeric_type_drift(tmp_path: Path) -> None:
+    payload = json.loads(DESIGN30_V2.read_text(encoding="utf-8"))
+    assert isinstance(payload["barrier_targets"]["maximum_stop_bps"], float)
+    payload["barrier_targets"]["maximum_stop_bps"] = 60
+    canonical = dict(payload)
+    canonical.pop("design_sha256")
+    payload["design_sha256"] = hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    source = tmp_path / "numeric-type-drift.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="shared JSON type contract drifted"):
+        load_outcome_mixture_design(source, require_current=False)
 
 
 @pytest.mark.parametrize(
