@@ -1,4 +1,4 @@
-"""Adaptive model-zoo experts layered on top of the trained base model.
+"""Adaptive candidate-model experts layered on top of the trained base model.
 
 The experts in this module are original implementations inspired by common
 free/community day-trading model families: Lorentzian nearest-neighbor voting,
@@ -137,7 +137,7 @@ class _PayoffTrainingExamples:
 
 
 def _normalized_features(model: TrainedModel, row: ModelRow) -> list[float]:
-    return list(model._normalize(row.features))  # noqa: SLF001 - internal model-zoo attachment point
+    return list(model._normalize(row.features))  # noqa: SLF001 - candidate-set attachment
 
 
 def _even_sample(rows: Sequence[ModelRow], limit: int) -> list[ModelRow]:

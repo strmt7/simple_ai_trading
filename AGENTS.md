@@ -87,7 +87,7 @@ before push.
 
 ## Objective
 
-Build and maintain a testnet-first multi-asset day-trading CLI and Windows app that is conservative by default, fully test-covered, and safe for iterative development. Keep edits minimal, correct, and reproducible.
+Build and maintain a testnet-first BTC/ETH/SOL day-trading CLI and Windows app that is conservative by default, fully test-covered, and safe for iterative development. Keep edits minimal, correct, and reproducible.
 
 ## Context-loading rules
 

@@ -264,7 +264,7 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
     ),
     ModelFamilyBlueprint(
         family="cross_asset_graph_sequence",
-        role="Multi-asset graph/sequence model for correlation shocks, rank forecasts, and portfolio-context features.",
+        role="Cross-asset BTC/ETH/SOL graph/sequence model for correlation shocks, rank forecasts, and portfolio-context features.",
         status="research_candidate",
         training_target=(
             "No-lookahead cross-symbol return ranks, volatility regimes, dynamic correlation graphs, "
