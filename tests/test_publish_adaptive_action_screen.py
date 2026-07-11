@@ -104,6 +104,22 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
     assert "2023-06-21" in charts[2]
     assert "Rounds 15 through 16" in charts[4]
 
+    empty_summary = _gate_summary(
+        [
+            {
+                "profile": profile,
+                "calibration_eligible_rows": 0,
+                "calibration_threshold_candidates": 0,
+                "calibration_threshold_accepted": False,
+                "policy_trades": 0,
+                "development_evaluated": False,
+            }
+            for profile in ("conservative", "regular", "aggressive")
+        ]
+    )
+    assert empty_summary["highest_eligible_rows"] == 0
+    assert empty_summary["highest_eligible_profile"] == "none"
+
 
 def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
     rows = _forecast_rows()
