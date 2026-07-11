@@ -65,6 +65,7 @@ class OutcomeMixtureArchitectureSpec:
     quantile_loss_weight: float
     ranking_loss_weight: float
     side_tower_mode: str = "shared"
+    ranking_loss_mode: str = "correlation"
 
     def __post_init__(self) -> None:
         weights = (
@@ -79,6 +80,7 @@ class OutcomeMixtureArchitectureSpec:
         if self.family != "conditional_outcome_mixture_residual_mlp" or (
             self.sequence_length != 1
             or self.side_tower_mode not in {"shared", "independent"}
+            or self.ranking_loss_mode not in {"correlation", "pairwise_net_return"}
         ):
             raise ValueError("outcome-mixture architecture family is unsupported")
         if (
@@ -149,6 +151,8 @@ def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
     contract = asdict(spec)
     if spec.side_tower_mode == "shared":
         contract.pop("side_tower_mode")
+    if spec.ranking_loss_mode == "correlation":
+        contract.pop("ranking_loss_mode")
     return contract
 
 
@@ -284,6 +288,28 @@ def _weighted_ranking_loss(prediction, target, sample_weight):
     return 1.0 - torch.mean(torch.clamp(correlation, -1.0, 1.0))
 
 
+def _weighted_pairwise_ranking_loss(prediction, target, sample_weight):
+    torch, _nn, functional = _torch_modules()
+    rows = int(target.shape[0])
+    if rows < 2:
+        raise ValueError("outcome-mixture pairwise ranking requires multiple rows")
+    offsets = tuple(dict.fromkeys((1, max(1, rows // 3), max(1, rows // 2))))
+    numerator = prediction.new_zeros(())
+    denominator = prediction.new_zeros(())
+    for offset in offsets:
+        paired_prediction = torch.roll(prediction, shifts=offset, dims=0)
+        paired_target = torch.roll(target, shifts=offset, dims=0)
+        paired_weight = torch.roll(sample_weight, shifts=offset, dims=0)
+        target_difference = target - paired_target
+        direction = torch.sign(target_difference)
+        informative = (target_difference != 0.0).to(dtype=prediction.dtype)
+        weights = torch.sqrt(sample_weight * paired_weight)[:, None] * informative
+        pair_loss = functional.softplus(-direction * (prediction - paired_prediction))
+        numerator = numerator + torch.sum(pair_loss * weights)
+        denominator = denominator + torch.sum(weights)
+    return numerator / torch.clamp(denominator, min=1.0e-8)
+
+
 def _loss(output, target, sample_weight, prevalence, spec):
     torch, _nn, functional = _torch_modules()
     (
@@ -337,9 +363,12 @@ def _loss(output, target, sample_weight, prevalence, spec):
     )
     weighted = torch.sum(per_row * sample_weight) / torch.sum(sample_weight)
     if spec.ranking_loss_weight > 0.0:
-        weighted = weighted + spec.ranking_loss_weight * _weighted_ranking_loss(
-            expected, target, sample_weight
+        ranking_loss = (
+            _weighted_ranking_loss(expected, target, sample_weight)
+            if spec.ranking_loss_mode == "correlation"
+            else _weighted_pairwise_ranking_loss(expected, target, sample_weight)
         )
+        weighted = weighted + spec.ranking_loss_weight * ranking_loss
     if probability.shape != target.shape:
         raise ValueError("outcome-mixture decoded head shape is invalid")
     return weighted
