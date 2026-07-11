@@ -15,6 +15,16 @@ from tools.run_selective_event_discovery import (
 )
 
 
+def _tracked_round_twelve_design() -> Path:
+    return (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "action-value"
+        / "round-012-design.json"
+    )
+
+
 def _registry(path: Path, window: tuple[str, str]) -> str:
     payload = {
         "schema_version": "action-value-consumed-periods-v1",
@@ -146,6 +156,30 @@ def test_selective_event_design_rejects_consumed_selection_date(tmp_path) -> Non
     )
     with pytest.raises(ValueError, match="reserved terminal"):
         load_selective_event_design(terminal)
+
+
+def test_round_twelve_design_pins_long_span_and_reserved_terminal() -> None:
+    design = load_selective_event_design(
+        _tracked_round_twelve_design(),
+        require_current=True,
+    )
+
+    assert design["design_sha256"] == (
+        "1507e8e18fd1c356a89feaf85e2dfba0553dd11dfea64680360fa6106f190b76"
+    )
+    assert design["change_control"]["implementation_commit"] == (
+        "a932b417f83f7deb9938c1277fecc494ca3037de"
+    )
+    assert design["data"]["roles"]["train"]["day_count"] == 230
+    assert design["data"]["roles"]["selection"]["day_count"] == 21
+    assert design["reserved_terminal"] == {
+        "start_date": "2024-03-07",
+        "end_date": "2024-03-14",
+        "day_count": 8,
+        "included_in_dataset": False,
+        "labels_constructed": False,
+        "access_allowed_in_round_12": False,
+    }
 
 
 def test_role_calendar_split_purges_cross_boundary_labels() -> None:
