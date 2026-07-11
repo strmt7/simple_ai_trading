@@ -97,6 +97,10 @@ _PROGRESS_IDENTITIES = {
         "sampled aggregate-depth feature ablation",
         "three-seed sampled-depth nested-context outcome-mixture",
     ),
+    29: (
+        "1800-second holding-horizon cost-amortization ablation",
+        "three-seed 1800-second nested-context outcome-mixture",
+    ),
 }
 
 
@@ -112,7 +116,7 @@ def _progress_identity(round_number: int) -> tuple[str, str]:
 def _feature_set_identity(round_number: int) -> str:
     if 16 <= round_number <= 18:
         return "l1-tape-causal-v7"
-    if 19 <= round_number <= 27:
+    if 19 <= round_number <= 27 or round_number == 29:
         return "l1-tape-causal-v8"
     if round_number == 28:
         return "l1-tape-aggregate-depth-causal-v9"
@@ -208,6 +212,12 @@ def _publication_narrative(
             "sampled aggregate-depth outcome model abstained",
             "The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best policy-validation long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline.",
             "Static sampled aggregate depth is rejected as a sufficient edge; the next precommitted change must target cost-aware action formation or higher-frequency depth dynamics, and maker-order economics remain blocked until event-level queue evidence can support fill modeling.",
+        )
+    if round_number == 29:
+        return (
+            "1800-second horizon outcome model abstained",
+            "The longer fixed horizon admitted substantially more signals under the regular and aggressive profiles, but calibration net-return ranking deteriorated, all eight threshold candidates lost after stress costs, and the least-negative trace was materially worse than the 900-second Round 26 baseline.",
+            "The 1800-second fixed horizon is rejected under the retained taker-cost model; the next precommitted change must test state-conditioned horizon selection or genuinely multi-horizon targets without weakening fees, slippage, latency, stop barriers, or risk controls.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
@@ -748,7 +758,7 @@ def _forecast_svg(
         value = float(row["auc"])
         role_label = {
             "calibration": "Threshold selection",
-            "policy": "Policy validation",
+            "policy": "Policy validation (reused)",
         }[str(row["role"])]
         y = top + chart_height * (1.0 - value)
         h = top + chart_height - y
@@ -823,7 +833,7 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
         center = left + 140 + index * 240
         role_label = {
             "calibration": "Threshold selection",
-            "policy": "Policy validation",
+            "policy": "Policy validation (reused)",
         }[str(row["role"])]
         for offset, (field, label, color) in enumerate(
             zip(
@@ -888,7 +898,7 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
         for offset, (field, color_key, label) in enumerate(
             (
                 ("calibration_eligible_rows", "calibration", "selection"),
-                ("policy_eligible_rows", "policy", "validation"),
+                ("policy_eligible_rows", "policy", "reused validation"),
             )
         ):
             value = int(row[field])
@@ -1032,13 +1042,13 @@ def _gate_summary(
         )
         sentence = (
             f"Signals meeting pre-threshold controls appeared only for {eligible_text}; "
-            f"{empty_clause}{candidate_clause}, so no policy-validation simulated trade, development access, "
+            f"{empty_clause}{candidate_clause}, so no reused policy-validation simulated trade, development access, "
             "leverage, or trading authority was permitted."
         )
     else:
         sentence = (
             "All three risk profiles had zero signals meeting pre-threshold controls, so no "
-            "threshold, policy-validation simulated trade, development access, leverage, or trading "
+            "threshold, reused policy-validation simulated trade, development access, leverage, or trading "
             "authority was permitted."
         )
     return {
@@ -1098,6 +1108,8 @@ def publish(
         "source_report_canonical_sha256": report["report_sha256"],
         "terminal_holdout_accessed": False,
         "development_window_is_consumed": False,
+        "policy_validation_window_reused": True,
+        "selection_contaminated": True,
         "trading_authority": False,
         "execution_claim": False,
         "profitability_claim": False,
@@ -1179,7 +1191,7 @@ def publish(
         )
     else:
         tail_evidence = (
-            f"the best policy-validation top-100 mean was {float(best_policy_tail['top_100_mean_net_bps']):+.3f} bps, "
+            f"the best reused policy-validation top-100 mean was {float(best_policy_tail['top_100_mean_net_bps']):+.3f} bps, "
             f"but {negative_tail_count} of {len(displayed_tail_values)} displayed top-100/top-500 means were negative and no threshold was accepted"
         )
     execution = design["execution"]
@@ -1220,13 +1232,15 @@ def publish(
 | Evidence | Result |
 | --- | ---: |
 | Best threshold-selection stress ROC AUC | {float(best_calibration_auc["auc"]):.3f} ({best_calibration_auc["side"]}) |
-| Best policy-validation stress ROC AUC | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
-| Best policy-validation top-100 mean net return | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
+| Best policy-validation stress ROC AUC (reused window) | {float(best_policy_auc["auc"]):.3f} ({best_policy_auc["side"]}) |
+| Best policy-validation top-100 mean net return (reused window) | {float(best_policy_tail["top_100_mean_net_bps"]):+.2f} bps ({best_policy_tail["side"]}) |
 | Largest pre-threshold eligible signal set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
 | Policy-validation simulated trades | {int(gate_summary["policy_trades"]):,} |
 | Authorized / live-executed trades | 0 / 0 |
 {depth_table_row}
+
+**Research-governance warning:** the policy-validation window has been reused across rounds and is selection-contaminated. It is not independent out-of-sample or terminal evidence.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
@@ -1274,6 +1288,8 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         "leverage_applied": False,
         "terminal_holdout_accessed": False,
         "development_window_is_consumed": False,
+        "policy_validation_window_reused": True,
+        "selection_contaminated": True,
         "design_sha256": design_sha256,
         "source_report_sha256": _sha256(evidence_root / "report.json"),
         "source_report_canonical_sha256": report["report_sha256"],
