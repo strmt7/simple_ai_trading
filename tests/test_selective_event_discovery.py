@@ -18,13 +18,13 @@ from tools.run_selective_event_discovery import (
 )
 
 
-def _tracked_round_twelve_design() -> Path:
+def _tracked_round_twelve_design(revision: int = 5) -> Path:
     return (
         Path(__file__).resolve().parents[1]
         / "docs"
         / "model-research"
         / "action-value"
-        / "round-012-design-v4.json"
+        / f"round-012-design-v{revision}.json"
     )
 
 
@@ -299,8 +299,39 @@ def test_causal_feature_build_rebuilds_stale_evidence() -> None:
     ]
 
 
+def test_round_twelve_v5_design_binds_bounded_roles_and_reserved_terminal() -> None:
+    design = load_selective_event_design(
+        _tracked_round_twelve_design(),
+        require_current=True,
+    )
+
+    assert design["design_sha256"] == (
+        "7948bf464c907a0825d62e6ad8208e183d08f6478c49c2c7c07724217c19a49f"
+    )
+    assert design["change_control"]["implementation_commit"] == (
+        "045f51bd986014609f12d531235947175cc0412d"
+    )
+    assert design["design_revision"] == 5
+    assert design["data"]["bounded_corpus_certificate_sha256"] == (
+        "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd"
+    )
+    assert design["data"]["roles"]["train"]["day_count"] == 31
+    assert design["data"]["roles"]["selection"]["day_count"] == 6
+    assert design["training"]["predictor_parameter_profile"] == (
+        "shared_regularized"
+    )
+    assert design["reserved_terminal"] == {
+        "start_date": "2023-07-07",
+        "end_date": "2023-07-07",
+        "day_count": 1,
+        "included_in_dataset": False,
+        "labels_constructed": False,
+        "access_allowed_in_round_12": False,
+    }
+
+
 def test_round_twelve_v4_design_is_preserved_but_no_longer_current() -> None:
-    design = load_selective_event_design(_tracked_round_twelve_design())
+    design = load_selective_event_design(_tracked_round_twelve_design(4))
 
     assert design["design_sha256"] == (
         "f0dcfc57751384120f65b1d26589a1573d6121cdca23cd3006a0c387c41d1e6d"
@@ -324,7 +355,7 @@ def test_round_twelve_v4_design_is_preserved_but_no_longer_current() -> None:
     }
     with pytest.raises(ValueError, match="implementation changed"):
         load_selective_event_design(
-            _tracked_round_twelve_design(),
+            _tracked_round_twelve_design(4),
             require_current=True,
         )
 
