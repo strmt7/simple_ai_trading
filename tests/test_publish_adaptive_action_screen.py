@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
+import tools.publish_adaptive_action_screen as publisher
 from tools.publish_adaptive_action_screen import (
     _barrier_svg,
     _feature_set_identity,
@@ -17,7 +18,9 @@ from tools.publish_adaptive_action_screen import (
     _publication_narrative,
     _research_progress_svg,
     _tail_svg,
+    _threshold_economics_svg,
     _validated_depth_coverage,
+    _validated_round30_replay,
 )
 from tools.run_gross_architecture_screen import _canonical_sha256
 
@@ -82,6 +85,7 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
     progress = [
         {
             "round": round_number,
+            "periods": "2023-05-16..2023-07-06",
             "mean_net_bps": "",
             "best_top_500_exact_after_cost_bps": -6.0,
             "executable_trades": 0,
@@ -91,8 +95,18 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
     charts = (
         _forecast_svg(_forecast_rows()),
         _tail_svg(_forecast_rows()),
-        _funnel_svg(profiles),
-        _barrier_svg(barrier_rows),
+        _funnel_svg(
+            profiles,
+            selection_start_date="2023-06-21",
+            selection_end_date="2023-06-25",
+            policy_start_date="2023-06-26",
+            policy_end_date="2023-06-30",
+        ),
+        _barrier_svg(
+            barrier_rows,
+            start_date="2023-05-16",
+            end_date="2023-07-06",
+        ),
         _research_progress_svg(progress),
     )
 
@@ -104,11 +118,22 @@ def test_round16_charts_are_accessible_parseable_and_truthfully_labeled() -> Non
         assert ">nan<" not in chart.lower()
         assert '="nan"' not in chart.lower()
     assert "Every displayed mean is negative" in charts[1]
+    assert "2023-06-21 to 2023-06-25 UTC" in charts[1]
     assert "action" + " funnel" not in charts[2].lower()
     assert "pre-trade risk controls" in charts[2].lower()
     assert "No candidate threshold passed all pre-trade risk controls" in charts[2]
     assert "2023-06-21" in charts[2]
+    assert "stop-loss exit" in charts[3]
+    assert "take-profit exit" in charts[3]
+    assert "profitable net outcome" in charts[3]
+    assert "2023-05-16 to 2023-07-06 UTC" in charts[3]
+    assert ">stop<" not in charts[3]
+    assert ">take<" not in charts[3]
     assert "Rounds 15 through 16" in charts[4]
+    assert (
+        "Underlying exchange-data windows span 2023-05-16 to 2023-07-06 UTC"
+        in charts[4]
+    )
 
     empty_summary = _gate_summary(
         [
@@ -151,6 +176,10 @@ def test_round17_titles_and_extreme_tail_label_have_clearance() -> None:
             for profile in ("conservative", "regular", "aggressive")
         ],
         round_number=17,
+        selection_start_date="2023-06-21",
+        selection_end_date="2023-06-25",
+        policy_start_date="2023-06-26",
+        policy_end_date="2023-06-30",
     )
 
 
@@ -224,6 +253,9 @@ def test_round18_gate_summary_preserves_nonzero_candidates() -> None:
         {
             "candidate_available": True,
             "stress_total_net_bps": value,
+            "stress_trades": 1,
+            "required_minimum_trades": 20,
+            "stress_max_drawdown_bps": abs(value),
         }
         for value in (-98.86, -103.68, -59.16, -59.16)
     ]
@@ -347,7 +379,10 @@ def test_round27_publication_copy_is_specific() -> None:
     assert model_id == "three-seed 300-second nested-context outcome-mixture"
     assert title == "300-second horizon outcome model abstained"
     assert "positive outcomes became rarer" in summary
-    assert "least-negative trace contained one losing trade" in summary
+    assert (
+        "least-negative threshold-selection simulation contained one losing trade"
+        in summary
+    )
     assert "retained taker-cost model" in next_step
 
 
@@ -362,7 +397,7 @@ def test_round28_publication_copy_and_feature_identity_are_specific() -> None:
     assert _feature_set_identity(28) == "l1-tape-aggregate-depth-causal-v9"
     assert title == "sampled aggregate-depth outcome model abstained"
     assert "all eight threshold candidates lost" in summary
-    assert "least-negative aggressive trace" in summary
+    assert "least-negative aggressive threshold-selection simulation" in summary
     assert "maker-order economics remain blocked" in next_step
 
 
@@ -380,12 +415,65 @@ def test_round29_publication_copy_and_feature_identity_are_specific() -> None:
     assert "all eight threshold candidates lost" in summary
     assert "900-second Round 26 baseline" in summary
     assert "state-conditioned horizon selection" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 30"):
-        _progress_identity(30)
-    with pytest.raises(ValueError, match="undefined for Round 30"):
-        _feature_set_identity(30)
-    with pytest.raises(ValueError, match="undefined for Round 30"):
-        _publication_narrative(30, all_candidate_stress_nets_negative=True)
+
+
+def test_round30_publication_copy_and_feature_identity_are_specific() -> None:
+    stage, model_id = _progress_identity(30)
+    title, summary, next_step = _publication_narrative(
+        30, all_candidate_stress_nets_negative=False
+    )
+
+    assert stage == "900-second LightGBM hurdle architecture challenger"
+    assert model_id == "three-seed side-specific LightGBM hurdle-quantile ensemble"
+    assert _feature_set_identity(30) == "l1-tape-causal-v8"
+    assert title == "LightGBM hurdle ensemble abstained"
+    assert "All twelve threshold-selection stress simulations were positive" in summary
+    assert "only 1 to 12 trades" in summary
+    assert "failed the precommitted minimum-count gate" in summary
+    assert "must test broader chronological support and stability" in next_step
+    assert "without lowering minimum trade counts" in next_step
+
+
+def test_threshold_economics_chart_shows_positive_returns_and_failed_support() -> None:
+    rows = []
+    for profile, required in (
+        ("conservative", 12),
+        ("regular", 15),
+        ("aggressive", 20),
+    ):
+        for index, quantile in enumerate((0.5, 0.7, 0.85, 0.95), start=1):
+            rows.append(
+                {
+                    "profile": profile,
+                    "candidate_available": True,
+                    "quantile": quantile,
+                    "stress_trades": index,
+                    "required_minimum_trades": required,
+                    "stress_total_net_bps": 10.0 * index,
+                    "stress_max_drawdown_bps": 5.0 * index,
+                }
+            )
+
+    chart = _threshold_economics_svg(
+        rows,
+        round_number=30,
+        selection_start_date="2023-06-21",
+        selection_end_date="2023-06-25",
+    )
+    root = ET.fromstring(chart)
+    namespace = "{http://www.w3.org/2000/svg}"
+    text = " ".join(
+        node.text or "" for node in root.findall(f"{namespace}text")
+    )
+
+    assert root.find(f"{namespace}title") is not None
+    assert root.find(f"{namespace}desc") is not None
+    assert "Positive threshold-selection simulations lacked minimum trade support" in text
+    assert "2023-06-21 to 2023-06-25 UTC" in text
+    assert "1/12 trades" in text
+    assert "4/20 trades" in text
+    assert "DD 20.0 bps" in text
+    assert ">nan<" not in chart.lower()
 
 
 def test_progress_uses_verified_barrier_horizon_instead_of_a_fixed_value(
@@ -494,3 +582,137 @@ def test_round28_depth_coverage_validator_accepts_zero_invalid_rows(tmp_path) ->
     coverage_path.write_text(json.dumps(coverage), encoding="utf-8")
 
     assert _validated_depth_coverage(coverage_path, report_path, report) == coverage
+
+
+def test_round30_replay_integrity_binds_reports_metrics_and_boosters(
+    tmp_path, monkeypatch
+) -> None:
+    current_root = tmp_path / "current"
+    replay_root = tmp_path / "replay"
+    baseline_root = tmp_path / "baseline"
+    for root in (current_root, replay_root, baseline_root):
+        (root / "models").mkdir(parents=True)
+
+    false_claims = {
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
+    dataset = {
+        "rows": 100,
+        "event_rows": 80,
+        "valid_barrier_rows": 75,
+        "cache_key": "c" * 64,
+        "source_manifest_fingerprint": "m" * 64,
+        "barrier_summary": {"spec": {"horizon_seconds": 900}, "rows": 80},
+        "roles": {"train": {"rows": 50}},
+    }
+
+    def members(root, suffix: str):
+        output = []
+        for seed in (29, 43, 71):
+            artifact_path = root / "models" / f"seed-{seed}.json"
+            artifact_payload = {
+                "model_strings": {f"head-{index}": f"tree-{seed}-{index}" for index in range(10)},
+                "best_iterations": {f"head-{index}": index + 1 for index in range(10)},
+                "metadata_suffix": suffix,
+            }
+            artifact_path.write_text(json.dumps(artifact_payload), encoding="utf-8")
+            output.append(
+                {
+                    "seed": seed,
+                    "model": false_claims,
+                    "artifact": {
+                        "path": artifact_path.relative_to(root).as_posix(),
+                        "sha256": hashlib.sha256(artifact_path.read_bytes()).hexdigest(),
+                        "bytes": artifact_path.stat().st_size,
+                    },
+                }
+            )
+        return output
+
+    current = {
+        **false_claims,
+        "round": 30,
+        "design_sha256": "2" * 64,
+        "status": "rejected",
+        "terminal_holdout_accessed": False,
+        "development_window_is_consumed": False,
+        "dataset": {**dataset, "barrier_targets_sha256": "b" * 64},
+        "forecast_diagnostics": {"same": True},
+        "profile_results": [{"same": True}],
+        "ensemble_models": members(current_root, "current-metadata"),
+    }
+    replay = {
+        **false_claims,
+        "round": 30,
+        "design_sha256": "1" * 64,
+        "status": "rejected",
+        "terminal_holdout_accessed": False,
+        "development_window_is_consumed": False,
+        "dataset": {**dataset, "barrier_targets_sha256": "a" * 64},
+        "forecast_diagnostics": {"same": True},
+        "profile_results": [{"same": True}],
+        "ensemble_models": members(replay_root, "replay-metadata"),
+    }
+    baseline = {
+        **false_claims,
+        "round": 26,
+        "design_sha256": "6" * 64,
+        "status": "rejected",
+        "terminal_holdout_accessed": False,
+        "development_window_is_consumed": False,
+        "dataset": {**dataset, "barrier_targets_sha256": "b" * 64},
+    }
+
+    def write_report(root, report):
+        report["report_sha256"] = _canonical_sha256(report)
+        path = root / "report.json"
+        path.write_text(json.dumps(report, sort_keys=True), encoding="utf-8")
+        return path
+
+    replay_path = write_report(replay_root, replay)
+    write_report(baseline_root, baseline)
+    current["report_sha256"] = _canonical_sha256(current)
+    (current_root / "report.json").write_text(
+        json.dumps(current, sort_keys=True), encoding="utf-8"
+    )
+    monkeypatch.setattr(publisher, "_ROUND26_DESIGN_SHA256", baseline["design_sha256"])
+    monkeypatch.setattr(publisher, "_ROUND26_REPORT_SHA256", baseline["report_sha256"])
+    design = {
+        "design_revision": 2,
+        "predecessor_evidence": {
+            "design_sha256": replay["design_sha256"],
+            "source_report_canonical_sha256": replay["report_sha256"],
+            "source_report_file_sha256": hashlib.sha256(
+                replay_path.read_bytes()
+            ).hexdigest(),
+        },
+    }
+
+    evidence = _validated_round30_replay(
+        current_root,
+        current,
+        design,
+        replay_root,
+        baseline_root,
+    )
+
+    assert evidence is not None
+    assert evidence["checks"]["revision2_target_hash_matches_round26"] is True
+    assert evidence["checks"]["booster_strings_equal_between_revisions"] is True
+    assert len(evidence["booster_hashes"]) == 3
+    assert len(evidence["replay_sha256"]) == 64
+
+    tampered = replay_root / "models" / "seed-29.json"
+    tampered.write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="artifact integrity failed"):
+        _validated_round30_replay(
+            current_root,
+            current,
+            design,
+            replay_root,
+            baseline_root,
+        )

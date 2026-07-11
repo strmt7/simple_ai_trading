@@ -1,16 +1,20 @@
-# Round 29: 1800-second horizon outcome model abstained
+# Round 30: LightGBM hurdle ensemble abstained
 
-**Rejected without trading authority.** The longer fixed horizon admitted substantially more signals under the regular and aggressive profiles, but calibration net-return ranking deteriorated, all eight threshold candidates lost after stress costs, and the least-negative trace was materially worse than the 900-second Round 26 baseline. Signals meeting pre-threshold controls appeared only for Regular (58), Aggressive (612); Conservative produced none. The 8 resulting threshold candidates all failed the stress-test acceptance criteria, so no reused policy-validation simulated trade, development access, leverage, or trading authority was permitted.
+**Rejected without trading authority.** All twelve threshold-selection stress simulations were positive after configured costs, and the best reused policy-validation short tails were positive, but every threshold candidate contained only 1 to 12 trades and failed the precommitted minimum-count gate. Signals meeting pre-threshold controls appeared only for Conservative (20), Regular (109), Aggressive (212); the 12 resulting threshold candidates all failed the stress-test acceptance criteria, so no reused policy-validation simulated trade, development access, leverage, or trading authority was permitted.
 
 | Evidence | Result |
 | --- | ---: |
-| Best threshold-selection stress ROC AUC | 0.589 (long) |
-| Best policy-validation stress ROC AUC (reused window) | 0.602 (short) |
-| Best policy-validation top-100 mean net return (reused window) | -2.02 bps (long) |
-| Largest pre-threshold eligible signal set | 612 / 28,340 (aggressive) |
-| Thresholds evaluated / accepted | 8 / 0 |
+| Best threshold-selection stress ROC AUC | 0.594 (long) |
+| Best policy-validation stress ROC AUC (reused window) | 0.613 (short) |
+| Best policy-validation top-100 mean net return (reused window) | +17.88 bps (short) |
+| Largest pre-threshold eligible signal set | 212 / 28,581 (aggressive) |
+| Thresholds evaluated / accepted | 12 / 0 |
 | Policy-validation simulated trades (reused window) | 0 |
+| Positive threshold-selection stress simulations | 12 / 12 |
+| Maximum candidate trades / required minimum | 12 / 20 |
+| Best threshold-selection stress net return | +135.76 bps from 5 trades |
 | Authorized / live-executed trades | 0 / 0 |
+| Numeric-contract replay | Identical boosters, forecasts, roles, and threshold-selection results |
 
 
 **Research-governance warning:** the policy-validation window has been reused across rounds and is selection-contaminated. It is not independent out-of-sample or terminal evidence.
@@ -21,12 +25,14 @@
 
 ![Signals passing pre-trade risk controls](charts/pre-trade-risk-controls.svg)
 
+![Threshold-selection stress economics](charts/threshold-economics.svg)
+
 ![Barrier outcomes](charts/barrier-outcomes.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-BTCUSDT, 2023-05-16 through 2023-07-06 UTC; 227,011 valid event labels from 877,664 exact-BBO rows. The simulation uses 1800 s positions, 100 ms paths, 750 ms total latency, and 12 bps configured taker round-trip cost.
+BTCUSDT, 2023-05-16 through 2023-07-06 UTC; 229,001 valid event labels from 877,894 exact-BBO rows. The simulation uses 900 s positions, 100 ms paths, 750 ms total latency, and 12 bps configured taker round-trip cost. Round 30 revision 2 restores the sealed float-valued JSON types; its target hash matches Round 26, while every booster string and substantive metric exactly reproduces revision 1.
 
-Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached 0.589, and every displayed top-100 and top-500 realized mean net return remained negative. The 1800-second fixed horizon is rejected under the retained taker-cost model; the next precommitted change must test state-conditioned horizon selection or genuinely multi-horizon targets without weakening fees, slippage, latency, stop barriers, or risk controls. The development window and reserved 2023-07-07 terminal day remain untouched.
+The hurdle ranking produced promising but statistically insufficient after-cost tails: threshold-selection stress ROC AUC reached 0.594, and the best reused policy-validation top-100 mean was +17.884 bps, but 5 of 8 displayed top-100/top-500 means were negative and no threshold was accepted. The architecture is a materially stronger research lead, but the next precommitted change must test broader chronological support and stability without lowering minimum trade counts, execution costs, drawdown limits, or abstention controls. The development window and reserved 2023-07-07 terminal day remain untouched.
 
-Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)
+Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [replay integrity](replay-integrity.json) | [integrity report](report.json)

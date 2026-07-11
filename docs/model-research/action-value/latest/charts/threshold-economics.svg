@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="660" viewBox="0 0 1440 660" role="img" aria-labelledby="title desc">
+<title id="title">Round 30 threshold-selection stress economics and sample support</title>
+<desc id="desc">Stress net return in basis points for every threshold candidate from 2023-06-21 to 2023-06-25 UTC. Each candidate is labeled with simulated trades versus its precommitted minimum and maximum drawdown. Positive net return does not pass when sample support is below the minimum.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Positive threshold-selection simulations lacked minimum trade support</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Threshold selection: 2023-06-21 to 2023-06-25 UTC; adverse-stress 100 ms BBO outcomes.</text>
+<rect x="90" y="130" width="1270" height="340" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="90" y1="470.0" x2="1360" y2="470.0" stroke="#536674" stroke-width="2"/>
+<text x="78" y="475.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">+0</text>
+<line x1="90" y1="402.0" x2="1360" y2="402.0" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="407.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">+30</text>
+<line x1="90" y1="334.0" x2="1360" y2="334.0" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="339.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">+60</text>
+<line x1="90" y1="266.0" x2="1360" y2="266.0" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="271.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">+90</text>
+<line x1="90" y1="198.0" x2="1360" y2="198.0" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="203.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">+120</text>
+<line x1="90" y1="130.0" x2="1360" y2="130.0" stroke="#e6ebef" stroke-width="1"/>
+<text x="78" y="135.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">+150</text>
+<rect x="117.9" y="427.3" width="50" height="42.7" fill="#16827a"/>
+<text x="142.9" y="418.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+18.8</text>
+<text x="142.9" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Conservative</text>
+<text x="142.9" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q50</text>
+<text x="142.9" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">1/12 trades</text>
+<text x="142.9" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<rect x="223.8" y="427.3" width="50" height="42.7" fill="#16827a"/>
+<text x="248.8" y="418.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+18.8</text>
+<text x="248.8" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Conservative</text>
+<text x="248.8" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q70</text>
+<text x="248.8" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">1/12 trades</text>
+<text x="248.8" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<rect x="329.6" y="441.3" width="50" height="28.7" fill="#16827a"/>
+<text x="354.6" y="432.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+12.7</text>
+<text x="354.6" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Conservative</text>
+<text x="354.6" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q85</text>
+<text x="354.6" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">1/12 trades</text>
+<text x="354.6" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<rect x="435.4" y="440.9" width="50" height="29.1" fill="#16827a"/>
+<text x="460.4" y="431.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+12.9</text>
+<text x="460.4" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Conservative</text>
+<text x="460.4" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q95</text>
+<text x="460.4" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">1/12 trades</text>
+<text x="460.4" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<rect x="541.2" y="295.9" width="50" height="174.1" fill="#16827a"/>
+<text x="566.2" y="286.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+76.8</text>
+<text x="566.2" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Regular</text>
+<text x="566.2" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q50</text>
+<text x="566.2" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">9/15 trades</text>
+<text x="566.2" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 58.8 bps</text>
+<rect x="647.1" y="205.8" width="50" height="264.2" fill="#16827a"/>
+<text x="672.1" y="196.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+116.6</text>
+<text x="672.1" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Regular</text>
+<text x="672.1" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q70</text>
+<text x="672.1" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">6/15 trades</text>
+<text x="672.1" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 11.4 bps</text>
+<rect x="752.9" y="175.9" width="50" height="294.1" fill="#16827a"/>
+<text x="777.9" y="166.9" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+129.7</text>
+<text x="777.9" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Regular</text>
+<text x="777.9" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q85</text>
+<text x="777.9" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">6/15 trades</text>
+<text x="777.9" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 11.4 bps</text>
+<rect x="858.8" y="251.4" width="50" height="218.6" fill="#16827a"/>
+<text x="883.8" y="242.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+96.4</text>
+<text x="883.8" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Regular</text>
+<text x="883.8" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q95</text>
+<text x="883.8" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">3/15 trades</text>
+<text x="883.8" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<rect x="964.6" y="211.4" width="50" height="258.6" fill="#16827a"/>
+<text x="989.6" y="202.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+114.1</text>
+<text x="989.6" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Aggressive</text>
+<text x="989.6" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q50</text>
+<text x="989.6" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">12/20 trades</text>
+<text x="989.6" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 88.8 bps</text>
+<rect x="1070.4" y="211.2" width="50" height="258.8" fill="#16827a"/>
+<text x="1095.4" y="202.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+114.2</text>
+<text x="1095.4" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Aggressive</text>
+<text x="1095.4" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q70</text>
+<text x="1095.4" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">7/20 trades</text>
+<text x="1095.4" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 11.3 bps</text>
+<rect x="1176.2" y="162.3" width="50" height="307.7" fill="#16827a"/>
+<text x="1201.2" y="153.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+135.8</text>
+<text x="1201.2" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Aggressive</text>
+<text x="1201.2" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q85</text>
+<text x="1201.2" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">5/20 trades</text>
+<text x="1201.2" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<rect x="1282.1" y="194.6" width="50" height="275.4" fill="#16827a"/>
+<text x="1307.1" y="185.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">+121.5</text>
+<text x="1307.1" y="497" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">Aggressive</text>
+<text x="1307.1" y="515" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q95</text>
+<text x="1307.1" y="535" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">4/20 trades</text>
+<text x="1307.1" y="553" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD 0.0 bps</text>
+<text x="34" y="300" transform="rotate(-90 34 300)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Total net basis points</text>
+<text x="48" y="625" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Measured threshold-selection economics remain selection-contaminated research evidence; no minimum-count gate was relaxed.</text>
+</svg>

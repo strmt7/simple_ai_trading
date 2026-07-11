@@ -63,3 +63,34 @@ def test_audit_covers_source_workflows_and_stale_scope_language() -> None:
             "candidate-model set",
         ),
     ]
+
+
+def test_audit_rejects_legacy_branding_and_superseded_evidence_copy() -> None:
+    legacy_brand = "simple" + "_bitcoin_trading"
+    stale_latest = "current retained per-iteration" + " evidence is"
+    stale_chart = "positive calibration" + " traces"
+    findings = audit_entries(
+        [
+            (f"docs/{legacy_brand}/README.md", "Legacy package."),
+            ("docs/evidence.md", f"The {stale_latest} Round 8."),
+            ("docs/chart.svg", f"<title>{stale_chart}</title>"),
+        ]
+    )
+
+    assert [(item.path, item.line, item.replacement) for item in findings] == [
+        (
+            "docs/chart.svg",
+            1,
+            "positive threshold-selection simulations",
+        ),
+        (
+            "docs/evidence.md",
+            1,
+            "explicitly named latest-only evidence tracks",
+        ),
+        (
+            f"docs/{legacy_brand}/README.md",
+            None,
+            "simple_ai_trading",
+        ),
+    ]

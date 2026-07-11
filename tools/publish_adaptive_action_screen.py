@@ -9,6 +9,7 @@ import html
 import json
 import math
 from pathlib import Path
+import re
 import sys
 from typing import Mapping, Sequence
 
@@ -37,6 +38,12 @@ except ModuleNotFoundError:  # pragma: no cover - direct tools directory executi
 
 
 PUBLICATION_SCHEMA_VERSION = "adaptive-action-screen-publication-v1"
+_ROUND26_DESIGN_SHA256 = (
+    "84112245cf1c6a7e93b678bdfea9f97e329772731bc2bdec97990773b6f92837"
+)
+_ROUND26_REPORT_SHA256 = (
+    "368fa5c3cbe7e61f93d1c0d9099f8812c5554eab423dcba61b6b9f3f65a83383"
+)
 _FALSE_CLAIMS = (
     "trading_authority",
     "execution_claim",
@@ -101,6 +108,10 @@ _PROGRESS_IDENTITIES = {
         "1800-second holding-horizon cost-amortization ablation",
         "three-seed 1800-second nested-context outcome-mixture",
     ),
+    30: (
+        "900-second LightGBM hurdle architecture challenger",
+        "three-seed side-specific LightGBM hurdle-quantile ensemble",
+    ),
 }
 
 
@@ -116,7 +127,7 @@ def _progress_identity(round_number: int) -> tuple[str, str]:
 def _feature_set_identity(round_number: int) -> str:
     if 16 <= round_number <= 18:
         return "l1-tape-causal-v7"
-    if 19 <= round_number <= 27 or round_number == 29:
+    if 19 <= round_number <= 27 or round_number in {29, 30}:
         return "l1-tape-causal-v8"
     if round_number == 28:
         return "l1-tape-aggregate-depth-causal-v9"
@@ -204,20 +215,26 @@ def _publication_narrative(
     if round_number == 27:
         return (
             "300-second horizon outcome model abstained",
-            "The shorter lifecycle improved probability-of-profit discrimination and calibration metrics, but positive outcomes became rarer, every displayed ranked tail remained negative, and all eight threshold candidates failed after stress costs; the least-negative trace contained one losing trade.",
+            "The shorter lifecycle improved probability-of-profit discrimination and calibration metrics, but positive outcomes became rarer, every displayed ranked tail remained negative, and all eight threshold candidates failed after stress costs; the least-negative threshold-selection simulation contained one losing trade.",
             "The 300-second fixed horizon is rejected under the retained taker-cost model; the next precommitted change must improve executable action design or cost-aware target formation without weakening fees, slippage, latency, or risk controls.",
         )
     if round_number == 28:
         return (
             "sampled aggregate-depth outcome model abstained",
-            "The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best policy-validation long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive trace was materially worse than the depth-free Round 26 baseline.",
+            "The added sampled 1% and 5% depth shape improved several calibration and broader ranked-tail diagnostics, but the best policy-validation long top-100 mean deteriorated, all eight threshold candidates lost after stress costs, and the least-negative aggressive threshold-selection simulation was materially worse than the depth-free Round 26 baseline.",
             "Static sampled aggregate depth is rejected as a sufficient edge; the next precommitted change must target cost-aware action formation or higher-frequency depth dynamics, and maker-order economics remain blocked until event-level queue evidence can support fill modeling.",
         )
     if round_number == 29:
         return (
             "1800-second horizon outcome model abstained",
-            "The longer fixed horizon admitted substantially more signals under the regular and aggressive profiles, but calibration net-return ranking deteriorated, all eight threshold candidates lost after stress costs, and the least-negative trace was materially worse than the 900-second Round 26 baseline.",
+            "The longer fixed horizon admitted substantially more signals under the regular and aggressive profiles, but calibration net-return ranking deteriorated, all eight threshold candidates lost after stress costs, and the least-negative threshold-selection simulation was materially worse than the 900-second Round 26 baseline.",
             "The 1800-second fixed horizon is rejected under the retained taker-cost model; the next precommitted change must test state-conditioned horizon selection or genuinely multi-horizon targets without weakening fees, slippage, latency, stop barriers, or risk controls.",
+        )
+    if round_number == 30:
+        return (
+            "LightGBM hurdle ensemble abstained",
+            "All twelve threshold-selection stress simulations were positive after configured costs, and the best reused policy-validation short tails were positive, but every threshold candidate contained only 1 to 12 trades and failed the precommitted minimum-count gate.",
+            "The architecture is a materially stronger research lead, but the next precommitted change must test broader chronological support and stability without lowering minimum trade counts, execution costs, drawdown limits, or abstention controls.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"
@@ -232,6 +249,8 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--design", type=Path, required=True)
     parser.add_argument("--prior-progress", type=Path, required=True)
     parser.add_argument("--depth-coverage", type=Path, default=None)
+    parser.add_argument("--numeric-replay-source", type=Path, default=None)
+    parser.add_argument("--architecture-baseline-source", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
@@ -396,8 +415,235 @@ def _validated_evidence(
         if int(report["round"]) >= 17 and artifact.get("reload_verified") is not True:
             raise ValueError("adaptive action model artifact reload was not verified")
         artifacts.append(_safe_artifact(evidence_root, artifact))
+    if int(report["round"]) == 30:
+        routing = report.get("representation_routing_diagnostics")
+        if (
+            report.get("artifact_class")
+            != "consumed_data_lightgbm_hurdle_evidence"
+            or report.get("action_value_model_schema_version")
+            != "adaptive-lightgbm-hurdle-action-value-v1"
+            or not isinstance(routing, Mapping)
+            or any(routing.get(role) is not None for role in ("calibration", "policy", "development"))
+        ):
+            raise ValueError("Round 30 LightGBM report contract is invalid")
+        for member in models:
+            assert isinstance(member, Mapping)
+            model = member["model"]
+            assert isinstance(model, Mapping)
+            spec = model.get("spec")
+            if (
+                model.get("model_family")
+                != "side_specific_lightgbm_hurdle_expected_value"
+                or model.get("backend_kind") != "opencl"
+                or model.get("backend_device") != "opencl:auto"
+                or int(model.get("booster_count") or 0) != 10
+                or not isinstance(spec, Mapping)
+                or spec.get("family")
+                != "side_specific_lightgbm_hurdle_expected_value"
+            ):
+                raise ValueError("Round 30 LightGBM member contract is invalid")
     report["_validated_artifacts"] = artifacts
     return report
+
+
+def _validated_report_file(path: Path, *, label: str) -> dict[str, object]:
+    report = _read_json(path)
+    claimed = report.get("report_sha256")
+    canonical = dict(report)
+    canonical.pop("report_sha256", None)
+    if not _is_sha256(claimed) or claimed != _canonical_sha256(canonical):
+        raise ValueError(f"{label} report hash is invalid")
+    _require_false_claims(report, label=label)
+    if (
+        report.get("status") != "rejected"
+        or report.get("terminal_holdout_accessed") is not False
+        or report.get("development_window_is_consumed") is not False
+    ):
+        raise ValueError(f"{label} report safety contract is invalid")
+    return report
+
+
+def _member_booster_contract(
+    root: Path,
+    member: Mapping[str, object],
+    *,
+    label: str,
+) -> tuple[int, Mapping[str, object], Mapping[str, object]]:
+    artifact = member.get("artifact")
+    model = member.get("model")
+    if not isinstance(artifact, Mapping) or not isinstance(model, Mapping):
+        raise ValueError(f"{label} model member is invalid")
+    verified = _safe_artifact(root, artifact)
+    payload = _read_json(root / str(verified["path"]))
+    strings = payload.get("model_strings")
+    iterations = payload.get("best_iterations")
+    if (
+        not isinstance(strings, Mapping)
+        or len(strings) != 10
+        or not isinstance(iterations, Mapping)
+        or len(iterations) != 10
+    ):
+        raise ValueError(f"{label} booster payload is incomplete")
+    return int(member["seed"]), strings, iterations
+
+
+def _validated_round30_replay(
+    evidence_root: Path,
+    report: Mapping[str, object],
+    design: Mapping[str, object],
+    numeric_replay_root: Path | None,
+    architecture_baseline_root: Path | None,
+) -> dict[str, object] | None:
+    round_number = int(report["round"])
+    if round_number != 30:
+        if numeric_replay_root is not None or architecture_baseline_root is not None:
+            raise ValueError("replay evidence is valid only for Round 30")
+        return None
+    if (
+        int(design.get("design_revision") or 0) != 2
+        or numeric_replay_root is None
+        or architecture_baseline_root is None
+    ):
+        raise ValueError("Round 30 revision 2 requires both replay evidence roots")
+    replay_path = numeric_replay_root / "report.json"
+    baseline_path = architecture_baseline_root / "report.json"
+    replay = _validated_report_file(replay_path, label="Round 30 revision 1")
+    baseline = _validated_report_file(baseline_path, label="Round 26 baseline")
+    predecessor = design.get("predecessor_evidence")
+    if not isinstance(predecessor, Mapping):
+        raise ValueError("Round 30 replay predecessor evidence is missing")
+    if (
+        replay.get("round") != 30
+        or replay.get("design_sha256") != predecessor.get("design_sha256")
+        or replay.get("report_sha256")
+        != predecessor.get("source_report_canonical_sha256")
+        or _sha256(replay_path) != predecessor.get("source_report_file_sha256")
+        or baseline.get("round") != 26
+        or baseline.get("design_sha256") != _ROUND26_DESIGN_SHA256
+        or baseline.get("report_sha256") != _ROUND26_REPORT_SHA256
+    ):
+        raise ValueError("Round 30 replay source identity is invalid")
+    current_dataset = report.get("dataset")
+    replay_dataset = replay.get("dataset")
+    baseline_dataset = baseline.get("dataset")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (current_dataset, replay_dataset, baseline_dataset)
+    ):
+        raise ValueError("Round 30 replay dataset evidence is invalid")
+    assert isinstance(current_dataset, Mapping)
+    assert isinstance(replay_dataset, Mapping)
+    assert isinstance(baseline_dataset, Mapping)
+    identity_fields = (
+        "rows",
+        "event_rows",
+        "valid_barrier_rows",
+        "cache_key",
+        "source_manifest_fingerprint",
+    )
+    if any(
+        current_dataset.get(name) != replay_dataset.get(name)
+        or current_dataset.get(name) != baseline_dataset.get(name)
+        for name in identity_fields
+    ) or not (
+        current_dataset.get("barrier_summary")
+        == replay_dataset.get("barrier_summary")
+        == baseline_dataset.get("barrier_summary")
+    ):
+        raise ValueError("Round 30 replay datasets are not semantically identical")
+    if (
+        current_dataset.get("barrier_targets_sha256")
+        != baseline_dataset.get("barrier_targets_sha256")
+        or current_dataset.get("barrier_targets_sha256")
+        == replay_dataset.get("barrier_targets_sha256")
+        or report.get("forecast_diagnostics") != replay.get("forecast_diagnostics")
+        or report.get("profile_results") != replay.get("profile_results")
+        or current_dataset.get("roles") != replay_dataset.get("roles")
+    ):
+        raise ValueError("Round 30 numeric replay did not reproduce model evidence")
+    current_models = report.get("ensemble_models")
+    replay_models = replay.get("ensemble_models")
+    if (
+        not isinstance(current_models, list)
+        or not isinstance(replay_models, list)
+        or len(current_models) != 3
+        or len(replay_models) != 3
+    ):
+        raise ValueError("Round 30 replay model evidence is incomplete")
+    booster_hashes: list[dict[str, object]] = []
+    for current_member, replay_member in zip(
+        current_models, replay_models, strict=True
+    ):
+        if not isinstance(current_member, Mapping) or not isinstance(
+            replay_member, Mapping
+        ):
+            raise ValueError("Round 30 replay model member is invalid")
+        current_seed, current_strings, current_iterations = _member_booster_contract(
+            evidence_root,
+            current_member,
+            label="Round 30 revision 2",
+        )
+        replay_seed, replay_strings, replay_iterations = _member_booster_contract(
+            numeric_replay_root,
+            replay_member,
+            label="Round 30 revision 1",
+        )
+        if (
+            current_seed != replay_seed
+            or current_strings != replay_strings
+            or current_iterations != replay_iterations
+        ):
+            raise ValueError("Round 30 replay booster payloads differ")
+        booster_hashes.append(
+            {
+                "seed": current_seed,
+                "model_strings_sha256": _canonical_sha256(current_strings),
+                "best_iterations_sha256": _canonical_sha256(current_iterations),
+            }
+        )
+    output: dict[str, object] = {
+        "schema_version": "round30-numeric-contract-replay-v1",
+        "artifact_class": "model_and_metric_reproducibility_evidence",
+        "round": 30,
+        "design_revision": 2,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+        "terminal_holdout_accessed": False,
+        "revision1": {
+            "design_sha256": replay["design_sha256"],
+            "report_file_sha256": _sha256(replay_path),
+            "report_canonical_sha256": replay["report_sha256"],
+            "barrier_targets_sha256": replay_dataset["barrier_targets_sha256"],
+        },
+        "revision2": {
+            "design_sha256": report["design_sha256"],
+            "report_file_sha256": _sha256(evidence_root / "report.json"),
+            "report_canonical_sha256": report["report_sha256"],
+            "barrier_targets_sha256": current_dataset["barrier_targets_sha256"],
+        },
+        "round26_architecture_baseline": {
+            "design_sha256": baseline["design_sha256"],
+            "report_file_sha256": _sha256(baseline_path),
+            "report_canonical_sha256": baseline["report_sha256"],
+            "barrier_targets_sha256": baseline_dataset["barrier_targets_sha256"],
+        },
+        "checks": {
+            "source_identity_equal": True,
+            "barrier_summary_equal": True,
+            "revision2_target_hash_matches_round26": True,
+            "forecast_diagnostics_equal_between_revisions": True,
+            "threshold_and_profile_results_equal_between_revisions": True,
+            "role_evidence_equal_between_revisions": True,
+            "booster_strings_equal_between_revisions": True,
+            "best_iterations_equal_between_revisions": True,
+        },
+        "booster_hashes": booster_hashes,
+    }
+    output["replay_sha256"] = _canonical_sha256(output)
+    return output
 
 
 def _forecast_rows(
@@ -522,7 +768,22 @@ def _profile_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
     return output
 
 
-def _threshold_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
+def _threshold_rows(
+    report: Mapping[str, object],
+    design: Mapping[str, object],
+) -> list[dict[str, object]]:
+    risk_profiles = design.get("risk_profiles")
+    if not isinstance(risk_profiles, list):
+        raise ValueError("adaptive action risk-profile design is invalid")
+    minimum_trades: dict[str, int] = {}
+    for profile in risk_profiles:
+        if not isinstance(profile, Mapping) or not isinstance(
+            profile.get("calibration_gates"), Mapping
+        ):
+            raise ValueError("adaptive action risk-profile gates are invalid")
+        minimum_trades[str(profile["profile"])] = int(
+            profile["calibration_gates"]["minimum_trades"]
+        )
     output: list[dict[str, object]] = []
     for raw in report["profile_results"]:
         if not isinstance(raw, Mapping):
@@ -541,6 +802,7 @@ def _threshold_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                     "quantile": "",
                     "threshold_bps": "",
                     "accepted": False,
+                    "required_minimum_trades": minimum_trades[str(raw["profile"])],
                     "stress_trades": 0,
                     "stress_total_net_bps": "",
                     "stress_max_drawdown_bps": "",
@@ -569,6 +831,7 @@ def _threshold_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                         candidate["threshold_bps"], label="threshold"
                     ),
                     "accepted": bool(candidate["accepted"]),
+                    "required_minimum_trades": minimum_trades[str(raw["profile"])],
                     "stress_trades": int(stress["trades"]),
                     "stress_total_net_bps": _finite(
                         stress["total_net_bps"], label="threshold net"
@@ -783,6 +1046,14 @@ def _forecast_svg(
 
 def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -> str:
     selected = [row for row in rows if row["scenario"] == "stress"]
+    calibration_rows = [row for row in selected if row["role"] == "calibration"]
+    policy_rows = [row for row in selected if row["role"] == "policy"]
+    if not calibration_rows or not policy_rows:
+        raise ValueError("ranked-tail chart requires calibration and policy windows")
+    calibration_start = min(str(row["start_date"]) for row in calibration_rows)
+    calibration_end = max(str(row["end_date"]) for row in calibration_rows)
+    policy_start = min(str(row["start_date"]) for row in policy_rows)
+    policy_end = max(str(row["end_date"]) for row in policy_rows)
     width, height = 1240, 580
     left, top, chart_width, chart_height = 90, 130, 1080, 310
     tail_values = [
@@ -811,10 +1082,11 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">Round {round_number} net returns for highest-ranked signals</title>',
-        f'<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold-selection and policy-validation windows during June 2023. The policy window has been reused across research rounds. {description}</desc>',
+        f'<desc id="desc">Mean adverse-stress net return in basis points for the 100 and 500 highest-ranked signals in threshold selection from {html.escape(calibration_start)} to {html.escape(calibration_end)} UTC and reused policy validation from {html.escape(policy_start)} to {html.escape(policy_end)} UTC. {description}</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         f'<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">{headline}</text>',
-        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Realized 100 ms BBO-path outcomes include fees, latency, slippage and delayed stop execution.</text>',
+        f'<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Threshold selection: {html.escape(calibration_start)} to {html.escape(calibration_end)} UTC; policy validation (reused): {html.escape(policy_start)} to {html.escape(policy_end)} UTC.</text>',
+        '<text x="48" y="101" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Realized 100 ms BBO-path outcomes include fees, latency, slippage and delayed stop-loss execution.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
     tick_step = max(5.0, math.ceil(((upper - lower) / 6.0) / 5.0) * 5.0)
@@ -871,7 +1143,15 @@ def _tail_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -
     return "\n".join(lines) + "\n"
 
 
-def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16) -> str:
+def _funnel_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    round_number: int = 16,
+    selection_start_date: str,
+    selection_end_date: str,
+    policy_start_date: str,
+    policy_end_date: str,
+) -> str:
     width, height = 1120, 540
     max_value = max(1, max(int(row["policy_eligible_rows"]) for row in rows))
     left, top, chart_width, chart_height = 100, 130, 940, 270
@@ -917,7 +1197,103 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
         )
     lines.extend(
         [
-            '<text x="48" y="510" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Threshold selection: 2023-06-21 to 2023-06-25 UTC. Policy validation (reused): 2023-06-26 to 2023-06-30 UTC.</text>',
+            f'<text x="48" y="510" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Threshold selection: {html.escape(selection_start_date)} to {html.escape(selection_end_date)} UTC. Policy validation (reused): {html.escape(policy_start_date)} to {html.escape(policy_end_date)} UTC.</text>',
+            "</svg>",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _threshold_economics_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    round_number: int = 16,
+    selection_start_date: str,
+    selection_end_date: str,
+) -> str:
+    selected = [row for row in rows if bool(row.get("candidate_available"))]
+    width, height = 1440, 660
+    left, top, chart_width, chart_height = 90, 130, 1270, 340
+    if not selected:
+        return "\n".join(
+            [
+                f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
+                f'<title id="title">Round {round_number} threshold-selection stress economics</title>',
+                f'<desc id="desc">No threshold candidates were available after pre-trade controls from {html.escape(selection_start_date)} to {html.escape(selection_end_date)} UTC.</desc>',
+                '<rect width="100%" height="100%" fill="#ffffff"/>',
+                '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">No threshold candidate was available</text>',
+                f'<text x="48" y="90" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#53616d">{html.escape(selection_start_date)} to {html.escape(selection_end_date)} UTC; pre-trade controls abstained before threshold simulation.</text>',
+                "</svg>",
+            ]
+        ) + "\n"
+    values = [float(row["stress_total_net_bps"]) for row in selected]
+    all_positive = all(value > 0.0 for value in values)
+    all_negative = all(value < 0.0 for value in values)
+    headline = (
+        "Positive threshold-selection simulations lacked minimum trade support"
+        if all_positive
+        else (
+            "Every threshold-selection simulation was negative after stress costs"
+            if all_negative
+            else "Threshold-selection economics were mixed and statistically insufficient"
+        )
+    )
+    minimum = min(0.0, min(values))
+    maximum = max(0.0, max(values))
+    raw_span = max(1.0, maximum - minimum)
+    tick_step = max(10.0, math.ceil((raw_span / 5.0) / 10.0) * 10.0)
+    lower = math.floor(minimum / tick_step) * tick_step
+    upper = math.ceil(maximum / tick_step) * tick_step
+    if upper == lower:
+        upper = lower + tick_step
+
+    def y(value: float) -> float:
+        return top + chart_height * (upper - value) / (upper - lower)
+
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
+        f'<title id="title">Round {round_number} threshold-selection stress economics and sample support</title>',
+        f'<desc id="desc">Stress net return in basis points for every threshold candidate from {html.escape(selection_start_date)} to {html.escape(selection_end_date)} UTC. Each candidate is labeled with simulated trades versus its precommitted minimum and maximum drawdown. Positive net return does not pass when sample support is below the minimum.</desc>',
+        '<rect width="100%" height="100%" fill="#ffffff"/>',
+        f'<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">{headline}</text>',
+        f'<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Threshold selection: {html.escape(selection_start_date)} to {html.escape(selection_end_date)} UTC; adverse-stress 100 ms BBO outcomes.</text>',
+        f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
+    ]
+    tick_count = int(round((upper - lower) / tick_step)) + 1
+    for index in range(tick_count):
+        value = lower + index * tick_step
+        yy = y(value)
+        lines.extend(
+            [
+                f'<line x1="{left}" y1="{yy:.1f}" x2="{left + chart_width}" y2="{yy:.1f}" stroke="#{"536674" if value == 0.0 else "e6ebef"}" stroke-width="{2 if value == 0.0 else 1}"/>',
+                f'<text x="{left - 12}" y="{yy + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:+.0f}</text>',
+            ]
+        )
+    zero_y = y(0.0)
+    slot = chart_width / len(selected)
+    for index, row in enumerate(selected):
+        value = float(row["stress_total_net_bps"])
+        xx = left + slot * (index + 0.5)
+        yy = y(value)
+        bar_y = min(yy, zero_y)
+        bar_height = max(1.0, abs(yy - zero_y))
+        color = "#16827a" if value > 0.0 else "#c64c3f"
+        value_y = yy - 9.0 if value >= 0.0 else yy + 18.0
+        quantile = int(round(100.0 * float(row["quantile"])))
+        lines.extend(
+            [
+                f'<rect x="{xx - 25:.1f}" y="{bar_y:.1f}" width="50" height="{bar_height:.1f}" fill="{color}"/>',
+                f'<text x="{xx:.1f}" y="{value_y:.1f}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#263744">{value:+.1f}</text>',
+                f'<text x="{xx:.1f}" y="{top + chart_height + 27}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#334653">{html.escape(str(row["profile"]).title())}</text>',
+                f'<text x="{xx:.1f}" y="{top + chart_height + 45}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">q{quantile}</text>',
+                f'<text x="{xx:.1f}" y="{top + chart_height + 65}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#425563">{int(row["stress_trades"])}/{int(row["required_minimum_trades"])} trades</text>',
+                f'<text x="{xx:.1f}" y="{top + chart_height + 83}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7882">DD {float(row["stress_max_drawdown_bps"]):.1f} bps</text>',
+            ]
+        )
+    lines.extend(
+        [
+            '<text x="34" y="300" transform="rotate(-90 34 300)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">Total net basis points</text>',
+            '<text x="48" y="625" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Measured threshold-selection economics remain selection-contaminated research evidence; no minimum-count gate was relaxed.</text>',
             "</svg>",
         ]
     )
@@ -925,7 +1301,11 @@ def _funnel_svg(rows: Sequence[Mapping[str, object]], *, round_number: int = 16)
 
 
 def _barrier_svg(
-    rows: Sequence[Mapping[str, object]], *, round_number: int = 16
+    rows: Sequence[Mapping[str, object]],
+    *,
+    round_number: int = 16,
+    start_date: str,
+    end_date: str,
 ) -> str:
     width, height = 1200, 560
     left, top, chart_width, chart_height = 100, 130, 1020, 280
@@ -936,14 +1316,21 @@ def _barrier_svg(
         "ambiguous_stop": "#e3a229",
         "protection_gap_stop": "#8d5aa7",
     }
+    labels = {
+        "horizon": "time exit",
+        "stop": "stop-loss exit",
+        "take": "take-profit exit",
+        "ambiguous_stop": "ambiguous stop-loss",
+        "protection_gap_stop": "gap stop-loss",
+    }
     outcomes = tuple(colors)
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">Round {round_number} adaptive barrier outcome composition</title>',
-        '<desc id="desc">Stacked percentages of horizon, stop, take, ambiguous stop and protection-gap stop outcomes for base and adverse-stress long and short paths from May 16 to July 6, 2023.</desc>',
+        f'<desc id="desc">Stacked percentages of time, stop-loss, take-profit, ambiguous stop-loss, and gap stop-loss exits for base and adverse-stress long and short paths from {html.escape(start_date)} to {html.escape(end_date)} UTC.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Path outcomes were predominantly horizon exits</text>',
-        '<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Real Binance Futures 100 ms BBO paths; each stack totals the valid event rows.</text>',
+        '<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Path outcomes were predominantly time exits</text>',
+        f'<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">BTCUSDT, {html.escape(start_date)} to {html.escape(end_date)} UTC; real Binance Futures 100 ms BBO paths.</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
     for value in (0, 25, 50, 75, 100):
@@ -968,7 +1355,7 @@ def _barrier_svg(
         lines.extend(
             [
                 f'<text x="{x:.1f}" y="{top + chart_height + 28}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#334653">{html.escape(str(row["scenario"]).title())} {html.escape(str(row["side"]))}</text>',
-                f'<text x="{x:.1f}" y="{top + chart_height + 49}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">positive {100 * float(row["positive_ratio"]):.1f}%</text>',
+                f'<text x="{x:.1f}" y="{top + chart_height + 49}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">profitable net outcome {100 * float(row["positive_ratio"]):.1f}%</text>',
             ]
         )
     legend_x = 115
@@ -976,7 +1363,7 @@ def _barrier_svg(
         lines.extend(
             [
                 f'<rect x="{legend_x}" y="493" width="14" height="14" fill="{colors[name]}"/>',
-                f'<text x="{legend_x + 21}" y="505" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#53616d">{html.escape(name.replace("_", " "))}</text>',
+                f'<text x="{legend_x + 21}" y="505" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#53616d">{html.escape(labels[name])}</text>',
             ]
         )
         legend_x += 190
@@ -987,10 +1374,43 @@ def _barrier_svg(
 def _research_progress_svg(
     rows: Sequence[Mapping[str, object]], *, round_number: int = 16
 ) -> str:
-    return _progress_svg(rows).replace(
+    chart = _progress_svg(rows).replace(
         "Round fifteen produced no evaluation trades.",
         f"Rounds 15 through {round_number} produced no evaluation trades.",
     )
+    dates = sorted(
+        {
+            value
+            for row in rows
+            for value in re.findall(
+                r"\d{4}-\d{2}-\d{2}", str(row.get("periods", ""))
+            )
+        }
+    )
+    if dates:
+        footer_prefix = (
+            "R denotes research round. " if "R denotes research round." in chart else ""
+        )
+        old_footer = (
+            '<text x="56" y="574" font-family="Segoe UI, Arial, sans-serif" '
+            f'font-size="13" fill="#65727d">{footer_prefix}Windows and '
+            "units differ by round. This is evidence lineage, not a continuous "
+            "equity curve or portfolio return series.</text>"
+        )
+        new_footer = (
+            '<text x="56" y="570" font-family="Segoe UI, Arial, sans-serif" '
+            'font-size="13" fill="#65727d">Underlying exchange-data windows span '
+            f"{html.escape(dates[0])} to {html.escape(dates[-1])} UTC; progress.csv "
+            "records each round's dates.</text>\n"
+            '<text x="56" y="594" font-family="Segoe UI, Arial, sans-serif" '
+            'font-size="13" fill="#65727d">R denotes research round; windows and '
+            "units differ. This is evidence lineage, not a continuous equity curve "
+            "or portfolio return series.</text>"
+        )
+        if old_footer not in chart:
+            raise ValueError("research-progress footer contract changed")
+        chart = chart.replace(old_footer, new_footer)
+    return chart
 
 
 def _gate_summary(
@@ -1024,6 +1444,19 @@ def _gate_summary(
     all_candidate_stress_nets_negative = bool(candidate_rows) and all(
         float(row["stress_total_net_bps"]) < 0.0 for row in candidate_rows
     )
+    positive_candidate_count = sum(
+        float(row["stress_total_net_bps"]) > 0.0 for row in candidate_rows
+    )
+    maximum_trade_row = (
+        max(candidate_rows, key=lambda row: int(row["stress_trades"]))
+        if candidate_rows
+        else None
+    )
+    best_net_row = (
+        max(candidate_rows, key=lambda row: float(row["stress_total_net_bps"]))
+        if candidate_rows
+        else None
+    )
     if eligible:
         eligible_text = ", ".join(
             f"{str(row['profile']).capitalize()} ({int(row['calibration_eligible_rows']):,})"
@@ -1035,7 +1468,7 @@ def _gate_summary(
             else ""
         )
         candidate_clause = (
-            f"The {candidate_count} resulting threshold candidates all failed the "
+            f"the {candidate_count} resulting threshold candidates all failed the "
             "stress-test acceptance criteria"
             if candidate_count
             else "No threshold candidate could be constructed"
@@ -1063,6 +1496,32 @@ def _gate_summary(
         "policy_trades": policy_trades,
         "development_evaluated": development_evaluated,
         "all_candidate_stress_nets_negative": all_candidate_stress_nets_negative,
+        "positive_candidate_count": positive_candidate_count,
+        "maximum_candidate_trades": (
+            int(maximum_trade_row["stress_trades"])
+            if maximum_trade_row is not None
+            else 0
+        ),
+        "maximum_candidate_trades_required": (
+            int(maximum_trade_row["required_minimum_trades"])
+            if maximum_trade_row is not None
+            else 0
+        ),
+        "best_candidate_stress_total_net_bps": (
+            float(best_net_row["stress_total_net_bps"])
+            if best_net_row is not None
+            else None
+        ),
+        "best_candidate_stress_trades": (
+            int(best_net_row["stress_trades"])
+            if best_net_row is not None
+            else 0
+        ),
+        "best_candidate_stress_max_drawdown_bps": (
+            float(best_net_row["stress_max_drawdown_bps"])
+            if best_net_row is not None
+            else None
+        ),
         "sentence": sentence,
     }
 
@@ -1073,6 +1532,8 @@ def publish(
     prior_progress_path: Path,
     output_dir: Path,
     depth_coverage_path: Path | None = None,
+    numeric_replay_root: Path | None = None,
+    architecture_baseline_root: Path | None = None,
 ) -> dict[str, object]:
     raw_design = _read_json(design_path)
     if raw_design.get("schema_version") == "outcome-mixture-screen-design-v1":
@@ -1084,6 +1545,13 @@ def publish(
             design_path, require_current=False
         )
     report = _validated_evidence(evidence_root, design, design_sha256)
+    replay_integrity = _validated_round30_replay(
+        evidence_root,
+        report,
+        design,
+        numeric_replay_root,
+        architecture_baseline_root,
+    )
     depth_coverage = _validated_depth_coverage(
         depth_coverage_path,
         evidence_root / "report.json",
@@ -1091,8 +1559,15 @@ def publish(
     )
     forecast_rows = _forecast_rows(report, design)
     profile_rows = _profile_rows(report)
-    thresholds = _threshold_rows(report)
+    thresholds = _threshold_rows(report, design)
     gate_summary = _gate_summary(profile_rows, thresholds)
+    if int(report["round"]) == 30 and (
+        gate_summary["candidate_count"] != 12
+        or gate_summary["positive_candidate_count"] != 12
+        or gate_summary["maximum_candidate_trades"] != 12
+        or gate_summary["maximum_candidate_trades_required"] != 20
+    ):
+        raise ValueError("Round 30 threshold-support evidence drifted")
     barrier_rows = _barrier_rows(report)
     progress = _progress_rows(prior_progress_path, report, forecast_rows)
     progress_fields: list[str] = []
@@ -1119,6 +1594,7 @@ def publish(
         "profile_rows": profile_rows,
         "barrier_rows": barrier_rows,
         "sampled_aggregate_depth_coverage": depth_coverage,
+        "numeric_replay_integrity": replay_integrity,
         "source_report": {
             name: value
             for name, value in report.items()
@@ -1142,27 +1618,12 @@ def publish(
             json.dumps(depth_coverage, indent=2, sort_keys=True, allow_nan=False)
             + "\n",
         )
-    _write_text(
-        charts / "forecast-quality.svg",
-        _forecast_svg(forecast_rows, round_number=int(report["round"])),
-    )
-    _write_text(
-        charts / "ranked-tail-economics.svg",
-        _tail_svg(forecast_rows, round_number=int(report["round"])),
-    )
-    _write_text(
-        charts / "pre-trade-risk-controls.svg",
-        _funnel_svg(profile_rows, round_number=int(report["round"])),
-    )
-    round_number = int(report["round"])
-    _write_text(
-        charts / "barrier-outcomes.svg",
-        _barrier_svg(barrier_rows, round_number=round_number),
-    )
-    _write_text(
-        charts / "research-progress.svg",
-        _research_progress_svg(progress, round_number=round_number),
-    )
+    if replay_integrity is not None:
+        _write_text(
+            output_dir / "replay-integrity.json",
+            json.dumps(replay_integrity, indent=2, sort_keys=True, allow_nan=False)
+            + "\n",
+        )
     calibration_stress = [
         row
         for row in forecast_rows
@@ -1173,6 +1634,54 @@ def publish(
         for row in forecast_rows
         if row["role"] == "policy" and row["scenario"] == "stress"
     ]
+    if not calibration_stress or not policy_stress:
+        raise ValueError("publication requires calibration and policy stress rows")
+    selection_start_date = min(str(row["start_date"]) for row in calibration_stress)
+    selection_end_date = max(str(row["end_date"]) for row in calibration_stress)
+    policy_start_date = min(str(row["start_date"]) for row in policy_stress)
+    policy_end_date = max(str(row["end_date"]) for row in policy_stress)
+    _write_text(
+        charts / "forecast-quality.svg",
+        _forecast_svg(forecast_rows, round_number=int(report["round"])),
+    )
+    _write_text(
+        charts / "ranked-tail-economics.svg",
+        _tail_svg(forecast_rows, round_number=int(report["round"])),
+    )
+    _write_text(
+        charts / "pre-trade-risk-controls.svg",
+        _funnel_svg(
+            profile_rows,
+            round_number=int(report["round"]),
+            selection_start_date=selection_start_date,
+            selection_end_date=selection_end_date,
+            policy_start_date=policy_start_date,
+            policy_end_date=policy_end_date,
+        ),
+    )
+    _write_text(
+        charts / "threshold-economics.svg",
+        _threshold_economics_svg(
+            thresholds,
+            round_number=int(report["round"]),
+            selection_start_date=selection_start_date,
+            selection_end_date=selection_end_date,
+        ),
+    )
+    round_number = int(report["round"])
+    _write_text(
+        charts / "barrier-outcomes.svg",
+        _barrier_svg(
+            barrier_rows,
+            round_number=round_number,
+            start_date=str(design["data"]["start_date"]),
+            end_date=str(design["data"]["end_date"]),
+        ),
+    )
+    _write_text(
+        charts / "research-progress.svg",
+        _research_progress_svg(progress, round_number=round_number),
+    )
     best_calibration_auc = max(calibration_stress, key=lambda row: float(row["auc"]))
     best_policy_auc = max(policy_stress, key=lambda row: float(row["auc"]))
     best_policy_tail = max(
@@ -1205,6 +1714,9 @@ def publish(
     depth_table_row = ""
     depth_method = ""
     depth_data_link = ""
+    replay_table_row = ""
+    replay_method = ""
+    replay_data_link = ""
     dataset_description = "exact-BBO rows"
     if depth_coverage is not None:
         available_rows = int(depth_coverage["available_rows"])
@@ -1225,6 +1737,46 @@ def publish(
         dataset_description = (
             "source-bound BBO/trade rows with sampled aggregate-depth features"
         )
+    if replay_integrity is not None:
+        replay_table_row = (
+            "| Numeric-contract replay | Identical boosters, forecasts, roles, "
+            "and threshold-selection results |\n"
+        )
+        replay_method = (
+            " Round 30 revision 2 restores the sealed float-valued JSON types; "
+            "its target hash matches Round 26, while every booster string and "
+            "substantive metric exactly reproduces revision 1."
+        )
+        replay_data_link = " | [replay integrity](replay-integrity.json)"
+    if int(gate_summary["candidate_count"]) > 0:
+        threshold_table_rows = (
+            "| Positive threshold-selection stress simulations | "
+            f"{int(gate_summary['positive_candidate_count']):,} / "
+            f"{int(gate_summary['candidate_count']):,} |\n"
+            "| Maximum candidate trades / required minimum | "
+            f"{int(gate_summary['maximum_candidate_trades']):,} / "
+            f"{int(gate_summary['maximum_candidate_trades_required']):,} |\n"
+            "| Best threshold-selection stress net return | "
+            f"{float(gate_summary['best_candidate_stress_total_net_bps']):+.2f} bps "
+            f"from {int(gate_summary['best_candidate_stress_trades']):,} trades |\n"
+        )
+    else:
+        threshold_table_rows = (
+            "| Threshold-selection candidates | 0; pre-threshold abstention |\n"
+        )
+    if round_number == 30:
+        conclusion = (
+            "The hurdle ranking produced promising but statistically insufficient "
+            "after-cost tails: threshold-selection stress ROC AUC reached "
+            f"{float(best_calibration_auc['auc']):.3f}, and {tail_evidence}."
+        )
+    else:
+        conclusion = (
+            "Probability-of-profit discrimination did not translate into an "
+            "economically usable net-return ranking: threshold-selection stress "
+            f"ROC AUC reached {float(best_calibration_auc['auc']):.3f}, and "
+            f"{tail_evidence}."
+        )
     readme = f"""# Round {round_number}: {title}
 
 **Rejected without trading authority.** {summary} {gate_summary["sentence"]}
@@ -1237,8 +1789,8 @@ def publish(
 | Largest pre-threshold eligible signal set | {int(gate_summary["highest_eligible_rows"]):,} / {int(best_calibration_auc["rows"]):,} ({gate_summary["highest_eligible_profile"]}) |
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
 | Policy-validation simulated trades (reused window) | {int(gate_summary["policy_trades"]):,} |
-| Authorized / live-executed trades | 0 / 0 |
-{depth_table_row}
+{threshold_table_rows}| Authorized / live-executed trades | 0 / 0 |
+{depth_table_row}{replay_table_row}
 
 **Research-governance warning:** the policy-validation window has been reused across rounds and is selection-contaminated. It is not independent out-of-sample or terminal evidence.
 
@@ -1248,15 +1800,17 @@ def publish(
 
 ![Signals passing pre-trade risk controls](charts/pre-trade-risk-controls.svg)
 
+![Threshold-selection stress economics](charts/threshold-economics.svg)
+
 ![Barrier outcomes](charts/barrier-outcomes.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} {dataset_description}. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.{depth_method}
+BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} {dataset_description}. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.{depth_method}{replay_method}
 
-Probability-of-profit discrimination did not translate into an economically usable net-return ranking: threshold-selection stress ROC AUC reached {float(best_calibration_auc["auc"]):.3f}, and {tail_evidence}. {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
+{conclusion} {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
 
-Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json){depth_data_link} | [integrity report](report.json)
+Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json){depth_data_link}{replay_data_link} | [integrity report](report.json)
 """
     _write_text(output_dir / "README.md", readme)
     generated = [
@@ -1270,11 +1824,14 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         charts / "forecast-quality.svg",
         charts / "ranked-tail-economics.svg",
         charts / "pre-trade-risk-controls.svg",
+        charts / "threshold-economics.svg",
         charts / "barrier-outcomes.svg",
         charts / "research-progress.svg",
     ]
     if depth_coverage is not None:
         generated.append(output_dir / "depth-coverage.json")
+    if replay_integrity is not None:
+        generated.append(output_dir / "replay-integrity.json")
     publication: dict[str, object] = {
         "schema_version": PUBLICATION_SCHEMA_VERSION,
         "artifact_class": "exchange_sourced_adaptive_action_graph_data",
@@ -1297,6 +1854,11 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         "corpus_certificate_sha256": report["corpus_certificate_sha256"],
         "barrier_targets_sha256": report["dataset"]["barrier_targets_sha256"],
         "diagnostic_sha256": diagnostics["diagnostic_sha256"],
+        "numeric_replay_sha256": (
+            replay_integrity["replay_sha256"]
+            if replay_integrity is not None
+            else None
+        ),
         "sampled_aggregate_depth_coverage_sha256": (
             depth_coverage["audit_sha256"] if depth_coverage is not None else None
         ),
@@ -1310,6 +1872,16 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
             ],
             "calibration_eligible_rows": gate_summary["highest_eligible_rows"],
             "accepted_thresholds": gate_summary["accepted_count"],
+            "threshold_candidate_count": gate_summary["candidate_count"],
+            "positive_threshold_candidates": gate_summary[
+                "positive_candidate_count"
+            ],
+            "maximum_threshold_candidate_trades": gate_summary[
+                "maximum_candidate_trades"
+            ],
+            "best_threshold_stress_total_net_bps": gate_summary[
+                "best_candidate_stress_total_net_bps"
+            ],
             "policy_trades": gate_summary["policy_trades"],
             "development_evaluated": gate_summary["development_evaluated"],
             "research_candidates": 0,
@@ -1348,6 +1920,8 @@ def main() -> int:
         args.prior_progress,
         args.output_dir,
         args.depth_coverage,
+        args.numeric_replay_source,
+        args.architecture_baseline_source,
     )
     print(
         "adaptive-action-publication: "

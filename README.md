@@ -528,18 +528,23 @@ required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md): Round
-29 changed only the depth-free Round 26 model's maximum target and holding
-horizon from 900 to 1,800 seconds. The checksummed feature matrix contains
-877,664 rows and 227,011 valid event labels. The longer horizon increased the
-largest threshold-selection eligible set to 612 signals, but that was a failure
-mode rather than an improvement: calibration rank correlations were negative,
-all eight threshold candidates lost after stress costs, and the least-negative
-trace lost `-92.246143` bps with `113.917222` bps maximum drawdown. The best
-top-100 mean in the reused policy-validation window was still `-2.016582` bps.
-The model was rejected with zero accepted thresholds, zero reused-policy
-simulated trades, no leverage, and no trading authority. That repeatedly reused
-policy window is selection-contaminated and is not independent out-of-sample or
-terminal evidence.
+30 changed only the Round 26 predictor architecture, replacing the neural
+mixture with a three-seed OpenCL LightGBM hurdle ensemble on the exact same
+900-second target contract. The checksummed feature matrix contains 877,894
+rows and 229,001 valid event labels. All 12 threshold-selection simulations were
+positive after stress costs, but only 1 to 12 trades survived against profile
+minimums of 12 to 20; even the best threshold-selection simulation
+(`+135.761521` bps from five trades)
+therefore failed sample-support gates. The long calibration top-100 mean was
+`+7.578554` bps, while the reused policy window's short top-100 and top-500 means
+were `+17.883613` and `+4.697719` bps. Several broader ranked tails and Brier
+comparisons still failed. A numeric-contract replay reproduced the Round 26
+target hash and Round 30 booster strings, iterations, forecasts, profiles, and
+threshold results exactly. The model was rejected with zero accepted
+thresholds, zero policy simulations, no leverage, and no trading authority.
+The repeatedly reused policy window is selection-contaminated and is not
+independent out-of-sample or terminal evidence; these results are not a
+profitability claim.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

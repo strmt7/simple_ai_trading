@@ -456,10 +456,12 @@ trades and does not access terminal data. It shows why threshold relaxation
 would be wrong: the regular 1,800-second model's top 100 selection rows predicted
 `+1.8338` bps mean edge but realized `-15.5390` bps with zero profitable rows.
 The aggressive top 100 realized `-27.0188` bps with zero profitable rows. These
-counts, class-support tables, model hashes, and top-score outcomes are retained
-in
-[`model-research/action-value/latest`](model-research/action-value/latest/README.md)
-under diagnostic SHA-256 `7ca872c2...ea90`. Round 10 is not profitable evidence.
+counts, class-support tables, model hashes, and top-score outcomes were bound to
+diagnostic SHA-256 `7ca872c2...ea90`. Under latest-only retention, the Round 10
+decision remains in the cumulative
+[`progress.csv`](model-research/action-value/latest/progress.csv), while the
+per-round bundle has been replaced by the newest round. Round 10 is not
+profitability evidence.
 
 Round 11 was precommitted in `e7ed78c` before opening its 42-day BTCUSDT
 window (`2023-08-14` through `2023-09-24`). Corpus certificate
@@ -489,10 +491,10 @@ top-100 results were only `-1.5940` and `+1.9305` bps, respectively; after
 non-overlap, neither policy had the minimum 20 trades. Retrospectively choosing
 the better selection tail would be leakage. Two independent reconstruction
 runs were byte-identical at file SHA-256 `31a7b553...c8f6f` and canonical
-diagnostic SHA-256 `b7f67cb0...3adb`. The source tables and corrected
-dynamic-axis charts are retained in
-[`model-research/action-value/latest`](model-research/action-value/latest/README.md).
-Round 11 is evidence of regime-transfer and value-calibration failure, not
+diagnostic SHA-256 `b7f67cb0...3adb`. The Round 11 decision remains in the
+cumulative [`progress.csv`](model-research/action-value/latest/progress.csv);
+its source tables and charts were superseded under latest-only retention. Round
+11 is evidence of regime-transfer and value-calibration failure, not
 profitability.
 
 A deterministic consumed-data ablation then tested whether the failure was
@@ -544,10 +546,11 @@ selection trade was permitted, and leverage was not applied. The July 7
 terminal day remains untouched; the evaluated window is sealed in
 `consumed-periods-through-round-012.json`.
 
-The current evidence rejects this feature/model/execution family as a viable
-trading baseline. It does not justify a full-history scale-up or an AI overlay
-yet. Source tables, exact hashes, and latest-only charts are in
-[`model-research/action-value/latest`](model-research/action-value/latest/README.md).
+Round 12 rejected that feature/model/execution family as a viable trading
+baseline and did not justify a full-history scale-up or an AI overlay. Its
+decision remains in the cumulative
+[`progress.csv`](model-research/action-value/latest/progress.csv); latest-only
+source tables, hashes, and charts now describe Round 30.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses
