@@ -71,6 +71,8 @@ class GrossArchitectureSpec:
 @dataclass(frozen=True)
 class GrossForecastMetrics:
     rows: int
+    exact_after_cost_eligible_rows: int
+    exact_after_cost_eligible_ratio: float
     mean_actual_bps: float
     mean_prediction_bps: float
     mean_absolute_error_bps: float
@@ -381,8 +383,18 @@ def evaluate_gross_forecast(
         dataset.long_net_bps[endpoints],
         dataset.short_net_bps[endpoints],
     )
+    selected_side_eligible = np.where(
+        predicted >= 0.0,
+        dataset.long_liquidity_eligible[endpoints],
+        dataset.short_liquidity_eligible[endpoints],
+    ).astype(bool)
+    eligible_indexes = np.flatnonzero(selected_side_eligible)
+    if eligible_indexes.size == 0:
+        raise ValueError("gross forecast has no exact after-cost eligible selected side")
     strength = np.abs(predicted)
-    ranking = np.argsort(-strength, kind="stable")
+    ranking = eligible_indexes[
+        np.argsort(-strength[eligible_indexes], kind="stable")
+    ]
     top_rows: list[dict[str, object]] = []
     for requested in requested_top_rows:
         count = min(int(requested), len(ranking))
@@ -408,6 +420,8 @@ def evaluate_gross_forecast(
     errors = predicted - actual
     return GrossForecastMetrics(
         rows=len(actual),
+        exact_after_cost_eligible_rows=len(eligible_indexes),
+        exact_after_cost_eligible_ratio=float(len(eligible_indexes) / len(actual)),
         mean_actual_bps=float(np.mean(actual)),
         mean_prediction_bps=float(np.mean(predicted)),
         mean_absolute_error_bps=float(np.mean(np.abs(errors))),
