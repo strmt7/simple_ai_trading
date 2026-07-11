@@ -36,7 +36,7 @@ DESIGN19 = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-019-pressure-capacity-design.json"
+    / "round-019-depth-normalized-order-flow-design.json"
 )
 
 
@@ -152,23 +152,23 @@ def test_round19_contract_changes_only_the_causal_feature_family() -> None:
     )
 
 
-def test_round19_revision1_design_is_historical_and_preserves_sealed_controls() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN19, require_current=False)
+def test_round19_design_is_current_and_preserves_sealed_controls() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN19)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN18, require_current=False
     )
 
     assert design_sha256 == (
-        "c2c848a708e807bf66b2f95b77a155d35c2f1569f034fddb2b07ffcfff61e947"
+        "2a2c2e1c52d7dd0a6c8ac1a34e26defe3ec436a5051fcc49ed2172ef9f87ca77"
     )
     assert design["round"] == 19
     assert design["implementation"]["commit"] == (
-        "b5f283271a7033ad63da784f09162beb13490f78"
+        "123d6edf69411a3c942b6c7ce3a511706c5f0ccb"
     )
     assert screen.MICROSTRUCTURE_FEATURE_VERSION == "l1-tape-causal-v8"
     assert design["model"]["ranking_loss_weight"] == 0.1
     assert design["model"]["candidate_id"] == (
-        "pressure-capacity-conditional-outcome-mixture"
+        "depth-normalized-order-flow-conditional-outcome-mixture"
     )
     for section in (
         "data",
