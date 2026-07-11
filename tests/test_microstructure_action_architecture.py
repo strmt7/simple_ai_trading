@@ -531,6 +531,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
             sequence_length=7,
             pairwise_ranking_loss_weight=0.02,
             temporal_pooling_mode="causal_attention",
+            ranking_scope="utc_session",
         ),
         target_scenario="base",
         compute_backend="directml",
@@ -555,6 +556,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
     assert reloaded.spec.ranking_loss_mode == "correlation"
     assert reloaded.spec.pairwise_ranking_loss_weight == 0.02
     assert reloaded.spec.temporal_pooling_mode == "causal_attention"
+    assert reloaded.spec.ranking_scope == "utc_session"
     assert reloaded.spec.sequence_length == 7
     assert prediction.rows == 300
     assert np.all(np.isfinite(prediction.long_mean_bps))
@@ -753,6 +755,65 @@ def test_outcome_mixture_pairwise_ranking_prefers_realized_net_return_order() ->
     assert float(tied_loss) == 0.0
 
 
+def test_outcome_mixture_session_local_ranking_rejects_cross_session_levels() -> None:
+    torch = pytest.importorskip("torch")
+    prediction = torch.tensor(
+        [[1.0, 1.0], [0.0, 0.0], [11.0, 11.0], [10.0, 10.0]]
+    )
+    target = torch.tensor(
+        [[0.0, 0.0], [1.0, 1.0], [10.0, 10.0], [11.0, 11.0]]
+    )
+    weight = torch.ones(4)
+    slices = outcome_mixture._contiguous_group_slices(
+        np.asarray([100, 100, 101, 101], dtype=np.int64)
+    )
+
+    global_loss = outcome_mixture._scoped_ranking_loss(
+        prediction,
+        target,
+        weight,
+        mode="correlation",
+        group_slices=None,
+    )
+    local_loss = outcome_mixture._scoped_ranking_loss(
+        prediction,
+        target,
+        weight,
+        mode="correlation",
+        group_slices=slices,
+    )
+
+    assert slices == ((0, 2), (2, 4))
+    assert outcome_mixture._contiguous_group_slices(np.asarray([100])) == ()
+    assert float(global_loss) < 0.1
+    assert float(local_loss) > 1.9
+    with pytest.raises(ValueError, match="not contiguous"):
+        outcome_mixture._contiguous_group_slices(
+            np.asarray([100, 101, 100, 101], dtype=np.int64)
+        )
+
+
+def test_outcome_mixture_session_training_order_is_seeded_and_group_contiguous() -> (
+    None
+):
+    sessions = np.asarray([100, 100, 100, 101, 101, 102, 102, 102], dtype=np.int64)
+    first = outcome_mixture._session_grouped_training_order(
+        sessions, np.random.default_rng(73)
+    )
+    second = outcome_mixture._session_grouped_training_order(
+        sessions, np.random.default_rng(73)
+    )
+    ordered_sessions = sessions[first]
+
+    np.testing.assert_array_equal(first, second)
+    np.testing.assert_array_equal(np.sort(first), np.arange(len(sessions)))
+    assert len(outcome_mixture._contiguous_group_slices(ordered_sessions)) == 3
+    with pytest.raises(ValueError, match="sessions are invalid"):
+        outcome_mixture._session_grouped_training_order(
+            sessions[::-1], np.random.default_rng(73)
+        )
+
+
 def test_outcome_mixture_directml_cpu_fallback_guard_fails_closed() -> None:
     message = "The operator will fall back to run on the CPU."
     with pytest.raises(UserWarning, match="fall back"):
@@ -861,6 +922,7 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
             side_tower_mode="independent",
             ranking_loss_mode="pairwise_net_return",
             temporal_pooling_mode="causal_attention",
+            ranking_scope="utc_session",
         ),
         target_scenario="base",
         compute_backend="cpu",
@@ -882,6 +944,7 @@ def test_outcome_mixture_independent_tower_artifact_round_trip(tmp_path) -> None
     assert loaded.spec.side_tower_mode == "independent"
     assert loaded.spec.ranking_loss_mode == "pairwise_net_return"
     assert loaded.spec.temporal_pooling_mode == "causal_attention"
+    assert loaded.spec.ranking_scope == "utc_session"
     assert loaded.model_sha256 == model.model_sha256
     assert loaded.state.keys() == model.state.keys()
 
@@ -1013,6 +1076,7 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
             "unsupported",
         ),
         ({"temporal_pooling_mode": "bidirectional"}, "unsupported"),
+        ({"ranking_scope": "rolling_week"}, "unsupported"),
         (
             {
                 "ranking_loss_mode": "pairwise_net_return",
