@@ -85,6 +85,10 @@ _PROGRESS_IDENTITIES = {
         "parameter-matched soft mixture-of-experts ablation",
         "three-seed soft-expert causal-attention outcome-mixture",
     ),
+    26: (
+        "nested 15-second and 30-second expert-context ablation",
+        "three-seed nested-context soft-expert outcome-mixture",
+    ),
 }
 
 
@@ -166,6 +170,12 @@ def _publication_narrative(
             "soft mixture-of-experts outcome model abstained",
             "The nearly parameter-matched soft experts restored global ranking and increased signals passing pre-threshold controls, but every threshold-selection candidate lost money after stress costs, every displayed ranked tail remained negative, and near-maximum routing entropy showed little expert specialization.",
             "Homogeneous experts with near-uniform routing are rejected; the next precommitted change must test economically motivated multi-scale causal context while preserving the proper losses and every execution and risk control.",
+        )
+    if round_number == 26:
+        return (
+            "nested-context soft-expert outcome model abstained",
+            "Separating 15-second and 30-second causal contexts improved the best out-of-sample long top-100 mean net return and reduced the least-negative threshold-selection loss, but all eight threshold candidates still lost under stress, every displayed ranked tail remained negative, and routing remained close to uniform.",
+            "Further representation-only tuning is not justified; the next precommitted change must address the mismatch between short-lived microstructure information and the 900-second holding horizon without relaxing any execution or risk control.",
         )
     raise ValueError(
         f"adaptive action publication narrative is undefined for Round {round_number}"

@@ -282,7 +282,7 @@ def test_round24_publication_copy_is_specific() -> None:
     assert "Session-local ranking is rejected" in next_step
 
 
-def test_round25_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+def test_round25_publication_copy_is_specific() -> None:
     stage, model_id = _progress_identity(25)
     title, summary, next_step = _publication_narrative(
         25, all_candidate_stress_nets_negative=True
@@ -294,7 +294,21 @@ def test_round25_publication_copy_is_specific_and_future_rounds_fail_closed() ->
     assert "every threshold-selection candidate lost money" in summary
     assert "near-maximum routing entropy" in summary
     assert "Homogeneous experts with near-uniform routing are rejected" in next_step
-    with pytest.raises(ValueError, match="undefined for Round 26"):
-        _progress_identity(26)
-    with pytest.raises(ValueError, match="undefined for Round 26"):
-        _publication_narrative(26, all_candidate_stress_nets_negative=True)
+
+
+def test_round26_publication_copy_is_specific_and_future_rounds_fail_closed() -> None:
+    stage, model_id = _progress_identity(26)
+    title, summary, next_step = _publication_narrative(
+        26, all_candidate_stress_nets_negative=True
+    )
+
+    assert stage == "nested 15-second and 30-second expert-context ablation"
+    assert model_id == "three-seed nested-context soft-expert outcome-mixture"
+    assert title == "nested-context soft-expert outcome model abstained"
+    assert "all eight threshold candidates still lost" in summary
+    assert "routing remained close to uniform" in summary
+    assert "900-second holding horizon" in next_step
+    with pytest.raises(ValueError, match="undefined for Round 27"):
+        _progress_identity(27)
+    with pytest.raises(ValueError, match="undefined for Round 27"):
+        _publication_narrative(27, all_candidate_stress_nets_negative=True)
