@@ -1,41 +1,15 @@
-# Action-Value Round 11 Evidence
+# Round 12: bounded viability
 
-Status: **rejected**. This is checksummed Binance USD-M discovery evidence, not
-a profitability, execution, or trading-authority claim.
+**Rejected.** All 18 candidates completed; none had positive after-cost policy utility. The best policy trace lost **-50.69 bps** over **31 trades** with **170.57 bps** max drawdown.
 
-- UTC window: 2023-08-14 through 2023-09-24 (now consumed for selection)
-- Precommitted candidates: 12
-- Statistical fit failures: 0
-- Trained candidates: 12
-- Unrejected candidates: 0
-- Policy trades across trained candidates: 0
-- Selection trades across trained candidates: 0
-- Positive predicted-edge policy rows: 1468
-- Design SHA-256: `c7cfe43512104388577fc3730a6963f19253b800088eec70c3e18573d1ac5d64`
-- Corpus certificate SHA-256: `3a3851f51a117901eb414762021824aafc1e2a6f4f409c390adfb8db3b1a191e`
-- Implementation commit: `745cdb6062e0a8b6a26950053dd9db844e1b0806`
+![Policy economics](charts/after-cost-performance.svg)
 
-No trained candidate selected an executable trade; per-trade mean return
-is undefined and no equity curve is generated.
-
-Fit errors and every trained artifact hash are retained verbatim
-in the source table. A failed fit is not counted as a zero-return model, and an
-abstaining model is not presented as profitable.
-
-## Charts
-
-![After-cost performance](charts/after-cost-performance.svg)
-
-![Forecast quality](charts/forecast-quality.svg)
+![Top-score reality check](charts/forecast-quality.svg)
 
 ![Action funnel](charts/action-funnel.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-The source tables are [candidates.csv](candidates.csv) and
-[progress.csv](progress.csv); reconstructed class support and top-score outcomes
-are in [diagnostics.json](diagnostics.json) when required by the round. Every
-trained artifact SHA-256 and every fit error is retained in `candidates.csv`;
-no zero-trade equity curve is fabricated.
-Regenerate by passing this round's `--design`, `--evidence-root`, and required
-`--diagnostics` to `python tools/publish_action_value_discovery.py`.
+BTCUSDT, 2023-05-16 through 2023-07-06 UTC. The window is consumed; the 2023-07-07 terminal day remains untouched. This is research evidence, not profitability or trading authority.
+
+Data: [candidates.csv](candidates.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json) | [integrity report](report.json)

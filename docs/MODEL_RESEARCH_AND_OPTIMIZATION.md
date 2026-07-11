@@ -522,10 +522,32 @@ regenerable full source JSON has SHA-256 `3bc2f230...9bd6`, canonical ablation
 SHA-256 `ca92dff4...ac1e`, and the tracked compact summary has SHA-256
 `2d072da6...fd34`. The source-bound summary is retained under
 [`model-research/action-value/ablations`](model-research/action-value/ablations/round-011-aggressive-h900-score-ablation-summary.json).
-This rejects event gating and uniqueness weighting as sufficient fixes on the
-42-day sample. It supports expanding exact-BBO training across the provider's
-full 320-day history before spending untouched evidence on another selection
-claim.
+This rejected event gating and uniqueness weighting as sufficient fixes on the
+42-day sample. At that point, the proposed next step was a full-history build.
+
+### Round 12 bounded viability
+
+Round 12 tested that assumption before committing to a much larger build. The
+v6 design fixed a 52-day BTCUSDT window (`2023-05-16` through `2023-07-06`),
+five chronological roles, 300/900-second horizons, three risk profiles, and
+three distributional score methods. The checksum-bound corpus certificate is
+`975692f0...c33bd`; the one-time causal build reconciled 747,033,065 BBO
+updates into 5,532,689 one-second bars. Six AMD/OpenCL fits produced all 18
+precommitted candidates with no fit failures.
+
+Every policy tail was negative after 5 bps/side fees, 1 bps/side added
+slippage, and 750 ms latency. The best lost `50.6911` bps over 31 trades with
+`170.5717` bps max drawdown and profit factor `0.8804`; the worst lost
+`621.9029` bps. Each candidate's top 100 selection rows also had a negative
+mean outcome (`-3.0395` to `-15.3647` bps). No policy was accepted, no
+selection trade was permitted, and leverage was not applied. The July 7
+terminal day remains untouched; the evaluated window is sealed in
+`consumed-periods-through-round-012.json`.
+
+The current evidence rejects this feature/model/execution family as a viable
+trading baseline. It does not justify a full-history scale-up or an AI overlay
+yet. Source tables, exact hashes, and latest-only charts are in
+[`model-research/action-value/latest`](model-research/action-value/latest/README.md).
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses
