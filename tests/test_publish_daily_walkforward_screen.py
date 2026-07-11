@@ -51,7 +51,7 @@ def test_publication_charts_are_accessible_parseable_and_truthfully_labeled() ->
     assert "Direction AUC" in forecast
     assert "2023-07-01" in forecast
     assert ">84<" in funnel
-    assert "zero evaluation trades is a safety outcome" in funnel
+    assert "zero evaluation trades is an abstention result" in funnel
 
 
 def test_report_identity_uses_canonical_self_hash_and_rejects_tampering() -> None:
