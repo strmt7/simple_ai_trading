@@ -108,6 +108,13 @@ DESIGN26 = (
     / "action-value"
     / "round-026-nested-multiscale-soft-experts-design.json"
 )
+DESIGN27 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-027-300s-horizon-alignment-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -705,8 +712,10 @@ def test_round25_design_is_historical_parameter_matched_and_globally_ranked() ->
     ]
 
 
-def test_round26_design_is_current_and_changes_only_expert_context() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN26)
+def test_round26_design_is_historical_and_changes_only_expert_context() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN26, require_current=False
+    )
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
         DESIGN25, require_current=False
     )
@@ -754,6 +763,86 @@ def test_round26_design_is_current_and_changes_only_expert_context() -> None:
     assert "do not validate the fixed 900-second net-return target" in research[
         "https://arxiv.org/abs/2105.10430"
     ]
+
+
+def test_round27_design_is_current_and_changes_only_the_horizon() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN27)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN26, require_current=False
+    )
+
+    assert design_sha256 == (
+        "466e23010e639b5535ee10a06ea0549512b4058dc97136077a8015d712211136"
+    )
+    assert design["round"] == 27
+    assert design["implementation"]["commit"] == (
+        "0a0d73d08750041f77015f30f347bfa512c1e7d2"
+    )
+    assert design["execution"]["horizon_seconds"] == 300
+    assert design["barrier_targets"]["horizon_seconds"] == 300
+    assert screen._ROUND_CONTRACTS[27]["horizon_seconds"] == 300
+    assert design["model"]["candidate_id"] == (
+        "300s-horizon-nested-soft-expert-outcome-mixture"
+    )
+    assert set(design["model"]) == set(predecessor["model"])
+    for name, value in predecessor["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
+    for section in (
+        "data",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+    for section in ("execution", "barrier_targets"):
+        assert set(design[section]) == set(predecessor[section])
+        for name, value in predecessor[section].items():
+            if name != "horizon_seconds":
+                assert design[section][name] == value
+    research = {item["url"]: item["use"] for item in design["research_basis"]}
+    assert "precommitted 300-second net-return target" in research[
+        "https://arxiv.org/abs/2105.10430"
+    ]
+    assert "shorter fixed lifecycle as a falsifiable alignment change" in research[
+        "https://arxiv.org/abs/1409.2618"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value"),
+    [
+        ("execution", "total_latency_ms", 751),
+        ("execution", "horizon_seconds", 301),
+        ("barrier_targets", "horizon_seconds", 301),
+        ("barrier_targets", "minimum_stop_bps", 17.0),
+    ],
+)
+def test_round27_horizon_override_rejects_other_safety_drift(
+    tmp_path: Path, section: str, field: str, value: object
+) -> None:
+    payload = json.loads(DESIGN27.read_text(encoding="utf-8"))
+    payload[section][field] = value
+    canonical = dict(payload)
+    canonical.pop("design_sha256")
+    payload["design_sha256"] = hashlib.sha256(
+        json.dumps(
+            canonical,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    source = tmp_path / "unsafe-horizon-design.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="shared safety contract drifted"):
+        load_outcome_mixture_design(source, require_current=False)
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
