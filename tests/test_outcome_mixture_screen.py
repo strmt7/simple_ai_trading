@@ -45,6 +45,13 @@ DESIGN20 = (
     / "action-value"
     / "round-020-parameter-matched-side-tower-design.json"
 )
+DESIGN21 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-021-pairwise-net-return-ranking-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -243,6 +250,42 @@ def test_round20_design_is_historical_and_changes_only_side_architecture() -> No
     assert design["model"]["side_tower_mode"] == "independent"
     assert design["model"]["hidden_dim"] == 88
     assert design["model"]["residual_blocks"] == 2
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
+
+
+def test_round21_design_is_current_and_changes_only_ranking_mode() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN21)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN20, require_current=False
+    )
+
+    assert design_sha256 == (
+        "e097162b1fda42439e3528526b37405a3f0d843f3e9490fc258ecdca90da200a"
+    )
+    assert design["round"] == 21
+    assert design["implementation"]["commit"] == (
+        "439487491b70fb2e932e19088b38564b6e26ffee"
+    )
+    assert design["model"]["candidate_id"] == (
+        "pairwise-ranked-independent-side-outcome-mixture"
+    )
+    assert design["model"]["ranking_loss_mode"] == "pairwise_net_return"
+    assert set(design["model"]) == set(predecessor["model"]) | {"ranking_loss_mode"}
+    for name, value in predecessor["model"].items():
+        if name != "candidate_id":
+            assert design["model"][name] == value
     for section in (
         "data",
         "execution",
