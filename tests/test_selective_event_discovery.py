@@ -19,7 +19,7 @@ from tools.run_selective_event_discovery import (
 )
 
 
-def _tracked_round_twelve_design(revision: int = 5) -> Path:
+def _tracked_round_twelve_design(revision: int = 6) -> Path:
     return (
         Path(__file__).resolve().parents[1]
         / "docs"
@@ -358,8 +358,35 @@ def test_causal_feature_build_rebuilds_stale_evidence() -> None:
     ]
 
 
+def test_round_twelve_v6_design_binds_resources_roles_and_terminal() -> None:
+    design = load_selective_event_design(
+        _tracked_round_twelve_design(),
+        require_current=True,
+    )
+
+    assert design["design_sha256"] == (
+        "933a8619248145f4fd2e433952a92cfb8b90db4429846a468a6072f18486587d"
+    )
+    assert design["change_control"]["implementation_commit"] == (
+        "09ae2f2eeba81eacdd147be96075371659e0ba02"
+    )
+    assert design["design_revision"] == 6
+    assert design["runtime_resources"] == {
+        "duckdb_memory_limit": "4GB",
+        "warehouse_threads": 8,
+        "spill_directory_policy": "warehouse_adjacent",
+        "feature_build_chunk_clock": "utc_event_day",
+    }
+    assert design["data"]["roles"]["train"]["day_count"] == 31
+    assert design["data"]["roles"]["selection"]["day_count"] == 6
+    assert design["reserved_terminal"]["start_date"] == "2023-07-07"
+    assert design["supersession"]["model_feature_build_started"] is True
+    assert design["supersession"]["model_fit_started"] is False
+    assert design["supersession"]["selection_labels_accessed"] is False
+
+
 def test_round_twelve_v5_design_is_preserved_but_no_longer_current() -> None:
-    design = load_selective_event_design(_tracked_round_twelve_design())
+    design = load_selective_event_design(_tracked_round_twelve_design(5))
 
     assert design["design_sha256"] == (
         "7948bf464c907a0825d62e6ad8208e183d08f6478c49c2c7c07724217c19a49f"
@@ -386,7 +413,7 @@ def test_round_twelve_v5_design_is_preserved_but_no_longer_current() -> None:
     }
     with pytest.raises(ValueError, match="implementation changed"):
         load_selective_event_design(
-            _tracked_round_twelve_design(),
+            _tracked_round_twelve_design(5),
             require_current=True,
         )
 

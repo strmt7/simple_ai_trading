@@ -1,0 +1,224 @@
+{
+  "schema_version": "selective-event-discovery-design-v1",
+  "round": 12,
+  "design_revision": 6,
+  "design_sha256": "933a8619248145f4fd2e433952a92cfb8b90db4429846a468a6072f18486587d",
+  "status": "precommitted",
+  "purpose": "bounded_exact_bbo_model_viability_screen",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "supersession": {
+    "supersedes_design_path": "docs/model-research/action-value/round-012-design-v5.json",
+    "supersedes_design_sha256": "7948bf464c907a0825d62e6ad8208e183d08f6478c49c2c7c07724217c19a49f",
+    "ancestor_design_sha256": "9c0e4f9bbe4e64086a5744cab2c8bc8c837ec878a5383dec292c5b757ca23d8f",
+    "root_design_sha256": "1507e8e18fd1c356a89feaf85e2dfba0553dd11dfea64680360fa6106f190b76",
+    "reason": "v5_feature_build_exceeded_safe_host_memory_before_any_label_or_model_access",
+    "historical_data_certification_attempted": true,
+    "historical_data_certification_passed": true,
+    "bounded_inventory_certificate_used": true,
+    "model_feature_build_started": true,
+    "model_feature_build_completed": false,
+    "model_fit_started": false,
+    "role_labels_constructed": false,
+    "selection_labels_accessed": false,
+    "reserved_terminal_accessed": false
+  },
+  "change_control": {
+    "implementation_commit": "09ae2f2eeba81eacdd147be96075371659e0ba02",
+    "implementation_files_sha256": {
+      "pyproject.toml": "757d9177fc93899fa4a584ae05e58a090cc50ed2d448d70b8b1e96aab8c295b3",
+      "src/simple_ai_trading/lightgbm_backend.py": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead",
+      "src/simple_ai_trading/microstructure_features.py": "b03eeaa8bbfa4df1d73bdc743aba73108357b5dd2d470b19b8d1de58bf8087be",
+      "src/simple_ai_trading/microstructure_model.py": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47",
+      "src/simple_ai_trading/microstructure_warehouse.py": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3",
+      "src/simple_ai_trading/tick_warehouse_merge.py": "7fe4df4e640df497452dc8fddcb1cee8336490d804177dcca54b357569de7228",
+      "tools/ablate_action_value_scores.py": "551c3379358ad9dd21f68805a12b779ad5b999f5e11f361eb2d0d999c769e687",
+      "tools/run_action_value_discovery.py": "b677ed64cc5691893fef889f4c35690c5566fe3d63516ea013d34db7054cd298",
+      "tools/run_selective_event_discovery.py": "1753b98d6cf482614f8843db475a5ba5cba9da44c53404fde4589c7139ce194d",
+      "tools/merge_tick_warehouses.py": "e6364f680aa505ddfb3741c81c040e87cac5633f05eaaa416ad012fda3901b76"
+    },
+    "fixed_dimensions": [
+      "v5_data_roles_horizons_costs_profiles_and_terminal_reservation",
+      "official_binance_usdm_book_ticker_and_trade_archives",
+      "checksum_and_physical_partition_certification",
+      "one_second_causal_features_and_100ms_execution_quotes",
+      "750ms_total_latency",
+      "5bps_taker_fee_and_1bps_additional_slippage_per_side",
+      "five_second_decision_cadence",
+      "causal_volatility_scaled_cusum_events",
+      "average_label_uniqueness_weights",
+      "risk_profile_stop_take_and_l1_participation_limits",
+      "nonoverlapping_positions_and_one_times_leverage"
+    ],
+    "changed_dimensions": [
+      "bounded_memory_utc_event_day_feature_construction",
+      "durable_interrupted_build_audit_and_retry_cleanup",
+      "four_gigabyte_duckdb_memory_contract",
+      "immutable_thread_spill_and_compute_backend_settings",
+      "runtime_resource_evidence_in_status_fit_and_report_artifacts"
+    ],
+    "round_11_evidence_mutable": false
+  },
+  "data": {
+    "provider": "binance",
+    "market_type": "futures",
+    "symbol": "BTCUSDT",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "roles": {
+      "train": {
+        "start_date": "2023-05-16",
+        "end_date": "2023-06-15",
+        "day_count": 31
+      },
+      "early_stop": {
+        "start_date": "2023-06-16",
+        "end_date": "2023-06-20",
+        "day_count": 5
+      },
+      "calibration": {
+        "start_date": "2023-06-21",
+        "end_date": "2023-06-25",
+        "day_count": 5
+      },
+      "policy": {
+        "start_date": "2023-06-26",
+        "end_date": "2023-06-30",
+        "day_count": 5
+      },
+      "selection": {
+        "start_date": "2023-07-01",
+        "end_date": "2023-07-06",
+        "day_count": 6
+      }
+    },
+    "feature_clock": "one_second_causal_event_time",
+    "execution_clock": "official_100ms_bbo",
+    "full_history_inventory_required": false,
+    "inventory_scope": "bounded_verified",
+    "bounded_corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
+    "checksum_verified_partitions_required": true,
+    "selection_dates_previously_untouched": true,
+    "selection_contaminated_after_run": true,
+    "all_window_dates_consumed_after_run": true,
+    "consumed_registry": "consumed-periods-through-round-011.json",
+    "consumed_registry_sha256": "ea6f1344c6a58e496f2f5f0f21711a05611d453db612b9b7bd043f43bf7fb898",
+    "window_selection_method": "earliest_contiguous_certified_window_before_untouched_terminal_and_consumed_2023_07_08",
+    "build_layout": "one_certified_duckdb_warehouse_with_transactionally_merged_trades",
+    "final_model_input_layout": "single_certified_duckdb_warehouse",
+    "merge_certificate_required": true
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "spill_directory_policy": "warehouse_adjacent",
+    "feature_build_chunk_clock": "utc_event_day"
+  },
+  "reserved_terminal": {
+    "start_date": "2023-07-07",
+    "end_date": "2023-07-07",
+    "day_count": 1,
+    "included_in_dataset": false,
+    "labels_constructed": false,
+    "access_allowed_in_round_12": false
+  },
+  "execution": {
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "trigger_execution_slippage_bps": 1.0,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "decision_cadence_seconds": 5,
+    "suppress_overlapping_positions": true,
+    "maker_fill_claim": false,
+    "leverage": 1.0
+  },
+  "training": {
+    "model_family": "causal_cusum_uniqueness_weighted_distributional_lgbm",
+    "feature_version": "l1-tape-causal-v7",
+    "predictor_parameter_profile": "shared_regularized",
+    "cusum_volatility_multiplier": 1.0,
+    "cusum_minimum_threshold_bps": 1.0,
+    "score_methods": [
+      "event_direct_mean",
+      "event_upper_quantile",
+      "event_distributional_value"
+    ],
+    "compute_backend": "directml",
+    "reproducible_backend": true,
+    "seed": 20260712,
+    "evaluate_terminal": false
+  },
+  "risk_profiles": {
+    "conservative": {
+      "stop_loss_bps": 25.0,
+      "take_profit_bps": 40.0,
+      "max_l1_participation": 0.05,
+      "max_selection_drawdown_bps": 250.0
+    },
+    "regular": {
+      "stop_loss_bps": 35.0,
+      "take_profit_bps": 60.0,
+      "max_l1_participation": 0.1,
+      "max_selection_drawdown_bps": 500.0
+    },
+    "aggressive": {
+      "stop_loss_bps": 50.0,
+      "take_profit_bps": 90.0,
+      "max_l1_participation": 0.15,
+      "max_selection_drawdown_bps": 800.0
+    }
+  },
+  "horizon_seconds": [
+    300,
+    900
+  ],
+  "model_fit_count": 6,
+  "candidate_count": 18,
+  "selection": {
+    "primary_metric": "selection_total_net_bps_minus_risk_penalty_times_max_drawdown_bps",
+    "minimum_policy_trades": 20,
+    "minimum_selection_trades": 20,
+    "activity_is_not_a_trade_quota": true,
+    "positive_daily_bootstrap_lower_bound_required": true,
+    "mandatory_gates": [
+      "positive_policy_risk_utility",
+      "minimum_nonoverlapping_selection_trade_count",
+      "positive_after_cost_selection_risk_utility",
+      "selection_profit_factor_above_one",
+      "positive_block_bootstrap_daily_lower_bound",
+      "risk_profile_selection_drawdown_limit",
+      "directional_baseline_outperformance"
+    ],
+    "promotion_allowed": false,
+    "next_stage": "development_role_diagnosis_or_fixed_architecture_screen"
+  },
+  "research_basis": [
+    {
+      "url": "https://github.com/binance/binance-public-data",
+      "use": "official_archive_format_and_checksum_contract"
+    },
+    {
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "forecast_discrimination_does_not_imply_executable_edge"
+    },
+    {
+      "url": "https://arxiv.org/abs/2502.15757",
+      "use": "transaction_cost_aware_limit_order_book_labels"
+    },
+    {
+      "url": "https://arxiv.org/abs/2202.07282",
+      "use": "adaptive_uncertainty_under_time_series_dependence"
+    },
+    {
+      "url": "https://arxiv.org/abs/2602.03903",
+      "use": "regime_weighted_nonstationary_risk_calibration"
+    }
+  ]
+}
