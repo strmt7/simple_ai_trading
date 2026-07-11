@@ -240,7 +240,7 @@ def load_outcome_mixture_design(
     if (
         payload.get("schema_version") != DESIGN_SCHEMA_VERSION
         or payload.get("round") != ROUND
-        or payload.get("design_revision") != 1
+        or payload.get("design_revision") not in {1, 2}
         or payload.get("purpose") != PURPOSE
         or payload.get("target_mode") != ADAPTIVE_BARRIER_TARGET_MODE
         or payload.get("trading_authority") is not False
