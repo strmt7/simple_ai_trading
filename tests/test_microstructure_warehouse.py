@@ -939,6 +939,7 @@ def test_causal_feature_rebuild_aggregates_event_time_across_daily_archives(tmp_
         threads=1,
     )
     boundary_ms = 1_704_153_600_000
+    progress: list[tuple[str, int, int | None]] = []
     try:
         _insert_complete_manifest(
             warehouse,
@@ -967,7 +968,10 @@ def test_causal_feature_rebuild_aggregates_event_time_across_daily_archives(tmp_
             ],
         )
 
-        evidence = warehouse.rebuild_causal_feature_bars("BTCUSDT")
+        evidence = warehouse.rebuild_causal_feature_bars(
+            "BTCUSDT",
+            progress=lambda phase, done, total: progress.append((phase, done, total)),
+        )
         bars = warehouse.connect().execute(
             """
             SELECT second_ms, open_mid, close_mid, quote_updates, source_archive_count
@@ -984,12 +988,78 @@ def test_causal_feature_rebuild_aggregates_event_time_across_daily_archives(tmp_
             (boundary_ms, 111.0, 121.0, 2, 2),
         ]
         assert len({row[0] for row in bars}) == len(bars)
+        assert progress == [
+            ("causal-feature-plan", 0, 2),
+            ("causal-feature-aggregate", 0, 3),
+            ("causal-feature-plan", 1, 2),
+            ("causal-feature-aggregate", 1, 3),
+            ("causal-feature-plan", 2, 2),
+            ("causal-feature-aggregate", 3, 3),
+            ("causal-feature-finalize", 2, 2),
+        ]
 
         warehouse.connect().execute(
             "UPDATE archive_manifest SET rows_read = rows_read + 1 WHERE archive_id = 'day-two'"
         )
         with pytest.raises(ValueError, match="stale relative to current source manifests"):
             warehouse.require_causal_feature_bars("BTCUSDT")
+    finally:
+        warehouse.close()
+
+
+def test_causal_feature_rebuild_cleans_interrupted_chunks_before_retry(tmp_path) -> None:
+    warehouse = MicrostructureWarehouse(
+        tmp_path / "ticks.duckdb",
+        cache_root=tmp_path / "cache",
+        memory_limit="256MB",
+        threads=1,
+    )
+    boundary_ms = 1_704_153_600_000
+    try:
+        _insert_complete_manifest(
+            warehouse,
+            archive_id="day-one",
+            period="2024-01-01",
+            source_hash="a" * 64,
+            rows=2,
+            first_ms=boundary_ms - 100,
+            last_ms=boundary_ms + 10,
+        )
+        warehouse.connect().executemany(
+            "INSERT INTO book_ticker_raw VALUES (?, 'BTCUSDT', ?, ?, ?, ?, ?, ?, ?)",
+            [
+                ("day-one", 1, 100.0, 2.0, 102.0, 2.0, boundary_ms - 100, boundary_ms - 80),
+                ("day-one", 2, 110.0, 2.0, 112.0, 2.0, boundary_ms + 10, boundary_ms + 20),
+            ],
+        )
+
+        def interrupt(phase: str, done: int, _total: int | None) -> None:
+            if phase == "causal-feature-aggregate" and done > 0:
+                raise RuntimeError("monitored abort")
+
+        with pytest.raises(RuntimeError, match="monitored abort"):
+            warehouse.rebuild_causal_feature_bars("BTCUSDT", progress=interrupt)
+
+        conn = warehouse.connect()
+        assert conn.execute("SELECT count(*) FROM book_ticker_feature_1s").fetchone()[0] == 0
+        failed = conn.execute(
+            "SELECT status, is_current, error FROM book_ticker_feature_build_audit"
+        ).fetchall()
+        assert len(failed) == 1
+        assert failed[0][0:2] == ("failed", False)
+        assert "monitored abort" in failed[0][2]
+
+        evidence = warehouse.rebuild_causal_feature_bars("BTCUSDT")
+        assert evidence["verified"] is True
+        assert evidence["quote_update_sum"] == 2
+        assert conn.execute(
+            "SELECT count(*) FROM book_ticker_feature_build_audit "
+            "WHERE status = 'building'"
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT count(*) FROM book_ticker_feature_build_audit "
+            "WHERE status = 'complete' AND is_current"
+        ).fetchone()[0] == 1
     finally:
         warehouse.close()
 
