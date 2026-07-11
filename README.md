@@ -229,19 +229,30 @@ not an executable fill or after-cost PnL. The artifact is therefore restricted t
 the long-history forecasting lane; the shorter exact-BBO lifecycle and current
 no-order shadow remain mandatory before any execution claim.
 
-The v6 forecast contract eliminates test-distribution tuning: return-magnitude
+The v8 forecast contract eliminates test-distribution tuning: return-magnitude
 sample weights use a scale learned only from exact float64 training targets.
 The calibration segment freezes the probability transform, direction baseline,
 forecast-magnitude gate, and maximum uncertainty width. Evaluation data cannot
 change any of them, and replay refits/recomputes every value before accepting the
-artifact. Conservative uses calibration quantiles `0.95/0.75` for magnitude and
-interval width plus `0.60` directional confidence; regular uses `0.90/0.90` and
-`0.56`; aggressive uses `0.80/0.98` and `0.52`. A forecast is selected only when
+artifact. Conservative uses calibration quantiles `0.95/0.95/0.75` for
+magnitude, directional-confidence margin, and interval width; regular uses
+`0.90/0.90/0.90`; aggressive uses `0.80/0.80/0.98`. The probability floor is
+`0.5` plus the selected quantile of absolute calibrated probability distance
+from `0.5`, so differently sharp models are compared by pre-evaluation rank
+rather than an arbitrary fixed probability. A forecast is selected only when
 magnitude, calibrated direction, and uncertainty agree. Every compressed
 prediction row carries the complete policy. Long/short/action counts are
 reported, but no quota forces an entry against risk analysis. The Brier and
 majority baselines are frozen from calibration prevalence rather than reading
 evaluation labels.
+
+The v8 training backend also makes numerical repeatability an explicit model
+contract. CPU fallback enables LightGBM deterministic column-wise training;
+OpenCL keeps AMD/NVIDIA acceleration but uses FP64 histogram accumulation, the
+upstream mitigation for GPU run-to-run variance. Two consecutive real-data AMD
+retrainings produced identical model and prediction SHA-256 fingerprints. This
+is a same-runtime repeatability result, not a claim that different LightGBM
+builds or GPU architectures will fit byte-identical trees.
 
 `tape-depth-prequential` is the multi-year rolling evidence path. Its default
 fold has 730 calendar days of training, separate 30-day tuning and calibration
@@ -254,6 +265,20 @@ shows AUC, rank IC, and gross forecast return with explicit baselines and a
 no-fill/no-cost caveat. It never sums overlapping forecast horizons into ROI and
 cannot grant trading authority. Full-corpus evidence is not claimed until the
 active checksummed acquisition and every planned fold complete.
+
+Gross-forecast survivors must also pass `tape_depth_execution` against the exact
+100 ms BBO overlap. This diagnostic suppresses overlapping same-symbol
+positions, uses causally available ask-to-bid or bid-to-ask paths, subtracts
+two-sided taker fees and explicit stress slippage, rejects stale/crossed/missing
+quotes, and enforces an L1 participation cap. It never infers maker fills or
+queue priority. The reproducible v8 replay of the exploratory 2024-03-15
+discovery reached `+5.5730` bps mean trade-reference gross on 15 conservative
+signals. Overlap suppression left 6 scheduled entries, the 10% L1 cap rejected
+2, and the remaining 4 averaged `-5.6385` bps net at 5 bps per side. It is
+rejected, not a profitability claim. The discovered
+20-second candidate is frozen for three untouched dates in the hash-bound
+[`confirmation-design.json`](docs/model-research/tape-depth/confirmation-design.json);
+those dates were committed before their archives were evaluated.
 
 The runner computes the causal one-second-derived matrix once per remaining
 symbol and retains only 20-second decision rows, bounded by

@@ -386,6 +386,7 @@ def test_tape_depth_prediction_table_is_complete_and_deterministic(tmp_path) -> 
         signal_policy=TapeDepthSignalPolicy(
             risk_level="conservative",
             magnitude_quantile=0.95,
+            direction_confidence_quantile=0.95,
             minimum_direction_probability=0.60,
             interval_width_quantile=0.75,
             signal_threshold_bps=1.0,

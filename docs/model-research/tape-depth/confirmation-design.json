@@ -1,0 +1,75 @@
+{
+  "acceptance": {
+    "maximum_liquidations": 0,
+    "maximum_quote_rejection_rows": 0,
+    "minimum_combined_executable_rows": 15,
+    "minimum_combined_mean_net_return_bps_exclusive": 0.0,
+    "minimum_combined_positive_net_rate_exclusive": 0.5,
+    "minimum_forecast_candidate_periods": 2,
+    "minimum_positive_mean_net_periods": 2,
+    "required_completed_periods": 3
+  },
+  "availability_sha256": "e8061cc87cbc826e660179a126741eb1e9e5f242cd8b3aad3a35b167d24ef1af",
+  "candidate": {
+    "compute_backend": "auto",
+    "decision_cadence_seconds": 5,
+    "feature_set": "cross_asset",
+    "horizon_seconds": 20,
+    "maximum_depth_age_ms": 60000,
+    "minimum_segment_rows": 1000,
+    "model_profile": "regularized",
+    "model_schema_version": "tape-depth-gross-forecast-v8",
+    "peer_symbols": [
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "reproducible_backend": true,
+    "risk_level": "conservative",
+    "seed": 20260710,
+    "symbol": "BTCUSDT",
+    "total_latency_ms": 750
+  },
+  "confirmation_periods": [
+    "2023-07-08",
+    "2023-10-21",
+    "2024-02-05"
+  ],
+  "date_selection": {
+    "eligible_first_period": "2023-05-16",
+    "eligible_last_period": "2024-03-30",
+    "eligible_period_count": 318,
+    "excluded_periods": [
+      "2023-11-13",
+      "2024-03-15"
+    ],
+    "method": "rounded_midpoint_of_each_of_three_equal_rank_strata",
+    "rank_indices": [
+      53,
+      158,
+      264
+    ]
+  },
+  "design_sha256": "03d0391d1001eb184c3dc5a500124b605141596f619286c217f1ab5a6b36ca94",
+  "discovery": {
+    "period": "2024-03-15",
+    "selection_contaminated": true,
+    "use_in_confirmation": false
+  },
+  "execution": {
+    "additional_slippage_bps_per_side": 1.0,
+    "leverage": 1.0,
+    "maker_fill_claim": false,
+    "max_l1_participation": 0.1,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "schema_version": "tape-depth-taker-diagnostic-v2",
+    "suppress_overlapping_positions": true,
+    "taker_fee_bps_per_side": 5.0
+  },
+  "execution_claim": false,
+  "profitability_claim": false,
+  "schema_version": "tape-depth-execution-confirmation-design-v1",
+  "terminal_holdout": false,
+  "trading_authority": false,
+  "truth_basis": "precommitted_space_filling_dates_within_official_bbo_trade_depth_intersection"
+}

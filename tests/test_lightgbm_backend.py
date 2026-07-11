@@ -11,7 +11,7 @@ def _backend(kind: str):
     return SimpleNamespace(kind=kind)
 
 
-def test_lightgbm_cpu_backend_is_deterministic(monkeypatch) -> None:
+def test_lightgbm_cpu_backend_is_seeded_by_default(monkeypatch) -> None:
     monkeypatch.setattr(lightgbm_backend, "resolve_backend", lambda _value: _backend("cpu"))
 
     parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters("auto", 41)
@@ -20,7 +20,25 @@ def test_lightgbm_cpu_backend_is_deterministic(monkeypatch) -> None:
     assert device == "cpu"
     assert parameters["device_type"] == "cpu"
     assert parameters["seed"] == 41
+    assert "deterministic" not in parameters
     assert "gpu_platform_id" not in parameters
+
+
+def test_lightgbm_reproducible_cpu_backend_uses_deterministic_columns(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(lightgbm_backend, "resolve_backend", lambda _value: _backend("cpu"))
+
+    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
+        "auto",
+        41,
+        reproducible=True,
+    )
+
+    assert kind == "cpu"
+    assert device == "cpu"
+    assert parameters["deterministic"] is True
+    assert parameters["force_col_wise"] is True
 
 
 def test_lightgbm_opencl_defaults_to_driver_selection(monkeypatch) -> None:
@@ -56,6 +74,32 @@ def test_lightgbm_opencl_honors_explicit_device_pair(monkeypatch) -> None:
     assert device == "opencl:2:3"
     assert parameters["gpu_platform_id"] == 2
     assert parameters["gpu_device_id"] == 3
+
+
+def test_lightgbm_reproducible_opencl_backend_uses_fp64(monkeypatch) -> None:
+    monkeypatch.delenv(lightgbm_backend.OPENCL_PLATFORM_ENV, raising=False)
+    monkeypatch.delenv(lightgbm_backend.OPENCL_DEVICE_ENV, raising=False)
+
+    parameters, kind, _device = lightgbm_backend.lightgbm_backend_parameters(
+        "directml",
+        11,
+        resolved_backend=_backend("directml"),
+        reproducible=True,
+    )
+
+    assert kind == "opencl"
+    assert parameters["gpu_use_dp"] is True
+
+
+def test_lightgbm_backend_rejects_non_boolean_reproducibility(monkeypatch) -> None:
+    monkeypatch.setattr(lightgbm_backend, "resolve_backend", lambda _value: _backend("cpu"))
+
+    with pytest.raises(ValueError, match="reproducible must be a boolean"):
+        lightgbm_backend.lightgbm_backend_parameters(
+            "auto",
+            11,
+            reproducible=1,  # type: ignore[arg-type]
+        )
 
 
 @pytest.mark.parametrize(

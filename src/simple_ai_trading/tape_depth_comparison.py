@@ -23,8 +23,8 @@ from .tape_depth_prequential import (
 )
 
 
-TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v4"
-TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v4"
+TAPE_DEPTH_SELECTION_SCHEMA_VERSION = "tape-depth-screening-selection-v5"
+TAPE_DEPTH_CONFIRMATION_SCHEMA_VERSION = "tape-depth-sealed-confirmation-v5"
 _TRIAL_CONFIG_KEYS = frozenset(
     {
         "model_profile",
