@@ -11,7 +11,7 @@
   "conclusion": {
     "adaptive_trading_configuration_count": 0,
     "cusum_filter_policy_accepted_count": 0,
-    "method_count": 13,
+    "method_count": 14,
     "static_policy_accepted_count": 0,
     "status": "rejected"
   },
@@ -3849,6 +3849,209 @@
           }
         }
       },
+      "cusum_event_filters": {},
+      "method": "event_distributional_value",
+      "policy": {
+        "accepted": false,
+        "best_observed_metrics": {
+          "active_days": 3,
+          "best_trade_bps": 78.80947327140574,
+          "long_trades": 28,
+          "max_drawdown_bps": 549.8230457306672,
+          "mean_net_bps": -19.636537347523824,
+          "median_net_bps": -13.756381091426658,
+          "profit_factor": 0.22007170312202143,
+          "short_trades": 0,
+          "total_net_bps": -549.8230457306671,
+          "trades": 28,
+          "trades_per_active_day": 9.333333333333334,
+          "win_rate": 0.2857142857142857,
+          "worst_trade_bps": -76.47519910310459
+        },
+        "best_observed_threshold": -10.80924843605035,
+        "best_observed_utility_bps": -1099.6460914613344,
+        "evaluated_thresholds": 9,
+        "minimum_trades": 20,
+        "policies_meeting_trade_minimum": 8,
+        "threshold": null
+      },
+      "policy_top_100": {
+        "actual_profitable_ratio": 0.33,
+        "actual_total_net_bps": -1757.258812994491,
+        "mean_actual_net_bps": -17.57258812994491,
+        "mean_score": -3.8615760532498715,
+        "requested_rows": 100,
+        "rows": 100
+      },
+      "selection_confidence": {
+        "active_days": 0,
+        "annualized_daily_sharpe": null,
+        "best_daily_net_bps": 0.0,
+        "block_length_days": 2,
+        "bootstrap_probability_mean_positive": 0.0,
+        "bootstrap_samples": 2000,
+        "calendar_days": 4,
+        "mean_daily_net_bps": 0.0,
+        "mean_daily_net_bps_ci_lower": 0.0,
+        "mean_daily_net_bps_ci_upper": 0.0,
+        "median_daily_net_bps": 0.0,
+        "worst_daily_net_bps": 0.0
+      },
+      "selection_metrics": {
+        "active_days": 0,
+        "best_trade_bps": 0.0,
+        "long_trades": 0,
+        "max_drawdown_bps": 0.0,
+        "mean_net_bps": 0.0,
+        "median_net_bps": 0.0,
+        "profit_factor": null,
+        "short_trades": 0,
+        "total_net_bps": 0.0,
+        "trades": 0,
+        "trades_per_active_day": 0.0,
+        "win_rate": 0.0,
+        "worst_trade_bps": 0.0
+      },
+      "selection_top_100": {
+        "actual_profitable_ratio": 0.57,
+        "actual_total_net_bps": -93.18622049364335,
+        "mean_actual_net_bps": -0.9318622049364335,
+        "mean_score": -6.363487838926587,
+        "requested_rows": 100,
+        "rows": 100
+      }
+    },
+    {
+      "adaptive_selection": {
+        "1": {
+          "accepted_days": 0,
+          "confidence": {
+            "active_days": 0,
+            "annualized_daily_sharpe": null,
+            "best_daily_net_bps": 0.0,
+            "block_length_days": 2,
+            "bootstrap_probability_mean_positive": 0.0,
+            "bootstrap_samples": 2000,
+            "calendar_days": 4,
+            "mean_daily_net_bps": 0.0,
+            "mean_daily_net_bps_ci_lower": 0.0,
+            "mean_daily_net_bps_ci_upper": 0.0,
+            "median_daily_net_bps": 0.0,
+            "worst_daily_net_bps": 0.0
+          },
+          "metrics": {
+            "active_days": 0,
+            "best_trade_bps": 0.0,
+            "long_trades": 0,
+            "max_drawdown_bps": 0.0,
+            "mean_net_bps": 0.0,
+            "median_net_bps": 0.0,
+            "profit_factor": null,
+            "short_trades": 0,
+            "total_net_bps": 0.0,
+            "trades": 0,
+            "trades_per_active_day": 0.0,
+            "win_rate": 0.0,
+            "worst_trade_bps": 0.0
+          }
+        },
+        "2": {
+          "accepted_days": 0,
+          "confidence": {
+            "active_days": 0,
+            "annualized_daily_sharpe": null,
+            "best_daily_net_bps": 0.0,
+            "block_length_days": 2,
+            "bootstrap_probability_mean_positive": 0.0,
+            "bootstrap_samples": 2000,
+            "calendar_days": 4,
+            "mean_daily_net_bps": 0.0,
+            "mean_daily_net_bps_ci_lower": 0.0,
+            "mean_daily_net_bps_ci_upper": 0.0,
+            "median_daily_net_bps": 0.0,
+            "worst_daily_net_bps": 0.0
+          },
+          "metrics": {
+            "active_days": 0,
+            "best_trade_bps": 0.0,
+            "long_trades": 0,
+            "max_drawdown_bps": 0.0,
+            "mean_net_bps": 0.0,
+            "median_net_bps": 0.0,
+            "profit_factor": null,
+            "short_trades": 0,
+            "total_net_bps": 0.0,
+            "trades": 0,
+            "trades_per_active_day": 0.0,
+            "win_rate": 0.0,
+            "worst_trade_bps": 0.0
+          }
+        },
+        "4": {
+          "accepted_days": 0,
+          "confidence": {
+            "active_days": 0,
+            "annualized_daily_sharpe": null,
+            "best_daily_net_bps": 0.0,
+            "block_length_days": 2,
+            "bootstrap_probability_mean_positive": 0.0,
+            "bootstrap_samples": 2000,
+            "calendar_days": 4,
+            "mean_daily_net_bps": 0.0,
+            "mean_daily_net_bps_ci_lower": 0.0,
+            "mean_daily_net_bps_ci_upper": 0.0,
+            "median_daily_net_bps": 0.0,
+            "worst_daily_net_bps": 0.0
+          },
+          "metrics": {
+            "active_days": 0,
+            "best_trade_bps": 0.0,
+            "long_trades": 0,
+            "max_drawdown_bps": 0.0,
+            "mean_net_bps": 0.0,
+            "median_net_bps": 0.0,
+            "profit_factor": null,
+            "short_trades": 0,
+            "total_net_bps": 0.0,
+            "trades": 0,
+            "trades_per_active_day": 0.0,
+            "win_rate": 0.0,
+            "worst_trade_bps": 0.0
+          }
+        },
+        "all": {
+          "accepted_days": 0,
+          "confidence": {
+            "active_days": 0,
+            "annualized_daily_sharpe": null,
+            "best_daily_net_bps": 0.0,
+            "block_length_days": 2,
+            "bootstrap_probability_mean_positive": 0.0,
+            "bootstrap_samples": 2000,
+            "calendar_days": 4,
+            "mean_daily_net_bps": 0.0,
+            "mean_daily_net_bps_ci_lower": 0.0,
+            "mean_daily_net_bps_ci_upper": 0.0,
+            "median_daily_net_bps": 0.0,
+            "worst_daily_net_bps": 0.0
+          },
+          "metrics": {
+            "active_days": 0,
+            "best_trade_bps": 0.0,
+            "long_trades": 0,
+            "max_drawdown_bps": 0.0,
+            "mean_net_bps": 0.0,
+            "median_net_bps": 0.0,
+            "profit_factor": null,
+            "short_trades": 0,
+            "total_net_bps": 0.0,
+            "trades": 0,
+            "trades_per_active_day": 0.0,
+            "win_rate": 0.0,
+            "worst_trade_bps": 0.0
+          }
+        }
+      },
       "cusum_event_filters": {
         "0.5": {
           "policy": {
@@ -4357,11 +4560,11 @@
   "profitability_claim": false,
   "schema_version": "action-value-score-ablation-summary-v1",
   "selection_is_consumed": true,
-  "source_ablation_file_sha256": "008d99fdd15dd5798f944f10b2e7fcf0325f1d642da1b778eafa7b4a55c08895",
-  "source_ablation_sha256": "3ca4ad7106f7120bee8ae574141d4e53361f376729152734bb35c6460607f9ec",
+  "source_ablation_file_sha256": "3bc2f230b31ef33126968717da7d738c3671beb19c20f1c47575a8205af19bd6",
+  "source_ablation_sha256": "ca92dff4f0919ac06eff810e3d7c87b6995564ffd82c20b1ec1d83e9ec0dac1e",
   "source_artifact_sha256": "6c122fd30e6cf735b9b9baedfdf0e380cf31cc3598109eee43e5efd8abf1ffcc",
   "source_report_sha256": "42ccd77ee2e18f59696e8b9c75b2cfcbf3bc881b20544a939e98bf79e23bbcf8",
-  "summary_sha256": "3ca4f35a4cb3587db4615af11528993bc24f6e69538d2c1df97f38aeffaa5741",
+  "summary_sha256": "52592ccccc19f5b689703d91f809465d937a1fd0c6a1cd3ba4a0fef31a249087",
   "terminal_holdout_accessed": false,
   "trading_authority": false
 }

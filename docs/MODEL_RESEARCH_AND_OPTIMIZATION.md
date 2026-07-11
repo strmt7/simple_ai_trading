@@ -500,25 +500,27 @@ limited to the hurdle expected-value formula. On aggressive 900 seconds it
 compared the hurdle score, calibrated profitability probability, direct mean,
 10th/90th conditional quantiles, downside-adjusted mean, and a reference-rank
 ensemble. It also evaluated four causal volatility-scaled CUSUM event filters,
-strictly prior-day threshold updates over four lookbacks, and six event-only
-models trained with average label-uniqueness weights. The event train roles had
+strictly prior-day threshold updates over four lookbacks, and seven event-only
+score families from eight estimators trained with average label-uniqueness
+weights. The event train roles had
 31,686 eligible long and 31,622 eligible short rows; class support remained
 ample after removing clock-tick duplicates.
 
-All 13 score families failed policy selection. No static policy was accepted,
-none of the 52 prior-only adaptive configurations traded, and none of the 28
+All 14 score families failed policy selection. No static policy was accepted,
+none of the 56 prior-only adaptive configurations traded, and none of the 28
 CUSUM-filter policy combinations passed. The probability score illustrates why
 row-level ranking is not enough: its policy top 100 averaged `-34.3739` bps,
 while its consumed selection top 100 averaged `+44.5879` bps with a 98%
 profitable-label rate. Those rows were clustered; after chronological
 non-overlap, every threshold still had negative policy utility. Event-only
-model utility was also negative for all six scores, from `-496.03` to
-`-1,061.30` bps.
+model utility was also negative for all seven scores, from `-496.03` to
+`-1,099.65` bps.
 
-Two complete AMD/OpenCL reruns were byte-identical. The regenerable full source
-JSON has SHA-256 `008d99fd...8895`, canonical ablation SHA-256
-`3ca4ad71...f9ec`, and the tracked compact summary has SHA-256
-`5f3b260d...067d`. The source-bound summary is retained under
+Two complete 13-method AMD/OpenCL reruns were byte-identical. The added
+distributional score reused the same direct/event model fingerprints; its
+regenerable full source JSON has SHA-256 `3bc2f230...9bd6`, canonical ablation
+SHA-256 `ca92dff4...ac1e`, and the tracked compact summary has SHA-256
+`2d072da6...fd34`. The source-bound summary is retained under
 [`model-research/action-value/ablations`](model-research/action-value/ablations/round-011-aggressive-h900-score-ablation-summary.json).
 This rejects event gating and uniqueness weighting as sufficient fixes on the
 42-day sample. It supports expanding exact-BBO training across the provider's
