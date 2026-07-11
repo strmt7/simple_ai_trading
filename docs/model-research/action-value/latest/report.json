@@ -16,9 +16,9 @@
   "artifact_class": "exchange_sourced_adaptive_action_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 2918,
+      "bytes": 2938,
       "path": "README.md",
-      "sha256": "e793e92bedb1a5d71bfa7648a2c98fb59fec80ef03b9522f333366948b3ae6f1"
+      "sha256": "136b52424bd8a190cdf64a8775ac1d62020a2ab154784ccf6dad87c9528c4ef9"
     },
     {
       "bytes": 2486,
@@ -51,19 +51,19 @@
       "sha256": "30e1d03f582726675d733c51432d8b11e9f04cdec67b15c580af9e1d3096893f"
     },
     {
-      "bytes": 4485,
+      "bytes": 4544,
       "path": "charts/forecast-quality.svg",
-      "sha256": "61873946f457ff7a769d20d11e9e06d444a09ae71efc3ed3d2bc4e9e53acf3c6"
+      "sha256": "d046ebf9b88b56e1820cd0866e258b9d0ebcee6ca361acd39075c0409f3867f5"
     },
     {
-      "bytes": 5508,
+      "bytes": 5567,
       "path": "charts/ranked-tail-economics.svg",
-      "sha256": "22728e6ede97257f24f79a6f72e37983a7a96ae016166b51dec2aa560067f245"
+      "sha256": "9ac8a95f8db3bf3102695be1723724ba5418ce56cd52e2d5a1a34c157a657dca"
     },
     {
-      "bytes": 4694,
+      "bytes": 4747,
       "path": "charts/pre-trade-risk-controls.svg",
-      "sha256": "53e804a6990bd0f3473b901ddc05376888a41a6e9b1a018f6957af349bc7c87c"
+      "sha256": "a73ad11abebe78275b1637ade1c0848d534cf385655043a50d84ff9b3ec28262"
     },
     {
       "bytes": 5240,
@@ -92,7 +92,7 @@
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "8c23a45d9bb025285c846ed485f8293631f269eccefa97fb577d639860e342b5",
+  "publication_sha256": "24223446c9cd74565f9be5f499139e4ab602d74e970faa34f8999ab329412375",
   "round": 28,
   "sampled_aggregate_depth_coverage_sha256": "b72b0bed8de7278d3b6b9390f086cebbd6828d681e06509cdae4c06795dbeb50",
   "schema_version": "adaptive-action-screen-publication-v1",

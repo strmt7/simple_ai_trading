@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1240" height="560" viewBox="0 0 1240 560" role="img" aria-labelledby="title desc">
 <title id="title">Round 28 probability-of-profit discrimination by evaluation window</title>
-<desc id="desc">Long and short adverse-stress ROC AUC for threshold selection from June 21 to 25 and out-of-sample validation from June 26 to 30, 2023. A dashed line marks random discrimination at 0.5.</desc>
+<desc id="desc">Long and short adverse-stress ROC AUC for threshold selection from June 21 to 25 and policy validation from June 26 to 30, 2023. The policy window has been reused across research rounds. A dashed line marks random discrimination at 0.5.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#17212b">Probability-of-profit discrimination</text>
 <text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Adverse-stress outcomes; ROC AUC above 0.5 indicates discrimination better than chance.</text>
@@ -25,11 +25,11 @@
 <text x="465.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-21 to 2023-06-25</text>
 <rect x="661.0" y="262.7" width="88" height="167.3" fill="#16827a"/>
 <text x="705.0" y="252.7" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">0.558</text>
-<text x="705.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Out-of-sample long</text>
+<text x="705.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy validation long</text>
 <text x="705.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-26 to 2023-06-30</text>
 <rect x="901.0" y="249.2" width="88" height="180.8" fill="#8d5aa7"/>
 <text x="945.0" y="239.2" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#253744">0.603</text>
-<text x="945.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Out-of-sample short</text>
+<text x="945.0" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#334653">Policy validation short</text>
 <text x="945.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6b7882">2023-06-26 to 2023-06-30</text>
 <text x="34" y="285" transform="rotate(-90 34 285)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">ROC AUC</text>
 <text x="48" y="532" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">ROC AUC alone does not establish a net-of-cost edge; all precommitted risk controls remained binding.</text>

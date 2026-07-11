@@ -533,7 +533,7 @@ aggregate depth at 1% and 5% to the otherwise unchanged Round 26 model. The
 checksummed feature matrix contains 877,894 rows; depth was current for 867,009
 (`98.76%`) and the remaining 10,885 rows were explicitly masked after 60
 seconds. These snapshots are not full event-level L2 or queue/fill evidence.
-The best out-of-sample top-100 mean was still `-5.732508` bps, all eight
+The best policy-validation top-100 mean was still `-5.732508` bps, all eight
 threshold candidates lost after stress costs, and the least-negative aggressive
 trace worsened to `-146.935234` bps. The model was rejected with zero simulated
 trades, no leverage, and no trading authority.
