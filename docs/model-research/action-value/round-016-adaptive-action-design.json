@@ -1,0 +1,334 @@
+{
+  "schema_version": "adaptive-action-screen-design-v1",
+  "round": 16,
+  "design_revision": 1,
+  "purpose": "consumed_data_adaptive_barrier_action_value_screen",
+  "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false,
+  "implementation": {
+    "commit": "b3327449ed22ae68007db77084d1d26da0f5cff3",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "3f1e4d099997f5093b6746200f123c372cb9201fab5ddc2b1f86b96d899bece3"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "9dd7d4818f4edd92c27662fc6f26033b7435b43cac88c319661122a75fec9f84"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "4a50a675f3618ba9aba73aebf24a58349f60b2241b7af66ffdded3a91e74d71c"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "7b1d0f7b3aff5aaaa1d0b282017918c63c2f421cc982cccd602165e8925be43a"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "f2a29c2ec5058811f1d4dfa4d9c86eef71dbc6f6b0c1ab44535e4bc8270310aa"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "0ae026337753c7dbdb8ed4558baf2880503eb79aee991699f66bbc413fc770ef"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "2d92c27e847374d7d9b734b074ed23837e9bc3ec3a674e175898a0ce2bf8c9bb"
+      },
+      {
+        "path": "tools/run_head_coherence_screen.py",
+        "sha256": "b7d26f3debf9fa31646649fe039bd0fd08caf379f527306209785ce916c22662"
+      },
+      {
+        "path": "tools/run_adaptive_action_screen.py",
+        "sha256": "44f0059a79953fe9154a729bd7ccc2752ea096720f340b0bee496dad5f52035a"
+      }
+    ]
+  },
+  "predecessor_evidence": {
+    "round": 15,
+    "design_sha256": "4ff50e579bb036d3146a8ea01e8f502efea0b2a0445df8f187f612199ebbe43c",
+    "source_report_canonical_sha256": "3518173cd9d8ba25e9bcb8ff6b421254092901d981001cd77b19e8c10c15fc12",
+    "publication_sha256": "ee18cdff45db44346960033a0bd55adf45359953106af1033738fb18099ef4a4",
+    "finding": "Daily gross-return refits could not select a positive after-cost policy, so Round 16 replaces the asymmetric path label with a single causal 100 ms barrier lifecycle and trains directly on side-specific after-cost action value."
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "full_history_inventory_required": false,
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development_evaluation": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "barrier_targets": {
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1.0,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18.0,
+    "maximum_stop_bps": 60.0,
+    "minimum_take_bps": 27.0,
+    "maximum_take_bps": 90.0,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "compute_backend": "directml",
+    "spill_directory_policy": "warehouse_adjacent",
+    "training_worker_isolation": "clean_process",
+    "cpu_fallback_permitted": false,
+    "training_data_mode": "bounded_device_preload_when_below_512MiB"
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "model": {
+    "candidate_id": "adaptive-barrier-shared-residual",
+    "family": "shared_residual_mlp",
+    "sequence_length": 1,
+    "hidden_dim": 128,
+    "residual_blocks": 2,
+    "dropout": 0.1,
+    "head_coherence_weight": 0.1,
+    "action_utility_weight": 0.1,
+    "downside_penalty": 0.5,
+    "action_temperature": 0.5
+  },
+  "training": {
+    "ensemble_seeds": [
+      29,
+      43,
+      71
+    ],
+    "batch_size": 4096,
+    "max_epochs": 20,
+    "patience": 4,
+    "target_scenario": "base",
+    "ensemble_method": "independent_seed_mean_and_dispersion",
+    "label_uniqueness_weighting": true,
+    "development_candidate_count": 1
+  },
+  "threshold_policy": {
+    "quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "drawdown_penalty": 0.5,
+    "selection_scenario": "stress",
+    "no_passing_threshold_action": "abstain"
+  },
+  "risk_profiles": [
+    {
+      "profile": "conservative",
+      "epistemic_penalty": 1.5,
+      "minimum_profitable_probability": 0.65,
+      "minimum_member_agreement": 1.0,
+      "maximum_epistemic_std_bps": 6.0,
+      "minimum_lower_bound_bps": -35.0,
+      "calibration_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 50.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "policy_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 60.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "development_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 70.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "regular",
+      "epistemic_penalty": 1.0,
+      "minimum_profitable_probability": 0.6,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 10.0,
+      "minimum_lower_bound_bps": -45.0,
+      "calibration_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 75.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "policy_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 85.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "development_gates": {
+        "minimum_trades": 18,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 95.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "aggressive",
+      "epistemic_penalty": 0.5,
+      "minimum_profitable_probability": 0.55,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 15.0,
+      "minimum_lower_bound_bps": -60.0,
+      "calibration_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 110.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "policy_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 125.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "development_gates": {
+        "minimum_trades": 24,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 140.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "leverage_applied": false
+    }
+  ],
+  "evaluation": {
+    "calibration_used_for_threshold_selection": true,
+    "policy_used_for_profile_acceptance": true,
+    "development_used_for_selection": false,
+    "positions_must_exit_within_utc_day": true,
+    "maximum_concurrent_positions": 1,
+    "overlap_permitted": false
+  },
+  "reserved_terminal": {
+    "date": "2023-07-07",
+    "included_in_dataset": false,
+    "access_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Requires a cost-aware execution filter and walk-forward evidence rather than sign-based trading."
+    },
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "use": "Supports causal order-book and trade features at one-second frequency while keeping claims tied to observed assets and periods."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Separates forecast quality from operational transaction evidence."
+    },
+    {
+      "title": "Conformal Risk Control",
+      "url": "https://arxiv.org/abs/2208.02814",
+      "use": "Motivates explicit risk-gated abstention while this short, drifting corpus is not claimed to satisfy exchangeability."
+    },
+    {
+      "title": "hftbacktest",
+      "url": "https://github.com/nkaz001/hftbacktest",
+      "use": "Motivates latency-aware replay and explicit queue-model limitations."
+    },
+    {
+      "title": "DirectML",
+      "url": "https://github.com/microsoft/DirectML",
+      "use": "Records vendor-neutral DirectX 12 acceleration and its maintenance-mode status; the experiment requires a verified clean-process DirectML training cycle."
+    }
+  ],
+  "design_sha256": "15e8702999f7ed2c5acdd5ab27c19535ad87c68e476b92339b7335d98991a639"
+}

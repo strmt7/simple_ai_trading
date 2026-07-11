@@ -22,6 +22,16 @@ from tools.run_adaptive_action_screen import (
 )
 
 
+ROOT = Path(__file__).resolve().parents[1]
+DESIGN = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-016-adaptive-action-design.json"
+)
+
+
 def _day(value: str) -> int:
     parsed = datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     return int(parsed.timestamp() * 1_000 // _DAY_MS)
@@ -172,3 +182,35 @@ def test_design_loader_rejects_unreadable_and_nonobject_payloads(
     source.write_text(json.dumps([]), encoding="utf-8")
     with pytest.raises(ValueError, match="must be an object"):
         load_adaptive_action_design(source)
+
+
+def test_tracked_round16_design_is_hash_bound_current_and_terminal_sealed() -> None:
+    design, design_sha256 = load_adaptive_action_design(DESIGN)
+
+    assert (
+        design_sha256
+        == "15e8702999f7ed2c5acdd5ab27c19535ad87c68e476b92339b7335d98991a639"
+    )
+    assert design["implementation"]["commit"] == (
+        "b3327449ed22ae68007db77084d1d26da0f5cff3"
+    )
+    assert design["reserved_terminal"] == {
+        "date": "2023-07-07",
+        "included_in_dataset": False,
+        "access_permitted": False,
+    }
+    assert [value["profile"] for value in design["risk_profiles"]] == [
+        "conservative",
+        "regular",
+        "aggressive",
+    ]
+    assert design["leverage_applied"] is False
+
+
+def test_round16_design_rejects_hash_and_contract_tampering(tmp_path: Path) -> None:
+    payload = json.loads(DESIGN.read_text(encoding="utf-8"))
+    payload["training"]["ensemble_seeds"] = [29, 43, 72]
+    source = tmp_path / "tampered.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="design hash is invalid"):
+        load_adaptive_action_design(source, require_current=False)
