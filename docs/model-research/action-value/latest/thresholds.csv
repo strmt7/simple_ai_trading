@@ -1,7 +1,10 @@
 profile,candidate_available,quantile,threshold_bps,accepted,stress_trades,stress_total_net_bps,stress_max_drawdown_bps,stress_profit_factor,stress_win_rate,rejection_reasons
 conservative,False,,,False,0,,,,,calibration_has_no_eligible_scores
-regular,False,,,False,0,,,,,calibration_has_no_eligible_scores
-aggressive,True,0.5,2.0257915938989473,False,7,-166.56367692692785,166.56367692692785,0.3167321983349431,0.2857142857142857,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
-aggressive,True,0.7,3.0340563769084303,False,7,-223.22789932432877,223.22789932432877,0.2569950655193595,0.2857142857142857,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;worst_trade_gate_failed;profit_factor_gate_failed
-aggressive,True,0.85,4.058678002431861,False,5,-161.5057375628645,206.04912455816367,0.31576397904624054,0.2,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
-aggressive,True,0.95,5.374937546352761,False,2,-103.85093514009219,103.85093514009219,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+regular,True,0.5,1.6119662386120348,False,7,-254.75480305436486,254.75480305436486,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;worst_trade_gate_failed;profit_factor_gate_failed
+regular,True,0.7,2.1807677110484054,False,6,-221.0081207960336,221.0081207960336,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;worst_trade_gate_failed;profit_factor_gate_failed
+regular,True,0.85,3.6631892084647513,False,3,-72.55713294621015,72.55713294621015,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+regular,True,0.95,4.288076724828143,False,1,-5.303917381551882,5.303917381551882,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.5,2.384633596615553,False,19,-553.0591532220801,570.7946658520938,0.15183789163323264,0.21052631578947367,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.7,3.4875328675846435,False,12,-298.38960823199403,298.38960823199403,0.23127641609670269,0.25,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,True,0.85,4.849860913379954,False,8,-164.6989806367929,164.69898063679287,0.31591316525675495,0.25,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;worst_trade_gate_failed;profit_factor_gate_failed
+aggressive,True,0.95,5.846718851805986,False,4,-124.7901230636825,124.7901230636825,0.0,0.0,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed

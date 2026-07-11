@@ -1,4 +1,4 @@
 profile,calibration_eligible_rows,calibration_threshold_candidates,calibration_threshold_accepted,calibration_rejection_reasons,policy_eligible_rows,policy_status,policy_trades,policy_total_net_bps,development_evaluated
-conservative,0,0,False,calibration_has_no_eligible_scores,0,rejected,0,0.0,False
-regular,0,0,False,calibration_has_no_eligible_scores,1,rejected,0,0.0,False
-aggressive,55,4,False,no_calibration_threshold_passed_stress_gates,83,rejected,0,0.0,False
+conservative,0,0,False,calibration_has_no_eligible_scores,2,rejected,0,0.0,False
+regular,19,4,False,no_calibration_threshold_passed_stress_gates,29,rejected,0,0.0,False
+aggressive,147,4,False,no_calibration_threshold_passed_stress_gates,214,rejected,0,0.0,False
