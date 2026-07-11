@@ -527,7 +527,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
         _barrier_targets(dataset, long_target, short_target),
         train_endpoints=np.arange(600, dtype=np.int64),
         tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
-        spec=_mixture_spec(ranking_loss_mode="pairwise_net_return"),
+        spec=_mixture_spec(pairwise_ranking_loss_weight=0.02),
         target_scenario="base",
         compute_backend="directml",
         seed=23,
@@ -548,7 +548,8 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
 
     assert reloaded.backend_kind == "directml"
     assert reloaded.backend_device == "privateuseone:0"
-    assert reloaded.spec.ranking_loss_mode == "pairwise_net_return"
+    assert reloaded.spec.ranking_loss_mode == "correlation"
+    assert reloaded.spec.pairwise_ranking_loss_weight == 0.02
     assert prediction.rows == 300
     assert np.all(np.isfinite(prediction.long_mean_bps))
 
@@ -947,6 +948,13 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
         ({"family": "shared_residual_mlp"}, "unsupported"),
         ({"side_tower_mode": "coupled"}, "unsupported"),
         ({"ranking_loss_mode": "listwise"}, "unsupported"),
+        (
+            {
+                "ranking_loss_mode": "pairwise_net_return",
+                "pairwise_ranking_loss_weight": 0.1,
+            },
+            "outside bounds",
+        ),
         ({"hidden_dim": 8}, "dimensions"),
         ({"dropout": float("nan")}, "must be finite"),
         ({"expected_value_loss_weight": -1.0}, "outside bounds"),

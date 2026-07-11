@@ -218,6 +218,22 @@ def test_round21_contract_changes_only_the_net_return_ranking_surrogate() -> Non
     assert "nonstable Safetensors" in contract["predecessors"][3]["finding"]
 
 
+def test_round22_contract_adds_a_bounded_pairwise_ranking_term() -> None:
+    contract = screen._ROUND_CONTRACTS[22]
+
+    assert contract["ranking_loss_mode"] == "correlation"
+    assert contract["ranking_loss_weight"] == 0.1
+    assert contract["pairwise_ranking_loss_weight"] == 0.02
+    assert contract["side_tower_mode"] == "independent"
+    assert contract["hidden_dim"] == 88
+    assert contract["trainable_parameter_count"] == 145_914
+    assert contract["feature_version"] == "l1-tape-causal-v8"
+    assert contract["predecessor"]["round"] == 21
+    assert contract["predecessor"]["publication_sha256"] == (
+        "c497c916945f89bd61bf4edf489b66684c67e22cf34882226914b943c5393afd"
+    )
+
+
 def test_round19_design_is_historical_and_preserves_sealed_controls() -> None:
     design, design_sha256 = load_outcome_mixture_design(DESIGN19, require_current=False)
     predecessor, _predecessor_sha256 = load_outcome_mixture_design(
@@ -354,8 +370,10 @@ def test_round21_revision2_is_historical_and_preserves_economic_contract() -> No
         assert design[section] == revision1[section]
 
 
-def test_round21_revision3_is_current_and_preserves_economic_contract() -> None:
-    design, design_sha256 = load_outcome_mixture_design(DESIGN21_V3)
+def test_round21_revision3_is_historical_and_preserves_economic_contract() -> None:
+    design, design_sha256 = load_outcome_mixture_design(
+        DESIGN21_V3, require_current=False
+    )
     revision2, _revision2_sha256 = load_outcome_mixture_design(
         DESIGN21_V2, require_current=False
     )
