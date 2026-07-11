@@ -332,6 +332,38 @@ _ROUND_CONTRACTS = {
             },
         },
     },
+    22: {
+        "purpose": "consumed_data_additive_pairwise_net_return_ranking_screen",
+        "design_revisions": {1},
+        "ranking_loss_weight": 0.1,
+        "ranking_loss_mode": "correlation",
+        "pairwise_ranking_loss_weight": 0.02,
+        "feature_version": "l1-tape-causal-v8",
+        "side_tower_mode": "independent",
+        "hidden_dim": 88,
+        "residual_blocks": 2,
+        "trainable_parameter_count": 145_914,
+        "predecessor": {
+            "round": 21,
+            "design_sha256": (
+                "afcebb4d1d079bb91755bb14da4ed8684af141bf829941443509b803bbe4b9eb"
+            ),
+            "source_report_canonical_sha256": (
+                "33475d88c105a8a7b1d85b18d30aef4a4ee71c11da1cc68edebd2f52bc0b1ee5"
+            ),
+            "publication_sha256": (
+                "c497c916945f89bd61bf4edf489b66684c67e22cf34882226914b943c5393afd"
+            ),
+            "finding": (
+                "Round 21 improved several discrimination and short-side tail "
+                "diagnostics, but every threshold-selection expected-return strength "
+                "was non-positive and all three profiles had zero eligible rows. "
+                "Round 22 restores Round 20's 0.10 correlation regularizer and adds "
+                "a 0.02 pairwise net-return term while keeping architecture, data, "
+                "targets, costs, thresholds, and risk controls fixed."
+            ),
+        },
+    },
 }
 
 
@@ -487,6 +519,8 @@ def load_outcome_mixture_design(
         or model_spec.ranking_loss_weight != round_contract["ranking_loss_weight"]
         or model_spec.ranking_loss_mode
         != round_contract.get("ranking_loss_mode", "correlation")
+        or model_spec.pairwise_ranking_loss_weight
+        != round_contract.get("pairwise_ranking_loss_weight", 0.0)
         or model_spec.side_tower_mode != round_contract.get("side_tower_mode", "shared")
         or model_spec.hidden_dim != round_contract.get("hidden_dim", 128)
         or model_spec.residual_blocks != round_contract.get("residual_blocks", 2)

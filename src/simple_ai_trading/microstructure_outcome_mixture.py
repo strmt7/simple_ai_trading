@@ -69,6 +69,7 @@ class OutcomeMixtureArchitectureSpec:
     ranking_loss_weight: float
     side_tower_mode: str = "shared"
     ranking_loss_mode: str = "correlation"
+    pairwise_ranking_loss_weight: float = 0.0
 
     def __post_init__(self) -> None:
         weights = (
@@ -77,6 +78,7 @@ class OutcomeMixtureArchitectureSpec:
             self.expected_value_loss_weight,
             self.quantile_loss_weight,
             self.ranking_loss_weight,
+            self.pairwise_ranking_loss_weight,
         )
         if not self.candidate_id.strip():
             raise ValueError("outcome-mixture candidate_id cannot be empty")
@@ -99,6 +101,10 @@ class OutcomeMixtureArchitectureSpec:
             not 0.0 <= self.dropout < 0.75
             or any(not 0.0 <= float(value) <= 4.0 for value in weights)
             or sum(float(value) for value in weights[:4]) <= 0.0
+            or (
+                self.ranking_loss_mode == "pairwise_net_return"
+                and self.pairwise_ranking_loss_weight > 0.0
+            )
         ):
             raise ValueError("outcome-mixture loss settings are outside bounds")
 
@@ -168,6 +174,8 @@ def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
         contract.pop("side_tower_mode")
     if spec.ranking_loss_mode == "correlation":
         contract.pop("ranking_loss_mode")
+    if spec.pairwise_ranking_loss_weight == 0.0:
+        contract.pop("pairwise_ranking_loss_weight")
     return contract
 
 
@@ -388,6 +396,11 @@ def _loss(output, target, sample_weight, prevalence, spec):
             else _weighted_pairwise_ranking_loss(expected, target, sample_weight)
         )
         weighted = weighted + spec.ranking_loss_weight * ranking_loss
+    if spec.pairwise_ranking_loss_weight > 0.0:
+        weighted = weighted + (
+            spec.pairwise_ranking_loss_weight
+            * _weighted_pairwise_ranking_loss(expected, target, sample_weight)
+        )
     if probability.shape != target.shape:
         raise ValueError("outcome-mixture decoded head shape is invalid")
     return weighted
