@@ -104,10 +104,11 @@ def test_aggregate_rejects_gross_net_count_drift() -> None:
         raise AssertionError("gross/net count drift must be rejected")
 
 
-def test_tracked_round15_design_is_hash_bound_and_current() -> None:
+def test_tracked_round15_design_is_hash_bound_to_historical_implementation() -> None:
     design, design_sha256 = load_daily_walkforward_design(
         ROOT
-        / "docs/model-research/action-value/round-015-daily-walk-forward-design.json"
+        / "docs/model-research/action-value/round-015-daily-walk-forward-design.json",
+        require_current=False,
     )
 
     assert design_sha256 == (

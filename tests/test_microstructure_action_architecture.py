@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import simple_ai_trading.microstructure_action_architecture as architecture
+import simple_ai_trading.microstructure_outcome_mixture as outcome_mixture
 from simple_ai_trading.compute import resolve_backend
 from simple_ai_trading.microstructure_action_architecture import (
     ActionValueArchitectureSpec,
@@ -28,6 +29,13 @@ from simple_ai_trading.microstructure_features import (
     MICROSTRUCTURE_FEATURE_VERSION,
     MicrostructureDataset,
 )
+from simple_ai_trading.microstructure_outcome_mixture import (
+    OutcomeMixtureArchitectureSpec,
+    load_outcome_mixture_model,
+    predict_outcome_mixture_model,
+    save_outcome_mixture_model,
+    train_outcome_mixture_model,
+)
 
 
 def _spec(**overrides: object) -> ActionValueArchitectureSpec:
@@ -45,6 +53,24 @@ def _spec(**overrides: object) -> ActionValueArchitectureSpec:
     }
     values.update(overrides)
     return ActionValueArchitectureSpec(**values)  # type: ignore[arg-type]
+
+
+def _mixture_spec(**overrides: object) -> OutcomeMixtureArchitectureSpec:
+    values: dict[str, object] = {
+        "candidate_id": "conditional-outcome-mixture",
+        "family": "conditional_outcome_mixture_residual_mlp",
+        "sequence_length": 1,
+        "hidden_dim": 32,
+        "residual_blocks": 1,
+        "dropout": 0.0,
+        "probability_loss_weight": 0.25,
+        "magnitude_loss_weight": 0.35,
+        "expected_value_loss_weight": 1.0,
+        "quantile_loss_weight": 0.15,
+        "ranking_loss_weight": 0.1,
+    }
+    values.update(overrides)
+    return OutcomeMixtureArchitectureSpec(**values)  # type: ignore[arg-type]
 
 
 def _dataset(rows: int = 1_200) -> tuple[MicrostructureDataset, np.ndarray, np.ndarray]:
@@ -465,6 +491,62 @@ def test_action_value_training_and_inference_run_on_directml_when_available() ->
     assert np.all(np.isfinite(prediction.long_mean_bps))
 
 
+def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_available(
+    tmp_path,
+) -> None:
+    if resolve_backend("directml").kind != "directml":
+        pytest.skip("DirectML backend is not available on this host")
+    if os.environ.get("SIMPLE_AI_TRADING_OUTCOME_DML_TEST_CHILD") != "1":
+        environment = os.environ.copy()
+        environment["SIMPLE_AI_TRADING_OUTCOME_DML_TEST_CHILD"] = "1"
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                f"{__file__}::{test_outcome_mixture_training_reload_and_inference_run_on_directml_when_available.__name__}",
+            ],
+            cwd=os.getcwd(),
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        return
+    dataset, long_target, short_target = _dataset()
+    model = train_outcome_mixture_model(
+        dataset,
+        _barrier_targets(dataset, long_target, short_target),
+        train_endpoints=np.arange(600, dtype=np.int64),
+        tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
+        spec=_mixture_spec(),
+        target_scenario="base",
+        compute_backend="directml",
+        seed=23,
+        batch_size=256,
+        max_epochs=1,
+        patience=1,
+    )
+    artifact = tmp_path / "directml.safetensors"
+    save_outcome_mixture_model(artifact, model)
+    reloaded = load_outcome_mixture_model(artifact)
+    prediction = predict_outcome_mixture_model(
+        reloaded,
+        dataset,
+        np.arange(800, 1_100, dtype=np.int64),
+        compute_backend="directml",
+        batch_size=256,
+    )
+
+    assert reloaded.backend_kind == "directml"
+    assert reloaded.backend_device == "privateuseone:0"
+    assert prediction.rows == 300
+    assert np.all(np.isfinite(prediction.long_mean_bps))
+
+
 def _prediction(offset: float = 0.0) -> ActionValuePredictionBatch:
     endpoints = np.asarray([10, 20], dtype=np.int64)
     return ActionValuePredictionBatch(
@@ -589,3 +671,180 @@ def test_action_value_spec_rejects_invalid_contracts(
 ) -> None:
     with pytest.raises(ValueError, match=match):
         _spec(**overrides)
+
+
+@pytest.fixture(scope="module")
+def outcome_mixture_bundle():
+    dataset, long_target, short_target = _dataset()
+    targets = _barrier_targets(dataset, long_target, short_target)
+    model = train_outcome_mixture_model(
+        dataset,
+        targets,
+        train_endpoints=np.arange(600, dtype=np.int64),
+        tuning_endpoints=np.arange(800, 1_100, dtype=np.int64),
+        spec=_mixture_spec(),
+        target_scenario="base",
+        compute_backend="cpu",
+        seed=23,
+        batch_size=128,
+        max_epochs=2,
+        patience=2,
+    )
+    return dataset, targets, model
+
+
+def test_outcome_mixture_decodes_expected_value_from_conditional_identity() -> None:
+    torch = pytest.importorskip("torch")
+    raw = torch.tensor(
+        [
+            [
+                [0.4, 1.2, -0.3, 0.1, 0.2],
+                [-0.7, -0.2, 0.8, -0.1, 0.4],
+            ]
+        ],
+        dtype=torch.float32,
+    )
+
+    probability, positive, negative, expected, lower, upper = (
+        outcome_mixture._decoded_heads(raw)
+    )
+
+    torch.testing.assert_close(
+        expected,
+        probability * positive - (1.0 - probability) * negative,
+    )
+    assert bool(torch.all(positive > 0.0))
+    assert bool(torch.all(negative > 0.0))
+    assert bool(torch.all(lower <= expected))
+    assert bool(torch.all(expected <= upper))
+
+
+def test_outcome_mixture_trains_predicts_and_binds_after_cost_target(
+    outcome_mixture_bundle,
+) -> None:
+    dataset, _targets, model = outcome_mixture_bundle
+
+    prediction = predict_outcome_mixture_model(
+        model,
+        dataset,
+        np.arange(800, 1_100, dtype=np.int64),
+        compute_backend="cpu",
+        batch_size=128,
+    )
+
+    assert model.target_mode.startswith("exchange_trigger_market_exit_100ms")
+    assert model.spec.family == "conditional_outcome_mixture_residual_mlp"
+    assert len(model.target_contract_sha256) == 64
+    assert len(model.model_sha256) == 64
+    assert model.optimizer_kind == "manual_adam_tensor_native_v1"
+    assert model.training_data_mode == "device_preloaded"
+    assert all(0.0 < value < 1.0 for value in model.positive_class_prevalence)
+    assert prediction.rows == 300
+    assert np.all(np.isfinite(prediction.long_mean_bps))
+    assert np.all((prediction.long_profitable_probability > 0.0))
+    assert np.all((prediction.long_profitable_probability < 1.0))
+    assert np.all(prediction.long_lower_bps <= prediction.long_mean_bps)
+    assert np.all(prediction.long_mean_bps <= prediction.long_upper_bps)
+    assert np.all(prediction.short_lower_bps <= prediction.short_mean_bps)
+    assert np.all(prediction.short_mean_bps <= prediction.short_upper_bps)
+    assert model.trading_authority is False
+
+
+def test_outcome_mixture_artifact_round_trip_is_prediction_exact(
+    tmp_path,
+    outcome_mixture_bundle,
+) -> None:
+    dataset, _targets, model = outcome_mixture_bundle
+    path = tmp_path / "model.safetensors"
+    endpoints = np.arange(800, 1_100, dtype=np.int64)
+    expected = predict_outcome_mixture_model(
+        model,
+        dataset,
+        endpoints,
+        compute_backend="cpu",
+        batch_size=128,
+    )
+
+    save_outcome_mixture_model(path, model)
+    loaded = load_outcome_mixture_model(path)
+    actual = predict_outcome_mixture_model(
+        loaded,
+        dataset,
+        endpoints,
+        compute_backend="cpu",
+        batch_size=128,
+    )
+
+    assert loaded.model_sha256 == model.model_sha256
+    assert loaded.spec == model.spec
+    assert loaded.target_spec == model.target_spec
+    assert loaded.positive_class_prevalence == model.positive_class_prevalence
+    for name in (
+        "long_mean_bps",
+        "short_mean_bps",
+        "long_profitable_probability",
+        "short_profitable_probability",
+        "long_lower_bps",
+        "short_lower_bps",
+        "long_upper_bps",
+        "short_upper_bps",
+    ):
+        np.testing.assert_array_equal(getattr(actual, name), getattr(expected, name))
+
+
+def test_outcome_mixture_artifact_save_is_atomic_on_failure(
+    tmp_path,
+    outcome_mixture_bundle,
+    monkeypatch,
+) -> None:
+    _dataset_value, _targets, model = outcome_mixture_bundle
+    path = tmp_path / "model.safetensors"
+    path.write_bytes(b"existing")
+
+    def fail_save(*_args, **_kwargs):
+        raise OSError("simulated write failure")
+
+    monkeypatch.setattr(outcome_mixture, "save_safetensors", fail_save)
+    with pytest.raises(OSError, match="simulated"):
+        save_outcome_mixture_model(path, model)
+
+    assert path.read_bytes() == b"existing"
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
+    tmp_path,
+    outcome_mixture_bundle,
+) -> None:
+    dataset, _targets, model = outcome_mixture_bundle
+    endpoints = np.arange(800, 1_100, dtype=np.int64)
+    with pytest.raises(ValueError, match="contract is invalid"):
+        predict_outcome_mixture_model(
+            replace(model, tuning_loss=model.tuning_loss + 0.01),
+            dataset,
+            endpoints,
+            compute_backend="cpu",
+            batch_size=128,
+        )
+
+    path = tmp_path / "truncated.safetensors"
+    path.write_bytes(b"not-safetensors")
+    with pytest.raises(ValueError, match="not valid safetensors"):
+        load_outcome_mixture_model(path)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "match"),
+    [
+        ({"candidate_id": ""}, "cannot be empty"),
+        ({"family": "shared_residual_mlp"}, "unsupported"),
+        ({"hidden_dim": 8}, "dimensions"),
+        ({"dropout": float("nan")}, "must be finite"),
+        ({"expected_value_loss_weight": -1.0}, "outside bounds"),
+    ],
+)
+def test_outcome_mixture_spec_rejects_invalid_contracts(
+    overrides: dict[str, object], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        _mixture_spec(**overrides)

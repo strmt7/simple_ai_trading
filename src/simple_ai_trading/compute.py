@@ -195,19 +195,26 @@ def resolve_backend(requested: str | None) -> BackendInfo:
         info = _try_rocm()
         if info is not None:
             return info
-        return _cpu("rocm", reason="ROCm unavailable (torch missing or not a ROCm build)")
+        return _cpu(
+            "rocm", reason="ROCm unavailable (torch missing or not a ROCm build)"
+        )
 
     if name == "directml":
         info = _try_directml()
         if info is not None:
             return info
-        return _cpu("directml", reason="DirectML unavailable (torch-directml missing or no device)")
+        return _cpu(
+            "directml",
+            reason="DirectML unavailable (torch-directml missing or no device)",
+        )
 
     if name == "mps":
         info = _try_mps()
         if info is not None:
             return info
-        return _cpu("mps", reason="MPS unavailable (torch missing or not Apple Silicon)")
+        return _cpu(
+            "mps", reason="MPS unavailable (torch missing or not Apple Silicon)"
+        )
 
     if name == "auto":
         probes = (_try_rocm, _try_cuda, _try_directml, _try_mps)
