@@ -44,6 +44,82 @@ _FALSE_CLAIMS = (
     "portfolio_claim",
     "leverage_applied",
 )
+_PROGRESS_IDENTITIES = {
+    16: (
+        "adaptive 100 ms barrier action-value ensemble",
+        "three-seed adaptive-barrier-shared-residual",
+    ),
+    17: (
+        "conditional win/loss outcome-mixture ensemble",
+        "three-seed conditional-outcome-mixture-shared-residual",
+    ),
+    18: (
+        "rank-regularized conditional outcome-mixture ensemble",
+        "three-seed rank-regularized-outcome-mixture-shared-residual",
+    ),
+    19: (
+        "depth-normalized order-flow conditional distribution model",
+        "three-seed depth-normalized-order-flow outcome-mixture",
+    ),
+    20: (
+        "parameter-matched direction-specific representation ablation",
+        "three-seed independent-long-short outcome-mixture",
+    ),
+}
+
+
+def _progress_identity(round_number: int) -> tuple[str, str]:
+    try:
+        return _PROGRESS_IDENTITIES[round_number]
+    except KeyError as exc:
+        raise ValueError(
+            f"adaptive action publication copy is undefined for Round {round_number}"
+        ) from exc
+
+
+def _publication_narrative(
+    round_number: int,
+    *,
+    all_candidate_stress_nets_negative: bool,
+) -> tuple[str, str, str]:
+    if round_number == 16:
+        return (
+            "action-value ensemble abstained",
+            "The three-seed DirectML ensemble improved forecast error and probability-of-profit discrimination in places, but the highest-ranked signals remained negative net of costs.",
+            "The next model change must estimate conditional profit/loss outcomes rather than relax the risk controls.",
+        )
+    if round_number == 17:
+        return (
+            "conditional net-return distribution model abstained",
+            "The conditional profit/loss decomposition improved point-error metrics versus the zero-return benchmark, but probability calibration was mostly worse than the prevalence benchmark and the highest-ranked signals remained negative net of costs.",
+            "The next precommitted model change must target regime-conditioned net-return ranking and probability calibration rather than relax the risk controls.",
+        )
+    if round_number == 18:
+        summary = (
+            "The added ranking objective produced a small aggressive-profile candidate set, but every threshold-selection simulation lost money after stress costs."
+            if all_candidate_stress_nets_negative
+            else "The added ranking objective produced threshold-selection candidates, but none passed the precommitted stress-test acceptance criteria."
+        )
+        return (
+            "rank-regularized net-return model abstained",
+            summary,
+            "The next precommitted model change must target regime-conditioned net-return ranking and probability calibration rather than relax the risk controls.",
+        )
+    if round_number == 19:
+        return (
+            "depth-normalized order-flow model abstained",
+            "Depth-normalized aggressive order-flow inputs increased signal counts under the aggressive risk profile, but every threshold-selection simulation lost money after stress costs.",
+            "The next precommitted model change must address direction-specific net-return ranking and probability calibration rather than add further depth-normalized inputs or relax the risk controls.",
+        )
+    if round_number == 20:
+        return (
+            "direction-specific outcome model abstained",
+            "Parameter-matched independent long and short representations increased signals meeting pre-threshold controls, but every threshold-selection simulation remained negative net of stress costs.",
+            "The next precommitted change must improve decision-objective alignment with realized net returns rather than add capacity or relax the risk controls.",
+        )
+    raise ValueError(
+        f"adaptive action publication narrative is undefined for Round {round_number}"
+    )
 
 
 def _arguments() -> argparse.Namespace:
@@ -430,22 +506,11 @@ def _progress_rows(
         if row["role"] == "policy" and row["scenario"] == "stress"
     ]
     profiles = report["profile_results"]
+    stage, best_model_id = _progress_identity(round_number)
     rows.append(
         {
             "round": round_number,
-            "stage": (
-                "depth-normalized order-flow conditional distribution model"
-                if round_number >= 19
-                else (
-                    "rank-regularized conditional outcome-mixture ensemble"
-                    if round_number >= 18
-                    else (
-                        "conditional win/loss outcome-mixture ensemble"
-                        if round_number >= 17
-                        else "adaptive 100 ms barrier action-value ensemble"
-                    )
-                )
-            ),
+            "stage": stage,
             "periods": "2023-05-16..2023-07-06",
             "selection_contaminated": True,
             "horizon_seconds": 900,
@@ -461,19 +526,7 @@ def _progress_rows(
             "mean_net_bps": "",
             "status": "rejected",
             "source_file": f"adaptive action-value Round {round_number} report",
-            "best_model_id": (
-                "three-seed depth-normalized-order-flow outcome-mixture"
-                if round_number >= 19
-                else (
-                    "three-seed rank-regularized-outcome-mixture-shared-residual"
-                    if round_number >= 18
-                    else (
-                        "three-seed conditional-outcome-mixture-shared-residual"
-                        if round_number >= 17
-                        else "three-seed adaptive-barrier-shared-residual"
-                    )
-                )
-            ),
+            "best_model_id": best_model_id,
             "best_top_500_exact_after_cost_bps": max(
                 float(value["top_500_mean_net_bps"]) for value in policy_stress
             ),
@@ -928,44 +981,11 @@ def publish(
     )
     execution = design["execution"]
     assert isinstance(execution, Mapping)
-    title = (
-        "depth-normalized order-flow model abstained"
-        if round_number >= 19
-        else (
-            "rank-regularized net-return model abstained"
-            if round_number >= 18
-            else (
-                "conditional net-return distribution model abstained"
-                if round_number >= 17
-                else "action-value ensemble abstained"
-            )
-        )
-    )
-    summary = (
-        "Depth-normalized aggressive order-flow inputs increased signal counts under the aggressive risk profile, but every threshold-selection simulation lost money after stress costs."
-        if round_number >= 19
-        else (
-            (
-                "The added ranking objective produced a small aggressive-profile candidate set, but every threshold-selection simulation lost money after stress costs."
-                if gate_summary["all_candidate_stress_nets_negative"]
-                else "The added ranking objective produced threshold-selection candidates, but none passed the precommitted stress-test acceptance criteria."
-            )
-            if round_number >= 18
-            else (
-                "The conditional profit/loss decomposition improved point-error metrics versus the zero-return benchmark, but probability calibration was mostly worse than the prevalence benchmark and the highest-ranked signals remained negative net of costs."
-                if round_number >= 17
-                else "The three-seed DirectML ensemble improved forecast error and probability-of-profit discrimination in places, but the highest-ranked signals remained negative net of costs."
-            )
-        )
-    )
-    next_step = (
-        "The next precommitted model change must address direction-specific net-return ranking and probability calibration rather than add further depth-normalized inputs or relax the risk controls."
-        if round_number >= 19
-        else (
-            "The next precommitted model change must target regime-conditioned net-return ranking and probability calibration rather than relax the risk controls."
-            if round_number >= 17
-            else "The next model change must estimate conditional profit/loss outcomes rather than relax the risk controls."
-        )
+    title, summary, next_step = _publication_narrative(
+        round_number,
+        all_candidate_stress_nets_negative=bool(
+            gate_summary["all_candidate_stress_nets_negative"]
+        ),
     )
     readme = f"""# Round {round_number}: {title}
 
