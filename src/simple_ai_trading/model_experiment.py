@@ -296,7 +296,7 @@ def tape_depth_candidate_design(
         raise ValueError("risk_level must be conservative, regular, or aggressive")
     domains: tuple[ParameterDomain, ...] = (
         ChoiceDomain("risk_level", (risk,)),
-        ChoiceDomain("horizon_seconds", (15, 30, 60, 120, 300, 900)),
+        ChoiceDomain("horizon_seconds", (5, 10, 15, 20, 30, 60, 120, 300, 900)),
         ChoiceDomain("decision_cadence_seconds", (1, 2, 5, 10)),
         ChoiceDomain("maximum_depth_age_ms", (15_000, 30_000, 60_000, 120_000)),
         ChoiceDomain("model_profile", ("regularized", "balanced", "expressive")),
@@ -305,18 +305,18 @@ def tape_depth_candidate_design(
     anchors: tuple[Mapping[str, Scalar], ...] = (
         {
             "risk_level": risk,
-            "horizon_seconds": 60,
+            "horizon_seconds": 20,
             "decision_cadence_seconds": 5,
             "maximum_depth_age_ms": 60_000,
             "model_profile": "regularized",
-            "feature_set": "full",
+            "feature_set": "cross_asset",
         },
         {
             "risk_level": risk,
-            "horizon_seconds": 15,
-            "decision_cadence_seconds": 1,
-            "maximum_depth_age_ms": 15_000,
-            "model_profile": "balanced",
+            "horizon_seconds": 5,
+            "decision_cadence_seconds": 2,
+            "maximum_depth_age_ms": 30_000,
+            "model_profile": "regularized",
             "feature_set": "tape_derived",
         },
         {

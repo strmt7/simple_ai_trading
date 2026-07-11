@@ -16,8 +16,12 @@ def lightgbm_backend_parameters(
     seed: int,
     *,
     resolved_backend: BackendInfo | None = None,
+    reproducible: bool = False,
 ) -> tuple[dict[str, object], str, str]:
-    """Resolve deterministic LightGBM parameters without assuming device 0:0."""
+    """Resolve seeded LightGBM parameters without assuming device 0:0."""
+
+    if not isinstance(reproducible, bool):
+        raise ValueError("reproducible must be a boolean")
 
     backend = resolved_backend or resolve_backend(compute_backend)
     use_gpu = backend.kind != "cpu"
@@ -31,6 +35,8 @@ def lightgbm_backend_parameters(
         "device_type": "gpu" if use_gpu else "cpu",
     }
     if not use_gpu:
+        if reproducible:
+            parameters.update({"deterministic": True, "force_col_wise": True})
         return parameters, "cpu", "cpu"
 
     platform_raw = (os.getenv(OPENCL_PLATFORM_ENV) or "").strip()
@@ -55,7 +61,9 @@ def lightgbm_backend_parameters(
             }
         )
         device_label = f"opencl:{platform_id}:{device_id}"
-    parameters["gpu_use_dp"] = False
+    # LightGBM's deterministic switch is CPU-only. FP64 accumulation is its
+    # documented mitigation for OpenCL run-to-run variance.
+    parameters["gpu_use_dp"] = reproducible
     return parameters, "opencl", device_label
 
 

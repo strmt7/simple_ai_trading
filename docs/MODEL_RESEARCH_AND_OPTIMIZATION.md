@@ -266,15 +266,17 @@ then records AUC, Brier score, MAE, RMSE, Spearman information coefficient,
 interval coverage, and calibration-threshold signed gross return against simple
 baselines.
 
-The v6 learner fits every data-dependent policy statistic before evaluation.
+The v8 learner fits every data-dependent policy statistic before evaluation.
 The 90th-percentile return-magnitude scale used for sample weights comes only
 from exact float64 training targets and is then frozen for train/tune refitting;
 calibration and evaluation targets cannot alter model weights or tree strings.
 The risk-specific decision policy is also calibration-only. Conservative uses
-the 95th percentile of absolute mean forecasts, a `0.60` minimum calibrated
-direction probability, and the 75th percentile of forecast-interval width.
-Regular uses `0.90`, `0.56`, and `0.90`; aggressive uses `0.80`, `0.52`, and
-`0.98`. Long and short selection require the mean forecast sign and calibrated
+the 95th percentile of absolute mean forecasts, the 95th percentile of absolute
+calibrated probability distance from `0.5`, and the 75th percentile of
+forecast-interval width. Regular uses `0.90/0.90/0.90`; aggressive uses
+`0.80/0.80/0.98`. The directional quantile becomes a serialized probability
+floor of `0.5 + margin`; it does not read evaluation sharpness. Long and short
+selection require the mean forecast sign and calibrated
 direction model to agree, and interval width must remain below the frozen risk
 limit. Calibration prevalence is the fixed Brier/majority baseline; evaluation
 prevalence is never read to construct a baseline. Every policy field is
@@ -300,6 +302,39 @@ cumulative trial burden. The initial space covers forecast horizon, decision
 cadence, maximum coarse-depth age, model capacity, and feature-group ablations
 for one risk profile at a time. It does not tune latency, fees, spread, or source
 quality downward to manufacture performance.
+
+The horizon domain includes `5`, `10`, `15`, `20`, `30`, `60`, `120`, `300`,
+and `900` seconds. A real-data discovery screen on 2024-03-15 moved the anchors
+to a 20-second regularized cross-asset candidate, a 5-second regularized
+tape-derived candidate, and the existing 300-second long-horizon control. This
+is search-space allocation, not promotion evidence: the discovery date is
+explicitly selection-contaminated and excluded from the immutable
+[`confirmation-design.json`](model-research/tape-depth/confirmation-design.json).
+
+`tape_depth_execution.py` is the mandatory exact-BBO diagnostic for a frozen
+gross survivor. It greedily suppresses overlapping same-symbol positions, joins
+only 100 ms quote buckets available by the modeled arrival time, crosses the
+observed ask/bid, subtracts two-sided taker fees and stress slippage, rejects
+stale/crossed/missing quotes, and caps order size by observed L1 quantity. It
+scales each cost leg by its observed notional and uses cash PnL divided by entry
+notional for both long and short returns. It cannot claim maker execution because
+historical queue position is absent. In the reproducible v8 replay of the
+discovery date, the selected 20-second conservative forecast produced 15 gross
+signals at `+5.5730` bps mean trade-reference return. Overlap suppression left
+6; the 10% L1 cap rejected 2; the remaining 4 averaged `+4.3617` bps on the
+actual quote path and `-5.6385` bps after 5 bps taker fees per side. With an
+additional 1 bps slippage per side, mean net was `-7.6385` bps. Every scenario
+was rejected and carries no profitability or execution claim.
+
+The v8 backend opts this model family into reproducible training. CPU uses
+LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses
+`gpu_use_dp=true`, LightGBM's
+[documented mitigation](https://lightgbm.readthedocs.io/en/stable/FAQ.html)
+for non-reproducible GPU histogram sums. On the AMD validation host, two
+consecutive real-data fits had
+identical serialized-model and evaluation-prediction SHA-256 fingerprints.
+Artifacts still record the resolved backend because exact fit identity is not
+promised across library builds or device architectures.
 
 `tape-depth-study` operationalizes the sealed screening level. It executes one
 candidate at a time, forwards fold-level progress, checkpoints after every
@@ -345,6 +380,9 @@ The implementation adapts, rather than blindly invokes, the following methods:
 - Binance's [official public-data repository](https://github.com/binance/binance-public-data)
   documents daily/monthly archives, timestamp changes, archive corrections,
   and SHA-256 sidecars used by the corpus certificate.
+- Binance's [official USD-M book-ticker stream reference](https://developers.binance.com/legacy-docs/derivatives/usds-margined-futures/websocket-market-streams/All-Book-Tickers-Stream)
+  defines the best bid/ask price and quantity fields. Historical replay treats
+  them as L1 only and never infers deeper fills or queue position.
 - AWS's [official S3 ListObjects reference](https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/list_objects.html)
   defines `ETag`, `LastModified`, and `Size`. The implementation treats ETag as
   an opaque content-version identifier because multipart ETags are not MD5
@@ -622,7 +660,7 @@ resolved live runtime backend is DirectML/CUDA/ROCm/MPS.
   order: candidate screening artifacts cannot contain terminal folds, and only
   the frozen winner can open the terminal suffix:
   <https://scikit-learn.org/stable/auto_examples/model_selection/plot_nested_cross_validation_iris.html>
-- Scikit-learn's leakage and decision-threshold guidance also informs the v6
+- Scikit-learn's leakage and decision-threshold guidance also informs the v8
   train-only sample-weight scale and calibration-only decision policy:
   <https://scikit-learn.org/stable/common_pitfalls.html> and
   <https://scikit-learn.org/stable/modules/classification_threshold.html>

@@ -91,6 +91,13 @@ def test_tape_depth_forecaster_is_predictive_but_never_executable(tmp_path) -> N
     replay = score_tape_depth_evaluation(artifact, dataset)
     assert replay.rows == artifact.evaluation_metrics.rows
     assert replay.metrics() == artifact.evaluation_metrics
+    sides = replay.action_sides()
+    assert np.count_nonzero(sides == 1) == (
+        artifact.evaluation_metrics.calibration_threshold_long_rows
+    )
+    assert np.count_nonzero(sides == -1) == (
+        artifact.evaluation_metrics.calibration_threshold_short_rows
+    )
     assert len(replay.fingerprint()) == 64
     no_action_metrics = replace(
         replay,
@@ -179,8 +186,12 @@ def test_tape_depth_predictor_is_shared_but_decision_policy_is_risk_specific() -
     assert conservative.model_strings == aggressive.model_strings
     assert conservative.signal_policy.magnitude_quantile == 0.95
     assert aggressive.signal_policy.magnitude_quantile == 0.80
-    assert conservative.signal_policy.minimum_direction_probability == 0.60
-    assert aggressive.signal_policy.minimum_direction_probability == 0.52
+    assert conservative.signal_policy.direction_confidence_quantile == 0.95
+    assert aggressive.signal_policy.direction_confidence_quantile == 0.80
+    assert (
+        conservative.signal_policy.minimum_direction_probability
+        >= aggressive.signal_policy.minimum_direction_probability
+    )
     assert (
         conservative.signal_policy.signal_threshold_bps
         >= aggressive.signal_policy.signal_threshold_bps
@@ -287,6 +298,7 @@ def test_tape_depth_learned_statistics_reject_invalid_inputs() -> None:
         TapeDepthSignalPolicy(
             risk_level="conservative",
             magnitude_quantile=0.95,
+            direction_confidence_quantile=0.95,
             minimum_direction_probability=0.60,
             interval_width_quantile=0.75,
             signal_threshold_bps=-1.0,
@@ -300,6 +312,7 @@ def test_tape_depth_baselines_are_frozen_from_calibration_not_evaluation() -> No
     policy = TapeDepthSignalPolicy(
         risk_level="regular",
         magnitude_quantile=0.90,
+        direction_confidence_quantile=0.90,
         minimum_direction_probability=0.56,
         interval_width_quantile=0.90,
         signal_threshold_bps=0.5,

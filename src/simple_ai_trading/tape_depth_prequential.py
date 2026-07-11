@@ -45,7 +45,7 @@ from .tape_depth_model import (
 
 
 TAPE_DEPTH_PREQUENTIAL_SCHEMA_VERSION = "tape-depth-prequential-plan-v2"
-TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION = "tape-depth-prequential-evidence-v3"
+TAPE_DEPTH_PREQUENTIAL_REPORT_VERSION = "tape-depth-prequential-evidence-v4"
 _DAY_MS = 86_400_000
 
 
@@ -484,6 +484,7 @@ def write_tape_depth_predictions(
                             "upper_prediction_bps",
                             "risk_level",
                             "magnitude_quantile",
+                            "direction_confidence_quantile",
                             "minimum_direction_probability",
                             "interval_width_quantile",
                             "signal_threshold_bps",
@@ -504,6 +505,10 @@ def write_tape_depth_predictions(
                                 format(float(row[7]), ".17g"),
                                 policy.risk_level,
                                 format(float(policy.magnitude_quantile), ".17g"),
+                                format(
+                                    float(policy.direction_confidence_quantile),
+                                    ".17g",
+                                ),
                                 format(
                                     float(policy.minimum_direction_probability),
                                     ".17g",
@@ -543,6 +548,7 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         "upper_prediction_bps",
         "risk_level",
         "magnitude_quantile",
+        "direction_confidence_quantile",
         "minimum_direction_probability",
         "interval_width_quantile",
         "signal_threshold_bps",
@@ -602,6 +608,9 @@ def read_tape_depth_predictions(path: str | Path) -> TapeDepthPredictionBatch:
         signal_policy=TapeDepthSignalPolicy(
             risk_level=str(columns["risk_level"][0]),
             magnitude_quantile=float(columns["magnitude_quantile"][0]),
+            direction_confidence_quantile=float(
+                columns["direction_confidence_quantile"][0]
+            ),
             minimum_direction_probability=float(
                 columns["minimum_direction_probability"][0]
             ),
