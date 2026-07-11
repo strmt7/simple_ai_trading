@@ -1,31 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1500" height="420" viewBox="0 0 1500 420" role="img" aria-labelledby="title desc">
-<title id="title">The execution-cost gate stopped promotion</title>
-<desc id="desc">Three neural architectures were screened. Two advanced and were compared with LightGBM. All final models passed forecast-quality gates and none passed the after-cost gate.</desc>
+<title id="title">The policy regime stopped every mapping</title>
+<desc id="desc">Four neural architectures were screened, two advanced and were compared with LightGBM, 15 mappings were evaluated, 12 had sufficient activity, 0 had positive policy gross returns, and none became a research candidate.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">The execution-cost gate stopped promotion</text>
-<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">A positive forecast was never allowed to become trading authority without positive exact after-cost evidence.</text>
-<rect x="56" y="146" width="240" height="148" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="176.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#60717f">3</text>
-<text x="176.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="176.0" dy="0">Neural</tspan><tspan x="176.0" dy="19">architectures screened</tspan></text>
-<line x1="304" y1="220" x2="333" y2="220" stroke="#7b8994" stroke-width="2"/>
-<path d="M 333 214 L 342 220 L 333 226 Z" fill="#7b8994"/>
-<rect x="342" y="146" width="240" height="148" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="462.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#60717f">3</text>
-<text x="462.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="462.0" dy="0">Final models</tspan><tspan x="462.0" dy="19">with baseline</tspan></text>
-<line x1="590" y1="220" x2="619" y2="220" stroke="#7b8994" stroke-width="2"/>
-<path d="M 619 214 L 628 220 L 619 226 Z" fill="#7b8994"/>
-<rect x="628" y="146" width="240" height="148" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
-<text x="748.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#60717f">3</text>
-<text x="748.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="748.0" dy="0">Passed</tspan><tspan x="748.0" dy="19">forecast gates</tspan></text>
-<line x1="876" y1="220" x2="905" y2="220" stroke="#7b8994" stroke-width="2"/>
-<path d="M 905 214 L 914 220 L 905 226 Z" fill="#7b8994"/>
-<rect x="914" y="146" width="240" height="148" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="1034.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#b42318">0</text>
-<text x="1034.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="1034.0" dy="0">Passed top-500</tspan><tspan x="1034.0" dy="19">cost gate</tspan></text>
-<line x1="1162" y1="220" x2="1191" y2="220" stroke="#7b8994" stroke-width="2"/>
-<path d="M 1191 214 L 1200 220 L 1191 226 Z" fill="#7b8994"/>
-<rect x="1200" y="146" width="240" height="148" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
-<text x="1320.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#b42318">0</text>
-<text x="1320.0" y="254" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#263746"><tspan x="1320.0" dy="0">Trading</tspan><tspan x="1320.0" dy="19">candidates</tspan></text>
-<text x="56" y="366" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">No trade, leverage, portfolio return, or profitability claim was produced.</text>
+<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">The policy regime stopped every mapping</text>
+<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">No later positive development tail was allowed to erase the earlier policy failure.</text>
+<rect x="56" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="158.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">4</text>
+<text x="158.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="158.5">Neural</tspan><tspan x="158.5" dy="18">architectures screened</tspan></text>
+<line x1="268" y1="218" x2="290" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 290 212 L 299 218 L 290 224 Z" fill="#7b8994"/>
+<rect x="299" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="401.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">3</text>
+<text x="401.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="401.5">Final models</tspan><tspan x="401.5" dy="18">with baseline</tspan></text>
+<line x1="511" y1="218" x2="533" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 533 212 L 542 218 L 533 224 Z" fill="#7b8994"/>
+<rect x="542" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="644.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">15</text>
+<text x="644.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="644.5">Action</tspan><tspan x="644.5" dy="18">mappings evaluated</tspan></text>
+<line x1="754" y1="218" x2="776" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 776 212 L 785 218 L 776 224 Z" fill="#7b8994"/>
+<rect x="785" y="145" width="205" height="146" rx="6" fill="#f4f7f9" stroke="#60717f" stroke-width="2"/>
+<text x="887.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#60717f">12</text>
+<text x="887.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="887.5">Activity-qualified</tspan><tspan x="887.5" dy="18">mappings</tspan></text>
+<line x1="997" y1="218" x2="1019" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 1019 212 L 1028 218 L 1019 224 Z" fill="#7b8994"/>
+<rect x="1028" y="145" width="205" height="146" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="1130.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#b42318">0</text>
+<text x="1130.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="1130.5">Positive</tspan><tspan x="1130.5" dy="18">policy gross</tspan></text>
+<line x1="1240" y1="218" x2="1262" y2="218" stroke="#7b8994" stroke-width="2"/><path d="M 1262 212 L 1271 218 L 1262 224 Z" fill="#7b8994"/>
+<rect x="1271" y="145" width="205" height="146" rx="6" fill="#fff1f0" stroke="#b42318" stroke-width="2"/>
+<text x="1373.5" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#b42318">0</text>
+<text x="1373.5" y="251" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#263746"><tspan x="1373.5">Research</tspan><tspan x="1373.5" dy="18">candidates</tspan></text>
+<text x="56" y="365" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">Zero candidates means no trade, leverage, execution, portfolio, or profitability authority.</text>
 </svg>
