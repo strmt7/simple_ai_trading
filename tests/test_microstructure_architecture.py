@@ -17,6 +17,8 @@ from simple_ai_trading.microstructure_architecture import (
     GrossPredictionBatch,
     average_label_uniqueness,
     causal_cusum_event_mask,
+    derive_gross_action_scores,
+    evaluate_gross_action_scores,
     evaluate_gross_forecast,
     gross_midpoint_log_returns_bps,
     predict_lightgbm_gross_model,
@@ -184,6 +186,7 @@ def test_gross_target_uses_latency_aligned_midpoint_log_return() -> None:
         ({"residual_blocks": 0}, "residual block"),
         ({"dropout": float("nan")}, "must be finite"),
         ({"gmadl_weight": 3.0}, "outside bounds"),
+        ({"head_coherence_weight": 3.0}, "outside bounds"),
     ],
 )
 def test_gross_architecture_spec_rejects_invalid_contract(changes, message) -> None:
@@ -443,6 +446,87 @@ def test_gross_metrics_exclude_ineligible_model_selected_sides() -> None:
         )
 
 
+def test_action_scores_keep_side_strength_and_economics_explicit() -> None:
+    dataset, actual = _dataset(6)
+    prediction = GrossPredictionBatch(
+        endpoint_indexes=np.arange(6, dtype=np.int64),
+        mean_prediction_bps=np.asarray([2.0, -3.0, 4.0, -5.0, 0.0, 1.0]),
+        direction_probability=np.asarray([0.9, 0.8, 0.2, 0.1, 0.5, 0.4]),
+        lower_prediction_bps=np.asarray([1.0, -3.0, -2.0, -5.0, -1.0, -2.0]),
+        upper_prediction_bps=np.asarray([3.0, -1.0, 4.0, -2.0, 1.0, -1.0]),
+    )
+    expected_sides = {
+        "mean": [1, -1, 1, -1, 0, 1],
+        "direction_confidence": [1, 1, -1, -1, 0, -1],
+        "direction_magnitude": [1, 1, -1, -1, 0, -1],
+        "head_consensus": [1, 0, 0, -1, 0, 0],
+        "conservative_quantile": [1, -1, 0, -1, 0, -1],
+    }
+
+    for method, expected in expected_sides.items():
+        score = derive_gross_action_scores(prediction, method=method)
+        np.testing.assert_array_equal(score.side, np.asarray(expected))
+        assert np.all(score.strength >= 0.0)
+        assert np.array_equal(score.side == 0, score.strength == 0.0)
+
+    consensus = derive_gross_action_scores(prediction, method="head_consensus")
+    diagnostics = evaluate_gross_action_scores(
+        dataset,
+        actual,
+        prediction,
+        consensus,
+        requested_top_rows=(2, 4),
+    )
+    assert diagnostics.active_rows == 2
+    assert diagnostics.mean_direction_head_agreement_ratio == pytest.approx(0.4)
+    assert diagnostics.top_rows[0]["overlapping_forecasts"] is True
+    assert diagnostics.top_rows[0]["portfolio_claim"] is False
+    assert diagnostics.top_rows[1]["rows"] == 2
+    assert diagnostics.trading_authority is False
+
+
+def test_action_scores_reject_unknown_methods_and_inactive_evidence() -> None:
+    dataset, actual = _dataset(8)
+    prediction = GrossPredictionBatch(
+        endpoint_indexes=np.arange(8, dtype=np.int64),
+        mean_prediction_bps=np.zeros(8),
+        direction_probability=np.full(8, 0.5),
+        lower_prediction_bps=np.full(8, -1.0),
+        upper_prediction_bps=np.full(8, 1.0),
+    )
+    with pytest.raises(ValueError, match="unsupported"):
+        derive_gross_action_scores(prediction, method="invented")
+    score = derive_gross_action_scores(prediction, method="head_consensus")
+    with pytest.raises(ValueError, match="no eligible active rows"):
+        evaluate_gross_action_scores(dataset, actual, prediction, score)
+
+
+def test_head_coherence_loss_penalizes_disagreement() -> None:
+    torch = pytest.importorskip("torch")
+    output = torch.tensor(
+        [[2.0, -2.0, -1.0, 1.0], [-2.0, 2.0, -1.0, 1.0]],
+        dtype=torch.float32,
+    )
+    target = torch.tensor([1.0, -1.0], dtype=torch.float32)
+    weight = torch.ones(2, dtype=torch.float32)
+    base = GrossArchitectureSpec(
+        candidate_id="coherence-base",
+        family="tabular_mlp",
+        sequence_length=1,
+        hidden_dim=8,
+        residual_blocks=1,
+        dropout=0.0,
+        gmadl_weight=0.0,
+        head_coherence_weight=0.0,
+    )
+    coherent = replace(base, head_coherence_weight=0.5)
+
+    base_loss = architecture._torch_loss(output, target, weight, base)
+    coherent_loss = architecture._torch_loss(output, target, weight, coherent)
+
+    assert coherent_loss > base_loss
+
+
 def test_tcn_network_executes_causal_residual_path() -> None:
     torch = pytest.importorskip("torch")
     spec = GrossArchitectureSpec(
@@ -501,6 +585,8 @@ def test_torch_gross_model_trains_and_reloads_on_cpu(torch_model_bundle) -> None
         "beta_2": 0.99,
         "epsilon": 1.0e-7,
     }
+    assert model.training_data_mode == "device_preloaded"
+    assert 0 < model.training_preload_bytes < 2_000_000
     assert len(progress) == 1
     prediction = predict_torch_gross_model(
         model,

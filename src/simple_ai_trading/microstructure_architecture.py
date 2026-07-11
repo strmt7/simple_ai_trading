@@ -23,7 +23,15 @@ from .microstructure_features import (
 
 GROSS_ARCHITECTURE_SCHEMA_VERSION = "exact-bbo-gross-architecture-v2"
 GROSS_TARGET_MODE = "latency_aligned_midpoint_log_return_no_execution_claim"
+GROSS_ACTION_SCORE_METHODS = (
+    "mean",
+    "direction_confidence",
+    "direction_magnitude",
+    "head_consensus",
+    "conservative_quantile",
+)
 _DAY_MS = 86_400_000
+_TRAINING_PRELOAD_LIMIT_BYTES = 512 * 1024 * 1024
 _MANUAL_ADAM_KIND = "manual_adam_tensor_native_v1"
 _MANUAL_ADAM_LEARNING_RATE = 8.0e-4
 _MANUAL_ADAM_BETA_1 = 0.9
@@ -40,6 +48,7 @@ class GrossArchitectureSpec:
     residual_blocks: int
     dropout: float
     gmadl_weight: float
+    head_coherence_weight: float = 0.0
     gmadl_slope: float = 8.0
     gmadl_magnitude_power: float = 1.0
 
@@ -59,6 +68,7 @@ class GrossArchitectureSpec:
         values = (
             self.dropout,
             self.gmadl_weight,
+            self.head_coherence_weight,
             self.gmadl_slope,
             self.gmadl_magnitude_power,
         )
@@ -67,6 +77,7 @@ class GrossArchitectureSpec:
         if (
             not 0.0 <= self.dropout < 0.75
             or not 0.0 <= self.gmadl_weight <= 2.0
+            or not 0.0 <= self.head_coherence_weight <= 2.0
             or self.gmadl_slope <= 0.0
             or not 0.25 <= self.gmadl_magnitude_power <= 2.0
         ):
@@ -113,6 +124,39 @@ class GrossPredictionBatch:
 
 
 @dataclass(frozen=True)
+class GrossActionScoreBatch:
+    endpoint_indexes: np.ndarray
+    side: np.ndarray
+    strength: np.ndarray
+    method: str
+    strength_units: str
+
+    @property
+    def rows(self) -> int:
+        return int(len(self.endpoint_indexes))
+
+
+@dataclass(frozen=True)
+class GrossActionDiagnostics:
+    score_method: str
+    strength_units: str
+    rows: int
+    active_rows: int
+    active_ratio: float
+    exact_after_cost_eligible_rows: int
+    exact_after_cost_eligible_ratio: float
+    mean_direction_head_agreement_ratio: float
+    top_rows: tuple[dict[str, object], ...]
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class TrainedTorchGrossModel:
     schema_version: str
     spec: GrossArchitectureSpec
@@ -124,6 +168,8 @@ class TrainedTorchGrossModel:
     backend_device: str
     optimizer_kind: str
     optimizer_hyperparameters: Mapping[str, float]
+    training_data_mode: str
+    training_preload_bytes: int
     sequence_length: int
     target_scale_bps: float
     scaler_center: np.ndarray
@@ -538,6 +584,196 @@ def evaluate_gross_forecast(
     )
 
 
+def derive_gross_action_scores(
+    prediction: GrossPredictionBatch,
+    *,
+    method: str,
+) -> GrossActionScoreBatch:
+    """Convert forecast heads into an explicit side and ranking strength."""
+
+    selected_method = str(method).strip().lower()
+    if selected_method not in GROSS_ACTION_SCORE_METHODS:
+        raise ValueError("gross action score method is unsupported")
+    endpoints = np.asarray(prediction.endpoint_indexes, dtype=np.int64)
+    mean = np.asarray(prediction.mean_prediction_bps, dtype=np.float64)
+    probability = np.asarray(prediction.direction_probability, dtype=np.float64)
+    lower = np.minimum(
+        np.asarray(prediction.lower_prediction_bps, dtype=np.float64),
+        np.asarray(prediction.upper_prediction_bps, dtype=np.float64),
+    )
+    upper = np.maximum(
+        np.asarray(prediction.lower_prediction_bps, dtype=np.float64),
+        np.asarray(prediction.upper_prediction_bps, dtype=np.float64),
+    )
+    if (
+        endpoints.ndim != 1
+        or endpoints.size == 0
+        or np.any(np.diff(endpoints) <= 0)
+        or any(
+            values.shape != endpoints.shape
+            for values in (mean, probability, lower, upper)
+        )
+        or not all(
+            np.all(np.isfinite(values)) for values in (mean, probability, lower, upper)
+        )
+        or np.any((probability < 0.0) | (probability > 1.0))
+    ):
+        raise ValueError("gross action score inputs are invalid")
+    mean_side = np.sign(mean).astype(np.int8)
+    direction_signal = 2.0 * probability - 1.0
+    direction_side = np.sign(direction_signal).astype(np.int8)
+    if selected_method == "mean":
+        side = mean_side
+        strength = np.abs(mean)
+        units = "basis_points"
+    elif selected_method == "direction_confidence":
+        side = direction_side
+        strength = np.abs(direction_signal)
+        units = "probability_margin"
+    elif selected_method == "direction_magnitude":
+        strength = np.abs(direction_signal) * np.abs(mean)
+        side = np.where(strength > 0.0, direction_side, 0).astype(np.int8)
+        units = "confidence_weighted_basis_points"
+    elif selected_method == "head_consensus":
+        agreement = (mean_side == direction_side) & (mean_side != 0)
+        side = np.where(agreement, direction_side, 0).astype(np.int8)
+        strength = np.where(
+            agreement,
+            np.abs(direction_signal) * np.abs(mean),
+            0.0,
+        )
+        units = "confidence_weighted_basis_points"
+    else:
+        long_lower_bound = lower
+        short_lower_bound = -upper
+        prefer_long = long_lower_bound >= short_lower_bound
+        best_lower_bound = np.where(
+            prefer_long,
+            long_lower_bound,
+            short_lower_bound,
+        )
+        side = np.where(
+            best_lower_bound > 0.0,
+            np.where(prefer_long, 1, -1),
+            0,
+        ).astype(np.int8)
+        strength = np.maximum(best_lower_bound, 0.0)
+        units = "gross_lower_bound_basis_points"
+    if (
+        side.shape != endpoints.shape
+        or strength.shape != endpoints.shape
+        or np.any(~np.isin(side, (-1, 0, 1)))
+        or not np.all(np.isfinite(strength))
+        or np.any(strength < 0.0)
+        or np.any((side == 0) != (strength == 0.0))
+    ):
+        raise ValueError("gross action score output is invalid")
+    return GrossActionScoreBatch(
+        endpoint_indexes=endpoints.copy(),
+        side=side,
+        strength=strength,
+        method=selected_method,
+        strength_units=units,
+    )
+
+
+def evaluate_gross_action_scores(
+    dataset: MicrostructureDataset,
+    actual_gross_bps: np.ndarray,
+    prediction: GrossPredictionBatch,
+    score: GrossActionScoreBatch,
+    *,
+    requested_top_rows: Sequence[int] = (100, 500, 1_000),
+) -> GrossActionDiagnostics:
+    """Evaluate non-portfolio action ranking without manufacturing trades."""
+
+    validate_microstructure_dataset(dataset)
+    endpoints = np.asarray(score.endpoint_indexes, dtype=np.int64)
+    actual_full = np.asarray(actual_gross_bps, dtype=np.float64)
+    if (
+        actual_full.shape != (dataset.rows,)
+        or endpoints.shape != prediction.endpoint_indexes.shape
+        or not np.array_equal(endpoints, prediction.endpoint_indexes)
+        or score.side.shape != endpoints.shape
+        or score.strength.shape != endpoints.shape
+        or endpoints.size == 0
+        or endpoints[0] < 0
+        or endpoints[-1] >= dataset.rows
+        or score.method not in GROSS_ACTION_SCORE_METHODS
+        or np.any(~np.isin(score.side, (-1, 0, 1)))
+        or not np.all(np.isfinite(score.strength))
+        or np.any(score.strength < 0.0)
+        or np.any((score.side == 0) != (score.strength == 0.0))
+    ):
+        raise ValueError("gross action diagnostics contract is invalid")
+    side = np.asarray(score.side, dtype=np.int8)
+    strength = np.asarray(score.strength, dtype=np.float64)
+    active = side != 0
+    selected_side_eligible = np.where(
+        side > 0,
+        dataset.long_liquidity_eligible[endpoints],
+        dataset.short_liquidity_eligible[endpoints],
+    ).astype(bool)
+    eligible = active & selected_side_eligible
+    eligible_indexes = np.flatnonzero(eligible)
+    if eligible_indexes.size == 0:
+        raise ValueError("gross action diagnostics have no eligible active rows")
+    ranking = eligible_indexes[np.argsort(-strength[eligible_indexes], kind="stable")]
+    actual = actual_full[endpoints]
+    signed_gross = side.astype(np.float64) * actual
+    selected_net = np.where(
+        side > 0,
+        dataset.long_net_bps[endpoints],
+        dataset.short_net_bps[endpoints],
+    )
+    days = dataset.decision_time_ms[endpoints] // _DAY_MS
+    top_rows: list[dict[str, object]] = []
+    for requested in requested_top_rows:
+        count = min(int(requested), len(ranking))
+        if count <= 0:
+            raise ValueError("requested action diagnostic rows must be positive")
+        indexes = ranking[:count]
+        _unique_days, rows_per_day = np.unique(days[indexes], return_counts=True)
+        top_rows.append(
+            {
+                "requested_rows": int(requested),
+                "rows": count,
+                "mean_action_strength": float(np.mean(strength[indexes])),
+                "mean_signed_gross_bps": float(np.mean(signed_gross[indexes])),
+                "signed_gross_positive_rate": float(
+                    np.mean(signed_gross[indexes] > 0.0)
+                ),
+                "mean_exact_after_cost_bps": float(np.mean(selected_net[indexes])),
+                "exact_after_cost_positive_rate": float(
+                    np.mean(selected_net[indexes] > 0.0)
+                ),
+                "unique_utc_days": int(len(rows_per_day)),
+                "maximum_rows_per_utc_day": int(np.max(rows_per_day)),
+                "overlapping_forecasts": True,
+                "portfolio_claim": False,
+            }
+        )
+    mean_side = np.sign(prediction.mean_prediction_bps)
+    direction_side = np.sign(2.0 * prediction.direction_probability - 1.0)
+    comparable = (mean_side != 0) & (direction_side != 0)
+    agreement = (
+        float(np.mean(mean_side[comparable] == direction_side[comparable]))
+        if np.any(comparable)
+        else 0.0
+    )
+    return GrossActionDiagnostics(
+        score_method=score.method,
+        strength_units=score.strength_units,
+        rows=len(endpoints),
+        active_rows=int(np.sum(active)),
+        active_ratio=float(np.mean(active)),
+        exact_after_cost_eligible_rows=len(eligible_indexes),
+        exact_after_cost_eligible_ratio=float(len(eligible_indexes) / len(endpoints)),
+        mean_direction_head_agreement_ratio=agreement,
+        top_rows=tuple(top_rows),
+    )
+
+
 def _torch_modules():
     try:
         import torch
@@ -686,6 +922,7 @@ def _torch_loss(
     labels = (target > 0.0).to(dtype=target.dtype)
     huber = functional.smooth_l1_loss(mean, target, reduction="none", beta=0.5)
     binary = functional.softplus(direction) - labels * direction
+    head_coherence = (torch.sigmoid(direction) - torch.sigmoid(mean)).square()
 
     def pinball(prediction, quantile: float):
         error = target - prediction
@@ -701,6 +938,7 @@ def _torch_loss(
         + 0.25 * binary
         + 0.15 * quantile
         + spec.gmadl_weight * directional
+        + spec.head_coherence_weight * head_coherence
         + 0.10 * crossing
     )
     return torch.sum(per_row * sample_weight) / torch.sum(sample_weight)
@@ -815,7 +1053,44 @@ def train_torch_gross_model(
     )
     rng = np.random.default_rng(int(seed))
 
-    def epoch_loss(endpoints: np.ndarray, weights: np.ndarray, training: bool) -> float:
+    preload_bytes = int(
+        (len(train) + len(tuning))
+        * spec.sequence_length
+        * len(MICROSTRUCTURE_FEATURE_NAMES)
+        * np.dtype(np.float32).itemsize
+        + (len(train) + len(tuning)) * 2 * np.dtype(np.float32).itemsize
+    )
+    preloaded = preload_bytes <= _TRAINING_PRELOAD_LIMIT_BYTES
+
+    def prepared_split(endpoints: np.ndarray, weights: np.ndarray):
+        if not preloaded:
+            return None
+        values = torch.from_numpy(
+            _sequence_batch(
+                dataset.features,
+                endpoints,
+                sequence_length=spec.sequence_length,
+                center=center,
+                scale=scale,
+            )
+        ).to(device)
+        labels = torch.from_numpy(
+            np.ascontiguousarray(target[endpoints] / target_scale, dtype=np.float32)
+        ).to(device)
+        weight_values = torch.from_numpy(
+            np.ascontiguousarray(weights, dtype=np.float32)
+        ).to(device)
+        return values, labels, weight_values
+
+    prepared_train = prepared_split(train, train_weights)
+    prepared_tuning = prepared_split(tuning, tuning_weights)
+
+    def epoch_loss(
+        endpoints: np.ndarray,
+        weights: np.ndarray,
+        training: bool,
+        prepared,
+    ) -> float:
         order = (
             rng.permutation(len(endpoints)) if training else np.arange(len(endpoints))
         )
@@ -825,17 +1100,25 @@ def train_torch_gross_model(
         for start in range(0, len(order), batch):
             positions = order[start : start + batch]
             batch_endpoints = endpoints[positions]
-            x = torch.from_numpy(
-                _sequence_batch(
-                    dataset.features,
-                    batch_endpoints,
-                    sequence_length=spec.sequence_length,
-                    center=center,
-                    scale=scale,
-                )
-            ).to(device)
-            y = torch.from_numpy(target[batch_endpoints] / target_scale).to(device)
-            weight = torch.from_numpy(weights[positions]).to(device)
+            if prepared is None:
+                x = torch.from_numpy(
+                    _sequence_batch(
+                        dataset.features,
+                        batch_endpoints,
+                        sequence_length=spec.sequence_length,
+                        center=center,
+                        scale=scale,
+                    )
+                ).to(device)
+                y = torch.from_numpy(target[batch_endpoints] / target_scale).to(device)
+                weight = torch.from_numpy(weights[positions]).to(device)
+            else:
+                device_positions = torch.from_numpy(
+                    np.ascontiguousarray(positions, dtype=np.int64)
+                ).to(device)
+                x = prepared[0].index_select(0, device_positions)
+                y = prepared[1].index_select(0, device_positions)
+                weight = prepared[2].index_select(0, device_positions)
             if training:
                 optimizer.zero_grad(set_to_none=True)
             with torch.set_grad_enabled(training):
@@ -861,8 +1144,8 @@ def train_torch_gross_model(
     best_training = float("inf")
     stale = 0
     for epoch in range(1, epochs + 1):
-        training_loss = epoch_loss(train, train_weights, True)
-        tuning_loss = epoch_loss(tuning, tuning_weights, False)
+        training_loss = epoch_loss(train, train_weights, True, prepared_train)
+        tuning_loss = epoch_loss(tuning, tuning_weights, False, prepared_tuning)
         if progress is not None:
             progress(epoch, epochs, training_loss, tuning_loss)
         if tuning_loss < best_tuning - 1.0e-5:
@@ -903,6 +1186,10 @@ def train_torch_gross_model(
         backend_device=backend.device,
         optimizer_kind=optimizer.kind,
         optimizer_hyperparameters=optimizer.hyperparameters,
+        training_data_mode=(
+            "device_preloaded" if preloaded else "streamed_host_batches"
+        ),
+        training_preload_bytes=preload_bytes if preloaded else 0,
         sequence_length=spec.sequence_length,
         target_scale_bps=target_scale,
         scaler_center=center,
@@ -1164,8 +1451,11 @@ def predict_lightgbm_gross_model(
 
 
 __all__ = [
+    "GROSS_ACTION_SCORE_METHODS",
     "GROSS_ARCHITECTURE_SCHEMA_VERSION",
     "GROSS_TARGET_MODE",
+    "GrossActionDiagnostics",
+    "GrossActionScoreBatch",
     "GrossArchitectureSpec",
     "GrossForecastMetrics",
     "GrossPredictionBatch",
@@ -1173,7 +1463,9 @@ __all__ = [
     "TrainedTorchGrossModel",
     "average_label_uniqueness",
     "causal_cusum_event_mask",
+    "derive_gross_action_scores",
     "evaluate_gross_forecast",
+    "evaluate_gross_action_scores",
     "gross_midpoint_log_returns_bps",
     "predict_lightgbm_gross_model",
     "predict_torch_gross_model",
