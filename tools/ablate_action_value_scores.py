@@ -582,6 +582,7 @@ def _event_model_scores(
         "event_upper_quantile": {},
         "event_lower_quantile": {},
         "event_downside_adjusted_mean": {},
+        "event_distributional_value": {},
     }
     penalty = {"conservative": 1.0, "regular": 0.75, "aggressive": 0.5}[
         risk_level
@@ -592,10 +593,11 @@ def _event_model_scores(
             features,
             num_iteration=iterations[probability_name],
         )
-        output["event_profitability_probability"][side] = _apply_platt_scaling(
+        probability = _apply_platt_scaling(
             raw_probability,
             calibrations[side],
         )
+        output["event_profitability_probability"][side] = probability
         values = {}
         for label in ("mean", "q10", "q90"):
             name = f"{side}_{label}"
@@ -609,6 +611,9 @@ def _event_model_scores(
         downside = np.maximum(0.0, values["mean"] - values["q10"])
         output["event_downside_adjusted_mean"][side] = (
             values["mean"] - penalty * downside
+        )
+        output["event_distributional_value"][side] = (
+            probability * values["q90"] + (1.0 - probability) * values["q10"]
         )
     return output
 
