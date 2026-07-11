@@ -1,0 +1,4 @@
+profile,candidate_available,accepted,rejection_reasons
+conservative,False,False,calibration_has_no_eligible_scores
+regular,False,False,calibration_has_no_eligible_scores
+aggressive,False,False,calibration_has_no_eligible_scores
