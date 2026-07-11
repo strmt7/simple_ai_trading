@@ -73,6 +73,9 @@ class OutcomeMixtureArchitectureSpec:
     pairwise_ranking_loss_weight: float = 0.0
     temporal_pooling_mode: str = "endpoint"
     ranking_scope: str = "global_batch"
+    representation_mode: str = "single"
+    expert_count: int = 1
+    router_balance_loss_weight: float = 0.0
 
     def __post_init__(self) -> None:
         weights = (
@@ -82,6 +85,7 @@ class OutcomeMixtureArchitectureSpec:
             self.quantile_loss_weight,
             self.ranking_loss_weight,
             self.pairwise_ranking_loss_weight,
+            self.router_balance_loss_weight,
         )
         if not self.candidate_id.strip():
             raise ValueError("outcome-mixture candidate_id cannot be empty")
@@ -90,6 +94,8 @@ class OutcomeMixtureArchitectureSpec:
             or self.ranking_loss_mode not in {"correlation", "pairwise_net_return"}
             or self.temporal_pooling_mode not in {"endpoint", "causal_attention"}
             or self.ranking_scope not in {"global_batch", "utc_session"}
+            or self.representation_mode
+            not in {"single", "soft_mixture_of_experts"}
             or (self.temporal_pooling_mode == "endpoint" and self.sequence_length != 1)
             or (
                 self.temporal_pooling_mode == "causal_attention"
@@ -102,6 +108,26 @@ class OutcomeMixtureArchitectureSpec:
             or not 1 <= int(self.residual_blocks) <= 8
         ):
             raise ValueError("outcome-mixture architecture dimensions are invalid")
+        if (
+            (
+                self.representation_mode == "single"
+                and (
+                    int(self.expert_count) != 1
+                    or float(self.router_balance_loss_weight) != 0.0
+                )
+            )
+            or (
+                self.representation_mode == "soft_mixture_of_experts"
+                and (
+                    self.side_tower_mode != "independent"
+                    or self.temporal_pooling_mode != "causal_attention"
+                    or int(self.expert_count) != 2
+                    or self.residual_blocks % self.expert_count != 0
+                    or not 0.0 < float(self.router_balance_loss_weight) <= 1.0
+                )
+            )
+        ):
+            raise ValueError("outcome-mixture representation contract is invalid")
         if not math.isfinite(float(self.dropout)) or not all(
             math.isfinite(float(value)) for value in weights
         ):
@@ -226,6 +252,12 @@ def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
         contract.pop("temporal_pooling_mode")
     if spec.ranking_scope == "global_batch":
         contract.pop("ranking_scope")
+    if spec.representation_mode == "single":
+        contract.pop("representation_mode")
+    if spec.expert_count == 1:
+        contract.pop("expert_count")
+    if spec.router_balance_loss_weight == 0.0:
+        contract.pop("router_balance_loss_weight")
     return contract
 
 
@@ -307,8 +339,66 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
         def forward(self, values):
             return torch.stack(tuple(tower(values) for tower in self.towers), dim=1)
 
+    class RepresentationExpert(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.blocks = nn.ModuleList(
+                ResidualBlock()
+                for _index in range(spec.residual_blocks // spec.expert_count)
+            )
+            self.normalization = nn.LayerNorm(spec.hidden_dim)
+            self.temporal_attention = nn.Linear(spec.hidden_dim, 1, bias=False)
+
+        def forward(self, values):
+            output = values
+            for block in self.blocks:
+                output = block(output)
+            output = self.normalization(output)
+            attention = functional.softmax(
+                self.temporal_attention(output).squeeze(-1), dim=1
+            )
+            return torch.sum(output * attention.unsqueeze(-1), dim=1)
+
+    class SoftMixtureSideTower(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.projection = nn.Linear(feature_count, spec.hidden_dim)
+            self.experts = nn.ModuleList(
+                RepresentationExpert() for _index in range(spec.expert_count)
+            )
+            self.router = nn.Linear(spec.hidden_dim, spec.expert_count)
+            self.head = nn.Linear(spec.hidden_dim, _OUTPUTS_PER_SIDE)
+
+        def forward(self, values):
+            projected = functional.gelu(self.projection(values))
+            expert_outputs = torch.stack(
+                tuple(expert(projected) for expert in self.experts), dim=1
+            )
+            router_weights = functional.softmax(
+                self.router(projected[:, -1, :]), dim=1
+            )
+            representation = torch.sum(
+                expert_outputs * router_weights.unsqueeze(-1), dim=1
+            )
+            return self.head(representation), router_weights
+
+    class IndependentSoftMixtureNetwork(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.towers = nn.ModuleList((SoftMixtureSideTower(), SoftMixtureSideTower()))
+
+        def forward(self, values):
+            side_outputs = tuple(tower(values) for tower in self.towers)
+            predictions = torch.stack(tuple(value[0] for value in side_outputs), dim=1)
+            router_weights = torch.stack(
+                tuple(value[1] for value in side_outputs), dim=1
+            )
+            return predictions, router_weights
+
     if spec.side_tower_mode == "shared":
         return OutcomeMixtureNetwork()
+    if spec.representation_mode == "soft_mixture_of_experts":
+        return IndependentSoftMixtureNetwork()
     return IndependentSideTowerNetwork()
 
 
@@ -355,6 +445,36 @@ def _decoded_heads(output):
         expected,
         lower,
         upper,
+    )
+
+
+def _unpack_network_output(output, spec: OutcomeMixtureArchitectureSpec):
+    if spec.representation_mode == "single":
+        if isinstance(output, tuple):
+            raise ValueError("outcome-mixture network output contract is invalid")
+        return output, None
+    if not isinstance(output, tuple) or len(output) != 2:
+        raise ValueError("outcome-mixture network output contract is invalid")
+    prediction, router_weights = output
+    if (
+        router_weights.ndim != 3
+        or int(router_weights.shape[0]) != int(prediction.shape[0])
+        or int(router_weights.shape[1]) != 2
+        or int(router_weights.shape[2]) != spec.expert_count
+    ):
+        raise ValueError("outcome-mixture router output shape is invalid")
+    return prediction, router_weights
+
+
+def _router_balance_loss(router_weights):
+    torch, _nn, _functional = _torch_modules()
+    if router_weights.ndim != 3 or int(router_weights.shape[2]) < 2:
+        raise ValueError("outcome-mixture router output shape is invalid")
+    expert_count = int(router_weights.shape[2])
+    mean_allocation = torch.mean(router_weights, dim=0)
+    equal_allocation = 1.0 / float(expert_count)
+    return float(expert_count) * torch.mean(
+        torch.sum((mean_allocation - equal_allocation).square(), dim=1)
     )
 
 
@@ -485,6 +605,7 @@ def _loss(
     ranking_group_slices: tuple[tuple[int, int], ...] | None = None,
 ):
     torch, _nn, functional = _torch_modules()
+    output, router_weights = _unpack_network_output(output, spec)
     (
         probability,
         positive_magnitude,
@@ -554,6 +675,11 @@ def _loss(
                 mode="pairwise_net_return",
                 group_slices=ranking_group_slices,
             )
+        )
+    if router_weights is not None:
+        weighted = weighted + (
+            spec.router_balance_loss_weight
+            * _router_balance_loss(router_weights)
         )
     if probability.shape != target.shape:
         raise ValueError("outcome-mixture decoded head shape is invalid")
@@ -1058,6 +1184,7 @@ def predict_outcome_mixture_model(
     network.load_state_dict(state, strict=True)
     network.eval()
     outputs: list[np.ndarray] = []
+    router_outputs: list[np.ndarray] = []
     with torch.no_grad(), _directml_cpu_fallback_guard(backend.kind):
         for start in range(0, len(selected), int(batch_size)):
             indexes = selected[start : start + int(batch_size)]
@@ -1070,7 +1197,12 @@ def predict_outcome_mixture_model(
                     scale=model.scaler_scale,
                 )
             ).to(device)
-            outputs.append(network(values).detach().cpu().numpy())
+            prediction_output, router_weights = _unpack_network_output(
+                network(values), model.spec
+            )
+            outputs.append(prediction_output.detach().cpu().numpy())
+            if router_weights is not None:
+                router_outputs.append(router_weights.detach().cpu().numpy())
     raw = np.concatenate(outputs, axis=0).astype(np.float64)
     if raw.shape != (len(selected), 2, _OUTPUTS_PER_SIDE) or not np.all(
         np.isfinite(raw)
@@ -1082,6 +1214,20 @@ def predict_outcome_mixture_model(
     expected = probability * positive - (1.0 - probability) * negative
     lower = expected - np.logaddexp(0.0, raw[:, :, 3])
     upper = expected + np.logaddexp(0.0, raw[:, :, 4])
+    router_weights_array = None
+    if router_outputs:
+        router_weights_array = np.concatenate(router_outputs, axis=0).astype(np.float64)
+        if (
+            router_weights_array.shape
+            != (len(selected), 2, model.spec.expert_count)
+            or not np.all(np.isfinite(router_weights_array))
+            or np.any(router_weights_array < 0.0)
+            or np.any(router_weights_array > 1.0)
+            or not np.allclose(
+                np.sum(router_weights_array, axis=2), 1.0, atol=1.0e-6
+            )
+        ):
+            raise ValueError("outcome-mixture neural model emitted invalid routing")
     scale = model.target_scale_bps
     return ActionValuePredictionBatch(
         endpoint_indexes=selected,
@@ -1093,6 +1239,16 @@ def predict_outcome_mixture_model(
         short_lower_bps=lower[:, 1] * scale,
         long_upper_bps=upper[:, 0] * scale,
         short_upper_bps=upper[:, 1] * scale,
+        long_router_weights=(
+            router_weights_array[:, 0, :]
+            if router_weights_array is not None
+            else None
+        ),
+        short_router_weights=(
+            router_weights_array[:, 1, :]
+            if router_weights_array is not None
+            else None
+        ),
     )
 
 

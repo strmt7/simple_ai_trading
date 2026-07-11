@@ -675,3 +675,38 @@ def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
     assert len(calls) == 3
     assert all(call[0] == (0.5, 0.7, 0.85, 0.95) for call in calls)
     assert all(call[3] == 0.5 for call in calls)
+
+
+def test_router_diagnostics_report_allocation_concentration_and_entropy() -> None:
+    prediction = SimpleNamespace(
+        rows=4,
+        long_router_weights=np.asarray(
+            [[0.8, 0.2], [0.7, 0.3], [0.4, 0.6], [0.1, 0.9]]
+        ),
+        short_router_weights=np.asarray(
+            [[0.5, 0.5], [0.6, 0.4], [0.3, 0.7], [0.2, 0.8]]
+        ),
+    )
+
+    diagnostics = screen._router_diagnostics(prediction)
+
+    assert diagnostics is not None
+    assert diagnostics["expert_count"] == 2
+    np.testing.assert_allclose(
+        diagnostics["long"]["mean_expert_allocation"], [0.5, 0.5]
+    )
+    np.testing.assert_allclose(
+        diagnostics["long"]["dominant_expert_row_fraction"], [0.5, 0.5]
+    )
+    assert 0.0 < diagnostics["long"]["mean_normalized_routing_entropy"] < 1.0
+    assert screen._router_diagnostics(
+        SimpleNamespace(rows=4, long_router_weights=None, short_router_weights=None)
+    ) is None
+    with pytest.raises(ValueError, match="incomplete"):
+        screen._router_diagnostics(
+            SimpleNamespace(
+                rows=4,
+                long_router_weights=prediction.long_router_weights,
+                short_router_weights=None,
+            )
+        )

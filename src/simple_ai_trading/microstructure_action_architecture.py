@@ -131,6 +131,8 @@ class ActionValuePredictionBatch:
     short_lower_bps: np.ndarray
     long_upper_bps: np.ndarray
     short_upper_bps: np.ndarray
+    long_router_weights: np.ndarray | None = None
+    short_router_weights: np.ndarray | None = None
 
     @property
     def rows(self) -> int:
@@ -158,6 +160,8 @@ class ActionValueEnsembleBatch:
     profitability_claim: bool = False
     portfolio_claim: bool = False
     leverage_applied: bool = False
+    long_router_weights: np.ndarray | None = None
+    short_router_weights: np.ndarray | None = None
 
     @property
     def rows(self) -> int:
@@ -739,6 +743,46 @@ def ensemble_action_value_predictions(
         or np.any(stacks["short_lower_bps"] > stacks["short_upper_bps"])
     ):
         raise ValueError("action-value ensemble member arrays are invalid")
+    router_members = tuple(
+        (value.long_router_weights, value.short_router_weights) for value in values
+    )
+    if any(
+        (long_weights is None) != (short_weights is None)
+        for long_weights, short_weights in router_members
+    ):
+        raise ValueError("action-value ensemble router evidence is incomplete")
+    router_presence = tuple(
+        long_weights is not None and short_weights is not None
+        for long_weights, short_weights in router_members
+    )
+    if any(router_presence) and not all(router_presence):
+        raise ValueError("action-value ensemble router evidence differs")
+    long_router_weights = None
+    short_router_weights = None
+    if all(router_presence):
+        long_router_stack = np.stack(
+            [np.asarray(value[0], dtype=np.float64) for value in router_members],
+            axis=0,
+        )
+        short_router_stack = np.stack(
+            [np.asarray(value[1], dtype=np.float64) for value in router_members],
+            axis=0,
+        )
+        if (
+            long_router_stack.ndim != 3
+            or short_router_stack.shape != long_router_stack.shape
+            or long_router_stack.shape[:2] != (len(values), len(endpoints))
+            or long_router_stack.shape[2] < 2
+            or not np.all(np.isfinite(long_router_stack))
+            or not np.all(np.isfinite(short_router_stack))
+            or np.any(long_router_stack < 0.0)
+            or np.any(short_router_stack < 0.0)
+            or not np.allclose(np.sum(long_router_stack, axis=2), 1.0, atol=1.0e-6)
+            or not np.allclose(np.sum(short_router_stack, axis=2), 1.0, atol=1.0e-6)
+        ):
+            raise ValueError("action-value ensemble router evidence is invalid")
+        long_router_weights = np.mean(long_router_stack, axis=0)
+        short_router_weights = np.mean(short_router_stack, axis=0)
     return ActionValueEnsembleBatch(
         endpoint_indexes=endpoints.copy(),
         long_mean_bps=np.mean(stacks["long_mean_bps"], axis=0),
@@ -758,6 +802,8 @@ def ensemble_action_value_predictions(
         long_positive_member_ratio=np.mean(stacks["long_mean_bps"] > 0.0, axis=0),
         short_positive_member_ratio=np.mean(stacks["short_mean_bps"] > 0.0, axis=0),
         member_count=len(values),
+        long_router_weights=long_router_weights,
+        short_router_weights=short_router_weights,
     )
 
 
