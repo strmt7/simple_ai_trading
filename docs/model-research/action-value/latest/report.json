@@ -1,112 +1,99 @@
 {
   "actual": {
-    "best_policy_candidate_id": "conservative-h900-event_distributional_value",
-    "best_policy_max_drawdown_bps": 170.57166138403232,
-    "best_policy_profit_factor": 0.8803898925722213,
-    "best_policy_total_net_bps": -50.691134971447134,
-    "best_policy_trades": 31,
-    "candidate_count": 18,
-    "fit_error_count": 0,
-    "model_fit_count": 6,
-    "policy_evaluable_candidate_count": 18,
-    "positive_policy_candidate_count": 0,
-    "selection_trades": 0,
+    "best_development_direction_auc": 0.5705046338834519,
+    "best_development_spearman_ic": 0.11072229311866835,
+    "best_model_id": "mlp-bounded-gmadl",
+    "best_top_500_exact_after_cost_bps": -6.605292973338392,
+    "best_top_500_gross_bps": 5.439178441084853,
+    "dataset_rows": 878025,
+    "event_rows": 230999,
+    "executed_trades": 0,
+    "final_model_count": 3,
+    "stage_one_neural_candidates": 3,
+    "stage_two_neural_candidates": 2,
     "unrejected_candidate_count": 0
   },
-  "artifact_class": "exchange_sourced_model_discovery_graph_data",
+  "artifact_class": "exchange_sourced_gross_model_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 750,
+      "bytes": 1129,
       "path": "docs/model-research/action-value/latest/README.md",
-      "sha256": "f8026ba73ce0d97bd248c72dfbd8bf4c0ee3866bd555fee98e4c73dfbba63233"
+      "sha256": "3d63a524174d82f0d54e5488b60603c26a762cc7c6a212974590e0b09d70497c"
     },
     {
-      "bytes": 11896,
+      "bytes": 3172,
       "path": "docs/model-research/action-value/latest/candidates.csv",
-      "sha256": "8d90bb80c91b8b211f076edab28062a6e1d32ca9d27356e7bfbc1b3e163215b0"
+      "sha256": "e44062733dfcaff6da4da47c08a86c3dcbe302f8e17d791312b98ba481522433"
     },
     {
-      "bytes": 2588,
+      "bytes": 2992,
       "path": "docs/model-research/action-value/latest/progress.csv",
-      "sha256": "852bf064d25c0340f25de9019878245d3ead2ed5de5f51af7e8042cfbd55909e"
+      "sha256": "99c2662a6e4ae3c55d2395b854b2969fd4368e0d472d65c3dd34dd8b1f3fb3f9"
     },
     {
-      "bytes": 81187,
+      "bytes": 37591,
       "path": "docs/model-research/action-value/latest/diagnostics.json",
-      "sha256": "14731a8f398b8ca5d84dd5676780d6c44c23f47be3bd39757c2e3053a04200b5"
+      "sha256": "ce845a0de64af6b0dc859aa811910b8bcd9ee4b0cf42cd53639ad5b2b712c405"
     },
     {
-      "bytes": 9017,
+      "bytes": 3917,
       "path": "docs/model-research/action-value/latest/charts/after-cost-performance.svg",
-      "sha256": "f4eb00945303e90da4b0047b4433d3c6ce6fb659603506ba9b4d077ac4ac53b7"
+      "sha256": "aef6ddb54660297058f09b4f334f896ba03e0a14fb77faf8cbde049752deb769"
     },
     {
-      "bytes": 9041,
+      "bytes": 5568,
       "path": "docs/model-research/action-value/latest/charts/forecast-quality.svg",
-      "sha256": "dc84dcc0f15a419926175ea3ba4be97379c090e963d2aacb95f7ee96c4652e1f"
+      "sha256": "e3c41de83691da16fa849bb392b840d43a631ae262cb8c8be34cb511011fb921"
     },
     {
-      "bytes": 4101,
+      "bytes": 3862,
       "path": "docs/model-research/action-value/latest/charts/action-funnel.svg",
-      "sha256": "197ca7acc17f4210080dc4d523a196573af60c1f872bf56bd564361c1d58e8df"
+      "sha256": "50e9e878d5ad2bd54db2a0a2f90f44225769fd06f2753d4a536cea42f36df241"
     },
     {
-      "bytes": 4361,
+      "bytes": 5782,
       "path": "docs/model-research/action-value/latest/charts/research-progress.svg",
-      "sha256": "e284aca43d2b74fb59f5604e29188be9226e9670a35f8d6dba9b39a4b3f984fd"
+      "sha256": "6c3b651262ec52f2c071ac83635d3f9cb942fb51d62c3e4ee6c40aba2c1aff6b"
     }
   ],
   "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
-  "design_revision": 6,
-  "design_sha256": "933a8619248145f4fd2e433952a92cfb8b90db4429846a468a6072f18486587d",
-  "diagnostic_sha256": "4af771c3d0b34d71e1ec11effdc79679f99c8608940933dd355a53be7c3db319",
-  "implementation_commit": "09ae2f2eeba81eacdd147be96075371659e0ba02",
+  "design_revision": 2,
+  "design_sha256": "57fcf6d940810d251917961d281f96e0c3b9ac88e3bde06faa8c59cdeebcb6f7",
+  "development_window_is_consumed": true,
+  "diagnostic_sha256": "788b009576c6a5112fb8ad625c70e9e75325fe98291675da3dff02d8f62f0202",
+  "execution_claim": false,
+  "implementation_commit": "a7ee582525c346b01326cee9439418abf91d21f8",
+  "leverage_applied": false,
+  "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "6895753ac55f6a98c073a8611c6268ccad97707699ec5e2953198bb7fe486883",
-  "round": 12,
-  "runner_status": "completed",
+  "publication_sha256": "5cbcb1020e57f64d1f3b070158d46f489cc3585d342e343206c6f3bdd4080981",
+  "round": 13,
   "runtime_resources": {
     "compute_backend_requested": "directml",
     "duckdb_memory_limit": "4GB",
     "spill_directory_policy": "warehouse_adjacent",
     "warehouse_threads": 8
   },
-  "schema_version": "selective-event-discovery-publication-v1",
-  "selection_window_is_consumed": true,
+  "schema_version": "gross-architecture-screen-publication-v1",
   "source_artifacts": [
     {
-      "bytes": 3934427,
-      "name": "conservative-h300.json",
-      "sha256": "3d527f946c9d9c1445314c5a9ec10202a9c679e1f7ba289d3b1361450627822d"
+      "bytes": 45976,
+      "path": "mlp-huber-direction.safetensors",
+      "sha256": "6129caaad215802ad018d4059bf771be2f47112df81ffd7de87ae01620600451"
     },
     {
-      "bytes": 3180737,
-      "name": "regular-h300.json",
-      "sha256": "4cc59d578501620eafbbea60834340cd51b12d223a572cd25ec2de522cfc417a"
+      "bytes": 45976,
+      "path": "mlp-bounded-gmadl.safetensors",
+      "sha256": "64936b50a0343e493d533c187886439ae3c7eb405dcf83fbad2f0e7b76530ef2"
     },
     {
-      "bytes": 3696113,
-      "name": "aggressive-h300.json",
-      "sha256": "ada7228ffec2f5710427260744edf0c2a789a03de473d56569a062c134470fb1"
-    },
-    {
-      "bytes": 2369773,
-      "name": "conservative-h900.json",
-      "sha256": "b0e3602184857d34d6e145a7126ffc4c67b4fa1ae3f868a7e87a7e173649d2ed"
-    },
-    {
-      "bytes": 2155623,
-      "name": "regular-h900.json",
-      "sha256": "bea717006cd1fd490c9ba751770a0fe13a9bb2d460da6825a430d5b79159cb4a"
-    },
-    {
-      "bytes": 1940198,
-      "name": "aggressive-h900.json",
-      "sha256": "d0e15d737c3fa0724f00b9a92e77bf960edc1a52f81fc955bf8ad1ab3f14a3dc"
+      "bytes": 2637160,
+      "path": "lightgbm-baseline.json",
+      "sha256": "06b41dfede81d249fb44d615abf3459fda0a77f72d405b6d0ea4710715f69a31"
     }
   ],
-  "source_report_canonical_sha256": "d80a9d9544f2dd967f9a9f35706d4fcc7fb6ffa908be203522cbb229c47cddc4",
-  "source_report_sha256": "f68969295029cef9641884c85382dd3a31da196b0e101c0095d61d9539b17505",
+  "source_report_canonical_sha256": "0f7bb314a74a849a2fae8510793c118378f157d69d1c84d2161190f0bc573e33",
+  "source_report_sha256": "cf5013d5b85e4dbfc79de31e51e139b248f183603a449b53874ea09907490362",
   "status": "rejected",
   "terminal_holdout_accessed": false,
   "trading_authority": false
