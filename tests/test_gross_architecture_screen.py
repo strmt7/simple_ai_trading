@@ -185,6 +185,25 @@ def test_round13_design_validates_hash_and_current_implementation(tmp_path) -> N
     assert design_sha256 == payload["design_sha256"]
 
 
+def test_tracked_round13_design_is_hash_and_implementation_bound() -> None:
+    design, design_sha256 = load_gross_architecture_design(
+        ROOT
+        / "docs/model-research/action-value/round-013-gross-architecture-design.json"
+    )
+    assert design_sha256 == (
+        "6488e119fff23a3b41dc83009d2c9dd63502efa9b62d4d1300aebfa981755540"
+    )
+    assert design["implementation"]["commit"] == (  # type: ignore[index]
+        "ba79726241dab55c21ed7fb68b3b355a94db9b6a"
+    )
+    assert design["ranking"]["development_evaluation_used_for_selection"] is False  # type: ignore[index]
+    assert design["reserved_terminal"] == {
+        "date": "2023-07-07",
+        "included_in_dataset": False,
+        "access_permitted": False,
+    }
+
+
 def test_round13_design_rejects_tampered_payload(tmp_path) -> None:
     path = tmp_path / "design.json"
     payload = _payload()

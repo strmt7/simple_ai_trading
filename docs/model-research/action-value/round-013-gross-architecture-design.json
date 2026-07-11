@@ -1,0 +1,211 @@
+{
+  "schema_version": "gross-architecture-screen-design-v1",
+  "round": 13,
+  "purpose": "consumed_data_architecture_development",
+  "seed": 20260711,
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "target_mode": "latency_aligned_midpoint_log_return_no_execution_claim",
+  "implementation": {
+    "commit": "ba79726241dab55c21ed7fb68b3b355a94db9b6a",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e7ecda3421708628f0c0034f98f233672f247c0decd50f71ca703f031596bce0"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "7b1d0f7b3aff5aaaa1d0b282017918c63c2f421cc982cccd602165e8925be43a"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "4a50a675f3618ba9aba73aebf24a58349f60b2241b7af66ffdded3a91e74d71c"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "f2a29c2ec5058811f1d4dfa4d9c86eef71dbc6f6b0c1ab44535e4bc8270310aa"
+      },
+      {
+        "path": "src/simple_ai_trading/lightgbm_backend.py",
+        "sha256": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "81e1cc63b5e11d9f4c17925a02015d6397268028ddccbaf84ca0e23d7e17abeb"
+      }
+    ]
+  },
+  "data": {
+    "provider": "binance",
+    "market_type": "futures",
+    "symbol": "BTCUSDT",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "full_history_inventory_required": false,
+    "bounded_corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
+    "consumed_registry_sha256": "7ee23bdab12e1574662f93f67f7c01ba811236f5be42b68b883af9306c5f9c6b",
+    "feature_build_id": "c3e94594f88e171f6e9e9cda0392f1f5db598cf6662fa5028d739855bb72d970",
+    "start_date": "2023-05-16",
+    "end_date": "2023-07-06",
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development_evaluation": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 300,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0,
+    "leverage": 1.0,
+    "leverage_rationale": "Architecture viability must be established before leverage can amplify either gains or losses."
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "4GB",
+    "warehouse_threads": 8,
+    "compute_backend": "directml",
+    "spill_directory_policy": "warehouse_adjacent"
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "stages": {
+    "stage_one": {
+      "role_used_for_elimination": "calibration",
+      "training_stride": 2,
+      "batch_size": 1024,
+      "max_epochs": 4,
+      "patience": 2,
+      "keep_candidates": 2
+    },
+    "stage_two": {
+      "role_used_for_final_ranking": "policy",
+      "training_stride": 1,
+      "batch_size": 2048,
+      "max_epochs": 16,
+      "patience": 4
+    }
+  },
+  "neural_candidates": [
+    {
+      "candidate_id": "mlp-huber-direction",
+      "family": "tabular_mlp",
+      "sequence_length": 1,
+      "hidden_dim": 64,
+      "residual_blocks": 1,
+      "dropout": 0.1,
+      "gmadl_weight": 0.0,
+      "gmadl_slope": 8.0,
+      "gmadl_magnitude_power": 1.0
+    },
+    {
+      "candidate_id": "mlp-bounded-gmadl",
+      "family": "tabular_mlp",
+      "sequence_length": 1,
+      "hidden_dim": 64,
+      "residual_blocks": 1,
+      "dropout": 0.1,
+      "gmadl_weight": 0.2,
+      "gmadl_slope": 8.0,
+      "gmadl_magnitude_power": 1.0
+    },
+    {
+      "candidate_id": "tcn-bounded-gmadl",
+      "family": "causal_tcn",
+      "sequence_length": 32,
+      "hidden_dim": 64,
+      "residual_blocks": 4,
+      "dropout": 0.1,
+      "gmadl_weight": 0.2,
+      "gmadl_slope": 8.0,
+      "gmadl_magnitude_power": 1.0
+    }
+  ],
+  "baseline": {
+    "candidate_id": "lightgbm-gross-baseline",
+    "family": "lightgbm_tabular_huber_direction",
+    "role_used_for_training": "train",
+    "role_used_for_early_stopping": "early_stop"
+  },
+  "ranking": {
+    "stage_one_role": "calibration",
+    "final_ranking_role": "policy",
+    "lexicographic_descending": [
+      "top_500_mean_exact_after_cost_bps",
+      "spearman_information_coefficient",
+      "direction_auc"
+    ],
+    "diagnostic_top_rows": [
+      100,
+      500,
+      1000
+    ],
+    "development_evaluation_used_for_selection": false
+  },
+  "development_gates": {
+    "minimum_direction_auc": 0.5,
+    "minimum_spearman_ic": 0.0,
+    "require_mae_better_than_zero": true,
+    "minimum_top_500_exact_after_cost_bps": 0.0
+  },
+  "reserved_terminal": {
+    "date": "2023-07-07",
+    "included_in_dataset": false,
+    "access_permitted": false
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/2403.09267",
+      "applied_principle": "Forecast metrics do not establish actionable trading performance."
+    },
+    {
+      "source": "https://arxiv.org/abs/2502.15757",
+      "applied_principle": "Compare a simple MLP and temporal architecture instead of assuming more complexity is better."
+    },
+    {
+      "source": "https://arxiv.org/abs/2506.05764",
+      "applied_principle": "Treat input quality and causal preprocessing as first-class experimental factors."
+    },
+    {
+      "source": "https://arxiv.org/abs/2412.18405",
+      "applied_principle": "Test bounded GMADL only as one component of a calibrated multi-objective loss."
+    },
+    {
+      "source": "https://arxiv.org/abs/2602.00776",
+      "applied_principle": "Use normalized microstructure features, time-series roles, and conservative top-of-book diagnostics."
+    }
+  ],
+  "design_sha256": "6488e119fff23a3b41dc83009d2c9dd63502efa9b62d4d1300aebfa981755540"
+}
