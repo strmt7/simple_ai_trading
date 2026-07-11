@@ -8,7 +8,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Mapping
+from typing import Callable, Mapping
 
 import numpy as np
 
@@ -61,6 +61,8 @@ _SCORE_METHODS = (
     "event_upper_quantile",
     "event_distributional_value",
 )
+_BOUNDED_VIABILITY_PURPOSE = "bounded_exact_bbo_model_viability_screen"
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _file_sha256(path: Path) -> str:
@@ -92,9 +94,29 @@ def _implementation_is_current(change_control: Mapping[str, object]) -> None:
     if not isinstance(files, Mapping) or not files:
         raise ValueError("selective event implementation file binding is missing")
     for relative, expected in files.items():
-        path = Path(str(relative))
+        relative_path = Path(str(relative))
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ValueError("selective event implementation path is not repository-relative")
+        path = (_PROJECT_ROOT / relative_path).resolve()
+        if not path.is_relative_to(_PROJECT_ROOT):
+            raise ValueError("selective event implementation path escapes the repository")
         if not path.is_file() or _file_sha256(path) != str(expected):
-            raise ValueError(f"selective event implementation changed: {path}")
+            raise ValueError(f"selective event implementation changed: {relative_path}")
+
+
+def _ensure_causal_feature_bars(
+    warehouse: MicrostructureWarehouse,
+    symbol: str,
+    *,
+    progress: Callable[[str, int, int | None], None],
+) -> dict[str, object]:
+    try:
+        evidence = warehouse.require_causal_feature_bars(symbol)
+    except ValueError:
+        return warehouse.rebuild_causal_feature_bars(symbol, progress=progress)
+    rows = int(evidence.get("feature_rows") or 0)
+    progress("causal-feature-reuse", rows, rows)
+    return evidence
 
 
 def load_selective_event_design(
@@ -149,6 +171,7 @@ def load_selective_event_design(
     assert isinstance(risk_profiles, Mapping)
     assert isinstance(selection, Mapping)
     assert isinstance(reserved_terminal, Mapping)
+    bounded_viability = payload.get("purpose") == _BOUNDED_VIABILITY_PURPOSE
     implementation_commit = str(change_control.get("implementation_commit") or "")
     if len(implementation_commit) != 40:
         raise ValueError("selective event implementation commit is invalid")
@@ -159,11 +182,18 @@ def load_selective_event_design(
         or data.get("market_type") != "futures"
         or data.get("symbol") != "BTCUSDT"
         or data.get("required_data_types") != ["bookTicker", "trades"]
-        or data.get("full_history_inventory_required") is not True
         or data.get("checksum_verified_partitions_required") is not True
         or data.get("selection_dates_previously_untouched") is not True
     ):
         raise ValueError("selective event data contract is invalid")
+    if bounded_viability:
+        if (
+            data.get("full_history_inventory_required") is not False
+            or data.get("inventory_scope") != "bounded_verified"
+        ):
+            raise ValueError("bounded viability inventory contract is invalid")
+    elif data.get("full_history_inventory_required") is not True:
+        raise ValueError("selective event full-history inventory is required")
     first = _parse_date(data.get("start_date"), label="start_date")
     last = _parse_date(data.get("end_date"), label="end_date")
     roles = data.get("roles")
@@ -230,8 +260,17 @@ def load_selective_event_design(
         or training.get("evaluate_terminal") is not False
     ):
         raise ValueError("selective event training contract is invalid")
+    parameter_profile = str(
+        training.get("predictor_parameter_profile") or "risk_specific"
+    )
+    if bounded_viability:
+        if parameter_profile != "shared_regularized":
+            raise ValueError("bounded viability predictor profile is invalid")
+    elif parameter_profile != "risk_specific":
+        raise ValueError("selective event predictor profile is invalid")
     horizons = tuple(int(value) for value in payload.get("horizon_seconds") or ())
-    if horizons != (300, 900, 1800):
+    expected_horizons = (300, 900) if bounded_viability else (300, 900, 1800)
+    if horizons != expected_horizons:
         raise ValueError("selective event horizons are invalid")
     if tuple(risk_profiles) != ("conservative", "regular", "aggressive"):
         raise ValueError("selective event risk profiles are invalid")
@@ -254,11 +293,21 @@ def load_selective_event_design(
         or int(payload.get("candidate_count") or 0) != expected_candidates
     ):
         raise ValueError("selective event candidate count is invalid")
-    if (
-        selection.get("promotion_allowed") is not False
-        or selection.get("minimum_trades_per_selection_day") != 5
-        or selection.get("positive_daily_bootstrap_lower_bound_required") is not True
-    ):
+    selection_gate_is_valid = (
+        selection.get("promotion_allowed") is False
+        and selection.get("positive_daily_bootstrap_lower_bound_required") is True
+    )
+    if bounded_viability:
+        selection_gate_is_valid = selection_gate_is_valid and (
+            int(selection.get("minimum_policy_trades") or 0) >= 20
+            and int(selection.get("minimum_selection_trades") or 0) >= 20
+            and selection.get("activity_is_not_a_trade_quota") is True
+        )
+    else:
+        selection_gate_is_valid = selection_gate_is_valid and (
+            selection.get("minimum_trades_per_selection_day") == 5
+        )
+    if not selection_gate_is_valid:
         raise ValueError("selective event selection gates are invalid")
     return payload
 
@@ -381,6 +430,7 @@ def run_selective_event_discovery(
     resume: bool = False,
 ) -> dict[str, object]:
     design = load_selective_event_design(design_path, require_current=True)
+    bounded_viability = design.get("purpose") == _BOUNDED_VIABILITY_PURPOSE
     design_sha256 = str(design["design_sha256"])
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -411,6 +461,9 @@ def run_selective_event_discovery(
         * 1_000
     ) - 1
     backend = str(compute_backend or training["compute_backend"])
+    full_history_inventory_required = bool(
+        data["full_history_inventory_required"]
+    )
     completed: list[dict[str, object]] = []
     errors: list[dict[str, object]] = []
     total_fits = len(design["horizon_seconds"]) * len(risk_profiles)
@@ -449,7 +502,8 @@ def run_selective_event_discovery(
                 f"{phase}:{done}/{total if total is not None else '?'}"
             )
         )
-        warehouse.rebuild_causal_feature_bars(
+        _ensure_causal_feature_bars(
+            warehouse,
             str(data["symbol"]),
             progress=lambda phase, done, total: progress(
                 f"{phase}:{done}/{total if total is not None else '?'}"
@@ -460,7 +514,7 @@ def run_selective_event_discovery(
             required_data_types=tuple(data["required_data_types"]),
             required_start_ms=start_ms,
             required_end_ms=end_ms,
-            require_full_history_inventory=True,
+            require_full_history_inventory=full_history_inventory_required,
         )
         corpus_sha256 = str(certificate["certificate_sha256"])
         for horizon in design["horizon_seconds"]:
@@ -483,6 +537,7 @@ def run_selective_event_discovery(
                 decision_cadence_seconds=int(execution["decision_cadence_seconds"]),
                 start_ms=start_ms,
                 end_ms=end_ms,
+                require_full_history_inventory=full_history_inventory_required,
             )
             event_mask = _causal_cusum_events(
                 base,
@@ -553,6 +608,10 @@ def run_selective_event_discovery(
                             name: roles[name]
                             for name in ("train", "early_stop", "calibration")
                         },
+                        parameter_profile=str(
+                            training.get("predictor_parameter_profile")
+                            or "risk_specific"
+                        ),
                     )
                     segment_scores = {
                         role: _event_model_scores(
@@ -576,6 +635,11 @@ def run_selective_event_discovery(
                             long_scores=policy_scores["long"],
                             short_scores=policy_scores["short"],
                             risk_level=str(risk_level),
+                            minimum_trades=(
+                                int(selection_contract["minimum_policy_trades"])
+                                if bounded_viability
+                                else None
+                            ),
                         )
                         selection_scores = segment_scores["selection"][method]
                         trace = (
@@ -594,12 +658,20 @@ def run_selective_event_discovery(
                             dataset.decision_time_ms[roles["selection"]],
                         )
                         baselines = _baseline_metrics(event_dataset, roles["selection"])
-                        minimum_trades = max(
-                            _minimum_evaluation_trades(
-                                dataset.decision_time_ms[roles["selection"]]
-                            ),
-                            int(role_evidence["selection"]["day_count"])
-                            * int(selection_contract["minimum_trades_per_selection_day"]),
+                        minimum_trades = (
+                            int(selection_contract["minimum_selection_trades"])
+                            if bounded_viability
+                            else max(
+                                _minimum_evaluation_trades(
+                                    dataset.decision_time_ms[roles["selection"]]
+                                ),
+                                int(role_evidence["selection"]["day_count"])
+                                * int(
+                                    selection_contract[
+                                        "minimum_trades_per_selection_day"
+                                    ]
+                                ),
+                            )
                         )
                         reasons: list[str] = []
                         if not policy["accepted"]:

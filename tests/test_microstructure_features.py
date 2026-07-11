@@ -9,6 +9,7 @@ from simple_ai_trading.microstructure_features import (
     _completed_path_index_bounds,
     _net_cross_spread_cash_returns_bps,
     apply_path_aware_lifecycle_targets,
+    build_executable_microstructure_dataset,
 )
 
 
@@ -141,3 +142,15 @@ def test_cross_spread_cash_returns_use_linear_short_pnl_and_actual_notionals() -
         rtol=0.0,
         atol=1e-12,
     )
+
+
+def test_dataset_inventory_policy_must_be_boolean() -> None:
+    with pytest.raises(ValueError, match="require_full_history_inventory"):
+        build_executable_microstructure_dataset(
+            object(),  # type: ignore[arg-type]
+            symbol="BTCUSDT",
+            horizon_seconds=300,
+            total_latency_ms=750,
+            taker_fee_bps=5.0,
+            require_full_history_inventory="false",  # type: ignore[arg-type]
+        )

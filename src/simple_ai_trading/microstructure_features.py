@@ -270,6 +270,7 @@ def build_executable_microstructure_dataset(
     decision_cadence_seconds: int = 5,
     start_ms: int | None = None,
     end_ms: int | None = None,
+    require_full_history_inventory: bool = True,
 ) -> MicrostructureDataset:
     """Build strictly causal features with real bid/ask entry and exit labels."""
 
@@ -300,6 +301,8 @@ def build_executable_microstructure_dataset(
         raise ValueError("max_l1_participation must lie in (0, 1]")
     if decision_cadence <= 0 or decision_cadence > 60:
         raise ValueError("decision_cadence_seconds must lie in [1, 60]")
+    if not isinstance(require_full_history_inventory, bool):
+        raise ValueError("require_full_history_inventory must be a boolean")
 
     lower = -9_223_372_036_854_775_808 if start_ms is None else int(start_ms)
     upper = 9_223_372_036_854_775_807 if end_ms is None else int(end_ms)
@@ -314,7 +317,9 @@ def build_executable_microstructure_dataset(
         if callable(require_corpus):
             certificate_kwargs: dict[str, object] = {
                 "required_data_types": ("bookTicker", "trades"),
-                "require_full_history_inventory": True,
+                "require_full_history_inventory": bool(
+                    require_full_history_inventory
+                ),
             }
             if start_ms is not None and end_ms is not None:
                 certificate_kwargs.update(
