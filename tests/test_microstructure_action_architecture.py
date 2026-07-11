@@ -536,6 +536,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
             representation_mode="soft_mixture_of_experts",
             expert_count=2,
             router_balance_loss_weight=0.02,
+            expert_temporal_context_mode="nested_recent_full",
         ),
         target_scenario="base",
         compute_backend="directml",
@@ -564,6 +565,7 @@ def test_outcome_mixture_training_reload_and_inference_run_on_directml_when_avai
     assert reloaded.spec.representation_mode == "soft_mixture_of_experts"
     assert reloaded.spec.expert_count == 2
     assert reloaded.spec.router_balance_loss_weight == 0.02
+    assert reloaded.spec.expert_temporal_context_mode == "nested_recent_full"
     assert reloaded.spec.sequence_length == 7
     assert prediction.rows == 300
     assert np.all(np.isfinite(prediction.long_mean_bps))
@@ -968,6 +970,47 @@ def test_outcome_mixture_soft_experts_are_parameter_matched_and_use_history() ->
     torch.testing.assert_close(baseline_routes, changed_routes, rtol=0.0, atol=0.0)
 
 
+def test_outcome_mixture_nested_experts_isolate_recent_and_full_contexts() -> None:
+    torch = pytest.importorskip("torch")
+    feature_count = len(MICROSTRUCTURE_FEATURE_NAMES)
+    spec = _mixture_spec(
+        sequence_length=7,
+        hidden_dim=88,
+        residual_blocks=2,
+        side_tower_mode="independent",
+        temporal_pooling_mode="causal_attention",
+        representation_mode="soft_mixture_of_experts",
+        expert_count=2,
+        router_balance_loss_weight=0.02,
+        expert_temporal_context_mode="nested_recent_full",
+    )
+    network = outcome_mixture._network(spec, feature_count)
+    network.eval()
+    values = torch.randn(8, 7, feature_count)
+    changed_early_history = values.clone()
+    changed_early_history[:, :3, :] += 0.5
+    tower = network.towers[0]
+    projected = torch.nn.functional.gelu(tower.projection(values))
+    changed_projected = torch.nn.functional.gelu(
+        tower.projection(changed_early_history)
+    )
+
+    recent = tower.experts[0](projected)
+    changed_recent = tower.experts[0](changed_projected)
+    full = tower.experts[1](projected)
+    changed_full = tower.experts[1](changed_projected)
+    baseline, baseline_routes = network(values)
+    changed, changed_routes = network(changed_early_history)
+
+    assert outcome_mixture._expert_context_lengths(spec) == (4, 7)
+    assert [expert.context_length for expert in tower.experts] == [4, 7]
+    assert sum(parameter.numel() for parameter in network.parameters()) == 146_974
+    torch.testing.assert_close(recent, changed_recent, rtol=0.0, atol=0.0)
+    assert not torch.equal(full, changed_full)
+    assert not torch.equal(baseline, changed)
+    torch.testing.assert_close(baseline_routes, changed_routes, rtol=0.0, atol=0.0)
+
+
 def test_outcome_mixture_router_balance_loss_penalizes_collapsed_allocation() -> None:
     torch = pytest.importorskip("torch")
     balanced = torch.full((16, 2, 2), 0.5)
@@ -1224,6 +1267,11 @@ def test_outcome_mixture_model_and_artifact_contracts_fail_closed(
         ),
         ({"temporal_pooling_mode": "bidirectional"}, "unsupported"),
         ({"ranking_scope": "rolling_week"}, "unsupported"),
+        ({"expert_temporal_context_mode": "bidirectional"}, "unsupported"),
+        (
+            {"expert_temporal_context_mode": "nested_recent_full"},
+            "representation contract",
+        ),
         ({"expert_count": 2}, "representation contract"),
         ({"router_balance_loss_weight": 0.02}, "representation contract"),
         (

@@ -76,6 +76,7 @@ class OutcomeMixtureArchitectureSpec:
     representation_mode: str = "single"
     expert_count: int = 1
     router_balance_loss_weight: float = 0.0
+    expert_temporal_context_mode: str = "shared_full"
 
     def __post_init__(self) -> None:
         weights = (
@@ -96,6 +97,8 @@ class OutcomeMixtureArchitectureSpec:
             or self.ranking_scope not in {"global_batch", "utc_session"}
             or self.representation_mode
             not in {"single", "soft_mixture_of_experts"}
+            or self.expert_temporal_context_mode
+            not in {"shared_full", "nested_recent_full"}
             or (self.temporal_pooling_mode == "endpoint" and self.sequence_length != 1)
             or (
                 self.temporal_pooling_mode == "causal_attention"
@@ -114,6 +117,7 @@ class OutcomeMixtureArchitectureSpec:
                 and (
                     int(self.expert_count) != 1
                     or float(self.router_balance_loss_weight) != 0.0
+                    or self.expert_temporal_context_mode != "shared_full"
                 )
             )
             or (
@@ -124,6 +128,10 @@ class OutcomeMixtureArchitectureSpec:
                     or int(self.expert_count) != 2
                     or self.residual_blocks % self.expert_count != 0
                     or not 0.0 < float(self.router_balance_loss_weight) <= 1.0
+                    or (
+                        self.expert_temporal_context_mode == "nested_recent_full"
+                        and self.sequence_length < 4
+                    )
                 )
             )
         ):
@@ -258,7 +266,22 @@ def _spec_contract(spec: OutcomeMixtureArchitectureSpec) -> dict[str, object]:
         contract.pop("expert_count")
     if spec.router_balance_loss_weight == 0.0:
         contract.pop("router_balance_loss_weight")
+    if spec.expert_temporal_context_mode == "shared_full":
+        contract.pop("expert_temporal_context_mode")
     return contract
+
+
+def _expert_context_lengths(
+    spec: OutcomeMixtureArchitectureSpec,
+) -> tuple[int, ...]:
+    if spec.representation_mode != "soft_mixture_of_experts":
+        raise ValueError("outcome-mixture expert context requires soft experts")
+    if spec.expert_temporal_context_mode == "shared_full":
+        return (spec.sequence_length,) * spec.expert_count
+    recent_length = (spec.sequence_length + 1) // 2
+    if recent_length < 2 or recent_length >= spec.sequence_length:
+        raise ValueError("outcome-mixture expert context is invalid")
+    return recent_length, spec.sequence_length
 
 
 def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
@@ -340,8 +363,9 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
             return torch.stack(tuple(tower(values) for tower in self.towers), dim=1)
 
     class RepresentationExpert(nn.Module):
-        def __init__(self) -> None:
+        def __init__(self, context_length: int) -> None:
             super().__init__()
+            self.context_length = int(context_length)
             self.blocks = nn.ModuleList(
                 ResidualBlock()
                 for _index in range(spec.residual_blocks // spec.expert_count)
@@ -350,7 +374,7 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
             self.temporal_attention = nn.Linear(spec.hidden_dim, 1, bias=False)
 
         def forward(self, values):
-            output = values
+            output = values[:, -self.context_length :, :]
             for block in self.blocks:
                 output = block(output)
             output = self.normalization(output)
@@ -364,7 +388,8 @@ def _network(spec: OutcomeMixtureArchitectureSpec, feature_count: int):
             super().__init__()
             self.projection = nn.Linear(feature_count, spec.hidden_dim)
             self.experts = nn.ModuleList(
-                RepresentationExpert() for _index in range(spec.expert_count)
+                RepresentationExpert(context_length)
+                for context_length in _expert_context_lengths(spec)
             )
             self.router = nn.Linear(spec.hidden_dim, spec.expert_count)
             self.head = nn.Linear(spec.hidden_dim, _OUTPUTS_PER_SIDE)
