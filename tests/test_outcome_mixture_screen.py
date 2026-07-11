@@ -66,18 +66,17 @@ def test_git_blob_binding_rejects_incomplete_contract() -> None:
 
 
 def test_round17_design_is_hash_bound_current_and_terminal_sealed() -> None:
-    design, design_sha256 = load_outcome_mixture_design(
-        DESIGN, require_current=False
-    )
+    design, design_sha256 = load_outcome_mixture_design(DESIGN)
 
     assert (
         design_sha256
-        == "0e4b09b6cb515e5e7d26aee63169768a61ec5f39a38250f2ec6cafc423510db9"
+        == "963ecc6d9fa384969992bed36addff0cfceb3e057fbe43a91725e15d037db1ee"
     )
     assert design["implementation"]["hash_mode"] == "git_blob_sha256_v1"
     assert design["implementation"]["commit"] == (
-        "ea6840c6977fd19e7615b4674fbdaf1b8e62329f"
+        "016b6890db4cf34610848aac3bf5effd428c0ef2"
     )
+    assert design["design_revision"] == 2
     assert design["model"]["ranking_loss_weight"] == 0.0
     assert design["reserved_terminal"] == {
         "date": "2023-07-07",

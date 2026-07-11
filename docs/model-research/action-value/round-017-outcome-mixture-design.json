@@ -1,7 +1,7 @@
 {
   "schema_version": "outcome-mixture-screen-design-v1",
   "round": 17,
-  "design_revision": 1,
+  "design_revision": 2,
   "purpose": "consumed_data_conditional_outcome_mixture_screen",
   "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
   "trading_authority": false,
@@ -11,7 +11,8 @@
   "leverage_applied": false,
   "implementation": {
     "hash_mode": "git_blob_sha256_v1",
-    "commit": "ea6840c6977fd19e7615b4674fbdaf1b8e62329f",
+    "commit": "016b6890db4cf34610848aac3bf5effd428c0ef2",
+    "revision_reason": "Revision 1 stopped after training and artifact reload, before threshold or policy evaluation, because the new runner passed an unsupported scenario keyword to the sealed threshold helper. Revision 2 binds the corrected and contract-tested invocation; no model, data, window, cost, threshold, or risk parameter changed.",
     "files": [
       {
         "path": "src/simple_ai_trading/microstructure_outcome_mixture.py",
@@ -71,7 +72,7 @@
       },
       {
         "path": "tools/run_outcome_mixture_screen.py",
-        "sha256": "6c0dcd01f5a1ac674ed92195299822b7baf9761ff38bc0e9dc6a973a8f24a287"
+        "sha256": "1fce3696a32c5a305bdafab4da9247e432d312ff965814d6759e50a4670644df"
       }
     ]
   },
@@ -350,5 +351,5 @@
       "use": "Defines the vendor-neutral DirectX 12 training path used in a clean process on this AMD host; CPU fallback remains forbidden for this experiment."
     }
   ],
-  "design_sha256": "0e4b09b6cb515e5e7d26aee63169768a61ec5f39a38250f2ec6cafc423510db9"
+  "design_sha256": "963ecc6d9fa384969992bed36addff0cfceb3e057fbe43a91725e15d037db1ee"
 }
