@@ -31,6 +31,13 @@ DESIGN18 = (
     / "action-value"
     / "round-018-ranked-outcome-mixture-design.json"
 )
+DESIGN19 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-019-pressure-capacity-design.json"
+)
 
 
 def _git(*arguments: str) -> bytes:
@@ -139,6 +146,39 @@ def test_round19_contract_changes_only_the_causal_feature_family() -> None:
     assert contract["predecessor"]["publication_sha256"] == (
         "1086ae098eb77679023c36dd3b42355aef52f6daa8de720b41c718ecaa00d378"
     )
+
+
+def test_round19_design_is_current_and_preserves_sealed_controls() -> None:
+    design, design_sha256 = load_outcome_mixture_design(DESIGN19)
+    predecessor, _predecessor_sha256 = load_outcome_mixture_design(
+        DESIGN18, require_current=False
+    )
+
+    assert design_sha256 == (
+        "c2c848a708e807bf66b2f95b77a155d35c2f1569f034fddb2b07ffcfff61e947"
+    )
+    assert design["round"] == 19
+    assert design["implementation"]["commit"] == (
+        "b5f283271a7033ad63da784f09162beb13490f78"
+    )
+    assert screen.MICROSTRUCTURE_FEATURE_VERSION == "l1-tape-causal-v8"
+    assert design["model"]["ranking_loss_weight"] == 0.1
+    assert design["model"]["candidate_id"] == (
+        "pressure-capacity-conditional-outcome-mixture"
+    )
+    for section in (
+        "data",
+        "execution",
+        "barrier_targets",
+        "runtime_resources",
+        "event_sampler",
+        "training",
+        "threshold_policy",
+        "risk_profiles",
+        "evaluation",
+        "reserved_terminal",
+    ):
+        assert design[section] == predecessor[section]
 
 
 def test_profile_evaluation_calls_the_sealed_threshold_api(monkeypatch) -> None:
