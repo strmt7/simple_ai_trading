@@ -1,5 +1,5 @@
-stage,evaluation_start,evaluation_end,prediction_opened,profile_count,survivor_count,valid_role_rows,withheld_reason
-calibration,2023-06-21,2023-06-25,True,3,0,28581,
-policy,2023-06-26,2023-06-30,False,0,0,27186,no_calibration_profile_passed
-development,2023-07-01,2023-07-06,False,0,0,22992,no_calibration_profile_passed
-distant_confirmation,2024-01-01,2024-02-04,False,0,0,0,no_calibration_profile_passed
+stage,evaluation_start,evaluation_end,prediction_opened,survivor_count,valid_role_rows,withheld_reason
+calibration,2023-06-21,2023-06-25,True,0,28581,
+policy,2023-06-26,2023-06-30,False,0,27186,calibration_architecture_rejected
+development,2023-07-01,2023-07-06,False,0,22992,calibration_architecture_rejected
+distant_confirmation,2024-01-01,2024-02-04,False,0,0,calibration_architecture_rejected

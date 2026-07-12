@@ -1,6 +1,6 @@
-# Round 32: shared-action calibration rejected
+# Round 33: selective-action calibration rejected
 
-**Rejected without trading authority.** A three-seed, symmetric long/short LightGBM ensemble trained on official BTCUSDT top-of-book and trade events. All profiles failed the first economic gate, so policy, development, and distant-confirmation predictions stayed withheld.
+**Rejected without trading authority.** The factorized model separated opportunity detection from direction conditional on an after-cost opportunity. Opportunity discrimination passed, but direction and selected-action economics failed their frozen calibration gates. Threshold selection and every later role remained withheld.
 
 | Evidence | Verified result |
 | --- | ---: |
@@ -8,22 +8,23 @@
 | Causal one-second rows | 877,894 |
 | CUSUM events / valid barrier outcomes | 230,941 / 229,000 |
 | Train / early-stop / calibration rows | 128,307 / 21,934 / 28,581 |
-| Eligible rows: conservative / regular / aggressive | 0 / 0 / 10 |
-| Selected-side AUC / Spearman IC | 0.5095 / -0.0127 |
-| Top-100 / top-500 stress mean | -6.32 / -10.76 bps |
-| Highest calibration total (insufficient support) | q95: +57.63 bps over 1 trade |
+| Opportunity ROC AUC / gate | 0.6627 / 0.6500 |
+| Conditional direction ROC AUC / gate | 0.5436 / 0.5500 |
+| Selected-action side AUC / Spearman IC | 0.5256 / -0.0328 |
+| Top-100 / top-500 stress mean | -17.24 / -12.77 bps |
+| Eligible rows: conservative / regular / aggressive | 0 / 0 / 0 |
 | Final profiles | none |
 
 ![Stage access](charts/stage-access.svg)
 
+![Calibration architecture gates](charts/architecture-gates.svg)
+
 ![Calibration eligibility](charts/eligibility.svg)
 
-![Threshold economics](charts/threshold-economics.svg)
-
-![Forecast quality](charts/forecast-quality.svg)
+![Forecast diagnostics](charts/forecast-quality.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-The positive q85 and q95 totals came from only two and one simulated trades. They failed minimum-support and positive-day gates and are not evidence of profitability. DirectML tensor execution and OpenCL FP64 LightGBM training were attested; LightGBM prediction used its CPU path. No leverage, live execution, portfolio claim, or untouched-period claim is permitted.
+All three direction calibrators reached temperature `54.598`, the configured search boundary, which is recorded in `models.csv`. This is evidence of weak confidence calibration, not a reason to loosen risk controls. DirectML tensor execution and OpenCL FP64 LightGBM training were attested. No leverage, testnet or live execution, untouched-period claim, or profitability claim is permitted.
 
-Data: [stages.csv](stages.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [forecast.csv](forecast.csv) | [models.csv](models.csv) | [progress.csv](progress.csv) | [integrity report](report.json)
+Data: [stages.csv](stages.csv) | [profiles.csv](profiles.csv) | [architecture.csv](architecture.csv) | [forecast.csv](forecast.csv) | [models.csv](models.csv) | [progress.csv](progress.csv) | [integrity report](report.json)

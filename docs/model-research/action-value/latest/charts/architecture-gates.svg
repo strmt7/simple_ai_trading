@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="590" viewBox="0 0 1260 590" role="img" aria-labelledby="title desc">
+<title id="title">Round 33 calibration architecture gates</title>
+<desc id="desc">Opportunity AUC passed, while conditional direction AUC and selected top-tail after-cost returns failed.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Opportunity detection survived; action selection did not</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Precommitted calibration gates; adverse-stress net returns include modeled execution costs.</text>
+<rect x="70" y="125" width="520" height="330" fill="#ffffff" stroke="#d7e0e6"/>
+<rect x="650" y="125" width="540" height="330" fill="#ffffff" stroke="#d7e0e6"/>
+<text x="92" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">ROC AUC</text>
+<text x="672" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Selected-action stress mean</text>
+<text x="92" y="197" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Opportunity</text>
+<rect x="160" y="215" width="390" height="28" fill="#edf1f4"/>
+<rect x="160" y="215" width="331.9" height="28" fill="#147d70"/>
+<line x1="472.0" y1="207" x2="472.0" y2="251" stroke="#18242d" stroke-width="2"/>
+<text x="160" y="270" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#53636f">observed 0.6627; gate 0.650</text>
+<text x="92" y="322" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Direction | opportunity</text>
+<rect x="160" y="340" width="390" height="28" fill="#edf1f4"/>
+<rect x="160" y="340" width="146.0" height="28" fill="#bc493e"/>
+<line x1="316.0" y1="332" x2="316.0" y2="376" stroke="#18242d" stroke-width="2"/>
+<text x="160" y="395" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#53636f">observed 0.5436; gate 0.550</text>
+<line x1="1030" y1="185" x2="1030" y2="395" stroke="#18242d" stroke-width="2"/>
+<text x="672" y="207" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 100</text>
+<rect x="719.7" y="225" width="310.3" height="34" fill="#bc493e"/>
+<text x="672" y="283" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-17.24 bps; required &gt; 0</text>
+<text x="672" y="322" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 500</text>
+<rect x="800.1" y="340" width="229.9" height="34" fill="#bc493e"/>
+<text x="672" y="398" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-12.77 bps; required &gt; 0</text>
+<text x="70" y="512" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Result: 1 of 4 architecture gates passed. Threshold selection was not opened.</text>
+<text x="70" y="542" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">AUC measures ranking discrimination; it is not an economic return or profitability claim.</text>
+</svg>
