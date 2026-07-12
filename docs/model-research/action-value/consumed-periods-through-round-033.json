@@ -1,0 +1,117 @@
+{
+  "schema_version": "action-value-consumed-periods-v1",
+  "registry_sha256": "3e27e4500530315bb52f1730111c113876f2912da42c1dd5b90314b4f07ecb04",
+  "records": [
+    {
+      "round": 7,
+      "status": "consumed",
+      "windows": [
+        {
+          "start_date": "2024-03-15",
+          "end_date": "2024-03-15"
+        }
+      ]
+    },
+    {
+      "round": 8,
+      "status": "consumed",
+      "windows": [
+        {
+          "start_date": "2023-07-08",
+          "end_date": "2023-07-08"
+        },
+        {
+          "start_date": "2023-10-21",
+          "end_date": "2023-10-21"
+        },
+        {
+          "start_date": "2024-02-05",
+          "end_date": "2024-02-05"
+        }
+      ]
+    },
+    {
+      "round": 9,
+      "status": "consumed",
+      "windows": [
+        {
+          "start_date": "2023-08-14",
+          "end_date": "2023-08-20"
+        }
+      ]
+    },
+    {
+      "round": 10,
+      "status": "consumed",
+      "windows": [
+        {
+          "start_date": "2023-09-04",
+          "end_date": "2023-09-10"
+        }
+      ]
+    },
+    {
+      "round": 11,
+      "status": "consumed",
+      "windows": [
+        {
+          "start_date": "2023-08-14",
+          "end_date": "2023-09-24"
+        }
+      ]
+    },
+    {
+      "round": 12,
+      "status": "consumed",
+      "design_sha256": "933a8619248145f4fd2e433952a92cfb8b90db4429846a468a6072f18486587d",
+      "report_sha256": "d80a9d9544f2dd967f9a9f35706d4fcc7fb6ffa908be203522cbb229c47cddc4",
+      "windows": [
+        {
+          "start_date": "2023-05-16",
+          "end_date": "2023-07-06"
+        }
+      ]
+    },
+    {
+      "round": 31,
+      "status": "consumed",
+      "outcome": "rejected",
+      "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e",
+      "report_sha256": "b3195481f6541442051e3c06d640ee660a7bf55740abc5186037d486b9091371",
+      "windows": [
+        {
+          "start_date": "2024-01-01",
+          "end_date": "2024-02-04"
+        }
+      ]
+    },
+    {
+      "round": 32,
+      "status": "consumed",
+      "outcome": "rejected",
+      "design_sha256": "5c8b2ac3618cdeec16dd4a8d21e5792cc4ea4bc26a645bf9ec00bd3997d3ca68",
+      "report_sha256": "e1dee0db73d2729aecfb09ea2f9c8abbd7f41a5985dd6dbd87de4e1575710552",
+      "diagnostic_sha256": "8c2d1cbaf13c2553d24466b27a29b2bb79c1afa2e011e75c75279bd376f36ab0",
+      "windows": [
+        {
+          "start_date": "2023-05-16",
+          "end_date": "2023-07-06"
+        }
+      ]
+    },
+    {
+      "round": 33,
+      "status": "consumed",
+      "outcome": "rejected",
+      "design_sha256": "bf5ec2c0b58b8d77f476ebc3d4427310fe1113c2f1b06c56acd91ab2c2611dcd",
+      "report_sha256": "300c9d8aa82943ccf0b8843a8d22da3f171feccdcf3692438c04e92cad3136a8",
+      "diagnostic_sha256": "01976ad70984247506e02e646e5162add902030383da8e1eb0330a9de1e0287d",
+      "windows": [
+        {
+          "start_date": "2023-05-16",
+          "end_date": "2023-07-06"
+        }
+      ]
+    }
+  ]
+}
