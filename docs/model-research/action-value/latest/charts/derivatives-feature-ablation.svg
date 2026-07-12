@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="890" viewBox="0 0 1480 890" role="img" aria-labelledby="title desc">
+<title id="title">Premium and funding features worsened predictive loss</title>
+<desc id="desc">Matched 2025-H1 multiclass log-loss delta: augmented minus price/flow; positive is worse.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">Premium and funding features worsened predictive loss</text>
+<text x="56" y="80" class="subtitle">Matched 2025-H1 multiclass log-loss delta: augmented minus price/flow; positive is worse.</text>
+<text x="402" y="146" text-anchor="end" class="label">per symbol direct multiclass / 15m</text>
+<rect x="420" y="128" width="33.8" height="25" fill="#b45309"/>
+<text x="463.8" y="146" class="value">+0.000062</text>
+<text x="402" y="189" text-anchor="end" class="label">per symbol direct multiclass / 30m</text>
+<rect x="420" y="171" width="536.4" height="25" fill="#b45309"/>
+<text x="966.4" y="189" class="value">+0.000988</text>
+<text x="402" y="232" text-anchor="end" class="label">per symbol direct multiclass / 60m</text>
+<rect x="420" y="214" width="485.7" height="25" fill="#b45309"/>
+<text x="915.7" y="232" class="value">+0.000895</text>
+<text x="402" y="275" text-anchor="end" class="label">per symbol direct multiclass / 120m</text>
+<rect x="420" y="257" width="341.0" height="25" fill="#b45309"/>
+<text x="771.0" y="275" class="value">+0.000628</text>
+<text x="402" y="318" text-anchor="end" class="label">per symbol two stage hurdle / 15m</text>
+<rect x="420" y="300" width="191.6" height="25" fill="#b45309"/>
+<text x="621.6" y="318" class="value">+0.000353</text>
+<text x="402" y="361" text-anchor="end" class="label">per symbol two stage hurdle / 30m</text>
+<rect x="420" y="343" width="486.5" height="25" fill="#b45309"/>
+<text x="916.5" y="361" class="value">+0.000896</text>
+<text x="402" y="404" text-anchor="end" class="label">per symbol two stage hurdle / 60m</text>
+<rect x="420" y="386" width="521.2" height="25" fill="#b45309"/>
+<text x="951.2" y="404" class="value">+0.000960</text>
+<text x="402" y="447" text-anchor="end" class="label">per symbol two stage hurdle / 120m</text>
+<rect x="420" y="429" width="791.3" height="25" fill="#b45309"/>
+<text x="1221.3" y="447" class="value">+0.001458</text>
+<text x="402" y="490" text-anchor="end" class="label">shared direct multiclass / 15m</text>
+<rect x="420" y="472" width="307.2" height="25" fill="#b45309"/>
+<text x="737.2" y="490" class="value">+0.000566</text>
+<text x="402" y="533" text-anchor="end" class="label">shared direct multiclass / 30m</text>
+<rect x="420" y="515" width="661.7" height="25" fill="#b45309"/>
+<text x="1091.7" y="533" class="value">+0.001219</text>
+<text x="402" y="576" text-anchor="end" class="label">shared direct multiclass / 60m</text>
+<rect x="420" y="558" width="410.1" height="25" fill="#b45309"/>
+<text x="840.1" y="576" class="value">+0.000755</text>
+<text x="402" y="619" text-anchor="end" class="label">shared direct multiclass / 120m</text>
+<rect x="420" y="601" width="377.5" height="25" fill="#b45309"/>
+<text x="807.5" y="619" class="value">+0.000695</text>
+<text x="402" y="662" text-anchor="end" class="label">shared two stage hurdle / 15m</text>
+<rect x="420" y="644" width="376.2" height="25" fill="#b45309"/>
+<text x="806.2" y="662" class="value">+0.000693</text>
+<text x="402" y="705" text-anchor="end" class="label">shared two stage hurdle / 30m</text>
+<rect x="420" y="687" width="458.9" height="25" fill="#b45309"/>
+<text x="888.9" y="705" class="value">+0.000845</text>
+<text x="402" y="748" text-anchor="end" class="label">shared two stage hurdle / 60m</text>
+<rect x="420" y="730" width="558.2" height="25" fill="#b45309"/>
+<text x="988.2" y="748" class="value">+0.001028</text>
+<text x="402" y="791" text-anchor="end" class="label">shared two stage hurdle / 120m</text>
+<rect x="420" y="773" width="679.4" height="25" fill="#b45309"/>
+<text x="1109.4" y="791" class="value">+0.001252</text>
+<text x="420" y="856" class="note">All 16 matched deltas are positive. Derivatives data remains retained for funding cash flows and risk state, not accepted directional alpha.</text>
+</svg>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1020" viewBox="0 0 1560 1020" role="img" aria-labelledby="title desc">
+<title id="title">Round 38 restored activity but not after-cost edge</title>
+<desc id="desc">Best 16 of 32 candidates on unseen 2025-H1; interval is the day-block bootstrap mean net bps.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">Round 38 restored activity but not after-cost edge</text>
+<text x="56" y="80" class="subtitle">Best 16 of 32 candidates on unseen 2025-H1; interval is the day-block bootstrap mean net bps.</text>
+<line x1="501.3" y1="114" x2="501.3" y2="868" class="grid"/>
+<text x="501.3" y="895" text-anchor="middle" class="axis">-25</text>
+<line x1="620.1" y1="114" x2="620.1" y2="868" class="grid"/>
+<text x="620.1" y="895" text-anchor="middle" class="axis">-20</text>
+<line x1="739.0" y1="114" x2="739.0" y2="868" class="grid"/>
+<text x="739.0" y="895" text-anchor="middle" class="axis">-15</text>
+<line x1="857.8" y1="114" x2="857.8" y2="868" class="grid"/>
+<text x="857.8" y="895" text-anchor="middle" class="axis">-10</text>
+<line x1="976.6" y1="114" x2="976.6" y2="868" class="grid"/>
+<text x="976.6" y="895" text-anchor="middle" class="axis">-5</text>
+<line x1="1095.5" y1="114" x2="1095.5" y2="868" class="grid"/>
+<text x="1095.5" y="895" text-anchor="middle" class="axis">+0</text>
+<line x1="1214.3" y1="114" x2="1214.3" y2="868" class="grid"/>
+<text x="1214.3" y="895" text-anchor="middle" class="axis">+5</text>
+<line x1="1095.5" y1="114" x2="1095.5" y2="868" class="zero"/>
+<text x="412" y="137" text-anchor="end" class="label">shared hurdle / price / 120m</text>
+<line x1="775.9" y1="132" x2="1230.1" y2="132" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="1000.7" cy="132" r="7" fill="#b42318"/>
+<text x="1496" y="137" text-anchor="end" class="value">-3.99 bps; n=789</text>
+<text x="412" y="183" text-anchor="end" class="label">symbol direct / price+derivatives / 15m</text>
+<line x1="723.3" y1="178" x2="1207.4" y2="178" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="968.1" cy="178" r="7" fill="#b42318"/>
+<text x="1496" y="183" text-anchor="end" class="value">-5.36 bps; n=368</text>
+<text x="412" y="229" text-anchor="end" class="label">shared direct / price+derivatives / 120m</text>
+<line x1="688.6" y1="224" x2="1165.9" y2="224" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="927.5" cy="224" r="7" fill="#b42318"/>
+<text x="1496" y="229" text-anchor="end" class="value">-7.07 bps; n=501</text>
+<text x="412" y="275" text-anchor="end" class="label">shared direct / price+derivatives / 15m</text>
+<line x1="670.4" y1="270" x2="1147.1" y2="270" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="899.6" cy="270" r="7" fill="#b42318"/>
+<text x="1496" y="275" text-anchor="end" class="value">-8.24 bps; n=948</text>
+<text x="412" y="321" text-anchor="end" class="label">symbol direct / price / 120m</text>
+<line x1="547.6" y1="316" x2="1272.5" y2="316" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="898.3" cy="316" r="7" fill="#b42318"/>
+<text x="1496" y="321" text-anchor="end" class="value">-8.30 bps; n=313</text>
+<text x="412" y="367" text-anchor="end" class="label">shared direct / price / 30m</text>
+<line x1="680.6" y1="362" x2="1088.6" y2="362" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="887.5" cy="362" r="7" fill="#b42318"/>
+<text x="1496" y="367" text-anchor="end" class="value">-8.75 bps; n=515</text>
+<text x="412" y="413" text-anchor="end" class="label">shared hurdle / price / 60m</text>
+<line x1="653.4" y1="408" x2="1129.5" y2="408" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="876.1" cy="408" r="7" fill="#b42318"/>
+<text x="1496" y="413" text-anchor="end" class="value">-9.23 bps; n=835</text>
+<text x="412" y="459" text-anchor="end" class="label">shared direct / price / 120m</text>
+<line x1="753.0" y1="454" x2="990.0" y2="454" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="873.4" cy="454" r="7" fill="#b42318"/>
+<text x="1496" y="459" text-anchor="end" class="value">-9.34 bps; n=3,929</text>
+<text x="412" y="505" text-anchor="end" class="label">shared hurdle / price+derivatives / 60m</text>
+<line x1="626.1" y1="500" x2="1114.1" y2="500" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="872.3" cy="500" r="7" fill="#b42318"/>
+<text x="1496" y="505" text-anchor="end" class="value">-9.39 bps; n=1,133</text>
+<text x="412" y="551" text-anchor="end" class="label">shared direct / price+derivatives / 30m</text>
+<line x1="692.2" y1="546" x2="1050.5" y2="546" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="869.5" cy="546" r="7" fill="#b42318"/>
+<text x="1496" y="551" text-anchor="end" class="value">-9.51 bps; n=1,061</text>
+<text x="412" y="597" text-anchor="end" class="label">symbol hurdle / price / 120m</text>
+<line x1="618.8" y1="592" x2="1073.6" y2="592" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="860.4" cy="592" r="7" fill="#b42318"/>
+<text x="1496" y="597" text-anchor="end" class="value">-9.89 bps; n=1,226</text>
+<text x="412" y="643" text-anchor="end" class="label">shared hurdle / price+derivatives / 15m</text>
+<line x1="573.5" y1="638" x2="1186.8" y2="638" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="860.2" cy="638" r="7" fill="#b42318"/>
+<text x="1496" y="643" text-anchor="end" class="value">-9.90 bps; n=696</text>
+<text x="412" y="689" text-anchor="end" class="label">symbol direct / price+derivatives / 120m</text>
+<line x1="614.0" y1="684" x2="1057.0" y2="684" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="848.3" cy="684" r="7" fill="#b42318"/>
+<text x="1496" y="689" text-anchor="end" class="value">-10.40 bps; n=995</text>
+<text x="412" y="735" text-anchor="end" class="label">symbol hurdle / price+derivatives / 15m</text>
+<line x1="722.9" y1="730" x2="969.5" y2="730" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="842.9" cy="730" r="7" fill="#b42318"/>
+<text x="1496" y="735" text-anchor="end" class="value">-10.63 bps; n=896</text>
+<text x="412" y="781" text-anchor="end" class="label">symbol direct / price / 15m</text>
+<line x1="763.2" y1="776" x2="915.2" y2="776" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="836.3" cy="776" r="7" fill="#b42318"/>
+<text x="1496" y="781" text-anchor="end" class="value">-10.91 bps; n=2,658</text>
+<text x="412" y="827" text-anchor="end" class="label">shared direct / price / 15m</text>
+<line x1="657.4" y1="822" x2="1011.5" y2="822" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="832.5" cy="822" r="7" fill="#b42318"/>
+<text x="1496" y="827" text-anchor="end" class="value">-11.06 bps; n=1,142</text>
+<text x="875.0" y="948" text-anchor="middle" class="label">Mean net basis points per trade (2025-H1)</text>
+<text x="430" y="982" class="note">Dot: mean net bps after the frozen 12 bps charge and exact funding cash flow. All 32 candidates failed viability.</text>
+</svg>
