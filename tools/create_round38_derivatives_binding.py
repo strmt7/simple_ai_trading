@@ -37,7 +37,6 @@ BOUND_PATHS = (
     "tools/create_round38_derivatives_binding.py",
     "tools/ingest_round38_derivatives_archives.py",
     "tools/run_derivatives_hurdle_ai_ablation.py",
-    "uv.lock",
 )
 
 
