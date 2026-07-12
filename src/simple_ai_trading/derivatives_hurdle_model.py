@@ -19,10 +19,10 @@ from .lightgbm_backend import lightgbm_backend_parameters
 
 
 ARCHITECTURES = (
-    "shared_direct_multiclass",
-    "per_symbol_direct_multiclass",
-    "shared_two_stage_hurdle",
-    "per_symbol_two_stage_hurdle",
+    "shared_direct_multiclass_lightgbm",
+    "per_symbol_direct_multiclass_lightgbm",
+    "shared_two_stage_hurdle_lightgbm",
+    "per_symbol_two_stage_hurdle_lightgbm",
 )
 FEATURE_SETS = ("price_flow_only", "price_flow_plus_premium_and_funding")
 ACTION_PROBABILITY_GRID = (0.40, 0.45, 0.50, 0.55, 0.60)
