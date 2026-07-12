@@ -200,6 +200,8 @@ def test_round31_publication_is_hash_verified_parseable_and_truthful(
     assert progress[-1]["round"] == "31"
     assert progress[-1]["status"] == "rejected"
     assert progress[-1]["development_consumed"] == "False"
+    assert progress[-1]["best_policy_trades"] == ""
+    assert progress[-1]["best_policy_total_net_bps"] == ""
     assert (output / "README.md").read_text(encoding="utf-8").count(
         "without trading authority"
     ) >= 1

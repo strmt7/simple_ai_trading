@@ -365,10 +365,12 @@ def _progress_rows(
         if row["stage"] == deepest and row["scenario"] == "stress"
     ]
     best_top_500 = max(float(row["top_500_mean_net_bps"]) for row in stress)
-    opened_candidates = [row for row in candidate_rows if row["stage"] == deepest]
-    best_candidate = (
-        max(opened_candidates, key=lambda row: float(row["stress_total_net_bps"]))
-        if opened_candidates
+    policy_candidates = [
+        row for row in candidate_rows if row["stage"] == "policy"
+    ]
+    best_policy_candidate = (
+        max(policy_candidates, key=lambda row: float(row["stress_total_net_bps"]))
+        if policy_candidates
         else None
     )
     source = report["stage_artifacts"][deepest]["path"]
@@ -389,13 +391,28 @@ def _progress_rows(
             "best_model_id": "frozen Round 30 LightGBM hurdle ensemble",
             "best_top_500_exact_after_cost_bps": best_top_500,
             "best_policy_trades": (
-                int(best_candidate["stress_trades"])
-                if best_candidate is not None
-                else 0
+                int(best_policy_candidate["stress_trades"])
+                if best_policy_candidate is not None
+                else ""
             ),
             "best_policy_total_net_bps": (
-                float(best_candidate["stress_total_net_bps"])
-                if best_candidate is not None
+                float(best_policy_candidate["stress_total_net_bps"])
+                if best_policy_candidate is not None
+                else ""
+            ),
+            "best_policy_mean_net_bps": (
+                float(best_policy_candidate["stress_mean_net_bps"])
+                if best_policy_candidate is not None
+                else ""
+            ),
+            "best_policy_max_drawdown_bps": (
+                float(best_policy_candidate["stress_max_drawdown_bps"])
+                if best_policy_candidate is not None
+                else ""
+            ),
+            "best_policy_profit_factor": (
+                best_policy_candidate["stress_profit_factor"]
+                if best_policy_candidate is not None
                 else ""
             ),
             "ensemble_models": 3,
