@@ -44,19 +44,24 @@ def test_round34_design_is_hash_bound_to_rejection_and_consumed_registry() -> No
     assert failure_claimed == _canonical_sha256(failure_canonical)
     assert registry_claimed == _canonical_sha256(registry_canonical)
     assert design["round"] == 34
-    assert design["design_revision"] == 2
+    assert design["schema_version"] == "three-action-utility-design-v2"
+    assert design["design_revision"] == 3
     assert design["supersedes"] == {
-        "design_revision": 1,
+        "design_revision": 2,
         "design_sha256": (
-            "0f8f3b074c5fd93727b0d4f60d82fa885420312af5c7d3debe3d10d12fa4846f"
+            "9b8b42a6d64d54e7a3a3ff3f552a49f13eb39bff63c3c5e5fa6d8e7c4200ac8d"
         ),
         "file_sha256": (
-            "a1ad2228bb1724307e09599d0cc4fb3d921cb4167913a35251e08c61ee9b6c52"
+            "8642fdb0e8987f3155111ff2037414bc4b17ffd7131dd31450ab90c063c1016a"
         ),
         "reason": (
-            "Replace undeclared SciPy L-BFGS-B dependency with a deterministic "
-            "projected Newton solver before implementation; all economic, data, "
-            "model, and acceptance contracts remain unchanged."
+            "Correct a pre-implementation semantic defect: the probability that an "
+            "action is the best of long, abstain, and short is not the probability "
+            "that the same side has positive after-cost return when both sides can "
+            "be positive. Add a separately calibrated, shared side-profit head for "
+            "expected-return estimation while retaining three-action probabilities "
+            "exclusively for routing. Data, costs, chronology, risk controls, and "
+            "authority-denial contracts remain unchanged."
         ),
     }
     assert design["predecessor"]["failure_analysis_file_sha256"] == _file_sha256(
@@ -68,9 +73,10 @@ def test_round34_design_is_hash_bound_to_rejection_and_consumed_registry() -> No
     assert design["governance"]["consumed_period_registry_file_sha256"] == (
         _file_sha256(REGISTRY)
     )
-    assert design["governance"][
-        "consumed_period_registry_canonical_sha256"
-    ] == registry_claimed
+    assert (
+        design["governance"]["consumed_period_registry_canonical_sha256"]
+        == registry_claimed
+    )
     assert registry["records"][-1]["round"] == 33
     assert registry["records"][-1]["outcome"] == "rejected"
 
@@ -100,9 +106,10 @@ def test_round34_changes_only_the_frozen_joint_decision_architecture() -> None:
         "runtime_resources",
     ):
         assert design[section] == predecessor[section]
-    assert design["conditional_direction_confidence"] == predecessor[
-        "conditional_direction_confidence"
-    ]
+    assert (
+        design["conditional_direction_confidence"]
+        == predecessor["conditional_direction_confidence"]
+    )
     assert design["model"]["family"] == (
         "utility_weighted_symmetric_three_action_lightgbm_hurdle"
     )
@@ -113,6 +120,7 @@ def test_round34_changes_only_the_frozen_joint_decision_architecture() -> None:
     ]
     assert design["model"]["heads"] == [
         "three_action_probability",
+        "shared_side_profit_probability",
         "shared_conditional_positive_magnitude",
         "shared_conditional_nonpositive_loss_magnitude",
         "shared_lower_quantile_0_10",
@@ -133,9 +141,12 @@ def test_round34_regret_weighting_and_calibration_are_bounded_and_symmetric() ->
 
     assert weighting["regret_multiplier"].endswith("clipped_to_0_5_and_3_0")
     assert weighting["mirrored_multiclass_rows_share_half_event_weight"] is True
-    assert weighting[
-        "conditional_magnitude_and_quantile_heads_retain_unmodified_average_label_uniqueness_weight"
-    ] is True
+    assert (
+        weighting[
+            "side_profit_probability_magnitude_and_quantile_heads_retain_unmodified_average_label_uniqueness_weight"
+        ]
+        is True
+    )
     assert calibration["log_temperature_bounds"] == [-4.0, 4.0]
     assert calibration["abstain_logit_bias_bounds"] == [-5.0, 5.0]
     assert calibration["optimizer"] == (
@@ -146,7 +157,30 @@ def test_round34_regret_weighting_and_calibration_are_bounded_and_symmetric() ->
     assert calibration["hessian_diagonal_ridge"] == 1e-12
     assert calibration["long_short_bias_permitted"] is False
     assert "long_short_class_swap" in symmetry["prediction"]
-    assert "preserves_long_short_mirror_equivariance" in symmetry["calibration"]
+    assert (
+        "preserves_long_short_mirror_equivariance" in symmetry["multiclass_calibration"]
+    )
+    side_calibration = design["model"]["side_profit_calibration"]
+    assert side_calibration["slope_bounds"] == [0.05, 10.0]
+    assert side_calibration["intercept_bounds"] == [-10.0, 10.0]
+    assert side_calibration["separate_long_short_parameters_permitted"] is False
+
+
+def test_round34_separates_action_class_from_side_profit_semantics() -> None:
+    design = json.loads(DESIGN.read_text(encoding="utf-8"))
+    derivation = design["model"]["probability_derivation"]
+
+    assert (
+        derivation[
+            "semantic_aliasing_between_action_class_and_side_profit_probabilities_permitted"
+        ]
+        is False
+    )
+    assert derivation["side_profit_probabilities_are_not_forced_to_sum_to_one"] is True
+    assert (
+        "independently_calibrated_side_profitable_probability"
+        in design["model"]["action_value"]
+    )
 
 
 def test_round34_retains_fail_closed_financial_claims_and_primary_sources() -> None:
@@ -163,11 +197,11 @@ def test_round34_retains_fail_closed_financial_claims_and_primary_sources() -> N
     assert design["acceptance_gates"]["calibration_architecture"] == {
         "minimum_opportunity_auc": 0.65,
         "minimum_conditional_direction_auc": 0.55,
+        "minimum_side_profit_auc": 0.55,
+        "maximum_side_profit_brier_to_base_rate_ratio": 1.0,
         "maximum_multiclass_log_loss_to_class_prior_ratio": 1.0,
         "minimum_selected_top_100_mean_stress_net_bps": 0.0,
         "minimum_selected_top_500_mean_stress_net_bps": 0.0,
     }
     assert len(design["research_basis"]) >= 6
-    assert all(
-        item["url"].startswith("https://") for item in design["research_basis"]
-    )
+    assert all(item["url"].startswith("https://") for item in design["research_basis"])
