@@ -1,0 +1,101 @@
+{
+  "schema_version": "round-032-execution-binding-v1",
+  "round": 32,
+  "binding_sha256": "aebaec70a8dfa5772abacd4ce0fc3f41a6e8bb718483923de27cb7196b9513d6",
+  "worktree_policy": "clean_including_untracked",
+  "design": {
+    "path": "docs/model-research/action-value/round-032-shared-action-value-viability-design.json",
+    "design_sha256": "5c8b2ac3618cdeec16dd4a8d21e5792cc4ea4bc26a645bf9ec00bd3997d3ca68",
+    "file_sha256": "4274c5dd514e484338d0e45c6538f0deb38c064db36701fcf0283fb7e11792c7"
+  },
+  "implementation": {
+    "commit": "8212805ee76d327ccedc859247ea92acc42f3670",
+    "hash_mode": "git_blob_sha256_v1",
+    "files": [
+      {
+        "path": "docs/model-research/action-value/round-031-frozen-chronological-confirmation-design.json",
+        "sha256": "571497081d1635aa7e261645f5d58d6536aabc9e9f3acf9b7ec9cd6d7abce1bd"
+      },
+      {
+        "path": "docs/model-research/action-value/round-032-shared-action-value-viability-design.json",
+        "sha256": "4274c5dd514e484338d0e45c6538f0deb38c064db36701fcf0283fb7e11792c7"
+      },
+      {
+        "path": "src/simple_ai_trading/assets.py",
+        "sha256": "a2532c31f4667905ed6c3b3f5e969a17eeadfc43ee351763adcd31efe2707ea1"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "330832b09b5cc71d75996004fa31b4df1be6e281ab3b8aa4bae98c92d1dd8452"
+      },
+      {
+        "path": "src/simple_ai_trading/lightgbm_backend.py",
+        "sha256": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "87e99eae0530de107c206e9890e2465975607bc96f891fd39e5fa5a47f20d37e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_features.py",
+        "sha256": "1597118616953b7f430d3c8dcb222e1d07f56ee25b1cecf7b75b3a329743c67e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "dcbafb0a22b4dbf1346df35ce3761c901adb246e31e7946b810797471b443384"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "6287072ee8d3a9574215ee4e4ac8e1c05e958f78490db51b943e4b1ca7df9c35"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "a331c1a8202be273adefed5f23c9bbd2b81bf1ef10e6d8decc813c4f52468c21"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_lightgbm.py",
+        "sha256": "26bd2785e5a5ebf02cb3770d31ab26324d9f4136b74925e9c4f1fc52571cf0c1"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_shared_action_lightgbm.py",
+        "sha256": "5d30f58e05ae25adffe1b155fa2da4556052aacd13926cdeec3e3f29a10cdac1"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_shared_action_policy.py",
+        "sha256": "f6f498421f4afeed6247e08fa7a408d1bebd6c8baf48e4a50ca0235e75d6cef8"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "7d6c1025c9e06dc5765c0c9510c8b1efde06414ab31ce703e7612c70c909c18b"
+      },
+      {
+        "path": "src/simple_ai_trading/probability_calibration.py",
+        "sha256": "47f3cffbf0beaaaf7de2d6fb30bac754f3f1a7846cc7649879fbabf17710e18a"
+      },
+      {
+        "path": "src/simple_ai_trading/progress_heartbeat.py",
+        "sha256": "d94e7e701014e668d1a55e6adbe4ebff16693d967a80d39e62adac0834ee9aa5"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "baff279e9b742ab930e50dc9508afa555a4a017fa3214c03d2dc645250e1f5c5"
+      },
+      {
+        "path": "tools/run_shared_action_viability.py",
+        "sha256": "118b199b7d46c656d7b8852e6badd869c00dd8984817d5fcb294c7776b39e69c"
+      }
+    ]
+  }
+}
