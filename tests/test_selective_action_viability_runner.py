@@ -17,6 +17,7 @@ from tools.run_selective_action_viability import (
     _architecture_gate_reasons,
     _calibration_architecture_diagnostics,
     load_round33_design,
+    load_round33_execution_binding,
 )
 
 
@@ -28,6 +29,7 @@ DESIGN = (
     / "action-value"
     / "round-033-selective-action-design.json"
 )
+BINDING = DESIGN.with_name("round-033-execution-binding.json")
 
 
 def _diagnostic_bundle() -> tuple[SimpleNamespace, SelectiveActionEnsembleBatch]:
@@ -115,6 +117,21 @@ def test_round33_runner_rejects_unhashed_design_change(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="design hash"):
         load_round33_design(changed)
+
+
+def test_round33_execution_binding_matches_current_git_blobs() -> None:
+    _design, design_sha, _profiles = load_round33_design(DESIGN)
+    binding, binding_sha = load_round33_execution_binding(
+        BINDING,
+        design_path=DESIGN,
+        design_sha256=design_sha,
+    )
+
+    assert binding_sha == binding["binding_sha256"]
+    assert binding["implementation"]["commit"] == (
+        "6e1b41dbc2a9767caa8ef1deea6fc4652726ef2d"
+    )
+    assert len(binding["implementation"]["files"]) == 27
 
 
 def test_round33_architecture_diagnostics_and_gates_are_selective() -> None:
