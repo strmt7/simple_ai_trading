@@ -1,0 +1,265 @@
+{
+  "schema_version": "cross-asset-cost-aware-ai-ablation-design-v1",
+  "round": 37,
+  "design_sha256": "be7dc720990d806620c7516961472c7314a8ed22033c11b88fff68e1f9c5cac4",
+  "phase": "frozen_multi_year_model_viability_then_ai_ablation",
+  "predecessor": {
+    "failure_analysis": "round-036-failure-analysis.json",
+    "failure_analysis_canonical_sha256": "ad2ee1477a8cf09b17aaa24a98f95df3ebd3cd887cc20cd8d21833ca7040fe5b",
+    "failure_analysis_file_sha256": "070d9b127d7908c9b6e6b71ff3bf10b5d38038dae42bd73edec22ac2f688541c",
+    "decision": "reject_static_l1_tape_taker_alpha_and_test_a_distinct_slower_cross_asset_lane"
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-036.json",
+    "consumed_period_registry_canonical_sha256": "89068a7426654d47360511869cfc875fccf3da66ffeb0aad7c13efc083af0d0d",
+    "consumed_period_registry_file_sha256": "09dba79e84c5548992350b449d09b2fd97e328099ddbbac29a2b0cd5e8276bc8",
+    "freeze_before_target_access": true,
+    "single_fixed_seed": 3701,
+    "unregistered_hyperparameter_search_permitted": false,
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "promotion_permitted": false,
+    "trading_authority_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "ai_can_create_or_reverse_trades": false,
+    "oracle_feature_or_runtime_label_use_permitted": false,
+    "profitability_target_override_permitted": false
+  },
+  "source_contract": {
+    "database_argument": "data/market_data.sqlite",
+    "provider": "Binance public data archives",
+    "market_type": "futures",
+    "venue_product": "USD-M perpetual futures",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "interval": "1m",
+    "source_rows": {
+      "BTCUSDT": 3417120,
+      "ETHUSDT": 3417120,
+      "SOLUSDT": 3046620
+    },
+    "source_start": {
+      "BTCUSDT": "2020-01-01T00:00:00Z",
+      "ETHUSDT": "2020-01-01T00:00:00Z",
+      "SOLUSDT": "2020-09-14T07:00:00Z"
+    },
+    "source_end": "2026-06-30T23:59:00Z",
+    "required_archive_status": "complete",
+    "required_checksum_status": "verified",
+    "required_archive_coverage": {
+      "BTCUSDT": {"archive_records": 107, "first_period": "2020-01", "last_period": "2026-06"},
+      "ETHUSDT": {"archive_records": 78, "first_period": "2020-01", "last_period": "2026-06"},
+      "SOLUSDT": {"archive_records": 75, "first_period": "2020-09", "last_period": "2026-06"}
+    },
+    "required_columns": [
+      "open_time",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "quote_volume",
+      "trade_count",
+      "taker_buy_base_volume",
+      "taker_buy_quote_volume",
+      "source"
+    ],
+    "required_gap_count": 0,
+    "source_rows_must_be_stream_hashed_during_materialization": true,
+    "persistent_feature_copy_permitted": false,
+    "incomplete_one_second_rows_are_not_a_multi_year_alpha_source": true,
+    "one_second_or_l1_features_may_be_used_later_only_as_a_separately_validated_execution_or_risk_overlay": true
+  },
+  "chronological_roles": [
+    {"role": "training", "start": "2022-01-01", "end": "2024-06-30", "targets_permitted": true},
+    {"role": "early_stop", "start": "2024-07-01", "end": "2024-09-30", "targets_permitted": true},
+    {"role": "calibration", "start": "2024-10-01", "end": "2024-12-31", "targets_permitted": true},
+    {"role": "viability", "start": "2025-01-01", "end": "2025-06-30", "targets_permitted": true},
+    {"role": "selection_confirmation", "start": "2025-07-01", "end": "2025-12-31", "targets_permitted": false},
+    {"role": "terminal", "start": "2026-01-01", "end": "2026-06-30", "targets_permitted": false}
+  ],
+  "decision_and_target_contract": {
+    "decision_cadence_minutes": 5,
+    "decision_information_cutoff": "all features end at the close of minute t",
+    "entry_price": "open of minute t+1",
+    "exit_price": "open exactly horizon_minutes after entry",
+    "horizons_minutes": [15, 30, 60, 120],
+    "gross_long_return_bps": "10000 * (exit_open / entry_open - 1)",
+    "gross_short_return_bps": "10000 * (1 - exit_open / entry_open)",
+    "model_target": "signed gross return bps before the frozen execution charge",
+    "round_trip_execution_charge_bps": 12.0,
+    "execution_charge_components": {
+      "taker_fee_bps_per_side": 5.0,
+      "additional_adverse_slippage_bps_per_side": 1.0,
+      "historical_spread_is_not_available_in_the_multi_year_minute_source": true,
+      "charge_must_not_be_reduced_from_round_36": true
+    },
+    "route_long_when": "calibrated_prediction_bps >= selected_cost_aware_threshold_bps",
+    "route_short_when": "calibrated_prediction_bps <= -selected_cost_aware_threshold_bps",
+    "threshold_grid_bps": [12.0, 15.0, 18.0, 24.0, 30.0],
+    "threshold_selected_on": "calibration_role_only",
+    "same_symbol_positions_may_not_overlap": true,
+    "event_outcomes_and_nonoverlapping_trade_replay_must_be_reported_separately": true
+  },
+  "feature_contract": {
+    "all_features_are_causal_and_finite_or_fail": true,
+    "storage_dtype": "float32",
+    "per_symbol_features": [
+      "log_returns_1_3_5_15_30_60_240_1440m",
+      "rolling_realized_volatility_5_15_60_240_1440m",
+      "rolling_downside_and_upside_semivariance_60_240m",
+      "intrabar_range_and_close_location",
+      "rolling_path_efficiency_15_60_240m",
+      "log_quote_volume_trade_count_and_base_volume",
+      "volume_and_trade_intensity_relative_to_60_240_1440m",
+      "taker_buy_quote_share_and_signed_taker_flow_1_5_15_60m",
+      "rolling_return_volume_and_range_z_scores",
+      "causal_minute_of_week_liquidity_state"
+    ],
+    "cross_asset_features": [
+      "contemporaneous_lagged_returns_for_btc_eth_sol",
+      "btc_relative_returns_for_eth_and_sol",
+      "rolling_beta_residual_returns_60_240_1440m",
+      "cross_asset_return_dispersion",
+      "cross_asset_taker_flow_agreement",
+      "cross_asset_volatility_and_liquidity_ratios"
+    ],
+    "calendar_features": ["utc_minute_of_day_sin_cos", "utc_day_of_week_sin_cos", "weekend_flag"],
+    "calendar_features_may_not_be_used_without_observed_market_state": true,
+    "target_symbol_is_a_categorical_feature": true,
+    "horizon_is_not_a_feature_because_models_are_horizon_specific": true
+  },
+  "model_contract": {
+    "baselines": [
+      "zero_return_random_walk",
+      "last_same_horizon_return",
+      "linear_ridge_return_model"
+    ],
+    "candidates": [
+      "per_symbol_lightgbm_l1_regression",
+      "shared_cross_asset_lightgbm_l1_regression"
+    ],
+    "lightgbm": {
+      "objective": "regression_l1",
+      "metric": "l1",
+      "learning_rate": 0.03,
+      "num_leaves": 63,
+      "min_data_in_leaf": 1000,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l1": 0.1,
+      "lambda_l2": 1.0,
+      "max_bin": 255,
+      "num_boost_round": 1000,
+      "early_stopping_rounds": 50,
+      "gpu_first": true,
+      "amd_nvidia_intel_opencl_device_auto_selection": true
+    },
+    "amplitude_calibration": {
+      "method": "per_symbol_nonnegative_zero_intercept_ols",
+      "role": "calibration",
+      "slope_bounds": [0.0, 3.0]
+    },
+    "single_asset_vs_cross_asset_is_a_prespecified_ablation": true,
+    "model_or_threshold_may_not_be_selected_on_viability_results": true
+  },
+  "viability_gate": {
+    "applied_to": "viability_role_only_after_training_early_stop_and_calibration_are_frozen",
+    "minimum_nonoverlapping_trades_total": 180,
+    "minimum_nonoverlapping_trades_per_symbol": 30,
+    "minimum_active_utc_days": 90,
+    "minimum_mean_net_bps_per_trade": 0.0,
+    "minimum_median_monthly_net_bps": 0.0,
+    "minimum_profit_factor": 1.05,
+    "maximum_negative_month_fraction": 0.45,
+    "minimum_day_block_bootstrap_mean_net_bps_lower_95": 0.0,
+    "must_beat_zero_return_and_persistence_baselines": true,
+    "must_not_have_any_nonfinite_prediction_or_accounting_error": true,
+    "failure_action": "reject_or_redesign_before_selection_confirmation_or_ai_expansion"
+  },
+  "ai_ablation_contract": {
+    "runs_only_if_ml_viability_candidate_set_is_complete": true,
+    "models": ["qwen3:8b", "fino1:8b"],
+    "minimum_model_parameters_b": 8.0,
+    "provider": "local_ollama",
+    "temperature": 0.0,
+    "think": false,
+    "structured_output": true,
+    "allowed_actions": ["approve", "veto", "cooldown"],
+    "allowed_risk_multiplier_range": [0.0, 1.0],
+    "ai_may_only_veto_or_reduce_risk": true,
+    "prompt_inputs": [
+      "causal_current_and_trailing_market_state",
+      "frozen_ml_prediction_and_calibration_evidence",
+      "frozen_execution_cost_hurdle",
+      "current_portfolio_risk_state",
+      "past_only_nearest_regime_summaries"
+    ],
+    "prompt_must_not_include": [
+      "future_prices_or_returns",
+      "current_case_outcome",
+      "selection_confirmation_or_terminal_data",
+      "unbounded_news_or_web_retrieval",
+      "operator_secrets"
+    ],
+    "case_selection": "highest_absolute_calibrated_ml_candidate_per_symbol_per_utc_day_on_the_last_90_viability_days",
+    "maximum_cases_per_model": 270,
+    "candidate_case_identity_sha256_required": true,
+    "response_and_model_artifact_sha256_required": true,
+    "provider_failure_action": "veto",
+    "uplift_comparison": "matched_daily_ml_only_versus_ml_plus_ai_returns",
+    "minimum_matched_days": 90,
+    "minimum_positive_daily_delta_rate": 0.55,
+    "maximum_exact_sign_test_p_value": 0.05,
+    "minimum_moving_day_block_bootstrap_delta_lower_95": 0.0,
+    "drawdown_profit_factor_loss_streak_and_liquidation_must_not_degrade": true,
+    "ai_output_grants_trading_authority": false
+  },
+  "required_outputs": [
+    "source_certificate_and_stream_hash",
+    "role_and_feature_causality_audit",
+    "model_artifacts_and_reload_identity",
+    "backend_device_runtime_and_memory_evidence",
+    "prediction_metrics_by_symbol_horizon_model_and_role",
+    "cost_threshold_calibration_traces",
+    "event_outcomes_and_nonoverlapping_trade_replay",
+    "daily_weekly_monthly_and_regime_performance",
+    "day_block_uncertainty",
+    "ai_candidate_case_and_response_hashes",
+    "ml_only_versus_each_ai_model_matched_period_ablation"
+  ],
+  "research_basis": [
+    "https://arxiv.org/abs/2606.00060",
+    "https://arxiv.org/abs/2606.27100",
+    "https://arxiv.org/abs/2605.21504",
+    "https://arxiv.org/abs/2403.09267",
+    "https://arxiv.org/abs/2108.09750",
+    "https://arxiv.org/abs/2212.06888",
+    "https://arxiv.org/abs/2510.13654",
+    "https://github.com/amazon-science/chronos-forecasting",
+    "https://github.com/binance/binance-public-data",
+    "https://github.com/SalesforceAIResearch/FinDap",
+    "https://github.com/The-FinAI/Fino1"
+  ],
+  "limitations": [
+    "Minute OHLCV and taker-flow archives do not contain historical order-book spread or queue state.",
+    "The frozen 12 bps charge is a conservative proxy, not pair-specific historical spread reconstruction.",
+    "A positive viability result would still be consumed development evidence and could not establish profitability.",
+    "The 2025 second half and all 2026 data remain unavailable to this round.",
+    "The AI models may have unknown pretraining overlap with public historical narratives, so prompts omit dates and exact price levels where possible.",
+    "An 8B financial-reasoning model is not presumed to forecast numeric returns better than supervised ML.",
+    "The AI veto cannot add information that is absent from its causal inputs.",
+    "Funding, premium-index, open-interest, liquidation, cross-venue, and on-chain data are not included in v1 and require separate real-data certification.",
+    "No maker fill, queue priority, hidden liquidity, or passive execution benefit is claimed.",
+    "No leverage, portfolio ROI, testnet, live, or mainnet claim can be produced."
+  ],
+  "claims": {
+    "trading_authority": false,
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "leverage_applied": false
+  }
+}
