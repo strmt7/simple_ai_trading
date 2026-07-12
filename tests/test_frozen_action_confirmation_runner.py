@@ -10,7 +10,7 @@ import tools.run_frozen_action_confirmation as runner
 from tools.run_gross_architecture_screen import _canonical_sha256
 
 
-def test_committed_round31_design_is_current_and_hash_bound() -> None:
+def test_committed_round31_design_is_historically_hash_bound() -> None:
     path = (
         runner.ROOT
         / "docs"
@@ -19,13 +19,28 @@ def test_committed_round31_design_is_current_and_hash_bound() -> None:
         / "round-031-frozen-chronological-confirmation-design.json"
     )
 
-    design, claimed = runner.load_frozen_confirmation_design(path)
+    design, claimed = runner.load_frozen_confirmation_design(
+        path, require_current=False
+    )
 
     assert claimed == "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e"
     assert design["implementation"]["commit"] == (
         "47133de1186e3a0e54f9dfdce10fe8500bae700c"
     )
     assert design["reserved_terminal"]["date"] == "2024-03-30"
+
+
+def test_committed_round31_design_refuses_replay_after_code_evolves() -> None:
+    path = (
+        runner.ROOT
+        / "docs"
+        / "model-research"
+        / "action-value"
+        / "round-031-frozen-chronological-confirmation-design.json"
+    )
+
+    with pytest.raises(ValueError, match="implementation"):
+        runner.load_frozen_confirmation_design(path)
 
 
 def _design() -> dict[str, object]:

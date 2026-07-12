@@ -1042,7 +1042,19 @@ class MicrostructureWarehouse:
         symbol: str,
         data_type: str,
         archive_id: str | None = None,
+        archive_ids: Sequence[str] | None = None,
     ) -> dict[str, dict[str, int]]:
+        if archive_id is not None and archive_ids is not None:
+            raise ValueError("archive_id and archive_ids are mutually exclusive")
+        selected_archive_ids: tuple[str, ...] | None = None
+        if archive_ids is not None:
+            selected_archive_ids = tuple(
+                dict.fromkeys(str(value).strip() for value in archive_ids)
+            )
+            if any(not value for value in selected_archive_ids):
+                raise ValueError("archive_ids must contain non-empty identifiers")
+            if not selected_archive_ids:
+                return {}
         table_contract = {
             "bookTicker": (
                 "book_ticker_raw",
@@ -1096,10 +1108,18 @@ class MicrostructureWarehouse:
         }
         invalid_expression, crossed_expression = raw_quality[data_type]
         conn = self.connect()
-        archive_clause = " AND r.archive_id = ?" if archive_id is not None else ""
-        parameters: list[object] = [symbol, data_type]
+        archive_parameters: list[object] = []
         if archive_id is not None:
-            parameters.append(archive_id)
+            archive_clause = " AND r.archive_id = ?"
+            archive_parameters.append(archive_id)
+        elif selected_archive_ids is not None:
+            placeholders = ",".join("?" for _ in selected_archive_ids)
+            archive_clause = f" AND r.archive_id IN ({placeholders})"
+            archive_parameters.extend(selected_archive_ids)
+        else:
+            archive_clause = ""
+        parameters: list[object] = [symbol, data_type]
+        parameters.extend(archive_parameters)
         raw_rows = conn.execute(
             f"""
             SELECT r.archive_id, count(*)::UBIGINT,
@@ -1158,7 +1178,7 @@ class MicrostructureWarehouse:
                        )::UBIGINT
                 FROM grouped GROUP BY archive_id
                 """,
-                [symbol, *([archive_id] if archive_id is not None else [])],
+                [symbol, *archive_parameters],
             ).fetchall()
         else:
             derived_rows = conn.execute(
@@ -1856,9 +1876,13 @@ class MicrostructureWarehouse:
             manifests_by_period: dict[str, list[tuple[object, ...]]] = {}
             for row in manifests:
                 manifests_by_period.setdefault(str(row[1]), []).append(row)
+            scoped_archive_ids = tuple(
+                str(row[0]) for row in manifests if str(row[1]) in scope
+            )
             physical_by_archive = self._physical_archive_stats(
                 symbol=normalized,
                 data_type=data_type,
+                archive_ids=scoped_archive_ids,
             )
             verified: list[dict[str, object]] = []
             missing: list[str] = []
