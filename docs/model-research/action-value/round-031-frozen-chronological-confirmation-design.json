@@ -1,0 +1,519 @@
+{
+  "schema_version": "frozen-action-confirmation-design-v1",
+  "round": 31,
+  "design_revision": 1,
+  "purpose": "frozen_round30_lightgbm_nested_chronological_confirmation",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false,
+  "implementation": {
+    "hash_mode": "git_blob_sha256_v1",
+    "commit": "47133de1186e3a0e54f9dfdce10fe8500bae700c",
+    "files": [
+      {
+        "path": "src/simple_ai_trading/frozen_action_confirmation.py",
+        "sha256": "1d00d26f0dac9dbd50a84722fa75c4c81944c0402c9092fd4f695888830ef361"
+      },
+      {
+        "path": "tools/run_frozen_action_confirmation.py",
+        "sha256": "fcf2ea6738f96fdb828eca90d6f26c1f2db7a599ae88a881f717b7e1a9685fb5"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_lightgbm.py",
+        "sha256": "26bd2785e5a5ebf02cb3770d31ab26324d9f4136b74925e9c4f1fc52571cf0c1"
+      },
+      {
+        "path": "src/simple_ai_trading/probability_calibration.py",
+        "sha256": "47f3cffbf0beaaaf7de2d6fb30bac754f3f1a7846cc7649879fbabf17710e18a"
+      },
+      {
+        "path": "src/simple_ai_trading/lightgbm_backend.py",
+        "sha256": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_mixture.py",
+        "sha256": "cc08b981e6d7c35018e3ae6620a34e0f2ce017cade7f8ea36a612343383c871f"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "87e99eae0530de107c206e9890e2465975607bc96f891fd39e5fa5a47f20d37e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "dcbafb0a22b4dbf1346df35ce3761c901adb246e31e7946b810797471b443384"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "f06c34f7be1df21a4a7214f92fea61dc5036013da846d682b0a2c747f8b859a0"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "6287072ee8d3a9574215ee4e4ac8e1c05e958f78490db51b943e4b1ca7df9c35"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "3e870791d8f00d6616b8bf2ac15874852bf5b565de9f13e2c6ea2da19be0f6b3"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "330832b09b5cc71d75996004fa31b4df1be6e281ab3b8aa4bae98c92d1dd8452"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "baff279e9b742ab930e50dc9508afa555a4a017fa3214c03d2dc645250e1f5c5"
+      },
+      {
+        "path": "tools/run_adaptive_action_screen.py",
+        "sha256": "8d596c8a5418f5fdd964aa51938d23d41887847924d96c27a374f390aaf9f9ce"
+      },
+      {
+        "path": "tools/run_gross_architecture_screen.py",
+        "sha256": "2d92c27e847374d7d9b734b074ed23837e9bc3ec3a674e175898a0ce2bf8c9bb"
+      },
+      {
+        "path": "tools/run_outcome_mixture_screen.py",
+        "sha256": "142a0eb031d3afb1187d115d16792673b05d4d15b71bb448cd5323a87cdf4fe7"
+      }
+    ]
+  },
+  "predecessor_evidence": {
+    "round30_publication_sha256": "6173f37bf5239f976d402fbdda61bc2b2aeb8d39f52b9ed6984c671c9c8d8e08",
+    "round30_governance_correction_sha256": "8c52836417c13e051f8478bf44b65e52bc5bda9de0805b04e879eb478eee1bfd",
+    "finding": "Round 30 produced twelve positive after-cost threshold-selection simulations but only one to twelve trades per candidate. Round 31 freezes every model and threshold and opens later dates through nested gates."
+  },
+  "source_model": {
+    "round": 30,
+    "model_schema_version": "adaptive-lightgbm-hurdle-action-value-v1",
+    "report_file_sha256": "3a445c51fc3df205824b8edf760500a9aa86b123d2676b6b30f2a1ec289f8ec3",
+    "report_canonical_sha256": "7634b03dd10805c3f45375dacc5feee3462316cd318e11e4bdd39d411a55fd23",
+    "design_sha256": "2adfba2a377666e204b22d926d3d757a6b3c1a20d58c67a3455dabfedbad9623",
+    "barrier_targets_sha256": "bde567752e0c30c49a62f73e1baa5f5618206d33a7644b2edc61e67f18143b10",
+    "source_manifest_fingerprint": "fbab4bc8175b073345b3aa0a52737d7dbb44b5bbd1bd63b7a504ff7a35e29812",
+    "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
+    "target_contract_sha256": "579b9ef35faba9c46b3595ab06f1391ba26ac28c682eece3e85554370cd635d8",
+    "models": [
+      {
+        "seed": 29,
+        "path": "models/seed-29.json",
+        "artifact_sha256": "918ff66f3e5510f0a2131a3c402afdf6f52df967ef5a36bee8c88f39ac4e896f",
+        "model_sha256": "151ebfa8e4e1babb3f5da9bc716b3bcec7e131b462ce07892eac84486f14cd76"
+      },
+      {
+        "seed": 43,
+        "path": "models/seed-43.json",
+        "artifact_sha256": "62573105d4e436bcb07f15ddd31030271398fd1d0d9701bfaf453e0275b7f84f",
+        "model_sha256": "ea1b15d3002ba5a04ee706c60e8a612dd5361256a5ff918aaefa9e627cc2456b"
+      },
+      {
+        "seed": 71,
+        "path": "models/seed-71.json",
+        "artifact_sha256": "cf4d90d0c5fdd432ee55a069d44878e260a963c2fa9fb4b4995c99d48bb9675f",
+        "model_sha256": "1844c1e9a5a7c08ad4430395cf207ff924b53ec47b98c98662e9280a62d83d23"
+      }
+    ],
+    "training_performed_in_round31": false,
+    "thresholds_recalibrated_in_round31": false
+  },
+  "availability": {
+    "plan_file_sha256": "8edb5087fa4c4f6e12a1c75c5709e33413f3d57adce1eafb7244a88461543961",
+    "truth_basis": "official_binance_data_vision_s3_listing",
+    "coverage": [
+      {
+        "available_files": 320,
+        "available_first_period": "2023-05-16",
+        "available_last_period": "2024-03-30",
+        "data_type": "bookTicker",
+        "official_calendar_gap_count": 0,
+        "official_calendar_gaps": [],
+        "selected_bytes": 52578851529,
+        "selected_files": 320,
+        "selected_first_period": "2023-05-16",
+        "selected_last_period": "2024-03-30",
+        "symbol": "BTCUSDT"
+      },
+      {
+        "available_files": 2498,
+        "available_first_period": "2019-09-08",
+        "available_last_period": "2026-07-10",
+        "data_type": "trades",
+        "official_calendar_gap_count": 0,
+        "official_calendar_gaps": [],
+        "selected_bytes": 67190783096,
+        "selected_files": 2498,
+        "selected_first_period": "2019-09-08",
+        "selected_last_period": "2026-07-10",
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "inventory_identities": [
+      {
+        "symbol": "BTCUSDT",
+        "data_type": "bookTicker",
+        "snapshot_id": "3259367c93d640dc8e868389276f39338a460d95b0ad75efbba8bd677055bf93",
+        "listing_sha256": "83ce1c24568f03c53801a766085af28db83e6a9b848459c7e8b96bc8a290d8fb",
+        "verification_phase": "initial"
+      },
+      {
+        "symbol": "BTCUSDT",
+        "data_type": "trades",
+        "snapshot_id": "475c80b6abdc3c84106e48d463ee769bcc36e61e3e989aff6f68890f1adc3c79",
+        "listing_sha256": "582a2af1128029a8ec8e7b3225469aa59ee9646fe40ea1e92006e701d3d37a2d",
+        "verification_phase": "initial"
+      },
+      {
+        "symbol": "BTCUSDT",
+        "data_type": "bookTicker",
+        "snapshot_id": "3259367c93d640dc8e868389276f39338a460d95b0ad75efbba8bd677055bf93",
+        "listing_sha256": "83ce1c24568f03c53801a766085af28db83e6a9b848459c7e8b96bc8a290d8fb",
+        "verification_phase": "verification_refresh"
+      },
+      {
+        "symbol": "BTCUSDT",
+        "data_type": "trades",
+        "snapshot_id": "475c80b6abdc3c84106e48d463ee769bcc36e61e3e989aff6f68890f1adc3c79",
+        "listing_sha256": "582a2af1128029a8ec8e7b3225469aa59ee9646fe40ea1e92006e701d3d37a2d",
+        "verification_phase": "verification_refresh"
+      }
+    ],
+    "inventory_identity_verified": true,
+    "exact_bbo_history_limit": {
+      "first_date": "2023-05-16",
+      "last_date": "2024-03-30",
+      "calendar_days": 320,
+      "official_calendar_gap_count": 0
+    },
+    "trade_history_context": {
+      "first_date": "2019-09-08",
+      "last_date": "2026-07-10",
+      "calendar_days": 2498,
+      "not_equivalent_to_exact_bbo_execution_history": true
+    }
+  },
+  "governance": {
+    "consumed_period_registry_sha256": "bd62c60a920936bac3b4280f7e78cf1a3f10794afc0b2b61d3bcae6211e03950",
+    "consumed_period_registry_canonical_sha256": "7ee23bdab12e1574662f93f67f7c01ba811236f5be42b68b883af9306c5f9c6b",
+    "later_stage_target_access_requires_prior_stage_acceptance": true,
+    "raw_archive_ingestion_and_fixed_causal_feature_materialization_are_not_model_selection": true,
+    "terminal_raw_archive_ingestion_permitted": false
+  },
+  "feature_version": "l1-tape-causal-v8",
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "full_history_inventory_required": true,
+    "start_date": "2023-12-31",
+    "end_date": "2024-03-29",
+    "excluded_target_dates": [
+      {
+        "date": "2024-02-05",
+        "reason": "Consumed by Round 8; permitted only as deterministic context for the next stage.",
+        "target_access_permitted": false
+      },
+      {
+        "date": "2024-03-15",
+        "reason": "Consumed by Round 7; excluded from development targets and expected-day gates.",
+        "target_access_permitted": false
+      }
+    ],
+    "stages": {
+      "confirmation": {
+        "context_start": "2023-12-31",
+        "evaluation_start": "2024-01-01",
+        "evaluation_end": "2024-02-04",
+        "next_unopened_date": "2024-02-05"
+      },
+      "policy": {
+        "context_start": "2024-02-05",
+        "evaluation_start": "2024-02-06",
+        "evaluation_end": "2024-03-05",
+        "next_unopened_date": "2024-03-06"
+      },
+      "development": {
+        "context_start": "2024-03-05",
+        "evaluation_start": "2024-03-06",
+        "evaluation_end": "2024-03-29",
+        "next_unopened_date": "2024-03-30"
+      }
+    }
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "barrier_targets": {
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1.0,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18.0,
+    "maximum_stop_bps": 60.0,
+    "minimum_take_bps": 27.0,
+    "maximum_take_bps": 90.0,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "threshold_policy": {
+    "quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "drawdown_penalty": 0.5,
+    "selection_scenario": "stress",
+    "no_passing_threshold_action": "abstain"
+  },
+  "risk_profiles": [
+    {
+      "profile": "conservative",
+      "epistemic_penalty": 1.5,
+      "minimum_profitable_probability": 0.65,
+      "minimum_member_agreement": 1.0,
+      "maximum_epistemic_std_bps": 6.0,
+      "minimum_lower_bound_bps": -35.0,
+      "calibration_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 50.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "policy_gates": {
+        "minimum_trades": 12,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 60.0,
+        "minimum_positive_day_ratio": 0.6,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "development_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 70.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -50.0,
+        "minimum_profit_factor": 1.05
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "regular",
+      "epistemic_penalty": 1.0,
+      "minimum_profitable_probability": 0.6,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 10.0,
+      "minimum_lower_bound_bps": -45.0,
+      "calibration_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 75.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "policy_gates": {
+        "minimum_trades": 15,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 85.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "development_gates": {
+        "minimum_trades": 18,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 95.0,
+        "minimum_positive_day_ratio": 0.5,
+        "minimum_worst_trade_bps": -60.0,
+        "minimum_profit_factor": 1.03
+      },
+      "leverage_applied": false
+    },
+    {
+      "profile": "aggressive",
+      "epistemic_penalty": 0.5,
+      "minimum_profitable_probability": 0.55,
+      "minimum_member_agreement": 0.6666666666666666,
+      "maximum_epistemic_std_bps": 15.0,
+      "minimum_lower_bound_bps": -60.0,
+      "calibration_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 110.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "policy_gates": {
+        "minimum_trades": 20,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 125.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "development_gates": {
+        "minimum_trades": 24,
+        "minimum_total_net_bps": 0.0,
+        "maximum_drawdown_bps": 140.0,
+        "minimum_positive_day_ratio": 0.4,
+        "minimum_worst_trade_bps": -75.0,
+        "minimum_profit_factor": 1.01
+      },
+      "leverage_applied": false
+    }
+  ],
+  "frozen_thresholds": {
+    "conservative": [
+      {
+        "quantile": 0.5,
+        "threshold_bps": 1.6376005412097743
+      },
+      {
+        "quantile": 0.7,
+        "threshold_bps": 1.8924995758082566
+      },
+      {
+        "quantile": 0.85,
+        "threshold_bps": 2.0956747149378536
+      },
+      {
+        "quantile": 0.95,
+        "threshold_bps": 2.1373023744256465
+      }
+    ],
+    "regular": [
+      {
+        "quantile": 0.5,
+        "threshold_bps": 2.1877401280468405
+      },
+      {
+        "quantile": 0.7,
+        "threshold_bps": 9.198820232920236
+      },
+      {
+        "quantile": 0.85,
+        "threshold_bps": 13.32018923598915
+      },
+      {
+        "quantile": 0.95,
+        "threshold_bps": 19.07010254121388
+      }
+    ],
+    "aggressive": [
+      {
+        "quantile": 0.5,
+        "threshold_bps": 3.3509561336677516
+      },
+      {
+        "quantile": 0.7,
+        "threshold_bps": 8.64119483453864
+      },
+      {
+        "quantile": 0.85,
+        "threshold_bps": 15.174464399730795
+      },
+      {
+        "quantile": 0.95,
+        "threshold_bps": 19.74337329158117
+      }
+    ]
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit": "8GB",
+    "warehouse_threads": 16,
+    "compute_backend": "directml",
+    "prediction_batch_size": 65536,
+    "cpu_fallback_permitted": false,
+    "model_training_performed": false,
+    "feature_materialization_scope": "ingested_nonterminal_manifests"
+  },
+  "evaluation": {
+    "nested_stage_order": [
+      "confirmation",
+      "policy",
+      "development"
+    ],
+    "confirmation_candidate_count": 12,
+    "confirmation_selects_only_from_frozen_round30_thresholds": true,
+    "policy_uses_exact_confirmation_threshold": true,
+    "development_uses_exact_policy_threshold": true,
+    "future_stage_targets_predictions_and_metrics_withheld_until_prior_acceptance": true,
+    "positions_must_exit_within_utc_day": true,
+    "maximum_concurrent_positions": 1,
+    "overlap_permitted": false,
+    "training_permitted": false,
+    "threshold_recalibration_permitted": false,
+    "leverage_permitted": false,
+    "terminal_access_permitted": false
+  },
+  "reserved_terminal": {
+    "date": "2024-03-30",
+    "included_in_dataset": false,
+    "access_permitted": false,
+    "raw_archive_ingestion_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Binance Public Data",
+      "url": "https://github.com/binance/binance-public-data",
+      "use": "Defines official daily/monthly archive products and checksum sidecars; the live S3 listing bounds exact bookTicker history to 320 days."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://doi.org/10.2139/ssrn.2326253",
+      "use": "Motivates frozen candidates and independent chronological confirmation instead of repeated holdout tuning."
+    },
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Supports cost-aware filtering and walk-forward evidence while explicitly warning that post-cost results are statistically fragile."
+    },
+    {
+      "title": "LOBFrame: A Comprehensive Framework for Deep Learning-based LOB Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Supports separating forecast discrimination from actionable, after-cost execution evidence."
+    },
+    {
+      "title": "LightGBM GPU Tutorial",
+      "url": "https://lightgbm.readthedocs.io/en/stable/GPU-Tutorial.html",
+      "use": "Documents the OpenCL training backend used by the frozen AMD-compatible source artifacts; Round 31 performs no training."
+    }
+  ],
+  "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e"
+}
