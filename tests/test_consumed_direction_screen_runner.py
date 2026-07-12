@@ -10,6 +10,7 @@ from tools.run_consumed_direction_screen import (
     _feature_names,
     _select_candidate,
     _variant_metrics,
+    load_direction_screen_binding,
     load_direction_screen_design,
 )
 
@@ -22,6 +23,7 @@ DESIGN = (
     / "action-value"
     / "round-035-consumed-direction-screen-design.json"
 )
+BINDING = DESIGN.with_name("round-035-direction-screen-execution-binding.json")
 
 
 def test_direction_screen_runner_loads_six_exact_variants() -> None:
@@ -41,6 +43,32 @@ def test_direction_screen_runner_loads_six_exact_variants() -> None:
     assert [
         len(_feature_names(design, item["feature_set"])) for item in design["variants"]
     ] == [107, 107, 100, 100, 68, 68]
+
+
+def test_direction_screen_binding_matches_committed_implementation() -> None:
+    _design, design_sha = load_direction_screen_design(DESIGN)
+    binding, binding_sha = load_direction_screen_binding(
+        BINDING,
+        design_path=DESIGN,
+        design_sha256=design_sha,
+    )
+
+    assert binding_sha == (
+        "ac94719659d15c18b5f465b1b2e09cd6d6bb980768f7822fb040462f3a2d6f6b"
+    )
+    assert binding["implementation"]["commit"] == (
+        "b89064d2eb594e590134a89bdc45ee6ecc2f93d7"
+    )
+    assert len(binding["implementation"]["files"]) == 35
+    assert binding["authority"] == {
+        "post_hoc_consumed_data_discovery_only": True,
+        "promotion_permitted": False,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
 
 
 def test_direction_screen_metrics_use_after_cost_side_returns_and_daily_auc() -> None:
