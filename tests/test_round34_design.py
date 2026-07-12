@@ -45,22 +45,19 @@ def test_round34_design_is_hash_bound_to_rejection_and_consumed_registry() -> No
     assert registry_claimed == _canonical_sha256(registry_canonical)
     assert design["round"] == 34
     assert design["schema_version"] == "three-action-utility-design-v2"
-    assert design["design_revision"] == 3
+    assert design["design_revision"] == 4
     assert design["supersedes"] == {
-        "design_revision": 2,
+        "design_revision": 3,
         "design_sha256": (
-            "9b8b42a6d64d54e7a3a3ff3f552a49f13eb39bff63c3c5e5fa6d8e7c4200ac8d"
+            "ac3033d4dbe47de39becdf0a6aa6632f21dc6e4d3b91ae43c2f4f110e50de485"
         ),
         "file_sha256": (
-            "8642fdb0e8987f3155111ff2037414bc4b17ffd7131dd31450ab90c063c1016a"
+            "dbfc114b7252f44c6246fb65b327eee96377be4db20d5a2c37378f3393fe90f2"
         ),
         "reason": (
-            "Correct a pre-implementation semantic defect: the probability that an "
-            "action is the best of long, abstain, and short is not the probability "
-            "that the same side has positive after-cost return when both sides can "
-            "be positive. Add a separately calibrated, shared side-profit head for "
-            "expected-return estimation while retaining three-action probabilities "
-            "exclusively for routing. Data, costs, chronology, risk controls, and "
+            "Clarify that the abstain class includes exact long-short utility ties "
+            "as already required by exact_tie_resolution and implemented by strict "
+            "class conditions. Data, targets, economics, model behavior, gates, and "
             "authority-denial contracts remain unchanged."
         ),
     }
