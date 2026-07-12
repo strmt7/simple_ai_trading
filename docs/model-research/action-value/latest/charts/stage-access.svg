@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1320" height="430" viewBox="0 0 1320 430" role="img" aria-labelledby="title desc">
-<title id="title">Round 33 chronological stage access</title>
-<desc id="desc">Calibration opened; threshold selection and all later predictions remained withheld after the architecture gate failed.</desc>
+<title id="title">Round 34 chronological stage access</title>
+<desc id="desc">Calibration prediction opened; threshold selection and all later stages remained withheld after the architecture rejection.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Nested evaluation stopped at calibration</text>
 <text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53636f">Green means predicted; red means withheld. All dates are UTC.</text>

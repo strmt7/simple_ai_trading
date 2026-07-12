@@ -1,18 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="500" viewBox="0 0 980 500" role="img" aria-labelledby="title desc">
-<title id="title">Round 33 calibration eligibility</title>
-<desc id="desc">No risk profile reached policy eligibility because the architecture gate failed before threshold selection.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="520" viewBox="0 0 1080 520" role="img" aria-labelledby="title desc">
+<title id="title">Round 34 calibration policy eligibility</title>
+<desc id="desc">Conservative had zero eligible rows, regular had ten, and aggressive had thirty-nine; architecture rejection prevented threshold selection.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">No profile received a tradable signal</text>
-<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Calibration: 2023-06-21 to 2023-06-25 UTC; 28,581 event rows.</text>
-<rect x="110" y="125" width="780" height="260" fill="#ffffff" stroke="#d7e0e6"/>
-<circle cx="240" cy="250" r="52" fill="#ffffff" stroke="#147d70" stroke-width="8"/>
-<text x="240" y="264" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#263640">0</text>
-<text x="240" y="337" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#344750">Conservative</text>
-<circle cx="490" cy="250" r="52" fill="#ffffff" stroke="#3d6f99" stroke-width="8"/>
-<text x="490" y="264" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#263640">0</text>
-<text x="490" y="337" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#344750">Regular</text>
-<circle cx="740" cy="250" r="52" fill="#ffffff" stroke="#bd6645" stroke-width="8"/>
-<text x="740" y="264" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700" fill="#263640">0</text>
-<text x="740" y="337" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#344750">Aggressive</text>
-<text x="48" y="450" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">Zero is the fail-closed result, not evidence that no market opportunities existed.</text>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Some actions cleared policy gates, but none were authorized</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Calibration: 2023-06-21 to 2023-06-25 UTC; architecture gates run before threshold economics.</text>
+<line x1="260" y1="125" x2="260" y2="400" stroke="#9aa8b2"/>
+<text x="48" y="177" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#344750">Conservative</text>
+<rect x="260" y="150" width="650" height="42" fill="#edf1f4"/>
+<rect x="260" y="150" width="0.0" height="42" fill="#147d70"/>
+<text x="930" y="179" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#263640">0</text>
+<text x="48" y="267" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#344750">Regular</text>
+<rect x="260" y="240" width="650" height="42" fill="#edf1f4"/>
+<rect x="260" y="240" width="166.7" height="42" fill="#3d6f99"/>
+<text x="930" y="269" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#263640">10</text>
+<text x="48" y="357" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#344750">Aggressive</text>
+<rect x="260" y="330" width="650" height="42" fill="#edf1f4"/>
+<rect x="260" y="330" width="650.0" height="42" fill="#bd6645"/>
+<text x="930" y="359" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#263640">39</text>
+<text x="48" y="452" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Eligible rows are diagnostics only: the negative ranked tails stopped threshold selection.</text>
+<text x="48" y="482" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">No threshold trace, backtest trade, leverage, testnet order, or live order was produced.</text>
 </svg>

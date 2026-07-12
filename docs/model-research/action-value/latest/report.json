@@ -1,10 +1,10 @@
 {
-  "artifact_class": "selective_action_viability_graph_data",
+  "artifact_class": "three_action_utility_viability_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1847,
+      "bytes": 2063,
       "path": "README.md",
-      "sha256": "c6439ff7547ccb4169c99bfac8079d5d2362968a53c6b4cd83f233dc867b95fd"
+      "sha256": "bd2f96d7f4ea6d4041c096afc46f76917d8e904a5c8e99816dff2d13cb6cde80"
     },
     {
       "bytes": 397,
@@ -13,73 +13,77 @@
       "sha256": "ba3bc337252e2302a030b2ae25083b625f8148cb1e4455342778f3c10a26819a"
     },
     {
-      "bytes": 409,
+      "bytes": 411,
       "path": "profiles.csv",
       "row_count": 3,
-      "sha256": "fa835f93e15a2e580b5278f366684c76f671d669ead43cac7a728cc94614ebb7"
+      "sha256": "98411dfa6500220e626cd33524a73126b8e2b18597461b4e37210a180b9161ad"
     },
     {
-      "bytes": 367,
+      "bytes": 592,
       "path": "architecture.csv",
-      "row_count": 4,
-      "sha256": "73c4950cb2140a53af24aead45337cd463ec5ef2cb115b3ea6788e7eba2bea60"
+      "row_count": 7,
+      "sha256": "e711ef8482e27eee8b30d41becc4d889a41d8122284e65fd4e6a72cebc704294"
     },
     {
-      "bytes": 818,
+      "bytes": 893,
       "path": "forecast.csv",
-      "row_count": 5,
-      "sha256": "5f77684afc00cd8d1b19562c061acb75361590f833b4a0c85f167d4e91e38f25"
+      "row_count": 6,
+      "sha256": "b0d6a4752e0e7943b011a427bc21a0298066d67476a08077dc48dcdb492f7707"
     },
     {
-      "bytes": 1199,
+      "bytes": 1496,
       "path": "models.csv",
       "row_count": 3,
-      "sha256": "d3b6214b890fef2b0323c4ddf507e9a5d9276681cf6582e2759a23d54ae9055b"
+      "sha256": "88aeeb94b40e5f31e718a9257ad77d004246cd605c86fc838b33905a0827f4a9"
     },
     {
-      "bytes": 9822,
+      "bytes": 10635,
       "path": "progress.csv",
-      "row_count": 33,
-      "sha256": "b6e1d4b3f196a0b157debf0931d41fc4cd9445045cace75a56c7807ff4435051"
+      "row_count": 34,
+      "sha256": "ab65128b10a5ade409624540731092e02f8736a3494f20630af67d6e23a73e76"
     },
     {
-      "bytes": 4280,
+      "bytes": 4284,
       "path": "charts/stage-access.svg",
-      "sha256": "28645b25b62c18a539c46fa7a8a25b9414218c07150b455274e0eaeac07baa51"
+      "sha256": "3957143039f8ae6077c5139e6bf3522412e0532c9a31aaad03bee54287a55124"
     },
     {
-      "bytes": 2031,
+      "bytes": 2360,
       "path": "charts/eligibility.svg",
-      "sha256": "10840a244c3d40589190256eaddf6f10c070cf7dcd85a9b217260ddf8d0e5173"
+      "sha256": "fe16730b9b2a15f8b80072dcf1dbe7a86aa3a9976898a7372ae239f9b86853ce"
     },
     {
-      "bytes": 3188,
+      "bytes": 6310,
       "path": "charts/architecture-gates.svg",
-      "sha256": "d37c5f8636efc1c938fa2f5132ea3d3f3f554052f2c80b9b31e6fd6fc1c90cc3"
+      "sha256": "1f6cd51fa3d70dbbf26a2593e4bbcce1cccc94a96024fcf1444da10004695a74"
     },
     {
-      "bytes": 4032,
+      "bytes": 4378,
       "path": "charts/forecast-quality.svg",
-      "sha256": "fa244ae33d183ac6306603d5468332e9ca2202ace4056d64380c0ee8c962c4c9"
+      "sha256": "ce708e8b2847c3a8897223090e0f6189d916dd25f2e46919186f5b3c8b09df24"
     },
     {
-      "bytes": 9438,
+      "bytes": 9666,
       "path": "charts/research-progress.svg",
-      "sha256": "6475f9a9935d8625f1a2c2b58306214dd666cc28fa0c5d916a13cea3f730bb6f"
+      "sha256": "e4435578797e279911a6ac954438d7e99d813f083a2f055709f57d0880907b72"
     }
   ],
-  "binding_sha256": "87efb279df39b6649579045b5bcc5e74b068dfe5801f6f07f940e0e4d4970b16",
-  "design_sha256": "bf5ec2c0b58b8d77f476ebc3d4427310fe1113c2f1b06c56acd91ab2c2611dcd",
+  "binding_sha256": "739b88e1527b5ff02cf9f5e9f61f0bed36e9b20909a1276d37195e7f8e368b0d",
+  "design_sha256": "61aea61eeec1ddc87aecb8b8fe17b915b8411760501e46eecf9c2f4e92ac5e03",
   "execution_claim": false,
   "final_profiles": [],
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "250c0c61b44759623f8495b6372290a47f7f2f2bab065c6639668d71760a6634",
-  "round": 33,
-  "schema_version": "selective-action-viability-publication-v1",
-  "source_report_canonical_sha256": "300c9d8aa82943ccf0b8843a8d22da3f171feccdcf3692438c04e92cad3136a8",
-  "source_report_file_sha256": "d200e8bdcf88fe5821b2ec31981e065a6b77e28b2e556d7103e2e258d73b016e",
+  "publication_sha256": "c7d2fcd86ed6b38b47ac4e4e6211d964344c5b8f5286573db004b9b65aecd090",
+  "round": 34,
+  "schema_version": "three-action-utility-viability-publication-v1",
+  "source_barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
+  "source_cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85",
+  "source_corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+  "source_implementation_commit": "18cdd663e5fa154c9c6a2521bea35a77eacbba02",
+  "source_report_canonical_sha256": "60f03a07e996230e8e278ef668fc7b9a1de35e1299fc7921e16a99fa51a53303",
+  "source_report_file_sha256": "467c7a1db23b3286921d1d3086f11fc8c4dd1483f9739f27943e6465ce630d34",
   "stage_access": {
     "calibration_prediction": true,
     "calibration_threshold_selection": false,
