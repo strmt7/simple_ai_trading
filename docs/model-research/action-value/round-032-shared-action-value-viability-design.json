@@ -1,9 +1,9 @@
 {
   "schema_version": "shared-action-value-viability-design-v1",
   "round": 32,
-  "design_revision": 2,
-  "design_revision_reason": "Explicitly require full-history inventory identity before implementation or data access; no model, window, gate, or result changed.",
-  "design_sha256": "190c9535c593618a6adf5845ad2b8743158689730ea5a12f6b7809af0d7cd1d6",
+  "design_revision": 3,
+  "design_revision_reason": "Make risk-profile provenance, tuning partitioning, label-uniqueness weighting, stage withholding, quantiles, and bounded runtime resources explicit before implementation binding or data access; no model family, window, gate, or result changed.",
+  "design_sha256": "8bf16aa1590d3f9cf616da84355a569c00897ad855cedff7d9fe04407cc5cea7",
   "purpose": "consumed_data_direction_canonical_shared_action_value_viability",
   "claims": {
     "execution_claim": false,
@@ -18,6 +18,13 @@
     "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e",
     "report_canonical_sha256": "b3195481f6541442051e3c06d640ee660a7bf55740abc5186037d486b9091371",
     "failure_analysis": "round-031-failure-analysis.json"
+  },
+  "risk_profiles_source": {
+    "path": "round-031-frozen-chronological-confirmation-design.json",
+    "file_sha256": "571497081d1635aa7e261645f5d58d6536aabc9e9f3acf9b7ec9cd6d7abce1bd",
+    "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e",
+    "section": "risk_profiles",
+    "modification_permitted": false
   },
   "governance": {
     "consumed_period_registry": "consumed-periods-through-round-031.json",
@@ -118,6 +125,13 @@
     "minimum_threshold_bps": 1.0,
     "minimum_activity_quota": null
   },
+  "sample_weighting": {
+    "method": "average_label_uniqueness",
+    "training_role": "train",
+    "tuning_role": "early_stop",
+    "computed_from": "decision_time_ms_and_maximum_realized_exit_time_ms",
+    "paired_action_rows_share_event_weight": true
+  },
   "model": {
     "candidate_id": "shared-direction-canonical-action-value-plus-advantage",
     "family": "shared_action_conditional_lightgbm_hurdle_with_signed_advantage_consensus",
@@ -146,6 +160,13 @@
       "selection_metric": "magnitude_weighted_directional_loss",
       "role": "side_consensus_only"
     },
+    "tuning_partition": {
+      "source_role": "early_stop",
+      "partition": "chronological_first_half_early_stopping_second_half_probability_calibration",
+      "calibration_fraction": 0.5,
+      "purge_rule": "early_stop_maximum_exit_time_strictly_before_calibration_start",
+      "minimum_rows_per_subpartition": 256
+    },
     "action_value": "p_positive_times_positive_magnitude_minus_one_minus_p_positive_times_nonpositive_loss_magnitude",
     "trade_eligibility": "chosen_shared_action_value_positive_and_lower_bound_above_profile_floor_and_probability_above_profile_floor_and_ensemble_agreement_and_signed_advantage_consensus",
     "seeds": [
@@ -166,6 +187,9 @@
       "max_bin": 127,
       "num_boost_round": 1500,
       "early_stopping_rounds": 100,
+      "lower_quantile": 0.1,
+      "upper_quantile": 0.9,
+      "calibration_fraction": 0.5,
       "gpu_use_dp_required": true,
       "backend": "opencl",
       "cpu_fallback_permitted": false
@@ -183,6 +207,42 @@
     "exact_non_overlapping_execution_required": true,
     "unfavorable_bbo_marking_required": true,
     "drawdown_penalty": 0.5
+  },
+  "stage_evaluation_order": {
+    "survival_scope": "per_risk_profile",
+    "later_stage_predictions_withheld_until_prior_stage_passes": true,
+    "thresholds_frozen_after_calibration": true,
+    "stages": [
+      {
+        "stage": "calibration",
+        "function": "threshold_selection",
+        "prior_stage_pass_required": null
+      },
+      {
+        "stage": "policy",
+        "function": "frozen_threshold_evaluation",
+        "prior_stage_pass_required": "calibration"
+      },
+      {
+        "stage": "development",
+        "function": "frozen_threshold_evaluation",
+        "prior_stage_pass_required": "policy"
+      },
+      {
+        "stage": "distant_confirmation",
+        "function": "frozen_threshold_and_forecast_evaluation",
+        "prior_stage_pass_required": "development"
+      }
+    ]
+  },
+  "runtime_resources": {
+    "maximum_process_memory_gib": 12,
+    "maximum_worker_threads": 16,
+    "accelerator_preflight": "directml",
+    "lightgbm_backend": "opencl",
+    "cpu_fallback_permitted": false,
+    "heartbeat_interval_seconds": 30,
+    "progress_status_atomic_write_required": true
   },
   "acceptance_gates": {
     "implementation": {
