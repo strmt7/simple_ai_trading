@@ -13,6 +13,7 @@ from tools.run_multi_horizon_signal_decay import (
     _daily_summary,
     _half_life,
     _memory_evidence,
+    load_signal_decay_binding,
     load_signal_decay_design,
 )
 
@@ -26,6 +27,7 @@ DESIGN = (
     / "round-036-multi-horizon-signal-decay-design.json"
 )
 BINDING_V1 = DESIGN.with_name("round-036-signal-decay-execution-binding-v1.json")
+BINDING = DESIGN.with_name("round-036-signal-decay-execution-binding.json")
 
 
 def test_round36_runner_loads_the_exact_frozen_budget() -> None:
@@ -77,6 +79,23 @@ def test_round36_v1_binding_remains_canonically_verifiable() -> None:
         "portfolio_claim": False,
         "leverage_applied": False,
     }
+
+
+def test_round36_current_binding_matches_hardened_implementation() -> None:
+    _design, design_sha = load_signal_decay_design(DESIGN)
+    binding, binding_sha = load_signal_decay_binding(
+        BINDING,
+        design_path=DESIGN,
+        design_sha256=design_sha,
+    )
+
+    assert binding_sha == (
+        "76bf3a8c39e658875c49bf91230c50322b3d37584492a05ee7aab4d01bcaead8"
+    )
+    assert binding["implementation"]["commit"] == (
+        "3c16bed56370c2dbf393fbb8dd19f54007419ee0"
+    )
+    assert len(binding["implementation"]["files"]) == 41
 
 
 def test_daily_summary_reports_defined_support_without_imputation() -> None:
