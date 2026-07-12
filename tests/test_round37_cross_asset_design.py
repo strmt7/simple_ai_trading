@@ -11,6 +11,7 @@ FAILURE = RESEARCH / "round-036-failure-analysis.json"
 REGISTRY35 = RESEARCH / "consumed-periods-through-round-035.json"
 REGISTRY36 = RESEARCH / "consumed-periods-through-round-036.json"
 DESIGN = RESEARCH / "round-037-cross-asset-cost-aware-ai-ablation-design.json"
+BINDING = RESEARCH / "round-037-cross-asset-ai-execution-binding.json"
 
 
 def _read(path: Path) -> dict[str, object]:
@@ -111,3 +112,26 @@ def test_round37_design_denies_promotion_leverage_and_future_access() -> None:
     ):
         assert governance[field] is False
     assert all(value is False for value in design["claims"].values())
+
+
+def test_round37_binding_is_hash_bound_to_implementation_blobs() -> None:
+    binding = _read(BINDING)
+    design = _read(DESIGN)
+
+    assert binding["binding_sha256"] == _canonical(binding, "binding_sha256")
+    assert binding["schema_version"] == (
+        "round-037-cross-asset-ai-execution-binding-v1"
+    )
+    assert binding["design_sha256"] == design["design_sha256"]
+    assert binding["implementation_commit"] == (
+        "b446ecd49c6f358be9de472ee4a653d7a368f7cc"
+    )
+    assert len(binding["blobs"]) == 12
+    paths = {item["path"] for item in binding["blobs"]}
+    assert {
+        "src/simple_ai_trading/ai_trade_veto.py",
+        "src/simple_ai_trading/cross_asset_cost_data.py",
+        "src/simple_ai_trading/cross_asset_cost_model.py",
+        "tools/run_cross_asset_cost_aware_ai_ablation.py",
+    } <= paths
+    assert all(value is False for value in binding["claims"].values())
