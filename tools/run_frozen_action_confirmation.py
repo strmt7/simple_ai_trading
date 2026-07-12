@@ -100,6 +100,13 @@ _ROUND30_DESIGN = (
 _ROUND30_DESIGN_SHA256 = (
     "2adfba2a377666e204b22d926d3d757a6b3c1a20d58c67a3455dabfedbad9623"
 )
+_CONSUMED_PERIODS = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "consumed-periods-through-round-012.json"
+)
 _SHARED_SECTIONS = (
     "execution",
     "barrier_targets",
@@ -236,6 +243,81 @@ def _validate_stage_contracts(data: Mapping[str, object]) -> None:
         raise ValueError("frozen confirmation data bounds differ from stages")
 
 
+def _date_range(first_value: object, last_value: object) -> set[str]:
+    first = _parse_date(first_value, label="consumed window start")
+    last = _parse_date(last_value, label="consumed window end")
+    if first > last:
+        raise ValueError("consumed window chronology is invalid")
+    return {
+        (first + timedelta(days=offset)).isoformat()
+        for offset in range((last - first).days + 1)
+    }
+
+
+def _validate_consumed_period_exclusions(
+    payload: Mapping[str, object],
+    data: Mapping[str, object],
+) -> None:
+    governance = payload.get("governance")
+    exclusions = data.get("excluded_target_dates")
+    if (
+        not isinstance(governance, Mapping)
+        or not _is_sha256(governance.get("consumed_period_registry_sha256"))
+        or not _is_sha256(
+            governance.get("consumed_period_registry_canonical_sha256")
+        )
+        or _sha256_file(_CONSUMED_PERIODS)
+        != governance["consumed_period_registry_sha256"]
+        or not isinstance(exclusions, list)
+    ):
+        raise ValueError("frozen confirmation consumed-period governance is invalid")
+    registry = _read_json(_CONSUMED_PERIODS, label="consumed-period registry")
+    canonical_registry = dict(registry)
+    claimed_registry = canonical_registry.pop("registry_sha256", None)
+    if (
+        claimed_registry
+        != governance["consumed_period_registry_canonical_sha256"]
+        or _canonical_sha256(canonical_registry) != claimed_registry
+    ):
+        raise ValueError("consumed-period registry canonical hash is invalid")
+    records = registry.get("records")
+    if not isinstance(records, list):
+        raise ValueError("consumed-period registry records are missing")
+    consumed: set[str] = set()
+    for record in records:
+        if not isinstance(record, Mapping) or not isinstance(
+            record.get("windows"), list
+        ):
+            raise ValueError("consumed-period registry record is invalid")
+        for window in record["windows"]:
+            if not isinstance(window, Mapping):
+                raise ValueError("consumed-period registry window is invalid")
+            consumed.update(_date_range(window.get("start_date"), window.get("end_date")))
+    declared: set[str] = set()
+    for exclusion in exclusions:
+        if (
+            not isinstance(exclusion, Mapping)
+            or exclusion.get("target_access_permitted") is not False
+            or not str(exclusion.get("reason") or "").strip()
+        ):
+            raise ValueError("frozen confirmation target exclusion is invalid")
+        value = _parse_date(exclusion.get("date"), label="excluded target").isoformat()
+        if value in declared:
+            raise ValueError("frozen confirmation target exclusion is duplicated")
+        declared.add(value)
+    stages = data["stages"]
+    evaluation_dates: set[str] = set()
+    context_dates: set[str] = set()
+    for stage in stages.values():
+        evaluation_dates.update(
+            _date_range(stage["evaluation_start"], stage["evaluation_end"])
+        )
+        context_dates.add(str(stage["context_start"]))
+    required = consumed & (evaluation_dates | context_dates)
+    if declared != required or consumed & evaluation_dates - declared:
+        raise ValueError("frozen confirmation consumed dates are not fully excluded")
+
+
 def load_frozen_confirmation_design(
     path: str | Path,
     *,
@@ -285,6 +367,7 @@ def load_frozen_confirmation_design(
     ):
         raise ValueError("frozen confirmation data contract is invalid")
     _validate_stage_contracts(data)
+    _validate_consumed_period_exclusions(payload, data)
     development = data["stages"]["development"]
     terminal_date = _parse_date(terminal.get("date"), label="terminal")
     if (
@@ -680,10 +763,28 @@ def _load_stage_dataset(
             volatility_multiplier=float(sampler["volatility_multiplier"]),
             minimum_threshold_bps=float(sampler["minimum_threshold_bps"]),
         )
+        excluded_dates = {
+            str(item["date"])
+            for item in data["excluded_target_dates"]
+            if first
+            <= _parse_date(item["date"], label="excluded target")
+            <= last
+        }
+        excluded_mask = np.zeros(dataset.rows, dtype=bool)
+        for excluded_date in excluded_dates:
+            excluded_first, excluded_last = _utc_day_bounds(
+                _parse_date(excluded_date, label="excluded target"),
+                _parse_date(excluded_date, label="excluded target"),
+            )
+            excluded_mask |= (
+                (dataset.decision_time_ms >= excluded_first)
+                & (dataset.decision_time_ms <= excluded_last)
+            )
         evaluation_mask = (
             event_mask
             & (dataset.decision_time_ms >= evaluation_start_ms)
             & (dataset.decision_time_ms < evaluation_end_ms)
+            & ~excluded_mask
         )
         event_indexes = np.flatnonzero(evaluation_mask).astype(np.int64)
         if len(event_indexes) < 256:
@@ -728,8 +829,16 @@ def _load_stage_dataset(
         "dataset": dataset,
         "targets": targets,
         "endpoints": endpoints,
-        "expected_days": _iso_days(
-            {"start": first.isoformat(), "end": last.isoformat()}
+        "expected_days": tuple(
+            day
+            for day in _iso_days(
+                {"start": first.isoformat(), "end": last.isoformat()}
+            )
+            if day
+            not in {
+                _iso_days({"start": value, "end": value})[0]
+                for value in excluded_dates
+            }
         ),
         "evidence": {
             "stage": stage_name,
@@ -737,6 +846,7 @@ def _load_stage_dataset(
             "evaluation_start": first.isoformat(),
             "evaluation_end": last.isoformat(),
             "next_unopened_date": next_day.isoformat(),
+            "excluded_target_dates": sorted(excluded_dates),
             "dataset_rows": dataset.rows,
             "event_rows": len(event_indexes),
             "valid_target_rows": targets.valid_rows,
@@ -999,6 +1109,16 @@ def run_frozen_action_confirmation(
         "policy_window_is_consumed": access["policy"],
         "development_window_is_consumed": access["development"],
         "stage_access": access,
+        "consumed_period_governance": {
+            "registry_file_sha256": design["governance"][
+                "consumed_period_registry_sha256"
+            ],
+            "registry_canonical_sha256": design["governance"][
+                "consumed_period_registry_canonical_sha256"
+            ],
+            "excluded_target_dates": design["data"]["excluded_target_dates"],
+            "all_consumed_dates_excluded_from_targets": True,
+        },
         "runtime_resources": runtime,
         "availability_plan": {
             "file_sha256": _sha256_file(Path(availability_plan_path)),

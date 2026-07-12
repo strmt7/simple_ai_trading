@@ -53,6 +53,14 @@ def _design() -> dict[str, object]:
             "coverage": [],
             "inventory_identities": [],
         },
+        "governance": {
+            "consumed_period_registry_sha256": runner._sha256_file(
+                runner._CONSUMED_PERIODS
+            ),
+            "consumed_period_registry_canonical_sha256": json.loads(
+                runner._CONSUMED_PERIODS.read_text(encoding="utf-8")
+            )["registry_sha256"],
+        },
         "feature_version": "l1-tape-causal-v8",
         "data": {
             "symbol": "BTCUSDT",
@@ -60,6 +68,18 @@ def _design() -> dict[str, object]:
             "market_type": "futures",
             "required_data_types": ["bookTicker", "trades"],
             "full_history_inventory_required": True,
+            "excluded_target_dates": [
+                {
+                    "date": "2024-02-05",
+                    "reason": "consumed Round 8 date; context only",
+                    "target_access_permitted": False,
+                },
+                {
+                    "date": "2024-03-15",
+                    "reason": "consumed Round 7 date; excluded from development",
+                    "target_access_permitted": False,
+                },
+            ],
             "start_date": "2023-12-31",
             "end_date": "2024-03-29",
             "stages": {
@@ -133,6 +153,21 @@ def test_design_loader_seals_round30_controls_and_nested_dates(tmp_path: Path) -
     )
     path.write_text(json.dumps(loaded), encoding="utf-8")
     with pytest.raises(ValueError, match="differs from sealed Round 30"):
+        runner.load_frozen_confirmation_design(path, require_current=False)
+
+
+def test_design_loader_rejects_consumed_date_in_development(tmp_path: Path) -> None:
+    design = _design()
+    design["data"]["excluded_target_dates"] = design["data"][
+        "excluded_target_dates"
+    ][:1]
+    design["design_sha256"] = _canonical_sha256(
+        {key: value for key, value in design.items() if key != "design_sha256"}
+    )
+    path = tmp_path / "design.json"
+    path.write_text(json.dumps(design), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="consumed dates are not fully excluded"):
         runner.load_frozen_confirmation_design(path, require_current=False)
 
 
