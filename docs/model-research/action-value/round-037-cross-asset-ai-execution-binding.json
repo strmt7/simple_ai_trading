@@ -1,5 +1,5 @@
 {
-  "binding_sha256": "43c25d8abb87ddea33b3ea2530365c9246b22cb966e02cdc6e7a9f41a7a3eaa2",
+  "binding_sha256": "26c2cc0eeef64e70d203829bb225cac50be82d215440b18198a2434ee8f6af90",
   "blobs": [
     {
       "bytes": 3833,
@@ -26,10 +26,10 @@
       "working_file_sha256": "9943f32edb7ebcf1e0e86d279496d67862a1971b16cb39f7b450bb31906e6e58"
     },
     {
-      "bytes": 26811,
-      "git_blob_oid": "3a2f58b41b32b338a1690eb3cb83be8944985ec7",
+      "bytes": 26790,
+      "git_blob_oid": "946b862d9dfb65ddb1fbd519b7753594fa47bcbe",
       "path": "src/simple_ai_trading/ai_trade_veto.py",
-      "working_file_sha256": "566fe8552ee258483dc132ccea2129946b36a4b1a8a8396a73413198fc330049"
+      "working_file_sha256": "8a317e8fff0d5368cf6defdaa169c20c737634cb93f8e1923383bd1e904ce6af"
     },
     {
       "bytes": 7484,
@@ -44,10 +44,10 @@
       "working_file_sha256": "b0e5bd8510510c640917f6b5a50e0c05d9eeeebdfc1fb5d48edf05127111dc98"
     },
     {
-      "bytes": 29029,
-      "git_blob_oid": "477ea9b8891307c040b727dceaf04653a2cdda20",
+      "bytes": 29048,
+      "git_blob_oid": "e04223d337843bd5182f19af7d0832279886f550",
       "path": "src/simple_ai_trading/cross_asset_cost_model.py",
-      "working_file_sha256": "7636dd093a859b76b3701ebb04057b06de60f91ce3729dd3709c92f3d517f2ee"
+      "working_file_sha256": "9fb5f9415c30e5cc81ba613ee768b6730e126af8167113697f8de48d58058de1"
     },
     {
       "bytes": 2500,
@@ -84,7 +84,7 @@
   "design_file_sha256": "db456b32cf85903861dcc95d56948e13f4f0ff28961c14db8631b930c9dcf769",
   "design_path": "docs/model-research/action-value/round-037-cross-asset-cost-aware-ai-ablation-design.json",
   "design_sha256": "f7ed6fb5921631eaa1c5b26fec0d09603e97e0ec9f02b4b8625fd77000bd3fe1",
-  "implementation_commit": "b446ecd49c6f358be9de472ee4a653d7a368f7cc",
+  "implementation_commit": "13379db93f661b7a201f580ef02244a6710e59b8",
   "round": 37,
   "schema_version": "round-037-cross-asset-ai-execution-binding-v1"
 }

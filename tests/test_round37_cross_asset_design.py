@@ -124,7 +124,7 @@ def test_round37_binding_is_hash_bound_to_implementation_blobs() -> None:
     )
     assert binding["design_sha256"] == design["design_sha256"]
     assert binding["implementation_commit"] == (
-        "b446ecd49c6f358be9de472ee4a653d7a368f7cc"
+        "13379db93f661b7a201f580ef02244a6710e59b8"
     )
     assert len(binding["blobs"]) == 12
     paths = {item["path"] for item in binding["blobs"]}
