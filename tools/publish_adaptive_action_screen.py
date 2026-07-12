@@ -37,7 +37,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct tools directory executi
     from run_outcome_mixture_screen import load_outcome_mixture_design
 
 
-PUBLICATION_SCHEMA_VERSION = "adaptive-action-screen-publication-v1"
+PUBLICATION_SCHEMA_VERSION = "adaptive-action-screen-publication-v2"
 _ROUND26_DESIGN_SHA256 = (
     "84112245cf1c6a7e93b678bdfea9f97e329772731bc2bdec97990773b6f92837"
 )
@@ -644,6 +644,83 @@ def _validated_round30_replay(
     }
     output["replay_sha256"] = _canonical_sha256(output)
     return output
+
+
+def _development_governance_correction(
+    *,
+    design: Mapping[str, object],
+    report: Mapping[str, object],
+    source_report_sha256: str,
+) -> dict[str, object]:
+    dataset = report.get("dataset")
+    forecast = report.get("forecast_diagnostics")
+    profiles = report.get("profile_results")
+    data = design.get("data")
+    terminal = design.get("reserved_terminal")
+    if (
+        not isinstance(dataset, Mapping)
+        or not isinstance(dataset.get("roles"), Mapping)
+        or not isinstance(forecast, Mapping)
+        or not isinstance(profiles, list)
+        or not isinstance(data, Mapping)
+        or not isinstance(data.get("roles"), Mapping)
+        or not isinstance(terminal, Mapping)
+        or report.get("development_window_is_consumed") is not False
+        or report.get("terminal_holdout_accessed") is not False
+    ):
+        raise ValueError("development-governance source evidence is incomplete")
+    role_evidence = dataset["roles"].get("development_evaluation")
+    role_contract = data["roles"].get("development_evaluation")
+    if (
+        not isinstance(role_evidence, Mapping)
+        or not isinstance(role_contract, Mapping)
+        or int(role_evidence.get("rows") or 0) <= 0
+        or str(role_evidence.get("start")) != str(role_contract.get("start"))
+        or str(role_evidence.get("end")) != str(role_contract.get("end"))
+        or forecast.get("development_base") is not None
+        or forecast.get("development_stress") is not None
+        or any(
+            not isinstance(profile, Mapping)
+            or profile.get("development_evaluated") is not False
+            or profile.get("development_result") is not None
+            for profile in profiles
+        )
+    ):
+        raise ValueError("development-governance correction evidence drifted")
+    correction: dict[str, object] = {
+        "schema_version": "adaptive-action-development-governance-correction-v1",
+        "artifact_class": "model_research_governance_correction",
+        "round": int(report["round"]),
+        "source_report_sha256": source_report_sha256,
+        "source_report_canonical_sha256": report["report_sha256"],
+        "finding": (
+            "The shared target builder materialized barrier labels for the declared "
+            "development role before the prediction gate. Development predictions "
+            "and profile metrics were not evaluated, but the window must be treated "
+            "as consumed under conservative model governance."
+        ),
+        "development_role": {
+            "start": role_contract["start"],
+            "end": role_contract["end"],
+            "labeled_rows": int(role_evidence["rows"]),
+            "labels_materialized": True,
+            "predictions_evaluated": False,
+            "profile_metrics_evaluated": False,
+            "window_is_consumed": True,
+        },
+        "terminal_holdout": {
+            "date": terminal["date"],
+            "included_in_dataset": bool(terminal["included_in_dataset"]),
+            "accessed": False,
+        },
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
+    correction["correction_sha256"] = _canonical_sha256(correction)
+    return correction
 
 
 def _forecast_rows(
@@ -1475,13 +1552,13 @@ def _gate_summary(
         )
         sentence = (
             f"Signals meeting pre-threshold controls appeared only for {eligible_text}; "
-            f"{empty_clause}{candidate_clause}, so no reused policy-validation simulated trade, development access, "
-            "leverage, or trading authority was permitted."
+            f"{empty_clause}{candidate_clause}, so no reused policy-validation simulated trade, "
+            "development prediction or profile evaluation, leverage, or trading authority was permitted."
         )
     else:
         sentence = (
             "All three risk profiles had zero signals meeting pre-threshold controls, so no "
-            "threshold, reused policy-validation simulated trade, development access, leverage, or trading "
+            "threshold, reused policy-validation simulated trade, development prediction or profile evaluation, leverage, or trading "
             "authority was permitted."
         )
     return {
@@ -1545,6 +1622,12 @@ def publish(
             design_path, require_current=False
         )
     report = _validated_evidence(evidence_root, design, design_sha256)
+    source_report_sha256 = _sha256(evidence_root / "report.json")
+    governance_correction = _development_governance_correction(
+        design=design,
+        report=report,
+        source_report_sha256=source_report_sha256,
+    )
     replay_integrity = _validated_round30_replay(
         evidence_root,
         report,
@@ -1576,13 +1659,16 @@ def publish(
             if name not in progress_fields:
                 progress_fields.append(name)
     diagnostics: dict[str, object] = {
-        "schema_version": "adaptive-action-publication-diagnostics-v1",
+        "schema_version": "adaptive-action-publication-diagnostics-v2",
         "artifact_class": "exchange_sourced_adaptive_action_evidence_no_authority",
         "design_sha256": design_sha256,
-        "source_report_sha256": _sha256(evidence_root / "report.json"),
+        "source_report_sha256": source_report_sha256,
         "source_report_canonical_sha256": report["report_sha256"],
         "terminal_holdout_accessed": False,
-        "development_window_is_consumed": False,
+        "development_window_is_consumed": True,
+        "development_labels_materialized": True,
+        "development_predictions_evaluated": False,
+        "development_profile_metrics_evaluated": False,
         "policy_validation_window_reused": True,
         "selection_contaminated": True,
         "trading_authority": False,
@@ -1595,6 +1681,7 @@ def publish(
         "barrier_rows": barrier_rows,
         "sampled_aggregate_depth_coverage": depth_coverage,
         "numeric_replay_integrity": replay_integrity,
+        "development_governance_correction": governance_correction,
         "source_report": {
             name: value
             for name, value in report.items()
@@ -1611,6 +1698,16 @@ def publish(
     _write_text(
         output_dir / "diagnostics.json",
         json.dumps(diagnostics, indent=2, sort_keys=True, allow_nan=False) + "\n",
+    )
+    _write_text(
+        output_dir / "governance-correction.json",
+        json.dumps(
+            governance_correction,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n",
     )
     if depth_coverage is not None:
         _write_text(
@@ -1748,6 +1845,11 @@ def publish(
             "substantive metric exactly reproduces revision 1."
         )
         replay_data_link = " | [replay integrity](replay-integrity.json)"
+    governance_table_row = (
+        "| Development governance | Labels materialized; predictions and profile "
+        "metrics not evaluated; window treated as consumed |\n"
+    )
+    governance_data_link = " | [governance correction](governance-correction.json)"
     if int(gate_summary["candidate_count"]) > 0:
         threshold_table_rows = (
             "| Positive threshold-selection stress simulations | "
@@ -1790,9 +1892,11 @@ def publish(
 | Thresholds evaluated / accepted | {int(gate_summary["candidate_count"]):,} / {int(gate_summary["accepted_count"]):,} |
 | Policy-validation simulated trades (reused window) | {int(gate_summary["policy_trades"]):,} |
 {threshold_table_rows}| Authorized / live-executed trades | 0 / 0 |
-{depth_table_row}{replay_table_row}
+{depth_table_row}{replay_table_row}{governance_table_row}
 
 **Research-governance warning:** the policy-validation window has been reused across rounds and is selection-contaminated. It is not independent out-of-sample or terminal evidence.
+
+**Development-window correction:** the shared target builder materialized barrier labels for the declared development dates. Predictions and profile metrics were not evaluated, but the window is conservatively treated as consumed. The reserved 2023-07-07 terminal day was outside the dataset and remains untouched.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
@@ -1808,9 +1912,9 @@ def publish(
 
 BTCUSDT, {design["data"]["start_date"]} through {design["data"]["end_date"]} UTC; {int(report["dataset"]["valid_barrier_rows"]):,} valid event labels from {int(report["dataset"]["rows"]):,} {dataset_description}. The simulation uses {int(execution["horizon_seconds"])} s positions, 100 ms paths, {int(execution["total_latency_ms"])} ms total latency, and {2 * (float(execution["taker_fee_bps_per_side"]) + float(execution["additional_slippage_bps_per_side"])):.0f} bps configured taker round-trip cost.{depth_method}{replay_method}
 
-{conclusion} {next_step} The development window and reserved 2023-07-07 terminal day remain untouched.
+{conclusion} {next_step} Development labels were materialized, but development predictions and profile metrics were not evaluated. The reserved 2023-07-07 terminal day remains untouched.
 
-Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json){depth_data_link}{replay_data_link} | [integrity report](report.json)
+Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [barrier-outcomes.csv](barrier-outcomes.csv) | [progress.csv](progress.csv) | [diagnostics.json](diagnostics.json){depth_data_link}{replay_data_link}{governance_data_link} | [integrity report](report.json)
 """
     _write_text(output_dir / "README.md", readme)
     generated = [
@@ -1821,6 +1925,7 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         output_dir / "barrier-outcomes.csv",
         output_dir / "progress.csv",
         output_dir / "diagnostics.json",
+        output_dir / "governance-correction.json",
         charts / "forecast-quality.svg",
         charts / "ranked-tail-economics.svg",
         charts / "pre-trade-risk-controls.svg",
@@ -1844,11 +1949,14 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
         "portfolio_claim": False,
         "leverage_applied": False,
         "terminal_holdout_accessed": False,
-        "development_window_is_consumed": False,
+        "development_window_is_consumed": True,
+        "development_labels_materialized": True,
+        "development_predictions_evaluated": False,
+        "development_profile_metrics_evaluated": False,
         "policy_validation_window_reused": True,
         "selection_contaminated": True,
         "design_sha256": design_sha256,
-        "source_report_sha256": _sha256(evidence_root / "report.json"),
+        "source_report_sha256": source_report_sha256,
         "source_report_canonical_sha256": report["report_sha256"],
         "implementation_commit": design["implementation"]["commit"],
         "corpus_certificate_sha256": report["corpus_certificate_sha256"],
@@ -1859,6 +1967,9 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
             if replay_integrity is not None
             else None
         ),
+        "governance_correction_sha256": governance_correction[
+            "correction_sha256"
+        ],
         "sampled_aggregate_depth_coverage_sha256": (
             depth_coverage["audit_sha256"] if depth_coverage is not None else None
         ),
@@ -1884,6 +1995,7 @@ Data: [forecast.csv](forecast.csv) | [profiles.csv](profiles.csv) | [thresholds.
             ],
             "policy_trades": gate_summary["policy_trades"],
             "development_evaluated": gate_summary["development_evaluated"],
+            "development_labels_materialized": True,
             "research_candidates": 0,
             "sampled_aggregate_depth_available_rows": (
                 depth_coverage["available_rows"] if depth_coverage is not None else None

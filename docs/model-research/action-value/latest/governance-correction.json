@@ -1,0 +1,28 @@
+{
+  "artifact_class": "model_research_governance_correction",
+  "correction_sha256": "8c52836417c13e051f8478bf44b65e52bc5bda9de0805b04e879eb478eee1bfd",
+  "development_role": {
+    "end": "2023-07-06",
+    "labeled_rows": 22992,
+    "labels_materialized": true,
+    "predictions_evaluated": false,
+    "profile_metrics_evaluated": false,
+    "start": "2023-07-01",
+    "window_is_consumed": true
+  },
+  "execution_claim": false,
+  "finding": "The shared target builder materialized barrier labels for the declared development role before the prediction gate. Development predictions and profile metrics were not evaluated, but the window must be treated as consumed under conservative model governance.",
+  "leverage_applied": false,
+  "portfolio_claim": false,
+  "profitability_claim": false,
+  "round": 30,
+  "schema_version": "adaptive-action-development-governance-correction-v1",
+  "source_report_canonical_sha256": "7634b03dd10805c3f45375dacc5feee3462316cd318e11e4bdd39d411a55fd23",
+  "source_report_sha256": "3a445c51fc3df205824b8edf760500a9aa86b123d2676b6b30f2a1ec289f8ec3",
+  "terminal_holdout": {
+    "accessed": false,
+    "date": "2023-07-07",
+    "included_in_dataset": false
+  },
+  "trading_authority": false
+}

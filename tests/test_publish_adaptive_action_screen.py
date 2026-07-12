@@ -9,6 +9,7 @@ import pytest
 import tools.publish_adaptive_action_screen as publisher
 from tools.publish_adaptive_action_screen import (
     _barrier_svg,
+    _development_governance_correction,
     _feature_set_identity,
     _funnel_svg,
     _forecast_svg,
@@ -23,6 +24,74 @@ from tools.publish_adaptive_action_screen import (
     _validated_round30_replay,
 )
 from tools.run_gross_architecture_screen import _canonical_sha256
+
+
+def test_development_governance_correction_marks_materialized_labels_consumed() -> None:
+    design = {
+        "data": {
+            "roles": {
+                "development_evaluation": {
+                    "start": "2023-07-01",
+                    "end": "2023-07-06",
+                }
+            }
+        },
+        "reserved_terminal": {
+            "date": "2023-07-07",
+            "included_in_dataset": False,
+        },
+    }
+    report = {
+        "round": 30,
+        "report_sha256": "b" * 64,
+        "development_window_is_consumed": False,
+        "terminal_holdout_accessed": False,
+        "dataset": {
+            "roles": {
+                "development_evaluation": {
+                    "start": "2023-07-01",
+                    "end": "2023-07-06",
+                    "rows": 2_000,
+                }
+            }
+        },
+        "forecast_diagnostics": {
+            "development_base": None,
+            "development_stress": None,
+        },
+        "profile_results": [
+            {
+                "development_evaluated": False,
+                "development_result": None,
+            }
+        ],
+    }
+
+    correction = _development_governance_correction(
+        design=design,
+        report=report,
+        source_report_sha256="a" * 64,
+    )
+
+    assert correction["development_role"] == {
+        "start": "2023-07-01",
+        "end": "2023-07-06",
+        "labeled_rows": 2_000,
+        "labels_materialized": True,
+        "predictions_evaluated": False,
+        "profile_metrics_evaluated": False,
+        "window_is_consumed": True,
+    }
+    assert correction["terminal_holdout"]["accessed"] is False
+    assert len(correction["correction_sha256"]) == 64
+
+    report["forecast_diagnostics"]["development_stress"] = {"rows": 2_000}
+    with pytest.raises(ValueError, match="correction evidence drifted"):
+        _development_governance_correction(
+            design=design,
+            report=report,
+            source_report_sha256="a" * 64,
+        )
 
 
 def _forecast_rows() -> list[dict[str, object]]:
