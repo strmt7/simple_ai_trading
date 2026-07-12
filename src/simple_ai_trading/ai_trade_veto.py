@@ -595,11 +595,13 @@ def benchmark_ai_veto_model(
     base_url: str = "http://127.0.0.1:11434",
     timeout_seconds: float = 60.0,
     progress: ProgressCallback | None = None,
+    prompt_builder: Callable[[AITradeCase], str] | None = None,
+    seed: int = 3701,
 ) -> AIModelVetoReport:
     """Replay one installed local model over an immutable case set."""
 
     if model not in AI_MODELS:
-        raise ValueError(f"model is not frozen for Round 37: {model}")
+        raise ValueError(f"model is not frozen for this AI ablation: {model}")
     if not cases:
         raise ValueError("AI veto benchmark requires at least one case")
     if len(cases) > MAX_CASES_PER_MODEL:
@@ -619,7 +621,12 @@ def benchmark_ai_veto_model(
                     "role": "system",
                     "content": "Return only valid JSON matching the supplied schema. Never increase risk.",
                 },
-                {"role": "user", "content": _prompt(case)},
+                {
+                    "role": "user",
+                    "content": (
+                        prompt_builder(case) if prompt_builder is not None else _prompt(case)
+                    ),
+                },
             ],
             "stream": False,
             "format": AI_SCHEMA,
@@ -629,7 +636,7 @@ def benchmark_ai_veto_model(
                 "temperature": 0,
                 "num_ctx": 4096,
                 "num_predict": 220,
-                "seed": 3701,
+                "seed": int(seed),
             },
         }
         started = time.perf_counter()
