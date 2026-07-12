@@ -1,28 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="560" viewBox="0 0 1300 560" role="img" aria-labelledby="title desc">
-<title id="title">Round 31 probability-of-profit discrimination</title>
-<desc id="desc">Adverse-stress ROC AUC by opened stage and side, with exact UTC windows and a chance reference at 0.5.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="590" viewBox="0 0 1260 590" role="img" aria-labelledby="title desc">
+<title id="title">Round 32 calibration forecast quality</title>
+<desc id="desc">Probability discrimination and selected-action ranked-tail economics on the calibration period.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="48" y="50" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Forecast discrimination across opened stages</text>
-<text x="48" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">ROC AUC is diagnostic evidence, not an after-cost profitability result.</text>
-<rect x="90" y="140" width="1140" height="280" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="90" y1="420.0" x2="1230" y2="420.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
-<text x="78" y="425.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">0.00</text>
-<line x1="90" y1="350.0" x2="1230" y2="350.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
-<text x="78" y="355.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">0.25</text>
-<line x1="90" y1="280.0" x2="1230" y2="280.0" stroke="#687985" stroke-width="2" stroke-dasharray="7 6"/>
-<text x="78" y="285.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">0.50</text>
-<line x1="90" y1="210.0" x2="1230" y2="210.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
-<text x="78" y="215.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">0.75</text>
-<line x1="90" y1="140.0" x2="1230" y2="140.0" stroke="#e6ebef" stroke-width="1" stroke-dasharray="none"/>
-<text x="78" y="145.0" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#60717f">1.00</text>
-<rect x="333.0" y="258.1" width="84.0" height="161.9" fill="#16827a"/>
-<text x="375.0" y="249.1" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263744">0.578</text>
-<text x="375.0" y="449" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#334653">Confirmation long</text>
-<text x="375.0" y="468" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#6b7882">2024-01-01 to 2024-02-04</text>
-<rect x="903.0" y="256.5" width="84.0" height="163.5" fill="#8d5aa7"/>
-<text x="945.0" y="247.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263744">0.584</text>
-<text x="945.0" y="449" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#334653">Confirmation short</text>
-<text x="945.0" y="468" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" fill="#6b7882">2024-01-01 to 2024-02-04</text>
-<text x="34" y="280" transform="rotate(-90 34 280)" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#51606d">ROC AUC</text>
-<text x="48" y="530" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#65727d">All dates are UTC. Brier score and ranked-tail data remain available in forecast.csv.</text>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Side classifiers did not produce tradable ranked tails</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Calibration: 2023-06-21 to 2023-06-25 UTC. Forecast metrics are not profitability claims.</text>
+<rect x="70" y="125" width="500" height="310" fill="#ffffff" stroke="#d7e0e6"/>
+<rect x="650" y="125" width="540" height="310" fill="#ffffff" stroke="#d7e0e6"/>
+<text x="90" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Probability-of-profit ROC AUC</text>
+<text x="670" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Selected-action stress mean</text>
+<rect x="115" y="231.6" width="86" height="158.4" fill="#147d70"/>
+<text x="158" y="222.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">0.634</text>
+<text x="158" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#344750">Long</text>
+<rect x="260" y="281.3" width="86" height="108.7" fill="#75569a"/>
+<text x="303" y="272.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">0.576</text>
+<text x="303" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#344750">Short</text>
+<rect x="405" y="338.8" width="86" height="51.2" fill="#bd6645"/>
+<text x="448" y="329.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">0.509</text>
+<text x="448" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#344750">Selected Action</text>
+<text x="670" y="224" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 100</text>
+<rect x="760" y="205" width="177.0" height="30" fill="#bc493e"/>
+<text x="947.0" y="226" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-6.32 bps</text>
+<text x="670" y="302" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 500</text>
+<rect x="760" y="283" width="301.2" height="30" fill="#bc493e"/>
+<text x="1071.2" y="304" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-10.76 bps</text>
+<text x="670" y="380" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">All</text>
+<rect x="760" y="361" width="323.0" height="30" fill="#bc493e"/>
+<text x="1093.0" y="382" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-11.54 bps</text>
+<text x="70" y="500" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Selected side AUC 0.5095; Pearson IC +0.0377; Spearman IC -0.0127.</text>
+<text x="70" y="532" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">Positive long classification did not offset weak side choice, negative rank correlation, or after-cost tail losses.</text>
 </svg>

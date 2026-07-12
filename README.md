@@ -525,20 +525,17 @@ Round-level implementation notes live under `docs/optimization/`. This repo no
 longer publishes ROI, P&L, drawdown, or chart claims unless they come from
 exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
-the rolling progress graph. The latest retained predictive-model evidence is
-[`action-value/latest`](docs/model-research/action-value/latest/README.md): Round
-31 froze the exact Round 30 LightGBM models and twelve thresholds before a fresh
-BTCUSDT confirmation window (`2024-01-01` through `2024-02-04` UTC). The run
-reconciled 3,042,271,724 official top-of-book updates into 13,300,347 causal
-one-second feature bars and produced 209,878 valid adaptive-barrier outcomes.
-Long/short ROC AUC was `0.5783`/`0.5839`, but ranked-tail economics did not
-support deployment. The strongest threshold produced `+79.5577` bps under the
-stress simulation over 28 simulated trades, with `371.5068` bps maximum
-drawdown and a `-148.4389` bps worst simulated trade; it failed the binding risk
-criteria. All conservative, regular, and aggressive candidates were rejected,
-so policy and development dates stayed unopened. The reserved `2024-03-30`
-terminal date was not ingested, queried, labeled, predicted, or evaluated. No
-leverage, trading authority, or profitability claim was produced.
+The latest predictive-model evidence is
+[`action-value/latest`](docs/model-research/action-value/latest/README.md). Round
+32 trained a symmetric, three-seed LightGBM ensemble on official BTCUSDT
+top-of-book and trade events from `2023-05-16` through `2023-07-06` UTC. It
+produced 877,894 causal one-second rows, 230,941 CUSUM events, and 229,000 valid
+adaptive-barrier outcomes. Calibration retained 0 conservative, 0 regular, and
+10 aggressive event rows. Selected-side AUC was `0.5095`, Spearman IC was
+`-0.0127`, and top-100/top-500 adverse-stress means were `-6.32`/`-10.76` bps.
+All profiles were rejected, so policy, development, and distant-confirmation
+predictions remained unopened. No leverage, trading authority, or profitability
+claim was produced.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

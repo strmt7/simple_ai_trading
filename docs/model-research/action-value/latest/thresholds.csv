@@ -1,0 +1,5 @@
+profile,quantile,threshold_bps,stress_trades,stress_total_net_bps,stress_mean_net_bps,stress_max_drawdown_bps,stress_worst_trade_bps,stress_profit_factor,stress_positive_day_ratio,base_total_net_bps,accepted,rejection_reasons
+aggressive,0.5,2.7739984499867676,5,-60.515292573181,-12.1030585146362,148.29070291810248,-56.18759519541236,0.5919144532843559,0.2,-58.0344498520091,False,minimum_trades_not_met;total_net_gate_failed;drawdown_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,0.7,3.0051549315045474,3,-34.47799967026742,-11.492666556755808,92.10310772269014,-48.28504191786372,0.6256586718650583,0.0,-34.47799967026742,False,minimum_trades_not_met;total_net_gate_failed;positive_day_ratio_gate_failed;profit_factor_gate_failed
+aggressive,0.85,3.5086727228554837,2,9.340066134558988,4.670033067279494,48.28504191786372,-48.28504191786372,1.1934360158669242,0.2,9.340066134558988,False,minimum_trades_not_met;positive_day_ratio_gate_failed
+aggressive,0.95,4.87639040686884,1,57.62510805242271,57.62510805242271,0.0,57.62510805242271,1000000000000.0,0.2,57.62510805242271,False,minimum_trades_not_met;positive_day_ratio_gate_failed

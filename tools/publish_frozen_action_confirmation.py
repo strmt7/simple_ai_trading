@@ -350,13 +350,12 @@ def _read_progress(path: Path) -> tuple[list[dict[str, str]], list[str]]:
         rounds = [int(row["round"]) for row in rows]
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("Round 31 prior progress lineage is invalid") from exc
-    if rounds != sorted(set(rounds)) or rounds[-1] not in {30, 31}:
+    if rounds != list(range(1, rounds[-1] + 1)) or rounds[-1] < 30:
         raise ValueError("Round 31 prior progress lineage is invalid")
-    if rounds[-1] == 31:
-        if len(rounds) < 2 or rounds[-2] != 30:
-            raise ValueError("Round 31 prior progress lineage is invalid")
-        rows = rows[:-1]
-    return rows, fields
+    prior_rows = [row for row in rows if int(row["round"]) <= 30]
+    if not prior_rows or int(prior_rows[-1]["round"]) != 30:
+        raise ValueError("Round 31 prior progress lineage is invalid")
+    return prior_rows, fields
 
 
 def _progress_rows(
@@ -646,7 +645,10 @@ def publish(
     prior_progress_path: Path,
     output_dir: Path,
 ) -> dict[str, object]:
-    design, design_sha256 = load_frozen_confirmation_design(design_path)
+    design, design_sha256 = load_frozen_confirmation_design(
+        design_path,
+        require_current=False,
+    )
     report = _validated_report(evidence_root, design, design_sha256)
     stages = _stage_rows(design, report)
     candidates = _candidate_rows(design, report)
