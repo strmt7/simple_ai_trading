@@ -1,0 +1,112 @@
+{
+  "binding_sha256": "4f34ab219424b70a859b0c5cbfe40e869fd80047cd8e9f3b4926ab9f275f6051",
+  "blobs": [
+    {
+      "git_blob_oid": "c4cce22566defccea38001b8ac326343237a26cd",
+      "path": "docs/model-research/action-value/consumed-periods-through-round-037.json"
+    },
+    {
+      "git_blob_oid": "75b0fa5b6a7977586452f43b001d747a9314d9d3",
+      "path": "docs/model-research/action-value/round-037-failure-analysis.json"
+    },
+    {
+      "git_blob_oid": "3f21c3e495af3b217feff744668cfd811054ae50",
+      "path": "docs/model-research/action-value/round-038-derivatives-hurdle-ai-ablation-design.json"
+    },
+    {
+      "git_blob_oid": "13eb81e0489ed63fa9fc4d35730d3fad8c0f982f",
+      "path": "pyproject.toml"
+    },
+    {
+      "git_blob_oid": "d761779f34ee70ab57cfbb4706fa59ed85224d46",
+      "path": "src/simple_ai_trading/ai_trade_veto.py"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "535b605c4afffa3afceda2f9050bebfb13402bf0",
+      "path": "src/simple_ai_trading/derivatives_ai_veto.py"
+    },
+    {
+      "git_blob_oid": "d1fa3048be1cebe4aaa8a94f0e1f3e35d5bc83bf",
+      "path": "src/simple_ai_trading/derivatives_archive.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "7ed3032f7f2d735fcba2f4ff2671051ebffaa93a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_model.py"
+    },
+    {
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c",
+      "path": "src/simple_ai_trading/lightgbm_backend.py"
+    },
+    {
+      "git_blob_oid": "8a82d100819eb33771cffa129179d16283b83509",
+      "path": "src/simple_ai_trading/market_store.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "bd37b0eb8279d10dc8b8ebb8beee3fda8cacaa73",
+      "path": "tests/test_derivatives_archive.py"
+    },
+    {
+      "git_blob_oid": "9c83b98842767b8f7bc960fa4d6242a554be14c6",
+      "path": "tests/test_derivatives_hurdle_model.py"
+    },
+    {
+      "git_blob_oid": "49b5737755e262ebeb5dddf11cb5a70df088169b",
+      "path": "tests/test_round38_derivatives_hurdle_design.py"
+    },
+    {
+      "git_blob_oid": "2d2bcc09b9634d509e99e4d717f3805d07345606",
+      "path": "tools/create_round38_derivatives_binding.py"
+    },
+    {
+      "git_blob_oid": "7991f393f7aec97e6d5c54eb82d124eb561352d2",
+      "path": "tools/ingest_round38_derivatives_archives.py"
+    },
+    {
+      "git_blob_oid": "d1328101c82b12789aab4c796aa96c6a86bcdc31",
+      "path": "tools/run_derivatives_hurdle_ai_ablation.py"
+    }
+  ],
+  "design_file_sha256": "a3198da8d0955a53284897184c36287d76ef6a0dc5e3388d441de0113766bf8f",
+  "design_path": "docs/model-research/action-value/round-038-derivatives-hurdle-ai-ablation-design.json",
+  "design_sha256": "7b4a6888cc8d4bc22b673881ab0e28b880cde82a5c18f7db13efe96308208520",
+  "execution": {
+    "candidate_count": 32,
+    "command": ".venv311\\Scripts\\python.exe tools\\run_derivatives_hurdle_ai_ablation.py --source-certificate <external-certificate.json> --evidence-root <new-external-evidence-root>",
+    "compute_backend": "auto_gpu_first_opencl",
+    "database": "data/market_data.sqlite",
+    "model_artifact_count": 96,
+    "source_period_end": "2025-06-30"
+  },
+  "governance": {
+    "bound_blob_identity_required": true,
+    "clean_worktree_required": true,
+    "implementation_must_be_ancestor_of_head": true,
+    "leverage_permitted": false,
+    "promotion_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "trading_authority_permitted": false
+  },
+  "implementation_commit": "3cb97fc0f3117321e2f22e1c074de0307464e2c4",
+  "round": 38,
+  "schema_version": "round-038-derivatives-hurdle-ai-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "ingestion_implementation_commit": "6be0a4738225c7d29a5b1f1da72209f1747e5b1c",
+    "path": "external://round38-derivatives-source-20260712-v2/certificate.json"
+  }
+}
