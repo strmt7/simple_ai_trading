@@ -34,6 +34,7 @@ BOUND_PATHS = (
     "tests/test_rolling_refit_ai_veto.py",
     "tests/test_rolling_refit_model.py",
     "tests/test_round39_causal_refit_design.py",
+    "tests/test_round39_execution_binding.py",
     "tools/create_round39_causal_refit_binding.py",
     "tools/run_causal_refit_utility_ai_ablation.py",
 )
