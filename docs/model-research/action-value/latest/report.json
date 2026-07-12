@@ -7,6 +7,7 @@
     "best_threshold_stress_total_net_bps": 135.76152097250065,
     "calibration_eligible_rows": 212,
     "development_evaluated": false,
+    "development_labels_materialized": true,
     "ensemble_models": 3,
     "maximum_threshold_candidate_trades": 12,
     "policy_trades": 0,
@@ -20,9 +21,9 @@
   "artifact_class": "exchange_sourced_adaptive_action_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 3310,
+      "bytes": 3914,
       "path": "README.md",
-      "sha256": "14b4b3355c9252a8a42cabf8b954f2cd4eefaa8f52991ca07804ba8a15171040"
+      "sha256": "8583a46f08b7834b4c309a2195e6d6bc21eccf1ae09f9e3ace11000f8be2660a"
     },
     {
       "bytes": 2476,
@@ -50,9 +51,14 @@
       "sha256": "2d516176cbc8824d25b008a2b12f3efbd68b0bdc2d643fb1e0305650bf1e6c93"
     },
     {
-      "bytes": 81648,
+      "bytes": 83105,
       "path": "diagnostics.json",
-      "sha256": "494405a18740c0c56f11b73bc68d39751c9e8b0fb3a9442dd5547e4b57dd0954"
+      "sha256": "38900616cfc3a9fbd9b5b564d7fc18cfe9305e1e3769509d69810daa52f2f891"
+    },
+    {
+      "bytes": 1225,
+      "path": "governance-correction.json",
+      "sha256": "a376802ac02e713a141fff5ed0421187aad9e2c39a50b02a7f9a8aad9dfa5775"
     },
     {
       "bytes": 4562,
@@ -94,19 +100,23 @@
   "corpus_certificate_sha256": "975692f08d730de22d628fc1f511ebf8fdcc1965f587eca75659657c2f2c33bd",
   "design_revision": 2,
   "design_sha256": "2adfba2a377666e204b22d926d3d757a6b3c1a20d58c67a3455dabfedbad9623",
-  "development_window_is_consumed": false,
-  "diagnostic_sha256": "6456b59743167398a2646891f399c914c65b0e01e772bc793c534caeb51bf256",
+  "development_labels_materialized": true,
+  "development_predictions_evaluated": false,
+  "development_profile_metrics_evaluated": false,
+  "development_window_is_consumed": true,
+  "diagnostic_sha256": "5533bfd519db64784d068fb230cfe1c3428137210a5f7382be926ac5a84122cc",
   "execution_claim": false,
+  "governance_correction_sha256": "8c52836417c13e051f8478bf44b65e52bc5bda9de0805b04e879eb478eee1bfd",
   "implementation_commit": "ea18acbca8244002d0e5c6910d793e303126502b",
   "leverage_applied": false,
   "numeric_replay_sha256": "8d32cf3c8c528919f8717260f4777a3b3bcf8502236d53ef945c8a294d531ed5",
   "policy_validation_window_reused": true,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "c14190d7324609952682d06dc9f47179f7148b22f486d756438512e386086eab",
+  "publication_sha256": "6173f37bf5239f976d402fbdda61bc2b2aeb8d39f52b9ed6984c671c9c8d8e08",
   "round": 30,
   "sampled_aggregate_depth_coverage_sha256": null,
-  "schema_version": "adaptive-action-screen-publication-v1",
+  "schema_version": "adaptive-action-screen-publication-v2",
   "selection_contaminated": true,
   "source_artifacts": [
     {

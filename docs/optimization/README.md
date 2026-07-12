@@ -45,7 +45,10 @@ Two latest-only research evidence tracks are retained. The predictive
 at Round 30: its three-seed LightGBM hurdle ensemble produced 12 positive
 threshold-selection stress simulations, but each contained only 1 to 12 trades
 and failed the precommitted sample-support gate, so it received no policy
-simulation, leverage, or trading authority. The independent execution-replay
+simulation, leverage, or trading authority. Its correction record marks the
+development window consumed because labels were materialized there, although
+development predictions and profile metrics were not evaluated; the terminal
+day remains untouched. The independent execution-replay
 [`tape-depth/latest`](../model-research/tape-depth/latest/README.md) track remains
 at Round 8. It evaluated the frozen BTCUSDT 20-second candidate on three
 untouched UTC dates using real one-second trade/depth features and exact 100 ms

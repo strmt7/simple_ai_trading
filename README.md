@@ -534,8 +534,8 @@ mixture with a three-seed OpenCL LightGBM hurdle ensemble on the exact same
 rows and 229,001 valid event labels. All 12 threshold-selection simulations were
 positive after stress costs, but only 1 to 12 trades survived against profile
 minimums of 12 to 20; even the best threshold-selection simulation
-(`+135.761521` bps from five trades)
-therefore failed sample-support gates. The long calibration top-100 mean was
+(`+135.761521` bps from five trades) therefore failed sample-support gates. The
+long calibration top-100 mean was
 `+7.578554` bps, while the reused policy window's short top-100 and top-500 means
 were `+17.883613` and `+4.697719` bps. Several broader ranked tails and Brier
 comparisons still failed. A numeric-contract replay reproduced the Round 26
@@ -543,8 +543,11 @@ target hash and Round 30 booster strings, iterations, forecasts, profiles, and
 threshold results exactly. The model was rejected with zero accepted
 thresholds, zero policy simulations, no leverage, and no trading authority.
 The repeatedly reused policy window is selection-contaminated and is not
-independent out-of-sample or terminal evidence; these results are not a
-profitability claim.
+independent out-of-sample or terminal evidence. A governance correction now
+marks the declared development window consumed because barrier labels were
+materialized across it, even though development predictions and profile metrics
+were not evaluated. The reserved 2023-07-07 terminal day remains untouched.
+These results are not a profitability claim.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
