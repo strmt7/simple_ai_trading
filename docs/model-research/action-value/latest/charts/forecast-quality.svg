@@ -1,31 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="590" viewBox="0 0 1260 590" role="img" aria-labelledby="title desc">
-<title id="title">Round 32 calibration forecast quality</title>
-<desc id="desc">Probability discrimination and selected-action ranked-tail economics on the calibration period.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="560" viewBox="0 0 1260 560" role="img" aria-labelledby="title desc">
+<title id="title">Round 33 factorized forecast diagnostics</title>
+<desc id="desc">Opportunity and conditional direction AUC beside selected-action information coefficients and ranked-tail returns.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Side classifiers did not produce tradable ranked tails</text>
-<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Calibration: 2023-06-21 to 2023-06-25 UTC. Forecast metrics are not profitability claims.</text>
-<rect x="70" y="125" width="500" height="310" fill="#ffffff" stroke="#d7e0e6"/>
-<rect x="650" y="125" width="540" height="310" fill="#ffffff" stroke="#d7e0e6"/>
-<text x="90" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Probability-of-profit ROC AUC</text>
-<text x="670" y="158" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Selected-action stress mean</text>
-<rect x="115" y="231.6" width="86" height="158.4" fill="#147d70"/>
-<text x="158" y="222.6" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">0.634</text>
-<text x="158" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#344750">Long</text>
-<rect x="260" y="281.3" width="86" height="108.7" fill="#75569a"/>
-<text x="303" y="272.3" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">0.576</text>
-<text x="303" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#344750">Short</text>
-<rect x="405" y="338.8" width="86" height="51.2" fill="#bd6645"/>
-<text x="448" y="329.8" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">0.509</text>
-<text x="448" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#344750">Selected Action</text>
-<text x="670" y="224" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 100</text>
-<rect x="760" y="205" width="177.0" height="30" fill="#bc493e"/>
-<text x="947.0" y="226" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-6.32 bps</text>
-<text x="670" y="302" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 500</text>
-<rect x="760" y="283" width="301.2" height="30" fill="#bc493e"/>
-<text x="1071.2" y="304" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-10.76 bps</text>
-<text x="670" y="380" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">All</text>
-<rect x="760" y="361" width="323.0" height="30" fill="#bc493e"/>
-<text x="1093.0" y="382" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-11.54 bps</text>
-<text x="70" y="500" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Selected side AUC 0.5095; Pearson IC +0.0377; Spearman IC -0.0127.</text>
-<text x="70" y="532" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">Positive long classification did not offset weak side choice, negative rank correlation, or after-cost tail losses.</text>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Directional ranking remained economically adverse</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Calibration: 2023-06-21 to 2023-06-25 UTC; no threshold or later role was evaluated.</text>
+<rect x="70" y="125" width="500" height="300" fill="#ffffff" stroke="#d7e0e6"/>
+<rect x="650" y="125" width="540" height="300" fill="#ffffff" stroke="#d7e0e6"/>
+<text x="92" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Discrimination</text>
+<text x="672" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Selected action</text>
+<text x="92" y="225" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#344750">Opportunity</text>
+<rect x="235" y="205" width="300" height="28" fill="#edf1f4"/>
+<rect x="235" y="205" width="289.3" height="28" fill="#147d70"/>
+<text x="545" y="225" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263640">0.6627</text>
+<text x="92" y="293" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#344750">Conditional Direction</text>
+<rect x="235" y="273" width="300" height="28" fill="#edf1f4"/>
+<rect x="235" y="273" width="127.3" height="28" fill="#bd6645"/>
+<text x="545" y="293" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263640">0.5436</text>
+<text x="92" y="361" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#344750">Selected Action</text>
+<rect x="235" y="341" width="300" height="28" fill="#edf1f4"/>
+<rect x="235" y="341" width="102.8" height="28" fill="#bd6645"/>
+<text x="545" y="361" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#263640">0.5256</text>
+<text x="672" y="205" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Pearson IC</text>
+<text x="1135" y="205" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#bc493e">+0.0160</text>
+<line x1="672" y1="218" x2="1135" y2="218" stroke="#e5ebef"/>
+<text x="672" y="260" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Spearman IC</text>
+<text x="1135" y="260" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#bc493e">-0.0328</text>
+<line x1="672" y1="273" x2="1135" y2="273" stroke="#e5ebef"/>
+<text x="672" y="315" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 100</text>
+<text x="1135" y="315" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#bc493e">-17.2361 bps</text>
+<line x1="672" y1="328" x2="1135" y2="328" stroke="#e5ebef"/>
+<text x="672" y="370" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 500</text>
+<text x="1135" y="370" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#bc493e">-12.7737 bps</text>
+<line x1="672" y1="383" x2="1135" y2="383" stroke="#e5ebef"/>
+<text x="70" y="486" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">The factorization improved opportunity AUC but did not create positive after-cost action ranking.</text>
+<text x="70" y="516" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">All values come from the hash-bound report; chart geometry is regenerated deterministically from the CSV data.</text>
 </svg>

@@ -21,17 +21,18 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def test_latest_action_value_publication_is_round32_hash_verified_and_accessible() -> None:
+def test_latest_action_value_publication_is_round33_hash_verified_and_accessible() -> None:
     report = json.loads((LATEST / "report.json").read_text(encoding="utf-8"))
     canonical = dict(report)
     claimed = canonical.pop("publication_sha256")
 
     assert claimed == _canonical_sha256(canonical)
-    assert report["schema_version"] == "shared-action-viability-publication-v1"
-    assert report["round"] == 32
+    assert report["schema_version"] == "selective-action-viability-publication-v1"
+    assert report["round"] == 33
     assert report["status"] == "rejected"
     assert report["stage_access"] == {
-        "calibration": True,
+        "calibration_prediction": True,
+        "calibration_threshold_selection": False,
         "policy": False,
         "development": False,
         "distant_confirmation": False,
@@ -56,12 +57,17 @@ def test_latest_action_value_publication_is_round32_hash_verified_and_accessible
 
     with (LATEST / "progress.csv").open("r", encoding="utf-8", newline="") as handle:
         progress = list(csv.DictReader(handle))
-    assert [int(row["round"]) for row in progress] == list(range(1, 33))
+    assert [int(row["round"]) for row in progress] == list(range(1, 34))
     assert progress[-1]["status"] == "rejected"
-    assert progress[-1]["calibration_eligible_rows"] == "10"
+    assert progress[-1]["calibration_eligible_rows"] == "0"
+    assert progress[-1]["calibration_threshold_traces"] == "0"
 
     assert not (LATEST / "candidates.csv").exists()
+    assert not (LATEST / "thresholds.csv").exists()
     assert not (LATEST / "charts" / "candidate-economics.svg").exists()
+    assert not (LATEST / "charts" / "threshold-economics.svg").exists()
+    assert (LATEST / "architecture.csv").is_file()
+    assert (LATEST / "charts" / "architecture-gates.svg").is_file()
     for chart in (LATEST / "charts").glob("*.svg"):
         document = ET.parse(chart).getroot()
         namespace = "{http://www.w3.org/2000/svg}"
@@ -73,6 +79,6 @@ def test_latest_action_value_publication_is_round32_hash_verified_and_accessible
         assert '="nan"' not in text
 
     readme = (LATEST / "README.md").read_text(encoding="utf-8")
-    assert "Round 32" in readme
-    assert "Round 31" not in readme
-    assert "not evidence of profitability" in readme
+    assert "Round 33" in readme
+    assert "Round 32" not in readme
+    assert "not a reason to loosen risk controls" in readme

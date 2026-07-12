@@ -1,0 +1,5 @@
+metric,observed,acceptance_operator,acceptance_gate,passed,population_rows,unit
+opportunity_roc_auc,0.6627259843484776,>=,0.65,True,28581,auc
+conditional_direction_roc_auc,0.5435849074896763,>=,0.55,False,15222,auc
+selected_top_100_mean_stress_net_bps,-17.236114294450953,>,0.0,False,100,bps
+selected_top_500_mean_stress_net_bps,-12.7737473850717,>,0.0,False,500,bps

@@ -1,87 +1,88 @@
 {
-  "artifact_class": "shared_action_viability_graph_data",
+  "artifact_class": "selective_action_viability_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 1716,
+      "bytes": 1847,
       "path": "README.md",
-      "sha256": "a81e4736d8dc730d2eddf2546f2bc4c440481be486dccf8da58ed8fd7925c3fd"
+      "sha256": "c6439ff7547ccb4169c99bfac8079d5d2362968a53c6b4cd83f233dc867b95fd"
     },
     {
-      "bytes": 407,
+      "bytes": 397,
       "path": "stages.csv",
       "row_count": 4,
-      "sha256": "2f8813ed05f5cd29d975fa2523e18ad27d72508d95f4f4c31c4ff3705e529765"
+      "sha256": "ba3bc337252e2302a030b2ae25083b625f8148cb1e4455342778f3c10a26819a"
     },
     {
-      "bytes": 382,
+      "bytes": 409,
       "path": "profiles.csv",
       "row_count": 3,
-      "sha256": "385658eccb558fa0771dd36e70bbcc83bcbbe322b0d0a2e5b321b52095bc67cd"
+      "sha256": "fa835f93e15a2e580b5278f366684c76f671d669ead43cac7a728cc94614ebb7"
     },
     {
-      "bytes": 1169,
-      "path": "thresholds.csv",
+      "bytes": 367,
+      "path": "architecture.csv",
       "row_count": 4,
-      "sha256": "d45a5ade71125f2383da619e65f42ca134a728223a76daa31d74c6678c23c7e2"
+      "sha256": "73c4950cb2140a53af24aead45337cd463ec5ef2cb115b3ea6788e7eba2bea60"
     },
     {
-      "bytes": 707,
+      "bytes": 818,
       "path": "forecast.csv",
-      "row_count": 3,
-      "sha256": "898a65936646968cef56cd640c207ee4915fa56974d915039ecfd29076f8f274"
+      "row_count": 5,
+      "sha256": "5f77684afc00cd8d1b19562c061acb75361590f833b4a0c85f167d4e91e38f25"
     },
     {
-      "bytes": 924,
+      "bytes": 1199,
       "path": "models.csv",
       "row_count": 3,
-      "sha256": "63c0f94dc2598f0b45185a93485f20094f4ff592fbcb47219ae10849b8e15a62"
+      "sha256": "d3b6214b890fef2b0323c4ddf507e9a5d9276681cf6582e2759a23d54ae9055b"
     },
     {
-      "bytes": 9439,
+      "bytes": 9822,
       "path": "progress.csv",
-      "row_count": 32,
-      "sha256": "bfab3ac8b9e6bcec0f1fd6b6a7d9d227f3f946a01cee15e0582a5fa97a783c1f"
+      "row_count": 33,
+      "sha256": "b6e1d4b3f196a0b157debf0931d41fc4cd9445045cace75a56c7807ff4435051"
     },
     {
-      "bytes": 4261,
+      "bytes": 4280,
       "path": "charts/stage-access.svg",
-      "sha256": "782db2d08e845ab7cf00b1feadcd67bd67210b49f63c52649000eebb1bc6853f"
+      "sha256": "28645b25b62c18a539c46fa7a8a25b9414218c07150b455274e0eaeac07baa51"
     },
     {
       "bytes": 2031,
       "path": "charts/eligibility.svg",
-      "sha256": "1b3c4d9da4ff3583cd34b37d051b6d97a691ab51f2fd96e9431380d4310bb836"
+      "sha256": "10840a244c3d40589190256eaddf6f10c070cf7dcd85a9b217260ddf8d0e5173"
     },
     {
-      "bytes": 4735,
-      "path": "charts/threshold-economics.svg",
-      "sha256": "252c808f72c473a7abca910ac0ff55dde18c5a3696b04b50547978462fe1278c"
+      "bytes": 3188,
+      "path": "charts/architecture-gates.svg",
+      "sha256": "d37c5f8636efc1c938fa2f5132ea3d3f3f554052f2c80b9b31e6fd6fc1c90cc3"
     },
     {
-      "bytes": 3522,
+      "bytes": 4032,
       "path": "charts/forecast-quality.svg",
-      "sha256": "9abdfe0092ebf829e4ce6ba9fb5820d0c201f65007719553b7a32954e3a54e3b"
+      "sha256": "fa244ae33d183ac6306603d5468332e9ca2202ace4056d64380c0ee8c962c4c9"
     },
     {
-      "bytes": 9209,
+      "bytes": 9438,
       "path": "charts/research-progress.svg",
-      "sha256": "9e1b5f9c29f869d41f8098f3a085b829cf8973c1255f5d3449892d8c45529199"
+      "sha256": "6475f9a9935d8625f1a2c2b58306214dd666cc28fa0c5d916a13cea3f730bb6f"
     }
   ],
-  "binding_sha256": "aebaec70a8dfa5772abacd4ce0fc3f41a6e8bb718483923de27cb7196b9513d6",
-  "design_sha256": "5c8b2ac3618cdeec16dd4a8d21e5792cc4ea4bc26a645bf9ec00bd3997d3ca68",
+  "binding_sha256": "87efb279df39b6649579045b5bcc5e74b068dfe5801f6f07f940e0e4d4970b16",
+  "design_sha256": "bf5ec2c0b58b8d77f476ebc3d4427310fe1113c2f1b06c56acd91ab2c2611dcd",
   "execution_claim": false,
   "final_profiles": [],
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "fd036422a93ccb16d487c35a4222ef1e6b8bff328e3a28a54bbb8d2c8651ed95",
-  "round": 32,
-  "schema_version": "shared-action-viability-publication-v1",
-  "source_report_canonical_sha256": "e1dee0db73d2729aecfb09ea2f9c8abbd7f41a5985dd6dbd87de4e1575710552",
-  "source_report_file_sha256": "4d6c55dcfb339fd631b2685bff9b6a0d09ecd42e7e6c364e0008c427fb1da712",
+  "publication_sha256": "250c0c61b44759623f8495b6372290a47f7f2f2bab065c6639668d71760a6634",
+  "round": 33,
+  "schema_version": "selective-action-viability-publication-v1",
+  "source_report_canonical_sha256": "300c9d8aa82943ccf0b8843a8d22da3f171feccdcf3692438c04e92cad3136a8",
+  "source_report_file_sha256": "d200e8bdcf88fe5821b2ec31981e065a6b77e28b2e556d7103e2e258d73b016e",
   "stage_access": {
-    "calibration": true,
+    "calibration_prediction": true,
+    "calibration_threshold_selection": false,
     "development": false,
     "distant_confirmation": false,
     "policy": false
