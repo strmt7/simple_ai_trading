@@ -76,7 +76,7 @@ class ReplayMetrics:
     mean_net_bps: float
     median_net_bps: float
     positive_rate: float
-    profit_factor: float
+    profit_factor: float | None
     median_monthly_net_bps: float
     negative_month_fraction: float
     day_block_bootstrap_mean_net_bps_lower_95: float | None
@@ -600,11 +600,7 @@ def replay_nonoverlapping(
         raise ValueError(f"replay produced {nonfinite} non-finite outcomes")
     positive_sum = float(np.sum(net[net > 0.0]))
     negative_sum = float(np.sum(net[net < 0.0]))
-    profit_factor = (
-        positive_sum / abs(negative_sum)
-        if negative_sum < 0.0
-        else float("inf") if positive_sum > 0.0 else 0.0
-    )
+    profit_factor = positive_sum / abs(negative_sum) if negative_sum < 0.0 else None
     role_spec = role_by_name(role)
     first_day = datetime.fromisoformat(role_spec.start).replace(tzinfo=UTC)
     last_day = datetime.fromisoformat(role_spec.end).replace(tzinfo=UTC)
@@ -735,7 +731,10 @@ def evaluate_candidates(
             reasons.append("viability_mean_net_bps<=0")
         if viability_replay.median_monthly_net_bps <= 0.0:
             reasons.append("viability_median_monthly_net_bps<=0")
-        if viability_replay.profit_factor < 1.05:
+        if (
+            viability_replay.profit_factor is not None
+            and viability_replay.profit_factor < 1.05
+        ):
             reasons.append("viability_profit_factor<1.05")
         if viability_replay.negative_month_fraction > 0.45:
             reasons.append("viability_negative_month_fraction>0.45")

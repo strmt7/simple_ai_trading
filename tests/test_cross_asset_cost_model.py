@@ -165,6 +165,7 @@ def test_nonoverlap_replay_rejects_overlapping_candidates_and_charges_cost() -> 
     assert replay.trades_by_symbol == {symbol: 3 for symbol in SYMBOLS}
     assert replay.mean_net_bps == 13.0
     assert replay.total_net_bps == 117.0
+    assert replay.profit_factor is None
 
 
 def test_ai_veto_schema_is_bounded_and_failure_is_zero_risk() -> None:
