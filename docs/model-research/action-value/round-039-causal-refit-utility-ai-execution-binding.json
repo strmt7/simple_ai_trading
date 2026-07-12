@@ -1,0 +1,119 @@
+{
+  "binding_sha256": "28272e597007215bb3063219171f42d670ec43145c0eb748f2426e14de37abda",
+  "blobs": [
+    {
+      "git_blob_oid": "bf349a677058ab151268e412286838610f557178",
+      "path": "docs/model-research/action-value/consumed-periods-through-round-038.json"
+    },
+    {
+      "git_blob_oid": "1d6f5ef3d38079307094edd42fa5e9adfd490630",
+      "path": "docs/model-research/action-value/round-038-failure-analysis.json"
+    },
+    {
+      "git_blob_oid": "2687176086ed772dc439eddb8cb2c17a45fca996",
+      "path": "docs/model-research/action-value/round-039-causal-refit-utility-ai-ablation-design.json"
+    },
+    {
+      "git_blob_oid": "13eb81e0489ed63fa9fc4d35730d3fad8c0f982f",
+      "path": "pyproject.toml"
+    },
+    {
+      "git_blob_oid": "d761779f34ee70ab57cfbb4706fa59ed85224d46",
+      "path": "src/simple_ai_trading/ai_trade_veto.py"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "52959f03610f05ad7dfe66578e0451dca5401bb1",
+      "path": "src/simple_ai_trading/derivatives_hurdle_model.py"
+    },
+    {
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c",
+      "path": "src/simple_ai_trading/lightgbm_backend.py"
+    },
+    {
+      "git_blob_oid": "8a82d100819eb33771cffa129179d16283b83509",
+      "path": "src/simple_ai_trading/market_store.py"
+    },
+    {
+      "git_blob_oid": "fae9e2c33f746604b052ca969bc1779b422dc3ca",
+      "path": "src/simple_ai_trading/rolling_refit_ai_veto.py"
+    },
+    {
+      "git_blob_oid": "ff60079a704228af968d7465fc34a1b5d3bbb367",
+      "path": "src/simple_ai_trading/rolling_refit_model.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "ae3cf67760818bb29ebdd8ceec82182c30cd0800",
+      "path": "tests/test_rolling_refit_ai_veto.py"
+    },
+    {
+      "git_blob_oid": "6b11b1732ac414cde416da45dc24c1d8b79a9238",
+      "path": "tests/test_rolling_refit_model.py"
+    },
+    {
+      "git_blob_oid": "d98464f320e3d5500ff1a649d5e5688268b92934",
+      "path": "tests/test_round39_causal_refit_design.py"
+    },
+    {
+      "git_blob_oid": "5e480244392d81f2333c778f4256c54ae2edb01c",
+      "path": "tests/test_round39_execution_binding.py"
+    },
+    {
+      "git_blob_oid": "8b83ab66b0229be6331001d19dc8b512842f1d1a",
+      "path": "tools/create_round39_causal_refit_binding.py"
+    },
+    {
+      "git_blob_oid": "5bbb5f24fa06f6b94e737bc6c3b49a22a32132fe",
+      "path": "tools/run_causal_refit_utility_ai_ablation.py"
+    }
+  ],
+  "design_file_sha256": "8b5d64f6a9b05784665e315ef29e5bc796e8fdd8664bb89c3a1f281f9402a28b",
+  "design_path": "docs/model-research/action-value/round-039-causal-refit-utility-ai-ablation-design.json",
+  "design_sha256": "cdfca0f55652737c10ed441ce88b5ab9a8e45499a24bd49a362609ee2e800a64",
+  "execution": {
+    "ai_batch_size": 12,
+    "ai_models": [
+      "qwen3:8b",
+      "fino1:8b"
+    ],
+    "candidate_count": 4,
+    "command": ".venv311\\Scripts\\python.exe tools\\run_causal_refit_utility_ai_ablation.py --source-certificate <external-certificate.json> --evidence-root <new-external-evidence-root>",
+    "compute_backend": "auto_gpu_first_opencl",
+    "database": "data/market_data.sqlite",
+    "model_artifact_count": 60,
+    "monthly_refits": 6,
+    "source_period_end": "2025-06-30"
+  },
+  "governance": {
+    "bound_blob_identity_required": true,
+    "clean_worktree_required": true,
+    "implementation_must_be_ancestor_of_head": true,
+    "leverage_permitted": false,
+    "promotion_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "trading_authority_permitted": false
+  },
+  "implementation_commit": "f248e6d9ca61dae8f80a038adc628fea55dcf575",
+  "round": 39,
+  "schema_version": "round-039-causal-refit-utility-ai-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "ingestion_implementation_commit": "6be0a4738225c7d29a5b1f1da72209f1747e5b1c",
+    "path": "external://round38-derivatives-source-20260712-v2/certificate.json",
+    "source_round": 38
+  }
+}
