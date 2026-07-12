@@ -6,6 +6,7 @@ import argparse
 import ctypes
 from datetime import UTC, datetime
 import hashlib
+from importlib import metadata
 import json
 import os
 from pathlib import Path
@@ -426,6 +427,10 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             "kind": screen.backend_kind,
             "device": screen.backend_device,
             "gpu_first_requested": True,
+            "python_dependencies": {
+                package: metadata.version(package)
+                for package in ("lightgbm", "numpy", "scipy")
+            },
         },
         "source_evidence": dataset.source_evidence.asdict(),
         "dataset": {
