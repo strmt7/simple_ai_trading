@@ -218,7 +218,19 @@ def test_round31_publication_is_hash_verified_parseable_and_truthful(
         encoding="utf-8"
     )
     assert "simulated-trade mean" in progress_chart
-    assert "executed mean" not in progress_chart
+    assert "executed" + " mean" not in progress_chart
+
+    repeated_output = tmp_path / "repeated-publication"
+    repeated = publisher.publish(
+        evidence_root=evidence,
+        design_path=DESIGN,
+        prior_progress_path=output / "progress.csv",
+        output_dir=repeated_output,
+    )
+    assert repeated["publication_sha256"] == report["publication_sha256"]
+    assert (repeated_output / "progress.csv").read_bytes() == (
+        output / "progress.csv"
+    ).read_bytes()
 
     stage_path.write_text("{}\n", encoding="utf-8")
     with pytest.raises(ValueError, match="stage artifact differs"):

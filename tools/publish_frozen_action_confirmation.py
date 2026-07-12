@@ -344,8 +344,18 @@ def _read_progress(path: Path) -> tuple[list[dict[str, str]], list[str]]:
         reader = csv.DictReader(handle)
         rows = list(reader)
         fields = list(reader.fieldnames or ())
-    if not rows or not fields or int(rows[-1]["round"]) != 30:
+    if not rows or not fields:
         raise ValueError("Round 31 prior progress lineage is invalid")
+    try:
+        rounds = [int(row["round"]) for row in rows]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Round 31 prior progress lineage is invalid") from exc
+    if rounds != sorted(set(rounds)) or rounds[-1] not in {30, 31}:
+        raise ValueError("Round 31 prior progress lineage is invalid")
+    if rounds[-1] == 31:
+        if len(rounds) < 2 or rounds[-2] != 30:
+            raise ValueError("Round 31 prior progress lineage is invalid")
+        rows = rows[:-1]
     return rows, fields
 
 
@@ -685,7 +695,7 @@ def publish(
 | Development window | 2024-03-06 to 2024-03-29 UTC; 2024-03-15 excluded |
 | Deepest opened stage | {deepest} |
 | Candidates in deepest stage / passed | {len(deepest_rows)} / {len(passing)} |
-| Best deepest-stage stress net return | {float(best['stress_total_net_bps']):+.2f} bps from {int(best['stress_trades'])} trades |
+| Best deepest-stage stress net return | {float(best['stress_total_net_bps']):+.2f} bps from {int(best['stress_trades'])} simulated trades |
 | Best deepest-stage maximum drawdown | {float(best['stress_max_drawdown_bps']):.2f} bps |
 | Final research profiles | {', '.join(report['final_profiles']) or 'none'} |
 | Authorized / live-executed trades | 0 / 0 |

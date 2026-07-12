@@ -550,7 +550,26 @@ Round 12 rejected that feature/model/execution family as a viable trading
 baseline and did not justify a full-history scale-up or an AI overlay. Its
 decision remains in the cumulative
 [`progress.csv`](model-research/action-value/latest/progress.csv); latest-only
-source tables, hashes, and charts now describe Round 30.
+source tables, hashes, and charts now describe Round 31.
+
+### Round 31 frozen chronological confirmation
+
+Round 31 evaluated the exact three-seed Round 30 LightGBM hurdle ensemble and
+all twelve frozen thresholds without retraining or recalibration. Its first
+precommitted stage covered `2024-01-01` through `2024-02-04` UTC and produced
+209,878 valid adaptive-barrier outcomes from official Binance trades and exact
+top-of-book archives. Long/short ROC AUC was `0.5783`/`0.5839`, but the ranked
+forecasts did not provide acceptable after-cost risk-adjusted performance.
+
+The strongest threshold produced `+79.5577` bps under the stress simulation
+over 28 simulated trades, but maximum drawdown was `371.5068` bps and the worst
+simulated trade was `-148.4389` bps. It failed the drawdown, positive-day-ratio,
+and worst-trade criteria. Every conservative, regular, and aggressive candidate
+was rejected, so policy and development targets, predictions, and metrics were
+withheld. The reserved `2024-03-30` terminal date was not ingested, queried,
+labeled, predicted, or evaluated. The verified source tables and charts are in
+[`action-value/latest`](model-research/action-value/latest/README.md); they grant
+no leverage, profitability claim, execution claim, or trading authority.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

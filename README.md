@@ -525,29 +525,20 @@ Round-level implementation notes live under `docs/optimization/`. This repo no
 longer publishes ROI, P&L, drawdown, or chart claims unless they come from
 exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
-The provenance audit permits only the latest per-iteration result graphs plus
 the rolling progress graph. The latest retained predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md): Round
-30 changed only the Round 26 predictor architecture, replacing the neural
-mixture with a three-seed OpenCL LightGBM hurdle ensemble on the exact same
-900-second target contract. The checksummed feature matrix contains 877,894
-rows and 229,001 valid event labels. All 12 threshold-selection simulations were
-positive after stress costs, but only 1 to 12 trades survived against profile
-minimums of 12 to 20; even the best threshold-selection simulation
-(`+135.761521` bps from five trades) therefore failed sample-support gates. The
-long calibration top-100 mean was
-`+7.578554` bps, while the reused policy window's short top-100 and top-500 means
-were `+17.883613` and `+4.697719` bps. Several broader ranked tails and Brier
-comparisons still failed. A numeric-contract replay reproduced the Round 26
-target hash and Round 30 booster strings, iterations, forecasts, profiles, and
-threshold results exactly. The model was rejected with zero accepted
-thresholds, zero policy simulations, no leverage, and no trading authority.
-The repeatedly reused policy window is selection-contaminated and is not
-independent out-of-sample or terminal evidence. A governance correction now
-marks the declared development window consumed because barrier labels were
-materialized across it, even though development predictions and profile metrics
-were not evaluated. The reserved 2023-07-07 terminal day remains untouched.
-These results are not a profitability claim.
+31 froze the exact Round 30 LightGBM models and twelve thresholds before a fresh
+BTCUSDT confirmation window (`2024-01-01` through `2024-02-04` UTC). The run
+reconciled 3,042,271,724 official top-of-book updates into 13,300,347 causal
+one-second feature bars and produced 209,878 valid adaptive-barrier outcomes.
+Long/short ROC AUC was `0.5783`/`0.5839`, but ranked-tail economics did not
+support deployment. The strongest threshold produced `+79.5577` bps under the
+stress simulation over 28 simulated trades, with `371.5068` bps maximum
+drawdown and a `-148.4389` bps worst simulated trade; it failed the binding risk
+criteria. All conservative, regular, and aggressive candidates were rejected,
+so policy and development dates stayed unopened. The reserved `2024-03-30`
+terminal date was not ingested, queried, labeled, predicted, or evaluated. No
+leverage, trading authority, or profitability claim was produced.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
