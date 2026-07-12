@@ -13,6 +13,10 @@ from simple_ai_trading.microstructure_action_architecture import (
 from simple_ai_trading.microstructure_shared_action_lightgbm import (
     SharedActionEnsembleBatch,
 )
+from tools.diagnose_round32_failure import (
+    _gate_breakdown,
+    _opportunity_diagnostics,
+)
 from tools.run_shared_action_viability import (
     _forecast_gate_reasons,
     _selected_action_diagnostics,
@@ -131,3 +135,25 @@ def test_selected_action_diagnostics_and_frozen_gates_are_directional() -> None:
     failed = dict(diagnostics)
     failed["side_choice_auc"] = 0.51
     assert "side_choice_auc_gate_failed" in _forecast_gate_reasons(failed, gates)
+
+
+def test_round32_failure_diagnostic_reconstructs_gates_and_opportunity_labels() -> None:
+    targets, ensemble = _diagnostic_bundle()
+    _design, _design_sha, profiles = load_round32_design(DESIGN)
+
+    breakdown = [_gate_breakdown(ensemble, profile) for profile in profiles]
+    opportunity = _opportunity_diagnostics(
+        ensemble,
+        np.asarray(targets.stress_long_net_bps),
+        np.asarray(targets.stress_short_net_bps),
+    )
+
+    assert [row["final_shared_action_eligible_rows"] for row in breakdown] == [
+        10,
+        10,
+        10,
+    ]
+    assert opportunity["any_profitable_rows"] == 10
+    assert opportunity["neither_profitable_rows"] == 0
+    assert opportunity["direction_auc_profitable_opportunity_rows"] == 1.0
+    assert len(opportunity["rankings"]) == 3
