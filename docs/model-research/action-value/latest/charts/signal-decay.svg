@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="720" viewBox="0 0 1420 720" role="img">
+<title>Short-horizon direction exists, then decays rapidly</title>
+<desc>Average-uniqueness-weighted ROC AUC on consumed BTCUSDT dates; no line is a trading policy.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:24px;font-weight:700;fill:#17202a}.subtitle{font-size:14px;fill:#4b5563}.label{font-size:13px;fill:#263238}.value{font-size:13px;font-weight:650;fill:#17202a}.axis{font-size:12px;fill:#64748b}.note{font-size:12px;fill:#6b7280}.grid{stroke:#d8dee7;stroke-width:1}.zero{stroke:#9f1239;stroke-width:2}.chance{stroke:#334155;stroke-width:2;stroke-dasharray:7 5}</style>
+<text x="48" y="42" class="title">Short-horizon direction exists, then decays rapidly</text>
+<text x="48" y="66" class="subtitle">Average-uniqueness-weighted ROC AUC on consumed BTCUSDT dates; no line is a trading policy.</text>
+<line x1="100" y1="597.3" x2="1340" y2="597.3" class="grid"/>
+<text x="86" y="601.3" text-anchor="end" class="axis">0.48</text>
+<line x1="100" y1="528.0" x2="1340" y2="528.0" class="chance"/>
+<text x="86" y="532.0" text-anchor="end" class="axis">0.50</text>
+<line x1="100" y1="389.3" x2="1340" y2="389.3" class="grid"/>
+<text x="86" y="393.3" text-anchor="end" class="axis">0.54</text>
+<line x1="100" y1="250.7" x2="1340" y2="250.7" class="grid"/>
+<text x="86" y="254.7" text-anchor="end" class="axis">0.58</text>
+<line x1="100" y1="112.0" x2="1340" y2="112.0" class="grid"/>
+<text x="86" y="116.0" text-anchor="end" class="axis">0.62</text>
+<polyline points="100.0,156.2 306.7,349.3 513.3,405.4 720.0,441.8 926.7,469.6 1133.3,497.2 1340.0,517.8" fill="none" stroke="#0f766e" stroke-width="4" opacity="1.0"/>
+<circle cx="100.0" cy="156.2" r="5" fill="#0f766e"/>
+<circle cx="306.7" cy="349.3" r="5" fill="#0f766e"/>
+<circle cx="513.3" cy="405.4" r="5" fill="#0f766e"/>
+<circle cx="720.0" cy="441.8" r="5" fill="#0f766e"/>
+<circle cx="926.7" cy="469.6" r="5" fill="#0f766e"/>
+<circle cx="1133.3" cy="497.2" r="5" fill="#0f766e"/>
+<circle cx="1340.0" cy="517.8" r="5" fill="#0f766e"/>
+<polyline points="100.0,166.6 306.7,353.1 513.3,409.4 720.0,444.4 926.7,469.9 1133.3,496.9 1340.0,516.7" fill="none" stroke="#2563eb" stroke-width="4" opacity="1.0"/>
+<circle cx="100.0" cy="166.6" r="5" fill="#2563eb"/>
+<circle cx="306.7" cy="353.1" r="5" fill="#2563eb"/>
+<circle cx="513.3" cy="409.4" r="5" fill="#2563eb"/>
+<circle cx="720.0" cy="444.4" r="5" fill="#2563eb"/>
+<circle cx="926.7" cy="469.9" r="5" fill="#2563eb"/>
+<circle cx="1133.3" cy="496.9" r="5" fill="#2563eb"/>
+<circle cx="1340.0" cy="516.7" r="5" fill="#2563eb"/>
+<polyline points="100.0,294.1 306.7,425.5 513.3,468.5 720.0,490.6 926.7,505.5 1133.3,520.9 1340.0,512.6" fill="none" stroke="#b45309" stroke-width="4" opacity="1.0"/>
+<circle cx="100.0" cy="294.1" r="5" fill="#b45309"/>
+<circle cx="306.7" cy="425.5" r="5" fill="#b45309"/>
+<circle cx="513.3" cy="468.5" r="5" fill="#b45309"/>
+<circle cx="720.0" cy="490.6" r="5" fill="#b45309"/>
+<circle cx="926.7" cy="505.5" r="5" fill="#b45309"/>
+<circle cx="1133.3" cy="520.9" r="5" fill="#b45309"/>
+<circle cx="1340.0" cy="512.6" r="5" fill="#b45309"/>
+<polyline points="100.0,320.6 306.7,440.7 513.3,466.6 720.0,513.7 926.7,533.1 1133.3,547.1 1340.0,531.6" fill="none" stroke="#7c3aed" stroke-width="4" opacity="1.0"/>
+<circle cx="100.0" cy="320.6" r="5" fill="#7c3aed"/>
+<circle cx="306.7" cy="440.7" r="5" fill="#7c3aed"/>
+<circle cx="513.3" cy="466.6" r="5" fill="#7c3aed"/>
+<circle cx="720.0" cy="513.7" r="5" fill="#7c3aed"/>
+<circle cx="926.7" cy="533.1" r="5" fill="#7c3aed"/>
+<circle cx="1133.3" cy="547.1" r="5" fill="#7c3aed"/>
+<circle cx="1340.0" cy="531.6" r="5" fill="#7c3aed"/>
+<polyline points="100.0,380.4 306.7,463.2 513.3,484.1 720.0,527.6 926.7,540.8 1133.3,581.5 1340.0,520.4" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,405.3 306.7,460.2 513.3,488.1 720.0,507.6 926.7,544.5 1133.3,586.7 1340.0,485.6" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,408.6 306.7,466.8 513.3,491.4 720.0,528.1 926.7,548.2 1133.3,557.2 1340.0,565.4" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,404.9 306.7,458.8 513.3,489.7 720.0,540.9 926.7,567.9 1133.3,578.4 1340.0,556.5" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,471.6 306.7,503.7 513.3,533.3 720.0,566.1 926.7,571.3 1133.3,585.7 1340.0,540.0" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,493.7 306.7,506.4 513.3,523.0 720.0,540.8 926.7,550.4 1133.3,559.2 1340.0,505.1" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,373.2 306.7,452.9 513.3,495.2 720.0,554.5 926.7,561.5 1133.3,577.6 1340.0,568.6" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,426.7 306.7,506.3 513.3,544.3 720.0,592.5 926.7,602.4 1133.3,640.4 1340.0,567.9" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<polyline points="100.0,492.8 306.7,556.2 513.3,586.9 720.0,631.5 926.7,675.7 1133.3,678.5 1340.0,565.1" fill="none" stroke="#cbd5e1" stroke-width="1.5" opacity="0.75"/>
+<text x="100.0" y="660" text-anchor="middle" class="axis">5s</text>
+<text x="306.7" y="660" text-anchor="middle" class="axis">15s</text>
+<text x="513.3" y="660" text-anchor="middle" class="axis">30s</text>
+<text x="720.0" y="660" text-anchor="middle" class="axis">60s</text>
+<text x="926.7" y="660" text-anchor="middle" class="axis">120s</text>
+<text x="1133.3" y="660" text-anchor="middle" class="axis">300s</text>
+<text x="1340.0" y="660" text-anchor="middle" class="axis">900s</text>
+<line x1="100" y1="690" x2="128" y2="690" stroke="#0f766e" stroke-width="4"/><text x="138" y="695" class="note">L1 imbalance</text>
+<line x1="350" y1="690" x2="378" y2="690" stroke="#2563eb" stroke-width="4"/><text x="388" y="695" class="note">Microprice offset</text>
+<line x1="600" y1="690" x2="628" y2="690" stroke="#b45309" stroke-width="4"/><text x="638" y="695" class="note">Normalized OFI</text>
+<line x1="850" y1="690" x2="878" y2="690" stroke="#7c3aed" stroke-width="4"/><text x="888" y="695" class="note">OFI 10s mean</text>
+<text x="1340" y="695" text-anchor="end" class="note">Gray lines: remaining prespecified signals.</text>
+</svg>

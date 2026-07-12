@@ -528,19 +528,16 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 35 compared six prespecified mirror-equivariant binary side-superiority
-LightGBM variants on the already-consumed BTCUSDT roles from `2023-05-16`
-through `2023-07-06` UTC. The certified corpus produced 877,894 causal
-one-second rows, 230,941 CUSUM events, and 229,000 valid adaptive-barrier
-outcomes. Direct direction learning improved the best pooled calibration ROC
-AUC from Round 34's `0.5245` to `0.5426`, but still failed the frozen `0.55`
-gate. The best broadly ranked top-500 stress mean remained `-4.02` bps. A
-different variant produced an isolated `+0.52` bps top-500 mean while its
-top-100 and confidence-ranked top-500 means were negative and it failed six of
-eight gates. All six variants were rejected; no policy/development metrics,
-architecture-freeze candidate, leverage, trading authority, or profitability
-claim was produced. This consumed-data screen covers BTCUSDT only and makes no
-ETHUSDT or SOLUSDT result claim.
+Round 36 measured 13 prespecified BTCUSDT L1/tape signals at seven horizons on
+five already-consumed June 2023 dates. L1 imbalance reached weighted ROC AUC
+`0.6073` at five seconds, with all five daily AUCs above chance and a measured
+half-life of about `14.6s`. That directional effect was not an economic edge:
+the best all-routed delayed taker mean was `-11.58` bps, the best top-100 mean
+was `-3.50` bps, and none of 819 causal regime slices was positive after the
+frozen spread, fee, slippage, and latency model. The lane is rejected for taker
+trading. No model was trained or selected, no leverage was applied, and no
+trading-authority, out-of-sample, ETHUSDT, SOLUSDT, or profitability claim was
+produced.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

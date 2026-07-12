@@ -1,34 +1,35 @@
-# Round 35: direct direction screen rejected
+# Round 36: direction exists, taker edge rejected
 
-**Rejected without a viability candidate or trading authority.** Six prespecified mirror-equivariant LightGBM variants were trained sequentially on the same consumed BTCUSDT roles. Direct binary side-superiority learning improved discrimination over Round 34, but no variant passed the complete stability and after-cost gate set.
+**The consumed BTCUSDT L1/tape lane is rejected for taker trading.** Short-horizon direction is measurable, but no prespecified signal, horizon, non-overlapping sample, ranked tail, or causal regime slice covered observed spread plus the frozen fee/slippage model.
 
 | Evidence | Verified result |
 | --- | ---: |
-| Source materialization | 2023-05-16 to 2023-07-06 UTC |
-| Calibration metrics | 2023-06-21 to 2023-06-25 UTC |
-| Causal one-second rows | 877,894 |
-| CUSUM events / valid barrier outcomes | 230,941 / 229,000 |
-| Calibration opportunity rows | 15,222 |
-| Variants / eligible variants | 6 / 0 |
-| Best pooled direction ROC AUC | 0.5426 (Full / uniqueness) |
-| Best daily minimum / median AUC | 0.4885 / 0.5504 |
-| Best frozen top-500 stress mean | +0.52 bps (No cycles / utility margin) |
-| Best frozen top-100 stress mean | -12.72 bps |
-| DirectML / LightGBM training | pass / OpenCL FP64 |
-| Architecture-freeze candidate | none |
+| Metric dates | 2023-06-21 to 2023-06-25 UTC |
+| Causal one-second rows / calibration events | 877,894 / 28,845 |
+| Signals x horizons | 13 x 7 = 91 |
+| Best weighted direction ROC AUC | 0.6073 (L1 imbalance, 5s) |
+| Daily minimum / median AUC | 0.5579 / 0.6040 |
+| Measured half-life | 14.63s (consumed role only) |
+| Best all-routed delayed taker mean | -11.58 bps |
+| Best top-100 / 500 / 1000 means | -3.50 / -10.01 / -10.66 bps |
+| Positive regime slices | 0 / 819 |
+| Peak / final working set | 8.96 / 0.76 GiB |
+| Model candidate / trading authority | none / none |
 
-![Direction AUC comparison](charts/direction-auc.svg)
+![Signal decay](charts/signal-decay.svg)
 
-![After-cost ranked tails](charts/after-cost-tails.svg)
+![Cost coverage](charts/cost-coverage.svg)
 
-![Daily direction AUC](charts/daily-direction-auc.svg)
+![After-cost tails](charts/after-cost-tails.svg)
 
-![Feature gain](charts/feature-gain.svg)
+![Daily direction](charts/daily-direction-auc.svg)
+
+![Placebo comparison](charts/placebo-comparison.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-The isolated positive `+0.52 bps` top-500 result belongs to the noncycle utility-margin variant, whose top-100 and confidence-ranked top-500 means were negative and which failed six of eight gates. It is not evidence of profitability. Full feature gain remained concentrated in OFI and deterministic cycle variables; removing cycles improved one ranked tail but reduced pooled and worst-day stability. Utility-margin weighting did not provide a consistent improvement.
+The strongest L1 imbalance and microprice effects decay to roughly half their excess AUC within 15 seconds. The largest signal-aligned gross mean across all 91 cells was only `+0.46` bps, while the frozen round-trip fee and adverse-slippage charge was approximately `12` bps. Leverage cannot repair negative unlevered expectancy.
 
-This screen is post-hoc discovery on already-consumed BTCUSDT dates. No ETHUSDT or SOLUSDT result, out-of-sample result, leverage, portfolio return, testnet/live execution, or profitability claim is permitted.
+This is post-hoc evidence on five already-consumed BTCUSDT dates. It contains no out-of-sample, ETHUSDT, SOLUSDT, model-training, portfolio-return, testnet/live-execution, or profitability claim.
 
-Data: [variants.csv](variants.csv) | [daily.csv](daily.csv) | [features.csv](features.csv) | [gates.csv](gates.csv) | [models.csv](models.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [signals.csv](signals.csv) | [daily.csv](daily.csv) | [regimes.csv](regimes.csv) | [ranked-event-outcomes.csv](ranked-event-outcomes.csv) | [decay.csv](decay.csv) | [horizon-support.csv](horizon-support.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)
