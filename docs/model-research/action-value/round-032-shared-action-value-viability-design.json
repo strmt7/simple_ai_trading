@@ -1,8 +1,9 @@
 {
   "schema_version": "shared-action-value-viability-design-v1",
   "round": 32,
-  "design_revision": 1,
-  "design_sha256": "163558bb7a79f57e04945ebbf52f961796fc56c892ff191d148698059759c4df",
+  "design_revision": 2,
+  "design_revision_reason": "Explicitly require full-history inventory identity before implementation or data access; no model, window, gate, or result changed.",
+  "design_sha256": "190c9535c593618a6adf5845ad2b8743158689730ea5a12f6b7809af0d7cd1d6",
   "purpose": "consumed_data_direction_canonical_shared_action_value_viability",
   "claims": {
     "execution_claim": false,
@@ -37,6 +38,7 @@
       "bookTicker",
       "trades"
     ],
+    "full_history_inventory_required": true,
     "feature_version": "l1-tape-causal-v8",
     "source_resolution": "official_event_level_bbo_and_trades_aggregated_causally_to_1s",
     "roles": {
