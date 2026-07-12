@@ -18,6 +18,7 @@ from tools.run_three_action_viability import (
     _architecture_gate_reasons,
     _calibration_architecture_diagnostics,
     load_round34_design,
+    load_round34_execution_binding,
 )
 
 
@@ -29,6 +30,7 @@ DESIGN = (
     / "action-value"
     / "round-034-three-action-utility-design.json"
 )
+BINDING = DESIGN.with_name("round-034-execution-binding.json")
 
 
 def _diagnostic_bundle() -> tuple[SimpleNamespace, ThreeActionEnsembleBatch]:
@@ -139,6 +141,21 @@ def test_round34_runner_rejects_unhashed_design_change(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="design hash"):
         load_round34_design(changed)
+
+
+def test_round34_execution_binding_matches_current_git_blobs() -> None:
+    _design, design_sha, _profiles = load_round34_design(DESIGN)
+    binding, binding_sha = load_round34_execution_binding(
+        BINDING,
+        design_path=DESIGN,
+        design_sha256=design_sha,
+    )
+
+    assert binding_sha == binding["binding_sha256"]
+    assert binding["implementation"]["commit"] == (
+        "18cdd663e5fa154c9c6a2521bea35a77eacbba02"
+    )
+    assert len(binding["implementation"]["files"]) == 28
 
 
 def test_round34_architecture_diagnostics_cover_both_probability_systems() -> None:
