@@ -1,0 +1,141 @@
+{
+  "schema_version": "selective-action-failure-analysis-v1",
+  "round": 33,
+  "analysis_sha256": "980711900ed3fc74e53078ece8c3b2a6563162f88e51f067270e3c69ab20f009",
+  "status": "rejected",
+  "source_evidence": {
+    "design_sha256": "bf5ec2c0b58b8d77f476ebc3d4427310fe1113c2f1b06c56acd91ab2c2611dcd",
+    "binding_sha256": "87efb279df39b6649579045b5bcc5e74b068dfe5801f6f07f940e0e4d4970b16",
+    "report_canonical_sha256": "300c9d8aa82943ccf0b8843a8d22da3f171feccdcf3692438c04e92cad3136a8",
+    "report_file_sha256": "d200e8bdcf88fe5821b2ec31981e065a6b77e28b2e556d7103e2e258d73b016e",
+    "diagnostic_canonical_sha256": "01976ad70984247506e02e646e5162add902030383da8e1eb0330a9de1e0287d",
+    "diagnostic_file_sha256": "bd32374bf6d8fc63b1913c94f0f249883f7795a9135f741dfcd258a4b8301521",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa"
+  },
+  "calibration_architecture": {
+    "rows": 28581,
+    "opportunity_rows": 15222,
+    "abstain_rows": 13359,
+    "opportunity_auc": 0.6627259843484776,
+    "opportunity_auc_gate": 0.65,
+    "conditional_direction_auc": 0.5435849074896763,
+    "conditional_direction_auc_gate": 0.55,
+    "selected_action_side_auc": 0.525611491586008,
+    "selected_action_pearson_ic": 0.015990727370410365,
+    "selected_action_spearman_ic": -0.032752497774197656,
+    "selected_top_100_mean_stress_net_bps": -17.236114294450953,
+    "selected_top_500_mean_stress_net_bps": -12.7737473850717,
+    "architecture_gates_passed": 1,
+    "architecture_gate_count": 4
+  },
+  "probability_diagnostics": {
+    "opportunity_probability_minimum": 0.0783784959979152,
+    "opportunity_probability_maximum": 0.8077794145489571,
+    "opportunity_brier_score": 0.2338287142129899,
+    "conditional_direction_probability_minimum": 0.496015621863938,
+    "conditional_direction_probability_maximum": 0.5042137844102823,
+    "conditional_direction_probability_standard_deviation": 0.0010212524587242104,
+    "conditional_direction_brier_score": 0.2499259733011453,
+    "conditional_direction_log_loss": 0.6929991266773716,
+    "member_direction_temperatures": [
+      54.59815003314424,
+      54.59815003295726,
+      54.598150033136186
+    ],
+    "all_direction_temperatures_at_configured_upper_boundary": true
+  },
+  "routing_stress_test": [
+    {
+      "routing": "opportunity_probability_with_conditional_direction_side",
+      "top_100_mean_stress_net_bps": 1.2785426975921608,
+      "top_500_mean_stress_net_bps": -10.432889362938424,
+      "top_100_positive_ratio": 0.57,
+      "top_500_positive_ratio": 0.426
+    },
+    {
+      "routing": "conditional_direction_confidence",
+      "top_100_mean_stress_net_bps": 2.2823914534141467,
+      "top_500_mean_stress_net_bps": -11.139497219050487,
+      "top_100_positive_ratio": 0.49,
+      "top_500_positive_ratio": 0.304
+    },
+    {
+      "routing": "action_value_direction_consensus_only",
+      "top_100_mean_stress_net_bps": -9.466028648460513,
+      "top_500_mean_stress_net_bps": -2.7458046194241237,
+      "top_100_positive_ratio": 0.34,
+      "top_500_positive_ratio": 0.426
+    }
+  ],
+  "stability_diagnostics": {
+    "daily_conditional_direction_auc_minimum": 0.4968993466195704,
+    "daily_conditional_direction_auc_maximum": 0.5725921392713356,
+    "days_below_chance": 2,
+    "days_evaluated": 5,
+    "all_daily_direction_routed_mean_stress_net_bps_negative": true,
+    "action_direction_side_agreement": 0.5819250551065394
+  },
+  "policy_bottlenecks": {
+    "all_profiles_eligible_rows": 0,
+    "positive_epistemic_adjusted_action_value_rows_per_side": 0,
+    "positive_action_value_member_agreement_rows_per_side": 0,
+    "conditional_direction_confidence_rows_per_side": 0,
+    "interpretation": "The calibrated direction distribution and the separate action-value heads jointly made every policy action ineligible. Removing gates would not repair the negative top-500 routing evidence."
+  },
+  "feature_importance_observation": {
+    "conditional_direction_top_six_features": [
+      "utc_day_cos",
+      "funding_cycle_cos",
+      "utc_week_sin",
+      "utc_day_sin",
+      "funding_cycle_sin",
+      "utc_week_cos"
+    ],
+    "first_order_flow_feature_rank": 7,
+    "first_order_flow_feature": "ofi_300s_mean",
+    "interpretation": "The conditional direction head allocated more normalized gain to deterministic cyclical features than to observed order flow, consistent with weak cross-day stability. This is diagnostic evidence, not proof of causation."
+  },
+  "rejected_responses": [
+    "Do not lower probability, agreement, drawdown, lower-tail, minimum-trade, or positive-day gates to manufacture activity.",
+    "Do not promote either positive top-100 routing result; both are post-hoc calibration diagnostics and fail materially by top 500.",
+    "Do not apply leverage because no broad after-cost ranked tail or executable edge was established.",
+    "Do not open policy, development, distant-confirmation, or untouched dates after the calibration architecture rejection.",
+    "Do not claim that opportunity AUC alone identifies the profitable action."
+  ],
+  "next_hypothesis": {
+    "candidate": "utility_weighted_symmetric_three_action_lightgbm",
+    "rationale": "Train one mirror-equivariant multiclass head directly on the economically optimal after-cost action: long, abstain, or short. Weight boundedly by decision-regret span so economically consequential mistakes matter while retaining average-label-uniqueness weights. Calibrate with one positive temperature and one abstain-logit bias shared symmetrically by long and short. Retain the shared conditional magnitude and tail heads, unchanged risk profiles, and nested chronological gates.",
+    "single_variant_only": true,
+    "hyperparameter_search_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Trading via Selective Classification",
+      "url": "https://arxiv.org/abs/2110.14914",
+      "use": "Supports an explicit ternary action space with abstention under walk-forward evaluation."
+    },
+    {
+      "title": "Utility-Weighted Forecasting and Calibration for Risk-Adjusted Decisions under Trading Frictions",
+      "url": "https://arxiv.org/abs/2601.07852",
+      "use": "Supports aligning forecast training and calibration with bounded decision loss under explicit frictions; its empirical results are not imported."
+    },
+    {
+      "title": "Price predictability in limit order book with deep learning model",
+      "url": "https://arxiv.org/abs/2409.14157",
+      "use": "Supports separating volatility or opportunity prediction from direction and emphasizes volume imbalance for directional information."
+    },
+    {
+      "title": "Exploring Microstructural Dynamics in Cryptocurrency Limit Order Books: Better Inputs Matter More Than Stacking Another Hidden Layer",
+      "url": "https://arxiv.org/abs/2506.05764",
+      "use": "Supports testing economically meaningful inputs and ternary labels before adding model complexity; its Bybit results do not validate this Binance model."
+    }
+  ],
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false
+}

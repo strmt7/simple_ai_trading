@@ -1,0 +1,361 @@
+{
+  "schema_version": "three-action-utility-design-v1",
+  "round": 34,
+  "design_revision": 1,
+  "design_sha256": "0f8f3b074c5fd93727b0d4f60d82fa885420312af5c7d3debe3d10d12fa4846f",
+  "purpose": "consumed_data_utility_weighted_symmetric_three_action_viability",
+  "claims": {
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "trading_authority": false,
+    "leverage_applied": false
+  },
+  "predecessor": {
+    "round": 33,
+    "status": "rejected",
+    "design_sha256": "bf5ec2c0b58b8d77f476ebc3d4427310fe1113c2f1b06c56acd91ab2c2611dcd",
+    "report_canonical_sha256": "300c9d8aa82943ccf0b8843a8d22da3f171feccdcf3692438c04e92cad3136a8",
+    "failure_analysis": "round-033-failure-analysis.json",
+    "failure_analysis_file_sha256": "d799e4dcf162f7a5c263f438ed5337e8f6c1ff9de83b93b8c9f4ac59569d2dec",
+    "failure_analysis_canonical_sha256": "980711900ed3fc74e53078ece8c3b2a6563162f88e51f067270e3c69ab20f009",
+    "routing_diagnostic_sha256": "01976ad70984247506e02e646e5162add902030383da8e1eb0330a9de1e0287d"
+  },
+  "risk_profiles_source": {
+    "path": "round-031-frozen-chronological-confirmation-design.json",
+    "file_sha256": "571497081d1635aa7e261645f5d58d6536aabc9e9f3acf9b7ec9cd6d7abce1bd",
+    "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e",
+    "section": "risk_profiles",
+    "modification_permitted": false,
+    "profitable_probability_semantic": "probability_that_either_long_or_short_is_the_profitable_after_cost_action"
+  },
+  "conditional_direction_confidence": {
+    "conservative": 0.6,
+    "regular": 0.575,
+    "aggressive": 0.55
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-033.json",
+    "consumed_period_registry_file_sha256": "f999e39aa276dd9393e139fb46c98da61c2923e84984bb920104ac365e6104fd",
+    "consumed_period_registry_canonical_sha256": "3e27e4500530315bb52f1730111c113876f2912da42c1dd5b90314b4f07ecb04",
+    "variant_budget": 1,
+    "hyperparameter_search_permitted": false,
+    "all_target_dates_already_consumed": true,
+    "thresholds_may_use_calibration_only": true,
+    "later_stage_parameters_may_not_change": true,
+    "no_passing_candidate_action": "reject_and_abstain",
+    "risk_gate_relaxation_permitted": false
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "full_history_inventory_required": true,
+    "feature_version": "l1-tape-causal-v8",
+    "source_resolution": "official_event_level_bbo_and_trades_aggregated_causally_to_1s",
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      },
+      "distant_confirmation": {
+        "context_start": "2023-12-31",
+        "start": "2024-01-01",
+        "end": "2024-02-04"
+      }
+    },
+    "forbidden_target_windows": [
+      {
+        "start": "2024-02-06",
+        "end": "2024-03-05",
+        "role": "untouched_policy"
+      },
+      {
+        "start": "2024-03-06",
+        "end": "2024-03-29",
+        "role": "untouched_development"
+      },
+      {
+        "start": "2024-03-30",
+        "end": "2024-03-30",
+        "role": "reserved_terminal"
+      }
+    ]
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "barrier_targets": {
+    "target_scenario": "stress",
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1.0,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18.0,
+    "maximum_stop_bps": 60.0,
+    "minimum_take_bps": 27.0,
+    "maximum_take_bps": 90.0,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "sample_weighting": {
+    "base_method": "average_label_uniqueness",
+    "training_role": "train",
+    "tuning_role": "early_stop",
+    "computed_from": "decision_time_ms_and_maximum_realized_exit_time_ms",
+    "multiclass_decision_utilities": [
+      "stress_long_net_bps",
+      "zero_bps_abstain",
+      "stress_short_net_bps"
+    ],
+    "decision_regret_span": "maximum_decision_utility_minus_minimum_decision_utility",
+    "regret_scale": "training_role_median_positive_decision_regret_span",
+    "regret_multiplier": "decision_regret_span_divided_by_regret_scale_clipped_to_0_5_and_3_0",
+    "multiclass_event_weight": "average_label_uniqueness_times_regret_multiplier",
+    "mirrored_multiclass_rows_share_half_event_weight": true,
+    "conditional_magnitude_and_quantile_heads_retain_unmodified_average_label_uniqueness_weight": true,
+    "probability_calibration_is_unweighted": true
+  },
+  "model": {
+    "candidate_id": "utility-weighted-symmetric-three-action-lightgbm",
+    "family": "utility_weighted_symmetric_three_action_lightgbm_hurdle",
+    "action_class_order": [
+      "long",
+      "abstain",
+      "short"
+    ],
+    "labels": {
+      "long": "stress_long_net_bps_is_positive_and_greater_than_stress_short_net_bps",
+      "short": "stress_short_net_bps_is_positive_and_greater_than_stress_long_net_bps",
+      "abstain": "neither_side_is_strictly_positive",
+      "both_profitable_resolution": "choose_higher_stress_net_bps",
+      "exact_tie_resolution": "abstain"
+    },
+    "symmetry": {
+      "training": "raw_and_exact_mirror_with_long_short_labels_swapped_and_abstain_unchanged",
+      "prediction": "mean_raw_logits_with_mirrored_logits_after_long_short_class_swap",
+      "calibration": "shared_positive_temperature_plus_abstain_logit_bias_preserves_long_short_mirror_equivariance",
+      "action_magnitude_features": "signed_features_multiplied_by_action_side_and_bid_ask_depth_mapped_to_supporting_opposing",
+      "unknown_feature_action": "fail_closed"
+    },
+    "probability_derivation": {
+      "p_opportunity": "p_long_plus_p_short",
+      "p_long_given_opportunity": "p_long_divided_by_p_long_plus_p_short",
+      "p_abstain": "direct_multiclass_probability",
+      "probabilities_sum_to_one": true
+    },
+    "heads": [
+      "three_action_probability",
+      "shared_conditional_positive_magnitude",
+      "shared_conditional_nonpositive_loss_magnitude",
+      "shared_lower_quantile_0_10",
+      "shared_upper_quantile_0_90"
+    ],
+    "action_value": "side_profitable_probability_times_positive_magnitude_minus_one_minus_side_profitable_probability_times_nonpositive_loss_magnitude",
+    "trade_eligibility": "positive_epistemic_adjusted_action_value_and_opportunity_probability_floor_and_conditional_direction_confidence_floor_and_lower_tail_and_member_agreement",
+    "seeds": [
+      29,
+      43,
+      71
+    ],
+    "tuning_partition": {
+      "source_role": "early_stop",
+      "partition": "chronological_first_half_early_stopping_second_half_probability_calibration",
+      "calibration_fraction": 0.5,
+      "purge_rule": "early_stop_maximum_exit_time_strictly_before_calibration_start",
+      "minimum_rows_per_subpartition": 256
+    },
+    "multiclass_calibration": {
+      "optimizer": "deterministic_lbfgsb",
+      "objective": "unweighted_original_row_multiclass_log_loss",
+      "log_temperature_bounds": [
+        -4.0,
+        4.0
+      ],
+      "abstain_logit_bias_bounds": [
+        -5.0,
+        5.0
+      ],
+      "long_short_bias_permitted": false
+    },
+    "lightgbm": {
+      "learning_rate": 0.025,
+      "num_leaves": 47,
+      "max_depth": 7,
+      "min_data_in_leaf": 160,
+      "feature_fraction": 0.82,
+      "bagging_fraction": 0.82,
+      "bagging_freq": 1,
+      "lambda_l1": 0.005,
+      "lambda_l2": 0.025,
+      "max_bin": 127,
+      "num_boost_round": 1500,
+      "early_stopping_rounds": 100,
+      "lower_quantile": 0.1,
+      "upper_quantile": 0.9,
+      "calibration_fraction": 0.5,
+      "gpu_use_dp_required": true,
+      "backend": "opencl",
+      "cpu_fallback_permitted": false
+    }
+  },
+  "selection": {
+    "threshold_quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "threshold_source_role": "calibration",
+    "selection_scenario": "stress",
+    "exact_non_overlapping_execution_required": true,
+    "unfavorable_bbo_marking_required": true,
+    "drawdown_penalty": 0.5
+  },
+  "stage_evaluation_order": {
+    "survival_scope": "per_risk_profile",
+    "later_stage_predictions_withheld_until_prior_stage_passes": true,
+    "thresholds_frozen_after_calibration": true,
+    "stages": [
+      {
+        "stage": "calibration",
+        "function": "architecture_gate_and_threshold_selection",
+        "prior_stage_pass_required": null
+      },
+      {
+        "stage": "policy",
+        "function": "frozen_threshold_evaluation",
+        "prior_stage_pass_required": "calibration"
+      },
+      {
+        "stage": "development",
+        "function": "frozen_threshold_evaluation",
+        "prior_stage_pass_required": "policy"
+      },
+      {
+        "stage": "distant_confirmation",
+        "function": "frozen_threshold_and_forecast_evaluation",
+        "prior_stage_pass_required": "development"
+      }
+    ]
+  },
+  "runtime_resources": {
+    "duckdb_memory_limit_gib": 12,
+    "maximum_worker_threads": 16,
+    "corpus_lifecycle": "sequential_with_distant_corpus_loaded_only_after_development_pass",
+    "accelerator_preflight": "directml",
+    "lightgbm_backend": "opencl",
+    "cpu_fallback_permitted": false,
+    "heartbeat_interval_seconds": 30,
+    "progress_status_atomic_write_required": true
+  },
+  "acceptance_gates": {
+    "implementation": {
+      "maximum_class_probability_mirror_swap_error": 1e-10,
+      "maximum_action_swap_equivariance_error": 1e-10,
+      "maximum_probability_sum_error": 1e-12,
+      "single_source_certificate_per_dataset_load": true,
+      "maximum_progress_silence_seconds": 30,
+      "artifact_reload_equivalence_required": true,
+      "nonfinite_prediction_count": 0
+    },
+    "calibration_architecture": {
+      "minimum_opportunity_auc": 0.65,
+      "minimum_conditional_direction_auc": 0.55,
+      "maximum_multiclass_log_loss_to_class_prior_ratio": 1.0,
+      "minimum_selected_top_100_mean_stress_net_bps": 0.0,
+      "minimum_selected_top_500_mean_stress_net_bps": 0.0
+    },
+    "distant_confirmation_forecast": {
+      "minimum_side_choice_auc": 0.52,
+      "minimum_selected_action_pearson_ic": 0.0,
+      "minimum_selected_action_spearman_ic": 0.0,
+      "minimum_top_100_mean_stress_net_bps": 0.0,
+      "minimum_top_500_mean_stress_net_bps": 0.0,
+      "minimum_long_share_in_top_500": 0.05,
+      "maximum_long_share_in_top_500": 0.95
+    },
+    "economic": {
+      "all_stage_profile_gates_must_pass": true,
+      "minimum_passing_profile_count": 1,
+      "positive_stress_total_required": true,
+      "leverage_permitted": false
+    }
+  },
+  "research_basis": [
+    {
+      "title": "Trading via Selective Classification",
+      "url": "https://arxiv.org/abs/2110.14914",
+      "use": "Supports a ternary long, short, or abstain action space with confidence-based rejection and chronological evaluation."
+    },
+    {
+      "title": "Utility-Weighted Forecasting and Calibration for Risk-Adjusted Decisions under Trading Frictions",
+      "url": "https://arxiv.org/abs/2601.07852",
+      "use": "Supports aligning forecast loss and calibration with bounded decision consequences under explicit frictions. Round 34 uses a capped regret multiplier and imports no empirical result."
+    },
+    {
+      "title": "Price predictability in limit order book with deep learning model",
+      "url": "https://arxiv.org/abs/2409.14157",
+      "use": "Supports treating three-class price prediction as opportunity plus direction and emphasizes volume imbalance for directional information."
+    },
+    {
+      "title": "Universal Features of Price Formation in Financial Markets",
+      "url": "https://arxiv.org/abs/1803.06917",
+      "use": "Supports normalized supply-demand representations and shared parameters; Round 34 enforces exact within-asset direction symmetry."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://doi.org/10.2139/ssrn.2326253",
+      "use": "Motivates the single-variant budget, frozen hyperparameters, nested chronological gates, and continued withholding of untouched dates."
+    },
+    {
+      "title": "LightGBM Parameters",
+      "url": "https://lightgbm.readthedocs.io/en/latest/Parameters.html",
+      "use": "Defines the multiclass objective and OpenCL device controls used by the implementation; class weighting is implemented through explicit per-row weights and followed by calibration."
+    }
+  ],
+  "limitations": [
+    "This is a BTC-only consumed-data architecture test; it cannot establish a portfolio or cross-asset result.",
+    "The official Binance Futures exact bookTicker archive spans 320 days, not multiple years.",
+    "The available bookDepth archive is sampled aggregate depth rather than event-level queue data and was previously insufficient; Round 34 therefore does not claim maker-fill or queue-position realism.",
+    "Decision-regret weighting changes the training distribution, so unweighted chronological multiclass calibration and strict ranked-tail gates are mandatory.",
+    "A passing consumed-data result would justify only a separately frozen untouched test, never live or testnet trading authority.",
+    "No leverage is modeled because leverage cannot create predictive edge and magnifies tail loss."
+  ]
+}
