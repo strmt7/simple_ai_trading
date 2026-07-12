@@ -142,7 +142,7 @@ class AIModelVetoReport:
     ai_total_net_bps: float
     baseline_mean_case_net_bps: float
     ai_mean_approved_case_net_bps: float
-    ai_profit_factor: float
+    ai_profit_factor: float | None
     baseline_max_drawdown_bps: float
     ai_max_drawdown_bps: float
     matched_days: int
@@ -540,12 +540,12 @@ def _failed_decision(reason: str) -> AIVetoDecision:
     )
 
 
-def _profit_factor(values: np.ndarray) -> float:
+def _profit_factor(values: np.ndarray) -> float | None:
     positive = float(np.sum(values[values > 0.0]))
     negative = float(np.sum(values[values < 0.0]))
     if negative < 0.0:
         return positive / abs(negative)
-    return float("inf") if positive > 0.0 else 0.0
+    return None
 
 
 def _max_drawdown(values: np.ndarray) -> float:
