@@ -528,14 +528,17 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 37 trained 16 OpenCL LightGBM models on 1,103,328 causal BTC/ETH/SOL
-minute decisions through 2025-H1. The best unseen Pearson IC was only `0.0178`;
-every cost threshold failed the frozen cross-symbol support gate because the
-rare profitable calibration tails were concentrated in SOL. No threshold,
-trade, AI-review case, leverage, or profitability claim was produced. The next
-research lane replaces median-return regression with cost-aware
-long/abstain/short classification and adds real futures premium and funding
-features without opening sealed 2025-H2 or 2026 periods.
+Round 38 trained 96 OpenCL LightGBM artifacts across 32 direct and two-stage
+hurdle candidates on 1,098,105 causal BTC/ETH/SOL minute decisions through
+2025-H1. The design restored meaningful activity: unseen viability replays
+contained 313 to 8,515 non-overlapping trades. It did not restore an economic
+edge. The best candidate produced 789 trades at `-3.989` mean net bps, profit
+factor `0.925`, and a `-13.447` bps day-block lower 95% bound. Premium and
+funding features worsened multiclass log loss in all 16 matched ablations, so
+they remain useful for funding cash-flow and risk accounting but are rejected
+as directional alpha. No candidate, AI-review case, leverage, or profitability
+claim passed. The next lane tests causal monthly refits against the observed
+regime decay without opening sealed 2025-H2 or 2026 periods.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
