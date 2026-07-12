@@ -44,6 +44,13 @@ except ModuleNotFoundError:  # pragma: no cover - direct tools execution
 
 
 PUBLICATION_SCHEMA_VERSION = "frozen-action-confirmation-publication-v1"
+_FALSE_CLAIMS = (
+    "trading_authority",
+    "execution_claim",
+    "profitability_claim",
+    "portfolio_claim",
+    "leverage_applied",
+)
 
 
 def _read_json(path: Path, *, label: str) -> dict[str, object]:
@@ -54,6 +61,11 @@ def _read_json(path: Path, *, label: str) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ValueError(f"{label} must be an object")
     return payload
+
+
+def _require_false_claims(value: Mapping[str, object], *, label: str) -> None:
+    if any(value.get(name) is not False for name in _FALSE_CLAIMS):
+        raise ValueError(f"frozen confirmation {label} authority drifted")
 
 
 def _validated_report(
@@ -73,14 +85,10 @@ def _validated_report(
         or report.get("round") != 31
         or report.get("design_sha256") != design_sha256
         or report.get("status") not in {"rejected", "research_candidate"}
-        or report.get("trading_authority") is not False
-        or report.get("execution_claim") is not False
-        or report.get("profitability_claim") is not False
-        or report.get("portfolio_claim") is not False
-        or report.get("leverage_applied") is not False
         or report.get("terminal_holdout_accessed") is not False
     ):
         raise ValueError("frozen confirmation report identity is invalid")
+    _require_false_claims(report, label="report")
     access = report.get("stage_access")
     stages = report.get("stages")
     artifacts = report.get("stage_artifacts")
@@ -91,13 +99,15 @@ def _validated_report(
         or not isinstance(artifacts, Mapping)
     ):
         raise ValueError("frozen confirmation stage evidence is incomplete")
-    opened = True
+    expected_profiles = tuple(
+        str(profile["profile"]) for profile in design["risk_profiles"]
+    )
+    prior_survivors = expected_profiles
+    should_open = True
     for name in _STAGE_NAMES:
         value = access[name]
-        if not isinstance(value, bool) or (value and not opened):
+        if not isinstance(value, bool) or value is not should_open:
             raise ValueError("frozen confirmation stage access is non-nested")
-        if not value:
-            opened = False
         if value:
             stage = stages.get(name)
             artifact = artifacts.get(name)
@@ -113,9 +123,64 @@ def _validated_report(
                 or path.stat().st_size != int(artifact.get("bytes") or -1)
                 or _read_json(path, label=f"{name} stage artifact") != stage
                 or stage.get("stage") != name
-                or stage.get("trading_authority") is not False
             ):
                 raise ValueError("frozen confirmation stage artifact differs")
+            _require_false_claims(stage, label=f"{name} stage")
+            diagnostics = stage.get("forecast_diagnostics")
+            results = stage.get("profile_results")
+            survivors = stage.get("surviving_profiles")
+            if (
+                not isinstance(diagnostics, Mapping)
+                or set(diagnostics) != {"base", "stress"}
+                or not isinstance(results, list)
+                or not isinstance(survivors, list)
+            ):
+                raise ValueError("frozen confirmation stage sections are incomplete")
+            for scenario in ("base", "stress"):
+                diagnostic = diagnostics[scenario]
+                if not isinstance(diagnostic, Mapping):
+                    raise ValueError("frozen confirmation forecast evidence is invalid")
+                _require_false_claims(
+                    diagnostic,
+                    label=f"{name} {scenario} forecast",
+                )
+            result_profiles = tuple(
+                result.get("profile") if isinstance(result, Mapping) else None
+                for result in results
+            )
+            if result_profiles != prior_survivors:
+                raise ValueError("frozen confirmation evaluated profiles drifted")
+            passed_profiles: list[str] = []
+            for result in results:
+                assert isinstance(result, Mapping)
+                _require_false_claims(result, label=f"{name} profile")
+                candidates = result.get("candidates")
+                expected_count = 4 if name == "confirmation" else 1
+                if not isinstance(candidates, list) or len(candidates) != expected_count:
+                    raise ValueError("frozen confirmation candidate count drifted")
+                for candidate in candidates:
+                    if not isinstance(candidate, Mapping):
+                        raise ValueError("frozen confirmation candidate is invalid")
+                    _require_false_claims(candidate, label=f"{name} candidate")
+                    reasons = candidate.get("gate_reasons")
+                    if (
+                        not isinstance(reasons, list)
+                        or bool(candidate.get("passed")) == bool(reasons)
+                    ):
+                        raise ValueError("frozen confirmation candidate gate drifted")
+                passed = bool(result.get("passed"))
+                selected_quantile = result.get("selected_quantile")
+                selected_threshold = result.get("selected_threshold_bps")
+                if passed:
+                    if selected_quantile is None or selected_threshold is None:
+                        raise ValueError("frozen confirmation selection is incomplete")
+                    passed_profiles.append(str(result["profile"]))
+                elif selected_quantile is not None or selected_threshold is not None:
+                    raise ValueError("frozen confirmation rejected selection drifted")
+            if survivors != passed_profiles:
+                raise ValueError("frozen confirmation survivors drifted")
+            prior_survivors = tuple(passed_profiles)
+            should_open = bool(prior_survivors)
         elif name in stages or name in artifacts:
             raise ValueError("frozen confirmation withheld stage has evidence")
     if bool(report.get("policy_window_is_consumed")) != bool(access["policy"]):
@@ -132,6 +197,12 @@ def _validated_report(
         != design["data"]["excluded_target_dates"]
     ):
         raise ValueError("frozen confirmation consumed-period evidence differs")
+    expected_final = list(prior_survivors) if access["development"] else []
+    if (
+        report.get("final_profiles") != expected_final
+        or (report.get("status") == "research_candidate") != bool(expected_final)
+    ):
+        raise ValueError("frozen confirmation final profile status drifted")
     return report
 
 

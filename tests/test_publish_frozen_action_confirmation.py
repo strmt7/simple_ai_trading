@@ -95,7 +95,12 @@ def _write_evidence(root: Path) -> Path:
                 "sides": {
                     "long": _forecast_side(auc=0.61),
                     "short": _forecast_side(auc=0.58),
-                }
+                },
+                "trading_authority": False,
+                "execution_claim": False,
+                "profitability_claim": False,
+                "portfolio_claim": False,
+                "leverage_applied": False,
             }
             for scenario in ("base", "stress")
         },
@@ -104,11 +109,17 @@ def _write_evidence(root: Path) -> Path:
                 "profile": profile,
                 "eligible_rows": 900,
                 "passed": False,
+                "selected_quantile": None,
                 "selected_threshold_bps": None,
                 "candidates": [
                     _candidate(float(item["quantile"]), float(item["threshold_bps"]))
                     for item in candidates[profile]
                 ],
+                "trading_authority": False,
+                "execution_claim": False,
+                "profitability_claim": False,
+                "portfolio_claim": False,
+                "leverage_applied": False,
             }
             for profile in ("conservative", "regular", "aggressive")
         ],
@@ -209,4 +220,34 @@ def test_round31_publication_is_hash_verified_parseable_and_truthful(
             design_path=DESIGN,
             prior_progress_path=PRIOR_PROGRESS,
             output_dir=tmp_path / "tampered",
+        )
+
+    semantic_evidence = tmp_path / "semantic-evidence"
+    semantic_stage_path = _write_evidence(semantic_evidence)
+    semantic_stage = json.loads(semantic_stage_path.read_text(encoding="utf-8"))
+    semantic_stage["profile_results"][0]["execution_claim"] = True
+    semantic_stage_path.write_text(
+        json.dumps(semantic_stage, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    semantic_report_path = semantic_evidence / "report.json"
+    semantic_report = json.loads(semantic_report_path.read_text(encoding="utf-8"))
+    semantic_report["stages"]["confirmation"] = semantic_stage
+    semantic_report["stage_artifacts"]["confirmation"] = {
+        "path": semantic_stage_path.name,
+        "sha256": _sha256_file(semantic_stage_path),
+        "bytes": semantic_stage_path.stat().st_size,
+    }
+    semantic_report.pop("report_sha256")
+    semantic_report["report_sha256"] = _canonical_sha256(semantic_report)
+    semantic_report_path.write_text(
+        json.dumps(semantic_report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="profile authority drifted"):
+        publisher.publish(
+            evidence_root=semantic_evidence,
+            design_path=DESIGN,
+            prior_progress_path=PRIOR_PROGRESS,
+            output_dir=tmp_path / "semantic-tamper",
         )
