@@ -1,9 +1,15 @@
 {
   "schema_version": "three-action-utility-design-v1",
   "round": 34,
-  "design_revision": 1,
-  "design_sha256": "0f8f3b074c5fd93727b0d4f60d82fa885420312af5c7d3debe3d10d12fa4846f",
+  "design_revision": 2,
+  "design_sha256": "9b8b42a6d64d54e7a3a3ff3f552a49f13eb39bff63c3c5e5fa6d8e7c4200ac8d",
   "purpose": "consumed_data_utility_weighted_symmetric_three_action_viability",
+  "supersedes": {
+    "design_revision": 1,
+    "design_sha256": "0f8f3b074c5fd93727b0d4f60d82fa885420312af5c7d3debe3d10d12fa4846f",
+    "file_sha256": "a1ad2228bb1724307e09599d0cc4fb3d921cb4167913a35251e08c61ee9b6c52",
+    "reason": "Replace undeclared SciPy L-BFGS-B dependency with a deterministic projected Newton solver before implementation; all economic, data, model, and acceptance contracts remain unchanged."
+  },
   "claims": {
     "execution_claim": false,
     "profitability_claim": false,
@@ -202,7 +208,7 @@
       "minimum_rows_per_subpartition": 256
     },
     "multiclass_calibration": {
-      "optimizer": "deterministic_lbfgsb",
+      "optimizer": "deterministic_projected_newton_in_inverse_temperature_and_abstain_bias",
       "objective": "unweighted_original_row_multiclass_log_loss",
       "log_temperature_bounds": [
         -4.0,
@@ -212,6 +218,9 @@
         -5.0,
         5.0
       ],
+      "maximum_iterations": 100,
+      "gradient_tolerance": 1e-10,
+      "hessian_diagonal_ridge": 1e-12,
       "long_short_bias_permitted": false
     },
     "lightgbm": {
