@@ -78,6 +78,8 @@ def test_round32_design_is_hash_bound_consumed_only_and_one_variant() -> None:
     ]
     assert governance["variant_budget"] == 1
     assert governance["hyperparameter_search_permitted"] is False
+    assert design["design_revision"] == 2
+    assert design["data"]["full_history_inventory_required"] is True
 
     consumed: set[str] = set()
     for record in registry["records"]:

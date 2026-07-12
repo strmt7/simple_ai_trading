@@ -11,6 +11,7 @@ from simple_ai_trading.microstructure_features import (
     _net_cross_spread_cash_returns_bps,
     apply_path_aware_lifecycle_targets,
     build_executable_microstructure_dataset,
+    verify_executable_microstructure_source,
 )
 
 
@@ -204,3 +205,66 @@ def test_aggregate_depth_contract_requires_all_three_official_products() -> None
     assert warehouse.certificate_kwargs["required_start_ms"] == 1_000
     assert warehouse.certificate_kwargs["required_end_ms"] == 2_000
     assert warehouse.certificate_kwargs["require_full_history_inventory"] is False
+
+
+def test_verified_source_capability_prevents_duplicate_physical_audit() -> None:
+    class _Warehouse:
+        causal_calls = 0
+        certificate_calls = 0
+
+        def require_causal_feature_bars(self, _symbol: str) -> dict[str, object]:
+            self.causal_calls += 1
+            return {
+                "verified": True,
+                "is_current": True,
+                "manifest_fingerprint": "a" * 64,
+            }
+
+        def require_corpus_certificate(
+            self, _symbol: str, **_kwargs: object
+        ) -> dict[str, object]:
+            self.certificate_calls += 1
+            return {
+                "status": "pass",
+                "verified": True,
+                "certificate_sha256": "b" * 64,
+            }
+
+        def connect(self):
+            raise RuntimeError("stop after single source audit")
+
+    warehouse = _Warehouse()
+    verified = verify_executable_microstructure_source(
+        warehouse,  # type: ignore[arg-type]
+        symbol="BTCUSDT",
+        start_ms=1_000,
+        end_ms=2_000,
+        require_full_history_inventory=True,
+    )
+    with pytest.raises(RuntimeError, match="single source audit"):
+        build_executable_microstructure_dataset(
+            warehouse,  # type: ignore[arg-type]
+            symbol="BTCUSDT",
+            horizon_seconds=900,
+            total_latency_ms=750,
+            taker_fee_bps=5.0,
+            start_ms=1_000,
+            end_ms=2_000,
+            require_full_history_inventory=True,
+            verified_source=verified,
+        )
+
+    assert warehouse.causal_calls == 1
+    assert warehouse.certificate_calls == 1
+    with pytest.raises(ValueError, match="capability drifted"):
+        build_executable_microstructure_dataset(
+            _Warehouse(),  # type: ignore[arg-type]
+            symbol="BTCUSDT",
+            horizon_seconds=900,
+            total_latency_ms=750,
+            taker_fee_bps=5.0,
+            start_ms=1_000,
+            end_ms=2_000,
+            require_full_history_inventory=True,
+            verified_source=verified,
+        )

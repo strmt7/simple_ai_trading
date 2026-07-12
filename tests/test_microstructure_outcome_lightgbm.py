@@ -13,6 +13,9 @@ from simple_ai_trading.microstructure_barriers import (
     AdaptiveBarrierSpec,
     AdaptiveBarrierTargets,
 )
+from simple_ai_trading.microstructure_action_features import (
+    mirror_microstructure_direction,
+)
 from simple_ai_trading.microstructure_features import (
     MICROSTRUCTURE_FEATURE_NAMES,
     MICROSTRUCTURE_FEATURE_VERSION,
@@ -25,6 +28,19 @@ from simple_ai_trading.microstructure_outcome_lightgbm import (
     predict_lightgbm_hurdle_model,
     save_lightgbm_hurdle_model,
     train_lightgbm_hurdle_model,
+)
+from simple_ai_trading.microstructure_action_policy import ActionPolicySpec
+from simple_ai_trading.microstructure_shared_action_lightgbm import (
+    SHARED_ACTION_LIGHTGBM_SCHEMA_VERSION,
+    SharedActionLightGBMSpec,
+    ensemble_shared_action_predictions,
+    load_shared_action_lightgbm_model,
+    predict_shared_action_lightgbm_model,
+    save_shared_action_lightgbm_model,
+    train_shared_action_lightgbm_model,
+)
+from simple_ai_trading.microstructure_shared_action_policy import (
+    derive_shared_action_scores,
 )
 
 
@@ -51,6 +67,34 @@ def _spec(**overrides: object) -> LightGBMHurdleSpec:
     }
     values.update(overrides)
     return LightGBMHurdleSpec(**values)  # type: ignore[arg-type]
+
+
+def _shared_spec(**overrides: object) -> SharedActionLightGBMSpec:
+    values: dict[str, object] = {
+        "candidate_id": "test-shared-action-lightgbm",
+        "family": (
+            "shared_action_conditional_lightgbm_hurdle_with_"
+            "signed_advantage_consensus"
+        ),
+        "learning_rate": 0.05,
+        "num_leaves": 15,
+        "max_depth": 4,
+        "min_data_in_leaf": 32,
+        "feature_fraction": 0.82,
+        "bagging_fraction": 0.82,
+        "bagging_freq": 1,
+        "lambda_l1": 0.005,
+        "lambda_l2": 0.025,
+        "max_bin": 63,
+        "num_boost_round": 12,
+        "early_stopping_rounds": 5,
+        "lower_quantile": 0.10,
+        "upper_quantile": 0.90,
+        "calibration_fraction": 0.50,
+        "gpu_use_dp_required": True,
+    }
+    values.update(overrides)
+    return SharedActionLightGBMSpec(**values)  # type: ignore[arg-type]
 
 
 def _dataset(rows: int = 4_800) -> tuple[MicrostructureDataset, AdaptiveBarrierTargets]:
@@ -155,6 +199,25 @@ def lightgbm_bundle():
         target_scenario="base",
         compute_backend="cpu",
         seed=812,
+        train_sample_weights=np.linspace(0.8, 1.2, 2_000, dtype=np.float32),
+        tuning_sample_weights=np.ones(1_600, dtype=np.float32),
+        progress=lambda name, step, total: phases.append((name, step, total)),
+    )
+    return dataset, targets, model, phases
+
+
+@pytest.fixture(scope="module")
+def shared_action_bundle():
+    dataset, targets = _dataset()
+    phases: list[tuple[str, int, int]] = []
+    model = train_shared_action_lightgbm_model(
+        dataset,
+        targets,
+        train_endpoints=np.arange(0, 2_000, dtype=np.int64),
+        tuning_endpoints=np.arange(2_400, 4_000, dtype=np.int64),
+        spec=_shared_spec(),
+        compute_backend="cpu",
+        seed=32,
         train_sample_weights=np.linspace(0.8, 1.2, 2_000, dtype=np.float32),
         tuning_sample_weights=np.ones(1_600, dtype=np.float32),
         progress=lambda name, step, total: phases.append((name, step, total)),
@@ -326,3 +389,176 @@ def test_lightgbm_hurdle_training_rejects_role_label_overlap() -> None:
             compute_backend="cpu",
             seed=812,
         )
+
+
+def test_shared_action_training_is_paired_purged_and_non_authoritative(
+    shared_action_bundle,
+) -> None:
+    dataset, _targets, model, phases = shared_action_bundle
+
+    assert model.schema_version == SHARED_ACTION_LIGHTGBM_SCHEMA_VERSION
+    assert model.backend_kind == "cpu"
+    assert model.target_scenario == "stress"
+    assert model.training_event_rows == 2_000
+    assert model.requested_tuning_event_rows == 1_600
+    assert model.early_stop_event_rows == 620
+    assert model.calibration_event_rows == 800
+    assert model.internal_purged_event_rows == 180
+    assert model.calibration_start_ms == int(dataset.decision_time_ms[3_200])
+    assert sum(model.class_support["train"].values()) == 4_000
+    assert sum(model.class_support["early_stop"].values()) == 1_240
+    assert sum(model.class_support["calibration"].values()) == 1_600
+    assert 0.0 <= model.advantage_validation_directional_loss < 0.5
+    assert len(model.best_iterations) == 6
+    assert len(model.model_strings) == 6
+    assert len(model.model_sha256) == 64
+    assert [step for _name, step, _total in phases] == list(range(1, 7))
+    assert all(total == 6 for _name, _step, total in phases)
+    assert not model.trading_authority
+    assert not model.execution_claim
+    assert not model.profitability_claim
+    assert not model.portfolio_claim
+    assert not model.leverage_applied
+
+
+def test_shared_action_prediction_is_finite_calibrated_and_consensual(
+    shared_action_bundle,
+) -> None:
+    dataset, _targets, model, _phases = shared_action_bundle
+    endpoints = np.arange(4_100, 4_300, dtype=np.int64)
+    prediction = predict_shared_action_lightgbm_model(model, dataset, endpoints)
+
+    assert prediction.rows == len(endpoints)
+    assert np.all(prediction.long_lower_bps <= prediction.long_upper_bps)
+    assert np.all(prediction.short_lower_bps <= prediction.short_upper_bps)
+    assert np.all((prediction.long_profitable_probability >= 0.0))
+    assert np.all((prediction.long_profitable_probability <= 1.0))
+    assert np.all((prediction.short_profitable_probability >= 0.0))
+    assert np.all((prediction.short_profitable_probability <= 1.0))
+    assert np.mean(prediction.side_consensus) > 0.75
+    assert set(np.unique(prediction.action_preference_side)) == {-1, 1}
+    assert {-1, 1} <= set(np.unique(prediction.advantage_preference_side))
+
+
+def test_shared_action_prediction_is_directionally_equivariant(
+    shared_action_bundle,
+) -> None:
+    dataset, _targets, model, _phases = shared_action_bundle
+    endpoints = np.arange(4_100, 4_160, dtype=np.int64)
+    original = predict_shared_action_lightgbm_model(model, dataset, endpoints)
+    mirrored_dataset = replace(
+        dataset,
+        features=mirror_microstructure_direction(dataset.features),
+    )
+    mirrored = predict_shared_action_lightgbm_model(
+        model,
+        mirrored_dataset,
+        endpoints,
+    )
+
+    np.testing.assert_array_equal(original.long_mean_bps, mirrored.short_mean_bps)
+    np.testing.assert_array_equal(original.short_mean_bps, mirrored.long_mean_bps)
+    np.testing.assert_array_equal(
+        original.long_profitable_probability,
+        mirrored.short_profitable_probability,
+    )
+    np.testing.assert_array_equal(
+        original.short_profitable_probability,
+        mirrored.long_profitable_probability,
+    )
+    np.testing.assert_array_equal(
+        original.signed_advantage_bps,
+        -mirrored.signed_advantage_bps,
+    )
+    np.testing.assert_array_equal(
+        original.action_preference_side,
+        -mirrored.action_preference_side,
+    )
+    np.testing.assert_array_equal(
+        original.advantage_preference_side,
+        -mirrored.advantage_preference_side,
+    )
+
+
+def test_shared_action_ensemble_and_policy_retain_consensus_gate(
+    shared_action_bundle,
+) -> None:
+    dataset, _targets, model, _phases = shared_action_bundle
+    endpoints = np.arange(4_100, 4_300, dtype=np.int64)
+    member = predict_shared_action_lightgbm_model(model, dataset, endpoints)
+    ensemble = ensemble_shared_action_predictions((member, member, member))
+    score = derive_shared_action_scores(
+        ensemble,
+        ActionPolicySpec(
+            profile="aggressive",
+            epistemic_penalty=0.5,
+            minimum_profitable_probability=0.5,
+            minimum_member_agreement=2.0 / 3.0,
+            maximum_epistemic_std_bps=15.0,
+            minimum_lower_bound_bps=-100.0,
+        ),
+    )
+
+    assert ensemble.rows == len(endpoints)
+    assert ensemble.member_count == 3
+    assert np.all(ensemble.signed_advantage_epistemic_std_bps <= 1e-12)
+    assert np.all(np.isin(score.side, (-1, 0, 1)))
+    assert np.all(score.eligible == (score.side != 0))
+    assert np.all(
+        ensemble.side_consensus_member_ratio[score.eligible] >= 2.0 / 3.0
+    )
+    assert np.all(
+        np.sign(ensemble.signed_advantage_mean_bps[score.eligible])
+        == score.side[score.eligible]
+    )
+
+
+def test_shared_action_artifact_round_trip_is_exact(
+    tmp_path, shared_action_bundle
+) -> None:
+    dataset, _targets, model, _phases = shared_action_bundle
+    artifact = tmp_path / "shared-action.json"
+    save_shared_action_lightgbm_model(artifact, model)
+    loaded = load_shared_action_lightgbm_model(artifact)
+
+    assert loaded == model
+    endpoints = np.arange(4_100, 4_130, dtype=np.int64)
+    expected = predict_shared_action_lightgbm_model(model, dataset, endpoints)
+    actual = predict_shared_action_lightgbm_model(loaded, dataset, endpoints)
+    for name in (
+        "long_mean_bps",
+        "short_mean_bps",
+        "long_profitable_probability",
+        "short_profitable_probability",
+        "long_lower_bps",
+        "short_lower_bps",
+        "long_upper_bps",
+        "short_upper_bps",
+        "signed_advantage_bps",
+        "action_preference_side",
+        "advantage_preference_side",
+        "side_consensus",
+    ):
+        np.testing.assert_array_equal(getattr(actual, name), getattr(expected, name))
+
+
+@pytest.mark.parametrize("tamper", ["authority", "model", "extra_field"])
+def test_shared_action_artifact_tampering_fails_closed(
+    tmp_path,
+    shared_action_bundle,
+    tamper: str,
+) -> None:
+    _dataset_value, _targets, model, _phases = shared_action_bundle
+    artifact = tmp_path / f"shared-action-tampered-{tamper}.json"
+    save_shared_action_lightgbm_model(artifact, model)
+    payload = json.loads(artifact.read_text(encoding="utf-8"))
+    if tamper == "authority":
+        payload["trading_authority"] = True
+    elif tamper == "model":
+        payload["model_strings"]["probability"] += "\n# tampered"
+    else:
+        payload["unbound"] = "value"
+    artifact.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="contract|invalid"):
+        load_shared_action_lightgbm_model(artifact)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import math
+from types import MappingProxyType
 from typing import Mapping
 
 import numpy as np
@@ -17,6 +18,7 @@ MICROSTRUCTURE_FEATURE_VERSION = "l1-tape-causal-v8"
 MICROSTRUCTURE_TRADE_EMBARGO_MS = 1_000
 AGGREGATE_DEPTH_FEATURE_VERSION = "l1-tape-aggregate-depth-causal-v9"
 AGGREGATE_DEPTH_MAX_AGE_MS = 60_000
+_VERIFIED_SOURCE_SEAL = object()
 
 
 @dataclass(frozen=True)
@@ -196,6 +198,21 @@ class MicrostructureDataset:
         return output
 
 
+@dataclass(frozen=True)
+class VerifiedMicrostructureSource:
+    """One-connection capability proving a completed physical source audit."""
+
+    _seal: object
+    warehouse_identity: int
+    symbol: str
+    feature_version: str
+    required_data_types: tuple[str, ...]
+    requested_start_ms: int | None
+    requested_end_ms: int | None
+    require_full_history_inventory: bool
+    evidence: Mapping[str, object]
+
+
 _FEATURE_COLUMNS_V7 = (
     "return_1s_bps",
     "return_5s_bps",
@@ -366,6 +383,101 @@ def microstructure_feature_source_contract(
     }
 
 
+def verify_executable_microstructure_source(
+    warehouse: MicrostructureWarehouse,
+    *,
+    symbol: str,
+    start_ms: int | None,
+    end_ms: int | None,
+    require_full_history_inventory: bool,
+    feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
+) -> VerifiedMicrostructureSource:
+    """Perform one physical certificate audit and seal it to this connection."""
+
+    normalized = normalize_symbol(symbol)
+    selected_version = str(feature_version)
+    microstructure_feature_names(selected_version)
+    if not isinstance(require_full_history_inventory, bool):
+        raise ValueError("require_full_history_inventory must be a boolean")
+    lower = None if start_ms is None else int(start_ms)
+    upper = None if end_ms is None else int(end_ms)
+    if lower is not None and upper is not None and lower > upper:
+        raise ValueError("source verification interval is reversed")
+    required_data_types = (
+        ("bookTicker", "trades", "bookDepth")
+        if selected_version == AGGREGATE_DEPTH_FEATURE_VERSION
+        else ("bookTicker", "trades")
+    )
+    require_causal = getattr(warehouse, "require_causal_feature_bars", None)
+    require_corpus = getattr(warehouse, "require_corpus_certificate", None)
+    if not callable(require_causal) or not callable(require_corpus):
+        raise ValueError("warehouse does not support physical source verification")
+    evidence = dict(require_causal(normalized))
+    certificate_parameters: dict[str, object] = {
+        "required_data_types": required_data_types,
+        "require_full_history_inventory": require_full_history_inventory,
+    }
+    if lower is not None and upper is not None:
+        certificate_parameters.update(
+            {"required_start_ms": lower, "required_end_ms": upper}
+        )
+    certificate = require_corpus(normalized, **certificate_parameters)
+    if (
+        evidence.get("verified") is not True
+        or evidence.get("is_current") is not True
+        or not isinstance(certificate, Mapping)
+        or certificate.get("status") != "pass"
+        or certificate.get("verified") is not True
+    ):
+        raise ValueError("microstructure source verification failed")
+    evidence["corpus_certificate"] = dict(certificate)
+    feature_contract = microstructure_feature_source_contract(selected_version)
+    if feature_contract is not None:
+        evidence["feature_source_contract"] = feature_contract
+    return VerifiedMicrostructureSource(
+        _seal=_VERIFIED_SOURCE_SEAL,
+        warehouse_identity=id(warehouse),
+        symbol=normalized,
+        feature_version=selected_version,
+        required_data_types=required_data_types,
+        requested_start_ms=lower,
+        requested_end_ms=upper,
+        require_full_history_inventory=require_full_history_inventory,
+        evidence=MappingProxyType(evidence),
+    )
+
+
+def _evidence_from_verified_source(
+    verified: VerifiedMicrostructureSource,
+    *,
+    warehouse: MicrostructureWarehouse,
+    symbol: str,
+    feature_version: str,
+    start_ms: int | None,
+    end_ms: int | None,
+    require_full_history_inventory: bool,
+) -> dict[str, object]:
+    expected_types = (
+        ("bookTicker", "trades", "bookDepth")
+        if feature_version == AGGREGATE_DEPTH_FEATURE_VERSION
+        else ("bookTicker", "trades")
+    )
+    if (
+        not isinstance(verified, VerifiedMicrostructureSource)
+        or verified._seal is not _VERIFIED_SOURCE_SEAL
+        or verified.warehouse_identity != id(warehouse)
+        or verified.symbol != symbol
+        or verified.feature_version != feature_version
+        or verified.required_data_types != expected_types
+        or verified.requested_start_ms != start_ms
+        or verified.requested_end_ms != end_ms
+        or verified.require_full_history_inventory
+        is not require_full_history_inventory
+    ):
+        raise ValueError("verified microstructure source capability drifted")
+    return dict(verified.evidence)
+
+
 def build_executable_microstructure_dataset(
     warehouse: MicrostructureWarehouse,
     *,
@@ -382,6 +494,7 @@ def build_executable_microstructure_dataset(
     end_ms: int | None = None,
     require_full_history_inventory: bool = True,
     feature_version: str = MICROSTRUCTURE_FEATURE_VERSION,
+    verified_source: VerifiedMicrostructureSource | None = None,
 ) -> MicrostructureDataset:
     """Build strictly causal features with real bid/ask entry and exit labels."""
 
@@ -426,8 +539,18 @@ def build_executable_microstructure_dataset(
         raise ValueError("start_ms must be less than or equal to end_ms")
 
     source_evidence = None
+    if verified_source is not None:
+        source_evidence = _evidence_from_verified_source(
+            verified_source,
+            warehouse=warehouse,
+            symbol=normalized_symbol,
+            feature_version=selected_feature_version,
+            start_ms=None if start_ms is None else int(start_ms),
+            end_ms=None if end_ms is None else int(end_ms),
+            require_full_history_inventory=require_full_history_inventory,
+        )
     require_causal_bars = getattr(warehouse, "require_causal_feature_bars", None)
-    if callable(require_causal_bars):
+    if source_evidence is None and callable(require_causal_bars):
         source_evidence = require_causal_bars(normalized_symbol)
         require_corpus = getattr(warehouse, "require_corpus_certificate", None)
         if callable(require_corpus):
@@ -1369,10 +1492,12 @@ __all__ = [
     "MICROSTRUCTURE_TRADE_EMBARGO_MS",
     "MICROSTRUCTURE_FEATURE_VERSION",
     "MicrostructureDataset",
+    "VerifiedMicrostructureSource",
     "PathTargetEvidence",
     "apply_path_aware_lifecycle_targets",
     "build_executable_microstructure_dataset",
     "microstructure_feature_names",
     "microstructure_feature_source_contract",
     "validate_microstructure_dataset",
+    "verify_executable_microstructure_source",
 ]
