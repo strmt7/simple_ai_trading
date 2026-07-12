@@ -202,8 +202,9 @@ def _validate_binding(
             raise ValueError("Round 38 bound blob is invalid")
         relative_path = str(item.get("path") or "")
         expected_oid = str(item.get("git_blob_oid") or "")
-        actual_oid = _git("rev-parse", f"{implementation_commit}:{relative_path}")
-        if actual_oid != expected_oid:
+        bound_oid = _git("rev-parse", f"{implementation_commit}:{relative_path}")
+        current_oid = _git("rev-parse", f"HEAD:{relative_path}")
+        if bound_oid != expected_oid or current_oid != expected_oid:
             raise ValueError(f"Round 38 bound blob changed: {relative_path}")
     return binding, claimed, implementation_commit
 
