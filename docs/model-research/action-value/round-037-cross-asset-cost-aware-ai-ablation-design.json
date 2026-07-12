@@ -1,8 +1,9 @@
 {
-  "schema_version": "cross-asset-cost-aware-ai-ablation-design-v1",
+  "schema_version": "cross-asset-cost-aware-ai-ablation-design-v2",
   "round": 37,
-  "design_sha256": "be7dc720990d806620c7516961472c7314a8ed22033c11b88fff68e1f9c5cac4",
+  "design_sha256": "f7ed6fb5921631eaa1c5b26fec0d09603e97e0ec9f02b4b8625fd77000bd3fe1",
   "phase": "frozen_multi_year_model_viability_then_ai_ablation",
+  "revision_reason": "Before any Round 37 target access, v2 freezes the previously underspecified calibration-threshold score, support floor, and tie break.",
   "predecessor": {
     "failure_analysis": "round-036-failure-analysis.json",
     "failure_analysis_canonical_sha256": "ad2ee1477a8cf09b17aaa24a98f95df3ebd3cd887cc20cd8d21833ca7040fe5b",
@@ -99,6 +100,22 @@
     "route_short_when": "calibrated_prediction_bps <= -selected_cost_aware_threshold_bps",
     "threshold_grid_bps": [12.0, 15.0, 18.0, 24.0, 30.0],
     "threshold_selected_on": "calibration_role_only",
+    "threshold_selection": {
+      "candidate_trade_replay": "nonoverlapping_within_symbol_then_chronologically_merged",
+      "minimum_total_trades": 90,
+      "minimum_trades_per_symbol": 15,
+      "score": "stationary_day_block_bootstrap_lower_95_mean_net_bps",
+      "bootstrap_samples": 1000,
+      "mean_day_block_length": 5,
+      "seed": 3711,
+      "tie_break_order": [
+        "higher_bootstrap_lower_95_mean_net_bps",
+        "higher_median_monthly_net_bps",
+        "higher_mean_net_bps",
+        "higher_threshold_bps"
+      ],
+      "fallback_when_no_threshold_meets_support": "route_no_trades_and_fail_viability"
+    },
     "same_symbol_positions_may_not_overlap": true,
     "event_outcomes_and_nonoverlapping_trade_replay_must_be_reported_separately": true
   },
