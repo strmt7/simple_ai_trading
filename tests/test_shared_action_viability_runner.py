@@ -17,6 +17,7 @@ from tools.run_shared_action_viability import (
     _forecast_gate_reasons,
     _selected_action_diagnostics,
     load_round32_design,
+    load_round32_execution_binding,
 )
 
 
@@ -28,6 +29,7 @@ DESIGN = (
     / "action-value"
     / "round-032-shared-action-value-viability-design.json"
 )
+BINDING = DESIGN.with_name("round-032-execution-binding.json")
 
 
 def _diagnostic_bundle() -> tuple[SimpleNamespace, SharedActionEnsembleBatch]:
@@ -86,6 +88,21 @@ def test_round32_runner_loads_exact_frozen_design() -> None:
         "regular",
         "aggressive",
     ]
+
+
+def test_round32_execution_binding_matches_current_git_blobs() -> None:
+    _design, design_sha, _profiles = load_round32_design(DESIGN)
+    binding, binding_sha = load_round32_execution_binding(
+        BINDING,
+        design_path=DESIGN,
+        design_sha256=design_sha,
+    )
+
+    assert binding_sha == binding["binding_sha256"]
+    assert binding["implementation"]["commit"] == (
+        "8212805ee76d327ccedc859247ea92acc42f3670"
+    )
+    assert len(binding["implementation"]["files"]) == 21
 
 
 def test_round32_runner_rejects_unhashed_design_change(tmp_path: Path) -> None:
