@@ -11,6 +11,7 @@ from tools.run_multi_horizon_signal_decay import (
     _REQUIRED_BOUND_PATHS,
     _daily_summary,
     _half_life,
+    load_signal_decay_binding,
     load_signal_decay_design,
 )
 
@@ -23,6 +24,7 @@ DESIGN = (
     / "action-value"
     / "round-036-multi-horizon-signal-decay-design.json"
 )
+BINDING = DESIGN.with_name("round-036-signal-decay-execution-binding.json")
 
 
 def test_round36_runner_loads_the_exact_frozen_budget() -> None:
@@ -48,6 +50,34 @@ def test_round36_runner_rejects_design_drift_before_execution(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="hash or identity"):
         load_signal_decay_design(drifted)
+
+
+def test_round36_binding_matches_committed_implementation() -> None:
+    _design, design_sha = load_signal_decay_design(DESIGN)
+    binding, binding_sha = load_signal_decay_binding(
+        BINDING,
+        design_path=DESIGN,
+        design_sha256=design_sha,
+    )
+
+    assert binding_sha == (
+        "1fdeac5134715ff368047e065f7aefff8b0d159477e485524b771083edda3405"
+    )
+    assert binding["implementation"]["commit"] == (
+        "9f69a5385237dc34bbea802518879374d2df33cd"
+    )
+    assert len(binding["implementation"]["files"]) == 41
+    assert binding["authority"] == {
+        "post_hoc_consumed_data_diagnostic_only": True,
+        "model_training_permitted": False,
+        "model_candidate_permitted": False,
+        "promotion_permitted": False,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
 
 
 def test_daily_summary_reports_defined_support_without_imputation() -> None:
