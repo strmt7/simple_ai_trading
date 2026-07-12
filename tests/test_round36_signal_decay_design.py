@@ -51,13 +51,14 @@ def test_round36_design_is_hash_bound_to_round35_failure_and_registry() -> None:
     assert design["schema_version"] == "multi-horizon-signal-decay-design-v1"
     assert design["round"] == 36
     assert design["phase"] == "pre_model_consumed_data_diagnostic"
-    assert predecessor["failure_analysis_canonical_sha256"] == failure[
-        "analysis_sha256"
-    ]
+    assert (
+        predecessor["failure_analysis_canonical_sha256"] == failure["analysis_sha256"]
+    )
     assert predecessor["failure_analysis_file_sha256"] == _file_sha256(failure_path)
-    assert governance["consumed_period_registry_canonical_sha256"] == registry[
-        "registry_sha256"
-    ]
+    assert (
+        governance["consumed_period_registry_canonical_sha256"]
+        == registry["registry_sha256"]
+    )
     assert governance["consumed_period_registry_file_sha256"] == _file_sha256(
         registry_path
     )
@@ -76,8 +77,7 @@ def test_round36_design_freezes_signal_horizon_and_cost_contracts() -> None:
     assert len(names) == len(set(names)) == 13
     assert set(names) <= set(MICROSTRUCTURE_FEATURE_NAMES)
     assert all(
-        item["positive_orientation"] == "higher_future_midquote"
-        for item in signals
+        item["positive_orientation"] == "higher_future_midquote" for item in signals
     )
     assert design["horizons_seconds"] == [5, 15, 30, 60, 120, 300, 900]
     assert costs["delayed_entry_arrival_ms"] == 750
