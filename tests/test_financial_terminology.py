@@ -96,12 +96,26 @@ def test_audit_rejects_legacy_branding_and_superseded_evidence_copy() -> None:
     ]
 
 
+def test_audit_rejects_superseded_active_microstructure_contract() -> None:
+    stale_feature = "Feature contract `l1-tape-causal-" + "v7`"
+    stale_pair = "current v16/" + "v7"
+    findings = audit_entries(
+        [
+            ("README.md", stale_feature),
+            ("docs/model.md", stale_pair),
+        ]
+    )
+
+    assert [(item.path, item.line, item.replacement) for item in findings] == [
+        ("docs/model.md", 1, "current v16/v8"),
+        ("README.md", 1, "Feature contract `l1-tape-causal-v8`"),
+    ]
+
+
 def test_audit_rejects_execution_language_for_simulated_statistics() -> None:
     stale_statistic = "executed" + " mean"
 
-    findings = audit_entries(
-        [("docs/chart.svg", f"<text>{stale_statistic}</text>")]
-    )
+    findings = audit_entries([("docs/chart.svg", f"<text>{stale_statistic}</text>")])
 
     assert [(item.path, item.line, item.replacement) for item in findings] == [
         ("docs/chart.svg", 1, "simulated-trade mean")

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="650" viewBox="0 0 1320 650" role="img">
+<title>Daily direction quality was not stable across variants</title>
+<desc>ROC AUC by UTC date; green is above chance, amber near chance, red below chance.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:24px;font-weight:700;fill:#17202a}.subtitle{font-size:14px;fill:#4b5563}.label{font-size:13px;fill:#263238}.value{font-size:13px;font-weight:650;fill:#17202a}.axis{font-size:12px;fill:#64748b}.note{font-size:12px;fill:#6b7280}.grid{stroke:#d8dee7;stroke-width:1}.zero{stroke:#9f1239;stroke-width:2}.gate{stroke:#b91c1c;stroke-width:2;stroke-dasharray:7 5}</style>
+<text x="48" y="42" class="title">Daily direction quality was not stable across variants</text>
+<text x="48" y="66" class="subtitle">ROC AUC by UTC date; green is above chance, amber near chance, red below chance.</text>
+<text x="385.0" y="112" text-anchor="middle" class="axis">2023-06-21</text>
+<text x="555.0" y="112" text-anchor="middle" class="axis">2023-06-22</text>
+<text x="725.0" y="112" text-anchor="middle" class="axis">2023-06-23</text>
+<text x="895.0" y="112" text-anchor="middle" class="axis">2023-06-24</text>
+<text x="1065.0" y="112" text-anchor="middle" class="axis">2023-06-25</text>
+<text x="282" y="166.0" text-anchor="end" class="label">Full / uniqueness</text>
+<rect x="304" y="134" width="162" height="54" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="385.0" y="166.0" text-anchor="middle" class="value">0.4994</text>
+<rect x="474" y="134" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="555.0" y="166.0" text-anchor="middle" class="value">0.5504</text>
+<rect x="644" y="134" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="725.0" y="166.0" text-anchor="middle" class="value">0.5771</text>
+<rect x="814" y="134" width="162" height="54" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="895.0" y="166.0" text-anchor="middle" class="value">0.4885</text>
+<rect x="984" y="134" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="166.0" text-anchor="middle" class="value">0.5800</text>
+<text x="282" y="228.0" text-anchor="end" class="label">Full / utility margin</text>
+<rect x="304" y="196" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="385.0" y="228.0" text-anchor="middle" class="value">0.5163</text>
+<rect x="474" y="196" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="555.0" y="228.0" text-anchor="middle" class="value">0.5372</text>
+<rect x="644" y="196" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="725.0" y="228.0" text-anchor="middle" class="value">0.5595</text>
+<rect x="814" y="196" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
+<text x="895.0" y="228.0" text-anchor="middle" class="value">0.4770</text>
+<rect x="984" y="196" width="162" height="54" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="1065.0" y="228.0" text-anchor="middle" class="value">0.4943</text>
+<text x="282" y="290.0" text-anchor="end" class="label">No cycles / uniqueness</text>
+<rect x="304" y="258" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="385.0" y="290.0" text-anchor="middle" class="value">0.5077</text>
+<rect x="474" y="258" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="555.0" y="290.0" text-anchor="middle" class="value">0.5649</text>
+<rect x="644" y="258" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="725.0" y="290.0" text-anchor="middle" class="value">0.5700</text>
+<rect x="814" y="258" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
+<text x="895.0" y="290.0" text-anchor="middle" class="value">0.4693</text>
+<rect x="984" y="258" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="290.0" text-anchor="middle" class="value">0.5560</text>
+<text x="282" y="352.0" text-anchor="end" class="label">No cycles / utility margin</text>
+<rect x="304" y="320" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
+<text x="385.0" y="352.0" text-anchor="middle" class="value">0.4599</text>
+<rect x="474" y="320" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="555.0" y="352.0" text-anchor="middle" class="value">0.5839</text>
+<rect x="644" y="320" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="725.0" y="352.0" text-anchor="middle" class="value">0.5560</text>
+<rect x="814" y="320" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
+<text x="895.0" y="352.0" text-anchor="middle" class="value">0.4546</text>
+<rect x="984" y="320" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1065.0" y="352.0" text-anchor="middle" class="value">0.5168</text>
+<text x="282" y="414.0" text-anchor="end" class="label">Compact / uniqueness</text>
+<rect x="304" y="382" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
+<text x="385.0" y="414.0" text-anchor="middle" class="value">0.4734</text>
+<rect x="474" y="382" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="555.0" y="414.0" text-anchor="middle" class="value">0.5128</text>
+<rect x="644" y="382" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="725.0" y="414.0" text-anchor="middle" class="value">0.5124</text>
+<rect x="814" y="382" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="895.0" y="414.0" text-anchor="middle" class="value">0.5000</text>
+<rect x="984" y="382" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="414.0" text-anchor="middle" class="value">0.5918</text>
+<text x="282" y="476.0" text-anchor="end" class="label">Compact / utility margin</text>
+<rect x="304" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="385.0" y="476.0" text-anchor="middle" class="value">0.5173</text>
+<rect x="474" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="555.0" y="476.0" text-anchor="middle" class="value">0.5195</text>
+<rect x="644" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="725.0" y="476.0" text-anchor="middle" class="value">0.5137</text>
+<rect x="814" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="895.0" y="476.0" text-anchor="middle" class="value">0.5064</text>
+<rect x="984" y="444" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="476.0" text-anchor="middle" class="value">0.5463</text>
+<text x="300" y="618" class="note">All five dates were already consumed. Cell color encodes discrimination only, not return or trading authority.</text>
+</svg>

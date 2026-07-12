@@ -200,10 +200,11 @@ approximation. Trigger slippage remains a distinct adverse stop/take exit-price
 adjustment. The default CLI stress is 1 bps per side in addition to the modeled
 taker fee, and every rebuild/promotion/shadow path is bound to that artifact
 value.
-Feature contract `l1-tape-causal-v7` adds causal 30/60-minute trend,
-volatility, range, path-efficiency, and liquidity baselines plus UTC weekly
-cycle and weekend context. Offline DuckDB construction and live streaming use
-the same 100-feature order and require 3,600 clean seconds before inference.
+Feature contract `l1-tape-causal-v8` retains causal 30/60-minute trend,
+volatility, range, path-efficiency, liquidity, UTC weekly-cycle, and weekend
+context, and adds bid/ask L1 quote depth, relative L1 depth, and signed pressure
+against opposing depth. Offline DuckDB construction and live streaming use the
+same 107-feature order and require 3,600 clean seconds before inference.
 Consequently, the default no-order promotion capture is 25,260 seconds: one
 hour of warmup, six complete evaluated hours, and one minute of tail margin.
 Because Binance's official historical BBO product contains 320 days, the exact
@@ -527,20 +528,19 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 34 trained a utility-weighted, mirror-symmetric three-action LightGBM
-ensemble on official BTCUSDT top-of-book and trade events from
-`2023-05-16` through `2023-07-06` UTC. It keeps long/abstain/short action-class
-probabilities separate from each side's positive-after-cost probability. The
-certified corpus produced
-877,894 causal one-second rows, 230,941 CUSUM events, and 229,000 valid
-adaptive-barrier outcomes. Opportunity, side-profit, multiclass log-loss, and
-side-profit Brier gates passed; conditional-direction AUC was only `0.5245`.
-Calibration retained 0 conservative, 10 regular, and 39 aggressive eligible
-rows, but the top-100/top-500 adverse-stress means remained negative at
-`-6.32`/`-10.76` bps.
-All profiles were rejected before threshold selection, so policy, development,
-and distant-confirmation predictions remained unopened. No leverage, trading
-authority, or profitability claim was produced.
+Round 35 compared six prespecified mirror-equivariant binary side-superiority
+LightGBM variants on the already-consumed BTCUSDT roles from `2023-05-16`
+through `2023-07-06` UTC. The certified corpus produced 877,894 causal
+one-second rows, 230,941 CUSUM events, and 229,000 valid adaptive-barrier
+outcomes. Direct direction learning improved the best pooled calibration ROC
+AUC from Round 34's `0.5245` to `0.5426`, but still failed the frozen `0.55`
+gate. The best broadly ranked top-500 stress mean remained `-4.02` bps. A
+different variant produced an isolated `+0.52` bps top-500 mean while its
+top-100 and confidence-ranked top-500 means were negative and it failed six of
+eight gates. All six variants were rejected; no policy/development metrics,
+architecture-freeze candidate, leverage, trading authority, or profitability
+claim was produced. This consumed-data screen covers BTCUSDT only and makes no
+ETHUSDT or SOLUSDT result claim.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

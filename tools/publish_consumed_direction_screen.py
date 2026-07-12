@@ -537,7 +537,7 @@ def _auc_svg(rows: Sequence[Mapping[str, object]]) -> str:
             f'<rect x="{x(pooled) - 6:.1f}" y="{y - 6:.1f}" width="12" height="12" fill="{color}"/>'
         )
         svg.append(
-            f'<text x="{x(pooled) + 12:.1f}" y="{y + 5}" class="value">{pooled:.4f}</text>'
+            f'<text x="{x(pooled):.1f}" y="{y - 14}" text-anchor="middle" class="value">{pooled:.4f}</text>'
         )
     svg.extend(
         [

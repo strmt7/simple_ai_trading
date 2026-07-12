@@ -1,0 +1,4381 @@
+{
+  "architecture_freeze_candidate": null,
+  "architecture_freeze_eligible_variants": [],
+  "binding_sha256": "ac94719659d15c18b5f465b1b2e09cd6d6bb980768f7822fb040462f3a2d6f6b",
+  "calibration": {
+    "event_rows": 28581,
+    "first_decision_time_ms": 1687305670000,
+    "last_decision_time_ms": 1687736630000,
+    "long_superior_rows": 8020,
+    "positive_opportunity_rows": 15222,
+    "short_superior_rows": 7202
+  },
+  "design_sha256": "db027483eed1329554bac8c3be057c488bc1899348978ea8b199c5796db6cbaa",
+  "execution_claim": false,
+  "generated_at_utc": "2026-07-12T20:08:06.164041+00:00",
+  "implementation_commit": "b89064d2eb594e590134a89bdc45ee6ecc2f93d7",
+  "interpretation_contract": {
+    "candidate_is_not_out_of_sample_evidence": true,
+    "candidate_requires_new_unseen_chronological_and_cross_asset_evaluation": true,
+    "oracle_or_future_outcome_runtime_features_used": false,
+    "post_hoc_consumed_data_discovery_only": true
+  },
+  "leverage_applied": false,
+  "portfolio_claim": false,
+  "profitability_claim": false,
+  "promotion_permitted": false,
+  "report_canonical_sha256": "1c6d2b7e5914ef62b110ea6095661f460cdc75f215aee07e04b1cdc0979499ac",
+  "role_evidence": {
+    "calibration": {
+      "end": "2023-06-25",
+      "first_decision_time_ms": 1687305670000,
+      "last_decision_time_ms": 1687736695000,
+      "last_exit_time_ms": 1687737595750,
+      "next_role_start_ms": 1687737600000,
+      "purged": true,
+      "rows": 28581,
+      "start": "2023-06-21"
+    },
+    "early_stop": {
+      "end": "2023-06-20",
+      "first_decision_time_ms": 1686873670000,
+      "last_decision_time_ms": 1687304685000,
+      "last_exit_time_ms": 1687305535750,
+      "next_role_start_ms": 1687305600000,
+      "purged": true,
+      "rows": 21934,
+      "start": "2023-06-16"
+    },
+    "train": {
+      "end": "2023-06-15",
+      "first_decision_time_ms": 1684241150000,
+      "last_decision_time_ms": 1686872665000,
+      "last_exit_time_ms": 1686873565750,
+      "next_role_start_ms": 1686873600000,
+      "purged": true,
+      "rows": 128307,
+      "start": "2023-05-16"
+    }
+  },
+  "round": 35,
+  "runtime": {
+    "cpu_fallback_permitted": false,
+    "directml_attestation": {
+      "device": "privateuseone:0",
+      "kind": "directml",
+      "requested": "directml",
+      "status": "pass",
+      "tensor_identity_sum": 32640.0,
+      "torch_directml_version": "unknown",
+      "torch_version": "2.4.1+cpu",
+      "vendor": "DirectML"
+    },
+    "elapsed_seconds": 29.43699999997625,
+    "lightgbm_gpu_use_dp_required": true,
+    "lightgbm_prediction_backend": "cpu_library_prediction_path",
+    "lightgbm_training_backend_required": "opencl",
+    "sequential_variant_execution": true,
+    "thread_limits": {
+      "configured_maximum_worker_threads": 16,
+      "duckdb_threads": 16,
+      "effective_worker_threads": 16,
+      "lightgbm_num_threads_upper_bound": 16,
+      "logical_cpu_count": 32,
+      "numba_threads": 16
+    }
+  },
+  "schema_version": "consumed-direction-screen-report-v1",
+  "selection_rule": [
+    "highest_minimum_daily_direction_auc",
+    "highest_frozen_opportunity_top_500_mean_stress_net_bps",
+    "fewest_features",
+    "variant_name_ascending"
+  ],
+  "source_evidence": {
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
+    "cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85",
+    "cache_state": "hit",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "dataset_rows": 877894,
+    "event_rows": 230941,
+    "round34_model_sha256": [
+      "23a5dbe9ebbb617edef7c68769000e347ec3b5a19883db97a7cf0ebefe711e00",
+      "87553f07e9a27ec10bc187f11496ffad7815a797d061bf9ec059f99aeac8741a",
+      "6fce08f82def40524a381f1cd2b099183439828ad0439c20464d373fdc337c60"
+    ],
+    "round34_report_canonical_sha256": "60f03a07e996230e8e278ef668fc7b9a1de35e1299fc7921e16a99fa51a53303",
+    "valid_barrier_rows": 229000
+  },
+  "stage_access": {
+    "calibration_prediction_and_metrics": true,
+    "certified_source_materialized_through_development": true,
+    "development_prediction_or_metrics": false,
+    "distant_confirmation_prediction_or_metrics": false,
+    "distant_confirmation_source_materialization": false,
+    "early_stop_used_for_early_stopping": true,
+    "policy_prediction_or_metrics": false,
+    "train_used_for_fit": true
+  },
+  "status": "rejected",
+  "trading_authority": false,
+  "variant_results": [
+    {
+      "architecture_freeze_eligible": false,
+      "execution_claim": false,
+      "feature_count": 107,
+      "feature_gain": [
+        {
+          "feature": "ofi_300s_mean",
+          "normalized_gain": 0.11562606120119051,
+          "rank": 1
+        },
+        {
+          "feature": "utc_day_cos",
+          "normalized_gain": 0.10426973474978202,
+          "rank": 2
+        },
+        {
+          "feature": "funding_cycle_cos",
+          "normalized_gain": 0.07792942213004547,
+          "rank": 3
+        },
+        {
+          "feature": "utc_day_sin",
+          "normalized_gain": 0.06603330456671318,
+          "rank": 4
+        },
+        {
+          "feature": "utc_week_sin",
+          "normalized_gain": 0.05316568478824392,
+          "rank": 5
+        },
+        {
+          "feature": "volatility_900s_vs_3600s",
+          "normalized_gain": 0.04570802414946408,
+          "rank": 6
+        },
+        {
+          "feature": "return_3600s_vol_units",
+          "normalized_gain": 0.04092478743120873,
+          "rank": 7
+        },
+        {
+          "feature": "funding_cycle_sin",
+          "normalized_gain": 0.03930376859067813,
+          "rank": 8
+        },
+        {
+          "feature": "return_900s_vol_units",
+          "normalized_gain": 0.03599824631387604,
+          "rank": 9
+        },
+        {
+          "feature": "utc_week_cos",
+          "normalized_gain": 0.02949641394480677,
+          "rank": 10
+        },
+        {
+          "feature": "realized_volatility_300s_bps",
+          "normalized_gain": 0.028557227154063034,
+          "rank": 11
+        },
+        {
+          "feature": "realized_volatility_1800s_bps",
+          "normalized_gain": 0.027925827055607155,
+          "rank": 12
+        },
+        {
+          "feature": "volatility_300s_vs_3600s",
+          "normalized_gain": 0.027355049837417943,
+          "rank": 13
+        },
+        {
+          "feature": "realized_volatility_3600s_bps",
+          "normalized_gain": 0.024781906138074038,
+          "rank": 14
+        },
+        {
+          "feature": "range_900s_bps",
+          "normalized_gain": 0.02468172381774417,
+          "rank": 15
+        },
+        {
+          "feature": "range_1800s_bps",
+          "normalized_gain": 0.022226918626708763,
+          "rank": 16
+        },
+        {
+          "feature": "imbalance_300s_mean",
+          "normalized_gain": 0.021441265845733967,
+          "rank": 17
+        },
+        {
+          "feature": "return_3600s_bps",
+          "normalized_gain": 0.018617774066910987,
+          "rank": 18
+        },
+        {
+          "feature": "return_1800s_bps",
+          "normalized_gain": 0.017062423260350065,
+          "rank": 19
+        },
+        {
+          "feature": "return_efficiency_900s",
+          "normalized_gain": 0.01705660863348977,
+          "rank": 20
+        },
+        {
+          "feature": "spread_bps",
+          "normalized_gain": 0.016256663066113945,
+          "rank": 21
+        },
+        {
+          "feature": "range_300s_bps",
+          "normalized_gain": 0.01478586702808146,
+          "rank": 22
+        },
+        {
+          "feature": "realized_volatility_900s_bps",
+          "normalized_gain": 0.013798167806938842,
+          "rank": 23
+        },
+        {
+          "feature": "range_3600s_bps",
+          "normalized_gain": 0.013089329770990312,
+          "rank": 24
+        },
+        {
+          "feature": "return_60s_vol_units",
+          "normalized_gain": 0.01115897145945723,
+          "rank": 25
+        },
+        {
+          "feature": "weekend_flag",
+          "normalized_gain": 0.010320101518314733,
+          "rank": 26
+        },
+        {
+          "feature": "return_900s_bps",
+          "normalized_gain": 0.009630036007816499,
+          "rank": 27
+        },
+        {
+          "feature": "return_1800s_vol_units",
+          "normalized_gain": 0.009514213160159482,
+          "rank": 28
+        },
+        {
+          "feature": "trade_imbalance_300s_mean",
+          "normalized_gain": 0.009122474449236032,
+          "rank": 29
+        },
+        {
+          "feature": "return_300s_bps",
+          "normalized_gain": 0.007308728166627064,
+          "rank": 30
+        },
+        {
+          "feature": "return_300s_vol_units",
+          "normalized_gain": 0.006168175171530808,
+          "rank": 31
+        },
+        {
+          "feature": "signed_flow_300s",
+          "normalized_gain": 0.005946913446700177,
+          "rank": 32
+        },
+        {
+          "feature": "volatility_60s_vs_900s",
+          "normalized_gain": 0.005641719533754393,
+          "rank": 33
+        },
+        {
+          "feature": "realized_volatility_120s_bps",
+          "normalized_gain": 0.005370058541228305,
+          "rank": 34
+        },
+        {
+          "feature": "return_efficiency_3600s",
+          "normalized_gain": 0.004757180516094217,
+          "rank": 35
+        },
+        {
+          "feature": "return_120s_bps",
+          "normalized_gain": 0.0040097136056156755,
+          "rank": 36
+        },
+        {
+          "feature": "trade_imbalance_60s_mean",
+          "normalized_gain": 0.003807217796061859,
+          "rank": 37
+        },
+        {
+          "feature": "log_ask_l1_depth_quote",
+          "normalized_gain": 0.0020874286417030046,
+          "rank": 38
+        },
+        {
+          "feature": "return_60s_bps",
+          "normalized_gain": 0.0019689747001798534,
+          "rank": 39
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_300s",
+          "normalized_gain": 0.0017329135313920447,
+          "rank": 40
+        },
+        {
+          "feature": "max_spread_bps",
+          "normalized_gain": 0.0016054424563683354,
+          "rank": 41
+        },
+        {
+          "feature": "log_base_volume",
+          "normalized_gain": 0.0012939653287089218,
+          "rank": 42
+        },
+        {
+          "feature": "signed_flow_60s",
+          "normalized_gain": 0.001292341551834712,
+          "rank": 43
+        },
+        {
+          "feature": "return_efficiency_300s",
+          "normalized_gain": 0.001171230442983369,
+          "rank": 44
+        },
+        {
+          "feature": "return_1s_bps",
+          "normalized_gain": 0.0,
+          "rank": 45
+        },
+        {
+          "feature": "return_5s_bps",
+          "normalized_gain": 0.0,
+          "rank": 46
+        },
+        {
+          "feature": "return_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 47
+        },
+        {
+          "feature": "return_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 48
+        },
+        {
+          "feature": "realized_volatility_10s_bps",
+          "normalized_gain": 0.0,
+          "rank": 49
+        },
+        {
+          "feature": "realized_volatility_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 50
+        },
+        {
+          "feature": "realized_volatility_60s_bps",
+          "normalized_gain": 0.0,
+          "rank": 51
+        },
+        {
+          "feature": "intrasecond_range_bps",
+          "normalized_gain": 0.0,
+          "rank": 52
+        },
+        {
+          "feature": "range_60s_bps",
+          "normalized_gain": 0.0,
+          "rank": 53
+        },
+        {
+          "feature": "spread_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 54
+        },
+        {
+          "feature": "spread_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 55
+        },
+        {
+          "feature": "l1_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 56
+        },
+        {
+          "feature": "close_l1_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 57
+        },
+        {
+          "feature": "imbalance_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 58
+        },
+        {
+          "feature": "imbalance_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 59
+        },
+        {
+          "feature": "microprice_offset_bps",
+          "normalized_gain": 0.0,
+          "rank": 60
+        },
+        {
+          "feature": "normalized_ofi",
+          "normalized_gain": 0.0,
+          "rank": 61
+        },
+        {
+          "feature": "ofi_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 62
+        },
+        {
+          "feature": "ofi_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 63
+        },
+        {
+          "feature": "ofi_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 64
+        },
+        {
+          "feature": "ofi_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 65
+        },
+        {
+          "feature": "ofi_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 66
+        },
+        {
+          "feature": "ofi_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 67
+        },
+        {
+          "feature": "log_quote_updates",
+          "normalized_gain": 0.0,
+          "rank": 68
+        },
+        {
+          "feature": "quote_intensity_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 69
+        },
+        {
+          "feature": "quote_intensity_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 70
+        },
+        {
+          "feature": "trade_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 71
+        },
+        {
+          "feature": "trade_imbalance_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 72
+        },
+        {
+          "feature": "trade_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 73
+        },
+        {
+          "feature": "trade_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 74
+        },
+        {
+          "feature": "trade_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 75
+        },
+        {
+          "feature": "trade_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 76
+        },
+        {
+          "feature": "signed_flow_10s",
+          "normalized_gain": 0.0,
+          "rank": 77
+        },
+        {
+          "feature": "volume_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 78
+        },
+        {
+          "feature": "volume_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 79
+        },
+        {
+          "feature": "log_trade_count",
+          "normalized_gain": 0.0,
+          "rank": 80
+        },
+        {
+          "feature": "trade_close_vs_mid_bps",
+          "normalized_gain": 0.0,
+          "rank": 81
+        },
+        {
+          "feature": "event_delay_p50_ms",
+          "normalized_gain": 0.0,
+          "rank": 82
+        },
+        {
+          "feature": "event_delay_p99_ms",
+          "normalized_gain": 0.0,
+          "rank": 83
+        },
+        {
+          "feature": "event_delay_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 84
+        },
+        {
+          "feature": "return_efficiency_60s",
+          "normalized_gain": 0.0,
+          "rank": 85
+        },
+        {
+          "feature": "l1_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 86
+        },
+        {
+          "feature": "l1_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 87
+        },
+        {
+          "feature": "l1_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 88
+        },
+        {
+          "feature": "l1_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 89
+        },
+        {
+          "feature": "microprice_delta_5s_bps",
+          "normalized_gain": 0.0,
+          "rank": 90
+        },
+        {
+          "feature": "microprice_delta_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 91
+        },
+        {
+          "feature": "microprice_delta_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 92
+        },
+        {
+          "feature": "microprice_delta_60s_bps",
+          "normalized_gain": 0.0,
+          "rank": 93
+        },
+        {
+          "feature": "volatility_10s_vs_300s",
+          "normalized_gain": 0.0,
+          "rank": 94
+        },
+        {
+          "feature": "spread_to_10s_volatility",
+          "normalized_gain": 0.0,
+          "rank": 95
+        },
+        {
+          "feature": "ofi_trade_flow_agreement",
+          "normalized_gain": 0.0,
+          "rank": 96
+        },
+        {
+          "feature": "quote_trade_log_intensity_gap",
+          "normalized_gain": 0.0,
+          "rank": 97
+        },
+        {
+          "feature": "intrasecond_close_location",
+          "normalized_gain": 0.0,
+          "rank": 98
+        },
+        {
+          "feature": "spread_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 99
+        },
+        {
+          "feature": "quote_intensity_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 100
+        },
+        {
+          "feature": "volume_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 101
+        },
+        {
+          "feature": "trade_intensity_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 102
+        },
+        {
+          "feature": "log_bid_l1_depth_quote",
+          "normalized_gain": 0.0,
+          "rank": 103
+        },
+        {
+          "feature": "l1_depth_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 104
+        },
+        {
+          "feature": "l1_depth_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 105
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_10s",
+          "normalized_gain": 0.0,
+          "rank": 106
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_60s",
+          "normalized_gain": 0.0,
+          "rank": 107
+        }
+      ],
+      "feature_set": "full",
+      "leverage_applied": false,
+      "metrics": {
+        "all_routed_mean_stress_net_bps": -8.850191946067106,
+        "candidate_confidence_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.64,
+            "long_share": 0.42,
+            "mean_stress_net_bps": -7.870384166743771,
+            "median_stress_net_bps": 11.804380066614264,
+            "positive_ratio": 0.64,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.559,
+            "long_share": 0.638,
+            "mean_stress_net_bps": -6.597537397399617,
+            "median_stress_net_bps": 4.617281086599552,
+            "positive_ratio": 0.559,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.594,
+            "long_share": 0.7,
+            "mean_stress_net_bps": -4.910525871451063,
+            "median_stress_net_bps": 8.866588897804164,
+            "positive_ratio": 0.594,
+            "requested_rows": 500
+          }
+        },
+        "conditional_long_probability_brier_score": 0.24916831432948056,
+        "daily": [
+          {
+            "brier_score": 0.24947267152063174,
+            "date": "2023-06-21",
+            "direction_accuracy": 0.5098181818181818,
+            "direction_auc": 0.49935253262591395,
+            "routed_rows": 4125,
+            "rows": 4125
+          },
+          {
+            "brier_score": 0.24927026150704817,
+            "date": "2023-06-22",
+            "direction_accuracy": 0.5282493737823546,
+            "direction_auc": 0.5504220202296337,
+            "routed_rows": 3593,
+            "rows": 3593
+          },
+          {
+            "brier_score": 0.2486339062208948,
+            "date": "2023-06-23",
+            "direction_accuracy": 0.5652310594152782,
+            "direction_auc": 0.5771319543729364,
+            "routed_rows": 3181,
+            "rows": 3181
+          },
+          {
+            "brier_score": 0.25069286985705985,
+            "date": "2023-06-24",
+            "direction_accuracy": 0.4774774774774775,
+            "direction_auc": 0.48853338981236666,
+            "routed_rows": 1887,
+            "rows": 1887
+          },
+          {
+            "brier_score": 0.24801944170647977,
+            "date": "2023-06-25",
+            "direction_accuracy": 0.5476190476190477,
+            "direction_auc": 0.5800021976495935,
+            "routed_rows": 2436,
+            "rows": 2436
+          }
+        ],
+        "daily_auc_median": 0.5504220202296337,
+        "daily_auc_minimum": 0.48853338981236666,
+        "daily_auc_standard_deviation": 0.038430326634024035,
+        "days_above_chance": 3,
+        "direction_accuracy": 0.5277887268427276,
+        "frozen_opportunity_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.47,
+            "long_share": 0.78,
+            "mean_stress_net_bps": -12.970429861738012,
+            "median_stress_net_bps": -26.639024942932004,
+            "positive_ratio": 0.47,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.558,
+            "long_share": 0.721,
+            "mean_stress_net_bps": -3.3480499135459687,
+            "median_stress_net_bps": 7.888841212739642,
+            "positive_ratio": 0.558,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.5,
+            "long_share": 0.74,
+            "mean_stress_net_bps": -9.41295463224387,
+            "median_stress_net_bps": -11.944207860282788,
+            "positive_ratio": 0.5,
+            "requested_rows": 500
+          }
+        },
+        "pooled_direction_auc": 0.5425869424605662,
+        "routed_rows": 15222,
+        "rows": 15222,
+        "score_tie_rows": 0
+      },
+      "model": {
+        "artifact_bytes": 63572,
+        "artifact_path": "models/full_uniqueness.json",
+        "artifact_reload_max_abs_prediction_error": 0.0,
+        "artifact_sha256": "d95f44dd955c08ece2096681c4cf7eb3a9d7053b0b3d426cb58bbff990372c70",
+        "backend_device": "opencl:auto",
+        "backend_kind": "opencl",
+        "backend_requested": "directml",
+        "best_iteration": 9,
+        "early_stop_opportunity_rows": 8814,
+        "early_stop_role_rows": 21934,
+        "early_stop_weight_multiplier_mean": 1.0,
+        "lightgbm_version": "4.6.0",
+        "mirror_swap_max_abs_prediction_error": 2.220446049250313e-16,
+        "model_sha256": "722dcdd6839fbe7cd111f30293fe44d15638fae1c5db82c43cd681f75f1cc15b",
+        "nonfinite_prediction_count": 0,
+        "train_opportunity_rows": 51139,
+        "train_role_rows": 128307,
+        "train_weight_multiplier_mean": 1.0,
+        "training_runtime_seconds": 1.7650000000139698,
+        "utility_margin_scale_bps": 44.5812463760376
+      },
+      "portfolio_claim": false,
+      "profitability_claim": false,
+      "promotion_permitted": false,
+      "rejection_reasons": [
+        "pooled_direction_auc_gate_failed",
+        "days_above_chance_gate_failed",
+        "frozen_opportunity_top_100_stress_net_gate_failed",
+        "frozen_opportunity_top_500_stress_net_gate_failed",
+        "candidate_confidence_top_500_stress_net_gate_failed"
+      ],
+      "selected_feature_names": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "intrasecond_range_bps",
+        "range_60s_bps",
+        "range_300s_bps",
+        "range_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "microprice_offset_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_trade_count",
+        "trade_close_vs_mid_bps",
+        "event_delay_p50_ms",
+        "event_delay_p99_ms",
+        "event_delay_vs_60s_mean",
+        "return_efficiency_60s",
+        "return_efficiency_300s",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "return_60s_vol_units",
+        "return_300s_vol_units",
+        "return_900s_vol_units",
+        "volatility_10s_vs_300s",
+        "volatility_60s_vs_900s",
+        "spread_to_10s_volatility",
+        "ofi_trade_flow_agreement",
+        "quote_trade_log_intensity_gap",
+        "intrasecond_close_location",
+        "utc_day_sin",
+        "utc_day_cos",
+        "funding_cycle_sin",
+        "funding_cycle_cos",
+        "return_1800s_bps",
+        "return_3600s_bps",
+        "realized_volatility_1800s_bps",
+        "realized_volatility_3600s_bps",
+        "range_1800s_bps",
+        "range_3600s_bps",
+        "spread_vs_900s_mean",
+        "quote_intensity_vs_900s_mean",
+        "volume_vs_900s_mean",
+        "trade_intensity_vs_900s_mean",
+        "return_efficiency_900s",
+        "return_efficiency_3600s",
+        "return_1800s_vol_units",
+        "return_3600s_vol_units",
+        "volatility_300s_vs_3600s",
+        "volatility_900s_vs_3600s",
+        "utc_week_sin",
+        "utc_week_cos",
+        "weekend_flag",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ],
+      "trading_authority": false,
+      "variant": "full_uniqueness",
+      "weighting": "uniqueness"
+    },
+    {
+      "architecture_freeze_eligible": false,
+      "execution_claim": false,
+      "feature_count": 107,
+      "feature_gain": [
+        {
+          "feature": "utc_day_cos",
+          "normalized_gain": 0.09222312984586525,
+          "rank": 1
+        },
+        {
+          "feature": "funding_cycle_cos",
+          "normalized_gain": 0.059195044956606636,
+          "rank": 2
+        },
+        {
+          "feature": "utc_week_sin",
+          "normalized_gain": 0.05460692949098844,
+          "rank": 3
+        },
+        {
+          "feature": "return_900s_vol_units",
+          "normalized_gain": 0.05315532213726,
+          "rank": 4
+        },
+        {
+          "feature": "utc_day_sin",
+          "normalized_gain": 0.05246569538358818,
+          "rank": 5
+        },
+        {
+          "feature": "realized_volatility_3600s_bps",
+          "normalized_gain": 0.050614665739526526,
+          "rank": 6
+        },
+        {
+          "feature": "range_3600s_bps",
+          "normalized_gain": 0.04874177412471024,
+          "rank": 7
+        },
+        {
+          "feature": "utc_week_cos",
+          "normalized_gain": 0.04839372195283177,
+          "rank": 8
+        },
+        {
+          "feature": "return_3600s_vol_units",
+          "normalized_gain": 0.04642633562385385,
+          "rank": 9
+        },
+        {
+          "feature": "realized_volatility_1800s_bps",
+          "normalized_gain": 0.04561481316016152,
+          "rank": 10
+        },
+        {
+          "feature": "funding_cycle_sin",
+          "normalized_gain": 0.04333626299861905,
+          "rank": 11
+        },
+        {
+          "feature": "volatility_900s_vs_3600s",
+          "normalized_gain": 0.042420500040697987,
+          "rank": 12
+        },
+        {
+          "feature": "ofi_300s_mean",
+          "normalized_gain": 0.03805622858245701,
+          "rank": 13
+        },
+        {
+          "feature": "volatility_300s_vs_3600s",
+          "normalized_gain": 0.036780470724786206,
+          "rank": 14
+        },
+        {
+          "feature": "return_3600s_bps",
+          "normalized_gain": 0.03356017617435059,
+          "rank": 15
+        },
+        {
+          "feature": "range_1800s_bps",
+          "normalized_gain": 0.029832542229840678,
+          "rank": 16
+        },
+        {
+          "feature": "range_300s_bps",
+          "normalized_gain": 0.022503002479446265,
+          "rank": 17
+        },
+        {
+          "feature": "realized_volatility_300s_bps",
+          "normalized_gain": 0.021942082521551744,
+          "rank": 18
+        },
+        {
+          "feature": "range_900s_bps",
+          "normalized_gain": 0.01684313260468656,
+          "rank": 19
+        },
+        {
+          "feature": "realized_volatility_900s_bps",
+          "normalized_gain": 0.016666656947971856,
+          "rank": 20
+        },
+        {
+          "feature": "spread_bps",
+          "normalized_gain": 0.016451956715907375,
+          "rank": 21
+        },
+        {
+          "feature": "return_efficiency_3600s",
+          "normalized_gain": 0.016405408246326896,
+          "rank": 22
+        },
+        {
+          "feature": "realized_volatility_120s_bps",
+          "normalized_gain": 0.01501922571293285,
+          "rank": 23
+        },
+        {
+          "feature": "return_900s_bps",
+          "normalized_gain": 0.011946813643927275,
+          "rank": 24
+        },
+        {
+          "feature": "trade_imbalance_300s_mean",
+          "normalized_gain": 0.01051322008143814,
+          "rank": 25
+        },
+        {
+          "feature": "imbalance_300s_mean",
+          "normalized_gain": 0.010332227924388752,
+          "rank": 26
+        },
+        {
+          "feature": "spread_vs_900s_mean",
+          "normalized_gain": 0.00834786382650239,
+          "rank": 27
+        },
+        {
+          "feature": "return_1800s_vol_units",
+          "normalized_gain": 0.006948228641050039,
+          "rank": 28
+        },
+        {
+          "feature": "realized_volatility_60s_bps",
+          "normalized_gain": 0.006905935486106238,
+          "rank": 29
+        },
+        {
+          "feature": "return_1800s_bps",
+          "normalized_gain": 0.0064310336161384155,
+          "rank": 30
+        },
+        {
+          "feature": "return_efficiency_900s",
+          "normalized_gain": 0.005356885767148333,
+          "rank": 31
+        },
+        {
+          "feature": "signed_flow_300s",
+          "normalized_gain": 0.005296037611570466,
+          "rank": 32
+        },
+        {
+          "feature": "spread_vs_300s_mean",
+          "normalized_gain": 0.003588667875465083,
+          "rank": 33
+        },
+        {
+          "feature": "volatility_60s_vs_900s",
+          "normalized_gain": 0.0034836399033148476,
+          "rank": 34
+        },
+        {
+          "feature": "return_300s_vol_units",
+          "normalized_gain": 0.0032934315933785736,
+          "rank": 35
+        },
+        {
+          "feature": "trade_imbalance_60s_mean",
+          "normalized_gain": 0.002773902166365661,
+          "rank": 36
+        },
+        {
+          "feature": "return_120s_bps",
+          "normalized_gain": 0.0019792119052277793,
+          "rank": 37
+        },
+        {
+          "feature": "range_60s_bps",
+          "normalized_gain": 0.0019238524349345224,
+          "rank": 38
+        },
+        {
+          "feature": "return_60s_vol_units",
+          "normalized_gain": 0.001745335266438831,
+          "rank": 39
+        },
+        {
+          "feature": "return_efficiency_60s",
+          "normalized_gain": 0.0011041460325261377,
+          "rank": 40
+        },
+        {
+          "feature": "max_spread_bps",
+          "normalized_gain": 0.0011004576379978267,
+          "rank": 41
+        },
+        {
+          "feature": "return_30s_bps",
+          "normalized_gain": 0.001038808461870169,
+          "rank": 42
+        },
+        {
+          "feature": "return_300s_bps",
+          "normalized_gain": 0.000785301636908356,
+          "rank": 43
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_300s",
+          "normalized_gain": 0.0007128508289103579,
+          "rank": 44
+        },
+        {
+          "feature": "ofi_60s_mean",
+          "normalized_gain": 0.0006547706648739464,
+          "rank": 45
+        },
+        {
+          "feature": "quote_intensity_vs_900s_mean",
+          "normalized_gain": 0.0005651328419670209,
+          "rank": 46
+        },
+        {
+          "feature": "weekend_flag",
+          "normalized_gain": 0.0005610416162142078,
+          "rank": 47
+        },
+        {
+          "feature": "volatility_10s_vs_300s",
+          "normalized_gain": 0.0005432780593961172,
+          "rank": 48
+        },
+        {
+          "feature": "spread_vs_60s_mean",
+          "normalized_gain": 0.000421529650808428,
+          "rank": 49
+        },
+        {
+          "feature": "realized_volatility_30s_bps",
+          "normalized_gain": 0.0003913164301646125,
+          "rank": 50
+        },
+        {
+          "feature": "return_1s_bps",
+          "normalized_gain": 0.0,
+          "rank": 51
+        },
+        {
+          "feature": "return_5s_bps",
+          "normalized_gain": 0.0,
+          "rank": 52
+        },
+        {
+          "feature": "return_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 53
+        },
+        {
+          "feature": "return_60s_bps",
+          "normalized_gain": 0.0,
+          "rank": 54
+        },
+        {
+          "feature": "realized_volatility_10s_bps",
+          "normalized_gain": 0.0,
+          "rank": 55
+        },
+        {
+          "feature": "intrasecond_range_bps",
+          "normalized_gain": 0.0,
+          "rank": 56
+        },
+        {
+          "feature": "l1_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 57
+        },
+        {
+          "feature": "close_l1_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 58
+        },
+        {
+          "feature": "imbalance_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 59
+        },
+        {
+          "feature": "imbalance_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 60
+        },
+        {
+          "feature": "microprice_offset_bps",
+          "normalized_gain": 0.0,
+          "rank": 61
+        },
+        {
+          "feature": "normalized_ofi",
+          "normalized_gain": 0.0,
+          "rank": 62
+        },
+        {
+          "feature": "ofi_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 63
+        },
+        {
+          "feature": "ofi_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 64
+        },
+        {
+          "feature": "ofi_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 65
+        },
+        {
+          "feature": "ofi_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 66
+        },
+        {
+          "feature": "ofi_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 67
+        },
+        {
+          "feature": "log_quote_updates",
+          "normalized_gain": 0.0,
+          "rank": 68
+        },
+        {
+          "feature": "quote_intensity_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 69
+        },
+        {
+          "feature": "quote_intensity_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 70
+        },
+        {
+          "feature": "trade_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 71
+        },
+        {
+          "feature": "trade_imbalance_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 72
+        },
+        {
+          "feature": "trade_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 73
+        },
+        {
+          "feature": "trade_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 74
+        },
+        {
+          "feature": "trade_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 75
+        },
+        {
+          "feature": "trade_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 76
+        },
+        {
+          "feature": "signed_flow_10s",
+          "normalized_gain": 0.0,
+          "rank": 77
+        },
+        {
+          "feature": "signed_flow_60s",
+          "normalized_gain": 0.0,
+          "rank": 78
+        },
+        {
+          "feature": "log_base_volume",
+          "normalized_gain": 0.0,
+          "rank": 79
+        },
+        {
+          "feature": "volume_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 80
+        },
+        {
+          "feature": "volume_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 81
+        },
+        {
+          "feature": "log_trade_count",
+          "normalized_gain": 0.0,
+          "rank": 82
+        },
+        {
+          "feature": "trade_close_vs_mid_bps",
+          "normalized_gain": 0.0,
+          "rank": 83
+        },
+        {
+          "feature": "event_delay_p50_ms",
+          "normalized_gain": 0.0,
+          "rank": 84
+        },
+        {
+          "feature": "event_delay_p99_ms",
+          "normalized_gain": 0.0,
+          "rank": 85
+        },
+        {
+          "feature": "event_delay_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 86
+        },
+        {
+          "feature": "return_efficiency_300s",
+          "normalized_gain": 0.0,
+          "rank": 87
+        },
+        {
+          "feature": "l1_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 88
+        },
+        {
+          "feature": "l1_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 89
+        },
+        {
+          "feature": "l1_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 90
+        },
+        {
+          "feature": "l1_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 91
+        },
+        {
+          "feature": "microprice_delta_5s_bps",
+          "normalized_gain": 0.0,
+          "rank": 92
+        },
+        {
+          "feature": "microprice_delta_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 93
+        },
+        {
+          "feature": "microprice_delta_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 94
+        },
+        {
+          "feature": "microprice_delta_60s_bps",
+          "normalized_gain": 0.0,
+          "rank": 95
+        },
+        {
+          "feature": "spread_to_10s_volatility",
+          "normalized_gain": 0.0,
+          "rank": 96
+        },
+        {
+          "feature": "ofi_trade_flow_agreement",
+          "normalized_gain": 0.0,
+          "rank": 97
+        },
+        {
+          "feature": "quote_trade_log_intensity_gap",
+          "normalized_gain": 0.0,
+          "rank": 98
+        },
+        {
+          "feature": "intrasecond_close_location",
+          "normalized_gain": 0.0,
+          "rank": 99
+        },
+        {
+          "feature": "volume_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 100
+        },
+        {
+          "feature": "trade_intensity_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 101
+        },
+        {
+          "feature": "log_bid_l1_depth_quote",
+          "normalized_gain": 0.0,
+          "rank": 102
+        },
+        {
+          "feature": "log_ask_l1_depth_quote",
+          "normalized_gain": 0.0,
+          "rank": 103
+        },
+        {
+          "feature": "l1_depth_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 104
+        },
+        {
+          "feature": "l1_depth_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 105
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_10s",
+          "normalized_gain": 0.0,
+          "rank": 106
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_60s",
+          "normalized_gain": 0.0,
+          "rank": 107
+        }
+      ],
+      "feature_set": "full",
+      "leverage_applied": false,
+      "metrics": {
+        "all_routed_mean_stress_net_bps": -9.498954979832108,
+        "candidate_confidence_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.71,
+            "long_share": 0.86,
+            "mean_stress_net_bps": 7.992945487396639,
+            "median_stress_net_bps": 19.67898906618361,
+            "positive_ratio": 0.71,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.498,
+            "long_share": 0.629,
+            "mean_stress_net_bps": -12.284364857853001,
+            "median_stress_net_bps": -24.85528568120663,
+            "positive_ratio": 0.498,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.504,
+            "long_share": 0.656,
+            "mean_stress_net_bps": -11.724453964283974,
+            "median_stress_net_bps": 0.17998964267955664,
+            "positive_ratio": 0.504,
+            "requested_rows": 500
+          }
+        },
+        "conditional_long_probability_brier_score": 0.24966993826993567,
+        "daily": [
+          {
+            "brier_score": 0.24945349865511382,
+            "date": "2023-06-21",
+            "direction_accuracy": 0.5233939393939394,
+            "direction_auc": 0.5162797722749761,
+            "routed_rows": 4125,
+            "rows": 4125
+          },
+          {
+            "brier_score": 0.24876354390303612,
+            "date": "2023-06-22",
+            "direction_accuracy": 0.5101586418035068,
+            "direction_auc": 0.5371696219991053,
+            "routed_rows": 3593,
+            "rows": 3593
+          },
+          {
+            "brier_score": 0.24737187541015043,
+            "date": "2023-06-23",
+            "direction_accuracy": 0.538824269097768,
+            "direction_auc": 0.559485370270884,
+            "routed_rows": 3181,
+            "rows": 3181
+          },
+          {
+            "brier_score": 0.25356593396195376,
+            "date": "2023-06-24",
+            "direction_accuracy": 0.510863804981452,
+            "direction_auc": 0.4769631588176752,
+            "routed_rows": 1887,
+            "rows": 1887
+          },
+          {
+            "brier_score": 0.25135626111786197,
+            "date": "2023-06-25",
+            "direction_accuracy": 0.4885057471264368,
+            "direction_auc": 0.49434071523382384,
+            "routed_rows": 2436,
+            "rows": 2436
+          }
+        ],
+        "daily_auc_median": 0.5162797722749761,
+        "daily_auc_minimum": 0.4769631588176752,
+        "daily_auc_standard_deviation": 0.029423171040364772,
+        "days_above_chance": 3,
+        "direction_accuracy": 0.5163579030350808,
+        "frozen_opportunity_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.39,
+            "long_share": 0.78,
+            "mean_stress_net_bps": -19.239087208700866,
+            "median_stress_net_bps": -41.90917642977384,
+            "positive_ratio": 0.39,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.568,
+            "long_share": 0.723,
+            "mean_stress_net_bps": -3.6809145831320884,
+            "median_stress_net_bps": 9.459480681602441,
+            "positive_ratio": 0.568,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.506,
+            "long_share": 0.718,
+            "mean_stress_net_bps": -10.303184432153033,
+            "median_stress_net_bps": 0.637797696406917,
+            "positive_ratio": 0.506,
+            "requested_rows": 500
+          }
+        },
+        "pooled_direction_auc": 0.5261950130228442,
+        "routed_rows": 15222,
+        "rows": 15222,
+        "score_tie_rows": 0
+      },
+      "model": {
+        "artifact_bytes": 163859,
+        "artifact_path": "models/full_utility_margin.json",
+        "artifact_reload_max_abs_prediction_error": 0.0,
+        "artifact_sha256": "9d52793c19de51158b9c1c67eb7d1e4cbb721edc0d3f90c7eeea9418f2b5bf55",
+        "backend_device": "opencl:auto",
+        "backend_kind": "opencl",
+        "backend_requested": "directml",
+        "best_iteration": 28,
+        "early_stop_opportunity_rows": 8814,
+        "early_stop_role_rows": 21934,
+        "early_stop_weight_multiplier_mean": 1.1075043007320395,
+        "lightgbm_version": "4.6.0",
+        "mirror_swap_max_abs_prediction_error": 2.220446049250313e-16,
+        "model_sha256": "6967f40ca1303167767d7048d4a69f26c7266b110e9c108b4c69e91044fd8b87",
+        "nonfinite_prediction_count": 0,
+        "train_opportunity_rows": 51139,
+        "train_role_rows": 128307,
+        "train_weight_multiplier_mean": 1.0784375063509968,
+        "training_runtime_seconds": 1.4689999999827705,
+        "utility_margin_scale_bps": 44.5812463760376
+      },
+      "portfolio_claim": false,
+      "profitability_claim": false,
+      "promotion_permitted": false,
+      "rejection_reasons": [
+        "pooled_direction_auc_gate_failed",
+        "minimum_daily_direction_auc_gate_failed",
+        "median_daily_direction_auc_gate_failed",
+        "days_above_chance_gate_failed",
+        "frozen_opportunity_top_100_stress_net_gate_failed",
+        "frozen_opportunity_top_500_stress_net_gate_failed",
+        "candidate_confidence_top_500_stress_net_gate_failed"
+      ],
+      "selected_feature_names": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "intrasecond_range_bps",
+        "range_60s_bps",
+        "range_300s_bps",
+        "range_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "microprice_offset_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_trade_count",
+        "trade_close_vs_mid_bps",
+        "event_delay_p50_ms",
+        "event_delay_p99_ms",
+        "event_delay_vs_60s_mean",
+        "return_efficiency_60s",
+        "return_efficiency_300s",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "return_60s_vol_units",
+        "return_300s_vol_units",
+        "return_900s_vol_units",
+        "volatility_10s_vs_300s",
+        "volatility_60s_vs_900s",
+        "spread_to_10s_volatility",
+        "ofi_trade_flow_agreement",
+        "quote_trade_log_intensity_gap",
+        "intrasecond_close_location",
+        "utc_day_sin",
+        "utc_day_cos",
+        "funding_cycle_sin",
+        "funding_cycle_cos",
+        "return_1800s_bps",
+        "return_3600s_bps",
+        "realized_volatility_1800s_bps",
+        "realized_volatility_3600s_bps",
+        "range_1800s_bps",
+        "range_3600s_bps",
+        "spread_vs_900s_mean",
+        "quote_intensity_vs_900s_mean",
+        "volume_vs_900s_mean",
+        "trade_intensity_vs_900s_mean",
+        "return_efficiency_900s",
+        "return_efficiency_3600s",
+        "return_1800s_vol_units",
+        "return_3600s_vol_units",
+        "volatility_300s_vs_3600s",
+        "volatility_900s_vs_3600s",
+        "utc_week_sin",
+        "utc_week_cos",
+        "weekend_flag",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ],
+      "trading_authority": false,
+      "variant": "full_utility_margin",
+      "weighting": "utility_margin"
+    },
+    {
+      "architecture_freeze_eligible": false,
+      "execution_claim": false,
+      "feature_count": 100,
+      "feature_gain": [
+        {
+          "feature": "ofi_300s_mean",
+          "normalized_gain": 0.11259155278456973,
+          "rank": 1
+        },
+        {
+          "feature": "volatility_900s_vs_3600s",
+          "normalized_gain": 0.08314388937725484,
+          "rank": 2
+        },
+        {
+          "feature": "return_3600s_vol_units",
+          "normalized_gain": 0.05510098974530615,
+          "rank": 3
+        },
+        {
+          "feature": "realized_volatility_3600s_bps",
+          "normalized_gain": 0.05269521634372933,
+          "rank": 4
+        },
+        {
+          "feature": "range_3600s_bps",
+          "normalized_gain": 0.04519983093378327,
+          "rank": 5
+        },
+        {
+          "feature": "realized_volatility_1800s_bps",
+          "normalized_gain": 0.0427245697565324,
+          "rank": 6
+        },
+        {
+          "feature": "realized_volatility_300s_bps",
+          "normalized_gain": 0.03934421957454173,
+          "rank": 7
+        },
+        {
+          "feature": "return_900s_vol_units",
+          "normalized_gain": 0.03653962443518809,
+          "rank": 8
+        },
+        {
+          "feature": "realized_volatility_900s_bps",
+          "normalized_gain": 0.036500984490349,
+          "rank": 9
+        },
+        {
+          "feature": "return_1800s_vol_units",
+          "normalized_gain": 0.035281366740340325,
+          "rank": 10
+        },
+        {
+          "feature": "range_1800s_bps",
+          "normalized_gain": 0.03251850295744629,
+          "rank": 11
+        },
+        {
+          "feature": "range_900s_bps",
+          "normalized_gain": 0.0296752630256748,
+          "rank": 12
+        },
+        {
+          "feature": "return_efficiency_900s",
+          "normalized_gain": 0.027926448486993043,
+          "rank": 13
+        },
+        {
+          "feature": "volatility_300s_vs_3600s",
+          "normalized_gain": 0.025690418772350815,
+          "rank": 14
+        },
+        {
+          "feature": "return_3600s_bps",
+          "normalized_gain": 0.023401806791398756,
+          "rank": 15
+        },
+        {
+          "feature": "return_efficiency_3600s",
+          "normalized_gain": 0.023016562805555984,
+          "rank": 16
+        },
+        {
+          "feature": "imbalance_300s_mean",
+          "normalized_gain": 0.02296900257814072,
+          "rank": 17
+        },
+        {
+          "feature": "range_300s_bps",
+          "normalized_gain": 0.02238572778165787,
+          "rank": 18
+        },
+        {
+          "feature": "return_1800s_bps",
+          "normalized_gain": 0.0221614220140224,
+          "rank": 19
+        },
+        {
+          "feature": "signed_flow_300s",
+          "normalized_gain": 0.02129241343254136,
+          "rank": 20
+        },
+        {
+          "feature": "return_60s_vol_units",
+          "normalized_gain": 0.020808335509435255,
+          "rank": 21
+        },
+        {
+          "feature": "spread_bps",
+          "normalized_gain": 0.020007209944297513,
+          "rank": 22
+        },
+        {
+          "feature": "trade_imbalance_300s_mean",
+          "normalized_gain": 0.019704252435370218,
+          "rank": 23
+        },
+        {
+          "feature": "realized_volatility_120s_bps",
+          "normalized_gain": 0.016529334197086524,
+          "rank": 24
+        },
+        {
+          "feature": "return_900s_bps",
+          "normalized_gain": 0.016182164412027994,
+          "rank": 25
+        },
+        {
+          "feature": "return_300s_vol_units",
+          "normalized_gain": 0.015355684587365505,
+          "rank": 26
+        },
+        {
+          "feature": "return_300s_bps",
+          "normalized_gain": 0.013603050156628256,
+          "rank": 27
+        },
+        {
+          "feature": "return_120s_bps",
+          "normalized_gain": 0.00833292793622821,
+          "rank": 28
+        },
+        {
+          "feature": "spread_vs_300s_mean",
+          "normalized_gain": 0.006138244458990288,
+          "rank": 29
+        },
+        {
+          "feature": "range_60s_bps",
+          "normalized_gain": 0.005368752743774607,
+          "rank": 30
+        },
+        {
+          "feature": "ofi_60s_mean",
+          "normalized_gain": 0.005111782199020932,
+          "rank": 31
+        },
+        {
+          "feature": "spread_vs_900s_mean",
+          "normalized_gain": 0.004840383073225852,
+          "rank": 32
+        },
+        {
+          "feature": "imbalance_60s_mean",
+          "normalized_gain": 0.004795837223081842,
+          "rank": 33
+        },
+        {
+          "feature": "trade_imbalance_60s_mean",
+          "normalized_gain": 0.004432526555170396,
+          "rank": 34
+        },
+        {
+          "feature": "max_spread_bps",
+          "normalized_gain": 0.0037381309217512644,
+          "rank": 35
+        },
+        {
+          "feature": "log_ask_l1_depth_quote",
+          "normalized_gain": 0.0036511996081627484,
+          "rank": 36
+        },
+        {
+          "feature": "trade_imbalance_10s_mean",
+          "normalized_gain": 0.0034683451702774313,
+          "rank": 37
+        },
+        {
+          "feature": "realized_volatility_60s_bps",
+          "normalized_gain": 0.0032190606723971654,
+          "rank": 38
+        },
+        {
+          "feature": "return_5s_bps",
+          "normalized_gain": 0.002831344395046038,
+          "rank": 39
+        },
+        {
+          "feature": "spread_to_10s_volatility",
+          "normalized_gain": 0.002704845299507354,
+          "rank": 40
+        },
+        {
+          "feature": "log_bid_l1_depth_quote",
+          "normalized_gain": 0.002609648574348119,
+          "rank": 41
+        },
+        {
+          "feature": "realized_volatility_30s_bps",
+          "normalized_gain": 0.0025825647303397907,
+          "rank": 42
+        },
+        {
+          "feature": "return_efficiency_300s",
+          "normalized_gain": 0.0020970004710903507,
+          "rank": 43
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_300s",
+          "normalized_gain": 0.0020346749930203463,
+          "rank": 44
+        },
+        {
+          "feature": "event_delay_p99_ms",
+          "normalized_gain": 0.001906559888606746,
+          "rank": 45
+        },
+        {
+          "feature": "close_l1_imbalance",
+          "normalized_gain": 0.0018856724094453306,
+          "rank": 46
+        },
+        {
+          "feature": "return_60s_bps",
+          "normalized_gain": 0.0018073629888844616,
+          "rank": 47
+        },
+        {
+          "feature": "signed_flow_60s",
+          "normalized_gain": 0.0012712360594766285,
+          "rank": 48
+        },
+        {
+          "feature": "return_15s_bps",
+          "normalized_gain": 0.0011864319372113898,
+          "rank": 49
+        },
+        {
+          "feature": "volatility_60s_vs_900s",
+          "normalized_gain": 0.0010694747208415034,
+          "rank": 50
+        },
+        {
+          "feature": "quote_trade_log_intensity_gap",
+          "normalized_gain": 0.0010063951281293368,
+          "rank": 51
+        },
+        {
+          "feature": "return_efficiency_60s",
+          "normalized_gain": 0.0010058600371064316,
+          "rank": 52
+        },
+        {
+          "feature": "ofi_delta_30s",
+          "normalized_gain": 0.0008663680210298597,
+          "rank": 53
+        },
+        {
+          "feature": "normalized_ofi",
+          "normalized_gain": 0.0007686103779768505,
+          "rank": 54
+        },
+        {
+          "feature": "trade_imbalance_delta_5s",
+          "normalized_gain": 0.0006907954104485452,
+          "rank": 55
+        },
+        {
+          "feature": "return_30s_bps",
+          "normalized_gain": 0.0005718104835019165,
+          "rank": 56
+        },
+        {
+          "feature": "l1_imbalance_delta_5s",
+          "normalized_gain": 0.0005034461868943947,
+          "rank": 57
+        },
+        {
+          "feature": "signed_flow_10s",
+          "normalized_gain": 0.0004941198669067794,
+          "rank": 58
+        },
+        {
+          "feature": "log_base_volume",
+          "normalized_gain": 0.0004559941869438485,
+          "rank": 59
+        },
+        {
+          "feature": "trade_close_vs_mid_bps",
+          "normalized_gain": 0.00045392506118343233,
+          "rank": 60
+        },
+        {
+          "feature": "quote_intensity_vs_900s_mean",
+          "normalized_gain": 0.00041226612860417635,
+          "rank": 61
+        },
+        {
+          "feature": "spread_vs_60s_mean",
+          "normalized_gain": 0.0003678999023293064,
+          "rank": 62
+        },
+        {
+          "feature": "ofi_10s_mean",
+          "normalized_gain": 0.0003636704689059963,
+          "rank": 63
+        },
+        {
+          "feature": "event_delay_vs_60s_mean",
+          "normalized_gain": 0.00031530409441361346,
+          "rank": 64
+        },
+        {
+          "feature": "imbalance_10s_mean",
+          "normalized_gain": 0.00031297251441670965,
+          "rank": 65
+        },
+        {
+          "feature": "trade_intensity_vs_900s_mean",
+          "normalized_gain": 0.00031292280038897904,
+          "rank": 66
+        },
+        {
+          "feature": "quote_intensity_vs_300s_mean",
+          "normalized_gain": 0.00030137818621221913,
+          "rank": 67
+        },
+        {
+          "feature": "volatility_10s_vs_300s",
+          "normalized_gain": 0.000299817344891128,
+          "rank": 68
+        },
+        {
+          "feature": "quote_intensity_vs_60s_mean",
+          "normalized_gain": 0.00023370116562028182,
+          "rank": 69
+        },
+        {
+          "feature": "realized_volatility_10s_bps",
+          "normalized_gain": 0.00023349841036992959,
+          "rank": 70
+        },
+        {
+          "feature": "log_quote_updates",
+          "normalized_gain": 0.00022921454706782167,
+          "rank": 71
+        },
+        {
+          "feature": "l1_imbalance_delta_30s",
+          "normalized_gain": 0.000198327540419798,
+          "rank": 72
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_60s",
+          "normalized_gain": 0.00016785103675168124,
+          "rank": 73
+        },
+        {
+          "feature": "return_1s_bps",
+          "normalized_gain": 0.0,
+          "rank": 74
+        },
+        {
+          "feature": "intrasecond_range_bps",
+          "normalized_gain": 0.0,
+          "rank": 75
+        },
+        {
+          "feature": "l1_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 76
+        },
+        {
+          "feature": "microprice_offset_bps",
+          "normalized_gain": 0.0,
+          "rank": 77
+        },
+        {
+          "feature": "ofi_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 78
+        },
+        {
+          "feature": "ofi_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 79
+        },
+        {
+          "feature": "ofi_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 80
+        },
+        {
+          "feature": "trade_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 81
+        },
+        {
+          "feature": "trade_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 82
+        },
+        {
+          "feature": "trade_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 83
+        },
+        {
+          "feature": "trade_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 84
+        },
+        {
+          "feature": "volume_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 85
+        },
+        {
+          "feature": "volume_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 86
+        },
+        {
+          "feature": "log_trade_count",
+          "normalized_gain": 0.0,
+          "rank": 87
+        },
+        {
+          "feature": "event_delay_p50_ms",
+          "normalized_gain": 0.0,
+          "rank": 88
+        },
+        {
+          "feature": "l1_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 89
+        },
+        {
+          "feature": "l1_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 90
+        },
+        {
+          "feature": "microprice_delta_5s_bps",
+          "normalized_gain": 0.0,
+          "rank": 91
+        },
+        {
+          "feature": "microprice_delta_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 92
+        },
+        {
+          "feature": "microprice_delta_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 93
+        },
+        {
+          "feature": "microprice_delta_60s_bps",
+          "normalized_gain": 0.0,
+          "rank": 94
+        },
+        {
+          "feature": "ofi_trade_flow_agreement",
+          "normalized_gain": 0.0,
+          "rank": 95
+        },
+        {
+          "feature": "intrasecond_close_location",
+          "normalized_gain": 0.0,
+          "rank": 96
+        },
+        {
+          "feature": "volume_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 97
+        },
+        {
+          "feature": "l1_depth_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 98
+        },
+        {
+          "feature": "l1_depth_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 99
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_10s",
+          "normalized_gain": 0.0,
+          "rank": 100
+        }
+      ],
+      "feature_set": "full_without_deterministic_cycles",
+      "leverage_applied": false,
+      "metrics": {
+        "all_routed_mean_stress_net_bps": -8.431810189859878,
+        "candidate_confidence_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.72,
+            "long_share": 0.56,
+            "mean_stress_net_bps": 1.919037722385383,
+            "median_stress_net_bps": 7.952768836935573,
+            "positive_ratio": 0.72,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.586,
+            "long_share": 0.63,
+            "mean_stress_net_bps": -5.641039224515481,
+            "median_stress_net_bps": 6.159769820590617,
+            "positive_ratio": 0.586,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.636,
+            "long_share": 0.672,
+            "mean_stress_net_bps": -3.110442272548919,
+            "median_stress_net_bps": 9.543859060884557,
+            "positive_ratio": 0.636,
+            "requested_rows": 500
+          }
+        },
+        "conditional_long_probability_brier_score": 0.24856833841731266,
+        "daily": [
+          {
+            "brier_score": 0.24867866835341865,
+            "date": "2023-06-21",
+            "direction_accuracy": 0.5156363636363637,
+            "direction_auc": 0.5077003110576253,
+            "routed_rows": 4125,
+            "rows": 4125
+          },
+          {
+            "brier_score": 0.24804872662426952,
+            "date": "2023-06-22",
+            "direction_accuracy": 0.5577511828555525,
+            "direction_auc": 0.564894813360505,
+            "routed_rows": 3593,
+            "rows": 3593
+          },
+          {
+            "brier_score": 0.2472496630310296,
+            "date": "2023-06-23",
+            "direction_accuracy": 0.5551713297705124,
+            "direction_auc": 0.5700309122801743,
+            "routed_rows": 3181,
+            "rows": 3181
+          },
+          {
+            "brier_score": 0.2524743700590707,
+            "date": "2023-06-24",
+            "direction_accuracy": 0.4626391096979332,
+            "direction_auc": 0.4693088833776284,
+            "routed_rows": 1887,
+            "rows": 1887
+          },
+          {
+            "brier_score": 0.24784415076613692,
+            "date": "2023-06-25",
+            "direction_accuracy": 0.5529556650246306,
+            "direction_auc": 0.5559925387773923,
+            "routed_rows": 2436,
+            "rows": 2436
+          }
+        ],
+        "daily_auc_median": 0.5559925387773923,
+        "daily_auc_minimum": 0.4693088833776284,
+        "daily_auc_standard_deviation": 0.03901831112990714,
+        "days_above_chance": 4,
+        "direction_accuracy": 0.5332413611877546,
+        "frozen_opportunity_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.47,
+            "long_share": 0.74,
+            "mean_stress_net_bps": -12.722778198827267,
+            "median_stress_net_bps": -28.308174160544173,
+            "positive_ratio": 0.47,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.605,
+            "long_share": 0.718,
+            "mean_stress_net_bps": 0.41444915988853154,
+            "median_stress_net_bps": 13.094342545989695,
+            "positive_ratio": 0.605,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.576,
+            "long_share": 0.708,
+            "mean_stress_net_bps": -4.020331971172164,
+            "median_stress_net_bps": 8.641134739524752,
+            "positive_ratio": 0.576,
+            "requested_rows": 500
+          }
+        },
+        "pooled_direction_auc": 0.5398709730810436,
+        "routed_rows": 15222,
+        "rows": 15222,
+        "score_tie_rows": 0
+      },
+      "model": {
+        "artifact_bytes": 180026,
+        "artifact_path": "models/noncycle_uniqueness.json",
+        "artifact_reload_max_abs_prediction_error": 0.0,
+        "artifact_sha256": "acb7bf76e07fe7b0bd33a0608f13e8f28a2901ef3d9b3a9f774fcffd0a8730ac",
+        "backend_device": "opencl:auto",
+        "backend_kind": "opencl",
+        "backend_requested": "directml",
+        "best_iteration": 31,
+        "early_stop_opportunity_rows": 8814,
+        "early_stop_role_rows": 21934,
+        "early_stop_weight_multiplier_mean": 1.0,
+        "lightgbm_version": "4.6.0",
+        "mirror_swap_max_abs_prediction_error": 2.220446049250313e-16,
+        "model_sha256": "1ee518a33fb2f366bedb28d17cef93effa3abf31d9c7e088814ece67502a070a",
+        "nonfinite_prediction_count": 0,
+        "train_opportunity_rows": 51139,
+        "train_role_rows": 128307,
+        "train_weight_multiplier_mean": 1.0,
+        "training_runtime_seconds": 1.2660000000032596,
+        "utility_margin_scale_bps": 44.5812463760376
+      },
+      "portfolio_claim": false,
+      "profitability_claim": false,
+      "promotion_permitted": false,
+      "rejection_reasons": [
+        "pooled_direction_auc_gate_failed",
+        "minimum_daily_direction_auc_gate_failed",
+        "frozen_opportunity_top_100_stress_net_gate_failed",
+        "frozen_opportunity_top_500_stress_net_gate_failed",
+        "candidate_confidence_top_500_stress_net_gate_failed"
+      ],
+      "selected_feature_names": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "intrasecond_range_bps",
+        "range_60s_bps",
+        "range_300s_bps",
+        "range_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "microprice_offset_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_trade_count",
+        "trade_close_vs_mid_bps",
+        "event_delay_p50_ms",
+        "event_delay_p99_ms",
+        "event_delay_vs_60s_mean",
+        "return_efficiency_60s",
+        "return_efficiency_300s",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "return_60s_vol_units",
+        "return_300s_vol_units",
+        "return_900s_vol_units",
+        "volatility_10s_vs_300s",
+        "volatility_60s_vs_900s",
+        "spread_to_10s_volatility",
+        "ofi_trade_flow_agreement",
+        "quote_trade_log_intensity_gap",
+        "intrasecond_close_location",
+        "return_1800s_bps",
+        "return_3600s_bps",
+        "realized_volatility_1800s_bps",
+        "realized_volatility_3600s_bps",
+        "range_1800s_bps",
+        "range_3600s_bps",
+        "spread_vs_900s_mean",
+        "quote_intensity_vs_900s_mean",
+        "volume_vs_900s_mean",
+        "trade_intensity_vs_900s_mean",
+        "return_efficiency_900s",
+        "return_efficiency_3600s",
+        "return_1800s_vol_units",
+        "return_3600s_vol_units",
+        "volatility_300s_vs_3600s",
+        "volatility_900s_vs_3600s",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ],
+      "trading_authority": false,
+      "variant": "noncycle_uniqueness",
+      "weighting": "uniqueness"
+    },
+    {
+      "architecture_freeze_eligible": false,
+      "execution_claim": false,
+      "feature_count": 100,
+      "feature_gain": [
+        {
+          "feature": "realized_volatility_3600s_bps",
+          "normalized_gain": 0.08066564630290259,
+          "rank": 1
+        },
+        {
+          "feature": "return_3600s_vol_units",
+          "normalized_gain": 0.07891850393570184,
+          "rank": 2
+        },
+        {
+          "feature": "volatility_900s_vs_3600s",
+          "normalized_gain": 0.07251726353147596,
+          "rank": 3
+        },
+        {
+          "feature": "realized_volatility_1800s_bps",
+          "normalized_gain": 0.07012111902885891,
+          "rank": 4
+        },
+        {
+          "feature": "return_900s_vol_units",
+          "normalized_gain": 0.06093918258679721,
+          "rank": 5
+        },
+        {
+          "feature": "ofi_300s_mean",
+          "normalized_gain": 0.056393548865988734,
+          "rank": 6
+        },
+        {
+          "feature": "range_3600s_bps",
+          "normalized_gain": 0.05354775679718406,
+          "rank": 7
+        },
+        {
+          "feature": "range_1800s_bps",
+          "normalized_gain": 0.05183172911390174,
+          "rank": 8
+        },
+        {
+          "feature": "realized_volatility_300s_bps",
+          "normalized_gain": 0.04804894520218411,
+          "rank": 9
+        },
+        {
+          "feature": "range_300s_bps",
+          "normalized_gain": 0.03348519843214883,
+          "rank": 10
+        },
+        {
+          "feature": "realized_volatility_900s_bps",
+          "normalized_gain": 0.03180694002723017,
+          "rank": 11
+        },
+        {
+          "feature": "spread_bps",
+          "normalized_gain": 0.02701490979350738,
+          "rank": 12
+        },
+        {
+          "feature": "imbalance_300s_mean",
+          "normalized_gain": 0.025269909880215796,
+          "rank": 13
+        },
+        {
+          "feature": "return_efficiency_900s",
+          "normalized_gain": 0.023665094431294203,
+          "rank": 14
+        },
+        {
+          "feature": "return_3600s_bps",
+          "normalized_gain": 0.023398778947171846,
+          "rank": 15
+        },
+        {
+          "feature": "realized_volatility_120s_bps",
+          "normalized_gain": 0.022824810682783785,
+          "rank": 16
+        },
+        {
+          "feature": "return_1800s_vol_units",
+          "normalized_gain": 0.022807886791938986,
+          "rank": 17
+        },
+        {
+          "feature": "range_900s_bps",
+          "normalized_gain": 0.022785167914278728,
+          "rank": 18
+        },
+        {
+          "feature": "volatility_300s_vs_3600s",
+          "normalized_gain": 0.021359919158676403,
+          "rank": 19
+        },
+        {
+          "feature": "signed_flow_300s",
+          "normalized_gain": 0.021051669819399873,
+          "rank": 20
+        },
+        {
+          "feature": "return_efficiency_3600s",
+          "normalized_gain": 0.01886807627106349,
+          "rank": 21
+        },
+        {
+          "feature": "return_900s_bps",
+          "normalized_gain": 0.01520132914510361,
+          "rank": 22
+        },
+        {
+          "feature": "return_1800s_bps",
+          "normalized_gain": 0.015170113617647706,
+          "rank": 23
+        },
+        {
+          "feature": "realized_volatility_60s_bps",
+          "normalized_gain": 0.012649053755867178,
+          "rank": 24
+        },
+        {
+          "feature": "trade_imbalance_300s_mean",
+          "normalized_gain": 0.010190246298503187,
+          "rank": 25
+        },
+        {
+          "feature": "return_60s_vol_units",
+          "normalized_gain": 0.009480335927492804,
+          "rank": 26
+        },
+        {
+          "feature": "spread_vs_900s_mean",
+          "normalized_gain": 0.008325941551222087,
+          "rank": 27
+        },
+        {
+          "feature": "range_60s_bps",
+          "normalized_gain": 0.006527735901149342,
+          "rank": 28
+        },
+        {
+          "feature": "imbalance_60s_mean",
+          "normalized_gain": 0.006109965189058135,
+          "rank": 29
+        },
+        {
+          "feature": "return_300s_bps",
+          "normalized_gain": 0.006038981582944077,
+          "rank": 30
+        },
+        {
+          "feature": "return_300s_vol_units",
+          "normalized_gain": 0.00395403527080358,
+          "rank": 31
+        },
+        {
+          "feature": "volatility_60s_vs_900s",
+          "normalized_gain": 0.0033202246286409037,
+          "rank": 32
+        },
+        {
+          "feature": "spread_vs_300s_mean",
+          "normalized_gain": 0.00330393321671076,
+          "rank": 33
+        },
+        {
+          "feature": "realized_volatility_30s_bps",
+          "normalized_gain": 0.0032863209065437174,
+          "rank": 34
+        },
+        {
+          "feature": "return_120s_bps",
+          "normalized_gain": 0.0032299423489269437,
+          "rank": 35
+        },
+        {
+          "feature": "max_spread_bps",
+          "normalized_gain": 0.0031120039013189183,
+          "rank": 36
+        },
+        {
+          "feature": "trade_imbalance_60s_mean",
+          "normalized_gain": 0.0030320778381916634,
+          "rank": 37
+        },
+        {
+          "feature": "return_efficiency_300s",
+          "normalized_gain": 0.0027541819616794666,
+          "rank": 38
+        },
+        {
+          "feature": "spread_to_10s_volatility",
+          "normalized_gain": 0.0021950311191325004,
+          "rank": 39
+        },
+        {
+          "feature": "ofi_60s_mean",
+          "normalized_gain": 0.0020856006446050373,
+          "rank": 40
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_300s",
+          "normalized_gain": 0.001801678180449757,
+          "rank": 41
+        },
+        {
+          "feature": "event_delay_p99_ms",
+          "normalized_gain": 0.0017927670802255701,
+          "rank": 42
+        },
+        {
+          "feature": "signed_flow_60s",
+          "normalized_gain": 0.0009363595590032041,
+          "rank": 43
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_60s",
+          "normalized_gain": 0.0009353603798615128,
+          "rank": 44
+        },
+        {
+          "feature": "return_30s_bps",
+          "normalized_gain": 0.0009056347808957065,
+          "rank": 45
+        },
+        {
+          "feature": "return_5s_bps",
+          "normalized_gain": 0.0008966064047205814,
+          "rank": 46
+        },
+        {
+          "feature": "return_60s_bps",
+          "normalized_gain": 0.0008304470379957047,
+          "rank": 47
+        },
+        {
+          "feature": "quote_intensity_vs_900s_mean",
+          "normalized_gain": 0.0007821658251271212,
+          "rank": 48
+        },
+        {
+          "feature": "trade_imbalance",
+          "normalized_gain": 0.0006838599125197343,
+          "rank": 49
+        },
+        {
+          "feature": "trade_intensity_vs_900s_mean",
+          "normalized_gain": 0.0005794550524485212,
+          "rank": 50
+        },
+        {
+          "feature": "microprice_delta_60s_bps",
+          "normalized_gain": 0.00044837410614439625,
+          "rank": 51
+        },
+        {
+          "feature": "close_l1_imbalance",
+          "normalized_gain": 0.0004401677276526612,
+          "rank": 52
+        },
+        {
+          "feature": "return_1s_bps",
+          "normalized_gain": 0.0004321454077922732,
+          "rank": 53
+        },
+        {
+          "feature": "log_bid_l1_depth_quote",
+          "normalized_gain": 0.00040631989396175855,
+          "rank": 54
+        },
+        {
+          "feature": "trade_imbalance_delta_60s",
+          "normalized_gain": 0.00030273162343785406,
+          "rank": 55
+        },
+        {
+          "feature": "spread_vs_60s_mean",
+          "normalized_gain": 0.00028582269596957063,
+          "rank": 56
+        },
+        {
+          "feature": "quote_intensity_vs_300s_mean",
+          "normalized_gain": 0.0002509920115478378,
+          "rank": 57
+        },
+        {
+          "feature": "return_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 58
+        },
+        {
+          "feature": "realized_volatility_10s_bps",
+          "normalized_gain": 0.0,
+          "rank": 59
+        },
+        {
+          "feature": "intrasecond_range_bps",
+          "normalized_gain": 0.0,
+          "rank": 60
+        },
+        {
+          "feature": "l1_imbalance",
+          "normalized_gain": 0.0,
+          "rank": 61
+        },
+        {
+          "feature": "imbalance_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 62
+        },
+        {
+          "feature": "microprice_offset_bps",
+          "normalized_gain": 0.0,
+          "rank": 63
+        },
+        {
+          "feature": "normalized_ofi",
+          "normalized_gain": 0.0,
+          "rank": 64
+        },
+        {
+          "feature": "ofi_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 65
+        },
+        {
+          "feature": "ofi_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 66
+        },
+        {
+          "feature": "ofi_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 67
+        },
+        {
+          "feature": "ofi_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 68
+        },
+        {
+          "feature": "ofi_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 69
+        },
+        {
+          "feature": "log_quote_updates",
+          "normalized_gain": 0.0,
+          "rank": 70
+        },
+        {
+          "feature": "quote_intensity_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 71
+        },
+        {
+          "feature": "trade_imbalance_10s_mean",
+          "normalized_gain": 0.0,
+          "rank": 72
+        },
+        {
+          "feature": "trade_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 73
+        },
+        {
+          "feature": "trade_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 74
+        },
+        {
+          "feature": "trade_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 75
+        },
+        {
+          "feature": "signed_flow_10s",
+          "normalized_gain": 0.0,
+          "rank": 76
+        },
+        {
+          "feature": "log_base_volume",
+          "normalized_gain": 0.0,
+          "rank": 77
+        },
+        {
+          "feature": "volume_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 78
+        },
+        {
+          "feature": "volume_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 79
+        },
+        {
+          "feature": "log_trade_count",
+          "normalized_gain": 0.0,
+          "rank": 80
+        },
+        {
+          "feature": "trade_close_vs_mid_bps",
+          "normalized_gain": 0.0,
+          "rank": 81
+        },
+        {
+          "feature": "event_delay_p50_ms",
+          "normalized_gain": 0.0,
+          "rank": 82
+        },
+        {
+          "feature": "event_delay_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 83
+        },
+        {
+          "feature": "return_efficiency_60s",
+          "normalized_gain": 0.0,
+          "rank": 84
+        },
+        {
+          "feature": "l1_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 85
+        },
+        {
+          "feature": "l1_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 86
+        },
+        {
+          "feature": "l1_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 87
+        },
+        {
+          "feature": "l1_imbalance_delta_60s",
+          "normalized_gain": 0.0,
+          "rank": 88
+        },
+        {
+          "feature": "microprice_delta_5s_bps",
+          "normalized_gain": 0.0,
+          "rank": 89
+        },
+        {
+          "feature": "microprice_delta_15s_bps",
+          "normalized_gain": 0.0,
+          "rank": 90
+        },
+        {
+          "feature": "microprice_delta_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 91
+        },
+        {
+          "feature": "volatility_10s_vs_300s",
+          "normalized_gain": 0.0,
+          "rank": 92
+        },
+        {
+          "feature": "ofi_trade_flow_agreement",
+          "normalized_gain": 0.0,
+          "rank": 93
+        },
+        {
+          "feature": "quote_trade_log_intensity_gap",
+          "normalized_gain": 0.0,
+          "rank": 94
+        },
+        {
+          "feature": "intrasecond_close_location",
+          "normalized_gain": 0.0,
+          "rank": 95
+        },
+        {
+          "feature": "volume_vs_900s_mean",
+          "normalized_gain": 0.0,
+          "rank": 96
+        },
+        {
+          "feature": "log_ask_l1_depth_quote",
+          "normalized_gain": 0.0,
+          "rank": 97
+        },
+        {
+          "feature": "l1_depth_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 98
+        },
+        {
+          "feature": "l1_depth_vs_300s_mean",
+          "normalized_gain": 0.0,
+          "rank": 99
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_10s",
+          "normalized_gain": 0.0,
+          "rank": 100
+        }
+      ],
+      "feature_set": "full_without_deterministic_cycles",
+      "leverage_applied": false,
+      "metrics": {
+        "all_routed_mean_stress_net_bps": -9.367685444141255,
+        "candidate_confidence_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.44,
+            "long_share": 0.82,
+            "mean_stress_net_bps": -15.694908384656255,
+            "median_stress_net_bps": -49.056187565947056,
+            "positive_ratio": 0.44,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.613,
+            "long_share": 0.69,
+            "mean_stress_net_bps": -1.1852474225510494,
+            "median_stress_net_bps": 11.117961567773687,
+            "positive_ratio": 0.613,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.56,
+            "long_share": 0.732,
+            "mean_stress_net_bps": -5.07345503936022,
+            "median_stress_net_bps": 6.159769820590617,
+            "positive_ratio": 0.56,
+            "requested_rows": 500
+          }
+        },
+        "conditional_long_probability_brier_score": 0.2502609549802924,
+        "daily": [
+          {
+            "brier_score": 0.25386523329513844,
+            "date": "2023-06-21",
+            "direction_accuracy": 0.47006060606060607,
+            "direction_auc": 0.4598821553258004,
+            "routed_rows": 4125,
+            "rows": 4125
+          },
+          {
+            "brier_score": 0.24693257503643465,
+            "date": "2023-06-22",
+            "direction_accuracy": 0.5699972168104648,
+            "direction_auc": 0.5838568330930961,
+            "routed_rows": 3593,
+            "rows": 3593
+          },
+          {
+            "brier_score": 0.24657775565981285,
+            "date": "2023-06-23",
+            "direction_accuracy": 0.5331656711725873,
+            "direction_auc": 0.5560110024614309,
+            "routed_rows": 3181,
+            "rows": 3181
+          },
+          {
+            "brier_score": 0.2551819908276444,
+            "date": "2023-06-24",
+            "direction_accuracy": 0.5119236883942766,
+            "direction_auc": 0.4546026996066964,
+            "routed_rows": 1887,
+            "rows": 1887
+          },
+          {
+            "brier_score": 0.2500645196289103,
+            "date": "2023-06-25",
+            "direction_accuracy": 0.4852216748768473,
+            "direction_auc": 0.5167894361815366,
+            "routed_rows": 2436,
+            "rows": 2436
+          }
+        ],
+        "daily_auc_median": 0.5167894361815366,
+        "daily_auc_minimum": 0.4546026996066964,
+        "daily_auc_standard_deviation": 0.051203909865067204,
+        "days_above_chance": 3,
+        "direction_accuracy": 0.5144527657338064,
+        "frozen_opportunity_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.46,
+            "long_share": 0.73,
+            "mean_stress_net_bps": -13.3123232942955,
+            "median_stress_net_bps": -32.168456091754365,
+            "positive_ratio": 0.46,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.605,
+            "long_share": 0.706,
+            "mean_stress_net_bps": 1.2860544965806662,
+            "median_stress_net_bps": 12.78110852364323,
+            "positive_ratio": 0.605,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.596,
+            "long_share": 0.7,
+            "mean_stress_net_bps": 0.5203813963863649,
+            "median_stress_net_bps": 11.39897397319982,
+            "positive_ratio": 0.596,
+            "requested_rows": 500
+          }
+        },
+        "pooled_direction_auc": 0.5231695216970071,
+        "routed_rows": 15222,
+        "rows": 15222,
+        "score_tie_rows": 0
+      },
+      "model": {
+        "artifact_bytes": 194124,
+        "artifact_path": "models/noncycle_utility_margin.json",
+        "artifact_reload_max_abs_prediction_error": 0.0,
+        "artifact_sha256": "4d2df54ab543b38be99b9ea50c8b432f7ebb0fb93276714c658b0ef8fbba89bc",
+        "backend_device": "opencl:auto",
+        "backend_kind": "opencl",
+        "backend_requested": "directml",
+        "best_iteration": 34,
+        "early_stop_opportunity_rows": 8814,
+        "early_stop_role_rows": 21934,
+        "early_stop_weight_multiplier_mean": 1.1075043007320395,
+        "lightgbm_version": "4.6.0",
+        "mirror_swap_max_abs_prediction_error": 2.220446049250313e-16,
+        "model_sha256": "021d893c333d9f0cb7fe697c1fdabd3a73c0bc2c7f4498a9336909a55b83b772",
+        "nonfinite_prediction_count": 0,
+        "train_opportunity_rows": 51139,
+        "train_role_rows": 128307,
+        "train_weight_multiplier_mean": 1.0784375063509968,
+        "training_runtime_seconds": 1.4689999999827705,
+        "utility_margin_scale_bps": 44.5812463760376
+      },
+      "portfolio_claim": false,
+      "profitability_claim": false,
+      "promotion_permitted": false,
+      "rejection_reasons": [
+        "pooled_direction_auc_gate_failed",
+        "minimum_daily_direction_auc_gate_failed",
+        "median_daily_direction_auc_gate_failed",
+        "days_above_chance_gate_failed",
+        "frozen_opportunity_top_100_stress_net_gate_failed",
+        "candidate_confidence_top_500_stress_net_gate_failed"
+      ],
+      "selected_feature_names": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "intrasecond_range_bps",
+        "range_60s_bps",
+        "range_300s_bps",
+        "range_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "microprice_offset_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_trade_count",
+        "trade_close_vs_mid_bps",
+        "event_delay_p50_ms",
+        "event_delay_p99_ms",
+        "event_delay_vs_60s_mean",
+        "return_efficiency_60s",
+        "return_efficiency_300s",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "return_60s_vol_units",
+        "return_300s_vol_units",
+        "return_900s_vol_units",
+        "volatility_10s_vs_300s",
+        "volatility_60s_vs_900s",
+        "spread_to_10s_volatility",
+        "ofi_trade_flow_agreement",
+        "quote_trade_log_intensity_gap",
+        "intrasecond_close_location",
+        "return_1800s_bps",
+        "return_3600s_bps",
+        "realized_volatility_1800s_bps",
+        "realized_volatility_3600s_bps",
+        "range_1800s_bps",
+        "range_3600s_bps",
+        "spread_vs_900s_mean",
+        "quote_intensity_vs_900s_mean",
+        "volume_vs_900s_mean",
+        "trade_intensity_vs_900s_mean",
+        "return_efficiency_900s",
+        "return_efficiency_3600s",
+        "return_1800s_vol_units",
+        "return_3600s_vol_units",
+        "volatility_300s_vs_3600s",
+        "volatility_900s_vs_3600s",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ],
+      "trading_authority": false,
+      "variant": "noncycle_utility_margin",
+      "weighting": "utility_margin"
+    },
+    {
+      "architecture_freeze_eligible": false,
+      "execution_claim": false,
+      "feature_count": 68,
+      "feature_gain": [
+        {
+          "feature": "ofi_300s_mean",
+          "normalized_gain": 0.15018007735105884,
+          "rank": 1
+        },
+        {
+          "feature": "realized_volatility_900s_bps",
+          "normalized_gain": 0.13072352081081762,
+          "rank": 2
+        },
+        {
+          "feature": "realized_volatility_300s_bps",
+          "normalized_gain": 0.09619524745173942,
+          "rank": 3
+        },
+        {
+          "feature": "imbalance_300s_mean",
+          "normalized_gain": 0.0750711816832055,
+          "rank": 4
+        },
+        {
+          "feature": "return_900s_bps",
+          "normalized_gain": 0.06368102605676926,
+          "rank": 5
+        },
+        {
+          "feature": "realized_volatility_120s_bps",
+          "normalized_gain": 0.053205022511202515,
+          "rank": 6
+        },
+        {
+          "feature": "signed_flow_300s",
+          "normalized_gain": 0.051465536592160195,
+          "rank": 7
+        },
+        {
+          "feature": "trade_imbalance_300s_mean",
+          "normalized_gain": 0.03367588480475042,
+          "rank": 8
+        },
+        {
+          "feature": "spread_vs_900s_mean",
+          "normalized_gain": 0.03313953397538691,
+          "rank": 9
+        },
+        {
+          "feature": "return_300s_bps",
+          "normalized_gain": 0.02957307203464373,
+          "rank": 10
+        },
+        {
+          "feature": "realized_volatility_60s_bps",
+          "normalized_gain": 0.026700354229151905,
+          "rank": 11
+        },
+        {
+          "feature": "return_120s_bps",
+          "normalized_gain": 0.0254832772223947,
+          "rank": 12
+        },
+        {
+          "feature": "spread_bps",
+          "normalized_gain": 0.021561927788982457,
+          "rank": 13
+        },
+        {
+          "feature": "return_15s_bps",
+          "normalized_gain": 0.01851980060369783,
+          "rank": 14
+        },
+        {
+          "feature": "spread_vs_300s_mean",
+          "normalized_gain": 0.016456986918574064,
+          "rank": 15
+        },
+        {
+          "feature": "imbalance_60s_mean",
+          "normalized_gain": 0.0130917219171001,
+          "rank": 16
+        },
+        {
+          "feature": "close_l1_imbalance",
+          "normalized_gain": 0.010450963859055248,
+          "rank": 17
+        },
+        {
+          "feature": "return_60s_bps",
+          "normalized_gain": 0.010413793131480916,
+          "rank": 18
+        },
+        {
+          "feature": "trade_imbalance_60s_mean",
+          "normalized_gain": 0.009528831561595666,
+          "rank": 19
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_300s",
+          "normalized_gain": 0.009109114608229238,
+          "rank": 20
+        },
+        {
+          "feature": "realized_volatility_30s_bps",
+          "normalized_gain": 0.009081332712383245,
+          "rank": 21
+        },
+        {
+          "feature": "max_spread_bps",
+          "normalized_gain": 0.008970519254120055,
+          "rank": 22
+        },
+        {
+          "feature": "log_ask_l1_depth_quote",
+          "normalized_gain": 0.008288034039092802,
+          "rank": 23
+        },
+        {
+          "feature": "ofi_60s_mean",
+          "normalized_gain": 0.008276418583131362,
+          "rank": 24
+        },
+        {
+          "feature": "return_5s_bps",
+          "normalized_gain": 0.007539569424335148,
+          "rank": 25
+        },
+        {
+          "feature": "return_30s_bps",
+          "normalized_gain": 0.007522113233662011,
+          "rank": 26
+        },
+        {
+          "feature": "signed_flow_60s",
+          "normalized_gain": 0.007474434053185979,
+          "rank": 27
+        },
+        {
+          "feature": "log_bid_l1_depth_quote",
+          "normalized_gain": 0.0067260857524098295,
+          "rank": 28
+        },
+        {
+          "feature": "quote_intensity_vs_300s_mean",
+          "normalized_gain": 0.004549719609140442,
+          "rank": 29
+        },
+        {
+          "feature": "spread_vs_60s_mean",
+          "normalized_gain": 0.0040632223258186715,
+          "rank": 30
+        },
+        {
+          "feature": "normalized_ofi",
+          "normalized_gain": 0.0035299519973203196,
+          "rank": 31
+        },
+        {
+          "feature": "log_quote_updates",
+          "normalized_gain": 0.003164010444898644,
+          "rank": 32
+        },
+        {
+          "feature": "l1_depth_vs_60s_mean",
+          "normalized_gain": 0.003053664535027231,
+          "rank": 33
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_60s",
+          "normalized_gain": 0.002931026538373336,
+          "rank": 34
+        },
+        {
+          "feature": "trade_imbalance_delta_60s",
+          "normalized_gain": 0.0027148013398136483,
+          "rank": 35
+        },
+        {
+          "feature": "log_base_volume",
+          "normalized_gain": 0.002350252555860653,
+          "rank": 36
+        },
+        {
+          "feature": "ofi_trade_flow_agreement",
+          "normalized_gain": 0.0021706896350735826,
+          "rank": 37
+        },
+        {
+          "feature": "ofi_10s_mean",
+          "normalized_gain": 0.002097815720985143,
+          "rank": 38
+        },
+        {
+          "feature": "trade_imbalance_delta_5s",
+          "normalized_gain": 0.0020971747093508505,
+          "rank": 39
+        },
+        {
+          "feature": "ofi_delta_60s",
+          "normalized_gain": 0.001988696089256581,
+          "rank": 40
+        },
+        {
+          "feature": "microprice_delta_5s_bps",
+          "normalized_gain": 0.0019862750352711987,
+          "rank": 41
+        },
+        {
+          "feature": "log_trade_count",
+          "normalized_gain": 0.0019344305973400778,
+          "rank": 42
+        },
+        {
+          "feature": "trade_close_vs_mid_bps",
+          "normalized_gain": 0.001789904194920191,
+          "rank": 43
+        },
+        {
+          "feature": "l1_depth_vs_300s_mean",
+          "normalized_gain": 0.0016738347430971274,
+          "rank": 44
+        },
+        {
+          "feature": "l1_imbalance_delta_30s",
+          "normalized_gain": 0.0016088445232383375,
+          "rank": 45
+        },
+        {
+          "feature": "trade_imbalance_10s_mean",
+          "normalized_gain": 0.0015854396895797881,
+          "rank": 46
+        },
+        {
+          "feature": "volume_vs_300s_mean",
+          "normalized_gain": 0.0014050771376317062,
+          "rank": 47
+        },
+        {
+          "feature": "microprice_delta_15s_bps",
+          "normalized_gain": 0.0012365886604386288,
+          "rank": 48
+        },
+        {
+          "feature": "microprice_offset_bps",
+          "normalized_gain": 0.0012350249695436502,
+          "rank": 49
+        },
+        {
+          "feature": "return_1s_bps",
+          "normalized_gain": 0.0008461855240585132,
+          "rank": 50
+        },
+        {
+          "feature": "quote_intensity_vs_60s_mean",
+          "normalized_gain": 0.0008420465153363774,
+          "rank": 51
+        },
+        {
+          "feature": "volume_vs_60s_mean",
+          "normalized_gain": 0.000839977622299512,
+          "rank": 52
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_10s",
+          "normalized_gain": 0.0007825730761215562,
+          "rank": 53
+        },
+        {
+          "feature": "imbalance_10s_mean",
+          "normalized_gain": 0.0007794401159982494,
+          "rank": 54
+        },
+        {
+          "feature": "microprice_delta_60s_bps",
+          "normalized_gain": 0.0007756352723684137,
+          "rank": 55
+        },
+        {
+          "feature": "trade_imbalance",
+          "normalized_gain": 0.0007622519718841149,
+          "rank": 56
+        },
+        {
+          "feature": "signed_flow_10s",
+          "normalized_gain": 0.0006915114073281626,
+          "rank": 57
+        },
+        {
+          "feature": "ofi_delta_30s",
+          "normalized_gain": 0.0005115338559006117,
+          "rank": 58
+        },
+        {
+          "feature": "l1_imbalance_delta_60s",
+          "normalized_gain": 0.00045232767998565804,
+          "rank": 59
+        },
+        {
+          "feature": "l1_imbalance_delta_5s",
+          "normalized_gain": 0.0004114266139186951,
+          "rank": 60
+        },
+        {
+          "feature": "l1_imbalance",
+          "normalized_gain": 0.00036174513653612986,
+          "rank": 61
+        },
+        {
+          "feature": "ofi_delta_5s",
+          "normalized_gain": 0.00035665143044819145,
+          "rank": 62
+        },
+        {
+          "feature": "realized_volatility_10s_bps",
+          "normalized_gain": 0.0003148665615190579,
+          "rank": 63
+        },
+        {
+          "feature": "l1_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 64
+        },
+        {
+          "feature": "microprice_delta_30s_bps",
+          "normalized_gain": 0.0,
+          "rank": 65
+        },
+        {
+          "feature": "ofi_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 66
+        },
+        {
+          "feature": "trade_imbalance_delta_15s",
+          "normalized_gain": 0.0,
+          "rank": 67
+        },
+        {
+          "feature": "trade_imbalance_delta_30s",
+          "normalized_gain": 0.0,
+          "rank": 68
+        }
+      ],
+      "feature_set": "compact_observed_microstructure",
+      "leverage_applied": false,
+      "metrics": {
+        "all_routed_mean_stress_net_bps": -10.723464250705192,
+        "candidate_confidence_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.57,
+            "long_share": 0.29,
+            "mean_stress_net_bps": -6.205945588751663,
+            "median_stress_net_bps": 6.291996672956088,
+            "positive_ratio": 0.57,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.527,
+            "long_share": 0.452,
+            "mean_stress_net_bps": -11.04847572327562,
+            "median_stress_net_bps": 1.544883122877259,
+            "positive_ratio": 0.527,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.498,
+            "long_share": 0.41,
+            "mean_stress_net_bps": -11.911254067574244,
+            "median_stress_net_bps": -24.475055022119975,
+            "positive_ratio": 0.498,
+            "requested_rows": 500
+          }
+        },
+        "conditional_long_probability_brier_score": 0.24997559108769712,
+        "daily": [
+          {
+            "brier_score": 0.2519513680075666,
+            "date": "2023-06-21",
+            "direction_accuracy": 0.48048484848484846,
+            "direction_auc": 0.4734405393877816,
+            "routed_rows": 4125,
+            "rows": 4125
+          },
+          {
+            "brier_score": 0.25013730800756356,
+            "date": "2023-06-22",
+            "direction_accuracy": 0.5101586418035068,
+            "direction_auc": 0.5128059918485014,
+            "routed_rows": 3593,
+            "rows": 3593
+          },
+          {
+            "brier_score": 0.24957088367524324,
+            "date": "2023-06-23",
+            "direction_accuracy": 0.4988997170701037,
+            "direction_auc": 0.5124183182358717,
+            "routed_rows": 3181,
+            "rows": 3181
+          },
+          {
+            "brier_score": 0.2508697422904946,
+            "date": "2023-06-24",
+            "direction_accuracy": 0.5135135135135135,
+            "direction_auc": 0.500022773803749,
+            "routed_rows": 1887,
+            "rows": 1887
+          },
+          {
+            "brier_score": 0.2462272258462339,
+            "date": "2023-06-25",
+            "direction_accuracy": 0.5714285714285714,
+            "direction_auc": 0.5918357991725782,
+            "routed_rows": 2436,
+            "rows": 2436
+          }
+        ],
+        "daily_auc_median": 0.5124183182358717,
+        "daily_auc_minimum": 0.4734405393877816,
+        "daily_auc_standard_deviation": 0.03954372144601021,
+        "days_above_chance": 4,
+        "direction_accuracy": 0.5099855472342661,
+        "frozen_opportunity_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.38,
+            "long_share": 0.59,
+            "mean_stress_net_bps": -25.889562106437225,
+            "median_stress_net_bps": -53.51207611040302,
+            "positive_ratio": 0.38,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.452,
+            "long_share": 0.511,
+            "mean_stress_net_bps": -17.864371291232487,
+            "median_stress_net_bps": -33.08074248678488,
+            "positive_ratio": 0.452,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.464,
+            "long_share": 0.512,
+            "mean_stress_net_bps": -18.767757148026025,
+            "median_stress_net_bps": -32.86512884874847,
+            "positive_ratio": 0.464,
+            "requested_rows": 500
+          }
+        },
+        "pooled_direction_auc": 0.5149097369046143,
+        "routed_rows": 15222,
+        "rows": 15222,
+        "score_tie_rows": 0
+      },
+      "model": {
+        "artifact_bytes": 177808,
+        "artifact_path": "models/compact_uniqueness.json",
+        "artifact_reload_max_abs_prediction_error": 0.0,
+        "artifact_sha256": "6535b47a45b11203525d15bae8d137c2aba2e80b069edc0894a1f9e785db1256",
+        "backend_device": "opencl:auto",
+        "backend_kind": "opencl",
+        "backend_requested": "directml",
+        "best_iteration": 31,
+        "early_stop_opportunity_rows": 8814,
+        "early_stop_role_rows": 21934,
+        "early_stop_weight_multiplier_mean": 1.0,
+        "lightgbm_version": "4.6.0",
+        "mirror_swap_max_abs_prediction_error": 2.220446049250313e-16,
+        "model_sha256": "77c517199001aa02259c781e82e3d3b30277bb75fabefb41add84c82f5f6f213",
+        "nonfinite_prediction_count": 0,
+        "train_opportunity_rows": 51139,
+        "train_role_rows": 128307,
+        "train_weight_multiplier_mean": 1.0,
+        "training_runtime_seconds": 1.2339999999967404,
+        "utility_margin_scale_bps": 44.5812463760376
+      },
+      "portfolio_claim": false,
+      "profitability_claim": false,
+      "promotion_permitted": false,
+      "rejection_reasons": [
+        "pooled_direction_auc_gate_failed",
+        "minimum_daily_direction_auc_gate_failed",
+        "median_daily_direction_auc_gate_failed",
+        "frozen_opportunity_top_100_stress_net_gate_failed",
+        "frozen_opportunity_top_500_stress_net_gate_failed",
+        "candidate_confidence_top_500_stress_net_gate_failed"
+      ],
+      "selected_feature_names": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "spread_vs_900s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_offset_bps",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "trade_close_vs_mid_bps",
+        "ofi_trade_flow_agreement",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "log_trade_count",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ],
+      "trading_authority": false,
+      "variant": "compact_uniqueness",
+      "weighting": "uniqueness"
+    },
+    {
+      "architecture_freeze_eligible": false,
+      "execution_claim": false,
+      "feature_count": 68,
+      "feature_gain": [
+        {
+          "feature": "return_900s_bps",
+          "normalized_gain": 0.16496249920987718,
+          "rank": 1
+        },
+        {
+          "feature": "realized_volatility_120s_bps",
+          "normalized_gain": 0.0877605739263358,
+          "rank": 2
+        },
+        {
+          "feature": "realized_volatility_900s_bps",
+          "normalized_gain": 0.08456563692110725,
+          "rank": 3
+        },
+        {
+          "feature": "realized_volatility_300s_bps",
+          "normalized_gain": 0.08400682815787107,
+          "rank": 4
+        },
+        {
+          "feature": "ofi_300s_mean",
+          "normalized_gain": 0.07714503894302548,
+          "rank": 5
+        },
+        {
+          "feature": "imbalance_300s_mean",
+          "normalized_gain": 0.06627262195289489,
+          "rank": 6
+        },
+        {
+          "feature": "signed_flow_300s",
+          "normalized_gain": 0.06374502736736812,
+          "rank": 7
+        },
+        {
+          "feature": "spread_vs_900s_mean",
+          "normalized_gain": 0.05390023687856262,
+          "rank": 8
+        },
+        {
+          "feature": "spread_bps",
+          "normalized_gain": 0.037299969809747466,
+          "rank": 9
+        },
+        {
+          "feature": "realized_volatility_60s_bps",
+          "normalized_gain": 0.032698090237163566,
+          "rank": 10
+        },
+        {
+          "feature": "imbalance_60s_mean",
+          "normalized_gain": 0.02800707985211705,
+          "rank": 11
+        },
+        {
+          "feature": "trade_imbalance_300s_mean",
+          "normalized_gain": 0.02786354603698689,
+          "rank": 12
+        },
+        {
+          "feature": "return_120s_bps",
+          "normalized_gain": 0.022905968863196204,
+          "rank": 13
+        },
+        {
+          "feature": "return_300s_bps",
+          "normalized_gain": 0.017581638932380284,
+          "rank": 14
+        },
+        {
+          "feature": "realized_volatility_30s_bps",
+          "normalized_gain": 0.01739925319101263,
+          "rank": 15
+        },
+        {
+          "feature": "max_spread_bps",
+          "normalized_gain": 0.014413659439737192,
+          "rank": 16
+        },
+        {
+          "feature": "spread_vs_300s_mean",
+          "normalized_gain": 0.013130286317694863,
+          "rank": 17
+        },
+        {
+          "feature": "quote_intensity_vs_300s_mean",
+          "normalized_gain": 0.006894612233264465,
+          "rank": 18
+        },
+        {
+          "feature": "ofi_60s_mean",
+          "normalized_gain": 0.006681698896292144,
+          "rank": 19
+        },
+        {
+          "feature": "return_5s_bps",
+          "normalized_gain": 0.0066201224841134715,
+          "rank": 20
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_300s",
+          "normalized_gain": 0.006038952904771428,
+          "rank": 21
+        },
+        {
+          "feature": "ofi_10s_mean",
+          "normalized_gain": 0.004976260399779305,
+          "rank": 22
+        },
+        {
+          "feature": "return_30s_bps",
+          "normalized_gain": 0.004489932714778352,
+          "rank": 23
+        },
+        {
+          "feature": "trade_imbalance_60s_mean",
+          "normalized_gain": 0.004282884938663121,
+          "rank": 24
+        },
+        {
+          "feature": "return_15s_bps",
+          "normalized_gain": 0.004238610575596243,
+          "rank": 25
+        },
+        {
+          "feature": "return_60s_bps",
+          "normalized_gain": 0.004199815488819094,
+          "rank": 26
+        },
+        {
+          "feature": "log_ask_l1_depth_quote",
+          "normalized_gain": 0.0033568060124074426,
+          "rank": 27
+        },
+        {
+          "feature": "signed_flow_60s",
+          "normalized_gain": 0.003346318700955622,
+          "rank": 28
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_60s",
+          "normalized_gain": 0.003345932884089532,
+          "rank": 29
+        },
+        {
+          "feature": "log_quote_updates",
+          "normalized_gain": 0.003199444581689481,
+          "rank": 30
+        },
+        {
+          "feature": "log_bid_l1_depth_quote",
+          "normalized_gain": 0.003189647633996051,
+          "rank": 31
+        },
+        {
+          "feature": "trade_imbalance_delta_15s",
+          "normalized_gain": 0.0031328492396602886,
+          "rank": 32
+        },
+        {
+          "feature": "signed_pressure_to_opposing_depth_10s",
+          "normalized_gain": 0.0027059714850593726,
+          "rank": 33
+        },
+        {
+          "feature": "log_base_volume",
+          "normalized_gain": 0.0025300457620348123,
+          "rank": 34
+        },
+        {
+          "feature": "close_l1_imbalance",
+          "normalized_gain": 0.0023955648460702705,
+          "rank": 35
+        },
+        {
+          "feature": "return_1s_bps",
+          "normalized_gain": 0.00204101593752619,
+          "rank": 36
+        },
+        {
+          "feature": "volume_vs_300s_mean",
+          "normalized_gain": 0.001990206467135694,
+          "rank": 37
+        },
+        {
+          "feature": "quote_intensity_vs_60s_mean",
+          "normalized_gain": 0.001836375612435471,
+          "rank": 38
+        },
+        {
+          "feature": "realized_volatility_10s_bps",
+          "normalized_gain": 0.0017355456011630716,
+          "rank": 39
+        },
+        {
+          "feature": "l1_imbalance_delta_30s",
+          "normalized_gain": 0.001653199235825176,
+          "rank": 40
+        },
+        {
+          "feature": "l1_depth_vs_60s_mean",
+          "normalized_gain": 0.0016488015966747548,
+          "rank": 41
+        },
+        {
+          "feature": "ofi_delta_60s",
+          "normalized_gain": 0.001606199485746277,
+          "rank": 42
+        },
+        {
+          "feature": "trade_imbalance_delta_30s",
+          "normalized_gain": 0.0015834768430983395,
+          "rank": 43
+        },
+        {
+          "feature": "ofi_delta_5s",
+          "normalized_gain": 0.001478582654511101,
+          "rank": 44
+        },
+        {
+          "feature": "trade_imbalance",
+          "normalized_gain": 0.0014408087705325623,
+          "rank": 45
+        },
+        {
+          "feature": "l1_imbalance_delta_15s",
+          "normalized_gain": 0.0012307377183781616,
+          "rank": 46
+        },
+        {
+          "feature": "microprice_offset_bps",
+          "normalized_gain": 0.0012295260786267521,
+          "rank": 47
+        },
+        {
+          "feature": "l1_depth_vs_300s_mean",
+          "normalized_gain": 0.0010967433401240032,
+          "rank": 48
+        },
+        {
+          "feature": "imbalance_10s_mean",
+          "normalized_gain": 0.001073801290556306,
+          "rank": 49
+        },
+        {
+          "feature": "trade_imbalance_delta_60s",
+          "normalized_gain": 0.001073624334404846,
+          "rank": 50
+        },
+        {
+          "feature": "log_trade_count",
+          "normalized_gain": 0.0009047043362298477,
+          "rank": 51
+        },
+        {
+          "feature": "trade_close_vs_mid_bps",
+          "normalized_gain": 0.0009019099036713751,
+          "rank": 52
+        },
+        {
+          "feature": "spread_vs_60s_mean",
+          "normalized_gain": 0.000826189012879137,
+          "rank": 53
+        },
+        {
+          "feature": "l1_imbalance",
+          "normalized_gain": 0.000807461300246097,
+          "rank": 54
+        },
+        {
+          "feature": "microprice_delta_15s_bps",
+          "normalized_gain": 0.000712913837610996,
+          "rank": 55
+        },
+        {
+          "feature": "trade_imbalance_delta_5s",
+          "normalized_gain": 0.0007127509400095043,
+          "rank": 56
+        },
+        {
+          "feature": "ofi_delta_30s",
+          "normalized_gain": 0.0005452339447706438,
+          "rank": 57
+        },
+        {
+          "feature": "signed_flow_10s",
+          "normalized_gain": 0.000475171138883453,
+          "rank": 58
+        },
+        {
+          "feature": "ofi_delta_15s",
+          "normalized_gain": 0.0004138455246333737,
+          "rank": 59
+        },
+        {
+          "feature": "normalized_ofi",
+          "normalized_gain": 0.00039485182753635427,
+          "rank": 60
+        },
+        {
+          "feature": "microprice_delta_5s_bps",
+          "normalized_gain": 0.00039173044427764063,
+          "rank": 61
+        },
+        {
+          "feature": "microprice_delta_60s_bps",
+          "normalized_gain": 0.0003078493401456199,
+          "rank": 62
+        },
+        {
+          "feature": "l1_imbalance_delta_60s",
+          "normalized_gain": 0.00030179121475347736,
+          "rank": 63
+        },
+        {
+          "feature": "microprice_delta_30s_bps",
+          "normalized_gain": 0.0002658943535345019,
+          "rank": 64
+        },
+        {
+          "feature": "trade_imbalance_10s_mean",
+          "normalized_gain": 3.5630094960224575e-05,
+          "rank": 65
+        },
+        {
+          "feature": "l1_imbalance_delta_5s",
+          "normalized_gain": 0.0,
+          "rank": 66
+        },
+        {
+          "feature": "ofi_trade_flow_agreement",
+          "normalized_gain": 0.0,
+          "rank": 67
+        },
+        {
+          "feature": "volume_vs_60s_mean",
+          "normalized_gain": 0.0,
+          "rank": 68
+        }
+      ],
+      "feature_set": "compact_observed_microstructure",
+      "leverage_applied": false,
+      "metrics": {
+        "all_routed_mean_stress_net_bps": -9.62371128045545,
+        "candidate_confidence_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.45,
+            "long_share": 0.51,
+            "mean_stress_net_bps": -20.762529166662972,
+            "median_stress_net_bps": -36.91489538151295,
+            "positive_ratio": 0.45,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.526,
+            "long_share": 0.466,
+            "mean_stress_net_bps": -13.730266263912185,
+            "median_stress_net_bps": 1.3346759803484343,
+            "positive_ratio": 0.526,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.504,
+            "long_share": 0.444,
+            "mean_stress_net_bps": -16.809086442906096,
+            "median_stress_net_bps": 0.637797696406917,
+            "positive_ratio": 0.504,
+            "requested_rows": 500
+          }
+        },
+        "conditional_long_probability_brier_score": 0.2503894428002351,
+        "daily": [
+          {
+            "brier_score": 0.25047172338979445,
+            "date": "2023-06-21",
+            "direction_accuracy": 0.5309090909090909,
+            "direction_auc": 0.5172553044255682,
+            "routed_rows": 4125,
+            "rows": 4125
+          },
+          {
+            "brier_score": 0.25069709101038856,
+            "date": "2023-06-22",
+            "direction_accuracy": 0.5251878652936265,
+            "direction_auc": 0.5195191734181619,
+            "routed_rows": 3593,
+            "rows": 3593
+          },
+          {
+            "brier_score": 0.25111143625572785,
+            "date": "2023-06-23",
+            "direction_accuracy": 0.5133605784344546,
+            "direction_auc": 0.5137111430581083,
+            "routed_rows": 3181,
+            "rows": 3181
+          },
+          {
+            "brier_score": 0.25117050494198634,
+            "date": "2023-06-24",
+            "direction_accuracy": 0.49973502914679385,
+            "direction_auc": 0.5064347382492866,
+            "routed_rows": 1887,
+            "rows": 1887
+          },
+          {
+            "brier_score": 0.2482485097565483,
+            "date": "2023-06-25",
+            "direction_accuracy": 0.5201149425287356,
+            "direction_auc": 0.5462635575093214,
+            "routed_rows": 2436,
+            "rows": 2436
+          }
+        ],
+        "daily_auc_median": 0.5172553044255682,
+        "daily_auc_minimum": 0.5064347382492866,
+        "daily_auc_standard_deviation": 0.013557858119809002,
+        "days_above_chance": 5,
+        "direction_accuracy": 0.520299566417028,
+        "frozen_opportunity_ranked": {
+          "100": {
+            "actual_rows": 100,
+            "direction_accuracy": 0.39,
+            "long_share": 0.66,
+            "mean_stress_net_bps": -25.99186845052459,
+            "median_stress_net_bps": -53.51207611040302,
+            "positive_ratio": 0.39,
+            "requested_rows": 100
+          },
+          "1000": {
+            "actual_rows": 1000,
+            "direction_accuracy": 0.495,
+            "long_share": 0.518,
+            "mean_stress_net_bps": -13.02119240756724,
+            "median_stress_net_bps": -25.700741921446117,
+            "positive_ratio": 0.495,
+            "requested_rows": 1000
+          },
+          "500": {
+            "actual_rows": 500,
+            "direction_accuracy": 0.496,
+            "long_share": 0.516,
+            "mean_stress_net_bps": -15.952352359113815,
+            "median_stress_net_bps": -26.15250784397834,
+            "positive_ratio": 0.496,
+            "requested_rows": 500
+          }
+        },
+        "pooled_direction_auc": 0.5234938635776568,
+        "routed_rows": 15222,
+        "rows": 15222,
+        "score_tie_rows": 0
+      },
+      "model": {
+        "artifact_bytes": 203721,
+        "artifact_path": "models/compact_utility_margin.json",
+        "artifact_reload_max_abs_prediction_error": 0.0,
+        "artifact_sha256": "872eb0d0ae2da57f9abd6ab52f376481135bd942a8760bb10e00cf7187c341ba",
+        "backend_device": "opencl:auto",
+        "backend_kind": "opencl",
+        "backend_requested": "directml",
+        "best_iteration": 36,
+        "early_stop_opportunity_rows": 8814,
+        "early_stop_role_rows": 21934,
+        "early_stop_weight_multiplier_mean": 1.1075043007320395,
+        "lightgbm_version": "4.6.0",
+        "mirror_swap_max_abs_prediction_error": 2.220446049250313e-16,
+        "model_sha256": "0e6fe0ffa8a09be05400522eefee05ffe91b3b382319cf5ca963486d81e010aa",
+        "nonfinite_prediction_count": 0,
+        "train_opportunity_rows": 51139,
+        "train_role_rows": 128307,
+        "train_weight_multiplier_mean": 1.0784375063509968,
+        "training_runtime_seconds": 1.0310000000172295,
+        "utility_margin_scale_bps": 44.5812463760376
+      },
+      "portfolio_claim": false,
+      "profitability_claim": false,
+      "promotion_permitted": false,
+      "rejection_reasons": [
+        "pooled_direction_auc_gate_failed",
+        "median_daily_direction_auc_gate_failed",
+        "frozen_opportunity_top_100_stress_net_gate_failed",
+        "frozen_opportunity_top_500_stress_net_gate_failed",
+        "candidate_confidence_top_500_stress_net_gate_failed"
+      ],
+      "selected_feature_names": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "spread_vs_900s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_offset_bps",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "trade_close_vs_mid_bps",
+        "ofi_trade_flow_agreement",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "log_trade_count",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ],
+      "trading_authority": false,
+      "variant": "compact_utility_margin",
+      "weighting": "utility_margin"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1380" height="650" viewBox="0 0 1380 650" role="img">
+<title>Ranked after-cost tails remained economically negative</title>
+<desc>Mean stress net return in basis points; the zero line is the minimum strict pass boundary.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:24px;font-weight:700;fill:#17202a}.subtitle{font-size:14px;fill:#4b5563}.label{font-size:13px;fill:#263238}.value{font-size:13px;font-weight:650;fill:#17202a}.axis{font-size:12px;fill:#64748b}.note{font-size:12px;fill:#6b7280}.grid{stroke:#d8dee7;stroke-width:1}.zero{stroke:#9f1239;stroke-width:2}.gate{stroke:#b91c1c;stroke-width:2;stroke-dasharray:7 5}</style>
+<text x="48" y="42" class="title">Ranked after-cost tails remained economically negative</text>
+<text x="48" y="66" class="subtitle">Mean stress net return in basis points; the zero line is the minimum strict pass boundary.</text>
+<line x1="310.0" y1="118" x2="310.0" y2="578" class="grid"/>
+<text x="310.0" y="602" text-anchor="middle" class="axis">-30</text>
+<line x1="557.5" y1="118" x2="557.5" y2="578" class="grid"/>
+<text x="557.5" y="602" text-anchor="middle" class="axis">-20</text>
+<line x1="805.0" y1="118" x2="805.0" y2="578" class="grid"/>
+<text x="805.0" y="602" text-anchor="middle" class="axis">-10</text>
+<line x1="1052.5" y1="118" x2="1052.5" y2="578" class="zero"/>
+<text x="1052.5" y="602" text-anchor="middle" class="axis">+0</text>
+<line x1="1300.0" y1="118" x2="1300.0" y2="578" class="grid"/>
+<text x="1300.0" y="602" text-anchor="middle" class="axis">+10</text>
+<text x="292" y="157" text-anchor="end" class="label">Full / uniqueness</text>
+<circle cx="731.5" cy="140" r="6" fill="#b45309" stroke="#ffffff" stroke-width="1"/>
+<text x="741.5" y="144" class="value">-12.97</text>
+<circle cx="819.5" cy="152" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+<text x="829.5" y="156" class="value">-9.41</text>
+<circle cx="931.0" cy="164" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<text x="941.0" y="168" class="value">-4.91</text>
+<text x="292" y="227" text-anchor="end" class="label">Full / utility margin</text>
+<circle cx="576.3" cy="210" r="6" fill="#b45309" stroke="#ffffff" stroke-width="1"/>
+<text x="586.3" y="214" class="value">-19.24</text>
+<circle cx="797.5" cy="222" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+<text x="807.5" y="226" class="value">-10.30</text>
+<circle cx="762.3" cy="234" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<text x="772.3" y="238" class="value">-11.72</text>
+<text x="292" y="297" text-anchor="end" class="label">No cycles / uniqueness</text>
+<circle cx="737.6" cy="280" r="6" fill="#b45309" stroke="#ffffff" stroke-width="1"/>
+<text x="747.6" y="284" class="value">-12.72</text>
+<circle cx="953.0" cy="292" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+<text x="963.0" y="296" class="value">-4.02</text>
+<circle cx="975.5" cy="304" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<text x="985.5" y="308" class="value">-3.11</text>
+<text x="292" y="367" text-anchor="end" class="label">No cycles / utility margin</text>
+<circle cx="723.0" cy="350" r="6" fill="#b45309" stroke="#ffffff" stroke-width="1"/>
+<text x="733.0" y="354" class="value">-13.31</text>
+<circle cx="1065.4" cy="362" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+<text x="1075.4" y="366" class="value">+0.52</text>
+<circle cx="926.9" cy="374" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<text x="936.9" y="378" class="value">-5.07</text>
+<text x="292" y="437" text-anchor="end" class="label">Compact / uniqueness</text>
+<circle cx="411.7" cy="420" r="6" fill="#b45309" stroke="#ffffff" stroke-width="1"/>
+<text x="421.7" y="424" class="value">-25.89</text>
+<circle cx="588.0" cy="432" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+<text x="598.0" y="436" class="value">-18.77</text>
+<circle cx="757.7" cy="444" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<text x="767.7" y="448" class="value">-11.91</text>
+<text x="292" y="507" text-anchor="end" class="label">Compact / utility margin</text>
+<circle cx="409.2" cy="490" r="6" fill="#b45309" stroke="#ffffff" stroke-width="1"/>
+<text x="419.2" y="494" class="value">-25.99</text>
+<circle cx="657.7" cy="502" r="6" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+<text x="667.7" y="506" class="value">-15.95</text>
+<circle cx="636.5" cy="514" r="6" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<text x="646.5" y="518" class="value">-16.81</text>
+<circle cx="310" cy="620" r="5" fill="#b45309"/><text x="322" y="624" class="note">frozen rank top 100</text>
+<circle cx="545" cy="620" r="5" fill="#0f766e"/><text x="557" y="624" class="note">frozen rank top 500</text>
+<circle cx="780" cy="620" r="5" fill="#2563eb"/><text x="792" y="624" class="note">candidate confidence top 500</text>
+<text x="1332" y="624" text-anchor="end" class="note">Stress targets include fees, slippage, latency, and barrier execution.</text>
+</svg>
