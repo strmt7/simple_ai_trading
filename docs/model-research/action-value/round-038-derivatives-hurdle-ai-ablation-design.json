@@ -1,0 +1,326 @@
+{
+  "schema_version": "derivatives-hurdle-ai-ablation-design-v1",
+  "round": 38,
+  "design_sha256": "ad81d4f5b570d0367cf2343e5e9ba0afdb1c41400f8368b3396df7e2484882a5",
+  "phase": "frozen_derivatives_augmented_hurdle_viability_then_ai_ablation",
+  "predecessor": {
+    "failure_analysis": "round-037-failure-analysis.json",
+    "failure_analysis_canonical_sha256": "39b2347a81d0ba7284cd213dc5f66f356148b7cbf06153c49a55dcd50f2c9374",
+    "failure_analysis_file_sha256": "1a5d3163c6a75b016f6c7f937919f95ad2cdc10c6826c6d159d10e3af7646316",
+    "decision": "reject_compressed_median_return_regression_and_model_cost_aware_actions_directly"
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-037.json",
+    "consumed_period_registry_canonical_sha256": "f5cf5667557b03c377ba9f65b85c61297dff3e53d6a292f1d1ac4edcf2fb71ce",
+    "consumed_period_registry_file_sha256": "f85a3212af0d5a5bf54a150ffe13da4668f17961b63f313e1f9fb78d4d3ef72a",
+    "freeze_before_derivatives_target_access": true,
+    "single_fixed_seed": 3801,
+    "unregistered_hyperparameter_search_permitted": false,
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "promotion_permitted": false,
+    "trading_authority_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "ai_can_create_reverse_or_increase_trades": false,
+    "oracle_feature_or_runtime_label_use_permitted": false,
+    "profitability_target_override_permitted": false
+  },
+  "source_contract": {
+    "database_argument": "data/market_data.sqlite",
+    "provider": "Binance public data archives",
+    "market_type": "futures",
+    "venue_product": "USD-M perpetual futures",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "materialization_start": "2021-12-01T00:00:00Z",
+    "materialization_end": "2025-06-30T23:59:00Z",
+    "price_flow_source": {
+      "data_type": "klines",
+      "interval": "1m",
+      "required_columns": [
+        "open_time",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "quote_volume",
+        "trade_count",
+        "taker_buy_base_volume",
+        "taker_buy_quote_volume",
+        "source"
+      ],
+      "required_rows_per_symbol": 1883520,
+      "required_gap_count": 0,
+      "required_panel_stream_sha256": "40ef0a76d57fa844fb01ccd90d7c768f5fbbf613467303a2dc1dcdd39b100a3d"
+    },
+    "premium_index_source": {
+      "data_type": "premiumIndexKlines",
+      "cadence": "monthly",
+      "interval": "1m",
+      "url_template": "https://data.binance.vision/data/futures/um/monthly/premiumIndexKlines/{symbol}/1m/{symbol}-1m-{yyyy_mm}.zip",
+      "required_columns": ["open_time", "open", "high", "low", "close", "close_time"],
+      "required_periods_per_symbol": 43,
+      "required_checksum_files_per_symbol": 43,
+      "required_gap_count": 0,
+      "expected_rows_per_symbol": 1883520
+    },
+    "funding_source": {
+      "data_type": "fundingRate",
+      "cadence": "monthly",
+      "url_template": "https://data.binance.vision/data/futures/um/monthly/fundingRate/{symbol}/{symbol}-fundingRate-{yyyy_mm}.zip",
+      "required_columns": ["calc_time", "funding_interval_hours", "last_funding_rate"],
+      "required_periods_per_symbol": 43,
+      "required_checksum_files_per_symbol": 43,
+      "duplicate_calc_time_permitted": false,
+      "funding_interval_hours_range": [1, 8]
+    },
+    "official_listing_metadata_observed_2026_07_12": {
+      "BTCUSDT": {"premium_periods": 78, "funding_periods": 78, "first": "2020-01", "last": "2026-06"},
+      "ETHUSDT": {"premium_periods": 78, "funding_periods": 78, "first": "2020-01", "last": "2026-06"},
+      "SOLUSDT": {"premium_periods": 70, "funding_periods": 70, "first": "2020-09", "last": "2026-06"}
+    },
+    "required_archive_status": "complete",
+    "required_checksum_status": "verified",
+    "archive_zip_sha256_and_decompressed_row_stream_sha256_required": true,
+    "single_database_required": true,
+    "persistent_feature_copy_permitted": false,
+    "mark_and_index_price_archives_ingested_in_this_round": false,
+    "mark_index_exclusion_reason": "Premium index is the prespecified basis-state feature; redundant mark and index archives would add storage and multiple-testing cost without a frozen incremental hypothesis."
+  },
+  "chronological_roles": [
+    {"role": "training", "start": "2022-01-01", "end": "2024-06-30", "targets_permitted": true},
+    {"role": "early_stop_and_probability_calibration", "start": "2024-07-01", "end": "2024-09-30", "targets_permitted": true},
+    {"role": "action_threshold_calibration", "start": "2024-10-01", "end": "2024-12-31", "targets_permitted": true},
+    {"role": "viability", "start": "2025-01-01", "end": "2025-06-30", "targets_permitted": true},
+    {"role": "selection_confirmation", "start": "2025-07-01", "end": "2025-12-31", "targets_permitted": false},
+    {"role": "terminal", "start": "2026-01-01", "end": "2026-06-30", "targets_permitted": false}
+  ],
+  "decision_target_and_accounting_contract": {
+    "decision_cadence_minutes": 5,
+    "decision_information_cutoff": "All price-flow and premium features end at minute t; funding features use only settlements with calc_time at or before minute t close.",
+    "entry_price": "USD-M perpetual open of minute t+1",
+    "exit_price": "USD-M perpetual open exactly horizon_minutes after entry",
+    "horizons_minutes": [15, 30, 60, 120],
+    "round_trip_execution_charge_bps": 12.0,
+    "execution_charge_components": {
+      "taker_fee_bps_per_side": 5.0,
+      "additional_adverse_slippage_bps_per_side": 1.0,
+      "historical_spread_unavailable_in_monthly_minute_archive": true,
+      "charge_may_not_be_reduced": true
+    },
+    "funding_cash_flow_window": "entry_time < calc_time <= exit_time",
+    "long_funding_cash_flow_bps": "-10000 * sum(last_funding_rate in holding window)",
+    "short_funding_cash_flow_bps": "+10000 * sum(last_funding_rate in holding window)",
+    "long_net_utility_bps": "10000 * (exit_open / entry_open - 1) - 12 + long_funding_cash_flow_bps",
+    "short_net_utility_bps": "10000 * (1 - exit_open / entry_open) - 12 + short_funding_cash_flow_bps",
+    "target_class": {
+      "short": "short_net_utility_bps > 0 and short_net_utility_bps > long_net_utility_bps",
+      "abstain": "max(long_net_utility_bps, short_net_utility_bps) <= 0",
+      "long": "long_net_utility_bps > 0 and long_net_utility_bps >= short_net_utility_bps"
+    },
+    "same_symbol_positions_may_not_overlap": true,
+    "different_symbols_may_overlap_only_for_research_replay": true,
+    "portfolio_capital_or_leverage_simulation_permitted": false,
+    "event_outcomes_and_nonoverlapping_trade_replay_reported_separately": true
+  },
+  "feature_contract": {
+    "all_features_causal_and_finite_or_fail": true,
+    "storage_dtype": "float32",
+    "round37_price_flow_features_retained": 71,
+    "premium_features": [
+      "premium_index_close_bps",
+      "premium_index_high_low_range_bps",
+      "premium_change_1_5_15_60m",
+      "premium_mean_15_60_240_1440m",
+      "premium_zscore_60_240_1440m",
+      "premium_positive_fraction_60_240m",
+      "premium_cross_asset_dispersion_and_agreement"
+    ],
+    "funding_features": [
+      "last_settled_funding_rate_bps",
+      "funding_interval_hours",
+      "minutes_since_last_settlement",
+      "settled_funding_sum_24_72_168h",
+      "settled_funding_mean_and_zscore_30_events",
+      "cross_asset_last_funding_dispersion_and_agreement"
+    ],
+    "past_settled_funding_only": true,
+    "next_announced_or_realized_funding_may_not_be_used_as_a_feature": true,
+    "ablation_feature_sets": ["price_flow_only", "price_flow_plus_premium_and_funding"],
+    "target_symbol_is_categorical": true,
+    "horizon_is_not_a_feature": true
+  },
+  "model_contract": {
+    "architectures": [
+      "shared_direct_multiclass_lightgbm",
+      "per_symbol_direct_multiclass_lightgbm",
+      "shared_two_stage_hurdle_lightgbm",
+      "per_symbol_two_stage_hurdle_lightgbm"
+    ],
+    "direct_multiclass": {
+      "objective": "multiclass",
+      "num_class": 3,
+      "metric": "multi_logloss",
+      "class_order": ["short", "abstain", "long"],
+      "class_weighting": "none_to_preserve_calibratable_probabilities"
+    },
+    "two_stage_hurdle": {
+      "opportunity_objective": "binary",
+      "opportunity_label": "target_class is long or short",
+      "direction_objective": "binary",
+      "direction_training_rows": "training rows whose target_class is long or short",
+      "direction_label": "target_class is long",
+      "composed_probabilities": {
+        "p_long": "p_opportunity * p_long_given_opportunity",
+        "p_short": "p_opportunity * (1 - p_long_given_opportunity)",
+        "p_abstain": "1 - p_opportunity"
+      },
+      "class_weighting": "none_to_preserve_calibratable_probabilities"
+    },
+    "lightgbm": {
+      "learning_rate": 0.03,
+      "num_leaves": 63,
+      "min_data_in_leaf": 1000,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l1": 0.1,
+      "lambda_l2": 1.0,
+      "max_bin": 255,
+      "num_boost_round": 1000,
+      "early_stopping_rounds": 50,
+      "gpu_first": true,
+      "amd_nvidia_intel_opencl_device_auto_selection": true
+    },
+    "probability_calibration": {
+      "role": "early_stop_and_probability_calibration",
+      "method": "single_positive_temperature_scaling_minimizing_multiclass_log_loss",
+      "temperature_bounds": [0.25, 4.0],
+      "optimizer": "bounded_scalar",
+      "calibration_rows_may_not_be_used": true
+    },
+    "fixed_ablation_count": 32,
+    "count_derivation": "4 architectures * 2 feature sets * 4 horizons",
+    "model_or_action_threshold_may_not_be_selected_on_viability": true
+  },
+  "action_threshold_contract": {
+    "selected_on": "action_threshold_calibration_role_only",
+    "maximum_action_probability_grid": [0.40, 0.45, 0.50, 0.55, 0.60],
+    "direction_probability_margin_grid": [0.05, 0.10, 0.15, 0.20],
+    "route_long_when": "p_long >= maximum_action_probability and p_long - p_short >= direction_probability_margin",
+    "route_short_when": "p_short >= maximum_action_probability and p_short - p_long >= direction_probability_margin",
+    "candidate_trade_replay": "same-symbol nonoverlap followed by chronological cross-symbol merge",
+    "minimum_total_trades": 90,
+    "minimum_trades_per_symbol": 15,
+    "minimum_active_utc_days": 45,
+    "score": "stationary_day_block_bootstrap_lower_95_mean_net_bps",
+    "bootstrap_samples": 1000,
+    "mean_day_block_length": 5,
+    "seed": 3811,
+    "tie_break_order": [
+      "higher_bootstrap_lower_95_mean_net_bps",
+      "higher_median_monthly_net_bps",
+      "higher_mean_net_bps",
+      "higher_maximum_action_probability",
+      "higher_direction_probability_margin"
+    ],
+    "fallback_when_no_threshold_meets_support": "route_no_trades_and_fail_viability"
+  },
+  "viability_gate": {
+    "applied_to": "viability_role_only_after_model_probability_and_action_thresholds_are_frozen",
+    "minimum_nonoverlapping_trades_total": 180,
+    "minimum_nonoverlapping_trades_per_symbol": 30,
+    "minimum_active_utc_days": 90,
+    "minimum_mean_net_bps_per_trade": 0.0,
+    "minimum_median_monthly_net_bps": 0.0,
+    "minimum_profit_factor": 1.05,
+    "maximum_negative_month_fraction": 0.45,
+    "minimum_day_block_bootstrap_mean_net_bps_lower_95": 0.0,
+    "maximum_single_symbol_fraction": 0.50,
+    "must_beat_price_flow_only_counterpart": false,
+    "derivatives_feature_uplift_report_required": true,
+    "must_not_have_nonfinite_prediction_data_or_accounting_error": true,
+    "failure_action": "reject_or_redesign_before_selection_confirmation_or_ai_expansion"
+  },
+  "ai_ablation_contract": {
+    "runs_only_if_diversified_ml_viability_candidate_set_is_complete": true,
+    "models": ["qwen3:8b", "fino1:8b"],
+    "minimum_model_parameters_b": 8.0,
+    "provider": "local_ollama",
+    "temperature": 0.0,
+    "think": false,
+    "structured_output": true,
+    "allowed_actions": ["approve", "veto", "cooldown"],
+    "allowed_risk_multiplier_range": [0.0, 1.0],
+    "ai_may_only_veto_or_reduce_risk": true,
+    "prompt_additions": [
+      "causal_premium_state",
+      "past_settled_funding_state",
+      "direct_and_hurdle_probability_decomposition",
+      "price_flow_only_versus_derivatives_augmented_disagreement"
+    ],
+    "prompt_must_not_include": [
+      "future_price_return_or_funding",
+      "current_case_outcome",
+      "calendar_date_or_exact_price_level",
+      "selection_confirmation_or_terminal_data",
+      "unbounded_news_or_web_retrieval",
+      "operator_secrets"
+    ],
+    "case_selection": "highest_action_probability_candidate_per_symbol_per_utc_day_on_last_90_viability_days",
+    "maximum_cases_per_model": 270,
+    "candidate_case_identity_sha256_required": true,
+    "response_and_model_artifact_sha256_required": true,
+    "provider_failure_action": "veto",
+    "uplift_comparison": "matched_daily_ml_only_versus_ml_plus_ai_exact_net_returns",
+    "minimum_matched_days": 90,
+    "minimum_positive_daily_delta_rate": 0.55,
+    "maximum_exact_sign_test_p_value": 0.05,
+    "minimum_moving_day_block_bootstrap_delta_lower_95": 0.0,
+    "drawdown_profit_factor_loss_streak_and_symbol_concentration_must_not_degrade": true,
+    "ai_output_grants_trading_authority": false
+  },
+  "required_outputs": [
+    "derivatives_archive_checksums_and_row_stream_hashes",
+    "joined_source_continuity_and_causality_audit",
+    "target_class_balance_by_symbol_horizon_and_role",
+    "model_artifacts_reload_identity_backend_runtime_and_memory",
+    "multiclass_log_loss_brier_score_calibration_error_and_confusion_matrix",
+    "direct_multiclass_versus_two_stage_hurdle_ablation",
+    "price_flow_only_versus_derivatives_augmented_ablation",
+    "action_threshold_calibration_traces",
+    "event_outcomes_and_nonoverlapping_exact_net_replay",
+    "funding_cash_flow_attribution",
+    "daily_weekly_monthly_symbol_and_regime_performance",
+    "stationary_day_block_uncertainty",
+    "ai_case_response_and_matched_uplift_evidence"
+  ],
+  "research_basis": [
+    "https://github.com/binance/binance-public-data",
+    "https://arxiv.org/abs/2212.06888",
+    "https://arxiv.org/abs/2310.11771",
+    "https://arxiv.org/abs/2606.00060",
+    "https://arxiv.org/abs/2606.27100",
+    "https://lightgbm.readthedocs.io/en/latest/Parameters.html",
+    "https://github.com/The-FinAI/Fino1"
+  ],
+  "limitations": [
+    "Minute archives do not contain historical order-book spread queue state or market impact.",
+    "The 12 bps charge remains a conservative fixed proxy and is not pair-specific historical spread reconstruction.",
+    "Funding and premium are contract-state features, not presumed alpha; their incremental value must be measured by the frozen ablation.",
+    "Funding settlement timestamps may change cadence and are read from each historical row rather than assumed to occur every eight hours.",
+    "A positive viability result remains consumed development evidence and cannot establish future profitability.",
+    "The 2025 second half and all 2026 target data remain unavailable.",
+    "The AI veto cannot create information absent from its causal numeric prompt and may fail to improve ML.",
+    "No maker fill leverage liquidation portfolio ROI testnet live or mainnet claim can be produced."
+  ],
+  "claims": {
+    "trading_authority": false,
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "leverage_applied": false
+  }
+}

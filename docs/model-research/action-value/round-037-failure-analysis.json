@@ -1,0 +1,123 @@
+{
+  "schema_version": "cross-asset-regression-failure-analysis-v1",
+  "round": 37,
+  "analysis_sha256": "39b2347a81d0ba7284cd213dc5f66f356148b7cbf06153c49a55dcd50f2c9374",
+  "status": "rejected",
+  "source_evidence": {
+    "design_sha256": "f7ed6fb5921631eaa1c5b26fec0d09603e97e0ec9f02b4b8625fd77000bd3fe1",
+    "design_file_sha256": "db456b32cf85903861dcc95d56948e13f4f0ff28961c14db8631b930c9dcf769",
+    "binding_sha256": "26c2cc0eeef64e70d203829bb225cac50be82d215440b18198a2434ee8f6af90",
+    "binding_file_sha256": "b2650cad5d13a5cacd13fa773d68d94d801736215f620986fae075d421311d1a",
+    "implementation_commit": "13379db93f661b7a201f580ef02244a6710e59b8",
+    "report_canonical_sha256": "ba1a642169b31751c505aa401b99de55c75fe19d78c1617ea95812d1e4c06bd6",
+    "report_file_sha256": "667296fa31972cd9e5ad32867c1ed02762ca532709a9d44213381aecb2e9ea81",
+    "publication_canonical_sha256": "5c25c3374d61e1417c12b7653d1972d6028f1408a2b089b0c08b8056b6a0a9cf",
+    "publication_file_sha256": "68c095c1377b82aa642d7d691fe2e7e7acdefee9e9a6a5b36becb8104cd456dc",
+    "panel_stream_sha256": "40ef0a76d57fa844fb01ccd90d7c768f5fbbf613467303a2dc1dcdd39b100a3d"
+  },
+  "scope": {
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "market": "Binance USD-M perpetual futures",
+    "source_interval": "1m",
+    "decision_cadence_minutes": 5,
+    "target_start": "2022-01-01",
+    "target_end": "2025-06-30",
+    "selection_confirmation_accessed": false,
+    "terminal_2026_accessed": false,
+    "dataset_rows": 1103328,
+    "feature_count": 71,
+    "features_dtype": "float32",
+    "persistent_feature_copy_created": false,
+    "horizons_minutes": [15, 30, 60, 120],
+    "candidate_count": 20,
+    "opencl_lightgbm_models": 16,
+    "threshold_cells": 100,
+    "runtime_seconds": 65.69816450000508,
+    "peak_working_set_bytes": 3557158912
+  },
+  "prediction_evidence": {
+    "best_viability_family": "shared_cross_asset_lightgbm",
+    "best_viability_horizon_minutes": 120,
+    "best_viability_pearson_information_coefficient": 0.017791430387791903,
+    "best_viability_spearman_information_coefficient": 0.0437035343890367,
+    "shared_lightgbm_prediction_standard_deviation_bps": {
+      "15": 1.2806693331872916,
+      "30": 2.1121813464118404,
+      "60": 3.320251837261659,
+      "120": 3.9494139508395256
+    },
+    "actual_standard_deviation_range_bps": [40.56558143251028, 168.3510843637276],
+    "selected_thresholds": 0,
+    "viability_gate_passed_candidates": 0,
+    "viability_trades": 0,
+    "ai_cases": 0,
+    "ai_models_evaluated": 0
+  },
+  "economic_opportunity_diagnostic": {
+    "role": "already_consumed_calibration_and_viability_only",
+    "period": "2024-10-01..2025-06-30",
+    "fraction_absolute_gross_return_above_12_bps": {
+      "BTCUSDT": {"15m": 0.4808, "30m": 0.6018, "60m": 0.7010, "120m": 0.7826},
+      "ETHUSDT": {"15m": 0.6364, "30m": 0.7280, "60m": 0.7979, "120m": 0.8602},
+      "SOLUSDT": {"15m": 0.7233, "30m": 0.7983, "60m": 0.8538, "120m": 0.8953}
+    },
+    "interpretation": "The rejected lane was not starved of moves larger than the frozen charge; it failed to predict their direction with sufficient calibrated confidence and diversified support."
+  },
+  "rare_calibration_tails": [
+    {"family": "shared_cross_asset_lightgbm", "horizon_minutes": 60, "threshold_bps": 12.0, "trades": 103, "btc": 0, "eth": 4, "sol": 99, "mean_net_bps": 16.98936013110633, "day_block_lower_95_bps": 0.9235335567624983, "support_passed": false},
+    {"family": "per_symbol_lightgbm", "horizon_minutes": 30, "threshold_bps": 12.0, "trades": 116, "btc": 0, "eth": 0, "sol": 116, "mean_net_bps": 27.827437200422946, "day_block_lower_95_bps": 5.862802119189052, "support_passed": false},
+    {"family": "per_symbol_lightgbm", "horizon_minutes": 120, "threshold_bps": 18.0, "trades": 104, "btc": 0, "eth": 0, "sol": 104, "mean_net_bps": 28.85038223862648, "day_block_lower_95_bps": 5.071897870478229, "support_passed": false},
+    {"family": "linear_ridge", "horizon_minutes": 120, "threshold_bps": 12.0, "trades": 663, "btc": 0, "eth": 284, "sol": 379, "mean_net_bps": 1.877796719044582, "day_block_lower_95_bps": -9.743508016069095, "support_passed": false}
+  ],
+  "critical_interpretation": [
+    "Median L1 regression compressed predictions to a small fraction of realized return dispersion, leaving most forecasts below the frozen 12 bps economic threshold.",
+    "The strongest rank association was weak and did not establish a cost-covering directional edge.",
+    "Several calibration tails had positive means or confidence bounds, but they were overwhelmingly SOLUSDT-only and therefore failed the mandatory cross-symbol support contract.",
+    "The zero-trade result is correct mandatory abstention after failed calibration; it is not evidence of profitability or a functioning trade policy.",
+    "The local AI ablation correctly did not run because there was no complete diversified ML candidate case set to review.",
+    "Lowering the cost threshold, symbol support, uncertainty, or viability gates would convert a diagnosed concentration failure into data-mined risk.",
+    "A target architecture that models economically actionable classes directly is justified; another median-return regressor is not."
+  ],
+  "rejected_responses": [
+    "Do not promote, leverage, or live-test any Round 37 candidate.",
+    "Do not report rare calibration tails as selected trades, ROI, an equity curve, or profitability evidence.",
+    "Do not drop BTCUSDT or ETHUSDT from the diversification gate to preserve SOLUSDT observations.",
+    "Do not open selection-confirmation 2025-H2 or terminal 2026 data for architecture selection.",
+    "Do not invoke AI on fabricated, post-hoc, or non-diversified trade cases."
+  ],
+  "next_experiment": {
+    "stage": "premium_and_funding_augmented_cost_aware_hurdle_classification",
+    "purpose": "Estimate long, abstain, and short actions directly using causal price-flow, premium-index, and settled-funding state, then replay exact taker and funding cash flows under the unchanged diversification gates.",
+    "new_real_data": ["premiumIndexKlines_1m", "fundingRate"],
+    "model_families": [
+      "shared_direct_multiclass_lightgbm",
+      "per_symbol_direct_multiclass_lightgbm",
+      "shared_two_stage_opportunity_direction_lightgbm",
+      "per_symbol_two_stage_opportunity_direction_lightgbm"
+    ],
+    "required_controls": [
+      "checksum_verified_archive_ingestion",
+      "past_settled_funding_only_in_features",
+      "funding_cash_flows_in_trade_outcomes",
+      "direct_multiclass_versus_two_stage_hurdle_ablation",
+      "price_flow_only_versus_derivatives_augmented_ablation",
+      "probability_calibration_on_early_stop_only",
+      "threshold_selection_on_calibration_only",
+      "nonoverlapping_cross_symbol_replay",
+      "stationary_day_block_uncertainty",
+      "ai_veto_only_after_diversified_ml_viability"
+    ],
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "promotion_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "profitability_target_override_permitted": false
+  },
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false
+}
