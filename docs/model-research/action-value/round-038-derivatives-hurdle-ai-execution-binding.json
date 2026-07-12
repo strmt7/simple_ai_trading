@@ -1,5 +1,5 @@
 {
-  "binding_sha256": "4f34ab219424b70a859b0c5cbfe40e869fd80047cd8e9f3b4926ab9f275f6051",
+  "binding_sha256": "9070b6a484781d205750964b1fc58defe9ef7c83337b7e88abcd75229fe44619",
   "blobs": [
     {
       "git_blob_oid": "c4cce22566defccea38001b8ac326343237a26cd",
@@ -38,7 +38,7 @@
       "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
     },
     {
-      "git_blob_oid": "7ed3032f7f2d735fcba2f4ff2671051ebffaa93a",
+      "git_blob_oid": "52959f03610f05ad7dfe66578e0451dca5401bb1",
       "path": "src/simple_ai_trading/derivatives_hurdle_model.py"
     },
     {
@@ -100,7 +100,7 @@
     "terminal_2026_access_permitted": false,
     "trading_authority_permitted": false
   },
-  "implementation_commit": "3cb97fc0f3117321e2f22e1c074de0307464e2c4",
+  "implementation_commit": "dc19f72e69f79e93ed40d97deea855a4c6a0b4aa",
   "round": 38,
   "schema_version": "round-038-derivatives-hurdle-ai-execution-binding-v1",
   "source_certificate": {
