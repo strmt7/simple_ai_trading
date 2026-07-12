@@ -31,6 +31,11 @@ SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 START_PERIOD = "2021-12"
 END_PERIOD = "2025-06"
 EXPECTED_PREMIUM_ROWS = 1_883_520
+EXPECTED_PREMIUM_QUALITY = {
+    "BTCUSDT": (1_880_574, 9, 2_946, 1_440),
+    "ETHUSDT": (1_880_577, 9, 2_943, 1_440),
+    "SOLUSDT": (1_882_018, 7, 1_502, 1_440),
+}
 DESIGN_PATH = (
     ROOT
     / "docs/model-research/action-value/round-038-derivatives-hurdle-ai-ablation-design.json"
@@ -69,7 +74,7 @@ def _design_sha256() -> str:
     claimed = str(canonical.pop("design_sha256", ""))
     if (
         value.get("schema_version")
-        != "derivatives-hurdle-ai-ablation-design-v1"
+        != "derivatives-hurdle-ai-ablation-design-v2"
         or value.get("round") != 38
         or claimed != _canonical_sha256(canonical)
     ):
@@ -152,7 +157,11 @@ def _series_evidence(store: MarketDataStore) -> list[dict[str, object]]:
                   AND kind='premium_index' AND interval='1m'
                   AND open_time BETWEEN 1638316800000 AND 1751327940000
             )
-            SELECT COUNT(*) AS gap_count
+            SELECT COUNT(*) AS gap_count,
+                   COALESCE(SUM((open_time - previous_time) / 60000 - 1), 0)
+                       AS missing_minutes,
+                   COALESCE(MAX((open_time - previous_time) / 60000 - 1), 0)
+                       AS maximum_gap_minutes
             FROM ordered
             WHERE previous_time IS NOT NULL AND open_time - previous_time != 60000
             """,
@@ -171,11 +180,17 @@ def _series_evidence(store: MarketDataStore) -> list[dict[str, object]]:
             """,
             (symbol,),
         ).fetchone()
+        expected_quality = EXPECTED_PREMIUM_QUALITY[symbol]
+        observed_quality = (
+            int(premium["rows"]),
+            int(gaps["gap_count"]),
+            int(gaps["missing_minutes"]),
+            int(gaps["maximum_gap_minutes"]),
+        )
         if (
-            int(premium["rows"]) != EXPECTED_PREMIUM_ROWS
+            observed_quality != expected_quality
             or int(premium["first_time"]) != 1_638_316_800_000
             or int(premium["last_time"]) != 1_751_327_940_000
-            or int(gaps["gap_count"]) != 0
             or int(funding["rows"]) <= 0
             or int(funding["null_rates"]) != 0
             or int(funding["minimum_interval_hours"]) < 1
@@ -186,9 +201,17 @@ def _series_evidence(store: MarketDataStore) -> list[dict[str, object]]:
             {
                 "symbol": symbol,
                 "premium_rows": int(premium["rows"]),
+                "premium_expected_grid_rows": EXPECTED_PREMIUM_ROWS,
                 "premium_first_open_time_ms": int(premium["first_time"]),
                 "premium_last_open_time_ms": int(premium["last_time"]),
                 "premium_gap_count": int(gaps["gap_count"]),
+                "premium_missing_minutes": int(gaps["missing_minutes"]),
+                "premium_missing_fraction": (
+                    int(gaps["missing_minutes"]) / EXPECTED_PREMIUM_ROWS
+                ),
+                "premium_maximum_gap_minutes": int(
+                    gaps["maximum_gap_minutes"]
+                ),
                 "funding_rows": int(funding["rows"]),
                 "funding_first_calc_time_ms": int(funding["first_time"]),
                 "funding_last_calc_time_ms": int(funding["last_time"]),
