@@ -1,30 +1,29 @@
-# Round 31: frozen chronological confirmation rejected
+# Round 32: shared-action calibration rejected
 
-**Rejected without trading authority.** The exact Round 30 models and twelve thresholds were evaluated without retraining or recalibration. The deepest opened stage was **confirmation**; withheld stages: **policy, development**. 0 candidate(s) passed that stage. No leverage or trading authority was permitted.
+**Rejected without trading authority.** A three-seed, symmetric long/short LightGBM ensemble trained on official BTCUSDT top-of-book and trade events. All profiles failed the first economic gate, so policy, development, and distant-confirmation predictions stayed withheld.
 
-| Evidence | Result |
+| Evidence | Verified result |
 | --- | ---: |
-| Exact-BBO archive availability | 2023-05-16 to 2024-03-30 UTC (320 gap-free days) |
-| Confirmation window | 2024-01-01 to 2024-02-04 UTC |
-| Policy window | 2024-02-06 to 2024-03-05 UTC |
-| Development window | 2024-03-06 to 2024-03-29 UTC; 2024-03-15 excluded |
-| Deepest opened stage | confirmation |
-| Candidates in deepest stage / passed | 12 / 0 |
-| Best deepest-stage stress net return | +79.56 bps from 28 simulated trades |
-| Best deepest-stage maximum drawdown | 371.51 bps |
-| Final research profiles | none |
-| Authorized / live-executed trades | 0 / 0 |
+| Source window | 2023-05-16 to 2023-07-06 UTC |
+| Causal one-second rows | 877,894 |
+| CUSUM events / valid barrier outcomes | 230,941 / 229,000 |
+| Train / early-stop / calibration rows | 128,307 / 21,934 / 28,581 |
+| Eligible rows: conservative / regular / aggressive | 0 / 0 / 10 |
+| Selected-side AUC / Spearman IC | 0.5095 / -0.0127 |
+| Top-100 / top-500 stress mean | -6.32 / -10.76 bps |
+| Highest calibration total (insufficient support) | q95: +57.63 bps over 1 trade |
+| Final profiles | none |
 
-![Nested stage access](charts/stage-access.svg)
+![Stage access](charts/stage-access.svg)
 
-![After-cost candidate economics](charts/candidate-economics.svg)
+![Calibration eligibility](charts/eligibility.svg)
+
+![Threshold economics](charts/threshold-economics.svg)
 
 ![Forecast quality](charts/forecast-quality.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-The terminal date, **2024-03-30**, was not ingested, queried, labeled, predicted, or evaluated. Dates already consumed by earlier rounds were excluded from targets. Official archive ingestion and deterministic causal-feature materialization occurred before model evaluation, but later-stage target, prediction, and metric construction remained gated.
+The positive q85 and q95 totals came from only two and one simulated trades. They failed minimum-support and positive-day gates and are not evidence of profitability. DirectML tensor execution and OpenCL FP64 LightGBM training were attested; LightGBM prediction used its CPU path. No leverage, live execution, portfolio claim, or untouched-period claim is permitted.
 
-This is single-symbol BTCUSDT research evidence. It cannot satisfy portfolio-diversification requirements and is not a profitability, execution, leverage, or deployment claim. Binance publishes years of trade data, but its public exact `bookTicker` history begins on 2023-05-16; the 320-day BBO limit is reported rather than extrapolated.
-
-Data: [stages.csv](stages.csv) | [candidates.csv](candidates.csv) | [forecast.csv](forecast.csv) | [progress.csv](progress.csv) | [integrity report](report.json)
+Data: [stages.csv](stages.csv) | [profiles.csv](profiles.csv) | [thresholds.csv](thresholds.csv) | [forecast.csv](forecast.csv) | [models.csv](models.csv) | [progress.csv](progress.csv) | [integrity report](report.json)
