@@ -662,11 +662,12 @@ def _memory_evidence() -> dict[str, object]:
     """Return best-effort process memory evidence without a new dependency."""
 
     if os.name == "nt":
+        from ctypes import wintypes
 
         class _Counters(ctypes.Structure):
             _fields_ = [
-                ("cb", ctypes.c_ulong),
-                ("PageFaultCount", ctypes.c_ulong),
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
                 ("PeakWorkingSetSize", ctypes.c_size_t),
                 ("WorkingSetSize", ctypes.c_size_t),
                 ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
@@ -679,17 +680,38 @@ def _memory_evidence() -> dict[str, object]:
 
         counters = _Counters()
         counters.cb = ctypes.sizeof(counters)
-        process = ctypes.windll.kernel32.GetCurrentProcess()  # type: ignore[attr-defined]
-        ok = ctypes.windll.psapi.GetProcessMemoryInfo(  # type: ignore[attr-defined]
-            process,
-            ctypes.byref(counters),
-            counters.cb,
-        )
-        if ok:
+        try:
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            psapi = ctypes.WinDLL("psapi", use_last_error=True)
+            kernel32.GetCurrentProcess.argtypes = []
+            kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+            psapi.GetProcessMemoryInfo.argtypes = [
+                wintypes.HANDLE,
+                ctypes.POINTER(_Counters),
+                wintypes.DWORD,
+            ]
+            psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+            ok = psapi.GetProcessMemoryInfo(
+                kernel32.GetCurrentProcess(),
+                ctypes.byref(counters),
+                counters.cb,
+            )
+            if not ok:
+                return {
+                    "source": "windows_process_memory_counters_failed",
+                    "windows_error": int(ctypes.get_last_error()),
+                }
             return {
                 "source": "windows_process_memory_counters",
                 "current_working_set_bytes": int(counters.WorkingSetSize),
                 "peak_working_set_bytes": int(counters.PeakWorkingSetSize),
+                "current_pagefile_bytes": int(counters.PagefileUsage),
+                "peak_pagefile_bytes": int(counters.PeakPagefileUsage),
+            }
+        except (AttributeError, OSError, TypeError, ValueError) as exc:
+            return {
+                "source": "windows_process_memory_counters_failed",
+                "error_type": type(exc).__name__,
             }
     try:
         import resource
@@ -1157,7 +1179,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         cache_root=arguments.cache_root,
         output_root=arguments.output_root,
     )
-    print(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))
+    summary = {
+        "status": report["status"],
+        "report_canonical_sha256": report["report_canonical_sha256"],
+        "reported_signal_horizon_cells": report["completeness"][
+            "reported_signal_horizon_cells"
+        ],
+        "model_candidate": report["model_candidate"],
+        "trading_authority": report["trading_authority"],
+    }
+    print(json.dumps(summary, ensure_ascii=True, sort_keys=True, allow_nan=False))
     return 0
 
 

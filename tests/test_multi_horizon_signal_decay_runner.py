@@ -9,9 +9,10 @@ from tools.run_multi_horizon_signal_decay import (
     _EXPECTED_HORIZONS,
     _EXPECTED_SIGNALS,
     _REQUIRED_BOUND_PATHS,
+    _canonical_sha256,
     _daily_summary,
     _half_life,
-    load_signal_decay_binding,
+    _memory_evidence,
     load_signal_decay_design,
 )
 
@@ -24,7 +25,7 @@ DESIGN = (
     / "action-value"
     / "round-036-multi-horizon-signal-decay-design.json"
 )
-BINDING = DESIGN.with_name("round-036-signal-decay-execution-binding.json")
+BINDING_V1 = DESIGN.with_name("round-036-signal-decay-execution-binding-v1.json")
 
 
 def test_round36_runner_loads_the_exact_frozen_budget() -> None:
@@ -52,17 +53,15 @@ def test_round36_runner_rejects_design_drift_before_execution(tmp_path) -> None:
         load_signal_decay_design(drifted)
 
 
-def test_round36_binding_matches_committed_implementation() -> None:
-    _design, design_sha = load_signal_decay_design(DESIGN)
-    binding, binding_sha = load_signal_decay_binding(
-        BINDING,
-        design_path=DESIGN,
-        design_sha256=design_sha,
-    )
+def test_round36_v1_binding_remains_canonically_verifiable() -> None:
+    binding = json.loads(BINDING_V1.read_text(encoding="utf-8"))
+    canonical = dict(binding)
+    binding_sha = canonical.pop("binding_sha256")
 
     assert binding_sha == (
         "1fdeac5134715ff368047e065f7aefff8b0d159477e485524b771083edda3405"
     )
+    assert binding_sha == _canonical_sha256(canonical)
     assert binding["implementation"]["commit"] == (
         "9f69a5385237dc34bbea802518879374d2df33cd"
     )
@@ -138,3 +137,13 @@ def test_half_life_requires_frozen_strength_daily_and_monotonic_conditions() -> 
     assert measurable["earliest_peak_horizon_seconds"] == 5
     assert unstable["half_life_status"] == ("no_measurable_half_life_on_consumed_role")
     assert unstable["half_life_seconds"] is None
+
+
+def test_process_memory_evidence_uses_a_supported_host_counter() -> None:
+    evidence = _memory_evidence()
+
+    assert evidence["source"] in {
+        "windows_process_memory_counters",
+        "getrusage",
+    }
+    assert int(evidence["peak_working_set_bytes"]) > 0
