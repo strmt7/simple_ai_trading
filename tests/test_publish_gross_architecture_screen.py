@@ -99,7 +99,7 @@ def test_progress_chart_distinguishes_trades_abstention_and_diagnostic() -> None
 
     svg = _research_progress_svg(rows)
 
-    assert "executed mean" in svg
+    assert "simulated-trade mean" in svg
     assert "no executable series" in svg
     assert "overlap diagnostic" in svg
     assert "-7.60 bps" in svg

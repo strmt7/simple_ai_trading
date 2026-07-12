@@ -102,6 +102,8 @@ _BANNED_PHRASE_SPECS = (
         ("even the best", " trace"),
         "even the best threshold-selection simulation",
     ),
+    (("executed", " mean"), "simulated-trade mean"),
+    (("executed trade", " mean"), "simulated-trade mean"),
 )
 _BANNED_FILENAME_SPECS = (
     (("action", "-funnel"), "signal-selection"),

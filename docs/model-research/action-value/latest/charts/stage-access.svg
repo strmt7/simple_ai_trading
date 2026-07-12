@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="450" viewBox="0 0 1260 450" role="img" aria-labelledby="title desc">
+<title id="title">Round 31 nested chronological access</title>
+<desc id="desc">Confirmation, policy, and development windows open only after the prior stage passes. The terminal date remains sealed.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#8a98a3"/></marker></defs>
+<text x="48" y="50" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">Later dates stayed behind binding evidence gates</text>
+<text x="48" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#53616d">Green means opened; red means withheld. Raw archive integrity checks do not open targets, predictions, or financial metrics.</text>
+<rect x="70" y="135" width="340" height="190" rx="6" fill="#e8f5f2" stroke="#16827a" stroke-width="2"/>
+<text x="94" y="176" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#22333d">Confirmation</text>
+<text x="94" y="207" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#16827a">opened</text>
+<text x="94" y="240" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#40525e">2024-01-01 to 2024-02-04 UTC</text>
+<text x="94" y="270" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#40525e">0 profiles survived</text>
+<text x="94" y="299" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#64727d">209,878 valid target rows</text>
+<path d="M 410 230 L 446 230" stroke="#8a98a3" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="460" y="135" width="340" height="190" rx="6" fill="#fff0ee" stroke="#c64c3f" stroke-width="2"/>
+<text x="484" y="176" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#22333d">Policy</text>
+<text x="484" y="207" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#c64c3f">withheld</text>
+<text x="484" y="240" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#40525e">2024-02-06 to 2024-03-05 UTC</text>
+<text x="484" y="270" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#40525e">prior stage rejected</text>
+<text x="484" y="299" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#64727d">0 valid target rows</text>
+<path d="M 800 230 L 836 230" stroke="#8a98a3" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="850" y="135" width="340" height="190" rx="6" fill="#fff0ee" stroke="#c64c3f" stroke-width="2"/>
+<text x="874" y="176" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#22333d">Development</text>
+<text x="874" y="207" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#c64c3f">withheld</text>
+<text x="874" y="240" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#40525e">2024-03-06 to 2024-03-29 UTC</text>
+<text x="874" y="270" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#40525e">prior stage rejected</text>
+<text x="874" y="299" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#64727d">0 valid target rows</text>
+<text x="48" y="395" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#52606d">Reserved terminal: 2024-03-30 UTC; not queried, labeled, predicted, or evaluated.</text>
+</svg>

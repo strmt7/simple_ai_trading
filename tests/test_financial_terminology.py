@@ -94,3 +94,15 @@ def test_audit_rejects_legacy_branding_and_superseded_evidence_copy() -> None:
             "simple_ai_trading",
         ),
     ]
+
+
+def test_audit_rejects_execution_language_for_simulated_statistics() -> None:
+    stale_statistic = "executed" + " mean"
+
+    findings = audit_entries(
+        [("docs/chart.svg", f"<text>{stale_statistic}</text>")]
+    )
+
+    assert [(item.path, item.line, item.replacement) for item in findings] == [
+        ("docs/chart.svg", 1, "simulated-trade mean")
+    ]
