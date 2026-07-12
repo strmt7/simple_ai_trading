@@ -528,16 +528,14 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 36 measured 13 prespecified BTCUSDT L1/tape signals at seven horizons on
-five already-consumed June 2023 dates. L1 imbalance reached weighted ROC AUC
-`0.6073` at five seconds, with all five daily AUCs above chance and a measured
-half-life of about `14.6s`. That directional effect was not an economic edge:
-the best all-routed delayed taker mean was `-11.58` bps, the best top-100 mean
-was `-3.50` bps, and none of 819 causal regime slices was positive after the
-frozen spread, fee, slippage, and latency model. The lane is rejected for taker
-trading. No model was trained or selected, no leverage was applied, and no
-trading-authority, out-of-sample, ETHUSDT, SOLUSDT, or profitability claim was
-produced.
+Round 37 trained 16 OpenCL LightGBM models on 1,103,328 causal BTC/ETH/SOL
+minute decisions through 2025-H1. The best unseen Pearson IC was only `0.0178`;
+every cost threshold failed the frozen cross-symbol support gate because the
+rare profitable calibration tails were concentrated in SOL. No threshold,
+trade, AI-review case, leverage, or profitability claim was produced. The next
+research lane replaces median-return regression with cost-aware
+long/abstain/short classification and adds real futures premium and funding
+features without opening sealed 2025-H2 or 2026 periods.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

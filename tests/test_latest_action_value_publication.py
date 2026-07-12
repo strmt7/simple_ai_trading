@@ -27,30 +27,35 @@ def _csv(path: str) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def test_latest_action_value_publication_is_round36_hash_verified() -> None:
+def test_latest_action_value_publication_is_round37_hash_verified() -> None:
     report = json.loads((LATEST / "report.json").read_text(encoding="utf-8"))
     canonical = dict(report)
     claimed = canonical.pop("publication_sha256")
 
     assert claimed == _canonical_sha256(canonical)
-    assert claimed == "c0b6dceae845b8976148f62d5ac7aad0b90af307216a8062fcf68ce3141d5ff9"
-    assert report["schema_version"] == "multi-horizon-signal-decay-publication-v1"
-    assert report["round"] == 36
+    assert claimed == "5c25c3374d61e1417c12b7653d1972d6028f1408a2b089b0c08b8056b6a0a9cf"
+    assert report["schema_version"] == (
+        "cross-asset-cost-aware-ai-ablation-publication-v1"
+    )
+    assert report["round"] == 37
     assert report["status"] == "rejected"
     assert report["source_implementation_commit"] == (
-        "3c16bed56370c2dbf393fbb8dd19f54007419ee0"
+        "13379db93f661b7a201f580ef02244a6710e59b8"
     )
     assert report["source_report_canonical_sha256"] == (
-        "2cb799246b51e610647f330d2b0a5745a6e96f56062782eb23055cb6b0905ee8"
+        "ba1a642169b31751c505aa401b99de55c75fe19d78c1617ea95812d1e4c06bd6"
     )
     assert report["source_report_file_sha256"] == (
-        "dcad6c89f50cb5a1b5f51816826f7844adafdc895da0c7a1612316e97dcf7633"
+        "667296fa31972cd9e5ad32867c1ed02762ca532709a9d44213381aecb2e9ea81"
     )
-    assert report["signal_count"] == 13
-    assert report["horizon_count"] == 7
-    assert report["signal_horizon_cells"] == 91
-    assert report["model_candidate"] is None
-    assert report["model_trained"] is False
+    assert report["dataset_rows"] == 1_103_328
+    assert report["feature_count"] == 71
+    assert report["gpu_model_count"] == 16
+    assert report["candidate_count"] == 20
+    assert report["threshold_cell_count"] == 100
+    assert report["selected_threshold_count"] == 0
+    assert report["viability_trade_count"] == 0
+    assert report["ai_case_count"] == 0
     for field in (
         "trading_authority",
         "execution_claim",
@@ -75,123 +80,114 @@ def test_latest_action_value_source_report_is_exact_and_fail_closed() -> None:
     claimed = canonical.pop("report_canonical_sha256")
 
     assert claimed == _canonical_sha256(canonical)
-    assert source["status"] == "diagnostic_complete_no_authority"
-    assert source["completeness"] == {
-        "all_cells_complete": True,
-        "expected_daily_records": 455,
-        "expected_regime_records": 819,
-        "expected_signal_horizon_cells": 91,
-        "placebo_replicates_per_cell": 200,
-        "reported_daily_records": 455,
-        "reported_regime_records": 819,
-        "reported_signal_horizon_cells": 91,
+    assert source["status"] == "rejected"
+    assert source["dataset"] == {
+        **source["dataset"],
+        "feature_count": 71,
+        "features_dtype": "float32",
+        "persistent_feature_copy_created": False,
+        "rows": 1_103_328,
     }
-    assert source["stage_access"] == {
-        "calibration_metrics": True,
-        "certified_barrier_targets_recomputed_for_identity_only": True,
-        "certified_source_materialized_through_development": True,
-        "development_prediction_or_metrics": False,
-        "distant_confirmation_prediction_or_metrics": False,
-        "distant_confirmation_source_materialized": False,
-        "early_stop_prediction_or_metrics": False,
-        "policy_prediction_or_metrics": False,
-        "train_prediction_or_metrics": False,
+    assert source["backend"] == {
+        "device": "opencl:auto",
+        "gpu_first_requested": True,
+        "kind": "opencl",
     }
-    assert source["zero_latency_quote_evidence"]["valid_timestamps"] == 80_307
-    assert source["zero_latency_quote_evidence"]["invalid_timestamps"] == 0
-    assert source["zero_latency_quote_evidence"]["counterfactual_only"] is True
     assert source["runtime_evidence"]["memory"]["peak_working_set_bytes"] == (
-        9_620_840_448
+        3_557_158_912
     )
+    assert source["viability_gate_passed_candidates"] == []
+    assert source["ai_case_set"]["cases"] == 0
+    assert source["ai_reports"] == []
+    assert source["selection_confirmation_accessed"] is False
+    assert source["terminal_2026_accessed"] is False
     for field in (
         "trading_authority",
         "execution_claim",
         "profitability_claim",
         "portfolio_claim",
         "leverage_applied",
-        "model_trained",
     ):
         assert source[field] is False
-    assert source["model_candidate"] is None
 
 
-def test_latest_action_value_tables_preserve_all_round36_graph_data() -> None:
-    signals = _csv("signals.csv")
-    daily = _csv("daily.csv")
-    regimes = _csv("regimes.csv")
-    ranked = _csv("ranked-event-outcomes.csv")
-    decay = _csv("decay.csv")
-    support = _csv("horizon-support.csv")
+def test_latest_action_value_tables_preserve_round37_graph_data() -> None:
+    candidates = _csv("candidates.csv")
+    thresholds = _csv("thresholds.csv")
+    models = _csv("models.csv")
+    sources = _csv("sources.csv")
 
-    assert len(signals) == 91
-    assert len(daily) == 455
-    assert len(regimes) == 819
-    assert len(ranked) == 273
-    assert len(decay) == 91
-    assert len(support) == 7
-    assert {int(row["horizon_seconds"]) for row in signals} == {
-        5,
-        15,
-        30,
-        60,
-        120,
-        300,
-        900,
+    assert len(candidates) == 20
+    assert len(thresholds) == 100
+    assert len(models) == 16
+    assert len(sources) == 3
+    assert {row["family"] for row in candidates} == {
+        "linear_ridge",
+        "per_symbol_lightgbm",
+        "persistence",
+        "shared_cross_asset_lightgbm",
+        "zero_return",
     }
-    assert {row["date"] for row in daily} == {
-        "2023-06-21",
-        "2023-06-22",
-        "2023-06-23",
-        "2023-06-24",
-        "2023-06-25",
+    assert {int(row["horizon_minutes"]) for row in candidates} == {15, 30, 60, 120}
+    assert all(row["selected_threshold_bps"] == "" for row in candidates)
+    assert all(row["viability_gate_passed"] == "False" for row in candidates)
+    assert all(row["support_passed"] == "False" for row in thresholds)
+    assert all(row["backend_kind"] == "opencl" for row in models)
+    assert all(float(row["reload_max_abs_prediction_error"]) == 0.0 for row in models)
+    assert {row["symbol"] for row in sources} == {
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
     }
-    assert all(row["event_outcomes_not_executable_trades"] == "True" for row in ranked)
-    assert all(float(row["mean_delayed_net_return_bps"]) < 0.0 for row in ranked)
-    assert all(float(row["mean_delayed_net_return_bps"]) < 0.0 for row in signals)
+    assert all(int(row["rows"]) == 1_883_520 for row in sources)
+    assert all(int(row["gap_count"]) == 0 for row in sources)
 
-    best_auc = max(signals, key=lambda row: float(row["weighted_roc_auc"]))
-    assert (best_auc["signal"], best_auc["horizon_seconds"]) == (
-        "l1_imbalance",
-        "5",
+    best = max(candidates, key=lambda row: float(row["viability_pearson_ic"]))
+    assert (best["family"], best["horizon_minutes"]) == (
+        "shared_cross_asset_lightgbm",
+        "120",
     )
-    assert float(best_auc["weighted_roc_auc"]) == 0.6072574903425851
-    assert float(best_auc["daily_auc_minimum"]) == 0.5579105002109371
-    assert int(best_auc["placebo_observed_rank_descending"]) == 1
+    assert float(best["viability_pearson_ic"]) == 0.017791430387791903
+    assert float(best["viability_spearman_ic"]) == 0.0437035343890367
 
-    best_all = max(signals, key=lambda row: float(row["mean_delayed_net_return_bps"]))
-    assert float(best_all["mean_delayed_net_return_bps"]) == -11.578984700095054
-    best_100 = max(
-        (row for row in ranked if row["requested_rows"] == "100"),
-        key=lambda row: float(row["mean_delayed_net_return_bps"]),
-    )
-    assert float(best_100["mean_delayed_net_return_bps"]) == -3.502678431456879
+    largest = max(thresholds, key=lambda row: int(row["nonoverlapping_trades"]))
+    assert (
+        largest["family"],
+        largest["horizon_minutes"],
+        largest["threshold_bps"],
+    ) == ("linear_ridge", "120", "12.0")
+    assert (
+        int(largest["btc_trades"]),
+        int(largest["eth_trades"]),
+        int(largest["sol_trades"]),
+    ) == (0, 284, 379)
 
 
-def test_latest_action_value_progress_extends_to_round36_without_equity_claim() -> None:
+def test_latest_action_value_progress_extends_to_round37_without_equity_claim() -> (
+    None
+):
     progress = _csv("progress.csv")
 
-    assert [int(row["round"]) for row in progress] == list(range(1, 37))
+    assert [int(row["round"]) for row in progress] == list(range(1, 38))
     latest = progress[-1]
     assert latest["status"] == "rejected"
     assert latest["selection_contaminated"] == "True"
     assert latest["risk_level"] == "research-only; no policy"
     assert latest["selected_signals"] == "0"
     assert latest["executable_trades"] == "0"
-    assert latest["direction_auc"] == "0.6072574903425851"
-    assert latest["top_100_exact_after_cost_bps"] == "-3.502678431456879"
-    assert latest["best_top_500_exact_after_cost_bps"] == "-10.008614095712256"
+    assert latest["direction_auc"] == ""
+    assert float(latest["spearman_ic"]) == 0.0437035343890367
+    assert latest["accepted_thresholds"] == "0"
 
 
-def test_latest_action_value_charts_are_accessible_and_round35_files_are_absent() -> (
+def test_latest_action_value_charts_are_accessible_and_round36_files_are_absent() -> (
     None
 ):
     expected_charts = {
-        "after-cost-tails.svg",
-        "cost-coverage.svg",
-        "daily-direction-auc.svg",
-        "placebo-comparison.svg",
+        "calibration-economics.svg",
+        "calibration-support.svg",
+        "prediction-quality.svg",
         "research-progress.svg",
-        "signal-decay.svg",
     }
     charts = {path.name for path in (LATEST / "charts").glob("*.svg")}
 
@@ -208,14 +204,18 @@ def test_latest_action_value_charts_are_accessible_and_round35_files_are_absent(
         assert ">inf<" not in text
         assert '="inf"' not in text
 
-    for stale in ("variants.csv", "features.csv", "gates.csv", "models.csv"):
+    for stale in (
+        "signals.csv",
+        "daily.csv",
+        "regimes.csv",
+        "ranked-event-outcomes.csv",
+        "decay.csv",
+        "horizon-support.csv",
+    ):
         assert not (LATEST / stale).exists()
-    for stale in ("direction-auc.svg", "feature-gain.svg"):
-        assert not (LATEST / "charts" / stale).exists()
 
     readme = (LATEST / "README.md").read_text(encoding="utf-8")
-    assert readme.startswith("# Round 36: direction exists, taker edge rejected")
-    assert "# Round 35:" not in readme
-    assert "Leverage cannot repair negative unlevered expectancy." in readme
-    assert "no out-of-sample, ETHUSDT, SOLUSDT" in readme
-    assert "no" in readme.casefold() and "profitability claim" in readme.casefold()
+    assert readme.startswith("# Round 37: diversified candidate selection rejected")
+    assert "# Round 36:" not in readme
+    assert "No ROI graph exists" in readme
+    assert "not selected trades, ROI, an equity curve, or profitability evidence" in readme

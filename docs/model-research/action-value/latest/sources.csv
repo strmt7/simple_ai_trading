@@ -1,0 +1,4 @@
+duplicate_or_regressed_time_count,first_open_time_ms,gap_count,invalid_ohlc_rows,invalid_volume_rows,last_open_time_ms,nonfinite_numeric_rows,rows,source_counts,stream_sha256,symbol
+0,1638316800000,0,0,0,1751327940000,0,1883520,{'binance_public_archive': 1883520},ffe9d263c4ad6bc8e12d08e616dad6625ec85fa0ca386de3141c6d89ae461836,BTCUSDT
+0,1638316800000,0,0,0,1751327940000,0,1883520,{'binance_public_archive': 1883520},d2ed4ca0f212dc854617fb269ce6e857b1c98f3f230e29793001b6221efa3701,ETHUSDT
+0,1638316800000,0,0,0,1751327940000,0,1883520,{'binance_public_archive': 1883520},cc17a7e4d0d54c441498c661f8be655ec169a7d93b4555c239ec869813e967b0,SOLUSDT
