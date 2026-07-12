@@ -1,0 +1,380 @@
+{
+  "schema_version": "multi-horizon-signal-decay-design-v1",
+  "round": 36,
+  "phase": "pre_model_consumed_data_diagnostic",
+  "design_revision": 1,
+  "design_sha256": "276e0c169b2bd24ce87843b66892c4139daffdd581776457d068d4b63b61727e",
+  "objective": "Measure the direction, decay, execution-cost coverage, and stability of prespecified causal L1 and trade-flow signals before selecting any further predictive-model architecture.",
+  "predecessor": {
+    "failure_analysis": "round-035-failure-analysis.json",
+    "failure_analysis_canonical_sha256": "19ef798c08185c28cdd48528fe32d7dcaf97f3d18faa7230103b91ada24cd690",
+    "failure_analysis_file_sha256": "758d8e796a03c08bc8589b693f622e45b418e46161915aa2e8772740c51dc134",
+    "direction_screen_design_canonical_sha256": "db027483eed1329554bac8c3be057c488bc1899348978ea8b199c5796db6cbaa",
+    "direction_screen_binding_canonical_sha256": "ac94719659d15c18b5f465b1b2e09cd6d6bb980768f7822fb040462f3a2d6f6b",
+    "direction_screen_report_canonical_sha256": "1c6d2b7e5914ef62b110ea6095661f460cdc75f215aee07e04b1cdc0979499ac"
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-035.json",
+    "consumed_period_registry_canonical_sha256": "b248361ceab4c0014e30facb729cb56f3f97a3cb3b05bfd9e6cc2d51f1e21572",
+    "consumed_period_registry_file_sha256": "8970b0b8d71cc2605d8f85e37dde0d26cc6cb9006077f32f8d9a04027781351d",
+    "all_evaluated_dates_already_consumed": true,
+    "post_hoc_diagnostic_only": true,
+    "untouched_period_access_permitted": false,
+    "model_training_permitted": false,
+    "model_architecture_selection_permitted": false,
+    "signal_sign_reversal_permitted": false,
+    "signal_threshold_search_permitted": false,
+    "signal_combination_weight_search_permitted": false,
+    "horizon_selection_permitted": false,
+    "promotion_permitted": false,
+    "trading_policy_selection_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "oracle_feature_or_runtime_label_use_permitted": false
+  },
+  "source_contract": {
+    "loader_design": "round-034-three-action-utility-design.json",
+    "loader_design_canonical_sha256": "61aea61eeec1ddc87aecb8b8fe17b915b8411760501e46eecf9c2f4e92ac5e03",
+    "loader_design_file_sha256": "c1b18c299e2d6cdba5c2e6b47498fbd10b1e611d9f689efc0a319b85a38ea405",
+    "provider": "binance",
+    "market_type": "usdm_futures",
+    "symbol": "BTCUSDT",
+    "feature_version": "l1-tape-causal-v8",
+    "feature_count": 107,
+    "feature_contract_sha256": "79da981a06f38608ae805ee5766e7ff0dd1504ca0917b231a79ad03b77304eef",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
+    "cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85",
+    "dataset_rows": 877894,
+    "event_rows": 230941,
+    "input_resolution": "one_second_causal_features_from_event_level_book_ticker_and_trade_archives",
+    "bbo_execution_path_resolution_ms": 100,
+    "certified_cache_materialization_start": "2023-05-16",
+    "certified_cache_materialization_end": "2023-07-06",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "full_level_two_order_book_claim": false,
+    "queue_position_claim": false,
+    "hidden_liquidity_claim": false
+  },
+  "data_access": {
+    "source_materialization_start": "2023-05-16",
+    "source_materialization_end": "2023-07-06",
+    "metric_role": "calibration",
+    "metric_start": "2023-06-21",
+    "metric_end": "2023-06-25",
+    "train_prediction_or_metric_access_permitted": false,
+    "early_stop_prediction_or_metric_access_permitted": false,
+    "policy_prediction_or_metric_access_permitted": false,
+    "development_prediction_or_metric_access_permitted": false,
+    "distant_confirmation_source_materialization_permitted": false,
+    "distant_confirmation_prediction_or_metric_access_permitted": false
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null,
+    "evaluated_rows": "calibration_role_cusum_events_with_exact_horizon_quote_support"
+  },
+  "signals": [
+    {
+      "name": "l1_imbalance",
+      "family": "displayed_l1_depth_imbalance",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "microprice_offset_bps",
+      "family": "microprice",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "normalized_ofi",
+      "family": "order_flow_imbalance",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "ofi_10s_mean",
+      "family": "order_flow_imbalance",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "ofi_60s_mean",
+      "family": "order_flow_imbalance",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "ofi_300s_mean",
+      "family": "order_flow_imbalance",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "trade_imbalance",
+      "family": "aggressor_trade_flow",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "trade_imbalance_10s_mean",
+      "family": "aggressor_trade_flow",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "trade_imbalance_60s_mean",
+      "family": "aggressor_trade_flow",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "trade_imbalance_300s_mean",
+      "family": "aggressor_trade_flow",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "signed_pressure_to_opposing_depth_10s",
+      "family": "depth_normalized_aggressor_flow",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "signed_pressure_to_opposing_depth_60s",
+      "family": "depth_normalized_aggressor_flow",
+      "positive_orientation": "higher_future_midquote"
+    },
+    {
+      "name": "signed_pressure_to_opposing_depth_300s",
+      "family": "depth_normalized_aggressor_flow",
+      "positive_orientation": "higher_future_midquote"
+    }
+  ],
+  "horizons_seconds": [
+    5,
+    15,
+    30,
+    60,
+    120,
+    300,
+    900
+  ],
+  "future_quote_contract": {
+    "decision_cadence_seconds": 5,
+    "exact_future_decision_timestamp_required": true,
+    "future_delayed_quote_source": "entry_quote_of_the_cached_row_at_decision_time_plus_horizon",
+    "same_utc_day_required": true,
+    "maximum_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "maximum_l1_participation": 1.0,
+    "missing_stale_or_nonpositive_quote_action": "exclude_row_and_count_reason",
+    "future_outcomes_available_to_live_features_or_runtime": false
+  },
+  "execution_cost_contract": {
+    "instrument": "Binance USD-M linear perpetual futures",
+    "position_size_basis": "constant_1000_usdt_entry_notional",
+    "side_from_signal": "strict_sign_with_exact_zero_unrouted",
+    "delayed_entry_arrival_ms": 750,
+    "delayed_exit_arrival_ms": "decision_time_plus_horizon_plus_750",
+    "taker_fee_bps_per_side": 5.0,
+    "additional_adverse_slippage_bps_per_side": 1.0,
+    "long_cross_spread_return": "future_bid_divided_by_entry_ask_minus_one",
+    "short_cross_spread_return": "one_minus_future_ask_divided_by_entry_bid",
+    "fees_and_slippage": "charged_on_actual_entry_and_exit_notional",
+    "zero_latency_counterfactual": {
+      "purpose": "decompose_historical_latency_drag_only",
+      "entry_arrival_ms": 0,
+      "exit_arrival_ms": "decision_time_plus_horizon",
+      "source": "certified_100ms_book_ticker_asof_quotes",
+      "live_or_executable_claim_permitted": false
+    },
+    "maker_fee_fill_queue_or_rebate_assumption_permitted": false,
+    "market_impact_beyond_observed_l1_participation_claim_permitted": false
+  },
+  "statistical_contract": {
+    "gross_direction_target": "future_delayed_midquote_strictly_above_entry_delayed_midquote",
+    "exact_zero_midquote_change": "excluded_from_direction_metrics",
+    "primary_pooling_weight": "average_label_uniqueness_for_each_horizon",
+    "overlap_robustness": "deterministic_chronological_nonoverlapping_event_subset_per_day_and_horizon",
+    "direction_metrics": [
+      "weighted_roc_auc",
+      "unweighted_roc_auc",
+      "direction_accuracy",
+      "spearman_rank_information_coefficient",
+      "daily_auc_minimum_median_and_standard_deviation",
+      "days_above_chance"
+    ],
+    "cost_decomposition_metrics": [
+      "signal_aligned_gross_midquote_return_bps",
+      "cross_spread_gross_return_bps",
+      "spread_crossing_cost_bps",
+      "fee_and_slippage_cost_bps",
+      "historical_latency_drag_bps",
+      "delayed_net_return_bps"
+    ],
+    "ranked_tail_counts": [
+      100,
+      500,
+      1000
+    ],
+    "ranked_tail_order": "descending_absolute_raw_signal_with_decision_time_ascending_tie_break",
+    "ranked_tail_outputs_are_event_outcomes_not_executable_trades": true,
+    "placebo": {
+      "method": "independently_permute_signal_values_within_each_utc_day",
+      "replicates": 200,
+      "seed": 3601,
+      "preserves_daily_signal_distribution": true,
+      "reported_metrics": [
+        "observed_rank_among_placebos",
+        "placebo_mean",
+        "placebo_standard_deviation",
+        "placebo_95_percent_interval"
+      ],
+      "formal_multiple_testing_significance_claim_permitted": false
+    },
+    "multiple_comparison_warning_required": true,
+    "orientation_flip_after_observing_results_permitted": false,
+    "best_horizon_or_best_signal_promotion_permitted": false
+  },
+  "regime_contract": {
+    "purpose": "report stability without selecting a trading regime",
+    "causal_variables": {
+      "relative_spread": {
+        "feature": "spread_vs_60s_mean",
+        "bands": [
+          "less_than_0_8",
+          "0_8_to_less_than_1_25",
+          "greater_than_or_equal_to_1_25"
+        ]
+      },
+      "relative_short_term_volatility": {
+        "feature": "volatility_10s_vs_300s",
+        "bands": [
+          "less_than_0_75",
+          "0_75_to_less_than_1_5",
+          "greater_than_or_equal_to_1_5"
+        ]
+      },
+      "relative_l1_depth": {
+        "feature": "l1_depth_vs_60s_mean",
+        "bands": [
+          "less_than_0_75",
+          "0_75_to_less_than_1_25",
+          "greater_than_or_equal_to_1_25"
+        ]
+      }
+    },
+    "minimum_rows_to_report_metric": 100,
+    "regime_selection_or_exclusion_permitted": false
+  },
+  "signal_decay_contract": {
+    "reported_curve": "weighted_auc_minus_0_5_and_spearman_information_coefficient_by_frozen_horizon",
+    "prespecified_positive_orientation_only": true,
+    "measurable_half_life_requires": [
+      "weighted_auc_at_the_earliest_peak_is_at_least_0_53",
+      "at_least_four_of_five_daily_auc_values_at_that_horizon_exceed_0_5",
+      "a_later_frozen_horizon_reaches_or_falls_below_half_of_the_peak_excess_auc",
+      "all_intermediate_excess_auc_values_are_nonincreasing_with_tolerance_0_002"
+    ],
+    "interpolation": "linear_between_adjacent_frozen_horizons",
+    "otherwise_report": "no_measurable_half_life_on_consumed_role"
+  },
+  "required_report": {
+    "support_by_horizon": true,
+    "signal_horizon_metrics": true,
+    "daily_metrics": true,
+    "nonoverlapping_robustness_metrics": true,
+    "cost_decomposition": true,
+    "ranked_event_outcomes": true,
+    "regime_metrics": true,
+    "placebo_metrics": true,
+    "signal_decay_summary": true,
+    "source_and_implementation_hashes": true,
+    "nonfinite_counts": true,
+    "exclusion_reason_counts": true,
+    "run_resource_and_elapsed_time_evidence": true
+  },
+  "decision_contract": {
+    "diagnostic_status": "complete_only_if_every_prespecified_signal_horizon_and_placebo_is_reported",
+    "if_no_signal_has_stable_positive_direction_and_after_cost_evidence": "reject_the_current_l1_tape_alpha_lane_instead_of_adding_model_complexity",
+    "if_a_signal_family_is_stable": "freeze_one_cost_conditioned_multi_horizon_causal_model_design_for_newly_certified_unseen_dates_without_selecting_from_this_role",
+    "this_round_can_create_model_candidate": false,
+    "this_round_can_create_trading_authority": false
+  },
+  "runtime_resources": {
+    "maximum_worker_threads": 16,
+    "duckdb_memory_limit_gib": 12,
+    "heartbeat_interval_seconds": 15,
+    "maximum_expected_process_working_set_gib": 12,
+    "temporary_relations": "memory_only",
+    "duplicate_dataset_or_quote_archive_permitted": false,
+    "gpu_training_required": false,
+    "reason_gpu_training_not_required": "this_frozen_round_contains_no_model_training",
+    "output_artifact_persistence": "external_evidence_root_only"
+  },
+  "research_basis": [
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1712822",
+      "review_status": "published_in_journal_of_financial_econometrics",
+      "use": "Supports signed order-flow imbalance and displayed depth as short-horizon price-impact variables; no performance is imported."
+    },
+    {
+      "title": "The Micro-Price: A High Frequency Estimator of Future Prices",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2970694",
+      "review_status": "working_paper",
+      "use": "Supports measuring imbalance-conditioned microprice displacement over explicit short horizons."
+    },
+    {
+      "title": "Multi-Horizon Forecasting for Limit Order Books",
+      "url": "https://arxiv.org/abs/2105.10430",
+      "review_status": "preprint",
+      "use": "Supports measuring a frozen forecast path before choosing a temporal architecture; no reported benchmark performance is imported."
+    },
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "review_status": "preprint",
+      "use": "Supports testing compact L1, spread, and trade-flow families with taker-side marking; its thresholds, maker assumptions, and performance are not imported."
+    },
+    {
+      "title": "Fee Structure and Order Flow Informativeness in the Cryptocurrency Market",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5051291",
+      "review_status": "working_paper",
+      "use": "Supports treating fee regime as material to order-flow informativeness rather than assuming gross predictability survives costs."
+    },
+    {
+      "title": "Order Flow Imbalance and Price Dynamics in CME Ether Futures",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6772279",
+      "review_status": "recent_unreviewed_preprint",
+      "use": "Supports a signal-decay and direction-shuffled-placebo hypothesis only; its market, search process, and results are not imported."
+    },
+    {
+      "title": "Bridging the Reality Gap in Limit Order Book Simulation",
+      "url": "https://arxiv.org/abs/2603.24137",
+      "review_status": "recent_preprint",
+      "use": "Supports explicit latency and execution-state measurement and cautions against idealized fill assumptions."
+    },
+    {
+      "title": "Binance Public Data",
+      "url": "https://github.com/binance/binance-public-data",
+      "review_status": "official_exchange_source_documentation",
+      "use": "Documents public archive provenance and checksum practice; local certificates remain the binding source evidence."
+    }
+  ],
+  "limitations": [
+    "All metrics are post-hoc diagnostics on five already-consumed BTCUSDT calibration days and cannot establish out-of-sample profitability.",
+    "The source has event-level best-bid-offer and trades but no full Level-2 queue, so maker fills, queue priority, hidden liquidity, and full market impact cannot be estimated.",
+    "One-second causal features and five-second decisions do not represent sub-second alpha generation even though execution quotes are sampled from a certified 100 ms BBO path.",
+    "Five daily blocks provide weak regime and daily-stability evidence; placebo ranks are descriptive and do not authorize formal multiple-testing significance claims.",
+    "Overlapping event outcomes are not executable trades or a portfolio backtest; the nonoverlapping subset is only a dependence robustness diagnostic.",
+    "ETHUSDT and SOLUSDT require separately certified corpora and are not covered by this BTCUSDT diagnostic.",
+    "A zero-latency counterfactual estimates historical quote-path latency drag and is not an achievable execution claim.",
+    "No result from this round permits leverage, order placement, model promotion, or trading authority."
+  ],
+  "claims": {
+    "trading_authority": false,
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "leverage_applied": false,
+    "model_trained": false
+  }
+}
