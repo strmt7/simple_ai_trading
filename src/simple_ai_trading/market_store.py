@@ -137,6 +137,59 @@ class ArchiveFileRecord:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class FuturesReferenceBar:
+    symbol: str
+    market_type: str
+    kind: str
+    interval: str
+    open_time: int
+    open: float
+    high: float
+    low: float
+    close: float
+    close_time: int
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class FundingRateRecord:
+    symbol: str
+    market_type: str
+    calc_time: int
+    funding_interval_hours: int
+    funding_rate: float
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class DerivativesArchiveFileRecord:
+    url: str
+    symbol: str
+    market_type: str
+    data_type: str
+    interval: str
+    period: str
+    status: str
+    rows_inserted: int
+    rows_read: int
+    bytes_downloaded: int
+    sha256: str
+    checksum_sha256: str
+    checksum_status: str
+    row_stream_sha256: str
+    error: str
+    started_at_ms: int
+    completed_at_ms: int | None
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 class MarketDataStore:
     """Small SQLite store optimized for append/update market-data ingestion."""
 
@@ -278,6 +331,63 @@ class MarketDataStore:
             );
             CREATE INDEX IF NOT EXISTS idx_archive_files_lookup
                 ON archive_files(symbol, market_type, interval, status);
+
+            CREATE TABLE IF NOT EXISTS derivatives_archive_files (
+                url TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                data_type TEXT NOT NULL,
+                interval TEXT NOT NULL,
+                period TEXT NOT NULL,
+                status TEXT NOT NULL,
+                rows_inserted INTEGER NOT NULL DEFAULT 0,
+                rows_read INTEGER NOT NULL DEFAULT 0,
+                bytes_downloaded INTEGER NOT NULL DEFAULT 0,
+                sha256 TEXT NOT NULL DEFAULT '',
+                checksum_sha256 TEXT NOT NULL DEFAULT '',
+                checksum_status TEXT NOT NULL DEFAULT 'unverified',
+                row_stream_sha256 TEXT NOT NULL DEFAULT '',
+                error TEXT NOT NULL DEFAULT '',
+                started_at_ms INTEGER NOT NULL,
+                completed_at_ms INTEGER
+            );
+            CREATE INDEX IF NOT EXISTS idx_derivatives_archive_files_lookup
+                ON derivatives_archive_files(
+                    symbol, market_type, data_type, interval, status, period
+                );
+
+            CREATE TABLE IF NOT EXISTS futures_reference_bars (
+                symbol TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                interval TEXT NOT NULL,
+                open_time INTEGER NOT NULL,
+                open REAL NOT NULL,
+                high REAL NOT NULL,
+                low REAL NOT NULL,
+                close REAL NOT NULL,
+                close_time INTEGER NOT NULL,
+                source TEXT NOT NULL,
+                ingested_at_ms INTEGER NOT NULL,
+                PRIMARY KEY (symbol, market_type, kind, interval, open_time)
+            );
+            CREATE INDEX IF NOT EXISTS idx_futures_reference_bars_lookup
+                ON futures_reference_bars(
+                    symbol, market_type, kind, interval, open_time
+                );
+
+            CREATE TABLE IF NOT EXISTS funding_rates (
+                symbol TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                calc_time INTEGER NOT NULL,
+                funding_interval_hours INTEGER NOT NULL,
+                funding_rate REAL NOT NULL,
+                source TEXT NOT NULL,
+                ingested_at_ms INTEGER NOT NULL,
+                PRIMARY KEY (symbol, market_type, calc_time)
+            );
+            CREATE INDEX IF NOT EXISTS idx_funding_rates_lookup
+                ON funding_rates(symbol, market_type, calc_time);
 
             CREATE TABLE IF NOT EXISTS microstructure_captures (
                 capture_id TEXT PRIMARY KEY,
@@ -1332,6 +1442,333 @@ class MarketDataStore:
                 error=str(row["error"]),
                 started_at_ms=int(row["started_at_ms"]),
                 completed_at_ms=(int(row["completed_at_ms"]) if row["completed_at_ms"] is not None else None),
+            )
+            for row in rows
+        ]
+
+    def upsert_futures_reference_bars(
+        self,
+        records: Sequence[FuturesReferenceBar],
+        *,
+        source: str,
+        ingested_at_ms: int | None = None,
+    ) -> int:
+        if not records:
+            return 0
+        timestamp = self._now_ms() if ingested_at_ms is None else int(ingested_at_ms)
+        rows = [
+            (
+                record.symbol.upper(),
+                record.market_type,
+                record.kind,
+                record.interval,
+                int(record.open_time),
+                float(record.open),
+                float(record.high),
+                float(record.low),
+                float(record.close),
+                int(record.close_time),
+                source,
+                timestamp,
+            )
+            for record in records
+        ]
+        before = self.connect().total_changes
+        with self.connect():
+            self.connect().executemany(
+                """
+            INSERT INTO futures_reference_bars(
+                symbol, market_type, kind, interval, open_time, open, high, low,
+                close, close_time, source, ingested_at_ms
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(symbol, market_type, kind, interval, open_time) DO UPDATE SET
+                open=excluded.open,
+                high=excluded.high,
+                low=excluded.low,
+                close=excluded.close,
+                close_time=excluded.close_time,
+                source=excluded.source,
+                ingested_at_ms=excluded.ingested_at_ms
+            WHERE futures_reference_bars.open IS NOT excluded.open
+               OR futures_reference_bars.high IS NOT excluded.high
+               OR futures_reference_bars.low IS NOT excluded.low
+               OR futures_reference_bars.close IS NOT excluded.close
+               OR futures_reference_bars.close_time IS NOT excluded.close_time
+               OR futures_reference_bars.source IS NOT excluded.source
+                """,
+                rows,
+            )
+        return max(0, self.connect().total_changes - before)
+
+    def upsert_funding_rates(
+        self,
+        records: Sequence[FundingRateRecord],
+        *,
+        source: str,
+        ingested_at_ms: int | None = None,
+    ) -> int:
+        if not records:
+            return 0
+        timestamp = self._now_ms() if ingested_at_ms is None else int(ingested_at_ms)
+        rows = [
+            (
+                record.symbol.upper(),
+                record.market_type,
+                int(record.calc_time),
+                int(record.funding_interval_hours),
+                float(record.funding_rate),
+                source,
+                timestamp,
+            )
+            for record in records
+        ]
+        before = self.connect().total_changes
+        with self.connect():
+            self.connect().executemany(
+                """
+            INSERT INTO funding_rates(
+                symbol, market_type, calc_time, funding_interval_hours,
+                funding_rate, source, ingested_at_ms
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(symbol, market_type, calc_time) DO UPDATE SET
+                funding_interval_hours=excluded.funding_interval_hours,
+                funding_rate=excluded.funding_rate,
+                source=excluded.source,
+                ingested_at_ms=excluded.ingested_at_ms
+            WHERE funding_rates.funding_interval_hours IS NOT excluded.funding_interval_hours
+               OR funding_rates.funding_rate IS NOT excluded.funding_rate
+               OR funding_rates.source IS NOT excluded.source
+                """,
+                rows,
+            )
+        return max(0, self.connect().total_changes - before)
+
+    def fetch_futures_reference_bars(
+        self,
+        symbol: str,
+        *,
+        kind: str = "premium_index",
+        market_type: str = "futures",
+        interval: str = "1m",
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+    ) -> list[FuturesReferenceBar]:
+        where = [
+            "symbol = ?",
+            "market_type = ?",
+            "kind = ?",
+            "interval = ?",
+        ]
+        params: list[object] = [symbol.upper(), market_type, kind, interval]
+        if start_ms is not None:
+            where.append("open_time >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("open_time <= ?")
+            params.append(int(end_ms))
+        rows = self.connect().execute(
+            f"""
+            SELECT symbol, market_type, kind, interval, open_time, open, high,
+                   low, close, close_time
+            FROM futures_reference_bars
+            WHERE {" AND ".join(where)}
+            ORDER BY open_time
+            """,
+            params,
+        ).fetchall()
+        return [
+            FuturesReferenceBar(
+                symbol=str(row["symbol"]),
+                market_type=str(row["market_type"]),
+                kind=str(row["kind"]),
+                interval=str(row["interval"]),
+                open_time=int(row["open_time"]),
+                open=float(row["open"]),
+                high=float(row["high"]),
+                low=float(row["low"]),
+                close=float(row["close"]),
+                close_time=int(row["close_time"]),
+            )
+            for row in rows
+        ]
+
+    def fetch_funding_rates(
+        self,
+        symbol: str,
+        *,
+        market_type: str = "futures",
+        start_ms: int | None = None,
+        end_ms: int | None = None,
+    ) -> list[FundingRateRecord]:
+        where = ["symbol = ?", "market_type = ?"]
+        params: list[object] = [symbol.upper(), market_type]
+        if start_ms is not None:
+            where.append("calc_time >= ?")
+            params.append(int(start_ms))
+        if end_ms is not None:
+            where.append("calc_time <= ?")
+            params.append(int(end_ms))
+        rows = self.connect().execute(
+            f"""
+            SELECT symbol, market_type, calc_time, funding_interval_hours,
+                   funding_rate
+            FROM funding_rates
+            WHERE {" AND ".join(where)}
+            ORDER BY calc_time
+            """,
+            params,
+        ).fetchall()
+        return [
+            FundingRateRecord(
+                symbol=str(row["symbol"]),
+                market_type=str(row["market_type"]),
+                calc_time=int(row["calc_time"]),
+                funding_interval_hours=int(row["funding_interval_hours"]),
+                funding_rate=float(row["funding_rate"]),
+            )
+            for row in rows
+        ]
+
+    def begin_derivatives_archive_file(
+        self,
+        *,
+        url: str,
+        symbol: str,
+        market_type: str,
+        data_type: str,
+        interval: str,
+        period: str,
+        started_at_ms: int | None = None,
+    ) -> None:
+        timestamp = self._now_ms() if started_at_ms is None else int(started_at_ms)
+        self.connect().execute(
+            """
+            INSERT INTO derivatives_archive_files(
+                url, symbol, market_type, data_type, interval, period, status,
+                rows_inserted, rows_read, bytes_downloaded, sha256,
+                checksum_sha256, checksum_status, row_stream_sha256, error,
+                started_at_ms, completed_at_ms
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 'started', 0, 0, 0, '', '',
+                    'unverified', '', '', ?, NULL)
+            ON CONFLICT(url) DO UPDATE SET
+                status='started',
+                error='',
+                started_at_ms=excluded.started_at_ms,
+                completed_at_ms=NULL
+            """,
+            (
+                url,
+                symbol.upper(),
+                market_type,
+                data_type,
+                interval,
+                period,
+                timestamp,
+            ),
+        )
+        self.connect().commit()
+
+    def complete_derivatives_archive_file(
+        self,
+        *,
+        url: str,
+        status: str,
+        rows_inserted: int,
+        rows_read: int,
+        bytes_downloaded: int,
+        sha256: str,
+        checksum_sha256: str,
+        checksum_status: str,
+        row_stream_sha256: str,
+        error: str = "",
+        completed_at_ms: int | None = None,
+    ) -> None:
+        timestamp = self._now_ms() if completed_at_ms is None else int(completed_at_ms)
+        self.connect().execute(
+            """
+            UPDATE derivatives_archive_files
+            SET status=?, rows_inserted=?, rows_read=?, bytes_downloaded=?,
+                sha256=?, checksum_sha256=?, checksum_status=?,
+                row_stream_sha256=?, error=?, completed_at_ms=?
+            WHERE url=?
+            """,
+            (
+                status,
+                max(0, int(rows_inserted)),
+                max(0, int(rows_read)),
+                max(0, int(bytes_downloaded)),
+                str(sha256 or ""),
+                str(checksum_sha256 or ""),
+                str(checksum_status or "unverified"),
+                str(row_stream_sha256 or ""),
+                str(error or "")[:500],
+                timestamp,
+                url,
+            ),
+        )
+        self.connect().commit()
+
+    def derivatives_archive_file_status(self, url: str) -> str | None:
+        row = self.connect().execute(
+            "SELECT status FROM derivatives_archive_files WHERE url = ?", (url,)
+        ).fetchone()
+        return str(row["status"]) if row is not None else None
+
+    def derivatives_archive_files(
+        self,
+        *,
+        symbol: str | None = None,
+        data_type: str | None = None,
+        status: str | None = None,
+    ) -> list[DerivativesArchiveFileRecord]:
+        where: list[str] = []
+        params: list[object] = []
+        if symbol is not None:
+            where.append("symbol = ?")
+            params.append(symbol.upper())
+        if data_type is not None:
+            where.append("data_type = ?")
+            params.append(data_type)
+        if status is not None:
+            where.append("status = ?")
+            params.append(status)
+        query = """
+            SELECT url, symbol, market_type, data_type, interval, period, status,
+                   rows_inserted, rows_read, bytes_downloaded, sha256,
+                   checksum_sha256, checksum_status, row_stream_sha256, error,
+                   started_at_ms, completed_at_ms
+            FROM derivatives_archive_files
+        """
+        if where:
+            query += " WHERE " + " AND ".join(where)
+        query += " ORDER BY symbol, data_type, interval, period"
+        rows = self.connect().execute(query, params).fetchall()
+        return [
+            DerivativesArchiveFileRecord(
+                url=str(row["url"]),
+                symbol=str(row["symbol"]),
+                market_type=str(row["market_type"]),
+                data_type=str(row["data_type"]),
+                interval=str(row["interval"]),
+                period=str(row["period"]),
+                status=str(row["status"]),
+                rows_inserted=int(row["rows_inserted"]),
+                rows_read=int(row["rows_read"]),
+                bytes_downloaded=int(row["bytes_downloaded"]),
+                sha256=str(row["sha256"]),
+                checksum_sha256=str(row["checksum_sha256"]),
+                checksum_status=str(row["checksum_status"]),
+                row_stream_sha256=str(row["row_stream_sha256"]),
+                error=str(row["error"]),
+                started_at_ms=int(row["started_at_ms"]),
+                completed_at_ms=(
+                    int(row["completed_at_ms"])
+                    if row["completed_at_ms"] is not None
+                    else None
+                ),
             )
             for row in rows
         ]
