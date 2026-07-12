@@ -1,35 +1,28 @@
-# Round 36: direction exists, taker edge rejected
+# Round 37: diversified candidate selection rejected
 
-**The consumed BTCUSDT L1/tape lane is rejected for taker trading.** Short-horizon direction is measurable, but no prespecified signal, horizon, non-overlapping sample, ranked tail, or causal regime slice covered observed spread plus the frozen fee/slippage model.
+**The cross-asset regression lane did not earn permission to trade.** GPU-trained LightGBM found weak out-of-period association, but forecasts were too compressed and the rare profitable calibration tails were concentrated in SOLUSDT. The frozen BTC/ETH/SOL support gate rejected every threshold before viability replay or AI review.
 
 | Evidence | Verified result |
 | --- | ---: |
-| Metric dates | 2023-06-21 to 2023-06-25 UTC |
-| Causal one-second rows / calibration events | 877,894 / 28,845 |
-| Signals x horizons | 13 x 7 = 91 |
-| Best weighted direction ROC AUC | 0.6073 (L1 imbalance, 5s) |
-| Daily minimum / median AUC | 0.5579 / 0.6040 |
-| Measured half-life | 14.63s (consumed role only) |
-| Best all-routed delayed taker mean | -11.58 bps |
-| Best top-100 / 500 / 1000 means | -3.50 / -10.01 / -10.66 bps |
-| Positive regime slices | 0 / 819 |
-| Peak / final working set | 8.96 / 0.76 GiB |
-| Model candidate / trading authority | none / none |
+| Source / target span | Binance USD-M 1m / 2022-01-01 to 2025-06-30 UTC |
+| Decision rows / causal features | 1,103,328 / 71 |
+| GPU models / candidates / threshold cells | 16 / 20 / 100 |
+| Best 2025-H1 Pearson / Spearman IC | 0.0178 / 0.0437 (shared cross asset lightgbm, 120m) |
+| Selected thresholds / viability trades | 0 / 0 |
+| AI cases / AI models evaluated | 0 / 0 |
+| Compute / runtime / peak working set | opencl:auto / 65.7s / 3.31 GiB |
+| Trading authority / leverage | none / none |
 
-![Signal decay](charts/signal-decay.svg)
+![Prediction quality](charts/prediction-quality.svg)
 
-![Cost coverage](charts/cost-coverage.svg)
+![Calibration support](charts/calibration-support.svg)
 
-![After-cost tails](charts/after-cost-tails.svg)
-
-![Daily direction](charts/daily-direction-auc.svg)
-
-![Placebo comparison](charts/placebo-comparison.svg)
+![Calibration economics](charts/calibration-economics.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-The strongest L1 imbalance and microprice effects decay to roughly half their excess AUC within 15 seconds. The largest signal-aligned gross mean across all 91 cells was only `+0.46` bps, while the frozen round-trip fee and adverse-slippage charge was approximately `12` bps. Leverage cannot repair negative unlevered expectancy.
+The positive tail observations are calibration diagnostics, not selected trades, ROI, an equity curve, or profitability evidence. No ROI graph exists because no portfolio or executable trade series was produced. Qwen3 and Fino1 were intentionally not invoked: without a diversified ML candidate set, an AI veto ablation would have no causal cases to review.
 
-This is post-hoc evidence on five already-consumed BTCUSDT dates. It contains no out-of-sample, ETHUSDT, SOLUSDT, model-training, portfolio-return, testnet/live-execution, or profitability claim.
+The next lane changes the target rather than weakening risk controls: cost-aware long/abstain/short classification with real futures premium and funding features. Selection-confirmation 2025-H2 and terminal 2026 data remain sealed.
 
-Data: [signals.csv](signals.csv) | [daily.csv](daily.csv) | [regimes.csv](regimes.csv) | [ranked-event-outcomes.csv](ranked-event-outcomes.csv) | [decay.csv](decay.csv) | [horizon-support.csv](horizon-support.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [candidates.csv](candidates.csv) | [thresholds.csv](thresholds.csv) | [models.csv](models.csv) | [sources.csv](sources.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)
