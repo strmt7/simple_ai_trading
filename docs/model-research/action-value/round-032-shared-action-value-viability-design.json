@@ -1,0 +1,252 @@
+{
+  "schema_version": "shared-action-value-viability-design-v1",
+  "round": 32,
+  "design_revision": 1,
+  "design_sha256": "163558bb7a79f57e04945ebbf52f961796fc56c892ff191d148698059759c4df",
+  "purpose": "consumed_data_direction_canonical_shared_action_value_viability",
+  "claims": {
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "trading_authority": false,
+    "leverage_applied": false
+  },
+  "predecessor": {
+    "round": 31,
+    "status": "rejected",
+    "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e",
+    "report_canonical_sha256": "b3195481f6541442051e3c06d640ee660a7bf55740abc5186037d486b9091371",
+    "failure_analysis": "round-031-failure-analysis.json"
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-031.json",
+    "consumed_period_registry_file_sha256": "91d4e556437519fb6806ffbcfd3d59cc969a43eb0ba4f1d1e1b16f849ac50cdc",
+    "consumed_period_registry_canonical_sha256": "fe28d186d784ae64f347b05606fab6405dba6280b711202dc93149b7edba9742",
+    "variant_budget": 1,
+    "hyperparameter_search_permitted": false,
+    "all_target_dates_already_consumed": true,
+    "thresholds_may_use_calibration_only": true,
+    "later_stage_parameters_may_not_change": true,
+    "no_passing_candidate_action": "reject_and_abstain"
+  },
+  "data": {
+    "symbol": "BTCUSDT",
+    "provider": "binance",
+    "market_type": "futures",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "feature_version": "l1-tape-causal-v8",
+    "source_resolution": "official_event_level_bbo_and_trades_aggregated_causally_to_1s",
+    "roles": {
+      "train": {
+        "start": "2023-05-16",
+        "end": "2023-06-15"
+      },
+      "early_stop": {
+        "start": "2023-06-16",
+        "end": "2023-06-20"
+      },
+      "calibration": {
+        "start": "2023-06-21",
+        "end": "2023-06-25"
+      },
+      "policy": {
+        "start": "2023-06-26",
+        "end": "2023-06-30"
+      },
+      "development": {
+        "start": "2023-07-01",
+        "end": "2023-07-06"
+      },
+      "distant_confirmation": {
+        "context_start": "2023-12-31",
+        "start": "2024-01-01",
+        "end": "2024-02-04"
+      }
+    },
+    "forbidden_target_windows": [
+      {
+        "start": "2024-02-06",
+        "end": "2024-03-05",
+        "role": "untouched_policy"
+      },
+      {
+        "start": "2024-03-06",
+        "end": "2024-03-29",
+        "role": "untouched_development"
+      },
+      {
+        "start": "2024-03-30",
+        "end": "2024-03-30",
+        "role": "reserved_terminal"
+      }
+    ]
+  },
+  "execution": {
+    "horizon_seconds": 900,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 5,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "max_l1_participation": 1.0
+  },
+  "barrier_targets": {
+    "target_scenario": "stress",
+    "horizon_seconds": 900,
+    "volatility_feature_name": "realized_volatility_300s_bps",
+    "stop_volatility_multiple": 1.0,
+    "take_volatility_multiple": 1.5,
+    "minimum_stop_bps": 18.0,
+    "maximum_stop_bps": 60.0,
+    "minimum_take_bps": 27.0,
+    "maximum_take_bps": 90.0,
+    "base_protection_delay_ms": 250,
+    "stress_protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "model": {
+    "candidate_id": "shared-direction-canonical-action-value-plus-advantage",
+    "family": "shared_action_conditional_lightgbm_hurdle_with_signed_advantage_consensus",
+    "action_rows_per_event": 2,
+    "paired_event_split_required": true,
+    "action_sides": [
+      "long",
+      "short"
+    ],
+    "canonicalization": {
+      "signed_microstructure_features_are_multiplied_by_action_side": true,
+      "bid_and_ask_depth_are_mapped_to_supporting_and_opposing_depth": true,
+      "unsigned_cost_liquidity_volatility_and_clock_features_are_shared": true,
+      "unknown_feature_action": "fail_closed"
+    },
+    "shared_action_heads": [
+      "profitable_probability",
+      "conditional_positive_magnitude",
+      "conditional_nonpositive_loss_magnitude",
+      "lower_quantile_0_10",
+      "upper_quantile_0_90"
+    ],
+    "signed_advantage_head": {
+      "target": "stress_long_net_bps_minus_stress_short_net_bps",
+      "training_objective": "l2",
+      "selection_metric": "magnitude_weighted_directional_loss",
+      "role": "side_consensus_only"
+    },
+    "action_value": "p_positive_times_positive_magnitude_minus_one_minus_p_positive_times_nonpositive_loss_magnitude",
+    "trade_eligibility": "chosen_shared_action_value_positive_and_lower_bound_above_profile_floor_and_probability_above_profile_floor_and_ensemble_agreement_and_signed_advantage_consensus",
+    "seeds": [
+      29,
+      43,
+      71
+    ],
+    "lightgbm": {
+      "learning_rate": 0.025,
+      "num_leaves": 47,
+      "max_depth": 7,
+      "min_data_in_leaf": 160,
+      "feature_fraction": 0.82,
+      "bagging_fraction": 0.82,
+      "bagging_freq": 1,
+      "lambda_l1": 0.005,
+      "lambda_l2": 0.025,
+      "max_bin": 127,
+      "num_boost_round": 1500,
+      "early_stopping_rounds": 100,
+      "gpu_use_dp_required": true,
+      "backend": "opencl",
+      "cpu_fallback_permitted": false
+    }
+  },
+  "selection": {
+    "threshold_quantiles": [
+      0.5,
+      0.7,
+      0.85,
+      0.95
+    ],
+    "threshold_source_role": "calibration",
+    "selection_scenario": "stress",
+    "exact_non_overlapping_execution_required": true,
+    "unfavorable_bbo_marking_required": true,
+    "drawdown_penalty": 0.5
+  },
+  "acceptance_gates": {
+    "implementation": {
+      "maximum_action_swap_equivariance_error": 1e-10,
+      "single_source_certificate_per_dataset_load": true,
+      "maximum_progress_silence_seconds": 30,
+      "artifact_reload_equivalence_required": true,
+      "nonfinite_prediction_count": 0
+    },
+    "distant_confirmation_forecast": {
+      "minimum_side_choice_auc": 0.52,
+      "minimum_selected_action_pearson_ic": 0.0,
+      "minimum_selected_action_spearman_ic": 0.0,
+      "minimum_top_100_mean_stress_net_bps": 0.0,
+      "minimum_top_500_mean_stress_net_bps": 0.0,
+      "minimum_long_share_in_top_500": 0.05,
+      "maximum_long_share_in_top_500": 0.95
+    },
+    "economic": {
+      "all_stage_profile_gates_must_pass": true,
+      "minimum_passing_profile_count": 1,
+      "positive_stress_total_required": true,
+      "leverage_permitted": false
+    }
+  },
+  "research_basis": [
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "use": "Supports stationary top-of-book, order-flow, spread, VWAP-to-mid, and adverse-selection features; squared-error training with direction-aware model selection; purged time-series validation; symmetric signal thresholds; and SHAP sign-stability review. Its latency-free results are not imported as evidence."
+    },
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Supports explicit cost-aware abstention and walk-forward evaluation. It also reports that tree boosting was descriptively stronger than tested neural alternatives without establishing statistical dominance."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Requires transaction-level practicality and after-cost evidence rather than treating forecast classification metrics as a trading result."
+    },
+    {
+      "title": "Deep Order Flow Imbalance: Extracting Alpha at Multiple Horizons from the Limit Order Book",
+      "url": "https://doi.org/10.1111/mafi.12413",
+      "use": "Supports stationary order-flow representations and explicit horizon diagnostics. It does not validate this crypto target or execution model."
+    },
+    {
+      "title": "Universal Features of Price Formation in Financial Markets",
+      "url": "https://arxiv.org/abs/1803.06917",
+      "use": "Supports parameter sharing over normalized supply-demand histories. Round 32 tests a stricter within-asset long/short action symmetry and makes no cross-asset claim."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://doi.org/10.2139/ssrn.2326253",
+      "use": "Motivates the one-variant budget, frozen thresholds, chronological stages, and untouched future windows."
+    },
+    {
+      "title": "Qlib",
+      "url": "https://github.com/microsoft/qlib",
+      "use": "Provides open-source precedent for separating forecasting, rolling adaptation, risk, portfolio, and execution workflows. No Qlib benchmark is imported."
+    }
+  ],
+  "limitations": [
+    "This is a BTC-only consumed-data architecture test; ETH and SOL require later source-certified cross-asset confirmation.",
+    "The available official Binance Futures bookTicker archive spans 320 days, not multiple years.",
+    "A passing consumed-data result would justify only a new frozen untouched test, never live or testnet trading authority.",
+    "No leverage is modeled because leverage cannot create predictive edge and magnifies the observed tail losses."
+  ]
+}

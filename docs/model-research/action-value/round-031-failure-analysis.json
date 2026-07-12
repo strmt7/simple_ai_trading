@@ -1,0 +1,109 @@
+{
+  "schema_version": "action-value-round-failure-analysis-v1",
+  "round": 31,
+  "status": "confirmed_rejection",
+  "source": {
+    "design_sha256": "1d6e8791f635be6d8d98b9f957ffffefbc211692d4f7adf07fdffb8fea667c0e",
+    "report_file_sha256": "2a10b9eded7b08d4b590d3cef4aabd57e95ae2a03e0dc055e238a6cb57819ec2",
+    "report_canonical_sha256": "b3195481f6541442051e3c06d640ee660a7bf55740abc5186037d486b9091371",
+    "model_schema_version": "adaptive-lightgbm-hurdle-action-value-v1",
+    "model_training_period": {
+      "start": "2023-05-16",
+      "end": "2023-06-15"
+    },
+    "confirmation_period": {
+      "start": "2024-01-01",
+      "end": "2024-02-04"
+    },
+    "confirmation_target_rows": 209878
+  },
+  "forecast_failure": {
+    "stress": {
+      "long": {
+        "profitable_auc": 0.5783188999968147,
+        "pearson_information_coefficient": -0.0064528029910294925,
+        "top_100_mean_actual_net_bps": -4.956598253789026,
+        "top_500_mean_actual_net_bps": -7.079171191843199,
+        "top_1000_mean_actual_net_bps": -9.848799988786423
+      },
+      "short": {
+        "profitable_auc": 0.5841010386733626,
+        "pearson_information_coefficient": -0.017527005246250126,
+        "top_100_mean_actual_net_bps": -20.472410810563023,
+        "top_500_mean_actual_net_bps": -14.36339497252768,
+        "top_1000_mean_actual_net_bps": -18.602032605476733
+      }
+    },
+    "interpretation": "Binary discrimination remained above chance, but expected-value ranking was directionally wrong and every reported top tail lost after the frozen execution costs. AUC therefore did not establish an executable edge."
+  },
+  "policy_failure": {
+    "eligible_rows": {
+      "conservative": 159,
+      "regular": 1069,
+      "aggressive": 1900
+    },
+    "candidate_trace_count": 12,
+    "repeated_candidate_side_count": {
+      "long": 428,
+      "short": 1
+    },
+    "unique_candidate_timestamps": 193,
+    "best_positive_stress_candidates": [
+      {
+        "profile": "regular",
+        "quantile": 0.85,
+        "simulated_trades": 28,
+        "total_net_bps": 79.55765288391893,
+        "max_drawdown_bps": 371.5068229538051,
+        "worst_trade_bps": -148.4388561874522,
+        "passed": false
+      },
+      {
+        "profile": "aggressive",
+        "quantile": 0.85,
+        "simulated_trades": 30,
+        "total_net_bps": 39.827150613650325,
+        "max_drawdown_bps": 371.5068229538051,
+        "worst_trade_bps": -148.4388561874522,
+        "passed": false
+      }
+    ],
+    "interpretation": "Two candidates had positive totals, but both failed the precommitted drawdown, positive-day, and worst-trade controls. Repeated threshold traces were almost entirely long and concentrated in few active days."
+  },
+  "implementation_evidence": {
+    "independent_side_head_count_per_seed": 10,
+    "ensemble_seeds": [
+      29,
+      43,
+      71
+    ],
+    "long_probability_best_iterations": [
+      59,
+      59,
+      69
+    ],
+    "short_probability_best_iterations": [
+      12,
+      18,
+      15
+    ]
+  },
+  "supported_conclusions": [
+    "The frozen Round 30 model did not generalize to the Round 31 confirmation period.",
+    "Independent side-specific expected-value heads permitted severe long/short calibration drift.",
+    "Profitability classification alone was insufficient to rank trades by realized after-cost value.",
+    "Leverage would have magnified the observed drawdown and tail loss and was correctly withheld."
+  ],
+  "causal_hypotheses_not_yet_proven": [
+    "Parameter sharing over direction-canonical action rows may reduce side-head drift.",
+    "A separate signed-advantage model may improve side selection without confusing it with the decision to trade.",
+    "Training and selecting directly on adverse-stress net outcomes may align the model with the policy objective better than fitting base outcomes and screening under stress."
+  ],
+  "claims": {
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "trading_authority": false,
+    "leverage_applied": false
+  }
+}
