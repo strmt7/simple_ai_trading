@@ -1,0 +1,232 @@
+{
+  "schema_version": "three-action-utility-failure-analysis-v1",
+  "round": 34,
+  "analysis_sha256": "6185ff7afec20fdf2ccc5f56e526ea1d2682ab29867d10de58670919f06889e0",
+  "status": "rejected",
+  "source_evidence": {
+    "design_sha256": "61aea61eeec1ddc87aecb8b8fe17b915b8411760501e46eecf9c2f4e92ac5e03",
+    "binding_sha256": "739b88e1527b5ff02cf9f5e9f61f0bed36e9b20909a1276d37195e7f8e368b0d",
+    "report_canonical_sha256": "60f03a07e996230e8e278ef668fc7b9a1de35e1299fc7921e16a99fa51a53303",
+    "report_file_sha256": "467c7a1db23b3286921d1d3086f11fc8c4dd1483f9739f27943e6465ce630d34",
+    "diagnostic_canonical_sha256": "05756cff0b99eaf62dc8253cfb4726b16438df2da8528a37b6a779a0f05455c3",
+    "diagnostic_file_sha256": "1ae843c50fc8f26beb10429613b3867459cfc67c982cc837868467a38c168224",
+    "diagnostic_implementation_commit": "8075640671906522fed33466c69848aead8f658a",
+    "diagnostic_implementation_sha256": "4e956b86186ca2b3cc4fa167d95da462f924b09a3f101e6a69005128832df69f",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
+    "model_sha256": [
+      "23a5dbe9ebbb617edef7c68769000e347ec3b5a19883db97a7cf0ebefe711e00",
+      "87553f07e9a27ec10bc187f11496ffad7815a797d061bf9ec059f99aeac8741a",
+      "6fce08f82def40524a381f1cd2b099183439828ad0439c20464d373fdc337c60"
+    ]
+  },
+  "calibration_architecture": {
+    "rows": 28581,
+    "action_class_support": {
+      "long_rows": 8020,
+      "abstain_rows": 13359,
+      "short_rows": 7202
+    },
+    "opportunity_auc": 0.6636738763493204,
+    "minimum_opportunity_auc": 0.65,
+    "conditional_direction_auc": 0.5245178846829054,
+    "minimum_conditional_direction_auc": 0.55,
+    "side_profit_auc": 0.6065548206367726,
+    "minimum_side_profit_auc": 0.55,
+    "multiclass_log_loss_to_class_prior_ratio": 0.9726797132808687,
+    "maximum_multiclass_log_loss_to_class_prior_ratio": 1.0,
+    "side_profit_brier_to_base_rate_ratio": 0.978931094514922,
+    "maximum_side_profit_brier_to_base_rate_ratio": 1.0,
+    "selected_action_side_auc": 0.5235372324614189,
+    "selected_action_pearson_information_coefficient": 0.037699633421766805,
+    "selected_action_spearman_information_coefficient": -0.012690710524068977,
+    "selected_top_100_mean_stress_net_bps": -6.321360919710518,
+    "selected_top_500_mean_stress_net_bps": -10.75830194865659,
+    "gates_passed": 4,
+    "gate_count": 7,
+    "rejection_reasons": [
+      "conditional_direction_auc_gate_failed",
+      "selected_top_100_mean_stress_net_gate_failed",
+      "selected_top_500_mean_stress_net_gate_failed"
+    ]
+  },
+  "action_class_confusion_matrix": {
+    "actual_row_order": [
+      "long",
+      "abstain",
+      "short"
+    ],
+    "predicted_column_order": [
+      "long",
+      "abstain",
+      "short"
+    ],
+    "counts": [
+      [
+        1040,
+        6230,
+        750
+      ],
+      [
+        581,
+        12320,
+        458
+      ],
+      [
+        641,
+        5922,
+        639
+      ]
+    ],
+    "predicted_support": {
+      "long_rows": 2262,
+      "abstain_rows": 24472,
+      "short_rows": 1847
+    }
+  },
+  "learned_route_diagnostics": [
+    {
+      "route": "action_class_probability",
+      "direction_auc_on_non_abstain_rows": 0.5248885388583526,
+      "all_rows_mean_stress_net_bps": -11.78862211581048,
+      "top_100_mean_stress_net_bps": -19.558154906845772,
+      "top_500_mean_stress_net_bps": -13.954520664822814
+    },
+    {
+      "route": "independent_side_profit_probability",
+      "direction_auc_on_non_abstain_rows": 0.5351724652545254,
+      "all_rows_mean_stress_net_bps": -11.905978241786729,
+      "top_100_mean_stress_net_bps": -3.398274430480401,
+      "top_500_mean_stress_net_bps": -7.398537367695004
+    },
+    {
+      "route": "expected_action_value",
+      "direction_auc_on_non_abstain_rows": 0.5179080727783429,
+      "all_rows_mean_stress_net_bps": -11.537296731460678,
+      "top_100_mean_stress_net_bps": -6.321360919710518,
+      "top_500_mean_stress_net_bps": -10.75830194865659
+    },
+    {
+      "route": "lower_tail",
+      "direction_auc_on_non_abstain_rows": 0.5072003932130241,
+      "all_rows_mean_stress_net_bps": -11.70444181412326,
+      "top_100_mean_stress_net_bps": -14.517538456742814,
+      "top_500_mean_stress_net_bps": -14.63899142164259
+    },
+    {
+      "route": "action_class_and_side_profit_consensus",
+      "direction_auc_on_non_abstain_rows": 0.5248885388583526,
+      "eligible_rows": 20663,
+      "all_eligible_rows_mean_stress_net_bps": -11.435150651506513,
+      "top_100_mean_stress_net_bps": 0.05347449984093139,
+      "top_500_mean_stress_net_bps": -12.316696048151629
+    }
+  ],
+  "daily_direction_stability": [
+    {
+      "date": "2023-06-21",
+      "action_class_direction_auc": 0.502113327652896,
+      "side_profit_direction_auc": 0.47608311397280223,
+      "opportunity_auc": 0.6477639770791389
+    },
+    {
+      "date": "2023-06-22",
+      "action_class_direction_auc": 0.575298846861176,
+      "side_profit_direction_auc": 0.6000931954868532,
+      "opportunity_auc": 0.6326888567175543
+    },
+    {
+      "date": "2023-06-23",
+      "action_class_direction_auc": 0.4971841104392044,
+      "side_profit_direction_auc": 0.564333858955502,
+      "opportunity_auc": 0.7020248904340107
+    },
+    {
+      "date": "2023-06-24",
+      "action_class_direction_auc": 0.4621920697060586,
+      "side_profit_direction_auc": 0.4403907073771183,
+      "opportunity_auc": 0.6024823910853323
+    },
+    {
+      "date": "2023-06-25",
+      "action_class_direction_auc": 0.5416444486090428,
+      "side_profit_direction_auc": 0.5356029346037455,
+      "opportunity_auc": 0.5571548511458556
+    }
+  ],
+  "oracle_side_decomposition_controls": [
+    {
+      "ranking_score": "action_opportunity_probability",
+      "top_100_mean_stress_net_bps": 25.513181471459678,
+      "top_500_mean_stress_net_bps": 29.77483911623001
+    },
+    {
+      "ranking_score": "side_profit_probability",
+      "top_100_mean_stress_net_bps": 27.462183965121724,
+      "top_500_mean_stress_net_bps": 23.51044656823487
+    },
+    {
+      "ranking_score": "expected_action_value_minus_one_epistemic_standard_deviation",
+      "top_100_mean_stress_net_bps": 21.789565191866007,
+      "top_500_mean_stress_net_bps": 17.72919571214774
+    }
+  ],
+  "oracle_control_warning": "These controls select the long or short side with future realized outcomes. They isolate the directional bottleneck only and are prohibited from model selection, policy calibration, backtesting, promotion, execution, and profitability claims.",
+  "feature_importance_observation": {
+    "three_action_probability_top_five": [
+      "realized_volatility_900s_bps",
+      "realized_volatility_1800s_bps",
+      "realized_volatility_3600s_bps",
+      "utc_week_sin",
+      "utc_week_cos"
+    ],
+    "side_profit_probability_top_five": [
+      "realized_volatility_900s_bps",
+      "realized_volatility_1800s_bps",
+      "realized_volatility_3600s_bps",
+      "utc_week_sin",
+      "utc_week_cos"
+    ],
+    "interpretation": "Both probability heads concentrate their highest normalized gain in realized-volatility and deterministic weekly-cycle features. This supports a controlled compact-feature and calendar-ablation screen, but feature gain is not causal evidence."
+  },
+  "critical_interpretation": [
+    "The semantically separate action-class and side-profit heads removed the universal zero-eligibility defect but did not establish an executable directional edge.",
+    "Opportunity discrimination, side-profit discrimination, side-profit calibration, and multiclass calibration passed their frozen gates.",
+    "Every learned directional route was economically negative by the top 500 calibration rows; the isolated positive consensus top 100 result was post-hoc, negligible, and failed to persist.",
+    "Daily directional discrimination crossed above and below chance, so pooled AUC alone would conceal temporal instability.",
+    "The positive oracle-side controls demonstrate only that direction selection is the primary bottleneck; they do not constitute a strategy or backtest."
+  ],
+  "rejected_responses": [
+    "Do not lower architecture, probability, lower-tail, drawdown, turnover, or minimum-trade gates to manufacture activity.",
+    "Do not apply leverage because no broad after-cost directional edge or executable policy was established.",
+    "Do not promote the isolated positive consensus top 100 result because the top 500 result is materially negative and all calibration diagnostics are post-hoc.",
+    "Do not use oracle sides, future outcomes, or calibration-period diagnostics as model inputs or promotion evidence.",
+    "Do not open policy, development, distant-confirmation, or untouched dates until a newly frozen architecture passes every preceding gate."
+  ],
+  "next_experiment": {
+    "stage": "consumed_data_direction_screen",
+    "target": "conditional_long_versus_short_direction_on_positive_opportunity_rows",
+    "purpose": "Determine whether compact observed microstructure inputs, removal of deterministic calendar features, and bounded utility-margin weighting improve cross-day directional stability before a full Round 35 architecture is frozen.",
+    "post_hoc_consumed_data_discovery_only": true,
+    "promotion_permitted": false,
+    "single_fixed_seed_per_variant": true,
+    "hyperparameter_search_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "oracle_feature_or_label_use_permitted": false,
+    "required_outputs": [
+      "pooled_direction_auc",
+      "daily_direction_auc",
+      "daily_auc_dispersion",
+      "top_100_mean_stress_net_bps",
+      "top_500_mean_stress_net_bps",
+      "feature_gain",
+      "runtime_and_backend_evidence"
+    ]
+  },
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false
+}
