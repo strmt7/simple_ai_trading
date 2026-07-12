@@ -169,3 +169,36 @@ def test_direction_screen_artifact_rejects_claim_tampering(
 
     with pytest.raises(ValueError, match="model contract"):
         load_direction_screen_model(artifact)
+
+
+def test_direction_screen_utility_margin_training_uses_frozen_training_scale(
+    direction_screen_bundle,
+) -> None:
+    dataset, targets, _baseline = direction_screen_bundle
+    model = train_direction_screen_model(
+        dataset,
+        targets,
+        train_endpoints=np.arange(0, 3_500, dtype=np.int64),
+        early_stop_endpoints=np.arange(4_000, 7_000, dtype=np.int64),
+        train_sample_weights=np.ones(3_500, dtype=np.float32),
+        early_stop_sample_weights=np.ones(3_000, dtype=np.float32),
+        selected_feature_names=MICROSTRUCTURE_FEATURE_NAMES[:32],
+        variant="synthetic_full_utility_margin",
+        feature_set="synthetic_first_32",
+        weighting="utility_margin",
+        spec=_spec(),
+        compute_backend="cpu",
+        seed=29,
+    )
+
+    train_long = targets.stress_long_net_bps[:3_500]
+    train_short = targets.stress_short_net_bps[:3_500]
+    opportunity = _opportunity_mask(train_long, train_short)
+    expected_scale = float(
+        np.median(np.abs(train_long[opportunity] - train_short[opportunity]))
+    )
+    assert model.weighting == "utility_margin"
+    assert model.utility_margin_scale_bps == pytest.approx(expected_scale, rel=1e-6)
+    assert 0.5 <= model.train_weight_multiplier_mean <= 3.0
+    assert 0.5 <= model.early_stop_weight_multiplier_mean <= 3.0
+    assert model.train_weight_multiplier_mean != 1.0

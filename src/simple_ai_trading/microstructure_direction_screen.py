@@ -161,6 +161,7 @@ class DirectionScreenPrediction:
             )
         )
         side = np.asarray(self.selected_side)
+        denominator = vectors[0] + vectors[1]
         authority = (
             self.promotion_permitted,
             self.trading_authority,
@@ -177,6 +178,9 @@ class DirectionScreenPrediction:
             or side.shape != (rows,)
             or any(not np.all(np.isfinite(value)) for value in vectors)
             or any(np.any(value < 0.0) or np.any(value > 1.0) for value in vectors[:3])
+            or np.any(denominator <= 0.0)
+            or not np.array_equal(vectors[2], vectors[0] / denominator)
+            or not np.array_equal(vectors[3], vectors[0] - vectors[1])
             or np.any(vectors[3] < -1.0)
             or np.any(vectors[3] > 1.0)
             or not set(np.unique(side)).issubset({-1, 0, 1})
@@ -303,6 +307,7 @@ def _validate_model(model: TrainedDirectionScreenModel, *, reload: bool) -> None
         != model.train_opportunity_rows
         or model.early_stop_long_superior_rows + model.early_stop_short_superior_rows
         != model.early_stop_opportunity_rows
+        or model.best_iteration > model.spec.num_boost_round
         or not np.isfinite(model.utility_margin_scale_bps)
         or model.utility_margin_scale_bps <= 0.0
         or not _MINIMUM_MARGIN_MULTIPLIER
