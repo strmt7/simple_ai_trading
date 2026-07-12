@@ -1,96 +1,109 @@
 {
-  "architecture_freeze_candidate": null,
-  "architecture_freeze_eligible_variants": [],
-  "artifact_class": "consumed_direction_screen_graph_data",
+  "artifact_class": "multi_horizon_signal_decay_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 5103,
+      "bytes": 4211,
       "path": "charts/after-cost-tails.svg",
-      "sha256": "a5d6806589a2d470e1e71f0f93d05c01d3748774140c4f08c98af110f03e9cac"
+      "sha256": "29f1627bd2f5da865f16beaabdcaf71ed55be1ff6bbdb992f237eecbcca28368"
     },
     {
-      "bytes": 6907,
+      "bytes": 4545,
+      "path": "charts/cost-coverage.svg",
+      "sha256": "cb423d936b360a0fd5bdeabec66ac57b09021a51e6a3d1d65028b1b18f6bffc3"
+    },
+    {
+      "bytes": 13177,
       "path": "charts/daily-direction-auc.svg",
-      "sha256": "504cfc73e30f17d0d442aea8db1e3cd3ff5aba03b35770134e2b6580c0be1853"
+      "sha256": "468c4078a1fe1f035a3f29a971873dc00d497cbd9ab7f6921dc2d4ed8abde9e5"
     },
     {
-      "bytes": 4692,
-      "path": "charts/direction-auc.svg",
-      "sha256": "4aa3b8057b5ae8f67c0d1f1142325cb869b8dcc0e2ef2cca092734688afacb17"
+      "bytes": 6424,
+      "path": "charts/placebo-comparison.svg",
+      "sha256": "0fa422b55abb8e4294fc759139a1e6594185678b5efd8bafbe95779ac8408e48"
     },
     {
-      "bytes": 6945,
-      "path": "charts/feature-gain.svg",
-      "sha256": "469ea5f81a02a089e088ae5daca66587385aa3f55dd2026aebce46ac00e33fe3"
-    },
-    {
-      "bytes": 9895,
+      "bytes": 10124,
       "path": "charts/research-progress.svg",
-      "sha256": "9bcf15e262939e59fb9c6b656dce1ff5d8277faaf0e02fd29714e48de111965a"
+      "sha256": "ed2617c5dd61045cbf218a9469e2cae07b7ac9833e5591596b1156d31a48f962"
     },
     {
-      "bytes": 3047,
+      "bytes": 6470,
+      "path": "charts/signal-decay.svg",
+      "sha256": "cb6b540a52868f003b55272335d0b7c87c34ef03193de9aadc38cbccc472bf7c"
+    },
+    {
+      "bytes": 54885,
       "path": "daily.csv",
-      "row_count": 30,
-      "sha256": "d58b92d66a4254ba811c4a58c1a9682070a5d7500909db1a7635aeeba17668d4"
+      "row_count": 455,
+      "sha256": "726e379b9e04c0838b9c45c58f1b975dcf274e07b3ff449475a878d11144a408"
     },
     {
-      "bytes": 52026,
-      "path": "features.csv",
-      "row_count": 550,
-      "sha256": "5be59bcf6eeab050fc40c197a90851a99eb2fbb2c0359b049dd82df7ae25bc98"
+      "bytes": 14491,
+      "path": "decay.csv",
+      "row_count": 91,
+      "sha256": "a6331aa67081e6e7ca6bcda59301d40accd98f0c1ac19afec898b44ed1e21a70"
     },
     {
-      "bytes": 5215,
-      "path": "gates.csv",
-      "row_count": 48,
-      "sha256": "3efd66f3e7f51a43c0c1dbe85f1dde7746a274b9d9e52931c615c86acbb080c6"
+      "bytes": 860,
+      "path": "horizon-support.csv",
+      "row_count": 7,
+      "sha256": "7d81288168229202f558a0ae7795be93d97d0161dfe73e98853e9c9fb5aa7c8d"
     },
     {
-      "bytes": 2266,
-      "path": "models.csv",
-      "row_count": 6,
-      "sha256": "90790eda00821c078adb8e2c5b43a5be169fab90d5b4c020a78f9b7cdf379ced"
-    },
-    {
-      "bytes": 10994,
+      "bytes": 11434,
       "path": "progress.csv",
-      "row_count": 35,
-      "sha256": "5ebe54452b0caf2f8ba658d5ef9d3221bdbadaa09cd54b863053c5a26f03af02"
+      "row_count": 36,
+      "sha256": "9435375eece10fe0d056ccd4981cf8ec82b5db9815af06ca1895667463372e1e"
     },
     {
-      "bytes": 2249,
+      "bytes": 23272,
+      "path": "ranked-event-outcomes.csv",
+      "row_count": 273,
+      "sha256": "88e9a6014a1125c5757c14488a50b422c5ac846e9e810a5393ef66a555dfc630"
+    },
+    {
+      "bytes": 2080,
       "path": "README.md",
-      "sha256": "9af4f63388212a08774fd9fd149013e08bb1a510b0b75359fcf69abb0ffe1160"
+      "sha256": "15fce841cfad9fff52d0a8eafad9c109e7a17ae880a255122cee037b367da9f2"
     },
     {
-      "bytes": 129584,
+      "bytes": 131673,
+      "path": "regimes.csv",
+      "row_count": 819,
+      "sha256": "50f21b7f0123e5a03570110361f7908882c5040daa07d86c2f0f488508c9dd90"
+    },
+    {
+      "bytes": 1843065,
       "path": "screen.json",
-      "sha256": "a8a9718e11053002541c6fe77c96df44016c0fdf7a3a187103c0c3c10af9e861"
+      "sha256": "dcad6c89f50cb5a1b5f51816826f7844adafdc895da0c7a1612316e97dcf7633"
     },
     {
-      "bytes": 4898,
-      "path": "variants.csv",
-      "row_count": 6,
-      "sha256": "d3b5e14a83a95c31e08c7ce0fcc6d7e67d4e66199e54432a9163f5382f6a84c1"
+      "bytes": 45681,
+      "path": "signals.csv",
+      "row_count": 91,
+      "sha256": "d283f94f1695ced610dca16248d1fbd88942bb92f82ab4bb2f711de7d3104aad"
     }
   ],
-  "binding_sha256": "ac94719659d15c18b5f465b1b2e09cd6d6bb980768f7822fb040462f3a2d6f6b",
-  "design_sha256": "db027483eed1329554bac8c3be057c488bc1899348978ea8b199c5796db6cbaa",
+  "binding_sha256": "76bf3a8c39e658875c49bf91230c50322b3d37584492a05ee7aab4d01bcaead8",
+  "design_sha256": "276e0c169b2bd24ce87843b66892c4139daffdd581776457d068d4b63b61727e",
   "execution_claim": false,
+  "horizon_count": 7,
   "leverage_applied": false,
+  "model_candidate": null,
+  "model_trained": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "4fc7c8f9a41162a322cb9d0d93a223fafaf655231d2c22471478035b1d165809",
-  "round": 35,
-  "schema_version": "consumed-direction-screen-publication-v1",
+  "publication_sha256": "c0b6dceae845b8976148f62d5ac7aad0b90af307216a8062fcf68ce3141d5ff9",
+  "round": 36,
+  "schema_version": "multi-horizon-signal-decay-publication-v1",
+  "signal_count": 13,
+  "signal_horizon_cells": 91,
   "source_barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
   "source_cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85",
   "source_corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
-  "source_implementation_commit": "b89064d2eb594e590134a89bdc45ee6ecc2f93d7",
-  "source_report_canonical_sha256": "1c6d2b7e5914ef62b110ea6095661f460cdc75f215aee07e04b1cdc0979499ac",
-  "source_report_file_sha256": "a8a9718e11053002541c6fe77c96df44016c0fdf7a3a187103c0c3c10af9e861",
+  "source_implementation_commit": "3c16bed56370c2dbf393fbb8dd19f54007419ee0",
+  "source_report_canonical_sha256": "2cb799246b51e610647f330d2b0a5745a6e96f56062782eb23055cb6b0905ee8",
+  "source_report_file_sha256": "dcad6c89f50cb5a1b5f51816826f7844adafdc895da0c7a1612316e97dcf7633",
   "status": "rejected",
-  "trading_authority": false,
-  "variant_count": 6
+  "trading_authority": false
 }

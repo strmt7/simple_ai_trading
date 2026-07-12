@@ -405,8 +405,13 @@ def _progress_rows(
         reader = csv.DictReader(stream)
         fields = list(reader.fieldnames or ())
         rows = [dict(row) for row in reader]
-    if not fields or [int(row["round"]) for row in rows] != list(range(1, 36)):
+    observed_rounds = [int(row["round"]) for row in rows]
+    if not fields or observed_rounds not in (
+        list(range(1, 36)),
+        list(range(1, 37)),
+    ):
         raise ValueError("Round 36 prior progress history is invalid")
+    rows = [row for row in rows if int(row["round"]) != 36]
     best_auc = max(signal_rows, key=lambda row: float(row["weighted_roc_auc"]))
     best_net = max(
         signal_rows,
@@ -554,7 +559,7 @@ def _cost_svg(rows: Sequence[Mapping[str, object]]) -> str:
             f'<line x1="{left}" y1="{py:.1f}" x2="{width - right}" y2="{py:.1f}" class="{"zero" if tick == 0 else "grid"}"/>'
         )
         svg.append(
-            f'<text x="{left - 14}" y="{py + 4:.1f}" text-anchor="end" class="axis">{tick:+d} bps</text>'
+            f'<text x="{left - 14}" y="{py + 5:.1f}" text-anchor="end" class="axis">{tick:+d} bps</text>'
         )
     group_width = (width - left - right) / len(horizons)
     for index, horizon in enumerate(horizons):
@@ -610,6 +615,9 @@ def _tails_svg(rows: Sequence[Mapping[str, object]]) -> str:
         py = y(float(tick))
         svg.append(
             f'<line x1="{left}" y1="{py:.1f}" x2="{width - right}" y2="{py:.1f}" class="{"zero" if tick == 0 else "grid"}"/>'
+        )
+        svg.append(
+            f'<text x="{left - 14}" y="{py + 5:.1f}" text-anchor="end" class="axis">{tick:+d} bps</text>'
         )
     x_positions = [
         left + index * (width - left - right) / (len(horizons) - 1)
@@ -718,6 +726,9 @@ def _placebo_svg(rows: Sequence[Mapping[str, object]]) -> str:
         px = x(tick)
         svg.append(
             f'<line x1="{px:.1f}" y1="{top}" x2="{px:.1f}" y2="{height - bottom}" class="{"chance" if tick == 0.50 else "grid"}"/>'
+        )
+        svg.append(
+            f'<text x="{px:.1f}" y="{height - bottom + 26}" text-anchor="middle" class="axis">{tick:.2f}</text>'
         )
     for index, row in enumerate(selected):
         y = top + 28 + index * 54

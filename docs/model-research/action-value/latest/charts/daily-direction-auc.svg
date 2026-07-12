@@ -1,80 +1,157 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="650" viewBox="0 0 1320 650" role="img">
-<title>Daily direction quality was not stable across variants</title>
-<desc>ROC AUC by UTC date; green is above chance, amber near chance, red below chance.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="960" viewBox="0 0 1500 960" role="img">
+<title>Five-second direction was stable for the strongest L1 signals</title>
+<desc>Weighted ROC AUC by UTC date; this heatmap measures direction, not after-cost profitability.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:24px;font-weight:700;fill:#17202a}.subtitle{font-size:14px;fill:#4b5563}.label{font-size:13px;fill:#263238}.value{font-size:13px;font-weight:650;fill:#17202a}.axis{font-size:12px;fill:#64748b}.note{font-size:12px;fill:#6b7280}.grid{stroke:#d8dee7;stroke-width:1}.zero{stroke:#9f1239;stroke-width:2}.gate{stroke:#b91c1c;stroke-width:2;stroke-dasharray:7 5}</style>
-<text x="48" y="42" class="title">Daily direction quality was not stable across variants</text>
-<text x="48" y="66" class="subtitle">ROC AUC by UTC date; green is above chance, amber near chance, red below chance.</text>
-<text x="385.0" y="112" text-anchor="middle" class="axis">2023-06-21</text>
-<text x="555.0" y="112" text-anchor="middle" class="axis">2023-06-22</text>
-<text x="725.0" y="112" text-anchor="middle" class="axis">2023-06-23</text>
-<text x="895.0" y="112" text-anchor="middle" class="axis">2023-06-24</text>
-<text x="1065.0" y="112" text-anchor="middle" class="axis">2023-06-25</text>
-<text x="282" y="166.0" text-anchor="end" class="label">Full / uniqueness</text>
-<rect x="304" y="134" width="162" height="54" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
-<text x="385.0" y="166.0" text-anchor="middle" class="value">0.4994</text>
-<rect x="474" y="134" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="555.0" y="166.0" text-anchor="middle" class="value">0.5504</text>
-<rect x="644" y="134" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="725.0" y="166.0" text-anchor="middle" class="value">0.5771</text>
-<rect x="814" y="134" width="162" height="54" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
-<text x="895.0" y="166.0" text-anchor="middle" class="value">0.4885</text>
-<rect x="984" y="134" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="1065.0" y="166.0" text-anchor="middle" class="value">0.5800</text>
-<text x="282" y="228.0" text-anchor="end" class="label">Full / utility margin</text>
-<rect x="304" y="196" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="385.0" y="228.0" text-anchor="middle" class="value">0.5163</text>
-<rect x="474" y="196" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="555.0" y="228.0" text-anchor="middle" class="value">0.5372</text>
-<rect x="644" y="196" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="725.0" y="228.0" text-anchor="middle" class="value">0.5595</text>
-<rect x="814" y="196" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
-<text x="895.0" y="228.0" text-anchor="middle" class="value">0.4770</text>
-<rect x="984" y="196" width="162" height="54" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
-<text x="1065.0" y="228.0" text-anchor="middle" class="value">0.4943</text>
-<text x="282" y="290.0" text-anchor="end" class="label">No cycles / uniqueness</text>
-<rect x="304" y="258" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="385.0" y="290.0" text-anchor="middle" class="value">0.5077</text>
-<rect x="474" y="258" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="555.0" y="290.0" text-anchor="middle" class="value">0.5649</text>
-<rect x="644" y="258" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="725.0" y="290.0" text-anchor="middle" class="value">0.5700</text>
-<rect x="814" y="258" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
-<text x="895.0" y="290.0" text-anchor="middle" class="value">0.4693</text>
-<rect x="984" y="258" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="1065.0" y="290.0" text-anchor="middle" class="value">0.5560</text>
-<text x="282" y="352.0" text-anchor="end" class="label">No cycles / utility margin</text>
-<rect x="304" y="320" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
-<text x="385.0" y="352.0" text-anchor="middle" class="value">0.4599</text>
-<rect x="474" y="320" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="555.0" y="352.0" text-anchor="middle" class="value">0.5839</text>
-<rect x="644" y="320" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="725.0" y="352.0" text-anchor="middle" class="value">0.5560</text>
-<rect x="814" y="320" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
-<text x="895.0" y="352.0" text-anchor="middle" class="value">0.4546</text>
-<rect x="984" y="320" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="1065.0" y="352.0" text-anchor="middle" class="value">0.5168</text>
-<text x="282" y="414.0" text-anchor="end" class="label">Compact / uniqueness</text>
-<rect x="304" y="382" width="162" height="54" rx="4" fill="#fecaca" stroke="#cbd5e1"/>
-<text x="385.0" y="414.0" text-anchor="middle" class="value">0.4734</text>
-<rect x="474" y="382" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="555.0" y="414.0" text-anchor="middle" class="value">0.5128</text>
-<rect x="644" y="382" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="725.0" y="414.0" text-anchor="middle" class="value">0.5124</text>
-<rect x="814" y="382" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="895.0" y="414.0" text-anchor="middle" class="value">0.5000</text>
-<rect x="984" y="382" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="1065.0" y="414.0" text-anchor="middle" class="value">0.5918</text>
-<text x="282" y="476.0" text-anchor="end" class="label">Compact / utility margin</text>
-<rect x="304" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="385.0" y="476.0" text-anchor="middle" class="value">0.5173</text>
-<rect x="474" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="555.0" y="476.0" text-anchor="middle" class="value">0.5195</text>
-<rect x="644" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="725.0" y="476.0" text-anchor="middle" class="value">0.5137</text>
-<rect x="814" y="444" width="162" height="54" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
-<text x="895.0" y="476.0" text-anchor="middle" class="value">0.5064</text>
-<rect x="984" y="444" width="162" height="54" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
-<text x="1065.0" y="476.0" text-anchor="middle" class="value">0.5463</text>
-<text x="300" y="618" class="note">All five dates were already consumed. Cell color encodes discrimination only, not return or trading authority.</text>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:24px;font-weight:700;fill:#17202a}.subtitle{font-size:14px;fill:#4b5563}.label{font-size:13px;fill:#263238}.value{font-size:13px;font-weight:650;fill:#17202a}.axis{font-size:12px;fill:#64748b}.note{font-size:12px;fill:#6b7280}.grid{stroke:#d8dee7;stroke-width:1}.zero{stroke:#9f1239;stroke-width:2}.chance{stroke:#334155;stroke-width:2;stroke-dasharray:7 5}</style>
+<text x="48" y="42" class="title">Five-second direction was stable for the strongest L1 signals</text>
+<text x="48" y="66" class="subtitle">Weighted ROC AUC by UTC date; this heatmap measures direction, not after-cost profitability.</text>
+<text x="435.0" y="112" text-anchor="middle" class="axis">2023-06-21</text>
+<text x="645.0" y="112" text-anchor="middle" class="axis">2023-06-22</text>
+<text x="855.0" y="112" text-anchor="middle" class="axis">2023-06-23</text>
+<text x="1065.0" y="112" text-anchor="middle" class="axis">2023-06-24</text>
+<text x="1275.0" y="112" text-anchor="middle" class="axis">2023-06-25</text>
+<text x="312" y="163.0" text-anchor="end" class="label">L1 imbalance</text>
+<rect x="334" y="134" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="435.0" y="163.0" text-anchor="middle" class="value">0.5579</text>
+<rect x="544" y="134" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="645.0" y="163.0" text-anchor="middle" class="value">0.5680</text>
+<rect x="754" y="134" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="855.0" y="163.0" text-anchor="middle" class="value">0.6040</text>
+<rect x="964" y="134" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="163.0" text-anchor="middle" class="value">0.6725</text>
+<rect x="1174" y="134" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="163.0" text-anchor="middle" class="value">0.6582</text>
+<text x="312" y="219.0" text-anchor="end" class="label">Microprice offset</text>
+<rect x="334" y="190" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="435.0" y="219.0" text-anchor="middle" class="value">0.5547</text>
+<rect x="544" y="190" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="645.0" y="219.0" text-anchor="middle" class="value">0.5675</text>
+<rect x="754" y="190" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="855.0" y="219.0" text-anchor="middle" class="value">0.6015</text>
+<rect x="964" y="190" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="219.0" text-anchor="middle" class="value">0.6704</text>
+<rect x="1174" y="190" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="219.0" text-anchor="middle" class="value">0.6567</text>
+<text x="312" y="275.0" text-anchor="end" class="label">Normalized OFI</text>
+<rect x="334" y="246" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="275.0" text-anchor="middle" class="value">0.5229</text>
+<rect x="544" y="246" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="645.0" y="275.0" text-anchor="middle" class="value">0.5512</text>
+<rect x="754" y="246" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="855.0" y="275.0" text-anchor="middle" class="value">0.5701</text>
+<rect x="964" y="246" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="275.0" text-anchor="middle" class="value">0.6141</text>
+<rect x="1174" y="246" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="275.0" text-anchor="middle" class="value">0.6135</text>
+<text x="312" y="331.0" text-anchor="end" class="label">OFI 10s mean</text>
+<rect x="334" y="302" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="331.0" text-anchor="middle" class="value">0.5210</text>
+<rect x="544" y="302" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="331.0" text-anchor="middle" class="value">0.5332</text>
+<rect x="754" y="302" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="855.0" y="331.0" text-anchor="middle" class="value">0.5534</text>
+<rect x="964" y="302" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="331.0" text-anchor="middle" class="value">0.6109</text>
+<rect x="1174" y="302" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="331.0" text-anchor="middle" class="value">0.6087</text>
+<text x="312" y="387.0" text-anchor="end" class="label">OFI 60s mean</text>
+<rect x="334" y="358" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="387.0" text-anchor="middle" class="value">0.5281</text>
+<rect x="544" y="358" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="387.0" text-anchor="middle" class="value">0.5191</text>
+<rect x="754" y="358" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="387.0" text-anchor="middle" class="value">0.5471</text>
+<rect x="964" y="358" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="387.0" text-anchor="middle" class="value">0.5670</text>
+<rect x="1174" y="358" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="387.0" text-anchor="middle" class="value">0.5663</text>
+<text x="312" y="443.0" text-anchor="end" class="label">OFI 300s mean</text>
+<rect x="334" y="414" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="443.0" text-anchor="middle" class="value">0.5287</text>
+<rect x="544" y="414" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="443.0" text-anchor="middle" class="value">0.5249</text>
+<rect x="754" y="414" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="443.0" text-anchor="middle" class="value">0.5342</text>
+<rect x="964" y="414" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="443.0" text-anchor="middle" class="value">0.5508</text>
+<rect x="1174" y="414" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1275.0" y="443.0" text-anchor="middle" class="value">0.5445</text>
+<text x="312" y="499.0" text-anchor="end" class="label">Trade imbalance</text>
+<rect x="334" y="470" width="202" height="48" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="435.0" y="499.0" text-anchor="middle" class="value">0.4962</text>
+<rect x="544" y="470" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="499.0" text-anchor="middle" class="value">0.5156</text>
+<rect x="754" y="470" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="499.0" text-anchor="middle" class="value">0.5419</text>
+<rect x="964" y="470" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="499.0" text-anchor="middle" class="value">0.5648</text>
+<rect x="1174" y="470" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="499.0" text-anchor="middle" class="value">0.5657</text>
+<text x="312" y="555.0" text-anchor="end" class="label">Trade imbalance 10s</text>
+<rect x="334" y="526" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="555.0" text-anchor="middle" class="value">0.5044</text>
+<rect x="544" y="526" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="555.0" text-anchor="middle" class="value">0.5163</text>
+<rect x="754" y="526" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="555.0" text-anchor="middle" class="value">0.5401</text>
+<rect x="964" y="526" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="555.0" text-anchor="middle" class="value">0.5613</text>
+<rect x="1174" y="526" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="555.0" text-anchor="middle" class="value">0.5689</text>
+<text x="312" y="611.0" text-anchor="end" class="label">Trade imbalance 60s</text>
+<rect x="334" y="582" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="611.0" text-anchor="middle" class="value">0.5078</text>
+<rect x="544" y="582" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="611.0" text-anchor="middle" class="value">0.5049</text>
+<rect x="754" y="582" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="611.0" text-anchor="middle" class="value">0.5341</text>
+<rect x="964" y="582" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1065.0" y="611.0" text-anchor="middle" class="value">0.5170</text>
+<rect x="1174" y="582" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1275.0" y="611.0" text-anchor="middle" class="value">0.5185</text>
+<text x="312" y="667.0" text-anchor="end" class="label">Trade imbalance 300s</text>
+<rect x="334" y="638" width="202" height="48" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="435.0" y="667.0" text-anchor="middle" class="value">0.4972</text>
+<rect x="544" y="638" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="667.0" text-anchor="middle" class="value">0.5093</text>
+<rect x="754" y="638" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="667.0" text-anchor="middle" class="value">0.5302</text>
+<rect x="964" y="638" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1065.0" y="667.0" text-anchor="middle" class="value">0.5076</text>
+<rect x="1174" y="638" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1275.0" y="667.0" text-anchor="middle" class="value">0.5025</text>
+<text x="312" y="723.0" text-anchor="end" class="label">Depth-normalized flow 10s</text>
+<rect x="334" y="694" width="202" height="48" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="435.0" y="723.0" text-anchor="middle" class="value">0.4995</text>
+<rect x="544" y="694" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="723.0" text-anchor="middle" class="value">0.5210</text>
+<rect x="754" y="694" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="855.0" y="723.0" text-anchor="middle" class="value">0.5538</text>
+<rect x="964" y="694" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="723.0" text-anchor="middle" class="value">0.6046</text>
+<rect x="1174" y="694" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1275.0" y="723.0" text-anchor="middle" class="value">0.5834</text>
+<text x="312" y="779.0" text-anchor="end" class="label">Depth-normalized flow 60s</text>
+<rect x="334" y="750" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="435.0" y="779.0" text-anchor="middle" class="value">0.5074</text>
+<rect x="544" y="750" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="779.0" text-anchor="middle" class="value">0.5097</text>
+<rect x="754" y="750" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="779.0" text-anchor="middle" class="value">0.5447</text>
+<rect x="964" y="750" width="202" height="48" rx="4" fill="#b7e4c7" stroke="#cbd5e1"/>
+<text x="1065.0" y="779.0" text-anchor="middle" class="value">0.5526</text>
+<rect x="1174" y="750" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1275.0" y="779.0" text-anchor="middle" class="value">0.5449</text>
+<text x="312" y="835.0" text-anchor="end" class="label">Depth-normalized flow 300s</text>
+<rect x="334" y="806" width="202" height="48" rx="4" fill="#fde68a" stroke="#cbd5e1"/>
+<text x="435.0" y="835.0" text-anchor="middle" class="value">0.4875</text>
+<rect x="544" y="806" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="645.0" y="835.0" text-anchor="middle" class="value">0.5037</text>
+<rect x="754" y="806" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="855.0" y="835.0" text-anchor="middle" class="value">0.5248</text>
+<rect x="964" y="806" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1065.0" y="835.0" text-anchor="middle" class="value">0.5254</text>
+<rect x="1174" y="806" width="202" height="48" rx="4" fill="#d8f3dc" stroke="#cbd5e1"/>
+<text x="1275.0" y="835.0" text-anchor="middle" class="value">0.5184</text>
+<text x="330" y="932" class="note">All five dates were already consumed; no cell can be used for policy or regime selection.</text>
 </svg>
