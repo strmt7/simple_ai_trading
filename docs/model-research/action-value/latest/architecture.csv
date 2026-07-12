@@ -1,5 +1,8 @@
 metric,observed,acceptance_operator,acceptance_gate,passed,population_rows,unit
-opportunity_roc_auc,0.6627259843484776,>=,0.65,True,28581,auc
-conditional_direction_roc_auc,0.5435849074896763,>=,0.55,False,15222,auc
-selected_top_100_mean_stress_net_bps,-17.236114294450953,>,0.0,False,100,bps
-selected_top_500_mean_stress_net_bps,-12.7737473850717,>,0.0,False,500,bps
+opportunity_roc_auc,0.6636738763493204,>=,0.65,True,28581,auc
+conditional_direction_roc_auc,0.5245178846829054,>=,0.55,False,15222,auc
+side_profit_roc_auc,0.6065548206367726,>=,0.55,True,57162,auc
+side_profit_brier_to_base_rate_ratio,0.978931094514922,<=,1.0,True,57162,ratio
+multiclass_log_loss_to_class_prior_ratio,0.9726797132808687,<=,1.0,True,28581,ratio
+selected_top_100_mean_stress_net_bps,-6.321360919710518,>,0.0,False,100,bps
+selected_top_500_mean_stress_net_bps,-10.75830194865659,>,0.0,False,500,bps

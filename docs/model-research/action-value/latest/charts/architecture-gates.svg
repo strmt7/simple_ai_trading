@@ -1,30 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="590" viewBox="0 0 1260 590" role="img" aria-labelledby="title desc">
-<title id="title">Round 33 calibration architecture gates</title>
-<desc id="desc">Opportunity AUC passed, while conditional direction AUC and selected top-tail after-cost returns failed.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="720" viewBox="0 0 1320 720" role="img" aria-labelledby="title desc">
+<title id="title">Round 34 calibration architecture gates</title>
+<desc id="desc">Four of seven frozen architecture gates passed; conditional direction and both selected-action ranked-tail return gates failed.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
-<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Opportunity detection survived; action selection did not</text>
-<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Precommitted calibration gates; adverse-stress net returns include modeled execution costs.</text>
-<rect x="70" y="125" width="520" height="330" fill="#ffffff" stroke="#d7e0e6"/>
-<rect x="650" y="125" width="540" height="330" fill="#ffffff" stroke="#d7e0e6"/>
-<text x="92" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">ROC AUC</text>
-<text x="672" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#2b3d47">Selected-action stress mean</text>
-<text x="92" y="197" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Opportunity</text>
-<rect x="160" y="215" width="390" height="28" fill="#edf1f4"/>
-<rect x="160" y="215" width="331.9" height="28" fill="#147d70"/>
-<line x1="472.0" y1="207" x2="472.0" y2="251" stroke="#18242d" stroke-width="2"/>
-<text x="160" y="270" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#53636f">observed 0.6627; gate 0.650</text>
-<text x="92" y="322" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Direction | opportunity</text>
-<rect x="160" y="340" width="390" height="28" fill="#edf1f4"/>
-<rect x="160" y="340" width="146.0" height="28" fill="#bc493e"/>
-<line x1="316.0" y1="332" x2="316.0" y2="376" stroke="#18242d" stroke-width="2"/>
-<text x="160" y="395" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#53636f">observed 0.5436; gate 0.550</text>
-<line x1="1030" y1="185" x2="1030" y2="395" stroke="#18242d" stroke-width="2"/>
-<text x="672" y="207" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 100</text>
-<rect x="719.7" y="225" width="310.3" height="34" fill="#bc493e"/>
-<text x="672" y="283" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-17.24 bps; required &gt; 0</text>
-<text x="672" y="322" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#344750">Top 500</text>
-<rect x="800.1" y="340" width="229.9" height="34" fill="#bc493e"/>
-<text x="672" y="398" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#263640">-12.77 bps; required &gt; 0</text>
-<text x="70" y="512" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Result: 1 of 4 architecture gates passed. Threshold selection was not opened.</text>
-<text x="70" y="542" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">AUC measures ranking discrimination; it is not an economic return or profitability claim.</text>
+<text x="48" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#18242d">Calibration quality improved; action economics remained adverse</text>
+<text x="48" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Observed values and precommitted gates; stress returns include modeled fees, latency, spread, and slippage.</text>
+<text x="70" y="123" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#62727d">METRIC</text>
+<text x="770" y="123" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#62727d">OBSERVED</text>
+<text x="930" y="123" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#62727d">GATE</text>
+<text x="1140" y="123" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#62727d">RESULT</text>
+<rect x="48" y="145" width="1224" height="56" fill="#f5f8fa"/>
+<text x="70" y="179" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">opportunity roc auc</text>
+<text x="770" y="179" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">0.6637 auc</text>
+<text x="930" y="179" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&gt;= 0.6500</text>
+<rect x="1132" y="157" width="112" height="32" rx="4" fill="#147d70"/>
+<text x="1188" y="179" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">PASS</text>
+<rect x="48" y="212" width="1224" height="56" fill="#ffffff"/>
+<text x="70" y="246" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">conditional direction roc auc</text>
+<text x="770" y="246" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">0.5245 auc</text>
+<text x="930" y="246" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&gt;= 0.5500</text>
+<rect x="1132" y="224" width="112" height="32" rx="4" fill="#bc493e"/>
+<text x="1188" y="246" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">FAIL</text>
+<rect x="48" y="279" width="1224" height="56" fill="#f5f8fa"/>
+<text x="70" y="313" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">side profit roc auc</text>
+<text x="770" y="313" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">0.6066 auc</text>
+<text x="930" y="313" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&gt;= 0.5500</text>
+<rect x="1132" y="291" width="112" height="32" rx="4" fill="#147d70"/>
+<text x="1188" y="313" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">PASS</text>
+<rect x="48" y="346" width="1224" height="56" fill="#ffffff"/>
+<text x="70" y="380" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">side profit brier to base rate ratio</text>
+<text x="770" y="380" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">0.9789 ratio</text>
+<text x="930" y="380" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&lt;= 1.0000</text>
+<rect x="1132" y="358" width="112" height="32" rx="4" fill="#147d70"/>
+<text x="1188" y="380" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">PASS</text>
+<rect x="48" y="413" width="1224" height="56" fill="#f5f8fa"/>
+<text x="70" y="447" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">multiclass log loss to class prior ratio</text>
+<text x="770" y="447" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">0.9727 ratio</text>
+<text x="930" y="447" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&lt;= 1.0000</text>
+<rect x="1132" y="425" width="112" height="32" rx="4" fill="#147d70"/>
+<text x="1188" y="447" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">PASS</text>
+<rect x="48" y="480" width="1224" height="56" fill="#ffffff"/>
+<text x="70" y="514" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">selected top 100 mean stress net bps</text>
+<text x="770" y="514" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">-6.3214 bps</text>
+<text x="930" y="514" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&gt; 0.0000</text>
+<rect x="1132" y="492" width="112" height="32" rx="4" fill="#bc493e"/>
+<text x="1188" y="514" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">FAIL</text>
+<rect x="48" y="547" width="1224" height="56" fill="#f5f8fa"/>
+<text x="70" y="581" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#2b3d47">selected top 500 mean stress net bps</text>
+<text x="770" y="581" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#263640">-10.7583 bps</text>
+<text x="930" y="581" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">&gt; 0.0000</text>
+<rect x="1132" y="559" width="112" height="32" rx="4" fill="#bc493e"/>
+<text x="1188" y="581" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">FAIL</text>
+<text x="48" y="666" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#53636f">Result: 4 of 7 gates passed. Passing probability calibration does not override negative selected-action returns.</text>
+<text x="48" y="696" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#667681">AUC and loss ratios measure forecast quality; only after-cost stress bps measure ranked economic outcome.</text>
 </svg>

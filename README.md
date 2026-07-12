@@ -526,16 +526,21 @@ longer publishes ROI, P&L, drawdown, or chart claims unless they come from
 exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
-[`action-value/latest`](docs/model-research/action-value/latest/README.md). Round
-32 trained a symmetric, three-seed LightGBM ensemble on official BTCUSDT
-top-of-book and trade events from `2023-05-16` through `2023-07-06` UTC. It
-produced 877,894 causal one-second rows, 230,941 CUSUM events, and 229,000 valid
-adaptive-barrier outcomes. Calibration retained 0 conservative, 0 regular, and
-10 aggressive event rows. Selected-side AUC was `0.5095`, Spearman IC was
-`-0.0127`, and top-100/top-500 adverse-stress means were `-6.32`/`-10.76` bps.
-All profiles were rejected, so policy, development, and distant-confirmation
-predictions remained unopened. No leverage, trading authority, or profitability
-claim was produced.
+[`action-value/latest`](docs/model-research/action-value/latest/README.md).
+Round 34 trained a utility-weighted, mirror-symmetric three-action LightGBM
+ensemble on official BTCUSDT top-of-book and trade events from
+`2023-05-16` through `2023-07-06` UTC. It keeps long/abstain/short action-class
+probabilities separate from each side's positive-after-cost probability. The
+certified corpus produced
+877,894 causal one-second rows, 230,941 CUSUM events, and 229,000 valid
+adaptive-barrier outcomes. Opportunity, side-profit, multiclass log-loss, and
+side-profit Brier gates passed; conditional-direction AUC was only `0.5245`.
+Calibration retained 0 conservative, 10 regular, and 39 aggressive eligible
+rows, but the top-100/top-500 adverse-stress means remained negative at
+`-6.32`/`-10.76` bps.
+All profiles were rejected before threshold selection, so policy, development,
+and distant-confirmation predictions remained unopened. No leverage, trading
+authority, or profitability claim was produced.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
