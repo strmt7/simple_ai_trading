@@ -1,0 +1,380 @@
+{
+  "schema_version": "consumed-direction-screen-design-v1",
+  "round": 35,
+  "phase": "pre_architecture_consumed_data_screen",
+  "design_revision": 1,
+  "design_sha256": "a9a4689d5405eb6799181c03b7438de3a2ecbf11e3ca99d044f8cb14afa1e635",
+  "objective": "Test whether direct mirror-equivariant long-versus-short superiority learning repairs the Round 34 conditional-direction bottleneck before freezing a new viability architecture.",
+  "predecessor": {
+    "failure_analysis": "round-034-failure-analysis.json",
+    "failure_analysis_canonical_sha256": "6185ff7afec20fdf2ccc5f56e526ea1d2682ab29867d10de58670919f06889e0",
+    "failure_analysis_file_sha256": "ee6934b429d7be916b4e8e14e00a68347a53ca60b14613305d3acc0f68c2e7fa",
+    "diagnostic_canonical_sha256": "05756cff0b99eaf62dc8253cfb4726b16438df2da8528a37b6a779a0f05455c3",
+    "diagnostic_file_sha256": "1ae843c50fc8f26beb10429613b3867459cfc67c982cc837868467a38c168224"
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-034.json",
+    "consumed_period_registry_canonical_sha256": "c7de7c308d6ffd95ba550b30ecf0c45cd80f75ecb8457413cfa35940ad12b8e1",
+    "consumed_period_registry_file_sha256": "4df327d171c736225c56b6a1c2a3333af47d83651cf9a729c4b0c6d3fd013a77",
+    "all_target_dates_already_consumed": true,
+    "post_hoc_discovery_only": true,
+    "promotion_permitted": false,
+    "trading_policy_selection_permitted": false,
+    "untouched_period_access_permitted": false,
+    "variant_budget": 6,
+    "seed_budget": 1,
+    "hyperparameter_search_permitted": false,
+    "manual_variant_addition_after_results_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "oracle_feature_or_runtime_label_use_permitted": false
+  },
+  "source_contract": {
+    "provider": "binance",
+    "market_type": "usdm_futures",
+    "symbol": "BTCUSDT",
+    "feature_version": "l1-tape-causal-v8",
+    "feature_count": 107,
+    "feature_contract_sha256": "79da981a06f38608ae805ee5766e7ff0dd1504ca0917b231a79ad03b77304eef",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
+    "cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85",
+    "dataset_rows": 877894,
+    "event_rows": 230941,
+    "valid_barrier_rows": 229000,
+    "input_resolution": "one_second_causal_features_from_event_level_book_ticker_and_trade_archives",
+    "required_data_types": [
+      "bookTicker",
+      "trades"
+    ],
+    "full_level_two_order_book_claim": false
+  },
+  "data_roles": {
+    "train": {
+      "start": "2023-05-16",
+      "end": "2023-06-15",
+      "permitted_use": "fit"
+    },
+    "early_stop": {
+      "start": "2023-06-16",
+      "end": "2023-06-20",
+      "permitted_use": "early_stopping_only"
+    },
+    "calibration": {
+      "start": "2023-06-21",
+      "end": "2023-06-25",
+      "permitted_use": "post_hoc_screen_evaluation"
+    },
+    "policy": {
+      "start": "2023-06-26",
+      "end": "2023-06-30",
+      "access_permitted": false
+    },
+    "development": {
+      "start": "2023-07-01",
+      "end": "2023-07-06",
+      "access_permitted": false
+    },
+    "distant_confirmation": {
+      "start": "2024-01-01",
+      "end": "2024-02-04",
+      "access_permitted": false
+    }
+  },
+  "execution_and_target_contract": {
+    "reference_order_notional_quote": 1000.0,
+    "maximum_l1_participation": 1.0,
+    "maximum_quote_age_ms": 1000,
+    "decision_cadence_seconds": 5,
+    "total_latency_ms": 750,
+    "taker_fee_bps_per_side": 5.0,
+    "additional_slippage_bps_per_side": 1.0,
+    "target_scenario": "stress",
+    "target_horizon_seconds": 900,
+    "target_mode": "exchange_trigger_market_exit_100ms_base_and_adverse_stress_v1",
+    "protection_delay_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true
+  },
+  "event_sampler": {
+    "method": "daily_reset_causal_cusum",
+    "volatility_multiplier": 0.25,
+    "minimum_threshold_bps": 1.0,
+    "minimum_activity_quota": null
+  },
+  "direction_target": {
+    "eligible_event": "maximum_of_stress_long_net_bps_and_stress_short_net_bps_is_strictly_positive",
+    "long_label": "stress_long_net_bps_is_strictly_greater_than_stress_short_net_bps",
+    "short_label": "stress_short_net_bps_is_strictly_greater_than_stress_long_net_bps",
+    "exact_long_short_utility_tie": "excluded",
+    "future_outcomes_available_only_during_offline_target_construction": true,
+    "future_outcomes_available_to_model_features_or_runtime": false
+  },
+  "mirror_equivariance": {
+    "training_rows_per_event": 2,
+    "first_row": "observed_features_with_long_superiority_label",
+    "second_row": "exact_directional_mirror_with_short_superiority_label",
+    "paired_rows_share_half_event_weight": true,
+    "prediction": "long_probability_from_observed_features_and_short_probability_from_exact_directional_mirror",
+    "conditional_long_probability": "long_probability_divided_by_long_probability_plus_short_probability",
+    "selected_side": "strictly_greater_probability_only_with_exact_probability_ties_unrouted",
+    "separate_long_and_short_models_permitted": false
+  },
+  "feature_sets": {
+    "full": {
+      "selector": "all_source_features",
+      "expected_feature_count": 107
+    },
+    "full_without_deterministic_cycles": {
+      "selector": "all_source_features_except_exact_exclusions",
+      "expected_feature_count": 100,
+      "excluded_features": [
+        "utc_day_sin",
+        "utc_day_cos",
+        "funding_cycle_sin",
+        "funding_cycle_cos",
+        "utc_week_sin",
+        "utc_week_cos",
+        "weekend_flag"
+      ]
+    },
+    "compact_observed_microstructure": {
+      "selector": "exact_inclusion_list",
+      "expected_feature_count": 68,
+      "included_features": [
+        "return_1s_bps",
+        "return_5s_bps",
+        "return_15s_bps",
+        "return_30s_bps",
+        "return_60s_bps",
+        "return_120s_bps",
+        "return_300s_bps",
+        "return_900s_bps",
+        "realized_volatility_10s_bps",
+        "realized_volatility_30s_bps",
+        "realized_volatility_60s_bps",
+        "realized_volatility_120s_bps",
+        "realized_volatility_300s_bps",
+        "realized_volatility_900s_bps",
+        "spread_bps",
+        "max_spread_bps",
+        "spread_vs_60s_mean",
+        "spread_vs_300s_mean",
+        "spread_vs_900s_mean",
+        "l1_imbalance",
+        "close_l1_imbalance",
+        "imbalance_10s_mean",
+        "imbalance_60s_mean",
+        "imbalance_300s_mean",
+        "l1_imbalance_delta_5s",
+        "l1_imbalance_delta_15s",
+        "l1_imbalance_delta_30s",
+        "l1_imbalance_delta_60s",
+        "microprice_offset_bps",
+        "microprice_delta_5s_bps",
+        "microprice_delta_15s_bps",
+        "microprice_delta_30s_bps",
+        "microprice_delta_60s_bps",
+        "normalized_ofi",
+        "ofi_10s_mean",
+        "ofi_60s_mean",
+        "ofi_300s_mean",
+        "ofi_delta_5s",
+        "ofi_delta_15s",
+        "ofi_delta_30s",
+        "ofi_delta_60s",
+        "trade_imbalance",
+        "trade_imbalance_10s_mean",
+        "trade_imbalance_60s_mean",
+        "trade_imbalance_300s_mean",
+        "trade_imbalance_delta_5s",
+        "trade_imbalance_delta_15s",
+        "trade_imbalance_delta_30s",
+        "trade_imbalance_delta_60s",
+        "signed_flow_10s",
+        "signed_flow_60s",
+        "signed_flow_300s",
+        "trade_close_vs_mid_bps",
+        "ofi_trade_flow_agreement",
+        "log_quote_updates",
+        "quote_intensity_vs_60s_mean",
+        "quote_intensity_vs_300s_mean",
+        "log_trade_count",
+        "log_base_volume",
+        "volume_vs_60s_mean",
+        "volume_vs_300s_mean",
+        "log_bid_l1_depth_quote",
+        "log_ask_l1_depth_quote",
+        "l1_depth_vs_60s_mean",
+        "l1_depth_vs_300s_mean",
+        "signed_pressure_to_opposing_depth_10s",
+        "signed_pressure_to_opposing_depth_60s",
+        "signed_pressure_to_opposing_depth_300s"
+      ]
+    }
+  },
+  "sample_weighting": {
+    "base_method": "average_label_uniqueness_from_decision_and_maximum_realized_exit_times",
+    "uniqueness": "average_label_uniqueness",
+    "utility_margin": "average_label_uniqueness_times_absolute_stress_long_minus_short_utility_divided_by_training_median_positive_margin_clipped_to_0_5_and_3_0",
+    "weight_scale_source_role": "train",
+    "early_stop_or_calibration_statistics_in_training_weights_permitted": false
+  },
+  "variants": [
+    {
+      "variant": "full_uniqueness",
+      "feature_set": "full",
+      "weighting": "uniqueness"
+    },
+    {
+      "variant": "full_utility_margin",
+      "feature_set": "full",
+      "weighting": "utility_margin"
+    },
+    {
+      "variant": "noncycle_uniqueness",
+      "feature_set": "full_without_deterministic_cycles",
+      "weighting": "uniqueness"
+    },
+    {
+      "variant": "noncycle_utility_margin",
+      "feature_set": "full_without_deterministic_cycles",
+      "weighting": "utility_margin"
+    },
+    {
+      "variant": "compact_uniqueness",
+      "feature_set": "compact_observed_microstructure",
+      "weighting": "uniqueness"
+    },
+    {
+      "variant": "compact_utility_margin",
+      "feature_set": "compact_observed_microstructure",
+      "weighting": "utility_margin"
+    }
+  ],
+  "model": {
+    "family": "mirror_equivariant_binary_side_superiority_lightgbm",
+    "objective": "binary",
+    "metric": "binary_logloss",
+    "seed": 29,
+    "compute_backend_requested": "directml",
+    "lightgbm_training_backend_required": "opencl",
+    "gpu_use_dp_required": true,
+    "cpu_fallback_permitted": false,
+    "prediction_backend": "cpu_library_prediction_path",
+    "parameters": {
+      "learning_rate": 0.025,
+      "num_leaves": 47,
+      "max_depth": 7,
+      "min_data_in_leaf": 160,
+      "feature_fraction": 0.82,
+      "bagging_fraction": 0.82,
+      "bagging_freq": 1,
+      "lambda_l1": 0.005,
+      "lambda_l2": 0.025,
+      "max_bin": 127,
+      "num_boost_round": 1500,
+      "early_stopping_rounds": 100
+    }
+  },
+  "evaluation": {
+    "primary_role": "calibration",
+    "labels": "long_is_superior_on_positive_opportunity_events",
+    "metrics": [
+      "pooled_direction_roc_auc",
+      "conditional_long_probability_brier_score",
+      "direction_accuracy",
+      "daily_direction_roc_auc",
+      "daily_direction_accuracy",
+      "daily_auc_minimum_median_and_standard_deviation",
+      "frozen_round34_opportunity_ranked_top_100_500_and_1000_mean_stress_net_bps",
+      "candidate_confidence_ranked_top_100_500_and_1000_mean_stress_net_bps",
+      "feature_gain",
+      "training_runtime_seconds",
+      "backend_and_artifact_hashes"
+    ],
+    "frozen_opportunity_probability_source": "mean_round34_three_action_ensemble_probability_of_long_or_short_action",
+    "candidate_confidence": "absolute_conditional_long_probability_minus_0_5",
+    "side_selection": "strict_comparison_of_long_and_short_superiority_probabilities",
+    "transaction_costs_and_stress_execution_already_embedded_in_target": true
+  },
+  "architecture_freeze_eligibility": {
+    "promotion_or_trading_authority_created": false,
+    "minimum_pooled_direction_auc": 0.55,
+    "minimum_daily_direction_auc": 0.48,
+    "minimum_median_daily_direction_auc": 0.53,
+    "minimum_days_above_chance": 4,
+    "minimum_frozen_opportunity_top_100_mean_stress_net_bps": 0.0,
+    "minimum_frozen_opportunity_top_500_mean_stress_net_bps": 0.0,
+    "minimum_candidate_confidence_top_500_mean_stress_net_bps": 0.0,
+    "maximum_nonfinite_predictions": 0,
+    "tie_break_order": [
+      "highest_minimum_daily_direction_auc",
+      "highest_frozen_opportunity_top_500_mean_stress_net_bps",
+      "fewest_features",
+      "variant_name_ascending"
+    ],
+    "if_no_variant_passes": "reject_screen_and_do_not_freeze_round35_viability_architecture"
+  },
+  "runtime_resources": {
+    "maximum_worker_threads": 16,
+    "duckdb_memory_limit_gib": 12,
+    "heartbeat_interval_seconds": 15,
+    "maximum_expected_process_working_set_gib": 12,
+    "variant_execution": "sequential_to_bound_vram_and_system_memory",
+    "model_artifact_persistence": "external_evidence_root_only"
+  },
+  "research_basis": [
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "review_status": "preprint",
+      "use": "Supports testing compact top-of-book, spread, order-flow, and trade-flow features at one-second resolution with chronological validation; no reported performance is imported."
+    },
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1712822",
+      "review_status": "published_in_journal_of_financial_econometrics",
+      "use": "Supports order-flow imbalance and depth-conditioned pressure as short-horizon microstructure variables."
+    },
+    {
+      "title": "The Micro-Price: A High Frequency Estimator of Future Prices",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2970694",
+      "review_status": "working_paper",
+      "use": "Supports testing spread-and-imbalance-conditioned microprice features for short-horizon direction."
+    },
+    {
+      "title": "Cross-Impact of Order Flow Imbalance in Equity Markets",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3993561",
+      "review_status": "published_in_quantitative_finance",
+      "use": "Supports integrated and lagged order-flow imbalance as a forecasting hypothesis while warning that impact decays rapidly."
+    },
+    {
+      "title": "Order Flow Imbalance and Price Dynamics in CME Ether Futures",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6772279",
+      "review_status": "recent_unreviewed_preprint",
+      "use": "Provides a recent crypto-futures OFI hypothesis only; its performance, parameter search, market, and execution assumptions are not imported."
+    },
+    {
+      "title": "LightGBM GPU Targets",
+      "url": "https://lightgbm.readthedocs.io/en/latest/GPU-Targets.html",
+      "review_status": "official_documentation",
+      "use": "Supports vendor-agnostic OpenCL training on the AMD host with FP64 accumulation requested for reproducibility."
+    }
+  ],
+  "limitations": [
+    "This is a six-variant post-hoc screen on already-consumed BTCUSDT calibration dates and cannot establish out-of-sample profitability.",
+    "The source has event-level best-bid-offer and trade archives transformed into one-second causal features; it does not contain a reconstructed full Level-2 queue.",
+    "ETHUSDT and SOLUSDT are outside this bounded screen and require separately certified source corpora before cross-asset viability can be assessed.",
+    "A passing variant may only justify freezing a new architecture for genuinely unseen chronological and cross-asset evaluation.",
+    "LightGBM prediction uses its CPU library path even though training is required to use OpenCL FP64 accumulation."
+  ],
+  "claims": {
+    "trading_authority": false,
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "leverage_applied": false
+  }
+}
