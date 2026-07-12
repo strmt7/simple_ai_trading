@@ -1,0 +1,135 @@
+{
+  "schema_version": "derivatives-hurdle-failure-analysis-v1",
+  "round": 38,
+  "analysis_sha256": "f5b693fd00891ae8af9f93eec6925837c16c019aa246864ec9af29100496917c",
+  "status": "rejected",
+  "source_evidence": {
+    "design_sha256": "7b4a6888cc8d4bc22b673881ab0e28b880cde82a5c18f7db13efe96308208520",
+    "design_file_sha256": "a3198da8d0955a53284897184c36287d76ef6a0dc5e3388d441de0113766bf8f",
+    "binding_sha256": "9070b6a484781d205750964b1fc58defe9ef7c83337b7e88abcd75229fe44619",
+    "binding_file_sha256": "1db4daf80af4ead745d0e5fdbbddf5cf639e6b24355fcb4bd246716ec28c2c65",
+    "implementation_commit": "dc19f72e69f79e93ed40d97deea855a4c6a0b4aa",
+    "report_canonical_sha256": "7b7f3a5ba4ab1a047fc6d06ca4c3e90b6bdc210c621d7bcca2d887629f9e4c42",
+    "report_file_sha256": "7b39beb7726a2b94b564f77fb766b207592f8979f1828f37bfceeae7970a7346",
+    "publication_canonical_sha256": "89f3ebbf6e37a7c80c6f26e6fedd831fed9a0a8b5f6420a4940c0fcff7b490f9",
+    "publication_file_sha256": "fd3d2c5b5ebabe1cb2ce1b5eb7fa81c540774a2146d15647e24cb933ac92d705",
+    "price_panel_stream_sha256": "40ef0a76d57fa844fb01ccd90d7c768f5fbbf613467303a2dc1dcdd39b100a3d",
+    "derivatives_panel_sha256": "3e7a57184d690afc7061e9f48e437716ff73b72f01302d2eb151112351e8cf7e"
+  },
+  "scope": {
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "market": "Binance USD-M perpetual futures",
+    "source_interval": "1m",
+    "decision_cadence_minutes": 5,
+    "target_start": "2022-01-01",
+    "target_end": "2025-06-30",
+    "selection_confirmation_accessed": false,
+    "terminal_2026_accessed": false,
+    "dataset_rows": 1098105,
+    "feature_count": 103,
+    "price_flow_feature_count": 71,
+    "derivatives_feature_count": 32,
+    "candidate_count": 32,
+    "opencl_model_artifacts": 96,
+    "threshold_cells": 640,
+    "supported_threshold_cells": 295,
+    "selected_action_thresholds": 32,
+    "runtime_seconds": 594.3303373000235,
+    "peak_working_set_bytes": 4662194176
+  },
+  "activity_evidence": {
+    "viability_trade_count_range": [313, 8515],
+    "interpretation": "Round 38 fixed the prior zero-trade failure. Activity no longer explains rejection."
+  },
+  "best_viability_candidate": {
+    "candidate_id": "price_flow_only_shared_two_stage_hurdle_lightgbm_h120",
+    "trades": 789,
+    "trades_by_symbol": {"BTCUSDT": 153, "ETHUSDT": 316, "SOLUSDT": 320},
+    "mean_net_bps": -3.9885070425551503,
+    "profit_factor": 0.9246544495467506,
+    "median_monthly_net_bps": -775.7284473329782,
+    "negative_month_fraction": 0.6666666666666666,
+    "day_block_lower_95_mean_net_bps": -13.44693667520006,
+    "maximum_single_symbol_fraction": 0.4055766793409379,
+    "viability_multiclass_log_loss": 0.9910002946853638,
+    "viability_balanced_accuracy": 0.38564663972864216,
+    "viability_accuracy": 0.4469970315778699,
+    "viability_gate_passed": false
+  },
+  "calibration_decay_case": {
+    "candidate_id": "price_flow_only_per_symbol_direct_multiclass_lightgbm_h30",
+    "selected_threshold": {"maximum_action_probability": 0.5, "direction_probability_margin": 0.15},
+    "calibration": {
+      "trades": 274,
+      "trades_by_symbol": {"BTCUSDT": 70, "ETHUSDT": 129, "SOLUSDT": 75},
+      "mean_net_bps": 12.089945957064629,
+      "profit_factor": 1.4667378740114103,
+      "day_block_lower_95_mean_net_bps": 2.1621741144786832
+    },
+    "viability": {
+      "trades": 689,
+      "trades_by_symbol": {"BTCUSDT": 81, "ETHUSDT": 371, "SOLUSDT": 237},
+      "mean_net_bps": -15.412824984418204,
+      "profit_factor": 0.6396661350862333,
+      "negative_month_fraction": 1.0,
+      "day_block_lower_95_mean_net_bps": -23.7669960074326,
+      "maximum_single_symbol_fraction": 0.5384615384615384
+    },
+    "interpretation": "The only supported calibration cell with a positive lower confidence bound reversed sharply in 2025-H1. Static fit and quarter-level threshold calibration did not survive regime change."
+  },
+  "derivatives_feature_ablation": {
+    "matched_comparisons": 16,
+    "augmented_log_loss_improvements": 0,
+    "mean_log_loss_delta_augmented_minus_price": 0.000830892473459244,
+    "all_log_loss_deltas_positive": true,
+    "decision": "Reject premium and settled funding as directional features in the next lane. Retain exact funding cash-flow accounting and causal risk-state availability."
+  },
+  "critical_interpretation": [
+    "Cost-aware action labels and hurdle decomposition generated enough trades but did not establish positive unseen after-cost expectancy.",
+    "The quarter-calibrated candidates were nonstationary: favorable 2024-Q4 economics did not persist into 2025-H1.",
+    "Classification confidence remained weak; the best viability candidate's balanced accuracy was 0.3856 for three classes.",
+    "Adding premium and funding features degraded predictive log loss in every matched architecture and horizon.",
+    "Exact settled funding remains economically required in outcomes even though its historical feature block failed as directional alpha.",
+    "The zero AI-case result followed the frozen gate. It is not evidence that local AI improves or fails to improve the ML lane.",
+    "Reducing the 12 bps charge or weakening support, uncertainty, diversification, or viability gates would hide the observed failure rather than fix it."
+  ],
+  "rejected_responses": [
+    "Do not promote, leverage, paper-trade, testnet-trade, or live-trade any Round 38 candidate.",
+    "Do not describe calibration gains as ROI, profitability, or an equity curve.",
+    "Do not keep derivatives features in the next directional model merely because they are financially plausible.",
+    "Do not select architectures, thresholds, or weighting from 2025-H2 or 2026 data.",
+    "Do not allow an AI model to create, reverse, or enlarge an ML action."
+  ],
+  "next_experiment": {
+    "stage": "causal_monthly_refit_and_economic_utility_weighting_with_ai_veto_ablation",
+    "purpose": "Test whether recent causal refits and bounded economic sample weights reduce the observed calibration-to-viability decay, then measure local AI only as a matched veto layer on support-complete ML actions.",
+    "model_lanes": [
+      "shared_two_stage_hurdle_lightgbm_h120",
+      "per_symbol_direct_multiclass_lightgbm_h30"
+    ],
+    "weighting_ablation": ["equal", "bounded_economic_utility"],
+    "required_controls": [
+      "24_month_trailing_training_window",
+      "two_month_early_stop_and_temperature_window",
+      "one_month_action_threshold_calibration_window",
+      "one_month_forward_evaluation_window",
+      "target_horizon_embargo_at_every_boundary",
+      "threshold_selected_independently_before_each_evaluation_month",
+      "same_symbol_nonoverlap_across_month_boundaries",
+      "exact_12_bps_charge_and_funding_cash_flows",
+      "aggregate_and_month-level_out_of-sample evidence",
+      "ai_veto_ablation_on_support-complete_cases_even_when_ml economics fail"
+    ],
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "promotion_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "profitability_target_override_permitted": false
+  },
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false
+}
