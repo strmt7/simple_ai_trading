@@ -45,6 +45,22 @@ def test_round35_direction_screen_is_hash_bound_to_round34_rejection() -> None:
     assert claimed == _canonical_sha256(canonical)
     assert design["round"] == 35
     assert design["phase"] == "pre_architecture_consumed_data_screen"
+    assert design["design_revision"] == 2
+    assert design["supersedes"] == {
+        "design_revision": 1,
+        "design_sha256": (
+            "a9a4689d5405eb6799181c03b7438de3a2ecbf11e3ca99d044f8cb14afa1e635"
+        ),
+        "file_sha256": (
+            "e05b52dc0978163dc1a72c3b84ddf6b1ab493686107f5245932defb2111b26a6"
+        ),
+        "reason": (
+            "Distinguish certified source-cache materialization from model "
+            "prediction and metric access, and bind the exact Round 34 loader "
+            "design. Variants, targets, model parameters, evaluation metrics, "
+            "claims, and authority denials are unchanged."
+        ),
+    }
     assert (
         design["predecessor"]["failure_analysis_canonical_sha256"]
         == failure["analysis_sha256"]
@@ -144,7 +160,10 @@ def test_round35_direction_screen_cannot_access_or_promote_later_stages() -> Non
     assert roles["early_stop"]["permitted_use"] == "early_stopping_only"
     assert roles["calibration"]["permitted_use"] == "post_hoc_screen_evaluation"
     for role in ("policy", "development", "distant_confirmation"):
-        assert roles[role]["access_permitted"] is False
+        assert roles[role]["prediction_or_metric_access_permitted"] is False
+    assert roles["policy"]["source_materialization_permitted"] is True
+    assert roles["development"]["source_materialization_permitted"] is True
+    assert roles["distant_confirmation"]["source_materialization_permitted"] is False
     assert design["claims"] == {
         "trading_authority": False,
         "execution_claim": False,

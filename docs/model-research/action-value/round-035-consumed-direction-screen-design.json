@@ -2,8 +2,14 @@
   "schema_version": "consumed-direction-screen-design-v1",
   "round": 35,
   "phase": "pre_architecture_consumed_data_screen",
-  "design_revision": 1,
-  "design_sha256": "a9a4689d5405eb6799181c03b7438de3a2ecbf11e3ca99d044f8cb14afa1e635",
+  "design_revision": 2,
+  "design_sha256": "db027483eed1329554bac8c3be057c488bc1899348978ea8b199c5796db6cbaa",
+  "supersedes": {
+    "design_revision": 1,
+    "design_sha256": "a9a4689d5405eb6799181c03b7438de3a2ecbf11e3ca99d044f8cb14afa1e635",
+    "file_sha256": "e05b52dc0978163dc1a72c3b84ddf6b1ab493686107f5245932defb2111b26a6",
+    "reason": "Distinguish certified source-cache materialization from model prediction and metric access, and bind the exact Round 34 loader design. Variants, targets, model parameters, evaluation metrics, claims, and authority denials are unchanged."
+  },
   "objective": "Test whether direct mirror-equivariant long-versus-short superiority learning repairs the Round 34 conditional-direction bottleneck before freezing a new viability architecture.",
   "predecessor": {
     "failure_analysis": "round-034-failure-analysis.json",
@@ -30,6 +36,9 @@
     "oracle_feature_or_runtime_label_use_permitted": false
   },
   "source_contract": {
+    "loader_design": "round-034-three-action-utility-design.json",
+    "loader_design_canonical_sha256": "61aea61eeec1ddc87aecb8b8fe17b915b8411760501e46eecf9c2f4e92ac5e03",
+    "loader_design_file_sha256": "c1b18c299e2d6cdba5c2e6b47498fbd10b1e611d9f689efc0a319b85a38ea405",
     "provider": "binance",
     "market_type": "usdm_futures",
     "symbol": "BTCUSDT",
@@ -43,6 +52,9 @@
     "event_rows": 230941,
     "valid_barrier_rows": 229000,
     "input_resolution": "one_second_causal_features_from_event_level_book_ticker_and_trade_archives",
+    "certified_cache_materialization_start": "2023-05-16",
+    "certified_cache_materialization_end": "2023-07-06",
+    "materialized_policy_and_development_rows_are_already_consumed": true,
     "required_data_types": [
       "bookTicker",
       "trades"
@@ -53,32 +65,38 @@
     "train": {
       "start": "2023-05-16",
       "end": "2023-06-15",
+      "source_materialization_permitted": true,
       "permitted_use": "fit"
     },
     "early_stop": {
       "start": "2023-06-16",
       "end": "2023-06-20",
+      "source_materialization_permitted": true,
       "permitted_use": "early_stopping_only"
     },
     "calibration": {
       "start": "2023-06-21",
       "end": "2023-06-25",
+      "source_materialization_permitted": true,
       "permitted_use": "post_hoc_screen_evaluation"
     },
     "policy": {
       "start": "2023-06-26",
       "end": "2023-06-30",
-      "access_permitted": false
+      "source_materialization_permitted": true,
+      "prediction_or_metric_access_permitted": false
     },
     "development": {
       "start": "2023-07-01",
       "end": "2023-07-06",
-      "access_permitted": false
+      "source_materialization_permitted": true,
+      "prediction_or_metric_access_permitted": false
     },
     "distant_confirmation": {
       "start": "2024-01-01",
       "end": "2024-02-04",
-      "access_permitted": false
+      "source_materialization_permitted": false,
+      "prediction_or_metric_access_permitted": false
     }
   },
   "execution_and_target_contract": {
