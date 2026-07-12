@@ -1,8 +1,15 @@
 {
-  "schema_version": "derivatives-hurdle-ai-ablation-design-v1",
+  "schema_version": "derivatives-hurdle-ai-ablation-design-v2",
   "round": 38,
-  "design_sha256": "ad81d4f5b570d0367cf2343e5e9ba0afdb1c41400f8368b3396df7e2484882a5",
+  "design_sha256": "7b4a6888cc8d4bc22b673881ab0e28b880cde82a5c18f7db13efe96308208520",
   "phase": "frozen_derivatives_augmented_hurdle_viability_then_ai_ablation",
+  "revision_reason": "The v1 source gate rejected before any Round 38 target construction or model access because official premium-index archives contain sparse real gaps. V2 freezes the exact observed source quality and a causal stale-data exclusion contract; no return outcome or model metric informed this revision.",
+  "superseded_design": {
+    "schema_version": "derivatives-hurdle-ai-ablation-design-v1",
+    "design_sha256": "ad81d4f5b570d0367cf2343e5e9ba0afdb1c41400f8368b3396df7e2484882a5",
+    "git_commit": "2584ea4ad743eb66f1af5d46ac66811342222241",
+    "source_gate_result": "rejected_before_target_or_model_access"
+  },
   "predecessor": {
     "failure_analysis": "round-037-failure-analysis.json",
     "failure_analysis_canonical_sha256": "39b2347a81d0ba7284cd213dc5f66f356148b7cbf06153c49a55dcd50f2c9374",
@@ -14,6 +21,8 @@
     "consumed_period_registry_canonical_sha256": "f5cf5667557b03c377ba9f65b85c61297dff3e53d6a292f1d1ac4edcf2fb71ce",
     "consumed_period_registry_file_sha256": "f85a3212af0d5a5bf54a150ffe13da4668f17961b63f313e1f9fb78d4d3ef72a",
     "freeze_before_derivatives_target_access": true,
+    "archive_source_rows_accessed_before_v2": true,
+    "round38_price_targets_or_model_metrics_accessed_before_v2": false,
     "single_fixed_seed": 3801,
     "unregistered_hyperparameter_search_permitted": false,
     "selection_confirmation_access_permitted": false,
@@ -63,8 +72,27 @@
       "required_columns": ["open_time", "open", "high", "low", "close", "close_time"],
       "required_periods_per_symbol": 43,
       "required_checksum_files_per_symbol": 43,
-      "required_gap_count": 0,
-      "expected_rows_per_symbol": 1883520
+      "expected_grid_rows_per_symbol": 1883520,
+      "minimum_observed_rows_per_symbol": 1880000,
+      "maximum_missing_fraction": 0.0016,
+      "maximum_gap_events": 9,
+      "maximum_single_gap_minutes": 1440,
+      "observed_source_quality": {
+        "BTCUSDT": {"rows": 1880574, "gap_events": 9, "missing_minutes": 2946, "maximum_gap_minutes": 1440},
+        "ETHUSDT": {"rows": 1880577, "gap_events": 9, "missing_minutes": 2943, "maximum_gap_minutes": 1440},
+        "SOLUSDT": {"rows": 1882018, "gap_events": 7, "missing_minutes": 1502, "maximum_gap_minutes": 1440}
+      },
+      "source_join_contract": {
+        "grid_authority": "continuous verified USD-M price-flow minute grid",
+        "join": "exact timestamp left join without source-row synthesis",
+        "observed_indicator_required": true,
+        "premium_age_minutes_required": true,
+        "maximum_causal_forward_fill_minutes_for_feature_computation": 5,
+        "decision_eligible_only_when_premium_age_minutes_at_most": 5,
+        "minimum_observed_fraction_for_rolling_premium_features": 0.90,
+        "long_gap_interpolation_permitted": false,
+        "imputed_source_row_persistence_permitted": false
+      }
     },
     "funding_source": {
       "data_type": "fundingRate",
@@ -136,7 +164,9 @@
       "premium_mean_15_60_240_1440m",
       "premium_zscore_60_240_1440m",
       "premium_positive_fraction_60_240m",
-      "premium_cross_asset_dispersion_and_agreement"
+      "premium_cross_asset_dispersion_and_agreement",
+      "premium_observed_indicator_and_age_minutes",
+      "rolling_premium_observed_fraction"
     ],
     "funding_features": [
       "last_settled_funding_rate_bps",
@@ -150,7 +180,8 @@
     "next_announced_or_realized_funding_may_not_be_used_as_a_feature": true,
     "ablation_feature_sets": ["price_flow_only", "price_flow_plus_premium_and_funding"],
     "target_symbol_is_categorical": true,
-    "horizon_is_not_a_feature": true
+    "horizon_is_not_a_feature": true,
+    "rows_failing_premium_staleness_or_rolling_coverage_are_excluded_before_role_metrics": true
   },
   "model_contract": {
     "architectures": [
@@ -284,6 +315,7 @@
   },
   "required_outputs": [
     "derivatives_archive_checksums_and_row_stream_hashes",
+    "exact_premium_gap_events_missing_minutes_and_staleness_exclusions",
     "joined_source_continuity_and_causality_audit",
     "target_class_balance_by_symbol_horizon_and_role",
     "model_artifacts_reload_identity_backend_runtime_and_memory",
@@ -310,6 +342,7 @@
     "Minute archives do not contain historical order-book spread queue state or market impact.",
     "The 12 bps charge remains a conservative fixed proxy and is not pair-specific historical spread reconstruction.",
     "Funding and premium are contract-state features, not presumed alpha; their incremental value must be measured by the frozen ablation.",
+    "Official premium-index archives contain sparse missing minutes including one-day gaps; V2 excludes stale decisions and reports rolling source coverage rather than synthesizing observations.",
     "Funding settlement timestamps may change cadence and are read from each historical row rather than assumed to occur every eight hours.",
     "A positive viability result remains consumed development evidence and cannot establish future profitability.",
     "The 2025 second half and all 2026 target data remain unavailable.",

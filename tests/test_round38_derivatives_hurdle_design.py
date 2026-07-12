@@ -68,9 +68,9 @@ def test_round38_design_freezes_real_derivatives_hurdle_ablation() -> None:
     registry = _read(REGISTRY37)
 
     assert _canonical_sha256(design, "design_sha256") == (
-        "ad81d4f5b570d0367cf2343e5e9ba0afdb1c41400f8368b3396df7e2484882a5"
+        "7b4a6888cc8d4bc22b673881ab0e28b880cde82a5c18f7db13efe96308208520"
     )
-    assert design["schema_version"] == "derivatives-hurdle-ai-ablation-design-v1"
+    assert design["schema_version"] == "derivatives-hurdle-ai-ablation-design-v2"
     assert design["round"] == 38
     assert design["predecessor"]["failure_analysis_canonical_sha256"] == failure[
         "analysis_sha256"
@@ -102,7 +102,14 @@ def test_round38_design_freezes_real_derivatives_hurdle_ablation() -> None:
 
     source = design["source_contract"]
     assert source["symbols"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
-    assert source["premium_index_source"]["required_periods_per_symbol"] == 43
+    premium = source["premium_index_source"]
+    assert premium["required_periods_per_symbol"] == 43
+    assert premium["maximum_missing_fraction"] == 0.0016
+    assert premium["maximum_single_gap_minutes"] == 1440
+    assert premium["source_join_contract"][
+        "maximum_causal_forward_fill_minutes_for_feature_computation"
+    ] == 5
+    assert premium["source_join_contract"]["long_gap_interpolation_permitted"] is False
     assert source["funding_source"]["required_periods_per_symbol"] == 43
     assert source["required_checksum_status"] == "verified"
     assert source["persistent_feature_copy_permitted"] is False
