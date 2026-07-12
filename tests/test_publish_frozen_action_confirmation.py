@@ -212,6 +212,11 @@ def test_round31_publication_is_hash_verified_parseable_and_truthful(
         chart_text = chart.read_text(encoding="utf-8").casefold()
         assert ">nan<" not in chart_text
         assert '="nan"' not in chart_text
+    progress_chart = (output / "charts" / "research-progress.svg").read_text(
+        encoding="utf-8"
+    )
+    assert "simulated-trade mean" in progress_chart
+    assert "executed mean" not in progress_chart
 
     stage_path.write_text("{}\n", encoding="utf-8")
     with pytest.raises(ValueError, match="stage artifact differs"):

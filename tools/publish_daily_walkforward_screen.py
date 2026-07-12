@@ -772,12 +772,12 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         '<title id="title">After-cost evidence by research round</title>',
-        '<desc id="desc">Executed means, overlapping-forecast diagnostics, and rounds with no executable series use distinct markers. Round fifteen produced no evaluation trades.</desc>',
+        '<desc id="desc">Simulated-trade means, overlapping-forecast diagnostics, and rounds with no simulated-trade series use distinct markers. Round fifteen produced no evaluation trades.</desc>',
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         '<text x="56" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#17212b">After-cost evidence by research round</text>',
-        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Distinct markers prevent diagnostics or abstention from being presented as an executed trade mean.</text>',
-        '<circle cx="900" cy="55" r="7" fill="#b42318"/><text x="917" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">executed mean</text>',
-        '<rect x="1052" y="48" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1059 55)"/><text x="1076" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">no executable series</text>',
+        '<text x="56" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#52606d">Distinct markers prevent diagnostics or abstention from being presented as a simulated-trade mean.</text>',
+        '<circle cx="900" cy="55" r="7" fill="#b42318"/><text x="917" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">simulated-trade mean</text>',
+        '<rect x="1052" y="48" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1059 55)"/><text x="1076" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">no simulated-trade series</text>',
         '<rect x="1277" y="48" width="14" height="14" fill="#7b559c"/><text x="1301" y="60" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#52606d">overlap diagnostic</text>',
         f'<rect x="{left}" y="{top}" width="{chart_width}" height="{chart_height}" fill="#ffffff" stroke="#d8e0e7"/>',
     ]
@@ -789,7 +789,7 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
         lines.append(
             f'<text x="{left - 14}" y="{y + 5:.1f}" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#60717f">{value:.0f}</text>'
         )
-    executed_points: list[tuple[float, float]] = []
+    simulated_points: list[tuple[float, float]] = []
     for index, row in enumerate(rows):
         x = left + chart_width * (index + 0.5) / max(1, len(rows))
         net_text = str(row.get("mean_net_bps") or "").strip()
@@ -797,9 +797,9 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
             row.get("best_top_500_exact_after_cost_bps") or ""
         ).strip()
         if int(row.get("executable_trades") or 0) > 0 and net_text:
-            value = _finite(net_text, label="progress executed mean")
+            value = _finite(net_text, label="progress simulated-trade mean")
             y = y_position(value)
-            executed_points.append((x, y))
+            simulated_points.append((x, y))
             lines.append(
                 f'<circle cx="{x:.1f}" cy="{y:.1f}" r="8" fill="#b42318" stroke="#ffffff" stroke-width="3"/>'
             )
@@ -821,10 +821,10 @@ def _progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
         lines.append(
             f'<text x="{x:.1f}" y="{top + chart_height + 32}" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="{11 if compact_labels else 13}" fill="#334653">{round_label}</text>'
         )
-    if len(executed_points) > 1:
+    if len(simulated_points) > 1:
         lines.append(
             '<polyline points="'
-            + " ".join(f"{x:.1f},{y:.1f}" for x, y in executed_points)
+            + " ".join(f"{x:.1f},{y:.1f}" for x, y in simulated_points)
             + '" fill="none" stroke="#287f9e" stroke-width="4"/>'
         )
     lines.extend(
