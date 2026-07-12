@@ -315,9 +315,9 @@ def diagnose(
         progress=progress,
     )
     if (
-        bundle.corpus_certificate_sha256
+        bundle.source_certificate.get("certificate_sha256")
         != report["training_corpus"]["corpus_certificate_sha256"]
-        or bundle.barrier_targets_sha256
+        or bundle.targets_sha256
         != report["training_corpus"]["barrier_targets_sha256"]
     ):
         raise ValueError("Round 34 diagnostic corpus identity drifted")
