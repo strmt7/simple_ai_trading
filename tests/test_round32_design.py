@@ -78,8 +78,31 @@ def test_round32_design_is_hash_bound_consumed_only_and_one_variant() -> None:
     ]
     assert governance["variant_budget"] == 1
     assert governance["hyperparameter_search_permitted"] is False
-    assert design["design_revision"] == 2
+    assert design["design_revision"] == 3
     assert design["data"]["full_history_inventory_required"] is True
+    risk_source = design["risk_profiles_source"]
+    assert risk_source == {
+        "path": ROUND31_DESIGN.name,
+        "file_sha256": hashlib.sha256(ROUND31_DESIGN.read_bytes()).hexdigest(),
+        "design_sha256": round31["design_sha256"],
+        "section": "risk_profiles",
+        "modification_permitted": False,
+    }
+    lightgbm = design["model"]["lightgbm"]
+    assert lightgbm["calibration_fraction"] == 0.5
+    assert lightgbm["lower_quantile"] == 0.1
+    assert lightgbm["upper_quantile"] == 0.9
+    assert design["sample_weighting"]["method"] == "average_label_uniqueness"
+    stage_order = design["stage_evaluation_order"]
+    assert stage_order["later_stage_predictions_withheld_until_prior_stage_passes"]
+    assert [stage["stage"] for stage in stage_order["stages"]] == [
+        "calibration",
+        "policy",
+        "development",
+        "distant_confirmation",
+    ]
+    assert design["runtime_resources"]["cpu_fallback_permitted"] is False
+    assert design["runtime_resources"]["heartbeat_interval_seconds"] == 30
 
     consumed: set[str] = set()
     for record in registry["records"]:
