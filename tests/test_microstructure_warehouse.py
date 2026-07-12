@@ -204,14 +204,16 @@ def _insert_certified_manifest(
         )
 
 
-def test_corpus_certificate_binds_official_inventory_and_every_daily_manifest(tmp_path) -> None:
+def test_corpus_certificate_binds_only_requested_physical_partitions(
+    tmp_path, monkeypatch
+) -> None:
     warehouse = MicrostructureWarehouse(
         tmp_path / "certificate.duckdb",
         cache_root=tmp_path / "cache",
         memory_limit="256MB",
         threads=1,
     )
-    periods = ("2026-07-08", "2026-07-09")
+    periods = ("2026-07-08", "2026-07-09", "2026-07-10")
     data_types = ("bookTicker", "trades", "bookDepth")
     try:
         for type_index, data_type in enumerate(data_types, start=1):
@@ -257,6 +259,17 @@ def test_corpus_certificate_binds_official_inventory_and_every_daily_manifest(tm
             assert repeated["snapshot_id"] == first["snapshot_id"]
             assert repeated["observed_at_ms"] == first["observed_at_ms"]
 
+        physical_scopes: list[tuple[str, tuple[str, ...]]] = []
+        original_physical_stats = warehouse._physical_archive_stats
+
+        def scoped_physical_stats(**kwargs):
+            archive_ids = tuple(kwargs.get("archive_ids") or ())
+            physical_scopes.append((str(kwargs["data_type"]), archive_ids))
+            return original_physical_stats(**kwargs)
+
+        monkeypatch.setattr(
+            warehouse, "_physical_archive_stats", scoped_physical_stats
+        )
         evidence = warehouse.require_corpus_certificate(
             "BTCUSDT",
             required_start_ms=1_783_468_800_000,
@@ -267,13 +280,20 @@ def test_corpus_certificate_binds_official_inventory_and_every_daily_manifest(tm
 
     assert evidence["status"] == "pass"
     assert evidence["verified"] is True
-    assert evidence["common_period_count"] == 2
+    assert evidence["common_period_count"] == 3
     assert evidence["common_calendar_gaps"] == []
     assert len(str(evidence["certificate_sha256"])) == 64
     assert all(
         evidence["data_types"][data_type]["verified_scope_archive_count"] == 2
         for data_type in data_types
     )
+    assert len(physical_scopes) == len(data_types)
+    assert {data_type for data_type, _archive_ids in physical_scopes} == set(data_types)
+    for data_type, archive_ids in physical_scopes:
+        assert set(archive_ids) == {
+            f"BTCUSDT-{data_type}-{periods[0]}",
+            f"BTCUSDT-{data_type}-{periods[1]}",
+        }
 
 
 def test_corpus_certificate_rejects_missing_and_mutated_partitions(tmp_path) -> None:
