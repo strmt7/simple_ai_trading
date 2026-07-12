@@ -78,7 +78,7 @@ def test_round32_design_is_hash_bound_consumed_only_and_one_variant() -> None:
     ]
     assert governance["variant_budget"] == 1
     assert governance["hyperparameter_search_permitted"] is False
-    assert design["design_revision"] == 3
+    assert design["design_revision"] == 4
     assert design["data"]["full_history_inventory_required"] is True
     risk_source = design["risk_profiles_source"]
     assert risk_source == {
@@ -102,6 +102,7 @@ def test_round32_design_is_hash_bound_consumed_only_and_one_variant() -> None:
         "distant_confirmation",
     ]
     assert design["runtime_resources"]["cpu_fallback_permitted"] is False
+    assert design["runtime_resources"]["duckdb_memory_limit_gib"] == 12
     assert design["runtime_resources"]["heartbeat_interval_seconds"] == 30
 
     consumed: set[str] = set()

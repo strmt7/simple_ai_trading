@@ -1,9 +1,9 @@
 {
   "schema_version": "shared-action-value-viability-design-v1",
   "round": 32,
-  "design_revision": 3,
-  "design_revision_reason": "Make risk-profile provenance, tuning partitioning, label-uniqueness weighting, stage withholding, quantiles, and bounded runtime resources explicit before implementation binding or data access; no model family, window, gate, or result changed.",
-  "design_sha256": "8bf16aa1590d3f9cf616da84355a569c00897ad855cedff7d9fe04407cc5cea7",
+  "design_revision": 4,
+  "design_revision_reason": "Correct the 12 GiB control from an unenforced process-wide label to the enforced DuckDB allocation ceiling and clarify sequential corpus lifetime before implementation binding or data access; no model, window, gate, or result changed.",
+  "design_sha256": "5c8b2ac3618cdeec16dd4a8d21e5792cc4ea4bc26a645bf9ec00bd3997d3ca68",
   "purpose": "consumed_data_direction_canonical_shared_action_value_viability",
   "claims": {
     "execution_claim": false,
@@ -236,8 +236,9 @@
     ]
   },
   "runtime_resources": {
-    "maximum_process_memory_gib": 12,
+    "duckdb_memory_limit_gib": 12,
     "maximum_worker_threads": 16,
+    "corpus_lifecycle": "sequential_with_distant_corpus_loaded_only_after_development_pass",
     "accelerator_preflight": "directml",
     "lightgbm_backend": "opencl",
     "cpu_fallback_permitted": false,
