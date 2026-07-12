@@ -1,0 +1,194 @@
+{
+  "authority": {
+    "execution_claim": false,
+    "leverage_applied": false,
+    "model_candidate_permitted": false,
+    "model_training_permitted": false,
+    "portfolio_claim": false,
+    "post_hoc_consumed_data_diagnostic_only": true,
+    "profitability_claim": false,
+    "promotion_permitted": false,
+    "trading_authority": false
+  },
+  "binding_sha256": "1fdeac5134715ff368047e065f7aefff8b0d159477e485524b771083edda3405",
+  "created_at_utc": "2026-07-12T21:03:27.459505+00:00",
+  "design": {
+    "design_revision": 1,
+    "design_sha256": "276e0c169b2bd24ce87843b66892c4139daffdd581776457d068d4b63b61727e",
+    "file_sha256": "cab3a4a4ed32880a4eb1e42b4d2d11780b458461dc1ef216b0b81bfc51471d51",
+    "path": "docs/model-research/action-value/round-036-multi-horizon-signal-decay-design.json"
+  },
+  "implementation": {
+    "commit": "9f69a5385237dc34bbea802518879374d2df33cd",
+    "files": [
+      {
+        "path": "docs/model-research/action-value/consumed-periods-through-round-033.json",
+        "sha256": "f999e39aa276dd9393e139fb46c98da61c2923e84984bb920104ac365e6104fd"
+      },
+      {
+        "path": "docs/model-research/action-value/consumed-periods-through-round-034.json",
+        "sha256": "4df327d171c736225c56b6a1c2a3333af47d83651cf9a729c4b0c6d3fd013a77"
+      },
+      {
+        "path": "docs/model-research/action-value/consumed-periods-through-round-035.json",
+        "sha256": "8970b0b8d71cc2605d8f85e37dde0d26cc6cb9006077f32f8d9a04027781351d"
+      },
+      {
+        "path": "docs/model-research/action-value/round-031-frozen-chronological-confirmation-design.json",
+        "sha256": "571497081d1635aa7e261645f5d58d6536aabc9e9f3acf9b7ec9cd6d7abce1bd"
+      },
+      {
+        "path": "docs/model-research/action-value/round-033-failure-analysis.json",
+        "sha256": "d799e4dcf162f7a5c263f438ed5337e8f6c1ff9de83b93b8c9f4ac59569d2dec"
+      },
+      {
+        "path": "docs/model-research/action-value/round-033-selective-action-design.json",
+        "sha256": "a43aa014addb5df2b273d5814958c4b114d21222488b10be05f88a03b4747fa0"
+      },
+      {
+        "path": "docs/model-research/action-value/round-034-execution-binding.json",
+        "sha256": "79739dc04082d23d763464463cd8ce5aa0b34323ab10511a09c154b05dc9ba6d"
+      },
+      {
+        "path": "docs/model-research/action-value/round-034-failure-analysis.json",
+        "sha256": "ee6934b429d7be916b4e8e14e00a68347a53ca60b14613305d3acc0f68c2e7fa"
+      },
+      {
+        "path": "docs/model-research/action-value/round-034-three-action-utility-design.json",
+        "sha256": "c1b18c299e2d6cdba5c2e6b47498fbd10b1e611d9f689efc0a319b85a38ea405"
+      },
+      {
+        "path": "docs/model-research/action-value/round-035-consumed-direction-screen-design.json",
+        "sha256": "b05dc0594ca5383297428328ca073e8d7b397b0a18e24707f930e3887ff6fb96"
+      },
+      {
+        "path": "docs/model-research/action-value/round-035-direction-screen-execution-binding.json",
+        "sha256": "60b51589dd1b24ce441de2256e220a9f00c695011c82e4ddfe17468427999a2a"
+      },
+      {
+        "path": "docs/model-research/action-value/round-035-failure-analysis.json",
+        "sha256": "758d8e796a03c08bc8589b693f622e45b418e46161915aa2e8772740c51dc134"
+      },
+      {
+        "path": "docs/model-research/action-value/round-036-multi-horizon-signal-decay-design.json",
+        "sha256": "cab3a4a4ed32880a4eb1e42b4d2d11780b458461dc1ef216b0b81bfc51471d51"
+      },
+      {
+        "path": "src/simple_ai_trading/assets.py",
+        "sha256": "a2532c31f4667905ed6c3b3f5e969a17eeadfc43ee351763adcd31efe2707ea1"
+      },
+      {
+        "path": "src/simple_ai_trading/compute.py",
+        "sha256": "330832b09b5cc71d75996004fa31b4df1be6e281ab3b8aa4bae98c92d1dd8452"
+      },
+      {
+        "path": "src/simple_ai_trading/lightgbm_backend.py",
+        "sha256": "3988c15270662e98e795ead171dd5955dcb93717c9fbe72b824cc9c4ff579ead"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_architecture.py",
+        "sha256": "87e99eae0530de107c206e9890e2465975607bc96f891fd39e5fa5a47f20d37e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_features.py",
+        "sha256": "1597118616953b7f430d3c8dcb222e1d07f56ee25b1cecf7b75b3a329743c67e"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_action_policy.py",
+        "sha256": "dcbafb0a22b4dbf1346df35ce3761c901adb246e31e7946b810797471b443384"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_architecture.py",
+        "sha256": "e95449fb50ae53f8fb0be27702da062577afdd7ae2db570dbcf61ef2f47f01cc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_barriers.py",
+        "sha256": "462291f4c780cc7c926306d6ed47041ce74811e5202a4e2fa203085d4a993453"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_cache.py",
+        "sha256": "6287072ee8d3a9574215ee4e4ac8e1c05e958f78490db51b943e4b1ca7df9c35"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_direction_screen.py",
+        "sha256": "c3a96a1d5486afca32e2d5a53fee0393518a7b27f3bebfefd0511bd8f1170fe6"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_features.py",
+        "sha256": "a331c1a8202be273adefed5f23c9bbd2b81bf1ef10e6d8decc813c4f52468c21"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_model.py",
+        "sha256": "f144b8666d9fe489608a7d9d6dc1de95f1111482c852eda69e2675fc789b4e47"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_outcome_lightgbm.py",
+        "sha256": "26bd2785e5a5ebf02cb3770d31ab26324d9f4136b74925e9c4f1fc52571cf0c1"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_selective_action_lightgbm.py",
+        "sha256": "bf3cd1232bbcef61f65cf796188f3001a7dd36bbceedc840b41d3b55eb1aa718"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_selective_action_policy.py",
+        "sha256": "d7b8bbd39b02e6c91f5440baf5e40d128533df0e1687957334c1a451b7c22fd3"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_shared_action_lightgbm.py",
+        "sha256": "5d30f58e05ae25adffe1b155fa2da4556052aacd13926cdeec3e3f29a10cdac1"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_signal_decay.py",
+        "sha256": "8964be47779ec61d2c904a6d3e98ad1e7da93327077aa798abdb01f7b3c3e0fc"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_three_action_lightgbm.py",
+        "sha256": "6a720d355231151d4f17758ac196e287b5ce2e80fa97fa9fe1fc06cde960f882"
+      },
+      {
+        "path": "src/simple_ai_trading/microstructure_warehouse.py",
+        "sha256": "7d6c1025c9e06dc5765c0c9510c8b1efde06414ab31ce703e7612c70c909c18b"
+      },
+      {
+        "path": "src/simple_ai_trading/probability_calibration.py",
+        "sha256": "47f3cffbf0beaaaf7de2d6fb30bac754f3f1a7846cc7649879fbabf17710e18a"
+      },
+      {
+        "path": "src/simple_ai_trading/progress_heartbeat.py",
+        "sha256": "d94e7e701014e668d1a55e6adbe4ebff16693d967a80d39e62adac0834ee9aa5"
+      },
+      {
+        "path": "src/simple_ai_trading/storage.py",
+        "sha256": "baff279e9b742ab930e50dc9508afa555a4a017fa3214c03d2dc645250e1f5c5"
+      },
+      {
+        "path": "tools/publish_three_action_viability.py",
+        "sha256": "0c64432323002d1039d99ca089e2553e31ef0c54d4a2a8d77b0d353aa9d38296"
+      },
+      {
+        "path": "tools/run_consumed_direction_screen.py",
+        "sha256": "ff68f4e63d9bcbeea17a9f73b7778451fec03468760d5b557fa49abd5f1de068"
+      },
+      {
+        "path": "tools/run_multi_horizon_signal_decay.py",
+        "sha256": "0be7d38ae5c64e20d237e887a27499c8d378d37dc9f9f0c27111fb66870d1845"
+      },
+      {
+        "path": "tools/run_selective_action_viability.py",
+        "sha256": "43df446bc68c5d3cd9909a762b28b7975db0d43799dcf5a21117c10beef09dfe"
+      },
+      {
+        "path": "tools/run_shared_action_viability.py",
+        "sha256": "118b199b7d46c656d7b8852e6badd869c00dd8984817d5fcb294c7776b39e69c"
+      },
+      {
+        "path": "tools/run_three_action_viability.py",
+        "sha256": "52f1eb21dd595ee682750485f1b4b2170dd5d21402207e84c4ff0c92b3318773"
+      }
+    ],
+    "hash_mode": "git_blob_sha256_v1"
+  },
+  "round": 36,
+  "schema_version": "round-036-signal-decay-execution-binding-v1",
+  "worktree_policy": "clean_including_untracked"
+}
