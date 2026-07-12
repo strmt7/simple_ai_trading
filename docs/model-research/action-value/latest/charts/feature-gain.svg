@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" role="img">
+<title>Feature gain shifted, but no representation established an edge</title>
+<desc>Top five normalized LightGBM gain shares per prespecified variant; gain is diagnostic, not causal evidence.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:24px;font-weight:700;fill:#17202a}.subtitle{font-size:14px;fill:#4b5563}.label{font-size:13px;fill:#263238}.value{font-size:13px;font-weight:650;fill:#17202a}.axis{font-size:12px;fill:#64748b}.note{font-size:12px;fill:#6b7280}.grid{stroke:#d8dee7;stroke-width:1}.zero{stroke:#9f1239;stroke-width:2}.gate{stroke:#b91c1c;stroke-width:2;stroke-dasharray:7 5}</style>
+<text x="48" y="42" class="title">Feature gain shifted, but no representation established an edge</text>
+<text x="48" y="66" class="subtitle">Top five normalized LightGBM gain shares per prespecified variant; gain is diagnostic, not causal evidence.</text>
+<text x="48" y="112" class="value">Full / uniqueness</text>
+<text x="48" y="156" class="label">ofi_300s_mean</text>
+<rect x="378" y="142" width="260.0" height="20" fill="#0f766e"/>
+<text x="648" y="157" class="value">0.116</text>
+<text x="48" y="194" class="label">utc_day_cos</text>
+<rect x="378" y="180" width="234.5" height="20" fill="#0f766e"/>
+<text x="648" y="195" class="value">0.104</text>
+<text x="48" y="232" class="label">funding_cycle_cos</text>
+<rect x="378" y="218" width="175.2" height="20" fill="#0f766e"/>
+<text x="648" y="233" class="value">0.078</text>
+<text x="48" y="270" class="label">utc_day_sin</text>
+<rect x="378" y="256" width="148.5" height="20" fill="#0f766e"/>
+<text x="648" y="271" class="value">0.066</text>
+<text x="48" y="308" class="label">utc_week_sin</text>
+<rect x="378" y="294" width="119.5" height="20" fill="#0f766e"/>
+<text x="648" y="309" class="value">0.053</text>
+<text x="772" y="112" class="value">Full / utility margin</text>
+<text x="772" y="156" class="label">utc_day_cos</text>
+<rect x="1102" y="142" width="260.0" height="20" fill="#0f766e"/>
+<text x="1372" y="157" class="value">0.092</text>
+<text x="772" y="194" class="label">funding_cycle_cos</text>
+<rect x="1102" y="180" width="166.9" height="20" fill="#0f766e"/>
+<text x="1372" y="195" class="value">0.059</text>
+<text x="772" y="232" class="label">utc_week_sin</text>
+<rect x="1102" y="218" width="154.0" height="20" fill="#0f766e"/>
+<text x="1372" y="233" class="value">0.055</text>
+<text x="772" y="270" class="label">return_900s_vol_units</text>
+<rect x="1102" y="256" width="149.9" height="20" fill="#0f766e"/>
+<text x="1372" y="271" class="value">0.053</text>
+<text x="772" y="308" class="label">utc_day_sin</text>
+<rect x="1102" y="294" width="147.9" height="20" fill="#0f766e"/>
+<text x="1372" y="309" class="value">0.052</text>
+<text x="48" y="362" class="value">No cycles / uniqueness</text>
+<text x="48" y="406" class="label">ofi_300s_mean</text>
+<rect x="378" y="392" width="260.0" height="20" fill="#0f766e"/>
+<text x="648" y="407" class="value">0.113</text>
+<text x="48" y="444" class="label">volatility_900s_vs_3600s</text>
+<rect x="378" y="430" width="192.0" height="20" fill="#0f766e"/>
+<text x="648" y="445" class="value">0.083</text>
+<text x="48" y="482" class="label">return_3600s_vol_units</text>
+<rect x="378" y="468" width="127.2" height="20" fill="#0f766e"/>
+<text x="648" y="483" class="value">0.055</text>
+<text x="48" y="520" class="label">realized_volatility_3600s_bps</text>
+<rect x="378" y="506" width="121.7" height="20" fill="#0f766e"/>
+<text x="648" y="521" class="value">0.053</text>
+<text x="48" y="558" class="label">range_3600s_bps</text>
+<rect x="378" y="544" width="104.4" height="20" fill="#0f766e"/>
+<text x="648" y="559" class="value">0.045</text>
+<text x="772" y="362" class="value">No cycles / utility margin</text>
+<text x="772" y="406" class="label">realized_volatility_3600s_bps</text>
+<rect x="1102" y="392" width="260.0" height="20" fill="#0f766e"/>
+<text x="1372" y="407" class="value">0.081</text>
+<text x="772" y="444" class="label">return_3600s_vol_units</text>
+<rect x="1102" y="430" width="254.4" height="20" fill="#0f766e"/>
+<text x="1372" y="445" class="value">0.079</text>
+<text x="772" y="482" class="label">volatility_900s_vs_3600s</text>
+<rect x="1102" y="468" width="233.7" height="20" fill="#0f766e"/>
+<text x="1372" y="483" class="value">0.073</text>
+<text x="772" y="520" class="label">realized_volatility_1800s_bps</text>
+<rect x="1102" y="506" width="226.0" height="20" fill="#0f766e"/>
+<text x="1372" y="521" class="value">0.070</text>
+<text x="772" y="558" class="label">return_900s_vol_units</text>
+<rect x="1102" y="544" width="196.4" height="20" fill="#0f766e"/>
+<text x="1372" y="559" class="value">0.061</text>
+<text x="48" y="612" class="value">Compact / uniqueness</text>
+<text x="48" y="656" class="label">ofi_300s_mean</text>
+<rect x="378" y="642" width="260.0" height="20" fill="#0f766e"/>
+<text x="648" y="657" class="value">0.150</text>
+<text x="48" y="694" class="label">realized_volatility_900s_bps</text>
+<rect x="378" y="680" width="226.3" height="20" fill="#0f766e"/>
+<text x="648" y="695" class="value">0.131</text>
+<text x="48" y="732" class="label">realized_volatility_300s_bps</text>
+<rect x="378" y="718" width="166.5" height="20" fill="#0f766e"/>
+<text x="648" y="733" class="value">0.096</text>
+<text x="48" y="770" class="label">imbalance_300s_mean</text>
+<rect x="378" y="756" width="130.0" height="20" fill="#0f766e"/>
+<text x="648" y="771" class="value">0.075</text>
+<text x="48" y="808" class="label">return_900s_bps</text>
+<rect x="378" y="794" width="110.2" height="20" fill="#0f766e"/>
+<text x="648" y="809" class="value">0.064</text>
+<text x="772" y="612" class="value">Compact / utility margin</text>
+<text x="772" y="656" class="label">return_900s_bps</text>
+<rect x="1102" y="642" width="260.0" height="20" fill="#0f766e"/>
+<text x="1372" y="657" class="value">0.165</text>
+<text x="772" y="694" class="label">realized_volatility_120s_bps</text>
+<rect x="1102" y="680" width="138.3" height="20" fill="#0f766e"/>
+<text x="1372" y="695" class="value">0.088</text>
+<text x="772" y="732" class="label">realized_volatility_900s_bps</text>
+<rect x="1102" y="718" width="133.3" height="20" fill="#0f766e"/>
+<text x="1372" y="733" class="value">0.085</text>
+<text x="772" y="770" class="label">realized_volatility_300s_bps</text>
+<rect x="1102" y="756" width="132.4" height="20" fill="#0f766e"/>
+<text x="1372" y="771" class="value">0.084</text>
+<text x="772" y="808" class="label">ofi_300s_mean</text>
+<rect x="1102" y="794" width="121.6" height="20" fill="#0f766e"/>
+<text x="1372" y="809" class="value">0.077</text>
+<text x="48" y="870" class="note">OFI = order-flow imbalance. Deterministic cycle removal improved one tail but did not pass the complete gate set.</text>
+</svg>

@@ -237,14 +237,16 @@ that 240 days replaces multi-year validation: multi-year trade/depth forecasts
 remain a separate research lane until they can be joined to defensible execution
 evidence without inventing historical quotes.
 
-Feature contract `l1-tape-causal-v7` expands the shared offline/live vector to
-100 features. It adds causal 1,800/3,600-second return, volatility, range,
-path-efficiency, spread, quote-intensity, trade-intensity, and volume context,
-plus UTC weekly phase and a weekend indicator. These are context variables, not
-fixed trading-hour prohibitions. DuckDB and the streaming coordinator use the
-same ordered vector and require 3,600 consecutive closed seconds. The promotion
-shadow therefore captures at least 25,260 seconds so warmup is followed by six
-complete evaluated hours and tail margin. This responds to measured
+Feature contract `l1-tape-causal-v8` expands the shared offline/live vector to
+107 features. It retains the v7 causal 1,800/3,600-second return, volatility,
+range, path-efficiency, spread, quote-intensity, trade-intensity, volume, UTC
+weekly-phase, and weekend context, then adds bid/ask L1 quote depth, L1 depth
+relative to 60/300-second history, and signed 10/60/300-second pressure against
+opposing L1 depth. These are context variables, not fixed trading-hour
+prohibitions. DuckDB and the streaming coordinator use the same ordered vector
+and require 3,600 consecutive closed seconds. The promotion shadow therefore
+captures at least 25,260 seconds so warmup is followed by six complete evaluated
+hours and tail margin. This responds to measured
 regime-transfer failure rather than presuming new alpha:
 [TLOB](https://arxiv.org/abs/2502.15757) reports declining cross-condition LOB
 predictability and worse results when transaction costs define the target,
@@ -258,7 +260,7 @@ tree count rather than estimating the final policy. Every trained artifact
 persists all six counts and their role-specific floors. A failure reports the
 exact side, role, observed counts, and required minimum. Historical v15/v6
 designs remain readable for publication, but the execution runner refuses them;
-new experiments must use the current v16/v7 and design-v2 contract.
+new experiments must use the current v16/v8 and design-v2 contract.
 
 Reproduce the plan without downloading data:
 

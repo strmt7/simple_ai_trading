@@ -62,13 +62,25 @@ _BANNED_PHRASE_SPECS = (
     (("action", " gates"), "pre-trade risk controls"),
     (("mandatory", " gates"), "binding risk controls"),
     (("rejected", " safely"), "rejected without trading authority"),
-    (("10x", " maximum app-level leverage cap"), "20x maximum app-level futures leverage cap"),
-    (("default leverage", ": `1x`"), "profile-specific futures defaults; spot remains 1x"),
-    (("no static", " allowlist"), "hard BTC/ETH/SOL scope with dynamic liquidity checks"),
+    (
+        ("10x", " maximum app-level leverage cap"),
+        "20x maximum app-level futures leverage cap",
+    ),
+    (
+        ("default leverage", ": `1x`"),
+        "profile-specific futures defaults; spot remains 1x",
+    ),
+    (
+        ("no static", " allowlist"),
+        "hard BTC/ETH/SOL scope with dynamic liquidity checks",
+    ),
     (("across all eligible", " symbols"), "across supported BTC/ETH/SOL symbols"),
     (("future stock-market", " schedule changes"), "changing venue participation"),
     (("multi-asset by", " design"), "BTC/ETH/SOL-only by design"),
-    (("testnet-first multi-asset", " day-trading"), "testnet-first BTC/ETH/SOL day trading"),
+    (
+        ("testnet-first multi-asset", " day-trading"),
+        "testnet-first BTC/ETH/SOL day trading",
+    ),
     (
         ("out-of-sample simulated trades", " across trained candidates"),
         "policy-window simulated trades with contamination status",
@@ -77,11 +89,19 @@ _BANNED_PHRASE_SPECS = (
         ("out-of-sample rows with positive", " predicted net return"),
         "policy-window rows with contamination status",
     ),
-    (("free signal source inventory for", " btcusdc"), "free signal source inventory for BTC, ETH, and SOL"),
+    (
+        ("free signal source inventory for", " btcusdc"),
+        "free signal source inventory for BTC, ETH, and SOL",
+    ),
     (("current", " btcusdc workflow"), "supported BTC/ETH/SOL workflow"),
     (("simple", " bitcoin trading"), "Simple AI Trading"),
     (("simple", "_bitcoin_trading"), "simple_ai_trading"),
     (("simple", "-bitcoin-trading"), "simple-ai-trading"),
+    (
+        ("feature contract `l1-tape-causal-", "v7`"),
+        "Feature contract `l1-tape-causal-v8`",
+    ),
+    (("current v16/", "v7"), "current v16/v8"),
     (
         ("latest local btc-only", " profitability"),
         "retained legacy BTCUSDT profitability experiment",

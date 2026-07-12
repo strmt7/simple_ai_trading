@@ -1,4 +1,0 @@
-profile,calibration_rows,eligible_rows,architecture_gate_passed,threshold_selection_evaluated,calibration_status,policy_prediction_opened,development_prediction_opened,distant_confirmation_opened,final_status
-conservative,28581,0,False,False,rejected,False,False,False,rejected
-regular,28581,10,False,False,rejected,False,False,False,rejected
-aggressive,28581,39,False,False,rejected,False,False,False,rejected

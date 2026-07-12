@@ -1,96 +1,96 @@
 {
-  "artifact_class": "three_action_utility_viability_graph_data",
+  "architecture_freeze_candidate": null,
+  "architecture_freeze_eligible_variants": [],
+  "artifact_class": "consumed_direction_screen_graph_data",
   "artifact_integrity": [
     {
-      "bytes": 2063,
-      "path": "README.md",
-      "sha256": "bd2f96d7f4ea6d4041c096afc46f76917d8e904a5c8e99816dff2d13cb6cde80"
+      "bytes": 5103,
+      "path": "charts/after-cost-tails.svg",
+      "sha256": "a5d6806589a2d470e1e71f0f93d05c01d3748774140c4f08c98af110f03e9cac"
     },
     {
-      "bytes": 397,
-      "path": "stages.csv",
-      "row_count": 4,
-      "sha256": "ba3bc337252e2302a030b2ae25083b625f8148cb1e4455342778f3c10a26819a"
+      "bytes": 6907,
+      "path": "charts/daily-direction-auc.svg",
+      "sha256": "504cfc73e30f17d0d442aea8db1e3cd3ff5aba03b35770134e2b6580c0be1853"
     },
     {
-      "bytes": 411,
-      "path": "profiles.csv",
-      "row_count": 3,
-      "sha256": "98411dfa6500220e626cd33524a73126b8e2b18597461b4e37210a180b9161ad"
+      "bytes": 4692,
+      "path": "charts/direction-auc.svg",
+      "sha256": "4aa3b8057b5ae8f67c0d1f1142325cb869b8dcc0e2ef2cca092734688afacb17"
     },
     {
-      "bytes": 592,
-      "path": "architecture.csv",
-      "row_count": 7,
-      "sha256": "e711ef8482e27eee8b30d41becc4d889a41d8122284e65fd4e6a72cebc704294"
+      "bytes": 6945,
+      "path": "charts/feature-gain.svg",
+      "sha256": "469ea5f81a02a089e088ae5daca66587385aa3f55dd2026aebce46ac00e33fe3"
     },
     {
-      "bytes": 893,
-      "path": "forecast.csv",
-      "row_count": 6,
-      "sha256": "b0d6a4752e0e7943b011a427bc21a0298066d67476a08077dc48dcdb492f7707"
-    },
-    {
-      "bytes": 1496,
-      "path": "models.csv",
-      "row_count": 3,
-      "sha256": "88aeeb94b40e5f31e718a9257ad77d004246cd605c86fc838b33905a0827f4a9"
-    },
-    {
-      "bytes": 10635,
-      "path": "progress.csv",
-      "row_count": 34,
-      "sha256": "ab65128b10a5ade409624540731092e02f8736a3494f20630af67d6e23a73e76"
-    },
-    {
-      "bytes": 4284,
-      "path": "charts/stage-access.svg",
-      "sha256": "3957143039f8ae6077c5139e6bf3522412e0532c9a31aaad03bee54287a55124"
-    },
-    {
-      "bytes": 2360,
-      "path": "charts/eligibility.svg",
-      "sha256": "fe16730b9b2a15f8b80072dcf1dbe7a86aa3a9976898a7372ae239f9b86853ce"
-    },
-    {
-      "bytes": 6310,
-      "path": "charts/architecture-gates.svg",
-      "sha256": "1f6cd51fa3d70dbbf26a2593e4bbcce1cccc94a96024fcf1444da10004695a74"
-    },
-    {
-      "bytes": 4378,
-      "path": "charts/forecast-quality.svg",
-      "sha256": "ce708e8b2847c3a8897223090e0f6189d916dd25f2e46919186f5b3c8b09df24"
-    },
-    {
-      "bytes": 9666,
+      "bytes": 9895,
       "path": "charts/research-progress.svg",
-      "sha256": "e4435578797e279911a6ac954438d7e99d813f083a2f055709f57d0880907b72"
+      "sha256": "9bcf15e262939e59fb9c6b656dce1ff5d8277faaf0e02fd29714e48de111965a"
+    },
+    {
+      "bytes": 3047,
+      "path": "daily.csv",
+      "row_count": 30,
+      "sha256": "d58b92d66a4254ba811c4a58c1a9682070a5d7500909db1a7635aeeba17668d4"
+    },
+    {
+      "bytes": 52026,
+      "path": "features.csv",
+      "row_count": 550,
+      "sha256": "5be59bcf6eeab050fc40c197a90851a99eb2fbb2c0359b049dd82df7ae25bc98"
+    },
+    {
+      "bytes": 5215,
+      "path": "gates.csv",
+      "row_count": 48,
+      "sha256": "3efd66f3e7f51a43c0c1dbe85f1dde7746a274b9d9e52931c615c86acbb080c6"
+    },
+    {
+      "bytes": 2266,
+      "path": "models.csv",
+      "row_count": 6,
+      "sha256": "90790eda00821c078adb8e2c5b43a5be169fab90d5b4c020a78f9b7cdf379ced"
+    },
+    {
+      "bytes": 10994,
+      "path": "progress.csv",
+      "row_count": 35,
+      "sha256": "5ebe54452b0caf2f8ba658d5ef9d3221bdbadaa09cd54b863053c5a26f03af02"
+    },
+    {
+      "bytes": 2249,
+      "path": "README.md",
+      "sha256": "9af4f63388212a08774fd9fd149013e08bb1a510b0b75359fcf69abb0ffe1160"
+    },
+    {
+      "bytes": 129584,
+      "path": "screen.json",
+      "sha256": "a8a9718e11053002541c6fe77c96df44016c0fdf7a3a187103c0c3c10af9e861"
+    },
+    {
+      "bytes": 4898,
+      "path": "variants.csv",
+      "row_count": 6,
+      "sha256": "d3b5e14a83a95c31e08c7ce0fcc6d7e67d4e66199e54432a9163f5382f6a84c1"
     }
   ],
-  "binding_sha256": "739b88e1527b5ff02cf9f5e9f61f0bed36e9b20909a1276d37195e7f8e368b0d",
-  "design_sha256": "61aea61eeec1ddc87aecb8b8fe17b915b8411760501e46eecf9c2f4e92ac5e03",
+  "binding_sha256": "ac94719659d15c18b5f465b1b2e09cd6d6bb980768f7822fb040462f3a2d6f6b",
+  "design_sha256": "db027483eed1329554bac8c3be057c488bc1899348978ea8b199c5796db6cbaa",
   "execution_claim": false,
-  "final_profiles": [],
   "leverage_applied": false,
   "portfolio_claim": false,
   "profitability_claim": false,
-  "publication_sha256": "c7d2fcd86ed6b38b47ac4e4e6211d964344c5b8f5286573db004b9b65aecd090",
-  "round": 34,
-  "schema_version": "three-action-utility-viability-publication-v1",
+  "publication_sha256": "4fc7c8f9a41162a322cb9d0d93a223fafaf655231d2c22471478035b1d165809",
+  "round": 35,
+  "schema_version": "consumed-direction-screen-publication-v1",
   "source_barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
   "source_cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85",
   "source_corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
-  "source_implementation_commit": "18cdd663e5fa154c9c6a2521bea35a77eacbba02",
-  "source_report_canonical_sha256": "60f03a07e996230e8e278ef668fc7b9a1de35e1299fc7921e16a99fa51a53303",
-  "source_report_file_sha256": "467c7a1db23b3286921d1d3086f11fc8c4dd1483f9739f27943e6465ce630d34",
-  "stage_access": {
-    "calibration_prediction": true,
-    "calibration_threshold_selection": false,
-    "development": false,
-    "distant_confirmation": false,
-    "policy": false
-  },
+  "source_implementation_commit": "b89064d2eb594e590134a89bdc45ee6ecc2f93d7",
+  "source_report_canonical_sha256": "1c6d2b7e5914ef62b110ea6095661f460cdc75f215aee07e04b1cdc0979499ac",
+  "source_report_file_sha256": "a8a9718e11053002541c6fe77c96df44016c0fdf7a3a187103c0c3c10af9e861",
   "status": "rejected",
-  "trading_authority": false
+  "trading_authority": false,
+  "variant_count": 6
 }

@@ -1,7 +1,0 @@
-diagnostic,population,rows,roc_auc,pearson_ic,spearman_ic,mean_stress_net_bps,top_100_mean_stress_net_bps,top_500_mean_stress_net_bps,long_share_top_500
-action_opportunity,non_abstain_action_class,28581,0.6636738763493204,,,,,,
-conditional_action_direction,non_abstain_action_class_only,15222,0.5245178846829054,,,,,,
-side_profit,paired_long_short_action_rows,57162,0.6065548206367726,,,,,,
-selected_action,all_calibration_events,28581,0.5235372324614189,0.037699633421766805,-0.012690710524068977,-11.537296731460678,-6.321360919710518,-10.75830194865659,0.636
-raw_long_action,all_calibration_events,28581,0.6341897069009786,0.06060478044895087,0.04142754630110926,-11.597905284640541,-0.9858348672357772,-6.893243453785331,
-raw_short_action,all_calibration_events,28581,0.5763911247816301,0.036849809758310446,0.0025747960974149787,-14.115980339805756,-25.17187205518022,-13.03908059806345,
