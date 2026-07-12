@@ -1,0 +1,312 @@
+{
+  "schema_version": "causal-refit-utility-ai-ablation-design-v1",
+  "round": 39,
+  "design_sha256": "cdfca0f55652737c10ed441ce88b5ab9a8e45499a24bd49a362609ee2e800a64",
+  "phase": "frozen_monthly_refit_utility_weighting_then_local_ai_veto_ablation",
+  "predecessor": {
+    "failure_analysis": "round-038-failure-analysis.json",
+    "failure_analysis_canonical_sha256": "f5b693fd00891ae8af9f93eec6925837c16c019aa246864ec9af29100496917c",
+    "failure_analysis_file_sha256": "87d78679cdc1ab526dc0bb70c3777066713f05b69644cfd150f61b005fd4eba3",
+    "decision": "reject_static_quarter_calibration_and_derivatives_directional_features; test causal monthly refits and bounded economic sample weighting"
+  },
+  "governance": {
+    "consumed_period_registry": "consumed-periods-through-round-038.json",
+    "consumed_period_registry_canonical_sha256": "7596a73f6ff63699debe662ddd1dac4e7adf2c65e0c55c0232d202c2381fb84c",
+    "consumed_period_registry_file_sha256": "ee98e08495b493cf50f88cb55061f0d0dd0749e4a2517aaca8787a8c16bc5364",
+    "freeze_before_round39_model_fit_or_ai_case_generation": true,
+    "round38_consumed_outcomes_informed_this_design": true,
+    "single_fixed_seed": 3901,
+    "unregistered_hyperparameter_search_permitted": false,
+    "selection_confirmation_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "promotion_permitted": false,
+    "trading_authority_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "oracle_feature_or_runtime_label_use_permitted": false,
+    "ai_can_create_reverse_or_increase_trades": false,
+    "ai_model_selection_on_round39_evaluation_permitted": false,
+    "profitability_target_override_permitted": false
+  },
+  "source_and_accounting_contract": {
+    "database_argument": "data/market_data.sqlite",
+    "provider": "Binance public data archives",
+    "market_type": "futures",
+    "venue_product": "USD-M perpetual futures",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "source_interval": "1m",
+    "decision_cadence_minutes": 5,
+    "materialization_start": "2021-12-01T00:00:00Z",
+    "materialization_end": "2025-06-30T23:59:00Z",
+    "required_price_panel_stream_sha256": "40ef0a76d57fa844fb01ccd90d7c768f5fbbf613467303a2dc1dcdd39b100a3d",
+    "required_derivatives_panel_sha256": "3e7a57184d690afc7061e9f48e437716ff73b72f01302d2eb151112351e8cf7e",
+    "feature_set": "71 causal price_and_flow_features_only",
+    "derivatives_directional_features_permitted": false,
+    "past_settled_funding_used_for_exact_cash_flow_accounting": true,
+    "premium_source_quality_and_staleness_exclusions_retained": true,
+    "persistent_feature_copy_permitted": false,
+    "entry_price": "USD-M perpetual open of minute t+1",
+    "exit_price": "USD-M perpetual open exactly horizon_minutes after entry",
+    "round_trip_execution_charge_bps": 12.0,
+    "execution_charge_may_not_be_reduced": true,
+    "funding_cash_flow_window": "entry_time < calc_time <= exit_time",
+    "target_class_and_long_short_net_utility": "identical to frozen Round 38 accounting contract",
+    "same_symbol_positions_may_not_overlap": true,
+    "same_symbol_nonoverlap_must_continue_across_calendar_month_boundaries": true,
+    "different_symbols_may_overlap_only_for_research_replay": true,
+    "portfolio_capital_or_leverage_simulation_permitted": false
+  },
+  "causal_walk_forward_contract": {
+    "evaluation_months": ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06"],
+    "schedule_rule_for_each_evaluation_month_M": {
+      "training": "24 complete calendar months ending three months before M",
+      "early_stop_and_temperature": "two complete calendar months ending one month before M",
+      "action_threshold_calibration": "the complete calendar month immediately before M",
+      "evaluation": "calendar month M"
+    },
+    "explicit_first_schedule": {
+      "training": ["2022-10-01", "2024-09-30"],
+      "early_stop_and_temperature": ["2024-10-01", "2024-11-30"],
+      "action_threshold_calibration": ["2024-12-01", "2024-12-31"],
+      "evaluation": ["2025-01-01", "2025-01-31"]
+    },
+    "explicit_last_schedule": {
+      "training": ["2023-03-01", "2025-02-28"],
+      "early_stop_and_temperature": ["2025-03-01", "2025-04-30"],
+      "action_threshold_calibration": ["2025-05-01", "2025-05-31"],
+      "evaluation": ["2025-06-01", "2025-06-30"]
+    },
+    "target_horizon_embargo": "A role includes a decision only when its entry and exit timestamps are inside that role; no target may cross a role boundary.",
+    "prior_evaluation_outcomes_may_enter_later_training_or_calibration": true,
+    "causality_reason": "At each refit date, only fully settled prior-month targets are available.",
+    "full_refit_each_month": true,
+    "continued_training_or_booster_refit_permitted": false,
+    "reason_full_refit_required": "Avoid retaining stale tree structure while testing whether rolling adaptation fixes concept drift.",
+    "threshold_selected_independently_before_each_evaluation_month": true,
+    "evaluation_month_outcomes_may_not_change_that_month_model_temperature_or_threshold": true
+  },
+  "model_contract": {
+    "fixed_candidates": [
+      {
+        "candidate_id": "rolling_shared_hurdle_h120_equal",
+        "architecture": "shared_two_stage_hurdle_lightgbm",
+        "horizon_minutes": 120,
+        "weighting": "equal"
+      },
+      {
+        "candidate_id": "rolling_shared_hurdle_h120_utility",
+        "architecture": "shared_two_stage_hurdle_lightgbm",
+        "horizon_minutes": 120,
+        "weighting": "bounded_economic_utility"
+      },
+      {
+        "candidate_id": "rolling_per_symbol_direct_h30_equal",
+        "architecture": "per_symbol_direct_multiclass_lightgbm",
+        "horizon_minutes": 30,
+        "weighting": "equal"
+      },
+      {
+        "candidate_id": "rolling_per_symbol_direct_h30_utility",
+        "architecture": "per_symbol_direct_multiclass_lightgbm",
+        "horizon_minutes": 30,
+        "weighting": "bounded_economic_utility"
+      }
+    ],
+    "candidate_count": 4,
+    "candidate_selection_basis": {
+      "shared_hurdle_h120": "best Round 38 viability economics and classification log loss",
+      "per_symbol_direct_h30": "only Round 38 supported calibration cell with positive day-block lower 95% bound"
+    },
+    "expected_model_artifact_count": 60,
+    "artifact_count_derivation": "6 months * ((2 shared hurdle heads * 2 weights) + (3 per-symbol direct models * 2 weights))",
+    "equal_weighting": "all training rows receive weight 1.0",
+    "bounded_economic_utility_weighting": {
+      "direct_and_opportunity_salience_bps": "max(long_net_utility_bps, short_net_utility_bps, 0)",
+      "direction_salience_bps": "abs(long_net_utility_bps - short_net_utility_bps) on actionable direction-training rows",
+      "normalizer": "current training-role positive-salience 90th percentile, calculated independently for every monthly model and target head",
+      "formula": "1 + min(salience_bps / normalizer_bps, 2)",
+      "weight_range": [1.0, 3.0],
+      "normalizer_must_be_finite_and_positive": true,
+      "validation_and_probability_metrics_are_unweighted": true,
+      "future_evaluation_utility_may_not_enter_weights": true
+    },
+    "direct_multiclass": {
+      "objective": "multiclass",
+      "num_class": 3,
+      "metric": "multi_logloss",
+      "class_order": ["short", "abstain", "long"]
+    },
+    "two_stage_hurdle": {
+      "opportunity_objective": "binary",
+      "opportunity_label": "target_class is long or short",
+      "direction_objective": "binary",
+      "direction_training_rows": "training rows whose target_class is long or short",
+      "direction_label": "target_class is long",
+      "probability_composition_identical_to_round38": true
+    },
+    "lightgbm": {
+      "learning_rate": 0.03,
+      "num_leaves": 63,
+      "min_data_in_leaf": 1000,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l1": 0.1,
+      "lambda_l2": 1.0,
+      "max_bin": 255,
+      "num_boost_round": 1000,
+      "early_stopping_rounds": 50,
+      "gpu_first": true,
+      "amd_nvidia_intel_opencl_device_auto_selection": true
+    },
+    "probability_calibration": {
+      "role": "current two-month early-stop window only",
+      "method": "single_positive_temperature_scaling_minimizing_unweighted_multiclass_log_loss",
+      "temperature_bounds": [0.25, 4.0]
+    },
+    "model_or_threshold_may_not_be_selected_on_any_evaluation_month": true
+  },
+  "monthly_action_threshold_contract": {
+    "selected_on": "current one-month action-threshold calibration role only",
+    "maximum_action_probability_grid": [0.40, 0.45, 0.50, 0.55, 0.60],
+    "direction_probability_margin_grid": [0.05, 0.10, 0.15, 0.20],
+    "minimum_total_trades": 30,
+    "minimum_trades_per_symbol": 5,
+    "minimum_active_utc_days": 15,
+    "score": "stationary_day_block_bootstrap_lower_95_mean_net_bps",
+    "bootstrap_samples": 500,
+    "mean_day_block_length": 5,
+    "seed": 3911,
+    "tie_break_order": [
+      "higher_bootstrap_lower_95_mean_net_bps",
+      "higher_median_monthly_net_bps",
+      "higher_mean_net_bps",
+      "higher_maximum_action_probability",
+      "higher_direction_probability_margin"
+    ],
+    "fallback_when_no_threshold_meets_support": "route_no_actions_for_the_next_evaluation_month_and_record_failure"
+  },
+  "aggregate_ml_gate": {
+    "applied_to": "chronological concatenation of all six independently frozen monthly evaluation replays",
+    "minimum_months_with_selected_threshold": 4,
+    "minimum_nonoverlapping_trades_total": 270,
+    "minimum_nonoverlapping_trades_per_symbol": 45,
+    "minimum_active_utc_days": 90,
+    "minimum_months_with_trades": 4,
+    "minimum_mean_net_bps_per_trade": 0.0,
+    "minimum_median_monthly_net_bps": 0.0,
+    "minimum_profit_factor": 1.05,
+    "maximum_negative_month_fraction": 0.45,
+    "minimum_day_block_bootstrap_mean_net_bps_lower_95": 0.0,
+    "maximum_single_symbol_fraction": 0.50,
+    "maximum_single_month_fraction_of_positive_net_bps": 0.50,
+    "must_not_have_nonfinite_prediction_data_or_accounting_error": true,
+    "round38_static_baseline_comparison_required": true,
+    "failure_action": "reject_or_redesign_without_opening_selection_confirmation"
+  },
+  "ai_ablation_contract": {
+    "entry_gate": "ML candidate must pass all aggregate activity and diversification gates; positive ML economics are not required because AI is tested as part of the composite veto policy.",
+    "models": ["qwen3:8b", "fino1:8b"],
+    "minimum_model_parameters_b": 8.0,
+    "provider": "local_ollama",
+    "temperature": 0.0,
+    "think": false,
+    "structured_output": true,
+    "batch_size": 12,
+    "case_set": "highest-confidence frozen ML action per symbol and UTC day across the six evaluation months",
+    "maximum_cases": 543,
+    "case_order": "chronological then symbol",
+    "models_receive_identical_case_ids_and_prompt_content": true,
+    "prompt_inputs": [
+      "causal price and order-flow state",
+      "past settled funding risk state without using it as directional ML alpha",
+      "monthly refit architecture and weighting identity",
+      "calibrated long abstain short probabilities",
+      "current symbol concentration and recent causal loss-state summaries"
+    ],
+    "prompt_must_not_include": [
+      "future return funding or trade outcome",
+      "calendar date or exact price level",
+      "selection-confirmation or terminal data",
+      "unbounded news or web retrieval",
+      "operator secrets"
+    ],
+    "allowed_actions": ["approve", "veto", "cooldown"],
+    "allowed_risk_multiplier_range": [0.0, 1.0],
+    "ai_may_only_veto_or_reduce_risk": true,
+    "provider_parse_timeout_or_identity_failure_action": "veto",
+    "model_artifact_response_prompt_and_case_set_sha256_required": true,
+    "matched_comparison": "same AI case set before versus after each model's veto; unsampled ML actions are outside the AI claim",
+    "minimum_retained_trades_total": 180,
+    "minimum_retained_trades_per_symbol": 30,
+    "minimum_matched_active_days": 90,
+    "minimum_positive_daily_delta_rate": 0.55,
+    "maximum_exact_sign_test_p_value": 0.05,
+    "minimum_stationary_day_block_bootstrap_delta_lower_95": 0.0,
+    "composite_policy_must_pass_all_after_cost_economic_diversification_and_uncertainty_gates": true,
+    "drawdown_profit_factor_loss_streak_and_symbol_concentration_must_not_degrade": true,
+    "best_ai_model_may_not_be_selected_on_round39_evaluation": true,
+    "ai_output_grants_trading_authority": false
+  },
+  "required_outputs": [
+    "source_and_target_causality_audit",
+    "six_explicit_monthly_role_schedules_and_embargo_counts",
+    "monthly_class_balance_and_utility_weight_distribution",
+    "60_model_artifacts_with_reload_identity_backend_runtime_and_memory",
+    "monthly_unweighted_log_loss_brier_calibration_error_and_confusion_matrix",
+    "all_monthly_action_threshold_calibration_traces",
+    "monthly_and_aggregate_nonoverlapping_exact_net_replays",
+    "symbol_month_and_funding_cash_flow_attribution",
+    "equal_versus_bounded_utility_weighting_ablation",
+    "static_round38_versus_rolling_round39_comparison",
+    "stationary_day_block_uncertainty",
+    "ai_case_prompt_response_model_identity_and_matched_uplift_evidence"
+  ],
+  "research_basis": [
+    {
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "cost-aware execution filtering and walk-forward cryptocurrency evaluation"
+    },
+    {
+      "url": "https://arxiv.org/abs/2103.14079",
+      "use": "financial time series as nonstationary streams with concept drift"
+    },
+    {
+      "url": "https://arxiv.org/abs/2412.08435",
+      "use": "causal adaptation must respect delayed target availability"
+    },
+    {
+      "url": "https://arxiv.org/abs/2009.11942",
+      "use": "nonstationary and imbalanced online-learning controls"
+    },
+    {
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4686376",
+      "use": "walk-forward alone does not eliminate backtest overfitting; later sealed confirmation remains mandatory"
+    },
+    {
+      "url": "https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.train.html",
+      "use": "official training and early-stopping behavior"
+    },
+    {
+      "url": "https://github.com/The-FinAI/Fino1",
+      "use": "local finance-oriented language-model ablation"
+    }
+  ],
+  "limitations": [
+    "All 2025-H1 results are consumed development evidence and cannot establish future profitability.",
+    "Monthly archives do not reconstruct historical order-book queue, spread, or market impact; the frozen 12 bps charge remains a proxy.",
+    "Rolling refits can adapt to drift but also increase repeated-testing and model-selection risk.",
+    "Economic utility weights use only training outcomes but intentionally alter the fitted class objective; unweighted calibration metrics remain mandatory.",
+    "The AI ablation covers a predeclared daily-symbol case subset, not every intraday action, and cannot imply live latency feasibility.",
+    "A positive Round 39 result remains ineligible for promotion until independently sealed confirmation and portfolio-risk replay.",
+    "No leverage liquidation portfolio ROI testnet live or mainnet claim can be produced."
+  ],
+  "claims": {
+    "trading_authority": false,
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "leverage_applied": false
+  }
+}
