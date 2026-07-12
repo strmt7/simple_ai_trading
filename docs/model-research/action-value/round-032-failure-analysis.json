@@ -1,0 +1,78 @@
+{
+  "schema_version": "shared-action-failure-analysis-v1",
+  "round": 32,
+  "analysis_sha256": "5d638ffb264ff5bb0f65a57ae943a5ed7307d19cf30fb23188ed5d4c26399b3b",
+  "status": "rejected",
+  "source_evidence": {
+    "design_sha256": "5c8b2ac3618cdeec16dd4a8d21e5792cc4ea4bc26a645bf9ec00bd3997d3ca68",
+    "report_canonical_sha256": "e1dee0db73d2729aecfb09ea2f9c8abbd7f41a5985dd6dbd87de4e1575710552",
+    "report_file_sha256": "4d6c55dcfb339fd631b2685bff9b6a0d09ecd42e7e6c364e0008c427fb1da712",
+    "diagnostic_canonical_sha256": "8c2d1cbaf13c2553d24466b27a29b2bb79c1afa2e011e75c75279bd376f36ab0",
+    "diagnostic_file_sha256": "53b3179660c6133548d37aba1e5de1c1d1be3dcc7f87026581fe977543c2e5bd",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa"
+  },
+  "observations": {
+    "calibration_rows": 28581,
+    "eligible_rows": {
+      "conservative": 0,
+      "regular": 0,
+      "aggressive": 10
+    },
+    "selected_side_auc": 0.5094848928156748,
+    "selected_action_pearson_ic": 0.037699633421766805,
+    "selected_action_spearman_ic": -0.012690710524068977,
+    "selected_top_100_mean_stress_net_bps": -6.321360919710518,
+    "selected_top_500_mean_stress_net_bps": -10.75830194865659,
+    "opportunity_probability_auc": 0.6614274493417278,
+    "conditional_direction_auc_on_profitable_opportunities": 0.5238954820668407,
+    "action_value_direction_auc_on_profitable_opportunities": 0.5179080727783429,
+    "profitable_opportunity_ratio": 0.5325915818200903,
+    "both_sides_profitable_rows": 0,
+    "neither_side_profitable_rows": 13359
+  },
+  "gate_bottleneck": {
+    "conservative_selected_side_probability_pass_rows": 0,
+    "regular_selected_side_probability_pass_rows": 1,
+    "aggressive_selected_side_probability_pass_rows": 21,
+    "conservative_positive_epistemic_adjusted_action_value_rows": 30,
+    "regular_positive_epistemic_adjusted_action_value_rows": 37,
+    "aggressive_positive_epistemic_adjusted_action_value_rows": 54,
+    "interpretation": "Uncertainty and directional-consensus gates were not the primary bottleneck. Independently fitted side probabilities and expected values rarely supported one selected side, while the union event that either side was profitable remained materially discriminable. Direction conditional on such opportunities remained weak."
+  },
+  "rejected_responses": [
+    "Do not lower risk-profile probability, drawdown, tail, or minimum-trade gates to manufacture activity.",
+    "Do not apply leverage; it cannot repair near-chance side selection or negative ranked tails.",
+    "Do not use opportunity probability alone because all tested current-side routing methods retained negative top-100 and top-500 stress means.",
+    "Do not open policy, development, distant-confirmation, or untouched dates after calibration rejection.",
+    "Do not claim that positive one-trade or two-trade threshold totals establish profitability."
+  ],
+  "next_hypothesis": {
+    "candidate": "factorized_selective_opportunity_and_conditional_direction_lightgbm",
+    "rationale": "Model a calibrated probability that either side is profitable, then learn direction only on profitable-opportunity labels. Enforce mirror invariance for opportunity and mirror complementarity for direction. Retain explicit abstention, after-cost action values, chronological calibration, risk gates, and nested stage withholding.",
+    "single_variant_only": true,
+    "hyperparameter_search_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Trading via Selective Classification",
+      "url": "https://arxiv.org/abs/2110.14914",
+      "use": "Supports a learned reject option and ternary long, short, or abstain formulation with walk-forward evaluation."
+    },
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Supports suppressing actions whose forecast does not clear explicit transaction costs; it does not validate this second-level model."
+    },
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "use": "Supports stationary microstructure features, purged chronological validation, and direction-aware evaluation."
+    }
+  ],
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false
+}
