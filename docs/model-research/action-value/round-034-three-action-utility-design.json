@@ -1,14 +1,14 @@
 {
   "schema_version": "three-action-utility-design-v2",
   "round": 34,
-  "design_revision": 3,
-  "design_sha256": "ac3033d4dbe47de39becdf0a6aa6632f21dc6e4d3b91ae43c2f4f110e50de485",
+  "design_revision": 4,
+  "design_sha256": "61aea61eeec1ddc87aecb8b8fe17b915b8411760501e46eecf9c2f4e92ac5e03",
   "purpose": "consumed_data_utility_weighted_symmetric_three_action_viability",
   "supersedes": {
-    "design_revision": 2,
-    "design_sha256": "9b8b42a6d64d54e7a3a3ff3f552a49f13eb39bff63c3c5e5fa6d8e7c4200ac8d",
-    "file_sha256": "8642fdb0e8987f3155111ff2037414bc4b17ffd7131dd31450ab90c063c1016a",
-    "reason": "Correct a pre-implementation semantic defect: the probability that an action is the best of long, abstain, and short is not the probability that the same side has positive after-cost return when both sides can be positive. Add a separately calibrated, shared side-profit head for expected-return estimation while retaining three-action probabilities exclusively for routing. Data, costs, chronology, risk controls, and authority-denial contracts remain unchanged."
+    "design_revision": 3,
+    "design_sha256": "ac3033d4dbe47de39becdf0a6aa6632f21dc6e4d3b91ae43c2f4f110e50de485",
+    "file_sha256": "dbfc114b7252f44c6246fb65b327eee96377be4db20d5a2c37378f3393fe90f2",
+    "reason": "Clarify that the abstain class includes exact long-short utility ties as already required by exact_tie_resolution and implemented by strict class conditions. Data, targets, economics, model behavior, gates, and authority-denial contracts remain unchanged."
   },
   "claims": {
     "execution_claim": false,
@@ -169,7 +169,7 @@
     "labels": {
       "long": "stress_long_net_bps_is_positive_and_greater_than_stress_short_net_bps",
       "short": "stress_short_net_bps_is_positive_and_greater_than_stress_long_net_bps",
-      "abstain": "neither_side_is_strictly_positive",
+      "abstain": "neither_side_is_both_strictly_positive_and_strictly_better_than_the_other",
       "both_profitable_resolution": "choose_higher_stress_net_bps",
       "exact_tie_resolution": "abstain"
     },
