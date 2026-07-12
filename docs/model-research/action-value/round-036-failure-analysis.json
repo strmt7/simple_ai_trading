@@ -1,0 +1,109 @@
+{
+  "schema_version": "multi-horizon-signal-decay-failure-analysis-v1",
+  "round": 36,
+  "analysis_sha256": "ad2ee1477a8cf09b17aaa24a98f95df3ebd3cd887cc20cd8d21833ca7040fe5b",
+  "status": "rejected",
+  "source_evidence": {
+    "design_sha256": "276e0c169b2bd24ce87843b66892c4139daffdd581776457d068d4b63b61727e",
+    "binding_sha256": "76bf3a8c39e658875c49bf91230c50322b3d37584492a05ee7aab4d01bcaead8",
+    "implementation_commit": "3c16bed56370c2dbf393fbb8dd19f54007419ee0",
+    "report_canonical_sha256": "2cb799246b51e610647f330d2b0a5745a6e96f56062782eb23055cb6b0905ee8",
+    "report_file_sha256": "dcad6c89f50cb5a1b5f51816826f7844adafdc895da0c7a1612316e97dcf7633",
+    "publication_canonical_sha256": "c0b6dceae845b8976148f62d5ac7aad0b90af307216a8062fcf68ce3141d5ff9",
+    "corpus_certificate_sha256": "113437a381453d53eea811034f9a7e6ad573092e00efe8cc97d070a84f411ebe",
+    "barrier_targets_sha256": "68ba235b7d40abedb953c05c42948592e740070c4aec5e80cc2fcc550eba26fa",
+    "cache_key": "ca5ce2c7f1924717ecdc162a5382925f6f07b85c233b82ad5a8c1ec117ea0d85"
+  },
+  "scope": {
+    "symbol": "BTCUSDT",
+    "market": "Binance USD-M perpetual futures",
+    "metric_start": "2023-06-21",
+    "metric_end": "2023-06-25",
+    "dataset_rows": 877894,
+    "metric_event_rows": 28845,
+    "signals": 13,
+    "horizons_seconds": [5, 15, 30, 60, 120, 300, 900],
+    "signal_horizon_cells": 91,
+    "policy_prediction_or_metrics_accessed": false,
+    "development_prediction_or_metrics_accessed": false,
+    "distant_confirmation_source_materialized": false
+  },
+  "direction_evidence": {
+    "best_signal": "l1_imbalance",
+    "best_horizon_seconds": 5,
+    "weighted_roc_auc": 0.6072574903425851,
+    "daily_auc_minimum": 0.5579105002109371,
+    "daily_auc_median": 0.6040312141768056,
+    "days_above_chance": 5,
+    "days": 5,
+    "placebo_rank_descending": 1,
+    "placebo_replicates": 200,
+    "measured_half_life_seconds": 14.626268945470454,
+    "half_life_is_consumed_role_only": true
+  },
+  "economic_evidence": {
+    "maximum_signal_aligned_gross_mean_bps": 0.4583631660401235,
+    "maximum_all_routed_delayed_net_mean_bps": -11.578984700095054,
+    "maximum_top_100_delayed_net_mean_bps": -3.502678431456879,
+    "maximum_top_500_delayed_net_mean_bps": -10.008614095712256,
+    "maximum_top_1000_delayed_net_mean_bps": -10.664887750893927,
+    "positive_regime_slices": 0,
+    "regime_slices": 819,
+    "positive_nonoverlapping_cells": 0,
+    "nonoverlapping_cells": 91,
+    "positive_ranked_tails": 0,
+    "ranked_tails": 273,
+    "approximate_frozen_round_trip_fee_and_slippage_bps": 12.0
+  },
+  "critical_interpretation": [
+    "The strongest prespecified L1 and microprice signals contain repeatable five-second directional information on the consumed role.",
+    "The effect decays too quickly and its gross magnitude is too small to cover observed spread plus the frozen taker fee and adverse-slippage charge.",
+    "Direction ROC AUC is not a profitability metric; every evaluated economic slice remained negative.",
+    "Leverage would multiply the negative expectancy and cannot repair this lane.",
+    "More static L1/tape thresholds, sign reversals, LightGBM variants, or post-hoc horizon selection are not justified by this evidence.",
+    "Passive execution is not assumed because the source does not identify queue position, cancellations ahead, hidden liquidity, or fill probability.",
+    "The L1/tape features may remain useful later as an execution-timing or risk overlay for an independently viable slower alpha model."
+  ],
+  "rejected_responses": [
+    "Do not promote the five-second L1 imbalance effect because its after-cost mean is negative.",
+    "Do not apply leverage to the Round 36 outcomes.",
+    "Do not treat event outcomes as executable trades or portfolio returns.",
+    "Do not claim ETHUSDT, SOLUSDT, out-of-sample, testnet, live, or profitability evidence.",
+    "Do not continue the consumed static L1/tape taker-alpha search by adding model complexity."
+  ],
+  "next_experiment": {
+    "stage": "multi_year_cross_asset_cost_aware_return_model_with_ai_veto_ablation",
+    "purpose": "Test a distinct slower-horizon economic hypothesis on checksum-verified BTCUSDT, ETHUSDT, and SOLUSDT minute archives, then measure whether a local 8B AI risk gate improves the identical ML candidate set.",
+    "alpha_source": "multi_scale_returns_taker_flow_liquidity_and_cross_asset_state",
+    "candidate_horizons_minutes": [15, 30, 60, 120],
+    "execution_cost_hurdle_bps": 12.0,
+    "decision_cadence_minutes": 5,
+    "required_ml_controls": [
+      "zero_return_and_persistence_baselines",
+      "single_asset_versus_shared_cross_asset_ablation",
+      "cost_aware_magnitude_filter",
+      "chronological_early_stop_calibration_selection_and_terminal_roles",
+      "nonoverlapping_trade_replay",
+      "day_block_uncertainty"
+    ],
+    "required_ai_controls": [
+      "qwen3_8b_versus_fino1_8b",
+      "identical_candidate_trade_binding",
+      "causal_structured_prompt_only",
+      "approve_veto_or_cooldown_only",
+      "ml_only_versus_ml_plus_ai_matched_period_ablation",
+      "latency_and_failure_fail_closed"
+    ],
+    "2026_terminal_access_permitted_during_viability_screen": false,
+    "promotion_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "leverage_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "profitability_target_override_permitted": false
+  },
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false
+}
