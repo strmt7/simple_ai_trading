@@ -1,0 +1,112 @@
+{
+  "binding_sha256": "3af5f9e378849ba0e454707997af605025b424b97a1397cccd7e3acb4a194308",
+  "blobs": [
+    {
+      "git_blob_oid": "23ca50465aeba01ab886a569395ddc08720f1ca3",
+      "path": "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "3d1d1250827953feb87411111ee26130d615c51d",
+      "path": "src/simple_ai_trading/distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "f9c1f324039d70124db8ee9e5307af59ac383825",
+      "path": "src/simple_ai_trading/joint_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "beae437f68c5dcbd20c07de6637eaf0cc966aec3",
+      "path": "src/simple_ai_trading/stable_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "ec51dbdb7e9627edb0cffee10944e40333655fd3",
+      "path": "src/simple_ai_trading/cost_aware_utility_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "9e6d150e5874076b1f4a17971ed3966004a60b9f",
+      "path": "tools/run_stability_regularized_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "3f6cd04a656359de5ef482f29e4ce52fa3a753ce",
+      "path": "tools/run_cost_aware_utility_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "320d2fa9caaddc222c34f478a5f0f51661f31443",
+      "path": "tools/publish_cost_aware_utility_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "9247ca08f05063bd7e98c16dfb3218998e99dcb7",
+      "path": "tools/create_round47_cost_aware_utility_tcn_binding.py"
+    },
+    {
+      "git_blob_oid": "25716078e461d024e6aede56fcba801a613db9b8",
+      "path": "tests/test_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "20da51202e62058c31efb8cde0346bf491ed41a2",
+      "path": "tests/test_joint_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "0b11351051d669fcd03874d84af5b9ec418f888b",
+      "path": "tests/test_stable_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "d8b9645e541f810a59e0c21e1934932eb469172c",
+      "path": "tests/test_cost_aware_utility_tcn_model.py"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_cost_aware_utility_tcn_viability.py --source-certificate <external-certificate.json> --predecessor-report <round46-report.json> --derived-cache <round45-derived-cache> --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "derived_cache": [
+    {
+      "bytes": 245304,
+      "name": "timestamps_ms.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\timestamps_ms.npy",
+      "sha256": "b85c541d78c29f34a12b75f42656cf09ae4c6a47dcef5334c4d60d2e90e6591f"
+    },
+    {
+      "bytes": 26111372,
+      "name": "features.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\features.npy",
+      "sha256": "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14"
+    },
+    {
+      "bytes": 367892,
+      "name": "hourly_return_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\hourly_return_bps.npy",
+      "sha256": "277cb6022dddefe1ba52c83a8827ec45e41f45fb877f7db59599561373b10dbf"
+    },
+    {
+      "bytes": 1471184,
+      "name": "forward_return_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\forward_return_bps.npy",
+      "sha256": "864d02e1f1ef5bae8f3b51e16ae90e1077ba8852cb67ea0a766a06ec956b9ce7"
+    },
+    {
+      "bytes": 3159,
+      "name": "metadata.json",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\metadata.json",
+      "sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135"
+    }
+  ],
+  "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
+  "implementation_commit": "74af91792761ec2a76fc67a8d9d15de91cfb4e7a",
+  "predecessor_report": {
+    "canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
+    "file_sha256": "e9bf3ec4db7ddd798f950f619097533dfa103e09db94ab7e322f45eceb0edd21",
+    "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\report.json"
+  },
+  "round": 47,
+  "schema_version": "round-047-cost-aware-utility-tcn-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
