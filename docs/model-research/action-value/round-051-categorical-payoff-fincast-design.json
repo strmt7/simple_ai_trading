@@ -38,7 +38,7 @@
   },
   "data_contract": {
     "archive_products": ["bookTicker", "trades", "bookDepth"],
-    "bbo_state_gap_analysis_file_sha256": "266d516ab23fccc54ef7c29487e763fa56776d4ede8bfe529b85b87bdbf4c808",
+    "bbo_state_gap_analysis_file_sha256": "5d297545ec2637b38a35180a41f0f5632b7cfa776f5ce27f0a76b14ed9955e15",
     "bbo_state_gap_analysis_path": "docs/model-research/action-value/round-051-bbo-state-gap-analysis.json",
     "book_depth_limit": "Binance sampled aggregate percentage-band depth only; it is not full L2, message-by-message depth, or queue-position evidence.",
     "checksums_required": true,
@@ -62,7 +62,7 @@
     "synthetic_fabricated_or_interpolated_market_rows_permitted": false,
     "target_path_resolution_ms": 100
   },
-  "design_sha256": "c37bc8686c6ab75e8af79d2477b92fc56973d41bd74fea2f3cbf6c6c7247d900",
+  "design_sha256": "42f9afbda8755807e898fa8bb54ad4039d1f9f6b2f4d6c825afc0b1d02bcfba3",
   "economic_screen": {
     "base_and_stress_profit_factor_above_one": true,
     "base_and_stress_return_positive": true,
