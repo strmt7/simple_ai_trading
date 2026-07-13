@@ -46,6 +46,7 @@ from simple_ai_trading.fincast_runtime import (  # noqa: E402
     FINCAST_SOURCE_COMMIT,
     FinCastRuntime,
     extract_fincast_feature_matrix,
+    fincast_context_valid_mask,
     fincast_feature_names,
     fincast_runtime_contract_sha256,
 )
@@ -397,6 +398,46 @@ def _load_real_symbol_data(
                 require_full_history_inventory=False,
             )
             cache_state = "written"
+        unfiltered_rows = dataset.rows
+        unfiltered_dataset_sha256 = microstructure_dataset_fingerprint(dataset)
+        query_start = (
+            int(dataset.decision_time_ms[0]) - (FINCAST_CONTEXT_SECONDS + 1) * 1_000
+        )
+        source = (
+            warehouse.connect()
+            .execute(
+                "SELECT second_ms, close_mid FROM current_book_ticker_1s "
+                "WHERE symbol = ? AND second_ms BETWEEN ? AND ? ORDER BY second_ms",
+                [symbol, query_start, int(dataset.decision_time_ms[-1]) - 1_000],
+            )
+            .fetchnumpy()
+        )
+        second_ms = np.asarray(source["second_ms"], dtype=np.int64)
+        close_mid = np.asarray(source["close_mid"], dtype=np.float32)
+        context_valid = fincast_context_valid_mask(
+            second_ms=second_ms,
+            decision_time_ms=dataset.decision_time_ms,
+        )
+        retained_indexes = np.flatnonzero(context_valid)
+        if len(retained_indexes) == 0:
+            raise ValueError(f"{symbol} has no complete causal FinCast contexts")
+        dataset = dataset.select_rows(retained_indexes)
+        context_filter = {
+            "schema_version": "fincast-causal-context-filter-v1",
+            "input_rows": unfiltered_rows,
+            "retained_rows": dataset.rows,
+            "dropped_rows": unfiltered_rows - dataset.rows,
+            "valid_mask_sha256": _array_sha256(context_valid),
+            "unfiltered_dataset_sha256": unfiltered_dataset_sha256,
+            "filtered_dataset_sha256": microstructure_dataset_fingerprint(dataset),
+        }
+        _progress(
+            "fincast-context-filter",
+            symbol=symbol,
+            input=unfiltered_rows,
+            retained=dataset.rows,
+            dropped=unfiltered_rows - dataset.rows,
+        )
         _progress("barrier-targets", symbol=symbol, rows=dataset.rows)
         barrier_spec = AdaptiveBarrierSpec(
             horizon_seconds=int(execution["horizon_seconds"]),
@@ -428,20 +469,6 @@ def _load_real_symbol_data(
                 valid=valid,
             ),
         )
-        query_start = (
-            int(dataset.decision_time_ms[0]) - (FINCAST_CONTEXT_SECONDS + 1) * 1_000
-        )
-        source = (
-            warehouse.connect()
-            .execute(
-                "SELECT second_ms, close_mid FROM current_book_ticker_1s "
-                "WHERE symbol = ? AND second_ms BETWEEN ? AND ? ORDER BY second_ms",
-                [symbol, query_start, int(dataset.decision_time_ms[-1]) - 1_000],
-            )
-            .fetchnumpy()
-        )
-        second_ms = np.asarray(source["second_ms"], dtype=np.int64)
-        close_mid = np.asarray(source["close_mid"], dtype=np.float32)
     return {
         "dataset": dataset,
         "targets": targets,
@@ -449,6 +476,7 @@ def _load_real_symbol_data(
         "close_mid": close_mid,
         "cache_state": cache_state,
         "dataset_sha256": microstructure_dataset_fingerprint(dataset),
+        "context_filter": context_filter,
         "source_evidence": source_evidence,
     }
 
@@ -1220,6 +1248,7 @@ def run_round51(
             "microstructure_feature_count": len(dataset.feature_names),
             "ai_feature_count": len(ai_dataset.feature_names),
             "dataset_cache_state": real["cache_state"],
+            "fincast_context_filter": real["context_filter"],
             "source_evidence": real["source_evidence"],
             "barrier_summary": targets.summary(),
             "roles": {

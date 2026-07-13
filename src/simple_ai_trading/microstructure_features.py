@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, replace
 import math
 from types import MappingProxyType
 from typing import Mapping
@@ -67,6 +67,29 @@ class MicrostructureDataset:
     @property
     def rows(self) -> int:
         return int(self.features.shape[0])
+
+    def select_rows(self, indexes: np.ndarray) -> MicrostructureDataset:
+        """Return a chronological subset while keeping every row array aligned."""
+
+        selected = np.asarray(indexes)
+        if (
+            selected.ndim != 1
+            or selected.dtype.kind not in "iu"
+            or len(selected) == 0
+            or int(selected[0]) < 0
+            or int(selected[-1]) >= self.rows
+            or np.any(np.diff(selected) <= 0)
+        ):
+            raise ValueError("microstructure row selection is invalid")
+        replacements: dict[str, np.ndarray] = {}
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if not isinstance(value, np.ndarray):
+                continue
+            if value.ndim == 0 or value.shape[0] != self.rows:
+                raise ValueError("microstructure dataset arrays are not row-aligned")
+            replacements[field.name] = np.ascontiguousarray(value[selected])
+        return replace(self, **replacements)
 
     @property
     def best_side_net_bps(self) -> np.ndarray:

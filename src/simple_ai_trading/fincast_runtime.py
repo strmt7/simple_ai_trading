@@ -550,6 +550,43 @@ def _array_sha256(*arrays: np.ndarray) -> str:
     return digest.hexdigest()
 
 
+def fincast_context_valid_mask(
+    *,
+    second_ms: np.ndarray,
+    decision_time_ms: np.ndarray,
+) -> np.ndarray:
+    """Identify decisions with an exact, uninterrupted causal FinCast context."""
+
+    seconds = np.asarray(second_ms, dtype=np.int64)
+    decisions = np.asarray(decision_time_ms, dtype=np.int64)
+    if (
+        seconds.ndim != 1
+        or len(seconds) == 0
+        or decisions.ndim != 1
+        or len(decisions) == 0
+        or np.any(np.diff(seconds) <= 0)
+        or np.any(seconds % 1_000 != 0)
+        or np.any(np.diff(decisions) <= 0)
+    ):
+        raise ValueError("FinCast context-validity source is invalid")
+
+    anchors = decisions - 1_000
+    anchor_indexes = np.searchsorted(seconds, anchors)
+    valid = anchor_indexes < len(seconds)
+    candidates = np.flatnonzero(valid)
+    valid[candidates] &= seconds[anchor_indexes[candidates]] == anchors[candidates]
+
+    start_indexes = anchor_indexes - (FINCAST_CONTEXT_SECONDS - 1)
+    valid &= start_indexes >= 0
+    candidates = np.flatnonzero(valid)
+    expected_span_ms = (FINCAST_CONTEXT_SECONDS - 1) * 1_000
+    valid[candidates] &= (
+        seconds[anchor_indexes[candidates]] - seconds[start_indexes[candidates]]
+        == expected_span_ms
+    )
+    return valid
+
+
 def extract_fincast_feature_matrix(
     runtime: FinCastRuntime,
     *,

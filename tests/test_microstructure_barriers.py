@@ -90,6 +90,20 @@ def test_adaptive_barriers_are_causal_bounded_and_take_exceeds_stop() -> None:
     assert np.all(take > stop)
 
 
+def test_microstructure_row_selection_keeps_all_arrays_aligned() -> None:
+    selected = _dataset().select_rows(np.asarray([0, 2], dtype=np.int64))
+
+    assert selected.rows == 2
+    assert selected.decision_time_ms.tolist() == [0, 10_000]
+    assert selected.features[:, 0].tolist() == [0.5, 3.0]
+    assert selected.long_net_bps.tolist() == [-10.0, -10.0]
+
+
+def test_microstructure_row_selection_rejects_reordering() -> None:
+    with pytest.raises(ValueError, match="row selection"):
+        _dataset().select_rows(np.asarray([2, 0], dtype=np.int64))
+
+
 def test_adaptive_barriers_apply_frozen_minimum_to_flat_price_window() -> None:
     dataset = _dataset()
     dataset.features[0, 0] = 0.0
