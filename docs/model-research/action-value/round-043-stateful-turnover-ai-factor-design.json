@@ -1,8 +1,9 @@
 {
-  "schema_version": "stateful-turnover-ai-factor-ablation-design-v1",
+  "schema_version": "stateful-turnover-ai-factor-ablation-design-v2",
   "round": 43,
-  "design_sha256": "1a85f3cf70510e1ed341faedae36ebe0849372fc422e7d21d287d20146b60ceb",
-  "status": "frozen_before_round_43_implementation_or_outcome_access",
+  "design_sha256": "e9c37331108db8fa66243f7e8b8baa0a43c6b85a4f25c4c48f5b48a95389991b",
+  "status": "revised_and_refrozen_after_pre_replay_completeness_failure",
+  "revision_reason": "The first bound execution trained all twelve models but stopped before any replay or performance result because the v1 per-month evaluation mask embargoed each month-end 23:00 decision while the position contract required continuous carry. Version 2 keeps target purging at training, early-stop, and calibration boundaries, but permits a month-end evaluation interval to settle at the next month's 00:01 boundary. No model, factor, cost, threshold, source, candidate, or gate changed.",
   "phase": "consumed-development stateful hourly position conversion and AI-research factor ablation",
   "registered_experiment": "Replace isolated fixed-horizon round trips with a persistent hourly position state whose costs occur only when exposure changes, then compare the same shared LightGBM with and without six pre-outcome AI-research-assisted interaction factors.",
   "predecessor_evidence": {
@@ -65,7 +66,8 @@
       "2025-06"
     ],
     "per_month_schedule": "24 complete training months, two immediately following early-stop months, one immediately following amplitude-calibration month, then one evaluation month",
-    "target_horizon_embargo_required_at_every_boundary": true,
+    "target_horizon_embargo_required_at_training_early_stop_and_calibration_boundaries": true,
+    "evaluation_month_end_interval_policy": "Include a decision made in the evaluation month when its real 60-minute interval settles after midnight; assign its return to the decision month and let the next monthly model begin at the same exit/entry timestamp.",
     "positions_start_flat_at_2025_01": true,
     "positions_carry_across_evaluation_month_boundaries": true,
     "positions_force_flat_after_2025_06": true,

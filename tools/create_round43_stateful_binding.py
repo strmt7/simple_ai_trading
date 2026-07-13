@@ -21,7 +21,7 @@ from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
 
 ROUND = 43
-BINDING_SCHEMA = "round-043-stateful-turnover-ai-factor-execution-binding-v1"
+BINDING_SCHEMA = "round-043-stateful-turnover-ai-factor-execution-binding-v2"
 BOUND_PATHS = (
     "docs/model-research/action-value/round-043-ai-factor-audit.json",
     "docs/model-research/action-value/round-043-stateful-turnover-ai-factor-design.json",
@@ -94,7 +94,7 @@ def create(arguments: argparse.Namespace) -> dict[str, object]:
     design_sha = _validate_canonical(
         design,
         field="design_sha256",
-        expected_schema="stateful-turnover-ai-factor-ablation-design-v1",
+        expected_schema="stateful-turnover-ai-factor-ablation-design-v2",
     )
     audit_sha = _validate_canonical(
         audit,

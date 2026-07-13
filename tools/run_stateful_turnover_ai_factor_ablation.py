@@ -57,10 +57,10 @@ from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
 
 ROUND = 43
-DESIGN_SCHEMA = "stateful-turnover-ai-factor-ablation-design-v1"
+DESIGN_SCHEMA = "stateful-turnover-ai-factor-ablation-design-v2"
 AUDIT_SCHEMA = "round-043-ai-factor-audit-v1"
-BINDING_SCHEMA = "round-043-stateful-turnover-ai-factor-execution-binding-v1"
-REPORT_SCHEMA = "stateful-turnover-ai-factor-ablation-report-v1"
+BINDING_SCHEMA = "round-043-stateful-turnover-ai-factor-execution-binding-v2"
+REPORT_SCHEMA = "stateful-turnover-ai-factor-ablation-report-v2"
 REASON_LABELS = {
     0: "none",
     1: "entry",

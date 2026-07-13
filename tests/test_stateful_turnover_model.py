@@ -9,10 +9,12 @@ import pytest
 from simple_ai_trading.derivatives_hurdle_data import DerivativesSourceEvidence
 from simple_ai_trading.stateful_turnover_model import (
     AI_FACTOR_NAMES,
+    SCHEDULES,
     StatefulHourlyDataset,
     build_ai_factor_matrix,
     replay_independent_hourly,
     replay_stateful_policy,
+    schedule_masks,
 )
 
 
@@ -44,6 +46,23 @@ def _predictions(hours: int, values: list[float]) -> np.ndarray:
     if len(values) != hours:
         raise ValueError("fixture prediction length differs")
     return np.repeat(np.asarray(values, dtype=np.float32), 3)
+
+
+def _dataset_at(timestamps: list[str]) -> StatefulHourlyDataset:
+    values = np.asarray([_timestamp_ms(value) for value in timestamps], dtype=np.int64)
+    rows = len(timestamps) * 3
+    baseline = np.zeros((rows, 1), dtype=np.float32)
+    return StatefulHourlyDataset(
+        feature_names=("fixture",),
+        baseline_features=baseline,
+        augmented_features=baseline.copy(),
+        decision_time_ms=np.repeat(values, 3),
+        symbol_index=np.tile(np.arange(3, dtype=np.int8), len(timestamps)),
+        signed_pre_transition_utility_bps=np.zeros(rows, dtype=np.float32),
+        funding_cash_flow_bps=np.zeros(rows, dtype=np.float32),
+        source_evidence=cast(DerivativesSourceEvidence, None),
+        dataset_sha256="fixture",
+    )
 
 
 def test_ai_factor_programs_match_frozen_signs_and_floors() -> None:
@@ -102,6 +121,24 @@ def test_ai_factor_programs_fail_closed_on_missing_or_nonfinite_input() -> None:
     values[0, 0] = np.nan
     with pytest.raises(ValueError, match="nonfinite"):
         build_ai_factor_matrix(values, names)
+
+
+def test_schedule_purges_fit_roles_but_keeps_contiguous_evaluation_month_end() -> None:
+    dataset = _dataset_at(
+        [
+            "2024-09-30T22:00:00",
+            "2024-11-30T22:00:00",
+            "2024-12-31T22:00:00",
+            "2024-12-31T23:00:00",
+            "2025-01-31T23:00:00",
+        ]
+    )
+
+    masks = schedule_masks(dataset, SCHEDULES[0])
+    grouped = {name: mask.reshape(-1, 3)[:, 0] for name, mask in masks.items()}
+
+    assert grouped["calibration"].tolist() == [False, False, True, False, False]
+    assert grouped["evaluation"].tolist() == [False, False, False, False, True]
 
 
 def test_stateful_policy_charges_only_entry_and_final_exit_when_signal_persists() -> (
