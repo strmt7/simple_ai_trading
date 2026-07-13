@@ -1,5 +1,5 @@
 {
-  "binding_sha256": "560c72c0d8518935b91d45cd053ca419b4e6d0a3a85d603c7755bd4e8deb1bec",
+  "binding_sha256": "fa3ce8abb52b5ea267c4fa39608619eb2f98b4d854e0ad41b5720d375cb0e62a",
   "blobs": [
     {
       "git_blob_oid": "4294548af0e9e6d6171611829da4d6221e4a005d",
@@ -30,7 +30,7 @@
       "path": "src/simple_ai_trading/storage.py"
     },
     {
-      "git_blob_oid": "00fb31667431ea25e70de90a2de140ff361d8222",
+      "git_blob_oid": "863518c79988cb6bc2350fa3d1f29e661f223d26",
       "path": "tools/run_minute_logistic_mixture_tcn_viability.py"
     },
     {
@@ -44,7 +44,7 @@
   ],
   "command": ".venv311\\Scripts\\python.exe tools\\run_minute_logistic_mixture_tcn_viability.py --database <market_data.sqlite> --source-certificate <external-certificate.json> --design docs\\model-research\\action-value\\round-048-minute-logistic-mixture-tcn-design.json --binding docs\\model-research\\action-value\\round-048-minute-logistic-mixture-tcn-binding.json --evidence-root <new-external-evidence-root> --compute-backend directml",
   "design_sha256": "69fe0b4e319d51680c50cc132d9f64d9da4fa01eccaf30f84e0aa51292f61aa3",
-  "implementation_commit": "e81a283bc3a3d89217563db05cf82db6c0b154e9",
+  "implementation_commit": "8285406665c21515f206c73b59c04f0dbd19023e",
   "round": 48,
   "schema_version": "round-048-minute-logistic-mixture-execution-binding-v1",
   "source_certificate": {
