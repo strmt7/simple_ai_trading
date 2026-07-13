@@ -1,0 +1,134 @@
+{
+  "schema_version": "round-043-ai-factor-audit-v1",
+  "round": 43,
+  "audit_sha256": "f0e8c74d8e78fdee2319c819c58605ce81a8730019c346df59b1a7122227d252",
+  "status": "frozen_before_round_43_outcome_access",
+  "purpose": "Use local language models as bounded quantitative-research assistants, then admit only deterministic causal factor programs after independent syntax, numerical, and financial review.",
+  "governance": {
+    "market_features_or_targets_supplied_to_models": false,
+    "historical_outcomes_supplied_to_models": false,
+    "model_generated_text_executed_as_code": false,
+    "model_generated_trading_actions_permitted": false,
+    "human_or_deterministic_repair_may_be_hidden": false,
+    "profitability_or_ai_uplift_claim_permitted_before_matched_walk_forward_ablation": false
+  },
+  "runtime": {
+    "engine": "Ollama 0.31.2",
+    "device_observation": "Both local 8B models reported 100% GPU through ollama ps on the AMD host during generation.",
+    "models": [
+      {
+        "model": "qwen3:8b",
+        "local_model_id_prefix": "500a1f067a9f",
+        "role": "factor proposer and one validator-feedback retry",
+        "temperature": 0,
+        "seeds": [
+          4301,
+          4302
+        ]
+      },
+      {
+        "model": "fino1:8b",
+        "upstream": "TheFinAI/Fino1-8B",
+        "local_model_id_prefix": "083c6422a2dd",
+        "role": "finance-tuned proposer and independent factor critic",
+        "temperature": 0,
+        "seeds": [
+          4301,
+          4303
+        ]
+      }
+    ]
+  },
+  "audit_trace": [
+    {
+      "stage": "qwen3_initial_proposal",
+      "schema_passed": false,
+      "dsl_passed": false,
+      "financial_review_passed": false,
+      "findings": [
+        "One malformed failure_mode key made the response invalid JSON.",
+        "One expression referenced target_cross_asset_return_dispersion_15m_bps, which is not an available feature.",
+        "Two safe_div expressions omitted the mandatory positive floor argument.",
+        "The path-efficiency mean-reversion rationale did not match the proposed sign interaction."
+      ]
+    },
+    {
+      "stage": "fino1_initial_proposal",
+      "schema_passed": true,
+      "dsl_passed": false,
+      "financial_review_passed": false,
+      "findings": [
+        "One safe_div expression omitted the mandatory positive floor argument.",
+        "Five of six proposals were bare copies or trivial rescalings of existing features rather than new interactions.",
+        "Several expected-regime labels did not correspond to the stated mechanism."
+      ]
+    },
+    {
+      "stage": "qwen3_validator_feedback_retry",
+      "schema_passed": true,
+      "dsl_passed": true,
+      "financial_review_passed": false,
+      "findings": [
+        "All six failure modes were the literal text positive_floor rather than economic failure conditions.",
+        "Four expressions were effectively scalar rescalings of one raw feature.",
+        "The cross-asset flow expression divided by agreement, which becomes least stable when agreement is weak."
+      ]
+    },
+    {
+      "stage": "fino1_independent_critic",
+      "schema_passed": true,
+      "dsl_passed": true,
+      "financial_review_passed": false,
+      "findings": [
+        "The critic accepted five of six constrained formulas.",
+        "It reversed the sign interpretation of conditional_mean_reversion_240m.",
+        "It reversed the sign interpretation of downside_asymmetry_60m.",
+        "Model acceptance therefore cannot replace deterministic dimensional and sign checks."
+      ]
+    }
+  ],
+  "admitted_factor_programs": [
+    {
+      "name": "trend_quality_60m",
+      "expression": "mul(tanh_scaled(target_return_60m_bps,50.0),target_path_efficiency_60m)",
+      "mechanism": "Directional persistence should be more credible when the one-hour path is efficient rather than oscillatory.",
+      "failure_mode": "Abrupt reversals after an efficient trend can invert the relation."
+    },
+    {
+      "name": "flow_confirmation_15m",
+      "expression": "mul(tanh_scaled(target_return_15m_bps,25.0),target_signed_taker_flow_15m)",
+      "mechanism": "A return accompanied by same-direction aggressive taker flow may be more persistent than an unconfirmed move.",
+      "failure_mode": "Exhaustion, liquidation cascades, or informed passive liquidity can make aggressive flow contrarian."
+    },
+    {
+      "name": "conditional_mean_reversion_240m",
+      "expression": "mul(neg(tanh_scaled(target_return_zscore_240m,1.0)),sub(1.0,target_path_efficiency_60m))",
+      "mechanism": "An extreme return is more likely to mean-revert when the recent path is inefficient; positive values represent an oversold reversion signal.",
+      "failure_mode": "Structural repricing and high-efficiency trends can make standardized extremes persist."
+    },
+    {
+      "name": "residual_risk_adjusted_60m",
+      "expression": "safe_div(target_beta_residual_return_60m_bps,target_realized_volatility_60m_bps,5.0)",
+      "mechanism": "Beta-residual momentum scaled by recent volatility isolates asset-specific movement without allowing a near-zero denominator.",
+      "failure_mode": "Unstable beta or a common shock not represented by the benchmark can contaminate the residual."
+    },
+    {
+      "name": "liquidity_conditioned_flow_5m",
+      "expression": "mul(target_signed_taker_flow_5m,min(target_same_minute_of_week_liquidity_ratio,2.0))",
+      "mechanism": "Aggressive flow observed in at least normal seasonal liquidity should be less vulnerable to a thin-market print than the same flow in poor liquidity.",
+      "failure_mode": "Temporary volume spikes and liquidation flow can be liquid but non-persistent."
+    },
+    {
+      "name": "downside_asymmetry_60m",
+      "expression": "safe_div(sub(target_upside_semivolatility_60m_bps,target_downside_semivolatility_60m_bps),add(target_upside_semivolatility_60m_bps,target_downside_semivolatility_60m_bps),1.0)",
+      "mechanism": "Positive values identify recent upside-dominated variation; negative values identify downside-dominated variation on a bounded-like scale.",
+      "failure_mode": "Semivolatility asymmetry can reflect a completed shock rather than continuation."
+    }
+  ],
+  "admission_decision": {
+    "direct_model_proposals_admitted_unchanged": 0,
+    "constrained_human_governed_syntheses_admitted": 6,
+    "reason": "The models identified useful factor families but did not produce a complete artifact that passed syntax and financial review. The admitted programs are deterministic, finite transforms whose incremental value must be established by a matched out-of-sample ablation.",
+    "ai_improvement_established": false
+  }
+}

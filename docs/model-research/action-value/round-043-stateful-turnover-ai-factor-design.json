@@ -1,0 +1,232 @@
+{
+  "schema_version": "stateful-turnover-ai-factor-ablation-design-v1",
+  "round": 43,
+  "design_sha256": "1a85f3cf70510e1ed341faedae36ebe0849372fc422e7d21d287d20146b60ceb",
+  "status": "frozen_before_round_43_implementation_or_outcome_access",
+  "phase": "consumed-development stateful hourly position conversion and AI-research factor ablation",
+  "registered_experiment": "Replace isolated fixed-horizon round trips with a persistent hourly position state whose costs occur only when exposure changes, then compare the same shared LightGBM with and without six pre-outcome AI-research-assisted interaction factors.",
+  "predecessor_evidence": {
+    "round_37": "The best shared 120-minute return model reached only 0.043704 Spearman IC and no support-valid policy; isolated selected tails were concentrated in SOLUSDT.",
+    "round_38_to_41": "Cost-aware labels, rolling refits, and profitability meta-labels produced activity but failed stable out-of-sample after-cost gates.",
+    "round_42": "The second-flow timing overlay selected no actions; its matched immediate proposals averaged -15.281501 bps after a 12 bps independent round-trip charge.",
+    "diagnosed_defect": "Every prior replay treated an accepted forecast as a new round trip. None represented holding an existing position across adjacent forecasts or charged turnover only on exposure changes."
+  },
+  "governance": {
+    "selection_contaminated": true,
+    "development_only": true,
+    "factorial_ablation_registered_before_outcome_access": true,
+    "unregistered_hyperparameter_or_factor_search_permitted": false,
+    "selection_confirmation_2025_h2_or_terminal_2026_access_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "ai_text_or_direct_action_in_execution_loop_permitted": false,
+    "ai_factor_rewrite_after_outcome_access_permitted": false,
+    "promotion_permitted": false,
+    "trading_authority_permitted": false,
+    "leverage_permitted": false,
+    "profitability_or_ai_uplift_claim_permitted_without_all_respective_gates": false
+  },
+  "source_contract": {
+    "market": "Binance USD-M perpetual futures",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "database": "data/market_data.sqlite",
+    "database_read_only": true,
+    "price_and_flow_period": "2021-12-01 through 2025-06-30",
+    "training_and_evaluation_period": "2022-01-01 through 2025-06-30",
+    "round_38_source_certificate_required": true,
+    "round_38_source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "real_exchange_rows_only": true,
+    "api_calls_required": false,
+    "persistent_duplicate_feature_matrix_permitted": false
+  },
+  "target_contract": {
+    "decision_cadence_minutes": 60,
+    "decision_timestamp": "UTC hour at minute zero using features ending at that minute close",
+    "entry_or_rebalance_timestamp": "decision timestamp plus one minute, at the real next-minute open",
+    "holding_interval_minutes": 60,
+    "next_decision_entry_contiguity": "The next hourly decision executes at the current interval exit, so unchanged exposure is carried without a fictitious close and reopen.",
+    "signed_pre_transition_utility_bps": "(existing long_net_utility_bps - existing short_net_utility_bps) / 2",
+    "funding": "Exact settled funding cash flow embedded with opposite sign for long and short",
+    "transition_cost_excluded_from_forecast_label": true,
+    "future_feature_or_overlapping_target_leakage_permitted": false
+  },
+  "walk_forward_contract": {
+    "evaluation_months": [
+      "2025-01",
+      "2025-02",
+      "2025-03",
+      "2025-04",
+      "2025-05",
+      "2025-06"
+    ],
+    "per_month_schedule": "24 complete training months, two immediately following early-stop months, one immediately following amplitude-calibration month, then one evaluation month",
+    "target_horizon_embargo_required_at_every_boundary": true,
+    "positions_start_flat_at_2025_01": true,
+    "positions_carry_across_evaluation_month_boundaries": true,
+    "positions_force_flat_after_2025_06": true,
+    "evaluation_outcomes_permitted_for_later_refits": false
+  },
+  "feature_ablation": {
+    "baseline": "71 causal price, volume, taker-flow, cross-asset, liquidity, volatility, residual, calendar, and symbol features from the verified Round 37/38 matrix",
+    "augmented": "The identical 71 features plus the six factor programs in the bound Round 43 AI factor audit",
+    "ai_factor_audit_path": "docs/model-research/action-value/round-043-ai-factor-audit.json",
+    "ai_factor_audit_sha256": "f0e8c74d8e78fdee2319c819c58605ce81a8730019c346df59b1a7122227d252",
+    "factor_program_count": 6,
+    "factor_nonfinite_policy": "fail closed",
+    "direct_language_model_feature_or_action_output_at_replay_time": false
+  },
+  "model_contract": {
+    "architecture": "one shared cross-asset LightGBM L1 return regressor per evaluation month and feature set",
+    "feature_sets": [
+      "baseline_71",
+      "ai_research_augmented_77"
+    ],
+    "models_per_feature_set": 6,
+    "total_models": 12,
+    "objective": "regression_l1",
+    "metric": "l1",
+    "learning_rate": 0.03,
+    "num_leaves": 31,
+    "min_data_in_leaf": 100,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_frequency": 1,
+    "lambda_l1": 0.1,
+    "lambda_l2": 1.0,
+    "maximum_boost_rounds": 1000,
+    "early_stopping_rounds": 50,
+    "fixed_seed_base": 4301,
+    "opencl_gpu_first_required": true,
+    "cpu_fallback_permitted": true,
+    "model_artifact_exact_reload_required": true,
+    "hyperparameter_search_permitted": false
+  },
+  "amplitude_calibration": {
+    "method": "nonnegative zero-intercept ordinary least squares on the immediately preceding calibration month",
+    "minimum_slope": 0.0,
+    "maximum_slope": 4.0,
+    "evaluation_outcome_access_permitted": false
+  },
+  "position_and_cost_contract": {
+    "position_states": [
+      -1,
+      0,
+      1
+    ],
+    "modes": [
+      "long_only",
+      "long_short"
+    ],
+    "cost_filter": "Change to forecast-implied position only when absolute calibrated forecast bps is greater than 2.0 times one-way cost bps times absolute position change; otherwise retain current position.",
+    "cost_filter_lambda": 2.0,
+    "base_one_way_cost_bps_per_unit_position_change": 6.0,
+    "stress_one_way_cost_bps_per_unit_position_change": 8.0,
+    "maximum_continuous_holding_hours": 24,
+    "maximum_hold_action": "Force the affected sleeve flat for the next interval and charge the applicable transition cost.",
+    "sleeve_notional_fraction": 0.3333333333333333,
+    "maximum_single_symbol_gross_fraction": 0.3333333333333333,
+    "maximum_portfolio_gross_exposure": 1.0,
+    "inactive_sleeve_reallocated": false,
+    "leverage": 1.0,
+    "liquidation_possible_under_frozen_exposure": false
+  },
+  "registered_candidates": {
+    "count": 4,
+    "primary_ai_uplift_pair": [
+      "baseline_71_long_only",
+      "ai_research_augmented_77_long_only"
+    ],
+    "secondary_short_ablation_pair": [
+      "baseline_71_long_short",
+      "ai_research_augmented_77_long_short"
+    ],
+    "candidate_selection_after_outcomes_permitted": false
+  },
+  "comparators": {
+    "always_flat": "Zero exposure and zero return.",
+    "always_long_fixed_sleeves": "Each symbol sleeve enters long once, remains long, and exits once under identical funding and transition charges.",
+    "independent_hourly_round_trip": "Use the same calibrated forecasts but force every accepted hourly exposure flat at the interval end, reproducing the prior independent-round-trip cost abstraction.",
+    "stateful_policy": "Carry unchanged exposure and charge only actual position transitions."
+  },
+  "evaluation_contract": {
+    "portfolio_return_series": "One-third weighted sum of each sleeve signed pre-transition utility less actual transition costs.",
+    "required_metrics": [
+      "hourly and compounded total net return",
+      "annualized return and volatility",
+      "Sharpe, Sortino, Calmar, and profit factor",
+      "maximum drawdown",
+      "hourly VaR and expected shortfall at 95 percent",
+      "entries, exits, reversals, transition units, turnover, active hours, active days, holding duration, and transitions per day",
+      "monthly and symbol contribution",
+      "Pearson IC, Spearman IC, direction accuracy, MAE, RMSE, and prediction dispersion",
+      "168-hour circular block-bootstrap intervals",
+      "paired augmented-minus-baseline AI uplift intervals"
+    ],
+    "bootstrap_replicates": 2000,
+    "bootstrap_block_hours": 168,
+    "familywise_one_sided_alpha_for_four_candidates": 0.0125,
+    "random_seed": 4301
+  },
+  "stateful_viability_gate": {
+    "meaning": "Passing supports only a newly frozen confirmation experiment; it cannot promote a model or authorize testnet or live trading.",
+    "base_total_net_return_must_exceed": 0.0,
+    "stress_total_net_return_must_exceed": 0.0,
+    "stress_profit_factor_must_be_at_least": 1.05,
+    "familywise_block_bootstrap_lower_mean_hourly_bps_must_exceed": 0.0,
+    "positive_evaluation_months_must_be_at_least": 4,
+    "maximum_drawdown_must_not_exceed_fraction": 0.10,
+    "minimum_transition_events": 60,
+    "minimum_transition_events_per_symbol": 10,
+    "minimum_active_days": 90,
+    "all_models_exact_reload_required": true,
+    "all_requirements_mandatory": true
+  },
+  "ai_uplift_gate": {
+    "scope": "The pre-registered long-only augmented-minus-baseline pair only.",
+    "augmented_base_total_return_must_exceed_baseline": true,
+    "augmented_stress_total_return_must_exceed_baseline": true,
+    "paired_168_hour_block_bootstrap_lower_mean_delta_bps_must_exceed": 0.0,
+    "augmented_maximum_drawdown_must_not_exceed_baseline": true,
+    "augmented_positive_month_count_must_not_be_lower": true,
+    "all_requirements_mandatory": true,
+    "passing_still_does_not_authorize_ai_execution": true
+  },
+  "required_outputs": [
+    "hash-bound design, AI audit, execution binding, implementation blobs, and source certificate",
+    "hourly row counts and causality identities by role and symbol",
+    "all twelve model artifacts, exact reload checks, backend evidence, and top feature gains",
+    "forecast diagnostics by month, symbol, and feature set",
+    "complete base and stress position ledgers for all four candidates and comparators",
+    "monthly and symbol economics, transition and holding diagnostics, and drawdown series",
+    "familywise block-bootstrap candidate intervals and paired AI-uplift interval",
+    "runtime, progress, peak memory, and explicit gate reasons",
+    "explicit false promotion, authority, leverage, confirmation, profitability, and AI-uplift claims when gates fail"
+  ],
+  "research_basis": [
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://arxiv.org/abs/2606.00060",
+      "use": "Supports persistent position state and a cost-aware transition filter; its hourly BTC results and simplified execution model are not imported as validation."
+    },
+    {
+      "title": "AlphaForgeBench: Benchmarking End-to-End Trading Strategy Design with Large Language Models",
+      "url": "https://arxiv.org/abs/2602.18481",
+      "use": "Supports using language models as reproducible factor researchers rather than unstable sequential execution agents."
+    },
+    {
+      "title": "FactorEngine: A Program-level Knowledge-Infused Factor Mining Framework for Quantitative Investment",
+      "url": "https://arxiv.org/abs/2603.16365",
+      "use": "Supports separating bounded LLM-guided logic proposals from deterministic local evaluation and parameter fitting."
+    },
+    {
+      "title": "Momentum in the Cryptocurrency Market: A Comprehensive Analysis under Realistic Assumptions",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4675565",
+      "use": "Supports retaining time-series rather than three-asset cross-sectional momentum as the primary direction and reporting liquidation and drawdown risk rather than mean return alone."
+    }
+  ]
+}
