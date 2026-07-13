@@ -162,14 +162,14 @@ def test_batch_response_requires_exact_case_identity_and_valid_decisions() -> No
                 {
                     "decisions": [
                         {
-                            "case_id": "a",
+                            "case_index": 0,
                             "action": "approve",
                             "risk_percent": 50,
                             "confidence_percent": 80,
                             "reason_codes": ["cost_ok"],
                         },
                         {
-                            "case_id": "b",
+                            "case_index": 1,
                             "action": "veto",
                             "risk_percent": 100,
                             "confidence_percent": 70,
@@ -187,7 +187,12 @@ def test_batch_response_requires_exact_case_identity_and_valid_decisions() -> No
     assert decisions["a"].risk_multiplier == 0.5
     assert decisions["b"].action == "veto"
     assert decisions["b"].risk_multiplier == 0.0
-    assert _decision_schema()["properties"]["decisions"]["type"] == "array"
+    schema = _decision_schema(("a", "b"))
+    decisions_schema = schema["properties"]["decisions"]
+    assert decisions_schema["type"] == "array"
+    assert decisions_schema["minItems"] == 2
+    assert decisions_schema["maxItems"] == 2
+    assert decisions_schema["items"]["properties"]["case_index"]["enum"] == [0, 1]
 
 
 def test_case_builder_retains_ten_highest_confidence_cases_per_symbol_month() -> None:

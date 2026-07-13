@@ -84,7 +84,7 @@ def create_binding(source_certificate: Path) -> dict[str, object]:
     design_sha = str(canonical_design.pop("design_sha256", ""))
     if (
         design.get("schema_version")
-        != "causal-refit-utility-ai-ablation-design-v2"
+        != "causal-refit-utility-ai-ablation-design-v3"
         or design.get("round") != 39
         or design_sha != _canonical_sha256(canonical_design)
     ):

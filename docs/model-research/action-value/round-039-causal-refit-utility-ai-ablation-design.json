@@ -1,7 +1,7 @@
 {
-  "schema_version": "causal-refit-utility-ai-ablation-design-v2",
+  "schema_version": "causal-refit-utility-ai-ablation-design-v3",
   "round": 39,
-  "design_sha256": "25df349981d734586f6fa2d432e8e32cf2bbaabdacf18a3da709db1f9ca29056",
+  "design_sha256": "bca0e6e21258d1a069bc7717c68f464b211655dc94fa84db369ccebf12b39446",
   "phase": "frozen_monthly_refit_utility_weighting_then_local_ai_veto_ablation",
   "revision_reason": "The v1 execution completed all 60 ML artifacts, then showed that the first Qwen3 batch was valid but took 91.7 seconds and the second batch was schema-invalid after 85.679 seconds. The run was stopped before any AI decision content or trade outcome was inspected. V2 changes only the pre-outcome AI sampling and compact response contract to reduce runtime and schema failure; all ML candidates, data, targets, costs, thresholds, gates, and results remain untouched.",
   "superseded_design": {
@@ -17,6 +17,25 @@
     "ai_batch_latency_seconds": [91.7, 85.679],
     "ai_batch_schema_valid": [true, false],
     "ai_decision_content_or_outcomes_inspected": false,
+    "report_created": false
+  },
+  "superseded_v2_execution": {
+    "schema_version": "causal-refit-utility-ai-ablation-design-v2",
+    "design_sha256": "25df349981d734586f6fa2d432e8e32cf2bbaabdacf18a3da709db1f9ca29056",
+    "execution_binding_sha256": "0ca25d890b150967fca3db7642fbea6dcd6ae7d0142c91f88f4a890becbb3e95",
+    "bound_implementation_commit": "885c3127ae886370091b6bbca389af287f3573a2",
+    "incomplete_evidence_root": "external://round39-causal-refit-utility-ai-20260712-v2",
+    "last_status_file_sha256": "cdd723a44bb9dedfb5785c7d1aa5c79492ef955769655dd2238a0c8eda286e11",
+    "ml_artifacts_completed": 60,
+    "ai_batches_attempted": 2,
+    "ai_batch_latency_seconds": [51.679, 42.926],
+    "ai_batch_schema_valid": [false, false],
+    "structural_probe": {
+      "decision_content_or_outcomes_printed": false,
+      "content_characters": 1907,
+      "failure": "JSON truncated before closing delimiter",
+      "decision": "Replace repeated 64-character response case_id with schema-constrained case_index ordinal."
+    },
     "report_created": false
   },
   "predecessor": {
@@ -254,7 +273,8 @@
     "ai_may_only_veto_or_reduce_risk": true,
     "provider_parse_timeout_or_identity_failure_action": "veto",
     "compact_response_contract": {
-      "fields": ["case_id", "action", "risk_percent", "confidence_percent", "reason_codes"],
+      "fields": ["case_index", "action", "risk_percent", "confidence_percent", "reason_codes"],
+      "case_index_contract": "Zero-based index into the immutable ordered batch; schema enum and exact array cardinality require every index once, then the runner maps it back to the full case_id.",
       "risk_percent_range": [0, 100],
       "confidence_percent_range": [0, 100],
       "maximum_reason_codes": 2,
