@@ -467,11 +467,18 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
     forecast_monthly_rows: list[dict[str, object]] = []
     quantile_stability_rows: list[dict[str, object]] = []
     prediction_paths: list[Path] = []
+    prediction_paths_by_candidate: dict[str, list[Path]] = {}
     trade_map: dict[str, tuple[object, ...]] = {}
     replay_map: dict[tuple[str, str], object] = {}
     for candidate_index, candidate_id in enumerate(CANDIDATES):
         bundle = bundles[candidate_id]
-        prediction_paths.extend(_write_predictions(evidence_root, bundle))
+        candidate_prediction_paths = _write_predictions(evidence_root, bundle)
+        if bundle.candidate_id in prediction_paths_by_candidate:
+            raise RuntimeError(
+                f"duplicate Round 47 candidate predictions: {bundle.candidate_id}"
+            )
+        prediction_paths_by_candidate[bundle.candidate_id] = candidate_prediction_paths
+        prediction_paths.extend(candidate_prediction_paths)
         monthly, stability, forecast = joint_forecast_diagnostics(
             dataset,
             bundle,  # type: ignore[arg-type]
@@ -784,11 +791,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
                 "stress": dict(stress.metrics),
                 "economic_gate": economic_gates[candidate_id],
                 "prediction_files": _artifact_manifest(
-                    [
-                        path
-                        for path in prediction_paths
-                        if path.name.startswith(candidate_id + "_")
-                    ]
+                    prediction_paths_by_candidate[candidate_id]
                 ),
             }
         )
