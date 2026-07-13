@@ -8,6 +8,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from simple_ai_trading.executable_csm_lightgbm import (
+    EXECUTABLE_CSM_MODEL_SCHEMA_VERSION,
+    ExecutableCsmSpec,
+    load_executable_csm_model,
+    predict_executable_csm_model,
+    save_executable_csm_model,
+    train_executable_csm_model,
+)
 from simple_ai_trading.executable_payoff_lightgbm import (
     EXECUTABLE_PAYOFF_MODEL_SCHEMA_VERSION,
     ExecutablePayoffSpec,
@@ -38,6 +46,13 @@ DESIGN = (
     / "action-value"
     / "round-052-executable-support-hurdle-fincast-design.json"
 )
+DESIGN53 = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-053-executable-csm-fincast-design.json"
+)
 
 
 def _spec(architecture: str) -> ExecutablePayoffSpec:
@@ -45,6 +60,28 @@ def _spec(architecture: str) -> ExecutablePayoffSpec:
         candidate_id=f"test-{architecture}",
         family="side_specific_executable_payoff",
         architecture=architecture,
+        learning_rate=0.05,
+        num_leaves=15,
+        max_depth=4,
+        minimum_leaf_fraction=0.01,
+        minimum_leaf_rows=16,
+        maximum_leaf_rows=64,
+        feature_fraction=0.8,
+        bagging_fraction=0.8,
+        bagging_freq=1,
+        lambda_l1=0.01,
+        lambda_l2=0.1,
+        max_bin=63,
+        num_boost_round=12,
+        early_stopping_rounds=5,
+    )
+
+
+def _csm_spec() -> ExecutableCsmSpec:
+    return ExecutableCsmSpec(
+        candidate_id="test-executable-csm",
+        family="side_specific_executable_csm",
+        magnitude_edge_quantiles=(0.1, 0.3, 0.5, 0.7, 0.9),
         learning_rate=0.05,
         num_leaves=15,
         max_depth=4,
@@ -191,6 +228,35 @@ def hurdle_bundle():
     return dataset, model, roles, progress
 
 
+@pytest.fixture(scope="module")
+def csm_bundle():
+    source, targets = _source()
+    dataset = build_executable_payoff_dataset(
+        source,
+        targets,
+        target_scenario="base",
+    )
+    roles = _roles()
+    progress: list[tuple[str, str, int, int]] = []
+    model = train_executable_csm_model(
+        dataset,
+        train_indexes=roles["train"],
+        early_stop_indexes=roles["early_stop"],
+        probability_calibration_indexes=roles["probability_calibration"],
+        probability_calibration_end_exclusive_ms=int(
+            dataset.payoff.decision_time_ms[4_500]
+        ),
+        spec=_csm_spec(),
+        target_scenario="base",
+        compute_backend="cpu",
+        seed=5201,
+        progress=lambda name, side, step, total: progress.append(
+            (name, side, step, total)
+        ),
+    )
+    return dataset, model, roles, progress
+
+
 def test_round52_design_is_canonical_and_fail_closed() -> None:
     design = json.loads(DESIGN.read_text(encoding="utf-8"))
     claimed = design.pop("design_sha256")
@@ -208,6 +274,29 @@ def test_round52_design_is_canonical_and_fail_closed() -> None:
     assert design["claims"]["profitability_claim_permitted"] is False
     assert design["model_contract"]["support_invariant"].startswith("Training")
     assert design["economic_screen"]["leverage"] == 1.0
+
+
+def test_round53_design_is_canonical_and_freezes_true_csm_integration() -> None:
+    design = json.loads(DESIGN53.read_text(encoding="utf-8"))
+    claimed = design.pop("design_sha256")
+    canonical = json.dumps(
+        design,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+    assert hashlib.sha256(canonical).hexdigest() == claimed
+    assert design["status"] == "frozen"
+    assert design["claims"]["selection_contaminated"] is True
+    assert design["claims"]["profitability_claim_permitted"] is False
+    assert design["economic_screen"]["leverage"] == 1.0
+    factorization = design["model_contract"]["csm_factorization"]
+    assert "P(M=k|X)" in factorization["expected_payoff"]
+    assert "actual future magnitude is never used" in factorization[
+        "sign_conditioning"
+    ]
 
 
 def test_dataset_binds_side_specific_support_to_exact_source_rows() -> None:
@@ -295,6 +384,97 @@ def test_hurdle_prediction_is_finite_calibrated_and_preserves_support(
         assert np.all(np.isfinite(values))
     assert np.all((prediction.long_profitable_probability >= 0.0))
     assert np.all((prediction.long_profitable_probability <= 1.0))
+
+
+def test_csm_training_is_support_aligned_calibrated_and_non_authoritative(
+    csm_bundle,
+) -> None:
+    dataset, model, roles, progress = csm_bundle
+
+    assert model.schema_version == EXECUTABLE_CSM_MODEL_SCHEMA_VERSION
+    assert set(model.model_strings) == {
+        "long_magnitude",
+        "long_conditional_sign",
+        "short_magnitude",
+        "short_conditional_sign",
+    }
+    for side, mask in (
+        ("long", dataset.long_executable),
+        ("short", dataset.short_executable),
+    ):
+        for role in ("train", "early_stop", "probability_calibration"):
+            expected = int(np.sum(mask[roles[role]]))
+            assert model.role_rows[side][role] == expected
+            assert sum(model.magnitude_class_support[side][role]) == expected
+            assert sum(model.sign_class_support[side][role].values()) == expected
+        assert len(model.magnitude_edges_risk_units[side]) == 5
+        assert len(model.magnitude_representatives_risk_units[side]) == 6
+        assert np.isclose(sum(model.training_joint_probabilities[side]), 1.0)
+    assert [step for _name, _side, step, _total in progress] == [1, 2, 3, 4]
+    assert all(total == 4 for _name, _side, _step, total in progress)
+    assert not model.trading_authority
+    assert not model.execution_claim
+    assert not model.profitability_claim
+    assert not model.portfolio_claim
+    assert not model.leverage_applied
+
+
+def test_csm_prediction_integrates_normalized_joint_distribution(csm_bundle) -> None:
+    dataset, model, roles, _progress = csm_bundle
+    prediction = predict_executable_csm_model(
+        model,
+        dataset,
+        roles["prediction"],
+    )
+    stop_width = dataset.payoff.stop_width_bps[roles["prediction"]]
+
+    for side in ("long", "short"):
+        magnitude = getattr(prediction, f"{side}_magnitude_probabilities")
+        positive = getattr(
+            prediction, f"{side}_positive_probability_by_magnitude"
+        )
+        representatives = np.asarray(
+            model.magnitude_representatives_risk_units[side], dtype=np.float64
+        )
+        expected = (
+            np.sum(magnitude * representatives * (2.0 * positive - 1.0), axis=1)
+            * stop_width
+        )
+        np.testing.assert_allclose(
+            getattr(prediction, f"{side}_expected_net_bps"),
+            expected,
+            rtol=1e-12,
+            atol=1e-12,
+        )
+        np.testing.assert_allclose(magnitude.sum(axis=1), 1.0, atol=1e-12)
+        profitable = np.sum(magnitude * positive, axis=1)
+        np.testing.assert_allclose(
+            getattr(prediction, f"{side}_profitable_probability"),
+            profitable,
+            rtol=1e-12,
+            atol=1e-12,
+        )
+        assert np.all(
+            getattr(prediction, f"{side}_cvar10_net_bps")
+            <= getattr(prediction, f"{side}_q10_net_bps") + 1e-12
+        )
+
+
+def test_csm_model_artifact_round_trip_is_bit_exact(tmp_path, csm_bundle) -> None:
+    dataset, model, roles, _progress = csm_bundle
+    artifact = tmp_path / "csm-model.json"
+    save_executable_csm_model(artifact, model)
+    loaded = load_executable_csm_model(artifact)
+    expected = predict_executable_csm_model(model, dataset, roles["prediction"])
+    actual = predict_executable_csm_model(loaded, dataset, roles["prediction"])
+
+    assert loaded == model
+    np.testing.assert_array_equal(
+        actual.long_expected_net_bps, expected.long_expected_net_bps
+    )
+    np.testing.assert_array_equal(
+        actual.short_expected_net_bps, expected.short_expected_net_bps
+    )
 
 
 def test_model_artifact_round_trip_is_exact(tmp_path, hurdle_bundle) -> None:
