@@ -1,0 +1,136 @@
+{
+  "binding_sha256": "18d6823d7b78cbfe72ae4914e86f9d4a38f4aa641a5fa20e1a37d48917461705",
+  "blobs": [
+    {
+      "git_blob_oid": "bc4975716bb66147c698210d3ab3c2af993f9df5",
+      "path": "docs/model-research/action-value/round-042-second-flow-execution-overlay-design.json"
+    },
+    {
+      "git_blob_oid": "13eb81e0489ed63fa9fc4d35730d3fad8c0f982f",
+      "path": "pyproject.toml"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c",
+      "path": "src/simple_ai_trading/lightgbm_backend.py"
+    },
+    {
+      "git_blob_oid": "8a82d100819eb33771cffa129179d16283b83509",
+      "path": "src/simple_ai_trading/market_store.py"
+    },
+    {
+      "git_blob_oid": "d6c13e492ddeaab4fd631f27f615f0dff4153674",
+      "path": "src/simple_ai_trading/microstructure_architecture.py"
+    },
+    {
+      "git_blob_oid": "e8065c4bf428be5581ab572ea1d9008ed8da5ad6",
+      "path": "src/simple_ai_trading/second_flow_data.py"
+    },
+    {
+      "git_blob_oid": "c6b8d58984ad23e2213c378f6ce6ec9c17f66db5",
+      "path": "src/simple_ai_trading/second_flow_execution_model.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "2cf1ea83272c857055540ac11a0454996c94cfcc",
+      "path": "tests/test_round42_second_flow_execution_overlay_design.py"
+    },
+    {
+      "git_blob_oid": "11f52f89f580fef49d53639b7272a3e8d6e03091",
+      "path": "tests/test_second_flow_execution_model.py"
+    },
+    {
+      "git_blob_oid": "e0d8f2fe6c184732fba6ef2b78a6b21f49bc382f",
+      "path": "tools/certify_round42_second_flow_source.py"
+    },
+    {
+      "git_blob_oid": "04fecafb56e63933adc6b273f32723a8530074ed",
+      "path": "tools/create_round42_second_flow_binding.py"
+    },
+    {
+      "git_blob_oid": "c2b9f9e1ccd666f75c714fd2503cf3899626e63e",
+      "path": "tools/run_causal_meta_label_capacity_ai.py"
+    },
+    {
+      "git_blob_oid": "0e17cdae6234ce191da23a2735f58c9f27c004f5",
+      "path": "tools/run_second_flow_execution_overlay.py"
+    }
+  ],
+  "design_file_sha256": "9af776d73561621dc387a5c8b995054d79b2d56c8ef7f4a39fb056be2b635e45",
+  "design_path": "docs/model-research/action-value/round-042-second-flow-execution-overlay-design.json",
+  "design_sha256": "2695f9064a5622658f772f44cdc3e8fcc0f8f19ef7ae594e937a899533085588",
+  "execution": {
+    "ai_cases": 0,
+    "base_round_trip_charge_bps": 12.0,
+    "command": ".venv311\\Scripts\\python.exe tools\\run_second_flow_execution_overlay.py --second-flow-certificate <external-second-certificate.json> --minute-source-certificate <external-minute-certificate.json> --round41-report <external-round41-report.json> --round41-evidence-root <external-round41-evidence-root> --evidence-root <new-external-evidence-root>",
+    "compute_backend": "auto_gpu_first_opencl",
+    "database": "data/market_data.sqlite",
+    "database_read_only": true,
+    "entry_delays_seconds": [
+      0,
+      5,
+      15,
+      30
+    ],
+    "evaluation_days": 2,
+    "models": 6,
+    "source_days": 7,
+    "stress_round_trip_charge_bps": 16.0,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "threshold_cells": 54
+  },
+  "governance": {
+    "ai_inference_permitted": false,
+    "bound_blob_identity_required": true,
+    "clean_worktree_required": true,
+    "data_expansion_only_if_pilot_gate_passes": true,
+    "development_only": true,
+    "historical_data_expansion_before_gate_permitted": false,
+    "implementation_must_be_ancestor_of_head": true,
+    "leverage_permitted": false,
+    "promotion_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "selection_contaminated": true,
+    "trading_authority_permitted": false
+  },
+  "implementation_commit": "09a9fa3248daba6a2aa3267379aa1f7cb7c15237",
+  "round": 42,
+  "round41_predecessor": {
+    "canonical_sha256": "718d75fdebf278f359a16dea9cf3b8e6606e49a420b9f8dfd2e262e9173522d7",
+    "file_sha256": "980619c4916942314218e923c83ff06bbcdf46679f8f172fd6a7e2f157b25101",
+    "implementation_commit": "ebf8d98263d67de20f52096adfaa0c2e8d1f2c50",
+    "path": "external://round41-prequential-meta-label-20260713-v2/report.json",
+    "status": "rejected"
+  },
+  "schema_version": "round-042-second-flow-execution-binding-v1",
+  "source_certificates": {
+    "minute_derivatives": {
+      "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+      "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+      "ingestion_implementation_commit": "6be0a4738225c7d29a5b1f1da72209f1747e5b1c",
+      "path": "external://round38-derivatives-source-20260712-v2/certificate.json",
+      "source_round": 38
+    },
+    "second_flow": {
+      "canonical_sha256": "e06c6c2894b0a1c5e2370a45c8cb0a7910fba62b4ea61f1cf973d4a06f59d1f5",
+      "file_sha256": "c2599e1b4c9f01b976443681bbb3aaaeb7a4e72f1ff2e93016f07f8eede18593",
+      "path": "external://round42-second-flow-source-20260713-v1/certificate.json",
+      "raw_aggregate_trade_rows": 15475296,
+      "rows": 1814400
+    }
+  }
+}
