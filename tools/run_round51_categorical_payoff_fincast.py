@@ -42,9 +42,11 @@ from simple_ai_trading.direct_payoff_lightgbm import (  # noqa: E402
 from simple_ai_trading.fincast_runtime import (  # noqa: E402
     FINCAST_CHECKPOINT_SHA256,
     FINCAST_CONTEXT_SECONDS,
+    FINCAST_MAX_STATE_AGE_SECONDS,
     FINCAST_PARAMETER_COUNT,
     FINCAST_SOURCE_COMMIT,
     FinCastRuntime,
+    build_fincast_causal_state_series,
     extract_fincast_feature_matrix,
     fincast_context_valid_mask,
     fincast_feature_names,
@@ -172,6 +174,9 @@ def _validate_design(path: Path) -> tuple[dict[str, object], str]:
     fincast = ai.get("fincast")
     lightgbm = model.get("lightgbm")
     categorical = model.get("categorical_target")
+    gap_analysis_path = (
+        ROOT / str(data.get("bbo_state_gap_analysis_path") or "")
+    ).resolve()
     if (
         tuple(data.get("symbols") or ()) != SYMBOLS
         or tuple(data.get("archive_products") or ())
@@ -180,11 +185,17 @@ def _validate_design(path: Path) -> tuple[dict[str, object], str]:
         or data.get("target_path_resolution_ms") != 100
         or data.get("synthetic_fabricated_or_interpolated_market_rows_permitted")
         is not False
+        or not gap_analysis_path.is_relative_to(ROOT)
+        or not gap_analysis_path.is_file()
+        or _file_sha256(gap_analysis_path)
+        != data.get("bbo_state_gap_analysis_file_sha256")
         or not isinstance(fincast, Mapping)
         or fincast.get("source_commit") != FINCAST_SOURCE_COMMIT
         or fincast.get("checkpoint_sha256") != FINCAST_CHECKPOINT_SHA256
         or fincast.get("parameter_count") != FINCAST_PARAMETER_COUNT
         or fincast.get("context_seconds") != FINCAST_CONTEXT_SECONDS
+        or fincast.get("maximum_state_age_seconds")
+        != FINCAST_MAX_STATE_AGE_SECONDS
         or not isinstance(lightgbm, Mapping)
         or lightgbm.get("opencl_fp64_accumulation_required") is not True
         or not isinstance(categorical, Mapping)
@@ -400,20 +411,30 @@ def _load_real_symbol_data(
             cache_state = "written"
         unfiltered_rows = dataset.rows
         unfiltered_dataset_sha256 = microstructure_dataset_fingerprint(dataset)
-        query_start = (
-            int(dataset.decision_time_ms[0]) - (FINCAST_CONTEXT_SECONDS + 1) * 1_000
+        state_start_ms = (
+            int(dataset.decision_time_ms[0]) - FINCAST_CONTEXT_SECONDS * 1_000
         )
+        state_end_ms = int(dataset.decision_time_ms[-1]) - 1_000
+        query_start = state_start_ms - FINCAST_MAX_STATE_AGE_SECONDS * 1_000
         source = (
             warehouse.connect()
             .execute(
                 "SELECT second_ms, close_mid FROM current_book_ticker_1s "
                 "WHERE symbol = ? AND second_ms BETWEEN ? AND ? ORDER BY second_ms",
-                [symbol, query_start, int(dataset.decision_time_ms[-1]) - 1_000],
+                [symbol, query_start, state_end_ms],
             )
             .fetchnumpy()
         )
-        second_ms = np.asarray(source["second_ms"], dtype=np.int64)
-        close_mid = np.asarray(source["close_mid"], dtype=np.float32)
+        observed_second_ms = np.asarray(source["second_ms"], dtype=np.int64)
+        observed_close_mid = np.asarray(source["close_mid"], dtype=np.float32)
+        second_ms, close_mid, causal_state_evidence = (
+            build_fincast_causal_state_series(
+                observed_second_ms=observed_second_ms,
+                observed_close_mid=observed_close_mid,
+                target_start_ms=state_start_ms,
+                target_end_ms=state_end_ms,
+            )
+        )
         context_valid = fincast_context_valid_mask(
             second_ms=second_ms,
             decision_time_ms=dataset.decision_time_ms,
@@ -430,6 +451,7 @@ def _load_real_symbol_data(
             "valid_mask_sha256": _array_sha256(context_valid),
             "unfiltered_dataset_sha256": unfiltered_dataset_sha256,
             "filtered_dataset_sha256": microstructure_dataset_fingerprint(dataset),
+            "causal_bbo_state": asdict(causal_state_evidence),
         }
         _progress(
             "fincast-context-filter",
@@ -491,6 +513,7 @@ def _load_or_extract_fincast(
     source: Path,
     checkpoint: Path,
     backend: str,
+    execution_binding_sha256: str,
 ) -> tuple[np.ndarray, dict[str, object], dict[str, object]]:
     cache_directory.mkdir(parents=True, exist_ok=True)
     source_sha = _array_sha256(second_ms, close_mid)
@@ -502,6 +525,7 @@ def _load_or_extract_fincast(
             "decision_times_sha256": decision_sha,
             "runtime_contract_sha256": fincast_runtime_contract_sha256(),
             "backend": backend,
+            "execution_binding_sha256": execution_binding_sha256,
         }
     )
     matrix_path = cache_directory / f"{symbol.lower()}-{identity}.npy"
@@ -511,6 +535,8 @@ def _load_or_extract_fincast(
         matrix = np.load(matrix_path, mmap_mode="r", allow_pickle=False)
         if (
             evidence.get("cache_identity") != identity
+            or evidence.get("execution_binding_sha256")
+            != execution_binding_sha256
             or evidence.get("source_series_sha256") != source_sha
             or evidence.get("decision_times_sha256") != decision_sha
             or tuple(evidence.get("feature_names") or ()) != fincast_feature_names()
@@ -563,6 +589,7 @@ def _load_or_extract_fincast(
         "cache_identity": identity,
         "feature_names": list(batch.feature_names),
         "runtime_contract_sha256": fincast_runtime_contract_sha256(),
+        "execution_binding_sha256": execution_binding_sha256,
         "runtime": runtime_evidence,
         "matrix_file_sha256": _file_sha256(matrix_path),
         "matrix_bytes": matrix_path.stat().st_size,
@@ -626,6 +653,34 @@ def _save_prediction(path: Path, **arrays: np.ndarray) -> dict[str, object]:
     return _artifact(path)
 
 
+def _model_cache_identity(
+    *,
+    execution_binding_sha256: str,
+    dataset,
+    specification,
+    roles: Mapping[str, np.ndarray],
+    seed: int,
+    compute_backend: str,
+    backend_kind: str,
+    backend_device: str,
+) -> str:
+    return _canonical_sha256(
+        {
+            "execution_binding_sha256": execution_binding_sha256,
+            "dataset_sha256": dataset.dataset_sha256,
+            "specification": asdict(specification),
+            "role_indexes_sha256": {
+                name: _array_sha256(np.asarray(indexes, dtype=np.int64))
+                for name, indexes in sorted(roles.items())
+            },
+            "seed": int(seed),
+            "compute_backend": compute_backend,
+            "backend_kind": backend_kind,
+            "backend_device": backend_device,
+        }
+    )
+
+
 def _train_symbol_models(
     *,
     symbol: str,
@@ -634,6 +689,9 @@ def _train_symbol_models(
     roles: Mapping[str, np.ndarray],
     model_contract: Mapping[str, object],
     compute_backend: str,
+    backend_kind: str,
+    backend_device: str,
+    execution_binding_sha256: str,
     artifact_root: Path,
 ) -> dict[str, list[dict[str, object]]]:
     direct_spec, categorical_spec, ai_spec = _specifications(model_contract)
@@ -641,30 +699,74 @@ def _train_symbol_models(
         candidate: [] for candidate in CANDIDATES
     }
     for seed in SEEDS:
-        _progress("train", symbol=symbol, candidate=direct_spec.candidate_id, seed=seed)
-        started = time.perf_counter()
-        model = train_direct_payoff_model(
-            deterministic_dataset,
-            train_indexes=roles["train"],
-            early_stop_indexes=roles["early_stop"],
-            spec=direct_spec,
-            target_scenario="base",
-            compute_backend=compute_backend,
+        direct_identity = _model_cache_identity(
+            execution_binding_sha256=execution_binding_sha256,
+            dataset=deterministic_dataset,
+            specification=direct_spec,
+            roles=roles,
             seed=seed,
+            compute_backend=compute_backend,
+            backend_kind=backend_kind,
+            backend_device=backend_device,
         )
         model_path = (
-            artifact_root / symbol / direct_spec.candidate_id / f"seed-{seed}.json"
+            artifact_root
+            / symbol
+            / direct_spec.candidate_id
+            / f"seed-{seed}-{direct_identity}.json"
         )
         model_path.parent.mkdir(parents=True, exist_ok=True)
-        save_direct_payoff_model(model_path, model)
+        started = time.perf_counter()
+        cache_state = "hit"
+        if model_path.is_file():
+            _progress(
+                "train-cache-hit",
+                symbol=symbol,
+                candidate=direct_spec.candidate_id,
+                seed=seed,
+            )
+            model = load_direct_payoff_model(model_path)
+        else:
+            cache_state = "written"
+            _progress(
+                "train", symbol=symbol, candidate=direct_spec.candidate_id, seed=seed
+            )
+            model = train_direct_payoff_model(
+                deterministic_dataset,
+                train_indexes=roles["train"],
+                early_stop_indexes=roles["early_stop"],
+                spec=direct_spec,
+                target_scenario="base",
+                compute_backend=compute_backend,
+                seed=seed,
+            )
+            save_direct_payoff_model(model_path, model)
+        if (
+            model.spec != direct_spec
+            or model.symbol != symbol
+            or model.feature_names != deterministic_dataset.feature_names
+            or model.source_dataset_sha256 != deterministic_dataset.dataset_sha256
+            or model.target_scenario != "base"
+            or model.backend_requested != compute_backend
+            or model.backend_kind != backend_kind
+            or model.backend_device != backend_device
+            or model.seed != seed
+            or model.training_rows != len(roles["train"])
+            or model.early_stop_rows != len(roles["early_stop"])
+        ):
+            raise ValueError(f"{symbol} direct payoff model cache identity drifted")
+        elapsed = time.perf_counter() - started
         output[direct_spec.candidate_id].append(
             {
                 "seed": seed,
+                "cache_identity": direct_identity,
+                "cache_state": cache_state,
                 "model_sha256": model.model_sha256,
                 "backend_kind": model.backend_kind,
                 "backend_device": model.backend_device,
                 "best_iterations": dict(model.best_iterations),
-                "training_seconds": time.perf_counter() - started,
+                "training_seconds": elapsed if cache_state == "written" else 0.0,
+                "cache_load_seconds": elapsed if cache_state == "hit" else 0.0,
                 "model": _artifact(model_path),
             }
         )
@@ -673,34 +775,75 @@ def _train_symbol_models(
             (categorical_spec, deterministic_dataset),
             (ai_spec, ai_dataset),
         ):
-            _progress(
-                "train",
-                symbol=symbol,
-                candidate=specification.candidate_id,
+            identity = _model_cache_identity(
+                execution_binding_sha256=execution_binding_sha256,
+                dataset=dataset,
+                specification=specification,
+                roles=roles,
                 seed=seed,
-            )
-            started = time.perf_counter()
-            model = train_categorical_payoff_model(
-                dataset,
-                train_indexes=roles["train"],
-                early_stop_indexes=roles["early_stop"],
-                calibration_indexes=roles["calibration"],
-                spec=specification,
-                target_scenario="base",
                 compute_backend=compute_backend,
-                seed=seed,
+                backend_kind=backend_kind,
+                backend_device=backend_device,
             )
             model_path = (
                 artifact_root
                 / symbol
                 / specification.candidate_id
-                / f"seed-{seed}.json"
+                / f"seed-{seed}-{identity}.json"
             )
             model_path.parent.mkdir(parents=True, exist_ok=True)
-            save_categorical_payoff_model(model_path, model)
+            started = time.perf_counter()
+            cache_state = "hit"
+            if model_path.is_file():
+                _progress(
+                    "train-cache-hit",
+                    symbol=symbol,
+                    candidate=specification.candidate_id,
+                    seed=seed,
+                )
+                model = load_categorical_payoff_model(model_path)
+            else:
+                cache_state = "written"
+                _progress(
+                    "train",
+                    symbol=symbol,
+                    candidate=specification.candidate_id,
+                    seed=seed,
+                )
+                model = train_categorical_payoff_model(
+                    dataset,
+                    train_indexes=roles["train"],
+                    early_stop_indexes=roles["early_stop"],
+                    calibration_indexes=roles["calibration"],
+                    spec=specification,
+                    target_scenario="base",
+                    compute_backend=compute_backend,
+                    seed=seed,
+                )
+                save_categorical_payoff_model(model_path, model)
+            if (
+                model.spec != specification
+                or model.symbol != symbol
+                or model.feature_names != dataset.feature_names
+                or model.source_dataset_sha256 != dataset.dataset_sha256
+                or model.target_scenario != "base"
+                or model.backend_requested != compute_backend
+                or model.backend_kind != backend_kind
+                or model.backend_device != backend_device
+                or model.seed != seed
+                or model.training_rows != len(roles["train"])
+                or model.early_stop_rows != len(roles["early_stop"])
+                or model.calibration_rows != len(roles["calibration"])
+            ):
+                raise ValueError(
+                    f"{symbol} {specification.candidate_id} model cache identity drifted"
+                )
+            elapsed = time.perf_counter() - started
             output[specification.candidate_id].append(
                 {
                     "seed": seed,
+                    "cache_identity": identity,
+                    "cache_state": cache_state,
                     "model_sha256": model.model_sha256,
                     "backend_kind": model.backend_kind,
                     "backend_device": model.backend_device,
@@ -719,7 +862,10 @@ def _train_symbol_models(
                         }
                         for side in SIDES
                     },
-                    "training_seconds": time.perf_counter() - started,
+                    "training_seconds": elapsed
+                    if cache_state == "written"
+                    else 0.0,
+                    "cache_load_seconds": elapsed if cache_state == "hit" else 0.0,
                     "model": _artifact(model_path),
                 }
             )
@@ -1197,6 +1343,7 @@ def run_round51(
             source=fincast_source,
             checkpoint=fincast_checkpoint,
             backend=fincast_backend,
+            execution_binding_sha256=binding_sha,
         )
         deterministic_dataset = build_categorical_payoff_dataset(
             dataset,
@@ -1280,6 +1427,9 @@ def run_round51(
             roles=state["roles"],
             model_contract=model_contract,
             compute_backend=compute_backend,
+            backend_kind=lightgbm_backend_kind,
+            backend_device=lightgbm_backend_device,
+            execution_binding_sha256=binding_sha,
             artifact_root=artifact_root,
         )
     _progress("all-models-trained", models=len(SYMBOLS) * len(CANDIDATES) * len(SEEDS))

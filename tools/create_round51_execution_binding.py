@@ -16,6 +16,7 @@ SCHEMA = "round-051-categorical-payoff-fincast-execution-binding-v1"
 ROUND = 51
 BOUND_PATHS = (
     "pyproject.toml",
+    "docs/model-research/action-value/round-051-bbo-state-gap-analysis.json",
     "src/simple_ai_trading/categorical_payoff_lightgbm.py",
     "src/simple_ai_trading/direct_payoff_lightgbm.py",
     "src/simple_ai_trading/fincast_runtime.py",

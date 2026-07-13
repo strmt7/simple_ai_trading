@@ -1,0 +1,79 @@
+{
+  "analysis_scope": {
+    "economics_inspected": false,
+    "end_date": "2023-06-14",
+    "event_source": "Official Binance Data Vision USD-M daily bookTicker archives",
+    "start_date": "2023-05-16",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+  },
+  "corpus_certificates": {
+    "BTCUSDT": "10f920c09fea0776905cd9662299875b34f547100893a85584d76d4a2b463f75",
+    "ETHUSDT": "6b4ca26af538040ce687eaed5029d39e5d7ad7f0d3a1e7dce990ecb320264d91",
+    "SOLUSDT": "3f919c173e307c20550d91f9a718a81159ae9e3174d3b67c17294578895d5b9d"
+  },
+  "failed_pre_evaluation_run": {
+    "economic_results_produced": false,
+    "failure": "categorical payoff short early-stop class support failed",
+    "models_completed_before_failure": 19,
+    "reason": "Sparse one-second bars treated every no-update second as absent, leaving insufficient SOL short-side class support in the early-stop role.",
+    "runtime_seconds": 3582.5
+  },
+  "gap_statistics": {
+    "BTCUSDT": {
+      "contiguous_one_second_intervals": 2508828,
+      "gap_count": 99,
+      "gap_only_quantiles_seconds": [2.0, 2.0, 4.0, 5.0, 1141.76, 35881.976, 39742.0],
+      "gap_only_quantile_probabilities": [0.0, 0.5, 0.9, 0.95, 0.99, 0.999, 1.0],
+      "intervals": 2508927,
+      "maximum_gap_seconds": 39742.0,
+      "observed_one_second_bars": 2508928
+    },
+    "ETHUSDT": {
+      "contiguous_one_second_intervals": 2508801,
+      "gap_count": 101,
+      "gap_only_quantiles_seconds": [2.0, 2.0, 4.0, 5.0, 354.0, 35803.2, 39742.0],
+      "gap_only_quantile_probabilities": [0.0, 0.5, 0.9, 0.95, 0.99, 0.999, 1.0],
+      "intervals": 2508902,
+      "maximum_gap_seconds": 39742.0,
+      "observed_one_second_bars": 2508903
+    },
+    "SOLUSDT": {
+      "contiguous_one_second_intervals": 2424049,
+      "gap_count": 40750,
+      "gap_only_quantiles_seconds": [2.0, 2.0, 2.0, 3.0, 3.0, 5.0, 39743.0],
+      "gap_only_quantile_probabilities": [0.0, 0.5, 0.9, 0.95, 0.99, 0.999, 1.0],
+      "intervals": 2464799,
+      "maximum_gap_seconds": 39743.0,
+      "observed_one_second_bars": 2464800
+    }
+  },
+  "generated_at": "2026-07-13T19:33:44.5679697Z",
+  "method": {
+    "context_seconds": 512,
+    "description": "For each one-second target timestamp, use only the most recent observed BBO midpoint at or before that timestamp. Never interpolate toward a future observation. Omit state samples older than the tested maximum age, then require every decision to have 512 uninterrupted retained state samples ending at t-1 second.",
+    "official_semantics_source": "https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md#individual-symbol-book-ticker-streams",
+    "official_semantics_summary": "Binance publishes any best-bid or best-ask price or quantity update in real time; the last observed BBO remains the known state until a replacement update.",
+    "price_interpolation_permitted": false,
+    "synthetic_market_rows_created": false
+  },
+  "retention_by_maximum_state_age_seconds": {
+    "BTCUSDT": {
+      "input_decisions": 249333,
+      "retained": {"0": 246407, "1": 248117, "2": 248748, "5": 249333, "10": 249333, "30": 249333}
+    },
+    "ETHUSDT": {
+      "input_decisions": 249291,
+      "retained": {"0": 246050, "1": 247401, "2": 248346, "5": 249246, "10": 249291, "30": 249291}
+    },
+    "SOLUSDT": {
+      "input_decisions": 137025,
+      "retained": {"0": 49632, "1": 120598, "2": 134112, "5": 136881, "10": 137025, "30": 137025}
+    }
+  },
+  "selected_contract": {
+    "maximum_state_age_seconds": 5,
+    "reason": "Retains ordinary event-time state persistence while rejecting the long synchronized outages and all state older than the measured 99.9th percentile of SOL gap events.",
+    "selection_used_market_outcomes": false
+  },
+  "schema_version": "round-051-bbo-state-gap-analysis-v1"
+}

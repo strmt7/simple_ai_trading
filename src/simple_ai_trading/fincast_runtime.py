@@ -32,7 +32,8 @@ FINCAST_PARAMETER_COUNT = 991_437_160
 FINCAST_QUANTILES = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 FINCAST_FEATURE_HORIZONS_SECONDS = (5, 15, 30, 60, 120)
 FINCAST_CONTEXT_SECONDS = 512
-FINCAST_RUNTIME_SCHEMA_VERSION = "pinned-fincast-runtime-v1"
+FINCAST_MAX_STATE_AGE_SECONDS = 5
+FINCAST_RUNTIME_SCHEMA_VERSION = "pinned-fincast-runtime-v2"
 _FALLBACK_MARKERS = (
     "not currently supported on the dml backend",
     "fall back to run on the cpu",
@@ -142,6 +143,52 @@ class FinCastFeatureExtractionEvidence:
             or self.cpu_fallback_warning_count != 0
         ):
             raise ValueError("FinCast feature extraction evidence is invalid")
+
+
+@dataclass(frozen=True)
+class FinCastCausalStateEvidence:
+    schema_version: str
+    maximum_state_age_seconds: int
+    target_start_ms: int
+    target_end_ms: int
+    observed_input_rows: int
+    target_grid_rows: int
+    exact_observation_rows: int
+    carried_state_rows: int
+    expired_state_rows: int
+    output_rows: int
+    maximum_retained_state_age_seconds: int
+    observed_source_sha256: str
+    state_series_sha256: str
+
+    def __post_init__(self) -> None:
+        hashes = (self.observed_source_sha256, self.state_series_sha256)
+        if (
+            self.schema_version != "fincast-causal-bbo-state-v1"
+            or self.maximum_state_age_seconds != FINCAST_MAX_STATE_AGE_SECONDS
+            or self.target_start_ms > self.target_end_ms
+            or self.observed_input_rows <= 0
+            or self.target_grid_rows <= 0
+            or self.exact_observation_rows < 0
+            or self.carried_state_rows < 0
+            or self.expired_state_rows < 0
+            or self.output_rows <= 0
+            or self.exact_observation_rows
+            + self.carried_state_rows
+            + self.expired_state_rows
+            != self.target_grid_rows
+            or self.output_rows
+            != self.exact_observation_rows + self.carried_state_rows
+            or not 0
+            <= self.maximum_retained_state_age_seconds
+            <= self.maximum_state_age_seconds
+            or any(
+                len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in hashes
+            )
+        ):
+            raise ValueError("FinCast causal BBO state evidence is invalid")
 
 
 @dataclass(frozen=True)
@@ -550,6 +597,78 @@ def _array_sha256(*arrays: np.ndarray) -> str:
     return digest.hexdigest()
 
 
+def build_fincast_causal_state_series(
+    *,
+    observed_second_ms: np.ndarray,
+    observed_close_mid: np.ndarray,
+    target_start_ms: int,
+    target_end_ms: int,
+    maximum_state_age_seconds: int = FINCAST_MAX_STATE_AGE_SECONDS,
+) -> tuple[np.ndarray, np.ndarray, FinCastCausalStateEvidence]:
+    """Sample the last observed BBO state without price interpolation or lookahead."""
+
+    observed_seconds = np.asarray(observed_second_ms, dtype=np.int64)
+    observed_prices = np.asarray(observed_close_mid, dtype=np.float32)
+    start_ms = int(target_start_ms)
+    end_ms = int(target_end_ms)
+    maximum_age = int(maximum_state_age_seconds)
+    if (
+        observed_seconds.ndim != 1
+        or observed_prices.shape != observed_seconds.shape
+        or len(observed_seconds) == 0
+        or np.any(np.diff(observed_seconds) <= 0)
+        or np.any(observed_seconds % 1_000 != 0)
+        or not np.all(np.isfinite(observed_prices))
+        or np.any(observed_prices <= 0.0)
+        or start_ms % 1_000 != 0
+        or end_ms % 1_000 != 0
+        or start_ms > end_ms
+        or maximum_age != FINCAST_MAX_STATE_AGE_SECONDS
+    ):
+        raise ValueError("FinCast observed BBO state source is invalid")
+
+    target_seconds = np.arange(start_ms, end_ms + 1_000, 1_000, dtype=np.int64)
+    observed_indexes = np.searchsorted(
+        observed_seconds,
+        target_seconds,
+        side="right",
+    ) - 1
+    has_observation = observed_indexes >= 0
+    state_age_ms = np.full(len(target_seconds), np.iinfo(np.int64).max, dtype=np.int64)
+    positions = np.flatnonzero(has_observation)
+    state_age_ms[positions] = (
+        target_seconds[positions] - observed_seconds[observed_indexes[positions]]
+    )
+    retained = has_observation & (state_age_ms <= maximum_age * 1_000)
+    if not np.any(retained):
+        raise ValueError("FinCast causal BBO state has no retained samples")
+    retained_positions = np.flatnonzero(retained)
+    output_seconds = np.ascontiguousarray(target_seconds[retained_positions])
+    output_prices = np.ascontiguousarray(
+        observed_prices[observed_indexes[retained_positions]],
+        dtype=np.float32,
+    )
+    exact = retained & (state_age_ms == 0)
+    carried = retained & (state_age_ms > 0)
+    maximum_retained_age = int(state_age_ms[retained].max() // 1_000)
+    evidence = FinCastCausalStateEvidence(
+        schema_version="fincast-causal-bbo-state-v1",
+        maximum_state_age_seconds=maximum_age,
+        target_start_ms=start_ms,
+        target_end_ms=end_ms,
+        observed_input_rows=len(observed_seconds),
+        target_grid_rows=len(target_seconds),
+        exact_observation_rows=int(np.sum(exact)),
+        carried_state_rows=int(np.sum(carried)),
+        expired_state_rows=int(np.sum(~retained)),
+        output_rows=len(output_seconds),
+        maximum_retained_state_age_seconds=maximum_retained_age,
+        observed_source_sha256=_array_sha256(observed_seconds, observed_prices),
+        state_series_sha256=_array_sha256(output_seconds, output_prices),
+    )
+    return output_seconds, output_prices, evidence
+
+
 def fincast_context_valid_mask(
     *,
     second_ms: np.ndarray,
@@ -681,6 +800,7 @@ def fincast_runtime_contract_sha256() -> str:
         "quantiles": FINCAST_QUANTILES,
         "feature_horizons_seconds": FINCAST_FEATURE_HORIZONS_SECONDS,
         "context_seconds": FINCAST_CONTEXT_SECONDS,
+        "maximum_state_age_seconds": FINCAST_MAX_STATE_AGE_SECONDS,
         "feature_names": fincast_feature_names(),
     }
     encoded = json.dumps(
