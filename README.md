@@ -528,16 +528,14 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 48 trained six minute-resolution logistic-distribution TCNs on the AMD
-GPU through DirectML. The state-conditioned mixture improved average negative
-log likelihood by `0.7381%`, while 15-minute long/short action AUC remained near
-`0.618`. The frozen expected-value rule nevertheless admitted no 15-minute
-trades and routed `97.84%` of control trades and `99.75%` of mixture trades to
-the weak 120-minute horizon. The control returned `-54.03%` at the 12 bps base
-charge; the less-bad mixture returned `-41.35%` with `41.97%` maximum drawdown
-and a `0.633` profit factor. Both were rejected, AI was withheld, and no
-profitability, leverage, testnet, live-trading, or autonomous-execution
-authority was established.
+Round 49 trained six 15-minute action-value TCNs on the AMD GPU through
+DirectML. Profit-probability AUC remained near `0.618`, and the hurdle model
+improved conditional gain/loss scores, but pooled expected-net Spearman stayed
+near zero. Its 165-trade point estimate was `+2.53%` at 12 bps and `+0.30%` at
+16 bps, with a negative familywise bootstrap lower bound, only 35 active days,
+and all positive symbol P&L concentrated in ETHUSDT. The model was rejected,
+AI was withheld, and no profitability, leverage, testnet, live-trading, or
+autonomous-execution authority was established.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

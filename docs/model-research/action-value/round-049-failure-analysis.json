@@ -1,0 +1,107 @@
+{
+  "ai_uplift_claim": false,
+  "analysis_sha256": "ec98b3c232b3103328e4cf3172e2cce140afaf9802fb1567824f2f88189b2517",
+  "binding_sha256": "8977c2788fa38f3d086e26e8b8818236a4ef81da9e92d5901b46d887a94f772b",
+  "critical_interpretation": [
+    "The positive 12 bps point estimate is not evidence of a repeatable edge because expected-net Spearman and MSE skill failed for both sides, seed action-value stability failed, and the familywise stress bootstrap lower bound was negative.",
+    "The hurdle heads learned conditional gain and loss severity better than static training means, but their exact probability-weighted combination did not improve expected-net ranking over the direct control.",
+    "The ledger was sparse and unstable: 165 trades occurred on only 35 days, 130 trades occurred in January-February, and ETHUSDT supplied all positive symbol net PnL while BTCUSDT and SOLUSDT lost.",
+    "The 16 bps stress ledger retained the same timestamps and sides but reduced total return to 0.30% and profit factor to 1.018, which is too close to break-even for execution uncertainty.",
+    "No threshold, seed, side, month, symbol, fee, or leverage choice may be selected from this consumed evaluation result."
+  ],
+  "dataset_sha256": "37d6c5b29bffd272afe03703d1ff2353f2d6939201be253cfe626e5e12f4b48b",
+  "development_only": true,
+  "generated_at_utc": "2026-07-13T14:24:40.762878+00:00",
+  "leverage_applied": false,
+  "next_model_requirements": [
+    "Retain the calibrated probability trunk because pooled 15-minute AUC and proper probability scores remained useful and stable.",
+    "Replace independently accurate severity components with an objective that must add stable out-of-sample expected-net ordering across symbols and months, while preserving proper conditional-distribution scoring.",
+    "Measure and penalize symbol and month concentration using only training and early-stop roles; do not tune a trade threshold on consumed 2025-H1 outcomes.",
+    "Require seed-stable positive action value and exact fixed-ledger base/stress replay with no forced activity, leverage, or fee reduction.",
+    "Reject isolated positive returns unless probability, action-value, mechanism, bootstrap, activity, drawdown, profit-factor, and concentration gates all pass together.",
+    "Keep local language-model AI disabled until a deterministic candidate clears every gate; AI remains a paired asynchronous veto, never an order generator or loss-recovery mechanism."
+  ],
+  "observed_result": {
+    "direct_control": {
+      "action_quality_gate_reasons": [
+        "short_expected_net_mse_skill_not_positive",
+        "short_expected_net_spearman_below_0_03",
+        "short_not_all_symbols_have_positive_action_spearman",
+        "short_fewer_than_four_months_positive_action_spearman",
+        "long_expected_net_mse_skill_not_positive",
+        "long_expected_net_spearman_below_0_03",
+        "minimum_pairwise_seed_expected_net_spearman_below_0_5"
+      ],
+      "long_expected_net_spearman": 0.00875550472926849,
+      "short_expected_net_spearman": 0.000998432750538169,
+      "trades": 0
+    },
+    "hurdle": {
+      "action_quality_gate_reasons": [
+        "short_expected_net_mse_skill_not_positive",
+        "short_expected_net_spearman_below_0_03",
+        "short_not_all_symbols_have_positive_action_spearman",
+        "short_fewer_than_four_months_positive_action_spearman",
+        "long_expected_net_mse_skill_not_positive",
+        "long_expected_net_spearman_below_0_03",
+        "long_not_all_symbols_have_positive_action_spearman",
+        "minimum_pairwise_seed_expected_net_spearman_below_0_5"
+      ],
+      "active_days": 35,
+      "base_maximum_drawdown_fraction": 0.062278649992049684,
+      "base_profit_factor": 1.0925769230906202,
+      "base_total_net_return_fraction": 0.025275283383165315,
+      "economic_gate_reasons": [
+        "stress_familywise_bootstrap_lower_not_positive",
+        "fewer_than_ninety_active_days",
+        "fewer_than_one_hundred_eighty_closed_trades",
+        "single_symbol_absolute_net_pnl_fraction_exceeds_half",
+        "numerical_action_or_mechanism_quality_gate_failed"
+      ],
+      "long_expected_net_spearman": 0.0045157613240759025,
+      "long_gain_gamma_skill": 0.03285011025676521,
+      "long_loss_gamma_skill": 0.016177086509848837,
+      "short_expected_net_spearman": -0.000641377506215588,
+      "short_gain_gamma_skill": 0.033024595160159764,
+      "short_loss_gamma_skill": 0.01598486522782805,
+      "stress_bootstrap_lower_mean_five_minute_bps": -0.03456874488678417,
+      "stress_profit_factor": 1.017619475324064,
+      "stress_total_net_return_fraction": 0.0029677582378793144,
+      "symbol_net_bps": {
+        "BTCUSDT": -189.17898559570312,
+        "ETHUSDT": 1457.4872550964355,
+        "SOLUSDT": -445.9727773666382
+      },
+      "trades": 165,
+      "trades_by_symbol": {
+        "BTCUSDT": 5,
+        "ETHUSDT": 55,
+        "SOLUSDT": 105
+      }
+    },
+    "mechanism_ablation": {
+      "average_expected_net_spearman_improvement": -0.002939776830973172,
+      "control_average_expected_net_mse_bps2": 1648.3564036426808,
+      "control_average_expected_net_spearman": 0.004876968739903329,
+      "control_average_probability_log_loss": 0.594697067021708,
+      "hurdle_average_expected_net_mse_bps2": 1650.917458647462,
+      "hurdle_average_expected_net_spearman": 0.0019371919089301573,
+      "hurdle_average_probability_log_loss": 0.5947575281268372,
+      "passed": false,
+      "reasons": [
+        "average_expected_net_spearman_improvement_below_0_005"
+      ],
+      "relative_expected_net_mse_degradation": 0.0015537022206613127,
+      "relative_probability_log_loss_degradation": 0.00010166706459813213
+    }
+  },
+  "predecessor_dataset_sha256": "6969a3134049a326024939d5f9c46a99c37a4932e4a1f146a542a77427bba92b",
+  "profitability_claim": false,
+  "round": 49,
+  "schema_version": "round-049-action-hurdle-failure-analysis-v1",
+  "selection_contaminated": true,
+  "source_report_canonical_sha256": "d07ce85ad0b63e292369d59d5a0c93610c34df17dd73be066d94fe6254a09417",
+  "source_report_file_sha256": "11f0a61a8bca1fcb5940df5f883c25bd970557a6dd2e875d6565aabbb9dfd9a2",
+  "status": "rejected",
+  "trading_authority": false
+}

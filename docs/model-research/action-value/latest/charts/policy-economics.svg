@@ -1,48 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="930" viewBox="0 0 1500 930" role="img" aria-labelledby="title desc">
-<title id="title">After-cost policy economics</title>
-<desc id="desc">Identical action ledgers repriced at 12 bps base and 16 bps stress roundtrip charges.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
+<title id="title">Positive point estimate failed economic validation</title>
+<desc id="desc">Exact fixed trade ledger at 12 bps base and 16 bps stress; no trade reselection, leverage, or fee improvement.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
-<text x="56" y="52" class="title">After-cost policy economics</text>
-<text x="56" y="80" class="subtitle">Identical action ledgers repriced at 12 bps base and 16 bps stress roundtrip charges.</text>
-<text x="170" y="127" class="label">Total net return</text>
-<line x1="170" y1="330.0" x2="1430" y2="330.0" class="grid"/><text x="156" y="334.0" text-anchor="end" class="axis">-71.55%</text>
-<line x1="170" y1="162.9" x2="1430" y2="162.9" class="zero"/><text x="156" y="166.9" text-anchor="end" class="axis">+0.00%</text>
-<line x1="170" y1="145.0" x2="1430" y2="145.0" class="grid"/><text x="156" y="149.0" text-anchor="end" class="axis">+7.67%</text>
-<rect x="269.5" y="162.9" width="116" height="126.2" fill="#2563a6" opacity="1.0"/>
-<text x="327.5" y="155.9" text-anchor="middle" class="value">-54.03%</text>
-<rect x="584.5" y="162.9" width="116" height="149.2" fill="#2563a6" opacity="0.55"/>
-<text x="642.5" y="155.9" text-anchor="middle" class="value">-63.88%</text>
-<rect x="899.5" y="162.9" width="116" height="96.6" fill="#0f766e" opacity="1.0"/>
-<text x="957.5" y="155.9" text-anchor="middle" class="value">-41.35%</text>
-<rect x="1214.5" y="162.9" width="116" height="110.4" fill="#0f766e" opacity="0.55"/>
-<text x="1272.5" y="155.9" text-anchor="middle" class="value">-47.25%</text>
-<text x="170" y="382" class="label">Maximum drawdown</text>
-<line x1="170" y1="585.0" x2="1430" y2="585.0" class="grid"/><text x="156" y="589.0" text-anchor="end" class="axis">-7.67%</text>
-<line x1="170" y1="567.1" x2="1430" y2="567.1" class="zero"/><text x="156" y="571.1" text-anchor="end" class="axis">+0.00%</text>
-<line x1="170" y1="400.0" x2="1430" y2="400.0" class="grid"/><text x="156" y="404.0" text-anchor="end" class="axis">+71.57%</text>
-<rect x="269.5" y="440.9" width="116" height="126.2" fill="#2563a6" opacity="1.0"/>
-<text x="327.5" y="433.9" text-anchor="middle" class="value">+54.06%</text>
-<rect x="584.5" y="417.9" width="116" height="149.2" fill="#2563a6" opacity="0.55"/>
-<text x="642.5" y="410.9" text-anchor="middle" class="value">+63.90%</text>
-<rect x="899.5" y="469.1" width="116" height="98.0" fill="#0f766e" opacity="1.0"/>
-<text x="957.5" y="462.1" text-anchor="middle" class="value">+41.97%</text>
-<rect x="1214.5" y="455.7" width="116" height="111.4" fill="#0f766e" opacity="0.55"/>
-<text x="1272.5" y="448.7" text-anchor="middle" class="value">+47.72%</text>
-<text x="170" y="637" class="label">Profit factor</text>
-<line x1="170" y1="840.0" x2="1430" y2="840.0" class="grid"/><text x="156" y="844.0" text-anchor="end" class="axis">+0.52</text>
-<line x1="170" y1="672.9" x2="1430" y2="672.9" class="zero"/><text x="156" y="676.9" text-anchor="end" class="axis">+1.05</text>
-<line x1="170" y1="655.0" x2="1430" y2="655.0" class="grid"/><text x="156" y="659.0" text-anchor="end" class="axis">+1.11</text>
-<rect x="269.5" y="672.9" width="116" height="90.9" fill="#2563a6" opacity="1.0"/>
-<text x="327.5" y="665.9" text-anchor="middle" class="value">+0.76</text>
-<rect x="584.5" y="672.9" width="116" height="111.0" fill="#2563a6" opacity="0.55"/>
-<text x="642.5" y="665.9" text-anchor="middle" class="value">+0.70</text>
-<rect x="899.5" y="672.9" width="116" height="131.5" fill="#0f766e" opacity="1.0"/>
-<text x="957.5" y="665.9" text-anchor="middle" class="value">+0.63</text>
-<rect x="1214.5" y="672.9" width="116" height="149.2" fill="#0f766e" opacity="0.55"/>
-<text x="1272.5" y="665.9" text-anchor="middle" class="value">+0.58</text>
-<text x="327.5" y="868" text-anchor="middle" class="axis">Control base</text>
-<text x="642.5" y="868" text-anchor="middle" class="axis">Control stress</text>
-<text x="957.5" y="868" text-anchor="middle" class="axis">Mixture base</text>
-<text x="1272.5" y="868" text-anchor="middle" class="axis">Mixture stress</text>
+<text x="56" y="52" class="title">Positive point estimate failed economic validation</text>
+<text x="56" y="80" class="subtitle">Exact fixed trade ledger at 12 bps base and 16 bps stress; no trade reselection, leverage, or fee improvement.</text>
+<rect x="930" y="42" width="18" height="18" fill="#0f766e"/><text x="958" y="56" class="note">candidate base charge</text>
+<rect x="1170" y="42" width="18" height="18" fill="#b45309"/><text x="1198" y="56" class="note">16 bps stress</text>
+<text x="130" y="127" class="label">Total net return (%)</text>
+<line x1="130" y1="350.0" x2="1430" y2="350.0" class="grid"/>
+<text x="116" y="354.0" text-anchor="end" class="axis">-0.38</text>
+<line x1="130" y1="247.5" x2="1430" y2="247.5" class="grid"/>
+<text x="116" y="251.5" text-anchor="end" class="axis">+1.26</text>
+<line x1="130" y1="145.0" x2="1430" y2="145.0" class="grid"/>
+<text x="116" y="149.0" text-anchor="end" class="axis">+2.91</text>
+<line x1="130" y1="326.3" x2="1430" y2="326.3" class="zero"/>
+<rect x="188.5" y="326.3" width="208.0" height="1.0" fill="#2563a6"/>
+<text x="292.5" y="318.3" text-anchor="middle" class="value">+0.00</text>
+<text x="292.5" y="372.0" text-anchor="middle" class="axis">Base / control</text>
+<rect x="513.5" y="326.3" width="208.0" height="1.0" fill="#b45309"/>
+<text x="617.5" y="318.3" text-anchor="middle" class="value">+0.00</text>
+<text x="617.5" y="372.0" text-anchor="middle" class="axis">Stress / control</text>
+<rect x="838.5" y="168.7" width="208.0" height="157.7" fill="#0f766e"/>
+<text x="942.5" y="160.7" text-anchor="middle" class="value">+2.53</text>
+<text x="942.5" y="372.0" text-anchor="middle" class="axis">Base / hurdle</text>
+<rect x="1163.5" y="307.8" width="208.0" height="18.5" fill="#b45309"/>
+<text x="1267.5" y="299.8" text-anchor="middle" class="value">+0.30</text>
+<text x="1267.5" y="372.0" text-anchor="middle" class="axis">Stress / hurdle</text>
+<text x="130" y="452" class="label">Maximum drawdown (%)</text>
+<line x1="130" y1="650.0" x2="1430" y2="650.0" class="grid"/>
+<text x="116" y="654.0" text-anchor="end" class="axis">0.00</text>
+<line x1="130" y1="560.0" x2="1430" y2="560.0" class="grid"/>
+<text x="116" y="564.0" text-anchor="end" class="axis">4.02</text>
+<line x1="130" y1="470.0" x2="1430" y2="470.0" class="grid"/>
+<text x="116" y="474.0" text-anchor="end" class="axis">8.04</text>
+<line x1="130" y1="650.0" x2="1430" y2="650.0" class="zero"/>
+<rect x="188.5" y="650.0" width="208.0" height="1.0" fill="#2563a6"/>
+<text x="292.5" y="642.0" text-anchor="middle" class="value">0.00</text>
+<text x="292.5" y="672.0" text-anchor="middle" class="axis">Base / control</text>
+<rect x="513.5" y="650.0" width="208.0" height="1.0" fill="#b45309"/>
+<text x="617.5" y="642.0" text-anchor="middle" class="value">0.00</text>
+<text x="617.5" y="672.0" text-anchor="middle" class="axis">Stress / control</text>
+<rect x="838.5" y="510.5" width="208.0" height="139.5" fill="#0f766e"/>
+<text x="942.5" y="502.5" text-anchor="middle" class="value">6.23</text>
+<text x="942.5" y="672.0" text-anchor="middle" class="axis">Base / hurdle</text>
+<rect x="1163.5" y="493.5" width="208.0" height="156.5" fill="#b45309"/>
+<text x="1267.5" y="485.5" text-anchor="middle" class="value">6.99</text>
+<text x="1267.5" y="672.0" text-anchor="middle" class="axis">Stress / hurdle</text>
 </svg>

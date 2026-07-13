@@ -1,24 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="700" viewBox="0 0 1500 700" role="img" aria-labelledby="title desc">
-<title id="title">Monthly after-cost return</title>
-<desc id="desc">Base is solid and stress is dashed; every series comes from the fixed replay ledger.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="610" viewBox="0 0 1500 610" role="img" aria-labelledby="title desc">
+<title id="title">Hurdle economics were concentrated early in 2025</title>
+<desc id="desc">Monthly compounded return from the same 165 trades; January-April contain 157 trades and both losing months.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
-<text x="56" y="52" class="title">Monthly after-cost return</text>
-<text x="56" y="80" class="subtitle">Base is solid and stress is dashed; every series comes from the fixed replay ledger.</text>
-<line x1="900" y1="53" x2="934" y2="53" stroke="#2563a6" stroke-width="4"/><text x="944" y="58" class="note">Single logistic control</text>
-<line x1="1170" y1="53" x2="1204" y2="53" stroke="#0f766e" stroke-width="4"/><text x="1214" y="58" class="note">State-conditioned mixture</text>
-<line x1="145" y1="535.0" x2="1430" y2="535.0" class="grid"/><text x="131" y="539.0" text-anchor="end" class="axis">-22.1%</text>
-<line x1="145" y1="183.1" x2="1430" y2="183.1" class="zero"/><text x="131" y="187.1" text-anchor="end" class="axis">+0.0%</text>
-<line x1="145" y1="145.0" x2="1430" y2="145.0" class="grid"/><text x="131" y="149.0" text-anchor="end" class="axis">+2.4%</text>
-<polyline points="145.0,437.6 402.0,211.6 659.0,405.9 916.0,416.9 1173.0,377.1 1430.0,399.3" fill="none" stroke="#2563a6" stroke-width="3"/>
-<polyline points="145.0,497.3 402.0,274.1 659.0,465.2 916.0,474.4 1173.0,425.1 1430.0,443.0" fill="none" stroke="#2563a6" stroke-width="3" stroke-dasharray="8 6"/>
-<polyline points="145.0,414.0 402.0,327.1 659.0,182.7 916.0,340.9 1173.0,319.6 1430.0,318.0" fill="none" stroke="#0f766e" stroke-width="3"/>
-<polyline points="145.0,442.8 402.0,354.7 659.0,209.7 916.0,368.6 1173.0,344.9 1430.0,334.6" fill="none" stroke="#0f766e" stroke-width="3" stroke-dasharray="8 6"/>
-<text x="145.0" y="565" text-anchor="middle" class="axis">2025-01</text>
-<text x="402.0" y="565" text-anchor="middle" class="axis">2025-02</text>
-<text x="659.0" y="565" text-anchor="middle" class="axis">2025-03</text>
-<text x="916.0" y="565" text-anchor="middle" class="axis">2025-04</text>
-<text x="1173.0" y="565" text-anchor="middle" class="axis">2025-05</text>
-<text x="1430.0" y="565" text-anchor="middle" class="axis">2025-06</text>
-<text x="56" y="640" class="note">The mixture had one positive base month; all other candidate/scenario months were negative.</text>
+<text x="56" y="52" class="title">Hurdle economics were concentrated early in 2025</text>
+<text x="56" y="80" class="subtitle">Monthly compounded return from the same 165 trades; January-April contain 157 trades and both losing months.</text>
+<rect x="930" y="42" width="18" height="18" fill="#0f766e"/><text x="958" y="56" class="note">12 bps base</text>
+<rect x="1170" y="42" width="18" height="18" fill="#b45309"/><text x="1198" y="56" class="note">16 bps stress</text>
+<line x1="120" y1="475.0" x2="1430" y2="475.0" class="grid"/>
+<text x="106" y="479.0" text-anchor="end" class="axis">-6.9%</text>
+<line x1="120" y1="292.0" x2="1430" y2="292.0" class="zero"/>
+<text x="106" y="296.0" text-anchor="end" class="axis">+0.0%</text>
+<line x1="120" y1="145.0" x2="1430" y2="145.0" class="grid"/>
+<text x="106" y="149.0" text-anchor="end" class="axis">+5.5%</text>
+<polyline points="120.0,418.7 382.0,193.8 644.0,183.1 906.0,329.2 1168.0,277.4 1430.0,276.2" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="120.0" cy="418.7" r="6" fill="#0f766e"/>
+<text x="120.0" y="406.7" text-anchor="middle" class="value">-4.75%</text>
+<circle cx="382.0" cy="193.8" r="6" fill="#0f766e"/>
+<text x="382.0" y="181.8" text-anchor="middle" class="value">+3.69%</text>
+<circle cx="644.0" cy="183.1" r="6" fill="#0f766e"/>
+<text x="644.0" y="171.1" text-anchor="middle" class="value">+4.09%</text>
+<circle cx="906.0" cy="329.2" r="6" fill="#0f766e"/>
+<text x="906.0" y="317.2" text-anchor="middle" class="value">-1.39%</text>
+<circle cx="1168.0" cy="277.4" r="6" fill="#0f766e"/>
+<text x="1168.0" y="265.4" text-anchor="middle" class="value">+0.55%</text>
+<circle cx="1430.0" cy="276.2" r="6" fill="#0f766e"/>
+<text x="1430.0" y="264.2" text-anchor="middle" class="value">+0.60%</text>
+<polyline points="120.0,436.9 382.0,211.0 644.0,195.2 906.0,337.3 1168.0,278.1 1430.0,278.3" fill="none" stroke="#b45309" stroke-width="4"/>
+<circle cx="120.0" cy="436.9" r="6" fill="#b45309"/>
+<circle cx="382.0" cy="211.0" r="6" fill="#b45309"/>
+<circle cx="644.0" cy="195.2" r="6" fill="#b45309"/>
+<circle cx="906.0" cy="337.3" r="6" fill="#b45309"/>
+<circle cx="1168.0" cy="278.1" r="6" fill="#b45309"/>
+<circle cx="1430.0" cy="278.3" r="6" fill="#b45309"/>
+<text x="120.0" y="503" text-anchor="middle" class="axis">2025-01</text>
+<text x="120.0" y="523" text-anchor="middle" class="note">54 trades</text>
+<text x="382.0" y="503" text-anchor="middle" class="axis">2025-02</text>
+<text x="382.0" y="523" text-anchor="middle" class="note">47 trades</text>
+<text x="644.0" y="503" text-anchor="middle" class="axis">2025-03</text>
+<text x="644.0" y="523" text-anchor="middle" class="note">33 trades</text>
+<text x="906.0" y="503" text-anchor="middle" class="axis">2025-04</text>
+<text x="906.0" y="523" text-anchor="middle" class="note">23 trades</text>
+<text x="1168.0" y="503" text-anchor="middle" class="axis">2025-05</text>
+<text x="1168.0" y="523" text-anchor="middle" class="note">2 trades</text>
+<text x="1430.0" y="503" text-anchor="middle" class="axis">2025-06</text>
+<text x="1430.0" y="523" text-anchor="middle" class="note">6 trades</text>
 </svg>
