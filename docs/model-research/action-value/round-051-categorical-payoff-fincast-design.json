@@ -1,0 +1,186 @@
+{
+  "ai_contract": {
+    "candidate": "categorical_payoff_lightgbm_fincast",
+    "fincast": {
+      "checkpoint_sha256": "d5ca999b02c944effa60d2b94174dc4d5a0cd2c0543ae289b2e36f37431492a8",
+      "context_seconds": 512,
+      "feature_horizons_seconds": [5, 15, 30, 60, 120],
+      "frequency_embedding": "high_frequency",
+      "parameter_count": 991437160,
+      "preflight_canonical_sha256": "70b3ffe32696642798b1035575084962901ba256b1f99806fecdfb6249cf8a66",
+      "preflight_file_sha256": "b71b4ba23555497d98472a2f88db52ac64cc005f8ef5c0727791c2025f59b546",
+      "source_commit": "488b19d1d85fa2b3d4b93469530cefdcf1cc97a4",
+      "source_repository": "https://github.com/vincent05r/FinCast-fts",
+      "source_series": "causal one-second best-bid/best-ask midpoint",
+      "use": "Frozen zero-shot point and quantile forecasts become causal numeric features; FinCast cannot submit, size, veto, or approve orders."
+    },
+    "paired_uplift_test": "Compare categorical_payoff_lightgbm and categorical_payoff_lightgbm_fincast on identical endpoints, targets, costs, seeds, policy, and replay. AI passes only with better proper score and after-cost paired economics without worse drawdown.",
+    "qwen_risk_reviewer": "Not part of this alpha screen. It remains an asynchronous veto-only safety component after every deterministic gate passes.",
+    "text_or_language_model_alpha_permitted": false
+  },
+  "chronological_roles": {
+    "calibration": "2023-06-05 through 2023-06-08 UTC",
+    "early_stop": "2023-06-01 through 2023-06-04 UTC",
+    "evaluation": "2023-06-09 through 2023-06-14 UTC",
+    "maximum_target_embargo_seconds": 300,
+    "role_boundary_rule": "Every feature timestamp, entry, path quote, exit, and target must remain inside one role.",
+    "training": "2023-05-16 through 2023-05-31 UTC"
+  },
+  "claims": {
+    "ai_uplift_claim_permitted": false,
+    "leverage_permitted": false,
+    "profitability_claim_permitted": false,
+    "promotion_permitted": false,
+    "reason": "This short historical interval is a consumed-development mechanism screen and FinCast pretraining membership cannot be independently excluded.",
+    "selection_contaminated": true,
+    "testnet_or_live_authority_permitted": false
+  },
+  "data_contract": {
+    "archive_products": ["bookTicker", "trades", "bookDepth"],
+    "book_depth_limit": "Binance sampled aggregate percentage-band depth only; it is not full L2, message-by-message depth, or queue-position evidence.",
+    "checksums_required": true,
+    "decision_cadence_seconds": 10,
+    "end_date": "2023-06-14",
+    "event_sources": "Official Binance Data Vision USD-M daily archives",
+    "full_inventory_plan": {
+      "file_sha256": "1b7a6a262c1bdb95c20e6bb02a67e792f8174b702128f287ffcd88b288cc30bd",
+      "planned_compressed_bytes": 295377835323,
+      "planned_files": 11865
+    },
+    "persistent_warehouse": "DuckDB on the external E: data volume; archive cache and evidence must not use the system SSD.",
+    "screen_plan": {
+      "file_sha256": "b7bb6a78efdb8ae5fa9560b6f31a6eab6e1a934ad220a935b64b58d1115f3b41",
+      "planned_compressed_bytes": 9234609488,
+      "planned_files": 270,
+      "truth_basis": "official_binance_data_vision_s3_listing"
+    },
+    "start_date": "2023-05-16",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "synthetic_fabricated_or_interpolated_market_rows_permitted": false,
+    "target_path_resolution_ms": 100
+  },
+  "design_sha256": "eeda9a52bf448a5cf789979c44ebb87d23c749979efaef65b9a1add48c4c28cd",
+  "economic_screen": {
+    "base_and_stress_profit_factor_above_one": true,
+    "base_and_stress_return_positive": true,
+    "daily_roi_target_used_as_gate": false,
+    "expansion_action": "Only a passing mechanism expands to the complete 320-day exact-BBO intersection, followed by new live shadow evidence. This screen can never promote a model.",
+    "forced_activity_or_trade_quota": false,
+    "maximum_single_symbol_positive_pnl_share": 0.7,
+    "maximum_unlevered_drawdown_fraction": 0.04,
+    "minimum_closed_trades": 30,
+    "minimum_positive_symbols": 2,
+    "selection_rule": "For a flat symbol, require all seeds to predict positive after-cost mean and mean profitable probability above 0.50; select the side with the higher worst-seed mean and abstain on ties.",
+    "stress_rule": "Reprice the identical base ledger with the frozen stress protection delay and two additional basis points per side; do not reselect trades."
+  },
+  "execution_target": {
+    "additional_slippage_bps_per_side": 1.0,
+    "base_protection_delay_ms": 750,
+    "entry_and_exit": "Cross the contemporaneous ask to enter long and bid to exit long; reverse for short. Enforce quote age, L1 participation, decision latency, and non-overlap.",
+    "horizon_seconds": 300,
+    "max_l1_participation": 0.1,
+    "max_quote_age_ms": 1000,
+    "maximum_stop_bps": 80.0,
+    "maximum_take_bps": 120.0,
+    "minimum_stop_bps": 18.0,
+    "minimum_take_bps": 30.0,
+    "reference_order_notional_quote": 1000.0,
+    "same_100ms_collision_rule": "Stop first.",
+    "stop_volatility_multiple": 1.5,
+    "stress_protection_delay_ms": 1500,
+    "take_volatility_multiple": 2.25,
+    "taker_fee_bps_per_side": 5.0,
+    "total_entry_latency_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "volatility_feature": "realized_volatility_60s_bps"
+  },
+  "model_contract": {
+    "candidates": [
+      {
+        "id": "direct_mean_lightgbm",
+        "target": "Separate long and short exact after-cost net-bps conditional means trained by unweighted squared error."
+      },
+      {
+        "id": "categorical_payoff_lightgbm",
+        "target": "Separate long and short categorical distributions of exact after-cost payoff in stop-risk units trained by unweighted multinomial log loss."
+      },
+      {
+        "id": "categorical_payoff_lightgbm_fincast",
+        "single_change": "Append only the frozen causal FinCast point/quantile features to the identical categorical candidate."
+      }
+    ],
+    "categorical_target": {
+      "bin_edge_training_quantiles": [0.02, 0.05, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 0.9, 0.95, 0.98],
+      "bin_representatives": "Exact arithmetic mean training payoff in each bin; no clipping, winsorization, or outcome weighting.",
+      "minimum_unique_bins": 8,
+      "normalization": "Exact net payoff bps divided by the causal stop width bps.",
+      "probability_calibration": "One bounded positive temperature per side and seed fitted only on calibration multinomial log loss.",
+      "proper_scores": ["multinomial_log_loss", "ranked_probability_score"]
+    },
+    "deterministic_features": "l1-tape-aggregate-depth-causal-v9",
+    "lightgbm": {
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "early_stopping_rounds": 50,
+      "feature_fraction": 0.8,
+      "lambda_l1": 0.1,
+      "lambda_l2": 1.0,
+      "learning_rate": 0.03,
+      "max_bin": 127,
+      "max_depth": 8,
+      "min_data_in_leaf": 512,
+      "num_boost_round": 1000,
+      "num_leaves": 31,
+      "opencl_fp64_accumulation_required": true
+    },
+    "seeds": [5101, 5102, 5103],
+    "short_preflight": "One-seed numerical, target-support, and training/early-stop run may precede the full screen. Evaluation economics cannot be inspected before the frozen full run."
+  },
+  "objective": "Test whether a replay-aligned distribution of exact after-cost payoffs repairs Round 50's selected-tail error, and whether a real finance-specific foundation model adds measurable edge over the same deterministic model.",
+  "predecessor_evidence": {
+    "diagnosis_canonical_sha256": "dc5ec7f6d421c973542c9a68654a5bdf30d733afb06d8e410f35a0c7b339a1cc",
+    "diagnosis_file_sha256": "f6ecf9b3b035603df4a6f1db60362e649e5423a4bee1bdb7e2f30263d3cde33a",
+    "finding": "Round 50's selected tail understated stop probability and overstated take-profit probability for both sides; neither pooled nor symbol calibration produced positive economics.",
+    "round_50_report_canonical_sha256": "8629a07940c0d8b4b16b35be4d7b651c1625807f8abae82a9e7fa7bfe73b6850"
+  },
+  "quality_gates": {
+    "ai": [
+      "The FinCast candidate must improve average side ranked-probability skill by at least 0.005 over the matched categorical model.",
+      "The FinCast candidate must improve average side expected-payoff Spearman by at least 0.005 without degrading expected-payoff MSE by more than 1%.",
+      "Paired base and stress daily-return uplift must be positive, with no worse drawdown or profit factor."
+    ],
+    "distribution": [
+      "Positive evaluation multinomial-log-loss and ranked-probability skill versus training prevalence for each side.",
+      "Positive expected-payoff MSE skill versus the training conditional mean and minimum Spearman 0.03 for each side.",
+      "Maximum 10-bin profitable-probability calibration error 0.05 and positive skill in at least four of six evaluation days per side.",
+      "Minimum pairwise seed expected-payoff Spearman 0.50."
+    ],
+    "numerical": [
+      "All source checksums, feature rows, labels, model outputs, probabilities, and replay cash flows are finite and hash-bound.",
+      "No feature or target crosses a chronological role boundary.",
+      "DirectML FinCast and OpenCL LightGBM record no CPU fallback.",
+      "Every model reloads exactly and every categorical distribution sums to one within 1e-6."
+    ]
+  },
+  "research_basis": [
+    {
+      "source": "https://proceedings.mlr.press/v80/imani18a.html",
+      "use": "Categorical distributional targets can be more stable than scalar regression on noisy values."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v97/song19a.html",
+      "use": "A useful probabilistic regressor requires distribution-level calibration, not only rank."
+    },
+    {
+      "source": "https://arxiv.org/abs/2508.19609",
+      "use": "FinCast is a 1B-parameter finance-specific point/quantile foundation model trained across financial domains and resolutions."
+    },
+    {
+      "source": "https://microsoft.github.io/DirectML/",
+      "use": "DirectML is the cross-vendor Windows GPU backend; actual compatibility is established by the tracked host preflight, not documentation alone."
+    }
+  ],
+  "round": 51,
+  "schema_version": "categorical-payoff-fincast-screen-design-v1",
+  "status": "frozen"
+}

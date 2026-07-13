@@ -1,0 +1,145 @@
+{
+  "ai_uplift_claim": false,
+  "architecture": {
+    "attention_heads": 16,
+    "experts": 4,
+    "experts_per_token": 2,
+    "hidden_size": 1280,
+    "input_patch_length": 32,
+    "layers": 50,
+    "materialized_nonpersistent_buffers": {
+      "count": 100,
+      "dummy_buffers": 50,
+      "names_sha256": "fae22fb8d67b2ea1ac1c6cd7ef7aa5ba74ec8a46cfe1fd3e5da31ff5e4a582f4",
+      "zero_buffers": 50
+    },
+    "output_patch_length": 128,
+    "parameter_count": 991437160,
+    "quantiles": [
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ],
+    "tensor_bytes": 3965748640
+  },
+  "canonical_sha256": "70b3ffe32696642798b1035575084962901ba256b1f99806fecdfb6249cf8a66",
+  "checkpoint": {
+    "bytes": 3966703063,
+    "path": "E:\\SimpleAITradingData\\model-cache\\huggingface\\models--Vincent05R--FinCast\\blobs\\d5ca999b02c944effa60d2b94174dc4d5a0cd2c0543ae289b2e36f37431492a8",
+    "sha256": "d5ca999b02c944effa60d2b94174dc4d5a0cd2c0543ae289b2e36f37431492a8"
+  },
+  "generated_at_utc": "2026-07-13T17:15:37.917318+00:00",
+  "input": {
+    "database": "C:\\trader\\simple_ai_trading\\data\\market_data.sqlite",
+    "database_bytes": 8082788352,
+    "database_modified_ns": 1783896428256289900,
+    "query": "futures 1s closes ending at the explicit common timestamp",
+    "selected_rows_sha256": "b055bb366d8c05bfd5591067f220682b6303dac0042024e9386dc8318a27cb74",
+    "symbols": [
+      {
+        "first_timestamp_ms": 1717804288000,
+        "last_timestamp_ms": 1717804799000,
+        "rows": 512,
+        "sources": [
+          "binance_public_archive_aggTrades"
+        ],
+        "symbol": "BTCUSDT"
+      },
+      {
+        "first_timestamp_ms": 1717804288000,
+        "last_timestamp_ms": 1717804799000,
+        "rows": 512,
+        "sources": [
+          "binance_public_archive_aggTrades"
+        ],
+        "symbol": "ETHUSDT"
+      },
+      {
+        "first_timestamp_ms": 1717804288000,
+        "last_timestamp_ms": 1717804799000,
+        "rows": 512,
+        "sources": [
+          "binance_public_archive_aggTrades"
+        ],
+        "symbol": "SOLUSDT"
+      }
+    ],
+    "truth_basis": "checksummed Binance USD-M aggregate-trade one-second bars"
+  },
+  "output": {
+    "maximum": 69455.328125,
+    "mean": 24413.12890625,
+    "minimum": 162.28407287597656,
+    "shape": [
+      3,
+      16,
+      128,
+      10
+    ],
+    "standard_deviation": 31839.8125
+  },
+  "profitability_claim": false,
+  "runtime": {
+    "backend": {
+      "device": "privateuseone:0",
+      "kind": "directml",
+      "torch_directml_version": "unknown"
+    },
+    "batch_size": 3,
+    "context_length": 512,
+    "cpu_fallback_warning_count": 0,
+    "exact_backend_compatibility_rewrites": [
+      "one_hot_scatter_to_exact_index_comparison",
+      "mixed_pad_exclusive_cumsum_to_exact_concat_cumsum"
+    ],
+    "inference_seconds": [
+      0.4264196999720298,
+      0.28299890004564077,
+      0.26712259999476373
+    ],
+    "model_move_seconds": 2.479725999990478,
+    "platform": "Windows-10-10.0.26220-SP0",
+    "python": "3.11.9",
+    "rss_after_model_move_bytes": 2125520896,
+    "rss_before_model_move_bytes": 255188992,
+    "runs": 3,
+    "steady_state_seconds": 0.26712259999476373,
+    "torch": "2.4.1+cpu",
+    "warning_count": 0
+  },
+  "schema_version": "fincast-directml-preflight-v1",
+  "source": {
+    "commit": "488b19d1d85fa2b3d4b93469530cefdcf1cc97a4",
+    "files": {
+      "decoder": {
+        "bytes": 28976,
+        "path": "E:\\SimpleAITradingData\\vendor-audit\\FinCast-fts\\src\\ffm\\pytorch_patched_decoder_MOE.py",
+        "sha256": "b7df152bfe7666c10a2c5a643459468e53f2ef2a7c489de8c9a9bd6c924d5147"
+      },
+      "distributed_helpers": {
+        "bytes": 3092,
+        "path": "E:\\SimpleAITradingData\\vendor-audit\\FinCast-fts\\src\\st_moe_pytorch\\distributed.py",
+        "sha256": "ab8dc35f4919418650b33d1c50c10f3bd79bc8eb6bf2ac2d4696c0af25e8499d"
+      },
+      "license": {
+        "bytes": 11558,
+        "path": "E:\\SimpleAITradingData\\vendor-audit\\FinCast-fts\\LICENSE",
+        "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+      },
+      "mixture_of_experts": {
+        "bytes": 24892,
+        "path": "E:\\SimpleAITradingData\\vendor-audit\\FinCast-fts\\src\\st_moe_pytorch\\st_moe_pytorch.py",
+        "sha256": "33e9afc0597933c35ffecc8149be9d166f84f919401750bed52dbf88052c3bf7"
+      }
+    },
+    "repository": "https://github.com/vincent05r/FinCast-fts"
+  },
+  "status": "passed",
+  "trading_authority": false
+}

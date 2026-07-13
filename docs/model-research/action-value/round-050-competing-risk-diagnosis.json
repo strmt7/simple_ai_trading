@@ -1,0 +1,60 @@
+{
+  "analysis_sha256": "7e905f28728eb78010dbe9c0d24d1e69a131c2700089b1fb40df1e80ef485edb",
+  "calibration_replay": {
+    "competing_risk_raw": {
+      "maximum_drawdown_fraction": 0.37412205395423015,
+      "profit_factor": 0.6839400438906108,
+      "return_fraction": -0.35726490193704763,
+      "trades": 610
+    },
+    "competing_risk_symbol_offset": {
+      "maximum_drawdown_fraction": 0.3674346341933184,
+      "profit_factor": 0.6669388719885423,
+      "return_fraction": -0.3476662057727574,
+      "trades": 564
+    },
+    "direct_pooled_offset": {
+      "maximum_drawdown_fraction": 0.0653307050536332,
+      "profit_factor": 0.9303870651827786,
+      "return_fraction": -0.01943977153301238,
+      "trades": 167
+    },
+    "direct_raw": {
+      "maximum_drawdown_fraction": 0.0737793962380691,
+      "profit_factor": 0.7369952456809801,
+      "return_fraction": -0.0430270258868734,
+      "trades": 90
+    }
+  },
+  "conclusion": "Calibration and threshold changes cannot rescue Round 50. The selected decision tail underestimated stops and overestimated take-profits; the next model must learn the complete after-cost payoff distribution directly.",
+  "event_tail": {
+    "long": {
+      "actual_stop_probability": 0.6260869565217392,
+      "actual_take_probability": 0.1391304347826087,
+      "predicted_stop_probability": 0.4535564001055732,
+      "predicted_take_probability": 0.30953270011460005
+    },
+    "short": {
+      "actual_stop_probability": 0.6119133574007221,
+      "actual_take_probability": 0.23375451263537905,
+      "predicted_stop_probability": 0.4999415728876593,
+      "predicted_take_probability": 0.3421341601006068
+    }
+  },
+  "external_evidence": {
+    "canonical_sha256": "dc5ec7f6d421c973542c9a68654a5bdf30d733afb06d8e410f35a0c7b339a1cc",
+    "file": "round51-round50-diagnosis-20260713-v1.json",
+    "file_sha256": "f6ecf9b3b035603df4a6f1db60362e649e5423a4bee1bdb7e2f30263d3cde33a"
+  },
+  "invariants": {
+    "artifact_hash_binding": true,
+    "raw_policy_exact_replay": true,
+    "structured_value_reconstruction": true
+  },
+  "profitability_claim": false,
+  "round": 50,
+  "schema_version": "round-050-competing-risk-diagnosis-summary-v1",
+  "source_report_canonical_sha256": "8629a07940c0d8b4b16b35be4d7b651c1625807f8abae82a9e7fa7bfe73b6850",
+  "status": "rejected",
+  "trading_authority": false
+}
