@@ -49,6 +49,9 @@ from simple_ai_trading.fincast_runtime import (  # noqa: E402
     fincast_feature_names,
     fincast_runtime_contract_sha256,
 )
+from simple_ai_trading.lightgbm_backend import (  # noqa: E402
+    lightgbm_backend_parameters,
+)
 from simple_ai_trading.microstructure_barriers import (  # noqa: E402
     AdaptiveBarrierSpec,
     build_adaptive_barrier_targets,
@@ -1115,6 +1118,22 @@ def run_round51(
         binding_path,
         design_sha256=design_sha,
     )
+    lightgbm_parameters, lightgbm_backend_kind, lightgbm_backend_device = (
+        lightgbm_backend_parameters(
+            compute_backend,
+            SEEDS[0],
+            reproducible=True,
+        )
+    )
+    if (
+        lightgbm_backend_kind != "opencl"
+        or lightgbm_parameters.get("device_type") != "gpu"
+        or lightgbm_parameters.get("gpu_use_dp") is not True
+    ):
+        raise RuntimeError(
+            "Round 51 requires LightGBM OpenCL with FP64 accumulation; "
+            f"resolved {lightgbm_backend_kind}:{lightgbm_backend_device}"
+        )
     data_contract = design["data_contract"]
     execution = design["execution_target"]
     model_contract = design["model_contract"]
@@ -1302,6 +1321,9 @@ def run_round51(
         "runtime_seconds": time.perf_counter() - started,
         "runtime_resources": {
             "compute_backend_requested": compute_backend,
+            "lightgbm_backend_kind": lightgbm_backend_kind,
+            "lightgbm_backend_device": lightgbm_backend_device,
+            "lightgbm_gpu_use_dp": lightgbm_parameters["gpu_use_dp"],
             "fincast_backend_requested": fincast_backend,
             "duckdb_memory_limit": memory_limit,
             "duckdb_threads": threads,
@@ -1365,7 +1387,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--fincast-source", type=Path, required=True)
     parser.add_argument("--fincast-checkpoint", type=Path, required=True)
-    parser.add_argument("--compute-backend", default="gpu")
+    parser.add_argument("--compute-backend", default="directml")
     parser.add_argument(
         "--fincast-backend", choices=("directml", "cpu"), default="directml"
     )
