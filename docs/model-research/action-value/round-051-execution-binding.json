@@ -1,12 +1,12 @@
 {
-  "binding_sha256": "cff5fc98740a3a1f578cf8645afe53fb14f52f4be155c1acbe98ba3311ab4908",
+  "binding_sha256": "4e4f17914bb27411675ffd4dfa7a64c56b3f4515025a95ffa675edcab031b5b1",
   "blobs": [
     {
       "git_blob_oid": "15919441ce8f89064b3a29265f6d7893d6042fb9",
       "path": "pyproject.toml"
     },
     {
-      "git_blob_oid": "ea8784a0760207afe656f72e7e9b3809481c8563",
+      "git_blob_oid": "c264245281848cee832168f30d2fc802faf72085",
       "path": "docs/model-research/action-value/round-051-bbo-state-gap-analysis.json"
     },
     {
@@ -62,9 +62,9 @@
       "path": "tools/run_round51_categorical_payoff_fincast.py"
     }
   ],
-  "created_at": "2026-07-13T19:37:07.235485+00:00",
+  "created_at": "2026-07-13T19:39:28.022590+00:00",
   "design_path": "docs/model-research/action-value/round-051-categorical-payoff-fincast-design.json",
-  "design_sha256": "c37bc8686c6ab75e8af79d2477b92fc56973d41bd74fea2f3cbf6c6c7247d900",
+  "design_sha256": "42f9afbda8755807e898fa8bb54ad4039d1f9f6b2f4d6c825afc0b1d02bcfba3",
   "execution_contract": {
     "all_models_trained_before_evaluation": true,
     "clean_worktree_required": true,
@@ -77,7 +77,7 @@
     "source_market_rows_synthetic": 0,
     "trading_authority_permitted": false
   },
-  "implementation_commit": "4049f605a1a1dba45f9adaa68280a2a12667a306",
+  "implementation_commit": "ae61bcb87765a5fd1e6610d358808848529de60c",
   "round": 51,
   "schema_version": "round-051-categorical-payoff-fincast-execution-binding-v1"
 }
