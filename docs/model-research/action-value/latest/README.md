@@ -1,12 +1,14 @@
-# Round 52: Executable-Support Hurdle
+# Round 53: Executable Conditional Sign-Magnitude
 
 > **Rejected consumed-development screen.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
 
-Round 52 corrected the measured Round 51 target-policy mismatch: training, early stopping, calibration, thresholds, scoring, and replay now use one hash-bound side-specific executable predicate. It trained 27 OpenCL LightGBM models on verified Binance USD-M BTC, ETH, and SOL tick data and reused the sealed causal FinCast feature matrices.
+Round 53 factorized each side's executable payoff into six magnitude states and a magnitude-conditioned sign model. Eighteen new OpenCL LightGBM models used verified Binance USD-M BTC, ETH, and SOL event data; nine direct controls and sealed causal FinCast features were reused.
 
-The correction restored activity, but calibration rejected every policy. The deterministic hurdle produced 9 calibration trades at `-1.057757` base and `-2.391091` stressed bps/trade. The later consumed interval showed 15 trades at `+5.162619` base and `+3.807622` stressed bps/trade, but that reversal was not authorized by calibration and cannot be selected. The direct model remained flat. FinCast produced 3 negative calibration trades and 7 negative consumed-evaluation trades.
+The CSM improved average expected-payoff rank to `0.051582` and every joint proper-score comparison, but mean calibration remained wrong. Its frozen 0.10% policy had 1 calibration trade at `-8.879308` stressed bps/trade. The 2 later trades averaged `+16.653357` bps, but calibration did not authorize them.
 
-Profitable-event classification improved over training prevalence, while expected-payoff magnitude did not: mean evaluation expected-payoff MSE skill was negative for every architecture. FinCast improved average probability log loss by `0.001463` and expected-payoff Spearman by `0.000375`, below both frozen `0.005` gates.
+A separate fixed 54-rule rank-tail diagnostic removed the positive-EV requirement. Zero rules passed calibration. The least-bad calibration rule was `worst_seed` at `0.1%` coverage: 11 trades at `-1.673628` stressed bps/trade; its consumed result was `-4.022015`. Global correlation therefore did not establish executable top-tail alpha.
+
+FinCast worsened joint log loss by `0.001392` and expected-payoff rank by `0.002586` versus the matched CSM control.
 
 ## Evidence
 
@@ -14,9 +16,10 @@ Profitable-event classification improved over training prevalence, while expecte
 |---|---|---|
 | Executable support | [SVG](charts/executable-support.svg) | [CSV](support.csv) |
 | Forecast quality | [SVG](charts/forecast-quality.svg) | [CSV](forecast.csv) |
-| Policy economics | [SVG](charts/policy-economics.svg) | [CSV](policy-grid.csv) |
+| Frozen policy | [SVG](charts/policy-economics.svg) | [CSV](policy-grid.csv) |
+| Rank-tail falsification | [SVG](charts/rank-tail.svg) | [CSV](rank-tail.csv) |
 | Fixed-policy daily path | [SVG](charts/daily-equity.svg) | [CSV](daily-policy.csv) |
 | FinCast uplift | [SVG](charts/ai-uplift.svg) | [CSV](ai-uplift.csv) |
 | Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`screen.json` is the complete source report. `report.json` binds this publication to the frozen design, execution binding, external report, and every published file. Model and prediction artifact hashes are recorded in [models.csv](models.csv) and `screen.json`; flattened gate outcomes are in [gates.csv](gates.csv).
+`screen.json` and `rank-tail-screen.json` preserve the complete sources. `report.json` binds every publication file to the frozen design, execution binding, external reports, models, and predictions.

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Global rank correlation failed in the executable tail</title>
+<desc>Worst-seed CSM; thresholds fit on calibration, all 9 calibration rules rejected</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Global rank correlation failed in the executable tail</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Worst-seed CSM; thresholds fit on calibration, all 9 calibration rules rejected</text>
+<line x1="105" y1="580.0" x2="1145" y2="580.0" stroke="#334155"/>
+<text x="91" y="585.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-7.0</text>
+<line x1="105" y1="491.0" x2="1145" y2="491.0" stroke="#334155"/>
+<text x="91" y="496.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-5.4</text>
+<line x1="105" y1="402.0" x2="1145" y2="402.0" stroke="#334155"/>
+<text x="91" y="407.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-3.8</text>
+<line x1="105" y1="313.0" x2="1145" y2="313.0" stroke="#334155"/>
+<text x="91" y="318.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-2.2</text>
+<line x1="105" y1="224.0" x2="1145" y2="224.0" stroke="#334155"/>
+<text x="91" y="229.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-0.6</text>
+<line x1="105" y1="135.0" x2="1145" y2="135.0" stroke="#334155"/>
+<text x="91" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">1.0</text>
+<text x="105.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.05%</text>
+<text x="365.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.25%</text>
+<text x="625.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">1%</text>
+<text x="885.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">5%</text>
+<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">20%</text>
+<path d="M 105.0 524.4 L 235.0 283.6 L 365.0 379.9 L 495.0 410.3 L 625.0 401.9 L 755.0 439.8 L 885.0 482.3 L 1015.0 503.7 L 1145.0 505.6" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="524.4" r="4" fill="#f59e0b"/>
+<circle cx="235.0" cy="283.6" r="4" fill="#f59e0b"/>
+<circle cx="365.0" cy="379.9" r="4" fill="#f59e0b"/>
+<circle cx="495.0" cy="410.3" r="4" fill="#f59e0b"/>
+<circle cx="625.0" cy="401.9" r="4" fill="#f59e0b"/>
+<circle cx="755.0" cy="439.8" r="4" fill="#f59e0b"/>
+<circle cx="885.0" cy="482.3" r="4" fill="#f59e0b"/>
+<circle cx="1015.0" cy="503.7" r="4" fill="#f59e0b"/>
+<circle cx="1145.0" cy="505.6" r="4" fill="#f59e0b"/>
+<rect x="105" y="657" width="16" height="4" fill="#f59e0b"/>
+<text x="129" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Calibration paired stress</text>
+<path d="M 105.0 333.5 L 235.0 414.1 L 365.0 499.1 L 495.0 468.5 L 625.0 482.8 L 755.0 501.9 L 885.0 507.3 L 1015.0 491.1 L 1145.0 486.0" fill="none" stroke="#ef4444" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="333.5" r="4" fill="#ef4444"/>
+<circle cx="235.0" cy="414.1" r="4" fill="#ef4444"/>
+<circle cx="365.0" cy="499.1" r="4" fill="#ef4444"/>
+<circle cx="495.0" cy="468.5" r="4" fill="#ef4444"/>
+<circle cx="625.0" cy="482.8" r="4" fill="#ef4444"/>
+<circle cx="755.0" cy="501.9" r="4" fill="#ef4444"/>
+<circle cx="885.0" cy="507.3" r="4" fill="#ef4444"/>
+<circle cx="1015.0" cy="491.1" r="4" fill="#ef4444"/>
+<circle cx="1145.0" cy="486.0" r="4" fill="#ef4444"/>
+<rect x="355" y="657" width="16" height="4" fill="#ef4444"/>
+<text x="379" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Consumed evaluation paired stress</text>
+<text transform="translate(25 357.5) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Weighted mean net bps per non-overlapping trade</text>
+</svg>
