@@ -13,7 +13,7 @@
     "selected_model_score": 0.983409090909091
   },
   "binding": {
-    "binding_sha256": "8d55f76ea53eba1d234dcd7b5908a326a567ab21743f323c707ec8fa7306e261",
+    "binding_sha256": "648b2474b8022daca7eefd8b0afe5292ded1eaf31860011c82c9ba9ee4ddb1f3",
     "blobs": [
       {
         "git_blob_oid": "23ca50465aeba01ab886a569395ddc08720f1ca3",
@@ -52,7 +52,7 @@
         "path": "tools/run_cost_aware_utility_tcn_viability.py"
       },
       {
-        "git_blob_oid": "320d2fa9caaddc222c34f478a5f0f51661f31443",
+        "git_blob_oid": "043008cf3910c535bb6fdb75584fe11a69708001",
         "path": "tools/publish_cost_aware_utility_tcn_viability.py"
       },
       {
@@ -72,7 +72,7 @@
         "path": "tests/test_stable_distributional_tcn_model.py"
       },
       {
-        "git_blob_oid": "d8b9645e541f810a59e0c21e1934932eb469172c",
+        "git_blob_oid": "9ea465118d1c416f8b98ed10aa8abb421582f2f0",
         "path": "tests/test_cost_aware_utility_tcn_model.py"
       }
     ],
@@ -110,7 +110,7 @@
       }
     ],
     "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
-    "implementation_commit": "d15a87dd5d31022d1815170b57d96cdd28ca2b55",
+    "implementation_commit": "49cf3a973b88ec0323bf1cc23b59117f43a49b5d",
     "predecessor_report": {
       "canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
       "file_sha256": "e9bf3ec4db7ddd798f950f619097533dfa103e09db94ab7e322f45eceb0edd21",
@@ -124,7 +124,7 @@
       "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
     }
   },
-  "binding_sha256": "8d55f76ea53eba1d234dcd7b5908a326a567ab21743f323c707ec8fa7306e261",
+  "binding_sha256": "648b2474b8022daca7eefd8b0afe5292ded1eaf31860011c82c9ba9ee4ddb1f3",
   "candidates": [
     {
       "action_diagnostics": {
@@ -3099,9 +3099,9 @@
     }
   },
   "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
-  "generated_at_utc": "2026-07-13T11:25:43.372548+00:00",
+  "generated_at_utc": "2026-07-13T11:39:23.335057+00:00",
   "hourly_ledger_rows": 26112,
-  "implementation_commit": "d15a87dd5d31022d1815170b57d96cdd28ca2b55",
+  "implementation_commit": "49cf3a973b88ec0323bf1cc23b59117f43a49b5d",
   "outputs": [
     {
       "bytes": 43168,
@@ -3203,7 +3203,7 @@
       "bytes": 183128,
       "name": "hourly_ledger.csv.gz",
       "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\hourly_ledger.csv.gz",
-      "sha256": "e8d9d54fcfc915cf119e8db34129009bcc30b50d0a039b0b4c787c8178ce27bb"
+      "sha256": "953d70270c3e58c96bcf5b7695dbc5a33da9d77cd48332ab944412c1e1ccaf8c"
     },
     {
       "bytes": 6955,
@@ -3212,16 +3212,16 @@
       "sha256": "8b490206bf6ed5ce8b3248fe1997cf159d3139a3866a02e24b4cf72fb12de70b"
     },
     {
-      "bytes": 38293,
+      "bytes": 38298,
       "name": "progress_events.jsonl",
       "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\progress_events.jsonl",
-      "sha256": "ab2f7b81c9faf0f03bc4edad512a2135408d5ffa4ded01e9920825bb668b5cd1"
+      "sha256": "168554e2538de9bba07a82b6adafd1bab07d164dd20f5c8b7a81d96ecc0df6de"
     },
     {
       "bytes": 642,
       "name": "status.json",
       "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\status.json",
-      "sha256": "2b1f845ff254d7cb2423661a2057cb1b759e481b01dc74de298a431d5cda42a8"
+      "sha256": "c639edc9bcb634bed4f71102d40b52909075848dc4fce5d8750168e24085cbca"
     },
     {
       "bytes": 22065968,
@@ -3355,15 +3355,15 @@
     "reasons": [],
     "relative_action_log_loss_degradation": 0.00016077899119104622
   },
-  "report_canonical_sha256": "19ab4bc3551941307f0a49dbd524f5449cc71ca94205aaec9e85ff7bbbd25639",
+  "report_canonical_sha256": "f220cad76235d4b7231a63a26792f6e6ccb7373368bdaacfb76bb67667bf5544",
   "round": 47,
   "runtime": {
-    "elapsed_seconds": 89.18627579999156,
+    "elapsed_seconds": 83.27376989996992,
     "memory": {
-      "current_pagefile_bytes": 5658763264,
-      "current_working_set_bytes": 2303979520,
-      "peak_pagefile_bytes": 5832896512,
-      "peak_working_set_bytes": 2510905344,
+      "current_pagefile_bytes": 5658533888,
+      "current_working_set_bytes": 2303434752,
+      "peak_pagefile_bytes": 5834113024,
+      "peak_working_set_bytes": 2511900672,
       "source": "windows_process_memory_counters"
     }
   },
