@@ -1,0 +1,377 @@
+{
+  "schema_version": "cost-aware-utility-distributional-tcn-design-v1",
+  "round": 47,
+  "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
+  "status": "frozen",
+  "phase": "consumed-development replay-aligned utility-learning screen",
+  "objective": "Test whether the stable Round 46 causal TCN can rank realizable after-cost actions when it is trained to estimate the conditional mean of exact additive holding-period utility and calibrated side-specific profitability, rather than treating a conditional median as expected P&L.",
+  "predecessor_evidence": {
+    "round_46_report_canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
+    "round_46_publication_canonical_sha256": "c8e99a7614eab7b2d94d9027cf9488d31ee233125f39dddd46b5248231b5898b",
+    "round_46_failure_analysis_canonical_sha256": "1acfd5b948a2b6f1b28a3ef7fa28f455170b416dbe25255d735c0836057389f4",
+    "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "retained_candidate": "mutual_median_consistency",
+    "retained_forecast_evidence": {
+      "forecast_gate_passed": true,
+      "mechanism_gate_passed": true,
+      "minimum_pairwise_seed_median_spearman": 0.8674969560851781,
+      "median_best_early_stop_pinball": 0.3669017893631544
+    },
+    "economic_failure": {
+      "base_total_net_return_fraction": 0.3386750367449929,
+      "stress_total_net_return_fraction": 0.1817332028729235,
+      "stress_familywise_bootstrap_lower_mean_hourly_bps": -1.0763915701611675,
+      "base_maximum_drawdown_fraction": 0.2630589364375243,
+      "base_profit_factor": 1.0360110029268617,
+      "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.7237798591287625,
+      "promotion_permitted": false
+    },
+    "new_diagnosis": {
+      "evaluation_trades": 935,
+      "predicted_margin_realized_net_spearman": 0.01989,
+      "seed_range_realized_net_spearman": 0.055108,
+      "central_80_width_realized_net_spearman": 0.028214,
+      "sided_lower_decile_realized_net_spearman": -0.02441,
+      "interpretation": "Neither the median-based margin nor posterior-width and peer-disagreement heuristics ranked realized net utility. A conditional quantile, especially the median, is not the conditional mean required for expected-P&L ranking. Threshold tuning on these scores is not a justified next step."
+    },
+    "prior_negative_control": {
+      "round": 22,
+      "finding": "A pairwise ranking auxiliary on a separate 15-minute BTC event model improved discrimination but left every top realized-return tail negative after costs.",
+      "constraint_carried_forward": "Ranking remains a bounded ablation beside a proper pointwise utility objective; it may not replace probability calibration or justify relaxed economic gates."
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4187217",
+      "finding_used": "The implementable-efficient-frontier framework integrates machine learning with a direct economic objective and explicit transaction costs rather than optimizing statistical fit alone.",
+      "limitation": "Its cross-sectional portfolio setting and reported results do not validate this hourly crypto model or any Round 47 economic result."
+    },
+    {
+      "source": "https://proceedings.neurips.cc/paper/2020/hash/26b58a41da329e0cbde0cbf956640a58-Abstract.html",
+      "finding_used": "Expected-utility regression and score-and-sort are not universally equivalent to arbitrary ranking objectives, so Round 47 measures utility regression and realized ranking separately.",
+      "limitation": "The theory addresses general ranking losses, not trading under temporal dependence or transaction costs."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v30/Agarwal13.html",
+      "finding_used": "Strongly proper probability losses can provide consistency for bipartite ranking, supporting retained binary cross-entropy alongside the explicit rank ablation.",
+      "limitation": "AUC consistency does not establish positive expected trading utility, temporal stability, or profitability."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v70/guo17a.html",
+      "finding_used": "A single held-out temperature parameter is a low-capacity method for improving neural probability calibration while preserving ordering.",
+      "limitation": "The experiments are image and document classification; Round 47 must measure calibration on chronological financial roles and assumes no transfer benefit."
+    },
+    {
+      "source": "https://proceedings.neurips.cc/paper/2021/hash/b5200c6107fc3d41d19a2b66835c3974-Abstract.html",
+      "finding_used": "Ranking metrics and ordinary pointwise surrogates can be misaligned, motivating a separately identified bounded ranking candidate.",
+      "limitation": "Round 47 uses a simpler deterministic pairwise logistic surrogate for DirectML portability, not PiRank, and claims no benefit in advance."
+    },
+    {
+      "source": "https://arxiv.org/abs/2207.07578",
+      "finding_used": "Financial prediction and profitable action can diverge, and seed sensitivity is material; Round 47 retains independent peers and adds action-specific outputs.",
+      "limitation": "AlphaMix studies stock selection and mixture-of-experts routing; its empirical gains do not transfer to three crypto perpetual futures."
+    },
+    {
+      "source": "https://arxiv.org/abs/2606.00060",
+      "finding_used": "Recent hourly BTC walk-forward evidence identifies forecast-to-trade mapping and transaction-cost filtering as material obstacles and reports weak formal dominance among models.",
+      "limitation": "The paper is recent non-peer-reviewed evidence; its selected configurations and metrics are not imported as expected performance."
+    },
+    {
+      "source": "https://arxiv.org/abs/2603.01820",
+      "finding_used": "A recent broad benchmark reports architecture-dependent differences in downside and transaction-cost robustness, supporting explicit downside and cost diagnostics rather than architecture-only claims.",
+      "limitation": "The preprint is not independent proof that any architecture has an edge in this dataset; Round 47 does not adopt its reported winner without a controlled local experiment."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "predecessor_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "round_45_derived_cache_metadata_sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "venue_product": "Binance USD-M perpetual futures",
+    "decision_interval_seconds": 3600,
+    "source_resolution_seconds": 60,
+    "causal_features_per_symbol": 71,
+    "forecast_target_horizons_hours": [
+      1,
+      4,
+      12,
+      24
+    ],
+    "forecast_target_quantiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "cache_contract": "Hash-verify all five immutable external Round 45 NumPy cache files and reproduce the aggregate dataset identity before use.",
+    "future_or_synthetic_market_data_permitted": false
+  },
+  "chronological_roles": {
+    "training": {
+      "start": "2022-01-01T00:00:00Z",
+      "end_inclusive": "2024-03-31T23:59:59Z",
+      "uses": [
+        "feature and target scaling",
+        "model fitting"
+      ]
+    },
+    "early_stop": {
+      "start": "2024-04-01T00:00:00Z",
+      "end_inclusive": "2024-06-30T23:59:59Z",
+      "uses": [
+        "common peer epoch selection"
+      ]
+    },
+    "calibration": {
+      "start": "2024-07-01T00:00:00Z",
+      "end_inclusive": "2024-09-30T23:59:59Z",
+      "uses": [
+        "one-parameter temperature fit per candidate and seed"
+      ]
+    },
+    "evaluation": {
+      "start": "2024-10-01T00:00:00Z",
+      "end_inclusive": "2025-06-30T23:59:59Z",
+      "uses": [
+        "consumed-development diagnostics and fixed-policy replay"
+      ]
+    },
+    "maximum_horizon_embargo_hours": 24,
+    "role_boundary_rule": "A row is admitted only when its complete 24-hour target path ends strictly inside the same role.",
+    "selection_contaminated": true,
+    "promotion_or_profitability_claim_permitted": false
+  },
+  "target_contract": {
+    "distributional_target": "The unchanged Round 44 compounded forward funding-adjusted signed utility in bps, retained solely to preserve the validated probabilistic forecast comparison.",
+    "replay_aligned_utility_target": "For each row, symbol, and horizon, the exact arithmetic sum of the cached hourly funding-adjusted signed utility over t through t+h-1. This equals the pre-cost trade P&L used by the fixed replay ledger in bps.",
+    "long_net_utility_bps": "replay_aligned_utility_target minus 12 bps base round-trip cost",
+    "short_net_utility_bps": "negative replay_aligned_utility_target minus 12 bps base round-trip cost",
+    "long_profitable_label": "one iff long_net_utility_bps is strictly positive",
+    "short_profitable_label": "one iff short_net_utility_bps is strictly positive",
+    "label_order": [
+      "short",
+      "long"
+    ],
+    "target_identity_check": "Every selected trade's base realized net bps must equal its side times replay-aligned utility target minus 12 bps to floating-point tolerance.",
+    "overlapping_forward_labels_in_training": true,
+    "overlapping_positions_in_replay": false
+  },
+  "normalization_contract": {
+    "fit_role": "training only",
+    "features": "Round 44 training mean and population standard deviation with the unchanged clipping rule.",
+    "distributional_targets": "Round 44 training median and scaled MAD.",
+    "utility_targets": "Per-horizon training arithmetic mean and population standard deviation; affine MSE therefore continues to elicit the conditional mean in original bps.",
+    "clipping_utility_targets_permitted": false,
+    "future_or_cross_role_statistics_permitted": false
+  },
+  "model_contract": {
+    "family": "per-symbol shared causal multitask distributional and action-utility TCN",
+    "candidates": [
+      {
+        "id": "cost_aware_utility",
+        "mechanism": "proper multitask quantile, conditional-mean utility, and side-profitability learning"
+      },
+      {
+        "id": "cost_aware_utility_rank",
+        "mechanism": "the identical proper multitask model plus a bounded pairwise utility-ordering regularizer",
+        "single_change_from_control": "pairwise_rank_loss_weight changes from zero to 0.05"
+      }
+    ],
+    "shared_encoder": {
+      "hidden_channels": 64,
+      "kernel_size": 3,
+      "residual_block_dilations": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32
+      ],
+      "receptive_field_hours": 127,
+      "padding": "left-only causal padding",
+      "activation": "GELU",
+      "dropout": 0.1
+    },
+    "heads": {
+      "quantile": "Four horizons times five monotone quantiles using one median and four nonnegative softplus gaps.",
+      "conditional_mean_utility": "One normalized replay-aligned expected signed utility per horizon.",
+      "side_profitability": "Independent short and long logits per horizon trained against mutually exclusive profitable-side labels; both labels are zero inside the 12 bps no-trade region."
+    },
+    "seeds": [
+      4701,
+      4702,
+      4703
+    ],
+    "peer_training": "Three independently initialized peers consume identical shuffled batches and are updated jointly.",
+    "ensemble": "Elementwise median of peers for reporting; policy confidence uses the worst peer rather than fitted ensemble weights.",
+    "training_objective": {
+      "normalized_quantile_pinball_weight": 1.0,
+      "normalized_conditional_mean_mse_weight": 0.1,
+      "side_profitability_binary_cross_entropy_weight": 0.2,
+      "peer_consistency_weight": 0.05,
+      "peer_consistency_definition": "Equal average of standardized quantile-median and standardized conditional-mean pair losses across all three peer pairs and horizons.",
+      "pairwise_rank_loss_weight_control": 0.0,
+      "pairwise_rank_loss_weight_ablation": 0.05,
+      "pairwise_rank_definition": "Logistic pairwise loss on normalized conditional-mean scores and replay-aligned utility ordering at a fixed 24-hour within-window offset; the compared forward target paths do not overlap.",
+      "rank_tie_rule": "Pairs with exactly equal float32 utility targets contribute zero and are excluded from the denominator.",
+      "tail_or_outcome_weighting": false
+    },
+    "early_stopping": {
+      "selection_role": "early_stop only",
+      "criterion": "ensemble normalized pinball plus 0.1 times ensemble normalized utility MSE plus 0.2 times ensemble side BCE plus the candidate's frozen pairwise term",
+      "maximum_epochs": 50,
+      "patience_epochs": 10,
+      "minimum_improvement": 1e-05,
+      "common_epoch_for_all_peers": true
+    },
+    "adamw": {
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-08,
+      "gradient_norm_clip": 1.0
+    },
+    "training_windows": {
+      "total_hours": 384,
+      "causal_context_hours": 127,
+      "supervised_hours": 257,
+      "stride_hours": 24,
+      "batch_size": 64
+    },
+    "compute_backend": "DirectML required for this host run; CPU remains an explicitly selected portability mode.",
+    "unsupported_operator_fallback_permitted": false,
+    "candidate_selection": "None; both pre-registered candidates complete the same consumed-development evaluation."
+  },
+  "probability_calibration_contract": {
+    "role": "calibration only",
+    "method": "one scalar temperature per candidate and seed, shared across symbols, horizons, and sides",
+    "temperature_grid": {
+      "spacing": "logarithmic",
+      "minimum": 0.25,
+      "maximum": 4.0,
+      "points": 301
+    },
+    "objective": "unweighted binary cross-entropy across every finite calibration label",
+    "tie_break": "temperature numerically closest to 1.0, then smaller temperature",
+    "intercept_or_vector_scaling_permitted": false,
+    "ordering_change_permitted": false,
+    "evaluation_outcomes_permitted": false
+  },
+  "forecast_gate": {
+    "all_finite_and_complete": true,
+    "quantile_crossing_count": 0,
+    "minimum_horizons_with_positive_pinball_skill_vs_unconditional": 3,
+    "minimum_pinball_skill_per_counted_horizon": 0.01,
+    "minimum_horizons_with_positive_pooled_median_spearman": 3,
+    "minimum_evaluation_months_with_positive_median_spearman_per_counted_horizon": 5,
+    "central_80_interval_coverage_bounds": [
+      0.72,
+      0.88
+    ],
+    "central_50_interval_coverage_bounds": [
+      0.42,
+      0.58
+    ],
+    "minimum_pairwise_seed_median_prediction_spearman": 0.5,
+    "minimum_positive_symbol_horizons_per_symbol": 2
+  },
+  "action_quality_gate": {
+    "all_replay_aligned_targets_and_outputs_finite": true,
+    "minimum_horizons_with_positive_conditional_mean_mse_skill_vs_training_mean": 3,
+    "minimum_horizons_with_positive_conditional_mean_spearman": 3,
+    "minimum_side_horizons_with_positive_log_loss_skill_vs_training_prevalence": 6,
+    "minimum_side_horizons_with_roc_auc_above_half": 6,
+    "minimum_pairwise_seed_conditional_mean_spearman": 0.5,
+    "minimum_pairwise_seed_action_logit_spearman": 0.5,
+    "maximum_relative_quantile_early_stop_degradation_vs_round46": 0.02,
+    "temperature_fit_may_not_worsen_calibration_bce": true,
+    "rank_ablation_comparison": {
+      "minimum_average_evaluation_utility_spearman_improvement": 0.005,
+      "maximum_relative_evaluation_action_log_loss_degradation": 0.01,
+      "claim_if_failed": "The pairwise mechanism did not improve replay-aligned ordering and must not be retained merely because one policy metric improved."
+    }
+  },
+  "fixed_policy_contract": {
+    "runs_for_each_candidate_even_if_a_quality_gate_fails": true,
+    "position_values": [
+      -1,
+      0,
+      1
+    ],
+    "position_sleeves": "Fixed one-third notional sleeve per symbol.",
+    "entry_rule": "When a symbol is flat, evaluate every horizon and side. A side is eligible only when every seed's calibrated probability is at least 0.55 and every seed's predicted conditional mean implies strictly positive net utility after the 12 bps round trip. Select the eligible side and horizon with the largest worst-seed expected net utility; ties prefer the shorter horizon and then abstention-safe deterministic ordering.",
+    "action_probability_floor": 0.55,
+    "holding_rule": "Hold for exactly the selected 1, 4, 12, or 24 hours, then flatten. No overlapping position is permitted within a symbol.",
+    "forced_quota": false,
+    "leverage": 1.0,
+    "base_one_way_transition_cost_bps": 6.0,
+    "stress_one_way_transition_cost_bps": 8.0,
+    "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect timestamps, sides, or horizons under stress.",
+    "funding_cash_flows_included": true,
+    "maker_execution_assumption": false
+  },
+  "economic_gate": {
+    "required_only_if_forecast_and_action_quality_gates_pass": true,
+    "familywise_circular_block_bootstrap_hours": 168,
+    "bootstrap_replicates": 2000,
+    "one_sided_familywise_lower_quantile": 0.0125,
+    "stress_mean_hourly_portfolio_bps_lower_bound_must_exceed": 0.0,
+    "minimum_positive_evaluation_months": 6,
+    "minimum_active_days": 90,
+    "minimum_closed_trades": 180,
+    "maximum_drawdown_fraction": 0.1,
+    "minimum_profit_factor": 1.05,
+    "all_three_symbols_must_have_activity": true,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "promotion_result": "Still denied because the complete Round 47 evaluation is selection-contaminated development evidence."
+  },
+  "ai_contract": {
+    "risk_review_benchmark_contract": "finance-risk-review-adversarial-v6",
+    "risk_review_comparison_file_sha256": "369f98826ee97b0b2c23c3fb3e53cb966cc0eb01785140774391993b1dbe9281",
+    "selected_local_risk_review_model": "qwen3:8b",
+    "selected_model_cases_correct": "11/11",
+    "selected_model_score": 0.983409090909091,
+    "risk_review_benchmark_passed": true,
+    "benchmark_is_financial_edge_evidence": false,
+    "market_features_or_future_outcomes_supplied_to_language_models": false,
+    "language_model_numerical_forecasts_or_orders_permitted": false,
+    "ai_trade_ablation_permitted": false,
+    "reason": "The current language-model benchmark establishes constrained risk reasoning, not market edge. An AI uplift experiment remains blocked until a deterministic numerical candidate clears forecast, action-quality, and economic gates."
+  },
+  "governance": {
+    "selection_confirmation_2025_h2_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "testnet_or_live_execution_permitted": false,
+    "promotion_permitted": false,
+    "leverage_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "post_outcome_parameter_seed_candidate_or_threshold_selection_permitted": false,
+    "manual_graph_or_result_editing_permitted": false,
+    "profitability_ai_or_ranking_uplift_claim_permitted": false
+  },
+  "required_outputs": [
+    "source dataset and cache hashes with reproduced target identities",
+    "role counts label prevalence and no-leakage boundary checks",
+    "DirectML multitask and pairwise backward-update preflight with zero fallback warnings",
+    "per-candidate per-seed artifacts and exact reload checks for all three heads",
+    "hashed quantile utility logit and calibrated probability tensors",
+    "per-epoch quantile utility BCE consistency ranking and composite diagnostics",
+    "calibration temperatures and before-after BCE",
+    "per-candidate per-symbol per-horizon per-month forecast and action diagnostics",
+    "seed stability and quality-gate reasons",
+    "fixed nonoverlapping trade ledger with exact target-to-replay identity",
+    "matched base and stress economics with block-bootstrap uncertainty",
+    "rank-ablation comparison against the proper multitask control",
+    "current hash-bound AI safety benchmark reference and explicit no-uplift boundary",
+    "peak working set runtime and progress events",
+    "machine-readable report with canonical identity"
+  ]
+}
