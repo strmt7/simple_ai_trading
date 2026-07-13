@@ -1,0 +1,115 @@
+{
+  "schema_version": "round-043-failure-analysis-v1",
+  "round": 43,
+  "analysis_sha256": "19864ec0e15a3b3e61dc9b013bc10a1ce75feffe60823700555484a6162d84fd",
+  "status": "rejected",
+  "evidence": {
+    "report_canonical_sha256": "c21ed68b105bcbe76156a6883bbc7b45a2ef0f28913677c92673cad73404b1ff",
+    "report_file_sha256": "68540a9245c7857757c2f9112c8ff7e126ac7502fc81d1ae51a37397cbb6b3e4",
+    "design_sha256": "e9c37331108db8fa66243f7e8b8baa0a43c6b85a4f25c4c48f5b48a95389991b",
+    "binding_sha256": "6f8d152d4be7e5846eef435e9e8e494346ca85340f8e03d4b4706babd3f05172",
+    "implementation_commit": "ef3225c4232dfece41fcabc0a9b278195e3333f9",
+    "dataset_sha256": "26d202c0e5279e28aa18d118e86b1f3e0c49580e5434f12c575fbff1397a4f22",
+    "hourly_rows": 91941,
+    "evaluation_hours": 4343,
+    "opencl_models": 12,
+    "exact_reload_failures": 0,
+    "position_ledger_rows": 234522
+  },
+  "registered_results": [
+    {
+      "candidate": "baseline_71_long_only",
+      "base_total_net_return_fraction": -0.04325845838615672,
+      "stress_total_net_return_fraction": 0.03137824893797991,
+      "base_maximum_drawdown_fraction": 0.09657225052434759,
+      "stress_familywise_bootstrap_lower_mean_hourly_bps": -0.29299475341609674,
+      "stress_positive_months": 1,
+      "stress_active_days": 21,
+      "gate_passed": false
+    },
+    {
+      "candidate": "baseline_71_long_short",
+      "base_total_net_return_fraction": -0.0892348054530222,
+      "stress_total_net_return_fraction": 0.06588866009941685,
+      "base_maximum_drawdown_fraction": 0.16088891726140575,
+      "stress_familywise_bootstrap_lower_mean_hourly_bps": -0.2566105987275358,
+      "stress_positive_months": 1,
+      "stress_active_days": 25,
+      "gate_passed": false
+    },
+    {
+      "candidate": "ai_research_augmented_77_long_only",
+      "base_total_net_return_fraction": -0.024022677428055972,
+      "stress_total_net_return_fraction": 0.03948300662808868,
+      "base_maximum_drawdown_fraction": 0.11282972360150845,
+      "stress_familywise_bootstrap_lower_mean_hourly_bps": -0.44717203849618214,
+      "stress_positive_months": 1,
+      "stress_active_days": 20,
+      "gate_passed": false
+    },
+    {
+      "candidate": "ai_research_augmented_77_long_short",
+      "base_total_net_return_fraction": 0.03619876114105791,
+      "stress_total_net_return_fraction": -0.06214249212545886,
+      "base_maximum_drawdown_fraction": 0.10370179280285152,
+      "stress_familywise_bootstrap_lower_mean_hourly_bps": -0.5380770986297151,
+      "stress_positive_months": 0,
+      "stress_active_days": 23,
+      "gate_passed": false
+    }
+  ],
+  "forecast_diagnosis": {
+    "baseline_nonzero_evaluation_spearman_range": [
+      0.02129172505949654,
+      0.0336370810185283
+    ],
+    "augmented_nonzero_evaluation_spearman_range": [
+      0.01613996106385107,
+      0.03223722099967383
+    ],
+    "baseline_zero_amplitude_months": [
+      "2025-03",
+      "2025-04",
+      "2025-05"
+    ],
+    "augmented_zero_amplitude_months": [
+      "2025-02",
+      "2025-03",
+      "2025-04",
+      "2025-05"
+    ],
+    "interpretation": "Nonnegative calibration correctly shut down models whose immediately prior calibration relation was nonpositive. This prevented fabricated activity but left the policy concentrated in January, with sparse June actions."
+  },
+  "ai_uplift_diagnosis": {
+    "primary_pair": "long_only augmented minus baseline",
+    "base_total_return_improved": true,
+    "stress_total_return_improved": true,
+    "stress_observed_mean_hourly_delta_bps": 0.023925291421645994,
+    "stress_paired_block_bootstrap_lower_bps": -0.3530198974253663,
+    "stress_paired_block_bootstrap_upper_bps": 0.5032664635067352,
+    "maximum_drawdown_improved": false,
+    "gate_passed": false,
+    "conclusion": "The six AI-research-assisted interactions changed model gain and point estimates but did not establish a statistically stable or drawdown-nondegrading edge. AI improvement is false."
+  },
+  "critical_interpretation": [
+    "Stateful carry can reduce repeated round-trip charges: the augmented long-short base replay returned 3.619876 percent while its matched independent-hourly comparator returned -4.733173 percent. This is an execution-conversion result, not alpha validation.",
+    "No candidate had a positive familywise 168-hour block-bootstrap lower bound, at least four positive months, or at least 90 active days.",
+    "The positive stress point estimates are not ordinary cost sensitivity. The frozen stress replay raises both the one-way charge and the transition hurdle, so it selects fewer positions than the base replay. Higher selectivity, not higher cost, explains the non-monotonic result.",
+    "The always-long fixed-sleeve comparator returned approximately -9.9 percent with 52.06 percent maximum drawdown, confirming an adverse and volatile evaluation regime but not excusing the models' weak information coefficients.",
+    "The local language models were useful for proposing factor families, but both proposer and critic failed deterministic syntax or financial-sign checks. No raw language-model output received execution authority."
+  ],
+  "decisions": [
+    "Do not promote, leverage, testnet-run, or represent any Round 43 candidate as profitable.",
+    "Retain stateful position accounting as a research infrastructure improvement, but do not treat it as evidence of predictive edge.",
+    "Do not tune the cost hurdle against the consumed 2025 H1 outcomes.",
+    "Future cost stress must reprice one matched action ledger while keeping position decisions fixed; a separate selectivity ablation may vary the hurdle.",
+    "Do not add more unconstrained language-model factors. Any next AI factor must use the bounded program workflow and beat a matched ML-only policy under block-bootstrap and drawdown gates."
+  ],
+  "next_model_requirements": [
+    "Target the forecasting defect rather than another threshold or meta-label adjustment.",
+    "Pre-register a regime-explicit or multi-horizon economic target with a matched fixed-action cost stress and causal walk-forward roles.",
+    "Require stable forecast association and nonzero calibrated amplitude across multiple months before portfolio replay.",
+    "Use short development slices only for implementation viability, then freeze before any full consumed-window comparison.",
+    "Keep BTCUSDT, ETHUSDT, and SOLUSDT fixed one-third sleeves, unlevered, with the 24-hour maximum hold until an unlevered edge is established."
+  ]
+}

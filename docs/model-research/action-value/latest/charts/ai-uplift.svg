@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="650" viewBox="0 0 1500 650" role="img" aria-labelledby="title desc">
+<title id="title">AI-assisted factors changed point estimates but did not establish uplift</title>
+<desc id="desc">Pre-registered long-only comparison; the paired 168-hour block-bootstrap interval crosses zero and drawdown worsened.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">AI-assisted factors changed point estimates but did not establish uplift</text>
+<text x="56" y="80" class="subtitle">Pre-registered long-only comparison; the paired 168-hour block-bootstrap interval crosses zero and drawdown worsened.</text>
+<text x="130" y="132" class="label">Compounded return</text><rect x="130" y="150" width="390" height="300" fill="#ffffff" stroke="#d8e0e7"/>
+<text x="650" y="132" class="label">Maximum drawdown</text><rect x="650" y="150" width="300" height="300" fill="#ffffff" stroke="#d8e0e7"/>
+<text x="1060" y="132" class="label">Paired stress delta</text><rect x="1060" y="150" width="330" height="300" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="130" y1="300.0" x2="520" y2="300.0" class="zero"/>
+<rect x="166" y="300.0" width="48" height="118.0" fill="#2563a6"/>
+<text x="190" y="437.0" text-anchor="middle" class="value">-4.33%</text>
+<text x="190" y="477" text-anchor="middle" class="axis">base</text>
+<rect x="246" y="300.0" width="48" height="65.5" fill="#b7791f"/>
+<text x="270" y="384.5" text-anchor="middle" class="value">-2.40%</text>
+<text x="270" y="477" text-anchor="middle" class="axis">base</text>
+<rect x="356" y="214.4" width="48" height="85.6" fill="#2563a6"/>
+<text x="380" y="205.4" text-anchor="middle" class="value">+3.14%</text>
+<text x="380" y="477" text-anchor="middle" class="axis">stress</text>
+<rect x="436" y="192.3" width="48" height="107.7" fill="#b7791f"/>
+<text x="460" y="183.3" text-anchor="middle" class="value">+3.95%</text>
+<text x="460" y="477" text-anchor="middle" class="axis">stress</text>
+<rect x="706" y="244.0" width="68" height="186.0" fill="#2563a6"/><text x="740" y="234.0" text-anchor="middle" class="value">7.44%</text>
+<rect x="826" y="238.3" width="68" height="191.7" fill="#b7791f"/><text x="860" y="228.3" text-anchor="middle" class="value">7.67%</text>
+<text x="740" y="477" text-anchor="middle" class="axis">ML</text><text x="860" y="477" text-anchor="middle" class="axis">AI-factor</text>
+<line x1="1214.6" y1="185" x2="1214.6" y2="420" class="zero"/>
+<line x1="1141.3" y1="300" x2="1319.1" y2="300" stroke="#7b559c" stroke-width="6"/><circle cx="1219.6" cy="300" r="9" fill="#7b559c"/>
+<text x="1225" y="350" text-anchor="middle" class="value">95% [-0.353, +0.503] bps/hour</text>
+<rect x="170" y="520" width="16" height="16" fill="#2563a6"/><text x="196" y="533" class="note">ML baseline</text>
+<rect x="340" y="520" width="16" height="16" fill="#b7791f"/><text x="366" y="533" class="note">AI-research factors</text>
+<text x="650" y="533" class="note">Gate: rejected (paired_stress_bootstrap_lower_delta_positive; augmented_stress_drawdown_not_worse)</text>
+<text x="130" y="592" class="note">Positive point estimates are insufficient: matched resampling and non-degrading drawdown were mandatory.</text>
+</svg>
