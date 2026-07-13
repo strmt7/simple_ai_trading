@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import torch
 
+import simple_ai_trading.joint_distributional_tcn_model as joint_module
 from simple_ai_trading.cross_asset_cost_data import SYMBOLS
 from simple_ai_trading.distributional_tcn_model import (
     BASE_ONE_WAY_COST_BPS,
@@ -25,6 +26,7 @@ from simple_ai_trading.joint_distributional_tcn_model import (
     JointForecastBundle,
     JointTCNArtifact,
     joint_economic_gate,
+    joint_forecast_diagnostics,
     joint_pinball_loss,
     optimizer_ablation_gate,
     replay_consensus_trades,
@@ -41,9 +43,10 @@ def _evaluation_dataset(
     hours: int = 120,
     hourly_bps: float = 20.0,
 ) -> DistributionalDataset:
-    timestamps = _timestamp_ms("2024-10-01T00:00:00") + np.arange(
-        hours, dtype=np.int64
-    ) * 3_600_000
+    timestamps = (
+        _timestamp_ms("2024-10-01T00:00:00")
+        + np.arange(hours, dtype=np.int64) * 3_600_000
+    )
     hourly = np.full((hours, len(SYMBOLS)), hourly_bps, dtype=np.float32)
     return DistributionalDataset(
         feature_names=tuple(f"feature_{index}" for index in range(71)),
@@ -78,9 +81,7 @@ def _bundle(
         seed_predictions_bps=predictions,
         ensemble_predictions_bps=np.median(predictions, axis=0),
         artifacts=(),
-        feature_scaler=FeatureScaler(
-            mean=np.zeros(71), standard_deviation=np.ones(71)
-        ),
+        feature_scaler=FeatureScaler(mean=np.zeros(71), standard_deviation=np.ones(71)),
         target_scaler=TargetScaler(
             center_bps=np.zeros(len(HORIZONS)),
             scale_bps=np.ones(len(HORIZONS)),
@@ -130,9 +131,7 @@ def test_joint_tcn_is_causal_and_quantiles_cannot_cross() -> None:
 
 def test_joint_pinball_loss_is_zero_for_exact_quantiles() -> None:
     targets = torch.zeros(3, len(SYMBOLS), len(HORIZONS), 20)
-    predictions = torch.zeros(
-        3, len(SYMBOLS), len(HORIZONS), len(QUANTILES), 20
-    )
+    predictions = torch.zeros(3, len(SYMBOLS), len(HORIZONS), len(QUANTILES), 20)
     assert joint_pinball_loss(predictions, targets).item() == 0.0
 
 
@@ -189,12 +188,52 @@ def test_consensus_ledger_is_fixed_under_stress() -> None:
         * len(trades)
         / len(SYMBOLS)
     )
-    assert np.sum(base.portfolio_return_bps - stress.portfolio_return_bps) == pytest.approx(
-        expected_delta
-    )
+    assert np.sum(
+        base.portfolio_return_bps - stress.portfolio_return_bps
+    ) == pytest.approx(expected_delta)
     assert stress.metrics["bootstrap_mean_hourly_portfolio_bps"][
         "lower_quantile"
     ] == pytest.approx(0.0125)
+
+
+def test_consensus_replay_accepts_a_bound_seed_for_future_candidates() -> None:
+    dataset = _evaluation_dataset()
+    bundle = _bundle(dataset, candidate_id="wavebound_ema")
+    trades = select_consensus_trades(dataset, bundle)
+    replay = replay_consensus_trades(
+        dataset,
+        trades,
+        candidate_id=bundle.candidate_id,
+        scenario="base",
+        one_way_cost_bps=BASE_ONE_WAY_COST_BPS,
+        bootstrap_seed=4601,
+    )
+    assert replay.metrics["candidate_id"] == "wavebound_ema"
+    assert replay.metrics["trades"] == len(trades)
+
+
+def test_forecast_diagnostics_use_bundle_artifact_seed_ids(monkeypatch) -> None:
+    dataset = _evaluation_dataset(hours=120)
+    dataset.forward_return_bps[:] += np.arange(120, dtype=np.float32)[:, None, None]
+    bundle = _bundle(dataset)
+    bound_seeds = (4601, 4602, 4603)
+    object.__setattr__(
+        bundle,
+        "artifacts",
+        tuple(_artifact(bundle.candidate_id, seed, 0.37) for seed in bound_seeds),
+    )
+
+    def selected_role(_dataset, role_name: str) -> np.ndarray:
+        indexes = np.arange(dataset.timestamps)
+        return indexes < 60 if role_name == "training" else indexes >= 60
+
+    monkeypatch.setattr(joint_module, "role_mask", selected_role)
+    _, stability, _ = joint_forecast_diagnostics(dataset, bundle)
+    assert {(row["left_seed"], row["right_seed"]) for row in stability} == {
+        (4601, 4602),
+        (4601, 4603),
+        (4602, 4603),
+    }
 
 
 def test_economic_gate_requires_forecast_and_capacity() -> None:
