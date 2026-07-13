@@ -531,6 +531,7 @@ def _fit_meta_model(
     compute_backend: str,
     seed: int,
     progress: ProgressCallback | None,
+    round_number: int = ROUND,
 ) -> tuple[np.ndarray, CausalMetaModelArtifact, str, str, dict[str, object]]:
     fit_indices = np.flatnonzero(masks["meta_fit"])
     early_indices = np.flatnonzero(masks["meta_early_stop"])
@@ -557,10 +558,13 @@ def _fit_meta_model(
         seed=seed,
     )
     parameters.update({"num_leaves": 31, "min_data_in_leaf": 200})
-    model_id = f"round40_{schedule.evaluation_month.replace('-', '')}_meta_shared"
+    model_id = (
+        f"round{round_number}_{schedule.evaluation_month.replace('-', '')}_"
+        "meta_shared"
+    )
     if progress is not None:
         progress(
-            "round40_model_training",
+                f"round{round_number}_model_training",
             {
                 "model_id": model_id,
                 "model_role": "meta_label",
@@ -631,7 +635,7 @@ def _fit_meta_model(
     )
     if progress is not None:
         progress(
-            "round40_model_training",
+            f"round{round_number}_model_training",
             {
                 "model_id": model_id,
                 "model_role": "meta_label",

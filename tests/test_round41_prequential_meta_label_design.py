@@ -4,6 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from tools.run_prequential_meta_label_ai import _validate_design
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DESIGN = (
@@ -68,3 +70,10 @@ def test_round41_design_is_hash_bound_prequential_and_fail_closed() -> None:
         "leverage_applied",
     ):
         assert design[field] is False
+
+
+def test_round41_runner_accepts_exact_frozen_design() -> None:
+    design, claimed = _validate_design(DESIGN)
+
+    assert design["round"] == 41
+    assert claimed == design["design_sha256"]
