@@ -164,18 +164,16 @@ def test_batch_response_requires_exact_case_identity_and_valid_decisions() -> No
                         {
                             "case_id": "a",
                             "action": "approve",
-                            "risk_multiplier": 0.5,
-                            "confidence": 0.8,
-                            "reason_codes": ["edge_covers_cost"],
-                            "summary": "Causal evidence is coherent.",
+                            "risk_percent": 50,
+                            "confidence_percent": 80,
+                            "reason_codes": ["cost_ok"],
                         },
                         {
                             "case_id": "b",
                             "action": "veto",
-                            "risk_multiplier": 1.0,
-                            "confidence": 0.7,
-                            "reason_codes": ["weak_cost_margin"],
-                            "summary": "The edge does not cover uncertainty.",
+                            "risk_percent": 100,
+                            "confidence_percent": 70,
+                            "reason_codes": ["weak_edge"],
                         },
                     ]
                 }
@@ -190,3 +188,43 @@ def test_batch_response_requires_exact_case_identity_and_valid_decisions() -> No
     assert decisions["b"].action == "veto"
     assert decisions["b"].risk_multiplier == 0.0
     assert _decision_schema()["properties"]["decisions"]["type"] == "array"
+
+
+def test_case_builder_retains_ten_highest_confidence_cases_per_symbol_month() -> None:
+    rows = 12
+    times = np.asarray(
+        [_ms(f"2025-01-{day:02d}T00:00:00") for day in range(1, rows + 1)],
+        dtype=np.int64,
+    )
+    probabilities = np.column_stack(
+        (
+            np.full(rows, 0.05),
+            np.linspace(0.44, 0.33, rows),
+            np.linspace(0.51, 0.62, rows),
+        )
+    ).astype(np.float32)
+    dataset = DerivativesHurdleDataset(
+        feature_names=FEATURE_NAMES,
+        price_flow_feature_count=len(FEATURE_NAMES),
+        features=np.zeros((rows, len(FEATURE_NAMES)), dtype=np.float32),
+        decision_time_ms=times,
+        symbol_index=np.zeros(rows, dtype=np.int8),
+        target_class={30: np.full(rows, 2, dtype=np.int8)},
+        long_net_utility_bps={30: np.arange(rows, dtype=np.float32)},
+        short_net_utility_bps={30: np.full(rows, -5.0, dtype=np.float32)},
+        funding_cash_flow_bps={30: np.zeros(rows, dtype=np.float32)},
+        role_masks={},
+        source_evidence=None,  # type: ignore[arg-type]
+        source_exclusions={},
+    )
+    candidate = _candidate(
+        np.arange(rows, dtype=np.int64),
+        probabilities,
+        np.arange(rows, dtype=np.float64),
+        "candidate",
+    )
+
+    cases = build_rolling_ai_cases(dataset, (candidate,))
+
+    assert len(cases) == 10
+    assert [case.dataset_row for case in cases] == list(range(2, 12))

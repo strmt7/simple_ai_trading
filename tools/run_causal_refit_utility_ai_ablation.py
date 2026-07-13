@@ -46,7 +46,7 @@ from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
 
 ROUND = 39
-DESIGN_SCHEMA = "causal-refit-utility-ai-ablation-design-v1"
+DESIGN_SCHEMA = "causal-refit-utility-ai-ablation-design-v2"
 BINDING_SCHEMA = "round-039-causal-refit-utility-ai-execution-binding-v1"
 REPORT_SCHEMA = "causal-refit-utility-ai-ablation-report-v1"
 SOURCE_CERTIFICATE_CANONICAL_SHA256 = (

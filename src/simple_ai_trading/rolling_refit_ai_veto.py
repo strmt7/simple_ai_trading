@@ -13,7 +13,6 @@ import numpy as np
 
 from .ai_trade_veto import (
     AI_MODELS,
-    AI_SCHEMA,
     AIVetoDecision,
     _bounded_float,
     _canonical_sha256,
@@ -27,7 +26,7 @@ from .rolling_refit_model import RollingSupportCandidate
 
 
 BATCH_SIZE = 12
-MAX_CASES = 543
+MAX_CASES = 180
 EVALUATION_START_MS = int(
     datetime(2025, 1, 1, tzinfo=UTC).timestamp() * 1000
 )
@@ -229,9 +228,11 @@ def build_rolling_ai_cases(
             proposal = (confidence, row, candidate, direction, net_by_row[row])
             key = (symbol_index, day_index)
             current = proposals.get(key)
-            if current is None or (
-                proposal[0], candidate.candidate_id, -row
-            ) > (current[0], current[2].candidate_id, -current[1]):
+            if current is None or confidence > current[0] or (
+                confidence == current[0]
+                and (candidate.candidate_id, row)
+                < (current[2].candidate_id, current[1])
+            ):
                 proposals[key] = proposal
     ordered = [
         (
@@ -251,7 +252,24 @@ def build_rolling_ai_cases(
             net,
         ) in proposals.items()
     ]
-    ordered.sort(key=lambda item: (int(dataset.decision_time_ms[item[0]]), item[4]))
+    grouped: dict[tuple[int, int], list[tuple[object, ...]]] = {}
+    for item in ordered:
+        timestamp = datetime.fromtimestamp(
+            int(dataset.decision_time_ms[int(item[0])]) / 1000.0, UTC
+        )
+        grouped.setdefault((int(item[4]), timestamp.month - 1), []).append(item)
+    selected: list[tuple[object, ...]] = []
+    for group in grouped.values():
+        group.sort(
+            key=lambda item: (
+                -float(item[6]),
+                str(item[1].candidate_id),
+                int(item[0]),
+            )
+        )
+        selected.extend(group[:10])
+    ordered = selected
+    ordered.sort(key=lambda item: (int(dataset.decision_time_ms[int(item[0])]), item[4]))
     if len(ordered) > MAX_CASES:
         raise ValueError("Round 39 AI case count exceeds the frozen maximum")
     feature_indices = _feature_indices(dataset.feature_names)
@@ -362,8 +380,33 @@ def build_rolling_ai_cases(
     return tuple(cases)
 
 
+SHORT_REASON_CODES = (
+    "cost_ok",
+    "weak_edge",
+    "unstable",
+    "flow_risk",
+    "volatility",
+    "liquidity",
+    "cross_asset",
+    "calibration",
+    "loss_lock",
+    "insufficient",
+)
+REASON_CODE_MAP = {
+    "cost_ok": "edge_covers_cost",
+    "weak_edge": "weak_cost_margin",
+    "unstable": "unstable_analogs",
+    "flow_risk": "adverse_taker_flow",
+    "volatility": "volatility_shock",
+    "liquidity": "liquidity_stress",
+    "cross_asset": "cross_asset_disagreement",
+    "calibration": "model_calibration_risk",
+    "loss_lock": "loss_cooldown",
+    "insufficient": "insufficient_evidence",
+}
+
+
 def _decision_schema() -> dict[str, object]:
-    properties = dict(AI_SCHEMA["properties"])
     return {
         "type": "object",
         "properties": {
@@ -373,9 +416,37 @@ def _decision_schema() -> dict[str, object]:
                     "type": "object",
                     "properties": {
                         "case_id": {"type": "string"},
-                        **properties,
+                        "action": {
+                            "type": "string",
+                            "enum": ["approve", "veto", "cooldown"],
+                        },
+                        "risk_percent": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100,
+                        },
+                        "confidence_percent": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100,
+                        },
+                        "reason_codes": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": list(SHORT_REASON_CODES),
+                            },
+                            "minItems": 1,
+                            "maxItems": 2,
+                        },
                     },
-                    "required": ["case_id", *AI_SCHEMA["required"]],
+                    "required": [
+                        "case_id",
+                        "action",
+                        "risk_percent",
+                        "confidence_percent",
+                        "reason_codes",
+                    ],
                     "additionalProperties": False,
                 },
             }
@@ -392,34 +463,38 @@ def _parse_single_decision(value: object) -> AIVetoDecision:
     if action not in {"approve", "veto", "cooldown"}:
         raise ValueError("AI action is invalid")
     risk = float(
-        np.clip(_bounded_float(value.get("risk_multiplier"), 0.0), 0.0, 1.0)
+        np.clip(_bounded_float(value.get("risk_percent"), 0.0), 0.0, 100.0)
+        / 100.0
     )
     confidence = float(
-        np.clip(_bounded_float(value.get("confidence"), 0.0), 0.0, 1.0)
+        np.clip(
+            _bounded_float(value.get("confidence_percent"), 0.0), 0.0, 100.0
+        )
+        / 100.0
     )
     raw_codes = value.get("reason_codes")
-    allowed = set(AI_SCHEMA["properties"]["reason_codes"]["items"]["enum"])
     if not isinstance(raw_codes, list) or not raw_codes:
         raise ValueError("AI reason_codes are missing")
     codes = tuple(
-        dict.fromkeys(str(item) for item in raw_codes if str(item) in allowed)
+        dict.fromkeys(
+            REASON_CODE_MAP[str(item)]
+            for item in raw_codes
+            if str(item) in REASON_CODE_MAP
+        )
     )
-    if not codes or len(codes) > 4:
+    if not codes or len(codes) > 2:
         raise ValueError("AI reason_codes are invalid")
-    summary = str(value.get("summary") or "").strip()[:180]
-    if not summary:
-        raise ValueError("AI summary is missing")
     if action != "approve":
         risk = 0.0
     if action == "approve" and risk <= 0.0:
         action = "veto"
-        codes = tuple(dict.fromkeys((*codes, "insufficient_evidence")))[:4]
+        codes = tuple(dict.fromkeys((*codes, "insufficient_evidence")))[:2]
     return AIVetoDecision(
         action=action,
         risk_multiplier=risk,
         confidence=confidence,
         reason_codes=codes,
-        summary=summary,
+        summary="Compact structured Round 39 veto decision.",
         valid=True,
         failure_reason="",
     )
@@ -563,8 +638,8 @@ def benchmark_rolling_ai_model(
             "keep_alive": "30m",
             "options": {
                 "temperature": 0,
-                "num_ctx": 16_384,
-                "num_predict": 1800,
+                "num_ctx": 12_288,
+                "num_predict": 900,
                 "seed": 3901,
             },
         }
@@ -652,13 +727,13 @@ def benchmark_rolling_ai_model(
     active_days = int(np.count_nonzero(retained_day_has_case))
     profit_factor = _profit_factor(retained)
     reasons: list[str] = []
-    if retained_total < 180:
-        reasons.append("ai_retained_trades<180")
+    if retained_total < 90:
+        reasons.append("ai_retained_trades<90")
     for symbol in SYMBOLS:
-        if retained_by_symbol[symbol] < 30:
-            reasons.append(f"{symbol}_ai_retained_trades<30")
-    if active_days < 90:
-        reasons.append("ai_retained_active_days<90")
+        if retained_by_symbol[symbol] < 20:
+            reasons.append(f"{symbol}_ai_retained_trades<20")
+    if active_days < 45:
+        reasons.append("ai_retained_active_days<45")
     if concentration > 0.50:
         reasons.append("ai_retained_symbol_fraction>0.50")
     if valid != len(cases):
