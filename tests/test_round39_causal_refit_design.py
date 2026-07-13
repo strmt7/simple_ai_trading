@@ -77,9 +77,9 @@ def test_round39_design_freezes_causal_refit_and_utility_ablation() -> None:
     registry = _read(REGISTRY38)
 
     assert _canonical_sha256(design, "design_sha256") == (
-        "cdfca0f55652737c10ed441ce88b5ab9a8e45499a24bd49a362609ee2e800a64"
+        "25df349981d734586f6fa2d432e8e32cf2bbaabdacf18a3da709db1f9ca29056"
     )
-    assert design["schema_version"] == "causal-refit-utility-ai-ablation-design-v1"
+    assert design["schema_version"] == "causal-refit-utility-ai-ablation-design-v2"
     assert design["round"] == 39
     assert design["predecessor"]["failure_analysis_canonical_sha256"] == failure[
         "analysis_sha256"
@@ -169,7 +169,9 @@ def test_round39_design_freezes_causal_refit_and_utility_ablation() -> None:
     ai = design["ai_ablation_contract"]
     assert ai["models"] == ["qwen3:8b", "fino1:8b"]
     assert ai["batch_size"] == 12
-    assert ai["maximum_cases"] == 543
+    assert ai["maximum_cases"] == 180
+    assert ai["compact_response_contract"]["maximum_generated_tokens_per_batch"] == 900
+    assert ai["minimum_retained_trades_total"] == 90
     assert ai["ai_may_only_veto_or_reduce_risk"] is True
     assert ai["best_ai_model_may_not_be_selected_on_round39_evaluation"] is True
     assert design["claims"] == {
