@@ -544,22 +544,8 @@ def _role_td_loss(
             discount_factor=spec.discount_factor,
         )
         model_losses.append(float(quantile_huber_loss(current, targets).cpu()))
-        positions = torch.tensor(
-            ACTIONS,
-            dtype=returns.dtype,
-            device=returns.device,
-        )
-        previous = positions.reshape(1, len(ACTIONS), 1, 1)
-        action = positions.reshape(1, 1, len(ACTIONS), 1)
-        immediate = (
-            action * selected_returns[:, None, None, :]
-            - normalized_cost * torch.abs(action - previous)
-        )
         zero = torch.zeros_like(current)
-        immediate_distribution = immediate[:, :, :, None, :].expand_as(current)
-        baseline_losses.append(
-            float(quantile_huber_loss(zero, immediate_distribution).cpu())
-        )
+        baseline_losses.append(float(quantile_huber_loss(zero, targets).cpu()))
     return float(np.mean(model_losses)), float(np.mean(baseline_losses))
 
 
@@ -760,6 +746,14 @@ def _train_seed(
         device=device,
         spec=spec,
     )
+    probe_features = normalized_features[: spec.window_hours * 2]
+    original_probe = _predict_dataset(
+        model,
+        probe_features,
+        device=device,
+        spec=spec,
+        chunk_hours=spec.window_hours * 2,
+    )
     reloaded = DuelingDistributionalQTCN(
         input_channels=normalized_features.shape[-1], spec=spec
     ).to(device)
@@ -768,7 +762,7 @@ def _train_seed(
     )
     reloaded_predictions = _predict_dataset(
         reloaded,
-        normalized_features[: spec.window_hours * 2],
+        probe_features,
         device=device,
         spec=spec,
         chunk_hours=spec.window_hours * 2,
@@ -777,7 +771,7 @@ def _train_seed(
         np.max(
             np.abs(
                 reloaded_predictions
-                - predictions[: reloaded_predictions.shape[0]]
+                - original_probe
             )
         )
     )
