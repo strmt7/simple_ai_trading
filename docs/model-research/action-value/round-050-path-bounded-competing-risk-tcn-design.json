@@ -1,0 +1,314 @@
+{
+  "schema_version": "path-bounded-competing-risk-tcn-design-v1",
+  "round": 50,
+  "design_sha256": "09abb13a55009b4995a3543550b375d39938ff9df7bbfdb7329a1b369570045a",
+  "status": "frozen",
+  "phase": "consumed-development path-payoff mechanism screen",
+  "objective": "Test whether a causal competing-risk decomposition of exact stop-loss, take-profit, and timeout paths improves after-cost expected-payoff ranking and fixed-policy economics over a matched direct conditional-mean control.",
+  "claims": {
+    "profitability_claim_permitted": false,
+    "trading_authority_permitted": false,
+    "selection_contaminated": true,
+    "reason": "The 2025-H1 development interval has been consumed by prior rounds. Results are research evidence only, even if point estimates are positive."
+  },
+  "predecessor_evidence": {
+    "round_49_report_file_sha256": "7b2a07ff68d6d73e4fd8f4f8672d343e91966e6c8a6851947418b608372de503",
+    "round_49_publication_sha256": "af5e16c48f6a23d437a61431a83850dbdb7f8aa75b3785a2d30289863fc10683",
+    "round_49_dataset_sha256": "37d6c5b29bffd272afe03703d1ff2353f2d6939201be253cfe626e5e12f4b48b",
+    "round_49_diagnosis": {
+      "external_file": "round50-round49-diagnosis-20260713-v1.json",
+      "file_sha256": "d4fc5a460163ead39c4406760f911541c0e577784def1578670ebf6f0a279b8f",
+      "canonical_sha256": "3b24b486dc5e5376ccc6d74c0e6a1540d8d87b8dd1e76e8a172c0b530231b4f1",
+      "finding": "Profit probability retained moderate discrimination, while separately forecast gain and loss severities were highly collinear and their subtraction produced near-zero expected-net rank correlation in both calibration and evaluation."
+    },
+    "round_50_target_probe": {
+      "external_file": "round50-barrier-geometry-probe-20260713-v1.json",
+      "file_sha256": "98d0b56929c6f538910c2a6099d34641e5ed86c1bc4485ffea8f6084ad3048e7",
+      "canonical_sha256": "13a202ebeb7a083f82d053ab0f8ca3127b4e19ef0e8f3fd283290d22611f1fe4",
+      "anchor_dataset_sha256": "31c7713339cff9ad12f3bae02475743d09b2248bfc1b85e02e1f3306a699e774",
+      "anchor_selected_from_returns": false,
+      "structural_gate_passed": true
+    },
+    "prior_h60_derivative_feature_result": {
+      "source_round": 38,
+      "architectures_checked": 4,
+      "augmented_minus_price_flow_log_loss_range": [
+        0.0007554292678833008,
+        0.001028299331665039
+      ],
+      "decision": "Retain the 71 price/flow predictors for this isolated mechanism test; exact funding remains in every target and replay cash flow."
+    },
+    "precursor_commit": "0d3e0763f5e047ed5e9dcc861a91aac74dacc426",
+    "precursor_git_blobs": {
+      "src/simple_ai_trading/barrier_payoff_data.py": "d967df29b55751602525bd547e580474bd99a1b0",
+      "tools/diagnose_round49_action_value_failure.py": "49ec697008bc3ebe0949b3c7f38f2a284632a3c7",
+      "tools/probe_round50_barrier_geometry.py": "6278ff06f0ac43de21a44eaab06ccd4d13579690"
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://proceedings.mlr.press/v258/alberge25a.html",
+      "finding_used": "Competing outcomes should be modeled with calibrated event probabilities under proper scoring rules.",
+      "limitation": "Round 50 has no censoring because timeout is an observed terminal class, so it uses ordinary joint multinomial log loss rather than importing the paper's censoring adjustment."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v202/yanagisawa23a.html",
+      "finding_used": "Time-to-event forecasts require scoring rules that target the predictive distribution rather than an arbitrary concordance surrogate.",
+      "limitation": "Medical survival results are not financial-edge evidence."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v151/rindt22a.html",
+      "finding_used": "Log likelihood is a proper distributional objective, while common ranking-style survival metrics need not be proper.",
+      "limitation": "Round 50 measures rank only as an out-of-sample diagnostic and does not train on a concordance objective."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v80/imani18a.html",
+      "finding_used": "Distributional target representations can stabilize noisy regression, motivating a future categorical payoff ablation if the simpler event decomposition is insufficient.",
+      "limitation": "Round 50 does not claim that classification universally dominates regression."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v235/farebrother24a.html",
+      "finding_used": "Categorical objectives can be more stable than scalar regression in noisy, non-stationary value estimation.",
+      "limitation": "The study is reinforcement learning; Round 50 is supervised and keeps direct mean regression as the matched control."
+    },
+    {
+      "source": "https://arxiv.org/abs/2403.09267",
+      "finding_used": "Forecast accuracy alone need not produce actionable trading performance, requiring a separate executable replay with costs.",
+      "limitation": "The paper's limit-order-book setting and reported values are not imported."
+    },
+    {
+      "source": "https://arxiv.org/abs/2606.00060",
+      "finding_used": "Walk-forward crypto evidence reinforces cost-aware abstention and evaluation after realistic friction.",
+      "limitation": "It is a recent preprint and cannot establish Round 50 profitability."
+    },
+    {
+      "source": "https://arxiv.org/abs/1612.01474",
+      "finding_used": "Independent deep seeds provide a practical disagreement signal for selective abstention.",
+      "limitation": "Disagreement is not a calibrated loss bound."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "venue_product": "Binance USD-M perpetual futures",
+    "verified_source_resolution_seconds": 60,
+    "decision_interval_seconds": 300,
+    "path_resolution_seconds": 60,
+    "persistent_derived_feature_or_target_copy_permitted": false,
+    "synthetic_or_fabricated_rows_permitted": false,
+    "future_selection_confirmation_or_terminal_data_permitted": false,
+    "sequence_gap_rule": "No training or inference window may cross a missing five-minute timestamp or symbol boundary.",
+    "second_level_limit": "The local multi-year corpus is verified at one-minute resolution. The verified one-second aggregate-trade corpus spans only 2024-06-01 through 2024-06-07 and is reserved for later execution sensitivity; no multi-year second-level claim is permitted."
+  },
+  "chronological_roles": {
+    "training": "2022-01-01 through 2024-06-30",
+    "early_stop": "2024-07-01 through 2024-09-30",
+    "calibration": "2024-10-01 through 2024-12-31",
+    "evaluation": "2025-01-01 through 2025-06-30",
+    "maximum_horizon_embargo_minutes": 60,
+    "role_boundary_rule": "Entry, every path bar, exit, and every funding cash flow must remain inside one role.",
+    "evaluation_use": "One consumed-development mechanism screen only; no tuning after inspection."
+  },
+  "target_contract": {
+    "entry": "The next verified minute open after each five-minute decision.",
+    "horizon_minutes": 60,
+    "stop_width": "Trailing causal 60-minute one-minute-return volatility in basis points, multiplied by sqrt(60), then clipped to [24, 80] bps.",
+    "stop_volatility_multiple": 1.0,
+    "minimum_stop_bps": 24.0,
+    "maximum_stop_bps": 80.0,
+    "take_profit_to_stop_ratio": 2.0,
+    "base_round_trip_execution_charge_bps": 12.0,
+    "stress_round_trip_execution_charge_bps": 16.0,
+    "funding": "Exact settled funding events after entry and through exit, paid by longs and received by shorts for positive rates.",
+    "intraminute_ambiguity": "When both barriers lie inside one minute bar, fill the stop first.",
+    "gap_through_stop": "Fill at the minute open when it is worse than the stop; never assume a stop-price fill through a gap.",
+    "timeout": "Exit at the open exactly 60 minutes after entry when neither barrier was reached.",
+    "side_order": [
+      "short",
+      "long"
+    ],
+    "event_classes_per_side": 121,
+    "event_class_order": "stop minute 1..60, take-profit minute 1..60, timeout",
+    "risk_unit_target": "Exact net payoff in bps divided by the causal stop width in bps.",
+    "structured_residuals": "For stop and take-profit separately, subtract the causal barrier payoff from exact risk-unit payoff and fit one training-only arithmetic-mean residual per symbol and side. These constants account for average funding and gap-through effects without a dynamic severity head.",
+    "target_clipping_winsorization_or_outcome_reweighting_permitted": false
+  },
+  "model_contract": {
+    "family": "Per-symbol causal large-kernel temporal convolution with side-specific path-event and payoff heads.",
+    "candidates": [
+      {
+        "id": "direct_barrier_mean_tcn",
+        "action_value": "Two direct conditional means of exact net payoff in risk units, trained by unweighted MSE.",
+        "shared_auxiliaries": "Exact event-time multinomial log loss plus conditional timeout-profit BCE and timeout-payoff MSE."
+      },
+      {
+        "id": "competing_risk_barrier_tcn",
+        "action_value": "Sum calibrated stop/take event probabilities times the causal barrier payoffs plus their training-only residual baselines, then add timeout probability times the conditional timeout-payoff mean.",
+        "single_primary_change_from_control": "Remove direct mean regression and derive the mean from mutually exclusive path-event probabilities and the timeout conditional mean."
+      }
+    ],
+    "shared_encoder": {
+      "input_channels": 71,
+      "hidden_channels": 96,
+      "blocks": 4,
+      "depthwise_kernel_size": 25,
+      "depthwise_dilations": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "receptive_field_decision_steps": 361,
+      "receptive_field_minutes": 1800,
+      "padding": "left-only causal",
+      "normalization": "per-timestamp channel LayerNorm",
+      "activation": "GELU",
+      "dropout": 0.1
+    },
+    "heads": {
+      "event_time": "Two independent 121-class logits, one for each side.",
+      "timeout_profit": "Two conditional logits scored only on timeout rows.",
+      "timeout_mean": "Two conditional risk-unit means scored only on timeout rows.",
+      "direct_mean_control": "Two risk-unit means present only in the direct candidate."
+    },
+    "loss": {
+      "event_time_multinomial_log_loss_weight": 1.0,
+      "conditional_timeout_profit_binary_log_loss_weight": 0.25,
+      "conditional_timeout_mean_mse_weight": 0.5,
+      "direct_primary_mean_mse_weight": 0.5,
+      "class_rebalancing": false,
+      "outcome_weighting": false,
+      "pairwise_rank_loss": false,
+      "economic_loss": false
+    },
+    "seeds": [
+      5001,
+      5002,
+      5003
+    ],
+    "candidate_selection": "None. Both candidates complete all three seeds and the same evaluation.",
+    "policy_uncertainty": "Every seed must predict positive net value for eligibility; disagreement can only cause abstention."
+  },
+  "training_contract": {
+    "feature_scaling": "Training-only per-feature median and scaled IQR, scale floor 1e-6, normalized feature clipping to [-12, 12].",
+    "target_scaling": "Divide exact net payoff by the decision-time stop width; no fitted target transformation and no target clipping.",
+    "training_window_steps": 576,
+    "supervised_steps_per_window": 216,
+    "window_stride_steps": 216,
+    "batch_size": 32,
+    "maximum_epochs": 40,
+    "early_stopping_patience": 8,
+    "minimum_improvement": 0.0001,
+    "optimizer": "Explicit DirectML-compatible AdamW, learning rate 0.0008, weight decay 0.0001, gradient norm clip 1.0.",
+    "compute": "DirectML required for the live host run; CPU is a portability mode only.",
+    "cpu_fallback_permitted_in_gpu_run": false,
+    "checkpoint_reload_max_abs_error": 0.000001,
+    "short_screen": "Numerical preflight and one-seed training/early-stop diagnostics may run before the full experiment; calibration and evaluation economics cannot be inspected or used to alter the frozen design."
+  },
+  "calibration_contract": {
+    "event_method": "One positive temperature per seed and candidate, shared across symbols, sides, and event classes, fitted on calibration multinomial log loss.",
+    "temperature_bounds": [
+      0.5,
+      3.0
+    ],
+    "timeout_profit_method": "One bounded positive-slope Platt transform per seed and candidate, shared across symbols and sides.",
+    "expected_payoff_calibration_permitted": false,
+    "economic_threshold_selection_permitted": false,
+    "evaluation_outcomes_permitted": false,
+    "nonworsening_proper_score_required": true
+  },
+  "quality_gates": {
+    "numerical": [
+      "All losses, outputs, gradients, probabilities, and parameters are finite.",
+      "The DirectML preflight records zero CPU-fallback warnings.",
+      "All six checkpoints and prediction artifacts reload and hash-verify exactly.",
+      "Every event distribution sums to one within 1e-5."
+    ],
+    "event": [
+      "Positive evaluation multinomial-log-loss skill versus training event-time prevalence for each side.",
+      "Positive evaluation event Brier skill versus training event prevalence for stop, take-profit, and timeout for each side.",
+      "Maximum 10-bin event expected-calibration error of 0.05.",
+      "At least four of six evaluation months have positive event log-loss skill for each side.",
+      "Minimum pairwise seed expected-payoff Spearman correlation of 0.50."
+    ],
+    "action_value": [
+      "Positive expected-payoff MSE skill versus the training conditional mean for each side.",
+      "Minimum expected-payoff Spearman correlation of 0.03 for each side.",
+      "Positive expected-payoff Spearman correlation for all three symbols and at least four evaluation months for each side.",
+      "The competing-risk candidate improves average side Spearman over the direct control by at least 0.005 without degrading relative MSE by more than 1%."
+    ]
+  },
+  "fixed_policy_contract": {
+    "decision_cadence_minutes": 5,
+    "entry_rule": "For a flat symbol, a side is eligible only when all three seeds predict strictly positive exact after-cost expected payoff. Choose the side with the greater worst-seed payoff; exact ties abstain.",
+    "exit_rule": "Use the exact target's stop, take-profit, or timeout exit. Do not overlap positions in the same symbol.",
+    "forced_activity_or_minimum_trade_quota": false,
+    "base_sleeve": "Fixed one-third unlevered notional sleeve per symbol.",
+    "base_leverage": 1.0,
+    "stress_rule": "Reprice the identical base trade ledger at 16 bps without reselecting timestamps or sides.",
+    "leverage_sensitivity": "Only after an unlevered candidate passes every quality and economic gate, replay the identical ledger at 5x, 10x, and 15x with margin, liquidation-distance, portfolio drawdown, and loss-budget gates. Leverage cannot rescue a failed unlevered candidate.",
+    "maker_fill_or_price_improvement_assumption": false
+  },
+  "economic_gates": {
+    "base_and_stress_total_return_positive": true,
+    "base_and_stress_profit_factor_above_one": true,
+    "base_and_stress_familywise_block_bootstrap_lower_return_bound_positive": true,
+    "minimum_closed_trades": 100,
+    "minimum_active_days": 30,
+    "minimum_symbols_with_positive_net_pnl": 2,
+    "maximum_single_symbol_positive_pnl_share": 0.7,
+    "maximum_unlevered_drawdown_fraction": 0.08,
+    "liquidations_permitted": 0,
+    "daily_roi_target_used_as_gate": false
+  },
+  "ai_contract": {
+    "live_benchmark_external_file": "round50-ai-risk-benchmark-20260713-v1.json",
+    "live_benchmark_file_sha256": "a712eaf9b5e9ea75bf0439f7c7baf019b1910b953ac0b226a1cefb963bcbe313",
+    "benchmark_contract": "finance-risk-review-adversarial-v6",
+    "selected_risk_reviewer": "qwen3:8b",
+    "selected_score": 0.9788636363636364,
+    "selected_action_matches": 11,
+    "selected_valid_json_cases": 11,
+    "selected_average_latency_seconds": 14.112272727271458,
+    "rejected_models": {
+      "fino1:8b": "Failed the liquidation case because leverage was omitted from the rationale.",
+      "fin-r1:8b": "Understated post-reconnect uncertainty and failed the required risk-score range."
+    },
+    "financial_edge_tested_by_safety_benchmark": false,
+    "order_authority": false,
+    "permitted_role": "Asynchronous schema-constrained veto after deterministic model, data, ownership, execution, and risk gates pass.",
+    "uplift_test": "Run only if a deterministic candidate passes. Compare paired chronological baseline and AI-veto daily net returns under identical costs; require positive exact sign-test and moving-block-bootstrap lower bounds, no worse drawdown or profit factor, and complete artifact hashes.",
+    "ai_can_repair_failed_numerical_or_economic_gate": false
+  },
+  "publication_contract": {
+    "latest_iteration_only": true,
+    "required_machine_tables": [
+      "model metrics",
+      "event quality",
+      "expected-payoff quality",
+      "seed stability",
+      "monthly performance",
+      "symbol performance",
+      "trade ledger",
+      "daily equity",
+      "training history",
+      "gate decisions"
+    ],
+    "required_graphs": [
+      "dated daily equity versus cash baseline",
+      "drawdown",
+      "monthly net return and trade count",
+      "symbol net PnL and drawdown",
+      "event calibration",
+      "expected-payoff rank and tail quality",
+      "training dynamics",
+      "cross-round optimization progress"
+    ],
+    "graph_source_rule": "Every graph is generated from a tracked machine-readable table; hand-edited or synthetic financial graphics are forbidden.",
+    "negative_result_rule": "Zero trades, negative returns, failed gates, concentration, and uncertainty must be reported prominently and cannot be relabeled as success."
+  }
+}
