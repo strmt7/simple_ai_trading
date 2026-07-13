@@ -142,9 +142,7 @@ class JointDistributionalTCN(nn.Module):
         super().__init__()
         self.features_per_symbol = features_per_symbol
         self.input_channels = features_per_symbol * len(SYMBOLS)
-        self.projection = nn.Conv1d(
-            self.input_channels, HIDDEN_CHANNELS, kernel_size=1
-        )
+        self.projection = nn.Conv1d(self.input_channels, HIDDEN_CHANNELS, kernel_size=1)
         self.blocks = nn.ModuleList(
             JointCausalResidualBlock(HIDDEN_CHANNELS, dilation, dropout)
             for dilation in DILATIONS
@@ -293,9 +291,9 @@ def directml_joint_preflight() -> tuple[object, dict[str, object]]:
     device = torch_directml.device()
     generator = np.random.default_rng(SEEDS[0])
     values_numpy = generator.normal(size=(4, 213, 160)).astype(np.float32)
-    targets_numpy = generator.normal(
-        size=(4, len(SYMBOLS), len(HORIZONS), 160)
-    ).astype(np.float32)
+    targets_numpy = generator.normal(size=(4, len(SYMBOLS), len(HORIZONS), 160)).astype(
+        np.float32
+    )
     results: list[dict[str, object]] = []
     all_messages: list[str] = []
     for candidate_id in CANDIDATES:
@@ -341,7 +339,9 @@ def directml_joint_preflight() -> tuple[object, dict[str, object]]:
         "backend_kind": "directml",
         "backend_device": str(device),
         "torch_version": str(torch.__version__),
-        "torch_directml_version": str(getattr(torch_directml, "__version__", "unknown")),
+        "torch_directml_version": str(
+            getattr(torch_directml, "__version__", "unknown")
+        ),
         "candidate_updates": results,
         "warning_count": len(all_messages),
         "cpu_fallback_warning_count": 0,
@@ -382,9 +382,7 @@ def _predict_all(
     model.eval()
     flattened = normalized_features.reshape(normalized_features.shape[0], -1).T
     with torch.no_grad():
-        tensor = torch.from_numpy(np.ascontiguousarray(flattened[None, ...])).to(
-            device
-        )
+        tensor = torch.from_numpy(np.ascontiguousarray(flattened[None, ...])).to(device)
         normalized = model(tensor)[0].detach().cpu().numpy()
     normalized = normalized.transpose(3, 0, 1, 2)
     predictions = target_scaler.denormalize(normalized).astype(np.float32)
@@ -644,8 +642,7 @@ def train_joint_candidate(
             target_scaler,
             candidate_id=candidate_id,
             seed=seed,
-            artifact_path=model_dir
-            / f"round45_{candidate_id}_seed_{seed}.pt",
+            artifact_path=model_dir / f"round45_{candidate_id}_seed_{seed}.pt",
             device=device,
             backend_kind=str(preflight["backend_kind"]),
             backend_device=str(preflight["backend_device"]),
@@ -700,6 +697,9 @@ def joint_forecast_diagnostics(
     dataset: DistributionalDataset,
     bundle: JointForecastBundle,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, object]]:
+    bundle_seeds = tuple(artifact.seed for artifact in bundle.artifacts)
+    if len(bundle_seeds) != bundle.seed_predictions_bps.shape[0]:
+        raise ValueError("Forecast artifacts and seed predictions differ in count")
     training_mask = role_mask(dataset, "training")
     evaluation_mask = role_mask(dataset, "evaluation")
     months = _month_labels(dataset.timestamps_ms)
@@ -718,9 +718,9 @@ def joint_forecast_diagnostics(
     symbol_horizons: list[dict[str, object]] = []
     evaluation_months = sorted(set(months[evaluation_mask]))
     for horizon_index, horizon in enumerate(HORIZONS):
-        actual = dataset.forward_return_bps[
-            evaluation_mask, :, horizon_index
-        ].astype(np.float64)
+        actual = dataset.forward_return_bps[evaluation_mask, :, horizon_index].astype(
+            np.float64
+        )
         prediction = bundle.ensemble_predictions_bps[
             evaluation_mask, :, horizon_index, :
         ].astype(np.float64)
@@ -783,14 +783,12 @@ def joint_forecast_diagnostics(
                 "evaluation_month_count": len(evaluation_months),
                 "coverage_80": float(
                     np.mean(
-                        (actual >= prediction[..., 0])
-                        & (actual <= prediction[..., 4])
+                        (actual >= prediction[..., 0]) & (actual <= prediction[..., 4])
                     )
                 ),
                 "coverage_50": float(
                     np.mean(
-                        (actual >= prediction[..., 1])
-                        & (actual <= prediction[..., 3])
+                        (actual >= prediction[..., 1]) & (actual <= prediction[..., 3])
                     )
                 ),
             }
@@ -835,8 +833,8 @@ def joint_forecast_diagnostics(
             )
     stability: list[dict[str, object]] = []
     minimum_correlation = 1.0
-    for left in range(len(SEEDS)):
-        for right in range(left + 1, len(SEEDS)):
+    for left in range(len(bundle_seeds)):
+        for right in range(left + 1, len(bundle_seeds)):
             for horizon_index, horizon in enumerate(HORIZONS):
                 correlation = _finite_spearman(
                     bundle.seed_predictions_bps[
@@ -850,8 +848,8 @@ def joint_forecast_diagnostics(
                 stability.append(
                     {
                         "candidate_id": bundle.candidate_id,
-                        "left_seed": SEEDS[left],
-                        "right_seed": SEEDS[right],
+                        "left_seed": bundle_seeds[left],
+                        "right_seed": bundle_seeds[right],
                         "horizon_hours": horizon,
                         "median_prediction_spearman": correlation,
                     }
@@ -863,8 +861,7 @@ def joint_forecast_diagnostics(
         for row in pooled_horizons
     )
     coverage_passed = all(
-        0.72 <= row["coverage_80"] <= 0.88
-        and 0.42 <= row["coverage_50"] <= 0.58
+        0.72 <= row["coverage_80"] <= 0.88 and 0.42 <= row["coverage_50"] <= 0.58
         for row in pooled_horizons
     )
     symbol_positive_counts = {
@@ -877,15 +874,16 @@ def joint_forecast_diagnostics(
     }
     crossing_count = int(
         np.count_nonzero(
-            np.diff(bundle.ensemble_predictions_bps[evaluation_mask], axis=-1)
-            < -1e-7
+            np.diff(bundle.ensemble_predictions_bps[evaluation_mask], axis=-1) < -1e-7
         )
     )
     reasons: list[str] = []
     if skill_count < 3:
         reasons.append("fewer_than_three_horizons_beat_unconditional_pinball_by_1pct")
     if association_count < 3:
-        reasons.append("fewer_than_three_horizons_have_stable_positive_rank_association")
+        reasons.append(
+            "fewer_than_three_horizons_have_stable_positive_rank_association"
+        )
     if not coverage_passed:
         reasons.append("central_interval_coverage_outside_frozen_bounds")
     if minimum_correlation < 0.5:
@@ -894,21 +892,25 @@ def joint_forecast_diagnostics(
         reasons.append("one_or_more_symbols_have_fewer_than_two_positive_horizons")
     if crossing_count:
         reasons.append("quantile_crossing_detected")
-    return monthly_rows, stability, {
-        "candidate_id": bundle.candidate_id,
-        "horizons": pooled_horizons,
-        "symbol_horizons": symbol_horizons,
-        "gate": {
-            "passed": not reasons,
-            "reasons": reasons,
-            "horizons_with_required_pinball_skill": skill_count,
-            "horizons_with_required_rank_stability": association_count,
-            "coverage_passed": coverage_passed,
-            "minimum_pairwise_seed_median_prediction_spearman": minimum_correlation,
-            "positive_symbol_horizon_counts": symbol_positive_counts,
-            "quantile_crossing_count": crossing_count,
+    return (
+        monthly_rows,
+        stability,
+        {
+            "candidate_id": bundle.candidate_id,
+            "horizons": pooled_horizons,
+            "symbol_horizons": symbol_horizons,
+            "gate": {
+                "passed": not reasons,
+                "reasons": reasons,
+                "horizons_with_required_pinball_skill": skill_count,
+                "horizons_with_required_rank_stability": association_count,
+                "coverage_passed": coverage_passed,
+                "minimum_pairwise_seed_median_prediction_spearman": minimum_correlation,
+                "positive_symbol_horizon_counts": symbol_positive_counts,
+                "quantile_crossing_count": crossing_count,
+            },
         },
-    }
+    )
 
 
 def _diagnostic_row(
@@ -930,9 +932,7 @@ def _diagnostic_row(
         "rows": int(actual.size),
         "pinball_loss": _numpy_pinball(actual, prediction),
         "baseline_pinball_loss": _numpy_pinball(actual, baseline),
-        "median_spearman": _finite_spearman(
-            actual.ravel(), prediction[..., 2].ravel()
-        ),
+        "median_spearman": _finite_spearman(actual.ravel(), prediction[..., 2].ravel()),
         "coverage_80": float(
             np.mean((actual >= prediction[..., 0]) & (actual <= prediction[..., 4]))
         ),
@@ -1049,6 +1049,7 @@ def replay_consensus_trades(
     candidate_id: str,
     scenario: str,
     one_way_cost_bps: float,
+    bootstrap_seed: int | None = None,
 ) -> PlannedReplay:
     if any(trade.candidate_id != candidate_id for trade in trades):
         raise ValueError("Round 45 replay candidate differs from its trade ledger")
@@ -1072,9 +1073,8 @@ def replay_consensus_trades(
             raise ValueError("Round 45 trade ledger overlaps within a symbol")
         occupied[local, symbol] = True
         positions[local, symbol] = trade.side
-        raw = (
-            trade.side
-            * dataset.hourly_return_bps[start:stop, symbol].astype(np.float64)
+        raw = trade.side * dataset.hourly_return_bps[start:stop, symbol].astype(
+            np.float64
         )
         raw[0] -= one_way_cost_bps
         raw[-1] -= one_way_cost_bps
@@ -1145,9 +1145,13 @@ def replay_consensus_trades(
         "maximum_single_symbol_fraction_of_absolute_net_pnl": maximum_symbol_fraction,
         "bootstrap_mean_hourly_portfolio_bps": _circular_block_bootstrap(
             portfolio_bps,
-            seed=SEEDS[0]
-            + CANDIDATES.index(candidate_id) * 1_000
-            + (0 if scenario == "base" else 100),
+            seed=(
+                bootstrap_seed
+                if bootstrap_seed is not None
+                else SEEDS[0]
+                + CANDIDATES.index(candidate_id) * 1_000
+                + (0 if scenario == "base" else 100)
+            ),
         ),
         "monthly": monthly,
     }
@@ -1215,14 +1219,10 @@ def optimizer_ablation_gate(
     )
     relative_degradation = sam_validation / adam_validation - 1.0
     adam_stability = float(
-        adam_diagnostics["gate"][
-            "minimum_pairwise_seed_median_prediction_spearman"
-        ]
+        adam_diagnostics["gate"]["minimum_pairwise_seed_median_prediction_spearman"]
     )
     sam_stability = float(
-        sam_diagnostics["gate"][
-            "minimum_pairwise_seed_median_prediction_spearman"
-        ]
+        sam_diagnostics["gate"]["minimum_pairwise_seed_median_prediction_spearman"]
     )
     reasons: list[str] = []
     if not bool(sam_diagnostics["gate"]["passed"]):
