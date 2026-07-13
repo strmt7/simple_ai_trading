@@ -58,7 +58,9 @@ def test_round42_design_is_hash_frozen_and_fail_closed() -> None:
         assert governance[field] is False
 
 
-def test_round42_design_preserves_source_model_cost_and_walk_forward_contracts() -> None:
+def test_round42_design_preserves_source_model_cost_and_walk_forward_contracts() -> (
+    None
+):
     design = json.loads(DESIGN.read_text(encoding="utf-8"))
     source = design["source_contract"]
     proposal = design["frozen_primary_proposal"]
