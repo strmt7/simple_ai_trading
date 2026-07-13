@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="920" viewBox="0 0 1480 920" role="img" aria-labelledby="title desc">
+<title id="title">The timing heads did not establish stable predictive utility</title>
+<desc id="desc">Calibration and untouched evaluation diagnostics for the two causal folds; reference lines show chance, zero IC, and target quantile coverage.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">The timing heads did not establish stable predictive utility</text>
+<text x="56" y="80" class="subtitle">Calibration and untouched evaluation diagnostics for the two causal folds; reference lines show chance, zero IC, and target quantile coverage.</text>
+<text x="150" y="127" class="label">Binary profitability ROC AUC</text>
+<line x1="150" y1="310.0" x2="1410" y2="310.0" class="grid"/>
+<text x="136" y="314.0" text-anchor="end" class="axis">+0.40</text>
+<line x1="150" y1="244.0" x2="1410" y2="244.0" class="zero"/>
+<text x="136" y="248.0" text-anchor="end" class="axis">+0.50</text>
+<line x1="150" y1="145.0" x2="1410" y2="145.0" class="grid"/>
+<text x="136" y="149.0" text-anchor="end" class="axis">+0.65</text>
+<circle cx="415.0" cy="204.1" r="8" fill="#0f766e"/>
+<text x="415.0" y="190.1" text-anchor="middle" class="value">0.560</text>
+<circle cx="515.0" cy="149.4" r="8" fill="#2563eb"/>
+<text x="515.0" y="135.4" text-anchor="middle" class="value">0.643</text>
+<text x="465.0" y="337.0" text-anchor="middle" class="axis">eval 2024-06-06</text>
+<circle cx="1045.0" cy="238.5" r="8" fill="#0f766e"/>
+<text x="1045.0" y="224.5" text-anchor="middle" class="value">0.508</text>
+<circle cx="1145.0" cy="251.9" r="8" fill="#2563eb"/>
+<text x="1145.0" y="237.9" text-anchor="middle" class="value">0.488</text>
+<text x="1095.0" y="337.0" text-anchor="middle" class="axis">eval 2024-06-07</text>
+<text x="150" y="370" class="label">Expected-utility Spearman IC</text>
+<line x1="150" y1="553.0" x2="1410" y2="553.0" class="grid"/>
+<text x="136" y="557.0" text-anchor="end" class="axis">-0.15</text>
+<line x1="150" y1="503.5" x2="1410" y2="503.5" class="zero"/>
+<text x="136" y="507.5" text-anchor="end" class="axis">+0.00</text>
+<line x1="150" y1="388.0" x2="1410" y2="388.0" class="grid"/>
+<text x="136" y="392.0" text-anchor="end" class="axis">+0.35</text>
+<circle cx="415.0" cy="521.2" r="8" fill="#0f766e"/>
+<text x="415.0" y="507.2" text-anchor="middle" class="value">-0.054</text>
+<circle cx="515.0" cy="408.2" r="8" fill="#2563eb"/>
+<text x="515.0" y="394.2" text-anchor="middle" class="value">0.289</text>
+<text x="465.0" y="580.0" text-anchor="middle" class="axis">eval 2024-06-06</text>
+<circle cx="1045.0" cy="405.4" r="8" fill="#0f766e"/>
+<text x="1045.0" y="391.4" text-anchor="middle" class="value">0.297</text>
+<circle cx="1145.0" cy="428.7" r="8" fill="#2563eb"/>
+<text x="1145.0" y="414.7" text-anchor="middle" class="value">0.227</text>
+<text x="1095.0" y="580.0" text-anchor="middle" class="axis">eval 2024-06-07</text>
+<text x="150" y="613" class="label">Lower-quartile empirical coverage</text>
+<line x1="150" y1="796.0" x2="1410" y2="796.0" class="grid"/>
+<text x="136" y="800.0" text-anchor="end" class="axis">+0.00</text>
+<line x1="150" y1="713.5" x2="1410" y2="713.5" class="zero"/>
+<text x="136" y="717.5" text-anchor="end" class="axis">+0.25</text>
+<line x1="150" y1="631.0" x2="1410" y2="631.0" class="grid"/>
+<text x="136" y="635.0" text-anchor="end" class="axis">+0.50</text>
+<circle cx="415.0" cy="719.0" r="8" fill="#0f766e"/>
+<text x="415.0" y="705.0" text-anchor="middle" class="value">0.233</text>
+<circle cx="515.0" cy="730.4" r="8" fill="#2563eb"/>
+<text x="515.0" y="716.4" text-anchor="middle" class="value">0.199</text>
+<text x="465.0" y="823.0" text-anchor="middle" class="axis">eval 2024-06-06</text>
+<circle cx="1045.0" cy="727.7" r="8" fill="#0f766e"/>
+<text x="1045.0" y="713.7" text-anchor="middle" class="value">0.207</text>
+<circle cx="1145.0" cy="717.4" r="8" fill="#2563eb"/>
+<text x="1145.0" y="703.4" text-anchor="middle" class="value">0.238</text>
+<text x="1095.0" y="823.0" text-anchor="middle" class="axis">eval 2024-06-07</text>
+<circle cx="1050" cy="885" r="7" fill="#0f766e"/><text x="1068" y="890" class="note">threshold calibration</text><circle cx="1260" cy="885" r="7" fill="#2563eb"/><text x="1278" y="890" class="note">evaluation</text>
+</svg>
