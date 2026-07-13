@@ -1,0 +1,419 @@
+{
+  "schema_version": "minute-logistic-mixture-tcn-design-v1",
+  "round": 48,
+  "design_sha256": "69fe0b4e319d51680c50cc132d9f64d9da4fa01eccaf30f84e0aa51292f61aa3",
+  "status": "frozen",
+  "phase": "consumed-development minute-level probabilistic viability screen",
+  "objective": "Test whether a causal large-receptive-field temporal model can turn verified one-minute BTC, ETH, and SOL price-flow history into a coherent distribution of 15, 30, 60, and 120 minute funding-adjusted returns, and whether a learned three-component state mixture improves calibration, expected-return quality, and fixed after-cost decisions over an otherwise matched one-component distribution.",
+  "predecessor_evidence": {
+    "round_47_report_canonical_sha256": "900945226c81f188dbf6b1f83c8404154fed87f9e5193ae84034ecf8281f7350",
+    "round_47_publication_canonical_sha256": "5065c1159ba22da8a8547e8e0e93a92348fa9ed534f5bb0b3f5124cb6dc7b092",
+    "round_47_failure_analysis_canonical_sha256": "28e4a7b1b35da8c68837b1ebfadb46694af6e7fb79e6fafe7c61c742844435a8",
+    "retained_findings": {
+      "all_four_hourly_horizons_had_positive_utility_rank_correlation": true,
+      "rank_regularizer_average_spearman_improvement": 0.01209384720568231,
+      "rank_regularizer_relative_action_log_loss_degradation": 0.00016077899119104622,
+      "minimum_ranked_action_logit_seed_spearman": 0.6446933263912632
+    },
+    "blocking_findings": {
+      "hourly_utility_horizons_with_positive_mean_squared_error_skill": 0,
+      "ranked_stress_familywise_bootstrap_lower_mean_hourly_bps": -0.1406979227718765,
+      "ranked_base_maximum_drawdown_fraction": 0.19527485767096597,
+      "ranked_maximum_single_symbol_fraction_of_absolute_net_pnl": 0.841024145287901,
+      "promotion_permitted": false
+    },
+    "amplitude_diagnosis": {
+      "prediction_standard_deviation_fraction_of_target_range": [
+        0.1358,
+        0.1807,
+        0.2063,
+        0.1813
+      ],
+      "simple_affine_shrinkage_materially_repaired_mean_skill": false,
+      "signal_concentration": "Rank information was strongest in high-volatility states, while raw amplitude error also worsened there.",
+      "decision": "Do not run another affine calibration or threshold-only round. Estimate one coherent heavy-tailed return distribution and derive mean, action probabilities, and downside diagnostics from it."
+    },
+    "minute_lane_negative_controls": {
+      "round_37": "Static LightGBM and ridge return regressions on 71 price-flow features had weak rank information, collapsed amplitude, and no selected trades.",
+      "round_38": "Direct multiclass and two-stage hurdle LightGBM models produced activity but every viability candidate lost after costs; the best had 789 trades, -3.9885 mean net bps, and profit factor 0.9247.",
+      "round_38_derivatives_ablation": "Premium and funding predictors degraded matched log loss in all sixteen comparisons, so Round 48 keeps price-flow predictors and uses verified funding only in labels and replay.",
+      "rounds_39_to_41": "Rolling refits and causal or prequential meta-labels did not produce stable after-cost support.",
+      "round_42": "A seven-day one-second taker-flow timing overlay failed and is not repeated."
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://openreview.net/forum?id=vpJMJerXHU",
+      "finding_used": "ModernTCN reports that large-kernel depthwise convolution and channel mixing can enlarge the effective receptive field while retaining convolutional efficiency.",
+      "limitation": "General time-series benchmark performance is not evidence of crypto return predictability or trading profitability; Round 48 implements a smaller causal DirectML-compatible variant and measures it locally."
+    },
+    {
+      "source": "https://openreview.net/forum?id=cGDAkQo1C0p",
+      "finding_used": "RevIN identifies temporal distribution shift as a material forecasting problem and motivates explicit chronological calibration diagnostics.",
+      "limitation": "Round 48 does not apply whole-window RevIN because supervising multiple timestamps would leak later window statistics into earlier predictions. Training-only robust scaling is used instead."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v238/ni24a.html",
+      "finding_used": "Learned expert routing can adapt a common forecasting backbone to different temporal patterns.",
+      "limitation": "Long-horizon benchmark gains do not establish market regimes, return alpha, or an optimal number of experts; one and three components are compared directly."
+    },
+    {
+      "source": "https://openreview.net/forum?id=IUfxVoIWV4K",
+      "finding_used": "A neural mixture can represent multiple predictive relations and use uncertainty as a reliability diagnostic, while direct mixture training may be unstable.",
+      "limitation": "Round 48 uses ordered logistic components, bounded parameters, exact-reload checks, and a one-component control; no mixture benefit is assumed."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v162/mandi22a.html",
+      "finding_used": "Decision-focused prediction can be formulated as learning to rank feasible decisions, supporting a small fixed pairwise term alongside a proper distributional objective.",
+      "limitation": "Ranking alone does not calibrate returns or prove positive economic value, so its weight is identical in both candidates and cannot replace distribution or economic gates."
+    },
+    {
+      "source": "https://arxiv.org/abs/2508.18921",
+      "finding_used": "Recent financial-return experiments evaluate neural conditional distributions with likelihood, CRPS, PIT, and value-at-risk diagnostics rather than relying on point error alone.",
+      "limitation": "The paper studies equity indices and reports model-specific results; Round 48 uses an analytically tractable logistic mixture and does not import reported performance."
+    },
+    {
+      "source": "https://arxiv.org/abs/2606.00060",
+      "finding_used": "Recent walk-forward BTC evidence finds that naive sign strategies fail after costs and that forecast-to-trade conversion and a cost hurdle are material.",
+      "limitation": "It is recent non-peer-reviewed evidence at hourly resolution; Round 48 retains its own fixed chronological protocol, costs, and statistical gates."
+    },
+    {
+      "source": "https://arxiv.org/abs/2606.27100",
+      "finding_used": "A recent financial benchmark finds that time-series foundation models can be useful priors but provide small and sparse gains over random-walk baselines.",
+      "limitation": "It studies five U.S. equities, not minute crypto futures, and cautions against treating foundation models as universal alpha engines. Round 48 therefore tests a local supervised temporal model first."
+    },
+    {
+      "source": "https://arxiv.org/abs/2603.19225",
+      "finding_used": "FinTradeBench reports persistent numerical and time-series reasoning limitations in current language models, even when textual retrieval helps other financial tasks.",
+      "limitation": "The benchmark does not evaluate this local risk-review prompt set. It supports keeping language models away from numerical forecasts and order authority until a paired veto-only ablation is possible."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "venue_product": "Binance USD-M perpetual futures",
+    "source_resolution_seconds": 60,
+    "decision_interval_seconds": 300,
+    "forecast_horizons_minutes": [
+      15,
+      30,
+      60,
+      120
+    ],
+    "source_period": {
+      "warmup_start": "2021-12-01T00:00:00Z",
+      "materialization_end_inclusive": "2025-06-30T23:59:59Z"
+    },
+    "verified_input": "Checksum-verified Binance futures one-minute archives in the read-only enterprise market database.",
+    "input_rows_expected_from_round_38_certificate": 1098105,
+    "eligible_decision_times_expected_from_round_38_certificate": 366035,
+    "causal_predictor_count": 71,
+    "predictor_set": "Round 37 price, volume, trade-count, taker-flow, cross-asset, liquidity-seasonality, volatility, beta-residual, and UTC-cycle transforms only.",
+    "premium_predictors_permitted": false,
+    "funding_predictors_permitted": false,
+    "verified_funding_cash_flows_in_targets_and_replay": true,
+    "duplicate_feature_or_market_database_copy_permitted": false,
+    "persistent_derived_feature_matrix_permitted": false,
+    "future_or_synthetic_market_data_permitted": false,
+    "selection_confirmation_or_terminal_rows_permitted": false,
+    "sequence_gap_rule": "A training or inference window may not cross a missing five-minute decision timestamp or a symbol boundary. Hidden state is reset after every gap."
+  },
+  "chronological_roles": {
+    "training": {
+      "start": "2022-01-01T00:00:00Z",
+      "end_inclusive": "2024-06-30T23:59:59Z",
+      "uses": [
+        "feature and target scaling",
+        "unconditional baselines",
+        "model fitting"
+      ]
+    },
+    "early_stop": {
+      "start": "2024-07-01T00:00:00Z",
+      "end_inclusive": "2024-09-30T23:59:59Z",
+      "uses": [
+        "common epoch selection per candidate and seed"
+      ]
+    },
+    "calibration": {
+      "start": "2024-10-01T00:00:00Z",
+      "end_inclusive": "2024-12-31T23:59:59Z",
+      "uses": [
+        "one scale multiplier per candidate and seed",
+        "diagnostic policy support only"
+      ]
+    },
+    "evaluation": {
+      "start": "2025-01-01T00:00:00Z",
+      "end_inclusive": "2025-06-30T23:59:59Z",
+      "uses": [
+        "consumed-development diagnostics and fixed-policy replay"
+      ]
+    },
+    "maximum_horizon_embargo_minutes": 120,
+    "role_boundary_rule": "A row is admitted only when entry, full holding period, exit, and funding cash flows remain strictly inside the same chronological role.",
+    "selection_contaminated": true,
+    "promotion_or_profitability_claim_permitted": false
+  },
+  "target_contract": {
+    "signed_distribution_target": "For a long position, simple open-to-open gross return in bps from the next minute open through the horizon exit open, minus all verified funding paid by a long during that holding interval.",
+    "long_net_utility_bps": "signed_distribution_target minus 12 bps base round-trip execution charge",
+    "short_net_utility_bps": "negative signed_distribution_target minus 12 bps base round-trip execution charge",
+    "long_profitable_label": "one iff long_net_utility_bps is strictly positive",
+    "short_profitable_label": "one iff short_net_utility_bps is strictly positive",
+    "flat_label": "one iff neither long nor short net utility is strictly positive",
+    "class_order": [
+      "short",
+      "flat",
+      "long"
+    ],
+    "base_round_trip_execution_charge_bps": 12.0,
+    "stress_round_trip_execution_charge_bps": 16.0,
+    "overlapping_forward_labels_in_training": true,
+    "overlapping_positions_in_replay": false,
+    "target_identity_check": "For every selected trade, replayed base net bps must equal side times signed_distribution_target minus 12 bps to floating-point tolerance."
+  },
+  "normalization_contract": {
+    "fit_role": "training only",
+    "features": "Per-feature training median and scaled interquartile range, with scale floored at 1e-6 and normalized values clipped to [-12, 12].",
+    "targets": "Per-horizon training median and interquartile range divided by 1.349, with scale floored at one basis point.",
+    "target_clipping_permitted": false,
+    "future_cross_role_or_evaluation_statistics_permitted": false,
+    "whole_window_instance_normalization_permitted": false,
+    "reason_whole_window_normalization_is_denied": "The model supervises multiple timestamps per chunk; statistics from the complete chunk would leak later observations into earlier outputs."
+  },
+  "model_contract": {
+    "family": "shared per-symbol causal large-kernel distributional temporal convolution",
+    "candidates": [
+      {
+        "id": "single_logistic_tcn",
+        "distribution_components": 1,
+        "mechanism": "One conditional logistic distribution per horizon from the common causal encoder."
+      },
+      {
+        "id": "state_mixture_logistic_tcn",
+        "distribution_components": 3,
+        "mechanism": "Three ordered conditional logistic components with state-dependent softmax weights per horizon.",
+        "single_change_from_control": "The output distribution changes from one logistic component to three ordered components; encoder, data, losses, seeds, optimizer, calibration, policy, and gates are unchanged."
+      }
+    ],
+    "shared_encoder": {
+      "input_channels": 71,
+      "hidden_channels": 96,
+      "blocks": 4,
+      "depthwise_kernel_size": 25,
+      "depthwise_dilations": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "receptive_field_decision_steps": 361,
+      "receptive_field_minutes": 1800,
+      "padding": "left-only causal padding",
+      "normalization": "per-timestamp channel LayerNorm",
+      "channel_mixer": "one-by-one convolution to 192 channels, GELU, dropout, and one-by-one projection to 96 channels",
+      "residual_connections": true,
+      "dropout": 0.1
+    },
+    "distribution_head": {
+      "family": "ordered logistic mixture density",
+      "weight_parameterization": "softmax over components independently for every horizon and timestamp",
+      "location_parameterization": "One bounded center plus nonnegative softplus lower and upper gaps for the three-component candidate; components are ordered low, center, high.",
+      "normalized_location_bounds": [
+        -8.0,
+        8.0
+      ],
+      "normalized_scale_bounds": [
+        0.05,
+        6.0
+      ],
+      "density": "Analytic logistic probability density and cumulative distribution; no Monte Carlo samples are used for training or policy probabilities.",
+      "coherence": "Expected return, long and short hurdle probabilities, interval coverage, and downside probabilities are derived from the same fitted distribution."
+    },
+    "seeds": [
+      4801,
+      4802,
+      4803
+    ],
+    "peer_training": "Seeds are independently initialized and trained; no peer-consistency term is used.",
+    "ensemble": "The reporting ensemble is the equal-weight mixture of every seed component and therefore remains a valid probability distribution. Fixed-policy eligibility uses the worst seed, not the reporting ensemble.",
+    "training_objective": {
+      "logistic_mixture_negative_log_likelihood_weight": 1.0,
+      "derived_three_class_hurdle_cross_entropy_weight": 0.25,
+      "pairwise_expected_return_rank_weight": 0.025,
+      "pairwise_rank_offset_decision_steps": 24,
+      "pairwise_rank_definition": "Logistic pairwise loss on predicted distribution means and signed target ordering at a fixed two-hour offset, so even the longest compared forward-return intervals do not overlap.",
+      "tail_or_outcome_reweighting": false,
+      "class_rebalancing": false,
+      "profit_weighting": false
+    },
+    "early_stopping": {
+      "selection_role": "early_stop only",
+      "criterion": "ensemble normalized negative log likelihood plus 0.25 times derived hurdle cross entropy plus 0.025 times pairwise rank loss",
+      "maximum_epochs": 40,
+      "patience_epochs": 8,
+      "minimum_improvement": 0.0001,
+      "common_epoch_across_horizons": true
+    },
+    "optimizer": {
+      "family": "explicit DirectML-compatible AdamW",
+      "learning_rate": 0.0008,
+      "weight_decay": 0.0001,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-08,
+      "gradient_norm_clip": 1.0
+    },
+    "training_windows": {
+      "total_decision_steps": 576,
+      "total_minutes": 2880,
+      "causal_context_decision_steps": 361,
+      "supervised_decision_steps": 216,
+      "stride_decision_steps": 216,
+      "batch_size": 32,
+      "coverage_rule": "Every eligible training label appears in at most one supervised chunk per epoch; context overlap is permitted and targets across role boundaries are forbidden."
+    },
+    "compute_backend": "DirectML required for this host experiment; CPU remains an explicitly selected portability mode.",
+    "unsupported_operator_fallback_permitted": false,
+    "candidate_selection": "None; both candidates complete the same consumed-development evaluation."
+  },
+  "probability_calibration_contract": {
+    "role": "calibration only",
+    "method": "Multiply every normalized logistic component scale by one positive scalar per candidate and seed, shared across symbols, horizons, and components.",
+    "scale_grid": {
+      "spacing": "logarithmic",
+      "minimum": 0.5,
+      "maximum": 2.0,
+      "points": 121
+    },
+    "objective": "Unweighted mixture negative log likelihood over every finite calibration target.",
+    "tie_break": "Scale multiplier numerically closest to 1.0, then smaller multiplier.",
+    "location_weight_or_intercept_change_permitted": false,
+    "evaluation_outcomes_permitted": false,
+    "nonworsening_check": "The grid includes 1.0 and calibrated calibration negative log likelihood may not exceed the uncalibrated value beyond floating-point tolerance."
+  },
+  "distribution_quality_gate": {
+    "all_outputs_finite_and_complete": true,
+    "minimum_horizons_with_positive_negative_log_likelihood_skill_vs_training_unconditional_logistic": 3,
+    "minimum_horizons_with_positive_five_quantile_pinball_skill_vs_training_unconditional_quantiles": 3,
+    "quantiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "central_80_interval_coverage_bounds": [
+      0.72,
+      0.88
+    ],
+    "central_50_interval_coverage_bounds": [
+      0.42,
+      0.58
+    ],
+    "minimum_horizons_with_positive_distribution_mean_mse_skill_vs_training_mean": 3,
+    "minimum_horizons_with_positive_distribution_mean_spearman": 3,
+    "minimum_pairwise_seed_distribution_mean_spearman": 0.5,
+    "minimum_pairwise_seed_long_probability_spearman": 0.5,
+    "minimum_pairwise_seed_short_probability_spearman": 0.5,
+    "probability_integral_transform_histogram_bins": 20
+  },
+  "action_quality_gate": {
+    "minimum_side_horizons_with_positive_binary_log_loss_skill_vs_training_prevalence": 6,
+    "minimum_side_horizons_with_positive_brier_skill_vs_training_prevalence": 6,
+    "minimum_side_horizons_with_roc_auc_above_half": 6,
+    "maximum_expected_calibration_error": 0.05,
+    "scale_calibration_may_not_worsen_calibration_negative_log_likelihood": true,
+    "mixture_ablation": {
+      "minimum_relative_evaluation_negative_log_likelihood_improvement": 0.005,
+      "maximum_relative_evaluation_hurdle_log_loss_degradation": 0.01,
+      "minimum_effective_components": 1.5,
+      "effective_components_definition": "Exponent of mean component-weight entropy, reported per horizon and pooled.",
+      "claim_if_failed": "The state mixture did not establish incremental distributional value and must not be retained because of an isolated cumulative-return result."
+    }
+  },
+  "fixed_policy_contract": {
+    "runs_for_each_candidate_even_if_quality_gates_fail": true,
+    "decision_cadence_minutes": 5,
+    "position_values": [
+      -1,
+      0,
+      1
+    ],
+    "position_sleeves": "Fixed one-third unlevered notional sleeve per symbol.",
+    "entry_rule": "When a symbol is flat, a side and horizon are eligible only when every seed assigns at least 0.50 probability to positive net utility after the 12 bps hurdle and every seed's distribution mean implies strictly positive net utility. Select the eligible action with the largest worst-seed expected net utility; ties prefer the shorter horizon and then abstention-safe deterministic ordering.",
+    "action_probability_floor": 0.5,
+    "holding_rule": "Hold through exactly the selected 15, 30, 60, or 120 minute exit open, then flatten. No same-symbol overlap is permitted.",
+    "forced_trade_or_daily_quota": false,
+    "leverage": 1.0,
+    "base_round_trip_execution_charge_bps": 12.0,
+    "stress_round_trip_execution_charge_bps": 16.0,
+    "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect timestamps, sides, horizons, or symbols under stress.",
+    "funding_cash_flows_included": true,
+    "maker_execution_assumption": false,
+    "liquidation_possible": false
+  },
+  "economic_gate": {
+    "required_only_if_distribution_and_action_quality_gates_pass": true,
+    "familywise_circular_block_bootstrap_minutes": 10080,
+    "bootstrap_replicates": 2000,
+    "one_sided_familywise_lower_quantile": 0.0125,
+    "stress_mean_five_minute_portfolio_bps_lower_bound_must_exceed": 0.0,
+    "minimum_positive_evaluation_months": 4,
+    "minimum_active_days": 90,
+    "minimum_closed_trades": 270,
+    "minimum_median_closed_trades_per_active_day": 1.0,
+    "maximum_drawdown_fraction": 0.1,
+    "minimum_profit_factor": 1.05,
+    "all_three_symbols_must_have_activity": true,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "promotion_result": "Still denied because all 2025 H1 outcomes are consumed-development evidence."
+  },
+  "ai_contract": {
+    "selected_local_risk_review_model": "qwen3:8b",
+    "current_schema_constrained_cases_correct": "11/11",
+    "current_score": 0.983409090909091,
+    "current_benchmark_is_market_edge_evidence": false,
+    "market_features_or_future_outcomes_supplied_to_language_models": false,
+    "language_model_numerical_forecasts_orders_or_position_increases_permitted": false,
+    "round_48_ai_trade_ablation_permitted": "Only if one deterministic candidate clears distribution, action-quality, and economic gates before any AI outcome is inspected.",
+    "future_paired_ablation": "Compare identical deterministic candidate actions with and without schema-constrained local-AI vetoes; AI may only abstain, reduce, pause, or request deterministic revalidation.",
+    "candidate_finance_model_research": "Fino1-8B and other finance-tuned models remain benchmark candidates, not default replacements, because public finance benchmarks report substantial numerical and expert-reasoning gaps and no local paired trading uplift exists.",
+    "ai_uplift_claim_permitted_without_paired_evidence": false
+  },
+  "governance": {
+    "selection_confirmation_2025_h2_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "testnet_or_live_execution_permitted": false,
+    "promotion_permitted": false,
+    "leverage_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "post_outcome_parameter_seed_candidate_threshold_or_policy_selection_permitted": false,
+    "manual_graph_or_result_editing_permitted": false,
+    "profitability_ai_or_mixture_uplift_claim_permitted": false
+  },
+  "required_outputs": [
+    "source certificate database stream and target hashes",
+    "role counts class prevalence gap segmentation and no-leakage boundary checks",
+    "DirectML large-kernel depthwise mixture-density backward preflight with zero CPU fallback warnings",
+    "per-candidate per-seed artifacts and exact reload checks",
+    "hashed mixture weights locations scales means probabilities quantiles and PIT values",
+    "per-epoch negative log likelihood hurdle cross entropy rank loss and early-stop diagnostics",
+    "calibration scale multipliers and before-after likelihood",
+    "per-candidate per-symbol per-horizon per-month distribution mean and action diagnostics",
+    "component entropy effective-component and volatility-liquidity routing diagnostics",
+    "seed stability and every quality-gate reason",
+    "fixed nonoverlapping trade ledger with exact target-to-replay identity",
+    "matched base and stress economics with weekly block-bootstrap uncertainty",
+    "one-component versus state-mixture mechanism comparison",
+    "explicit AI ablation eligibility decision and no-uplift boundary",
+    "peak working set DirectML device runtime and progress events",
+    "machine-readable report failure analysis tabular publication and canonical identities"
+  ]
+}
