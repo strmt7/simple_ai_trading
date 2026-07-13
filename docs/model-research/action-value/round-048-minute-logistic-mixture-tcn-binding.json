@@ -1,0 +1,55 @@
+{
+  "binding_sha256": "2a466424a2b18ffdeae3743b77fb21a1c97460aa2912750445e4027081fc7769",
+  "blobs": [
+    {
+      "git_blob_oid": "4294548af0e9e6d6171611829da4d6221e4a005d",
+      "path": "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "3d1d1250827953feb87411111ee26130d615c51d",
+      "path": "src/simple_ai_trading/distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "e1c08bd07e8d57158be85f157e9c2ff40ec78bcc",
+      "path": "src/simple_ai_trading/minute_logistic_mixture_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "181fe48b99f42ffe2613ca1e20d1320dbbcec44f",
+      "path": "src/simple_ai_trading/minute_logistic_mixture_analysis.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "00fb31667431ea25e70de90a2de140ff361d8222",
+      "path": "tools/run_minute_logistic_mixture_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "4d85d1c217dd6fca87224bc6dd7719f828ad287b",
+      "path": "tools/create_round48_minute_logistic_mixture_binding.py"
+    },
+    {
+      "git_blob_oid": "9ea52fd67adbe5d0880dc8f81416f6d29677f586",
+      "path": "tests/test_minute_logistic_mixture_tcn_model.py"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_minute_logistic_mixture_tcn_viability.py --database <market_data.sqlite> --source-certificate <external-certificate.json> --design docs\\model-research\\action-value\\round-048-minute-logistic-mixture-tcn-design.json --binding docs\\model-research\\action-value\\round-048-minute-logistic-mixture-tcn-binding.json --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "design_sha256": "69fe0b4e319d51680c50cc132d9f64d9da4fa01eccaf30f84e0aa51292f61aa3",
+  "implementation_commit": "77046d8dcec252bcf62bb3694132830f3f1239c4",
+  "round": 48,
+  "schema_version": "round-048-minute-logistic-mixture-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
