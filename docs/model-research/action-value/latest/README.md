@@ -1,37 +1,22 @@
-# Round 51: Categorical Payoff + FinCast
+# Round 52: Executable-Support Hurdle
 
-> **Beta research warning:** this consumed-development screen is not approved for testnet, live day trading, leverage, autonomous execution, or a profitability claim.
+> **Rejected consumed-development screen.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
 
-Round 51 tested direct after-cost regression, a categorical payoff model, and the same categorical model with causal features from the 991,437,160-parameter FinCast foundation model. All three selectors produced **zero eligible actions**. The round was rejected.
+Round 52 corrected the measured Round 51 target-policy mismatch: training, early stopping, calibration, thresholds, scoring, and replay now use one hash-bound side-specific executable predicate. It trained 27 OpenCL LightGBM models on verified Binance USD-M BTC, ETH, and SOL tick data and reused the sealed causal FinCast feature matrices.
 
-![Prediction tail](charts/prediction-tail.svg)
+The correction restored activity, but calibration rejected every policy. The deterministic hurdle produced 9 calibration trades at `-1.057757` base and `-2.391091` stressed bps/trade. The later consumed interval showed 15 trades at `+5.162619` base and `+3.807622` stressed bps/trade, but that reversal was not authorized by calibration and cannot be selected. The direct model remained flat. FinCast produced 3 negative calibration trades and 7 negative consumed-evaluation trades.
 
-The result is not a threshold accident. Across BTCUSDT, ETHUSDT, and SOLUSDT, even the best worst-seed expected payoff remained below zero after spread, fees, latency, and slippage. An empty ledger has no meaningful ROI, profit factor, or drawdown.
+Profitable-event classification improved over training prevalence, while expected-payoff magnitude did not: mean evaluation expected-payoff MSE skill was negative for every architecture. FinCast improved average probability log loss by `0.001463` and expected-payoff Spearman by `0.000375`, below both frozen `0.005` gates.
 
-![Barrier baselines](charts/barrier-baselines.svg)
+## Evidence
 
-![Evaluation ledger](charts/daily-equity.svg)
+| View | Graph | Source |
+|---|---|---|
+| Executable support | [SVG](charts/executable-support.svg) | [CSV](support.csv) |
+| Forecast quality | [SVG](charts/forecast-quality.svg) | [CSV](forecast.csv) |
+| Policy economics | [SVG](charts/policy-economics.svg) | [CSV](policy-grid.csv) |
+| Fixed-policy daily path | [SVG](charts/daily-equity.svg) | [CSV](daily-policy.csv) |
+| FinCast uplift | [SVG](charts/ai-uplift.svg) | [CSV](ai-uplift.csv) |
+| Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-| Candidate | Selected trades | Base net | Stress net | Economic gate |
-|---|---:|---:|---:|:---:|
-| Direct mean | 0 | 0 bps | 0 bps | false |
-| Categorical | 0 | 0 bps | 0 bps | false |
-| Categorical + FinCast | 0 | 0 bps | 0 bps | false |
-
-The categorical models showed positive aggregate proper-score skill, but short-side profitable-probability calibration failed the frozen `0.05` limit. SOL short payoff rank also fell below `0.03`.
-
-![Forecast quality](charts/forecast-quality.svg)
-
-![Calibration](charts/calibration.svg)
-
-FinCast changed average ranked-probability skill by `-0.000074`, expected-payoff Spearman by `+0.002023`, and expected-payoff MSE by a ratio of `1.001171`. It missed both precommitted `+0.005` uplift gates and did not establish economic uplift.
-
-![AI uplift](charts/ai-uplift.svg)
-
-![Research progress](charts/research-progress.svg)
-
-The source is verified, checksummed Binance USD-M `bookTicker`, trades, and sampled aggregate depth for **2023-05-16 through 2023-06-14**. Decisions are ten seconds apart; each target follows exact 100 ms BBO paths for up to five minutes. Evaluation covers **2023-06-09 through 2023-06-14**. This is real tick evidence, but it is only 30 days and is not a multi-year claim.
-
-FinCast ran through DirectML on the AMD GPU with zero warnings or CPU fallback. All 27 LightGBM models used OpenCL. The publisher independently verified 27 model files, 27 prediction files, three FinCast matrices, finite arrays, and probability normalization.
-
-Data: [forecast](forecast.csv) | [prediction tails](prediction-tails.csv) | [barrier baselines](barrier-baselines.csv) | [scenarios](scenarios.csv) | [symbols](symbols.csv) | [daily ledger](daily-policy.csv) | [AI uplift](ai-uplift.csv) | [models](models.csv) | [roles](roles.csv) | [sources](sources.csv) | [gates](gates.csv) | [progress](progress.csv) | [source report](screen.json) | [publication integrity](report.json)
+`screen.json` is the complete source report. `report.json` binds this publication to the frozen design, execution binding, external report, and every published file. Model and prediction artifact hashes are recorded in [models.csv](models.csv) and `screen.json`; flattened gate outcomes are in [gates.csv](gates.csv).

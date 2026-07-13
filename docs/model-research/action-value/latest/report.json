@@ -1,188 +1,124 @@
 {
-  "ai_uplift_claim": false,
-  "ai_uplift_gate_passed": false,
-  "artifact_integrity": [
+  "artifacts": [
     {
-      "bytes": 742,
+      "bytes": 925,
       "path": "ai-uplift.csv",
-      "row_count": 3,
-      "sha256": "2942b528fe5f2eb5c67cf49d560e77bf17e4eae77f5c51fbdae5dc3dad786eb3"
+      "sha256": "be4b3eecfc35582b8c648cc7b63fa6fd95d7d6df6ecfc1de0496bb99f6d277bc"
     },
     {
-      "bytes": 2011,
-      "path": "barrier-baselines.csv",
-      "row_count": 12,
-      "sha256": "da3cd5ecd41a0a9c3c6282f6815c8b6161956f3eb2dc9cacbb7179637f190161"
-    },
-    {
-      "bytes": 4483,
+      "bytes": 3571,
       "path": "charts/ai-uplift.svg",
-      "sha256": "2c556e93fdee2eb9bd0341953ef89cc16917f71d44970107bb7c75dc04bef737"
+      "sha256": "c72783604da358972891b38281ba0e50022ce83617200f3f627b7457678975e9"
     },
     {
-      "bytes": 3747,
-      "path": "charts/barrier-baselines.svg",
-      "sha256": "5bdca1e18199ebd87ea31f87db236993f8b8efb0932073a72e6afe4607fae46e"
-    },
-    {
-      "bytes": 4173,
-      "path": "charts/calibration.svg",
-      "sha256": "ce4e1af7560aa264a0e02f8f1286fbb8a2a09abe7e51dfb047865acb68c6bdb3"
-    },
-    {
-      "bytes": 2466,
+      "bytes": 4484,
       "path": "charts/daily-equity.svg",
-      "sha256": "32742055f8eba5dcb2e19de702e403b43777b721c36c5b7e37a793759852acab"
+      "sha256": "80267caea0dbbd4604d83bbe5cba454943f20471c0cc4e57e4e36009d62efc40"
     },
     {
-      "bytes": 4562,
+      "bytes": 4083,
+      "path": "charts/executable-support.svg",
+      "sha256": "b49c0bfa781a0b53a9d151ec30c567687397d482c6beaf23a9cf7afda5c3177d"
+    },
+    {
+      "bytes": 4829,
       "path": "charts/forecast-quality.svg",
-      "sha256": "75d85a148bd0e79f697093cc54f7d0201fd4bbcb2781f27d591b5d7172854cf4"
+      "sha256": "f081bbcacbf3a5d05c6d1f402af80ef052a157ef7202675f770585c842d8f78d"
     },
     {
-      "bytes": 5942,
-      "path": "charts/prediction-tail.svg",
-      "sha256": "aabc564cd33e69029a0eb664212dbc7957b030159b21732451a1c0470246a310"
+      "bytes": 5851,
+      "path": "charts/policy-economics.svg",
+      "sha256": "ea93a503caa838867ce1cabb20575f8cd8bdb4b7b77fa6829f9f6d149bc28963"
     },
     {
-      "bytes": 10252,
+      "bytes": 3683,
       "path": "charts/research-progress.svg",
-      "sha256": "06ebe77fcd7765f86f31bd2d779d55e6bd17a04fe0f8d89221644dbfdafe0a6b"
+      "sha256": "939c77562133bdd6d9699b049d7355bc750cdf1a76e3a5052a7b659e8ad04eab"
     },
     {
-      "bytes": 3562,
+      "bytes": 1919,
       "path": "daily-policy.csv",
-      "row_count": 36,
-      "sha256": "95faafa0f7d019082c5b45fb183bd0e1f76e61a402a212fed21f21b1ae8438b1"
+      "sha256": "3d6e7bca6dbcb120c7ce226095078f6760bce0a632912d19485afab752cc25ab"
     },
     {
-      "bytes": 19398,
+      "bytes": 50595,
       "path": "forecast.csv",
-      "row_count": 54,
-      "sha256": "015fc5d50ee80a1775226ed5b2ff7a1f70a1654359c0b78a636282b6999f350c"
+      "sha256": "fc846accd082d110c1a4ec72665bdd42801284a3dfa75324a60bf6902ad03ef9"
     },
     {
-      "bytes": 5816,
+      "bytes": 3902,
       "path": "gates.csv",
-      "row_count": 53,
-      "sha256": "6c51a811330499f43d5ab1251c4169f595761f1797861bbcd5901c36fb742a9d"
+      "sha256": "8e9ca899b96a983df6a2b09ebcb4f165951ad3b93420d69b59a2f125928db6c5"
     },
     {
-      "bytes": 9377,
+      "bytes": 33941,
       "path": "models.csv",
-      "row_count": 27,
-      "sha256": "8b393647ffa77717e0527ea1ae3f92c7189a74e03547dfb4c98a007b192edb52"
+      "sha256": "1e862d18ff78525fc89d325b5ba8586578269111a8838de3681d9d8680d466e6"
     },
     {
-      "bytes": 4442,
-      "path": "prediction-tails.csv",
-      "row_count": 18,
-      "sha256": "4f57da1c2a3e41154dc220d7a4e2ded58fff1487b2265e6e5ac01814587adb19"
+      "bytes": 23769,
+      "path": "policy-grid.csv",
+      "sha256": "152449cff87092df98a65ff9f578fd3c645d9cf0f729415938beb4f47942abb7"
     },
     {
-      "bytes": 18119,
+      "bytes": 18681,
       "path": "progress.csv",
-      "row_count": 51,
-      "sha256": "77b25466e73931e34c264514a0c983bb06282326ae9d5481f86a28a8ef20f9fe"
-    },
-    {
-      "bytes": 2795,
-      "path": "README.md",
-      "sha256": "b888b48a5236435080e37e8a662ba37c306cc232b57658e8b27f4582dd011b11"
-    },
-    {
-      "bytes": 1359,
-      "path": "roles.csv",
-      "row_count": 12,
-      "sha256": "6e3b660e5c1cb517164ed102f9dc95e4fb3bef79d7142e927ae0804b1cfcc63d"
-    },
-    {
-      "bytes": 820,
-      "path": "scenarios.csv",
-      "row_count": 6,
-      "sha256": "87b8bd46e268df967d9e2b9f9c907bc21d89ebe39f3cce4e95627a349302cb94"
-    },
-    {
-      "bytes": 584288,
-      "path": "screen.json",
-      "sha256": "d2e6c2e1a8ba0a48293f124d148359e4015f9c25aa61fb11b9dc7578d7975a80"
-    },
-    {
-      "bytes": 1041,
-      "path": "sources.csv",
-      "row_count": 3,
-      "sha256": "1a14f95f02b4278ee0b539633753879a3d2aed4c75f0bdaa9bf49716bb3cd896"
+      "sha256": "626d8d033a7a74643b2810505abc62974589b6020688d428cd49a20356321184"
     },
     {
       "bytes": 2184,
-      "path": "symbols.csv",
-      "row_count": 18,
-      "sha256": "b39e37e26a1499138dea82dd79f0151e109142713ddf857f435b4f3acdf0c485"
+      "path": "README.md",
+      "sha256": "d351bad87c064fcca8f231a942cb95747e1fc1f3458e54e02d92cdf90ebdda55"
+    },
+    {
+      "bytes": 620856,
+      "path": "screen.json",
+      "sha256": "c5b728161535372d934ff9087a24b81c2490246cd17cb56beb3e29a3052d73fa"
+    },
+    {
+      "bytes": 810,
+      "path": "support.csv",
+      "sha256": "26c0139e76ef6cab119332c2ae6e8002c62360b14a1edf4fd41595cc483d9f24"
     }
   ],
-  "binding_sha256": "4e4f17914bb27411675ffd4dfa7a64c56b3f4515025a95ffa675edcab031b5b1",
-  "decision_cadence_seconds": 10,
-  "design_sha256": "42f9afbda8755807e898fa8bb54ad4039d1f9f6b2f4d6c825afc0b1d02bcfba3",
-  "development_only": true,
-  "distribution_gate_pass_count": 0,
-  "economic_gate_pass_count": 0,
-  "evaluation_period": "2023-06-09..2023-06-14",
-  "external_artifacts_hash_verified": true,
-  "external_artifacts_verified_bytes": 322506457,
-  "fincast_backend_kind": "directml",
-  "fincast_feature_artifact_count": 3,
-  "fincast_parameter_count": 991437160,
-  "generated_at": "2026-07-13T21:06:15.063325+00:00",
-  "graph_sources": {
-    "charts/ai-uplift.svg": [
-      "ai-uplift.csv"
-    ],
-    "charts/barrier-baselines.svg": [
-      "barrier-baselines.csv"
-    ],
-    "charts/calibration.svg": [
-      "forecast.csv"
-    ],
-    "charts/daily-equity.svg": [
-      "daily-policy.csv"
-    ],
-    "charts/forecast-quality.svg": [
-      "forecast.csv"
-    ],
-    "charts/prediction-tail.svg": [
-      "prediction-tails.csv"
-    ],
-    "charts/research-progress.svg": [
-      "progress.csv"
-    ]
+  "claims": {
+    "ai_uplift_claim": false,
+    "leverage_applied": false,
+    "live_authority": false,
+    "profitability_claim": false,
+    "selection_contaminated": true,
+    "status": "rejected",
+    "testnet_authority": false,
+    "trading_authority": false,
+    "untouched_data_expansion_authorized": false
   },
-  "leverage_applied": false,
-  "lightgbm_backend_kind": "opencl",
-  "live_authority": false,
-  "model_artifact_count": 27,
-  "prediction_artifact_count": 27,
-  "profitability_claim": false,
-  "publication_sha256": "30173edfc3b5656e05aae9a1d4e047e06803804ed8c163cbbbda16231eb9a449",
-  "publisher_path": "tools/publish_round51_categorical_payoff_fincast.py",
-  "publisher_sha256": "69a149e2c462384b1f3e4696bbe942951b9dc3d7fd0e90cdbb288f2dd43b3105",
-  "round": 51,
-  "round_gate_passed": false,
-  "schema_version": "categorical-payoff-fincast-publication-v1",
-  "selected_trades": 0,
-  "selection_contaminated": true,
-  "source_implementation_commit": "ae61bcb87765a5fd1e6610d358808848529de60c",
-  "source_market_rows_synthetic": 0,
-  "source_period": "2023-05-16..2023-06-14",
-  "source_report_canonical_sha256": "b97a12764256680402d526fd17ee56999c7f88335d66570a196aae3d0e9d0201",
-  "source_report_file_sha256": "d2e6c2e1a8ba0a48293f124d148359e4015f9c25aa61fb11b9dc7578d7975a80",
-  "status": "rejected",
-  "symbols": [
-    "BTCUSDT",
-    "ETHUSDT",
-    "SOLUSDT"
-  ],
-  "target_horizon_seconds": 300,
-  "target_path_resolution_ms": 100,
-  "testnet_authority": false,
-  "trading_authority": false
+  "publication_canonical_sha256": "3f1feb381ff2e2ee6ba711727cf10784c1f7958e7bd8ecd131a0b962e1504cce",
+  "published_at": "2026-07-13T21:51:27.921615+00:00",
+  "publisher_path": "tools/publish_round52_executable_support_hurdle.py",
+  "result": {
+    "ai_expected_payoff_spearman_improvement": 0.0003752313719727132,
+    "ai_probability_log_loss_improvement": 0.001463466267459912,
+    "deterministic_hurdle_calibration_base_mean_net_bps": -1.0577574655257402,
+    "deterministic_hurdle_calibration_stress_mean_net_bps": -2.3910907988590737,
+    "deterministic_hurdle_calibration_trades": 9,
+    "deterministic_hurdle_consumed_evaluation_base_mean_net_bps": 5.162619173795532,
+    "deterministic_hurdle_consumed_evaluation_stress_mean_net_bps": 3.807621643943038,
+    "deterministic_hurdle_consumed_evaluation_trades": 15,
+    "formally_selected_policies": 0,
+    "models": 27,
+    "passed_mechanisms": 0,
+    "prediction_artifacts": 54
+  },
+  "round": 52,
+  "schema_version": "round-052-action-value-publication-v1",
+  "source": {
+    "binding_path": "docs/model-research/action-value/round-052-execution-binding.json",
+    "binding_sha256": "e14f6e4b742e0da6d838621355a16fbc030ae2a941b6eef0ee2dd1ab9344568a",
+    "design_path": "docs/model-research/action-value/round-052-executable-support-hurdle-fincast-design.json",
+    "design_sha256": "af95d80a3adc21b72d6809d43afb3f2446213fe0a4e089b10366691465a0c669",
+    "implementation_commit": "3cb9500fb1c34eeab77c2b294ed8c1fd282e2247",
+    "report_canonical_sha256": "ace44ebc33dc0601306841b4c353b43a184b2aa604b49f73d2301257f86d2f7f",
+    "report_file_sha256": "c5b728161535372d934ff9087a24b81c2490246cd17cb56beb3e29a3052d73fa",
+    "report_path": "E:\\SimpleAITradingData\\round52-executable-support-hurdle-20260713-v1\\report.json"
+  }
 }

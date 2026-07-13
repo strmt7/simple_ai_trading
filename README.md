@@ -528,16 +528,17 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 51 trained 27 OpenCL LightGBM models on verified Binance USD-M tick data
-and paired the categorical candidate with causal features from the
-991,437,160-parameter FinCast model running through DirectML on the AMD GPU.
-All three candidates produced zero eligible actions: even their best
-worst-seed forecast remained negative after spread, fees, latency, and
-slippage. FinCast changed average ranked-probability skill by `-0.000074`,
-payoff Spearman by `+0.002023`, and payoff MSE by a ratio of `1.001171`; it did
-not establish AI uplift. The round was rejected, and an empty ledger is not a
-profitability or zero-drawdown result. No testnet, live-trading, leverage, or
-autonomous-execution authority was established.
+Round 52 trained 27 OpenCL LightGBM models and produced 54 hash-verified
+prediction artifacts from verified Binance USD-M BTC, ETH, and SOL tick data.
+One side-specific executable-row predicate now governs fitting, calibration,
+scoring, thresholding, and replay. Every frozen calibration selector failed.
+The deterministic hurdle lost `1.057757` base and `2.391091` stressed bps/trade
+over 9 calibration trades. Its later 15-trade consumed-development diagnostic
+was positive, but calibration did not authorize it, so it was not selected.
+FinCast improved probability log loss by `0.001463` and expected-payoff
+Spearman by `0.000375`, below both frozen `0.005` uplift gates; expected-payoff
+MSE skill remained negative. The round was rejected with no untouched-data
+expansion, testnet, live-trading, leverage, or autonomous-execution authority.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
