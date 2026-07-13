@@ -1,0 +1,282 @@
+{
+  "schema_version": "stability-regularized-distributional-tcn-design-v1",
+  "round": 46,
+  "design_sha256": "054f3619ea8abe45f773a653d265d0eb1a1a3a401aa1ffa4f792e2e7d1fe7253",
+  "status": "frozen",
+  "phase": "consumed-development sequence-model stability screen",
+  "objective": "Recover the forecast quality of the Round 44 per-symbol shared causal distributional TCN while raising independently initialized median-forecast agreement above the unchanged 0.500 floor through time-series-specific dynamic error bounds or explicit peer consistency.",
+  "predecessor_evidence": {
+    "round_45_report_canonical_sha256": "4f3e7f80e2ba2fb08f7523b02a7548b9b4ff3a34e49121b048d4c6484a09375d",
+    "round_45_publication_sha256": "6f6ee9404729e9bdcee5ae9cd6bd66c36a6b3067f0f1123308ef6a69d7a03dde",
+    "round_45_failure_analysis_sha256": "84b78e6cba147a06347cebf5a65087a54e5338f1a9501e61b05d38eed457b74f",
+    "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "round_44_reference": {
+      "median_best_early_stop_pinball": 0.36850768359123126,
+      "minimum_pairwise_seed_median_prediction_spearman": 0.45191081264635347,
+      "forecast_gate_failure": "seed_prediction_stability_below_0_5"
+    },
+    "diagnosis": [
+      "Round 44's per-symbol shared TCN beat the unconditional pinball baseline and had positive pooled rank association at all four horizons, but its minimum pairwise seed correlation was 0.452.",
+      "Round 44 reached the best early-stop loss at epoch 3 or 4 while training loss continued to fall, which is direct evidence of rapid noise fitting.",
+      "Round 45 joint training preserved weak forecast skill but reduced minimum seed agreement to 0.189 for AdamW and 0.181 for SAM.",
+      "SAM marginally improved early-stop pinball loss but worsened seed stability and therefore failed its frozen optimizer-ablation gate.",
+      "Round 45's seed-consensus action mapping restored activity with 898 to 947 trades, but neither candidate passed forecast or economic gates and drawdown reached 29.48 to 44.10 percent at base cost."
+    ]
+  },
+  "research_basis": [
+    {
+      "source": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/7b99e3c648898b9e4923dea0aeb4afa1-Abstract-Conference.html",
+      "finding_used": "WaveBound uses a slow EMA target network to set dynamic, output-specific lower bounds on training error and was reported to reduce unstable time-series overfit across multiple architectures, including TCNs.",
+      "limitation": "The published experiments use deterministic MSE forecasting on non-crypto benchmarks; the pinball-loss adaptation is an explicit new ablation and carries no assumed benefit."
+    },
+    {
+      "source": "https://github.com/choyi0521/WaveBound",
+      "finding_used": "The official implementation evaluates the EMA target model, uses 0.99 decay, starts dynamic bounding after a warm-up, and uses a small positive epsilon in the bound.",
+      "limitation": "The upstream implementation targets older PyTorch and CUDA workflows; this repository independently implements only the documented loss and EMA update on DirectML."
+    },
+    {
+      "source": "https://openaccess.thecvf.com/content_cvpr_2018/html/Zhang_Deep_Mutual_Learning_CVPR_2018_paper.html",
+      "finding_used": "Deep mutual learning shows that independently initialized peer networks can improve by learning collaboratively without a pre-trained teacher.",
+      "limitation": "The paper concerns classification; Round 46 uses a separately defined standardized-median regression consistency objective and does not assume its reported accuracy transfers."
+    },
+    {
+      "source": "https://arxiv.org/abs/2106.14448",
+      "finding_used": "Output-consistency regularization can reduce stochastic submodel disagreement while retaining the supervised objective.",
+      "limitation": "R-Drop uses bidirectional KL divergence for probabilistic classification and language tasks, not quantile return regression."
+    },
+    {
+      "source": "https://arxiv.org/abs/1803.06730",
+      "finding_used": "Constrained probabilistic forecast combination supports retaining independently valid quantile forecasts rather than collapsing uncertainty into one point estimate.",
+      "limitation": "Load forecasting is not financial trading evidence; Round 46 keeps a simple elementwise median ensemble and does not fit post-outcome ensemble weights."
+    },
+    {
+      "source": "https://proceedings.neurips.cc/paper_files/paper/2007/hash/85d8ce590ad8981ca2c8286f79f59954-Abstract.html",
+      "finding_used": "Algorithmic stability for temporally dependent, non-i.i.d. processes is a relevant generalization criterion, so seed agreement remains a hard gate rather than a cosmetic metric.",
+      "limitation": "The theoretical bounds do not validate this neural architecture or establish financial edge."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "predecessor_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "round_45_derived_cache_metadata_sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "decision_interval_seconds": 3600,
+    "source_resolution_seconds": 60,
+    "causal_features_per_symbol": 71,
+    "target_horizons_hours": [
+      1,
+      4,
+      12,
+      24
+    ],
+    "target_quantiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "target_and_role_contract": "Bit-for-bit identical to the hash-bound Round 44 and Round 45 compounded hourly return, completeness, and role-boundary contract.",
+    "cache_contract": "Read the five hash-verified external Round 45 NumPy cache files only after reproducing their aggregate dataset identity; no cache value can override source-certificate lineage."
+  },
+  "chronological_roles": {
+    "training": {
+      "start": "2022-01-01T00:00:00Z",
+      "end_inclusive": "2024-03-31T23:59:59Z"
+    },
+    "early_stop": {
+      "start": "2024-04-01T00:00:00Z",
+      "end_inclusive": "2024-06-30T23:59:59Z"
+    },
+    "calibration": {
+      "start": "2024-07-01T00:00:00Z",
+      "end_inclusive": "2024-09-30T23:59:59Z"
+    },
+    "evaluation": {
+      "start": "2024-10-01T00:00:00Z",
+      "end_inclusive": "2025-06-30T23:59:59Z"
+    },
+    "selection_contaminated": true,
+    "purpose": "Mechanism development only; no role can support promotion or a live-trading claim."
+  },
+  "normalization_contract": {
+    "fit_role": "training only",
+    "feature_and_target_scalers": "Bit-for-bit Round 44 mean, population-standard-deviation, clip, median, and scaled-MAD definitions.",
+    "future_or_cross_role_statistics_permitted": false
+  },
+  "model_contract": {
+    "family": "per-symbol shared causal distributional TCN",
+    "candidates": [
+      {
+        "id": "wavebound_ema",
+        "mechanism": "WaveBound dynamic pinball-error lower bounds with an EMA target model",
+        "ema_decay": 0.99,
+        "warmup_optimizer_updates": 100,
+        "epsilon_normalized_pinball": 0.001,
+        "evaluation_model": "EMA target"
+      },
+      {
+        "id": "mutual_median_consistency",
+        "mechanism": "Three independently initialized peers trained on common batches with supervised pinball plus standardized-median agreement",
+        "consistency_weight": 0.05,
+        "consistency_definition": "For each horizon and peer pair, one half of the mean squared difference between centered, unit-population-standard-deviation median forecasts over the batch and supervised time axis; algebraically this is 1 minus Pearson correlation before numerical epsilon.",
+        "tail_quantile_consistency_penalty": false,
+        "early_stop_model": "all three peers at the common epoch with the best ensemble-median early-stop pinball"
+      }
+    ],
+    "input_layout": "One symbol sequence per sample with the same 71 target and causal cross-asset context features used by Round 44.",
+    "output_layout": "Four horizons times five monotone quantiles for the sampled symbol.",
+    "hidden_channels": 64,
+    "kernel_size": 3,
+    "residual_block_dilations": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "receptive_field_hours": 127,
+    "padding": "left-only causal padding",
+    "activation": "GELU",
+    "dropout": 0.1,
+    "quantile_parameterization": "Per horizon, predict a median and four nonnegative softplus gaps so q10 <= q25 <= q50 <= q75 <= q90.",
+    "supervised_loss": "Equal-weight normalized pinball loss across four horizons and five quantiles.",
+    "seeds": [
+      4601,
+      4602,
+      4603
+    ],
+    "ensemble": "Elementwise median of three independently initialized forecasts; no fitted ensemble weights.",
+    "adamw": {
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-08,
+      "gradient_norm_clip": 1.0
+    },
+    "training_windows": {
+      "total_hours": 384,
+      "causal_context_hours": 127,
+      "supervised_hours": 257,
+      "stride_hours": 24,
+      "batch_size": 64
+    },
+    "maximum_epochs": 50,
+    "early_stopping_patience_epochs": 10,
+    "minimum_improvement": 1e-05,
+    "candidate_selection": "None; both pre-registered mechanisms complete the same consumed-development evaluation.",
+    "compute_backend": "DirectML required for this host run; CPU remains a separately declared portability mode.",
+    "unsupported_operator_fallback_permitted": false
+  },
+  "mechanism_gate": {
+    "applied_separately_to_each_candidate": true,
+    "predecessor_minimum_seed_stability": 0.45191081264635347,
+    "minimum_required_seed_stability": 0.5,
+    "minimum_absolute_seed_stability_improvement": 0.048089187353646534,
+    "predecessor_median_best_early_stop_pinball": 0.36850768359123126,
+    "maximum_relative_median_early_stop_pinball_degradation": 0.02,
+    "maximum_permitted_median_best_early_stop_pinball": 0.3758778372630559,
+    "claim_if_failed": "The candidate's stability mechanism is not established; preserve all diagnostics and do not lower the floor after observing outcomes."
+  },
+  "forecast_gate": {
+    "applied_separately_to_each_candidate": true,
+    "all_finite_and_complete": true,
+    "quantile_crossing_count": 0,
+    "minimum_horizons_with_positive_pinball_skill_vs_unconditional": 3,
+    "minimum_pinball_skill_per_counted_horizon": 0.01,
+    "minimum_horizons_with_positive_pooled_median_spearman": 3,
+    "minimum_evaluation_months_with_positive_median_spearman_per_counted_horizon": 5,
+    "central_80_interval_coverage_bounds": [
+      0.72,
+      0.88
+    ],
+    "central_50_interval_coverage_bounds": [
+      0.42,
+      0.58
+    ],
+    "minimum_pairwise_seed_median_prediction_correlation": 0.5,
+    "minimum_positive_symbol_horizons_per_symbol": 2,
+    "gate_failure_action": "Continue only to labeled descriptive consensus-policy diagnostics; deny AI action review, promotion, leverage, and untouched data."
+  },
+  "descriptive_policy_contract": {
+    "runs_for_each_candidate_even_if_forecast_gate_fails": true,
+    "position_values": [
+      -1,
+      0,
+      1
+    ],
+    "position_sleeves": "Fixed one-third notional sleeve per symbol.",
+    "entry_rule": "When flat, evaluate every horizon. Long score is the minimum of the three seed median forecasts minus 12 bps round-trip cost. Short score is the negative maximum seed median forecast minus 12 bps. Enter only the side and horizon with the largest strictly positive score.",
+    "rationale": "The identical Round 45 mapping isolates the training mechanism and preserves an explicit epistemic-disagreement veto; changing the policy after seeing Round 45 outcomes is forbidden in this round.",
+    "holding_rule": "Hold for exactly the selected 1, 4, 12, or 24-hour horizon, then flatten. No overlapping position is permitted within a symbol.",
+    "forced_quota": false,
+    "leverage": 1.0,
+    "base_one_way_transition_cost_bps": 6.0,
+    "stress_one_way_transition_cost_bps": 8.0,
+    "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect horizons, sides, or timestamps under stress.",
+    "funding_cash_flows_included": true,
+    "maker_execution_assumption": false
+  },
+  "economic_gate": {
+    "required_only_if_corresponding_forecast_and_mechanism_gates_pass": true,
+    "familywise_circular_block_bootstrap_hours": 168,
+    "bootstrap_replicates": 2000,
+    "one_sided_familywise_lower_quantile": 0.0125,
+    "stress_mean_hourly_portfolio_bps_lower_bound_must_exceed": 0.0,
+    "minimum_positive_evaluation_months": 6,
+    "minimum_active_days": 90,
+    "minimum_closed_trades": 180,
+    "maximum_drawdown_fraction": 0.1,
+    "minimum_profit_factor": 1.05,
+    "all_three_symbols_must_have_activity": true,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "promotion_result": "Still denied because the complete Round 46 evaluation is selection-contaminated development evidence."
+  },
+  "ai_contract": {
+    "risk_review_benchmark_contract": "finance-risk-review-adversarial-v6",
+    "risk_review_comparison_file_sha256": "369f98826ee97b0b2c23c3fb3e53cb966cc0eb01785140774391993b1dbe9281",
+    "selected_local_risk_review_model": "qwen3:8b",
+    "selected_model_cases_correct": "11/11",
+    "selected_model_score": 0.983409090909091,
+    "risk_review_benchmark_passed": true,
+    "benchmark_is_financial_edge_evidence": false,
+    "market_features_or_future_outcomes_supplied_to_language_models": false,
+    "language_model_numerical_forecasts_or_orders_permitted": false,
+    "ai_trade_ablation_permitted": false,
+    "reason": "The current AI benchmark establishes schema-constrained safety reasoning only. A paired AI-versus-deterministic after-cost uplift test remains forbidden until a deterministic candidate passes its numerical forecast, mechanism, and economic gates."
+  },
+  "governance": {
+    "selection_confirmation_2025_h2_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "testnet_or_live_execution_permitted": false,
+    "promotion_permitted": false,
+    "leverage_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "post_outcome_parameter_seed_or_candidate_selection_permitted": false,
+    "manual_graph_or_result_editing_permitted": false,
+    "profitability_ai_or_stability_uplift_claim_permitted": false
+  },
+  "required_outputs": [
+    "source_dataset_and_cache_hashes",
+    "role_and_target_completeness",
+    "DirectML WaveBound and mutual-consistency backward-update preflight and runtime evidence",
+    "per-candidate per-seed artifacts and exact reload checks",
+    "hashed seed and ensemble prediction tensors",
+    "per-epoch supervised, WaveBound, EMA, and peer-consistency training diagnostics",
+    "per-candidate per-symbol per-horizon per-month forecast diagnostics",
+    "per-candidate seed stability and mechanism gate",
+    "per-candidate descriptive fixed consensus trade ledger",
+    "matched fixed-ledger base and stress economics",
+    "forecast, mechanism, and economic gate reasons",
+    "current hash-bound AI safety benchmark reference and explicit no-uplift boundary",
+    "peak working set runtime and progress events",
+    "machine-readable report with canonical identity"
+  ]
+}
