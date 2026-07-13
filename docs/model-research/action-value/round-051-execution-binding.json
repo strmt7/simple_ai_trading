@@ -1,0 +1,78 @@
+{
+  "binding_sha256": "c7577c28ee825fe86d739a4904f6eac46158286646b7b3576ec431f2ec7661a1",
+  "blobs": [
+    {
+      "git_blob_oid": "15919441ce8f89064b3a29265f6d7893d6042fb9",
+      "path": "pyproject.toml"
+    },
+    {
+      "git_blob_oid": "60c40cdc5b1d6543af63709777a19e976bb93659",
+      "path": "src/simple_ai_trading/categorical_payoff_lightgbm.py"
+    },
+    {
+      "git_blob_oid": "e84a5830bc351ec089d11c894c0449adac8324c7",
+      "path": "src/simple_ai_trading/direct_payoff_lightgbm.py"
+    },
+    {
+      "git_blob_oid": "56d1ec40b59d4630559658161a6e794ac4932615",
+      "path": "src/simple_ai_trading/fincast_runtime.py"
+    },
+    {
+      "git_blob_oid": "795c3ad2d349658e9b358acf1cfb4cf291571815",
+      "path": "src/simple_ai_trading/payoff_distribution_analysis.py"
+    },
+    {
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c",
+      "path": "src/simple_ai_trading/lightgbm_backend.py"
+    },
+    {
+      "git_blob_oid": "d442c1de57a1e37f4572460afb3437873905a7c0",
+      "path": "src/simple_ai_trading/microstructure_action_policy.py"
+    },
+    {
+      "git_blob_oid": "554debe203367714c0ecb8758be8c5befeeb1af8",
+      "path": "src/simple_ai_trading/microstructure_barriers.py"
+    },
+    {
+      "git_blob_oid": "158ae8a90c5d4c590d077862987f81618184a748",
+      "path": "src/simple_ai_trading/microstructure_cache.py"
+    },
+    {
+      "git_blob_oid": "d187d472dbc9fb6d48f5d750001bbbf5f3c28f4d",
+      "path": "src/simple_ai_trading/microstructure_features.py"
+    },
+    {
+      "git_blob_oid": "572722540bfab6f8c1135b951f2cdd5bd47b983c",
+      "path": "src/simple_ai_trading/microstructure_model.py"
+    },
+    {
+      "git_blob_oid": "367c8059d7ec5f86acca26d60ad641c9a61dc1bc",
+      "path": "src/simple_ai_trading/microstructure_warehouse.py"
+    },
+    {
+      "git_blob_oid": "135a9485dc5dba3a96440670b7ba25776bf4a66e",
+      "path": "tools/create_round51_execution_binding.py"
+    },
+    {
+      "git_blob_oid": "c579c9147eaf6b1222a7e9df66f5f02c801bc2b6",
+      "path": "tools/run_round51_categorical_payoff_fincast.py"
+    }
+  ],
+  "created_at": "2026-07-13T17:58:23.670434+00:00",
+  "design_path": "docs/model-research/action-value/round-051-categorical-payoff-fincast-design.json",
+  "design_sha256": "eeda9a52bf448a5cf789979c44ebb87d23c749979efaef65b9a1add48c4c28cd",
+  "execution_contract": {
+    "all_models_trained_before_evaluation": true,
+    "clean_worktree_required": true,
+    "fincast_cpu_fallback_permitted": false,
+    "leverage_applied": false,
+    "lightgbm_opencl_fp64_required": true,
+    "profitability_claim_permitted": false,
+    "selection_contaminated": true,
+    "source_market_rows_synthetic": 0,
+    "trading_authority_permitted": false
+  },
+  "implementation_commit": "b136121dea8f95030a4048c8a55a5a2cb56c1f64",
+  "round": 51,
+  "schema_version": "round-051-categorical-payoff-fincast-execution-binding-v1"
+}
