@@ -90,6 +90,26 @@ def test_adaptive_barriers_are_causal_bounded_and_take_exceeds_stop() -> None:
     assert np.all(take > stop)
 
 
+def test_adaptive_barriers_apply_frozen_minimum_to_flat_price_window() -> None:
+    dataset = _dataset()
+    dataset.features[0, 0] = 0.0
+
+    stop, take = volatility_scaled_barriers(
+        dataset, np.asarray([0], dtype=np.int64), _spec()
+    )
+
+    np.testing.assert_allclose(stop, [18.0])
+    np.testing.assert_allclose(take, [27.0])
+
+
+def test_adaptive_barriers_reject_negative_volatility() -> None:
+    dataset = _dataset()
+    dataset.features[0, 0] = -0.1
+
+    with pytest.raises(ValueError, match="volatility values"):
+        volatility_scaled_barriers(dataset, np.asarray([0], dtype=np.int64), _spec())
+
+
 @pytest.mark.parametrize(
     ("overrides", "match"),
     [

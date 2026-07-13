@@ -210,7 +210,7 @@ def volatility_scaled_barriers(
     except ValueError as exc:
         raise ValueError("adaptive barrier volatility feature is absent") from exc
     per_second = np.asarray(dataset.features[indexes, feature_index], dtype=np.float64)
-    if np.any(~np.isfinite(per_second)) or np.any(per_second <= 0.0):
+    if np.any(~np.isfinite(per_second)) or np.any(per_second < 0.0):
         raise ValueError("adaptive barrier volatility values are invalid")
     sigma_horizon = per_second * math.sqrt(float(spec.horizon_seconds))
     stop = np.clip(
