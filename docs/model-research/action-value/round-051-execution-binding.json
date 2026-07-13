@@ -1,5 +1,5 @@
 {
-  "binding_sha256": "037a4aaed95bf9274ad0680ffd660040b918c88576c88e96f31329d8591c3fa6",
+  "binding_sha256": "e6e864e5f10c17d87733d2617c1001611a689d977a8d375d14115d80a3e3ec29",
   "blobs": [
     {
       "git_blob_oid": "15919441ce8f89064b3a29265f6d7893d6042fb9",
@@ -14,7 +14,7 @@
       "path": "src/simple_ai_trading/direct_payoff_lightgbm.py"
     },
     {
-      "git_blob_oid": "56d1ec40b59d4630559658161a6e794ac4932615",
+      "git_blob_oid": "c4bc557018c364a01c2b11707d0d06b816cca44f",
       "path": "src/simple_ai_trading/fincast_runtime.py"
     },
     {
@@ -38,7 +38,7 @@
       "path": "src/simple_ai_trading/microstructure_cache.py"
     },
     {
-      "git_blob_oid": "d187d472dbc9fb6d48f5d750001bbbf5f3c28f4d",
+      "git_blob_oid": "b7a039d946afe1ae8ec15aa2f15e38dc496d58cb",
       "path": "src/simple_ai_trading/microstructure_features.py"
     },
     {
@@ -54,11 +54,11 @@
       "path": "tools/create_round51_execution_binding.py"
     },
     {
-      "git_blob_oid": "64b255b43108cc80d2e8e40943f5938d2f02a226",
+      "git_blob_oid": "629ed0a0fec823bc50c9bcd17dd646eb4baf3f31",
       "path": "tools/run_round51_categorical_payoff_fincast.py"
     }
   ],
-  "created_at": "2026-07-13T18:18:57.268335+00:00",
+  "created_at": "2026-07-13T18:24:07.084282+00:00",
   "design_path": "docs/model-research/action-value/round-051-categorical-payoff-fincast-design.json",
   "design_sha256": "eeda9a52bf448a5cf789979c44ebb87d23c749979efaef65b9a1add48c4c28cd",
   "execution_contract": {
@@ -73,7 +73,7 @@
     "source_market_rows_synthetic": 0,
     "trading_authority_permitted": false
   },
-  "implementation_commit": "f61b402fdab8b4e60ef287410c90f5c53bdc621c",
+  "implementation_commit": "9c683d4bc12c23feafac7d44ea94638078ddbbf6",
   "round": 51,
   "schema_version": "round-051-categorical-payoff-fincast-execution-binding-v1"
 }
