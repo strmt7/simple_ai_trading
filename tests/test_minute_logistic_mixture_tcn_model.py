@@ -86,6 +86,26 @@ def test_torch_and_numpy_logistic_density_match() -> None:
     )
 
 
+def test_logistic_density_has_finite_extreme_tail_gradients() -> None:
+    logits = torch.zeros((2, 4, 3, 8), requires_grad=True)
+    locations = torch.zeros((2, 4, 3, 8), requires_grad=True)
+    raw_scales = torch.zeros((2, 4, 3, 8), requires_grad=True)
+    weights = torch.softmax(logits, dim=2)
+    scales = 0.05 + 5.95 * torch.sigmoid(raw_scales)
+    targets = torch.full((2, 4, 8), 500.0)
+    targets[..., ::2] = -500.0
+
+    loss = -logistic_mixture_log_density(
+        weights, locations, scales, targets
+    ).mean()
+    loss.backward()
+
+    assert torch.isfinite(loss)
+    assert logits.grad is not None and torch.isfinite(logits.grad).all()
+    assert locations.grad is not None and torch.isfinite(locations.grad).all()
+    assert raw_scales.grad is not None and torch.isfinite(raw_scales.grad).all()
+
+
 def test_pairwise_loss_prefers_the_correct_temporal_order() -> None:
     target = torch.arange(40, dtype=torch.float32).reshape(1, 1, -1)
     correct = target.clone()

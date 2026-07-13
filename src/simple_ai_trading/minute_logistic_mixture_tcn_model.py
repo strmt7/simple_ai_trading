@@ -462,7 +462,12 @@ def logistic_mixture_log_density(
     ):
         raise ValueError("Round 48 mixture density shapes are invalid")
     z = (targets.unsqueeze(2) - locations) / scales
-    component_log_density = -z - 2.0 * F.softplus(-z) - torch.log(scales)
+    absolute_z = torch.abs(z)
+    component_log_density = (
+        -absolute_z
+        - 2.0 * torch.log1p(torch.exp(-absolute_z))
+        - torch.log(scales)
+    )
     return torch.logsumexp(
         torch.log(torch.clamp(weights, min=1e-7)) + component_log_density,
         dim=2,
@@ -651,6 +656,23 @@ def _run_preflight(
                 model.parameters(), 1.0, foreach=False
             )
             optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+            tail_targets = torch.from_numpy(
+                np.broadcast_to(
+                    np.where(np.arange(400) % 2 == 0, -500.0, 500.0),
+                    (4, len(HORIZONS_MINUTES), 400),
+                )
+                .copy()
+                .astype(np.float32)
+            ).to(device)
+            tail_output = model(values)
+            tail_loss = -logistic_mixture_log_density(
+                *tail_output, tail_targets
+            ).mean()
+            tail_loss.backward()
+            tail_gradient_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), 1.0, foreach=False
+            )
         warning_messages.extend(str(item.message) for item in caught)
         changes = {
             "depthwise": float(
@@ -681,6 +703,10 @@ def _run_preflight(
                 losses["pairwise_rank_loss"].detach().cpu()
             ),
             "gradient_norm": float(gradient_norm.detach().cpu()),
+            "extreme_tail_loss": float(tail_loss.detach().cpu()),
+            "extreme_tail_gradient_norm": float(
+                tail_gradient_norm.detach().cpu()
+            ),
             "parameter_changes": changes,
             "ordered_locations": bool(
                 components == 1
@@ -892,14 +918,39 @@ def _predict_mask(
                 weights[target_positions] = arrays[0]
                 locations[target_positions] = arrays[1]
                 scales[target_positions] = arrays[2]
+    weights_finite = np.isfinite(weights)
+    locations_finite = np.isfinite(locations)
+    scales_finite = np.isfinite(scales)
+    weight_sum_error = (
+        float(np.max(np.abs(np.sum(weights, axis=-1) - 1.0)))
+        if weights_finite.all()
+        else math.inf
+    )
+    minimum_scale = (
+        float(np.min(scales[scales_finite])) if scales_finite.any() else math.nan
+    )
     if (
-        not np.isfinite(weights).all()
-        or not np.isfinite(locations).all()
-        or not np.isfinite(scales).all()
-        or np.max(np.abs(np.sum(weights, axis=-1) - 1.0)) > 1e-5
-        or np.any(scales <= 0.0)
+        not weights_finite.all()
+        or not locations_finite.all()
+        or not scales_finite.all()
+        or weight_sum_error > 1e-5
+        or minimum_scale <= 0.0
     ):
-        raise RuntimeError("Round 48 prediction output failed integrity checks")
+        diagnostics = {
+            "components": components,
+            "prediction_rows": int(indices.size),
+            "weights_nonfinite": int(weights.size - weights_finite.sum()),
+            "locations_nonfinite": int(
+                locations.size - locations_finite.sum()
+            ),
+            "scales_nonfinite": int(scales.size - scales_finite.sum()),
+            "weight_sum_max_abs_error": weight_sum_error,
+            "minimum_finite_scale": minimum_scale,
+        }
+        raise RuntimeError(
+            "Round 48 prediction output failed integrity checks: "
+            f"{diagnostics}"
+        )
     if components == 3 and np.any(np.diff(locations, axis=-1) < -1e-6):
         raise RuntimeError("Round 48 prediction component locations crossed")
     return indices, weights, locations, scales
@@ -925,7 +976,12 @@ def numpy_logistic_mixture_log_density(
     ):
         raise ValueError("Round 48 NumPy density shapes are invalid")
     z = (targets[..., None] - locations) / scales
-    component = -z - 2.0 * np.logaddexp(0.0, -z) - np.log(scales)
+    absolute_z = np.abs(z)
+    component = (
+        -absolute_z
+        - 2.0 * np.log1p(np.exp(-absolute_z))
+        - np.log(scales)
+    )
     return _numpy_logsumexp(
         np.log(np.clip(weights, 1e-12, 1.0)) + component,
         axis=-1,
@@ -1220,7 +1276,9 @@ def _train_candidate(
                 peer_components: dict[str, list[float]] = {
                     key: [] for key in batch_losses
                 }
-                for peer, optimizer in zip(peers, optimizers, strict=True):
+                for seed, peer, optimizer in zip(
+                    SEEDS, peers, optimizers, strict=True
+                ):
                     optimizer.zero_grad(set_to_none=True)
                     output = tuple(
                         value[..., -SUPERVISED_STEPS:] for value in peer(values)
@@ -1232,15 +1290,34 @@ def _train_candidate(
                         short_tensor,
                         long_tensor,
                     )
+                    loss_values = {
+                        key: float(value.detach().cpu())
+                        for key, value in losses.items()
+                    }
+                    if not all(
+                        math.isfinite(value) for value in loss_values.values()
+                    ):
+                        raise RuntimeError(
+                            "Round 48 produced a nonfinite training loss: "
+                            f"candidate={candidate_id}, seed={seed}, "
+                            f"epoch={epoch}, batch={offset // BATCH_SIZE}, "
+                            f"losses={loss_values}"
+                        )
                     objective.backward()
-                    torch.nn.utils.clip_grad_norm_(
+                    gradient_norm = torch.nn.utils.clip_grad_norm_(
                         peer.parameters(), 1.0, foreach=False
                     )
+                    gradient_norm_value = float(gradient_norm.detach().cpu())
+                    if not math.isfinite(gradient_norm_value):
+                        raise RuntimeError(
+                            "Round 48 rejected a nonfinite gradient update: "
+                            f"candidate={candidate_id}, seed={seed}, "
+                            f"epoch={epoch}, batch={offset // BATCH_SIZE}, "
+                            f"losses={loss_values}"
+                        )
                     optimizer.step()
                     for key in peer_components:
-                        peer_components[key].append(
-                            float(losses[key].detach().cpu())
-                        )
+                        peer_components[key].append(loss_values[key])
                 optimizer_updates += 1
                 for key, values_for_key in peer_components.items():
                     batch_losses[key].append(float(np.mean(values_for_key)))
