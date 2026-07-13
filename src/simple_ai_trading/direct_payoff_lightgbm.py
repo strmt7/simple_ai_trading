@@ -392,7 +392,7 @@ def save_direct_payoff_model(
     encoded = _canonical_json(payload).encode("utf-8")
     if len(encoded) > _MAX_ARTIFACT_BYTES:
         raise ValueError("direct payoff model artifact is too large")
-    write_json_atomic(Path(path), payload, indent=2, sort_keys=True)
+    write_json_atomic(Path(path), payload, indent=None, sort_keys=True)
 
 
 def load_direct_payoff_model(path: str | Path) -> TrainedDirectPayoffModel:
