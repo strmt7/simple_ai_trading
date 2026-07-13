@@ -1,0 +1,71 @@
+{
+  "binding_sha256": "37ed388adbe1e2eb1bf02fb4b4b9a20834d4f6191b7cebd872e08b3e939f95d1",
+  "blobs": [
+    {
+      "git_blob_oid": "895193be8c8d89569613e347547bb783e5932102",
+      "path": "docs/model-research/action-value/round-050-path-bounded-competing-risk-tcn-design.json"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "3d1d1250827953feb87411111ee26130d615c51d",
+      "path": "src/simple_ai_trading/distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "35432a7681471551e5d908987958dd90d0074cd7",
+      "path": "src/simple_ai_trading/minute_logistic_mixture_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "ebc8232488407a9bbf0b2d3642508563b900675e",
+      "path": "src/simple_ai_trading/action_hurdle_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "d967df29b55751602525bd547e580474bd99a1b0",
+      "path": "src/simple_ai_trading/barrier_payoff_data.py"
+    },
+    {
+      "git_blob_oid": "d2cca620588e9c454cc22557e2e6e70a00acb90c",
+      "path": "src/simple_ai_trading/barrier_competing_risk_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "21fe1b4bfc6bb617bd6fd610fc5f555973f90bc5",
+      "path": "src/simple_ai_trading/barrier_competing_risk_analysis.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "a6a0f31bffaeaf79aaf9461d5597d40c40df9ad8",
+      "path": "tools/run_barrier_competing_risk_viability.py"
+    },
+    {
+      "git_blob_oid": "a351177b71020e3ff95b399ffd3239d42c93fdb7",
+      "path": "tools/create_round50_barrier_competing_risk_binding.py"
+    },
+    {
+      "git_blob_oid": "854f77f6e2fe30bce1508c3e2623b00b68ecdc35",
+      "path": "tests/test_barrier_payoff_data.py"
+    },
+    {
+      "git_blob_oid": "d8a43f7d6555abb33539fcc43f0a922a20149f2c",
+      "path": "tests/test_barrier_competing_risk_tcn_model.py"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_barrier_competing_risk_viability.py --database <market_data.sqlite> --source-certificate <external-certificate.json> --design docs\\model-research\\action-value\\round-050-path-bounded-competing-risk-tcn-design.json --binding docs\\model-research\\action-value\\round-050-path-bounded-competing-risk-tcn-binding.json --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "design_sha256": "09abb13a55009b4995a3543550b375d39938ff9df7bbfdb7329a1b369570045a",
+  "implementation_commit": "62db9baeee3e000af6b690a6ba57c754284dbbbc",
+  "round": 50,
+  "schema_version": "round-050-path-bounded-competing-risk-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
