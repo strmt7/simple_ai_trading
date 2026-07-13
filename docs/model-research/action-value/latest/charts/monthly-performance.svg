@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="720" viewBox="0 0 1500 720" role="img" aria-labelledby="title desc">
+<title id="title">Monthly losses were broad rather than one isolated event</title>
+<desc id="desc">Competing-risk fixed policy, 2025-H1; monthly bars use the exact daily ledger and trade counts use exit month.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">Monthly losses were broad rather than one isolated event</text>
+<text x="56" y="80" class="subtitle">Competing-risk fixed policy, 2025-H1; monthly bars use the exact daily ledger and trade counts use exit month.</text>
+<rect x="830" y="43" width="18" height="18" fill="#0f766e"/><text x="858" y="57" class="note">12 bps base</text>
+<rect x="1120" y="43" width="18" height="18" fill="#b45309"/><text x="1148" y="57" class="note">16 bps stress</text>
+<line x1="130" y1="390.0" x2="1430" y2="390.0" class="grid"/><text x="116" y="394.0" text-anchor="end" class="axis">-20.2%</text>
+<line x1="130" y1="175.6" x2="1430" y2="175.6" class="zero"/><text x="116" y="179.6" text-anchor="end" class="axis">+0.0%</text>
+<line x1="130" y1="145.0" x2="1430" y2="145.0" class="grid"/><text x="116" y="149.0" text-anchor="end" class="axis">+2.9%</text>
+<rect x="169.0" y="175.6" width="60.7" height="161.8" fill="#0f766e"/>
+<rect x="242.7" y="175.6" width="60.7" height="186.1" fill="#b45309"/>
+<text x="238.3" y="414" text-anchor="middle" class="axis">2025-01</text>
+<rect x="385.7" y="175.6" width="60.7" height="118.6" fill="#0f766e"/>
+<rect x="459.3" y="175.6" width="60.7" height="139.3" fill="#b45309"/>
+<text x="455.0" y="414" text-anchor="middle" class="axis">2025-02</text>
+<rect x="602.3" y="175.6" width="60.7" height="29.1" fill="#0f766e"/>
+<rect x="676.0" y="175.6" width="60.7" height="45.5" fill="#b45309"/>
+<text x="671.7" y="414" text-anchor="middle" class="axis">2025-03</text>
+<rect x="819.0" y="175.6" width="60.7" height="29.0" fill="#0f766e"/>
+<rect x="892.7" y="175.6" width="60.7" height="42.0" fill="#b45309"/>
+<text x="888.3" y="414" text-anchor="middle" class="axis">2025-04</text>
+<rect x="1035.7" y="175.6" width="60.7" height="42.5" fill="#0f766e"/>
+<rect x="1109.3" y="175.6" width="60.7" height="47.1" fill="#b45309"/>
+<text x="1105.0" y="414" text-anchor="middle" class="axis">2025-05</text>
+<rect x="1252.3" y="173.3" width="60.7" height="2.3" fill="#0f766e"/>
+<rect x="1326.0" y="175.6" width="60.7" height="4.7" fill="#b45309"/>
+<text x="1321.7" y="414" text-anchor="middle" class="axis">2025-06</text>
+<text x="130" y="502" class="label">Closed trades by exit month</text>
+<rect x="188.5" y="520.0" width="99.7" height="105.0" fill="#526674"/><text x="238.3" y="512.0" text-anchor="middle" class="value">172</text>
+<rect x="405.2" y="535.3" width="99.7" height="89.7" fill="#526674"/><text x="455.0" y="527.3" text-anchor="middle" class="value">147</text>
+<rect x="621.8" y="554.2" width="99.7" height="70.8" fill="#526674"/><text x="671.7" y="546.2" text-anchor="middle" class="value">116</text>
+<rect x="838.5" y="568.8" width="99.7" height="56.2" fill="#526674"/><text x="888.3" y="560.8" text-anchor="middle" class="value">92</text>
+<rect x="1055.2" y="604.9" width="99.7" height="20.1" fill="#526674"/><text x="1105.0" y="596.9" text-anchor="middle" class="value">33</text>
+<rect x="1271.8" y="594.5" width="99.7" height="30.5" fill="#526674"/><text x="1321.7" y="586.5" text-anchor="middle" class="value">50</text>
+</svg>

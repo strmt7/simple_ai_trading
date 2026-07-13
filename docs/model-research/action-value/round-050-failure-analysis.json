@@ -1,0 +1,61 @@
+{
+  "ai_uplift_claim": false,
+  "analysis_sha256": "e5b491e59f91c55118797a705b10ee24db3830d61a809ef7730f00009e665800",
+  "binding_sha256": "4bf9248727caec9c848e73d9e39a0ffe1b98f67958bbdeadbcf5057804805d6e",
+  "development_only": true,
+  "findings": [
+    "Event-time log loss and grouped Brier score improved for both sides, so the path classifier learned real distributional structure.",
+    "That probability structure did not identify after-cost action value: the competing-risk average side Spearman improvement was negative and short-side rank was negative in every symbol and month.",
+    "The all-seed-positive rule exposed rather than repaired the error: it selected 610 trades, 525 short, and all three symbol sleeves lost after 12 bps costs.",
+    "Long-side ranking improved, but a mixed long/short policy cannot be promoted while the short mechanism fails breadth, economics, and drawdown gates.",
+    "The direct control also lost and did not meet activity, breadth, confidence, or expected-payoff quality requirements.",
+    "Leverage and AI were correctly withheld; neither can convert a failed deterministic unlevered model into valid evidence."
+  ],
+  "generated_at_utc": "2026-07-13T16:05:46.431145+00:00",
+  "leverage_applied": false,
+  "next_model_requirements": [
+    "Freeze side-specific model and policy gates so a failed short lane cannot dominate a viable long lane.",
+    "Test a lower-variance categorical payoff distribution against the direct mean using proper scoring and calibration-only transforms.",
+    "Preserve exact next-open barrier cash flows, funding, gap-through stops, costs, and no-overlap replay without outcome reweighting.",
+    "Diagnose event-probability-to-payoff reconstruction by event group, duration, symbol, month, and predicted-value quantile before another full run.",
+    "Require positive unlevered breadth and familywise block-bootstrap evidence before leverage or an AI veto ablation is allowed.",
+    "Keep Qwen3 8B in asynchronous veto-only scope; its safety benchmark is not alpha evidence."
+  ],
+  "observed_result": {
+    "competing_risk": {
+      "long_expected_payoff_spearman": 0.048081355987611304,
+      "maximum_drawdown_fraction": 0.37412205395423015,
+      "profit_factor": 0.6839400438906108,
+      "return_fraction": -0.35726490193704763,
+      "short_expected_payoff_spearman": -0.060433327853639356,
+      "trades": 610
+    },
+    "direct_control": {
+      "maximum_drawdown_fraction": 0.0737793962380691,
+      "profit_factor": 0.7369952456809801,
+      "return_fraction": -0.0430270258868734,
+      "trades": 90
+    },
+    "mechanism_gate": {
+      "average_expected_payoff_spearman_improvement": -0.01701770760601806,
+      "maximum_relative_expected_payoff_mse_degradation": 0.002863195151521125,
+      "passed": false,
+      "reasons": [
+        "average_spearman_improvement_below_0.005",
+        "competing_risk_quality_gate_failed"
+      ],
+      "side_spearman_improvements": {
+        "long": 0.019939201481455303,
+        "short": -0.05397461669349142
+      }
+    }
+  },
+  "profitability_claim": false,
+  "round": 50,
+  "schema_version": "round-050-path-bounded-failure-analysis-v1",
+  "selection_contaminated": true,
+  "source_report_canonical_sha256": "8629a07940c0d8b4b16b35be4d7b651c1625807f8abae82a9e7fa7bfe73b6850",
+  "source_report_file_sha256": "47385351b7faf6bf1feb19d84f1c6200c5b6d5552e735877ae95f4f2c62245e8",
+  "status": "rejected",
+  "trading_authority": false
+}
