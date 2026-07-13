@@ -1,25 +1,27 @@
-# Round 45: Joint TCN and SAM
+# Round 46: Stability-Regularized TCN
 
-> **Beta research warning:** rejected, selection-contaminated development evidence. No model is approved for testnet, live day trading, leverage, or autonomous execution.
+> **Beta research warning:** the economic gate failed. No model is approved for testnet, live day trading, leverage, or autonomous execution.
 
-Round 45 compared a joint 213-channel cross-asset distributional TCN trained with AdamW and sharpness-aware minimization (SAM). Six three-seed artifacts trained on the AMD GPU through DirectML, reloaded exactly, and emitted zero fallback warnings.
+Round 46 compared WaveBound EMA error bounds with three co-trained distributional TCN peers. Six artifacts trained through DirectML on the AMD GPU, reloaded exactly, and emitted zero fallback warnings. The source dataset and every cached forward target were independently re-hashed and reproduced before training.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-| Horizon | AdamW skill | AdamW Spearman | SAM skill | SAM Spearman |
-|---:|---:|---:|---:|---:|
-| 1 h | 3.75% | 0.0275 | 3.80% | 0.0315 |
-| 4 h | 3.39% | 0.0368 | 3.34% | 0.0215 |
-| 12 h | 3.20% | 0.0665 | 3.07% | 0.0642 |
-| 24 h | 1.58% | 0.0445 | 1.50% | 0.0390 |
+Mutual consistency passed the frozen forecast and mechanism screens. Minimum seed agreement rose from `0.452` in Round 44 to `0.867`; WaveBound fell to `0.211`.
 
-Both candidates preserved weak forecast information, but joint training made seed agreement materially worse. AdamW reached only `0.189` and SAM `0.181` against the frozen `0.500` floor. SAM therefore did **not** establish an optimizer improvement.
+| Horizon | Pinball skill | Spearman | 50% coverage | 80% coverage |
+|---:|---:|---:|---:|---:|
+| 1 h | +4.41% | 0.0444 | 46.9% | 77.9% |
+| 4 h | +4.08% | 0.0500 | 46.5% | 78.3% |
+| 12 h | +3.55% | 0.0658 | 46.8% | 78.2% |
+| 24 h | +2.08% | 0.0272 | 49.2% | 78.9% |
 
 ![Seed stability](charts/seed-stability.svg)
 
+![Training dynamics](charts/training-dynamics.svg)
+
 ![Per-symbol forecast quality](charts/symbol-forecast.svg)
 
-The consensus mapping restored activity: AdamW made `898` trades and SAM `947` across `272` active days. AdamW lost `-35.98%`. SAM's `+22.26%` base point estimate is **not validated**: maximum drawdown was `29.48%`, profit factor `1.029`, only `4/9` months were positive, and the stress bootstrap lower bound was `-1.043` bps/hour.
+The mutual ledger made `935` trades over `272` active days. Its base and stress point estimates were `+33.87%` and `+18.17%`. They are **not validated profitability**: base drawdown was `26.31%`, hourly profit factor `1.036`, ETH represented `72.4%` of absolute symbol P&L, and the stress bootstrap lower bound was `-1.076` bps/hour.
 
 ![Policy economics](charts/policy-economics.svg)
 
@@ -29,4 +31,4 @@ The consensus mapping restored activity: AdamW made `898` trades and SAM `947` a
 
 ![Research progress](charts/research-progress.svg)
 
-Data: [horizons](horizons.csv) | [symbol horizons](symbol-horizons.csv) | [forecast diagnostics](diagnostics.csv) | [seed stability](seed-stability.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-045-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [horizons](horizons.csv) | [symbol horizons](symbol-horizons.csv) | [forecast diagnostics](diagnostics.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-046-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
