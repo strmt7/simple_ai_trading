@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="780" viewBox="0 0 1500 780" role="img" aria-labelledby="title desc">
+<title id="title">Monthly returns reveal regime concentration and reversal</title>
+<desc id="desc">All nine consumed development months are shown; base and stress use identical decisions for each candidate.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">Monthly returns reveal regime concentration and reversal</text>
+<text x="56" y="80" class="subtitle">All nine consumed development months are shown; base and stress use identical decisions for each candidate.</text>
+<text x="120" y="125" class="label">Joint AdamW</text>
+<rect x="120" y="145" width="1310" height="220" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="120" y1="346.7" x2="1430" y2="346.7" class="grid"/><text x="106" y="350.7" text-anchor="end" class="axis">-20%</text>
+<line x1="120" y1="273.3" x2="1430" y2="273.3" class="zero"/><text x="106" y="277.3" text-anchor="end" class="axis">+0%</text>
+<line x1="120" y1="200.0" x2="1430" y2="200.0" class="grid"/><text x="106" y="204.0" text-anchor="end" class="axis">+20%</text>
+<rect x="167.8" y="273.3" width="23" height="47.5" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="194.8" y="273.3" width="23" height="51.3" fill="#b42318" fill-opacity="0.88"/>
+<rect x="313.3" y="273.3" width="23" height="80.0" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="340.3" y="273.3" width="23" height="83.9" fill="#b42318" fill-opacity="0.88"/>
+<rect x="458.9" y="251.4" width="23" height="21.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="485.9" y="256.9" width="23" height="16.4" fill="#b42318" fill-opacity="0.88"/>
+<rect x="604.4" y="273.3" width="23" height="29.6" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="631.4" y="273.3" width="23" height="34.3" fill="#b42318" fill-opacity="0.88"/>
+<rect x="750.0" y="268.9" width="23" height="4.4" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="777.0" y="273.3" width="23" height="2.0" fill="#b42318" fill-opacity="0.88"/>
+<rect x="895.6" y="273.3" width="23" height="17.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="922.6" y="273.3" width="23" height="22.7" fill="#b42318" fill-opacity="0.88"/>
+<rect x="1041.1" y="249.2" width="23" height="24.1" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1068.1" y="254.8" width="23" height="18.5" fill="#b42318" fill-opacity="0.88"/>
+<rect x="1186.7" y="273.3" width="23" height="10.5" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1213.7" y="273.3" width="23" height="15.0" fill="#b42318" fill-opacity="0.88"/>
+<rect x="1332.2" y="273.3" width="23" height="11.4" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1359.2" y="273.3" width="23" height="15.4" fill="#b42318" fill-opacity="0.88"/>
+<text x="120" y="450" class="label">Joint SAM</text>
+<rect x="120" y="470" width="1310" height="220" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="120" y1="671.7" x2="1430" y2="671.7" class="grid"/><text x="106" y="675.7" text-anchor="end" class="axis">-20%</text>
+<line x1="120" y1="598.3" x2="1430" y2="598.3" class="zero"/><text x="106" y="602.3" text-anchor="end" class="axis">+0%</text>
+<line x1="120" y1="525.0" x2="1430" y2="525.0" class="grid"/><text x="106" y="529.0" text-anchor="end" class="axis">+20%</text>
+<rect x="167.8" y="598.3" width="23" height="12.2" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="194.8" y="598.3" width="23" height="16.8" fill="#b42318" fill-opacity="0.88"/>
+<text x="192.8" y="717" text-anchor="middle" class="axis">2024-10</text>
+<rect x="313.3" y="598.3" width="23" height="49.7" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="340.3" y="598.3" width="23" height="54.2" fill="#b42318" fill-opacity="0.88"/>
+<text x="338.3" y="717" text-anchor="middle" class="axis">2024-11</text>
+<rect x="458.9" y="562.6" width="23" height="35.8" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="485.9" y="568.2" width="23" height="30.1" fill="#b42318" fill-opacity="0.88"/>
+<text x="483.9" y="717" text-anchor="middle" class="axis">2024-12</text>
+<rect x="604.4" y="577.4" width="23" height="20.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="631.4" y="583.4" width="23" height="14.9" fill="#b42318" fill-opacity="0.88"/>
+<text x="629.4" y="717" text-anchor="middle" class="axis">2025-01</text>
+<rect x="750.0" y="484.5" width="23" height="113.8" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="777.0" y="490.7" width="23" height="107.6" fill="#b42318" fill-opacity="0.88"/>
+<text x="775.0" y="717" text-anchor="middle" class="axis">2025-02</text>
+<rect x="895.6" y="550.8" width="23" height="47.5" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="922.6" y="557.0" width="23" height="41.3" fill="#b42318" fill-opacity="0.88"/>
+<text x="920.6" y="717" text-anchor="middle" class="axis">2025-03</text>
+<rect x="1041.1" y="598.3" width="23" height="17.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1068.1" y="598.3" width="23" height="22.7" fill="#b42318" fill-opacity="0.88"/>
+<text x="1066.1" y="717" text-anchor="middle" class="axis">2025-04</text>
+<rect x="1186.7" y="598.3" width="23" height="34.3" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1213.7" y="598.3" width="23" height="39.0" fill="#b42318" fill-opacity="0.88"/>
+<text x="1211.7" y="717" text-anchor="middle" class="axis">2025-05</text>
+<rect x="1332.2" y="598.3" width="23" height="4.5" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1359.2" y="598.3" width="23" height="9.1" fill="#b42318" fill-opacity="0.88"/>
+<text x="1357.2" y="717" text-anchor="middle" class="axis">2025-06</text>
+<rect x="120" y="742" width="24" height="12" fill="#2563a6"/><text x="154" y="753" class="note">base</text>
+<rect x="245" y="742" width="24" height="12" fill="#b42318"/><text x="279" y="753" class="note">stress</text>
+<text x="1430" y="753" text-anchor="end" class="note">SAM was positive in only 4/9 months; February 2025 dominated its cumulative point estimate.</text>
+</svg>

@@ -1,33 +1,18 @@
 {
   "ai_evidence": {
     "ai_trade_ablation_permitted": false,
-    "architecture_review_observation": "All three local models violated the requested output schema or produced internally inconsistent rankings in a bounded A/B/C architecture critique. Their text is nonbinding.",
-    "fin_r1_host_result": {
-      "action_match_cases": 11,
-      "average_latency_seconds": 22.420454545454547,
-      "benchmark_contract": "finance-risk-review-adversarial-v6",
-      "external_report_file_sha256": "73d00ef5702ac899f102f1dfee7d713c0e81e15e43c3b43bdb0b541a96e27856",
-      "failure": "cooldown_reconnect_state_uncertain risk_score 0.500 was below the frozen 0.600 minimum",
-      "gpu_residency": "Ollama reported 6.2 GB and 100% GPU on the AMD host",
-      "passed": false,
-      "score": 0.9659090909090909,
-      "valid_json_cases": 11
-    },
-    "future_ai_role": "Asynchronous research and risk review only after a deterministic primary model passes; any uplift requires a separate paired fixed-period test.",
+    "fin_r1_round_44_benchmark_passed": false,
+    "future_ai_work": "Improve the separate schema-constrained risk-review benchmark only after deterministic sequence-model execution; no language model may repair or reinterpret a failed numerical gate.",
+    "language_model_architecture_votes_binding": false,
     "language_model_numerical_forecasts_or_orders_permitted": false,
-    "market_features_or_future_outcomes_supplied_to_language_models": false,
-    "models_examined": [
-      "qwen3:8b",
-      "fino1:8b",
-      "fin-r1:8b"
-    ]
+    "market_features_or_future_outcomes_supplied_to_language_models": false
   },
   "binding": {
-    "binding_sha256": "c6e81e6b64b93079b249569e9aad249929e0aefd51a3014b67deda84f688ee45",
+    "binding_sha256": "f675a82570462b87de4e5ed979b3ac88fea2c6e9dd54a7a60c77d8df52b91410",
     "blobs": [
       {
-        "git_blob_oid": "d433ffb72bf4c52d1cd53b8c5e8979ccc34b120c",
-        "path": "docs/model-research/action-value/round-044-distributional-tcn-design.json"
+        "git_blob_oid": "11021c65a4be0062652c4fbe8608d6f357789c1a",
+        "path": "docs/model-research/action-value/round-045-joint-sam-tcn-design.json"
       },
       {
         "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
@@ -42,6 +27,10 @@
         "path": "src/simple_ai_trading/distributional_tcn_model.py"
       },
       {
+        "git_blob_oid": "719eb3ff77ea01e18f9f462d761b5a41fd9a144a",
+        "path": "src/simple_ai_trading/joint_distributional_tcn_model.py"
+      },
+      {
         "git_blob_oid": "01e3499ac6c10a685644a7351e1864f7f96d39e9",
         "path": "src/simple_ai_trading/stateful_turnover_model.py"
       },
@@ -50,38 +39,1010 @@
         "path": "src/simple_ai_trading/storage.py"
       },
       {
-        "git_blob_oid": "1b318aafeea9110f3af60f0f4e1c17cd8869a70a",
-        "path": "tools/create_round44_distributional_tcn_binding.py"
+        "git_blob_oid": "6014f294cf884a28313140ca7217e473c6ba63f4",
+        "path": "tools/create_round45_joint_sam_tcn_binding.py"
       },
       {
-        "git_blob_oid": "8e2ca554c42b463103a711d73f8bf53fb51e8c0b",
-        "path": "tools/run_distributional_tcn_viability.py"
+        "git_blob_oid": "d83016e9df3320fb63bd06129df1df6d87afe38f",
+        "path": "tools/run_joint_sam_tcn_viability.py"
       },
       {
         "git_blob_oid": "25716078e461d024e6aede56fcba801a613db9b8",
         "path": "tests/test_distributional_tcn_model.py"
+      },
+      {
+        "git_blob_oid": "731d867b2ea1a170d083f16b2cdcd27d70ea1835",
+        "path": "tests/test_joint_distributional_tcn_model.py"
       }
     ],
-    "command": ".venv311\\Scripts\\python.exe tools\\run_distributional_tcn_viability.py --source-certificate <external-certificate.json> --evidence-root <new-external-evidence-root> --compute-backend directml",
-    "design_sha256": "aad01204fd3ede5e0ca6771f273a061e80c4b503095a00399afdfffeb7656442",
-    "implementation_commit": "e0882b5c7fb7cf43d2b8e2d98714a369a62ba21b",
-    "round": 44,
-    "schema_version": "round-044-distributional-tcn-execution-binding-v1",
+    "command": ".venv311\\Scripts\\python.exe tools\\run_joint_sam_tcn_viability.py --source-certificate <external-certificate.json> --evidence-root <new-external-evidence-root> --compute-backend directml",
+    "design_sha256": "f6fb4f9a92f4a14a23671c2c55fadb12a6d9c1586f14018bf60beb15740bb9e5",
+    "implementation_commit": "bfa5cd7faea591aa711ea81fd50525435e357bd6",
+    "round": 45,
+    "schema_version": "round-045-joint-sam-tcn-execution-binding-v1",
     "source_certificate": {
       "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
       "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
       "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
     }
   },
-  "binding_sha256": "c6e81e6b64b93079b249569e9aad249929e0aefd51a3014b67deda84f688ee45",
+  "binding_sha256": "f675a82570462b87de4e5ed979b3ac88fea2c6e9dd54a7a60c77d8df52b91410",
+  "candidates": [
+    {
+      "base": {
+        "active_days": 272,
+        "active_hours": 6479,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -1.8145837893661316,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.5260427357143685,
+          "samples": 2000,
+          "upper_bps": 0.5969936702521732
+        },
+        "candidate_id": "joint_adamw",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.441039017264686,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.4627924208813298,
+        "mean_hourly_portfolio_bps": -0.5526769562832968,
+        "monthly": [
+          {
+            "active_hours": 739,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.8103844467767494,
+            "month": "2024-10",
+            "total_net_return_fraction": -0.12953589894144124
+          },
+          {
+            "active_hours": 712,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -3.3101800131611525,
+            "month": "2024-11",
+            "total_net_return_fraction": -0.21814731340803772
+          },
+          {
+            "active_hours": 741,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.8955913823987539,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.05980201388978079
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.965619543714175,
+            "month": "2025-01",
+            "total_net_return_fraction": -0.08085260032200403
+          },
+          {
+            "active_hours": 671,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.41027993658587103,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.01209493201715861
+          },
+          {
+            "active_hours": 738,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.46822257612674967,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.04883405043666167
+          },
+          {
+            "active_hours": 717,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 1.0179529212553193,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.06574214250609312
+          },
+          {
+            "active_hours": 730,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.2860188357779043,
+            "month": "2025-05",
+            "total_net_return_fraction": -0.02868727830716411
+          },
+          {
+            "active_hours": 687,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.39223734332360927,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.031007934990473718
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 3,
+        "profit_factor": 0.9650150008423851,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": -1545.5375232351955,
+          "ETHUSDT": -392.64036293451943,
+          "SOLUSDT": -1669.6972844476522
+        },
+        "total_net_return_fraction": -0.35983093616802286,
+        "trades": 898,
+        "trades_by_symbol": {
+          "BTCUSDT": 300,
+          "ETHUSDT": 266,
+          "SOLUSDT": 332
+        }
+      },
+      "candidate_id": "joint_adamw",
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "forecast_gate_failed",
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_six_positive_evaluation_months",
+          "maximum_drawdown_exceeds_ten_percent",
+          "profit_factor_below_1_05"
+        ],
+        "selection_contaminated": true
+      },
+      "fixed_ledger_under_stress": true,
+      "forecast_diagnostics": {
+        "candidate_id": "joint_adamw",
+        "gate": {
+          "coverage_passed": true,
+          "horizons_with_required_pinball_skill": 4,
+          "horizons_with_required_rank_stability": 4,
+          "minimum_pairwise_seed_median_prediction_spearman": 0.18896296003492963,
+          "passed": false,
+          "positive_symbol_horizon_counts": {
+            "BTCUSDT": 4,
+            "ETHUSDT": 4,
+            "SOLUSDT": 4
+          },
+          "quantile_crossing_count": 0,
+          "reasons": [
+            "seed_prediction_stability_below_0_5"
+          ]
+        },
+        "horizons": [
+          {
+            "baseline_pinball_loss_bps": 19.198658124282197,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.4948937908496732,
+            "coverage_80": 0.8043811274509803,
+            "evaluation_month_count": 9,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 18.479358041745126,
+            "pinball_skill": 0.037466164451739004,
+            "pooled_median_spearman": 0.0275234749445709,
+            "positive_monthly_median_spearman_count": 6,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 38.9906155782522,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.4852941176470588,
+            "coverage_80": 0.8097937091503268,
+            "evaluation_month_count": 9,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 37.670583522771025,
+            "pinball_skill": 0.033855122210931454,
+            "pooled_median_spearman": 0.03676128122567119,
+            "positive_monthly_median_spearman_count": 7,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 70.00329828268877,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.49693627450980393,
+            "coverage_80": 0.8093341503267973,
+            "evaluation_month_count": 9,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 67.75992543744519,
+            "pinball_skill": 0.03204667351792978,
+            "pooled_median_spearman": 0.06650673519778448,
+            "positive_monthly_median_spearman_count": 8,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 98.7583674619629,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5076082516339869,
+            "coverage_80": 0.8143382352941176,
+            "evaluation_month_count": 9,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 97.19607097272262,
+            "pinball_skill": 0.01581938350532175,
+            "pooled_median_spearman": 0.04448712203203892,
+            "positive_monthly_median_spearman_count": 7,
+            "symbol": "ALL"
+          }
+        ],
+        "symbol_horizons": [
+          {
+            "baseline_pinball_loss_bps": 12.951931615522726,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5229779411764706,
+            "coverage_80": 0.8268995098039216,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 12.54568196708875,
+            "pinball_skill": 0.03136595069318393,
+            "pooled_median_spearman": 0.022613569359321652,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 19.558881407146508,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.43106617647058826,
+            "coverage_80": 0.742953431372549,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 19.026447214752245,
+            "pinball_skill": 0.027222118755713676,
+            "pooled_median_spearman": 0.031837480106616974,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 24.458004385375368,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5306372549019608,
+            "coverage_80": 0.8432904411764706,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 23.865944943394382,
+            "pinball_skill": 0.024207185208250603,
+            "pooled_median_spearman": 0.027871076070666505,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 26.39012420270611,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.49984681372549017,
+            "coverage_80": 0.8216911764705882,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 25.573670693058407,
+            "pinball_skill": 0.030937842632964285,
+            "pooled_median_spearman": 0.029956873026488317,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 40.428950860122036,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.42830882352941174,
+            "coverage_80": 0.7558210784313726,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 39.33489392665619,
+            "pinball_skill": 0.027061224943756623,
+            "pooled_median_spearman": 0.03051421991974282,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 48.863909521027004,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5277267156862745,
+            "coverage_80": 0.8518688725490197,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 48.10318594859851,
+            "pinball_skill": 0.015568209336609518,
+            "pooled_median_spearman": 0.04666705764819852,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 46.57864829551893,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.514859068627451,
+            "coverage_80": 0.8295036764705882,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 45.099033598727885,
+            "pinball_skill": 0.03176594321508874,
+            "pooled_median_spearman": 0.04558263498294797,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 73.3425614541584,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.44699754901960786,
+            "coverage_80": 0.7640931372549019,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 71.84813842845799,
+            "pinball_skill": 0.02037593173827834,
+            "pooled_median_spearman": 0.05975518788672858,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 87.38773982074214,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5289522058823529,
+            "coverage_80": 0.8344056372549019,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 86.33260428514971,
+            "pinball_skill": 0.012074182691494517,
+            "pooled_median_spearman": 0.080946579220836,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 65.28675534154505,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5088848039215687,
+            "coverage_80": 0.8480392156862745,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 64.31553200917632,
+            "pinball_skill": 0.014876268965853923,
+            "pooled_median_spearman": 0.063527537825796,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 103.79963858867528,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.46691176470588236,
+            "coverage_80": 0.765625,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 102.99495707218784,
+            "pinball_skill": 0.0077522574011662515,
+            "pooled_median_spearman": 0.031245826798565902,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 123.25372060394237,
+            "candidate_id": "joint_adamw",
+            "coverage_50": 0.5470281862745098,
+            "coverage_80": 0.8293504901960784,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 124.27772383680367,
+            "pinball_skill": -0.008308091859975386,
+            "pooled_median_spearman": 0.03189343139652349,
+            "symbol": "SOLUSDT"
+          }
+        ]
+      },
+      "models": [
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_pinball": 0.3689637347217731,
+          "best_epoch": 4,
+          "bytes": 476034,
+          "candidate_id": "joint_adamw",
+          "epochs": 16,
+          "parameter_count": 116668,
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_adamw_seed_4501.pt",
+          "reload_max_abs_prediction_error": 0.0,
+          "seed": 4501,
+          "sha256": "6fa1ea1efeaa0f3b5bdb02f5c13e8e9d1e0db238017b68ee9865aaa5ce6e0a24",
+          "warning_count": 0
+        },
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_pinball": 0.36947007668572635,
+          "best_epoch": 3,
+          "bytes": 476034,
+          "candidate_id": "joint_adamw",
+          "epochs": 15,
+          "parameter_count": 116668,
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_adamw_seed_4502.pt",
+          "reload_max_abs_prediction_error": 0.0,
+          "seed": 4502,
+          "sha256": "8b8fed538706deb42989fcb3d745de9c2b213a60f577379fa23bbe4144636bdc",
+          "warning_count": 0
+        },
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_pinball": 0.36902374539631605,
+          "best_epoch": 4,
+          "bytes": 476034,
+          "candidate_id": "joint_adamw",
+          "epochs": 16,
+          "parameter_count": 116668,
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_adamw_seed_4503.pt",
+          "reload_max_abs_prediction_error": 0.0,
+          "seed": 4503,
+          "sha256": "124d0b0197527cd4505755b13a0a2541ad901c2586a12c0f12568a16b30f111c",
+          "warning_count": 0
+        }
+      ],
+      "prediction_files": [
+        {
+          "bytes": 22065968,
+          "name": "joint_adamw_seed_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_adamw_seed_predictions_bps.npy",
+          "sha256": "09c29cacf01f286c39fc86652c976e9d75663ded840e1039436a20fe3c31c088"
+        },
+        {
+          "bytes": 7355408,
+          "name": "joint_adamw_ensemble_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_adamw_ensemble_predictions_bps.npy",
+          "sha256": "a022d406567b63c59e46241c7f3f2428c9faeb201c4e3e6e1fd1b72cf6cfdb0d"
+        }
+      ],
+      "stress": {
+        "active_days": 272,
+        "active_hours": 6479,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -1.9512741807171328,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.7348313545221363,
+          "samples": 2000,
+          "upper_bps": 0.3981503690542408
+        },
+        "candidate_id": "joint_adamw",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.4779023477055896,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.43959881228412756,
+        "mean_hourly_portfolio_bps": -0.7360919889630355,
+        "monthly": [
+          {
+            "active_hours": 739,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.9707787120097238,
+            "month": "2024-10",
+            "total_net_return_fraction": -0.139865246051871
+          },
+          {
+            "active_hours": 712,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -3.502772605753745,
+            "month": "2024-11",
+            "total_net_return_fraction": -0.2289208135415164
+          },
+          {
+            "active_hours": 741,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.7047311673449906,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.04485851419228748
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.1528955293772576,
+            "month": "2025-01",
+            "total_net_return_fraction": -0.09357321510396366
+          },
+          {
+            "active_hours": 671,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.21186723817317293,
+            "month": "2025-02",
+            "total_net_return_fraction": -0.00130844636756966
+          },
+          {
+            "active_hours": 738,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.6554985617898316,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.06199978875422929
+          },
+          {
+            "active_hours": 717,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.8188788471812454,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.05056177903472525
+          },
+          {
+            "active_hours": 730,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.45716578918292183,
+            "month": "2025-05",
+            "total_net_return_fraction": -0.040975969292152636
+          },
+          {
+            "active_hours": 687,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.5569883011780155,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.04206565222958081
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 2,
+        "profit_factor": 0.9536969788215666,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": -1945.5375232351964,
+          "ETHUSDT": -747.3070296011858,
+          "SOLUSDT": -2112.3639511143165
+        },
+        "total_net_return_fraction": -0.432093502537517,
+        "trades": 898,
+        "trades_by_symbol": {
+          "BTCUSDT": 300,
+          "ETHUSDT": 266,
+          "SOLUSDT": 332
+        }
+      },
+      "trade_count": 898,
+      "trade_ledger_sha256": "7202fb6152047d097cb6a373129dfdcd6dc7a899580121cb75c2b16abbb19a8c"
+    },
+    {
+      "base": {
+        "active_days": 272,
+        "active_hours": 6421,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.7411560823474631,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.4330172987728374,
+          "samples": 2000,
+          "upper_bps": 1.714929838344678
+        },
+        "candidate_id": "joint_sam",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.2947723693493568,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.3637982998744224,
+        "mean_hourly_portfolio_bps": 0.43346459937206394,
+        "monthly": [
+          {
+            "active_hours": 723,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.3962985076891479,
+            "month": "2024-10",
+            "total_net_return_fraction": -0.033197123278472906
+          },
+          {
+            "active_hours": 708,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -1.9151841841258659,
+            "month": "2024-11",
+            "total_net_return_fraction": -0.13541287587264428
+          },
+          {
+            "active_hours": 732,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.345436461591145,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.09756268463752371
+          },
+          {
+            "active_hours": 739,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.8985682327073319,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.056985443263035895
+          },
+          {
+            "active_hours": 669,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 4.235178272984552,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.31049906469292776
+          },
+          {
+            "active_hours": 741,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.8501251913760677,
+            "month": "2025-03",
+            "total_net_return_fraction": 0.12962380765987547
+          },
+          {
+            "active_hours": 720,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -0.5689669421701519,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.04881284284766696
+          },
+          {
+            "active_hours": 735,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.2263022807216448,
+            "month": "2025-05",
+            "total_net_return_fraction": -0.09345637918626648
+          },
+          {
+            "active_hours": 654,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.0957065117469602,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.012290344294019095
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 4,
+        "profit_factor": 1.0287274129874915,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": 908.0195496538652,
+          "ETHUSDT": 1029.4243711580832,
+          "SOLUSDT": 892.2129838888836
+        },
+        "total_net_return_fraction": 0.22264273809039992,
+        "trades": 947,
+        "trades_by_symbol": {
+          "BTCUSDT": 281,
+          "ETHUSDT": 292,
+          "SOLUSDT": 374
+        }
+      },
+      "candidate_id": "joint_sam",
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "forecast_gate_failed",
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_six_positive_evaluation_months",
+          "maximum_drawdown_exceeds_ten_percent",
+          "profit_factor_below_1_05"
+        ],
+        "selection_contaminated": true
+      },
+      "fixed_ledger_under_stress": true,
+      "forecast_diagnostics": {
+        "candidate_id": "joint_sam",
+        "gate": {
+          "coverage_passed": true,
+          "horizons_with_required_pinball_skill": 4,
+          "horizons_with_required_rank_stability": 4,
+          "minimum_pairwise_seed_median_prediction_spearman": 0.18098242493308747,
+          "passed": false,
+          "positive_symbol_horizon_counts": {
+            "BTCUSDT": 4,
+            "ETHUSDT": 4,
+            "SOLUSDT": 4
+          },
+          "quantile_crossing_count": 0,
+          "reasons": [
+            "seed_prediction_stability_below_0_5"
+          ]
+        },
+        "horizons": [
+          {
+            "baseline_pinball_loss_bps": 19.198658124282197,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.4788602941176471,
+            "coverage_80": 0.790390114379085,
+            "evaluation_month_count": 9,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 18.469036148535537,
+            "pinball_skill": 0.0380038006314537,
+            "pooled_median_spearman": 0.031519133175593204,
+            "positive_monthly_median_spearman_count": 6,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 38.9906155782522,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.4619076797385621,
+            "coverage_80": 0.7952920751633987,
+            "evaluation_month_count": 9,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 37.68644666392658,
+            "pinball_skill": 0.03344827710422327,
+            "pooled_median_spearman": 0.021536637193004825,
+            "positive_monthly_median_spearman_count": 6,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 70.00329828268877,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.4765114379084967,
+            "coverage_80": 0.7920751633986928,
+            "evaluation_month_count": 9,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 67.8537283154541,
+            "pinball_skill": 0.030706695541033335,
+            "pooled_median_spearman": 0.0641605169063605,
+            "positive_monthly_median_spearman_count": 7,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 98.7583674619629,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.49463848039215685,
+            "coverage_80": 0.8037683823529411,
+            "evaluation_month_count": 9,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 97.27474161458964,
+            "pinball_skill": 0.015022786276258415,
+            "pooled_median_spearman": 0.03901115280720715,
+            "positive_monthly_median_spearman_count": 6,
+            "symbol": "ALL"
+          }
+        ],
+        "symbol_horizons": [
+          {
+            "baseline_pinball_loss_bps": 12.951931615522726,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.5006127450980392,
+            "coverage_80": 0.8131127450980392,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 12.530286786556598,
+            "pinball_skill": 0.03255459042578579,
+            "pooled_median_spearman": 0.0265591159151757,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 19.558881407146508,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.4180453431372549,
+            "coverage_80": 0.7280943627450981,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 19.06303363428641,
+            "pinball_skill": 0.025351540435176623,
+            "pooled_median_spearman": 0.021038082973091454,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 24.458004385375368,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.5179227941176471,
+            "coverage_80": 0.8299632352941176,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 23.81378802476361,
+            "pinball_skill": 0.026339694378212042,
+            "pooled_median_spearman": 0.04066893200456024,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 26.39012420270611,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.47855392156862747,
+            "coverage_80": 0.8123468137254902,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 25.601062297359263,
+            "pinball_skill": 0.029899893584659054,
+            "pooled_median_spearman": 0.0043458243186200824,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 40.428950860122036,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.40487132352941174,
+            "coverage_80": 0.7383578431372549,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 39.47232061933762,
+            "pinball_skill": 0.023662010030737757,
+            "pooled_median_spearman": 0.020897625151098664,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 48.863909521027004,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.5022977941176471,
+            "coverage_80": 0.835171568627451,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 47.985957075082865,
+            "pinball_skill": 0.017967298452988945,
+            "pooled_median_spearman": 0.03598570080478623,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 46.57864829551893,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.49525122549019607,
+            "coverage_80": 0.8175551470588235,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 45.183357335028454,
+            "pinball_skill": 0.029955591489861044,
+            "pooled_median_spearman": 0.033663366336291994,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 73.3425614541584,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.42386642156862747,
+            "coverage_80": 0.7382046568627451,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 72.08862184699912,
+            "pinball_skill": 0.017097025005637922,
+            "pooled_median_spearman": 0.06291873405830582,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 87.38773982074214,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.5104166666666666,
+            "coverage_80": 0.8204656862745098,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 86.28920576433472,
+            "pinball_skill": 0.012570802937126313,
+            "pooled_median_spearman": 0.0825297758088397,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 65.28675534154505,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.5029105392156863,
+            "coverage_80": 0.8406862745098039,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 64.45609339960309,
+            "pinball_skill": 0.012723284188291828,
+            "pooled_median_spearman": 0.049547676594669174,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 103.79963858867528,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.45128676470588236,
+            "coverage_80": 0.7576593137254902,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 103.0659470850898,
+            "pinball_skill": 0.007068343527599885,
+            "pooled_median_spearman": 0.032160494461442146,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 123.25372060394237,
+            "candidate_id": "joint_sam",
+            "coverage_50": 0.5297181372549019,
+            "coverage_80": 0.8129595588235294,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 124.302184359076,
+            "pinball_skill": -0.008506548524427116,
+            "pooled_median_spearman": 0.026305254608753135,
+            "symbol": "SOLUSDT"
+          }
+        ]
+      },
+      "models": [
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_pinball": 0.36876792744702347,
+          "best_epoch": 5,
+          "bytes": 475970,
+          "candidate_id": "joint_sam",
+          "epochs": 17,
+          "parameter_count": 116668,
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_sam_seed_4501.pt",
+          "reload_max_abs_prediction_error": 0.0,
+          "seed": 4501,
+          "sha256": "29f8e4fee0b72551f6a0224de03add192234ce71f4918968460b2595bf0eabad",
+          "warning_count": 0
+        },
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_pinball": 0.36867899888341094,
+          "best_epoch": 5,
+          "bytes": 475970,
+          "candidate_id": "joint_sam",
+          "epochs": 17,
+          "parameter_count": 116668,
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_sam_seed_4502.pt",
+          "reload_max_abs_prediction_error": 0.0,
+          "seed": 4502,
+          "sha256": "5dcb970d94cd761d6e3eea3fa794fc849f91ae72fbce91da7f012e3667345451",
+          "warning_count": 0
+        },
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_pinball": 0.3682615400419676,
+          "best_epoch": 8,
+          "bytes": 475970,
+          "candidate_id": "joint_sam",
+          "epochs": 20,
+          "parameter_count": 116668,
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_sam_seed_4503.pt",
+          "reload_max_abs_prediction_error": 0.0,
+          "seed": 4503,
+          "sha256": "6e40b8fe0f7fed3f2ecfa260e75152a4e2c7cec5a2713d1e2bcef506095649a3",
+          "warning_count": 0
+        }
+      ],
+      "prediction_files": [
+        {
+          "bytes": 22065968,
+          "name": "joint_sam_seed_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_sam_seed_predictions_bps.npy",
+          "sha256": "9bbc8766a17d33ce8fedd2af7d9ba2e2e67e8fbcbf7608cc3d181a48084e3fb2"
+        },
+        {
+          "bytes": 7355408,
+          "name": "joint_sam_ensemble_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_sam_ensemble_predictions_bps.npy",
+          "sha256": "e96eac8944fa617fb0c692712a18ade337b8f3f9de533cb8c09b8ddc5b4e4fb4"
+        }
+      ],
+      "stress": {
+        "active_days": 272,
+        "active_hours": 6421,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -1.0431353677157627,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.23671980775674273,
+          "samples": 2000,
+          "upper_bps": 1.5555263201228562
+        },
+        "candidate_id": "joint_sam",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.3159899895584851,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.40848438126057646,
+        "mean_hourly_portfolio_bps": 0.2400413967576848,
+        "monthly": [
+          {
+            "active_hours": 723,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.5719257478325169,
+            "month": "2024-10",
+            "total_net_return_fraction": -0.04574962290278917
+          },
+          {
+            "active_hours": 708,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -2.116110110051791,
+            "month": "2024-11",
+            "total_net_return_fraction": -0.14782911608290006
+          },
+          {
+            "active_hours": 732,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.1545762465373817,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.0820834320064725
+          },
+          {
+            "active_hours": 739,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.6906829280478347,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.04076367019525762
+          },
+          {
+            "active_hours": 669,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 4.041725892032171,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.2935790410334145
+          },
+          {
+            "active_hours": 741,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.6476162308025906,
+            "month": "2025-03",
+            "total_net_return_fraction": 0.11274523490591326
+          },
+          {
+            "active_hours": 720,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -0.7624854606886711,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.061979897436006404
+          },
+          {
+            "active_hours": 735,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.419850667818419,
+            "month": "2025-05",
+            "total_net_return_fraction": -0.10641686926790461
+          },
+          {
+            "active_hours": 654,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.2776988489117109,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.024732345965833513
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 4,
+        "profit_factor": 1.0158007448170292,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": 533.3528829871988,
+          "ETHUSDT": 640.0910378247501,
+          "SOLUSDT": 393.54631722221814
+        },
+        "total_net_return_fraction": 0.07760983071861705,
+        "trades": 947,
+        "trades_by_symbol": {
+          "BTCUSDT": 281,
+          "ETHUSDT": 292,
+          "SOLUSDT": 374
+        }
+      },
+      "trade_count": 947,
+      "trade_ledger_sha256": "efd1a494292a34dc4d7d1e6a36e6a90ae4f5218d087fdd4124f9757243a293b3"
+    }
+  ],
   "claims": {
     "ai_improvement_established": false,
-    "economic_gate_passed": false,
-    "forecast_gate_passed": false,
+    "candidate_economic_gate_pass_count": 0,
+    "candidate_forecast_gate_pass_count": 0,
     "leverage_authorized": false,
+    "optimizer_ablation_gate_passed": false,
     "profitability_established": false,
     "promotion_authorized": false,
-    "reason": "All Round 44 roles are consumed development evidence. Passing cannot authorize trading or profitability claims.",
+    "reason": "Every Round 45 role is consumed development evidence. No result can authorize trading or a profitability, AI, or SAM improvement claim.",
+    "sam_improvement_established": false,
     "selection_confirmation_established": false,
     "testnet_or_live_trading_authorized": false
   },
@@ -89,13 +1050,26 @@
     "all_artifacts_exact_reload": true,
     "backend_device": "privateuseone:0",
     "backend_kind": "directml",
-    "model_artifacts": 3,
+    "model_artifacts": 6,
     "numpy_version": "2.2.6",
     "preflight": {
       "backend_device": "privateuseone:0",
       "backend_kind": "directml",
+      "candidate_updates": [
+        {
+          "candidate_id": "joint_adamw",
+          "first_loss": 0.3524371385574341,
+          "update_loss": 0.3524371385574341,
+          "warning_count": 0
+        },
+        {
+          "candidate_id": "joint_sam",
+          "first_loss": 0.35218000411987305,
+          "update_loss": 0.3528028428554535,
+          "warning_count": 0
+        }
+      ],
       "cpu_fallback_warning_count": 0,
-      "preflight_loss": 0.356893926858902,
       "torch_directml_version": "unknown",
       "torch_version": "2.4.1+cpu",
       "warning_count": 0
@@ -107,7 +1081,39 @@
   },
   "dataset": {
     "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
-    "feature_count": 71,
+    "derived_cache": [
+      {
+        "bytes": 245304,
+        "name": "timestamps_ms.npy",
+        "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\timestamps_ms.npy",
+        "sha256": "b85c541d78c29f34a12b75f42656cf09ae4c6a47dcef5334c4d60d2e90e6591f"
+      },
+      {
+        "bytes": 26111372,
+        "name": "features.npy",
+        "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\features.npy",
+        "sha256": "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14"
+      },
+      {
+        "bytes": 367892,
+        "name": "hourly_return_bps.npy",
+        "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\hourly_return_bps.npy",
+        "sha256": "277cb6022dddefe1ba52c83a8827ec45e41f45fb877f7db59599561373b10dbf"
+      },
+      {
+        "bytes": 1471184,
+        "name": "forward_return_bps.npy",
+        "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\forward_return_bps.npy",
+        "sha256": "864d02e1f1ef5bae8f3b51e16ae90e1077ba8852cb67ea0a766a06ec956b9ce7"
+      },
+      {
+        "bytes": 3159,
+        "name": "metadata.json",
+        "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\metadata.json",
+        "sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135"
+      }
+    ],
+    "feature_count_per_symbol": 71,
     "feature_names": [
       "target_return_1m_bps",
       "target_return_3m_bps",
@@ -182,9 +1188,9 @@
       "symbol_solusdt"
     ],
     "first_timestamp_utc": "2022-01-01T00:00:00+00:00",
+    "joint_input_channels": 213,
     "last_timestamp_utc": "2025-06-30T22:00:00+00:00",
     "matrix_bytes": 27950064,
-    "predecessor_dataset_sha256": "26d202c0e5279e28aa18d118e86b1f3e0c49580e5434f12c575fbff1397a4f22",
     "roles": [
       {
         "end": "2024-03-31",
@@ -231,7 +1237,9 @@
         "timestamps": 6528
       }
     ],
+    "round44_equivalent_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
     "rows": 91941,
+    "source_hourly_dataset_sha256": "26d202c0e5279e28aa18d118e86b1f3e0c49580e5434f12c575fbff1397a4f22",
     "symbols": [
       "BTCUSDT",
       "ETHUSDT",
@@ -252,234 +1260,14 @@
     ],
     "timestamps": 30647
   },
-  "descriptive_policy": {
-    "base": {
-      "active_days": 1,
-      "active_hours": 12,
-      "bootstrap_mean_hourly_portfolio_bps": {
-        "block_hours": 168,
-        "lower_bps": -0.018158113083716943,
-        "lower_quantile": 0.025,
-        "median_bps": -0.004882478642161765,
-        "samples": 2000,
-        "upper_bps": 0.0
-      },
-      "hours": 6528,
-      "maximum_drawdown_fraction": 0.009504700258036514,
-      "maximum_single_symbol_fraction_of_absolute_net_pnl": 1.0,
-      "mean_hourly_portfolio_bps": -0.004882478642161765,
-      "monthly": [
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2024-10",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 720,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2024-11",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2024-12",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-01",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 12,
-          "hours": 672,
-          "mean_hourly_portfolio_bps": -0.047429792523857144,
-          "month": "2025-02",
-          "total_net_return_fraction": -0.0032144216399929704
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-03",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 720,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-04",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-05",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 696,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-06",
-          "total_net_return_fraction": 0.0
-        }
-      ],
-      "one_way_cost_bps": 6.0,
-      "positive_months": 0,
-      "profit_factor": 0.7190301100982109,
-      "scenario": "base",
-      "symbol_net_bps": {
-        "BTCUSDT": -31.872820576032,
-        "ETHUSDT": 0.0,
-        "SOLUSDT": 0.0
-      },
-      "total_net_return_fraction": -0.0032144216399929704,
-      "trades": 1,
-      "trades_by_symbol": {
-        "BTCUSDT": 1,
-        "ETHUSDT": 0,
-        "SOLUSDT": 0
-      }
-    },
-    "fixed_ledger_under_stress": true,
-    "stress": {
-      "active_days": 1,
-      "active_hours": 12,
-      "bootstrap_mean_hourly_portfolio_bps": {
-        "block_hours": 168,
-        "lower_bps": -0.018354866764769932,
-        "lower_quantile": 0.025,
-        "median_bps": -0.005086727008174837,
-        "samples": 2000,
-        "upper_bps": 0.0
-      },
-      "hours": 6528,
-      "maximum_drawdown_fraction": 0.009504700258036625,
-      "maximum_single_symbol_fraction_of_absolute_net_pnl": 1.0,
-      "mean_hourly_portfolio_bps": -0.005086727008174837,
-      "monthly": [
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2024-10",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 720,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2024-11",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2024-12",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-01",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 12,
-          "hours": 672,
-          "mean_hourly_portfolio_bps": -0.04941391950798413,
-          "month": "2025-02",
-          "total_net_return_fraction": -0.0033472852794672603
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-03",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 720,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-04",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 744,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-05",
-          "total_net_return_fraction": 0.0
-        },
-        {
-          "active_hours": 0,
-          "hours": 696,
-          "mean_hourly_portfolio_bps": 0.0,
-          "month": "2025-06",
-          "total_net_return_fraction": 0.0
-        }
-      ],
-      "one_way_cost_bps": 8.0,
-      "positive_months": 0,
-      "profit_factor": 0.7089865733027758,
-      "scenario": "stress",
-      "symbol_net_bps": {
-        "BTCUSDT": -33.206153909365334,
-        "ETHUSDT": 0.0,
-        "SOLUSDT": 0.0
-      },
-      "total_net_return_fraction": -0.0033472852794672603,
-      "trades": 1,
-      "trades_by_symbol": {
-        "BTCUSDT": 1,
-        "ETHUSDT": 0,
-        "SOLUSDT": 0
-      }
-    },
-    "trade_count": 1,
-    "trade_ledger_sha256": "e54d75486f88300a4f565808efeb075a2ef97177003a7cd1f44d3c26d3b6ddc1"
-  },
   "design": {
     "ai_contract": {
       "ai_trade_ablation_permitted": false,
-      "architecture_review_observation": "All three local models violated the requested output schema or produced internally inconsistent rankings in a bounded A/B/C architecture critique. Their text is nonbinding.",
-      "fin_r1_host_result": {
-        "action_match_cases": 11,
-        "average_latency_seconds": 22.420454545454547,
-        "benchmark_contract": "finance-risk-review-adversarial-v6",
-        "external_report_file_sha256": "73d00ef5702ac899f102f1dfee7d713c0e81e15e43c3b43bdb0b541a96e27856",
-        "failure": "cooldown_reconnect_state_uncertain risk_score 0.500 was below the frozen 0.600 minimum",
-        "gpu_residency": "Ollama reported 6.2 GB and 100% GPU on the AMD host",
-        "passed": false,
-        "score": 0.9659090909090909,
-        "valid_json_cases": 11
-      },
-      "future_ai_role": "Asynchronous research and risk review only after a deterministic primary model passes; any uplift requires a separate paired fixed-period test.",
+      "fin_r1_round_44_benchmark_passed": false,
+      "future_ai_work": "Improve the separate schema-constrained risk-review benchmark only after deterministic sequence-model execution; no language model may repair or reinterpret a failed numerical gate.",
+      "language_model_architecture_votes_binding": false,
       "language_model_numerical_forecasts_or_orders_permitted": false,
-      "market_features_or_future_outcomes_supplied_to_language_models": false,
-      "models_examined": [
-        "qwen3:8b",
-        "fino1:8b",
-        "fin-r1:8b"
-      ]
-    },
-    "baseline_contract": {
-      "primary": "Training-role unconditional empirical quantile for each horizon, applied unchanged to every later row.",
-      "same_targets_roles_and_metrics_required": true,
-      "tabular_comparator": "OpenCL LightGBM quantile models may run only after the causal TCN forecast gate passes; this prevents unnecessary model proliferation.",
-      "zero_return": "A zero forecast at every quantile and horizon."
+      "market_features_or_future_outcomes_supplied_to_language_models": false
     },
     "chronological_roles": {
       "calibration": {
@@ -494,7 +1282,7 @@
         "end_inclusive": "2025-06-30T23:59:59Z",
         "start": "2024-10-01T00:00:00Z"
       },
-      "purpose": "Architecture development only; every role has been consumed by prior research and cannot support promotion.",
+      "purpose": "Architecture development only; no role can support promotion.",
       "selection_contaminated": true,
       "training": {
         "end_inclusive": "2024-03-31T23:59:59Z",
@@ -502,20 +1290,19 @@
       }
     },
     "data_contract": {
-      "causal_feature_count": 71,
+      "causal_features_per_symbol": 71,
       "decision_interval_seconds": 3600,
-      "feature_history_only": true,
-      "feature_source_resolution_seconds": 60,
-      "forward_return_definition": "For each horizon, compound the contiguous one-hour long returns net of settled funding but before transition costs: 10000 * (product(1 + hourly_net_fraction) - 1).",
-      "funding": "Only funding settled inside each future holding interval enters the return target.",
-      "missing_or_nonfinite_policy": "Reject the run; no interpolation, synthetic values, or row-local imputation is permitted.",
-      "role_boundary_rule": "A row is admitted only when its complete 24-hour target path ends strictly inside the same role.",
+      "derived_cache": "Write one hash-manifested external NumPy cache of the verified Round 44-equivalent feature and target arrays for future diagnosis; no cache values may replace or alter the source identity.",
+      "joint_input_channels": 213,
+      "predecessor_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
       "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+      "source_resolution_seconds": 60,
       "symbols": [
         "BTCUSDT",
         "ETHUSDT",
         "SOLUSDT"
       ],
+      "target_and_role_contract": "Identical to the hash-bound Round 44 compounded hourly return, settled-funding, completeness, and role-boundary contract.",
       "target_horizons_hours": [
         1,
         4,
@@ -532,10 +1319,10 @@
     },
     "descriptive_policy_contract": {
       "base_one_way_transition_cost_bps": 6.0,
-      "entry_rule": "When flat, select the horizon and side with the largest positive lower-quartile return after a 6 bps entry and 6 bps terminal exit. Long uses q25; short uses negative q75.",
+      "entry_rule": "When flat, evaluate every horizon. Long score is the minimum of the three seed median forecasts minus 12 bps round-trip cost. Short score is the negative maximum seed median forecast minus 12 bps. Enter only the side and horizon with the largest strictly positive score.",
       "forced_quota": false,
       "funding_cash_flows_included": true,
-      "holding_rule": "Hold the selected side for exactly the selected 1, 4, 12, or 24 hour horizon, then flatten. No overlapping position is permitted within a symbol.",
+      "holding_rule": "Hold for exactly the selected 1, 4, 12, or 24-hour horizon, then flatten. No overlapping position is permitted within a symbol.",
       "leverage": 1.0,
       "maker_execution_assumption": false,
       "position_sleeves": "Fixed one-third notional sleeve per symbol.",
@@ -544,12 +1331,12 @@
         0,
         1
       ],
-      "reason": "Measure activity and after-cost failure modes without representing them as selected trades or promotion evidence.",
-      "runs_even_if_forecast_gate_fails": true,
+      "rationale": "Every seed must estimate positive after-cost median utility in the same direction; seed disagreement remains an explicit epistemic-risk veto while the return lower quartile is no longer misused as the expected-value forecast.",
+      "runs_for_each_candidate_even_if_forecast_gate_fails": true,
       "stress_one_way_transition_cost_bps": 8.0,
       "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect horizons, sides, or timestamps under stress."
     },
-    "design_sha256": "aad01204fd3ede5e0ca6771f273a061e80c4b503095a00399afdfffeb7656442",
+    "design_sha256": "f6fb4f9a92f4a14a23671c2c55fadb12a6d9c1586f14018bf60beb15740bb9e5",
     "economic_gate": {
       "all_three_symbols_must_have_activity": true,
       "bootstrap_replicates": 2000,
@@ -557,15 +1344,17 @@
       "maximum_drawdown_fraction": 0.1,
       "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
       "minimum_active_days": 90,
+      "minimum_closed_trades": 180,
       "minimum_positive_evaluation_months": 6,
       "minimum_profit_factor": 1.05,
-      "one_sided_familywise_lower_quantile": 0.025,
-      "promotion_result": "Still denied because the complete Round 44 evaluation is selection-contaminated development evidence.",
-      "required_only_if_forecast_gate_passes": true,
+      "one_sided_familywise_lower_quantile": 0.0125,
+      "promotion_result": "Still denied because the complete Round 45 evaluation is selection-contaminated development evidence.",
+      "required_only_if_corresponding_forecast_gate_passes": true,
       "stress_mean_hourly_portfolio_bps_lower_bound_must_exceed": 0.0
     },
     "forecast_gate": {
       "all_finite_and_complete": true,
+      "applied_separately_to_each_candidate": true,
       "central_50_interval_coverage_bounds": [
         0.42,
         0.58
@@ -574,20 +1363,21 @@
         0.72,
         0.88
       ],
-      "gate_failure_action": "Continue only to explicitly labeled descriptive policy diagnostics; deny tabular expansion, AI action review, promotion, leverage, and untouched data.",
+      "gate_failure_action": "Continue only to labeled descriptive consensus-policy diagnostics; deny AI action review, promotion, leverage, and untouched data.",
       "minimum_evaluation_months_with_positive_median_spearman_per_counted_horizon": 5,
       "minimum_horizons_with_positive_pinball_skill_vs_unconditional": 3,
       "minimum_horizons_with_positive_pooled_median_spearman": 3,
       "minimum_pairwise_seed_median_prediction_correlation": 0.5,
       "minimum_pinball_skill_per_counted_horizon": 0.01,
+      "minimum_positive_symbol_horizons_per_symbol": 2,
       "quantile_crossing_count": 0
     },
     "governance": {
       "fee_or_slippage_reduction_permitted": false,
       "leverage_permitted": false,
       "manual_graph_or_result_editing_permitted": false,
-      "post_outcome_parameter_or_seed_selection_permitted": false,
-      "profitability_or_ai_uplift_claim_permitted": false,
+      "post_outcome_parameter_seed_or_candidate_selection_permitted": false,
+      "profitability_ai_or_sam_uplift_claim_permitted": false,
       "promotion_permitted": false,
       "risk_gate_relaxation_permitted": false,
       "selection_confirmation_2025_h2_access_permitted": false,
@@ -596,27 +1386,40 @@
     },
     "model_contract": {
       "activation": "GELU",
-      "compute_backend": "DirectML required for this host run; CPU remains a separately declared portability mode",
-      "dropout": 0.1,
-      "early_stopping_patience_epochs": 12,
-      "ensemble": "Elementwise median of the three seed forecasts; monotonicity must remain exact.",
-      "family": "shared_cross_asset_causal_distributional_tcn",
-      "hidden_channels": 64,
-      "input_channels": 71,
-      "kernel_size": 3,
-      "loss": "Equal-weight normalized pinball loss across four horizons and five quantiles.",
-      "maximum_epochs": 100,
-      "minimum_improvement": 1e-05,
-      "optimizer": {
-        "foreach": false,
+      "adamw": {
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "epsilon": 1e-08,
         "gradient_norm_clip": 1.0,
         "learning_rate": 0.001,
-        "name": "AdamW",
         "weight_decay": 0.0001
       },
-      "output_channels": 20,
+      "candidate_selection": "None; both candidates complete the same consumed-development diagnostics and gates.",
+      "candidates": [
+        {
+          "id": "joint_adamw",
+          "optimizer": "explicit non-foreach AdamW"
+        },
+        {
+          "id": "joint_sam",
+          "optimizer": "non-adaptive SAM over explicit non-foreach AdamW",
+          "rho": 0.05
+        }
+      ],
+      "compute_backend": "DirectML required for this host run; CPU remains a separately declared portability mode.",
+      "dropout": 0.1,
+      "early_stopping_patience_epochs": 12,
+      "ensemble": "Elementwise median of three independently initialized seed forecasts.",
+      "family": "joint_cross_asset_causal_distributional_tcn",
+      "hidden_channels": 64,
+      "input_layout": "Flatten the complete causal BTC, ETH, and SOL feature block at each hour into 213 channels; no future values and no cross-time attention.",
+      "kernel_size": 3,
+      "loss": "Equal-weight normalized pinball loss across three symbols, four horizons, and five quantiles.",
+      "maximum_epochs": 100,
+      "minimum_improvement": 1e-05,
+      "output_layout": "Predict all three symbols jointly with 60 output channels: three symbols times four horizons times five monotone quantiles.",
       "padding": "left-only causal padding",
-      "quantile_parameterization": "For each horizon, predict a median and four nonnegative softplus gaps so q10 <= q25 <= q50 <= q75 <= q90 by construction.",
+      "quantile_parameterization": "Per symbol and horizon, predict a median and four nonnegative softplus gaps so q10 <= q25 <= q50 <= q75 <= q90.",
       "receptive_field_hours": 127,
       "residual_block_dilations": [
         1,
@@ -626,13 +1429,20 @@
         16,
         32
       ],
+      "sam": {
+        "adaptive": false,
+        "base_optimizer": "the identical explicit AdamW contract",
+        "first_gradient_clip": false,
+        "rho": 0.05,
+        "second_gradient_norm_clip": 1.0
+      },
       "seeds": [
-        4401,
-        4402,
-        4403
+        4501,
+        4502,
+        4503
       ],
       "training_windows": {
-        "batch_size": 64,
+        "batch_size": 32,
         "causal_context_hours": 127,
         "stride_hours": 24,
         "supervised_hours": 257,
@@ -641,394 +1451,288 @@
       "unsupported_operator_fallback_permitted": false
     },
     "normalization_contract": {
+      "feature_and_target_scalers": "Bit-for-bit Round 44 mean, population-standard-deviation, clip, median, and scaled-MAD definitions.",
       "fit_role": "training only",
-      "future_or_cross_role_statistics_permitted": false,
-      "method": "per-feature finite mean and population standard deviation",
-      "standard_deviation_floor": 1e-06,
-      "standardized_clip": [
-        -10.0,
-        10.0
-      ],
-      "target_scale_method": "per-horizon training median absolute deviation about the training median, multiplied by 1.4826, with a 1 bps floor"
+      "future_or_cross_role_statistics_permitted": false
     },
-    "objective": "Test whether causal temporal context and calibrated forward-return distributions repair the unstable one-hour point-forecast defect without hiding transition costs or forcing activity.",
-    "phase": "consumed-development multi-horizon distributional sequence-model screen",
+    "objective": "Preserve Round 44 multi-horizon distributional forecast information while testing whether joint cross-asset learning and sharpness-aware optimization improve seed stability and whether epistemic-consensus medians produce enough fixed-cost actions for an economic screen.",
+    "optimizer_ablation_gate": {
+      "claim_if_failed": "SAM improvement is false; retain both raw candidate results without post-outcome changes.",
+      "maximum_relative_median_early_stop_pinball_degradation_vs_joint_adamw": 0.01,
+      "minimum_seed_stability_improvement": 0.0,
+      "sam_claim_requires_joint_sam_forecast_gate": true
+    },
+    "phase": "consumed-development cross-asset stability and consensus-action screen",
     "predecessor_evidence": {
       "diagnosis": [
-        "Persistent position accounting removed fictitious hourly close-and-reopen costs but did not establish alpha.",
-        "One-hour median forecasts had weak, unstable rank association and were correctly set to zero after nonpositive calibration relations.",
-        "Static multiclass, two-stage hurdle, meta-label, threshold, and local-language-model veto lanes have already failed after-cost stability gates.",
-        "The next experiment must change the forecast target and temporal representation rather than relax gates or retune the consumed 2025-H1 outcomes."
+        "All four horizons beat the unconditional quantile baseline by 2.33 to 4.31 percent and had positive pooled median-return rank association.",
+        "Central 80-percent and 50-percent interval coverage passed at every horizon.",
+        "The forecast gate failed only seed stability: four of twelve pair-horizon correlations were below 0.500, with a 0.452 minimum.",
+        "Every seed reached its best early-stop pinball loss at epoch 3 or 4 while training loss continued falling, indicating rapid overfit rather than optimization failure.",
+        "The lower-quartile-after-cost policy admitted one trade in nine months and cannot measure economic capacity."
       ],
-      "round_43_failure_analysis_sha256": "19864ec0e15a3b3e61dc9b013bc10a1ce75feffe60823700555484a6162d84fd",
-      "round_43_publication_sha256": "380387de736ed21b37d622269c8494cdcd9890a88ec7761355158f9dc758004f",
-      "round_43_report_canonical_sha256": "c21ed68b105bcbe76156a6883bbc7b45a2ef0f28913677c92673cad73404b1ff"
+      "round_44_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+      "round_44_failure_analysis_sha256": "5dbb66f650e5f3409c5436478772d04f73f9d17f7dd25bd56852c796127cbb7d",
+      "round_44_publication_sha256": "d45753b7c37c68b31ba2ffdfdbf2ab4eaa513e65ec377bb9d0a0f7192309ea83",
+      "round_44_report_canonical_sha256": "30f05bf9bc4089bb779ed2c2468ec72f299fc19164e84b6c0e3ae357f6c7f4dc"
     },
-    "rejected_architectures": [
-      {
-        "id": "hindsight_dynamic_programming_q_teacher",
-        "reason": "Its oracle continuation policy creates a target-policy mismatch and optimistic action values that are not available in live operation."
-      },
-      {
-        "id": "direct_in_sample_sharpe_or_pnl_optimization",
-        "reason": "A small crypto panel can overfit path-level objectives, and continuous differentiable positions do not match the hard 24-hour holding and fail-closed execution contract."
-      },
-      {
-        "id": "lstm_on_directml",
-        "reason": "The live AMD host failed nn.LSTM training because aten::_thnn_fused_lstm_cell is unsupported by the installed DirectML stack."
-      }
-    ],
     "required_outputs": [
-      "source_and_dataset_hashes",
+      "source_dataset_and_derived_cache_hashes",
       "role_and_target_completeness",
-      "DirectML operator_preflight_and_runtime_evidence",
-      "per_seed_model_artifact_hashes_and_exact_reload_checks",
-      "per_horizon_and_month pinball_skill_spearman_and_interval_coverage",
-      "seed_stability",
-      "descriptive fixed_horizon_trade_ledger",
-      "matched_fixed_ledger_base_and_stress_economics",
-      "forecast_and_economic_gate_reasons",
-      "peak_working_set_runtime_and_progress_events",
-      "machine_readable_report_with_canonical_identity"
+      "DirectML AdamW and SAM backward-update preflight and runtime evidence",
+      "per-candidate per-seed artifacts and exact reload checks",
+      "hashed seed and ensemble prediction tensors",
+      "per-candidate per-symbol per-horizon per-month forecast diagnostics",
+      "per-candidate seed stability and optimizer-ablation gate",
+      "per-candidate descriptive fixed consensus trade ledger",
+      "matched fixed-ledger base and stress economics",
+      "forecast and economic gate reasons",
+      "peak working set runtime and progress events",
+      "machine-readable report with canonical identity"
     ],
     "research_basis": [
       {
-        "finding_used": "Sequence models can learn persistent position signals, and transaction-cost-aware turnover regularization is more aligned with trading than point-return MSE.",
-        "limitation": "The published cost range was approximately 2 to 3 bps and continuous futures are not evidence for this crypto taker-cost setting.",
-        "source": "https://arxiv.org/abs/1904.04912"
+        "finding_used": "Causal dilated temporal convolutions are a strong generic sequence-modeling baseline with long effective memory.",
+        "limitation": "The benchmark tasks are not financial returns and provide no trading-performance evidence.",
+        "source": "https://arxiv.org/abs/1803.01271"
       },
       {
-        "finding_used": "Multi-task horizon and volatility supervision can improve a shared temporal representation.",
-        "limitation": "The reported 2000 to 2020 futures results and 3 bps costs are hypotheses only, not transferable performance evidence.",
-        "source": "https://arxiv.org/abs/2306.13661"
+        "finding_used": "Direct multi-horizon quantile forecasting and forking sequences can improve probabilistic forecast stability and sample efficiency.",
+        "limitation": "Demand and electricity forecasting do not establish crypto return predictability.",
+        "source": "https://arxiv.org/abs/1711.11053"
       },
       {
-        "finding_used": "Intraday policies should preserve positional context because trading is sequential.",
-        "limitation": "This round does not adopt deep reinforcement learning or the paper's reported returns.",
-        "source": "https://arxiv.org/abs/2406.08013"
+        "finding_used": "Cross-entity context can improve a shared multi-horizon probabilistic model; this motivates one joint BTC, ETH, and SOL temporal encoder.",
+        "limitation": "The reported retrieval results concern product demand and do not transfer as financial evidence.",
+        "source": "https://arxiv.org/abs/2207.10517"
       },
       {
-        "finding_used": "Crypto momentum must be evaluated with transaction costs, path risk, liquidation risk, and more than a mean-return test.",
-        "limitation": "No leverage or liquidation inference is permitted before an unlevered edge exists.",
-        "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4675565"
+        "finding_used": "Sharpness-aware minimization explicitly penalizes locally sharp solutions and can improve generalization under overparameterization.",
+        "limitation": "SAM approximately doubles gradient computation and its image benchmarks do not guarantee time-series improvement.",
+        "source": "https://arxiv.org/abs/2010.01412"
       },
       {
-        "finding_used": "Learned offline action values can be overestimated under policy and data-distribution shift.",
-        "limitation": "Hindsight dynamic-programming Q labels and fitted-Q iteration are rejected from this round.",
-        "source": "https://arxiv.org/abs/2006.04779"
+        "finding_used": "A recent multivariate time-series study found sharpness-aware optimization repaired rapid neural-forecast overfit; this supports a bounded SAM ablation.",
+        "limitation": "Its long-horizon benchmark data, transformer architecture, and MSE objective differ from this causal quantile-return task.",
+        "source": "https://arxiv.org/abs/2402.10198"
+      },
+      {
+        "finding_used": "Disagreement among independently initialized models is epistemic uncertainty; the policy therefore requires worst-seed median consensus rather than hiding disagreement inside only an ensemble median.",
+        "limitation": "Deep-ensemble uncertainty is not a guarantee of calibrated financial tail risk.",
+        "source": "https://arxiv.org/abs/1612.01474"
       }
     ],
-    "round": 44,
-    "schema_version": "distributional-tcn-viability-design-v1",
+    "round": 45,
+    "schema_version": "joint-sam-distributional-tcn-design-v1",
     "status": "frozen"
   },
-  "design_sha256": "aad01204fd3ede5e0ca6771f273a061e80c4b503095a00399afdfffeb7656442",
-  "economic_gate": {
+  "design_sha256": "f6fb4f9a92f4a14a23671c2c55fadb12a6d9c1586f14018bf60beb15740bb9e5",
+  "generated_at_utc": "2026-07-13T09:31:45.991200+00:00",
+  "hourly_ledger_rows": 26112,
+  "implementation_commit": "bfa5cd7faea591aa711ea81fd50525435e357bd6",
+  "optimizer_ablation_gate": {
+    "adamw_median_best_early_stop_pinball": 0.36902374539631605,
+    "adamw_minimum_seed_stability": 0.18896296003492963,
     "passed": false,
-    "promotion_permitted": false,
     "reasons": [
-      "forecast_gate_failed",
-      "stress_familywise_bootstrap_lower_not_positive",
-      "fewer_than_six_positive_evaluation_months",
-      "fewer_than_ninety_active_days",
-      "profit_factor_below_1_05",
-      "not_all_three_symbols_have_activity",
-      "single_symbol_absolute_net_pnl_fraction_exceeds_half"
+      "joint_sam_forecast_gate_failed",
+      "sam_minimum_seed_stability_did_not_improve"
     ],
-    "selection_contaminated": true
+    "sam_median_best_early_stop_pinball": 0.36867899888341094,
+    "sam_minimum_seed_stability": 0.18098242493308747,
+    "sam_relative_early_stop_pinball_degradation": -0.0009342122755132687,
+    "sam_seed_stability_delta": -0.007980535101842157
   },
-  "forecast_diagnostics": {
-    "gate": {
-      "coverage_passed": true,
-      "horizons_with_required_pinball_skill": 4,
-      "horizons_with_required_rank_stability": 4,
-      "minimum_pairwise_seed_median_prediction_spearman": 0.45191081264635347,
-      "passed": false,
-      "quantile_crossing_count": 0,
-      "reasons": [
-        "seed_prediction_stability_below_0_5"
-      ]
-    },
-    "horizons": [
-      {
-        "baseline_pinball_loss_bps": 19.198658124282197,
-        "coverage_50": 0.45960988562091504,
-        "coverage_80": 0.772671568627451,
-        "evaluation_month_count": 9,
-        "horizon_hours": 1,
-        "model_pinball_loss_bps": 18.370720081522208,
-        "pinball_skill": 0.04312478702419442,
-        "pooled_median_spearman": 0.05005108869813274,
-        "positive_monthly_median_spearman_count": 9
-      },
-      {
-        "baseline_pinball_loss_bps": 38.9906155782522,
-        "coverage_50": 0.46119281045751637,
-        "coverage_80": 0.7820669934640523,
-        "evaluation_month_count": 9,
-        "horizon_hours": 4,
-        "model_pinball_loss_bps": 37.482474965931786,
-        "pinball_skill": 0.038679579430944244,
-        "pooled_median_spearman": 0.029455029603646994,
-        "positive_monthly_median_spearman_count": 5
-      },
-      {
-        "baseline_pinball_loss_bps": 70.00329828268877,
-        "coverage_50": 0.46655433006535946,
-        "coverage_80": 0.7808925653594772,
-        "evaluation_month_count": 9,
-        "horizon_hours": 12,
-        "model_pinball_loss_bps": 67.51871155375403,
-        "pinball_skill": 0.03549242378411133,
-        "pooled_median_spearman": 0.0622719110137472,
-        "positive_monthly_median_spearman_count": 8
-      },
-      {
-        "baseline_pinball_loss_bps": 98.7583674619629,
-        "coverage_50": 0.49581290849673204,
-        "coverage_80": 0.7933517156862745,
-        "evaluation_month_count": 9,
-        "horizon_hours": 24,
-        "model_pinball_loss_bps": 96.45713490585779,
-        "pinball_skill": 0.023301646384458974,
-        "pooled_median_spearman": 0.04392378504166944,
-        "positive_monthly_median_spearman_count": 6
-      }
-    ]
-  },
-  "generated_at_utc": "2026-07-13T09:01:08.231910+00:00",
-  "hourly_ledger_rows": 13056,
-  "implementation_commit": "e0882b5c7fb7cf43d2b8e2d98714a369a62ba21b",
-  "models": [
-    {
-      "backend_device": "privateuseone:0",
-      "backend_kind": "directml",
-      "best_early_stop_pinball": 0.36850768359123126,
-      "best_epoch": 3,
-      "bytes": 429474,
-      "epochs": 15,
-      "parameter_count": 104980,
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models\\round44_distributional_tcn_seed_4401.pt",
-      "reload_max_abs_prediction_error": 0.0,
-      "seed": 4401,
-      "sha256": "db763e72dbb9b4f16965801b907961dfd1d6dae8570fb70982dd9aca656ecdd8",
-      "warning_count": 0
-    },
-    {
-      "backend_device": "privateuseone:0",
-      "backend_kind": "directml",
-      "best_early_stop_pinball": 0.3687038448013323,
-      "best_epoch": 3,
-      "bytes": 429474,
-      "epochs": 15,
-      "parameter_count": 104980,
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models\\round44_distributional_tcn_seed_4402.pt",
-      "reload_max_abs_prediction_error": 0.0,
-      "seed": 4402,
-      "sha256": "2068c637b64e48751f7b7e8e5fb258df3576c5ba54357cc860114e836637126d",
-      "warning_count": 0
-    },
-    {
-      "backend_device": "privateuseone:0",
-      "backend_kind": "directml",
-      "best_early_stop_pinball": 0.36684204978303137,
-      "best_epoch": 4,
-      "bytes": 429474,
-      "epochs": 16,
-      "parameter_count": 104980,
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models\\round44_distributional_tcn_seed_4403.pt",
-      "reload_max_abs_prediction_error": 0.0,
-      "seed": 4403,
-      "sha256": "73e3805b0976d27fcd161e3eaf75a77ac582fd663a4131ae60d32cfee79fb3c5",
-      "warning_count": 0
-    }
-  ],
   "outputs": [
     {
-      "bytes": 4670,
+      "bytes": 40298,
       "name": "forecast_diagnostics.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\forecast_diagnostics.csv",
-      "sha256": "56c6a944915f31c497890ca9234ca2ea7e12df67797fdac086dee29188505df8"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\forecast_diagnostics.csv",
+      "sha256": "546d0d338fe6a2dfc04b9ce37765af9cc8f5c86aa387139729deda1e3abce92e"
     },
     {
-      "bytes": 679,
+      "bytes": 1303,
       "name": "horizon_summary.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\horizon_summary.csv",
-      "sha256": "0a19f9cca7fa05a227df83444c9cfe9ccccc6f546a4fba660044e05377764d10"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\horizon_summary.csv",
+      "sha256": "2e9489bf42da6313ac22718d0149273fe9d699c77507dd44d9ff6a4c6d6b4ae3"
     },
     {
-      "bytes": 454,
+      "bytes": 3469,
+      "name": "symbol_horizon_summary.csv",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\symbol_horizon_summary.csv",
+      "sha256": "4e624768b45436f48023556ef0519f59a872df3309dd40644f4bfa8750934459"
+    },
+    {
+      "bytes": 1130,
       "name": "seed_stability.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\seed_stability.csv",
-      "sha256": "0616a854e515c0e3e2211e77c869205b041dfae6dcbdfbb9aa02c1fe7e07071b"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\seed_stability.csv",
+      "sha256": "ba6a7cd7168f9622836954cbd1e6238eafa90cb4961fe5258b49dc20b9f8d4d1"
     },
     {
-      "bytes": 905,
+      "bytes": 1655,
       "name": "models.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models.csv",
-      "sha256": "546b96656f77610589a1230dd5e1d1ec92272e667af0c468f23b82d213eea853"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models.csv",
+      "sha256": "d8ee56ecf563a4079e93f1d7ddfdc608cd08749d1afce30fde1d50f97fb6a7a6"
     },
     {
       "bytes": 549,
       "name": "roles.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\roles.csv",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\roles.csv",
       "sha256": "eb091e2c1a9ac2c830e4b86e5c04e58d8dbbf5998b2fdcd58c1add71cba48243"
     },
     {
-      "bytes": 401,
+      "bytes": 393781,
       "name": "trades.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\trades.csv",
-      "sha256": "4f2bf97b6a0c7b522413faf6eb50a719160e7f97fabe1b6afe9268e11b7b1853"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\trades.csv",
+      "sha256": "a8ab750e2f74203148ca78b90ddb3ed04404e2bc8fd079d0ebe69f441e2d2fb0"
     },
     {
-      "bytes": 1059,
+      "bytes": 2132,
       "name": "replays.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\replays.csv",
-      "sha256": "2f46457bab42d60d54d9cd0a7c0e13638fb7e5cc37c45b304fed4360fc9e8d54"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\replays.csv",
+      "sha256": "bfe8b55685d03cd4994b9ca80b83432ee161a54c196e53f73a9e86f325943ee0"
     },
     {
-      "bytes": 684,
+      "bytes": 2773,
       "name": "monthly_economics.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\monthly_economics.csv",
-      "sha256": "00a258724e4547c7ae66b246b8fe2e7ed9e18b1aee0bdd42b820cdb23e300f1a"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\monthly_economics.csv",
+      "sha256": "b7ccccfc903c5fc2e38c41aa6d6f978088d453d0f45741612ec2e04462807ba9"
     },
     {
-      "bytes": 187,
+      "bytes": 634,
       "name": "symbol_economics.csv",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\symbol_economics.csv",
-      "sha256": "478fd8d1c88b44ac0f14c9aec13f041c1cdddb002c521513ef28ac0e4ca81ab8"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\symbol_economics.csv",
+      "sha256": "08bc981446540d4cbb9f75fd90dc6f34c577d33593c3a477adbdd69683a31e97"
     },
     {
-      "bytes": 34489,
+      "bytes": 984605,
       "name": "hourly_ledger.csv.gz",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\hourly_ledger.csv.gz",
-      "sha256": "feef9f6d4abd63ba3a28287da3799b74043489bb5c8a9b146646759498ba1410"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\hourly_ledger.csv.gz",
+      "sha256": "0c849dbcc27437fe692ce5bb6386c2a7cd17eeaecff15b2306fc98ca49bc59ea"
     },
     {
-      "bytes": 6579,
+      "bytes": 6618,
       "name": "scalers.json",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\scalers.json",
-      "sha256": "17ff8ca6ed1174d806ada602bcbfb68e35094b459b6e123e45b75ef2484b7701"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\scalers.json",
+      "sha256": "d8251c47f15b8551eefafc89f5c2b843fbba409a4523b99a31ed7d5f1a71a61b"
     },
     {
-      "bytes": 61120,
+      "bytes": 105252,
       "name": "progress_events.jsonl",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\progress_events.jsonl",
-      "sha256": "6dadc96328e107f08042d5007ed32756926614abddd4df65f6c630f51125dc56"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\progress_events.jsonl",
+      "sha256": "04ffcf7d07b1d59fe22703d80d6600a10769425fe6f351ee5d2d31d107421ee6"
     },
     {
-      "bytes": 580,
+      "bytes": 645,
       "name": "status.json",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\status.json",
-      "sha256": "fb88dd541bc218aa57c55bce8ddb9466e719575a1dfd8e9583be520db07d5464"
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\status.json",
+      "sha256": "16b4084b2878cfa7fdbabf4693a1a255571e396d1ff52c4176009a26ebefd8eb"
     },
     {
-      "bytes": 429474,
-      "name": "round44_distributional_tcn_seed_4401.pt",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models\\round44_distributional_tcn_seed_4401.pt",
-      "sha256": "db763e72dbb9b4f16965801b907961dfd1d6dae8570fb70982dd9aca656ecdd8"
+      "bytes": 245304,
+      "name": "timestamps_ms.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\timestamps_ms.npy",
+      "sha256": "b85c541d78c29f34a12b75f42656cf09ae4c6a47dcef5334c4d60d2e90e6591f"
     },
     {
-      "bytes": 429474,
-      "name": "round44_distributional_tcn_seed_4402.pt",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models\\round44_distributional_tcn_seed_4402.pt",
-      "sha256": "2068c637b64e48751f7b7e8e5fb258df3576c5ba54357cc860114e836637126d"
+      "bytes": 26111372,
+      "name": "features.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\features.npy",
+      "sha256": "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14"
     },
     {
-      "bytes": 429474,
-      "name": "round44_distributional_tcn_seed_4403.pt",
-      "path": "E:\\SimpleAITradingData\\round44-distributional-tcn-20260713-v1\\models\\round44_distributional_tcn_seed_4403.pt",
-      "sha256": "73e3805b0976d27fcd161e3eaf75a77ac582fd663a4131ae60d32cfee79fb3c5"
+      "bytes": 367892,
+      "name": "hourly_return_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\hourly_return_bps.npy",
+      "sha256": "277cb6022dddefe1ba52c83a8827ec45e41f45fb877f7db59599561373b10dbf"
+    },
+    {
+      "bytes": 1471184,
+      "name": "forward_return_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\forward_return_bps.npy",
+      "sha256": "864d02e1f1ef5bae8f3b51e16ae90e1077ba8852cb67ea0a766a06ec956b9ce7"
+    },
+    {
+      "bytes": 3159,
+      "name": "metadata.json",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\metadata.json",
+      "sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135"
+    },
+    {
+      "bytes": 22065968,
+      "name": "joint_adamw_seed_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_adamw_seed_predictions_bps.npy",
+      "sha256": "09c29cacf01f286c39fc86652c976e9d75663ded840e1039436a20fe3c31c088"
+    },
+    {
+      "bytes": 7355408,
+      "name": "joint_adamw_ensemble_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_adamw_ensemble_predictions_bps.npy",
+      "sha256": "a022d406567b63c59e46241c7f3f2428c9faeb201c4e3e6e1fd1b72cf6cfdb0d"
+    },
+    {
+      "bytes": 22065968,
+      "name": "joint_sam_seed_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_sam_seed_predictions_bps.npy",
+      "sha256": "9bbc8766a17d33ce8fedd2af7d9ba2e2e67e8fbcbf7608cc3d181a48084e3fb2"
+    },
+    {
+      "bytes": 7355408,
+      "name": "joint_sam_ensemble_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\predictions\\joint_sam_ensemble_predictions_bps.npy",
+      "sha256": "e96eac8944fa617fb0c692712a18ade337b8f3f9de533cb8c09b8ddc5b4e4fb4"
+    },
+    {
+      "bytes": 476034,
+      "name": "round45_joint_adamw_seed_4501.pt",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_adamw_seed_4501.pt",
+      "sha256": "6fa1ea1efeaa0f3b5bdb02f5c13e8e9d1e0db238017b68ee9865aaa5ce6e0a24"
+    },
+    {
+      "bytes": 476034,
+      "name": "round45_joint_adamw_seed_4502.pt",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_adamw_seed_4502.pt",
+      "sha256": "8b8fed538706deb42989fcb3d745de9c2b213a60f577379fa23bbe4144636bdc"
+    },
+    {
+      "bytes": 476034,
+      "name": "round45_joint_adamw_seed_4503.pt",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_adamw_seed_4503.pt",
+      "sha256": "124d0b0197527cd4505755b13a0a2541ad901c2586a12c0f12568a16b30f111c"
+    },
+    {
+      "bytes": 475970,
+      "name": "round45_joint_sam_seed_4501.pt",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_sam_seed_4501.pt",
+      "sha256": "29f8e4fee0b72551f6a0224de03add192234ce71f4918968460b2595bf0eabad"
+    },
+    {
+      "bytes": 475970,
+      "name": "round45_joint_sam_seed_4502.pt",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_sam_seed_4502.pt",
+      "sha256": "5dcb970d94cd761d6e3eea3fa794fc849f91ae72fbce91da7f012e3667345451"
+    },
+    {
+      "bytes": 475970,
+      "name": "round45_joint_sam_seed_4503.pt",
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\models\\round45_joint_sam_seed_4503.pt",
+      "sha256": "6e40b8fe0f7fed3f2ecfa260e75152a4e2c7cec5a2713d1e2bcef506095649a3"
     }
   ],
-  "progress_event_count": 122,
-  "report_canonical_sha256": "30f05bf9bc4089bb779ed2c2468ec72f299fc19164e84b6c0e3ae357f6c7f4dc",
-  "round": 44,
+  "progress_event_count": 184,
+  "report_canonical_sha256": "4f3e7f80e2ba2fb08f7523b02a7548b9b4ff3a34e49121b048d4c6484a09375d",
+  "round": 45,
   "runtime": {
-    "elapsed_seconds": 155.69105710001895,
+    "elapsed_seconds": 124.64685870002722,
     "memory": {
-      "current_pagefile_bytes": 4079001600,
-      "current_working_set_bytes": 1715970048,
-      "peak_pagefile_bytes": 5406330880,
-      "peak_working_set_bytes": 3880591360,
+      "current_pagefile_bytes": 3989794816,
+      "current_working_set_bytes": 1710735360,
+      "peak_pagefile_bytes": 5407006720,
+      "peak_working_set_bytes": 3880476672,
       "source": "windows_process_memory_counters"
     }
   },
-  "schema_version": "distributional-tcn-viability-report-v1",
-  "seed_stability": [
-    {
-      "horizon_hours": 1,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.6092035229405917,
-      "right_seed": 4402
-    },
-    {
-      "horizon_hours": 4,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.5198223409032432,
-      "right_seed": 4402
-    },
-    {
-      "horizon_hours": 12,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.48943297753021736,
-      "right_seed": 4402
-    },
-    {
-      "horizon_hours": 24,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.45191081264635347,
-      "right_seed": 4402
-    },
-    {
-      "horizon_hours": 1,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.577253073094788,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 4,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.5578282331056043,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 12,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.5475625184322136,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 24,
-      "left_seed": 4401,
-      "median_prediction_spearman": 0.524931706673925,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 1,
-      "left_seed": 4402,
-      "median_prediction_spearman": 0.5521276653567591,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 4,
-      "left_seed": 4402,
-      "median_prediction_spearman": 0.4682032983749936,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 12,
-      "left_seed": 4402,
-      "median_prediction_spearman": 0.5808313599511914,
-      "right_seed": 4403
-    },
-    {
-      "horizon_hours": 24,
-      "left_seed": 4402,
-      "median_prediction_spearman": 0.46242422438509984,
-      "right_seed": 4403
-    }
-  ],
+  "schema_version": "joint-sam-distributional-tcn-report-v1",
   "source_evidence": {
     "derivatives_panel_sha256": "3e7a57184d690afc7061e9f48e437716ff73b72f01302d2eb151112351e8cf7e",
     "derivatives_series": [

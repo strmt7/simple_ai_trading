@@ -528,15 +528,18 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 44 trained a three-seed causal distributional TCN on the AMD GPU through
-DirectML. Its 1, 4, 12, and 24-hour forecasts beat the unconditional pinball
-baseline by `2.33%` to `4.31%`, with positive pooled rank association and valid
-central-interval coverage at every horizon. The forecast gate still rejected it:
-minimum pairwise seed stability was `0.452`, below the frozen `0.500` floor. The
-registered lower-quartile policy admitted one BTC short and lost `0.321%` at
-base cost; matched stress repricing lost `0.335%`. No profitability, AI uplift,
-leverage, testnet, live-trading, or autonomous-execution authority was
-established.
+Round 45 compared joint cross-asset distributional TCNs trained with AdamW and
+sharpness-aware minimization on the AMD GPU through DirectML. Both candidates
+retained positive pooled rank association and beat the unconditional pinball
+baseline at every horizon, but joint training reduced minimum seed agreement to
+`0.189` for AdamW and `0.181` for SAM against the frozen `0.500` floor. SAM did
+not establish an optimizer improvement. The frozen consensus policies generated
+`898` and `947` trades over `272` active days. AdamW lost `35.98%`; SAM's
+`+22.26%` base point estimate remains rejected because maximum drawdown was
+`29.48%`, profit factor was `1.029`, only four of nine months were positive, and
+the stress bootstrap lower bound was `-1.043` bps/hour. No profitability, SAM
+uplift, AI uplift, leverage, testnet, live-trading, or autonomous-execution
+authority was established.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

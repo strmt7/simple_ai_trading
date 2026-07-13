@@ -1,30 +1,32 @@
-# Round 44: Causal Distributional TCN
+# Round 45: Joint TCN and SAM
 
 > **Beta research warning:** rejected, selection-contaminated development evidence. No model is approved for testnet, live day trading, leverage, or autonomous execution.
 
-Round 44 replaced one-hour point forecasts with a 127-hour causal temporal convolutional network that predicts calibrated 1, 4, 12, and 24-hour return distributions. Three seeds trained on the AMD GPU through DirectML and reloaded exactly with zero fallback warnings.
+Round 45 compared a joint 213-channel cross-asset distributional TCN trained with AdamW and sharpness-aware minimization (SAM). Six three-seed artifacts trained on the AMD GPU through DirectML, reloaded exactly, and emitted zero fallback warnings.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-| Horizon | Pinball skill | Median Spearman | Positive months | 80% coverage | 50% coverage |
-|---:|---:|---:|---:|---:|---:|
-| 1 h | 4.31% | 0.0501 | 9/9 | 0.773 | 0.460 |
-| 4 h | 3.87% | 0.0295 | 5/9 | 0.782 | 0.461 |
-| 12 h | 3.55% | 0.0623 | 8/9 | 0.781 | 0.467 |
-| 24 h | 2.33% | 0.0439 | 6/9 | 0.793 | 0.496 |
+| Horizon | AdamW skill | AdamW Spearman | SAM skill | SAM Spearman |
+|---:|---:|---:|---:|---:|
+| 1 h | 3.75% | 0.0275 | 3.80% | 0.0315 |
+| 4 h | 3.39% | 0.0368 | 3.34% | 0.0215 |
+| 12 h | 3.20% | 0.0665 | 3.07% | 0.0642 |
+| 24 h | 1.58% | 0.0445 | 1.50% | 0.0390 |
 
-Forecast learning improved materially, but the frozen gate failed because minimum pairwise seed stability was `0.452`, below `0.500`.
+Both candidates preserved weak forecast information, but joint training made seed agreement materially worse. AdamW reached only `0.189` and SAM `0.181` against the frozen `0.500` floor. SAM therefore did **not** establish an optimizer improvement.
 
 ![Seed stability](charts/seed-stability.svg)
 
-![Monthly rank association](charts/monthly-rank.svg)
+![Per-symbol forecast quality](charts/symbol-forecast.svg)
 
-The descriptive lower-quartile policy admitted one BTCUSDT short. It returned `-0.321%` at 6 bps one-way and `-0.335%` when the identical ledger was repriced at 8 bps. This is not viable economic evidence.
+The consensus mapping restored activity: AdamW made `898` trades and SAM `947` across `272` active days. AdamW lost `-35.98%`. SAM's `+22.26%` base point estimate is **not validated**: maximum drawdown was `29.48%`, profit factor `1.029`, only `4/9` months were positive, and the stress bootstrap lower bound was `-1.043` bps/hour.
 
 ![Policy economics](charts/policy-economics.svg)
+
+![Monthly economics](charts/monthly-economics.svg)
 
 ![Dated equity](charts/daily-equity.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-Data: [horizons](horizons.csv) | [monthly forecast diagnostics](diagnostics.csv) | [seed stability](seed-stability.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbols](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-044-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [horizons](horizons.csv) | [symbol horizons](symbol-horizons.csv) | [forecast diagnostics](diagnostics.csv) | [seed stability](seed-stability.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-045-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
