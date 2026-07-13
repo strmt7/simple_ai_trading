@@ -1,0 +1,51 @@
+{
+  "binding_sha256": "c6e81e6b64b93079b249569e9aad249929e0aefd51a3014b67deda84f688ee45",
+  "blobs": [
+    {
+      "git_blob_oid": "d433ffb72bf4c52d1cd53b8c5e8979ccc34b120c",
+      "path": "docs/model-research/action-value/round-044-distributional-tcn-design.json"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "3d1d1250827953feb87411111ee26130d615c51d",
+      "path": "src/simple_ai_trading/distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "01e3499ac6c10a685644a7351e1864f7f96d39e9",
+      "path": "src/simple_ai_trading/stateful_turnover_model.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "1b318aafeea9110f3af60f0f4e1c17cd8869a70a",
+      "path": "tools/create_round44_distributional_tcn_binding.py"
+    },
+    {
+      "git_blob_oid": "8e2ca554c42b463103a711d73f8bf53fb51e8c0b",
+      "path": "tools/run_distributional_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "25716078e461d024e6aede56fcba801a613db9b8",
+      "path": "tests/test_distributional_tcn_model.py"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_distributional_tcn_viability.py --source-certificate <external-certificate.json> --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "design_sha256": "aad01204fd3ede5e0ca6771f273a061e80c4b503095a00399afdfffeb7656442",
+  "implementation_commit": "e0882b5c7fb7cf43d2b8e2d98714a369a62ba21b",
+  "round": 44,
+  "schema_version": "round-044-distributional-tcn-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
