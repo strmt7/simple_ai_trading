@@ -6,12 +6,13 @@
       "context_seconds": 512,
       "feature_horizons_seconds": [5, 15, 30, 60, 120],
       "frequency_embedding": "high_frequency",
+      "maximum_state_age_seconds": 5,
       "parameter_count": 991437160,
       "preflight_canonical_sha256": "70b3ffe32696642798b1035575084962901ba256b1f99806fecdfb6249cf8a66",
       "preflight_file_sha256": "b71b4ba23555497d98472a2f88db52ac64cc005f8ef5c0727791c2025f59b546",
       "source_commit": "488b19d1d85fa2b3d4b93469530cefdcf1cc97a4",
       "source_repository": "https://github.com/vincent05r/FinCast-fts",
-      "source_series": "causal one-second best-bid/best-ask midpoint",
+      "source_series": "Causal one-second sampled best-bid/best-ask midpoint state. Hold only the last observed state for at most five seconds; never interpolate toward a future observation and reject older state.",
       "use": "Frozen zero-shot point and quantile forecasts become causal numeric features; FinCast cannot submit, size, veto, or approve orders."
     },
     "paired_uplift_test": "Compare categorical_payoff_lightgbm and categorical_payoff_lightgbm_fincast on identical endpoints, targets, costs, seeds, policy, and replay. AI passes only with better proper score and after-cost paired economics without worse drawdown.",
@@ -37,6 +38,8 @@
   },
   "data_contract": {
     "archive_products": ["bookTicker", "trades", "bookDepth"],
+    "bbo_state_gap_analysis_file_sha256": "266d516ab23fccc54ef7c29487e763fa56776d4ede8bfe529b85b87bdbf4c808",
+    "bbo_state_gap_analysis_path": "docs/model-research/action-value/round-051-bbo-state-gap-analysis.json",
     "book_depth_limit": "Binance sampled aggregate percentage-band depth only; it is not full L2, message-by-message depth, or queue-position evidence.",
     "checksums_required": true,
     "decision_cadence_seconds": 10,
@@ -59,7 +62,7 @@
     "synthetic_fabricated_or_interpolated_market_rows_permitted": false,
     "target_path_resolution_ms": 100
   },
-  "design_sha256": "eeda9a52bf448a5cf789979c44ebb87d23c749979efaef65b9a1add48c4c28cd",
+  "design_sha256": "c37bc8686c6ab75e8af79d2477b92fc56973d41bd74fea2f3cbf6c6c7247d900",
   "economic_screen": {
     "base_and_stress_profit_factor_above_one": true,
     "base_and_stress_return_positive": true,
@@ -143,6 +146,12 @@
     "finding": "Round 50's selected tail understated stop probability and overstated take-profit probability for both sides; neither pooled nor symbol calibration produced positive economics.",
     "round_50_report_canonical_sha256": "8629a07940c0d8b4b16b35be4d7b651c1625807f8abae82a9e7fa7bfe73b6850"
   },
+  "pre_evaluation_correction": {
+    "economic_results_inspected": false,
+    "failed_run_result": "SOL short early-stop class support failed before all models were trained.",
+    "refrozen_at": "2026-07-13T19:33:44.5679697Z",
+    "resolution": "Correct event-time-to-clock-time BBO state sampling and retain the frozen class-support gate."
+  },
   "quality_gates": {
     "ai": [
       "The FinCast candidate must improve average side ranked-probability skill by at least 0.005 over the matched categorical model.",
@@ -178,6 +187,10 @@
     {
       "source": "https://microsoft.github.io/DirectML/",
       "use": "DirectML is the cross-vendor Windows GPU backend; actual compatibility is established by the tracked host preflight, not documentation alone."
+    },
+    {
+      "source": "https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md#individual-symbol-book-ticker-streams",
+      "use": "BookTicker publishes best-bid or best-ask changes; causal clock-time sampling therefore holds the last observed state, while this design expires state after five seconds."
     }
   ],
   "round": 51,
