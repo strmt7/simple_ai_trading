@@ -1,0 +1,434 @@
+{
+  "schema_version": "cost-aware-action-hurdle-tcn-design-v1",
+  "round": 49,
+  "design_sha256": "72f114a2ad553c3401f03f1a5d6018566af724c4214408ecc07e1a5e1ae48026",
+  "status": "frozen",
+  "phase": "consumed-development 15-minute action-value mechanism screen",
+  "objective": "Test whether an explicit, calibrated decomposition of 15-minute long and short net utility into profit probability, conditional gain mean, and conditional loss mean improves after-cost action-value ranking and fixed-policy economics over a matched direct conditional-mean control.",
+  "predecessor_evidence": {
+    "round_48_report_canonical_sha256": "95638932838bfe99dc751ccf18e1909ad601a2882be99c7de913af5d7db5d274",
+    "round_48_report_file_sha256": "f438ce711c3b88544c11f0f0b3aee92baa1ad87564023b2e8303ea3d84e2bc70",
+    "round_48_publication_sha256": "50f21514710c71c776ac01e9a6dc1d5d2c3d6db17a39fad5876bf2a2c201693a",
+    "round_48_failure_analysis_sha256": "5004312fd7339ae2c569cae10d6e6ac3356417b61f6ffe56630013a1e229f755",
+    "dataset_sha256": "6969a3134049a326024939d5f9c46a99c37a4932e4a1f146a542a77427bba92b",
+    "retained_findings": {
+      "single_logistic_15m_short_auc": 0.6181996273470824,
+      "single_logistic_15m_long_auc": 0.6180007360929869,
+      "mixture_15m_short_auc": 0.6179052458327093,
+      "mixture_15m_long_auc": 0.6171415882853288,
+      "mixture_relative_negative_log_likelihood_improvement": 0.007380897488566296,
+      "directml_cpu_fallback_warnings": 0,
+      "exact_checkpoint_reload_failures": 0
+    },
+    "blocking_findings": {
+      "single_logistic_15m_trades": 0,
+      "mixture_15m_trades": 0,
+      "single_logistic_120m_trade_fraction": 0.978429203539823,
+      "mixture_120m_trade_fraction": 0.9974842767295597,
+      "single_logistic_base_return_fraction": -0.5403046439615072,
+      "mixture_base_return_fraction": -0.4134917382840835,
+      "mixture_base_maximum_drawdown_fraction": 0.41969997657406277,
+      "mixture_base_profit_factor": 0.6330280366277816
+    },
+    "consumed_15m_probability_tail_diagnosis": {
+      "method": "Reconstruct calibrated Round 48 probabilities from all six hash-verified prediction artifacts, choose the side with the larger worst-seed probability for each symbol-time row, and rank the already-consumed 2025-H1 rows without changing any policy.",
+      "single_logistic_top_500_mean_net_bps": -6.321767316818237,
+      "single_logistic_top_500_profit_rate": 0.49,
+      "mixture_top_500_mean_net_bps": -17.69067132472992,
+      "mixture_top_500_profit_rate": 0.438,
+      "all_equal_count_probability_deciles_negative_after_12_bps": true,
+      "interpretation": "Probability discrimination alone did not rank after-cost magnitude. A new model must predict conditional gain and loss severity and must beat a direct action-mean control; a probability threshold is not a justified mechanism."
+    },
+    "prior_hurdle_negative_controls": {
+      "round_34": "A BTC-only event-level three-action hurdle had useful opportunity and side-profit discrimination but near-chance direction routing and negative learned top-tail economics.",
+      "round_38": "Minute LightGBM hurdle candidates generated activity, but the only positive calibration cell reversed sharply in 2025-H1 and every viability candidate failed after costs.",
+      "constraint_carried_forward": "Round 49 must preserve the stronger shared temporal direction model, measure monthly stability, and reject calibration-only gains."
+    }
+  },
+  "research_basis": [
+    {
+      "source": "https://proceedings.mlr.press/v162/mandi22a.html",
+      "finding_used": "Decision-focused learning can be expressed as learning to rank feasible decisions, supporting a bounded action-value ranking term beside proper pointwise objectives.",
+      "limitation": "Ranking does not calibrate probabilities or magnitudes and cannot replace the economic replay gates."
+    },
+    {
+      "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4187217",
+      "finding_used": "Trading-cost-aware economic objectives are required because statistically accurate forecasts can create an inefficient implementable frontier after turnover and costs.",
+      "limitation": "The paper studies cross-sectional portfolios, not minute crypto futures, and its reported performance is not imported."
+    },
+    {
+      "source": "https://arxiv.org/abs/2606.00060",
+      "finding_used": "Recent walk-forward BTC evidence finds that naive forecast signs fail after realistic costs and that cost-aware abstention materially affects economics.",
+      "limitation": "The non-peer-reviewed study uses hourly BTC and selected configurations; Round 49 uses its own fixed chronology and cost ledger."
+    },
+    {
+      "source": "https://arxiv.org/abs/1612.01474",
+      "finding_used": "Independent deep ensembles provide a practical predictive-uncertainty signal and can expose distribution shift without modifying the base training procedure.",
+      "limitation": "Ensemble disagreement is an abstention input, not proof of financial edge or a calibrated loss bound."
+    },
+    {
+      "source": "https://arxiv.org/abs/1811.10041",
+      "finding_used": "Order-book research demonstrates that predictive uncertainty can be used to avoid unnecessary trades and control position sizing.",
+      "limitation": "Round 49 has minute price-flow features rather than historical L2 books and uses uncertainty only to abstain."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v97/geifman19a.html",
+      "finding_used": "Selective prediction formalizes a model's ability to abstain when conditional risk is high.",
+      "limitation": "Round 49 does not optimize a coverage quota because forced activity is unsafe in trading."
+    },
+    {
+      "source": "https://arxiv.org/abs/1706.04599",
+      "finding_used": "Low-capacity held-out calibration can improve neural probability reliability without changing score ordering.",
+      "limitation": "Image and text calibration results do not guarantee temporal financial calibration, so month-level drift is measured explicitly."
+    },
+    {
+      "source": "https://proceedings.mlr.press/v139/wu21e.html",
+      "finding_used": "Temporally related forecast horizons can act as auxiliary tasks for a shared sequence representation.",
+      "limitation": "The 30-minute target is representation-only and may not route, open, size, or extend a trade."
+    },
+    {
+      "source": "https://arxiv.org/abs/2603.19225",
+      "finding_used": "Current LLMs retain material numerical and time-series reasoning weaknesses even when retrieval improves textual finance tasks.",
+      "limitation": "A finance language model remains a paired asynchronous veto only and cannot repair a failed numerical candidate."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "venue_product": "Binance USD-M perpetual futures",
+    "source_resolution_seconds": 60,
+    "decision_interval_seconds": 300,
+    "primary_executable_horizon_minutes": 15,
+    "auxiliary_nonexecuting_horizon_minutes": 30,
+    "causal_predictor_count": 71,
+    "expected_timestamps": 366035,
+    "expected_rows": 1098105,
+    "verified_funding_cash_flows_in_targets_and_replay": true,
+    "premium_or_funding_directional_predictors_permitted": false,
+    "persistent_derived_feature_copy_permitted": false,
+    "future_synthetic_selection_confirmation_or_terminal_data_permitted": false,
+    "sequence_gap_rule": "No training or inference window may cross a missing five-minute timestamp or symbol boundary."
+  },
+  "chronological_roles": {
+    "training": {
+      "start": "2022-01-01T00:00:00Z",
+      "end_inclusive": "2024-06-30T23:59:59Z",
+      "uses": [
+        "feature scaling",
+        "target and conditional-severity baselines",
+        "model fitting"
+      ]
+    },
+    "early_stop": {
+      "start": "2024-07-01T00:00:00Z",
+      "end_inclusive": "2024-09-30T23:59:59Z",
+      "uses": [
+        "candidate-specific epoch selection"
+      ]
+    },
+    "calibration": {
+      "start": "2024-10-01T00:00:00Z",
+      "end_inclusive": "2024-12-31T23:59:59Z",
+      "uses": [
+        "bounded probability calibration",
+        "shared gain and loss mean multipliers",
+        "calibration stability diagnostics only"
+      ]
+    },
+    "evaluation": {
+      "start": "2025-01-01T00:00:00Z",
+      "end_inclusive": "2025-06-30T23:59:59Z",
+      "uses": [
+        "consumed-development diagnostics",
+        "fixed-policy replay"
+      ]
+    },
+    "maximum_horizon_embargo_minutes": 30,
+    "role_boundary_rule": "Entry, complete target path, exit, and funding cash flows must remain inside one role.",
+    "selection_contaminated": true,
+    "promotion_or_profitability_claim_permitted": false
+  },
+  "target_contract": {
+    "signed_return_bps": "Funding-adjusted long gross open-to-open return for the specified horizon.",
+    "long_net_bps": "signed_return_bps minus 12 bps",
+    "short_net_bps": "negative signed_return_bps minus 12 bps",
+    "profit_label": "one iff the side-specific net return is strictly positive",
+    "conditional_gain_bps": "side-specific net return conditional on profit_label equal to one",
+    "conditional_loss_bps": "negative side-specific net return conditional on profit_label equal to zero",
+    "expected_net_identity": "p_profit * conditional_gain_mean - (1 - p_profit) * conditional_loss_mean",
+    "cost_subtraction_after_identity_permitted": false,
+    "side_order": [
+      "short",
+      "long"
+    ],
+    "base_round_trip_execution_charge_bps": 12.0,
+    "stress_round_trip_execution_charge_bps": 16.0,
+    "overlapping_forward_labels_in_training": true,
+    "overlapping_same_symbol_positions_in_replay": false,
+    "target_clipping_winsorization_or_outcome_reweighting_permitted": false
+  },
+  "observed_training_target_geometry": {
+    "purpose": "Set training-only scales and required diagnostics; no policy threshold is selected from these values.",
+    "profit_prevalence_range_across_symbol_and_side": [
+      0.2233690278171686,
+      0.36489241830766755
+    ],
+    "conditional_gain_mean_bps_range": [
+      19.60936475324515,
+      37.280900997589285
+    ],
+    "conditional_loss_mean_bps_range": [
+      21.310386805927426,
+      40.29779385723887
+    ],
+    "interpretation": "The probability base rate and magnitude scale are symbol-dependent. Positive action value requires calibrated probability and both severity means; probability ranking alone is insufficient."
+  },
+  "normalization_contract": {
+    "fit_role": "training only",
+    "features": "Round 48 per-feature median and scaled IQR with scale floor 1e-6 and normalized clipping to [-12, 12].",
+    "direct_action_means": "Per-symbol and side training arithmetic mean and population standard deviation; the unmodified normalized MSE elicits the original conditional mean.",
+    "conditional_severities": "Per-symbol, side, and outcome training conditional arithmetic mean. The network predicts a positive multiplier around one.",
+    "auxiliary_signed_return": "Training median and scaled IQR for the 30-minute signed return; no target clipping.",
+    "future_cross_role_or_evaluation_statistics_permitted": false,
+    "whole_window_instance_normalization_permitted": false
+  },
+  "model_contract": {
+    "family": "shared per-symbol causal large-kernel temporal convolution with explicit side-action heads",
+    "candidates": [
+      {
+        "id": "direct_action_mean_tcn",
+        "mechanism": "Calibrated side-profit probabilities plus direct side-specific conditional-mean net utility trained by normalized MSE."
+      },
+      {
+        "id": "hurdle_action_value_tcn",
+        "mechanism": "The same probability and auxiliary tasks, with primary action value derived from calibrated profit probability and separately learned conditional gain and loss means.",
+        "single_primary_change_from_control": "Replace direct primary action-mean regression with two conditional positive-mean heads and the exact expected-net identity."
+      }
+    ],
+    "shared_encoder": {
+      "input_channels": 71,
+      "hidden_channels": 96,
+      "blocks": 4,
+      "depthwise_kernel_size": 25,
+      "depthwise_dilations": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "receptive_field_decision_steps": 361,
+      "receptive_field_minutes": 1800,
+      "padding": "left-only causal",
+      "normalization": "per-timestamp channel LayerNorm",
+      "activation": "GELU",
+      "dropout": 0.1
+    },
+    "shared_heads": {
+      "profitability": "Independent short and long logits for 15 and 30 minutes with no class weighting.",
+      "auxiliary_30m_signed_mean": "One normalized 30-minute signed-return mean used only for representation learning and diagnostics."
+    },
+    "direct_primary_head": "Two normalized 15-minute side-specific net-utility means.",
+    "hurdle_primary_heads": {
+      "conditional_gain_mean": "Two strictly positive training-baseline multipliers using softplus plus 1e-4.",
+      "conditional_loss_mean": "Two strictly positive training-baseline multipliers using softplus plus 1e-4.",
+      "positive_mean_score": "Conditional Gamma mean score y / mu + log(mu), which is minimized at the conditional arithmetic mean; rows outside the relevant condition contribute zero and are excluded from the denominator."
+    },
+    "seeds": [
+      4901,
+      4902,
+      4903
+    ],
+    "peer_training": "Seeds are independently initialized and trained on identical candidate data; no peer-consistency term is permitted.",
+    "policy_uncertainty": "The worst seed determines eligibility; ensemble disagreement can only cause abstention.",
+    "training_objective": {
+      "side_profit_binary_cross_entropy_weight": 1.0,
+      "auxiliary_30m_normalized_mean_mse_weight": 0.1,
+      "direct_primary_normalized_action_mean_mse_weight": 0.5,
+      "hurdle_conditional_gain_gamma_mean_score_weight": 0.25,
+      "hurdle_conditional_loss_gamma_mean_score_weight": 0.25,
+      "primary_action_value_pairwise_rank_weight": 0.025,
+      "pairwise_rank_offset_decision_steps": 24,
+      "class_rebalancing": false,
+      "target_or_profit_weighting": false
+    },
+    "early_stopping": {
+      "selection_role": "early_stop only",
+      "criterion": "The candidate's complete proper pointwise objective plus its fixed bounded action-value rank term.",
+      "maximum_epochs": 40,
+      "patience_epochs": 8,
+      "minimum_improvement": 0.0001
+    },
+    "optimizer": {
+      "family": "explicit DirectML-compatible AdamW",
+      "learning_rate": 0.0008,
+      "weight_decay": 0.0001,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-08,
+      "gradient_norm_clip": 1.0
+    },
+    "training_windows": {
+      "total_decision_steps": 576,
+      "causal_context_decision_steps": 361,
+      "supervised_decision_steps": 216,
+      "stride_decision_steps": 216,
+      "batch_size": 32
+    },
+    "compute_backend": "DirectML required for the host experiment; CPU remains an explicit portability mode.",
+    "unsupported_operator_fallback_permitted": false,
+    "candidate_selection": "None; both candidates complete the same consumed-development evaluation."
+  },
+  "calibration_contract": {
+    "role": "calibration only",
+    "probability_method": "One bounded positive-slope Platt transform per seed and candidate, shared across horizons, symbols, and sides.",
+    "probability_slope_bounds": [
+      0.25,
+      4.0
+    ],
+    "probability_intercept_bounds": [
+      -4.0,
+      4.0
+    ],
+    "probability_objective": "Unweighted binary log loss over all calibration side-action rows.",
+    "hurdle_severity_method": "One positive multiplicative calibration scalar for gain and one for loss per seed, shared across symbols and sides and fitted by the analytic Gamma mean-score optimum.",
+    "hurdle_severity_multiplier_bounds": [
+      0.5,
+      2.0
+    ],
+    "nonworsening_required": true,
+    "direct_action_mean_calibration_permitted": false,
+    "evaluation_outcomes_permitted": false,
+    "threshold_grid_or_economic_selection_permitted": false
+  },
+  "numerical_quality_gate": {
+    "all_outputs_losses_gradients_and_parameters_finite": true,
+    "directml_extreme_severity_preflight_required": true,
+    "probabilities_strictly_inside_zero_and_one": true,
+    "conditional_means_strictly_positive": true,
+    "all_six_checkpoints_must_reload_with_max_abs_error_at_most": 1e-06,
+    "all_prediction_artifacts_hash_verified": true,
+    "cpu_fallback_warning_count_must_equal": 0
+  },
+  "action_quality_gate": {
+    "minimum_pooled_roc_auc_each_15m_side": 0.55,
+    "positive_binary_log_loss_skill_each_15m_side_vs_training_prevalence": true,
+    "positive_brier_skill_each_15m_side_vs_training_prevalence": true,
+    "maximum_expected_calibration_error_10_bin": 0.05,
+    "minimum_evaluation_months_with_auc_above_half_each_side": 4,
+    "positive_expected_net_mse_skill_each_side_vs_training_mean": true,
+    "minimum_expected_net_spearman_each_side": 0.03,
+    "minimum_symbols_with_positive_expected_net_spearman_each_side": 3,
+    "minimum_evaluation_months_with_positive_expected_net_spearman_each_side": 4,
+    "minimum_pairwise_seed_probability_spearman": 0.5,
+    "minimum_pairwise_seed_expected_net_spearman": 0.5
+  },
+  "hurdle_mechanism_gate": {
+    "positive_conditional_gain_gamma_score_skill_vs_training_baseline_each_side": true,
+    "positive_conditional_loss_gamma_score_skill_vs_training_baseline_each_side": true,
+    "minimum_average_expected_net_spearman_improvement_over_direct_control": 0.005,
+    "maximum_relative_expected_net_mse_degradation_vs_direct_control": 0.01,
+    "maximum_relative_probability_log_loss_degradation_vs_direct_control": 0.01,
+    "claim_if_failed": "The hurdle decomposition did not add trustworthy action-value information and must not be retained because of a favorable isolated return."
+  },
+  "fixed_policy_contract": {
+    "runs_for_each_candidate_even_if_quality_gates_fail": true,
+    "decision_cadence_minutes": 5,
+    "executable_horizon_minutes": 15,
+    "position_values": [
+      -1,
+      0,
+      1
+    ],
+    "position_sleeves": "Fixed one-third unlevered notional sleeve per symbol.",
+    "entry_rule": "When a symbol is flat, a side is eligible only when every seed predicts strictly positive calibrated 15-minute net utility for that same side. Choose the side with the larger worst-seed expected net utility; exact ties abstain.",
+    "probability_floor_beyond_positive_expected_value": null,
+    "economic_threshold_grid": null,
+    "forced_activity_or_trade_quota": false,
+    "holding_rule": "Hold exactly 15 minutes and flatten; no same-symbol overlap or horizon extension is permitted.",
+    "leverage": 1.0,
+    "base_round_trip_execution_charge_bps": 12.0,
+    "stress_round_trip_execution_charge_bps": 16.0,
+    "stress_rule": "Reprice the exact base trade ledger without reselecting timestamps or sides.",
+    "funding_cash_flows_included": true,
+    "maker_fill_or_price_improvement_assumption": false
+  },
+  "economic_gate": {
+    "required_only_if_numerical_action_and_mechanism_gates_pass": true,
+    "familywise_circular_block_bootstrap_decision_steps": 2016,
+    "bootstrap_replicates": 2000,
+    "one_sided_familywise_lower_quantile": 0.0125,
+    "stress_mean_five_minute_portfolio_bps_lower_bound_must_exceed": 0.0,
+    "minimum_positive_evaluation_months": 4,
+    "minimum_active_days": 90,
+    "minimum_closed_trades": 180,
+    "maximum_drawdown_fraction": 0.1,
+    "minimum_profit_factor": 1.05,
+    "all_three_symbols_must_have_activity": true,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "promotion_result": "Still denied because 2025-H1 is consumed development evidence."
+  },
+  "ai_contract": {
+    "eligible_only_if_a_deterministic_candidate_clears_every_gate": true,
+    "candidate_models": [
+      "qwen3:8b",
+      "fino1:8b"
+    ],
+    "minimum_parameter_count_billions": 8,
+    "execution_mode": "local asynchronous structured-output inference",
+    "allowed_actions": [
+      "approve_unchanged",
+      "veto",
+      "cooldown"
+    ],
+    "risk_multiplier_range": [
+      0.0,
+      1.0
+    ],
+    "order_creation_reversal_or_enlargement_permitted": false,
+    "market_outcome_or_future_data_in_prompt_permitted": false,
+    "point_in_time_news_use_permitted_without_a_hash_verified_timestamped_corpus": false,
+    "paired_ablation": "Use identical deterministic candidate actions and compare ML-only with ML-plus-AI veto outcomes; provider failure is a veto.",
+    "current_finance_reasoning_benchmark_is_edge_evidence": false,
+    "ai_uplift_claim_before_paired_ablation": false
+  },
+  "runtime_and_governance": {
+    "progress_event_after_every_epoch_and_major_data_stage": true,
+    "heartbeat_timeout_seconds": 180,
+    "independent_candidate_failure_isolated": true,
+    "atomic_status_and_report_writes": true,
+    "memory_and_backend_evidence_required": true,
+    "selection_confirmation_2025_h2_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "testnet_or_live_execution_permitted": false,
+    "leverage_permitted": false,
+    "fee_risk_or_gate_relaxation_permitted": false,
+    "post_outcome_parameter_seed_threshold_or_candidate_selection_permitted": false,
+    "manual_graph_or_result_editing_permitted": false
+  },
+  "required_outputs": [
+    "dataset feature target and role identities",
+    "training-only target geometry by symbol side and role",
+    "DirectML preflight fallback runtime and memory evidence",
+    "six exact-reload model and prediction artifacts",
+    "epoch-level pointwise and ranking losses",
+    "probability AUC log loss Brier ECE prevalence and monthly stability",
+    "conditional gain and loss Gamma mean-score skill",
+    "expected-net MSE Spearman seed stability symbol and monthly diagnostics",
+    "direct-control versus hurdle-mechanism ablation",
+    "fixed-ledger base and stress trades monthly symbol daily equity drawdown profit factor and bootstrap evidence",
+    "machine-readable graph data and deterministic SVG charts",
+    "AI eligibility and paired-ablation decision"
+  ],
+  "claims": {
+    "trading_authority": false,
+    "execution_claim": false,
+    "profitability_claim": false,
+    "portfolio_claim": false,
+    "leverage_applied": false,
+    "ai_uplift_claim": false
+  }
+}
