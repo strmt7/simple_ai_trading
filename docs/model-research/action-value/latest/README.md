@@ -1,29 +1,28 @@
-# Round 42: one-second execution overlay rejected
+# Round 43: Stateful Turnover and AI-Factor Ablation
 
-**Second-level taker flow did not rescue the frozen primary signal.** The verified source contains 1,814,400 contiguous one-second bars derived from 15,475,296 checksum-backed Binance USD-M aggregate trades. Six OpenCL LightGBM heads reloaded exactly, but no calibration cell admitted an action.
+> **Beta research warning:** rejected, selection-contaminated development evidence. No model is approved for testnet, live day trading, leverage, or autonomous execution.
 
-| Evidence | Verified result |
-| --- | ---: |
-| Source / evaluation span | Binance USD-M 1s / 2024-06-06 to 2024-06-07 UTC |
-| Frozen proposals / delay options | 703 / 2812 |
-| Features / GPU artifacts / threshold cells | 251 / 6 / 54 |
-| Immediate comparator | 41 trades; -15.282 net bps; PF 0.360 |
-| Post-outcome best-delay diagnostic | 40 trades; -14.279 net bps; +5.724 bps vs matched immediate |
-| Timing-overlay actions / selected folds | 0 / 0 of 2 |
-| AI cases / AI models run | 0 / 0; seconds-loop AI prohibited by design |
-| Compute / runtime / peak working set | opencl:auto / 105.7s / 4.55 GiB |
-| Trading authority / leverage | none / none |
+Round 43 replaced fictitious hourly close/reopen cycles with persistent positions and actual transition costs. It also tested six bounded factors proposed through a local 8B AI research workflow. All 12 monthly LightGBM models ran on OpenCL and reloaded exactly; no candidate passed.
 
-![Execution economics](charts/execution-economics.svg)
+![Stateful economics](charts/stateful-economics.svg)
 
-![Model diagnostics](charts/model-diagnostics.svg)
+| Candidate | Base return | Stress-policy return | Base max DD | Stress bootstrap lower bps/hour | Active days |
+|---|---:|---:|---:|---:|---:|
+| ML long-only | -4.33% | +3.14% | 9.66% | -0.293 | 21 |
+| ML long-short | -8.92% | +6.59% | 16.09% | -0.257 | 25 |
+| AI-factor long-only | -2.40% | +3.95% | 11.28% | -0.447 | 20 |
+| AI-factor long-short | +3.62% | -6.21% | 10.37% | -0.538 | 23 |
 
-![Proposal coverage](charts/proposal-coverage.svg)
+The stress ledger is **not** a matched cost-only sensitivity: its 8 bps one-way charge also raises the transition hurdle. This explains why some stress point estimates exceed base. Future stress tests must reprice one fixed action ledger.
+
+![Forecast stability](charts/forecast-stability.svg)
+
+![Daily equity](charts/daily-equity.svg)
+
+![AI uplift](charts/ai-uplift.svg)
+
+The primary AI-factor long-only pair improved point estimates, but its paired stress delta was `+0.024` bps/hour with a 95% block-bootstrap interval of `[-0.353, +0.503]`; drawdown also worsened. AI uplift is not established.
 
 ![Research progress](charts/research-progress.svg)
 
-Zero overlay trades means the frozen hurdle rejected every option, not that proposals disappeared: 703 primary opportunities were evaluated. Adding back the fixed 12 bps charge leaves the immediate comparator at `-3.282` bps and the prohibited best-delay diagnostic at `-2.279` bps on their respective capacity-selected sets. The primary direction signal was therefore negative even before that fixed charge; more execution tuning is not justified.
-
-This seven-day, repeatedly consumed development pilot is not multi-year evidence, an equity curve, ROI, portfolio drawdown, execution quality, AI uplift, or profitability. Larger second-level acquisition was not authorized.
-
-Data: [comparators.csv](comparators.csv) | [diagnostics.csv](diagnostics.csv) | [thresholds.csv](thresholds.csv) | [proposals.csv](proposals.csv) | [models.csv](models.csv) | [sources.csv](sources.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [replays](replays.csv) | [monthly](monthly.csv) | [symbols](symbols.csv) | [forecast diagnostics](diagnostics.csv) | [models](models.csv) | [gates](gates.csv) | [AI uplift](ai-uplift.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-043-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)

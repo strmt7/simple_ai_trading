@@ -528,16 +528,16 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 42 tested whether verified one-second taker flow could improve the entry
-timing of unchanged Round 41 direction proposals. Its 1,814,400 one-second bars
-derive from 15,475,296 checksum-backed Binance USD-M aggregate trades. All six
-OpenCL timing heads reloaded exactly, but no calibration threshold admitted an
-action. The immediate comparator averaged `-15.282` net bps and the prohibited
-post-outcome best-delay diagnostic still averaged `-14.279` net bps. Adding back
-the fixed 12 bps charge left both negative on their respective selected sets,
-so execution timing cannot rescue this primary signal. Larger second-level
-acquisition and AI review were denied. No profitability, ROI, portfolio,
-leverage, execution, AI-uplift, or trading-authority claim passed.
+Round 43 tested persistent positions, transition-only costs, and six bounded
+factors produced through a local 8B AI research workflow. All 12 monthly
+LightGBM models ran on OpenCL and reloaded exactly. The best base point estimate
+was the AI-factor long-short replay at `+3.62%`, but it reversed to `-6.21%`
+under the registered stress policy, had `10.37%` maximum drawdown, and failed
+the block-bootstrap, monthly-consistency, and activity gates. The stress policy
+also changed the transition hurdle, so it is not a matched cost-only sensitivity;
+future rounds must reprice one fixed action ledger. All four candidates and the
+AI-uplift claim were rejected. No profitability, leverage, testnet, live-trading,
+or autonomous-execution authority was established.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
