@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="660" viewBox="0 0 1420 660" role="img" aria-labelledby="title desc">
+<title id="title">Round 51 forecast quality</title>
+<desc id="desc">Seed, side, and symbol averages on 2023-06-09 through 2023-06-14; positive skill does not establish tradable edge.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:28px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}.gate{stroke:#b42318;stroke-width:2;stroke-dasharray:5 4}</style>
+<text x="56" y="52" class="title">Round 51 forecast quality</text>
+<text x="56" y="80" class="subtitle">Seed, side, and symbol averages on 2023-06-09 through 2023-06-14; positive skill does not establish tradable edge.</text>
+<text x="80" y="125" class="label">Expected-payoff Spearman</text>
+<line x1="80" y1="500.0" x2="470" y2="500.0" class="grid"/>
+<text x="70" y="504.0" text-anchor="end" class="axis">-0.01</text>
+<line x1="80" y1="450.0" x2="470" y2="450.0" class="zero"/>
+<text x="70" y="454.0" text-anchor="end" class="axis">+0.00</text>
+<line x1="80" y1="150.0" x2="470" y2="150.0" class="grid"/>
+<text x="70" y="154.0" text-anchor="end" class="axis">+0.06</text>
+<rect x="115" y="384.9" width="82" height="65.1" fill="#2563a6"/>
+<text x="156.0" y="375.9" text-anchor="middle" class="value">+0.0130</text>
+<text x="156.0" y="527" text-anchor="middle" class="axis">Direct</text>
+<rect x="233" y="250.4" width="82" height="199.6" fill="#0f766e"/>
+<text x="274.0" y="241.4" text-anchor="middle" class="value">+0.0399</text>
+<text x="274.0" y="527" text-anchor="middle" class="axis">Categorical</text>
+<rect x="351" y="240.3" width="82" height="209.7" fill="#b54708"/>
+<text x="392.0" y="231.3" text-anchor="middle" class="value">+0.0419</text>
+<text x="392.0" y="527" text-anchor="middle" class="axis">FinCast</text>
+<text x="530" y="125" class="label">Expected-payoff MSE skill</text>
+<line x1="530" y1="500.0" x2="920" y2="500.0" class="grid"/>
+<text x="520" y="504.0" text-anchor="end" class="axis">-0.02</text>
+<line x1="530" y1="468.2" x2="920" y2="468.2" class="zero"/>
+<text x="520" y="472.2" text-anchor="end" class="axis">+0.00</text>
+<line x1="530" y1="150.0" x2="920" y2="150.0" class="grid"/>
+<text x="520" y="154.0" text-anchor="end" class="axis">+0.20</text>
+<rect x="565" y="468.2" width="82" height="11.4" fill="#2563a6"/>
+<text x="606.0" y="459.2" text-anchor="middle" class="value">-0.0072</text>
+<text x="606.0" y="527" text-anchor="middle" class="axis">Direct</text>
+<rect x="683" y="239.7" width="82" height="228.5" fill="#0f766e"/>
+<text x="724.0" y="230.7" text-anchor="middle" class="value">+0.1436</text>
+<text x="724.0" y="527" text-anchor="middle" class="axis">Categorical</text>
+<rect x="801" y="239.2" width="82" height="229.0" fill="#b54708"/>
+<text x="842.0" y="230.2" text-anchor="middle" class="value">+0.1439</text>
+<text x="842.0" y="527" text-anchor="middle" class="axis">FinCast</text>
+<text x="980" y="125" class="label">Ranked-probability skill</text>
+<line x1="980" y1="500.0" x2="1370" y2="500.0" class="grid"/>
+<text x="970" y="504.0" text-anchor="end" class="axis">-0.01</text>
+<line x1="980" y1="456.3" x2="1370" y2="456.3" class="zero"/>
+<text x="970" y="460.3" text-anchor="end" class="axis">+0.00</text>
+<line x1="980" y1="150.0" x2="1370" y2="150.0" class="grid"/>
+<text x="970" y="154.0" text-anchor="end" class="axis">+0.07</text>
+<rect x="1015" y="456.3" width="82" height="1.0" fill="#2563a6"/>
+<text x="1056.0" y="447.3" text-anchor="middle" class="value">+0.0000</text>
+<text x="1056.0" y="527" text-anchor="middle" class="axis">Direct</text>
+<rect x="1133" y="246.8" width="82" height="209.5" fill="#0f766e"/>
+<text x="1174.0" y="237.8" text-anchor="middle" class="value">+0.0479</text>
+<text x="1174.0" y="527" text-anchor="middle" class="axis">Categorical</text>
+<rect x="1251" y="247.1" width="82" height="209.2" fill="#b54708"/>
+<text x="1292.0" y="238.1" text-anchor="middle" class="value">+0.0478</text>
+<text x="1292.0" y="527" text-anchor="middle" class="axis">FinCast</text>
+<text x="56" y="610" class="note">The FinCast treatment improved mean payoff rank by +0.0020 but reduced ranked-probability skill by 0.000074 and increased MSE.</text>
+</svg>

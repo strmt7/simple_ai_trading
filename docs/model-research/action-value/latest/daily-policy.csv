@@ -1,0 +1,37 @@
+candidate_id,candidate,scenario,date_utc,selected_trades,net_bps,cumulative_net_bps,ledger_present,zero_return_reason
+direct_mean_lightgbm,Direct mean,base,2023-06-09,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,base,2023-06-10,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,base,2023-06-11,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,base,2023-06-12,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,base,2023-06-13,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,base,2023-06-14,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,stress,2023-06-09,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,stress,2023-06-10,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,stress,2023-06-11,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,stress,2023-06-12,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,stress,2023-06-13,0,0.0,0.0,False,no selected trades
+direct_mean_lightgbm,Direct mean,stress,2023-06-14,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,base,2023-06-09,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,base,2023-06-10,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,base,2023-06-11,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,base,2023-06-12,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,base,2023-06-13,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,base,2023-06-14,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,stress,2023-06-09,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,stress,2023-06-10,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,stress,2023-06-11,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,stress,2023-06-12,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,stress,2023-06-13,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm,Categorical,stress,2023-06-14,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-09,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-10,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-11,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-12,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-13,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-14,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-09,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-10,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-11,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-12,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-13,0,0.0,0.0,False,no selected trades
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-14,0,0.0,0.0,False,no selected trades

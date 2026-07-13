@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="570" viewBox="0 0 1420 570" role="img" aria-labelledby="title desc">
+<title id="title">Evaluation ledger: no selected trades</title>
+<desc id="desc">Dated base-scenario cumulative net bps, 2023-06-09 through 2023-06-14; flat lines denote abstention, not validated performance.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:28px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}.gate{stroke:#b42318;stroke-width:2;stroke-dasharray:5 4}</style>
+<text x="56" y="52" class="title">Evaluation ledger: no selected trades</text>
+<text x="56" y="80" class="subtitle">Dated base-scenario cumulative net bps, 2023-06-09 through 2023-06-14; flat lines denote abstention, not validated performance.</text>
+<rect x="110" y="150" width="1230" height="270" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="110" y1="285.0" x2="1340" y2="285.0" class="zero"/>
+<text x="95" y="289.0" text-anchor="end" class="axis">0 bps</text>
+<line x1="110.0" y1="150" x2="110.0" y2="420" class="grid"/>
+<text x="110.0" y="448" text-anchor="middle" class="axis">06-09</text>
+<line x1="356.0" y1="150" x2="356.0" y2="420" class="grid"/>
+<text x="356.0" y="448" text-anchor="middle" class="axis">06-10</text>
+<line x1="602.0" y1="150" x2="602.0" y2="420" class="grid"/>
+<text x="602.0" y="448" text-anchor="middle" class="axis">06-11</text>
+<line x1="848.0" y1="150" x2="848.0" y2="420" class="grid"/>
+<text x="848.0" y="448" text-anchor="middle" class="axis">06-12</text>
+<line x1="1094.0" y1="150" x2="1094.0" y2="420" class="grid"/>
+<text x="1094.0" y="448" text-anchor="middle" class="axis">06-13</text>
+<line x1="1340.0" y1="150" x2="1340.0" y2="420" class="grid"/>
+<text x="1340.0" y="448" text-anchor="middle" class="axis">06-14</text>
+<line x1="110" y1="285.0" x2="1340" y2="285.0" stroke="#263746" stroke-width="4"/>
+<text x="1328" y="273.0" text-anchor="end" class="value">All three candidates: 0 trades / 0 bps</text>
+<text x="56" y="525" class="note">No ROI, profit factor, or drawdown inference can be made from an empty ledger. All economic gates failed.</text>
+</svg>

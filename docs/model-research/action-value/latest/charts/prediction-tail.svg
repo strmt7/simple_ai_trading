@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1080" viewBox="0 0 1480 1080" role="img" aria-labelledby="title desc">
+<title id="title">No ensemble found a positive expected-value action</title>
+<desc id="desc">Best worst-seed expected payoff anywhere in each evaluation series; the frozen selector required this value above zero.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:28px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}.gate{stroke:#b42318;stroke-width:2;stroke-dasharray:5 4}</style>
+<text x="56" y="52" class="title">No ensemble found a positive expected-value action</text>
+<text x="56" y="80" class="subtitle">Best worst-seed expected payoff anywhere in each evaluation series; the frozen selector required this value above zero.</text>
+<line x1="427.0" y1="115" x2="427.0" y2="981" class="grid"/>
+<text x="427.0" y="104" text-anchor="middle" class="axis">-12 bps</text>
+<line x1="649.3" y1="115" x2="649.3" y2="981" class="grid"/>
+<text x="649.3" y="104" text-anchor="middle" class="axis">-9 bps</text>
+<line x1="871.5" y1="115" x2="871.5" y2="981" class="grid"/>
+<text x="871.5" y="104" text-anchor="middle" class="axis">-6 bps</text>
+<line x1="1093.7" y1="115" x2="1093.7" y2="981" class="grid"/>
+<text x="1093.7" y="104" text-anchor="middle" class="axis">-3 bps</text>
+<line x1="1315.9" y1="115" x2="1315.9" y2="981" class="zero"/>
+<text x="1315.9" y="104" text-anchor="middle" class="axis">+0 bps</text>
+<text x="372" y="149" text-anchor="end" class="label">BTCUSDT long | Direct</text>
+<rect x="435.3" y="135" width="880.6" height="21" fill="#2563a6"/>
+<text x="426.3" y="150" text-anchor="end" class="value">-11.89</text>
+<text x="372" y="196" text-anchor="end" class="label">BTCUSDT short | Direct</text>
+<rect x="443.5" y="182" width="872.5" height="21" fill="#2563a6"/>
+<text x="434.5" y="197" text-anchor="end" class="value">-11.78</text>
+<text x="372" y="243" text-anchor="end" class="label">BTCUSDT long | Categorical</text>
+<rect x="987.9" y="229" width="328.0" height="21" fill="#0f766e"/>
+<text x="978.9" y="244" text-anchor="end" class="value">-4.43</text>
+<text x="372" y="290" text-anchor="end" class="label">BTCUSDT short | Categorical</text>
+<rect x="703.9" y="276" width="612.0" height="21" fill="#0f766e"/>
+<text x="694.9" y="291" text-anchor="end" class="value">-8.26</text>
+<text x="372" y="337" text-anchor="end" class="label">BTCUSDT long | FinCast</text>
+<rect x="946.2" y="323" width="369.7" height="21" fill="#b54708"/>
+<text x="937.2" y="338" text-anchor="end" class="value">-4.99</text>
+<text x="372" y="384" text-anchor="end" class="label">BTCUSDT short | FinCast</text>
+<rect x="691.6" y="370" width="624.4" height="21" fill="#b54708"/>
+<text x="682.6" y="385" text-anchor="end" class="value">-8.43</text>
+<text x="372" y="431" text-anchor="end" class="label">ETHUSDT long | Direct</text>
+<rect x="471.5" y="417" width="844.5" height="21" fill="#2563a6"/>
+<text x="462.5" y="432" text-anchor="end" class="value">-11.40</text>
+<text x="372" y="478" text-anchor="end" class="label">ETHUSDT short | Direct</text>
+<rect x="508.7" y="464" width="807.2" height="21" fill="#2563a6"/>
+<text x="499.7" y="479" text-anchor="end" class="value">-10.90</text>
+<text x="372" y="525" text-anchor="end" class="label">ETHUSDT long | Categorical</text>
+<rect x="969.0" y="511" width="347.0" height="21" fill="#0f766e"/>
+<text x="960.0" y="526" text-anchor="end" class="value">-4.68</text>
+<text x="372" y="572" text-anchor="end" class="label">ETHUSDT short | Categorical</text>
+<rect x="827.9" y="558" width="488.0" height="21" fill="#0f766e"/>
+<text x="818.9" y="573" text-anchor="end" class="value">-6.59</text>
+<text x="372" y="619" text-anchor="end" class="label">ETHUSDT long | FinCast</text>
+<rect x="920.1" y="605" width="395.8" height="21" fill="#b54708"/>
+<text x="911.1" y="620" text-anchor="end" class="value">-5.34</text>
+<text x="372" y="666" text-anchor="end" class="label">ETHUSDT short | FinCast</text>
+<rect x="820.0" y="652" width="496.0" height="21" fill="#b54708"/>
+<text x="811.0" y="667" text-anchor="end" class="value">-6.70</text>
+<text x="372" y="713" text-anchor="end" class="label">SOLUSDT long | Direct</text>
+<rect x="1113.2" y="699" width="202.7" height="21" fill="#2563a6"/>
+<text x="1104.2" y="714" text-anchor="end" class="value">-2.74</text>
+<text x="372" y="760" text-anchor="end" class="label">SOLUSDT short | Direct</text>
+<rect x="951.5" y="746" width="364.4" height="21" fill="#2563a6"/>
+<text x="942.5" y="761" text-anchor="end" class="value">-4.92</text>
+<text x="372" y="807" text-anchor="end" class="label">SOLUSDT long | Categorical</text>
+<rect x="1131.9" y="793" width="184.1" height="21" fill="#0f766e"/>
+<text x="1122.9" y="808" text-anchor="end" class="value">-2.48</text>
+<text x="372" y="854" text-anchor="end" class="label">SOLUSDT short | Categorical</text>
+<rect x="679.6" y="840" width="636.3" height="21" fill="#0f766e"/>
+<text x="670.6" y="855" text-anchor="end" class="value">-8.59</text>
+<text x="372" y="901" text-anchor="end" class="label">SOLUSDT long | FinCast</text>
+<rect x="1196.1" y="887" width="119.9" height="21" fill="#b54708"/>
+<text x="1187.1" y="902" text-anchor="end" class="value">-1.62</text>
+<text x="372" y="948" text-anchor="end" class="label">SOLUSDT short | FinCast</text>
+<rect x="711.5" y="934" width="604.5" height="21" fill="#b54708"/>
+<text x="702.5" y="949" text-anchor="end" class="value">-8.16</text>
+<text x="56" y="1042" class="note">Zero selected trades is a failed viability result, not zero-risk or flat-performance evidence.</text>
+</svg>

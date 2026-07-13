@@ -1,2 +1,0 @@
-average_expected_payoff_spearman_improvement,maximum_relative_expected_payoff_mse_degradation,passed,reasons,side_spearman_improvements
--0.01701770760601806,0.002863195151521125,False,"[""average_spearman_improvement_below_0.005"",""competing_risk_quality_gate_failed""]","{""long"":0.019939201481455303,""short"":-0.05397461669349142}"
