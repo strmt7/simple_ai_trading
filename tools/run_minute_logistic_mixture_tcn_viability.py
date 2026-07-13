@@ -233,8 +233,18 @@ def _memory_evidence() -> dict[str, object]:
 
         counters = Counters()
         counters.cb = ctypes.sizeof(counters)
-        success = ctypes.windll.psapi.GetProcessMemoryInfo(
-            ctypes.windll.kernel32.GetCurrentProcess(),
+        get_current_process = ctypes.windll.kernel32.GetCurrentProcess
+        get_current_process.argtypes = []
+        get_current_process.restype = wintypes.HANDLE
+        get_process_memory_info = ctypes.windll.psapi.GetProcessMemoryInfo
+        get_process_memory_info.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(Counters),
+            wintypes.DWORD,
+        ]
+        get_process_memory_info.restype = wintypes.BOOL
+        success = get_process_memory_info(
+            get_current_process(),
             ctypes.byref(counters),
             counters.cb,
         )
@@ -273,6 +283,37 @@ class ProgressWriter:
         }
         write_json_atomic(self.path, payload, indent=2, sort_keys=True)
         print(_canonical_json(payload), flush=True)
+
+
+def _write_failure_status(
+    path: Path,
+    error: Exception,
+    *,
+    elapsed_seconds: float,
+) -> None:
+    sequence = 1
+    if path.is_file():
+        try:
+            previous = _read_object(path, "Round 48 progress")
+            sequence = int(previous.get("sequence", 0)) + 1
+        except (TypeError, ValueError):
+            sequence = 1
+    payload = {
+        "schema_version": "round-048-progress-v1",
+        "round": ROUND,
+        "sequence": sequence,
+        "event": "round48_failed",
+        "updated_at_utc": datetime.now(UTC).isoformat(),
+        "elapsed_seconds": elapsed_seconds,
+        "memory": _memory_evidence(),
+        "details": {
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "report_published": False,
+        },
+    }
+    write_json_atomic(path, payload, indent=2, sort_keys=True)
+    print(_canonical_json(payload), flush=True)
 
 
 def _package_versions() -> dict[str, str]:
@@ -568,7 +609,20 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(arguments: Sequence[str] | None = None) -> int:
-    run(_parser().parse_args(arguments))
+    parsed = _parser().parse_args(arguments)
+    evidence_root = parsed.evidence_root.resolve()
+    root_preexisted = evidence_root.exists()
+    started = time.perf_counter()
+    try:
+        run(parsed)
+    except Exception as exc:
+        if not root_preexisted and evidence_root.is_dir():
+            _write_failure_status(
+                evidence_root / "status.json",
+                exc,
+                elapsed_seconds=time.perf_counter() - started,
+            )
+        raise
     return 0
 
 
