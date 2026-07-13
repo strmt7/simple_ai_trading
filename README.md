@@ -528,13 +528,15 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 50 trained six 60-minute path-payoff TCNs on the AMD GPU through
-DirectML. Competing-risk event probabilities improved proper scores, but their
-after-cost payoff rank was `-0.0604` short and `+0.0481` long and the mechanism
-underperformed its direct-mean control on average. Its fixed 610-trade ledger
-lost `35.73%` at 12 bps and `43.86%` at 16 bps, with `37.41%` base drawdown and
-all three symbol sleeves negative. The model was rejected; leverage and AI
-uplift were withheld, and no profitability, testnet, live-trading, or
+Round 51 trained 27 OpenCL LightGBM models on verified Binance USD-M tick data
+and paired the categorical candidate with causal features from the
+991,437,160-parameter FinCast model running through DirectML on the AMD GPU.
+All three candidates produced zero eligible actions: even their best
+worst-seed forecast remained negative after spread, fees, latency, and
+slippage. FinCast changed average ranked-probability skill by `-0.000074`,
+payoff Spearman by `+0.002023`, and payoff MSE by a ratio of `1.001171`; it did
+not establish AI uplift. The round was rejected, and an empty ledger is not a
+profitability or zero-drawdown result. No testnet, live-trading, leverage, or
 autonomous-execution authority was established.
 
 The latest independent execution-replay confirmation remains

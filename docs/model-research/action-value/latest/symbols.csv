@@ -1,13 +1,19 @@
-candidate_id,scenario,symbol,closed_trades,total_return_fraction,maximum_drawdown_fraction,mean_net_payoff_bps,win_rate,stop_loss_trades,take_profit_trades,timeout_trades
-direct_barrier_mean_tcn,base,BTCUSDT,12,-0.009758993673324586,0.014918557636235247,-24.397484183311462,0.4166666666666667,7,2,3
-direct_barrier_mean_tcn,base,ETHUSDT,28,-0.0355774470453461,0.04184959543198352,-38.11869326287082,0.21428571428571427,15,4,9
-direct_barrier_mean_tcn,base,SOLUSDT,50,0.0023094148317972817,0.03408813621058658,1.385648899078369,0.4,27,16,7
-direct_barrier_mean_tcn,stress,BTCUSDT,12,-0.011358993673324587,0.016247501181568997,-28.397484183311462,0.3333333333333333,7,2,3
-direct_barrier_mean_tcn,stress,ETHUSDT,28,-0.03931078037867943,0.04411626209864994,-42.11869326287082,0.21428571428571427,15,4,9
-direct_barrier_mean_tcn,stress,SOLUSDT,50,-0.004357251834869385,0.03815936644872057,-2.6143511009216307,0.4,27,16,7
-competing_risk_barrier_tcn,base,BTCUSDT,60,-0.033746826895078026,0.0337468268950778,-16.87341344753901,0.31666666666666665,29,10,21
-competing_risk_barrier_tcn,base,ETHUSDT,196,-0.030557570786277452,0.07180488760522281,-4.677179201981243,0.4030612244897959,102,55,39
-competing_risk_barrier_tcn,base,SOLUSDT,354,-0.29296050425569214,0.29443565698093854,-24.82716137760103,0.3107344632768362,227,77,50
-competing_risk_barrier_tcn,stress,BTCUSDT,60,-0.041746826895078026,0.04174682689507725,-20.87341344753901,0.3,29,10,21
-competing_risk_barrier_tcn,stress,ETHUSDT,196,-0.05669090411961079,0.09420132128390177,-8.677179201981243,0.3877551020408163,102,55,39
-competing_risk_barrier_tcn,stress,SOLUSDT,354,-0.34016050425569216,0.3414495563398282,-28.82716137760103,0.3107344632768362,227,77,50
+candidate_id,candidate,scenario,symbol,active_days,best_trade_bps,long_trades,max_drawdown_bps,mean_net_bps,median_net_bps,profit_factor,short_trades,total_net_bps,trades,trades_per_active_day,win_rate,worst_trade_bps,portfolio_weighted_net_bps,positive_pnl_share
+direct_mean_lightgbm,Direct mean,base,BTCUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+direct_mean_lightgbm,Direct mean,base,ETHUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+direct_mean_lightgbm,Direct mean,base,SOLUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+direct_mean_lightgbm,Direct mean,stress,BTCUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+direct_mean_lightgbm,Direct mean,stress,ETHUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+direct_mean_lightgbm,Direct mean,stress,SOLUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm,Categorical,base,BTCUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm,Categorical,base,ETHUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm,Categorical,base,SOLUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm,Categorical,stress,BTCUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm,Categorical,stress,ETHUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm,Categorical,stress,SOLUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,BTCUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,ETHUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,SOLUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,BTCUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,ETHUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
+categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,SOLUSDT,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0,0.0
