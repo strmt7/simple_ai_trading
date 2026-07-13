@@ -1,0 +1,110 @@
+{
+  "binding_sha256": "580b081827562f1fcff383245cedff82bda89a1873476e951622d5335b0eaf92",
+  "blobs": [
+    {
+      "git_blob": "15919441ce8f89064b3a29265f6d7893d6042fb9",
+      "path": "pyproject.toml"
+    },
+    {
+      "git_blob": "a81bba225a77852585e1d59e0c11f16fbbc3dc01",
+      "path": "docs/model-research/action-value/round-053-executable-csm-fincast-design.json"
+    },
+    {
+      "git_blob": "60c40cdc5b1d6543af63709777a19e976bb93659",
+      "path": "src/simple_ai_trading/categorical_payoff_lightgbm.py"
+    },
+    {
+      "git_blob": "4c9c2a640f1a412a1e7ea8e4136d0a6d75eb2baa",
+      "path": "src/simple_ai_trading/executable_csm_lightgbm.py"
+    },
+    {
+      "git_blob": "57274eb3665a7be3ed2154b2676e5d9ecb34b971",
+      "path": "src/simple_ai_trading/executable_payoff_lightgbm.py"
+    },
+    {
+      "git_blob": "d772911678e45fc5188cf4ebf52a505db459618c",
+      "path": "src/simple_ai_trading/lightgbm_backend.py"
+    },
+    {
+      "git_blob": "d442c1de57a1e37f4572460afb3437873905a7c0",
+      "path": "src/simple_ai_trading/microstructure_action_policy.py"
+    },
+    {
+      "git_blob": "cb9d333735045b85d8a5f656c27598a7b968c409",
+      "path": "src/simple_ai_trading/microstructure_barriers.py"
+    },
+    {
+      "git_blob": "158ae8a90c5d4c590d077862987f81618184a748",
+      "path": "src/simple_ai_trading/microstructure_cache.py"
+    },
+    {
+      "git_blob": "b7a039d946afe1ae8ec15aa2f15e38dc496d58cb",
+      "path": "src/simple_ai_trading/microstructure_features.py"
+    },
+    {
+      "git_blob": "572722540bfab6f8c1135b951f2cdd5bd47b983c",
+      "path": "src/simple_ai_trading/microstructure_model.py"
+    },
+    {
+      "git_blob": "367c8059d7ec5f86acca26d60ad641c9a61dc1bc",
+      "path": "src/simple_ai_trading/microstructure_warehouse.py"
+    },
+    {
+      "git_blob": "795c3ad2d349658e9b358acf1cfb4cf291571815",
+      "path": "src/simple_ai_trading/payoff_distribution_analysis.py"
+    },
+    {
+      "git_blob": "aff1863fbbfe939bd18657bb580cd11dc65d2237",
+      "path": "src/simple_ai_trading/probability_calibration.py"
+    },
+    {
+      "git_blob": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob": "356e574344c8353e45b4c8793a2201d401ac5e64",
+      "path": "tests/test_executable_payoff_lightgbm.py"
+    },
+    {
+      "git_blob": "5ccf5c6b179f3b1ae0a26b282519f59f85109830",
+      "path": "tools/create_round53_executable_csm_binding.py"
+    },
+    {
+      "git_blob": "a77b31fd3364582d169f5a8fea946e67a945b245",
+      "path": "tools/prototype_round53_severity_shrinkage.py"
+    },
+    {
+      "git_blob": "98709020553418b4e23906bd06f00839b9bd78ae",
+      "path": "tools/run_round51_categorical_payoff_fincast.py"
+    },
+    {
+      "git_blob": "3fe78404153d5267f95d4882d8bfa60158d95aaf",
+      "path": "tools/run_round52_executable_support_hurdle.py"
+    },
+    {
+      "git_blob": "67245a0049481ac72086e944993bdd72b07c9609",
+      "path": "tools/run_round53_executable_csm.py"
+    }
+  ],
+  "created_at": "2026-07-13T22:43:39.399226+00:00",
+  "design_path": "docs/model-research/action-value/round-053-executable-csm-fincast-design.json",
+  "design_sha256": "58a6df6f34bc4d2cbb660be2c84f80a352a708e315197e45f4ab9922ef7504e4",
+  "execution_contract": {
+    "all_models_trained_before_evaluation": true,
+    "clean_worktree_required_at_binding": true,
+    "fincast_cached_artifact_hash_validation_required": true,
+    "fincast_feature_rerun_required": false,
+    "leverage_applied": false,
+    "lightgbm_compute_backend": "directml",
+    "lightgbm_opencl_fp64_required": true,
+    "profitability_claim": false,
+    "round52_direct_control_hash_validation_required": true,
+    "selection_contaminated": true,
+    "side_specific_support_alignment_required": true,
+    "source_market_rows_synthetic": 0,
+    "trading_authority": false
+  },
+  "implementation_commit": "c20a9d8597ef9c85a1ea796b88a3ba34b89e3551",
+  "round": 53,
+  "schema_version": "round-053-executable-csm-fincast-execution-binding-v1"
+}
