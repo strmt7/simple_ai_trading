@@ -1,0 +1,541 @@
+{
+  "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+  "decision": {
+    "next_model_requirements": [
+      "Use a supervised finite-horizon alpha distribution as the primary learned quantity and keep dynamic programming in a bounded controller.",
+      "Make maximum holding time, per-trade stop loss, forced reconciliation, and cooldown state explicit and non-bypassable.",
+      "Require directional rank, proper distributional score, net action value, bootstrap, drawdown, activity, and symbol-breadth gates before evaluation.",
+      "Preserve the withheld evaluation boundary until a calibration candidate passes every gate."
+    ],
+    "reject": [
+      "unbounded rolling greedy Q policy",
+      "Bellman residual as a sufficient model-quality gate",
+      "any controller without a mandatory maximum holding period"
+    ],
+    "retain": [
+      "DirectML-compatible distributional tensors",
+      "explicit prior-position/action cost accounting",
+      "all-seed stability diagnostics"
+    ]
+  },
+  "development_only": true,
+  "diagnostic_canonical_sha256": "dd392f0fa1278860424bc27e5764ad84ac943c98ad992f4ec707ff6a94d7369f",
+  "directional_rank": [
+    {
+      "directional_spearman": 0.032605108858054455,
+      "horizon_hours": 1,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.02054966290803131,
+      "horizon_hours": 1,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.040204433610941774,
+      "horizon_hours": 1,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.03792378109298499,
+      "horizon_hours": 1,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.023095000081859524,
+      "horizon_hours": 4,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.002580612691926348,
+      "horizon_hours": 4,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.025552156704466363,
+      "horizon_hours": 4,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.03545007202455908,
+      "horizon_hours": 4,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.02282212632881972,
+      "horizon_hours": 12,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.0012417625845078041,
+      "horizon_hours": 12,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.01440207923937513,
+      "horizon_hours": 12,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.04231051048721606,
+      "horizon_hours": 12,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.014435989417561296,
+      "horizon_hours": 24,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.016510313667355128,
+      "horizon_hours": 24,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.004591730798921583,
+      "horizon_hours": 24,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.020832868868396155,
+      "horizon_hours": 24,
+      "policy_id": "median_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.0331331298301421,
+      "horizon_hours": 1,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.03997213751772691,
+      "horizon_hours": 1,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.03209967069635611,
+      "horizon_hours": 1,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.03029671025152362,
+      "horizon_hours": 1,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.027077578749709313,
+      "horizon_hours": 4,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.02354072873019466,
+      "horizon_hours": 4,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.023936229390510367,
+      "horizon_hours": 4,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.03072324254886408,
+      "horizon_hours": 4,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.044239258947149425,
+      "horizon_hours": 12,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.042335796348130054,
+      "horizon_hours": 12,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.04405320694259511,
+      "horizon_hours": 12,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.0383906053494542,
+      "horizon_hours": 12,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "directional_spearman": 0.035286018948786795,
+      "horizon_hours": 24,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 6552,
+      "symbol": "ALL"
+    },
+    {
+      "directional_spearman": 0.033325692244359585,
+      "horizon_hours": 24,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "directional_spearman": 0.03734279895615932,
+      "horizon_hours": 24,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "directional_spearman": 0.0254008458639417,
+      "horizon_hours": 24,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "rows": 2184,
+      "symbol": "SOLUSDT"
+    }
+  ],
+  "elapsed_seconds": 2.2201172999921255,
+  "evaluation_role_read": false,
+  "findings": [
+    "The Bellman model learned a numerically stable representation, but its best pooled calibration directional Spearman was only 0.044239.",
+    "The median-Q controller converted weak action differences into position runs as long as 791 hours, which is not a day-trading or stale-position-safe policy.",
+    "Mandatory finite holding reduced the stale-position defect but did not establish robust economics. The best diagnostic row was median_q_all_seed_consensus at 8 hours with stress return 1.0722%, drawdown 12.4317%, profit factor 1.0279, and bootstrap lower mean -0.633625 bps/hour.",
+    "Positive Bellman-residual skill is not evidence of forecast alpha or tradable value; future designs must gate directional and economic skill separately."
+  ],
+  "finite_holding_screen": [
+    {
+      "active_days": 50,
+      "bootstrap_lower_mean_hourly_bps": -0.9493972602197825,
+      "closed_trades": 106,
+      "maximum_holding_hours": 4,
+      "policy_id": "median_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.1407272134346006,
+      "stress_profit_factor": 0.8883745735269093,
+      "stress_total_net_return_fraction": -0.06945044764810326,
+      "symbol_net_bps": {
+        "BTCUSDT": -882.7935653924942,
+        "ETHUSDT": -928.0640061651357,
+        "SOLUSDT": -71.70825850963593
+      }
+    },
+    {
+      "active_days": 54,
+      "bootstrap_lower_mean_hourly_bps": -0.6336249299729146,
+      "closed_trades": 99,
+      "maximum_holding_hours": 8,
+      "policy_id": "median_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.12431722758124841,
+      "stress_profit_factor": 1.0279070636698442,
+      "stress_total_net_return_fraction": 0.010721668178457433,
+      "symbol_net_bps": {
+        "BTCUSDT": -1409.5915627777576,
+        "ETHUSDT": 371.48904569773003,
+        "SOLUSDT": 1721.9987329244614
+      }
+    },
+    {
+      "active_days": 61,
+      "bootstrap_lower_mean_hourly_bps": -1.9357528492245863,
+      "closed_trades": 88,
+      "maximum_holding_hours": 12,
+      "policy_id": "median_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.22381935587549184,
+      "stress_profit_factor": 0.944247731768762,
+      "stress_total_net_return_fraction": -0.07709843729176591,
+      "symbol_net_bps": {
+        "BTCUSDT": -1557.22413662076,
+        "ETHUSDT": -1152.696645390708,
+        "SOLUSDT": 796.165231615305
+      }
+    },
+    {
+      "active_days": 58,
+      "bootstrap_lower_mean_hourly_bps": -2.096349660325875,
+      "closed_trades": 73,
+      "maximum_holding_hours": 24,
+      "policy_id": "median_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.23889345412602037,
+      "stress_profit_factor": 0.9907924431762448,
+      "stress_total_net_return_fraction": -0.03442549387053018,
+      "symbol_net_bps": {
+        "BTCUSDT": -94.60961062763818,
+        "ETHUSDT": -443.46470373496413,
+        "SOLUSDT": 95.04651007056236
+      }
+    },
+    {
+      "active_days": 1,
+      "bootstrap_lower_mean_hourly_bps": -0.011421098049743708,
+      "closed_trades": 1,
+      "maximum_holding_hours": 4,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.0009035465592474035,
+      "stress_profit_factor": 0.2639965662252036,
+      "stress_total_net_return_fraction": -0.000831539904650902,
+      "symbol_net_bps": {
+        "BTCUSDT": -24.94367814064026,
+        "ETHUSDT": 0.0,
+        "SOLUSDT": 0.0
+      }
+    },
+    {
+      "active_days": 1,
+      "bootstrap_lower_mean_hourly_bps": -0.0049895505183200056,
+      "closed_trades": 1,
+      "maximum_holding_hours": 8,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.0028782485689570203,
+      "stress_profit_factor": 0.9224964453943671,
+      "stress_total_net_return_fraction": -0.0002793766150909205,
+      "symbol_net_bps": {
+        "BTCUSDT": -8.172883749008179,
+        "ETHUSDT": 0.0,
+        "SOLUSDT": 0.0
+      }
+    },
+    {
+      "active_days": 1,
+      "bootstrap_lower_mean_hourly_bps": -0.015342789582717113,
+      "closed_trades": 1,
+      "maximum_holding_hours": 12,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.0028782485689570203,
+      "stress_profit_factor": 0.7789764378309032,
+      "stress_total_net_return_fraction": -0.0011240382641928282,
+      "symbol_net_bps": {
+        "BTCUSDT": -33.508652448654175,
+        "ETHUSDT": 0.0,
+        "SOLUSDT": 0.0
+      }
+    },
+    {
+      "active_days": 1,
+      "bootstrap_lower_mean_hourly_bps": -0.046071003972392374,
+      "closed_trades": 1,
+      "maximum_holding_hours": 24,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "stress_maximum_drawdown_fraction": 0.003488129228780612,
+      "stress_profit_factor": 0.5399579444229813,
+      "stress_total_net_return_fraction": -0.0033585377824190132,
+      "symbol_net_bps": {
+        "BTCUSDT": -100.61907267570496,
+        "ETHUSDT": 0.0,
+        "SOLUSDT": 0.0
+      }
+    }
+  ],
+  "generated_at_utc": "2026-07-13T23:42:14.137046+00:00",
+  "implementation_commit": "3b2500c7c44532bec51e374c6577b75773a0a54a",
+  "original_policy_summary": [
+    {
+      "considered_symbol_hours": 6552,
+      "maximum_holding_hours": 791,
+      "median_holding_hours": 430.0,
+      "nonflat_runs": 15,
+      "policy_id": "median_q_all_seed_consensus",
+      "position_changes": 15,
+      "unanimous_fraction": 0.894993894993895,
+      "unanimous_symbol_hours": 5864
+    },
+    {
+      "considered_symbol_hours": 6552,
+      "maximum_holding_hours": 13,
+      "median_holding_hours": 13.0,
+      "nonflat_runs": 1,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "position_changes": 2,
+      "unanimous_fraction": 0.9685592185592186,
+      "unanimous_symbol_hours": 6346
+    }
+  ],
+  "position_runs": [
+    {
+      "end_utc": "2024-08-05T13:00:00+00:00",
+      "hours": 780,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-07-04T02:00:00+00:00",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "end_utc": "2024-08-15T17:00:00+00:00",
+      "hours": 244,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-08-05T14:00:00+00:00",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "end_utc": "2024-09-12T01:00:00+00:00",
+      "hours": 656,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-08-15T18:00:00+00:00",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "end_utc": "2024-09-29T23:00:00+00:00",
+      "hours": 430,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-09-12T02:00:00+00:00",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "end_utc": "2024-08-05T13:00:00+00:00",
+      "hours": 780,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-07-04T02:00:00+00:00",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "end_utc": "2024-08-07T14:00:00+00:00",
+      "hours": 49,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-08-05T14:00:00+00:00",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "end_utc": "2024-08-08T22:00:00+00:00",
+      "hours": 32,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-08-07T15:00:00+00:00",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "end_utc": "2024-08-15T17:00:00+00:00",
+      "hours": 163,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-08-08T23:00:00+00:00",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "end_utc": "2024-09-12T01:00:00+00:00",
+      "hours": 656,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-08-15T18:00:00+00:00",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "end_utc": "2024-09-29T23:00:00+00:00",
+      "hours": 430,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-09-12T02:00:00+00:00",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "end_utc": "2024-07-03T14:00:00+00:00",
+      "hours": 49,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-07-01T14:00:00+00:00",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "end_utc": "2024-08-05T13:00:00+00:00",
+      "hours": 791,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-07-03T15:00:00+00:00",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "end_utc": "2024-08-12T13:00:00+00:00",
+      "hours": 168,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-08-05T14:00:00+00:00",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "end_utc": "2024-09-12T01:00:00+00:00",
+      "hours": 732,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-08-12T14:00:00+00:00",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "end_utc": "2024-09-29T23:00:00+00:00",
+      "hours": 430,
+      "policy_id": "median_q_all_seed_consensus",
+      "side": -1,
+      "start_utc": "2024-09-12T02:00:00+00:00",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "end_utc": "2024-09-04T13:00:00+00:00",
+      "hours": 13,
+      "policy_id": "lower_tail_q_all_seed_consensus",
+      "side": 1,
+      "start_utc": "2024-09-04T01:00:00+00:00",
+      "symbol": "BTCUSDT"
+    }
+  ],
+  "profitability_claim": false,
+  "round": 54,
+  "schema_version": "round-054-sequential-failure-diagnostic-v1",
+  "source_prediction_sha256": "437b882eb747b8abbbcb9c5182040f7c72774fc12cacbe08454934275e940bcf",
+  "source_report_canonical_sha256": "8aff454b63201ccab8a53d7a9cf4a9f46bad04a284074c7e7a22e001fb9385ff",
+  "source_report_file_sha256": "e1a6e53d4be1d21ef101f7172083740af5ad332ec8933ca445625b32f5085642",
+  "status": "rejected",
+  "trading_authority": false
+}

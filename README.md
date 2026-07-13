@@ -528,17 +528,14 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 53 evaluated 18 new conditional sign-magnitude LightGBM models, nine
-reused direct controls, and 54 hash-verified predictions on verified Binance
-USD-M BTC, ETH, and SOL event data. The CSM improved joint proper scores and
-average expected-payoff rank to `0.051582`, but expected-value MSE skill stayed
-negative. Its frozen policy lost `8.879308` stressed bps on the only calibration
-trade; two later positive consumed-development trades were not authorized.
-A separate 54-rule rank-tail diagnostic also produced zero calibration passes:
-the least-bad rule averaged `-1.673628` stressed bps over 11 calibration trades
-and `-4.022015` on the consumed interval. FinCast worsened joint log loss and
-rank versus the matched CSM. The round was rejected with no untouched-data
-expansion, testnet, live-trading, leverage, or autonomous-execution authority.
+Round 54 trained three DirectML distributional action-value TCNs on BTC, ETH,
+and SOL. Bellman residual skill reached `25.76%` to `26.20%`, but pooled
+directional rank remained weak and the greedy controller held positions for up
+to `791` hours. Its median-Q stress replay returned `-30.87%` with `43.96%`
+drawdown. A post-hoc 8-hour cap produced a `+1.07%` calibration point estimate,
+but still had `12.43%` drawdown and a negative block-bootstrap lower bound. The
+round was rejected before evaluation; no profitability, untouched-data,
+testnet, live-trading, leverage, AI-uplift, or execution authority is claimed.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
