@@ -11,82 +11,85 @@
 <rect x="120" y="150" width="1310" height="330" fill="#ffffff" stroke="#d8e0e7"/>
 <line x1="120" y1="480.0" x2="1430" y2="480.0" class="grid"/>
 <text x="106" y="484.0" text-anchor="end" class="axis">-14.3</text>
+<line x1="120" y1="389.1" x2="1430" y2="389.1" class="zero"/>
+<text x="106" y="393.1" text-anchor="end" class="axis">+0.0</text>
 <line x1="120" y1="315.0" x2="1430" y2="315.0" class="grid"/>
-<text x="106" y="319.0" text-anchor="end" class="axis">-4.0</text>
-<line x1="120" y1="249.9" x2="1430" y2="249.9" class="zero"/>
-<text x="106" y="253.9" text-anchor="end" class="axis">+0.0</text>
+<text x="106" y="319.0" text-anchor="end" class="axis">+11.6</text>
 <line x1="120" y1="150.0" x2="1430" y2="150.0" class="grid"/>
-<text x="106" y="154.0" text-anchor="end" class="axis">+6.2</text>
+<text x="106" y="154.0" text-anchor="end" class="axis">+37.6</text>
 <text x="104" y="556" text-anchor="end" class="axis">no series</text>
-<circle cx="139.8" cy="373.0" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="139.8" y="358.0" text-anchor="middle" class="value">-7.64</text>
-<text x="139.8" y="589" text-anchor="middle" class="axis">R7</text>
-<circle cx="179.5" cy="440.8" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="179.5" y="425.8" text-anchor="middle" class="value">-11.84</text>
-<text x="179.5" y="589" text-anchor="middle" class="axis">R8</text>
-<rect x="212.2" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 219.2 552.0)"/>
-<text x="219.2" y="589" text-anchor="middle" class="axis">R9</text>
-<rect x="251.9" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 258.9 552.0)"/>
-<text x="258.9" y="589" text-anchor="middle" class="axis">R10</text>
-<rect x="291.6" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 298.6 552.0)"/>
-<text x="298.6" y="589" text-anchor="middle" class="axis">R11</text>
-<rect x="331.3" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 338.3 552.0)"/>
-<text x="338.3" y="589" text-anchor="middle" class="axis">R12</text>
-<rect x="371.0" y="349.4" width="14" height="14" fill="#7b559c"/>
-<text x="378.0" y="589" text-anchor="middle" class="axis">R13</text>
-<rect x="410.7" y="347.0" width="14" height="14" fill="#7b559c"/>
-<text x="417.7" y="589" text-anchor="middle" class="axis">R14</text>
-<rect x="450.4" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 457.4 552.0)"/>
-<text x="457.4" y="589" text-anchor="middle" class="axis">R15</text>
-<rect x="490.1" y="445.8" width="14" height="14" fill="#7b559c"/>
-<text x="497.1" y="589" text-anchor="middle" class="axis">R16</text>
-<rect x="529.8" y="411.2" width="14" height="14" fill="#7b559c"/>
-<text x="536.8" y="589" text-anchor="middle" class="axis">R17</text>
-<rect x="569.5" y="376.9" width="14" height="14" fill="#7b559c"/>
-<text x="576.5" y="589" text-anchor="middle" class="axis">R18</text>
-<rect x="609.2" y="409.0" width="14" height="14" fill="#7b559c"/>
-<text x="616.2" y="589" text-anchor="middle" class="axis">R19</text>
-<rect x="648.9" y="410.2" width="14" height="14" fill="#7b559c"/>
-<text x="655.9" y="589" text-anchor="middle" class="axis">R20</text>
-<rect x="688.6" y="440.4" width="14" height="14" fill="#7b559c"/>
-<text x="695.6" y="589" text-anchor="middle" class="axis">R21</text>
-<rect x="728.3" y="406.9" width="14" height="14" fill="#7b559c"/>
-<text x="735.3" y="589" text-anchor="middle" class="axis">R22</text>
-<rect x="768.0" y="397.9" width="14" height="14" fill="#7b559c"/>
-<text x="775.0" y="589" text-anchor="middle" class="axis">R23</text>
-<rect x="807.7" y="425.4" width="14" height="14" fill="#7b559c"/>
-<text x="814.7" y="589" text-anchor="middle" class="axis">R24</text>
-<rect x="847.4" y="402.3" width="14" height="14" fill="#7b559c"/>
-<text x="854.4" y="589" text-anchor="middle" class="axis">R25</text>
-<rect x="887.1" y="410.1" width="14" height="14" fill="#7b559c"/>
-<text x="894.1" y="589" text-anchor="middle" class="axis">R26</text>
-<rect x="926.8" y="438.6" width="14" height="14" fill="#7b559c"/>
-<text x="933.8" y="589" text-anchor="middle" class="axis">R27</text>
-<rect x="966.5" y="392.4" width="14" height="14" fill="#7b559c"/>
-<text x="973.5" y="589" text-anchor="middle" class="axis">R28</text>
-<rect x="1006.2" y="382.2" width="14" height="14" fill="#7b559c"/>
-<text x="1013.2" y="589" text-anchor="middle" class="axis">R29</text>
-<rect x="1045.9" y="167.2" width="14" height="14" fill="#7b559c"/>
-<text x="1052.9" y="589" text-anchor="middle" class="axis">R30</text>
-<rect x="1085.6" y="357.0" width="14" height="14" fill="#7b559c"/>
-<text x="1092.6" y="589" text-anchor="middle" class="axis">R31</text>
-<rect x="1125.3" y="416.3" width="14" height="14" fill="#7b559c"/>
-<text x="1132.3" y="589" text-anchor="middle" class="axis">R32</text>
-<rect x="1165.0" y="448.8" width="14" height="14" fill="#7b559c"/>
-<text x="1172.0" y="589" text-anchor="middle" class="axis">R33</text>
-<rect x="1204.7" y="416.3" width="14" height="14" fill="#7b559c"/>
-<text x="1211.7" y="589" text-anchor="middle" class="axis">R34</text>
-<rect x="1244.4" y="234.5" width="14" height="14" fill="#7b559c"/>
-<text x="1251.4" y="589" text-anchor="middle" class="axis">R35</text>
-<rect x="1284.1" y="404.2" width="14" height="14" fill="#7b559c"/>
-<text x="1291.1" y="589" text-anchor="middle" class="axis">R36</text>
-<rect x="1323.8" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1330.8 552.0)"/>
-<text x="1330.8" y="589" text-anchor="middle" class="axis">R37</text>
-<circle cx="1370.5" cy="314.2" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1370.5" y="299.2" text-anchor="middle" class="value">-3.99</text>
-<text x="1370.5" y="589" text-anchor="middle" class="axis">R38</text>
-<circle cx="1410.2" cy="409.6" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1410.2" y="394.6" text-anchor="middle" class="value">-9.91</text>
-<text x="1410.2" y="589" text-anchor="middle" class="axis">R39</text>
+<circle cx="139.3" cy="437.8" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
+<text x="139.3" y="422.8" text-anchor="middle" class="value">-7.64</text>
+<text x="139.3" y="589" text-anchor="middle" class="axis">R7</text>
+<circle cx="177.8" cy="464.5" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
+<text x="177.8" y="449.5" text-anchor="middle" class="value">-11.84</text>
+<text x="177.8" y="589" text-anchor="middle" class="axis">R8</text>
+<rect x="209.3" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 216.3 552.0)"/>
+<text x="216.3" y="589" text-anchor="middle" class="axis">R9</text>
+<rect x="247.9" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 254.9 552.0)"/>
+<text x="254.9" y="589" text-anchor="middle" class="axis">R10</text>
+<rect x="286.4" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 293.4 552.0)"/>
+<text x="293.4" y="589" text-anchor="middle" class="axis">R11</text>
+<rect x="324.9" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 331.9 552.0)"/>
+<text x="331.9" y="589" text-anchor="middle" class="axis">R12</text>
+<rect x="363.4" y="424.2" width="14" height="14" fill="#7b559c"/>
+<text x="370.4" y="589" text-anchor="middle" class="axis">R13</text>
+<rect x="402.0" y="423.2" width="14" height="14" fill="#7b559c"/>
+<text x="409.0" y="589" text-anchor="middle" class="axis">R14</text>
+<rect x="440.5" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 447.5 552.0)"/>
+<text x="447.5" y="589" text-anchor="middle" class="axis">R15</text>
+<rect x="479.0" y="462.3" width="14" height="14" fill="#7b559c"/>
+<text x="486.0" y="589" text-anchor="middle" class="axis">R16</text>
+<rect x="517.6" y="448.6" width="14" height="14" fill="#7b559c"/>
+<text x="524.6" y="589" text-anchor="middle" class="axis">R17</text>
+<rect x="556.1" y="435.0" width="14" height="14" fill="#7b559c"/>
+<text x="563.1" y="589" text-anchor="middle" class="axis">R18</text>
+<rect x="594.6" y="447.7" width="14" height="14" fill="#7b559c"/>
+<text x="601.6" y="589" text-anchor="middle" class="axis">R19</text>
+<rect x="633.1" y="448.2" width="14" height="14" fill="#7b559c"/>
+<text x="640.1" y="589" text-anchor="middle" class="axis">R20</text>
+<rect x="671.7" y="460.1" width="14" height="14" fill="#7b559c"/>
+<text x="678.7" y="589" text-anchor="middle" class="axis">R21</text>
+<rect x="710.2" y="446.9" width="14" height="14" fill="#7b559c"/>
+<text x="717.2" y="589" text-anchor="middle" class="axis">R22</text>
+<rect x="748.7" y="443.3" width="14" height="14" fill="#7b559c"/>
+<text x="755.7" y="589" text-anchor="middle" class="axis">R23</text>
+<rect x="787.3" y="454.2" width="14" height="14" fill="#7b559c"/>
+<text x="794.3" y="589" text-anchor="middle" class="axis">R24</text>
+<rect x="825.8" y="445.1" width="14" height="14" fill="#7b559c"/>
+<text x="832.8" y="589" text-anchor="middle" class="axis">R25</text>
+<rect x="864.3" y="448.1" width="14" height="14" fill="#7b559c"/>
+<text x="871.3" y="589" text-anchor="middle" class="axis">R26</text>
+<rect x="902.9" y="459.4" width="14" height="14" fill="#7b559c"/>
+<text x="909.9" y="589" text-anchor="middle" class="axis">R27</text>
+<rect x="941.4" y="441.2" width="14" height="14" fill="#7b559c"/>
+<text x="948.4" y="589" text-anchor="middle" class="axis">R28</text>
+<rect x="979.9" y="437.1" width="14" height="14" fill="#7b559c"/>
+<text x="986.9" y="589" text-anchor="middle" class="axis">R29</text>
+<rect x="1018.4" y="352.2" width="14" height="14" fill="#7b559c"/>
+<text x="1025.4" y="589" text-anchor="middle" class="axis">R30</text>
+<rect x="1057.0" y="427.2" width="14" height="14" fill="#7b559c"/>
+<text x="1064.0" y="589" text-anchor="middle" class="axis">R31</text>
+<rect x="1095.5" y="450.6" width="14" height="14" fill="#7b559c"/>
+<text x="1102.5" y="589" text-anchor="middle" class="axis">R32</text>
+<rect x="1134.0" y="463.5" width="14" height="14" fill="#7b559c"/>
+<text x="1141.0" y="589" text-anchor="middle" class="axis">R33</text>
+<rect x="1172.6" y="450.6" width="14" height="14" fill="#7b559c"/>
+<text x="1179.6" y="589" text-anchor="middle" class="axis">R34</text>
+<rect x="1211.1" y="378.8" width="14" height="14" fill="#7b559c"/>
+<text x="1218.1" y="589" text-anchor="middle" class="axis">R35</text>
+<rect x="1249.6" y="445.8" width="14" height="14" fill="#7b559c"/>
+<text x="1256.6" y="589" text-anchor="middle" class="axis">R36</text>
+<rect x="1288.1" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1295.1 552.0)"/>
+<text x="1295.1" y="589" text-anchor="middle" class="axis">R37</text>
+<circle cx="1333.7" cy="414.5" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
+<text x="1333.7" y="399.5" text-anchor="middle" class="value">-3.99</text>
+<text x="1333.7" y="589" text-anchor="middle" class="axis">R38</text>
+<circle cx="1372.2" cy="452.2" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
+<text x="1372.2" y="437.2" text-anchor="middle" class="value">-9.91</text>
+<text x="1372.2" y="589" text-anchor="middle" class="axis">R39</text>
+<circle cx="1410.7" cy="159.5" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
+<text x="1410.7" y="144.5" text-anchor="middle" class="value">+36.06</text>
+<text x="1410.7" y="589" text-anchor="middle" class="axis">R40</text>
 <text x="56" y="632" class="note">Windows and units differ by round. This is evidence lineage, not an equity curve or portfolio return series.</text>
 </svg>
