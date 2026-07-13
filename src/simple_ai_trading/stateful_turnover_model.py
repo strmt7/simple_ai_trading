@@ -450,6 +450,17 @@ def _window_mask(
     )
 
 
+def _evaluation_window_mask(
+    dataset: StatefulHourlyDataset,
+    *,
+    start: str,
+    end: str,
+) -> np.ndarray:
+    return (dataset.decision_time_ms >= _date_ms(start)) & (
+        dataset.decision_time_ms < _end_exclusive_ms(end)
+    )
+
+
 def schedule_masks(
     dataset: StatefulHourlyDataset,
     schedule: MonthlySchedule,
@@ -464,7 +475,7 @@ def schedule_masks(
         "calibration": _window_mask(
             dataset, start=schedule.calibration_start, end=schedule.calibration_end
         ),
-        "evaluation": _window_mask(
+        "evaluation": _evaluation_window_mask(
             dataset, start=schedule.evaluation_start, end=schedule.evaluation_end
         ),
     }
@@ -474,6 +485,19 @@ def schedule_masks(
     if np.any(combined > 1) or any(not np.any(mask) for mask in masks.values()):
         raise ValueError(f"Round 43 invalid role masks for {schedule.evaluation_month}")
     return masks
+
+
+def _combined_evaluation_mask(dataset: StatefulHourlyDataset) -> np.ndarray:
+    return np.logical_or.reduce(
+        [
+            _evaluation_window_mask(
+                dataset,
+                start=schedule.evaluation_start,
+                end=schedule.evaluation_end,
+            )
+            for schedule in SCHEDULES
+        ]
+    )
 
 
 def _amplitude_slope(actual: np.ndarray, prediction: np.ndarray) -> float:
@@ -703,7 +727,7 @@ def train_stateful_forecasts(
                 )
     if len(artifacts) != 12 or len(backend_kinds) != 1 or len(backend_devices) != 1:
         raise RuntimeError("Round 43 model artifact or backend count is inconsistent")
-    evaluation_mask = _window_mask(dataset, start="2025-01-01", end="2025-06-30")
+    evaluation_mask = _combined_evaluation_mask(dataset)
     for feature_set, values in predictions.items():
         if not np.isfinite(values[evaluation_mask]).all():
             raise ValueError(
@@ -937,7 +961,7 @@ def _evaluation_grid(
     dataset: StatefulHourlyDataset,
     predictions: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    mask = _window_mask(dataset, start="2025-01-01", end="2025-06-30")
+    mask = _combined_evaluation_mask(dataset)
     indexes = np.flatnonzero(mask)
     if indexes.size % len(SYMBOLS):
         raise ValueError("Round 43 evaluation grid has incomplete symbol groups")
