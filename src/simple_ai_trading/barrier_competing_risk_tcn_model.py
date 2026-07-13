@@ -123,6 +123,10 @@ class BarrierCompetingRiskArtifact:
     reload_max_abs_timeout_profit_logit_error: float
     reload_max_abs_timeout_mean_error: float
     reload_max_abs_direct_mean_error: float
+    runtime_repeat_max_abs_event_logit_error: float
+    runtime_repeat_max_abs_timeout_profit_logit_error: float
+    runtime_repeat_max_abs_timeout_mean_error: float
+    runtime_repeat_max_abs_direct_mean_error: float
     warning_count: int
 
     def asdict(self) -> dict[str, object]:
@@ -1303,22 +1307,31 @@ def _train_candidate(
                 {"status": "started", "candidate_id": candidate_id, "seed": seed},
             )
         peer.load_state_dict(best_state)
-        reference_probe = _predict_mask(
-            peer, normalized_features, temporal, probe_mask, device
-        )
         model_path = model_dir / f"round50_{candidate_id}_seed_{seed}.pt"
         model_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(best_state, model_path)
-        reloaded = _candidate_model(candidate_id, target_baselines)
-        reloaded.load_state_dict(
-            torch.load(model_path, map_location="cpu", weights_only=True)
+        loaded_state = torch.load(model_path, map_location="cpu", weights_only=True)
+        if set(loaded_state) != set(best_state) or any(
+            not torch.equal(best_state[name], loaded_state[name]) for name in best_state
+        ):
+            raise RuntimeError("Round 50 checkpoint tensors changed during reload")
+        reference_cpu = _candidate_model(candidate_id, target_baselines)
+        reference_cpu.load_state_dict(best_state)
+        reloaded_cpu = _candidate_model(candidate_id, target_baselines)
+        reloaded_cpu.load_state_dict(loaded_state)
+        reference_probe = _predict_mask(
+            reference_cpu,
+            normalized_features,
+            temporal,
+            probe_mask,
+            torch.device("cpu"),
         )
-        reloaded = reloaded.to(device)
         reloaded_probe = _predict_mask(
-            reloaded, normalized_features, temporal, probe_mask, device
-        )
-        indices, outputs = _predict_mask(
-            reloaded, normalized_features, temporal, analysis_mask, device
+            reloaded_cpu,
+            normalized_features,
+            temporal,
+            probe_mask,
+            torch.device("cpu"),
         )
         if not np.array_equal(reference_probe[0], reloaded_probe[0]):
             raise RuntimeError("Round 50 reload probe indexing failed")
@@ -1330,6 +1343,28 @@ def _train_candidate(
         )
         if not all(math.isfinite(value) and value <= 1e-6 for value in reload_errors):
             raise RuntimeError(f"Round 50 reload errors are {reload_errors}")
+        runtime_reference = _predict_mask(
+            peer, normalized_features, temporal, probe_mask, device
+        )
+        reloaded = reloaded_cpu.to(device)
+        runtime_reloaded = _predict_mask(
+            reloaded, normalized_features, temporal, probe_mask, device
+        )
+        runtime_repeat_errors = tuple(
+            float(np.max(np.abs(reference - observed)))
+            for reference, observed in zip(
+                runtime_reference[1], runtime_reloaded[1], strict=True
+            )
+        )
+        if not all(
+            math.isfinite(value) and value <= 1e-4 for value in runtime_repeat_errors
+        ):
+            raise RuntimeError(
+                f"Round 50 runtime repeat errors are {runtime_repeat_errors}"
+            )
+        indices, outputs = _predict_mask(
+            reloaded, normalized_features, temporal, analysis_mask, device
+        )
         if global_indices is None:
             global_indices = indices
         elif not np.array_equal(global_indices, indices):
@@ -1388,6 +1423,11 @@ def _train_candidate(
             if candidate_id == "direct_barrier_mean_tcn"
             else reload_errors + (0.0,)
         )
+        mapped_runtime_errors = (
+            runtime_repeat_errors
+            if candidate_id == "direct_barrier_mean_tcn"
+            else runtime_repeat_errors + (0.0,)
+        )
         artifact = BarrierCompetingRiskArtifact(
             candidate_id=candidate_id,
             seed=seed,
@@ -1427,6 +1467,12 @@ def _train_candidate(
             reload_max_abs_timeout_profit_logit_error=mapped_errors[1],
             reload_max_abs_timeout_mean_error=mapped_errors[2],
             reload_max_abs_direct_mean_error=mapped_errors[3],
+            runtime_repeat_max_abs_event_logit_error=mapped_runtime_errors[0],
+            runtime_repeat_max_abs_timeout_profit_logit_error=(
+                mapped_runtime_errors[1]
+            ),
+            runtime_repeat_max_abs_timeout_mean_error=mapped_runtime_errors[2],
+            runtime_repeat_max_abs_direct_mean_error=mapped_runtime_errors[3],
             warning_count=len(warning_messages),
         )
         artifacts.append(artifact)
