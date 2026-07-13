@@ -555,7 +555,7 @@ def _load_verified_cache(
         "hourly_grid_contiguous": True,
         "forward_targets_exactly_reproduced": True,
         "aggregate_dataset_identity_reproduced": True,
-        "cache_copied_to_round46_evidence": False,
+        "cache_copied_to_evidence": False,
     }
     return dataset, manifest, verification
 
