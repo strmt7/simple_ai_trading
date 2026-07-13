@@ -1,0 +1,902 @@
+{
+  "ai_uplift_claim": false,
+  "analysis_sha256": "7054fa3c18eb3240a070192a0e53f3d91bd43330bfafd3289f8fcf374f81a133",
+  "candidate_results": {
+    "cost_aware_utility": {
+      "action_gate": {
+        "horizons_with_positive_mse_skill": 0,
+        "horizons_with_positive_utility_spearman": 4,
+        "maximum_permitted_early_stop_pinball": 0.3742398251504175,
+        "median_best_early_stop_pinball": 0.3678441226357943,
+        "minimum_pairwise_seed_action_logit_spearman": 0.4842014717886247,
+        "minimum_pairwise_seed_conditional_mean_spearman": 0.7317975444265157,
+        "passed": false,
+        "reasons": [
+          "fewer_than_three_utility_horizons_beat_training_mean_mse",
+          "action_logit_seed_stability_below_0_5"
+        ],
+        "side_horizons_with_auc_above_half": 8,
+        "side_horizons_with_positive_log_loss_skill": 7,
+        "temperature_calibration_not_worse": true
+      },
+      "action_side_horizons": [
+        {
+          "baseline_brier": 0.23764515141164835,
+          "baseline_log_loss": 0.6682376475659113,
+          "brier": 0.23678266635540807,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.38842934370040894,
+          "expected_calibration_error_10_bin": 0.02367709803066271,
+          "horizon_hours": 1,
+          "log_loss": 0.6664186432381672,
+          "log_loss_skill": 0.002722091959903583,
+          "roc_auc": 0.5484253159557527,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.37877708673477173
+        },
+        {
+          "baseline_brier": 0.24192310628838093,
+          "baseline_log_loss": 0.6769501111430563,
+          "brier": 0.23949743685137395,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.40696486830711365,
+          "expected_calibration_error_10_bin": 0.012107257935936776,
+          "horizon_hours": 1,
+          "log_loss": 0.6719075015928899,
+          "log_loss_skill": 0.007449012072177186,
+          "roc_auc": 0.5539204890303508,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.382909893989563
+        },
+        {
+          "baseline_brier": 0.2461462320068359,
+          "baseline_log_loss": 0.685421302321042,
+          "brier": 0.24582090308649887,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.4374489486217499,
+          "expected_calibration_error_10_bin": 0.010032139723858736,
+          "horizon_hours": 4,
+          "log_loss": 0.684766372487758,
+          "log_loss_skill": 0.0009555142670154559,
+          "roc_auc": 0.5322604033142154,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.4297764301300049
+        },
+        {
+          "baseline_brier": 0.24866673950716814,
+          "baseline_log_loss": 0.6904865925952859,
+          "brier": 0.247684983044976,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.4583333432674408,
+          "expected_calibration_error_10_bin": 0.006408690968741446,
+          "horizon_hours": 4,
+          "log_loss": 0.6885314505466192,
+          "log_loss_skill": 0.002831542378423313,
+          "roc_auc": 0.5298122534484451,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.4382621943950653
+        },
+        {
+          "baseline_brier": 0.24835321403642063,
+          "baseline_log_loss": 0.689850187404449,
+          "brier": 0.24847537959421057,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.45904821157455444,
+          "expected_calibration_error_10_bin": 0.0224179637373358,
+          "horizon_hours": 12,
+          "log_loss": 0.6901300384990071,
+          "log_loss_skill": -0.0004056693752756413,
+          "roc_auc": 0.530465126754435,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.4645494520664215
+        },
+        {
+          "baseline_brier": 0.250358257795417,
+          "baseline_log_loss": 0.6938692534416542,
+          "brier": 0.24936844640966124,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.48366013169288635,
+          "expected_calibration_error_10_bin": 0.018046969749502106,
+          "horizon_hours": 12,
+          "log_loss": 0.6919489641850768,
+          "log_loss_skill": 0.002767508787934636,
+          "roc_auc": 0.5280183158506484,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.45865514874458313
+        },
+        {
+          "baseline_brier": 0.24889702847379996,
+          "baseline_log_loss": 0.6909397845700519,
+          "brier": 0.2485498266825685,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.4661458432674408,
+          "expected_calibration_error_10_bin": 0.016676688490715512,
+          "horizon_hours": 24,
+          "log_loss": 0.6902382904059325,
+          "log_loss_skill": 0.0010152753970533723,
+          "roc_auc": 0.5293699599538765,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.4727134108543396
+        },
+        {
+          "baseline_brier": 0.25013850584378017,
+          "baseline_log_loss": 0.6934248225355663,
+          "brier": 0.24923600502797813,
+          "candidate_id": "cost_aware_utility",
+          "evaluation_prevalence": 0.4910641312599182,
+          "expected_calibration_error_10_bin": 0.010386154485495147,
+          "horizon_hours": 24,
+          "log_loss": 0.6916196981609654,
+          "log_loss_skill": 0.0026032012641259428,
+          "roc_auc": 0.5237806024307792,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.47628727555274963
+        }
+      ],
+      "base": {
+        "active_days": 68,
+        "active_hours": 652,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.08315877800131512,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.3826754081022645,
+          "samples": 2000,
+          "upper_bps": 0.9320743552484253
+        },
+        "candidate_id": "cost_aware_utility",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.1256490882019886,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.67290887970906,
+        "mean_hourly_portfolio_bps": 0.3968496919157641,
+        "monthly": [
+          {
+            "active_hours": 27,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.2203067470622319,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.016390688543558074
+          },
+          {
+            "active_hours": 21,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.2456340502809595,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.017746286192303895
+          },
+          {
+            "active_hours": 53,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.5350583611209759,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.03929453549226958
+          },
+          {
+            "active_hours": 129,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.883989454270424,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.1473458479182972
+          },
+          {
+            "active_hours": 147,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.8053233998103275,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.05062076464611365
+          },
+          {
+            "active_hours": 140,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.5116161725427086,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.042426205026037556
+          },
+          {
+            "active_hours": 93,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -0.40256846533329393,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.031144452051013793
+          },
+          {
+            "active_hours": 30,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.8656431671539087,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.06604112155224184
+          },
+          {
+            "active_hours": 12,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.0928529245186583,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.006476962580876489
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 6,
+        "profit_factor": 1.1780654651720908,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": -223.85861675441254,
+          "ETHUSDT": 769.959350069364,
+          "SOLUSDT": 2044.534055511156
+        },
+        "total_net_return_fraction": 0.2733927081329244,
+        "trades": 102,
+        "trades_by_symbol": {
+          "BTCUSDT": 12,
+          "ETHUSDT": 41,
+          "SOLUSDT": 49
+        }
+      },
+      "combined_action_gate_passed": false,
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_ninety_active_days",
+          "fewer_than_one_hundred_eighty_closed_trades",
+          "maximum_drawdown_exceeds_ten_percent",
+          "single_symbol_absolute_net_pnl_fraction_exceeds_half",
+          "action_quality_gate_failed"
+        ],
+        "selection_contaminated": true
+      },
+      "forecast_gate": {
+        "coverage_passed": true,
+        "horizons_with_required_pinball_skill": 4,
+        "horizons_with_required_rank_stability": 4,
+        "minimum_pairwise_seed_median_prediction_spearman": 0.7567025357021169,
+        "passed": true,
+        "positive_symbol_horizon_counts": {
+          "BTCUSDT": 4,
+          "ETHUSDT": 4,
+          "SOLUSDT": 3
+        },
+        "quantile_crossing_count": 0,
+        "reasons": []
+      },
+      "rank_ablation_gate": null,
+      "stress": {
+        "active_days": 68,
+        "active_hours": 652,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.07589733628587517,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.3641611614802493,
+          "samples": 2000,
+          "upper_bps": 0.8654512521763846
+        },
+        "candidate_id": "cost_aware_utility",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.12641539320731798,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.674493280667439,
+        "mean_hourly_portfolio_bps": 0.37601635858243077,
+        "monthly": [
+          {
+            "active_hours": 27,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.20955405889018888,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.01557969154908223
+          },
+          {
+            "active_hours": 21,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.23637479102170025,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.01706949944794789
+          },
+          {
+            "active_hours": 53,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.5225135582535924,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.03832460044488095
+          },
+          {
+            "active_hours": 129,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.8606919632309973,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.14536038983564437
+          },
+          {
+            "active_hours": 147,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.7616726061595338,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.04754884592119146
+          },
+          {
+            "active_hours": 140,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.5564190399262211,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.04561328057537861
+          },
+          {
+            "active_hours": 93,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -0.4266425394073682,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.03282590218786097
+          },
+          {
+            "active_hours": 30,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.8477220202005036,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.06462544684095395
+          },
+          {
+            "active_hours": 12,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.09476863333091881,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.0066097705976136956
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 6,
+        "profit_factor": 1.1679939917445976,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": -239.85861675441262,
+          "ETHUSDT": 715.2926834026973,
+          "SOLUSDT": 1979.2007221778233
+        },
+        "total_net_return_fraction": 0.25620348972490525,
+        "trades": 102,
+        "trades_by_symbol": {
+          "BTCUSDT": 12,
+          "ETHUSDT": 41,
+          "SOLUSDT": 49
+        }
+      },
+      "utility_horizons": [
+        {
+          "actual_mean_bps": 0.4907402993448355,
+          "baseline_mse_bps2": 6166.239691321513,
+          "candidate_id": "cost_aware_utility",
+          "horizon_hours": 1,
+          "model_mse_bps2": 6219.418945127365,
+          "mse_skill": -0.008624259916574006,
+          "pearson": 0.017504966517136355,
+          "prediction_mean_bps": 0.032213817718849326,
+          "rows": 19584,
+          "spearman": 0.025907779808302053,
+          "training_mean_bps": 0.4675271511077881
+        },
+        {
+          "actual_mean_bps": 1.9383440151828908,
+          "baseline_mse_bps2": 24028.852686710274,
+          "candidate_id": "cost_aware_utility",
+          "horizon_hours": 4,
+          "model_mse_bps2": 24533.320655940788,
+          "mse_skill": -0.020994259518246627,
+          "pearson": -0.021352170314497126,
+          "prediction_mean_bps": 2.292853023726729,
+          "rows": 19584,
+          "spearman": 0.017016032655591304,
+          "training_mean_bps": 1.8598825931549072
+        },
+        {
+          "actual_mean_bps": 5.557674806329933,
+          "baseline_mse_bps2": 73291.93407576373,
+          "candidate_id": "cost_aware_utility",
+          "horizon_hours": 12,
+          "model_mse_bps2": 74655.10582365017,
+          "mse_skill": -0.01859920556165573,
+          "pearson": 0.00022238460193805366,
+          "prediction_mean_bps": 4.971030516329917,
+          "rows": 19584,
+          "spearman": 0.04174301262079343,
+          "training_mean_bps": 5.6018452644348145
+        },
+        {
+          "actual_mean_bps": 11.861478705231551,
+          "baseline_mse_bps2": 142386.92542690993,
+          "candidate_id": "cost_aware_utility",
+          "horizon_hours": 24,
+          "model_mse_bps2": 144568.07015993766,
+          "mse_skill": -0.015318434094198974,
+          "pearson": 0.008204615603032055,
+          "prediction_mean_bps": 4.56095992529034,
+          "rows": 19584,
+          "spearman": 0.025243944911720575,
+          "training_mean_bps": 11.214112281799316
+        }
+      ]
+    },
+    "cost_aware_utility_rank": {
+      "action_gate": {
+        "horizons_with_positive_mse_skill": 0,
+        "horizons_with_positive_utility_spearman": 4,
+        "maximum_permitted_early_stop_pinball": 0.3742398251504175,
+        "median_best_early_stop_pinball": 0.3680705336570559,
+        "minimum_pairwise_seed_action_logit_spearman": 0.6446933263912632,
+        "minimum_pairwise_seed_conditional_mean_spearman": 0.6934098068469674,
+        "passed": false,
+        "reasons": [
+          "fewer_than_three_utility_horizons_beat_training_mean_mse"
+        ],
+        "side_horizons_with_auc_above_half": 8,
+        "side_horizons_with_positive_log_loss_skill": 6,
+        "temperature_calibration_not_worse": true
+      },
+      "action_side_horizons": [
+        {
+          "baseline_brier": 0.23764515141164835,
+          "baseline_log_loss": 0.6682376475659113,
+          "brier": 0.2374046597969557,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.38842934370040894,
+          "expected_calibration_error_10_bin": 0.04222631254355163,
+          "horizon_hours": 1,
+          "log_loss": 0.6676816501659217,
+          "log_loss_skill": 0.0008320354323267942,
+          "roc_auc": 0.5549816796992009,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.37877708673477173
+        },
+        {
+          "baseline_brier": 0.24192310628838093,
+          "baseline_log_loss": 0.6769501111430563,
+          "brier": 0.23977572226368402,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.40696486830711365,
+          "expected_calibration_error_10_bin": 0.026700644550717214,
+          "horizon_hours": 1,
+          "log_loss": 0.6724824483791161,
+          "log_loss_skill": 0.006599692784445166,
+          "roc_auc": 0.5559312204648956,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.382909893989563
+        },
+        {
+          "baseline_brier": 0.2461462320068359,
+          "baseline_log_loss": 0.685421302321042,
+          "brier": 0.24619682610410462,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.4374489486217499,
+          "expected_calibration_error_10_bin": 0.02237765315548802,
+          "horizon_hours": 4,
+          "log_loss": 0.6855269806181267,
+          "log_loss_skill": -0.00015418005936895796,
+          "roc_auc": 0.5328601693368629,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.4297764301300049
+        },
+        {
+          "baseline_brier": 0.24866673950716814,
+          "baseline_log_loss": 0.6904865925952859,
+          "brier": 0.24769728953451897,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.4583333432674408,
+          "expected_calibration_error_10_bin": 0.013354100674250807,
+          "horizon_hours": 4,
+          "log_loss": 0.688579401264919,
+          "log_loss_skill": 0.002762097556736731,
+          "roc_auc": 0.5328837138687917,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.4382621943950653
+        },
+        {
+          "baseline_brier": 0.24835321403642063,
+          "baseline_log_loss": 0.689850187404449,
+          "brier": 0.2483283089589714,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.45904821157455444,
+          "expected_calibration_error_10_bin": 0.022493566731082305,
+          "horizon_hours": 12,
+          "log_loss": 0.6898997820037309,
+          "log_loss_skill": -7.189183997824422e-05,
+          "roc_auc": 0.5291597359346477,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.4645494520664215
+        },
+        {
+          "baseline_brier": 0.250358257795417,
+          "baseline_log_loss": 0.6938692534416542,
+          "brier": 0.24899403609159873,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.48366013169288635,
+          "expected_calibration_error_10_bin": 0.006422492990108964,
+          "horizon_hours": 12,
+          "log_loss": 0.6912947990667362,
+          "log_loss_skill": 0.0037102874383732054,
+          "roc_auc": 0.5290399604246627,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.45865514874458313
+        },
+        {
+          "baseline_brier": 0.24889702847379996,
+          "baseline_log_loss": 0.6909397845700519,
+          "brier": 0.2484543613227548,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.4661458432674408,
+          "expected_calibration_error_10_bin": 0.02079890438414855,
+          "horizon_hours": 24,
+          "log_loss": 0.6900259760239986,
+          "log_loss_skill": 0.001322558877720259,
+          "roc_auc": 0.5314914882538863,
+          "rows": 19584,
+          "side": "short",
+          "training_prevalence": 0.4727134108543396
+        },
+        {
+          "baseline_brier": 0.25013850584378017,
+          "baseline_log_loss": 0.6934248225355663,
+          "brier": 0.24891699510922863,
+          "candidate_id": "cost_aware_utility_rank",
+          "evaluation_prevalence": 0.4910641312599182,
+          "expected_calibration_error_10_bin": 0.005372440429507894,
+          "horizon_hours": 24,
+          "log_loss": 0.6909502767610783,
+          "log_loss_skill": 0.003568585510740019,
+          "roc_auc": 0.5253671054377543,
+          "rows": 19584,
+          "side": "long",
+          "training_prevalence": 0.47628727555274963
+        }
+      ],
+      "base": {
+        "active_days": 102,
+        "active_hours": 1192,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.06045346268178504,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.4630800938681513,
+          "samples": 2000,
+          "upper_bps": 1.0240386760650768
+        },
+        "candidate_id": "cost_aware_utility_rank",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.19527485767096597,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.841024145287901,
+        "mean_hourly_portfolio_bps": 0.4537590223693995,
+        "monthly": [
+          {
+            "active_hours": 38,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.21558406628588195,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.016094865048438933
+          },
+          {
+            "active_hours": 110,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 1.3558267271456619,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.10037012165352088
+          },
+          {
+            "active_hours": 100,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.6651895048504021,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.04896940819202755
+          },
+          {
+            "active_hours": 196,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.931147945290398,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.1503363677341809
+          },
+          {
+            "active_hours": 222,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.3925205324111241,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.020575591591860176
+          },
+          {
+            "active_hours": 214,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.6348305506945513,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.1202507658548565
+          },
+          {
+            "active_hours": 163,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.8412927802652119,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.05808760981635075
+          },
+          {
+            "active_hours": 89,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.3051213284280138,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.021994824021775994
+          },
+          {
+            "active_hours": 60,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": 0.01964527019567184,
+            "month": "2025-06",
+            "total_net_return_fraction": 0.0006812755850813534
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 8,
+        "profit_factor": 1.1253147698231474,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": 346.55628370741994,
+          "ETHUSDT": 124.35227938244732,
+          "SOLUSDT": 2491.230334937572
+        },
+        "total_net_return_fraction": 0.31078327836880737,
+        "trades": 153,
+        "trades_by_symbol": {
+          "BTCUSDT": 22,
+          "ETHUSDT": 62,
+          "SOLUSDT": 69
+        }
+      },
+      "combined_action_gate_passed": false,
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_one_hundred_eighty_closed_trades",
+          "maximum_drawdown_exceeds_ten_percent",
+          "single_symbol_absolute_net_pnl_fraction_exceeds_half",
+          "action_quality_gate_failed"
+        ],
+        "selection_contaminated": true
+      },
+      "forecast_gate": {
+        "coverage_passed": true,
+        "horizons_with_required_pinball_skill": 4,
+        "horizons_with_required_rank_stability": 3,
+        "minimum_pairwise_seed_median_prediction_spearman": 0.7569934269861229,
+        "passed": true,
+        "positive_symbol_horizon_counts": {
+          "BTCUSDT": 4,
+          "ETHUSDT": 4,
+          "SOLUSDT": 4
+        },
+        "quantile_crossing_count": 0,
+        "reasons": []
+      },
+      "rank_ablation_gate": {
+        "average_utility_spearman_improvement": 0.01209384720568231,
+        "control_average_action_log_loss": 0.684445119889552,
+        "control_average_utility_spearman": 0.02747769249910184,
+        "passed": true,
+        "ranked_average_action_log_loss": 0.6845551642854535,
+        "ranked_average_utility_spearman": 0.03957153970478415,
+        "reasons": [],
+        "relative_action_log_loss_degradation": 0.00016077899119104622
+      },
+      "stress": {
+        "active_days": 102,
+        "active_hours": 1192,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.1406979227718765,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.4146683944976627,
+          "samples": 2000,
+          "upper_bps": 0.9677287631346105
+        },
+        "candidate_id": "cost_aware_utility_rank",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.19892414160576677,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.869872919254882,
+        "mean_hourly_portfolio_bps": 0.42250902236939947,
+        "monthly": [
+          {
+            "active_hours": 38,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.20303926341849843,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.015148498534146793
+          },
+          {
+            "active_hours": 110,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 1.328048949367884,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.0981758558897663
+          },
+          {
+            "active_hours": 100,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.643684128506316,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.04729198714555416
+          },
+          {
+            "active_hours": 196,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.8970977660789288,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.1474306380422179
+          },
+          {
+            "active_hours": 222,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.3290284689190605,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.016227794483893776
+          },
+          {
+            "active_hours": 214,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.6823215901210744,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.12335995606102967
+          },
+          {
+            "active_hours": 163,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.7977742617466935,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.05477457036568323
+          },
+          {
+            "active_hours": 89,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.2854080667792682,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.02050018916646823
+          },
+          {
+            "active_hours": 60,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": 0.006235308509848154,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.0002520217602963726
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 7,
+        "profit_factor": 1.116210228055943,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": 317.22295037408657,
+          "ETHUSDT": 41.68561271578088,
+          "SOLUSDT": 2399.2303349375725
+        },
+        "total_net_return_fraction": 0.2843143625563964,
+        "trades": 153,
+        "trades_by_symbol": {
+          "BTCUSDT": 22,
+          "ETHUSDT": 62,
+          "SOLUSDT": 69
+        }
+      },
+      "utility_horizons": [
+        {
+          "actual_mean_bps": 0.4907402993448355,
+          "baseline_mse_bps2": 6166.239691321513,
+          "candidate_id": "cost_aware_utility_rank",
+          "horizon_hours": 1,
+          "model_mse_bps2": 6239.57342010262,
+          "mse_skill": -0.011892779465630943,
+          "pearson": 0.02434373180192517,
+          "prediction_mean_bps": -0.03681729112811369,
+          "rows": 19584,
+          "spearman": 0.04210679001787824,
+          "training_mean_bps": 0.4675271511077881
+        },
+        {
+          "actual_mean_bps": 1.9383440151828908,
+          "baseline_mse_bps2": 24028.852686710274,
+          "candidate_id": "cost_aware_utility_rank",
+          "horizon_hours": 4,
+          "model_mse_bps2": 24803.96951781391,
+          "mse_skill": -0.032257754509117165,
+          "pearson": 0.0010109250047622123,
+          "prediction_mean_bps": 1.8618053092358262,
+          "rows": 19584,
+          "spearman": 0.030884252385586244,
+          "training_mean_bps": 1.8598825931549072
+        },
+        {
+          "actual_mean_bps": 5.557674806329933,
+          "baseline_mse_bps2": 73291.93407576373,
+          "candidate_id": "cost_aware_utility_rank",
+          "horizon_hours": 12,
+          "model_mse_bps2": 75317.77648274439,
+          "mse_skill": -0.02764072789901406,
+          "pearson": 0.03616869475176774,
+          "prediction_mean_bps": 4.307538706599201,
+          "rows": 19584,
+          "spearman": 0.04467527392815424,
+          "training_mean_bps": 5.6018452644348145
+        },
+        {
+          "actual_mean_bps": 11.861478705231551,
+          "baseline_mse_bps2": 142386.92542690993,
+          "candidate_id": "cost_aware_utility_rank",
+          "horizon_hours": 24,
+          "model_mse_bps2": 145192.2197579261,
+          "mse_skill": -0.019701909586187227,
+          "pearson": 0.03745635422274775,
+          "prediction_mean_bps": 4.306314496947962,
+          "rows": 19584,
+          "spearman": 0.040619842487517877,
+          "training_mean_bps": 11.214112281799316
+        }
+      ]
+    }
+  },
+  "critical_interpretation": [
+    "Round 46's median-based action score had almost no rank relationship with realized net utility. Round 47 replaced that mapping with an affine conditional-mean target that exactly matches the additive replay ledger before costs.",
+    "Long and short profitability heads were trained against the unchanged 12 bps round-trip hurdle and calibrated with one scalar temperature per seed on the earlier calibration role. No evaluation outcome selected a threshold or temperature.",
+    "The pairwise candidate changed one frozen term only. Its mechanism result is reported independently of policy economics because a favorable cumulative return cannot retroactively validate the ranking objective.",
+    "Proper utility multitask produced 102 trades; base return +27.339%, stress return +25.620%, base drawdown 12.565%, best utility Spearman +0.0417, and best action AUC 0.5539. Forecast/action/economic gates were True/False/False.",
+    "Utility + pairwise rank produced 153 trades; base return +31.078%, stress return +28.431%, base drawdown 19.527%, best utility Spearman +0.0447, and best action AUC 0.5559. Forecast/action/economic gates were True/False/False.",
+    "Every point estimate remains selection-contaminated development evidence. A positive aggregate result, if present, is not a profitability claim and cannot authorize testnet, live day trading, or leverage.",
+    "The Qwen3 8B evidence remains a schema-constrained risk-reasoning benchmark. No language model received market outcomes or numerical order authority, so AI trading uplift remains untested."
+  ],
+  "decisions": [
+    "Do not promote, apply leverage, or authorize testnet/live execution from this consumed-development round.",
+    "Retain a candidate mechanism only if its own forecast and action-quality gates pass; do not select it from cumulative return alone.",
+    "Do not lower the probability floor, costs, drawdown ceiling, bootstrap bound, or diversification gate after seeing the evaluation ledger.",
+    "Keep language-model authority limited to fail-closed risk review until a deterministic candidate passes all numerical gates on untouched confirmation data."
+  ],
+  "evidence": {
+    "binding_sha256": "8d55f76ea53eba1d234dcd7b5908a326a567ab21743f323c707ec8fa7306e261",
+    "cpu_fallback_warnings": 0,
+    "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "declared_output_count": 40,
+    "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
+    "directml_model_artifacts": 6,
+    "exact_reload_verified": true,
+    "implementation_commit": "d15a87dd5d31022d1815170b57d96cdd28ca2b55",
+    "report_canonical_sha256": "19ab4bc3551941307f0a49dbd524f5449cc71ca94205aaec9e85ff7bbbd25639",
+    "report_file_sha256": "40ae14943f99014b2ef8bcc4bddf413a1ee0d63a9f7881c079fd5a62032a237c",
+    "temperature_nonworsening_verified": true
+  },
+  "generated_at_utc": "2026-07-13T11:25:43.372548+00:00",
+  "leverage_applied": false,
+  "next_model_requirements": [
+    "If conditional-mean skill remains weak, test a pre-registered robust mean-distribution model or state-conditioned mixture while preserving exact replay-aligned targets.",
+    "If probability skill is positive but economics fail, diagnose calibration drift, side/horizon concentration, and volatility-conditioned utility without post-hoc evaluation thresholds.",
+    "Acquire an untouched chronological confirmation period only after the mechanism is fixed; preserve matched funding, volume, price, and execution-cost lineage.",
+    "Run any local finance-language-model ablation as a paired veto-only test with identical deterministic candidate actions and no future outcomes in prompts."
+  ],
+  "profitability_claim": false,
+  "rank_ablation_gate": {
+    "average_utility_spearman_improvement": 0.01209384720568231,
+    "control_average_action_log_loss": 0.684445119889552,
+    "control_average_utility_spearman": 0.02747769249910184,
+    "passed": true,
+    "ranked_average_action_log_loss": 0.6845551642854535,
+    "ranked_average_utility_spearman": 0.03957153970478415,
+    "reasons": [],
+    "relative_action_log_loss_degradation": 0.00016077899119104622
+  },
+  "round": 47,
+  "schema_version": "round-047-failure-analysis-v1",
+  "status": "quality_or_economic_gate_rejected",
+  "trading_authority": false
+}

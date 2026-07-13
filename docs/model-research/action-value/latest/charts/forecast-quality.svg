@@ -1,65 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="780" viewBox="0 0 1500 780" role="img" aria-labelledby="title desc">
-<title id="title">Mutual consistency passed the frozen forecast screen</title>
-<desc id="desc">Consumed development evaluation, 2024-10-01 through 2025-06-30 UTC; skill is relative to training-role unconditional quantiles.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
+<title id="title">Round 47 probabilistic forecast quality</title>
+<desc id="desc">Pinball skill versus the training-only unconditional baseline and pooled median rank association.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
-<text x="56" y="52" class="title">Mutual consistency passed the frozen forecast screen</text>
-<text x="56" y="80" class="subtitle">Consumed development evaluation, 2024-10-01 through 2025-06-30 UTC; skill is relative to training-role unconditional quantiles.</text>
-<text x="120" y="125" class="label">Pinball skill versus unconditional baseline</text>
-<rect x="120" y="145" width="1310" height="220" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="120" y1="365.0" x2="1430" y2="365.0" class="grid"/><text x="106" y="369.0" text-anchor="end" class="axis">-14%</text>
-<line x1="120" y1="321.0" x2="1430" y2="321.0" class="grid"/><text x="106" y="325.0" text-anchor="end" class="axis">-10%</text>
-<line x1="120" y1="277.0" x2="1430" y2="277.0" class="grid"/><text x="106" y="281.0" text-anchor="end" class="axis">-6%</text>
-<line x1="120" y1="233.0" x2="1430" y2="233.0" class="grid"/><text x="106" y="237.0" text-anchor="end" class="axis">-2%</text>
-<line x1="120" y1="189.0" x2="1430" y2="189.0" class="grid"/><text x="106" y="193.0" text-anchor="end" class="axis">+2%</text>
-<line x1="120" y1="145.0" x2="1430" y2="145.0" class="grid"/><text x="106" y="149.0" text-anchor="end" class="axis">+6%</text>
-<line x1="120" y1="200.0" x2="1430" y2="200.0" stroke="#6b7280" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="225.8" y="211.0" width="54" height="112.9" fill="#a33a32" fill-opacity="0.88"/>
-<text x="252.8" y="341.9" text-anchor="middle" class="value">-10.3%</text>
-<rect x="287.8" y="162.5" width="54" height="48.5" fill="#0f766e" fill-opacity="0.88"/>
-<text x="314.8" y="153.5" text-anchor="middle" class="value">+4.4%</text>
-<rect x="553.2" y="211.0" width="54" height="140.0" fill="#a33a32" fill-opacity="0.88"/>
-<text x="580.2" y="369.0" text-anchor="middle" class="value">-12.7%</text>
-<rect x="615.2" y="166.2" width="54" height="44.8" fill="#0f766e" fill-opacity="0.88"/>
-<text x="642.2" y="157.2" text-anchor="middle" class="value">+4.1%</text>
-<rect x="880.8" y="211.0" width="54" height="135.3" fill="#a33a32" fill-opacity="0.88"/>
-<text x="907.8" y="364.3" text-anchor="middle" class="value">-12.3%</text>
-<rect x="942.8" y="171.9" width="54" height="39.1" fill="#0f766e" fill-opacity="0.88"/>
-<text x="969.8" y="162.9" text-anchor="middle" class="value">+3.6%</text>
-<rect x="1208.2" y="211.0" width="54" height="130.0" fill="#a33a32" fill-opacity="0.88"/>
-<text x="1235.2" y="359.0" text-anchor="middle" class="value">-11.8%</text>
-<rect x="1270.2" y="188.1" width="54" height="22.9" fill="#0f766e" fill-opacity="0.88"/>
-<text x="1297.2" y="179.1" text-anchor="middle" class="value">+2.1%</text>
-<text x="120" y="450" class="label">Pooled median-return Spearman coefficient</text>
-<rect x="120" y="470" width="1310" height="220" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="120" y1="690.0" x2="1430" y2="690.0" class="grid"/><text x="106" y="694.0" text-anchor="end" class="axis">0.000</text>
-<line x1="120" y1="646.0" x2="1430" y2="646.0" class="grid"/><text x="106" y="650.0" text-anchor="end" class="axis">0.016</text>
-<line x1="120" y1="602.0" x2="1430" y2="602.0" class="grid"/><text x="106" y="606.0" text-anchor="end" class="axis">0.032</text>
-<line x1="120" y1="558.0" x2="1430" y2="558.0" class="grid"/><text x="106" y="562.0" text-anchor="end" class="axis">0.048</text>
-<line x1="120" y1="514.0" x2="1430" y2="514.0" class="grid"/><text x="106" y="518.0" text-anchor="end" class="axis">0.064</text>
-<line x1="120" y1="470.0" x2="1430" y2="470.0" class="grid"/><text x="106" y="474.0" text-anchor="end" class="axis">0.080</text>
-<line x1="120" y1="690.0" x2="1430" y2="690.0" stroke="#6b7280" stroke-width="2" stroke-dasharray="8 6"/>
-<rect x="225.8" y="562.8" width="54" height="127.2" fill="#a33a32" fill-opacity="0.88"/>
-<text x="252.8" y="553.8" text-anchor="middle" class="value">0.046</text>
-<rect x="287.8" y="568.0" width="54" height="122.0" fill="#0f766e" fill-opacity="0.88"/>
-<text x="314.8" y="559.0" text-anchor="middle" class="value">0.044</text>
-<text x="283.8" y="717" text-anchor="middle" class="axis">1 h</text>
-<rect x="553.2" y="629.1" width="54" height="60.9" fill="#a33a32" fill-opacity="0.88"/>
-<text x="580.2" y="620.1" text-anchor="middle" class="value">0.022</text>
-<rect x="615.2" y="552.6" width="54" height="137.4" fill="#0f766e" fill-opacity="0.88"/>
-<text x="642.2" y="543.6" text-anchor="middle" class="value">0.050</text>
-<text x="611.2" y="717" text-anchor="middle" class="axis">4 h</text>
-<rect x="880.8" y="608.1" width="54" height="81.9" fill="#a33a32" fill-opacity="0.88"/>
-<text x="907.8" y="599.1" text-anchor="middle" class="value">0.030</text>
-<rect x="942.8" y="509.0" width="54" height="181.0" fill="#0f766e" fill-opacity="0.88"/>
-<text x="969.8" y="500.0" text-anchor="middle" class="value">0.066</text>
-<text x="938.8" y="717" text-anchor="middle" class="axis">12 h</text>
-<rect x="1208.2" y="637.7" width="54" height="52.3" fill="#a33a32" fill-opacity="0.88"/>
-<text x="1235.2" y="628.7" text-anchor="middle" class="value">0.019</text>
-<rect x="1270.2" y="615.1" width="54" height="74.9" fill="#0f766e" fill-opacity="0.88"/>
-<text x="1297.2" y="606.1" text-anchor="middle" class="value">0.027</text>
-<text x="1266.2" y="717" text-anchor="middle" class="axis">24 h</text>
-<rect x="120" y="738" width="24" height="12" fill="#a33a32"/><text x="154" y="749" class="note">WaveBound EMA</text>
-<rect x="380" y="738" width="24" height="12" fill="#0f766e"/><text x="414" y="749" class="note">Mutual consistency</text>
-<text x="1430" y="749" text-anchor="end" class="note">Mutual consistency passed all four horizon skill and rank checks; this is not an economic pass.</text>
+<text x="56" y="52" class="title">Round 47 probabilistic forecast quality</text>
+<text x="56" y="80" class="subtitle">Pinball skill versus the training-only unconditional baseline and pooled median rank association.</text>
+<line x1="900" y1="53" x2="934" y2="53" stroke="#2563a6" stroke-width="4"/><text x="944" y="58" class="note">Proper utility multitask</text>
+<line x1="1170" y1="53" x2="1204" y2="53" stroke="#0f766e" stroke-width="4"/><text x="1214" y="58" class="note">Utility + pairwise rank</text>
+<text x="135" y="135" class="label">Pinball skill (fraction; higher is better)</text>
+<line x1="135" y1="360.0" x2="1430" y2="360.0" class="grid"/><text x="121" y="364.0" text-anchor="end" class="axis">-0.005</text>
+<line x1="135" y1="340.2" x2="1430" y2="340.2" class="zero"/><text x="121" y="344.2" text-anchor="end" class="axis">+0.000</text>
+<line x1="135" y1="155.0" x2="1430" y2="155.0" class="grid"/><text x="121" y="159.0" text-anchor="end" class="axis">+0.046</text>
+<polyline points="135.0,174.8 566.7,198.9 998.3,215.7 1430.0,255.5" fill="none" stroke="#2563a6" stroke-width="4"/>
+<circle cx="135.0" cy="174.8" r="5" fill="#2563a6"/>
+<circle cx="566.7" cy="198.9" r="5" fill="#2563a6"/>
+<circle cx="998.3" cy="215.7" r="5" fill="#2563a6"/>
+<circle cx="1430.0" cy="255.5" r="5" fill="#2563a6"/>
+<polyline points="135.0,176.4 566.7,209.2 998.3,231.6 1430.0,273.6" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="135.0" cy="176.4" r="5" fill="#0f766e"/>
+<circle cx="566.7" cy="209.2" r="5" fill="#0f766e"/>
+<circle cx="998.3" cy="231.6" r="5" fill="#0f766e"/>
+<circle cx="1430.0" cy="273.6" r="5" fill="#0f766e"/>
+<text x="135.0" y="388" text-anchor="middle" class="axis">1h</text>
+<text x="566.7" y="388" text-anchor="middle" class="axis">4h</text>
+<text x="998.3" y="388" text-anchor="middle" class="axis">12h</text>
+<text x="1430.0" y="388" text-anchor="middle" class="axis">24h</text>
+<text x="135" y="445" class="label">Median forecast Spearman</text>
+<line x1="135" y1="670.0" x2="1430" y2="670.0" class="grid"/><text x="121" y="674.0" text-anchor="end" class="axis">-0.006</text>
+<line x1="135" y1="650.2" x2="1430" y2="650.2" class="zero"/><text x="121" y="654.2" text-anchor="end" class="axis">+0.000</text>
+<line x1="135" y1="465.0" x2="1430" y2="465.0" class="grid"/><text x="121" y="469.0" text-anchor="end" class="axis">+0.052</text>
+<polyline points="135.0,508.6 566.7,589.1 998.3,527.7 1430.0,546.0" fill="none" stroke="#2563a6" stroke-width="4"/>
+<circle cx="135.0" cy="508.6" r="5" fill="#2563a6"/>
+<circle cx="566.7" cy="589.1" r="5" fill="#2563a6"/>
+<circle cx="998.3" cy="527.7" r="5" fill="#2563a6"/>
+<circle cx="1430.0" cy="546.0" r="5" fill="#2563a6"/>
+<polyline points="135.0,484.8 566.7,581.2 998.3,528.5 1430.0,499.8" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="135.0" cy="484.8" r="5" fill="#0f766e"/>
+<circle cx="566.7" cy="581.2" r="5" fill="#0f766e"/>
+<circle cx="998.3" cy="528.5" r="5" fill="#0f766e"/>
+<circle cx="1430.0" cy="499.8" r="5" fill="#0f766e"/>
+<text x="135.0" y="698" text-anchor="middle" class="axis">1h</text>
+<text x="566.7" y="698" text-anchor="middle" class="axis">4h</text>
+<text x="998.3" y="698" text-anchor="middle" class="axis">12h</text>
+<text x="1430.0" y="698" text-anchor="middle" class="axis">24h</text>
+<text x="56" y="730" class="note">All values are from the frozen 2024-10 through 2025-06 consumed evaluation role; zero-reference lines are not acceptance thresholds.</text>
 </svg>

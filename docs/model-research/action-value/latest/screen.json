@@ -4,7 +4,7 @@
     "benchmark_is_financial_edge_evidence": false,
     "language_model_numerical_forecasts_or_orders_permitted": false,
     "market_features_or_future_outcomes_supplied_to_language_models": false,
-    "reason": "The current AI benchmark establishes schema-constrained safety reasoning only. A paired AI-versus-deterministic after-cost uplift test remains forbidden until a deterministic candidate passes its numerical forecast, mechanism, and economic gates.",
+    "reason": "The current language-model benchmark establishes constrained risk reasoning, not market edge. An AI uplift experiment remains blocked until a deterministic numerical candidate clears forecast, action-quality, and economic gates.",
     "risk_review_benchmark_contract": "finance-risk-review-adversarial-v6",
     "risk_review_benchmark_passed": true,
     "risk_review_comparison_file_sha256": "369f98826ee97b0b2c23c3fb3e53cb966cc0eb01785140774391993b1dbe9281",
@@ -13,11 +13,11 @@
     "selected_model_score": 0.983409090909091
   },
   "binding": {
-    "binding_sha256": "86535f37207a07f678a83b34403512d10e2578a0eb9efb47175910c2a483b58b",
+    "binding_sha256": "8d55f76ea53eba1d234dcd7b5908a326a567ab21743f323c707ec8fa7306e261",
     "blobs": [
       {
-        "git_blob_oid": "669c465dcca5c796014ff4f582d9fcbb846f4e7d",
-        "path": "docs/model-research/action-value/round-046-stability-regularized-tcn-design.json"
+        "git_blob_oid": "23ca50465aeba01ab886a569395ddc08720f1ca3",
+        "path": "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json"
       },
       {
         "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
@@ -36,16 +36,28 @@
         "path": "src/simple_ai_trading/stable_distributional_tcn_model.py"
       },
       {
+        "git_blob_oid": "ec51dbdb7e9627edb0cffee10944e40333655fd3",
+        "path": "src/simple_ai_trading/cost_aware_utility_tcn_model.py"
+      },
+      {
         "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
         "path": "src/simple_ai_trading/storage.py"
       },
       {
-        "git_blob_oid": "fb695972d1153e94482e2699f2476e48242dc253",
-        "path": "tools/create_round46_stability_tcn_binding.py"
+        "git_blob_oid": "a1512bfc14eccb11f78e3627f5c5076c39171d34",
+        "path": "tools/run_stability_regularized_tcn_viability.py"
       },
       {
-        "git_blob_oid": "9e6d150e5874076b1f4a17971ed3966004a60b9f",
-        "path": "tools/run_stability_regularized_tcn_viability.py"
+        "git_blob_oid": "a22c973d2e9042b1a28ab1b6e2b9c42b6516c429",
+        "path": "tools/run_cost_aware_utility_tcn_viability.py"
+      },
+      {
+        "git_blob_oid": "320d2fa9caaddc222c34f478a5f0f51661f31443",
+        "path": "tools/publish_cost_aware_utility_tcn_viability.py"
+      },
+      {
+        "git_blob_oid": "9247ca08f05063bd7e98c16dfb3218998e99dcb7",
+        "path": "tools/create_round47_cost_aware_utility_tcn_binding.py"
       },
       {
         "git_blob_oid": "25716078e461d024e6aede56fcba801a613db9b8",
@@ -58,9 +70,13 @@
       {
         "git_blob_oid": "0b11351051d669fcd03874d84af5b9ec418f888b",
         "path": "tests/test_stable_distributional_tcn_model.py"
+      },
+      {
+        "git_blob_oid": "d8b9645e541f810a59e0c21e1934932eb469172c",
+        "path": "tests/test_cost_aware_utility_tcn_model.py"
       }
     ],
-    "command": ".venv311\\Scripts\\python.exe tools\\run_stability_regularized_tcn_viability.py --source-certificate <external-certificate.json> --predecessor-report <round45-report.json> --derived-cache <round45-derived-cache> --evidence-root <new-external-evidence-root> --compute-backend directml",
+    "command": ".venv311\\Scripts\\python.exe tools\\run_cost_aware_utility_tcn_viability.py --source-certificate <external-certificate.json> --predecessor-report <round46-report.json> --derived-cache <round45-derived-cache> --evidence-root <new-external-evidence-root> --compute-backend directml",
     "derived_cache": [
       {
         "bytes": 245304,
@@ -93,658 +109,667 @@
         "sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135"
       }
     ],
-    "design_sha256": "054f3619ea8abe45f773a653d265d0eb1a1a3a401aa1ffa4f792e2e7d1fe7253",
-    "implementation_commit": "c8e5b0767e957fc435289b8de5e9bc6ca240bc5d",
+    "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
+    "implementation_commit": "d15a87dd5d31022d1815170b57d96cdd28ca2b55",
     "predecessor_report": {
-      "canonical_sha256": "4f3e7f80e2ba2fb08f7523b02a7548b9b4ff3a34e49121b048d4c6484a09375d",
-      "file_sha256": "d475bae25067ac295a32081e178cce5a8e54aea9a63ae97b9b88109cd6f6b680",
-      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\report.json"
+      "canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
+      "file_sha256": "e9bf3ec4db7ddd798f950f619097533dfa103e09db94ab7e322f45eceb0edd21",
+      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\report.json"
     },
-    "round": 46,
-    "schema_version": "round-046-stability-tcn-execution-binding-v1",
+    "round": 47,
+    "schema_version": "round-047-cost-aware-utility-tcn-execution-binding-v1",
     "source_certificate": {
       "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
       "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
       "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
     }
   },
-  "binding_sha256": "86535f37207a07f678a83b34403512d10e2578a0eb9efb47175910c2a483b58b",
+  "binding_sha256": "8d55f76ea53eba1d234dcd7b5908a326a567ab21743f323c707ec8fa7306e261",
   "candidates": [
     {
-      "base": {
-        "active_days": 272,
-        "active_hours": 6050,
-        "bootstrap_mean_hourly_portfolio_bps": {
-          "block_hours": 168,
-          "lower_bps": -1.9641333637989442,
-          "lower_quantile": 0.0125,
-          "median_bps": -0.33987978175942535,
-          "samples": 2000,
-          "upper_bps": 1.111139510417364
-        },
-        "candidate_id": "wavebound_ema",
-        "hours": 6528,
-        "maximum_drawdown_fraction": 0.4761649339960611,
-        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.6774283775325957,
-        "mean_hourly_portfolio_bps": -0.3402078744604972,
-        "monthly": [
+      "action_diagnostics": {
+        "action_side_horizons": [
           {
-            "active_hours": 684,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": -0.31568413813127827,
-            "month": "2024-10",
-            "total_net_return_fraction": -0.027543072051486983
+            "baseline_brier": 0.23764515141164835,
+            "baseline_log_loss": 0.6682376475659113,
+            "brier": 0.23678266635540807,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.38842934370040894,
+            "expected_calibration_error_10_bin": 0.02367709803066271,
+            "horizon_hours": 1,
+            "log_loss": 0.6664186432381672,
+            "log_loss_skill": 0.002722091959903583,
+            "roc_auc": 0.5484253159557527,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.37877708673477173
           },
           {
-            "active_hours": 681,
-            "hours": 720,
-            "mean_hourly_portfolio_bps": 1.069877827164062,
-            "month": "2024-11",
-            "total_net_return_fraction": 0.06978807191714242
+            "baseline_brier": 0.24192310628838093,
+            "baseline_log_loss": 0.6769501111430563,
+            "brier": 0.23949743685137395,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.40696486830711365,
+            "expected_calibration_error_10_bin": 0.012107257935936776,
+            "horizon_hours": 1,
+            "log_loss": 0.6719075015928899,
+            "log_loss_skill": 0.007449012072177186,
+            "roc_auc": 0.5539204890303508,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.382909893989563
           },
           {
-            "active_hours": 691,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": 2.7967098986322734,
-            "month": "2024-12",
-            "total_net_return_fraction": 0.21694590012319592
+            "baseline_brier": 0.2461462320068359,
+            "baseline_log_loss": 0.685421302321042,
+            "brier": 0.24582090308649887,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.4374489486217499,
+            "expected_calibration_error_10_bin": 0.010032139723858736,
+            "horizon_hours": 4,
+            "log_loss": 0.684766372487758,
+            "log_loss_skill": 0.0009555142670154559,
+            "roc_auc": 0.5322604033142154,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.4297764301300049
           },
           {
-            "active_hours": 706,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": -1.4945177017013447,
-            "month": "2025-01",
-            "total_net_return_fraction": -0.1140084924428505
+            "baseline_brier": 0.24866673950716814,
+            "baseline_log_loss": 0.6904865925952859,
+            "brier": 0.247684983044976,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.4583333432674408,
+            "expected_calibration_error_10_bin": 0.006408690968741446,
+            "horizon_hours": 4,
+            "log_loss": 0.6885314505466192,
+            "log_loss_skill": 0.002831542378423313,
+            "roc_auc": 0.5298122534484451,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.4382621943950653
           },
           {
-            "active_hours": 640,
-            "hours": 672,
-            "mean_hourly_portfolio_bps": 0.270745316893602,
-            "month": "2025-02",
-            "total_net_return_fraction": 0.004647379010407571
+            "baseline_brier": 0.24835321403642063,
+            "baseline_log_loss": 0.689850187404449,
+            "brier": 0.24847537959421057,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.45904821157455444,
+            "expected_calibration_error_10_bin": 0.0224179637373358,
+            "horizon_hours": 12,
+            "log_loss": 0.6901300384990071,
+            "log_loss_skill": -0.0004056693752756413,
+            "roc_auc": 0.530465126754435,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.4645494520664215
           },
           {
-            "active_hours": 693,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": -3.9029702593849493,
-            "month": "2025-03",
-            "total_net_return_fraction": -0.26372081312740536
+            "baseline_brier": 0.250358257795417,
+            "baseline_log_loss": 0.6938692534416542,
+            "brier": 0.24936844640966124,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.48366013169288635,
+            "expected_calibration_error_10_bin": 0.018046969749502106,
+            "horizon_hours": 12,
+            "log_loss": 0.6919489641850768,
+            "log_loss_skill": 0.002767508787934636,
+            "roc_auc": 0.5280183158506484,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.45865514874458313
           },
           {
-            "active_hours": 665,
-            "hours": 720,
-            "mean_hourly_portfolio_bps": -0.9296658412863814,
-            "month": "2025-04",
-            "total_net_return_fraction": -0.07513118008044795
+            "baseline_brier": 0.24889702847379996,
+            "baseline_log_loss": 0.6909397845700519,
+            "brier": 0.2485498266825685,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.4661458432674408,
+            "expected_calibration_error_10_bin": 0.016676688490715512,
+            "horizon_hours": 24,
+            "log_loss": 0.6902382904059325,
+            "log_loss_skill": 0.0010152753970533723,
+            "roc_auc": 0.5293699599538765,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.4727134108543396
           },
           {
-            "active_hours": 683,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": 0.7964336456443886,
-            "month": "2025-05",
-            "total_net_return_fraction": 0.053050207271462035
-          },
-          {
-            "active_hours": 607,
-            "hours": 696,
-            "mean_hourly_portfolio_bps": -1.3311339689461497,
-            "month": "2025-06",
-            "total_net_return_fraction": -0.09329749041353719
+            "baseline_brier": 0.25013850584378017,
+            "baseline_log_loss": 0.6934248225355663,
+            "brier": 0.24923600502797813,
+            "candidate_id": "cost_aware_utility",
+            "evaluation_prevalence": 0.4910641312599182,
+            "expected_calibration_error_10_bin": 0.010386154485495147,
+            "horizon_hours": 24,
+            "log_loss": 0.6916196981609654,
+            "log_loss_skill": 0.0026032012641259428,
+            "roc_auc": 0.5237806024307792,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.47628727555274963
           }
         ],
-        "one_way_cost_bps": 6.0,
-        "positive_months": 4,
-        "profit_factor": 0.9778013534993637,
-        "scenario": "base",
-        "symbol_net_bps": {
-          "BTCUSDT": -408.37176605810737,
-          "ETHUSDT": -2680.5178327423846,
-          "SOLUSDT": 868.0125943223621
-        },
-        "total_net_return_fraction": -0.2673118450920384,
-        "trades": 757,
-        "trades_by_symbol": {
-          "BTCUSDT": 197,
-          "ETHUSDT": 244,
-          "SOLUSDT": 316
-        }
-      },
-      "candidate_id": "wavebound_ema",
-      "economic_gate": {
-        "passed": false,
-        "promotion_permitted": false,
-        "reasons": [
-          "forecast_gate_failed",
-          "stress_familywise_bootstrap_lower_not_positive",
-          "fewer_than_six_positive_evaluation_months",
-          "maximum_drawdown_exceeds_ten_percent",
-          "profit_factor_below_1_05",
-          "single_symbol_absolute_net_pnl_fraction_exceeds_half",
-          "mechanism_gate_failed"
-        ],
-        "selection_contaminated": true
-      },
-      "fixed_ledger_under_stress": true,
-      "forecast_diagnostics": {
-        "candidate_id": "wavebound_ema",
+        "candidate_id": "cost_aware_utility",
         "gate": {
-          "coverage_passed": false,
-          "horizons_with_required_pinball_skill": 0,
-          "horizons_with_required_rank_stability": 3,
-          "minimum_pairwise_seed_median_prediction_spearman": 0.2113381821860912,
+          "horizons_with_positive_mse_skill": 0,
+          "horizons_with_positive_utility_spearman": 4,
+          "maximum_permitted_early_stop_pinball": 0.3742398251504175,
+          "median_best_early_stop_pinball": 0.3678441226357943,
+          "minimum_pairwise_seed_action_logit_spearman": 0.4842014717886247,
+          "minimum_pairwise_seed_conditional_mean_spearman": 0.7317975444265157,
           "passed": false,
-          "positive_symbol_horizon_counts": {
-            "BTCUSDT": 4,
-            "ETHUSDT": 4,
-            "SOLUSDT": 4
-          },
-          "quantile_crossing_count": 0,
           "reasons": [
-            "fewer_than_three_horizons_beat_unconditional_pinball_by_1pct",
-            "central_interval_coverage_outside_frozen_bounds",
-            "seed_prediction_stability_below_0_5"
-          ]
+            "fewer_than_three_utility_horizons_beat_training_mean_mse",
+            "action_logit_seed_stability_below_0_5"
+          ],
+          "side_horizons_with_auc_above_half": 8,
+          "side_horizons_with_positive_log_loss_skill": 7,
+          "temperature_calibration_not_worse": true
         },
-        "horizons": [
+        "seed_stability": [
           {
-            "baseline_pinball_loss_bps": 19.198658124282197,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.22166053921568626,
-            "coverage_80": 0.37653186274509803,
-            "evaluation_month_count": 9,
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 1,
-            "model_pinball_loss_bps": 21.169038031076543,
-            "pinball_skill": -0.10263112630263649,
-            "pooled_median_spearman": 0.04624918477042766,
-            "positive_monthly_median_spearman_count": 7,
-            "symbol": "ALL"
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.7644643280766501
           },
           {
-            "baseline_pinball_loss_bps": 38.9906155782522,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.20863970588235295,
-            "coverage_80": 0.3426266339869281,
-            "evaluation_month_count": 9,
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.7566486809869445
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.8141547696216085
+          },
+          {
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 4,
-            "model_pinball_loss_bps": 43.95428261975546,
-            "pinball_skill": -0.1273041465975686,
-            "pooled_median_spearman": 0.022145620449888975,
-            "positive_monthly_median_spearman_count": 7,
-            "symbol": "ALL"
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.7695232494998482
           },
           {
-            "baseline_pinball_loss_bps": 70.00329828268877,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.22247753267973855,
-            "coverage_80": 0.37081290849673204,
-            "evaluation_month_count": 9,
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.6592616726646118
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.8255059674325054
+          },
+          {
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 12,
-            "model_pinball_loss_bps": 78.6158768474151,
-            "pinball_skill": -0.12303103962254491,
-            "pooled_median_spearman": 0.02977376440501536,
-            "positive_monthly_median_spearman_count": 6,
-            "symbol": "ALL"
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.8153819086438875
           },
           {
-            "baseline_pinball_loss_bps": 98.7583674619629,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.24397467320261437,
-            "coverage_80": 0.3871527777777778,
-            "evaluation_month_count": 9,
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.554945140455368
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.8430187256131383
+          },
+          {
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 24,
-            "model_pinball_loss_bps": 110.43355832578807,
-            "pinball_skill": -0.11821976369062503,
-            "pooled_median_spearman": 0.019019499086364675,
-            "positive_monthly_median_spearman_count": 4,
-            "symbol": "ALL"
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.8339740042310023
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.6057389751333395
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.7177828288845833
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7418129807349949
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7583672795533902
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.8671450500260437
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7317975444265157
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7595321037540341
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7734495744529102
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7613285968263104
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.4842014717886247
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7851317179966245
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.8026316028433924
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7275652692883762
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7515260753052738
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7510725293303314
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7590127093131246
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 1,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.8269774419309613
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7565946528388802
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7743649372311017
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 4,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.8185690067003706
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7598293959788796
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.5304449926564619
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 12,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7998859493186308
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.8212919676841376
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.5978311282844886
+          },
+          {
+            "candidate_id": "cost_aware_utility",
+            "horizon_hours": 24,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.6515728255513716
           }
         ],
-        "symbol_horizons": [
+        "utility_horizons": [
           {
-            "baseline_pinball_loss_bps": 12.951931615522726,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.2841605392156863,
-            "coverage_80": 0.49203431372549017,
+            "actual_mean_bps": 0.4907402993448355,
+            "baseline_mse_bps2": 6166.239691321513,
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 1,
-            "model_pinball_loss_bps": 13.74409965498858,
-            "pinball_skill": -0.061162154262492274,
-            "pooled_median_spearman": 0.037443198986425744,
-            "symbol": "BTCUSDT"
+            "model_mse_bps2": 6219.418945127365,
+            "mse_skill": -0.008624259916574006,
+            "pearson": 0.017504966517136355,
+            "prediction_mean_bps": 0.032213817718849326,
+            "rows": 19584,
+            "spearman": 0.025907779808302053,
+            "training_mean_bps": 0.4675271511077881
           },
           {
-            "baseline_pinball_loss_bps": 19.558881407146508,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.21951593137254902,
-            "coverage_80": 0.3642769607843137,
-            "horizon_hours": 1,
-            "model_pinball_loss_bps": 21.56883947278839,
-            "pinball_skill": -0.10276446918418736,
-            "pooled_median_spearman": 0.05128697874906518,
-            "symbol": "ETHUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 24.458004385375368,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.16130514705882354,
-            "coverage_80": 0.27328431372549017,
-            "horizon_hours": 1,
-            "model_pinball_loss_bps": 28.194174965452657,
-            "pinball_skill": -0.15275860291820575,
-            "pooled_median_spearman": 0.0458968045420591,
-            "symbol": "SOLUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 26.39012420270611,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.2818627450980392,
-            "coverage_80": 0.46400122549019607,
+            "actual_mean_bps": 1.9383440151828908,
+            "baseline_mse_bps2": 24028.852686710274,
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 4,
-            "model_pinball_loss_bps": 28.438635824404077,
-            "pinball_skill": -0.07762417508773622,
-            "pooled_median_spearman": 0.03223904416745545,
-            "symbol": "BTCUSDT"
+            "model_mse_bps2": 24533.320655940788,
+            "mse_skill": -0.020994259518246627,
+            "pearson": -0.021352170314497126,
+            "prediction_mean_bps": 2.292853023726729,
+            "rows": 19584,
+            "spearman": 0.017016032655591304,
+            "training_mean_bps": 1.8598825931549072
           },
           {
-            "baseline_pinball_loss_bps": 40.428950860122036,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.19454656862745098,
-            "coverage_80": 0.31924019607843135,
-            "horizon_hours": 4,
-            "model_pinball_loss_bps": 45.61543995578987,
-            "pinball_skill": -0.12828651214849196,
-            "pooled_median_spearman": 0.029959182144747337,
-            "symbol": "ETHUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 48.863909521027004,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.14950980392156862,
-            "coverage_80": 0.24463848039215685,
-            "horizon_hours": 4,
-            "model_pinball_loss_bps": 57.80877207907243,
-            "pinball_skill": -0.18305662902793918,
-            "pooled_median_spearman": 0.009927282853937106,
-            "symbol": "SOLUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 46.57864829551893,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.29825367647058826,
-            "coverage_80": 0.4888174019607843,
+            "actual_mean_bps": 5.557674806329933,
+            "baseline_mse_bps2": 73291.93407576373,
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 12,
-            "model_pinball_loss_bps": 49.99098544897474,
-            "pinball_skill": -0.0732596861078103,
-            "pooled_median_spearman": 0.03325515472426276,
-            "symbol": "BTCUSDT"
+            "model_mse_bps2": 74655.10582365017,
+            "mse_skill": -0.01859920556165573,
+            "pearson": 0.00022238460193805366,
+            "prediction_mean_bps": 4.971030516329917,
+            "rows": 19584,
+            "spearman": 0.04174301262079343,
+            "training_mean_bps": 5.6018452644348145
           },
           {
-            "baseline_pinball_loss_bps": 73.3425614541584,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.21200980392156862,
-            "coverage_80": 0.35110294117647056,
-            "horizon_hours": 12,
-            "model_pinball_loss_bps": 82.41320766178974,
-            "pinball_skill": -0.1236750670795812,
-            "pooled_median_spearman": 0.0332337158266251,
-            "symbol": "ETHUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 87.38773982074214,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.15716911764705882,
-            "coverage_80": 0.2725183823529412,
-            "horizon_hours": 12,
-            "model_pinball_loss_bps": 103.44343743148079,
-            "pinball_skill": -0.18372940693595674,
-            "pooled_median_spearman": 0.01907922146061242,
-            "symbol": "SOLUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 65.28675534154505,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.32230392156862747,
-            "coverage_80": 0.5006127450980392,
+            "actual_mean_bps": 11.861478705231551,
+            "baseline_mse_bps2": 142386.92542690993,
+            "candidate_id": "cost_aware_utility",
             "horizon_hours": 24,
-            "model_pinball_loss_bps": 69.94001959933215,
-            "pinball_skill": -0.07127424595453902,
-            "pooled_median_spearman": 0.04832966360143698,
-            "symbol": "BTCUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 103.79963858867528,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.23268995098039216,
-            "coverage_80": 0.36887254901960786,
-            "horizon_hours": 24,
-            "model_pinball_loss_bps": 116.54735667921429,
-            "pinball_skill": -0.12281081383196457,
-            "pooled_median_spearman": 0.013839807694451289,
-            "symbol": "ETHUSDT"
-          },
-          {
-            "baseline_pinball_loss_bps": 123.25372060394237,
-            "candidate_id": "wavebound_ema",
-            "coverage_50": 0.17693014705882354,
-            "coverage_80": 0.2919730392156863,
-            "horizon_hours": 24,
-            "model_pinball_loss_bps": 144.81329869881785,
-            "pinball_skill": -0.17492030252096002,
-            "pooled_median_spearman": 0.0025258562114052136,
-            "symbol": "SOLUSDT"
+            "model_mse_bps2": 144568.07015993766,
+            "mse_skill": -0.015318434094198974,
+            "pearson": 0.008204615603032055,
+            "prediction_mean_bps": 4.56095992529034,
+            "rows": 19584,
+            "spearman": 0.025243944911720575,
+            "training_mean_bps": 11.214112281799316
           }
         ]
       },
-      "mechanism_gate": {
-        "candidate_id": "wavebound_ema",
-        "maximum_permitted_median_best_early_stop_pinball": 0.3758778372630559,
-        "median_best_early_stop_pinball": 0.4265706752528263,
-        "minimum_required_seed_stability": 0.5,
-        "minimum_required_seed_stability_improvement": 0.048089187353646534,
-        "minimum_seed_stability": 0.2113381821860912,
-        "passed": false,
-        "predecessor_median_best_early_stop_pinball": 0.36850768359123126,
-        "predecessor_minimum_seed_stability": 0.45191081264635347,
-        "reasons": [
-          "minimum_seed_stability_below_0_5",
-          "seed_stability_improvement_below_frozen_minimum",
-          "median_early_stop_pinball_degraded_more_than_two_percent"
-        ],
-        "relative_early_stop_pinball_degradation": 0.15756249936433253,
-        "seed_stability_delta": -0.24057263046026225
-      },
-      "models": [
-        {
-          "backend_device": "privateuseone:0",
-          "backend_kind": "directml",
-          "best_early_stop_pinball": 0.43689523431668054,
-          "best_epoch": 3,
-          "bytes": 429314,
-          "candidate_id": "wavebound_ema",
-          "epochs": 13,
-          "evaluation_model": "ema_target",
-          "optimizer_updates": 494,
-          "parameter_count": 104980,
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_wavebound_ema_seed_4601.pt",
-          "reload_max_abs_prediction_error": 0.0,
-          "seed": 4601,
-          "sha256": "d74ab42c359c870734f99ba21481d6e961f047a12694cee0b7ee8ccab2f0af12",
-          "warning_count": 0
-        },
-        {
-          "backend_device": "privateuseone:0",
-          "backend_kind": "directml",
-          "best_early_stop_pinball": 0.37242151387787864,
-          "best_epoch": 28,
-          "bytes": 429314,
-          "candidate_id": "wavebound_ema",
-          "epochs": 38,
-          "evaluation_model": "ema_target",
-          "optimizer_updates": 1444,
-          "parameter_count": 104980,
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_wavebound_ema_seed_4602.pt",
-          "reload_max_abs_prediction_error": 0.0,
-          "seed": 4602,
-          "sha256": "5716c1ed48a764526354860dd3cfd29e440a00b6756add0d460f17f8b1de2761",
-          "warning_count": 0
-        },
-        {
-          "backend_device": "privateuseone:0",
-          "backend_kind": "directml",
-          "best_early_stop_pinball": 0.4265706752528263,
-          "best_epoch": 50,
-          "bytes": 429314,
-          "candidate_id": "wavebound_ema",
-          "epochs": 50,
-          "evaluation_model": "ema_target",
-          "optimizer_updates": 1900,
-          "parameter_count": 104980,
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_wavebound_ema_seed_4603.pt",
-          "reload_max_abs_prediction_error": 0.0,
-          "seed": 4603,
-          "sha256": "9049b7d9e2dc5eca9c94d37d4273f7acef7e336109e9fa913d2d789a16620357",
-          "warning_count": 0
-        }
-      ],
-      "prediction_files": [
-        {
-          "bytes": 22065968,
-          "name": "wavebound_ema_seed_predictions_bps.npy",
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\wavebound_ema_seed_predictions_bps.npy",
-          "sha256": "5ef26a218dbb84322a4c9b3b5d6d5e84b3a359b55d00b13949bfd8af41833418"
-        },
-        {
-          "bytes": 7355408,
-          "name": "wavebound_ema_ensemble_predictions_bps.npy",
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\wavebound_ema_ensemble_predictions_bps.npy",
-          "sha256": "a92bf37fc472f0cacc88ac406f1270207b216b7c63a22a9fd24bcdfda9a33822"
-        }
-      ],
-      "stress": {
-        "active_days": 272,
-        "active_hours": 6050,
-        "bootstrap_mean_hourly_portfolio_bps": {
-          "block_hours": 168,
-          "lower_bps": -2.0532030129690857,
-          "lower_quantile": 0.0125,
-          "median_bps": -0.4943619661790805,
-          "samples": 2000,
-          "upper_bps": 0.8412719790884485
-        },
-        "candidate_id": "wavebound_ema",
-        "hours": 6528,
-        "maximum_drawdown_fraction": 0.5050625778006477,
-        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.7289440938859799,
-        "mean_hourly_portfolio_bps": -0.49482388753239265,
-        "monthly": [
-          {
-            "active_hours": 684,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": -0.4545730270201671,
-            "month": "2024-10",
-            "total_net_return_fraction": -0.037542253990007546
-          },
-          {
-            "active_hours": 681,
-            "hours": 720,
-            "mean_hourly_portfolio_bps": 0.9059889382751736,
-            "month": "2024-11",
-            "total_net_return_fraction": 0.05724110301148411
-          },
-          {
-            "active_hours": 691,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": 2.6452762068760007,
-            "month": "2024-12",
-            "total_net_return_fraction": 0.20332067338546045
-          },
-          {
-            "active_hours": 706,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": -1.6567040816296599,
-            "month": "2025-01",
-            "total_net_return_fraction": -0.12463581248749178
-          },
-          {
-            "active_hours": 640,
-            "hours": 672,
-            "mean_hourly_portfolio_bps": 0.11300722165550654,
-            "month": "2025-02",
-            "total_net_return_fraction": -0.005942998098136809
-          },
-          {
-            "active_hours": 693,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": -4.060676352574913,
-            "month": "2025-03",
-            "total_net_return_fraction": -0.27230843770571267
-          },
-          {
-            "active_hours": 665,
-            "hours": 720,
-            "mean_hourly_portfolio_bps": -1.0935547301752697,
-            "month": "2025-04",
-            "total_net_return_fraction": -0.08598236496015288
-          },
-          {
-            "active_hours": 683,
-            "hours": 744,
-            "mean_hourly_portfolio_bps": 0.6387275524544244,
-            "month": "2025-05",
-            "total_net_return_fraction": 0.04076516668647501
-          },
-          {
-            "active_hours": 607,
-            "hours": 696,
-            "mean_hourly_portfolio_bps": -1.4690650034289077,
-            "month": "2025-06",
-            "total_net_return_fraction": -0.10196668257060171
-          }
-        ],
-        "one_way_cost_bps": 8.0,
-        "positive_months": 3,
-        "profit_factor": 0.9678825775241299,
-        "scenario": "stress",
-        "symbol_net_bps": {
-          "BTCUSDT": -671.0384327247735,
-          "ETHUSDT": -3005.851166075715,
-          "SOLUSDT": 446.6792609890312
-        },
-        "total_net_return_fraction": -0.33765499535697874,
-        "trades": 757,
-        "trades_by_symbol": {
-          "BTCUSDT": 197,
-          "ETHUSDT": 244,
-          "SOLUSDT": 316
-        }
-      },
-      "trade_count": 757,
-      "trade_ledger_sha256": "944ba0e8decd243d28de26d69ac69a85a3e0cb57619e9e65fe90156dc2e6c4ad",
-      "training_history_file": {
-        "bytes": 75802,
-        "name": "training_history.json",
-        "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\training_history.json",
-        "sha256": "d12e4d07bab0cc9c1486479eaa396e3c7950f1ee977b20c561c7624abe3b3b1d"
-      }
-    },
-    {
       "base": {
-        "active_days": 272,
-        "active_hours": 6514,
+        "active_days": 68,
+        "active_hours": 652,
         "bootstrap_mean_hourly_portfolio_bps": {
           "block_hours": 168,
-          "lower_bps": -0.7973000382646274,
+          "lower_bps": -0.08315877800131512,
           "lower_quantile": 0.0125,
-          "median_bps": 0.5994389977527641,
+          "median_bps": 0.3826754081022645,
           "samples": 2000,
-          "upper_bps": 2.009570294265133
+          "upper_bps": 0.9320743552484253
         },
-        "candidate_id": "mutual_median_consistency",
+        "candidate_id": "cost_aware_utility",
         "hours": 6528,
-        "maximum_drawdown_fraction": 0.2630589364375243,
-        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.7237798591287625,
-        "mean_hourly_portfolio_bps": 0.5909855105464589,
+        "maximum_drawdown_fraction": 0.1256490882019886,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.67290887970906,
+        "mean_hourly_portfolio_bps": 0.3968496919157641,
         "monthly": [
           {
-            "active_hours": 743,
+            "active_hours": 27,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 0.5475053724308757,
+            "mean_hourly_portfolio_bps": 0.2203067470622319,
             "month": "2024-10",
-            "total_net_return_fraction": 0.03609532722813524
+            "total_net_return_fraction": 0.016390688543558074
           },
           {
-            "active_hours": 717,
+            "active_hours": 21,
             "hours": 720,
-            "mean_hourly_portfolio_bps": -1.4468585549163875,
+            "mean_hourly_portfolio_bps": 0.2456340502809595,
             "month": "2024-11",
-            "total_net_return_fraction": -0.10669193167667346
+            "total_net_return_fraction": 0.017746286192303895
           },
           {
-            "active_hours": 744,
+            "active_hours": 53,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 2.992721978601696,
+            "mean_hourly_portfolio_bps": 0.5350583611209759,
             "month": "2024-12",
-            "total_net_return_fraction": 0.23700505495217605
+            "total_net_return_fraction": 0.03929453549226958
           },
           {
-            "active_hours": 744,
+            "active_hours": 129,
             "hours": 744,
-            "mean_hourly_portfolio_bps": -1.3169234183927372,
+            "mean_hourly_portfolio_bps": 1.883989454270424,
             "month": "2025-01",
-            "total_net_return_fraction": -0.10510910202329526
+            "total_net_return_fraction": 0.1473458479182972
           },
           {
-            "active_hours": 672,
+            "active_hours": 147,
             "hours": 672,
-            "mean_hourly_portfolio_bps": 1.7422100772733782,
+            "mean_hourly_portfolio_bps": 0.8053233998103275,
             "month": "2025-02",
-            "total_net_return_fraction": 0.1061442730532689
+            "total_net_return_fraction": 0.05062076464611365
           },
           {
-            "active_hours": 744,
+            "active_hours": 140,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 1.003202534841514,
+            "mean_hourly_portfolio_bps": -0.5116161725427086,
             "month": "2025-03",
-            "total_net_return_fraction": 0.06078459003197301
+            "total_net_return_fraction": -0.042426205026037556
           },
           {
-            "active_hours": 720,
+            "active_hours": 93,
             "hours": 720,
-            "mean_hourly_portfolio_bps": 0.8236211261677518,
+            "mean_hourly_portfolio_bps": -0.40256846533329393,
             "month": "2025-04",
-            "total_net_return_fraction": 0.04638739350121224
+            "total_net_return_fraction": -0.031144452051013793
           },
           {
-            "active_hours": 740,
+            "active_hours": 30,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 1.3050581312915273,
+            "mean_hourly_portfolio_bps": 0.8656431671539087,
             "month": "2025-05",
-            "total_net_return_fraction": 0.09455385761844415
+            "total_net_return_fraction": 0.06604112155224184
           },
           {
-            "active_hours": 690,
+            "active_hours": 12,
             "hours": 696,
-            "mean_hourly_portfolio_bps": -0.33845527567303024,
+            "mean_hourly_portfolio_bps": -0.0928529245186583,
             "month": "2025-06",
-            "total_net_return_fraction": -0.027781197331809948
+            "total_net_return_fraction": -0.006476962580876489
           }
         ],
         "one_way_cost_bps": 6.0,
         "positive_months": 6,
-        "profit_factor": 1.0360110029268617,
+        "profit_factor": 1.1780654651720908,
         "scenario": "base",
         "symbol_net_bps": {
-          "BTCUSDT": 889.6967411056788,
-          "ETHUSDT": 2792.3089776759357,
-          "SOLUSDT": 175.94769406566894
+          "BTCUSDT": -223.85861675441254,
+          "ETHUSDT": 769.959350069364,
+          "SOLUSDT": 2044.534055511156
         },
-        "total_net_return_fraction": 0.3386750367449929,
-        "trades": 935,
+        "total_net_return_fraction": 0.2733927081329244,
+        "trades": 102,
         "trades_by_symbol": {
-          "BTCUSDT": 255,
-          "ETHUSDT": 327,
-          "SOLUSDT": 353
+          "BTCUSDT": 12,
+          "ETHUSDT": 41,
+          "SOLUSDT": 49
         }
       },
-      "candidate_id": "mutual_median_consistency",
+      "candidate_id": "cost_aware_utility",
+      "combined_action_gate_passed": false,
       "economic_gate": {
         "passed": false,
         "promotion_permitted": false,
         "reasons": [
           "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_ninety_active_days",
+          "fewer_than_one_hundred_eighty_closed_trades",
           "maximum_drawdown_exceeds_ten_percent",
-          "profit_factor_below_1_05",
-          "single_symbol_absolute_net_pnl_fraction_exceeds_half"
+          "single_symbol_absolute_net_pnl_fraction_exceeds_half",
+          "action_quality_gate_failed"
         ],
         "selection_contaminated": true
       },
+      "exact_replay_aligned_target_identity": true,
       "fixed_ledger_under_stress": true,
       "forecast_diagnostics": {
-        "candidate_id": "mutual_median_consistency",
+        "candidate_id": "cost_aware_utility",
         "gate": {
           "coverage_passed": true,
           "horizons_with_required_pinball_skill": 4,
           "horizons_with_required_rank_stability": 4,
-          "minimum_pairwise_seed_median_prediction_spearman": 0.8674969560851781,
+          "minimum_pairwise_seed_median_prediction_spearman": 0.7567025357021169,
           "passed": true,
           "positive_symbol_horizon_counts": {
             "BTCUSDT": 4,
@@ -757,53 +782,1158 @@
         "horizons": [
           {
             "baseline_pinball_loss_bps": 19.198658124282197,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.46895424836601307,
-            "coverage_80": 0.7794628267973857,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.47201797385620914,
+            "coverage_80": 0.7779820261437909,
             "evaluation_month_count": 9,
             "horizon_hours": 1,
-            "model_pinball_loss_bps": 18.35134946205081,
-            "pinball_skill": 0.04413374397035197,
-            "pooled_median_spearman": 0.0443773395157534,
-            "positive_monthly_median_spearman_count": 9,
+            "model_pinball_loss_bps": 18.408100766878768,
+            "pinball_skill": 0.04117774025068677,
+            "pooled_median_spearman": 0.03945976119094415,
+            "positive_monthly_median_spearman_count": 8,
             "symbol": "ALL"
           },
           {
             "baseline_pinball_loss_bps": 38.9906155782522,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.46517565359477125,
-            "coverage_80": 0.7828329248366013,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.46400122549019607,
+            "coverage_80": 0.7778288398692811,
             "evaluation_month_count": 9,
             "horizon_hours": 4,
-            "model_pinball_loss_bps": 37.401262058316185,
-            "pinball_skill": 0.040762462873823235,
-            "pooled_median_spearman": 0.04996023807601572,
-            "positive_monthly_median_spearman_count": 7,
+            "model_pinball_loss_bps": 37.61888828238044,
+            "pinball_skill": 0.03518096022666728,
+            "pooled_median_spearman": 0.017014824412006524,
+            "positive_monthly_median_spearman_count": 6,
             "symbol": "ALL"
           },
           {
             "baseline_pinball_loss_bps": 70.00329828268877,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4677798202614379,
-            "coverage_80": 0.7818116830065359,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.47012867647058826,
+            "coverage_80": 0.7808925653594772,
             "evaluation_month_count": 9,
             "horizon_hours": 12,
-            "model_pinball_loss_bps": 67.51719381632277,
-            "pinball_skill": 0.035514104725845375,
-            "pooled_median_spearman": 0.06582292226298861,
-            "positive_monthly_median_spearman_count": 9,
+            "model_pinball_loss_bps": 67.83294830334924,
+            "pinball_skill": 0.031003538870057024,
+            "pooled_median_spearman": 0.03412892470226034,
+            "positive_monthly_median_spearman_count": 6,
             "symbol": "ALL"
           },
           {
             "baseline_pinball_loss_bps": 98.7583674619629,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.49177900326797386,
-            "coverage_80": 0.7886540032679739,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4936172385620915,
+            "coverage_80": 0.7909007352941176,
             "evaluation_month_count": 9,
             "horizon_hours": 24,
-            "model_pinball_loss_bps": 96.70272612092664,
-            "pinball_skill": 0.02081485745324818,
-            "pooled_median_spearman": 0.027248632509284963,
+            "model_pinball_loss_bps": 96.67668812155594,
+            "pinball_skill": 0.021078511055873106,
+            "pooled_median_spearman": 0.029038447882982158,
+            "positive_monthly_median_spearman_count": 5,
+            "symbol": "ALL"
+          }
+        ],
+        "symbol_horizons": [
+          {
+            "baseline_pinball_loss_bps": 12.951931615522726,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4814644607843137,
+            "coverage_80": 0.7781862745098039,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 12.519935214611595,
+            "pinball_skill": 0.03335382039798518,
+            "pooled_median_spearman": 0.02559359679314598,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 19.558881407146508,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4696691176470588,
+            "coverage_80": 0.7738970588235294,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 18.93740635599296,
+            "pinball_skill": 0.03177457024339192,
+            "pooled_median_spearman": 0.04844267461243587,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 24.458004385375368,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4649203431372549,
+            "coverage_80": 0.7818627450980392,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 23.766960730031737,
+            "pinball_skill": 0.028254294359225773,
+            "pooled_median_spearman": 0.04255225480743083,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 26.39012420270611,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4756433823529412,
+            "coverage_80": 0.7784926470588235,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 25.50504117866765,
+            "pinball_skill": 0.03353841828253701,
+            "pooled_median_spearman": 0.021966708471001187,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 40.428950860122036,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.45940563725490197,
+            "coverage_80": 0.7683823529411765,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 39.3738465986909,
+            "pinball_skill": 0.02609774033171508,
+            "pooled_median_spearman": 0.012373659496007178,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 48.863909521027004,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4569546568627451,
+            "coverage_80": 0.7866115196078431,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 47.97777706978278,
+            "pinball_skill": 0.01813470227679803,
+            "pooled_median_spearman": 0.017008870283162156,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 46.57864829551893,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.48912377450980393,
+            "coverage_80": 0.7928921568627451,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 45.06660790170391,
+            "pinball_skill": 0.03246209259276611,
+            "pooled_median_spearman": 0.041498834613813276,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 73.3425614541584,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.46568627450980393,
+            "coverage_80": 0.7680759803921569,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 71.92326947516119,
+            "pinball_skill": 0.019351546371670025,
+            "pooled_median_spearman": 0.03862634220562546,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 87.38773982074214,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.45557598039215685,
+            "coverage_80": 0.7817095588235294,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 86.50896753318261,
+            "pinball_skill": 0.010056013456374413,
+            "pooled_median_spearman": 0.01374460997938618,
+            "symbol": "SOLUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 65.28675534154505,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.5065870098039216,
+            "coverage_80": 0.8120404411764706,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 64.05163308893977,
+            "pinball_skill": 0.018918419917543616,
+            "pooled_median_spearman": 0.04930766027007714,
+            "symbol": "BTCUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 103.79963858867528,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.4885110294117647,
+            "coverage_80": 0.7771139705882353,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 102.90288419026979,
+            "pinball_skill": 0.008639282473410503,
+            "pooled_median_spearman": 0.015839857585677693,
+            "symbol": "ETHUSDT"
+          },
+          {
+            "baseline_pinball_loss_bps": 123.25372060394237,
+            "candidate_id": "cost_aware_utility",
+            "coverage_50": 0.48575367647058826,
+            "coverage_80": 0.7835477941176471,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 123.0755470854582,
+            "pinball_skill": 0.0014455832863391471,
+            "pooled_median_spearman": -0.005493997623878964,
+            "symbol": "SOLUSDT"
+          }
+        ]
+      },
+      "models": [
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_action_bce": 0.6810531578497911,
+          "best_early_stop_composite": 0.5718677870712768,
+          "best_early_stop_pinball": 0.3678441226357943,
+          "best_early_stop_rank_loss": 0.6931882910170141,
+          "best_early_stop_utility_mse": 0.6781303286552429,
+          "best_epoch": 5,
+          "bytes": 433802,
+          "calibration_bce_after": 0.6849479183678284,
+          "calibration_bce_before": 0.6860844364226264,
+          "candidate_id": "cost_aware_utility",
+          "epochs": 15,
+          "optimizer_updates": 570,
+          "parameter_count": 105760,
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_seed_4701.pt",
+          "reload_max_abs_logit_error": 0.0,
+          "reload_max_abs_quantile_error": 0.0,
+          "reload_max_abs_utility_error": 0.0,
+          "seed": 4701,
+          "sha256": "7d100527d0032e8fdc1853f1d399530bf84b26f1fb7a0dc4a167ec00372c2f90",
+          "temperature": 1.3819128799677765,
+          "warning_count": 0
+        },
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_action_bce": 0.6810531578497911,
+          "best_early_stop_composite": 0.5718677870712768,
+          "best_early_stop_pinball": 0.3678441226357943,
+          "best_early_stop_rank_loss": 0.6931882910170141,
+          "best_early_stop_utility_mse": 0.6781303286552429,
+          "best_epoch": 5,
+          "bytes": 433802,
+          "calibration_bce_after": 0.6847029158946175,
+          "calibration_bce_before": 0.6855187537872407,
+          "candidate_id": "cost_aware_utility",
+          "epochs": 15,
+          "optimizer_updates": 570,
+          "parameter_count": 105760,
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_seed_4702.pt",
+          "reload_max_abs_logit_error": 0.0,
+          "reload_max_abs_quantile_error": 0.0,
+          "reload_max_abs_utility_error": 0.0,
+          "seed": 4702,
+          "sha256": "ed75fa047cb02230d75851912481399e216c3de1d1ef5ff09b88526c0c971a94",
+          "temperature": 1.3195079107728946,
+          "warning_count": 0
+        },
+        {
+          "backend_device": "privateuseone:0",
+          "backend_kind": "directml",
+          "best_early_stop_action_bce": 0.6810531578497911,
+          "best_early_stop_composite": 0.5718677870712768,
+          "best_early_stop_pinball": 0.3678441226357943,
+          "best_early_stop_rank_loss": 0.6931882910170141,
+          "best_early_stop_utility_mse": 0.6781303286552429,
+          "best_epoch": 5,
+          "bytes": 433802,
+          "calibration_bce_after": 0.6856497198229156,
+          "calibration_bce_before": 0.6863166252651448,
+          "candidate_id": "cost_aware_utility",
+          "epochs": 15,
+          "optimizer_updates": 570,
+          "parameter_count": 105760,
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_seed_4703.pt",
+          "reload_max_abs_logit_error": 0.0,
+          "reload_max_abs_quantile_error": 0.0,
+          "reload_max_abs_utility_error": 0.0,
+          "seed": 4703,
+          "sha256": "73ad30f7eb02ca998c6ef171f83bda5ebda58794e717b2f0722155ba72a70a6c",
+          "temperature": 1.3073692472021052,
+          "warning_count": 0
+        }
+      ],
+      "prediction_files": [
+        {
+          "bytes": 22065968,
+          "name": "cost_aware_utility_seed_quantile_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_quantile_predictions_bps.npy",
+          "sha256": "d330867db6c778b1a9a4214ba4f031742d25ef9d287c84b7f629f22a7551def1"
+        },
+        {
+          "bytes": 7355408,
+          "name": "cost_aware_utility_ensemble_quantile_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_ensemble_quantile_predictions_bps.npy",
+          "sha256": "806d4a3f47026f3e0803363c4eca415edc6eb8ac802dfaeab0e7d53378d8705e"
+        },
+        {
+          "bytes": 4413296,
+          "name": "cost_aware_utility_seed_utility_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_utility_predictions_bps.npy",
+          "sha256": "1ef2574e3e4058bb6e436a4cce5301ddd680bb3aba1dffa4b5eae1a8cde847fd"
+        },
+        {
+          "bytes": 1471184,
+          "name": "cost_aware_utility_ensemble_utility_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_ensemble_utility_predictions_bps.npy",
+          "sha256": "3b19f8e444d5b8a3034effb3ddd86cc36c81dddf3e7db3c22cdebbce569b1211"
+        },
+        {
+          "bytes": 8826464,
+          "name": "cost_aware_utility_seed_action_logits.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_action_logits.npy",
+          "sha256": "c2d0f9f91bb49121f7df39bf8c2089d2b90e094306b65483ea4be87dd82c7279"
+        },
+        {
+          "bytes": 8826464,
+          "name": "cost_aware_utility_seed_action_probabilities.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_action_probabilities.npy",
+          "sha256": "221b605aba7b56720012b8384402619f74706df66e7dc47384aeadae5be759d1"
+        },
+        {
+          "bytes": 2942240,
+          "name": "cost_aware_utility_ensemble_action_probabilities.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_ensemble_action_probabilities.npy",
+          "sha256": "6f0fd17fca814dbde935760cc9da49d61164be43cc0463f8e40226b6be7314ff"
+        },
+        {
+          "bytes": 22065968,
+          "name": "cost_aware_utility_rank_seed_quantile_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_quantile_predictions_bps.npy",
+          "sha256": "ddaa1bbed1ffcde2fd1f3c78412aa8e4961f7fa88e57b792139c97ed37b81647"
+        },
+        {
+          "bytes": 7355408,
+          "name": "cost_aware_utility_rank_ensemble_quantile_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_quantile_predictions_bps.npy",
+          "sha256": "ebca6c17a5799c2944c0e56bb7cfa0329b2a3ae8b5dd8d8ceee9e50fce64d7d9"
+        },
+        {
+          "bytes": 4413296,
+          "name": "cost_aware_utility_rank_seed_utility_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_utility_predictions_bps.npy",
+          "sha256": "52d20ef914fa4c2b0fc581ee442db8349116997c5b520e6af0606643c7df9a48"
+        },
+        {
+          "bytes": 1471184,
+          "name": "cost_aware_utility_rank_ensemble_utility_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_utility_predictions_bps.npy",
+          "sha256": "152892a595f3f4a84d9b595f696d86e4bdc674c27350c3293892aa63ff001796"
+        },
+        {
+          "bytes": 8826464,
+          "name": "cost_aware_utility_rank_seed_action_logits.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_action_logits.npy",
+          "sha256": "1c68ed0f0dd622955fe1372463dfe32517069e0f51ee657332eb27b8ba3767dd"
+        },
+        {
+          "bytes": 8826464,
+          "name": "cost_aware_utility_rank_seed_action_probabilities.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_action_probabilities.npy",
+          "sha256": "75ae49ec18e54dd1c75b8637934f481e3ff2fe73288f1b0be57db86ec1231620"
+        },
+        {
+          "bytes": 2942240,
+          "name": "cost_aware_utility_rank_ensemble_action_probabilities.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_action_probabilities.npy",
+          "sha256": "b06521609aafe3560eddf79b870b7369cfda84848c452e072a4ec3a39a0fa92d"
+        }
+      ],
+      "rank_ablation_gate": null,
+      "stress": {
+        "active_days": 68,
+        "active_hours": 652,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.07589733628587517,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.3641611614802493,
+          "samples": 2000,
+          "upper_bps": 0.8654512521763846
+        },
+        "candidate_id": "cost_aware_utility",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.12641539320731798,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.674493280667439,
+        "mean_hourly_portfolio_bps": 0.37601635858243077,
+        "monthly": [
+          {
+            "active_hours": 27,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.20955405889018888,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.01557969154908223
+          },
+          {
+            "active_hours": 21,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.23637479102170025,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.01706949944794789
+          },
+          {
+            "active_hours": 53,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.5225135582535924,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.03832460044488095
+          },
+          {
+            "active_hours": 129,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.8606919632309973,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.14536038983564437
+          },
+          {
+            "active_hours": 147,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.7616726061595338,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.04754884592119146
+          },
+          {
+            "active_hours": 140,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.5564190399262211,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.04561328057537861
+          },
+          {
+            "active_hours": 93,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -0.4266425394073682,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.03282590218786097
+          },
+          {
+            "active_hours": 30,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.8477220202005036,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.06462544684095395
+          },
+          {
+            "active_hours": 12,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.09476863333091881,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.0066097705976136956
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 6,
+        "profit_factor": 1.1679939917445976,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": -239.85861675441262,
+          "ETHUSDT": 715.2926834026973,
+          "SOLUSDT": 1979.2007221778233
+        },
+        "total_net_return_fraction": 0.25620348972490525,
+        "trades": 102,
+        "trades_by_symbol": {
+          "BTCUSDT": 12,
+          "ETHUSDT": 41,
+          "SOLUSDT": 49
+        }
+      },
+      "trade_count": 102,
+      "trade_ledger_sha256": "d7923e28897c36514b406399e0501bffd93408c495f8101c0f69b81de2fde747"
+    },
+    {
+      "action_diagnostics": {
+        "action_side_horizons": [
+          {
+            "baseline_brier": 0.23764515141164835,
+            "baseline_log_loss": 0.6682376475659113,
+            "brier": 0.2374046597969557,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.38842934370040894,
+            "expected_calibration_error_10_bin": 0.04222631254355163,
+            "horizon_hours": 1,
+            "log_loss": 0.6676816501659217,
+            "log_loss_skill": 0.0008320354323267942,
+            "roc_auc": 0.5549816796992009,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.37877708673477173
+          },
+          {
+            "baseline_brier": 0.24192310628838093,
+            "baseline_log_loss": 0.6769501111430563,
+            "brier": 0.23977572226368402,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.40696486830711365,
+            "expected_calibration_error_10_bin": 0.026700644550717214,
+            "horizon_hours": 1,
+            "log_loss": 0.6724824483791161,
+            "log_loss_skill": 0.006599692784445166,
+            "roc_auc": 0.5559312204648956,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.382909893989563
+          },
+          {
+            "baseline_brier": 0.2461462320068359,
+            "baseline_log_loss": 0.685421302321042,
+            "brier": 0.24619682610410462,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.4374489486217499,
+            "expected_calibration_error_10_bin": 0.02237765315548802,
+            "horizon_hours": 4,
+            "log_loss": 0.6855269806181267,
+            "log_loss_skill": -0.00015418005936895796,
+            "roc_auc": 0.5328601693368629,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.4297764301300049
+          },
+          {
+            "baseline_brier": 0.24866673950716814,
+            "baseline_log_loss": 0.6904865925952859,
+            "brier": 0.24769728953451897,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.4583333432674408,
+            "expected_calibration_error_10_bin": 0.013354100674250807,
+            "horizon_hours": 4,
+            "log_loss": 0.688579401264919,
+            "log_loss_skill": 0.002762097556736731,
+            "roc_auc": 0.5328837138687917,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.4382621943950653
+          },
+          {
+            "baseline_brier": 0.24835321403642063,
+            "baseline_log_loss": 0.689850187404449,
+            "brier": 0.2483283089589714,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.45904821157455444,
+            "expected_calibration_error_10_bin": 0.022493566731082305,
+            "horizon_hours": 12,
+            "log_loss": 0.6898997820037309,
+            "log_loss_skill": -7.189183997824422e-05,
+            "roc_auc": 0.5291597359346477,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.4645494520664215
+          },
+          {
+            "baseline_brier": 0.250358257795417,
+            "baseline_log_loss": 0.6938692534416542,
+            "brier": 0.24899403609159873,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.48366013169288635,
+            "expected_calibration_error_10_bin": 0.006422492990108964,
+            "horizon_hours": 12,
+            "log_loss": 0.6912947990667362,
+            "log_loss_skill": 0.0037102874383732054,
+            "roc_auc": 0.5290399604246627,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.45865514874458313
+          },
+          {
+            "baseline_brier": 0.24889702847379996,
+            "baseline_log_loss": 0.6909397845700519,
+            "brier": 0.2484543613227548,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.4661458432674408,
+            "expected_calibration_error_10_bin": 0.02079890438414855,
+            "horizon_hours": 24,
+            "log_loss": 0.6900259760239986,
+            "log_loss_skill": 0.001322558877720259,
+            "roc_auc": 0.5314914882538863,
+            "rows": 19584,
+            "side": "short",
+            "training_prevalence": 0.4727134108543396
+          },
+          {
+            "baseline_brier": 0.25013850584378017,
+            "baseline_log_loss": 0.6934248225355663,
+            "brier": 0.24891699510922863,
+            "candidate_id": "cost_aware_utility_rank",
+            "evaluation_prevalence": 0.4910641312599182,
+            "expected_calibration_error_10_bin": 0.005372440429507894,
+            "horizon_hours": 24,
+            "log_loss": 0.6909502767610783,
+            "log_loss_skill": 0.003568585510740019,
+            "roc_auc": 0.5253671054377543,
+            "rows": 19584,
+            "side": "long",
+            "training_prevalence": 0.47628727555274963
+          }
+        ],
+        "candidate_id": "cost_aware_utility_rank",
+        "gate": {
+          "horizons_with_positive_mse_skill": 0,
+          "horizons_with_positive_utility_spearman": 4,
+          "maximum_permitted_early_stop_pinball": 0.3742398251504175,
+          "median_best_early_stop_pinball": 0.3680705336570559,
+          "minimum_pairwise_seed_action_logit_spearman": 0.6446933263912632,
+          "minimum_pairwise_seed_conditional_mean_spearman": 0.6934098068469674,
+          "passed": false,
+          "reasons": [
+            "fewer_than_three_utility_horizons_beat_training_mean_mse"
+          ],
+          "side_horizons_with_auc_above_half": 8,
+          "side_horizons_with_positive_log_loss_skill": 6,
+          "temperature_calibration_not_worse": true
+        },
+        "seed_stability": [
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.7145135275495265
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.7892681662880845
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.8294223102898954
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.7520656564887179
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.7578163502358871
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.8051036974382489
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.7949943303363057
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.7171121839967568
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.831665821261365
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4702,
+            "side": "signed",
+            "spearman": 0.7830574354455456
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "short",
+            "spearman": 0.7317632471110854
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4702,
+            "side": "long",
+            "spearman": 0.7844635361023047
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7120670203155124
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7660170974129699
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.8707588944880322
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7150209301067322
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7811959642519118
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7953340378099039
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7376944517586251
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.6446933263912632
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7870985303278587
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7641828977826449
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7259544371480934
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4701,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7721687018502603
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.6934098068469674
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.8069031505339169
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.8368115764173386
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7255602038848626
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7900613337342905
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.8192037460087511
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7349860290366529
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.6759962635815708
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7979478200897272
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4702,
+            "output": "conditional_mean_utility",
+            "right_seed": 4703,
+            "side": "signed",
+            "spearman": 0.7756749300491355
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "short",
+            "spearman": 0.7037605681899344
+          },
+          {
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "left_seed": 4702,
+            "output": "action_logit",
+            "right_seed": 4703,
+            "side": "long",
+            "spearman": 0.7362833246222914
+          }
+        ],
+        "utility_horizons": [
+          {
+            "actual_mean_bps": 0.4907402993448355,
+            "baseline_mse_bps2": 6166.239691321513,
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 1,
+            "model_mse_bps2": 6239.57342010262,
+            "mse_skill": -0.011892779465630943,
+            "pearson": 0.02434373180192517,
+            "prediction_mean_bps": -0.03681729112811369,
+            "rows": 19584,
+            "spearman": 0.04210679001787824,
+            "training_mean_bps": 0.4675271511077881
+          },
+          {
+            "actual_mean_bps": 1.9383440151828908,
+            "baseline_mse_bps2": 24028.852686710274,
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 4,
+            "model_mse_bps2": 24803.96951781391,
+            "mse_skill": -0.032257754509117165,
+            "pearson": 0.0010109250047622123,
+            "prediction_mean_bps": 1.8618053092358262,
+            "rows": 19584,
+            "spearman": 0.030884252385586244,
+            "training_mean_bps": 1.8598825931549072
+          },
+          {
+            "actual_mean_bps": 5.557674806329933,
+            "baseline_mse_bps2": 73291.93407576373,
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 12,
+            "model_mse_bps2": 75317.77648274439,
+            "mse_skill": -0.02764072789901406,
+            "pearson": 0.03616869475176774,
+            "prediction_mean_bps": 4.307538706599201,
+            "rows": 19584,
+            "spearman": 0.04467527392815424,
+            "training_mean_bps": 5.6018452644348145
+          },
+          {
+            "actual_mean_bps": 11.861478705231551,
+            "baseline_mse_bps2": 142386.92542690993,
+            "candidate_id": "cost_aware_utility_rank",
+            "horizon_hours": 24,
+            "model_mse_bps2": 145192.2197579261,
+            "mse_skill": -0.019701909586187227,
+            "pearson": 0.03745635422274775,
+            "prediction_mean_bps": 4.306314496947962,
+            "rows": 19584,
+            "spearman": 0.040619842487517877,
+            "training_mean_bps": 11.214112281799316
+          }
+        ]
+      },
+      "base": {
+        "active_days": 102,
+        "active_hours": 1192,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.06045346268178504,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.4630800938681513,
+          "samples": 2000,
+          "upper_bps": 1.0240386760650768
+        },
+        "candidate_id": "cost_aware_utility_rank",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.19527485767096597,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.841024145287901,
+        "mean_hourly_portfolio_bps": 0.4537590223693995,
+        "monthly": [
+          {
+            "active_hours": 38,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.21558406628588195,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.016094865048438933
+          },
+          {
+            "active_hours": 110,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 1.3558267271456619,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.10037012165352088
+          },
+          {
+            "active_hours": 100,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.6651895048504021,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.04896940819202755
+          },
+          {
+            "active_hours": 196,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.931147945290398,
+            "month": "2025-01",
+            "total_net_return_fraction": 0.1503363677341809
+          },
+          {
+            "active_hours": 222,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.3925205324111241,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.020575591591860176
+          },
+          {
+            "active_hours": 214,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.6348305506945513,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.1202507658548565
+          },
+          {
+            "active_hours": 163,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.8412927802652119,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.05808760981635075
+          },
+          {
+            "active_hours": 89,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.3051213284280138,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.021994824021775994
+          },
+          {
+            "active_hours": 60,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": 0.01964527019567184,
+            "month": "2025-06",
+            "total_net_return_fraction": 0.0006812755850813534
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 8,
+        "profit_factor": 1.1253147698231474,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": 346.55628370741994,
+          "ETHUSDT": 124.35227938244732,
+          "SOLUSDT": 2491.230334937572
+        },
+        "total_net_return_fraction": 0.31078327836880737,
+        "trades": 153,
+        "trades_by_symbol": {
+          "BTCUSDT": 22,
+          "ETHUSDT": 62,
+          "SOLUSDT": 69
+        }
+      },
+      "candidate_id": "cost_aware_utility_rank",
+      "combined_action_gate_passed": false,
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_one_hundred_eighty_closed_trades",
+          "maximum_drawdown_exceeds_ten_percent",
+          "single_symbol_absolute_net_pnl_fraction_exceeds_half",
+          "action_quality_gate_failed"
+        ],
+        "selection_contaminated": true
+      },
+      "exact_replay_aligned_target_identity": true,
+      "fixed_ledger_under_stress": true,
+      "forecast_diagnostics": {
+        "candidate_id": "cost_aware_utility_rank",
+        "gate": {
+          "coverage_passed": true,
+          "horizons_with_required_pinball_skill": 4,
+          "horizons_with_required_rank_stability": 3,
+          "minimum_pairwise_seed_median_prediction_spearman": 0.7569934269861229,
+          "passed": true,
+          "positive_symbol_horizon_counts": {
+            "BTCUSDT": 4,
+            "ETHUSDT": 4,
+            "SOLUSDT": 4
+          },
+          "quantile_crossing_count": 0,
+          "reasons": []
+        },
+        "horizons": [
+          {
+            "baseline_pinball_loss_bps": 19.198658124282197,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.49637459150326796,
+            "coverage_80": 0.8032066993464052,
+            "evaluation_month_count": 9,
+            "horizon_hours": 1,
+            "model_pinball_loss_bps": 18.41568894623955,
+            "pinball_skill": 0.040782494952204984,
+            "pooled_median_spearman": 0.046067369128653134,
+            "positive_monthly_median_spearman_count": 8,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 38.9906155782522,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.4792687908496732,
+            "coverage_80": 0.7987642973856209,
+            "evaluation_month_count": 9,
+            "horizon_hours": 4,
+            "model_pinball_loss_bps": 37.719062756185025,
+            "pinball_skill": 0.03261176575976943,
+            "pooled_median_spearman": 0.019207435372304245,
+            "positive_monthly_median_spearman_count": 4,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 70.00329828268877,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.49295343137254904,
+            "coverage_80": 0.7966196895424836,
+            "evaluation_month_count": 9,
+            "horizon_hours": 12,
+            "model_pinball_loss_bps": 68.11114012656175,
+            "pinball_skill": 0.02702955721437683,
+            "pooled_median_spearman": 0.03390859477678359,
+            "positive_monthly_median_spearman_count": 5,
+            "symbol": "ALL"
+          },
+          {
+            "baseline_pinball_loss_bps": 98.7583674619629,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.5176164215686274,
+            "coverage_80": 0.8093341503267973,
+            "evaluation_month_count": 9,
+            "horizon_hours": 24,
+            "model_pinball_loss_bps": 97.1200401358391,
+            "pinball_skill": 0.016589250796949506,
+            "pooled_median_spearman": 0.04191195094530032,
             "positive_monthly_median_spearman_count": 6,
             "symbol": "ALL"
           }
@@ -811,342 +1941,387 @@
         "symbol_horizons": [
           {
             "baseline_pinball_loss_bps": 12.951931615522726,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.45848651960784315,
-            "coverage_80": 0.7616421568627451,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.5237438725490197,
+            "coverage_80": 0.8232230392156863,
             "horizon_hours": 1,
-            "model_pinball_loss_bps": 12.508474273233592,
-            "pinball_skill": 0.03423870318753508,
-            "pooled_median_spearman": 0.0446815086669779,
+            "model_pinball_loss_bps": 12.515528041251004,
+            "pinball_skill": 0.03369409191048367,
+            "pooled_median_spearman": 0.045480733703801166,
             "symbol": "BTCUSDT"
           },
           {
             "baseline_pinball_loss_bps": 19.558881407146508,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4733455882352941,
-            "coverage_80": 0.7815563725490197,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.49050245098039214,
+            "coverage_80": 0.7933517156862745,
             "horizon_hours": 1,
-            "model_pinball_loss_bps": 18.845593708893148,
-            "pinball_skill": 0.036468736805814306,
-            "pooled_median_spearman": 0.04695997304490176,
+            "model_pinball_loss_bps": 18.940679359451234,
+            "pinball_skill": 0.03160722920838366,
+            "pooled_median_spearman": 0.06157979900688364,
             "symbol": "ETHUSDT"
           },
           {
             "baseline_pinball_loss_bps": 24.458004385375368,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.47503063725490197,
-            "coverage_80": 0.7951899509803921,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.47487745098039214,
+            "coverage_80": 0.7930453431372549,
             "horizon_hours": 1,
-            "model_pinball_loss_bps": 23.69998040402569,
-            "pinball_skill": 0.03099287944371032,
-            "pooled_median_spearman": 0.04464847403397812,
+            "model_pinball_loss_bps": 23.79085943801641,
+            "pinball_skill": 0.027277161981288933,
+            "pooled_median_spearman": 0.03617540423815134,
             "symbol": "SOLUSDT"
           },
           {
             "baseline_pinball_loss_bps": 26.39012420270611,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4574142156862745,
-            "coverage_80": 0.764859068627451,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.5047487745098039,
+            "coverage_80": 0.8137254901960784,
             "horizon_hours": 4,
-            "model_pinball_loss_bps": 25.441532763026977,
-            "pinball_skill": 0.0359449403266493,
-            "pooled_median_spearman": 0.06089734834333125,
+            "model_pinball_loss_bps": 25.50370313557427,
+            "pinball_skill": 0.033589120699968,
+            "pooled_median_spearman": 0.03475977762333447,
             "symbol": "BTCUSDT"
           },
           {
             "baseline_pinball_loss_bps": 40.428950860122036,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4649203431372549,
-            "coverage_80": 0.7800245098039216,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.47012867647058826,
+            "coverage_80": 0.7838541666666666,
             "horizon_hours": 4,
-            "model_pinball_loss_bps": 39.045056339875124,
-            "pinball_skill": 0.03423028524868166,
-            "pooled_median_spearman": 0.06080533351271013,
+            "model_pinball_loss_bps": 39.49295328666401,
+            "pinball_skill": 0.023151666158650386,
+            "pooled_median_spearman": 0.01782718403264685,
             "symbol": "ETHUSDT"
           },
           {
             "baseline_pinball_loss_bps": 48.863909521027004,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4731924019607843,
-            "coverage_80": 0.8036151960784313,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.46292892156862747,
+            "coverage_80": 0.7987132352941176,
             "horizon_hours": 4,
-            "model_pinball_loss_bps": 47.71719707204647,
-            "pinball_skill": 0.02346747241923175,
-            "pooled_median_spearman": 0.039561033902249375,
+            "model_pinball_loss_bps": 48.16053184631681,
+            "pinball_skill": 0.014394625432243013,
+            "pooled_median_spearman": 0.010349936753832252,
             "symbol": "SOLUSDT"
           },
           {
             "baseline_pinball_loss_bps": 46.57864829551893,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4653799019607843,
-            "coverage_80": 0.7738970588235294,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.5318627450980392,
+            "coverage_80": 0.8285845588235294,
             "horizon_hours": 12,
-            "model_pinball_loss_bps": 45.06269528105851,
-            "pinball_skill": 0.03254609289738153,
-            "pooled_median_spearman": 0.05756114775472426,
+            "model_pinball_loss_bps": 45.109191442055035,
+            "pinball_skill": 0.031547863822515954,
+            "pooled_median_spearman": 0.061885407843164215,
             "symbol": "BTCUSDT"
           },
           {
             "baseline_pinball_loss_bps": 73.3425614541584,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.47074142156862747,
-            "coverage_80": 0.7775735294117647,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.4808517156862745,
+            "coverage_80": 0.7732843137254902,
             "horizon_hours": 12,
-            "model_pinball_loss_bps": 71.42088120691086,
-            "pinball_skill": 0.02620143350799997,
-            "pooled_median_spearman": 0.08681386978848327,
+            "model_pinball_loss_bps": 72.2344443704645,
+            "pinball_skill": 0.015108786245303318,
+            "pooled_median_spearman": 0.03642184260606576,
             "symbol": "ETHUSDT"
           },
           {
             "baseline_pinball_loss_bps": 87.38773982074214,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.46721813725490197,
-            "coverage_80": 0.7939644607843137,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.4661458333333333,
+            "coverage_80": 0.7879901960784313,
             "horizon_hours": 12,
-            "model_pinball_loss_bps": 86.06800496099895,
-            "pinball_skill": 0.015102059653337552,
-            "pooled_median_spearman": 0.045903066046181606,
+            "model_pinball_loss_bps": 86.98978456716571,
+            "pinball_skill": 0.004553902577097757,
+            "pooled_median_spearman": 0.0024592966788684755,
             "symbol": "SOLUSDT"
           },
           {
             "baseline_pinball_loss_bps": 65.28675534154505,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4849877450980392,
-            "coverage_80": 0.7889093137254902,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.5485600490196079,
+            "coverage_80": 0.8506433823529411,
             "horizon_hours": 24,
-            "model_pinball_loss_bps": 64.07415530939471,
-            "pinball_skill": 0.01857344611179812,
-            "pooled_median_spearman": 0.052209891650721145,
+            "model_pinball_loss_bps": 64.31384270101344,
+            "pinball_skill": 0.014902144170618525,
+            "pooled_median_spearman": 0.0738391193880385,
             "symbol": "BTCUSDT"
           },
           {
             "baseline_pinball_loss_bps": 103.79963858867528,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4955575980392157,
-            "coverage_80": 0.7817095588235294,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.4993872549019608,
+            "coverage_80": 0.7864583333333334,
             "horizon_hours": 24,
-            "model_pinball_loss_bps": 102.59495384460593,
-            "pinball_skill": 0.011605866460124514,
-            "pooled_median_spearman": 0.023737346658276665,
+            "model_pinball_loss_bps": 103.66925174298197,
+            "pinball_skill": 0.0012561396885975018,
+            "pooled_median_spearman": 0.020159203071343466,
             "symbol": "ETHUSDT"
           },
           {
             "baseline_pinball_loss_bps": 123.25372060394237,
-            "candidate_id": "mutual_median_consistency",
-            "coverage_50": 0.4947916666666667,
-            "coverage_80": 0.7953431372549019,
+            "candidate_id": "cost_aware_utility_rank",
+            "coverage_50": 0.5049019607843137,
+            "coverage_80": 0.7909007352941176,
             "horizon_hours": 24,
-            "model_pinball_loss_bps": 123.43906920877933,
-            "pinball_skill": -0.0015037972397811128,
-            "pooled_median_spearman": -0.01561578503047529,
+            "model_pinball_loss_bps": 123.37702596352193,
+            "pinball_skill": -0.0010004189648422646,
+            "pooled_median_spearman": 0.016052745339535195,
             "symbol": "SOLUSDT"
           }
         ]
-      },
-      "mechanism_gate": {
-        "candidate_id": "mutual_median_consistency",
-        "maximum_permitted_median_best_early_stop_pinball": 0.3758778372630559,
-        "median_best_early_stop_pinball": 0.3669017893631544,
-        "minimum_required_seed_stability": 0.5,
-        "minimum_required_seed_stability_improvement": 0.048089187353646534,
-        "minimum_seed_stability": 0.8674969560851781,
-        "passed": true,
-        "predecessor_median_best_early_stop_pinball": 0.36850768359123126,
-        "predecessor_minimum_seed_stability": 0.45191081264635347,
-        "reasons": [],
-        "relative_early_stop_pinball_degradation": -0.00435783105640275,
-        "seed_stability_delta": 0.4155861434388246
       },
       "models": [
         {
           "backend_device": "privateuseone:0",
           "backend_kind": "directml",
-          "best_early_stop_pinball": 0.3669017893631544,
-          "best_epoch": 5,
-          "bytes": 429698,
-          "candidate_id": "mutual_median_consistency",
-          "epochs": 15,
-          "evaluation_model": "peer_at_common_best_epoch",
-          "optimizer_updates": 570,
-          "parameter_count": 104980,
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_mutual_median_consistency_seed_4601.pt",
-          "reload_max_abs_prediction_error": 0.0,
-          "seed": 4601,
-          "sha256": "a451f96d424af93b5015a816477a0bb8971b1728d3a1a73cd4c48e67d0e20d2a",
+          "best_early_stop_action_bce": 0.6795213068599342,
+          "best_early_stop_composite": 0.6060455282455062,
+          "best_early_stop_pinball": 0.3680705336570559,
+          "best_early_stop_rank_loss": 0.6891255837094579,
+          "best_early_stop_utility_mse": 0.676144540309906,
+          "best_epoch": 6,
+          "bytes": 434046,
+          "calibration_bce_after": 0.6872996433457111,
+          "calibration_bce_before": 0.6898437528623763,
+          "candidate_id": "cost_aware_utility_rank",
+          "epochs": 16,
+          "optimizer_updates": 608,
+          "parameter_count": 105760,
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_rank_seed_4701.pt",
+          "reload_max_abs_logit_error": 0.0,
+          "reload_max_abs_quantile_error": 0.0,
+          "reload_max_abs_utility_error": 0.0,
+          "seed": 4701,
+          "sha256": "1aae6298262d2118882970f7c630c611acf595cec97eaedcea0f8b9751093ba9",
+          "temperature": 1.7092143485297995,
           "warning_count": 0
         },
         {
           "backend_device": "privateuseone:0",
           "backend_kind": "directml",
-          "best_early_stop_pinball": 0.3669017893631544,
-          "best_epoch": 5,
-          "bytes": 429698,
-          "candidate_id": "mutual_median_consistency",
-          "epochs": 15,
-          "evaluation_model": "peer_at_common_best_epoch",
-          "optimizer_updates": 570,
-          "parameter_count": 104980,
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_mutual_median_consistency_seed_4602.pt",
-          "reload_max_abs_prediction_error": 0.0,
-          "seed": 4602,
-          "sha256": "e4c1a2c16c7f7537b642be67adb4130c41f2b251e924fd24c7712e64e7fd498e",
+          "best_early_stop_action_bce": 0.6795213068599342,
+          "best_early_stop_composite": 0.6060455282455062,
+          "best_early_stop_pinball": 0.3680705336570559,
+          "best_early_stop_rank_loss": 0.6891255837094579,
+          "best_early_stop_utility_mse": 0.676144540309906,
+          "best_epoch": 6,
+          "bytes": 434046,
+          "calibration_bce_after": 0.6862028826841418,
+          "calibration_bce_before": 0.6883565360811021,
+          "candidate_id": "cost_aware_utility_rank",
+          "epochs": 16,
+          "optimizer_updates": 608,
+          "parameter_count": 105760,
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_rank_seed_4702.pt",
+          "reload_max_abs_logit_error": 0.0,
+          "reload_max_abs_quantile_error": 0.0,
+          "reload_max_abs_utility_error": 0.0,
+          "seed": 4702,
+          "sha256": "2d4192082d0f20478d44c655b614d794661b435fe8b3c539b26bb5debe84daf9",
+          "temperature": 1.5874010519681998,
           "warning_count": 0
         },
         {
           "backend_device": "privateuseone:0",
           "backend_kind": "directml",
-          "best_early_stop_pinball": 0.3669017893631544,
-          "best_epoch": 5,
-          "bytes": 429698,
-          "candidate_id": "mutual_median_consistency",
-          "epochs": 15,
-          "evaluation_model": "peer_at_common_best_epoch",
-          "optimizer_updates": 570,
-          "parameter_count": 104980,
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_mutual_median_consistency_seed_4603.pt",
-          "reload_max_abs_prediction_error": 0.0,
-          "seed": 4603,
-          "sha256": "a8296b0343dc06b914afdd64583bb0febdda73bb380ef5207077bf14b5ee3520",
+          "best_early_stop_action_bce": 0.6795213068599342,
+          "best_early_stop_composite": 0.6060455282455062,
+          "best_early_stop_pinball": 0.3680705336570559,
+          "best_early_stop_rank_loss": 0.6891255837094579,
+          "best_early_stop_utility_mse": 0.676144540309906,
+          "best_epoch": 6,
+          "bytes": 434046,
+          "calibration_bce_after": 0.686382360203205,
+          "calibration_bce_before": 0.6894003044696613,
+          "candidate_id": "cost_aware_utility_rank",
+          "epochs": 16,
+          "optimizer_updates": 608,
+          "parameter_count": 105760,
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_rank_seed_4703.pt",
+          "reload_max_abs_logit_error": 0.0,
+          "reload_max_abs_quantile_error": 0.0,
+          "reload_max_abs_utility_error": 0.0,
+          "seed": 4703,
+          "sha256": "a41789af80e678801dd2801c12a71714d3d5880b7593a6a31f6e68ded40d4490",
+          "temperature": 1.7092143485297995,
           "warning_count": 0
         }
       ],
       "prediction_files": [
         {
           "bytes": 22065968,
-          "name": "mutual_median_consistency_seed_predictions_bps.npy",
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\mutual_median_consistency_seed_predictions_bps.npy",
-          "sha256": "be0a6a4ea4ad9a4a343aadb0afb0a50e9738d2c1062416fa13091a65f243e8a9"
+          "name": "cost_aware_utility_rank_seed_quantile_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_quantile_predictions_bps.npy",
+          "sha256": "ddaa1bbed1ffcde2fd1f3c78412aa8e4961f7fa88e57b792139c97ed37b81647"
         },
         {
           "bytes": 7355408,
-          "name": "mutual_median_consistency_ensemble_predictions_bps.npy",
-          "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\mutual_median_consistency_ensemble_predictions_bps.npy",
-          "sha256": "4b1ab291272754293b1bc6d36a5ca88c61a4e6f3818139e767dae32be1b432e9"
+          "name": "cost_aware_utility_rank_ensemble_quantile_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_quantile_predictions_bps.npy",
+          "sha256": "ebca6c17a5799c2944c0e56bb7cfa0329b2a3ae8b5dd8d8ceee9e50fce64d7d9"
+        },
+        {
+          "bytes": 4413296,
+          "name": "cost_aware_utility_rank_seed_utility_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_utility_predictions_bps.npy",
+          "sha256": "52d20ef914fa4c2b0fc581ee442db8349116997c5b520e6af0606643c7df9a48"
+        },
+        {
+          "bytes": 1471184,
+          "name": "cost_aware_utility_rank_ensemble_utility_predictions_bps.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_utility_predictions_bps.npy",
+          "sha256": "152892a595f3f4a84d9b595f696d86e4bdc674c27350c3293892aa63ff001796"
+        },
+        {
+          "bytes": 8826464,
+          "name": "cost_aware_utility_rank_seed_action_logits.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_action_logits.npy",
+          "sha256": "1c68ed0f0dd622955fe1372463dfe32517069e0f51ee657332eb27b8ba3767dd"
+        },
+        {
+          "bytes": 8826464,
+          "name": "cost_aware_utility_rank_seed_action_probabilities.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_action_probabilities.npy",
+          "sha256": "75ae49ec18e54dd1c75b8637934f481e3ff2fe73288f1b0be57db86ec1231620"
+        },
+        {
+          "bytes": 2942240,
+          "name": "cost_aware_utility_rank_ensemble_action_probabilities.npy",
+          "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_action_probabilities.npy",
+          "sha256": "b06521609aafe3560eddf79b870b7369cfda84848c452e072a4ec3a39a0fa92d"
         }
       ],
+      "rank_ablation_gate": {
+        "average_utility_spearman_improvement": 0.01209384720568231,
+        "control_average_action_log_loss": 0.684445119889552,
+        "control_average_utility_spearman": 0.02747769249910184,
+        "passed": true,
+        "ranked_average_action_log_loss": 0.6845551642854535,
+        "ranked_average_utility_spearman": 0.03957153970478415,
+        "reasons": [],
+        "relative_action_log_loss_degradation": 0.00016077899119104622
+      },
       "stress": {
-        "active_days": 272,
-        "active_hours": 6514,
+        "active_days": 102,
+        "active_hours": 1192,
         "bootstrap_mean_hourly_portfolio_bps": {
           "block_hours": 168,
-          "lower_bps": -1.0763915701611675,
+          "lower_bps": -0.1406979227718765,
           "lower_quantile": 0.0125,
-          "median_bps": 0.38755341050113984,
+          "median_bps": 0.4146683944976627,
           "samples": 2000,
-          "upper_bps": 1.7118745475297346
+          "upper_bps": 0.9677287631346105
         },
-        "candidate_id": "mutual_median_consistency",
+        "candidate_id": "cost_aware_utility_rank",
         "hours": 6528,
-        "maximum_drawdown_fraction": 0.2730731052705577,
-        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.73617983577903,
-        "mean_hourly_portfolio_bps": 0.4000132883242365,
+        "maximum_drawdown_fraction": 0.19892414160576677,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.869872919254882,
+        "mean_hourly_portfolio_bps": 0.42250902236939947,
         "monthly": [
           {
-            "active_hours": 743,
+            "active_hours": 38,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 0.3521648706387611,
+            "mean_hourly_portfolio_bps": 0.20303926341849843,
             "month": "2024-10",
-            "total_net_return_fraction": 0.02114538700515145
+            "total_net_return_fraction": 0.015148498534146793
           },
           {
-            "active_hours": 717,
+            "active_hours": 110,
             "hours": 720,
-            "mean_hourly_portfolio_bps": -1.6329696660274982,
+            "mean_hourly_portfolio_bps": 1.328048949367884,
             "month": "2024-11",
-            "total_net_return_fraction": -0.11859013508159277
+            "total_net_return_fraction": 0.0981758558897663
           },
           {
-            "active_hours": 744,
+            "active_hours": 100,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 2.7946933047665703,
+            "mean_hourly_portfolio_bps": 0.643684128506316,
             "month": "2024-12",
-            "total_net_return_fraction": 0.21892499617561656
+            "total_net_return_fraction": 0.04729198714555416
           },
           {
-            "active_hours": 744,
+            "active_hours": 196,
             "hours": 744,
-            "mean_hourly_portfolio_bps": -1.5149520922278625,
+            "mean_hourly_portfolio_bps": 1.8970977660789288,
             "month": "2025-01",
-            "total_net_return_fraction": -0.11820507365571342
+            "total_net_return_fraction": 0.1474306380422179
           },
           {
-            "active_hours": 672,
+            "active_hours": 222,
             "hours": 672,
-            "mean_hourly_portfolio_bps": 1.5497497598130607,
+            "mean_hourly_portfolio_bps": 0.3290284689190605,
             "month": "2025-02",
-            "total_net_return_fraction": 0.09192317291647734
+            "total_net_return_fraction": 0.016227794483893776
           },
           {
-            "active_hours": 744,
+            "active_hours": 214,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 0.8168226065261016,
+            "mean_hourly_portfolio_bps": -1.6823215901210744,
             "month": "2025-03",
-            "total_net_return_fraction": 0.04617445377033347
+            "total_net_return_fraction": -0.12335995606102967
           },
           {
-            "active_hours": 720,
+            "active_hours": 163,
             "hours": 720,
-            "mean_hourly_portfolio_bps": 0.6356581632047884,
+            "mean_hourly_portfolio_bps": 0.7977742617466935,
             "month": "2025-04",
-            "total_net_return_fraction": 0.03230356600245954
+            "total_net_return_fraction": 0.05477457036568323
           },
           {
-            "active_hours": 740,
+            "active_hours": 89,
             "hours": 744,
-            "mean_hourly_portfolio_bps": 1.1276387764528177,
+            "mean_hourly_portfolio_bps": 0.2854080667792682,
             "month": "2025-05",
-            "total_net_return_fraction": 0.08020958869800632
+            "total_net_return_fraction": 0.02050018916646823
           },
           {
-            "active_hours": 690,
+            "active_hours": 60,
             "hours": 696,
-            "mean_hourly_portfolio_bps": -0.5357732833358654,
+            "mean_hourly_portfolio_bps": 0.006235308509848154,
             "month": "2025-06",
-            "total_net_return_fraction": -0.04104614865862899
+            "total_net_return_fraction": -0.0002520217602963726
           }
         ],
         "one_way_cost_bps": 8.0,
-        "positive_months": 6,
-        "profit_factor": 1.0242227327191633,
+        "positive_months": 7,
+        "profit_factor": 1.116210228055943,
         "scenario": "stress",
         "symbol_net_bps": {
-          "BTCUSDT": 549.6967411056783,
-          "ETHUSDT": 2356.3089776759375,
-          "SOLUSDT": -294.718972600996
+          "BTCUSDT": 317.22295037408657,
+          "ETHUSDT": 41.68561271578088,
+          "SOLUSDT": 2399.2303349375725
         },
-        "total_net_return_fraction": 0.1817331606157475,
-        "trades": 935,
+        "total_net_return_fraction": 0.2843143625563964,
+        "trades": 153,
         "trades_by_symbol": {
-          "BTCUSDT": 255,
-          "ETHUSDT": 327,
-          "SOLUSDT": 353
+          "BTCUSDT": 22,
+          "ETHUSDT": 62,
+          "SOLUSDT": 69
         }
       },
-      "trade_count": 935,
-      "trade_ledger_sha256": "2fb549f5464cd731794f19b71f125cb3ca50b453ef358283617adb7276bbb0bd",
-      "training_history_file": {
-        "bytes": 75802,
-        "name": "training_history.json",
-        "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\training_history.json",
-        "sha256": "d12e4d07bab0cc9c1486479eaa396e3c7950f1ee977b20c561c7624abe3b3b1d"
-      }
+      "trade_count": 153,
+      "trade_ledger_sha256": "4f0efcc29b47d302298f4e9cb6e2a179ed06d31b6520c4e60f2ccca6eecf1c7f"
     }
   ],
   "claims": {
     "ai_improvement_established": false,
+    "candidate_action_gate_pass_count": 0,
     "candidate_economic_gate_pass_count": 0,
-    "candidate_forecast_gate_pass_count": 1,
-    "candidate_mechanism_gate_pass_count": 1,
+    "candidate_forecast_gate_pass_count": 2,
     "leverage_authorized": false,
     "profitability_established": false,
     "promotion_authorized": false,
-    "reason": "Every Round 46 role is consumed development evidence. No result can authorize trading or a profitability or AI-edge claim.",
+    "rank_ablation_passed": true,
+    "reason": "All Round 47 roles are consumed development evidence. No result authorizes trading or establishes future profitability or AI edge.",
     "selection_confirmation_established": false,
-    "stability_uplift_established": false,
     "testnet_or_live_trading_authorized": false
   },
   "compute": {
     "all_artifacts_exact_reload": true,
+    "all_temperature_fits_nonworsening": true,
     "backend_device": "privateuseone:0",
     "backend_kind": "directml",
     "model_artifacts": 6,
@@ -1154,19 +2329,38 @@
     "preflight": {
       "backend_device": "privateuseone:0",
       "backend_kind": "directml",
+      "cost_aware_utility": {
+        "action_bce": 0.6942159533500671,
+        "consistency": 0.9979467391967773,
+        "head_parameter_max_abs_change": {
+          "action": 0.0009998306632041931,
+          "quantile": 0.0010000020265579224,
+          "utility": 0.0010000020265579224
+        },
+        "objective": 0.6476136445999146,
+        "pinball": 0.36010366678237915,
+        "rank_weight": 0.0,
+        "ranking": 0.6935218572616577,
+        "utility_mse": 0.9876947402954102
+      },
+      "cost_aware_utility_rank": {
+        "action_bce": 0.6942159533500671,
+        "consistency": 0.9979467391967773,
+        "head_parameter_max_abs_change": {
+          "action": 0.0009998306632041931,
+          "quantile": 0.0010000020265579224,
+          "utility": 0.0010000020265579224
+        },
+        "objective": 0.682289719581604,
+        "pinball": 0.36010366678237915,
+        "rank_weight": 0.05,
+        "ranking": 0.6935218572616577,
+        "utility_mse": 0.9876947402954102
+      },
       "cpu_fallback_warning_count": 0,
-      "mutual_consistency": 0.9951971769332886,
-      "mutual_objective": 0.4108080565929413,
-      "mutual_pair_horizon_max": 1.0703868865966797,
-      "mutual_parameter_max_abs_change": 0.0010000020265579224,
-      "mutual_supervised_pinball": 0.3610481917858124,
       "torch_directml_version": "unknown",
       "torch_version": "2.4.1+cpu",
-      "warning_count": 0,
-      "wavebound_objective": 0.36105233430862427,
-      "wavebound_parameter_max_abs_change": 0.0009999945759773254,
-      "wavebound_source_pinball": 0.36105233430862427,
-      "wavebound_target_pinball": 0.3610025942325592
+      "warning_count": 0
     },
     "requested_backend": "directml",
     "scipy_version": "1.17.1",
@@ -1176,7 +2370,7 @@
   "dataset": {
     "cache_verification": {
       "aggregate_dataset_identity_reproduced": true,
-      "cache_copied_to_round46_evidence": false,
+      "cache_copied_to_evidence": false,
       "forward_targets_exactly_reproduced": true,
       "hourly_grid_contiguous": true,
       "individual_file_hashes_verified": true,
@@ -1291,7 +2485,175 @@
     ],
     "first_timestamp_utc": "2022-01-01T00:00:00+00:00",
     "last_timestamp_utc": "2025-06-30T22:00:00+00:00",
-    "matrix_bytes": 27950064,
+    "matrix_bytes": 29421120,
+    "replay_aligned_utility_target_finite_in_all_roles": true,
+    "replay_aligned_utility_target_shape": [
+      30647,
+      3,
+      4
+    ],
+    "role_label_prevalence": [
+      {
+        "finite": true,
+        "horizon_hours": 1,
+        "long_profitable_fraction": 0.382909893989563,
+        "mean_signed_utility_bps": 0.4675295948982239,
+        "no_trade_fraction": 0.2383130081300813,
+        "role": "training",
+        "rows": 59040,
+        "short_profitable_fraction": 0.37877708673477173
+      },
+      {
+        "finite": true,
+        "horizon_hours": 4,
+        "long_profitable_fraction": 0.4382621943950653,
+        "mean_signed_utility_bps": 1.8598836660385132,
+        "no_trade_fraction": 0.13196138211382114,
+        "role": "training",
+        "rows": 59040,
+        "short_profitable_fraction": 0.4297764301300049
+      },
+      {
+        "finite": true,
+        "horizon_hours": 12,
+        "long_profitable_fraction": 0.45865514874458313,
+        "mean_signed_utility_bps": 5.60185432434082,
+        "no_trade_fraction": 0.07679539295392954,
+        "role": "training",
+        "rows": 59040,
+        "short_profitable_fraction": 0.4645494520664215
+      },
+      {
+        "finite": true,
+        "horizon_hours": 24,
+        "long_profitable_fraction": 0.47628727555274963,
+        "mean_signed_utility_bps": 11.214071273803711,
+        "no_trade_fraction": 0.05099932249322493,
+        "role": "training",
+        "rows": 59040,
+        "short_profitable_fraction": 0.4727134108543396
+      },
+      {
+        "finite": true,
+        "horizon_hours": 1,
+        "long_profitable_fraction": 0.3740740716457367,
+        "mean_signed_utility_bps": -0.7611437439918518,
+        "no_trade_fraction": 0.23425925925925925,
+        "role": "early_stop",
+        "rows": 6480,
+        "short_profitable_fraction": 0.3916666805744171
+      },
+      {
+        "finite": true,
+        "horizon_hours": 4,
+        "long_profitable_fraction": 0.4285493791103363,
+        "mean_signed_utility_bps": -3.027116298675537,
+        "no_trade_fraction": 0.12407407407407407,
+        "role": "early_stop",
+        "rows": 6480,
+        "short_profitable_fraction": 0.447376549243927
+      },
+      {
+        "finite": true,
+        "horizon_hours": 12,
+        "long_profitable_fraction": 0.4601851999759674,
+        "mean_signed_utility_bps": -8.317377090454102,
+        "no_trade_fraction": 0.07222222222222222,
+        "role": "early_stop",
+        "rows": 6480,
+        "short_profitable_fraction": 0.46759259700775146
+      },
+      {
+        "finite": true,
+        "horizon_hours": 24,
+        "long_profitable_fraction": 0.46759259700775146,
+        "mean_signed_utility_bps": -14.326679229736328,
+        "no_trade_fraction": 0.04552469135802469,
+        "role": "early_stop",
+        "rows": 6480,
+        "short_profitable_fraction": 0.4868827164173126
+      },
+      {
+        "finite": true,
+        "horizon_hours": 1,
+        "long_profitable_fraction": 0.39636752009391785,
+        "mean_signed_utility_bps": 0.043817877769470215,
+        "no_trade_fraction": 0.21596459096459097,
+        "role": "calibration",
+        "rows": 6552,
+        "short_profitable_fraction": 0.3876678943634033
+      },
+      {
+        "finite": true,
+        "horizon_hours": 4,
+        "long_profitable_fraction": 0.45772284269332886,
+        "mean_signed_utility_bps": -0.10595986247062683,
+        "no_trade_fraction": 0.10912698412698413,
+        "role": "calibration",
+        "rows": 6552,
+        "short_profitable_fraction": 0.43315017223358154
+      },
+      {
+        "finite": true,
+        "horizon_hours": 12,
+        "long_profitable_fraction": 0.4888583719730377,
+        "mean_signed_utility_bps": -0.6913031339645386,
+        "no_trade_fraction": 0.052503052503052504,
+        "role": "calibration",
+        "rows": 6552,
+        "short_profitable_fraction": 0.45863857865333557
+      },
+      {
+        "finite": true,
+        "horizon_hours": 24,
+        "long_profitable_fraction": 0.5009157657623291,
+        "mean_signed_utility_bps": -1.7533434629440308,
+        "no_trade_fraction": 0.037698412698412696,
+        "role": "calibration",
+        "rows": 6552,
+        "short_profitable_fraction": 0.4613858461380005
+      },
+      {
+        "finite": true,
+        "horizon_hours": 1,
+        "long_profitable_fraction": 0.40696486830711365,
+        "mean_signed_utility_bps": 0.4907403588294983,
+        "no_trade_fraction": 0.20460580065359477,
+        "role": "evaluation",
+        "rows": 19584,
+        "short_profitable_fraction": 0.38842934370040894
+      },
+      {
+        "finite": true,
+        "horizon_hours": 4,
+        "long_profitable_fraction": 0.4583333432674408,
+        "mean_signed_utility_bps": 1.938344120979309,
+        "no_trade_fraction": 0.10421772875816994,
+        "role": "evaluation",
+        "rows": 19584,
+        "short_profitable_fraction": 0.4374489486217499
+      },
+      {
+        "finite": true,
+        "horizon_hours": 12,
+        "long_profitable_fraction": 0.48366013169288635,
+        "mean_signed_utility_bps": 5.557674407958984,
+        "no_trade_fraction": 0.057291666666666664,
+        "role": "evaluation",
+        "rows": 19584,
+        "short_profitable_fraction": 0.45904821157455444
+      },
+      {
+        "finite": true,
+        "horizon_hours": 24,
+        "long_profitable_fraction": 0.4910641312599182,
+        "mean_signed_utility_bps": 11.861479759216309,
+        "no_trade_fraction": 0.04279003267973856,
+        "role": "evaluation",
+        "rows": 19584,
+        "short_profitable_fraction": 0.4661458432674408
+      }
+    ],
     "roles": [
       {
         "end": "2024-03-31",
@@ -1338,7 +2700,6 @@
         "timestamps": 6528
       }
     ],
-    "round44_and_round45_equivalent_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
     "rows": 91941,
     "symbols": [
       "BTCUSDT",
@@ -1361,12 +2722,28 @@
     "timestamps": 30647
   },
   "design": {
+    "action_quality_gate": {
+      "all_replay_aligned_targets_and_outputs_finite": true,
+      "maximum_relative_quantile_early_stop_degradation_vs_round46": 0.02,
+      "minimum_horizons_with_positive_conditional_mean_mse_skill_vs_training_mean": 3,
+      "minimum_horizons_with_positive_conditional_mean_spearman": 3,
+      "minimum_pairwise_seed_action_logit_spearman": 0.5,
+      "minimum_pairwise_seed_conditional_mean_spearman": 0.5,
+      "minimum_side_horizons_with_positive_log_loss_skill_vs_training_prevalence": 6,
+      "minimum_side_horizons_with_roc_auc_above_half": 6,
+      "rank_ablation_comparison": {
+        "claim_if_failed": "The pairwise mechanism did not improve replay-aligned ordering and must not be retained merely because one policy metric improved.",
+        "maximum_relative_evaluation_action_log_loss_degradation": 0.01,
+        "minimum_average_evaluation_utility_spearman_improvement": 0.005
+      },
+      "temperature_fit_may_not_worsen_calibration_bce": true
+    },
     "ai_contract": {
       "ai_trade_ablation_permitted": false,
       "benchmark_is_financial_edge_evidence": false,
       "language_model_numerical_forecasts_or_orders_permitted": false,
       "market_features_or_future_outcomes_supplied_to_language_models": false,
-      "reason": "The current AI benchmark establishes schema-constrained safety reasoning only. A paired AI-versus-deterministic after-cost uplift test remains forbidden until a deterministic candidate passes its numerical forecast, mechanism, and economic gates.",
+      "reason": "The current language-model benchmark establishes constrained risk reasoning, not market edge. An AI uplift experiment remains blocked until a deterministic numerical candidate clears forecast, action-quality, and economic gates.",
       "risk_review_benchmark_contract": "finance-risk-review-adversarial-v6",
       "risk_review_benchmark_passed": true,
       "risk_review_comparison_file_sha256": "369f98826ee97b0b2c23c3fb3e53cb966cc0eb01785140774391993b1dbe9281",
@@ -1377,27 +2754,56 @@
     "chronological_roles": {
       "calibration": {
         "end_inclusive": "2024-09-30T23:59:59Z",
-        "start": "2024-07-01T00:00:00Z"
+        "start": "2024-07-01T00:00:00Z",
+        "uses": [
+          "one-parameter temperature fit per candidate and seed"
+        ]
       },
       "early_stop": {
         "end_inclusive": "2024-06-30T23:59:59Z",
-        "start": "2024-04-01T00:00:00Z"
+        "start": "2024-04-01T00:00:00Z",
+        "uses": [
+          "common peer epoch selection"
+        ]
       },
       "evaluation": {
         "end_inclusive": "2025-06-30T23:59:59Z",
-        "start": "2024-10-01T00:00:00Z"
+        "start": "2024-10-01T00:00:00Z",
+        "uses": [
+          "consumed-development diagnostics and fixed-policy replay"
+        ]
       },
-      "purpose": "Mechanism development only; no role can support promotion or a live-trading claim.",
+      "maximum_horizon_embargo_hours": 24,
+      "promotion_or_profitability_claim_permitted": false,
+      "role_boundary_rule": "A row is admitted only when its complete 24-hour target path ends strictly inside the same role.",
       "selection_contaminated": true,
       "training": {
         "end_inclusive": "2024-03-31T23:59:59Z",
-        "start": "2022-01-01T00:00:00Z"
+        "start": "2022-01-01T00:00:00Z",
+        "uses": [
+          "feature and target scaling",
+          "model fitting"
+        ]
       }
     },
     "data_contract": {
-      "cache_contract": "Read the five hash-verified external Round 45 NumPy cache files only after reproducing their aggregate dataset identity; no cache value can override source-certificate lineage.",
+      "cache_contract": "Hash-verify all five immutable external Round 45 NumPy cache files and reproduce the aggregate dataset identity before use.",
       "causal_features_per_symbol": 71,
       "decision_interval_seconds": 3600,
+      "forecast_target_horizons_hours": [
+        1,
+        4,
+        12,
+        24
+      ],
+      "forecast_target_quantiles": [
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        0.9
+      ],
+      "future_or_synthetic_market_data_permitted": false,
       "predecessor_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
       "round_45_derived_cache_metadata_sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135",
       "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
@@ -1407,41 +2813,9 @@
         "ETHUSDT",
         "SOLUSDT"
       ],
-      "target_and_role_contract": "Bit-for-bit identical to the hash-bound Round 44 and Round 45 compounded hourly return, completeness, and role-boundary contract.",
-      "target_horizons_hours": [
-        1,
-        4,
-        12,
-        24
-      ],
-      "target_quantiles": [
-        0.1,
-        0.25,
-        0.5,
-        0.75,
-        0.9
-      ]
+      "venue_product": "Binance USD-M perpetual futures"
     },
-    "descriptive_policy_contract": {
-      "base_one_way_transition_cost_bps": 6.0,
-      "entry_rule": "When flat, evaluate every horizon. Long score is the minimum of the three seed median forecasts minus 12 bps round-trip cost. Short score is the negative maximum seed median forecast minus 12 bps. Enter only the side and horizon with the largest strictly positive score.",
-      "forced_quota": false,
-      "funding_cash_flows_included": true,
-      "holding_rule": "Hold for exactly the selected 1, 4, 12, or 24-hour horizon, then flatten. No overlapping position is permitted within a symbol.",
-      "leverage": 1.0,
-      "maker_execution_assumption": false,
-      "position_sleeves": "Fixed one-third notional sleeve per symbol.",
-      "position_values": [
-        -1,
-        0,
-        1
-      ],
-      "rationale": "The identical Round 45 mapping isolates the training mechanism and preserves an explicit epistemic-disagreement veto; changing the policy after seeing Round 45 outcomes is forbidden in this round.",
-      "runs_for_each_candidate_even_if_forecast_gate_fails": true,
-      "stress_one_way_transition_cost_bps": 8.0,
-      "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect horizons, sides, or timestamps under stress."
-    },
-    "design_sha256": "054f3619ea8abe45f773a653d265d0eb1a1a3a401aa1ffa4f792e2e7d1fe7253",
+    "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
     "economic_gate": {
       "all_three_symbols_must_have_activity": true,
       "bootstrap_replicates": 2000,
@@ -1453,13 +2827,31 @@
       "minimum_positive_evaluation_months": 6,
       "minimum_profit_factor": 1.05,
       "one_sided_familywise_lower_quantile": 0.0125,
-      "promotion_result": "Still denied because the complete Round 46 evaluation is selection-contaminated development evidence.",
-      "required_only_if_corresponding_forecast_and_mechanism_gates_pass": true,
+      "promotion_result": "Still denied because the complete Round 47 evaluation is selection-contaminated development evidence.",
+      "required_only_if_forecast_and_action_quality_gates_pass": true,
       "stress_mean_hourly_portfolio_bps_lower_bound_must_exceed": 0.0
+    },
+    "fixed_policy_contract": {
+      "action_probability_floor": 0.55,
+      "base_one_way_transition_cost_bps": 6.0,
+      "entry_rule": "When a symbol is flat, evaluate every horizon and side. A side is eligible only when every seed's calibrated probability is at least 0.55 and every seed's predicted conditional mean implies strictly positive net utility after the 12 bps round trip. Select the eligible side and horizon with the largest worst-seed expected net utility; ties prefer the shorter horizon and then abstention-safe deterministic ordering.",
+      "forced_quota": false,
+      "funding_cash_flows_included": true,
+      "holding_rule": "Hold for exactly the selected 1, 4, 12, or 24 hours, then flatten. No overlapping position is permitted within a symbol.",
+      "leverage": 1.0,
+      "maker_execution_assumption": false,
+      "position_sleeves": "Fixed one-third notional sleeve per symbol.",
+      "position_values": [
+        -1,
+        0,
+        1
+      ],
+      "runs_for_each_candidate_even_if_a_quality_gate_fails": true,
+      "stress_one_way_transition_cost_bps": 8.0,
+      "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect timestamps, sides, or horizons under stress."
     },
     "forecast_gate": {
       "all_finite_and_complete": true,
-      "applied_separately_to_each_candidate": true,
       "central_50_interval_coverage_bounds": [
         0.42,
         0.58
@@ -1468,11 +2860,10 @@
         0.72,
         0.88
       ],
-      "gate_failure_action": "Continue only to labeled descriptive consensus-policy diagnostics; deny AI action review, promotion, leverage, and untouched data.",
       "minimum_evaluation_months_with_positive_median_spearman_per_counted_horizon": 5,
       "minimum_horizons_with_positive_pinball_skill_vs_unconditional": 3,
       "minimum_horizons_with_positive_pooled_median_spearman": 3,
-      "minimum_pairwise_seed_median_prediction_correlation": 0.5,
+      "minimum_pairwise_seed_median_prediction_spearman": 0.5,
       "minimum_pinball_skill_per_counted_horizon": 0.01,
       "minimum_positive_symbol_horizons_per_symbol": 2,
       "quantile_crossing_count": 0
@@ -1481,26 +2872,15 @@
       "fee_or_slippage_reduction_permitted": false,
       "leverage_permitted": false,
       "manual_graph_or_result_editing_permitted": false,
-      "post_outcome_parameter_seed_or_candidate_selection_permitted": false,
-      "profitability_ai_or_stability_uplift_claim_permitted": false,
+      "post_outcome_parameter_seed_candidate_or_threshold_selection_permitted": false,
+      "profitability_ai_or_ranking_uplift_claim_permitted": false,
       "promotion_permitted": false,
       "risk_gate_relaxation_permitted": false,
       "selection_confirmation_2025_h2_access_permitted": false,
       "terminal_2026_access_permitted": false,
       "testnet_or_live_execution_permitted": false
     },
-    "mechanism_gate": {
-      "applied_separately_to_each_candidate": true,
-      "claim_if_failed": "The candidate's stability mechanism is not established; preserve all diagnostics and do not lower the floor after observing outcomes.",
-      "maximum_permitted_median_best_early_stop_pinball": 0.3758778372630559,
-      "maximum_relative_median_early_stop_pinball_degradation": 0.02,
-      "minimum_absolute_seed_stability_improvement": 0.048089187353646534,
-      "minimum_required_seed_stability": 0.5,
-      "predecessor_median_best_early_stop_pinball": 0.36850768359123126,
-      "predecessor_minimum_seed_stability": 0.45191081264635347
-    },
     "model_contract": {
-      "activation": "GELU",
       "adamw": {
         "beta1": 0.9,
         "beta2": 0.999,
@@ -1509,53 +2889,68 @@
         "learning_rate": 0.001,
         "weight_decay": 0.0001
       },
-      "candidate_selection": "None; both pre-registered mechanisms complete the same consumed-development evaluation.",
+      "candidate_selection": "None; both pre-registered candidates complete the same consumed-development evaluation.",
       "candidates": [
         {
-          "ema_decay": 0.99,
-          "epsilon_normalized_pinball": 0.001,
-          "evaluation_model": "EMA target",
-          "id": "wavebound_ema",
-          "mechanism": "WaveBound dynamic pinball-error lower bounds with an EMA target model",
-          "warmup_optimizer_updates": 100
+          "id": "cost_aware_utility",
+          "mechanism": "proper multitask quantile, conditional-mean utility, and side-profitability learning"
         },
         {
-          "consistency_definition": "For each horizon and peer pair, one half of the mean squared difference between centered, unit-population-standard-deviation median forecasts over the batch and supervised time axis; algebraically this is 1 minus Pearson correlation before numerical epsilon.",
-          "consistency_weight": 0.05,
-          "early_stop_model": "all three peers at the common epoch with the best ensemble-median early-stop pinball",
-          "id": "mutual_median_consistency",
-          "mechanism": "Three independently initialized peers trained on common batches with supervised pinball plus standardized-median agreement",
-          "tail_quantile_consistency_penalty": false
+          "id": "cost_aware_utility_rank",
+          "mechanism": "the identical proper multitask model plus a bounded pairwise utility-ordering regularizer",
+          "single_change_from_control": "pairwise_rank_loss_weight changes from zero to 0.05"
         }
       ],
-      "compute_backend": "DirectML required for this host run; CPU remains a separately declared portability mode.",
-      "dropout": 0.1,
-      "early_stopping_patience_epochs": 10,
-      "ensemble": "Elementwise median of three independently initialized forecasts; no fitted ensemble weights.",
-      "family": "per-symbol shared causal distributional TCN",
-      "hidden_channels": 64,
-      "input_layout": "One symbol sequence per sample with the same 71 target and causal cross-asset context features used by Round 44.",
-      "kernel_size": 3,
-      "maximum_epochs": 50,
-      "minimum_improvement": 1e-05,
-      "output_layout": "Four horizons times five monotone quantiles for the sampled symbol.",
-      "padding": "left-only causal padding",
-      "quantile_parameterization": "Per horizon, predict a median and four nonnegative softplus gaps so q10 <= q25 <= q50 <= q75 <= q90.",
-      "receptive_field_hours": 127,
-      "residual_block_dilations": [
-        1,
-        2,
-        4,
-        8,
-        16,
-        32
-      ],
+      "compute_backend": "DirectML required for this host run; CPU remains an explicitly selected portability mode.",
+      "early_stopping": {
+        "common_epoch_for_all_peers": true,
+        "criterion": "ensemble normalized pinball plus 0.1 times ensemble normalized utility MSE plus 0.2 times ensemble side BCE plus the candidate's frozen pairwise term",
+        "maximum_epochs": 50,
+        "minimum_improvement": 1e-05,
+        "patience_epochs": 10,
+        "selection_role": "early_stop only"
+      },
+      "ensemble": "Elementwise median of peers for reporting; policy confidence uses the worst peer rather than fitted ensemble weights.",
+      "family": "per-symbol shared causal multitask distributional and action-utility TCN",
+      "heads": {
+        "conditional_mean_utility": "One normalized replay-aligned expected signed utility per horizon.",
+        "quantile": "Four horizons times five monotone quantiles using one median and four nonnegative softplus gaps.",
+        "side_profitability": "Independent short and long logits per horizon trained against mutually exclusive profitable-side labels; both labels are zero inside the 12 bps no-trade region."
+      },
+      "peer_training": "Three independently initialized peers consume identical shuffled batches and are updated jointly.",
       "seeds": [
-        4601,
-        4602,
-        4603
+        4701,
+        4702,
+        4703
       ],
-      "supervised_loss": "Equal-weight normalized pinball loss across four horizons and five quantiles.",
+      "shared_encoder": {
+        "activation": "GELU",
+        "dropout": 0.1,
+        "hidden_channels": 64,
+        "kernel_size": 3,
+        "padding": "left-only causal padding",
+        "receptive_field_hours": 127,
+        "residual_block_dilations": [
+          1,
+          2,
+          4,
+          8,
+          16,
+          32
+        ]
+      },
+      "training_objective": {
+        "normalized_conditional_mean_mse_weight": 0.1,
+        "normalized_quantile_pinball_weight": 1.0,
+        "pairwise_rank_definition": "Logistic pairwise loss on normalized conditional-mean scores and replay-aligned utility ordering at a fixed 24-hour within-window offset; the compared forward target paths do not overlap.",
+        "pairwise_rank_loss_weight_ablation": 0.05,
+        "pairwise_rank_loss_weight_control": 0.0,
+        "peer_consistency_definition": "Equal average of standardized quantile-median and standardized conditional-mean pair losses across all three peer pairs and horizons.",
+        "peer_consistency_weight": 0.05,
+        "rank_tie_rule": "Pairs with exactly equal float32 utility targets contribute zero and are excluded from the denominator.",
+        "side_profitability_binary_cross_entropy_weight": 0.2,
+        "tail_or_outcome_weighting": false
+      },
       "training_windows": {
         "batch_size": 64,
         "causal_context_hours": 127,
@@ -1566,261 +2961,416 @@
       "unsupported_operator_fallback_permitted": false
     },
     "normalization_contract": {
-      "feature_and_target_scalers": "Bit-for-bit Round 44 mean, population-standard-deviation, clip, median, and scaled-MAD definitions.",
+      "clipping_utility_targets_permitted": false,
+      "distributional_targets": "Round 44 training median and scaled MAD.",
+      "features": "Round 44 training mean and population standard deviation with the unchanged clipping rule.",
       "fit_role": "training only",
-      "future_or_cross_role_statistics_permitted": false
+      "future_or_cross_role_statistics_permitted": false,
+      "utility_targets": "Per-horizon training arithmetic mean and population standard deviation; affine MSE therefore continues to elicit the conditional mean in original bps."
     },
-    "objective": "Recover the forecast quality of the Round 44 per-symbol shared causal distributional TCN while raising independently initialized median-forecast agreement above the unchanged 0.500 floor through time-series-specific dynamic error bounds or explicit peer consistency.",
-    "phase": "consumed-development sequence-model stability screen",
+    "objective": "Test whether the stable Round 46 causal TCN can rank realizable after-cost actions when it is trained to estimate the conditional mean of exact additive holding-period utility and calibrated side-specific profitability, rather than treating a conditional median as expected P&L.",
+    "phase": "consumed-development replay-aligned utility-learning screen",
     "predecessor_evidence": {
       "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
-      "diagnosis": [
-        "Round 44's per-symbol shared TCN beat the unconditional pinball baseline and had positive pooled rank association at all four horizons, but its minimum pairwise seed correlation was 0.452.",
-        "Round 44 reached the best early-stop loss at epoch 3 or 4 while training loss continued to fall, which is direct evidence of rapid noise fitting.",
-        "Round 45 joint training preserved weak forecast skill but reduced minimum seed agreement to 0.189 for AdamW and 0.181 for SAM.",
-        "SAM marginally improved early-stop pinball loss but worsened seed stability and therefore failed its frozen optimizer-ablation gate.",
-        "Round 45's seed-consensus action mapping restored activity with 898 to 947 trades, but neither candidate passed forecast or economic gates and drawdown reached 29.48 to 44.10 percent at base cost."
-      ],
-      "round_44_reference": {
-        "forecast_gate_failure": "seed_prediction_stability_below_0_5",
-        "median_best_early_stop_pinball": 0.36850768359123126,
-        "minimum_pairwise_seed_median_prediction_spearman": 0.45191081264635347
+      "economic_failure": {
+        "base_maximum_drawdown_fraction": 0.2630589364375243,
+        "base_profit_factor": 1.0360110029268617,
+        "base_total_net_return_fraction": 0.3386750367449929,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.7237798591287625,
+        "promotion_permitted": false,
+        "stress_familywise_bootstrap_lower_mean_hourly_bps": -1.0763915701611675,
+        "stress_total_net_return_fraction": 0.1817332028729235
       },
-      "round_45_failure_analysis_sha256": "84b78e6cba147a06347cebf5a65087a54e5338f1a9501e61b05d38eed457b74f",
-      "round_45_publication_sha256": "6f6ee9404729e9bdcee5ae9cd6bd66c36a6b3067f0f1123308ef6a69d7a03dde",
-      "round_45_report_canonical_sha256": "4f3e7f80e2ba2fb08f7523b02a7548b9b4ff3a34e49121b048d4c6484a09375d"
+      "new_diagnosis": {
+        "central_80_width_realized_net_spearman": 0.028214,
+        "evaluation_trades": 935,
+        "interpretation": "Neither the median-based margin nor posterior-width and peer-disagreement heuristics ranked realized net utility. A conditional quantile, especially the median, is not the conditional mean required for expected-P&L ranking. Threshold tuning on these scores is not a justified next step.",
+        "predicted_margin_realized_net_spearman": 0.01989,
+        "seed_range_realized_net_spearman": 0.055108,
+        "sided_lower_decile_realized_net_spearman": -0.02441
+      },
+      "prior_negative_control": {
+        "constraint_carried_forward": "Ranking remains a bounded ablation beside a proper pointwise utility objective; it may not replace probability calibration or justify relaxed economic gates.",
+        "finding": "A pairwise ranking auxiliary on a separate 15-minute BTC event model improved discrimination but left every top realized-return tail negative after costs.",
+        "round": 22
+      },
+      "retained_candidate": "mutual_median_consistency",
+      "retained_forecast_evidence": {
+        "forecast_gate_passed": true,
+        "mechanism_gate_passed": true,
+        "median_best_early_stop_pinball": 0.3669017893631544,
+        "minimum_pairwise_seed_median_spearman": 0.8674969560851781
+      },
+      "round_46_failure_analysis_canonical_sha256": "1acfd5b948a2b6f1b28a3ef7fa28f455170b416dbe25255d735c0836057389f4",
+      "round_46_publication_canonical_sha256": "c8e99a7614eab7b2d94d9027cf9488d31ee233125f39dddd46b5248231b5898b",
+      "round_46_report_canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b"
+    },
+    "probability_calibration_contract": {
+      "evaluation_outcomes_permitted": false,
+      "intercept_or_vector_scaling_permitted": false,
+      "method": "one scalar temperature per candidate and seed, shared across symbols, horizons, and sides",
+      "objective": "unweighted binary cross-entropy across every finite calibration label",
+      "ordering_change_permitted": false,
+      "role": "calibration only",
+      "temperature_grid": {
+        "maximum": 4.0,
+        "minimum": 0.25,
+        "points": 301,
+        "spacing": "logarithmic"
+      },
+      "tie_break": "temperature numerically closest to 1.0, then smaller temperature"
     },
     "required_outputs": [
-      "source_dataset_and_cache_hashes",
-      "role_and_target_completeness",
-      "DirectML WaveBound and mutual-consistency backward-update preflight and runtime evidence",
-      "per-candidate per-seed artifacts and exact reload checks",
-      "hashed seed and ensemble prediction tensors",
-      "per-epoch supervised, WaveBound, EMA, and peer-consistency training diagnostics",
-      "per-candidate per-symbol per-horizon per-month forecast diagnostics",
-      "per-candidate seed stability and mechanism gate",
-      "per-candidate descriptive fixed consensus trade ledger",
-      "matched fixed-ledger base and stress economics",
-      "forecast, mechanism, and economic gate reasons",
+      "source dataset and cache hashes with reproduced target identities",
+      "role counts label prevalence and no-leakage boundary checks",
+      "DirectML multitask and pairwise backward-update preflight with zero fallback warnings",
+      "per-candidate per-seed artifacts and exact reload checks for all three heads",
+      "hashed quantile utility logit and calibrated probability tensors",
+      "per-epoch quantile utility BCE consistency ranking and composite diagnostics",
+      "calibration temperatures and before-after BCE",
+      "per-candidate per-symbol per-horizon per-month forecast and action diagnostics",
+      "seed stability and quality-gate reasons",
+      "fixed nonoverlapping trade ledger with exact target-to-replay identity",
+      "matched base and stress economics with block-bootstrap uncertainty",
+      "rank-ablation comparison against the proper multitask control",
       "current hash-bound AI safety benchmark reference and explicit no-uplift boundary",
       "peak working set runtime and progress events",
       "machine-readable report with canonical identity"
     ],
     "research_basis": [
       {
-        "finding_used": "WaveBound uses a slow EMA target network to set dynamic, output-specific lower bounds on training error and was reported to reduce unstable time-series overfit across multiple architectures, including TCNs.",
-        "limitation": "The published experiments use deterministic MSE forecasting on non-crypto benchmarks; the pinball-loss adaptation is an explicit new ablation and carries no assumed benefit.",
-        "source": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/7b99e3c648898b9e4923dea0aeb4afa1-Abstract-Conference.html"
+        "finding_used": "The implementable-efficient-frontier framework integrates machine learning with a direct economic objective and explicit transaction costs rather than optimizing statistical fit alone.",
+        "limitation": "Its cross-sectional portfolio setting and reported results do not validate this hourly crypto model or any Round 47 economic result.",
+        "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4187217"
       },
       {
-        "finding_used": "The official implementation evaluates the EMA target model, uses 0.99 decay, starts dynamic bounding after a warm-up, and uses a small positive epsilon in the bound.",
-        "limitation": "The upstream implementation targets older PyTorch and CUDA workflows; this repository independently implements only the documented loss and EMA update on DirectML.",
-        "source": "https://github.com/choyi0521/WaveBound"
+        "finding_used": "Expected-utility regression and score-and-sort are not universally equivalent to arbitrary ranking objectives, so Round 47 measures utility regression and realized ranking separately.",
+        "limitation": "The theory addresses general ranking losses, not trading under temporal dependence or transaction costs.",
+        "source": "https://proceedings.neurips.cc/paper/2020/hash/26b58a41da329e0cbde0cbf956640a58-Abstract.html"
       },
       {
-        "finding_used": "Deep mutual learning shows that independently initialized peer networks can improve by learning collaboratively without a pre-trained teacher.",
-        "limitation": "The paper concerns classification; Round 46 uses a separately defined standardized-median regression consistency objective and does not assume its reported accuracy transfers.",
-        "source": "https://openaccess.thecvf.com/content_cvpr_2018/html/Zhang_Deep_Mutual_Learning_CVPR_2018_paper.html"
+        "finding_used": "Strongly proper probability losses can provide consistency for bipartite ranking, supporting retained binary cross-entropy alongside the explicit rank ablation.",
+        "limitation": "AUC consistency does not establish positive expected trading utility, temporal stability, or profitability.",
+        "source": "https://proceedings.mlr.press/v30/Agarwal13.html"
       },
       {
-        "finding_used": "Output-consistency regularization can reduce stochastic submodel disagreement while retaining the supervised objective.",
-        "limitation": "R-Drop uses bidirectional KL divergence for probabilistic classification and language tasks, not quantile return regression.",
-        "source": "https://arxiv.org/abs/2106.14448"
+        "finding_used": "A single held-out temperature parameter is a low-capacity method for improving neural probability calibration while preserving ordering.",
+        "limitation": "The experiments are image and document classification; Round 47 must measure calibration on chronological financial roles and assumes no transfer benefit.",
+        "source": "https://proceedings.mlr.press/v70/guo17a.html"
       },
       {
-        "finding_used": "Constrained probabilistic forecast combination supports retaining independently valid quantile forecasts rather than collapsing uncertainty into one point estimate.",
-        "limitation": "Load forecasting is not financial trading evidence; Round 46 keeps a simple elementwise median ensemble and does not fit post-outcome ensemble weights.",
-        "source": "https://arxiv.org/abs/1803.06730"
+        "finding_used": "Ranking metrics and ordinary pointwise surrogates can be misaligned, motivating a separately identified bounded ranking candidate.",
+        "limitation": "Round 47 uses a simpler deterministic pairwise logistic surrogate for DirectML portability, not PiRank, and claims no benefit in advance.",
+        "source": "https://proceedings.neurips.cc/paper/2021/hash/b5200c6107fc3d41d19a2b66835c3974-Abstract.html"
       },
       {
-        "finding_used": "Algorithmic stability for temporally dependent, non-i.i.d. processes is a relevant generalization criterion, so seed agreement remains a hard gate rather than a cosmetic metric.",
-        "limitation": "The theoretical bounds do not validate this neural architecture or establish financial edge.",
-        "source": "https://proceedings.neurips.cc/paper_files/paper/2007/hash/85d8ce590ad8981ca2c8286f79f59954-Abstract.html"
+        "finding_used": "Financial prediction and profitable action can diverge, and seed sensitivity is material; Round 47 retains independent peers and adds action-specific outputs.",
+        "limitation": "AlphaMix studies stock selection and mixture-of-experts routing; its empirical gains do not transfer to three crypto perpetual futures.",
+        "source": "https://arxiv.org/abs/2207.07578"
+      },
+      {
+        "finding_used": "Recent hourly BTC walk-forward evidence identifies forecast-to-trade mapping and transaction-cost filtering as material obstacles and reports weak formal dominance among models.",
+        "limitation": "The paper is recent non-peer-reviewed evidence; its selected configurations and metrics are not imported as expected performance.",
+        "source": "https://arxiv.org/abs/2606.00060"
+      },
+      {
+        "finding_used": "A recent broad benchmark reports architecture-dependent differences in downside and transaction-cost robustness, supporting explicit downside and cost diagnostics rather than architecture-only claims.",
+        "limitation": "The preprint is not independent proof that any architecture has an edge in this dataset; Round 47 does not adopt its reported winner without a controlled local experiment.",
+        "source": "https://arxiv.org/abs/2603.01820"
       }
     ],
-    "round": 46,
-    "schema_version": "stability-regularized-distributional-tcn-design-v1",
-    "status": "frozen"
+    "round": 47,
+    "schema_version": "cost-aware-utility-distributional-tcn-design-v1",
+    "status": "frozen",
+    "target_contract": {
+      "distributional_target": "The unchanged Round 44 compounded forward funding-adjusted signed utility in bps, retained solely to preserve the validated probabilistic forecast comparison.",
+      "label_order": [
+        "short",
+        "long"
+      ],
+      "long_net_utility_bps": "replay_aligned_utility_target minus 12 bps base round-trip cost",
+      "long_profitable_label": "one iff long_net_utility_bps is strictly positive",
+      "overlapping_forward_labels_in_training": true,
+      "overlapping_positions_in_replay": false,
+      "replay_aligned_utility_target": "For each row, symbol, and horizon, the exact arithmetic sum of the cached hourly funding-adjusted signed utility over t through t+h-1. This equals the pre-cost trade P&L used by the fixed replay ledger in bps.",
+      "short_net_utility_bps": "negative replay_aligned_utility_target minus 12 bps base round-trip cost",
+      "short_profitable_label": "one iff short_net_utility_bps is strictly positive",
+      "target_identity_check": "Every selected trade's base realized net bps must equal its side times replay-aligned utility target minus 12 bps to floating-point tolerance."
+    }
   },
-  "design_sha256": "054f3619ea8abe45f773a653d265d0eb1a1a3a401aa1ffa4f792e2e7d1fe7253",
-  "generated_at_utc": "2026-07-13T10:18:33.004761+00:00",
+  "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
+  "generated_at_utc": "2026-07-13T11:25:43.372548+00:00",
   "hourly_ledger_rows": 26112,
-  "implementation_commit": "c8e5b0767e957fc435289b8de5e9bc6ca240bc5d",
+  "implementation_commit": "d15a87dd5d31022d1815170b57d96cdd28ca2b55",
   "outputs": [
     {
-      "bytes": 43045,
+      "bytes": 43168,
       "name": "forecast_diagnostics.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\forecast_diagnostics.csv",
-      "sha256": "876ee70c524ed5eb90aff5b2c5a905f4e9261c2576b09f1bf446dea711fa2d51"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\forecast_diagnostics.csv",
+      "sha256": "51242a5ec60db2a3656a2658f83332648344af2617e2573bc24d84c12ebdf93a"
     },
     {
-      "bytes": 1387,
+      "bytes": 1395,
       "name": "horizon_summary.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\horizon_summary.csv",
-      "sha256": "d7beab4b28440cab98d4a5a41e895aae964ec2112b3d52c3eacbcac83867ae62"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\horizon_summary.csv",
+      "sha256": "baf26264f008cc9c215eae5fb8f6638c6d3363cedeb7cf3015253c95838ccb2b"
     },
     {
-      "bytes": 3704,
+      "bytes": 3730,
       "name": "symbol_horizon_summary.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\symbol_horizon_summary.csv",
-      "sha256": "6e9ed56595ec01cf24a885413c031b7f0b96c54b3438e9d3f4d51e4a5d8637cd"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\symbol_horizon_summary.csv",
+      "sha256": "959787ca482a99c804c0582e7813e17f6bd0349fd02924dfc35431f0e75dbde4"
     },
     {
-      "bytes": 1335,
-      "name": "seed_stability.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\seed_stability.csv",
-      "sha256": "859654a63f7a118b69d097aec25810cbe5422e0ee15448c9e188ad0fa935964e"
+      "bytes": 1369,
+      "name": "quantile_seed_stability.csv",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\quantile_seed_stability.csv",
+      "sha256": "24e120aaa32712dcdf76cf6ed5a307f7acd8b91682a0827a5c7d5835c4ff32dc"
     },
     {
-      "bytes": 1504,
-      "name": "mechanism_gates.json",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\mechanism_gates.json",
-      "sha256": "2238fb397c94b47a73cf4821bfd1407454e4eae17b3be53348f1aa1353331118"
+      "bytes": 1648,
+      "name": "utility_horizon_summary.csv",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\utility_horizon_summary.csv",
+      "sha256": "7380fdbf6701d56757c626c336ceabbb503fd8d3255ed2aa739a13a1b7499fa6"
     },
     {
-      "bytes": 75802,
+      "bytes": 3600,
+      "name": "action_side_horizon_summary.csv",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\action_side_horizon_summary.csv",
+      "sha256": "bb3f8d995940717af0378c4893c6a04c1ea516156dd6495942aa22cfec213f5e"
+    },
+    {
+      "bytes": 5612,
+      "name": "action_seed_stability.csv",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\action_seed_stability.csv",
+      "sha256": "178673161e21aada5623155368c77484a2510e249a691b040b13e1d3915cbafe"
+    },
+    {
+      "bytes": 1770,
+      "name": "role_label_prevalence.csv",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\role_label_prevalence.csv",
+      "sha256": "838b8dd25c98ce4e1514b0d41cd6ad82630b5a4f67db40834d173bc62255abaa"
+    },
+    {
+      "bytes": 3769,
+      "name": "quality_gates.json",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\quality_gates.json",
+      "sha256": "3e3e504b2d3acb4ed32a7bc45eebef1bfc5845aa82a12ce22939918e7db1c9dd"
+    },
+    {
+      "bytes": 27650,
       "name": "training_history.json",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\training_history.json",
-      "sha256": "d12e4d07bab0cc9c1486479eaa396e3c7950f1ee977b20c561c7624abe3b3b1d"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\training_history.json",
+      "sha256": "8911a2c92856c288d743fe30d19bb1f931fb3e82c13516f9f854689039cb2cab"
     },
     {
-      "bytes": 2007,
+      "bytes": 2933,
       "name": "models.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models.csv",
-      "sha256": "fb95f7ebe86d15d6b27a4453c11b9aee78834ef4abad4bfee49c2dcbbb057690"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models.csv",
+      "sha256": "79123b89f59175f3ee911e16a0eb2890da2a5a67d4285b714c0ff33090a324f8"
     },
     {
       "bytes": 549,
       "name": "roles.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\roles.csv",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\roles.csv",
       "sha256": "eb091e2c1a9ac2c830e4b86e5c04e58d8dbbf5998b2fdcd58c1add71cba48243"
     },
     {
-      "bytes": 377406,
+      "bytes": 61769,
       "name": "trades.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\trades.csv",
-      "sha256": "c775583b5bba4fa52c21aae92f7989e66e7a6209f8b3bb1f272b5ab1ecd4ad33"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\trades.csv",
+      "sha256": "42cd8c48e4c528e77994f3bff86ad7fa99a7594f352b90ad2f634abe26ae970d"
     },
     {
-      "bytes": 2160,
+      "bytes": 2147,
       "name": "replays.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\replays.csv",
-      "sha256": "d71d0ae7108fd9e81fdc8bbfd2defe01be12a667114a74eb0afd9b37cabe8573"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\replays.csv",
+      "sha256": "5a8463baee19ae0e40815e4e7abca8d744f15117a40e9bee1df6978766bb980d"
     },
     {
-      "bytes": 3087,
+      "bytes": 3121,
       "name": "monthly_economics.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\monthly_economics.csv",
-      "sha256": "d04ac86c5e476458be9f6ca50a3aa76e9f63f96f63b6a564f045eceed5df6c30"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\monthly_economics.csv",
+      "sha256": "201a928fd4f288510efd35d053a59775367ef6a078ac82b71fa47dbecc59138d"
     },
     {
-      "bytes": 738,
+      "bytes": 743,
       "name": "symbol_economics.csv",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\symbol_economics.csv",
-      "sha256": "0e463efffdeea8ecb609dfc160ffb0df409daa69c8fab6b32da9dc2ac148b937"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\symbol_economics.csv",
+      "sha256": "5fb033c435efac9a4713f43672e3ec792efd43f2556443458f606da83e151eca"
     },
     {
-      "bytes": 940263,
+      "bytes": 183128,
       "name": "hourly_ledger.csv.gz",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\hourly_ledger.csv.gz",
-      "sha256": "7abf52a6faa276687c520ade393219235e00bce5afa1328d37afe421ada2be51"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\hourly_ledger.csv.gz",
+      "sha256": "e8d9d54fcfc915cf119e8db34129009bcc30b50d0a039b0b4c787c8178ce27bb"
     },
     {
-      "bytes": 6618,
+      "bytes": 6955,
       "name": "scalers.json",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\scalers.json",
-      "sha256": "3f7b5efa766c1ffc917792132fe609601fe65cefc04f7f030b1c7917d01094d3"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\scalers.json",
+      "sha256": "8b490206bf6ed5ce8b3248fe1997cf159d3139a3866a02e24b4cf72fb12de70b"
     },
     {
-      "bytes": 106556,
+      "bytes": 38293,
       "name": "progress_events.jsonl",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\progress_events.jsonl",
-      "sha256": "797cdb36a4a543d645a7ceca2cf7fd8ca6bb6a09fa36faa0d27b47ff0d8cf9c6"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\progress_events.jsonl",
+      "sha256": "ab2f7b81c9faf0f03bc4edad512a2135408d5ffa4ded01e9920825bb668b5cd1"
     },
     {
-      "bytes": 647,
+      "bytes": 642,
       "name": "status.json",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\status.json",
-      "sha256": "1ecbc512683306941e6be881745ab9d445557e181c2dfe25b1aa52258acf28e7"
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\status.json",
+      "sha256": "2b1f845ff254d7cb2423661a2057cb1b759e481b01dc74de298a431d5cda42a8"
     },
     {
       "bytes": 22065968,
-      "name": "wavebound_ema_seed_predictions_bps.npy",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\wavebound_ema_seed_predictions_bps.npy",
-      "sha256": "5ef26a218dbb84322a4c9b3b5d6d5e84b3a359b55d00b13949bfd8af41833418"
+      "name": "cost_aware_utility_seed_quantile_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_quantile_predictions_bps.npy",
+      "sha256": "d330867db6c778b1a9a4214ba4f031742d25ef9d287c84b7f629f22a7551def1"
     },
     {
       "bytes": 7355408,
-      "name": "wavebound_ema_ensemble_predictions_bps.npy",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\wavebound_ema_ensemble_predictions_bps.npy",
-      "sha256": "a92bf37fc472f0cacc88ac406f1270207b216b7c63a22a9fd24bcdfda9a33822"
+      "name": "cost_aware_utility_ensemble_quantile_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_ensemble_quantile_predictions_bps.npy",
+      "sha256": "806d4a3f47026f3e0803363c4eca415edc6eb8ac802dfaeab0e7d53378d8705e"
+    },
+    {
+      "bytes": 4413296,
+      "name": "cost_aware_utility_seed_utility_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_utility_predictions_bps.npy",
+      "sha256": "1ef2574e3e4058bb6e436a4cce5301ddd680bb3aba1dffa4b5eae1a8cde847fd"
+    },
+    {
+      "bytes": 1471184,
+      "name": "cost_aware_utility_ensemble_utility_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_ensemble_utility_predictions_bps.npy",
+      "sha256": "3b19f8e444d5b8a3034effb3ddd86cc36c81dddf3e7db3c22cdebbce569b1211"
+    },
+    {
+      "bytes": 8826464,
+      "name": "cost_aware_utility_seed_action_logits.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_action_logits.npy",
+      "sha256": "c2d0f9f91bb49121f7df39bf8c2089d2b90e094306b65483ea4be87dd82c7279"
+    },
+    {
+      "bytes": 8826464,
+      "name": "cost_aware_utility_seed_action_probabilities.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_seed_action_probabilities.npy",
+      "sha256": "221b605aba7b56720012b8384402619f74706df66e7dc47384aeadae5be759d1"
+    },
+    {
+      "bytes": 2942240,
+      "name": "cost_aware_utility_ensemble_action_probabilities.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_ensemble_action_probabilities.npy",
+      "sha256": "6f0fd17fca814dbde935760cc9da49d61164be43cc0463f8e40226b6be7314ff"
     },
     {
       "bytes": 22065968,
-      "name": "mutual_median_consistency_seed_predictions_bps.npy",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\mutual_median_consistency_seed_predictions_bps.npy",
-      "sha256": "be0a6a4ea4ad9a4a343aadb0afb0a50e9738d2c1062416fa13091a65f243e8a9"
+      "name": "cost_aware_utility_rank_seed_quantile_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_quantile_predictions_bps.npy",
+      "sha256": "ddaa1bbed1ffcde2fd1f3c78412aa8e4961f7fa88e57b792139c97ed37b81647"
     },
     {
       "bytes": 7355408,
-      "name": "mutual_median_consistency_ensemble_predictions_bps.npy",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\predictions\\mutual_median_consistency_ensemble_predictions_bps.npy",
-      "sha256": "4b1ab291272754293b1bc6d36a5ca88c61a4e6f3818139e767dae32be1b432e9"
+      "name": "cost_aware_utility_rank_ensemble_quantile_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_quantile_predictions_bps.npy",
+      "sha256": "ebca6c17a5799c2944c0e56bb7cfa0329b2a3ae8b5dd8d8ceee9e50fce64d7d9"
     },
     {
-      "bytes": 429314,
-      "name": "round46_wavebound_ema_seed_4601.pt",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_wavebound_ema_seed_4601.pt",
-      "sha256": "d74ab42c359c870734f99ba21481d6e961f047a12694cee0b7ee8ccab2f0af12"
+      "bytes": 4413296,
+      "name": "cost_aware_utility_rank_seed_utility_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_utility_predictions_bps.npy",
+      "sha256": "52d20ef914fa4c2b0fc581ee442db8349116997c5b520e6af0606643c7df9a48"
     },
     {
-      "bytes": 429314,
-      "name": "round46_wavebound_ema_seed_4602.pt",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_wavebound_ema_seed_4602.pt",
-      "sha256": "5716c1ed48a764526354860dd3cfd29e440a00b6756add0d460f17f8b1de2761"
+      "bytes": 1471184,
+      "name": "cost_aware_utility_rank_ensemble_utility_predictions_bps.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_utility_predictions_bps.npy",
+      "sha256": "152892a595f3f4a84d9b595f696d86e4bdc674c27350c3293892aa63ff001796"
     },
     {
-      "bytes": 429314,
-      "name": "round46_wavebound_ema_seed_4603.pt",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_wavebound_ema_seed_4603.pt",
-      "sha256": "9049b7d9e2dc5eca9c94d37d4273f7acef7e336109e9fa913d2d789a16620357"
+      "bytes": 8826464,
+      "name": "cost_aware_utility_rank_seed_action_logits.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_action_logits.npy",
+      "sha256": "1c68ed0f0dd622955fe1372463dfe32517069e0f51ee657332eb27b8ba3767dd"
     },
     {
-      "bytes": 429698,
-      "name": "round46_mutual_median_consistency_seed_4601.pt",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_mutual_median_consistency_seed_4601.pt",
-      "sha256": "a451f96d424af93b5015a816477a0bb8971b1728d3a1a73cd4c48e67d0e20d2a"
+      "bytes": 8826464,
+      "name": "cost_aware_utility_rank_seed_action_probabilities.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_seed_action_probabilities.npy",
+      "sha256": "75ae49ec18e54dd1c75b8637934f481e3ff2fe73288f1b0be57db86ec1231620"
     },
     {
-      "bytes": 429698,
-      "name": "round46_mutual_median_consistency_seed_4602.pt",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_mutual_median_consistency_seed_4602.pt",
-      "sha256": "e4c1a2c16c7f7537b642be67adb4130c41f2b251e924fd24c7712e64e7fd498e"
+      "bytes": 2942240,
+      "name": "cost_aware_utility_rank_ensemble_action_probabilities.npy",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\predictions\\cost_aware_utility_rank_ensemble_action_probabilities.npy",
+      "sha256": "b06521609aafe3560eddf79b870b7369cfda84848c452e072a4ec3a39a0fa92d"
     },
     {
-      "bytes": 429698,
-      "name": "round46_mutual_median_consistency_seed_4603.pt",
-      "path": "E:\\SimpleAITradingData\\round46-stability-regularized-tcn-20260713-v1\\models\\round46_mutual_median_consistency_seed_4603.pt",
-      "sha256": "a8296b0343dc06b914afdd64583bb0febdda73bb380ef5207077bf14b5ee3520"
+      "bytes": 433802,
+      "name": "round47_cost_aware_utility_seed_4701.pt",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_seed_4701.pt",
+      "sha256": "7d100527d0032e8fdc1853f1d399530bf84b26f1fb7a0dc4a167ec00372c2f90"
+    },
+    {
+      "bytes": 433802,
+      "name": "round47_cost_aware_utility_seed_4702.pt",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_seed_4702.pt",
+      "sha256": "ed75fa047cb02230d75851912481399e216c3de1d1ef5ff09b88526c0c971a94"
+    },
+    {
+      "bytes": 433802,
+      "name": "round47_cost_aware_utility_seed_4703.pt",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_seed_4703.pt",
+      "sha256": "73ad30f7eb02ca998c6ef171f83bda5ebda58794e717b2f0722155ba72a70a6c"
+    },
+    {
+      "bytes": 434046,
+      "name": "round47_cost_aware_utility_rank_seed_4701.pt",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_rank_seed_4701.pt",
+      "sha256": "1aae6298262d2118882970f7c630c611acf595cec97eaedcea0f8b9751093ba9"
+    },
+    {
+      "bytes": 434046,
+      "name": "round47_cost_aware_utility_rank_seed_4702.pt",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_rank_seed_4702.pt",
+      "sha256": "2d4192082d0f20478d44c655b614d794661b435fe8b3c539b26bb5debe84daf9"
+    },
+    {
+      "bytes": 434046,
+      "name": "round47_cost_aware_utility_rank_seed_4703.pt",
+      "path": "E:\\SimpleAITradingData\\round47-cost-aware-utility-tcn-20260713-v1\\models\\round47_cost_aware_utility_rank_seed_4703.pt",
+      "sha256": "a41789af80e678801dd2801c12a71714d3d5880b7593a6a31f6e68ded40d4490"
     }
   ],
-  "progress_event_count": 127,
-  "report_canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
-  "round": 46,
+  "progress_event_count": 40,
+  "rank_ablation_gate": {
+    "average_utility_spearman_improvement": 0.01209384720568231,
+    "control_average_action_log_loss": 0.684445119889552,
+    "control_average_utility_spearman": 0.02747769249910184,
+    "passed": true,
+    "ranked_average_action_log_loss": 0.6845551642854535,
+    "ranked_average_utility_spearman": 0.03957153970478415,
+    "reasons": [],
+    "relative_action_log_loss_degradation": 0.00016077899119104622
+  },
+  "report_canonical_sha256": "19ab4bc3551941307f0a49dbd524f5449cc71ca94205aaec9e85ff7bbbd25639",
+  "round": 47,
   "runtime": {
-    "elapsed_seconds": 133.2931501000421,
+    "elapsed_seconds": 89.18627579999156,
     "memory": {
-      "current_pagefile_bytes": 5145149440,
-      "current_working_set_bytes": 1772216320,
-      "peak_pagefile_bytes": 5246500864,
-      "peak_working_set_bytes": 1906241536,
+      "current_pagefile_bytes": 5658763264,
+      "current_working_set_bytes": 2303979520,
+      "peak_pagefile_bytes": 5832896512,
+      "peak_working_set_bytes": 2510905344,
       "source": "windows_process_memory_counters"
     }
   },
-  "schema_version": "stability-regularized-distributional-tcn-report-v1",
+  "schema_version": "cost-aware-utility-distributional-tcn-report-v1",
   "source_lineage": {
-    "predecessor_report_canonical_sha256": "4f3e7f80e2ba2fb08f7523b02a7548b9b4ff3a34e49121b048d4c6484a09375d",
-    "predecessor_report_file_sha256": "d475bae25067ac295a32081e178cce5a8e54aea9a63ae97b9b88109cd6f6b680",
+    "predecessor_report_canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
+    "predecessor_report_file_sha256": "e9bf3ec4db7ddd798f950f619097533dfa103e09db94ab7e322f45eceb0edd21",
     "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
     "source_certificate_file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7"
   },

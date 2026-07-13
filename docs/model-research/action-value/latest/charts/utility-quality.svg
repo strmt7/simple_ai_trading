@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
+<title id="title">Replay-aligned conditional-mean utility quality</title>
+<desc id="desc">The new head is measured against exact additive holding-period utility used by the replay ledger.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">Replay-aligned conditional-mean utility quality</text>
+<text x="56" y="80" class="subtitle">The new head is measured against exact additive holding-period utility used by the replay ledger.</text>
+<line x1="900" y1="53" x2="934" y2="53" stroke="#2563a6" stroke-width="4"/><text x="944" y="58" class="note">Proper utility multitask</text>
+<line x1="1170" y1="53" x2="1204" y2="53" stroke="#0f766e" stroke-width="4"/><text x="1214" y="58" class="note">Utility + pairwise rank</text>
+<text x="135" y="135" class="label">Conditional-mean MSE skill versus training mean</text>
+<line x1="135" y1="360.0" x2="1430" y2="360.0" class="grid"/><text x="121" y="364.0" text-anchor="end" class="axis">-0.036</text>
+<line x1="135" y1="174.8" x2="1430" y2="174.8" class="zero"/><text x="121" y="178.8" text-anchor="end" class="axis">+0.000</text>
+<line x1="135" y1="155.0" x2="1430" y2="155.0" class="grid"/><text x="121" y="159.0" text-anchor="end" class="axis">+0.004</text>
+<polyline points="135.0,219.0 566.7,282.4 998.3,270.2 1430.0,253.3" fill="none" stroke="#2563a6" stroke-width="4"/>
+<circle cx="135.0" cy="219.0" r="5" fill="#2563a6"/>
+<circle cx="566.7" cy="282.4" r="5" fill="#2563a6"/>
+<circle cx="998.3" cy="270.2" r="5" fill="#2563a6"/>
+<circle cx="1430.0" cy="253.3" r="5" fill="#2563a6"/>
+<polyline points="135.0,235.8 566.7,340.2 998.3,316.5 1430.0,275.8" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="135.0" cy="235.8" r="5" fill="#0f766e"/>
+<circle cx="566.7" cy="340.2" r="5" fill="#0f766e"/>
+<circle cx="998.3" cy="316.5" r="5" fill="#0f766e"/>
+<circle cx="1430.0" cy="275.8" r="5" fill="#0f766e"/>
+<text x="135.0" y="388" text-anchor="middle" class="axis">1h</text>
+<text x="566.7" y="388" text-anchor="middle" class="axis">4h</text>
+<text x="998.3" y="388" text-anchor="middle" class="axis">12h</text>
+<text x="1430.0" y="388" text-anchor="middle" class="axis">24h</text>
+<text x="135" y="445" class="label">Predicted versus realized utility Spearman</text>
+<line x1="135" y1="670.0" x2="1430" y2="670.0" class="grid"/><text x="121" y="674.0" text-anchor="end" class="axis">-0.005</text>
+<line x1="135" y1="650.2" x2="1430" y2="650.2" class="zero"/><text x="121" y="654.2" text-anchor="end" class="axis">+0.000</text>
+<line x1="135" y1="465.0" x2="1430" y2="465.0" class="grid"/><text x="121" y="469.0" text-anchor="end" class="axis">+0.050</text>
+<polyline points="135.0,554.3 566.7,587.2 998.3,495.7 1430.0,556.7" fill="none" stroke="#2563a6" stroke-width="4"/>
+<circle cx="135.0" cy="554.3" r="5" fill="#2563a6"/>
+<circle cx="566.7" cy="587.2" r="5" fill="#2563a6"/>
+<circle cx="998.3" cy="495.7" r="5" fill="#2563a6"/>
+<circle cx="1430.0" cy="556.7" r="5" fill="#2563a6"/>
+<polyline points="135.0,494.3 566.7,535.9 998.3,484.8 1430.0,499.8" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="135.0" cy="494.3" r="5" fill="#0f766e"/>
+<circle cx="566.7" cy="535.9" r="5" fill="#0f766e"/>
+<circle cx="998.3" cy="484.8" r="5" fill="#0f766e"/>
+<circle cx="1430.0" cy="499.8" r="5" fill="#0f766e"/>
+<text x="135.0" y="698" text-anchor="middle" class="axis">1h</text>
+<text x="566.7" y="698" text-anchor="middle" class="axis">4h</text>
+<text x="998.3" y="698" text-anchor="middle" class="axis">12h</text>
+<text x="1430.0" y="698" text-anchor="middle" class="axis">24h</text>
+<text x="56" y="730" class="note">All values are from the frozen 2024-10 through 2025-06 consumed evaluation role; zero-reference lines are not acceptance thresholds.</text>
+</svg>

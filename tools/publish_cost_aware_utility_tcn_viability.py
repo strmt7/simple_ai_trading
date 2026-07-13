@@ -258,7 +258,11 @@ def _progress_rows(
         fields = list(reader.fieldnames or ())
         rows = [dict(row) for row in reader]
     observed = [int(row["round"]) for row in rows]
-    if not fields or observed[-1] != 46 or observed != list(range(1, 47)):
+    prior_rounds = list(range(1, ROUND))
+    if observed == [*prior_rounds, ROUND]:
+        rows.pop()
+        observed.pop()
+    if not fields or observed != prior_rounds:
         raise ValueError("Round 47 prior progress history is invalid")
     best = max(
         report["candidates"],
@@ -489,8 +493,10 @@ def _action_svg(report: Mapping[str, object]) -> str:
             )
     lines.extend(
         [
-            '<rect x="955" y="46" width="11" height="11" fill="#52606d"/><text x="974" y="57" class="note">short</text>',
-            '<circle cx="1045" cy="52" r="6" fill="#52606d"/><text x="1060" y="57" class="note">long</text>',
+            f'<line x1="900" y1="52" x2="934" y2="52" stroke="{COLORS[CANDIDATES[0]]}" stroke-width="4"/><text x="944" y="57" class="note">{LABELS[CANDIDATES[0]]}</text>',
+            f'<line x1="1170" y1="52" x2="1204" y2="52" stroke="{COLORS[CANDIDATES[1]]}" stroke-width="4"/><text x="1214" y="57" class="note">{LABELS[CANDIDATES[1]]}</text>',
+            '<rect x="955" y="73" width="11" height="11" fill="#52606d"/><text x="974" y="84" class="note">short</text>',
+            '<circle cx="1045" cy="79" r="6" fill="#52606d"/><text x="1060" y="84" class="note">long</text>',
             '<text x="56" y="730" class="note">AUC above 0.5 and log-loss skill above zero are necessary action-quality checks, not evidence of positive after-cost expectancy.</text>',
             "</svg>",
         ]
@@ -755,7 +761,13 @@ def _monthly_svg(rows: Sequence[Mapping[str, object]]) -> str:
         lines.append(
             f'<text x="{x(index):.1f}" y="{top + chart_height + 30}" text-anchor="middle" class="axis">{month}</text>'
         )
-    lines.append("</svg>")
+    lines.extend(
+        [
+            f'<line x1="900" y1="52" x2="934" y2="52" stroke="{COLORS[CANDIDATES[0]]}" stroke-width="4"/><text x="944" y="57" class="note">{LABELS[CANDIDATES[0]]}</text>',
+            f'<line x1="1170" y1="52" x2="1204" y2="52" stroke="{COLORS[CANDIDATES[1]]}" stroke-width="4"/><text x="1214" y="57" class="note">{LABELS[CANDIDATES[1]]}</text>',
+            "</svg>",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -805,7 +817,15 @@ def _equity_svg(rows: Sequence[Mapping[str, object]]) -> str:
         lines.append(
             f'<text x="{x(date):.1f}" y="{top + chart_height + 32}" text-anchor="middle" class="axis">{date}</text>'
         )
-    lines.append("</svg>")
+    lines.extend(
+        [
+            f'<line x1="900" y1="52" x2="934" y2="52" stroke="{COLORS[CANDIDATES[0]]}" stroke-width="4"/><text x="944" y="57" class="note">{LABELS[CANDIDATES[0]]}</text>',
+            f'<line x1="1170" y1="52" x2="1204" y2="52" stroke="{COLORS[CANDIDATES[1]]}" stroke-width="4"/><text x="1214" y="57" class="note">{LABELS[CANDIDATES[1]]}</text>',
+            '<line x1="955" y1="79" x2="989" y2="79" stroke="#52606d" stroke-width="3"/><text x="999" y="84" class="note">base cost</text>',
+            '<line x1="1095" y1="79" x2="1129" y2="79" stroke="#52606d" stroke-width="3" stroke-dasharray="7 5"/><text x="1139" y="84" class="note">stress cost</text>',
+            "</svg>",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
