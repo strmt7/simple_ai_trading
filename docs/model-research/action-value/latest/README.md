@@ -29,6 +29,6 @@ Point estimates are not validated profitability. The fixed ledger charges 6 bps 
 
 ![Research progress](charts/research-progress.svg)
 
-DirectML trained six AMD-GPU artifacts in `89.2s`; all three output heads reloaded exactly and the warning-fatal preflight recorded zero CPU fallbacks. The local 8B language model remains a risk-review component only; AI trading uplift is not established.
+DirectML trained six AMD-GPU artifacts in `83.3s`; all three output heads reloaded exactly and the warning-fatal preflight recorded zero CPU fallbacks. The local 8B language model remains a risk-review component only; AI trading uplift is not established.
 
 Data: [forecast horizons](horizons.csv) | [utility horizons](utility-horizons.csv) | [action horizons](action-horizons.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [label prevalence](labels.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-047-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
