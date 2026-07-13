@@ -27,36 +27,46 @@ def _csv(path: str) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def test_latest_action_value_publication_is_round38_hash_verified() -> None:
+def test_latest_action_value_publication_is_round39_hash_verified() -> None:
     report = json.loads((LATEST / "report.json").read_text(encoding="utf-8"))
     canonical = dict(report)
     claimed = canonical.pop("publication_sha256")
 
     assert claimed == _canonical_sha256(canonical)
-    assert claimed == "89f3ebbf6e37a7c80c6f26e6fedd831fed9a0a8b5f6420a4940c0fcff7b490f9"
+    assert claimed == "42c27ebf3739b719901f8e71db312cb368c0ce8611468faf8017f03dc4a9219a"
     assert report["schema_version"] == (
-        "derivatives-hurdle-ai-ablation-publication-v1"
+        "causal-refit-utility-ai-ablation-publication-v1"
     )
-    assert report["round"] == 38
+    assert report["round"] == 39
     assert report["status"] == "rejected"
     assert report["source_implementation_commit"] == (
-        "dc19f72e69f79e93ed40d97deea855a4c6a0b4aa"
+        "474dedb4c3b645cb2d9b8199b6b78619c07e031c"
     )
     assert report["source_report_canonical_sha256"] == (
-        "7b7f3a5ba4ab1a047fc6d06ca4c3e90b6bdc210c621d7bcca2d887629f9e4c42"
+        "6f95bd8cd238c8a0aee3cb147c477fb6a73edce404ce35bb857a9c411ea7627f"
     )
     assert report["source_report_file_sha256"] == (
-        "7b39beb7726a2b94b564f77fb766b207592f8979f1828f37bfceeae7970a7346"
+        "c987f021b1630cf07a40bad40be76c12f2bef39561251dc8d8e12fa504332598"
+    )
+    assert report["source_ai_case_file_sha256"] == (
+        "eaea3973d67e46c1ef1ab3a31a5c866405445a1629aa245e740c3713cb37acfe"
     )
     assert report["dataset_rows"] == 1_098_105
-    assert report["feature_count"] == 103
-    assert report["gpu_model_artifact_count"] == 96
-    assert report["candidate_count"] == 32
-    assert report["threshold_cell_count"] == 640
-    assert report["supported_threshold_cell_count"] == 295
-    assert report["selected_threshold_count"] == 32
-    assert report["viability_gate_passed_candidate_count"] == 0
-    assert report["ai_case_count"] == 0
+    assert report["model_feature_count"] == 71
+    assert report["gpu_model_artifact_count"] == 60
+    assert report["candidate_count"] == 4
+    assert report["monthly_result_count"] == 24
+    assert report["threshold_cell_count"] == 480
+    assert report["ai_case_count"] == 180
+    assert report["ai_decision_count"] == 360
+    assert report["ai_provider_failure_count"] == 0
+    assert report["aggregate_ml_gate_passed_candidate_count"] == 0
+    assert report["ai_uplift_gate_passed_model_count"] == 0
+    assert report["confidence_capacity_bootstrap_samples"] == 50_000
+    assert report["confidence_capacity_bootstrap_seed"] == 3939
+    assert report["confidence_capacity_lower_95_mean_net_bps"] == (
+        -0.17872218697091233
+    )
     for field in (
         "trading_authority",
         "execution_claim",
@@ -81,15 +91,19 @@ def test_latest_action_value_source_report_is_exact_and_fail_closed() -> None:
     claimed = canonical.pop("report_canonical_sha256")
 
     assert claimed == _canonical_sha256(canonical)
+    assert source["round"] == 39
     assert source["status"] == "rejected"
+    assert source["implementation_commit"] == (
+        "474dedb4c3b645cb2d9b8199b6b78619c07e031c"
+    )
     assert source["dataset"] == {
-        "derivatives_feature_count": 32,
+        "derivatives_risk_and_accounting_feature_count": 32,
         "feature_count": 103,
         "features_bytes": 452_419_260,
         "features_dtype": "float32",
-        "horizons_minutes": [15, 30, 60, 120],
+        "horizons_minutes": [30, 120],
+        "model_feature_count": 71,
         "persistent_feature_copy_created": False,
-        "price_flow_feature_count": 71,
         "rows": 1_098_105,
         "source_exclusions": {
             "base_decision_rows": 367_752,
@@ -109,11 +123,24 @@ def test_latest_action_value_source_report_is_exact_and_fail_closed() -> None:
         },
     }
     assert source["runtime_evidence"]["memory"]["peak_working_set_bytes"] == (
-        4_662_194_176
+        4_662_816_768
     )
-    assert source["viability_gate_passed_candidates"] == []
-    assert source["ai_case_set"]["cases"] == 0
-    assert source["ai_reports"] == []
+    assert len(source["model_artifacts"]) == 60
+    assert all(
+        artifact["reload_max_abs_prediction_error"] == 0.0
+        for artifact in source["model_artifacts"]
+    )
+    assert source["aggregate_ml_gate_passed_candidates"] == []
+    assert source["ai_case_set"]["cases"] == 180
+    assert source["ai_case_set"]["case_set_sha256"] == (
+        "fb94623fc8c5906bfb8f18a951def9ca19bae7d66ca3d2e91ef4d3cb93e5985f"
+    )
+    assert len(source["ai_reports"]) == 2
+    assert all(report["provider_failures"] == 0 for report in source["ai_reports"])
+    assert all(not report["uplift_gate_passed"] for report in source["ai_reports"])
+    assert source["ai_uplift_gate_passed_models"] == []
+    assert source["model_selection_on_evaluation_permitted"] is False
+    assert source["ai_model_selection_on_evaluation_permitted"] is False
     assert source["selection_confirmation_accessed"] is False
     assert source["terminal_2026_accessed"] is False
     for field in (
@@ -126,38 +153,67 @@ def test_latest_action_value_source_report_is_exact_and_fail_closed() -> None:
         assert source[field] is False
 
 
-def test_latest_action_value_tables_preserve_round38_graph_data() -> None:
+def test_latest_action_value_tables_preserve_round39_graph_data() -> None:
     candidates = _csv("candidates.csv")
+    monthly = _csv("monthly.csv")
     thresholds = _csv("thresholds.csv")
     models = _csv("models.csv")
-    uplift = _csv("derivatives-uplift.csv")
+    ai_cases = _csv("ai-cases.csv")
+    ai_models = _csv("ai-models.csv")
+    ai_decisions = _csv("ai-decisions.csv")
+    capacity = _csv("capacity-summary.csv")
+    uplift = _csv("utility-uplift.csv")
     sources = _csv("sources.csv")
 
-    assert len(candidates) == 32
-    assert len(thresholds) == 640
-    assert len(models) == 96
-    assert len(uplift) == 16
-    assert len(sources) == 3
+    assert [
+        len(table)
+        for table in (
+            candidates,
+            monthly,
+            thresholds,
+            models,
+            ai_cases,
+            ai_models,
+            ai_decisions,
+            capacity,
+            uplift,
+            sources,
+        )
+    ] == [4, 24, 480, 60, 180, 2, 360, 14, 2, 3]
     assert {row["architecture"] for row in candidates} == {
-        "shared_direct_multiclass_lightgbm",
-        "per_symbol_direct_multiclass_lightgbm",
         "shared_two_stage_hurdle_lightgbm",
-        "per_symbol_two_stage_hurdle_lightgbm",
+        "per_symbol_direct_multiclass_lightgbm",
     }
-    assert {row["feature_set"] for row in candidates} == {
-        "price_flow_only",
-        "price_flow_plus_premium_and_funding",
+    assert {row["weighting"] for row in candidates} == {
+        "equal",
+        "bounded_economic_utility",
     }
-    assert {int(row["horizon_minutes"]) for row in candidates} == {15, 30, 60, 120}
-    assert all(row["viability_gate_passed"] == "False" for row in candidates)
-    assert sum(row["support_passed"] == "True" for row in thresholds) == 295
-    assert sum(row["selected"] == "True" for row in thresholds) == 32
-    assert all(row["backend_kind"] == "opencl" for row in models)
+    assert all(row["ai_entry_support_passed"] == "True" for row in candidates)
+    assert all(row["aggregate_ml_gate_passed"] == "False" for row in candidates)
+    assert all(float(row["mean_net_bps"]) < 0.0 for row in candidates)
+    assert all(float(row["profit_factor"]) < 1.0 for row in candidates)
     assert all(float(row["reload_max_abs_prediction_error"]) == 0.0 for row in models)
+    assert all(row["backend_kind"] == "opencl" for row in models)
+    assert {row["evaluation_month"] for row in monthly} == {
+        "2025-01",
+        "2025-02",
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+    }
+    assert {row["symbol"] for row in ai_cases} == {
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+    }
     assert all(
-        float(row["viability_log_loss_delta_augmented_minus_price"]) > 0
-        for row in uplift
+        sum(row["symbol"] == symbol for row in ai_cases) == 60
+        for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
     )
+    assert all(row["valid"] == "True" for row in ai_decisions)
+    assert {row["model"] for row in ai_models} == {"qwen3:8b", "fino1:8b"}
+    assert all(row["uplift_gate_passed"] == "False" for row in ai_models)
     assert {row["symbol"] for row in sources} == {
         "BTCUSDT",
         "ETHUSDT",
@@ -166,40 +222,56 @@ def test_latest_action_value_tables_preserve_round38_graph_data() -> None:
     assert all(int(row["price_rows"]) == 1_883_520 for row in sources)
     assert all(int(row["price_gap_count"]) == 0 for row in sources)
 
-    best = max(candidates, key=lambda row: float(row["viability_mean_net_bps"]))
-    assert best["candidate_id"] == (
-        "price_flow_only_shared_two_stage_hurdle_lightgbm_h120"
+    best = max(candidates, key=lambda row: float(row["mean_net_bps"]))
+    assert best["candidate_id"] == "rolling_shared_hurdle_h120_utility"
+    assert int(best["total_trades"]) == 2_796
+    assert float(best["mean_net_bps"]) == -9.908254582381598
+    assert float(best["profit_factor"]) == 0.7885771104997189
+    assert float(best["day_block_bootstrap_mean_net_bps_lower_95"]) == (
+        -15.385173536256483
     )
-    assert int(best["viability_total_trades"]) == 789
-    assert float(best["viability_mean_net_bps"]) == -3.9885070425551503
-    assert float(best["viability_profit_factor"]) == 0.9246544495467506
-    assert float(best["viability_day_block_bootstrap_mean_net_bps_lower_95"]) == (
-        -13.44693667520006
+
+    overall = next(row for row in capacity if row["scope"] == "overall")
+    assert int(overall["trades"]) == 180
+    assert float(overall["mean_net_bps"]) == 18.66688779551122
+    assert float(overall["day_block_lower_95_mean_net_bps"]) == (
+        -0.17872218697091233
     )
-    assert min(int(row["viability_total_trades"]) for row in candidates) == 313
-    assert max(int(row["viability_total_trades"]) for row in candidates) == 8_515
+    eth = next(
+        row
+        for row in capacity
+        if row["scope"] == "symbol" and row["member"] == "ETHUSDT"
+    )
+    sol = next(
+        row
+        for row in capacity
+        if row["scope"] == "symbol" and row["member"] == "SOLUSDT"
+    )
+    assert float(eth["total_net_bps"]) < 0.0
+    assert float(sol["total_net_bps"]) == 2944.4864406585693
 
 
-def test_latest_action_value_progress_extends_to_round38_without_portfolio_claim() -> None:
+def test_latest_action_value_progress_extends_to_round39_without_policy_claim() -> None:
     progress = _csv("progress.csv")
 
-    assert [int(row["round"]) for row in progress] == list(range(1, 39))
+    assert [int(row["round"]) for row in progress] == list(range(1, 40))
     latest = progress[-1]
     assert latest["status"] == "rejected"
     assert latest["selection_contaminated"] == "True"
     assert latest["risk_level"] == "research-only; no policy"
-    assert latest["selected_signals"] == "789"
-    assert latest["executable_trades"] == "789"
-    assert float(latest["mean_net_bps"]) == -3.9885070425551503
+    assert latest["selected_signals"] == "2796"
+    assert latest["executable_trades"] == "2796"
+    assert float(latest["mean_net_bps"]) == -9.908254582381598
     assert latest["accepted_thresholds"] == "0"
 
 
 def test_latest_action_value_charts_are_accessible_and_prior_files_are_absent() -> None:
     expected_charts = {
-        "calibration-to-viability.svg",
-        "derivatives-feature-ablation.svg",
+        "ai-ablation.svg",
+        "confidence-capacity.svg",
+        "monthly-economics.svg",
         "research-progress.svg",
-        "viability-economics.svg",
+        "rolling-candidate-economics.svg",
     }
     charts = {path.name for path in (LATEST / "charts").glob("*.svg")}
 
@@ -217,21 +289,17 @@ def test_latest_action_value_charts_are_accessible_and_prior_files_are_absent() 
         assert '="inf"' not in text
 
     for stale in (
-        "signals.csv",
-        "daily.csv",
-        "regimes.csv",
-        "ranked-event-outcomes.csv",
-        "decay.csv",
-        "horizon-support.csv",
-        "calibration-economics.svg",
-        "calibration-support.svg",
-        "prediction-quality.svg",
+        "derivatives-uplift.csv",
+        "calibration-to-viability.svg",
+        "derivatives-feature-ablation.svg",
+        "viability-economics.svg",
     ):
         assert not (LATEST / stale).exists()
         assert not (LATEST / "charts" / stale).exists()
 
     readme = (LATEST / "README.md").read_text(encoding="utf-8")
-    assert readme.startswith("# Round 38: activity restored, economic edge rejected")
-    assert "# Round 37:" not in readme
-    assert "No ROI graph is published" in readme
-    assert "not a capital-constrained portfolio, ROI series, or equity curve" in readme
+    assert readme.startswith("# Round 39: rolling ML and local AI rejected")
+    assert "# Round 38:" not in readme
+    assert "completed evaluation month" in readme
+    assert "unavailable to a live controller" in readme
+    assert "No AI, ML, ROI, portfolio, leverage, execution" in readme
