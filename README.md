@@ -528,16 +528,15 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 43 tested persistent positions, transition-only costs, and six bounded
-factors produced through a local 8B AI research workflow. All 12 monthly
-LightGBM models ran on OpenCL and reloaded exactly. The best base point estimate
-was the AI-factor long-short replay at `+3.62%`, but it reversed to `-6.21%`
-under the registered stress policy, had `10.37%` maximum drawdown, and failed
-the block-bootstrap, monthly-consistency, and activity gates. The stress policy
-also changed the transition hurdle, so it is not a matched cost-only sensitivity;
-future rounds must reprice one fixed action ledger. All four candidates and the
-AI-uplift claim were rejected. No profitability, leverage, testnet, live-trading,
-or autonomous-execution authority was established.
+Round 44 trained a three-seed causal distributional TCN on the AMD GPU through
+DirectML. Its 1, 4, 12, and 24-hour forecasts beat the unconditional pinball
+baseline by `2.33%` to `4.31%`, with positive pooled rank association and valid
+central-interval coverage at every horizon. The forecast gate still rejected it:
+minimum pairwise seed stability was `0.452`, below the frozen `0.500` floor. The
+registered lower-quartile policy admitted one BTC short and lost `0.321%` at
+base cost; matched stress repricing lost `0.335%`. No profitability, AI uplift,
+leverage, testnet, live-trading, or autonomous-execution authority was
+established.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

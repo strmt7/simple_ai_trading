@@ -1,28 +1,30 @@
-# Round 43: Stateful Turnover and AI-Factor Ablation
+# Round 44: Causal Distributional TCN
 
 > **Beta research warning:** rejected, selection-contaminated development evidence. No model is approved for testnet, live day trading, leverage, or autonomous execution.
 
-Round 43 replaced fictitious hourly close/reopen cycles with persistent positions and actual transition costs. It also tested six bounded factors proposed through a local 8B AI research workflow. All 12 monthly LightGBM models ran on OpenCL and reloaded exactly; no candidate passed.
+Round 44 replaced one-hour point forecasts with a 127-hour causal temporal convolutional network that predicts calibrated 1, 4, 12, and 24-hour return distributions. Three seeds trained on the AMD GPU through DirectML and reloaded exactly with zero fallback warnings.
 
-![Stateful economics](charts/stateful-economics.svg)
+![Forecast quality](charts/forecast-quality.svg)
 
-| Candidate | Base return | Stress-policy return | Base max DD | Stress bootstrap lower bps/hour | Active days |
-|---|---:|---:|---:|---:|---:|
-| ML long-only | -4.33% | +3.14% | 9.66% | -0.293 | 21 |
-| ML long-short | -8.92% | +6.59% | 16.09% | -0.257 | 25 |
-| AI-factor long-only | -2.40% | +3.95% | 11.28% | -0.447 | 20 |
-| AI-factor long-short | +3.62% | -6.21% | 10.37% | -0.538 | 23 |
+| Horizon | Pinball skill | Median Spearman | Positive months | 80% coverage | 50% coverage |
+|---:|---:|---:|---:|---:|---:|
+| 1 h | 4.31% | 0.0501 | 9/9 | 0.773 | 0.460 |
+| 4 h | 3.87% | 0.0295 | 5/9 | 0.782 | 0.461 |
+| 12 h | 3.55% | 0.0623 | 8/9 | 0.781 | 0.467 |
+| 24 h | 2.33% | 0.0439 | 6/9 | 0.793 | 0.496 |
 
-The stress ledger is **not** a matched cost-only sensitivity: its 8 bps one-way charge also raises the transition hurdle. This explains why some stress point estimates exceed base. Future stress tests must reprice one fixed action ledger.
+Forecast learning improved materially, but the frozen gate failed because minimum pairwise seed stability was `0.452`, below `0.500`.
 
-![Forecast stability](charts/forecast-stability.svg)
+![Seed stability](charts/seed-stability.svg)
 
-![Daily equity](charts/daily-equity.svg)
+![Monthly rank association](charts/monthly-rank.svg)
 
-![AI uplift](charts/ai-uplift.svg)
+The descriptive lower-quartile policy admitted one BTCUSDT short. It returned `-0.321%` at 6 bps one-way and `-0.335%` when the identical ledger was repriced at 8 bps. This is not viable economic evidence.
 
-The primary AI-factor long-only pair improved point estimates, but its paired stress delta was `+0.024` bps/hour with a 95% block-bootstrap interval of `[-0.353, +0.503]`; drawdown also worsened. AI uplift is not established.
+![Policy economics](charts/policy-economics.svg)
+
+![Dated equity](charts/daily-equity.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-Data: [replays](replays.csv) | [monthly](monthly.csv) | [symbols](symbols.csv) | [forecast diagnostics](diagnostics.csv) | [models](models.csv) | [gates](gates.csv) | [AI uplift](ai-uplift.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-043-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [horizons](horizons.csv) | [monthly forecast diagnostics](diagnostics.csv) | [seed stability](seed-stability.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbols](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-044-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
