@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
+<title id="title">Per-symbol diagnostics expose a weak SOL 24-hour quantile forecast</title>
+<desc id="desc">SAM ensemble on consumed development evaluation; positive rank association does not imply after-cost profitability.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
+<text x="56" y="52" class="title">Per-symbol diagnostics expose a weak SOL 24-hour quantile forecast</text>
+<text x="56" y="80" class="subtitle">SAM ensemble on consumed development evaluation; positive rank association does not imply after-cost profitability.</text>
+<text x="120" y="125" class="label">Pinball skill versus unconditional baseline</text>
+<rect x="120" y="145" width="1310" height="205" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="120" y1="350.0" x2="1430" y2="350.0" class="grid"/><text x="106" y="354.0" text-anchor="end" class="axis">-0.012</text>
+<line x1="120" y1="309.0" x2="1430" y2="309.0" class="grid"/><text x="106" y="313.0" text-anchor="end" class="axis">-0.002</text>
+<line x1="120" y1="268.0" x2="1430" y2="268.0" class="grid"/><text x="106" y="272.0" text-anchor="end" class="axis">+0.009</text>
+<line x1="120" y1="227.0" x2="1430" y2="227.0" class="grid"/><text x="106" y="231.0" text-anchor="end" class="axis">+0.019</text>
+<line x1="120" y1="186.0" x2="1430" y2="186.0" class="grid"/><text x="106" y="190.0" text-anchor="end" class="axis">+0.030</text>
+<line x1="120" y1="145.0" x2="1430" y2="145.0" class="grid"/><text x="106" y="149.0" text-anchor="end" class="axis">+0.040</text>
+<rect x="208.8" y="174.4" width="44" height="128.3" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="260.8" y="202.7" width="44" height="99.9" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="312.8" y="198.9" width="44" height="103.8" fill="#b7791f" fill-opacity="0.88"/>
+<rect x="536.2" y="184.8" width="44" height="117.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="588.2" y="209.4" width="44" height="93.3" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="640.2" y="231.9" width="44" height="70.8" fill="#b7791f" fill-opacity="0.88"/>
+<rect x="863.8" y="184.6" width="44" height="118.1" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="915.8" y="235.3" width="44" height="67.4" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="967.8" y="253.1" width="44" height="49.6" fill="#b7791f" fill-opacity="0.88"/>
+<rect x="1191.2" y="252.5" width="44" height="50.2" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1243.2" y="274.8" width="44" height="27.9" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="1295.2" y="302.7" width="44" height="33.5" fill="#b7791f" fill-opacity="0.88"/>
+<text x="120" y="430" class="label">Median-return Spearman coefficient</text>
+<rect x="120" y="450" width="1310" height="205" fill="#ffffff" stroke="#d8e0e7"/>
+<line x1="120" y1="655.0" x2="1430" y2="655.0" class="zero"/><text x="106" y="659.0" text-anchor="end" class="axis">+0.000</text>
+<line x1="120" y1="614.0" x2="1430" y2="614.0" class="grid"/><text x="106" y="618.0" text-anchor="end" class="axis">+0.018</text>
+<line x1="120" y1="573.0" x2="1430" y2="573.0" class="grid"/><text x="106" y="577.0" text-anchor="end" class="axis">+0.036</text>
+<line x1="120" y1="532.0" x2="1430" y2="532.0" class="grid"/><text x="106" y="536.0" text-anchor="end" class="axis">+0.054</text>
+<line x1="120" y1="491.0" x2="1430" y2="491.0" class="grid"/><text x="106" y="495.0" text-anchor="end" class="axis">+0.072</text>
+<line x1="120" y1="450.0" x2="1430" y2="450.0" class="grid"/><text x="106" y="454.0" text-anchor="end" class="axis">+0.090</text>
+<rect x="208.8" y="594.5" width="44" height="60.5" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="260.8" y="607.1" width="44" height="47.9" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="312.8" y="562.4" width="44" height="92.6" fill="#b7791f" fill-opacity="0.88"/>
+<text x="283.8" y="682" text-anchor="middle" class="axis">1 h</text>
+<rect x="536.2" y="645.1" width="44" height="9.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="588.2" y="607.4" width="44" height="47.6" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="640.2" y="573.0" width="44" height="82.0" fill="#b7791f" fill-opacity="0.88"/>
+<text x="611.2" y="682" text-anchor="middle" class="axis">4 h</text>
+<rect x="863.8" y="578.3" width="44" height="76.7" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="915.8" y="511.7" width="44" height="143.3" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="967.8" y="467.0" width="44" height="188.0" fill="#b7791f" fill-opacity="0.88"/>
+<text x="938.8" y="682" text-anchor="middle" class="axis">12 h</text>
+<rect x="1191.2" y="542.1" width="44" height="112.9" fill="#2563a6" fill-opacity="0.88"/>
+<rect x="1243.2" y="581.7" width="44" height="73.3" fill="#0f766e" fill-opacity="0.88"/>
+<rect x="1295.2" y="595.1" width="44" height="59.9" fill="#b7791f" fill-opacity="0.88"/>
+<text x="1266.2" y="682" text-anchor="middle" class="axis">24 h</text>
+<rect x="120" y="718" width="24" height="12" fill="#2563a6"/><text x="154" y="729" class="note">BTCUSDT</text>
+<rect x="330" y="718" width="24" height="12" fill="#0f766e"/><text x="364" y="729" class="note">ETHUSDT</text>
+<rect x="540" y="718" width="24" height="12" fill="#b7791f"/><text x="574" y="729" class="note">SOLUSDT</text>
+<text x="1430" y="729" text-anchor="end" class="note">SOLUSDT 24 h pinball skill: -0.851%.</text>
+</svg>

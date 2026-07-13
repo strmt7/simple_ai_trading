@@ -72,9 +72,7 @@ def _validated_source(
     design = _read_object(design_path, "Round 37 design")
     design_sha = _canonical_identity(design, "design_sha256", "Round 37 design")
     binding = _read_object(binding_path, "Round 37 binding")
-    binding_sha = _canonical_identity(
-        binding, "binding_sha256", "Round 37 binding"
-    )
+    binding_sha = _canonical_identity(binding, "binding_sha256", "Round 37 binding")
     report = _read_object(evidence_root / "report.json", "Round 37 report")
     report_sha = _canonical_identity(
         report, "report_canonical_sha256", "Round 37 report"
@@ -90,8 +88,7 @@ def _validated_source(
         or report.get("status") != "rejected"
         or report.get("design_sha256") != design_sha
         or report.get("binding_sha256") != binding_sha
-        or report.get("implementation_commit")
-        != binding.get("implementation_commit")
+        or report.get("implementation_commit") != binding.get("implementation_commit")
     ):
         raise ValueError("Round 37 evidence lineage is invalid")
     _validate_tree(report)
@@ -190,15 +187,11 @@ def _candidate_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                 ],
                 "viability_rows": viability["rows"],
                 "viability_pearson_ic": viability["pearson_information_coefficient"],
-                "viability_spearman_ic": viability[
-                    "spearman_information_coefficient"
-                ],
+                "viability_spearman_ic": viability["spearman_information_coefficient"],
                 "viability_prediction_std_bps": viability[
                     "prediction_standard_deviation_bps"
                 ],
-                "viability_actual_std_bps": viability[
-                    "actual_standard_deviation_bps"
-                ],
+                "viability_actual_std_bps": viability["actual_standard_deviation_bps"],
                 "selected_threshold_bps": "",
                 "viability_gate_passed": False,
                 "viability_gate_reasons": ";".join(
@@ -355,11 +348,17 @@ def _prediction_svg(rows: Sequence[Mapping[str, object]]) -> str:
     }
 
     def panel(key: str, label: str, y_top: float, low: float, high: float) -> None:
-        lines.append(f'<text x="{left}" y="{y_top - 18}" class="label">{html.escape(label)}</text>')
+        lines.append(
+            f'<text x="{left}" y="{y_top - 18}" class="label">{html.escape(label)}</text>'
+        )
         for tick in (low, (low + high) / 2, high):
             y = y_top + panel_height * (high - tick) / (high - low)
-            lines.append(f'<line x1="{left}" y1="{y:.1f}" x2="{width-right}" y2="{y:.1f}" class="{"zero" if tick == 0 else "grid"}"/>')
-            lines.append(f'<text x="{left-14}" y="{y+4:.1f}" text-anchor="end" class="axis">{tick:.3f}</text>')
+            lines.append(
+                f'<line x1="{left}" y1="{y:.1f}" x2="{width - right}" y2="{y:.1f}" class="{"zero" if tick == 0 else "grid"}"/>'
+            )
+            lines.append(
+                f'<text x="{left - 14}" y="{y + 4:.1f}" text-anchor="end" class="axis">{tick:.3f}</text>'
+            )
         for family, color in colors.items():
             family_rows = sorted(
                 (row for row in learned if row["family"] == family),
@@ -371,8 +370,15 @@ def _prediction_svg(rows: Sequence[Mapping[str, object]]) -> str:
                 x = x_positions[int(row["horizon_minutes"])]
                 y = y_top + panel_height * (high - value) / (high - low)
                 points.append((x, y))
-            lines.append('<polyline points="' + " ".join(f"{x:.1f},{y:.1f}" for x, y in points) + f'" fill="none" stroke="{color}" stroke-width="4"/>')
-            lines.extend(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{color}"/>' for x, y in points)
+            lines.append(
+                '<polyline points="'
+                + " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+                + f'" fill="none" stroke="{color}" stroke-width="4"/>'
+            )
+            lines.extend(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{color}"/>'
+                for x, y in points
+            )
 
     panel("viability_pearson_ic", "Pearson information coefficient", top, -0.015, 0.025)
     panel(
@@ -383,12 +389,20 @@ def _prediction_svg(rows: Sequence[Mapping[str, object]]) -> str:
         6.0,
     )
     for horizon, x in x_positions.items():
-        lines.append(f'<text x="{x:.1f}" y="{height-58}" text-anchor="middle" class="axis">{horizon}m</text>')
+        lines.append(
+            f'<text x="{x:.1f}" y="{height - 58}" text-anchor="middle" class="axis">{horizon}m</text>'
+        )
     for index, (family, color) in enumerate(colors.items()):
-        label = "shared LightGBM" if family.startswith("shared") else "per-symbol LightGBM"
+        label = (
+            "shared LightGBM" if family.startswith("shared") else "per-symbol LightGBM"
+        )
         x = left + index * 250
-        lines.append(f'<line x1="{x}" y1="{height-24}" x2="{x+28}" y2="{height-24}" stroke="{color}" stroke-width="4"/><text x="{x+38}" y="{height-19}" class="note">{label}</text>')
-    lines.append(f'<text x="{width-right}" y="{height-19}" text-anchor="end" class="note">Best Pearson IC: 0.0178 at 120m. No model passed economic selection.</text>')
+        lines.append(
+            f'<line x1="{x}" y1="{height - 24}" x2="{x + 28}" y2="{height - 24}" stroke="{color}" stroke-width="4"/><text x="{x + 38}" y="{height - 19}" class="note">{label}</text>'
+        )
+    lines.append(
+        f'<text x="{width - right}" y="{height - 19}" text-anchor="end" class="note">Best Pearson IC: 0.0178 at 120m. No model passed economic selection.</text>'
+    )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -397,7 +411,8 @@ def _support_svg(rows: Sequence[Mapping[str, object]]) -> str:
     active = [
         row
         for row in rows
-        if row["family"] in {
+        if row["family"]
+        in {
             "linear_ridge",
             "shared_cross_asset_lightgbm",
             "per_symbol_lightgbm",
@@ -411,12 +426,18 @@ def _support_svg(rows: Sequence[Mapping[str, object]]) -> str:
                 for row in active
                 if row["family"] == family and int(row["horizon_minutes"]) == horizon
             ]
-            largest.append(max(group, key=lambda item: int(item["nonoverlapping_trades"])))
+            largest.append(
+                max(group, key=lambda item: int(item["nonoverlapping_trades"]))
+            )
     width, height = 1480, 800
     left, right, top, row_height = 390, 120, 126, 48
     chart_width = width - left - right
     max_trades = max(int(row["nonoverlapping_trades"]) for row in largest)
-    colors = (("btc_trades", "#2563eb"), ("eth_trades", "#0f766e"), ("sol_trades", "#b45309"))
+    colors = (
+        ("btc_trades", "#2563eb"),
+        ("eth_trades", "#0f766e"),
+        ("sol_trades", "#b45309"),
+    )
     lines = _svg_start(
         width,
         height,
@@ -427,18 +448,28 @@ def _support_svg(rows: Sequence[Mapping[str, object]]) -> str:
         y = top + index * row_height
         family = str(row["family"]).replace("_", " ")
         label = f"{family} / {row['horizon_minutes']}m / {float(row['threshold_bps']):.0f}bps"
-        lines.append(f'<text x="{left-18}" y="{y+18}" text-anchor="end" class="label">{html.escape(label)}</text>')
+        lines.append(
+            f'<text x="{left - 18}" y="{y + 18}" text-anchor="end" class="label">{html.escape(label)}</text>'
+        )
         x = left
         for key, color in colors:
             value = int(row[key])
             bar_width = chart_width * value / max_trades
-            lines.append(f'<rect x="{x:.1f}" y="{y}" width="{bar_width:.1f}" height="26" fill="{color}"/>')
+            lines.append(
+                f'<rect x="{x:.1f}" y="{y}" width="{bar_width:.1f}" height="26" fill="{color}"/>'
+            )
             x += bar_width
-        lines.append(f'<text x="{min(x+9, width-right+8):.1f}" y="{y+18}" class="value">{row["btc_trades"]}/{row["eth_trades"]}/{row["sol_trades"]}</text>')
+        lines.append(
+            f'<text x="{min(x + 9, width - right + 8):.1f}" y="{y + 18}" class="value">{row["btc_trades"]}/{row["eth_trades"]}/{row["sol_trades"]}</text>'
+        )
     for index, (key, color) in enumerate(colors):
         x = left + index * 160
-        lines.append(f'<rect x="{x}" y="{height-38}" width="16" height="16" fill="{color}"/><text x="{x+24}" y="{height-25}" class="note">{key[:3].upper()} trades</text>')
-    lines.append(f'<text x="{width-right}" y="{height-25}" text-anchor="end" class="note">Values are descriptive calibration counts, not selected or viability trades.</text>')
+        lines.append(
+            f'<rect x="{x}" y="{height - 38}" width="16" height="16" fill="{color}"/><text x="{x + 24}" y="{height - 25}" class="note">{key[:3].upper()} trades</text>'
+        )
+    lines.append(
+        f'<text x="{width - right}" y="{height - 25}" text-anchor="end" class="note">Values are descriptive calibration counts, not selected or viability trades.</text>'
+    )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -471,7 +502,9 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
         "Top day-block intervals among cells with at least 30 trades; all cells failed frozen support and remained ineligible.",
     )
     zero = x(0.0)
-    lines.append(f'<line x1="{zero:.1f}" y1="{top-12}" x2="{zero:.1f}" y2="{top+row_height*len(selected)}" class="zero"/>')
+    lines.append(
+        f'<line x1="{zero:.1f}" y1="{top - 12}" x2="{zero:.1f}" y2="{top + row_height * len(selected)}" class="zero"/>'
+    )
     for index, row in enumerate(selected):
         y = top + index * row_height
         family = str(row["family"]).replace("_", " ")
@@ -479,11 +512,19 @@ def _economics_svg(rows: Sequence[Mapping[str, object]]) -> str:
         lower = float(row["day_block_lower_95_net_bps"])
         median = float(row["day_block_median_net_bps"])
         upper = float(row["day_block_upper_95_net_bps"])
-        lines.append(f'<text x="{left-18}" y="{y+6}" text-anchor="end" class="label">{html.escape(label)}</text>')
-        lines.append(f'<line x1="{x(lower):.1f}" y1="{y}" x2="{x(upper):.1f}" y2="{y}" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>')
+        lines.append(
+            f'<text x="{left - 18}" y="{y + 6}" text-anchor="end" class="label">{html.escape(label)}</text>'
+        )
+        lines.append(
+            f'<line x1="{x(lower):.1f}" y1="{y}" x2="{x(upper):.1f}" y2="{y}" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>'
+        )
         lines.append(f'<circle cx="{x(median):.1f}" cy="{y}" r="6" fill="#0f766e"/>')
-        lines.append(f'<text x="{width-70}" y="{y+6}" text-anchor="end" class="value">n={row["nonoverlapping_trades"]}; {row["btc_trades"]}/{row["eth_trades"]}/{row["sol_trades"]}</text>')
-    lines.append(f'<text x="{left}" y="{height-34}" class="note">Line: 95% day-block bootstrap interval; dot: median bootstrap mean net bps. Counts: total and BTC/ETH/SOL.</text>')
+        lines.append(
+            f'<text x="{width - 70}" y="{y + 6}" text-anchor="end" class="value">n={row["nonoverlapping_trades"]}; {row["btc_trades"]}/{row["eth_trades"]}/{row["sol_trades"]}</text>'
+        )
+    lines.append(
+        f'<text x="{left}" y="{height - 34}" class="note">Line: 95% day-block bootstrap interval; dot: median bootstrap mean net bps. Counts: total and BTC/ETH/SOL.</text>'
+    )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -494,9 +535,7 @@ def _research_progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     numeric: list[float] = []
     for row in rows:
         net = str(row.get("mean_net_bps") or "").strip()
-        diagnostic = str(
-            row.get("best_top_500_exact_after_cost_bps") or ""
-        ).strip()
+        diagnostic = str(row.get("best_top_500_exact_after_cost_bps") or "").strip()
         if int(row.get("executable_trades") or 0) > 0 and net:
             kind, value = "simulated", float(net)
             numeric.append(value)
@@ -533,14 +572,14 @@ def _research_progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     for tick in sorted(set(ticks)):
         py = y(tick)
         lines.append(
-            f'<line x1="{left}" y1="{py:.1f}" x2="{left+chart_width}" y2="{py:.1f}" class="{"zero" if tick == 0 else "grid"}"/>'
+            f'<line x1="{left}" y1="{py:.1f}" x2="{left + chart_width}" y2="{py:.1f}" class="{"zero" if tick == 0 else "grid"}"/>'
         )
         lines.append(
-            f'<text x="{left-14}" y="{py+4:.1f}" text-anchor="end" class="axis">{tick:+.1f}</text>'
+            f'<text x="{left - 14}" y="{py + 4:.1f}" text-anchor="end" class="axis">{tick:+.1f}</text>'
         )
     absent_y = top + chart_height + 72
     lines.append(
-        f'<text x="{left-16}" y="{absent_y+4}" text-anchor="end" class="axis">no series</text>'
+        f'<text x="{left - 16}" y="{absent_y + 4}" text-anchor="end" class="axis">no series</text>'
     )
     for index, (row, kind, value) in enumerate(plotted):
         x = left + chart_width * (index + 0.5) / len(plotted)
@@ -549,20 +588,22 @@ def _research_progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
             lines.append(
                 f'<circle cx="{x:.1f}" cy="{py:.1f}" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>'
             )
+            label_offset = 15 + 17 * (index % 2)
+            display_value = 0.0 if abs(value) < 0.005 else value
             lines.append(
-                f'<text x="{x:.1f}" y="{py-15:.1f}" text-anchor="middle" class="value">{value:+.2f}</text>'
+                f'<text x="{x:.1f}" y="{py - label_offset:.1f}" text-anchor="middle" class="value">{display_value:+.2f}</text>'
             )
         elif kind == "diagnostic" and value is not None:
             py = y(value)
             lines.append(
-                f'<rect x="{x-7:.1f}" y="{py-7:.1f}" width="14" height="14" fill="#7b559c"/>'
+                f'<rect x="{x - 7:.1f}" y="{py - 7:.1f}" width="14" height="14" fill="#7b559c"/>'
             )
         else:
             lines.append(
-                f'<rect x="{x-7:.1f}" y="{absent_y-7:.1f}" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 {x:.1f} {absent_y:.1f})"/>'
+                f'<rect x="{x - 7:.1f}" y="{absent_y - 7:.1f}" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 {x:.1f} {absent_y:.1f})"/>'
             )
         lines.append(
-            f'<text x="{x:.1f}" y="{absent_y+37}" text-anchor="middle" class="axis">R{row["round"]}</text>'
+            f'<text x="{x:.1f}" y="{absent_y + 37}" text-anchor="middle" class="axis">R{row["round"]}</text>'
         )
     lines.append(
         '<text x="56" y="632" class="note">Windows and units differ by round. This is evidence lineage, not an equity curve or portfolio return series.</text>'
@@ -571,7 +612,9 @@ def _research_progress_svg(progress: Sequence[Mapping[str, object]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _readme(report: Mapping[str, object], candidates: Sequence[Mapping[str, object]]) -> str:
+def _readme(
+    report: Mapping[str, object], candidates: Sequence[Mapping[str, object]]
+) -> str:
     best = max(candidates, key=lambda item: float(item["viability_pearson_ic"]))
     runtime = report["runtime_evidence"]
     memory = runtime["memory"]
@@ -665,9 +708,7 @@ def publish(
     _write_text(charts / "prediction-quality.svg", _prediction_svg(candidates))
     _write_text(charts / "calibration-support.svg", _support_svg(thresholds))
     _write_text(charts / "calibration-economics.svg", _economics_svg(thresholds))
-    _write_text(
-        charts / "research-progress.svg", _research_progress_svg(progress)
-    )
+    _write_text(charts / "research-progress.svg", _research_progress_svg(progress))
     artifact_paths = sorted(expected - {output_dir / "report.json"})
     publication: dict[str, object] = {
         "schema_version": PUBLICATION_SCHEMA,
@@ -679,9 +720,7 @@ def publish(
         "source_report_canonical_sha256": source_report_sha,
         "source_report_file_sha256": _file_sha256(evidence_root / "report.json"),
         "source_implementation_commit": report["implementation_commit"],
-        "source_panel_stream_sha256": report["source_evidence"][
-            "panel_stream_sha256"
-        ],
+        "source_panel_stream_sha256": report["source_evidence"]["panel_stream_sha256"],
         "dataset_rows": report["dataset"]["rows"],
         "feature_count": report["dataset"]["feature_count"],
         "gpu_model_count": len(models),
