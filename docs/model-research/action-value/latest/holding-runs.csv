@@ -1,0 +1,17 @@
+round,end_utc,hours,policy_id,side,start_utc,symbol
+54,2024-08-05T13:00:00+00:00,780,median_q_all_seed_consensus,1,2024-07-04T02:00:00+00:00,BTCUSDT
+54,2024-08-15T17:00:00+00:00,244,median_q_all_seed_consensus,-1,2024-08-05T14:00:00+00:00,BTCUSDT
+54,2024-09-12T01:00:00+00:00,656,median_q_all_seed_consensus,1,2024-08-15T18:00:00+00:00,BTCUSDT
+54,2024-09-29T23:00:00+00:00,430,median_q_all_seed_consensus,-1,2024-09-12T02:00:00+00:00,BTCUSDT
+54,2024-08-05T13:00:00+00:00,780,median_q_all_seed_consensus,1,2024-07-04T02:00:00+00:00,ETHUSDT
+54,2024-08-07T14:00:00+00:00,49,median_q_all_seed_consensus,-1,2024-08-05T14:00:00+00:00,ETHUSDT
+54,2024-08-08T22:00:00+00:00,32,median_q_all_seed_consensus,1,2024-08-07T15:00:00+00:00,ETHUSDT
+54,2024-08-15T17:00:00+00:00,163,median_q_all_seed_consensus,-1,2024-08-08T23:00:00+00:00,ETHUSDT
+54,2024-09-12T01:00:00+00:00,656,median_q_all_seed_consensus,1,2024-08-15T18:00:00+00:00,ETHUSDT
+54,2024-09-29T23:00:00+00:00,430,median_q_all_seed_consensus,-1,2024-09-12T02:00:00+00:00,ETHUSDT
+54,2024-07-03T14:00:00+00:00,49,median_q_all_seed_consensus,-1,2024-07-01T14:00:00+00:00,SOLUSDT
+54,2024-08-05T13:00:00+00:00,791,median_q_all_seed_consensus,1,2024-07-03T15:00:00+00:00,SOLUSDT
+54,2024-08-12T13:00:00+00:00,168,median_q_all_seed_consensus,-1,2024-08-05T14:00:00+00:00,SOLUSDT
+54,2024-09-12T01:00:00+00:00,732,median_q_all_seed_consensus,1,2024-08-12T14:00:00+00:00,SOLUSDT
+54,2024-09-29T23:00:00+00:00,430,median_q_all_seed_consensus,-1,2024-09-12T02:00:00+00:00,SOLUSDT
+54,2024-09-04T13:00:00+00:00,13,lower_tail_q_all_seed_consensus,1,2024-09-04T01:00:00+00:00,BTCUSDT

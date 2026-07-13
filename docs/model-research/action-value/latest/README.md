@@ -1,25 +1,22 @@
-# Round 53: Executable Conditional Sign-Magnitude
+# Round 54: Sequential Distributional Action Value
 
-> **Rejected consumed-development screen.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
+> **Rejected before evaluation.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
 
-Round 53 factorized each side's executable payoff into six magnitude states and a magnitude-conditioned sign model. Eighteen new OpenCL LightGBM models used verified Binance USD-M BTC, ETH, and SOL event data; nine direct controls and sealed causal FinCast features were reused.
+Three DirectML-trained dueling causal TCNs reduced matched early-stop Bellman residual loss by `25.76%` to `26.20%`, but that was not directional or economic proof. Calibration directional rank peaked at `0.044239`. The median-Q controller held a position for up to `791` hours and returned `-30.87%` under stress with `43.96%` drawdown.
 
-The CSM improved average expected-payoff rank to `0.051582` and every joint proper-score comparison, but mean calibration remained wrong. Its frozen 0.10% policy had 1 calibration trade at `-8.879308` stressed bps/trade. The 2 later trades averaged `+16.653357` bps, but calibration did not authorize them.
+A post-hoc finite-hold diagnostic found its least-bad point at `8h`: `+1.07%` stress return across `99` trades, `12.43%` drawdown, and a `-0.6336` bps/hour bootstrap lower bound. It remains rejected and selection-contaminated.
 
-A separate fixed 54-rule rank-tail diagnostic removed the positive-EV requirement. Zero rules passed calibration. The least-bad calibration rule was `worst_seed` at `0.1%` coverage: 11 trades at `-1.673628` stressed bps/trade; its consumed result was `-4.022015`. Global correlation therefore did not establish executable top-tail alpha.
-
-FinCast worsened joint log loss by `0.001392` and expected-payoff rank by `0.002586` versus the matched CSM control.
+Round 55 must forecast finite-horizon return distributions directly, keep the controller bounded, and gate directional skill, proper scores, path risk, net action value, bootstrap evidence, activity, and asset breadth separately. The evaluation interval remains unread.
 
 ## Evidence
 
 | View | Graph | Source |
 |---|---|---|
-| Executable support | [SVG](charts/executable-support.svg) | [CSV](support.csv) |
-| Forecast quality | [SVG](charts/forecast-quality.svg) | [CSV](forecast.csv) |
-| Frozen policy | [SVG](charts/policy-economics.svg) | [CSV](policy-grid.csv) |
-| Rank-tail falsification | [SVG](charts/rank-tail.svg) | [CSV](rank-tail.csv) |
-| Fixed-policy daily path | [SVG](charts/daily-equity.svg) | [CSV](daily-policy.csv) |
-| FinCast uplift | [SVG](charts/ai-uplift.svg) | [CSV](ai-uplift.csv) |
+| Bellman fit | [SVG](charts/model-skill.svg) | [CSV](models.csv) |
+| Directional rank | [SVG](charts/directional-rank.svg) | [CSV](directional-rank.csv) |
+| Policy economics | [SVG](charts/policy-economics.svg) | [CSV](policies.csv) |
+| Holding duration | [SVG](charts/holding-duration.svg) | [CSV](holding-summary.csv) |
+| Bounded-hold screen | [SVG](charts/finite-hold.svg) | [CSV](finite-hold.csv) |
 | Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`screen.json` and `rank-tail-screen.json` preserve the complete sources. `report.json` binds every publication file to the frozen design, execution binding, external reports, models, and predictions.
+`screen.json`, `failure-diagnostic.json`, and `holding-runs.csv` preserve the full verified evidence. `report.json` binds every publication artifact to the exact external reports, design, dataset, model artifacts, and diagnostic implementation.
