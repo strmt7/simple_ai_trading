@@ -1,5 +1,5 @@
 {
-  "binding_sha256": "0ca25d890b150967fca3db7642fbea6dcd6ae7d0142c91f88f4a890becbb3e95",
+  "binding_sha256": "10290ec07bdbc9546beb11a6498d8b3b9de34ede73851d497b9a3edf47cadc31",
   "blobs": [
     {
       "git_blob_oid": "bf349a677058ab151268e412286838610f557178",
@@ -10,7 +10,7 @@
       "path": "docs/model-research/action-value/round-038-failure-analysis.json"
     },
     {
-      "git_blob_oid": "2855a10f0fcaaeddb28930dd821cbb96d573cca1",
+      "git_blob_oid": "c747fd60ce5ebec247f3b1a009fcce539dcce0fa",
       "path": "docs/model-research/action-value/round-039-causal-refit-utility-ai-ablation-design.json"
     },
     {
@@ -42,7 +42,7 @@
       "path": "src/simple_ai_trading/market_store.py"
     },
     {
-      "git_blob_oid": "23c154d2000ce4c09f0bbf8fc55226010c5cebd5",
+      "git_blob_oid": "15931a165fb4cfd344e2f5359db4c8fa66473d8f",
       "path": "src/simple_ai_trading/rolling_refit_ai_veto.py"
     },
     {
@@ -54,7 +54,7 @@
       "path": "src/simple_ai_trading/storage.py"
     },
     {
-      "git_blob_oid": "91eb3d170213f5c0d85f534682fc467c9ef0e632",
+      "git_blob_oid": "56a89f300dc2c85abb3682af32420223182759f2",
       "path": "tests/test_rolling_refit_ai_veto.py"
     },
     {
@@ -62,7 +62,7 @@
       "path": "tests/test_rolling_refit_model.py"
     },
     {
-      "git_blob_oid": "847a0aed35cfee81006bbf0d1a9b48a4229498ac",
+      "git_blob_oid": "5ee3ae1538578649df3df00ddb0eebdcbc7049a9",
       "path": "tests/test_round39_causal_refit_design.py"
     },
     {
@@ -70,17 +70,17 @@
       "path": "tests/test_round39_execution_binding.py"
     },
     {
-      "git_blob_oid": "f2b51aaf0b8eeb816cc35a9a7bf576ec01d76d8b",
+      "git_blob_oid": "4d37dbf7832bac94e20174a49e59af33663a6986",
       "path": "tools/create_round39_causal_refit_binding.py"
     },
     {
-      "git_blob_oid": "eec28a5cfc0598fe23e1c21dd3b4f131a89ca945",
+      "git_blob_oid": "3e13c067ce9d1ec8838c56adc226688036c735b8",
       "path": "tools/run_causal_refit_utility_ai_ablation.py"
     }
   ],
-  "design_file_sha256": "c42a281877233ee382d28e97dac6bbcda98efd0c677f095e807d4138b98947ad",
+  "design_file_sha256": "c8f56bc59a93b45bc20fc8e1bc15ae0eb53af290ecf9285aefe35c4d57999de2",
   "design_path": "docs/model-research/action-value/round-039-causal-refit-utility-ai-ablation-design.json",
-  "design_sha256": "25df349981d734586f6fa2d432e8e32cf2bbaabdacf18a3da709db1f9ca29056",
+  "design_sha256": "bca0e6e21258d1a069bc7717c68f464b211655dc94fa84db369ccebf12b39446",
   "execution": {
     "ai_batch_size": 12,
     "ai_models": [
@@ -106,7 +106,7 @@
     "terminal_2026_access_permitted": false,
     "trading_authority_permitted": false
   },
-  "implementation_commit": "885c3127ae886370091b6bbca389af287f3573a2",
+  "implementation_commit": "474dedb4c3b645cb2d9b8199b6b78619c07e031c",
   "round": 39,
   "schema_version": "round-039-causal-refit-utility-ai-execution-binding-v1",
   "source_certificate": {
