@@ -1,7 +1,7 @@
 {
   "schema_version": "round-054-sequential-distributional-action-value-prototype-design-v1",
   "round": 54,
-  "design_sha256": "05cce735bd895b9ebedf584b8e12d2c4e1c7867d0847caf08d132a11f8c960c2",
+  "design_sha256": "bc6bc8ea8e4fb8f2d44234c5a987201530786754e2e821e804e7fdb1b3a8a5c4",
   "created_at_utc": "2026-07-13T23:19:27.320963Z",
   "status": "frozen_development_only",
   "objective": "Test whether a causal distributional state-action value model can convert the existing multi-year BTCUSDT, ETHUSDT, and SOLUSDT feature panel into a stateful long-flat-short policy after explicit transition costs without tuning on the consumed evaluation role.",
@@ -97,7 +97,7 @@
     "reward": "next-hour signed return minus one-way cost times absolute position change; linear reward scaling is fitted on training only"
   },
   "model_quality_gate": {
-    "minimum_early_stop_td_skill_for_every_seed": 0.0,
+    "minimum_same_target_zero_q_bellman_residual_skill_for_every_seed": 0.0,
     "maximum_exact_reload_q_error": 0.000001,
     "cpu_fallback_warnings_allowed_with_directml": 0,
     "quantile_crossings_allowed": 0
