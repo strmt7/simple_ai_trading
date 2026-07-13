@@ -33,7 +33,9 @@ microstructure = [
     "hftbacktest==2.4.4",
 ]
 foundation-ai = [
+    "beartype==0.20.2",
     "einops==0.8.1",
+    "einx==0.3.0",
     "huggingface_hub==0.33.1",
     "pandas>=2.2,<4",
     "safetensors==0.6.2",
