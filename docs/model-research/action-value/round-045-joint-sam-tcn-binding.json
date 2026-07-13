@@ -1,0 +1,59 @@
+{
+  "binding_sha256": "f675a82570462b87de4e5ed979b3ac88fea2c6e9dd54a7a60c77d8df52b91410",
+  "blobs": [
+    {
+      "git_blob_oid": "11021c65a4be0062652c4fbe8608d6f357789c1a",
+      "path": "docs/model-research/action-value/round-045-joint-sam-tcn-design.json"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "3d1d1250827953feb87411111ee26130d615c51d",
+      "path": "src/simple_ai_trading/distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "719eb3ff77ea01e18f9f462d761b5a41fd9a144a",
+      "path": "src/simple_ai_trading/joint_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "01e3499ac6c10a685644a7351e1864f7f96d39e9",
+      "path": "src/simple_ai_trading/stateful_turnover_model.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "6014f294cf884a28313140ca7217e473c6ba63f4",
+      "path": "tools/create_round45_joint_sam_tcn_binding.py"
+    },
+    {
+      "git_blob_oid": "d83016e9df3320fb63bd06129df1df6d87afe38f",
+      "path": "tools/run_joint_sam_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "25716078e461d024e6aede56fcba801a613db9b8",
+      "path": "tests/test_distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "731d867b2ea1a170d083f16b2cdcd27d70ea1835",
+      "path": "tests/test_joint_distributional_tcn_model.py"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_joint_sam_tcn_viability.py --source-certificate <external-certificate.json> --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "design_sha256": "f6fb4f9a92f4a14a23671c2c55fadb12a6d9c1586f14018bf60beb15740bb9e5",
+  "implementation_commit": "bfa5cd7faea591aa711ea81fd50525435e357bd6",
+  "round": 45,
+  "schema_version": "round-045-joint-sam-tcn-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
