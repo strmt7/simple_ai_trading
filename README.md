@@ -528,15 +528,16 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 41 trained and exactly reloaded 42 monthly out-of-fold direction models
-and six shared profitability meta-labelers on OpenCL. Evaluation AUC was
-`0.573-0.598` across six 2024-H2 development months. November and December
-inherited thresholds that looked profitable in their preceding calibration
-months, but their 466 untouched actions averaged `-0.677` net bps with profit
-factor `0.980` and a day-block lower 95% bound of `-11.019` bps. This exposes
-threshold and regime instability, not profitability or ROI evidence. The ML
-gate failed and the finance LLM was correctly not invoked. No model, portfolio,
-leverage, execution, or trading-authority claim passed.
+Round 42 tested whether verified one-second taker flow could improve the entry
+timing of unchanged Round 41 direction proposals. Its 1,814,400 one-second bars
+derive from 15,475,296 checksum-backed Binance USD-M aggregate trades. All six
+OpenCL timing heads reloaded exactly, but no calibration threshold admitted an
+action. The immediate comparator averaged `-15.282` net bps and the prohibited
+post-outcome best-delay diagnostic still averaged `-14.279` net bps. Adding back
+the fixed 12 bps charge left both negative on their respective selected sets,
+so execution timing cannot rescue this primary signal. Larger second-level
+acquisition and AI review were denied. No profitability, ROI, portfolio,
+leverage, execution, AI-uplift, or trading-authority claim passed.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
