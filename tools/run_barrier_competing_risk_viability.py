@@ -246,9 +246,18 @@ def _memory_evidence() -> dict[str, object]:
 
         counters = Counters()
         counters.cb = ctypes.sizeof(counters)
-        process = ctypes.windll.kernel32.GetCurrentProcess()
-        if ctypes.windll.psapi.GetProcessMemoryInfo(
-            process, ctypes.byref(counters), counters.cb
+        get_current_process = ctypes.windll.kernel32.GetCurrentProcess
+        get_current_process.argtypes = []
+        get_current_process.restype = wintypes.HANDLE
+        get_process_memory_info = ctypes.windll.psapi.GetProcessMemoryInfo
+        get_process_memory_info.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(Counters),
+            wintypes.DWORD,
+        ]
+        get_process_memory_info.restype = wintypes.BOOL
+        if get_process_memory_info(
+            get_current_process(), ctypes.byref(counters), counters.cb
         ):
             return {
                 "working_set_bytes": int(counters.WorkingSetSize),
