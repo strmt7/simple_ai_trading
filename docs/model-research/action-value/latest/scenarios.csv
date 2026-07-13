@@ -1,7 +1,0 @@
-candidate_id,candidate,scenario,active_days,best_trade_bps,long_trades,max_drawdown_bps,mean_net_bps,median_net_bps,profit_factor,short_trades,total_net_bps,trades,trades_per_active_day,win_rate,worst_trade_bps,maximum_single_symbol_positive_pnl_share
-direct_mean_lightgbm,Direct mean,base,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0
-direct_mean_lightgbm,Direct mean,stress,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0
-categorical_payoff_lightgbm,Categorical,base,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0
-categorical_payoff_lightgbm,Categorical,stress,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,0,0.0,0,0.0,0.0,0.0,,0,0.0,0,0.0,0.0,0.0,0.0

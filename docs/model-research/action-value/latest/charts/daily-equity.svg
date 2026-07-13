@@ -1,26 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="570" viewBox="0 0 1420 570" role="img" aria-labelledby="title desc">
-<title id="title">Evaluation ledger: no selected trades</title>
-<desc id="desc">Dated base-scenario cumulative net bps, 2023-06-09 through 2023-06-14; flat lines denote abstention, not validated performance.</desc>
-<rect width="100%" height="100%" fill="#ffffff"/>
-<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:28px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}.gate{stroke:#b42318;stroke-width:2;stroke-dasharray:5 4}</style>
-<text x="56" y="52" class="title">Evaluation ledger: no selected trades</text>
-<text x="56" y="80" class="subtitle">Dated base-scenario cumulative net bps, 2023-06-09 through 2023-06-14; flat lines denote abstention, not validated performance.</text>
-<rect x="110" y="150" width="1230" height="270" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="110" y1="285.0" x2="1340" y2="285.0" class="zero"/>
-<text x="95" y="289.0" text-anchor="end" class="axis">0 bps</text>
-<line x1="110.0" y1="150" x2="110.0" y2="420" class="grid"/>
-<text x="110.0" y="448" text-anchor="middle" class="axis">06-09</text>
-<line x1="356.0" y1="150" x2="356.0" y2="420" class="grid"/>
-<text x="356.0" y="448" text-anchor="middle" class="axis">06-10</text>
-<line x1="602.0" y1="150" x2="602.0" y2="420" class="grid"/>
-<text x="602.0" y="448" text-anchor="middle" class="axis">06-11</text>
-<line x1="848.0" y1="150" x2="848.0" y2="420" class="grid"/>
-<text x="848.0" y="448" text-anchor="middle" class="axis">06-12</text>
-<line x1="1094.0" y1="150" x2="1094.0" y2="420" class="grid"/>
-<text x="1094.0" y="448" text-anchor="middle" class="axis">06-13</text>
-<line x1="1340.0" y1="150" x2="1340.0" y2="420" class="grid"/>
-<text x="1340.0" y="448" text-anchor="middle" class="axis">06-14</text>
-<line x1="110" y1="285.0" x2="1340" y2="285.0" stroke="#263746" stroke-width="4"/>
-<text x="1328" y="273.0" text-anchor="end" class="value">All three candidates: 0 trades / 0 bps</text>
-<text x="56" y="525" class="note">No ROI, profit factor, or drawdown inference can be made from an empty ledger. All economic gates failed.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Fixed-policy cumulative diagnostic</title>
+<desc>Executable hurdle at frozen 0.25% coverage; each role resets to zero and no line was formally selected</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Fixed-policy cumulative diagnostic</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Executable hurdle at frozen 0.25% coverage; each role resets to zero and no line was formally selected</text>
+<line x1="105" y1="580.0" x2="1145" y2="580.0" stroke="#334155"/>
+<text x="91" y="585.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-35.8</text>
+<line x1="105" y1="491.0" x2="1145" y2="491.0" stroke="#334155"/>
+<text x="91" y="496.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-10.7</text>
+<line x1="105" y1="402.0" x2="1145" y2="402.0" stroke="#334155"/>
+<text x="91" y="407.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">14.4</text>
+<line x1="105" y1="313.0" x2="1145" y2="313.0" stroke="#334155"/>
+<text x="91" y="318.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">39.4</text>
+<line x1="105" y1="224.0" x2="1145" y2="224.0" stroke="#334155"/>
+<text x="91" y="229.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">64.5</text>
+<line x1="105" y1="135.0" x2="1145" y2="135.0" stroke="#334155"/>
+<text x="91" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">89.6</text>
+<text x="105.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">06-07</text>
+<text x="451.7" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">06-10</text>
+<text x="798.3" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">06-12</text>
+<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">06-14</text>
+<path d="M 105.0 499.1 L 278.3 486.7" fill="none" stroke="#22d3ee" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="499.1" r="4" fill="#22d3ee"/>
+<circle cx="278.3" cy="486.7" r="4" fill="#22d3ee"/>
+<rect x="105" y="657" width="16" height="4" fill="#22d3ee"/>
+<text x="129" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Calibration base</text>
+<path d="M 105.0 536.9 L 278.3 529.3" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="536.9" r="4" fill="#f59e0b"/>
+<circle cx="278.3" cy="529.3" r="4" fill="#f59e0b"/>
+<rect x="355" y="657" width="16" height="4" fill="#f59e0b"/>
+<text x="379" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Calibration stress</text>
+<path d="M 451.7 444.9 L 625.0 447.8 L 798.3 400.8 L 971.7 428.2 L 1145.0 178.1" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="451.7" cy="444.9" r="4" fill="#60a5fa"/>
+<circle cx="625.0" cy="447.8" r="4" fill="#60a5fa"/>
+<circle cx="798.3" cy="400.8" r="4" fill="#60a5fa"/>
+<circle cx="971.7" cy="428.2" r="4" fill="#60a5fa"/>
+<circle cx="1145.0" cy="178.1" r="4" fill="#60a5fa"/>
+<rect x="605" y="657" width="16" height="4" fill="#60a5fa"/>
+<text x="629" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Consumed eval base</text>
+<path d="M 451.7 465.0 L 625.0 477.3 L 798.3 439.8 L 971.7 481.4 L 1145.0 250.2" fill="none" stroke="#ef4444" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="451.7" cy="465.0" r="4" fill="#ef4444"/>
+<circle cx="625.0" cy="477.3" r="4" fill="#ef4444"/>
+<circle cx="798.3" cy="439.8" r="4" fill="#ef4444"/>
+<circle cx="971.7" cy="481.4" r="4" fill="#ef4444"/>
+<circle cx="1145.0" cy="250.2" r="4" fill="#ef4444"/>
+<rect x="855" y="657" width="16" height="4" fill="#ef4444"/>
+<text x="879" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Consumed eval stress</text>
+<text transform="translate(25 357.5) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Cumulative weighted net bps</text>
 </svg>

@@ -1,37 +1,15 @@
-candidate_id,candidate,scenario,date_utc,selected_trades,net_bps,cumulative_net_bps,ledger_present,zero_return_reason
-direct_mean_lightgbm,Direct mean,base,2023-06-09,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,base,2023-06-10,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,base,2023-06-11,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,base,2023-06-12,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,base,2023-06-13,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,base,2023-06-14,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,stress,2023-06-09,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,stress,2023-06-10,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,stress,2023-06-11,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,stress,2023-06-12,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,stress,2023-06-13,0,0.0,0.0,False,no selected trades
-direct_mean_lightgbm,Direct mean,stress,2023-06-14,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,base,2023-06-09,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,base,2023-06-10,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,base,2023-06-11,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,base,2023-06-12,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,base,2023-06-13,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,base,2023-06-14,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,stress,2023-06-09,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,stress,2023-06-10,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,stress,2023-06-11,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,stress,2023-06-12,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,stress,2023-06-13,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm,Categorical,stress,2023-06-14,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-09,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-10,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-11,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-12,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-13,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,base,2023-06-14,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-09,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-10,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-11,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-12,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-13,0,0.0,0.0,False,no selected trades
-categorical_payoff_lightgbm_fincast,Categorical + FinCast,stress,2023-06-14,0,0.0,0.0,False,no selected trades
+round,candidate,coverage,period,scenario,utc_date,daily_weighted_net_bps,cumulative_weighted_net_bps,formally_selected,selection_contaminated
+52,executable_hurdle_lightgbm,0.0025,policy_calibration,base,2023-06-07,-12.996872514988194,-12.996872514988194,false,true
+52,executable_hurdle_lightgbm,0.0025,policy_calibration,base,2023-06-08,3.4770553252565333,-9.519817189731661,false,true
+52,executable_hurdle_lightgbm,0.0025,policy_calibration,paired_stress,2023-06-07,-23.66353918165487,-23.66353918165487,false,true
+52,executable_hurdle_lightgbm,0.0025,policy_calibration,paired_stress,2023-06-08,2.1437219919232,-21.51981718973167,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,base,2023-06-10,2.2708155670926784,2.2708155670926784,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,base,2023-06-11,-0.8183712108676318,1.4524443562250466,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,base,2023-06-12,13.250024595677099,14.702468951902144,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,base,2023-06-13,-7.728328827874603,6.974140124027541,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,base,2023-06-14,70.46514748290544,77.43928760693298,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,paired_stress,2023-06-10,-3.3874807140280616,-3.3874807140280616,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,paired_stress,2023-06-11,-3.4850378775342996,-6.872518591562361,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,paired_stress,2023-06-12,10.58335792901043,3.7108393374480695,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,paired_stress,2023-06-13,-11.7283288278746,-8.01748949042653,false,true
+52,executable_hurdle_lightgbm,0.0025,consumed_evaluation,paired_stress,2023-06-14,65.13181414957211,57.11432465914558,false,true

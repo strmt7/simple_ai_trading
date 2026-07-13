@@ -1,126 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="660" viewBox="0 0 1500 660" role="img" aria-labelledby="title desc">
-<title id="title">After-cost evidence by research round</title>
-<desc id="desc">Heterogeneous simulations, overlap diagnostics, and rounds without a trade series use separate marks.</desc>
-<rect width="100%" height="100%" fill="#ffffff"/>
-<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
-<text x="56" y="52" class="title">After-cost evidence by research round</text>
-<text x="56" y="80" class="subtitle">Heterogeneous simulations, overlap diagnostics, and rounds without a trade series use separate marks.</text>
-<circle cx="870" cy="52" r="7" fill="#b42318"/><text x="887" y="57" class="note">simulated-trade mean</text>
-<rect x="1050" y="45" width="14" height="14" fill="#7b559c"/><text x="1074" y="57" class="note">overlap diagnostic</text>
-<rect x="1250" y="45" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1257 52)"/><text x="1276" y="57" class="note">no trade series</text>
-<rect x="120" y="150" width="1310" height="330" fill="#ffffff" stroke="#d8e0e7"/>
-<line x1="120" y1="480.0" x2="1430" y2="480.0" class="grid"/>
-<text x="106" y="484.0" text-anchor="end" class="axis">-19.1</text>
-<line x1="120" y1="368.9" x2="1430" y2="368.9" class="zero"/>
-<text x="106" y="372.9" text-anchor="end" class="axis">+0.0</text>
-<line x1="120" y1="315.0" x2="1430" y2="315.0" class="grid"/>
-<text x="106" y="319.0" text-anchor="end" class="axis">+9.2</text>
-<line x1="120" y1="150.0" x2="1430" y2="150.0" class="grid"/>
-<text x="106" y="154.0" text-anchor="end" class="axis">+37.6</text>
-<text x="104" y="556" text-anchor="end" class="axis">no series</text>
-<circle cx="134.6" cy="413.4" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="134.6" y="398.4" text-anchor="middle" class="value">-7.64</text>
-<text x="134.6" y="589" text-anchor="middle" class="axis">R7</text>
-<circle cx="163.7" cy="437.9" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="163.7" y="405.9" text-anchor="middle" class="value">-11.84</text>
-<text x="163.7" y="589" text-anchor="middle" class="axis">R8</text>
-<rect x="185.8" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 192.8 552.0)"/>
-<text x="192.8" y="589" text-anchor="middle" class="axis">R9</text>
-<rect x="214.9" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 221.9 552.0)"/>
-<text x="221.9" y="589" text-anchor="middle" class="axis">R10</text>
-<rect x="244.0" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 251.0 552.0)"/>
-<text x="251.0" y="589" text-anchor="middle" class="axis">R11</text>
-<rect x="273.1" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 280.1 552.0)"/>
-<text x="280.1" y="589" text-anchor="middle" class="axis">R12</text>
-<rect x="302.2" y="400.4" width="14" height="14" fill="#7b559c"/>
-<text x="309.2" y="589" text-anchor="middle" class="axis">R13</text>
-<rect x="331.3" y="399.5" width="14" height="14" fill="#7b559c"/>
-<text x="338.3" y="589" text-anchor="middle" class="axis">R14</text>
-<rect x="360.4" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 367.4 552.0)"/>
-<text x="367.4" y="589" text-anchor="middle" class="axis">R15</text>
-<rect x="389.6" y="435.2" width="14" height="14" fill="#7b559c"/>
-<text x="396.6" y="589" text-anchor="middle" class="axis">R16</text>
-<rect x="418.7" y="422.7" width="14" height="14" fill="#7b559c"/>
-<text x="425.7" y="589" text-anchor="middle" class="axis">R17</text>
-<rect x="447.8" y="410.3" width="14" height="14" fill="#7b559c"/>
-<text x="454.8" y="589" text-anchor="middle" class="axis">R18</text>
-<rect x="476.9" y="421.9" width="14" height="14" fill="#7b559c"/>
-<text x="483.9" y="589" text-anchor="middle" class="axis">R19</text>
-<rect x="506.0" y="422.4" width="14" height="14" fill="#7b559c"/>
-<text x="513.0" y="589" text-anchor="middle" class="axis">R20</text>
-<rect x="535.1" y="433.3" width="14" height="14" fill="#7b559c"/>
-<text x="542.1" y="589" text-anchor="middle" class="axis">R21</text>
-<rect x="564.2" y="421.1" width="14" height="14" fill="#7b559c"/>
-<text x="571.2" y="589" text-anchor="middle" class="axis">R22</text>
-<rect x="593.3" y="417.9" width="14" height="14" fill="#7b559c"/>
-<text x="600.3" y="589" text-anchor="middle" class="axis">R23</text>
-<rect x="622.4" y="427.8" width="14" height="14" fill="#7b559c"/>
-<text x="629.4" y="589" text-anchor="middle" class="axis">R24</text>
-<rect x="651.6" y="419.5" width="14" height="14" fill="#7b559c"/>
-<text x="658.6" y="589" text-anchor="middle" class="axis">R25</text>
-<rect x="680.7" y="422.3" width="14" height="14" fill="#7b559c"/>
-<text x="687.7" y="589" text-anchor="middle" class="axis">R26</text>
-<rect x="709.8" y="432.6" width="14" height="14" fill="#7b559c"/>
-<text x="716.8" y="589" text-anchor="middle" class="axis">R27</text>
-<rect x="738.9" y="415.9" width="14" height="14" fill="#7b559c"/>
-<text x="745.9" y="589" text-anchor="middle" class="axis">R28</text>
-<rect x="768.0" y="412.2" width="14" height="14" fill="#7b559c"/>
-<text x="775.0" y="589" text-anchor="middle" class="axis">R29</text>
-<rect x="797.1" y="334.5" width="14" height="14" fill="#7b559c"/>
-<text x="804.1" y="589" text-anchor="middle" class="axis">R30</text>
-<rect x="826.2" y="403.1" width="14" height="14" fill="#7b559c"/>
-<text x="833.2" y="589" text-anchor="middle" class="axis">R31</text>
-<rect x="855.3" y="424.6" width="14" height="14" fill="#7b559c"/>
-<text x="862.3" y="589" text-anchor="middle" class="axis">R32</text>
-<rect x="884.4" y="436.3" width="14" height="14" fill="#7b559c"/>
-<text x="891.4" y="589" text-anchor="middle" class="axis">R33</text>
-<rect x="913.6" y="424.6" width="14" height="14" fill="#7b559c"/>
-<text x="920.6" y="589" text-anchor="middle" class="axis">R34</text>
-<rect x="942.7" y="358.8" width="14" height="14" fill="#7b559c"/>
-<text x="949.7" y="589" text-anchor="middle" class="axis">R35</text>
-<rect x="971.8" y="420.2" width="14" height="14" fill="#7b559c"/>
-<text x="978.8" y="589" text-anchor="middle" class="axis">R36</text>
-<rect x="1000.9" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1007.9 552.0)"/>
-<text x="1007.9" y="589" text-anchor="middle" class="axis">R37</text>
-<circle cx="1037.0" cy="392.1" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1037.0" y="360.1" text-anchor="middle" class="value">-3.99</text>
-<text x="1037.0" y="589" text-anchor="middle" class="axis">R38</text>
-<circle cx="1066.1" cy="426.6" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1066.1" y="411.6" text-anchor="middle" class="value">-9.91</text>
-<text x="1066.1" y="589" text-anchor="middle" class="axis">R39</text>
-<circle cx="1095.2" cy="158.7" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1095.2" y="126.7" text-anchor="middle" class="value">+36.06</text>
-<text x="1095.2" y="589" text-anchor="middle" class="axis">R40</text>
-<circle cx="1124.3" cy="372.8" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1124.3" y="357.8" text-anchor="middle" class="value">-0.68</text>
-<text x="1124.3" y="589" text-anchor="middle" class="axis">R41</text>
-<rect x="1146.4" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1153.4 552.0)"/>
-<text x="1153.4" y="589" text-anchor="middle" class="axis">R42</text>
-<circle cx="1182.6" cy="368.2" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1182.6" y="353.2" text-anchor="middle" class="value">+0.11</text>
-<text x="1182.6" y="589" text-anchor="middle" class="axis">R43</text>
-<circle cx="1211.7" cy="368.9" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1211.7" y="336.9" text-anchor="middle" class="value">+0.00</text>
-<text x="1211.7" y="589" text-anchor="middle" class="axis">R44</text>
-<circle cx="1240.8" cy="366.3" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1240.8" y="351.3" text-anchor="middle" class="value">+0.43</text>
-<text x="1240.8" y="589" text-anchor="middle" class="axis">R45</text>
-<circle cx="1269.9" cy="365.4" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1269.9" y="333.4" text-anchor="middle" class="value">+0.59</text>
-<text x="1269.9" y="589" text-anchor="middle" class="axis">R46</text>
-<circle cx="1299.0" cy="366.2" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1299.0" y="351.2" text-anchor="middle" class="value">+0.45</text>
-<text x="1299.0" y="589" text-anchor="middle" class="axis">R47</text>
-<circle cx="1328.1" cy="369.5" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1328.1" y="337.5" text-anchor="middle" class="value">-0.10</text>
-<text x="1328.1" y="589" text-anchor="middle" class="axis">R48</text>
-<circle cx="1357.2" cy="368.8" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1357.2" y="353.8" text-anchor="middle" class="value">+0.01</text>
-<text x="1357.2" y="589" text-anchor="middle" class="axis">R49</text>
-<circle cx="1386.3" cy="471.3" r="8" fill="#b42318" stroke="#ffffff" stroke-width="2"/>
-<text x="1386.3" y="439.3" text-anchor="middle" class="value">-17.57</text>
-<text x="1386.3" y="589" text-anchor="middle" class="axis">R50</text>
-<rect x="1408.4" y="545.0" width="14" height="14" fill="#ffffff" stroke="#60717f" stroke-width="2" transform="rotate(45 1415.4 552.0)"/>
-<text x="1415.4" y="589" text-anchor="middle" class="axis">R51</text>
-<text x="56" y="632" class="note">Windows and units differ by round. This is evidence lineage, not an equity curve or portfolio return series.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Optimization research progression</title>
+<desc>Best descriptive net bps/trade by round; datasets and policies differ, all shown values remain non-promotable</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Optimization research progression</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Best descriptive net bps/trade by round; datasets and policies differ, all shown values remain non-promotable</text>
+<line x1="105" y1="580.0" x2="1145" y2="580.0" stroke="#334155"/>
+<text x="91" y="585.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-20.1</text>
+<line x1="105" y1="491.0" x2="1145" y2="491.0" stroke="#334155"/>
+<text x="91" y="496.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-14.8</text>
+<line x1="105" y1="402.0" x2="1145" y2="402.0" stroke="#334155"/>
+<text x="91" y="407.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-9.5</text>
+<line x1="105" y1="313.0" x2="1145" y2="313.0" stroke="#334155"/>
+<text x="91" y="318.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-4.2</text>
+<line x1="105" y1="224.0" x2="1145" y2="224.0" stroke="#334155"/>
+<text x="91" y="229.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">1.1</text>
+<line x1="105" y1="135.0" x2="1145" y2="135.0" stroke="#334155"/>
+<text x="91" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">6.4</text>
+<text x="105.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">12</text>
+<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">52</text>
+<text x="313.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">20</text>
+<text x="573.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">30</text>
+<text x="833.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">40</text>
+<text x="1093.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">50</text>
+<path d="M 105.0 269.4 L 911.0 240.1 L 937.0 242.1 L 963.0 234.7 L 989.0 232.1 L 1015.0 234.4 L 1041.0 243.7 L 1067.0 241.9 L 1093.0 536.9 L 1145.0 178.1" fill="none" stroke="#14b8a6" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="269.4" r="4" fill="#14b8a6"/>
+<circle cx="911.0" cy="240.1" r="4" fill="#14b8a6"/>
+<circle cx="937.0" cy="242.1" r="4" fill="#14b8a6"/>
+<circle cx="963.0" cy="234.7" r="4" fill="#14b8a6"/>
+<circle cx="989.0" cy="232.1" r="4" fill="#14b8a6"/>
+<circle cx="1015.0" cy="234.4" r="4" fill="#14b8a6"/>
+<circle cx="1041.0" cy="243.7" r="4" fill="#14b8a6"/>
+<circle cx="1067.0" cy="241.9" r="4" fill="#14b8a6"/>
+<circle cx="1093.0" cy="536.9" r="4" fill="#14b8a6"/>
+<circle cx="1145.0" cy="178.1" r="4" fill="#14b8a6"/>
+<rect x="105" y="657" width="16" height="4" fill="#14b8a6"/>
+<text x="129" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Descriptive best policy</text>
+<text transform="translate(25 357.5) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Net bps per trade</text>
 </svg>

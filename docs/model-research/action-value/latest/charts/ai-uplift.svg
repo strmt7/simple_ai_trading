@@ -1,56 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="760" viewBox="0 0 1420 760" role="img" aria-labelledby="title desc">
-<title id="title">FinCast did not establish AI uplift</title>
-<desc id="desc">Matched deterministic control and 991M-parameter FinCast treatment on identical evaluation endpoints.</desc>
-<rect width="100%" height="100%" fill="#ffffff"/>
-<style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:28px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}.gate{stroke:#b42318;stroke-width:2;stroke-dasharray:5 4}</style>
-<text x="56" y="52" class="title">FinCast did not establish AI uplift</text>
-<text x="56" y="80" class="subtitle">Matched deterministic control and 991M-parameter FinCast treatment on identical evaluation endpoints.</text>
-<text x="80" y="130" class="label">Ranked-probability skill</text>
-<line x1="80" y1="525.0" x2="440" y2="525.0" class="grid"/>
-<text x="70" y="529.0" text-anchor="end" class="axis">0.000</text>
-<line x1="80" y1="345.0" x2="440" y2="345.0" class="grid"/>
-<text x="70" y="349.0" text-anchor="end" class="axis">0.030</text>
-<line x1="80" y1="165.0" x2="440" y2="165.0" class="grid"/>
-<text x="70" y="169.0" text-anchor="end" class="axis">0.060</text>
-<rect x="135" y="237.7" width="95" height="287.3" fill="#0f766e"/>
-<text x="182.5" y="228.7" text-anchor="middle" class="value">0.04788</text>
-<text x="182.5" y="553" text-anchor="middle" class="axis">Control</text>
-<rect x="280" y="238.1" width="95" height="286.9" fill="#b54708"/>
-<text x="327.5" y="229.1" text-anchor="middle" class="value">0.04781</text>
-<text x="327.5" y="553" text-anchor="middle" class="axis">FinCast</text>
-<text x="80" y="587" class="value">Delta -0.000074</text>
-<text x="80" y="609" class="note">higher is better; required delta +0.005</text>
-<text x="80" y="629" class="note">Observed delta missed by +0.005074</text>
-<text x="530" y="130" class="label">Expected-payoff Spearman</text>
-<line x1="530" y1="525.0" x2="890" y2="525.0" class="grid"/>
-<text x="520" y="529.0" text-anchor="end" class="axis">0.000</text>
-<line x1="530" y1="345.0" x2="890" y2="345.0" class="grid"/>
-<text x="520" y="349.0" text-anchor="end" class="axis">0.030</text>
-<line x1="530" y1="165.0" x2="890" y2="165.0" class="grid"/>
-<text x="520" y="169.0" text-anchor="end" class="axis">0.060</text>
-<rect x="585" y="285.5" width="95" height="239.5" fill="#0f766e"/>
-<text x="632.5" y="276.5" text-anchor="middle" class="value">0.03991</text>
-<text x="632.5" y="553" text-anchor="middle" class="axis">Control</text>
-<rect x="730" y="273.4" width="95" height="251.6" fill="#b54708"/>
-<text x="777.5" y="264.4" text-anchor="middle" class="value">0.04194</text>
-<text x="777.5" y="553" text-anchor="middle" class="axis">FinCast</text>
-<text x="530" y="587" class="value">Delta +0.002023</text>
-<text x="530" y="609" class="note">higher is better; required delta +0.005</text>
-<text x="530" y="629" class="note">Observed delta missed by +0.002977</text>
-<text x="980" y="130" class="label">Expected-payoff MSE (bps2)</text>
-<line x1="980" y1="525.0" x2="1340" y2="525.0" class="grid"/>
-<text x="970" y="529.0" text-anchor="end" class="axis">0.000</text>
-<line x1="980" y1="345.0" x2="1340" y2="345.0" class="grid"/>
-<text x="970" y="349.0" text-anchor="end" class="axis">366.121</text>
-<line x1="980" y1="165.0" x2="1340" y2="165.0" class="grid"/>
-<text x="970" y="169.0" text-anchor="end" class="axis">732.242</text>
-<rect x="1035" y="220.3" width="95" height="304.7" fill="#0f766e"/>
-<text x="1082.5" y="211.3" text-anchor="middle" class="value">619.81870</text>
-<text x="1082.5" y="553" text-anchor="middle" class="axis">Control</text>
-<rect x="1180" y="219.9" width="95" height="305.1" fill="#b54708"/>
-<text x="1227.5" y="210.9" text-anchor="middle" class="value">620.54437</text>
-<text x="1227.5" y="553" text-anchor="middle" class="axis">FinCast</text>
-<text x="980" y="587" class="value">Delta +0.725671</text>
-<text x="980" y="609" class="note">lower is better; treatment/control = 1.00117</text>
-<text x="56" y="720" class="note">Economics could not show uplift because both matched selectors produced zero trades; the AI gate therefore failed closed.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>FinCast failed the matched uplift gate</title>
+<desc>Causal cached features from the 991,437,160-parameter model; higher is better</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">FinCast failed the matched uplift gate</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Causal cached features from the 991,437,160-parameter model; higher is better</text>
+<line x1="100" y1="575.0" x2="1150" y2="575.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="580.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.0000</text>
+<line x1="100" y1="487.0" x2="1150" y2="487.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="492.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.0012</text>
+<line x1="100" y1="399.0" x2="1150" y2="399.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="404.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.0024</text>
+<line x1="100" y1="311.0" x2="1150" y2="311.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="316.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.0036</text>
+<line x1="100" y1="223.0" x2="1150" y2="223.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="228.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.0048</text>
+<line x1="100" y1="135.0" x2="1150" y2="135.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.0060</text>
+<rect x="215.5" y="467.7" width="119.0" height="107.3" rx="3" fill="#14b8a6"/>
+<text x="275.0" y="459.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.001463</text>
+<rect x="390.5" y="208.3" width="119.0" height="366.7" rx="3" fill="#94a3b8"/>
+<text x="450.0" y="200.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.005000</text>
+<text x="362.5" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">Probability log loss</text>
+<rect x="740.5" y="547.5" width="119.0" height="27.5" rx="3" fill="#60a5fa"/>
+<text x="800.0" y="539.5" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.000375</text>
+<rect x="915.5" y="208.3" width="119.0" height="366.7" rx="3" fill="#94a3b8"/>
+<text x="975.0" y="200.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.005000</text>
+<text x="887.5" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">Expected-payoff Spearman</text>
+<text transform="translate(24 355.0) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Absolute improvement</text>
+<rect x="100.0" y="655" width="14" height="14" rx="2" fill="#14b8a6"/>
+<text x="122.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Observed improvement</text>
+<rect x="625.0" y="655" width="14" height="14" rx="2" fill="#94a3b8"/>
+<text x="647.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Required improvement</text>
 </svg>
