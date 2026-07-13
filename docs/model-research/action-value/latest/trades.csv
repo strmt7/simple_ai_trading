@@ -1,0 +1,2 @@
+trade_id,symbol,symbol_index,decision_index,decision_time_ms,side,horizon_hours,selected_lower_quartile_bps,expected_after_cost_bps,decision_time_utc,base_realized_net_bps,stress_realized_net_bps
+2ad0ef6728e3c72f505021f42ec21822bfbe590a97f7e6d3b213b2b49dfbcc2f,BTCUSDT,0,27098,1738548000000,-1,12,28.707611083984375,16.707611083984375,2025-02-03T02:00:00+00:00,-95.61846172809601,-99.61846172809601
