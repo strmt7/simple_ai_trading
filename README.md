@@ -528,15 +528,15 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 40 trained and exactly reloaded 18 per-symbol direction models and six
-shared profitability meta-labelers on OpenCL. The meta-label evaluation AUC was
-`0.564-0.587` across six 2024-H2 development months, but only December's
-prior-month threshold passed the frozen economic gate. Those 70 conditional
-actions averaged `+36.061` net bps with profit factor `2.008`; five months were
-flat and the stationary day-block lower 95% bound was `-4.307` bps. The repeated
-period is selection-contaminated, so this is not profitability or ROI evidence.
-The ML gate failed and the finance LLM was correctly not invoked. No model,
-portfolio, leverage, execution, or trading-authority claim passed.
+Round 41 trained and exactly reloaded 42 monthly out-of-fold direction models
+and six shared profitability meta-labelers on OpenCL. Evaluation AUC was
+`0.573-0.598` across six 2024-H2 development months. November and December
+inherited thresholds that looked profitable in their preceding calibration
+months, but their 466 untouched actions averaged `-0.677` net bps with profit
+factor `0.980` and a day-block lower 95% bound of `-11.019` bps. This exposes
+threshold and regime instability, not profitability or ROI evidence. The ML
+gate failed and the finance LLM was correctly not invoked. No model, portfolio,
+leverage, execution, or trading-authority claim passed.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

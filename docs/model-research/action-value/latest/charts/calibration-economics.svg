@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1480" height="610" viewBox="0 0 1480 610" role="img" aria-labelledby="title desc">
-<title id="title">Only December calibration cleared uncertainty</title>
-<desc id="desc">Best support-complete threshold per month; intervals exist only when positive mean and PF triggered bootstrap evaluation.</desc>
+<title id="title">Late calibration cleared uncertainty, then failed out of sample</title>
+<desc id="desc">Best support-complete threshold per month; November and December labels refer to gates passed before the following evaluation month.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
-<text x="56" y="52" class="title">Only December calibration cleared uncertainty</text>
-<text x="56" y="80" class="subtitle">Best support-complete threshold per month; intervals exist only when positive mean and PF triggered bootstrap evaluation.</text>
+<text x="56" y="52" class="title">Late calibration cleared uncertainty, then failed out of sample</text>
+<text x="56" y="80" class="subtitle">Best support-complete threshold per month; November and December labels refer to gates passed before the following evaluation month.</text>
 <line x1="110" y1="426.2" x2="1410" y2="426.2" class="grid"/>
 <text x="96" y="430.2" text-anchor="end" class="axis">-20</text>
 <line x1="110" y1="351.2" x2="1410" y2="351.2" class="zero"/>
@@ -13,25 +13,26 @@
 <text x="96" y="280.2" text-anchor="end" class="axis">+20</text>
 <line x1="110" y1="201.2" x2="1410" y2="201.2" class="grid"/>
 <text x="96" y="205.2" text-anchor="end" class="axis">+40</text>
-<circle cx="218.3" cy="386.3" r="8" fill="#b42318"/>
-<text x="218.3" y="371.3" text-anchor="middle" class="value">-9.4</text>
+<circle cx="218.3" cy="428.9" r="8" fill="#b42318"/>
+<text x="218.3" y="413.9" text-anchor="middle" class="value">-20.7</text>
 <text x="218.3" y="475" text-anchor="middle" class="axis">2024-07</text>
-<circle cx="435.0" cy="359.9" r="8" fill="#b42318"/>
-<text x="435.0" y="344.9" text-anchor="middle" class="value">-2.3</text>
+<circle cx="435.0" cy="358.7" r="8" fill="#b42318"/>
+<text x="435.0" y="343.7" text-anchor="middle" class="value">-2.0</text>
 <text x="435.0" y="475" text-anchor="middle" class="axis">2024-08</text>
-<circle cx="651.7" cy="419.7" r="8" fill="#b42318"/>
-<text x="651.7" y="404.7" text-anchor="middle" class="value">-18.3</text>
+<circle cx="651.7" cy="409.5" r="8" fill="#b42318"/>
+<text x="651.7" y="394.5" text-anchor="middle" class="value">-15.5</text>
 <text x="651.7" y="475" text-anchor="middle" class="axis">2024-09</text>
-<circle cx="868.3" cy="378.1" r="8" fill="#b42318"/>
-<text x="868.3" y="363.1" text-anchor="middle" class="value">-7.2</text>
+<line x1="868.3" y1="374.9" x2="868.3" y2="332.3" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="868.3" cy="332.3" r="8" fill="#b42318"/>
+<text x="868.3" y="317.3" text-anchor="middle" class="value">+5.1</text>
 <text x="868.3" y="475" text-anchor="middle" class="axis">2024-10</text>
-<line x1="1085.0" y1="399.0" x2="1085.0" y2="336.5" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
-<circle cx="1085.0" cy="336.5" r="8" fill="#b42318"/>
-<text x="1085.0" y="321.5" text-anchor="middle" class="value">+3.9</text>
+<line x1="1085.0" y1="348.3" x2="1085.0" y2="302.1" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="1085.0" cy="302.1" r="8" fill="#0f766e"/>
+<text x="1085.0" y="287.1" text-anchor="middle" class="value">+13.1</text>
 <text x="1085.0" y="475" text-anchor="middle" class="axis">2024-11</text>
-<line x1="1301.7" y1="273.6" x2="1301.7" y2="189.7" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
-<circle cx="1301.7" cy="189.7" r="8" fill="#0f766e"/>
-<text x="1301.7" y="174.7" text-anchor="middle" class="value">+43.1</text>
+<line x1="1301.7" y1="345.0" x2="1301.7" y2="300.9" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+<circle cx="1301.7" cy="300.9" r="8" fill="#0f766e"/>
+<text x="1301.7" y="285.9" text-anchor="middle" class="value">+13.4</text>
 <text x="1301.7" y="475" text-anchor="middle" class="axis">2024-12</text>
 <text x="110" y="535" class="note">Red: no threshold passed the frozen economic gate. Teal: at least one passed. Values are calibration mean net bps, not evaluation ROI.</text>
 </svg>
