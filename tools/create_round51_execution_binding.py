@@ -98,6 +98,7 @@ def create_binding(*, design_path: Path, output_path: Path) -> dict[str, object]
             "source_market_rows_synthetic": 0,
             "fincast_cpu_fallback_permitted": False,
             "lightgbm_opencl_fp64_required": True,
+            "lightgbm_compute_backend": "directml",
             "selection_contaminated": True,
             "profitability_claim_permitted": False,
             "trading_authority_permitted": False,
