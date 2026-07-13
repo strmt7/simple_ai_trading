@@ -11,6 +11,26 @@
     "ETHUSDT": "6b4ca26af538040ce687eaed5029d39e5d7ad7f0d3a1e7dce990ecb320264d91",
     "SOLUSDT": "3f919c173e307c20550d91f9a718a81159ae9e3174d3b67c17294578895d5b9d"
   },
+  "corrected_sol_one_seed_preflight": {
+    "backend_device": "opencl:auto",
+    "backend_kind": "opencl",
+    "barrier_rows": 135164,
+    "best_iterations": {"long": 69, "short": 96},
+    "calibration_log_loss_after": {"long": 2.256413429639703, "short": 2.263458226764378},
+    "calibration_log_loss_before": {"long": 2.2659021050639216, "short": 2.2887887488978085},
+    "context_input_rows": 137025,
+    "context_retained_rows": 136881,
+    "economics_inspected": false,
+    "filtered_microstructure_dataset_sha256": "c2838549c9ba738f3357122b968d873439115a444b3fc8161dbc8511813506dc",
+    "generated_at": "2026-07-13T19:38:20.2535228Z",
+    "minimum_early_stop_class_support": {"long": 158, "short": 229},
+    "minimum_required_early_stop_class_support": 16,
+    "minimum_train_class_support": {"long": 1197, "short": 1196},
+    "role_rows": {"calibration": 24078, "early_stop": 11582, "evaluation": 39699, "train": 59805},
+    "seed": 5101,
+    "state_series_sha256": "c2c08640b08c1e1f279f9abfb2ed8e5871d6591a6634a341a578481d8a1bb00f",
+    "valid_mask_sha256": "7af8976e2cc28f9942473d7b2031f4f53eda6a6c7ea9484bb6626bb0f471d6dc"
+  },
   "failed_pre_evaluation_run": {
     "economic_results_produced": false,
     "failure": "categorical payoff short early-stop class support failed",
