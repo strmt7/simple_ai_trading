@@ -528,13 +528,13 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 49 trained six 15-minute action-value TCNs on the AMD GPU through
-DirectML. Profit-probability AUC remained near `0.618`, and the hurdle model
-improved conditional gain/loss scores, but pooled expected-net Spearman stayed
-near zero. Its 165-trade point estimate was `+2.53%` at 12 bps and `+0.30%` at
-16 bps, with a negative familywise bootstrap lower bound, only 35 active days,
-and all positive symbol P&L concentrated in ETHUSDT. The model was rejected,
-AI was withheld, and no profitability, leverage, testnet, live-trading, or
+Round 50 trained six 60-minute path-payoff TCNs on the AMD GPU through
+DirectML. Competing-risk event probabilities improved proper scores, but their
+after-cost payoff rank was `-0.0604` short and `+0.0481` long and the mechanism
+underperformed its direct-mean control on average. Its fixed 610-trade ledger
+lost `35.73%` at 12 bps and `43.86%` at 16 bps, with `37.41%` base drawdown and
+all three symbol sleeves negative. The model was rejected; leverage and AI
+uplift were withheld, and no profitability, testnet, live-trading, or
 autonomous-execution authority was established.
 
 The latest independent execution-replay confirmation remains

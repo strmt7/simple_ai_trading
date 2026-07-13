@@ -1,27 +1,27 @@
-# Round 49: Cost-Aware Action-Hurdle TCN
+# Round 50: Path-Bounded Competing-Risk TCN
 
-> **Beta research warning:** neither candidate is approved for testnet, live day trading, leverage, or autonomous execution. The 2025-H1 result is consumed development evidence.
+> **Beta research warning:** neither model is approved for testnet, live day trading, leverage, autonomous execution, or a profitability claim. The 2025-H1 interval is consumed development evidence.
 
-Round 49 trained six causal large-kernel TCNs on verified Binance BTCUSDT, ETHUSDT, and SOLUSDT data. Explicit conditional gain/loss modeling created a positive point estimate, but expected-net prediction, temporal breadth, diversification, and stress confidence failed. The candidate was rejected.
+Round 50 tested whether exact stop-loss, take-profit, and timeout probabilities produce better after-cost action values than a matched direct-mean control. Event distributions improved, but payoff ranking and fixed-policy economics failed. The candidate was rejected.
 
-![Profit-probability quality](charts/forecast-quality.svg)
+![Event quality](charts/event-quality.svg)
 
-![Expected-net quality](charts/action-value-quality.svg)
+![Expected-payoff quality](charts/expected-payoff-quality.svg)
 
-![Conditional severity](charts/severity-quality.svg)
+| Candidate | Short payoff rank | Long payoff rank | Trades | Base return | Stress return | Base drawdown | Profit factor | Quality/economic gate |
+|---|---:|---:|---:|---:|---:|---:|---:|:---:|
+| Direct mean control | -0.0065 | +0.0281 | 90 | -4.30% | -5.50% | 7.38% | 0.737 | false/false |
+| Competing-risk model | -0.0604 | +0.0481 | 610 | -35.73% | -43.86% | 37.41% | 0.684 | false/false |
 
-| Candidate | Best 15m AUC | Trades | Base return | Stress return | Base drawdown | Profit factor | Numerical/action/economic gate |
-|---|---:|---:|---:|---:|---:|---:|:---:|
-| Direct mean control | 0.619 | 0 | +0.00% | +0.00% | 0.00% | n/a | True/False/False |
-| Conditional gain/loss hurdle | 0.618 | 165 | +2.53% | +0.30% | 6.23% | 1.093 | True/False/False |
-
-The hurdle ledger made 165 trades on 35 days. Its base return was `+2.53%`, but the 16 bps stress return fell to `+0.30%`; the familywise bootstrap lower bound was negative. ETHUSDT supplied `+1,457.49` net bps while BTCUSDT and SOLUSDT lost, and 130 trades occurred in January-February. This is not a profitability claim.
+The competing-risk model made `610` non-overlapping trades on `108` active days, including `525` shorts. It lost `35.73%` at 12 bps and `43.86%` at 16 bps, with `37.41%` base drawdown; BTCUSDT, ETHUSDT, and SOLUSDT all lost. The direct control made `90` trades and lost `4.30%`. These are additive fixed-sleeve research returns, not deployable portfolio estimates.
 
 ![Policy economics](charts/policy-economics.svg)
 
-![Monthly economics](charts/monthly-economics.svg)
+![Dated equity and drawdown](charts/daily-equity-drawdown.svg)
 
-![Dated equity](charts/daily-equity.svg)
+![Monthly performance](charts/monthly-performance.svg)
+
+![Symbol performance](charts/symbol-performance.svg)
 
 ![Seed stability](charts/seed-stability.svg)
 
@@ -29,6 +29,8 @@ The hurdle ledger made 165 trades on 35 days. Its base return was `+2.53%`, but 
 
 ![Research progress](charts/research-progress.svg)
 
-DirectML completed in `254.2s`, peaked at `4.49 GiB` working set, recorded zero CPU fallbacks, and reloaded all six models and prediction arrays exactly. AI was withheld because no deterministic candidate passed.
+The source is verified Binance USD-M **one-minute** BTCUSDT, ETHUSDT, and SOLUSDT data from 2022 through 2025-H1. Decisions occur every five minutes and each target follows the next-minute open for up to 60 minutes. This is not a multi-year second-level dataset claim.
 
-Data: [probability](probability.csv) | [expected net](expected-net.csv) | [conditional severity](severity.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [target geometry](target-geometry.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [gates](gates.csv) | [mechanism](mechanism.csv) | [source lineage](sources.csv) | [progress](progress.csv) | [failure analysis](../round-049-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
+DirectML trained six models on the AMD GPU in `382.1s`, peaked at `6.73 GiB` working set, recorded zero CPU fallbacks, and hash-verified every checkpoint and prediction artifact. `qwen3:8b` passed the separate safety benchmark, but AI uplift was not run because no deterministic model passed. Leverage was likewise withheld.
+
+Data: [forecast quality](forecast.csv) | [monthly forecast](monthly-forecast.csv) | [symbol forecast](symbol-forecast.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [target baselines](target-baselines.csv) | [trades](trades.csv) | [scenarios](scenarios.csv) | [monthly performance](monthly-performance.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [gates](gates.csv) | [mechanism](mechanism.csv) | [roles](roles.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-050-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
