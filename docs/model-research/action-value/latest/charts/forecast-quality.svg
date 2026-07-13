@@ -1,47 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
-<title id="title">Round 47 probabilistic forecast quality</title>
-<desc id="desc">Pinball skill versus the training-only unconditional baseline and pooled median rank association.</desc>
+<title id="title">Round 48 probabilistic forecast quality</title>
+<desc id="desc">Likelihood skill was positive, but conditional-mean rank association remained weak.</desc>
 <rect width="100%" height="100%" fill="#ffffff"/>
 <style>text{font-family:"Segoe UI",Arial,sans-serif;letter-spacing:0}.title{font-size:27px;font-weight:700;fill:#17212b}.subtitle{font-size:14px;fill:#52606d}.label{font-size:13px;fill:#263746}.axis{font-size:12px;fill:#60717f}.value{font-size:12px;font-weight:650;fill:#263746}.note{font-size:12px;fill:#65727d}.grid{stroke:#e1e8ed;stroke-width:1}.zero{stroke:#526674;stroke-width:2;stroke-dasharray:6 5}</style>
-<text x="56" y="52" class="title">Round 47 probabilistic forecast quality</text>
-<text x="56" y="80" class="subtitle">Pinball skill versus the training-only unconditional baseline and pooled median rank association.</text>
-<line x1="900" y1="53" x2="934" y2="53" stroke="#2563a6" stroke-width="4"/><text x="944" y="58" class="note">Proper utility multitask</text>
-<line x1="1170" y1="53" x2="1204" y2="53" stroke="#0f766e" stroke-width="4"/><text x="1214" y="58" class="note">Utility + pairwise rank</text>
-<text x="135" y="135" class="label">Pinball skill (fraction; higher is better)</text>
-<line x1="135" y1="360.0" x2="1430" y2="360.0" class="grid"/><text x="121" y="364.0" text-anchor="end" class="axis">-0.005</text>
+<text x="56" y="52" class="title">Round 48 probabilistic forecast quality</text>
+<text x="56" y="80" class="subtitle">Likelihood skill was positive, but conditional-mean rank association remained weak.</text>
+<line x1="900" y1="53" x2="934" y2="53" stroke="#2563a6" stroke-width="4"/><text x="944" y="58" class="note">Single logistic control</text>
+<line x1="1170" y1="53" x2="1204" y2="53" stroke="#0f766e" stroke-width="4"/><text x="1214" y="58" class="note">State-conditioned mixture</text>
+<text x="135" y="135" class="label">Negative-log-likelihood skill (higher is better)</text>
+<line x1="135" y1="360.0" x2="1430" y2="360.0" class="grid"/><text x="121" y="364.0" text-anchor="end" class="axis">-0.016</text>
 <line x1="135" y1="340.2" x2="1430" y2="340.2" class="zero"/><text x="121" y="344.2" text-anchor="end" class="axis">+0.000</text>
-<line x1="135" y1="155.0" x2="1430" y2="155.0" class="grid"/><text x="121" y="159.0" text-anchor="end" class="axis">+0.046</text>
-<polyline points="135.0,174.8 566.7,198.9 998.3,215.7 1430.0,255.5" fill="none" stroke="#2563a6" stroke-width="4"/>
-<circle cx="135.0" cy="174.8" r="5" fill="#2563a6"/>
-<circle cx="566.7" cy="198.9" r="5" fill="#2563a6"/>
-<circle cx="998.3" cy="215.7" r="5" fill="#2563a6"/>
-<circle cx="1430.0" cy="255.5" r="5" fill="#2563a6"/>
-<polyline points="135.0,176.4 566.7,209.2 998.3,231.6 1430.0,273.6" fill="none" stroke="#0f766e" stroke-width="4"/>
-<circle cx="135.0" cy="176.4" r="5" fill="#0f766e"/>
-<circle cx="566.7" cy="209.2" r="5" fill="#0f766e"/>
-<circle cx="998.3" cy="231.6" r="5" fill="#0f766e"/>
-<circle cx="1430.0" cy="273.6" r="5" fill="#0f766e"/>
-<text x="135.0" y="388" text-anchor="middle" class="axis">1h</text>
-<text x="566.7" y="388" text-anchor="middle" class="axis">4h</text>
-<text x="998.3" y="388" text-anchor="middle" class="axis">12h</text>
-<text x="1430.0" y="388" text-anchor="middle" class="axis">24h</text>
-<text x="135" y="445" class="label">Median forecast Spearman</text>
-<line x1="135" y1="670.0" x2="1430" y2="670.0" class="grid"/><text x="121" y="674.0" text-anchor="end" class="axis">-0.006</text>
+<line x1="135" y1="155.0" x2="1430" y2="155.0" class="grid"/><text x="121" y="159.0" text-anchor="end" class="axis">+0.153</text>
+<polyline points="135.0,181.5 566.7,189.5 998.3,199.8 1430.0,217.4" fill="none" stroke="#2563a6" stroke-width="4"/>
+<circle cx="135.0" cy="181.5" r="5" fill="#2563a6"/>
+<circle cx="566.7" cy="189.5" r="5" fill="#2563a6"/>
+<circle cx="998.3" cy="199.8" r="5" fill="#2563a6"/>
+<circle cx="1430.0" cy="217.4" r="5" fill="#2563a6"/>
+<polyline points="135.0,174.8 566.7,182.2 998.3,190.8 1430.0,208.9" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="135.0" cy="174.8" r="5" fill="#0f766e"/>
+<circle cx="566.7" cy="182.2" r="5" fill="#0f766e"/>
+<circle cx="998.3" cy="190.8" r="5" fill="#0f766e"/>
+<circle cx="1430.0" cy="208.9" r="5" fill="#0f766e"/>
+<text x="135.0" y="388" text-anchor="middle" class="axis">15m</text>
+<text x="566.7" y="388" text-anchor="middle" class="axis">30m</text>
+<text x="998.3" y="388" text-anchor="middle" class="axis">60m</text>
+<text x="1430.0" y="388" text-anchor="middle" class="axis">120m</text>
+<text x="135" y="445" class="label">Conditional distribution-mean Spearman</text>
+<line x1="135" y1="670.0" x2="1430" y2="670.0" class="grid"/><text x="121" y="674.0" text-anchor="end" class="axis">-0.005</text>
 <line x1="135" y1="650.2" x2="1430" y2="650.2" class="zero"/><text x="121" y="654.2" text-anchor="end" class="axis">+0.000</text>
-<line x1="135" y1="465.0" x2="1430" y2="465.0" class="grid"/><text x="121" y="469.0" text-anchor="end" class="axis">+0.052</text>
-<polyline points="135.0,508.6 566.7,589.1 998.3,527.7 1430.0,546.0" fill="none" stroke="#2563a6" stroke-width="4"/>
-<circle cx="135.0" cy="508.6" r="5" fill="#2563a6"/>
-<circle cx="566.7" cy="589.1" r="5" fill="#2563a6"/>
-<circle cx="998.3" cy="527.7" r="5" fill="#2563a6"/>
-<circle cx="1430.0" cy="546.0" r="5" fill="#2563a6"/>
-<polyline points="135.0,484.8 566.7,581.2 998.3,528.5 1430.0,499.8" fill="none" stroke="#0f766e" stroke-width="4"/>
-<circle cx="135.0" cy="484.8" r="5" fill="#0f766e"/>
-<circle cx="566.7" cy="581.2" r="5" fill="#0f766e"/>
-<circle cx="998.3" cy="528.5" r="5" fill="#0f766e"/>
-<circle cx="1430.0" cy="499.8" r="5" fill="#0f766e"/>
-<text x="135.0" y="698" text-anchor="middle" class="axis">1h</text>
-<text x="566.7" y="698" text-anchor="middle" class="axis">4h</text>
-<text x="998.3" y="698" text-anchor="middle" class="axis">12h</text>
-<text x="1430.0" y="698" text-anchor="middle" class="axis">24h</text>
-<text x="56" y="730" class="note">All values are from the frozen 2024-10 through 2025-06 consumed evaluation role; zero-reference lines are not acceptance thresholds.</text>
+<line x1="135" y1="465.0" x2="1430" y2="465.0" class="grid"/><text x="121" y="469.0" text-anchor="end" class="axis">+0.045</text>
+<polyline points="135.0,484.8 566.7,500.8 998.3,517.0 1430.0,544.3" fill="none" stroke="#2563a6" stroke-width="4"/>
+<circle cx="135.0" cy="484.8" r="5" fill="#2563a6"/>
+<circle cx="566.7" cy="500.8" r="5" fill="#2563a6"/>
+<circle cx="998.3" cy="517.0" r="5" fill="#2563a6"/>
+<circle cx="1430.0" cy="544.3" r="5" fill="#2563a6"/>
+<polyline points="135.0,538.6 566.7,542.4 998.3,565.4 1430.0,565.0" fill="none" stroke="#0f766e" stroke-width="4"/>
+<circle cx="135.0" cy="538.6" r="5" fill="#0f766e"/>
+<circle cx="566.7" cy="542.4" r="5" fill="#0f766e"/>
+<circle cx="998.3" cy="565.4" r="5" fill="#0f766e"/>
+<circle cx="1430.0" cy="565.0" r="5" fill="#0f766e"/>
+<text x="135.0" y="698" text-anchor="middle" class="axis">15m</text>
+<text x="566.7" y="698" text-anchor="middle" class="axis">30m</text>
+<text x="998.3" y="698" text-anchor="middle" class="axis">60m</text>
+<text x="1430.0" y="698" text-anchor="middle" class="axis">120m</text>
+<text x="56" y="730" class="note">All values are regenerated from the hash-bound 2025-H1 consumed evaluation report.</text>
 </svg>

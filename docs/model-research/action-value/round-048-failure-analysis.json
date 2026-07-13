@@ -1,0 +1,291 @@
+{
+  "ai_uplift_claim": false,
+  "analysis_sha256": "5004312fd7339ae2c569cae10d6e6ac3356417b61f6ffe56630013a1e229f755",
+  "candidate_results": {
+    "single_logistic_tcn": {
+      "action_gate": {
+        "passed": true,
+        "reasons": []
+      },
+      "base_metrics": {
+        "active_days": 179,
+        "bootstrap_mean_five_minute_portfolio_bps": {
+          "block_steps": 2016,
+          "lower_bps": -0.25110712055395445,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.13838261021636233,
+          "samples": 2000,
+          "upper_bps": -0.04255955470466116
+        },
+        "candidate_id": "single_logistic_tcn",
+        "execution_charge_bps": 12.0,
+        "five_minute_steps": 52104,
+        "long_trades": 589,
+        "maximum_drawdown_fraction": 0.5405724191122376,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.37501783531810556,
+        "mean_five_minute_portfolio_bps": -0.14406748275026168,
+        "median_trades_per_active_day": 10.0,
+        "positive_months": 0,
+        "profit_factor": 0.7619857710488116,
+        "scenario": "base",
+        "short_trades": 1219,
+        "symbol_net_bps": {
+          "BTCUSDT": -8445.205278396606,
+          "ETHUSDT": -7324.758488178253,
+          "SOLUSDT": -6749.512597084045
+        },
+        "total_net_return_fraction": -0.5403046439615072,
+        "trades": 1808,
+        "trades_by_horizon": {
+          "120": 1769,
+          "15": 0,
+          "30": 1,
+          "60": 38
+        },
+        "trades_by_symbol": {
+          "BTCUSDT": 524,
+          "ETHUSDT": 663,
+          "SOLUSDT": 621
+        }
+      },
+      "best_epoch": 12,
+      "distribution_gate": {
+        "minimum_pairwise_seed_distribution_mean_spearman": 0.8148327448342018,
+        "minimum_pairwise_seed_long_probability_spearman": 0.8834871120617738,
+        "minimum_pairwise_seed_short_probability_spearman": 0.823563487090288,
+        "passed": false,
+        "reasons": [
+          "fewer_than_three_horizons_beat_training_mean_mse"
+        ]
+      },
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_four_positive_months",
+          "maximum_drawdown_exceeds_ten_percent",
+          "profit_factor_below_1_05",
+          "distribution_or_action_quality_gate_failed"
+        ],
+        "selection_contaminated": true
+      },
+      "fifteen_minute_action_auc": {
+        "long": 0.6180007360929869,
+        "short": 0.6181996273470824
+      },
+      "fifteen_minute_trades": 0,
+      "one_hundred_twenty_minute_trade_fraction": 0.978429203539823,
+      "stress_metrics": {
+        "active_days": 179,
+        "bootstrap_mean_five_minute_portfolio_bps": {
+          "block_steps": 2016,
+          "lower_bps": -0.30531692531628485,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.18944790489116337,
+          "samples": 2000,
+          "upper_bps": -0.08600167482145682
+        },
+        "candidate_id": "single_logistic_tcn",
+        "execution_charge_bps": 16.0,
+        "five_minute_steps": 52104,
+        "long_trades": 589,
+        "maximum_drawdown_fraction": 0.6390090533938959,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.3543086450416481,
+        "mean_five_minute_portfolio_bps": -0.19033392422628398,
+        "median_trades_per_active_day": 10.0,
+        "positive_months": 0,
+        "profit_factor": 0.6980453645499528,
+        "scenario": "stress",
+        "short_trades": 1219,
+        "symbol_net_bps": {
+          "BTCUSDT": -10541.205278396606,
+          "ETHUSDT": -9976.758488178253,
+          "SOLUSDT": -9233.512597084045
+        },
+        "total_net_return_fraction": -0.6388467836871314,
+        "trades": 1808,
+        "trades_by_horizon": {
+          "120": 1769,
+          "15": 0,
+          "30": 1,
+          "60": 38
+        },
+        "trades_by_symbol": {
+          "BTCUSDT": 524,
+          "ETHUSDT": 663,
+          "SOLUSDT": 621
+        }
+      }
+    },
+    "state_mixture_logistic_tcn": {
+      "action_gate": {
+        "passed": true,
+        "reasons": []
+      },
+      "base_metrics": {
+        "active_days": 163,
+        "bootstrap_mean_five_minute_portfolio_bps": {
+          "block_steps": 2016,
+          "lower_bps": -0.16811470477885407,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.09810068818855275,
+          "samples": 2000,
+          "upper_bps": -0.034951775062771466
+        },
+        "candidate_id": "state_mixture_logistic_tcn",
+        "execution_charge_bps": 12.0,
+        "five_minute_steps": 52104,
+        "long_trades": 508,
+        "maximum_drawdown_fraction": 0.41969997657406277,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.4296624511781859,
+        "mean_five_minute_portfolio_bps": -0.10057689085167294,
+        "median_trades_per_active_day": 4.0,
+        "positive_months": 1,
+        "profit_factor": 0.6330280366277816,
+        "scenario": "base",
+        "short_trades": 287,
+        "symbol_net_bps": {
+          "BTCUSDT": -3139.8424305915833,
+          "ETHUSDT": -5826.64802980423,
+          "SOLUSDT": -6754.884502410889
+        },
+        "total_net_return_fraction": -0.4134917382840835,
+        "trades": 795,
+        "trades_by_horizon": {
+          "120": 793,
+          "15": 0,
+          "30": 0,
+          "60": 2
+        },
+        "trades_by_symbol": {
+          "BTCUSDT": 233,
+          "ETHUSDT": 290,
+          "SOLUSDT": 272
+        }
+      },
+      "best_epoch": 11,
+      "distribution_gate": {
+        "minimum_pairwise_seed_distribution_mean_spearman": 0.5542285693623038,
+        "minimum_pairwise_seed_long_probability_spearman": 0.8633324037521107,
+        "minimum_pairwise_seed_short_probability_spearman": 0.8896687030038614,
+        "passed": false,
+        "reasons": [
+          "fewer_than_three_horizons_beat_training_mean_mse"
+        ]
+      },
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_four_positive_months",
+          "maximum_drawdown_exceeds_ten_percent",
+          "profit_factor_below_1_05",
+          "distribution_or_action_quality_gate_failed"
+        ],
+        "selection_contaminated": true
+      },
+      "fifteen_minute_action_auc": {
+        "long": 0.6171415882853288,
+        "short": 0.6179052458327093
+      },
+      "fifteen_minute_trades": 0,
+      "one_hundred_twenty_minute_trade_fraction": 0.9974842767295597,
+      "stress_metrics": {
+        "active_days": 163,
+        "bootstrap_mean_five_minute_portfolio_bps": {
+          "block_steps": 2016,
+          "lower_bps": -0.1968190938877232,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.12007461522794366,
+          "samples": 2000,
+          "upper_bps": -0.05680730759543067
+        },
+        "candidate_id": "state_mixture_logistic_tcn",
+        "execution_charge_bps": 16.0,
+        "five_minute_steps": 52104,
+        "long_trades": 508,
+        "maximum_drawdown_fraction": 0.4772105039029573,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.41493724757292916,
+        "mean_five_minute_portfolio_bps": -0.12092081838122921,
+        "median_trades_per_active_day": 4.0,
+        "positive_months": 0,
+        "profit_factor": 0.5770827033762748,
+        "scenario": "stress",
+        "short_trades": 287,
+        "symbol_net_bps": {
+          "BTCUSDT": -4071.8424305915833,
+          "ETHUSDT": -6986.64802980423,
+          "SOLUSDT": -7842.884502410889
+        },
+        "total_net_return_fraction": -0.47253189299721177,
+        "trades": 795,
+        "trades_by_horizon": {
+          "120": 793,
+          "15": 0,
+          "30": 0,
+          "60": 2
+        },
+        "trades_by_symbol": {
+          "BTCUSDT": 233,
+          "ETHUSDT": 290,
+          "SOLUSDT": 272
+        }
+      }
+    }
+  },
+  "critical_interpretation": [
+    "The state-conditioned mixture improved average negative log likelihood by 0.7381 percent and used more than two effective components, but this distributional improvement did not improve conditional-mean ranking or after-cost economics.",
+    "Both candidates learned useful 15-minute cost-covering direction probabilities with ROC AUC near 0.618, yet the frozen policy opened zero 15-minute trades because all three seeds also had to predict positive expected net value.",
+    "The policy instead concentrated 97.84 percent of control trades and 99.75 percent of mixture trades at 120 minutes, where direction and conditional-mean skill were weakest. This is a model-policy alignment failure, not evidence that more leverage or lower costs would help.",
+    "Every bootstrap interval was negative, profit factors were below one, and drawdowns exceeded 41 percent. No point estimate supports profitability, testnet execution, AI uplift, or leverage.",
+    "The probabilistic likelihood learned return scale and tail shape substantially better than unconditional baselines, while predicted conditional means remained too compressed relative to realized volatility. A likelihood-only mean is therefore not an adequate action-value estimator for this dataset."
+  ],
+  "decisions": [
+    "Reject both Round 48 candidates and preserve the 2025-H1 period as consumed development evidence.",
+    "Do not tune the probability floor, expected-value threshold, costs, drawdown limit, or horizon choice against these outcomes.",
+    "Do not run the local finance language model: deterministic candidates failed mandatory numerical and economic gates.",
+    "Retain the tail-stable DirectML logistic likelihood, exact reload checks, hash-bound evidence, and independent-seed supervisor infrastructure."
+  ],
+  "evidence": {
+    "binding_sha256": "504bd325fa27d8d6d444843c54e0695618984ce52540969fc856687b31d159a3",
+    "cpu_fallback_warnings": 0,
+    "dataset_sha256": "6969a3134049a326024939d5f9c46a99c37a4932e4a1f146a542a77427bba92b",
+    "design_sha256": "69fe0b4e319d51680c50cc132d9f64d9da4fa01eccaf30f84e0aa51292f61aa3",
+    "directml_models": 6,
+    "evaluation_timestamps": 52104,
+    "exact_reload_failures": 0,
+    "implementation_commit": "01f6dc21bc0eb1beab918d1dcc133a4781bcbf30",
+    "report_canonical_sha256": "95638932838bfe99dc751ccf18e1909ad601a2882be99c7de913af5d7db5d274",
+    "report_file_sha256": "f438ce711c3b88544c11f0f0b3aee92baa1ad87564023b2e8303ea3d84e2bc70",
+    "rows": 1098105,
+    "timestamps": 366035
+  },
+  "generated_at_utc": "2026-07-13T13:14:05.288166+00:00",
+  "leverage_applied": false,
+  "mixture_ablation_gate": {
+    "control_average_hurdle_log_loss": 0.6444449428594253,
+    "control_average_negative_log_likelihood": 1.7121088287372994,
+    "minimum_effective_components": 2.104127883911133,
+    "mixture_average_hurdle_log_loss": 0.6455074842525999,
+    "mixture_average_negative_log_likelihood": 1.6994719289831202,
+    "passed": true,
+    "reasons": [],
+    "relative_hurdle_log_loss_degradation": 0.00164876985217699,
+    "relative_negative_log_likelihood_improvement": 0.007380897488566296
+  },
+  "next_model_requirements": [
+    "Make 15 minutes the only executable primary horizon; use 30 minutes only as an auxiliary representation target so horizon base rates cannot route actions toward weak 120-minute forecasts.",
+    "Replace the distribution mean as action value with a three-action hurdle decomposition: calibrated action-profit probability, conditional gain severity, conditional loss severity, and a frozen expected-net-utility identity after 12 bps costs.",
+    "Train the utility decomposition with robust conditional-magnitude losses plus bounded pairwise decision ranking; measure each component against training-only baselines and require seed agreement before replay.",
+    "Use uncertainty as abstention, never as forced activity. Require positive fixed-ledger stress bootstrap, profit factor, drawdown, monthly breadth, and symbol-diversification gates before opening untouched confirmation data.",
+    "Treat the available one-second taker-flow corpus as a later execution-veto/timing input, not as standalone direction alpha. Expand it chronologically only after the slower 15-minute candidate passes consumed-development gates.",
+    "Keep any finance-language-model contribution asynchronous and veto-only. A paired AI-versus-ML ablation is eligible only after the deterministic action-value model clears every gate."
+  ],
+  "profitability_claim": false,
+  "round": 48,
+  "schema_version": "round-048-failure-analysis-v1",
+  "status": "rejected",
+  "trading_authority": false
+}

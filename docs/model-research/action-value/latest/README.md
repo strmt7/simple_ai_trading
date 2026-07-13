@@ -1,25 +1,21 @@
-# Round 47: Replay-Aligned Utility TCN
+# Round 48: Minute Logistic-Mixture TCN
 
-> **Beta research warning:** no model is approved for testnet, live day trading, leverage, or autonomous execution. All results use a consumed development period.
+> **Beta research warning:** neither model is approved for testnet, live day trading, leverage, or autonomous execution. The 2025-H1 result is consumed development evidence.
 
-Round 47 fixes a model-policy mismatch: a conditional median is not expected P&L. The stable causal TCN now learns exact additive holding-period mean utility plus calibrated long/short probabilities, while retaining monotone return quantiles. The second candidate adds one bounded pairwise ranking term.
+Round 48 trained six causal large-kernel TCNs on 366,035 five-minute timestamps derived from verified Binance one-minute archives. The mixture improved return-density likelihood, but both policies lost money after fixed costs and were rejected.
 
 ![Forecast quality](charts/forecast-quality.svg)
 
-![Utility quality](charts/utility-quality.svg)
+![Action quality](charts/action-quality.svg)
 
-![Action probability quality](charts/action-quality.svg)
-
-![Seed stability](charts/seed-stability.svg)
-
-| Candidate | Best utility Spearman | Trades | Base return | Stress return | Base drawdown | Profit factor | Forecast/action/economic gate |
+| Candidate | Best action AUC | Trades | Base return | Stress return | Base drawdown | Profit factor | Distribution/action/economic gate |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| Proper utility multitask | +0.0417 | 102 | +27.34% | +25.62% | 12.56% | 1.178 | True/False/False |
-| Utility + pairwise rank | +0.0447 | 153 | +31.08% | +28.43% | 19.53% | 1.125 | True/False/False |
+| Single logistic control | 0.618 | 1808 | -54.03% | -63.88% | 54.06% | 0.762 | False/True/False |
+| State-conditioned mixture | 0.618 | 795 | -41.35% | -47.25% | 41.97% | 0.633 | False/True/False |
 
-Point estimates are not validated profitability. The fixed ledger charges 6 bps per side at base and 8 bps per side under stress, uses one-third sleeves, and forbids overlapping positions within a symbol.
+The strongest measured signal was 15-minute direction classification, but the expected-value rule admitted no 15-minute trades. Instead, both ledgers concentrated almost entirely at 120 minutes and failed every economic gate.
 
-![Training dynamics](charts/training-dynamics.svg)
+![Horizon allocation](charts/horizon-allocation.svg)
 
 ![Policy economics](charts/policy-economics.svg)
 
@@ -27,8 +23,12 @@ Point estimates are not validated profitability. The fixed ledger charges 6 bps 
 
 ![Dated equity](charts/daily-equity.svg)
 
+![Seed stability](charts/seed-stability.svg)
+
+![Training dynamics](charts/training-dynamics.svg)
+
 ![Research progress](charts/research-progress.svg)
 
-DirectML trained six AMD-GPU artifacts in `82.9s`; all three output heads reloaded exactly and the warning-fatal preflight recorded zero CPU fallbacks. The local 8B language model remains a risk-review component only; AI trading uplift is not established.
+DirectML completed in `434.0s`, peaked at `4.49 GiB` working set, recorded zero CPU fallbacks, and reloaded all six models exactly. AI was correctly withheld because no deterministic candidate passed.
 
-Data: [forecast horizons](horizons.csv) | [utility horizons](utility-horizons.csv) | [action horizons](action-horizons.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [label prevalence](labels.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [sources](sources.csv) | [progress](progress.csv) | [failure analysis](../round-047-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [forecast horizons](horizons.csv) | [action horizons](action-horizons.csv) | [symbol horizons](symbol-horizons.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [source lineage](sources.csv) | [progress](progress.csv) | [failure analysis](../round-048-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
