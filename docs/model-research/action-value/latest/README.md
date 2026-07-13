@@ -1,30 +1,28 @@
-# Round 39: rolling ML and local AI rejected
+# Round 40: causal meta-label screen rejected
 
-**Monthly refits restored support, not after-cost edge.** All four BTC/ETH/SOL candidates traded across all six 2025-H1 months, but their aggregate means remained negative. Both local 8B models processed the same 180 outcome-blind offline cases without provider failures; neither improved the matched baseline.
+**The stacked model found weak repeatable discrimination, but not a six-month policy.** All 24 OpenCL LightGBM artifacts reloaded exactly. Meta-label evaluation AUC stayed above chance in every month, yet only December's prior-month threshold cleared the frozen economic and uncertainty gates. Five months correctly remained flat.
 
 | Evidence | Verified result |
 | --- | ---: |
-| Source / evaluation span | Binance USD-M 1m / 2025-01-01 to 2025-06-30 UTC |
-| Rolling candidates / monthly refits / model artifacts | 4 / 24 / 60 |
-| Threshold cells / selected month thresholds | 480 / 24 |
-| Best full candidate | rolling_shared_hurdle_h120_utility |
-| Best full-candidate result | 2,796 trades; -9.908 mean net bps; PF 0.789 |
-| Confidence-capacity diagnostic | 180 cases; +18.667 mean; PF 1.582; lower 95% -0.179 |
-| Qwen3 | 0 approvals; uplift gate failed |
-| Fino1 | 97 approvals; +221.4 retained net bps; uplift lower 95% -31.02; failed |
-| Compute / runtime / peak working set | opencl:auto / 1174.0s / 4.34 GiB |
+| Source / evaluation span | Binance USD-M 1m / 2024-07-01 to 2024-12-31 UTC |
+| Primary / meta GPU artifacts | 18 / 6 |
+| Threshold cells / months selected | 216 / 1 of 6 |
+| Meta evaluation AUC range | 0.564 to 0.587 |
+| Selected evaluation actions | 70 (10/29/31 BTC/ETH/SOL) |
+| Conditional action result | +36.061 mean net bps; PF 2.008 |
+| Six-month day-block lower 95% | -4.307 bps |
+| AI cases / AI models run | 0 / 0; ML gate failed first |
+| Compute / runtime / peak working set | opencl:auto / 149.3s / 4.36 GiB |
 | Trading authority / leverage | none / none |
 
-![Candidate economics](charts/rolling-candidate-economics.svg)
+![Meta-label AUC](charts/meta-label-auc.svg)
 
-![Monthly economics](charts/monthly-economics.svg)
+![Calibration economics](charts/calibration-economics.svg)
 
-![Capacity concentration](charts/confidence-capacity.svg)
-
-![AI ablation](charts/ai-ablation.svg)
+![Evaluation activity](charts/evaluation-activity.svg)
 
 ![Research progress](charts/research-progress.svg)
 
-The confidence-ranked subset is an offline diagnostic, not an accepted policy. Features and outcomes remain causal, but selecting the top cases across each completed evaluation month uses a future opportunity set that is unavailable to a live controller. Its 50,000-sample lower bound is below zero, ETH lost money, and SOL supplied most gains. Fino retained positive total economics but underperformed the stronger matched baseline; Qwen vetoed every case. No AI, ML, ROI, portfolio, leverage, execution, or profitability claim passed.
+The `+36.061` bps action mean is not a profitability or ROI claim. It comes from 70 December actions after five zero-action months, its stationary day-block lower bound is negative, and the repeated development period is selection-contaminated. The in-sample meta-fit AUC was materially higher than every later role, which identifies short meta training as the next defect to address. Selection-confirmation 2025-H2 and terminal 2026 remain sealed.
 
-Data: [candidates.csv](candidates.csv) | [monthly.csv](monthly.csv) | [thresholds.csv](thresholds.csv) | [models.csv](models.csv) | [ai-cases.csv](ai-cases.csv) | [ai-models.csv](ai-models.csv) | [ai-decisions.csv](ai-decisions.csv) | [capacity-summary.csv](capacity-summary.csv) | [utility-uplift.csv](utility-uplift.csv) | [sources.csv](sources.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [candidate.csv](candidate.csv) | [monthly.csv](monthly.csv) | [thresholds.csv](thresholds.csv) | [models.csv](models.csv) | [sources.csv](sources.csv) | [progress.csv](progress.csv) | [validated source report](screen.json) | [integrity report](report.json)

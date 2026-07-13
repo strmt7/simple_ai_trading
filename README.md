@@ -528,17 +528,15 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 39 trained and exactly reloaded 60 OpenCL LightGBM artifacts in six causal
-monthly walk-forward refits over 1,098,105 BTC/ETH/SOL minute decisions. All
-four candidates met activity and diversification support, but all failed
-after-cost economics. The best full candidate produced 2,796 non-overlapping
-trades at `-9.908` mean net bps and profit factor `0.789`. Qwen3 8B and Fino1 8B
-then processed the same 180 outcome-blind offline cases with zero provider
-failures; neither passed the matched uplift gate. The confidence-ranked sample
-is not a live policy because its completed-month opportunity ranks are
-unavailable causally, its day-block lower 95% bound is negative, ETH lost money,
-and SOL supplied most gains. No AI, ML, ROI, portfolio, leverage, execution, or
-profitability claim passed.
+Round 40 trained and exactly reloaded 18 per-symbol direction models and six
+shared profitability meta-labelers on OpenCL. The meta-label evaluation AUC was
+`0.564-0.587` across six 2024-H2 development months, but only December's
+prior-month threshold passed the frozen economic gate. Those 70 conditional
+actions averaged `+36.061` net bps with profit factor `2.008`; five months were
+flat and the stationary day-block lower 95% bound was `-4.307` bps. The repeated
+period is selection-contaminated, so this is not profitability or ROI evidence.
+The ML gate failed and the finance LLM was correctly not invoked. No model,
+portfolio, leverage, execution, or trading-authority claim passed.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
