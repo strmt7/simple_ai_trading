@@ -1,0 +1,266 @@
+{
+  "schema_version": "joint-sam-distributional-tcn-design-v1",
+  "round": 45,
+  "design_sha256": "f6fb4f9a92f4a14a23671c2c55fadb12a6d9c1586f14018bf60beb15740bb9e5",
+  "status": "frozen",
+  "phase": "consumed-development cross-asset stability and consensus-action screen",
+  "objective": "Preserve Round 44 multi-horizon distributional forecast information while testing whether joint cross-asset learning and sharpness-aware optimization improve seed stability and whether epistemic-consensus medians produce enough fixed-cost actions for an economic screen.",
+  "predecessor_evidence": {
+    "round_44_report_canonical_sha256": "30f05bf9bc4089bb779ed2c2468ec72f299fc19164e84b6c0e3ae357f6c7f4dc",
+    "round_44_publication_sha256": "d45753b7c37c68b31ba2ffdfdbf2ab4eaa513e65ec377bb9d0a0f7192309ea83",
+    "round_44_failure_analysis_sha256": "5dbb66f650e5f3409c5436478772d04f73f9d17f7dd25bd56852c796127cbb7d",
+    "round_44_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "diagnosis": [
+      "All four horizons beat the unconditional quantile baseline by 2.33 to 4.31 percent and had positive pooled median-return rank association.",
+      "Central 80-percent and 50-percent interval coverage passed at every horizon.",
+      "The forecast gate failed only seed stability: four of twelve pair-horizon correlations were below 0.500, with a 0.452 minimum.",
+      "Every seed reached its best early-stop pinball loss at epoch 3 or 4 while training loss continued falling, indicating rapid overfit rather than optimization failure.",
+      "The lower-quartile-after-cost policy admitted one trade in nine months and cannot measure economic capacity."
+    ]
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/1803.01271",
+      "finding_used": "Causal dilated temporal convolutions are a strong generic sequence-modeling baseline with long effective memory.",
+      "limitation": "The benchmark tasks are not financial returns and provide no trading-performance evidence."
+    },
+    {
+      "source": "https://arxiv.org/abs/1711.11053",
+      "finding_used": "Direct multi-horizon quantile forecasting and forking sequences can improve probabilistic forecast stability and sample efficiency.",
+      "limitation": "Demand and electricity forecasting do not establish crypto return predictability."
+    },
+    {
+      "source": "https://arxiv.org/abs/2207.10517",
+      "finding_used": "Cross-entity context can improve a shared multi-horizon probabilistic model; this motivates one joint BTC, ETH, and SOL temporal encoder.",
+      "limitation": "The reported retrieval results concern product demand and do not transfer as financial evidence."
+    },
+    {
+      "source": "https://arxiv.org/abs/2010.01412",
+      "finding_used": "Sharpness-aware minimization explicitly penalizes locally sharp solutions and can improve generalization under overparameterization.",
+      "limitation": "SAM approximately doubles gradient computation and its image benchmarks do not guarantee time-series improvement."
+    },
+    {
+      "source": "https://arxiv.org/abs/2402.10198",
+      "finding_used": "A recent multivariate time-series study found sharpness-aware optimization repaired rapid neural-forecast overfit; this supports a bounded SAM ablation.",
+      "limitation": "Its long-horizon benchmark data, transformer architecture, and MSE objective differ from this causal quantile-return task."
+    },
+    {
+      "source": "https://arxiv.org/abs/1612.01474",
+      "finding_used": "Disagreement among independently initialized models is epistemic uncertainty; the policy therefore requires worst-seed median consensus rather than hiding disagreement inside only an ensemble median.",
+      "limitation": "Deep-ensemble uncertainty is not a guarantee of calibrated financial tail risk."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "predecessor_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "decision_interval_seconds": 3600,
+    "source_resolution_seconds": 60,
+    "causal_features_per_symbol": 71,
+    "joint_input_channels": 213,
+    "target_horizons_hours": [
+      1,
+      4,
+      12,
+      24
+    ],
+    "target_quantiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "target_and_role_contract": "Identical to the hash-bound Round 44 compounded hourly return, settled-funding, completeness, and role-boundary contract.",
+    "derived_cache": "Write one hash-manifested external NumPy cache of the verified Round 44-equivalent feature and target arrays for future diagnosis; no cache values may replace or alter the source identity."
+  },
+  "chronological_roles": {
+    "training": {
+      "start": "2022-01-01T00:00:00Z",
+      "end_inclusive": "2024-03-31T23:59:59Z"
+    },
+    "early_stop": {
+      "start": "2024-04-01T00:00:00Z",
+      "end_inclusive": "2024-06-30T23:59:59Z"
+    },
+    "calibration": {
+      "start": "2024-07-01T00:00:00Z",
+      "end_inclusive": "2024-09-30T23:59:59Z"
+    },
+    "evaluation": {
+      "start": "2024-10-01T00:00:00Z",
+      "end_inclusive": "2025-06-30T23:59:59Z"
+    },
+    "selection_contaminated": true,
+    "purpose": "Architecture development only; no role can support promotion."
+  },
+  "normalization_contract": {
+    "fit_role": "training only",
+    "feature_and_target_scalers": "Bit-for-bit Round 44 mean, population-standard-deviation, clip, median, and scaled-MAD definitions.",
+    "future_or_cross_role_statistics_permitted": false
+  },
+  "model_contract": {
+    "family": "joint_cross_asset_causal_distributional_tcn",
+    "candidates": [
+      {
+        "id": "joint_adamw",
+        "optimizer": "explicit non-foreach AdamW"
+      },
+      {
+        "id": "joint_sam",
+        "optimizer": "non-adaptive SAM over explicit non-foreach AdamW",
+        "rho": 0.05
+      }
+    ],
+    "input_layout": "Flatten the complete causal BTC, ETH, and SOL feature block at each hour into 213 channels; no future values and no cross-time attention.",
+    "output_layout": "Predict all three symbols jointly with 60 output channels: three symbols times four horizons times five monotone quantiles.",
+    "hidden_channels": 64,
+    "kernel_size": 3,
+    "residual_block_dilations": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "receptive_field_hours": 127,
+    "padding": "left-only causal padding",
+    "activation": "GELU",
+    "dropout": 0.1,
+    "quantile_parameterization": "Per symbol and horizon, predict a median and four nonnegative softplus gaps so q10 <= q25 <= q50 <= q75 <= q90.",
+    "loss": "Equal-weight normalized pinball loss across three symbols, four horizons, and five quantiles.",
+    "seeds": [
+      4501,
+      4502,
+      4503
+    ],
+    "ensemble": "Elementwise median of three independently initialized seed forecasts.",
+    "adamw": {
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-08,
+      "gradient_norm_clip": 1.0
+    },
+    "sam": {
+      "rho": 0.05,
+      "adaptive": false,
+      "first_gradient_clip": false,
+      "second_gradient_norm_clip": 1.0,
+      "base_optimizer": "the identical explicit AdamW contract"
+    },
+    "training_windows": {
+      "total_hours": 384,
+      "causal_context_hours": 127,
+      "supervised_hours": 257,
+      "stride_hours": 24,
+      "batch_size": 32
+    },
+    "maximum_epochs": 100,
+    "early_stopping_patience_epochs": 12,
+    "minimum_improvement": 1e-05,
+    "candidate_selection": "None; both candidates complete the same consumed-development diagnostics and gates.",
+    "compute_backend": "DirectML required for this host run; CPU remains a separately declared portability mode.",
+    "unsupported_operator_fallback_permitted": false
+  },
+  "forecast_gate": {
+    "applied_separately_to_each_candidate": true,
+    "all_finite_and_complete": true,
+    "quantile_crossing_count": 0,
+    "minimum_horizons_with_positive_pinball_skill_vs_unconditional": 3,
+    "minimum_pinball_skill_per_counted_horizon": 0.01,
+    "minimum_horizons_with_positive_pooled_median_spearman": 3,
+    "minimum_evaluation_months_with_positive_median_spearman_per_counted_horizon": 5,
+    "central_80_interval_coverage_bounds": [
+      0.72,
+      0.88
+    ],
+    "central_50_interval_coverage_bounds": [
+      0.42,
+      0.58
+    ],
+    "minimum_pairwise_seed_median_prediction_correlation": 0.5,
+    "minimum_positive_symbol_horizons_per_symbol": 2,
+    "gate_failure_action": "Continue only to labeled descriptive consensus-policy diagnostics; deny AI action review, promotion, leverage, and untouched data."
+  },
+  "optimizer_ablation_gate": {
+    "sam_claim_requires_joint_sam_forecast_gate": true,
+    "maximum_relative_median_early_stop_pinball_degradation_vs_joint_adamw": 0.01,
+    "minimum_seed_stability_improvement": 0.0,
+    "claim_if_failed": "SAM improvement is false; retain both raw candidate results without post-outcome changes."
+  },
+  "descriptive_policy_contract": {
+    "runs_for_each_candidate_even_if_forecast_gate_fails": true,
+    "position_values": [
+      -1,
+      0,
+      1
+    ],
+    "position_sleeves": "Fixed one-third notional sleeve per symbol.",
+    "entry_rule": "When flat, evaluate every horizon. Long score is the minimum of the three seed median forecasts minus 12 bps round-trip cost. Short score is the negative maximum seed median forecast minus 12 bps. Enter only the side and horizon with the largest strictly positive score.",
+    "rationale": "Every seed must estimate positive after-cost median utility in the same direction; seed disagreement remains an explicit epistemic-risk veto while the return lower quartile is no longer misused as the expected-value forecast.",
+    "holding_rule": "Hold for exactly the selected 1, 4, 12, or 24-hour horizon, then flatten. No overlapping position is permitted within a symbol.",
+    "forced_quota": false,
+    "leverage": 1.0,
+    "base_one_way_transition_cost_bps": 6.0,
+    "stress_one_way_transition_cost_bps": 8.0,
+    "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect horizons, sides, or timestamps under stress.",
+    "funding_cash_flows_included": true,
+    "maker_execution_assumption": false
+  },
+  "economic_gate": {
+    "required_only_if_corresponding_forecast_gate_passes": true,
+    "familywise_circular_block_bootstrap_hours": 168,
+    "bootstrap_replicates": 2000,
+    "one_sided_familywise_lower_quantile": 0.0125,
+    "stress_mean_hourly_portfolio_bps_lower_bound_must_exceed": 0.0,
+    "minimum_positive_evaluation_months": 6,
+    "minimum_active_days": 90,
+    "minimum_closed_trades": 180,
+    "maximum_drawdown_fraction": 0.1,
+    "minimum_profit_factor": 1.05,
+    "all_three_symbols_must_have_activity": true,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "promotion_result": "Still denied because the complete Round 45 evaluation is selection-contaminated development evidence."
+  },
+  "ai_contract": {
+    "fin_r1_round_44_benchmark_passed": false,
+    "language_model_architecture_votes_binding": false,
+    "market_features_or_future_outcomes_supplied_to_language_models": false,
+    "language_model_numerical_forecasts_or_orders_permitted": false,
+    "ai_trade_ablation_permitted": false,
+    "future_ai_work": "Improve the separate schema-constrained risk-review benchmark only after deterministic sequence-model execution; no language model may repair or reinterpret a failed numerical gate."
+  },
+  "governance": {
+    "selection_confirmation_2025_h2_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "testnet_or_live_execution_permitted": false,
+    "promotion_permitted": false,
+    "leverage_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "post_outcome_parameter_seed_or_candidate_selection_permitted": false,
+    "manual_graph_or_result_editing_permitted": false,
+    "profitability_ai_or_sam_uplift_claim_permitted": false
+  },
+  "required_outputs": [
+    "source_dataset_and_derived_cache_hashes",
+    "role_and_target_completeness",
+    "DirectML AdamW and SAM backward-update preflight and runtime evidence",
+    "per-candidate per-seed artifacts and exact reload checks",
+    "hashed seed and ensemble prediction tensors",
+    "per-candidate per-symbol per-horizon per-month forecast diagnostics",
+    "per-candidate seed stability and optimizer-ablation gate",
+    "per-candidate descriptive fixed consensus trade ledger",
+    "matched fixed-ledger base and stress economics",
+    "forecast and economic gate reasons",
+    "peak working set runtime and progress events",
+    "machine-readable report with canonical identity"
+  ]
+}
