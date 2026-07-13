@@ -1,5 +1,5 @@
 {
-  "binding_sha256": "37ed388adbe1e2eb1bf02fb4b4b9a20834d4f6191b7cebd872e08b3e939f95d1",
+  "binding_sha256": "6492b036b42aa0afef70e23c67109980195129e848dafd51138590b18ced088a",
   "blobs": [
     {
       "git_blob_oid": "895193be8c8d89569613e347547bb783e5932102",
@@ -42,7 +42,7 @@
       "path": "src/simple_ai_trading/storage.py"
     },
     {
-      "git_blob_oid": "a6a0f31bffaeaf79aaf9461d5597d40c40df9ad8",
+      "git_blob_oid": "5785c3e2272e10479543abf2dc6269fb404ea4b4",
       "path": "tools/run_barrier_competing_risk_viability.py"
     },
     {
@@ -60,7 +60,7 @@
   ],
   "command": ".venv311\\Scripts\\python.exe tools\\run_barrier_competing_risk_viability.py --database <market_data.sqlite> --source-certificate <external-certificate.json> --design docs\\model-research\\action-value\\round-050-path-bounded-competing-risk-tcn-design.json --binding docs\\model-research\\action-value\\round-050-path-bounded-competing-risk-tcn-binding.json --evidence-root <new-external-evidence-root> --compute-backend directml",
   "design_sha256": "09abb13a55009b4995a3543550b375d39938ff9df7bbfdb7329a1b369570045a",
-  "implementation_commit": "62db9baeee3e000af6b690a6ba57c754284dbbbc",
+  "implementation_commit": "9872ce1584f913b263dd7126deecd81e74e82960",
   "round": 50,
   "schema_version": "round-050-path-bounded-competing-risk-execution-binding-v1",
   "source_certificate": {
