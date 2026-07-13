@@ -21,6 +21,7 @@ from simple_ai_trading.cost_aware_utility_tcn_model import (
     rank_ablation_gate,
     select_utility_trades,
 )
+from tools.publish_cost_aware_utility_tcn_viability import _progress_rows
 from simple_ai_trading.cross_asset_cost_data import SYMBOLS
 from simple_ai_trading.distributional_tcn_model import (
     HORIZONS,
@@ -81,6 +82,43 @@ def _bundle(dataset: DistributionalDataset) -> UtilityForecastBundle:
         backend_device="cpu",
         training_history=(),
     )
+
+
+def test_round47_progress_publication_replaces_existing_terminal_row(
+    tmp_path,
+) -> None:
+    progress_path = tmp_path / "progress.csv"
+    report = {
+        "candidates": [
+            {
+                "candidate_id": CANDIDATES[0],
+                "trade_count": 153,
+                "base": {
+                    "trades": 153,
+                    "total_net_return_fraction": 0.31,
+                    "mean_hourly_portfolio_bps": 0.45,
+                    "maximum_drawdown_fraction": 0.19,
+                    "profit_factor": 1.12,
+                },
+                "action_diagnostics": {"utility_horizons": [{"spearman": 0.04}]},
+            }
+        ],
+        "claims": {"candidate_action_gate_pass_count": 0},
+    }
+    progress_path.write_text(
+        "round\n" + "".join(f"{round_number}\n" for round_number in range(1, 47)),
+        encoding="utf-8",
+    )
+    fields, first = _progress_rows(progress_path, report)
+    progress_path.write_text(
+        "round\n" + "".join(f"{round_number}\n" for round_number in range(1, 48)),
+        encoding="utf-8",
+    )
+    repeated_fields, repeated = _progress_rows(progress_path, report)
+
+    assert repeated_fields == fields
+    assert repeated == first
+    assert [int(row["round"]) for row in repeated] == list(range(1, 48))
 
 
 def test_additive_forward_utility_matches_every_exact_window() -> None:

@@ -528,17 +528,16 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 46 compared WaveBound EMA error bounds with mutual median-consistency
-training on the AMD GPU through DirectML. Mutual consistency passed the frozen
-forecast and mechanism screens: minimum seed agreement rose from `0.452` to
-`0.867`, all four horizons beat unconditional pinball by `2.08-4.41%`, and all
-four pooled rank associations were positive. WaveBound failed. The mutual fixed
-ledger generated `935` trades over `272` active days, but its `+33.87%` base and
-`+18.17%` stress point estimates remain rejected: base maximum drawdown was
-`26.31%`, hourly profit factor `1.036`, ETH supplied `72.38%` of absolute symbol
-P&L, and the stress bootstrap lower bound was `-1.076` bps/hour. No
-profitability, stability uplift, AI uplift, leverage, testnet, live-trading, or
-autonomous-execution authority was established.
+Round 47 trained exact replay-aligned mean-utility and calibrated long/short
+probability heads on the AMD GPU through DirectML. Both candidates passed the
+frozen return-forecast gate, and the bounded ranking term improved average
+utility Spearman by `0.0121`, but neither passed action quality or economics.
+The ranked candidate generated `153` trades over `102` active days; its
+`+31.08%` base and `+28.43%` stress point estimates remain rejected because
+maximum drawdown reached `19.53%`, hourly profit factor was only `1.125`, SOL
+supplied `84.10%` of absolute symbol P&L, and the stress family-wise bootstrap
+lower bound was `-0.141` bps/hour. No profitability, AI uplift, leverage,
+testnet, live-trading, or autonomous-execution authority was established.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
