@@ -1426,6 +1426,13 @@ def _train_candidate(
         reloaded = reloaded.to(device)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
+            reloaded_probe = _predict_mask(
+                reloaded,
+                normalized_features,
+                dataset,
+                probe_mask,
+                device,
+            )
             predicted = _predict_mask(
                 reloaded,
                 normalized_features,
@@ -1439,14 +1446,13 @@ def _train_candidate(
             global_indices = indices
         elif not np.array_equal(global_indices, indices):
             raise RuntimeError("Round 48 final indices differ by seed")
-        probe_positions = np.searchsorted(indices, reference_probe[0])
-        if not np.array_equal(indices[probe_positions], reference_probe[0]):
+        if not np.array_equal(reloaded_probe[0], reference_probe[0]):
             raise RuntimeError("Round 48 reload probe indexing failed")
         reload_errors = tuple(
-            float(np.max(np.abs(reference - observed[probe_positions])))
+            float(np.max(np.abs(reference - observed)))
             for reference, observed in zip(
                 reference_probe[1:],
-                (weights, locations, scales),
+                reloaded_probe[1:],
                 strict=True,
             )
         )
