@@ -1,6 +1,6 @@
 {
   "ai_uplift_claim": false,
-  "analysis_sha256": "c847c7e497160d37ca8cf282ac3dbb17b763ec2ca391d180aa6c4658f3a28a4a",
+  "analysis_sha256": "28e4a7b1b35da8c68837b1ebfadb46694af6e7fb79e6fafe7c61c742844435a8",
   "candidate_results": {
     "cost_aware_utility": {
       "action_gate": {
@@ -864,19 +864,19 @@
     "Keep language-model authority limited to fail-closed risk review until a deterministic candidate passes all numerical gates on untouched confirmation data."
   ],
   "evidence": {
-    "binding_sha256": "648b2474b8022daca7eefd8b0afe5292ded1eaf31860011c82c9ba9ee4ddb1f3",
+    "binding_sha256": "3a384b8fb0233688c2e62664df65b41db11e0feba06079cbda382018d01a52bd",
     "cpu_fallback_warnings": 0,
     "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
     "declared_output_count": 40,
     "design_sha256": "778019adcbc7a7156f4b87647181e8c3bd44fb1e28837cdf875f1266824d1bba",
     "directml_model_artifacts": 6,
     "exact_reload_verified": true,
-    "implementation_commit": "49cf3a973b88ec0323bf1cc23b59117f43a49b5d",
-    "report_canonical_sha256": "f220cad76235d4b7231a63a26792f6e6ccb7373368bdaacfb76bb67667bf5544",
-    "report_file_sha256": "95850a621a4cbec29f1bd8ef3b5fa6dba24021de3879f9398a0d50e915b93201",
+    "implementation_commit": "d590a6b8dfbf20222105178377cdb995f653ed78",
+    "report_canonical_sha256": "900945226c81f188dbf6b1f83c8404154fed87f9e5193ae84034ecf8281f7350",
+    "report_file_sha256": "225c503cc7fa2e82329f6de2005645b8209515d651dd003e8b563b96eb2a7f29",
     "temperature_nonworsening_verified": true
   },
-  "generated_at_utc": "2026-07-13T11:39:23.335057+00:00",
+  "generated_at_utc": "2026-07-13T11:49:06.229526+00:00",
   "leverage_applied": false,
   "next_model_requirements": [
     "If conditional-mean skill remains weak, test a pre-registered robust mean-distribution model or state-conditioned mixture while preserving exact replay-aligned targets.",

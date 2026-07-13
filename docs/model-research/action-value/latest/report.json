@@ -98,7 +98,7 @@
     {
       "bytes": 2410,
       "path": "README.md",
-      "sha256": "8a75a6af0fed4f39670a8932384e44537e1ab9f618f8bd053f986c41a8bca734"
+      "sha256": "858abe5cf99b4163d1057cf1d57d69b5bd4183f25b2ce3ccc4dee818833c5891"
     },
     {
       "bytes": 2142,
@@ -113,9 +113,9 @@
       "sha256": "d3f3098a6c9b34a0dbd62bbe1bf401dc8a16e9a56bf5ce1ae32e9177e13ef6a7"
     },
     {
-      "bytes": 139100,
+      "bytes": 136485,
       "path": "screen.json",
-      "sha256": "95850a621a4cbec29f1bd8ef3b5fa6dba24021de3879f9398a0d50e915b93201"
+      "sha256": "225c503cc7fa2e82329f6de2005645b8209515d651dd003e8b563b96eb2a7f29"
     },
     {
       "bytes": 7360,
@@ -127,7 +127,7 @@
       "bytes": 487,
       "path": "sources.csv",
       "row_count": 3,
-      "sha256": "4512b979320a621091ac43d4e013358734fe0ff3bff66ef3a20143ae53465fd9"
+      "sha256": "c994afe5bc18cd5192e7fa52e5e92d89f19e84cdfe686a309b3d25294386ce0f"
     },
     {
       "bytes": 3705,
@@ -160,7 +160,7 @@
       "sha256": "d464cc5f2fb648b88c5f1700c82560b952227a29ad7cf60a5ab62c878e04f908"
     }
   ],
-  "binding_sha256": "648b2474b8022daca7eefd8b0afe5292ded1eaf31860011c82c9ba9ee4ddb1f3",
+  "binding_sha256": "3a384b8fb0233688c2e62664df65b41db11e0feba06079cbda382018d01a52bd",
   "candidate_action_gate_pass_count": 0,
   "candidate_economic_gate_pass_count": 0,
   "candidate_forecast_gate_pass_count": 2,
@@ -168,20 +168,20 @@
   "development_only": true,
   "directml_model_artifact_count": 6,
   "evaluation_timestamps": 6528,
-  "failure_analysis_file_sha256": "34f0d3d4a8e760758a9ad89e02d9a9f8a6ef62a497f3e8021fe54ae06000337f",
-  "failure_analysis_sha256": "c847c7e497160d37ca8cf282ac3dbb17b763ec2ca391d180aa6c4658f3a28a4a",
+  "failure_analysis_file_sha256": "6763838b6e1f872f37077dd293c770851225765de553d97e5a938f39936bcc02",
+  "failure_analysis_sha256": "28e4a7b1b35da8c68837b1ebfadb46694af6e7fb79e6fafe7c61c742844435a8",
   "hourly_dataset_rows": 91941,
   "hourly_ledger_rows": 26112,
   "leverage_applied": false,
   "profitability_claim": false,
-  "publication_sha256": "fb7b63843300b1ba70556653513b2a26ad97fbbb91445d4712299f993d654f9d",
+  "publication_sha256": "5065c1159ba22da8a8547e8e0e93a92348fa9ed534f5bb0b3f5124cb6dc7b092",
   "rank_ablation_passed": true,
   "round": 47,
   "schema_version": "cost-aware-utility-distributional-tcn-publication-v1",
   "selection_contaminated": true,
-  "source_implementation_commit": "49cf3a973b88ec0323bf1cc23b59117f43a49b5d",
-  "source_report_canonical_sha256": "f220cad76235d4b7231a63a26792f6e6ccb7373368bdaacfb76bb67667bf5544",
-  "source_report_file_sha256": "95850a621a4cbec29f1bd8ef3b5fa6dba24021de3879f9398a0d50e915b93201",
+  "source_implementation_commit": "d590a6b8dfbf20222105178377cdb995f653ed78",
+  "source_report_canonical_sha256": "900945226c81f188dbf6b1f83c8404154fed87f9e5193ae84034ecf8281f7350",
+  "source_report_file_sha256": "225c503cc7fa2e82329f6de2005645b8209515d651dd003e8b563b96eb2a7f29",
   "status": "quality_or_economic_gate_rejected",
   "trading_authority": false
 }
