@@ -51,7 +51,6 @@ from simple_ai_trading.joint_distributional_tcn_model import (  # noqa: E402
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 from tools.run_stability_regularized_tcn_viability import (  # noqa: E402
-    ProgressWriter,
     _artifact_manifest,
     _canonical_json,
     _canonical_sha256,
@@ -90,6 +89,39 @@ PREDECESSOR_DATASET_SHA256 = (
 CACHE_METADATA_SHA256 = (
     "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135"
 )
+
+
+class ProgressWriter:
+    def __init__(self, root: Path) -> None:
+        self.status_path = root / "status.json"
+        self.events_path = root / "progress_events.jsonl"
+        self.started = time.perf_counter()
+        self.sequence = 0
+        self.frozen = False
+
+    def __call__(self, phase: str, detail: Mapping[str, object]) -> None:
+        if self.frozen:
+            raise RuntimeError("Round 47 progress stream is already frozen")
+        self.sequence += 1
+        payload = {
+            "schema_version": "round-047-progress-v1",
+            "round": ROUND,
+            "sequence": self.sequence,
+            "phase": phase,
+            "detail": dict(detail),
+            "elapsed_seconds": time.perf_counter() - self.started,
+            "memory": _memory_evidence(),
+            "updated_at_utc": datetime.now(UTC).isoformat(),
+        }
+        encoded = _canonical_json(payload)
+        print(encoded, flush=True)
+        with self.events_path.open("a", encoding="ascii", newline="\n") as stream:
+            stream.write(encoded + "\n")
+        write_json_atomic(self.status_path, payload, indent=2, sort_keys=True)
+
+    def freeze(self, detail: Mapping[str, object]) -> None:
+        self("finalization", {"status": "complete", **detail})
+        self.frozen = True
 
 
 def _validate_hashed_object(
