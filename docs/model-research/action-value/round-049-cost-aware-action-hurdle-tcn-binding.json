@@ -1,0 +1,63 @@
+{
+  "binding_sha256": "8977c2788fa38f3d086e26e8b8818236a4ef81da9e92d5901b46d887a94f772b",
+  "blobs": [
+    {
+      "git_blob_oid": "e66839071561c3d77388826f8c9b5a265b59d1b3",
+      "path": "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json"
+    },
+    {
+      "git_blob_oid": "12f9807b73e7e78274c713c54fa8ae06335f9f0b",
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py"
+    },
+    {
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a",
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py"
+    },
+    {
+      "git_blob_oid": "3d1d1250827953feb87411111ee26130d615c51d",
+      "path": "src/simple_ai_trading/distributional_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "35432a7681471551e5d908987958dd90d0074cd7",
+      "path": "src/simple_ai_trading/minute_logistic_mixture_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "ebc8232488407a9bbf0b2d3642508563b900675e",
+      "path": "src/simple_ai_trading/action_hurdle_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "32e335df6678655e3982ac7a703b94435c8557dd",
+      "path": "src/simple_ai_trading/action_hurdle_analysis.py"
+    },
+    {
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f",
+      "path": "src/simple_ai_trading/storage.py"
+    },
+    {
+      "git_blob_oid": "a6b80b200c82f97649a39997aa1f23fa8d0a32dd",
+      "path": "tools/run_action_hurdle_tcn_viability.py"
+    },
+    {
+      "git_blob_oid": "8f28762c13c20b175dea709128db9800e8e897b4",
+      "path": "tools/create_round49_action_hurdle_binding.py"
+    },
+    {
+      "git_blob_oid": "bd08efee938243783eaa33d38c401fdbb60f89a9",
+      "path": "tests/test_action_hurdle_tcn_model.py"
+    },
+    {
+      "git_blob_oid": "e9fd0747c5bc485752db92db4a893ae32d3be0cd",
+      "path": "tests/test_action_hurdle_analysis.py"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_action_hurdle_tcn_viability.py --database <market_data.sqlite> --source-certificate <external-certificate.json> --design docs\\model-research\\action-value\\round-049-cost-aware-action-hurdle-tcn-design.json --binding docs\\model-research\\action-value\\round-049-cost-aware-action-hurdle-tcn-binding.json --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "design_sha256": "72f114a2ad553c3401f03f1a5d6018566af724c4214408ecc07e1a5e1ae48026",
+  "implementation_commit": "f1f55a8db6a9951b33bde5132a68d27eb0da7957",
+  "round": 49,
+  "schema_version": "round-049-cost-aware-action-hurdle-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
