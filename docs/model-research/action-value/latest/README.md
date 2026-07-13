@@ -1,21 +1,21 @@
-# Round 48: Minute Logistic-Mixture TCN
+# Round 49: Cost-Aware Action-Hurdle TCN
 
-> **Beta research warning:** neither model is approved for testnet, live day trading, leverage, or autonomous execution. The 2025-H1 result is consumed development evidence.
+> **Beta research warning:** neither candidate is approved for testnet, live day trading, leverage, or autonomous execution. The 2025-H1 result is consumed development evidence.
 
-Round 48 trained six causal large-kernel TCNs on 366,035 five-minute timestamps derived from verified Binance one-minute archives. The mixture improved return-density likelihood, but both policies lost money after fixed costs and were rejected.
+Round 49 trained six causal large-kernel TCNs on verified Binance BTCUSDT, ETHUSDT, and SOLUSDT data. Explicit conditional gain/loss modeling created a positive point estimate, but expected-net prediction, temporal breadth, diversification, and stress confidence failed. The candidate was rejected.
 
-![Forecast quality](charts/forecast-quality.svg)
+![Profit-probability quality](charts/forecast-quality.svg)
 
-![Action quality](charts/action-quality.svg)
+![Expected-net quality](charts/action-value-quality.svg)
 
-| Candidate | Best action AUC | Trades | Base return | Stress return | Base drawdown | Profit factor | Distribution/action/economic gate |
+![Conditional severity](charts/severity-quality.svg)
+
+| Candidate | Best 15m AUC | Trades | Base return | Stress return | Base drawdown | Profit factor | Numerical/action/economic gate |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| Single logistic control | 0.618 | 1808 | -54.03% | -63.88% | 54.06% | 0.762 | False/True/False |
-| State-conditioned mixture | 0.618 | 795 | -41.35% | -47.25% | 41.97% | 0.633 | False/True/False |
+| Direct mean control | 0.619 | 0 | +0.00% | +0.00% | 0.00% | n/a | True/False/False |
+| Conditional gain/loss hurdle | 0.618 | 165 | +2.53% | +0.30% | 6.23% | 1.093 | True/False/False |
 
-The strongest measured signal was 15-minute direction classification, but the expected-value rule admitted no 15-minute trades. Instead, both ledgers concentrated almost entirely at 120 minutes and failed every economic gate.
-
-![Horizon allocation](charts/horizon-allocation.svg)
+The hurdle ledger made 165 trades on 35 days. Its base return was `+2.53%`, but the 16 bps stress return fell to `+0.30%`; the familywise bootstrap lower bound was negative. ETHUSDT supplied `+1,457.49` net bps while BTCUSDT and SOLUSDT lost, and 130 trades occurred in January-February. This is not a profitability claim.
 
 ![Policy economics](charts/policy-economics.svg)
 
@@ -29,6 +29,6 @@ The strongest measured signal was 15-minute direction classification, but the ex
 
 ![Research progress](charts/research-progress.svg)
 
-DirectML completed in `434.0s`, peaked at `4.49 GiB` working set, recorded zero CPU fallbacks, and reloaded all six models exactly. AI was correctly withheld because no deterministic candidate passed.
+DirectML completed in `254.2s`, peaked at `4.49 GiB` working set, recorded zero CPU fallbacks, and reloaded all six models and prediction arrays exactly. AI was withheld because no deterministic candidate passed.
 
-Data: [forecast horizons](horizons.csv) | [action horizons](action-horizons.csv) | [symbol horizons](symbol-horizons.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [source lineage](sources.csv) | [progress](progress.csv) | [failure analysis](../round-048-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)
+Data: [probability](probability.csv) | [expected net](expected-net.csv) | [conditional severity](severity.csv) | [seed stability](seed-stability.csv) | [training](training.csv) | [models](models.csv) | [roles](roles.csv) | [target geometry](target-geometry.csv) | [trades](trades.csv) | [replays](replays.csv) | [monthly economics](monthly.csv) | [symbol economics](symbols.csv) | [daily equity](daily-equity.csv) | [gates](gates.csv) | [mechanism](mechanism.csv) | [source lineage](sources.csv) | [progress](progress.csv) | [failure analysis](../round-049-failure-analysis.json) | [validated source report](screen.json) | [integrity report](report.json)

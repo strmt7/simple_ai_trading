@@ -1,5 +1,5 @@
 role,start_utc,end_inclusive_utc,timestamps,uses,selection_contaminated
-training,2022-01-01T00:00:00Z,2024-06-30T23:59:59Z,260918,"[""feature and target scaling"",""unconditional baselines"",""model fitting""]",False
-early_stop,2024-07-01T00:00:00Z,2024-09-30T23:59:59Z,26469,"[""common epoch selection per candidate and seed""]",False
-calibration,2024-10-01T00:00:00Z,2024-12-31T23:59:59Z,26472,"[""one scale multiplier per candidate and seed"",""diagnostic policy support only""]",False
-evaluation,2025-01-01T00:00:00Z,2025-06-30T23:59:59Z,52104,"[""consumed-development diagnostics and fixed-policy replay""]",True
+training,2022-01-01T00:00:00Z,2024-06-30T23:59:59Z,260936,"[""feature scaling"",""target and conditional-severity baselines"",""model fitting""]",False
+early_stop,2024-07-01T00:00:00Z,2024-09-30T23:59:59Z,26487,"[""candidate-specific epoch selection""]",False
+calibration,2024-10-01T00:00:00Z,2024-12-31T23:59:59Z,26490,"[""bounded probability calibration"",""shared gain and loss mean multipliers"",""calibration stability diagnostics only""]",False
+evaluation,2025-01-01T00:00:00Z,2025-06-30T23:59:59Z,52104,"[""consumed-development diagnostics"",""fixed-policy replay""]",True
