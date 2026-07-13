@@ -67,7 +67,7 @@
     "synthetic_fabricated_or_interpolated_rows_permitted": false,
     "target_path_resolution_ms": 100
   },
-  "design_sha256": "c0f1ad429f239a2ef4479ef752eafb9f5a918a52ef8b5be6dc8e50a98bd07e2f",
+  "design_sha256": "af95d80a3adc21b72d6809d43afb3f2446213fe0a4e089b10366691465a0c669",
   "economic_screen": {
     "evaluation_gates": {
       "base_and_paired_stress_profit_factor_above_one": true,
@@ -96,7 +96,7 @@
       0.05
     ],
     "threshold_selection": "For each fixed coverage and symbol, derive a numeric worst-seed expected-net-bps threshold from policy-calibration predictions only. Select the passing coverage with the highest paired-stress mean; break ties by lower drawdown, then lower coverage. If none passes, the candidate abstains on evaluation.",
-    "trade_rule": "A side must be replay-executable, every seed must predict positive after-cost utility, and ensemble profitable probability must exceed 0.50. Choose the side with the greater worst-seed expected utility; ties abstain. Apply only the frozen numeric threshold learned before evaluation."
+    "trade_rule": "For every candidate, a side must be replay-executable and every seed must predict positive after-cost utility. Hurdle candidates additionally require ensemble profitable probability above 0.50; the direct-mean control has no probability head and receives no synthetic substitute. Choose the side with the greater worst-seed expected utility; ties abstain. Apply only the frozen numeric threshold learned before evaluation."
   },
   "execution_target": {
     "additional_slippage_bps_per_side": 1.0,
@@ -161,6 +161,11 @@
     "support_invariant": "Training, early stopping, probability calibration, policy calibration, proper-score baselines, threshold derivation, and evaluation must use the same side-specific replay-executable predicate."
   },
   "objective": "Determine whether correcting Round 51's target-policy support mismatch and decomposing exact executable payoff into probability and conditional severity creates a stable after-cost tail, and whether cached FinCast features add incremental value over the matched deterministic model.",
+  "pre_execution_correction": {
+    "economic_results_inspected": false,
+    "reason": "The first frozen text applied a profitable-probability gate to every candidate even though the direct-mean control deliberately has no probability head.",
+    "resolution": "The direct control uses executable support and all-seed positive expected utility only; hurdle candidates additionally use their calibrated profitable-probability gate. No probability is fabricated for the control."
+  },
   "predecessor_evidence": {
     "round_51_diagnosis_canonical_sha256": "079ac21b0f37595da9ba24904d52940e16ae67d5a74263b257b1f96fb1c9c5fa",
     "round_51_diagnosis_file_sha256": "5e44e1e3e4f67c5b8fc34b4733a086cc4731207ad792691524f263f20504a7e4",
