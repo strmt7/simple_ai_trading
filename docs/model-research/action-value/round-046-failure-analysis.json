@@ -1,0 +1,907 @@
+{
+  "analysis_sha256": "1acfd5b948a2b6f1b28a3ef7fa28f455170b416dbe25255d735c0836057389f4",
+  "candidate_results": {
+    "mutual_median_consistency": {
+      "base": {
+        "active_days": 272,
+        "active_hours": 6514,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -0.7973000382646274,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.5994389977527641,
+          "samples": 2000,
+          "upper_bps": 2.009570294265133
+        },
+        "candidate_id": "mutual_median_consistency",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.2630589364375243,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.7237798591287625,
+        "mean_hourly_portfolio_bps": 0.5909855105464589,
+        "monthly": [
+          {
+            "active_hours": 743,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.5475053724308757,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.03609532722813524
+          },
+          {
+            "active_hours": 717,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -1.4468585549163875,
+            "month": "2024-11",
+            "total_net_return_fraction": -0.10669193167667346
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 2.992721978601696,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.23700505495217605
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.3169234183927372,
+            "month": "2025-01",
+            "total_net_return_fraction": -0.10510910202329526
+          },
+          {
+            "active_hours": 672,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 1.7422100772733782,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.1061442730532689
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.003202534841514,
+            "month": "2025-03",
+            "total_net_return_fraction": 0.06078459003197301
+          },
+          {
+            "active_hours": 720,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.8236211261677518,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.04638739350121224
+          },
+          {
+            "active_hours": 740,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.3050581312915273,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.09455385761844415
+          },
+          {
+            "active_hours": 690,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.33845527567303024,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.027781197331809948
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 6,
+        "profit_factor": 1.0360110029268617,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": 889.6967411056788,
+          "ETHUSDT": 2792.3089776759357,
+          "SOLUSDT": 175.94769406566894
+        },
+        "total_net_return_fraction": 0.3386750367449929,
+        "trades": 935,
+        "trades_by_symbol": {
+          "BTCUSDT": 255,
+          "ETHUSDT": 327,
+          "SOLUSDT": 353
+        }
+      },
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "stress_familywise_bootstrap_lower_not_positive",
+          "maximum_drawdown_exceeds_ten_percent",
+          "profit_factor_below_1_05",
+          "single_symbol_absolute_net_pnl_fraction_exceeds_half"
+        ],
+        "selection_contaminated": true
+      },
+      "forecast_gate": {
+        "coverage_passed": true,
+        "horizons_with_required_pinball_skill": 4,
+        "horizons_with_required_rank_stability": 4,
+        "minimum_pairwise_seed_median_prediction_spearman": 0.8674969560851781,
+        "passed": true,
+        "positive_symbol_horizon_counts": {
+          "BTCUSDT": 4,
+          "ETHUSDT": 4,
+          "SOLUSDT": 3
+        },
+        "quantile_crossing_count": 0,
+        "reasons": []
+      },
+      "horizons": [
+        {
+          "baseline_pinball_loss_bps": 19.198658124282197,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.46895424836601307,
+          "coverage_80": 0.7794628267973857,
+          "evaluation_month_count": 9,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 18.35134946205081,
+          "pinball_skill": 0.04413374397035197,
+          "pooled_median_spearman": 0.0443773395157534,
+          "positive_monthly_median_spearman_count": 9,
+          "symbol": "ALL"
+        },
+        {
+          "baseline_pinball_loss_bps": 38.9906155782522,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.46517565359477125,
+          "coverage_80": 0.7828329248366013,
+          "evaluation_month_count": 9,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 37.401262058316185,
+          "pinball_skill": 0.040762462873823235,
+          "pooled_median_spearman": 0.04996023807601572,
+          "positive_monthly_median_spearman_count": 7,
+          "symbol": "ALL"
+        },
+        {
+          "baseline_pinball_loss_bps": 70.00329828268877,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4677798202614379,
+          "coverage_80": 0.7818116830065359,
+          "evaluation_month_count": 9,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 67.51719381632277,
+          "pinball_skill": 0.035514104725845375,
+          "pooled_median_spearman": 0.06582292226298861,
+          "positive_monthly_median_spearman_count": 9,
+          "symbol": "ALL"
+        },
+        {
+          "baseline_pinball_loss_bps": 98.7583674619629,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.49177900326797386,
+          "coverage_80": 0.7886540032679739,
+          "evaluation_month_count": 9,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 96.70272612092664,
+          "pinball_skill": 0.02081485745324818,
+          "pooled_median_spearman": 0.027248632509284963,
+          "positive_monthly_median_spearman_count": 6,
+          "symbol": "ALL"
+        }
+      ],
+      "mechanism_gate": {
+        "candidate_id": "mutual_median_consistency",
+        "maximum_permitted_median_best_early_stop_pinball": 0.3758778372630559,
+        "median_best_early_stop_pinball": 0.3669017893631544,
+        "minimum_required_seed_stability": 0.5,
+        "minimum_required_seed_stability_improvement": 0.048089187353646534,
+        "minimum_seed_stability": 0.8674969560851781,
+        "passed": true,
+        "predecessor_median_best_early_stop_pinball": 0.36850768359123126,
+        "predecessor_minimum_seed_stability": 0.45191081264635347,
+        "reasons": [],
+        "relative_early_stop_pinball_degradation": -0.00435783105640275,
+        "seed_stability_delta": 0.4155861434388246
+      },
+      "stress": {
+        "active_days": 272,
+        "active_hours": 6514,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -1.0763915701611675,
+          "lower_quantile": 0.0125,
+          "median_bps": 0.38755341050113984,
+          "samples": 2000,
+          "upper_bps": 1.7118745475297346
+        },
+        "candidate_id": "mutual_median_consistency",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.2730731052705577,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.73617983577903,
+        "mean_hourly_portfolio_bps": 0.4000132883242365,
+        "monthly": [
+          {
+            "active_hours": 743,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.3521648706387611,
+            "month": "2024-10",
+            "total_net_return_fraction": 0.02114538700515145
+          },
+          {
+            "active_hours": 717,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -1.6329696660274982,
+            "month": "2024-11",
+            "total_net_return_fraction": -0.11859013508159277
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 2.7946933047665703,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.21892499617561656
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.5149520922278625,
+            "month": "2025-01",
+            "total_net_return_fraction": -0.11820507365571342
+          },
+          {
+            "active_hours": 672,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 1.5497497598130607,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.09192317291647734
+          },
+          {
+            "active_hours": 744,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.8168226065261016,
+            "month": "2025-03",
+            "total_net_return_fraction": 0.04617445377033347
+          },
+          {
+            "active_hours": 720,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.6356581632047884,
+            "month": "2025-04",
+            "total_net_return_fraction": 0.03230356600245954
+          },
+          {
+            "active_hours": 740,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 1.1276387764528177,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.08020958869800632
+          },
+          {
+            "active_hours": 690,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -0.5357732833358654,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.04104614865862899
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 6,
+        "profit_factor": 1.0242227327191633,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": 549.6967411056783,
+          "ETHUSDT": 2356.3089776759375,
+          "SOLUSDT": -294.718972600996
+        },
+        "total_net_return_fraction": 0.1817331606157475,
+        "trades": 935,
+        "trades_by_symbol": {
+          "BTCUSDT": 255,
+          "ETHUSDT": 327,
+          "SOLUSDT": 353
+        }
+      },
+      "symbol_horizons": [
+        {
+          "baseline_pinball_loss_bps": 12.951931615522726,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.45848651960784315,
+          "coverage_80": 0.7616421568627451,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 12.508474273233592,
+          "pinball_skill": 0.03423870318753508,
+          "pooled_median_spearman": 0.0446815086669779,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 19.558881407146508,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4733455882352941,
+          "coverage_80": 0.7815563725490197,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 18.845593708893148,
+          "pinball_skill": 0.036468736805814306,
+          "pooled_median_spearman": 0.04695997304490176,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 24.458004385375368,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.47503063725490197,
+          "coverage_80": 0.7951899509803921,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 23.69998040402569,
+          "pinball_skill": 0.03099287944371032,
+          "pooled_median_spearman": 0.04464847403397812,
+          "symbol": "SOLUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 26.39012420270611,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4574142156862745,
+          "coverage_80": 0.764859068627451,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 25.441532763026977,
+          "pinball_skill": 0.0359449403266493,
+          "pooled_median_spearman": 0.06089734834333125,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 40.428950860122036,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4649203431372549,
+          "coverage_80": 0.7800245098039216,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 39.045056339875124,
+          "pinball_skill": 0.03423028524868166,
+          "pooled_median_spearman": 0.06080533351271013,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 48.863909521027004,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4731924019607843,
+          "coverage_80": 0.8036151960784313,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 47.71719707204647,
+          "pinball_skill": 0.02346747241923175,
+          "pooled_median_spearman": 0.039561033902249375,
+          "symbol": "SOLUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 46.57864829551893,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4653799019607843,
+          "coverage_80": 0.7738970588235294,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 45.06269528105851,
+          "pinball_skill": 0.03254609289738153,
+          "pooled_median_spearman": 0.05756114775472426,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 73.3425614541584,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.47074142156862747,
+          "coverage_80": 0.7775735294117647,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 71.42088120691086,
+          "pinball_skill": 0.02620143350799997,
+          "pooled_median_spearman": 0.08681386978848327,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 87.38773982074214,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.46721813725490197,
+          "coverage_80": 0.7939644607843137,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 86.06800496099895,
+          "pinball_skill": 0.015102059653337552,
+          "pooled_median_spearman": 0.045903066046181606,
+          "symbol": "SOLUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 65.28675534154505,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4849877450980392,
+          "coverage_80": 0.7889093137254902,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 64.07415530939471,
+          "pinball_skill": 0.01857344611179812,
+          "pooled_median_spearman": 0.052209891650721145,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 103.79963858867528,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4955575980392157,
+          "coverage_80": 0.7817095588235294,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 102.59495384460593,
+          "pinball_skill": 0.011605866460124514,
+          "pooled_median_spearman": 0.023737346658276665,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 123.25372060394237,
+          "candidate_id": "mutual_median_consistency",
+          "coverage_50": 0.4947916666666667,
+          "coverage_80": 0.7953431372549019,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 123.43906920877933,
+          "pinball_skill": -0.0015037972397811128,
+          "pooled_median_spearman": -0.01561578503047529,
+          "symbol": "SOLUSDT"
+        }
+      ]
+    },
+    "wavebound_ema": {
+      "base": {
+        "active_days": 272,
+        "active_hours": 6050,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -1.9641333637989442,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.33987978175942535,
+          "samples": 2000,
+          "upper_bps": 1.111139510417364
+        },
+        "candidate_id": "wavebound_ema",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.4761649339960611,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.6774283775325957,
+        "mean_hourly_portfolio_bps": -0.3402078744604972,
+        "monthly": [
+          {
+            "active_hours": 684,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.31568413813127827,
+            "month": "2024-10",
+            "total_net_return_fraction": -0.027543072051486983
+          },
+          {
+            "active_hours": 681,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 1.069877827164062,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.06978807191714242
+          },
+          {
+            "active_hours": 691,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 2.7967098986322734,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.21694590012319592
+          },
+          {
+            "active_hours": 706,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.4945177017013447,
+            "month": "2025-01",
+            "total_net_return_fraction": -0.1140084924428505
+          },
+          {
+            "active_hours": 640,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.270745316893602,
+            "month": "2025-02",
+            "total_net_return_fraction": 0.004647379010407571
+          },
+          {
+            "active_hours": 693,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -3.9029702593849493,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.26372081312740536
+          },
+          {
+            "active_hours": 665,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -0.9296658412863814,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.07513118008044795
+          },
+          {
+            "active_hours": 683,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.7964336456443886,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.053050207271462035
+          },
+          {
+            "active_hours": 607,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -1.3311339689461497,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.09329749041353719
+          }
+        ],
+        "one_way_cost_bps": 6.0,
+        "positive_months": 4,
+        "profit_factor": 0.9778013534993637,
+        "scenario": "base",
+        "symbol_net_bps": {
+          "BTCUSDT": -408.37176605810737,
+          "ETHUSDT": -2680.5178327423846,
+          "SOLUSDT": 868.0125943223621
+        },
+        "total_net_return_fraction": -0.2673118450920384,
+        "trades": 757,
+        "trades_by_symbol": {
+          "BTCUSDT": 197,
+          "ETHUSDT": 244,
+          "SOLUSDT": 316
+        }
+      },
+      "economic_gate": {
+        "passed": false,
+        "promotion_permitted": false,
+        "reasons": [
+          "forecast_gate_failed",
+          "stress_familywise_bootstrap_lower_not_positive",
+          "fewer_than_six_positive_evaluation_months",
+          "maximum_drawdown_exceeds_ten_percent",
+          "profit_factor_below_1_05",
+          "single_symbol_absolute_net_pnl_fraction_exceeds_half",
+          "mechanism_gate_failed"
+        ],
+        "selection_contaminated": true
+      },
+      "forecast_gate": {
+        "coverage_passed": false,
+        "horizons_with_required_pinball_skill": 0,
+        "horizons_with_required_rank_stability": 3,
+        "minimum_pairwise_seed_median_prediction_spearman": 0.2113381821860912,
+        "passed": false,
+        "positive_symbol_horizon_counts": {
+          "BTCUSDT": 4,
+          "ETHUSDT": 4,
+          "SOLUSDT": 4
+        },
+        "quantile_crossing_count": 0,
+        "reasons": [
+          "fewer_than_three_horizons_beat_unconditional_pinball_by_1pct",
+          "central_interval_coverage_outside_frozen_bounds",
+          "seed_prediction_stability_below_0_5"
+        ]
+      },
+      "horizons": [
+        {
+          "baseline_pinball_loss_bps": 19.198658124282197,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.22166053921568626,
+          "coverage_80": 0.37653186274509803,
+          "evaluation_month_count": 9,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 21.169038031076543,
+          "pinball_skill": -0.10263112630263649,
+          "pooled_median_spearman": 0.04624918477042766,
+          "positive_monthly_median_spearman_count": 7,
+          "symbol": "ALL"
+        },
+        {
+          "baseline_pinball_loss_bps": 38.9906155782522,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.20863970588235295,
+          "coverage_80": 0.3426266339869281,
+          "evaluation_month_count": 9,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 43.95428261975546,
+          "pinball_skill": -0.1273041465975686,
+          "pooled_median_spearman": 0.022145620449888975,
+          "positive_monthly_median_spearman_count": 7,
+          "symbol": "ALL"
+        },
+        {
+          "baseline_pinball_loss_bps": 70.00329828268877,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.22247753267973855,
+          "coverage_80": 0.37081290849673204,
+          "evaluation_month_count": 9,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 78.6158768474151,
+          "pinball_skill": -0.12303103962254491,
+          "pooled_median_spearman": 0.02977376440501536,
+          "positive_monthly_median_spearman_count": 6,
+          "symbol": "ALL"
+        },
+        {
+          "baseline_pinball_loss_bps": 98.7583674619629,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.24397467320261437,
+          "coverage_80": 0.3871527777777778,
+          "evaluation_month_count": 9,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 110.43355832578807,
+          "pinball_skill": -0.11821976369062503,
+          "pooled_median_spearman": 0.019019499086364675,
+          "positive_monthly_median_spearman_count": 4,
+          "symbol": "ALL"
+        }
+      ],
+      "mechanism_gate": {
+        "candidate_id": "wavebound_ema",
+        "maximum_permitted_median_best_early_stop_pinball": 0.3758778372630559,
+        "median_best_early_stop_pinball": 0.4265706752528263,
+        "minimum_required_seed_stability": 0.5,
+        "minimum_required_seed_stability_improvement": 0.048089187353646534,
+        "minimum_seed_stability": 0.2113381821860912,
+        "passed": false,
+        "predecessor_median_best_early_stop_pinball": 0.36850768359123126,
+        "predecessor_minimum_seed_stability": 0.45191081264635347,
+        "reasons": [
+          "minimum_seed_stability_below_0_5",
+          "seed_stability_improvement_below_frozen_minimum",
+          "median_early_stop_pinball_degraded_more_than_two_percent"
+        ],
+        "relative_early_stop_pinball_degradation": 0.15756249936433253,
+        "seed_stability_delta": -0.24057263046026225
+      },
+      "stress": {
+        "active_days": 272,
+        "active_hours": 6050,
+        "bootstrap_mean_hourly_portfolio_bps": {
+          "block_hours": 168,
+          "lower_bps": -2.0532030129690857,
+          "lower_quantile": 0.0125,
+          "median_bps": -0.4943619661790805,
+          "samples": 2000,
+          "upper_bps": 0.8412719790884485
+        },
+        "candidate_id": "wavebound_ema",
+        "hours": 6528,
+        "maximum_drawdown_fraction": 0.5050625778006477,
+        "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.7289440938859799,
+        "mean_hourly_portfolio_bps": -0.49482388753239265,
+        "monthly": [
+          {
+            "active_hours": 684,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -0.4545730270201671,
+            "month": "2024-10",
+            "total_net_return_fraction": -0.037542253990007546
+          },
+          {
+            "active_hours": 681,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": 0.9059889382751736,
+            "month": "2024-11",
+            "total_net_return_fraction": 0.05724110301148411
+          },
+          {
+            "active_hours": 691,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 2.6452762068760007,
+            "month": "2024-12",
+            "total_net_return_fraction": 0.20332067338546045
+          },
+          {
+            "active_hours": 706,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -1.6567040816296599,
+            "month": "2025-01",
+            "total_net_return_fraction": -0.12463581248749178
+          },
+          {
+            "active_hours": 640,
+            "hours": 672,
+            "mean_hourly_portfolio_bps": 0.11300722165550654,
+            "month": "2025-02",
+            "total_net_return_fraction": -0.005942998098136809
+          },
+          {
+            "active_hours": 693,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": -4.060676352574913,
+            "month": "2025-03",
+            "total_net_return_fraction": -0.27230843770571267
+          },
+          {
+            "active_hours": 665,
+            "hours": 720,
+            "mean_hourly_portfolio_bps": -1.0935547301752697,
+            "month": "2025-04",
+            "total_net_return_fraction": -0.08598236496015288
+          },
+          {
+            "active_hours": 683,
+            "hours": 744,
+            "mean_hourly_portfolio_bps": 0.6387275524544244,
+            "month": "2025-05",
+            "total_net_return_fraction": 0.04076516668647501
+          },
+          {
+            "active_hours": 607,
+            "hours": 696,
+            "mean_hourly_portfolio_bps": -1.4690650034289077,
+            "month": "2025-06",
+            "total_net_return_fraction": -0.10196668257060171
+          }
+        ],
+        "one_way_cost_bps": 8.0,
+        "positive_months": 3,
+        "profit_factor": 0.9678825775241299,
+        "scenario": "stress",
+        "symbol_net_bps": {
+          "BTCUSDT": -671.0384327247735,
+          "ETHUSDT": -3005.851166075715,
+          "SOLUSDT": 446.6792609890312
+        },
+        "total_net_return_fraction": -0.33765499535697874,
+        "trades": 757,
+        "trades_by_symbol": {
+          "BTCUSDT": 197,
+          "ETHUSDT": 244,
+          "SOLUSDT": 316
+        }
+      },
+      "symbol_horizons": [
+        {
+          "baseline_pinball_loss_bps": 12.951931615522726,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.2841605392156863,
+          "coverage_80": 0.49203431372549017,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 13.74409965498858,
+          "pinball_skill": -0.061162154262492274,
+          "pooled_median_spearman": 0.037443198986425744,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 19.558881407146508,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.21951593137254902,
+          "coverage_80": 0.3642769607843137,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 21.56883947278839,
+          "pinball_skill": -0.10276446918418736,
+          "pooled_median_spearman": 0.05128697874906518,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 24.458004385375368,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.16130514705882354,
+          "coverage_80": 0.27328431372549017,
+          "horizon_hours": 1,
+          "model_pinball_loss_bps": 28.194174965452657,
+          "pinball_skill": -0.15275860291820575,
+          "pooled_median_spearman": 0.0458968045420591,
+          "symbol": "SOLUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 26.39012420270611,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.2818627450980392,
+          "coverage_80": 0.46400122549019607,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 28.438635824404077,
+          "pinball_skill": -0.07762417508773622,
+          "pooled_median_spearman": 0.03223904416745545,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 40.428950860122036,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.19454656862745098,
+          "coverage_80": 0.31924019607843135,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 45.61543995578987,
+          "pinball_skill": -0.12828651214849196,
+          "pooled_median_spearman": 0.029959182144747337,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 48.863909521027004,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.14950980392156862,
+          "coverage_80": 0.24463848039215685,
+          "horizon_hours": 4,
+          "model_pinball_loss_bps": 57.80877207907243,
+          "pinball_skill": -0.18305662902793918,
+          "pooled_median_spearman": 0.009927282853937106,
+          "symbol": "SOLUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 46.57864829551893,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.29825367647058826,
+          "coverage_80": 0.4888174019607843,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 49.99098544897474,
+          "pinball_skill": -0.0732596861078103,
+          "pooled_median_spearman": 0.03325515472426276,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 73.3425614541584,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.21200980392156862,
+          "coverage_80": 0.35110294117647056,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 82.41320766178974,
+          "pinball_skill": -0.1236750670795812,
+          "pooled_median_spearman": 0.0332337158266251,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 87.38773982074214,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.15716911764705882,
+          "coverage_80": 0.2725183823529412,
+          "horizon_hours": 12,
+          "model_pinball_loss_bps": 103.44343743148079,
+          "pinball_skill": -0.18372940693595674,
+          "pooled_median_spearman": 0.01907922146061242,
+          "symbol": "SOLUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 65.28675534154505,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.32230392156862747,
+          "coverage_80": 0.5006127450980392,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 69.94001959933215,
+          "pinball_skill": -0.07127424595453902,
+          "pooled_median_spearman": 0.04832966360143698,
+          "symbol": "BTCUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 103.79963858867528,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.23268995098039216,
+          "coverage_80": 0.36887254901960786,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 116.54735667921429,
+          "pinball_skill": -0.12281081383196457,
+          "pooled_median_spearman": 0.013839807694451289,
+          "symbol": "ETHUSDT"
+        },
+        {
+          "baseline_pinball_loss_bps": 123.25372060394237,
+          "candidate_id": "wavebound_ema",
+          "coverage_50": 0.17693014705882354,
+          "coverage_80": 0.2919730392156863,
+          "horizon_hours": 24,
+          "model_pinball_loss_bps": 144.81329869881785,
+          "pinball_skill": -0.17492030252096002,
+          "pooled_median_spearman": 0.0025258562114052136,
+          "symbol": "SOLUSDT"
+        }
+      ]
+    }
+  },
+  "critical_interpretation": [
+    "WaveBound did not stabilize this quantile TCN adaptation. Its minimum pairwise seed correlation fell to 0.211, median early-stop pinball worsened 15.76% versus Round 44, and all four horizon pinball skills were negative.",
+    "Mutual median consistency met the pre-registered mechanism gate: minimum pairwise seed correlation was 0.867, up 0.416 from Round 44, while common-epoch early-stop pinball improved 0.44%.",
+    "The mutual ensemble passed every pooled forecast requirement: all four horizons beat unconditional pinball by 2.08% to 4.41%, all four pooled rank associations were positive, interval coverage stayed inside frozen bounds, and quantiles never crossed.",
+    "The mutual fixed consensus ledger generated 935 trades over 272 active days. Its base point estimate was +33.868% and its stress point estimate +18.173%, but these are consumed development results and do not establish profitability.",
+    "Mutual economics failed the frozen gate: base maximum drawdown was 26.306%, hourly profit factor was 1.036, ETH supplied 72.38% of absolute symbol net P&L, and the stress familywise bootstrap lower bound was -1.076 bps/hour.",
+    "Six of nine mutual months were positive, but November 2024 and January 2025 each lost more than 10% at base cost. The dated ledger therefore remains regime-sensitive.",
+    "SOLUSDT 24-hour forecast quality remained weak: -0.15% pinball skill and -0.0156 rank association. Pooled success does not remove this symbol-horizon defect.",
+    "The local Qwen3 8B benchmark remains safety-reasoning evidence only. No language model received market features, future outcomes, numerical forecast authority, or order authority, so AI edge remains untested and false."
+  ],
+  "decisions": [
+    "Retain mutual median consistency as a development backbone candidate; reject WaveBound for this architecture and objective.",
+    "Do not promote, leverage, testnet-run, or describe the mutual point estimates as validated profitability.",
+    "Do not lower drawdown, bootstrap, concentration, or profit-factor gates after observing the positive cumulative return.",
+    "Treat the next bottleneck as conditional exposure and trade-quality control, not raw activity or cross-seed forecast agreement."
+  ],
+  "evidence": {
+    "binding_sha256": "86535f37207a07f678a83b34403512d10e2578a0eb9efb47175910c2a483b58b",
+    "cpu_fallback_warnings": 0,
+    "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "declared_output_count": 26,
+    "design_sha256": "054f3619ea8abe45f773a653d265d0eb1a1a3a401aa1ffa4f792e2e7d1fe7253",
+    "directml_model_artifacts": 6,
+    "evaluation_timestamps": 6528,
+    "exact_reload_failures": 0,
+    "hourly_rows": 91941,
+    "implementation_commit": "c8e5b0767e957fc435289b8de5e9bc6ca240bc5d",
+    "report_canonical_sha256": "7cd0bce1e797a77a89a389670677e1a3bce785d2018549ac168c4d753122076b",
+    "report_file_sha256": "e9bf3ec4db7ddd798f950f619097533dfa103e09db94ab7e322f45eceb0edd21"
+  },
+  "generated_at_utc": "2026-07-13T10:18:33.004761+00:00",
+  "next_model_requirements": [
+    "Freeze a risk-aware candidate using only training and calibration roles: volatility targeting, ensemble-disagreement abstention, symbol concentration limits, and stateful drawdown/cooldown controls.",
+    "Use the mutual ensemble forecasts as immutable inputs and pre-register any trade-quality meta-label or exposure rule before accessing a new confirmation period.",
+    "Address SOLUSDT 24-hour weakness with horizon-specific calibration or abstention without post-hoc evaluation tuning.",
+    "Acquire and certify a genuinely untouched confirmation period with matched funding, premium, price, volume, and execution-cost lineage before any promotion claim.",
+    "Only after deterministic forecast, risk, and economic gates pass, run a paired local-language-model risk-review ablation with identical actions and costs; deny direct numerical forecast or order authority."
+  ],
+  "round": 46,
+  "schema_version": "round-046-failure-analysis-v1",
+  "status": "economic_gate_rejected"
+}

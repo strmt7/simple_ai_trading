@@ -528,18 +528,17 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 45 compared joint cross-asset distributional TCNs trained with AdamW and
-sharpness-aware minimization on the AMD GPU through DirectML. Both candidates
-retained positive pooled rank association and beat the unconditional pinball
-baseline at every horizon, but joint training reduced minimum seed agreement to
-`0.189` for AdamW and `0.181` for SAM against the frozen `0.500` floor. SAM did
-not establish an optimizer improvement. The frozen consensus policies generated
-`898` and `947` trades over `272` active days. AdamW lost `35.98%`; SAM's
-`+22.26%` base point estimate remains rejected because maximum drawdown was
-`29.48%`, profit factor was `1.029`, only four of nine months were positive, and
-the stress bootstrap lower bound was `-1.043` bps/hour. No profitability, SAM
-uplift, AI uplift, leverage, testnet, live-trading, or autonomous-execution
-authority was established.
+Round 46 compared WaveBound EMA error bounds with mutual median-consistency
+training on the AMD GPU through DirectML. Mutual consistency passed the frozen
+forecast and mechanism screens: minimum seed agreement rose from `0.452` to
+`0.867`, all four horizons beat unconditional pinball by `2.08-4.41%`, and all
+four pooled rank associations were positive. WaveBound failed. The mutual fixed
+ledger generated `935` trades over `272` active days, but its `+33.87%` base and
+`+18.17%` stress point estimates remain rejected: base maximum drawdown was
+`26.31%`, hourly profit factor `1.036`, ETH supplied `72.38%` of absolute symbol
+P&L, and the stress bootstrap lower bound was `-1.076` bps/hour. No
+profitability, stability uplift, AI uplift, leverage, testnet, live-trading, or
+autonomous-execution authority was established.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
