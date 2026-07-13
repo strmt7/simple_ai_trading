@@ -1,0 +1,271 @@
+{
+  "schema_version": "distributional-tcn-viability-design-v1",
+  "round": 44,
+  "design_sha256": "aad01204fd3ede5e0ca6771f273a061e80c4b503095a00399afdfffeb7656442",
+  "status": "frozen",
+  "phase": "consumed-development multi-horizon distributional sequence-model screen",
+  "objective": "Test whether causal temporal context and calibrated forward-return distributions repair the unstable one-hour point-forecast defect without hiding transition costs or forcing activity.",
+  "predecessor_evidence": {
+    "round_43_report_canonical_sha256": "c21ed68b105bcbe76156a6883bbc7b45a2ef0f28913677c92673cad73404b1ff",
+    "round_43_publication_sha256": "380387de736ed21b37d622269c8494cdcd9890a88ec7761355158f9dc758004f",
+    "round_43_failure_analysis_sha256": "19864ec0e15a3b3e61dc9b013bc10a1ce75feffe60823700555484a6162d84fd",
+    "diagnosis": [
+      "Persistent position accounting removed fictitious hourly close-and-reopen costs but did not establish alpha.",
+      "One-hour median forecasts had weak, unstable rank association and were correctly set to zero after nonpositive calibration relations.",
+      "Static multiclass, two-stage hurdle, meta-label, threshold, and local-language-model veto lanes have already failed after-cost stability gates.",
+      "The next experiment must change the forecast target and temporal representation rather than relax gates or retune the consumed 2025-H1 outcomes."
+    ]
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/1904.04912",
+      "finding_used": "Sequence models can learn persistent position signals, and transaction-cost-aware turnover regularization is more aligned with trading than point-return MSE.",
+      "limitation": "The published cost range was approximately 2 to 3 bps and continuous futures are not evidence for this crypto taker-cost setting."
+    },
+    {
+      "source": "https://arxiv.org/abs/2306.13661",
+      "finding_used": "Multi-task horizon and volatility supervision can improve a shared temporal representation.",
+      "limitation": "The reported 2000 to 2020 futures results and 3 bps costs are hypotheses only, not transferable performance evidence."
+    },
+    {
+      "source": "https://arxiv.org/abs/2406.08013",
+      "finding_used": "Intraday policies should preserve positional context because trading is sequential.",
+      "limitation": "This round does not adopt deep reinforcement learning or the paper's reported returns."
+    },
+    {
+      "source": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4675565",
+      "finding_used": "Crypto momentum must be evaluated with transaction costs, path risk, liquidation risk, and more than a mean-return test.",
+      "limitation": "No leverage or liquidation inference is permitted before an unlevered edge exists."
+    },
+    {
+      "source": "https://arxiv.org/abs/2006.04779",
+      "finding_used": "Learned offline action values can be overestimated under policy and data-distribution shift.",
+      "limitation": "Hindsight dynamic-programming Q labels and fitted-Q iteration are rejected from this round."
+    }
+  ],
+  "rejected_architectures": [
+    {
+      "id": "hindsight_dynamic_programming_q_teacher",
+      "reason": "Its oracle continuation policy creates a target-policy mismatch and optimistic action values that are not available in live operation."
+    },
+    {
+      "id": "direct_in_sample_sharpe_or_pnl_optimization",
+      "reason": "A small crypto panel can overfit path-level objectives, and continuous differentiable positions do not match the hard 24-hour holding and fail-closed execution contract."
+    },
+    {
+      "id": "lstm_on_directml",
+      "reason": "The live AMD host failed nn.LSTM training because aten::_thnn_fused_lstm_cell is unsupported by the installed DirectML stack."
+    }
+  ],
+  "data_contract": {
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "decision_interval_seconds": 3600,
+    "causal_feature_count": 71,
+    "feature_source_resolution_seconds": 60,
+    "feature_history_only": true,
+    "funding": "Only funding settled inside each future holding interval enters the return target.",
+    "target_horizons_hours": [
+      1,
+      4,
+      12,
+      24
+    ],
+    "target_quantiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "forward_return_definition": "For each horizon, compound the contiguous one-hour long returns net of settled funding but before transition costs: 10000 * (product(1 + hourly_net_fraction) - 1).",
+    "role_boundary_rule": "A row is admitted only when its complete 24-hour target path ends strictly inside the same role.",
+    "missing_or_nonfinite_policy": "Reject the run; no interpolation, synthetic values, or row-local imputation is permitted."
+  },
+  "chronological_roles": {
+    "training": {
+      "start": "2022-01-01T00:00:00Z",
+      "end_inclusive": "2024-03-31T23:59:59Z"
+    },
+    "early_stop": {
+      "start": "2024-04-01T00:00:00Z",
+      "end_inclusive": "2024-06-30T23:59:59Z"
+    },
+    "calibration": {
+      "start": "2024-07-01T00:00:00Z",
+      "end_inclusive": "2024-09-30T23:59:59Z"
+    },
+    "evaluation": {
+      "start": "2024-10-01T00:00:00Z",
+      "end_inclusive": "2025-06-30T23:59:59Z"
+    },
+    "selection_contaminated": true,
+    "purpose": "Architecture development only; every role has been consumed by prior research and cannot support promotion."
+  },
+  "normalization_contract": {
+    "fit_role": "training only",
+    "method": "per-feature finite mean and population standard deviation",
+    "standard_deviation_floor": 1e-06,
+    "standardized_clip": [
+      -10.0,
+      10.0
+    ],
+    "target_scale_method": "per-horizon training median absolute deviation about the training median, multiplied by 1.4826, with a 1 bps floor",
+    "future_or_cross_role_statistics_permitted": false
+  },
+  "model_contract": {
+    "family": "shared_cross_asset_causal_distributional_tcn",
+    "input_channels": 71,
+    "hidden_channels": 64,
+    "kernel_size": 3,
+    "residual_block_dilations": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "receptive_field_hours": 127,
+    "padding": "left-only causal padding",
+    "activation": "GELU",
+    "dropout": 0.1,
+    "output_channels": 20,
+    "quantile_parameterization": "For each horizon, predict a median and four nonnegative softplus gaps so q10 <= q25 <= q50 <= q75 <= q90 by construction.",
+    "loss": "Equal-weight normalized pinball loss across four horizons and five quantiles.",
+    "seeds": [
+      4401,
+      4402,
+      4403
+    ],
+    "ensemble": "Elementwise median of the three seed forecasts; monotonicity must remain exact.",
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "foreach": false,
+      "gradient_norm_clip": 1.0
+    },
+    "training_windows": {
+      "total_hours": 384,
+      "causal_context_hours": 127,
+      "supervised_hours": 257,
+      "stride_hours": 24,
+      "batch_size": 64
+    },
+    "maximum_epochs": 100,
+    "early_stopping_patience_epochs": 12,
+    "minimum_improvement": 1e-05,
+    "compute_backend": "DirectML required for this host run; CPU remains a separately declared portability mode",
+    "unsupported_operator_fallback_permitted": false
+  },
+  "baseline_contract": {
+    "primary": "Training-role unconditional empirical quantile for each horizon, applied unchanged to every later row.",
+    "zero_return": "A zero forecast at every quantile and horizon.",
+    "tabular_comparator": "OpenCL LightGBM quantile models may run only after the causal TCN forecast gate passes; this prevents unnecessary model proliferation.",
+    "same_targets_roles_and_metrics_required": true
+  },
+  "forecast_gate": {
+    "all_finite_and_complete": true,
+    "quantile_crossing_count": 0,
+    "minimum_horizons_with_positive_pinball_skill_vs_unconditional": 3,
+    "minimum_pinball_skill_per_counted_horizon": 0.01,
+    "minimum_horizons_with_positive_pooled_median_spearman": 3,
+    "minimum_evaluation_months_with_positive_median_spearman_per_counted_horizon": 5,
+    "central_80_interval_coverage_bounds": [
+      0.72,
+      0.88
+    ],
+    "central_50_interval_coverage_bounds": [
+      0.42,
+      0.58
+    ],
+    "minimum_pairwise_seed_median_prediction_correlation": 0.5,
+    "gate_failure_action": "Continue only to explicitly labeled descriptive policy diagnostics; deny tabular expansion, AI action review, promotion, leverage, and untouched data."
+  },
+  "descriptive_policy_contract": {
+    "runs_even_if_forecast_gate_fails": true,
+    "reason": "Measure activity and after-cost failure modes without representing them as selected trades or promotion evidence.",
+    "position_values": [
+      -1,
+      0,
+      1
+    ],
+    "position_sleeves": "Fixed one-third notional sleeve per symbol.",
+    "entry_rule": "When flat, select the horizon and side with the largest positive lower-quartile return after a 6 bps entry and 6 bps terminal exit. Long uses q25; short uses negative q75.",
+    "holding_rule": "Hold the selected side for exactly the selected 1, 4, 12, or 24 hour horizon, then flatten. No overlapping position is permitted within a symbol.",
+    "forced_quota": false,
+    "leverage": 1.0,
+    "base_one_way_transition_cost_bps": 6.0,
+    "stress_one_way_transition_cost_bps": 8.0,
+    "stress_rule": "Reprice the exact fixed base trade ledger; do not reselect horizons, sides, or timestamps under stress.",
+    "funding_cash_flows_included": true,
+    "maker_execution_assumption": false
+  },
+  "economic_gate": {
+    "required_only_if_forecast_gate_passes": true,
+    "familywise_circular_block_bootstrap_hours": 168,
+    "bootstrap_replicates": 2000,
+    "one_sided_familywise_lower_quantile": 0.025,
+    "stress_mean_hourly_portfolio_bps_lower_bound_must_exceed": 0.0,
+    "minimum_positive_evaluation_months": 6,
+    "minimum_active_days": 90,
+    "maximum_drawdown_fraction": 0.1,
+    "minimum_profit_factor": 1.05,
+    "all_three_symbols_must_have_activity": true,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "promotion_result": "Still denied because the complete Round 44 evaluation is selection-contaminated development evidence."
+  },
+  "ai_contract": {
+    "models_examined": [
+      "qwen3:8b",
+      "fino1:8b",
+      "fin-r1:8b"
+    ],
+    "fin_r1_host_result": {
+      "benchmark_contract": "finance-risk-review-adversarial-v6",
+      "score": 0.9659090909090909,
+      "valid_json_cases": 11,
+      "action_match_cases": 11,
+      "passed": false,
+      "failure": "cooldown_reconnect_state_uncertain risk_score 0.500 was below the frozen 0.600 minimum",
+      "average_latency_seconds": 22.420454545454547,
+      "external_report_file_sha256": "73d00ef5702ac899f102f1dfee7d713c0e81e15e43c3b43bdb0b541a96e27856",
+      "gpu_residency": "Ollama reported 6.2 GB and 100% GPU on the AMD host"
+    },
+    "architecture_review_observation": "All three local models violated the requested output schema or produced internally inconsistent rankings in a bounded A/B/C architecture critique. Their text is nonbinding.",
+    "market_features_or_future_outcomes_supplied_to_language_models": false,
+    "language_model_numerical_forecasts_or_orders_permitted": false,
+    "ai_trade_ablation_permitted": false,
+    "future_ai_role": "Asynchronous research and risk review only after a deterministic primary model passes; any uplift requires a separate paired fixed-period test."
+  },
+  "governance": {
+    "selection_confirmation_2025_h2_access_permitted": false,
+    "terminal_2026_access_permitted": false,
+    "testnet_or_live_execution_permitted": false,
+    "promotion_permitted": false,
+    "leverage_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "post_outcome_parameter_or_seed_selection_permitted": false,
+    "manual_graph_or_result_editing_permitted": false,
+    "profitability_or_ai_uplift_claim_permitted": false
+  },
+  "required_outputs": [
+    "source_and_dataset_hashes",
+    "role_and_target_completeness",
+    "DirectML operator_preflight_and_runtime_evidence",
+    "per_seed_model_artifact_hashes_and_exact_reload_checks",
+    "per_horizon_and_month pinball_skill_spearman_and_interval_coverage",
+    "seed_stability",
+    "descriptive fixed_horizon_trade_ledger",
+    "matched_fixed_ledger_base_and_stress_economics",
+    "forecast_and_economic_gate_reasons",
+    "peak_working_set_runtime_and_progress_events",
+    "machine_readable_report_with_canonical_identity"
+  ]
+}
