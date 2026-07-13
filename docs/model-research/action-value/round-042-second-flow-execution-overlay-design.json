@@ -1,0 +1,313 @@
+{
+  "schema_version": "second-flow-execution-overlay-design-v1",
+  "round": 42,
+  "design_sha256": "2695f9064a5622658f772f44cdc3e8fcc0f8f19ef7ae594e937a899533085588",
+  "status": "frozen_before_implementation_or_outcome_access",
+  "phase": "consumed-development one-second taker-flow execution-timing viability pilot",
+  "single_registered_change": "Keep the frozen Round 41 June 2024 out-of-sample primary side proposals unchanged and add a shared one-second taker-flow hurdle model that may veto the proposal or choose a 0, 5, 15, or 30 second market-entry delay.",
+  "predecessor_evidence": {
+    "round_36_finding": "BTCUSDT L1 imbalance had repeatable five-second direction AUC 0.607257 but at most 0.458363 gross bps; every frozen 12 bps taker replay remained negative. Short-horizon microstructure is therefore an execution input, not standalone alpha evidence.",
+    "round_41_report_canonical_sha256": "718d75fdebf278f359a16dea9cf3b8e6606e49a420b9f8dfd2e262e9173522d7",
+    "round_41_finding": "Six-month prequential meta evaluation AUC was 0.572530 to 0.598146, but the two selected months reversed from positive calibration to negative evaluation. The 466 selected actions averaged -0.677377 net bps at the frozen 12 bps charge.",
+    "decision": "Do not add another minute-bar architecture or weaken costs. Test whether causal one-second trade flow improves the execution of an unchanged slower proposal before acquiring a much larger second-level corpus."
+  },
+  "governance": {
+    "selection_contaminated": true,
+    "development_only": true,
+    "single_registered_experiment": true,
+    "unregistered_hyperparameter_search_permitted": false,
+    "round_41_primary_side_or_probability_change_permitted": false,
+    "future_delay_or_outcome_feature_use_permitted": false,
+    "oracle_delay_use_for_training_selection_or_claims_permitted": false,
+    "maker_execution_assumption_permitted": false,
+    "fee_or_slippage_reduction_permitted": false,
+    "risk_gate_relaxation_permitted": false,
+    "historical_data_expansion_before_pilot_gate_permitted": false,
+    "ai_inference_during_pilot_permitted": false,
+    "promotion_permitted": false,
+    "trading_authority_permitted": false,
+    "leverage_permitted": false,
+    "profitability_portfolio_roi_or_drawdown_claim_permitted": false,
+    "selection_confirmation_or_terminal_2026_access_permitted": false
+  },
+  "source_contract": {
+    "market": "Binance USD-M perpetual futures",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "second_flow_period_start_utc": "2024-06-01T00:00:00Z",
+    "second_flow_period_end_exclusive_utc": "2024-06-08T00:00:00Z",
+    "seconds_per_symbol": 604800,
+    "second_rows_total": 1814400,
+    "raw_aggregate_trade_rows": {
+      "BTCUSDT": 6361886,
+      "ETHUSDT": 6181375,
+      "SOLUSDT": 2932035
+    },
+    "archive_files_per_symbol": 7,
+    "archive_source": "checksum-verified Binance public daily USD-M aggTrades files",
+    "second_bar_derivation": "One-second OHLCV, quote volume, trade count, taker-buy base volume, and taker-buy quote volume aggregated from real exchange aggTrades; empty seconds forward-fill only price and retain zero flow.",
+    "database": "data/market_data.sqlite",
+    "database_read_only_during_execution": true,
+    "source_certificate_required": true,
+    "source_certificate_must_bind_archive_metadata_and_canonical_second_streams": true,
+    "round_41_evidence_root_required": true,
+    "round_41_june_primary_artifacts_required": 3,
+    "round_41_june_temperature": 1.06538314761829,
+    "round_38_minute_source_certificate_required": true,
+    "persistent_feature_matrix_or_raw_trade_copy_permitted": false,
+    "api_calls_required": false,
+    "known_limitations": [
+      "The pilot has seven contiguous days and cannot establish long-run profitability, regime coverage, or portfolio risk.",
+      "Historical Level-2 depth and queue state are unavailable, so passive fill simulation is prohibited.",
+      "The fixed cost charges represent fee, spread, latency, and adverse-slippage stress; they are not claimed as exact fills for every second."
+    ]
+  },
+  "frozen_primary_proposal": {
+    "model_identity": "Round 41 2024-06 per-symbol direct multiclass LightGBM",
+    "model_artifact_ids": [
+      "round41_202406_primary_btcusdt",
+      "round41_202406_primary_ethusdt",
+      "round41_202406_primary_solusdt"
+    ],
+    "predictions_strictly_out_of_sample_for_june": true,
+    "temperature_scale": 1.06538314761829,
+    "decision_cadence_seconds": 300,
+    "entry_lag_after_decision_seconds": 60,
+    "holding_horizon_seconds": 1800,
+    "proposal_side": "long when calibrated p_long is greater than p_short; otherwise short",
+    "minimum_direction_probability_margin": 0.10,
+    "margin_definition": "absolute p_long minus p_short",
+    "side_or_probability_refit_permitted": false
+  },
+  "causal_second_flow_features": {
+    "feature_timestamp": "Every feature ends at entry_time minus one second; the entry second and every later second are excluded.",
+    "windows_seconds": [
+      5,
+      15,
+      30,
+      60,
+      300,
+      900
+    ],
+    "target_symbol_features_per_window": [
+      "log_return_bps",
+      "realized_volatility_bps",
+      "high_low_range_bps",
+      "path_efficiency",
+      "signed_taker_base_imbalance",
+      "signed_taker_quote_imbalance",
+      "signed_flow_acceleration",
+      "quote_volume_intensity",
+      "trade_count_intensity",
+      "zero_trade_fraction",
+      "vwap_minus_close_bps",
+      "absolute_return_per_signed_quote_flow"
+    ],
+    "cross_asset_features": [
+      "same six-window return, volatility, signed-flow, and intensity summaries for BTCUSDT, ETHUSDT, and SOLUSDT",
+      "target-minus-market return",
+      "target-minus-market signed flow",
+      "cross-asset return dispersion",
+      "cross-asset signed-flow agreement"
+    ],
+    "primary_context_features": [
+      "calibrated p_short",
+      "calibrated p_abstain",
+      "calibrated p_long",
+      "direction probability margin",
+      "probability entropy",
+      "proposal side"
+    ],
+    "side_canonicalization": "Directional return and flow features are multiplied by proposal side so one shared model learns favorable versus adverse state.",
+    "calendar_features_permitted": false,
+    "future_fill_price_or_future_flow_feature_permitted": false,
+    "nonfinite_feature_policy": "fail closed"
+  },
+  "delay_option_and_outcome_contract": {
+    "entry_delay_seconds": [
+      0,
+      5,
+      15,
+      30
+    ],
+    "entry_price": "real one-second candle open at frozen baseline entry time plus selected delay",
+    "exit_price": "real one-second candle open exactly 1800 seconds after the delayed entry",
+    "proposal_side_unchanged": true,
+    "base_round_trip_charge_bps": 12.0,
+    "stress_round_trip_charge_bps": 16.0,
+    "funding_cash_flow": "exact settled funding when a settlement falls strictly inside the holding window; expected to be rare at 30 minutes",
+    "overlapping_label_weighting": "average uniqueness by symbol and holding interval, divided equally across the four delay rows from one proposal",
+    "same_symbol_position_overlap_permitted": false,
+    "maximum_entries_per_symbol_per_utc_day": 8,
+    "future_opportunity_ranking_permitted": false,
+    "capacity_selection": "stable chronological first threshold crossing"
+  },
+  "overlay_model": {
+    "architecture": "one shared option-conditional LightGBM hurdle stack across symbols and proposal sides",
+    "opencl_gpu_first_required": true,
+    "cpu_fallback_permitted": true,
+    "models_per_walk_forward_fold": 3,
+    "heads": [
+      {
+        "name": "positive_net_probability",
+        "objective": "binary",
+        "label": "one when proposal-side delayed utility is above zero after the 12 bps charge"
+      },
+      {
+        "name": "robust_expected_net_utility",
+        "objective": "huber",
+        "label": "proposal-side net utility bps after the 12 bps charge"
+      },
+      {
+        "name": "lower_quartile_net_utility",
+        "objective": "quantile alpha 0.25",
+        "label": "proposal-side net utility bps after the 12 bps charge"
+      }
+    ],
+    "option_selection": "Among delay options passing the frozen probability, expected-utility, and lower-tail thresholds, choose highest predicted expected utility; stable ties choose the shortest delay. If no option passes, veto.",
+    "model_artifact_reload_must_be_exact": true,
+    "fixed_seed": 4201,
+    "hyperparameter_search_permitted": false
+  },
+  "walk_forward_contract": {
+    "folds": [
+      {
+        "fold": "evaluation_2024-06-06",
+        "fit": "2024-06-01..2024-06-03",
+        "early_stop": "2024-06-04",
+        "threshold_calibration": "2024-06-05",
+        "evaluation": "2024-06-06"
+      },
+      {
+        "fold": "evaluation_2024-06-07",
+        "fit": "2024-06-01..2024-06-04",
+        "early_stop": "2024-06-05",
+        "threshold_calibration": "2024-06-06",
+        "evaluation": "2024-06-07"
+      }
+    ],
+    "target_horizon_embargo_required_at_every_boundary": true,
+    "prior_fold_evaluation_may_enter_later_fold_calibration": true,
+    "causality_reason": "At the later fold date, all prior 30-minute outcomes are settled and observable.",
+    "threshold_probability_grid": [
+      0.50,
+      0.55,
+      0.60
+    ],
+    "threshold_expected_net_bps_grid": [
+      0.0,
+      2.0,
+      4.0
+    ],
+    "threshold_lower_quartile_bps_grid": [
+      -20.0,
+      -10.0,
+      0.0
+    ],
+    "threshold_cells_per_fold": 27,
+    "threshold_cells_total": 54,
+    "threshold_selected_on": "the complete immediately preceding calibration day only",
+    "evaluation_outcome_access_before_threshold_freeze_permitted": false
+  },
+  "comparators": {
+    "immediate_execution": "Every frozen primary proposal enters at delay zero under the same overlap, capacity, funding, and cost accounting.",
+    "veto_only": "Apply the selected overlay eligibility threshold but force delay zero, isolating filtering from timing.",
+    "timing_overlay": "Apply both overlay eligibility and selected delay.",
+    "oracle_best_delay": "Post-outcome diagnostic upper bound only; prohibited from selection, model input, gate satisfaction, or any profitability claim."
+  },
+  "pilot_gate": {
+    "meaning": "Passing authorizes only a new frozen multimonth second-level data-acquisition and confirmation experiment.",
+    "minimum_selected_evaluation_trades": 40,
+    "minimum_selected_trades_per_evaluation_day": 15,
+    "minimum_selected_trades_per_symbol_aggregate": 8,
+    "maximum_single_symbol_fraction": 0.50,
+    "maximum_veto_fraction": 0.90,
+    "minimum_nonzero_delay_fraction": 0.10,
+    "base_mean_net_bps_must_exceed": 0.0,
+    "base_profit_factor_must_be_at_least": 1.10,
+    "both_evaluation_days_mean_net_bps_must_exceed": 0.0,
+    "stress_16_bps_mean_net_bps_must_exceed": 0.0,
+    "mean_increment_over_matched_immediate_bps_must_be_at_least": 1.0,
+    "day_block_bootstrap_lower_95_mean_net_bps_must_exceed": 0.0,
+    "all_requirements_mandatory": true,
+    "passing_is_not_promotion_or_profitability_evidence": true
+  },
+  "ai_contract": {
+    "pilot_ai_cases": 0,
+    "reason": "An 8B language model cannot safely sit in a 5 to 30 second execution loop, and two evaluation days cannot support an AI-uplift claim. AI remains an asynchronous regime and risk-veto candidate only after the ML overlay passes and multimonth data are frozen.",
+    "future_ai_candidate": "DianJin/DianJin-R1-7B or a better measured finance model available at the later frozen design date",
+    "future_ai_authority": "veto or cooldown only; never create, reverse, resize, or delay an action outside ML options",
+    "future_ai_uplift_requires_matched_ml_only_ablation": true,
+    "ai_improvement_claim_permitted_in_round_42": false
+  },
+  "required_outputs": [
+    "hash-bound source certificate and execution binding",
+    "per-symbol archive and one-second stream identities",
+    "proposal counts and exclusions by role and symbol",
+    "causal feature identity and matrix memory evidence",
+    "six OpenCL model artifacts with exact reload checks",
+    "classification, robust-regression, and lower-quantile diagnostics by role",
+    "all 54 threshold traces including zero-action cells",
+    "immediate, veto-only, timing-overlay, and oracle diagnostic replays",
+    "base and 16 bps stress economics by fold and symbol",
+    "delay-choice distribution, overlap rejections, and capacity rejections",
+    "day-block bootstrap interval and pilot-gate reasons",
+    "runtime, peak working set, and backend evidence",
+    "explicit false authority, leverage, portfolio, ROI, drawdown, profitability, and AI-uplift claims"
+  ],
+  "research_basis": [
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1712822",
+      "use": "Supports treating short-horizon order-flow imbalance as a price-impact and execution-state variable; its equity results do not validate this Binance pilot."
+    },
+    {
+      "title": "Incorporating Order-Flow into Optimal Execution",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2557457",
+      "use": "Supports adjusting execution timing to prevailing expected order flow rather than treating the short signal as standalone alpha."
+    },
+    {
+      "title": "Price predictability in limit order book with deep learning model",
+      "url": "https://arxiv.org/abs/2409.14157",
+      "use": "Supports separating opportunity from direction and identifies volume imbalance as more useful for direction than price history alone."
+    },
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "use": "Supports cross-asset stationary trade and order-book representations with conservative execution tests; its CatBoost and Level-2 results are not imported."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "use": "Warns that high forecast accuracy need not produce actionable transactions, so economic and execution gates remain primary."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "use": "Requires explicit trial accounting and denies promotion from this short, repeatedly consumed pilot."
+    },
+    {
+      "title": "Binance public trade data guidance",
+      "url": "https://academy.binance.com/en/articles/how-to-get-trading-data-via-the-binance-api",
+      "use": "Documents daily and monthly public trades and aggTrades archives plus real-time aggregate trade streams."
+    }
+  ],
+  "explicit_non_claims": [
+    "The seven-day source is not multi-year backtesting.",
+    "A positive pilot would not prove a market edge, profitability, ROI, drawdown, execution quality, or readiness for testnet or live trading.",
+    "No spread, depth, queue, passive fill, leverage, capital allocation, or liquidation result is produced.",
+    "No AI inference or AI-uplift result is produced.",
+    "A failed pilot rejects this exact overlay and does not justify lowering the cost or uncertainty gates."
+  ],
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "roi_claim": false,
+  "drawdown_claim": false,
+  "leverage_applied": false,
+  "ai_uplift_claim": false
+}
