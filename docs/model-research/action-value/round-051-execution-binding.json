@@ -1,9 +1,13 @@
 {
-  "binding_sha256": "e6e864e5f10c17d87733d2617c1001611a689d977a8d375d14115d80a3e3ec29",
+  "binding_sha256": "cff5fc98740a3a1f578cf8645afe53fb14f52f4be155c1acbe98ba3311ab4908",
   "blobs": [
     {
       "git_blob_oid": "15919441ce8f89064b3a29265f6d7893d6042fb9",
       "path": "pyproject.toml"
+    },
+    {
+      "git_blob_oid": "ea8784a0760207afe656f72e7e9b3809481c8563",
+      "path": "docs/model-research/action-value/round-051-bbo-state-gap-analysis.json"
     },
     {
       "git_blob_oid": "60c40cdc5b1d6543af63709777a19e976bb93659",
@@ -14,7 +18,7 @@
       "path": "src/simple_ai_trading/direct_payoff_lightgbm.py"
     },
     {
-      "git_blob_oid": "c4bc557018c364a01c2b11707d0d06b816cca44f",
+      "git_blob_oid": "56e4ecb511278ba8629dc83b0aba6325448d3a1d",
       "path": "src/simple_ai_trading/fincast_runtime.py"
     },
     {
@@ -50,17 +54,17 @@
       "path": "src/simple_ai_trading/microstructure_warehouse.py"
     },
     {
-      "git_blob_oid": "8f9db77f43fcac4559493ab81ffae38f7ad2f96e",
+      "git_blob_oid": "078d72e4b026800edc61d15b92b3d7d1e995b1f3",
       "path": "tools/create_round51_execution_binding.py"
     },
     {
-      "git_blob_oid": "629ed0a0fec823bc50c9bcd17dd646eb4baf3f31",
+      "git_blob_oid": "98709020553418b4e23906bd06f00839b9bd78ae",
       "path": "tools/run_round51_categorical_payoff_fincast.py"
     }
   ],
-  "created_at": "2026-07-13T18:24:07.084282+00:00",
+  "created_at": "2026-07-13T19:37:07.235485+00:00",
   "design_path": "docs/model-research/action-value/round-051-categorical-payoff-fincast-design.json",
-  "design_sha256": "eeda9a52bf448a5cf789979c44ebb87d23c749979efaef65b9a1add48c4c28cd",
+  "design_sha256": "c37bc8686c6ab75e8af79d2477b92fc56973d41bd74fea2f3cbf6c6c7247d900",
   "execution_contract": {
     "all_models_trained_before_evaluation": true,
     "clean_worktree_required": true,
@@ -73,7 +77,7 @@
     "source_market_rows_synthetic": 0,
     "trading_authority_permitted": false
   },
-  "implementation_commit": "9c683d4bc12c23feafac7d44ea94638078ddbbf6",
+  "implementation_commit": "4049f605a1a1dba45f9adaa68280a2a12667a306",
   "round": 51,
   "schema_version": "round-051-categorical-payoff-fincast-execution-binding-v1"
 }
