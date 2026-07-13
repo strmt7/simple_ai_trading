@@ -1,0 +1,35 @@
+{
+  "ai_factor_audit_sha256": "f0e8c74d8e78fdee2319c819c58605ce81a8730019c346df59b1a7122227d252",
+  "binding_sha256": "c6b40bf2857f447968dbff3bb2a17067fc4aff8ed9e16905ca1bfde50e0fd737",
+  "blobs": [
+    {
+      "git_blob_oid": "de08758816c3d3eb36f7b370a54bfd8f41afce3a",
+      "path": "docs/model-research/action-value/round-043-ai-factor-audit.json"
+    },
+    {
+      "git_blob_oid": "47bf8b9b05a6c7b544d8dcd233c0b6ebd4fd731d",
+      "path": "docs/model-research/action-value/round-043-stateful-turnover-ai-factor-design.json"
+    },
+    {
+      "git_blob_oid": "780125422579883a37ea543457f92c7f3415debe",
+      "path": "src/simple_ai_trading/stateful_turnover_model.py"
+    },
+    {
+      "git_blob_oid": "6f1ed57529b63f8baa97e9c1f95ea28569f0aad3",
+      "path": "tools/run_stateful_turnover_ai_factor_ablation.py"
+    },
+    {
+      "git_blob_oid": "7e1b80974f5b016e2b36097c15ab5e94a79bc020",
+      "path": "tests/test_stateful_turnover_model.py"
+    }
+  ],
+  "design_sha256": "1a85f3cf70510e1ed341faedae36ebe0849372fc422e7d21d287d20146b60ceb",
+  "implementation_commit": "3f2b3bcc495f459f9ea85eef3b4acc887d12842b",
+  "round": 43,
+  "schema_version": "round-043-stateful-turnover-ai-factor-execution-binding-v1",
+  "source_certificate": {
+    "canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json"
+  }
+}
