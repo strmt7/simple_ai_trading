@@ -1,0 +1,253 @@
+{
+  "ai_contract": {
+    "candidate": "executable_csm_lightgbm_fincast",
+    "feature_source": {
+      "checkpoint_sha256": "d5ca999b02c944effa60d2b94174dc4d5a0cd2c0543ae289b2e36f37431492a8",
+      "feature_count": 30,
+      "model": "FinCast",
+      "parameter_count": 991437160,
+      "runtime": "DirectML on the tracked AMD host",
+      "source_commit": "488b19d1d85fa2b3d4b93469530cefdcf1cc97a4",
+      "source_repository": "https://github.com/vincent05r/FinCast-fts"
+    },
+    "matched_ablation": "Append only the sealed causal FinCast point and quantile features to the identical executable CSM model. Reuse the hash-bound Round 51 matrices; do not rerun foundation-model extraction.",
+    "numeric_authority": "FinCast supplies causal numeric forecast features only. It cannot select a trade, size an order, approve leverage, override risk controls, or receive trading authority.",
+    "text_model_alpha_permitted": false,
+    "uplift_rule": "AI is retained only if it improves joint proper scores and expected-payoff rank by at least 0.005, and improves paired base and stress economics without worse drawdown, concentration, or temporal stability. A mixed result fails."
+  },
+  "chronological_roles": {
+    "early_stop": "2023-06-01 through 2023-06-04 UTC",
+    "evaluation": "2023-06-09 through 2023-06-14 UTC; already consumed and diagnostic only",
+    "policy_calibration": "2023-06-07 through 2023-06-08 UTC; both UTC days must pass separately",
+    "probability_calibration": "2023-06-05 through 2023-06-06 UTC",
+    "role_boundary_rule": "Every feature, entry, path quote, exit, and target must finish before the next role starts. Side-specific support and exits are purged independently.",
+    "training": "2023-05-16 through 2023-05-31 UTC"
+  },
+  "claims": {
+    "ai_uplift_claim_permitted": false,
+    "leverage_permitted": false,
+    "profitability_claim_permitted": false,
+    "promotion_permitted": false,
+    "reason": "The complete interval has been repeatedly inspected. Round 53 is a selection-contaminated mechanism screen and cannot confirm generalization, profitability, or AI uplift.",
+    "selection_contaminated": true,
+    "testnet_or_live_authority_permitted": false
+  },
+  "data_contract": {
+    "archive_products": [
+      "bookTicker",
+      "trades",
+      "bookDepth"
+    ],
+    "decision_cadence_seconds": 10,
+    "end_date": "2023-06-14",
+    "event_source": "Official Binance Data Vision USD-M daily archives with checksum-verified warehouse ingestion",
+    "feature_version": "l1-tape-aggregate-depth-causal-v9",
+    "fincast_feature_artifacts": {
+      "BTCUSDT": {
+        "bytes": 29920088,
+        "file_sha256": "a5d922c6e82d8a394e96ee3928b92adbdb2e7d1cf820cc94944b8853ea55f7f6"
+      },
+      "ETHUSDT": {
+        "bytes": 29909648,
+        "file_sha256": "fa21fed7fe4d434624ef9c0194d21ca8345eb2cb16b5e23958b4a01f611cd9d0"
+      },
+      "SOLUSDT": {
+        "bytes": 16425848,
+        "file_sha256": "c4cbe757dd43bab15eb6dd6dd038fc3913580102c4979cee289a744f18556c3e"
+      }
+    },
+    "historical_depth_limit": "bookDepth is sampled aggregate percentage-band depth, not full L2 queue evidence. Passive-fill or queue-position claims are prohibited.",
+    "persistent_warehouse": "E:\\SimpleAITradingData\\tick-warehouse\\round51-screen.duckdb",
+    "start_date": "2023-05-16",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_fabricated_or_interpolated_rows_permitted": false,
+    "target_path_resolution_ms": 100
+  },
+  "design_sha256": "58a6df6f34bc4d2cbb660be2c84f80a352a708e315197e45f4ab9922ef7504e4",
+  "economic_screen": {
+    "evaluation_diagnostic_gates": {
+      "base_and_paired_stress_profit_factor_above_one": true,
+      "base_and_paired_stress_total_net_bps_positive": true,
+      "maximum_single_symbol_positive_pnl_share": 0.7,
+      "maximum_unlevered_drawdown_bps": 120.0,
+      "minimum_closed_trades": 30,
+      "minimum_positive_symbols": 2
+    },
+    "forced_activity_or_trade_quota": false,
+    "leverage": 1.0,
+    "policy_calibration_gates": {
+      "aggregate_minimum_closed_trades": 8,
+      "base_and_paired_stress_profit_factor_above_one": true,
+      "base_and_paired_stress_total_net_bps_positive": true,
+      "each_utc_day_base_and_paired_stress_total_net_bps_positive": true,
+      "each_utc_day_minimum_closed_trades": 3,
+      "maximum_single_symbol_positive_pnl_share": 0.7,
+      "minimum_positive_symbols": 2
+    },
+    "stress_rule": "Reprice the exact base ledger with the frozen stress protection delay and two additional basis points per side. Never reselect trades under stress.",
+    "threshold_coverages": [
+      0.001,
+      0.0025,
+      0.005,
+      0.01,
+      0.02,
+      0.05
+    ],
+    "threshold_selection": "For each fixed coverage and symbol, derive a numeric worst-seed expected-net-bps threshold only from the complete policy-calibration role. A coverage passes only when the aggregate and both constituent UTC days pass every calibration gate. Select the passing coverage with the highest aggregate paired-stress mean, then lower drawdown, then lower coverage. Evaluation cannot repair the threshold.",
+    "trade_rule": "A side must be replay-executable and every seed must predict positive after-cost expected payoff. Choose the side with the greater worst-seed expected payoff and abstain on ties. Do not add a profitable-probability threshold: the integrated expected payoff already weights probability and magnitude, and a 0.50 hit-rate rule incorrectly rejects positively skewed opportunities. Apply only the frozen numeric threshold learned before evaluation."
+  },
+  "execution_target": {
+    "additional_slippage_bps_per_side": 1.0,
+    "base_protection_delay_ms": 750,
+    "entry_and_exit": "Cross the contemporaneous ask to enter long and bid to exit long; reverse for short. Enforce observed quote age, side-specific L1 participation, latency, same-day exit, and one non-overlapping position per symbol.",
+    "horizon_seconds": 300,
+    "max_l1_participation": 0.1,
+    "max_quote_age_ms": 1000,
+    "maximum_stop_bps": 80.0,
+    "maximum_take_bps": 120.0,
+    "minimum_stop_bps": 18.0,
+    "minimum_take_bps": 30.0,
+    "reference_order_notional_quote": 1000.0,
+    "same_100ms_collision_rule": "Stop first",
+    "stop_volatility_multiple": 1.5,
+    "stress_protection_delay_ms": 1500,
+    "take_volatility_multiple": 2.25,
+    "taker_fee_bps_per_side": 5.0,
+    "total_entry_latency_ms": 750,
+    "trigger_execution_slippage_bps": 1.0,
+    "volatility_feature": "realized_volatility_60s_bps"
+  },
+  "model_contract": {
+    "architectures": [
+      {
+        "id": "executable_direct_mean_lightgbm",
+        "source": "Reuse and revalidate the sealed Round 52 direct-mean artifacts and predictions as the matched support-correct control."
+      },
+      {
+        "id": "executable_csm_lightgbm",
+        "target": "For each side, factor exact executable after-cost payoff into a marginal magnitude distribution and a profitable-sign probability conditional on magnitude, then numerically integrate their joint distribution."
+      },
+      {
+        "id": "executable_csm_lightgbm_fincast",
+        "single_change": "Append the sealed causal FinCast matrix to the identical executable CSM candidate."
+      }
+    ],
+    "csm_factorization": {
+      "expected_payoff": "For magnitude state k, compute P(M=k|X) * representative_M_k * (2 * P(Y>0|X,M=representative_M_k) - 1), sum over k, then multiply by the causal stop width in bps.",
+      "magnitude_state_edges": "Training-only quantiles [0.10, 0.30, 0.50, 0.70, 0.90] of abs(exact after-cost net bps) / causal stop width, producing six ordered states.",
+      "magnitude_state_representatives": "Arithmetic mean training magnitude in each state; no clipping, winsorization, outcome weighting, or evaluation refit.",
+      "magnitude_target": "abs(exact after-cost net bps) / causal stop width",
+      "sign_conditioning": "Train the sign head with causal X plus log1p(realized magnitude risk units). At inference, evaluate the sign head at every training-derived magnitude representative and integrate; actual future magnitude is never used to make a prediction.",
+      "sign_target": "1 only when exact after-cost net bps is strictly positive",
+      "tail_distribution": "Construct the twelve-point signed joint distribution from six magnitudes times positive and non-positive sign probabilities; report q10, q90, CVaR10, and profitable probability without using them to tune the frozen action rule."
+    },
+    "deterministic_features": "l1-tape-aggregate-depth-causal-v9",
+    "lightgbm": {
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "early_stopping_rounds": 50,
+      "feature_fraction": 0.8,
+      "lambda_l1": 0.1,
+      "lambda_l2": 1.0,
+      "learning_rate": 0.03,
+      "max_bin": 127,
+      "max_depth": 6,
+      "minimum_leaf_rows": "max(64, min(512, ceil(0.002 * side-specific training rows)))",
+      "num_boost_round": 750,
+      "num_leaves": 31,
+      "opencl_fp64_accumulation_required": true
+    },
+    "probability_calibration": "Fit one bounded temperature for each magnitude distribution and one bounded Platt map for each conditional-sign head on the dedicated probability-calibration role only. The sign calibration uses that role's realized magnitude solely to calibrate the conditional factor, never for action scoring.",
+    "replay_executable_support": "target valid AND selected side L1 participation <= 10% AND selected side target exit remains in the same UTC day. Quote-age eligibility is already enforced during feature construction.",
+    "seeds": [
+      5201,
+      5202,
+      5203
+    ],
+    "support_invariant": "Training, early stopping, probability calibration, policy calibration, proper-score baselines, threshold derivation, evaluation, and replay must use the same side-specific replay-executable predicate."
+  },
+  "objective": "Test whether a genuine conditioning-sign-on-magnitude joint model repairs Round 52's unstable severity economics on exact executable payoffs, and whether sealed FinCast features add incremental proper-score and after-cost value over the matched deterministic CSM model.",
+  "predecessor_evidence": {
+    "round_52_design_sha256": "af95d80a3adc21b72d6809d43afb3f2446213fe0a4e089b10366691465a0c669",
+    "round_52_report_canonical_sha256": "ace44ebc33dc0601306841b4c353b43a184b2aa604b49f73d2301257f86d2f7f",
+    "round_52_report_file_sha256": "c5b728161535372d934ff9087a24b81c2490246cd17cb56beb3e29a3052d73fa",
+    "round_52_retained_findings": {
+      "consumed_evaluation_stress_mean_net_bps": 3.807621643943038,
+      "consumed_evaluation_trades": 15,
+      "deterministic_hurdle_average_mse_skill": -0.007798408555381547,
+      "deterministic_hurdle_average_spearman": 0.03277303660805263,
+      "policy_calibration_stress_mean_net_bps": -2.3910907988590737,
+      "policy_calibration_trades": 9,
+      "result": "rejected"
+    },
+    "severity_shrinkage_probe": {
+      "file_sha256": "dbfa305316592ed62eda84740398b6b210d492def59970be1057ed1ac20dc82d",
+      "path": "E:\\SimpleAITradingData\\round53-severity-shrinkage-prototype-20260713-v1.json",
+      "result": "All 36 gain/loss coefficients clipped at 1.0, leaving every variant identical to Round 52; calibration day 1 remained negative and day 2 contained only one positive trade.",
+      "script_git_blob": "a77b31fd3364582d169f5a8fea946e67a945b245"
+    }
+  },
+  "quality_gates": {
+    "ai": [
+      "FinCast must improve mean joint log-loss skill and expected-payoff Spearman by at least 0.005 over the matched deterministic CSM candidate.",
+      "FinCast must improve both base and paired-stress policy economics without worse drawdown, concentration, trade count, or either calibration-day result.",
+      "AI cannot pass when the deterministic CSM candidate fails numerical, predictive, temporal, or economic gates."
+    ],
+    "economic": [
+      "Thresholds and coverage are selected only on policy calibration; evaluation cannot choose or repair them.",
+      "The aggregate calibration interval and both constituent UTC days must each remain positive under base and paired stress with their required trade counts.",
+      "Evaluation is consumed diagnostic evidence and requires at least 30 non-overlapping closed trades, two positive symbols, bounded concentration, positive base and paired-stress return, and profit factor above one.",
+      "No leverage, ROI annualization, profitability statement, or live authority is permitted."
+    ],
+    "numerical": [
+      "All source artifacts, support masks, role indexes, labels, magnitude edges, representatives, models, predictions, joint probabilities, and ledgers are finite and hash-bound.",
+      "Every side and role records total rows, executable rows, rejected rows, class support, and exact mask SHA-256.",
+      "Every magnitude distribution and signed joint distribution sums to one within 1e-6; every model reloads exactly; OpenCL records no CPU fallback.",
+      "Unsupported rows can never enter model fitting, calibration, threshold selection, scoring, or replay."
+    ],
+    "predictive": [
+      "Positive evaluation joint-log-loss and magnitude ranked-probability skill versus training class prevalence for both sides of every symbol.",
+      "Positive expected-payoff MSE skill versus the executable training mean and minimum expected-payoff Spearman 0.03 for both sides of every symbol.",
+      "Minimum pairwise seed expected-payoff Spearman 0.50 and no nonfinite or negative magnitude representative."
+    ]
+  },
+  "research_basis": [
+    {
+      "limitation": "The accepted paper studies monthly U.S. equity excess returns, not intraday crypto or executable barrier payoffs.",
+      "source": "https://arxiv.org/abs/2606.04153",
+      "use": "It supplies the exact factorization Round 53 tests: model magnitude marginally, condition sign on contemporaneous magnitude, and integrate the joint distribution for expected return."
+    },
+    {
+      "limitation": "The theory is generic probabilistic classification and does not establish market edge.",
+      "source": "https://proceedings.mlr.press/v258/perez-lebel25a.html",
+      "use": "Expected-utility decisions require calibrated posterior probabilities, while grouping loss can remain after scalar recalibration; this supports replacing inert severity shrinkage with a new joint model."
+    },
+    {
+      "limitation": "The paper evaluates conformal intervals rather than crypto trade payoffs.",
+      "source": "https://proceedings.mlr.press/v266/retzlaff25a.html",
+      "use": "Non-stationary financial time series need conditional temporal calibration checks; aggregate metrics can conceal drift, motivating separate policy-calibration-day gates."
+    },
+    {
+      "limitation": "The benchmark studies daily liquid U.S. equities and is a recent preprint.",
+      "source": "https://arxiv.org/abs/2606.27100",
+      "use": "Pretrained time-series models can be useful priors, but gains over random walk are small and sparse; FinCast remains a strictly matched ablation rather than presumed alpha."
+    },
+    {
+      "limitation": "The study uses hourly BTC and selected configurations; its results are not imported.",
+      "source": "https://arxiv.org/abs/2606.00060",
+      "use": "Transaction costs can erase apparent directional predictability, so targets and decisions remain exact after-cost executable payoffs."
+    },
+    {
+      "limitation": "The engine cannot reconstruct queue evidence absent from the source corpus.",
+      "source": "https://github.com/nkaz001/hftbacktest",
+      "use": "Passive-order claims require queue and latency evidence; Round 53 keeps conservative taker execution."
+    }
+  ],
+  "round": 53,
+  "schema_version": "executable-csm-fincast-screen-design-v1",
+  "status": "frozen"
+}
