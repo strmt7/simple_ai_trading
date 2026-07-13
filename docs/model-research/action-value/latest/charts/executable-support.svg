@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
 <title>Replay-executable action support</title>
-<desc>Exact side-specific mask used in fitting, calibration, scoring, thresholding, and replay</desc>
+<desc>Exact side-specific support shared by fitting, calibration, and replay</desc>
 <rect width="1200" height="700" fill="#0b1220"/>
 <text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Replay-executable action support</text>
-<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Exact side-specific mask used in fitting, calibration, scoring, thresholding, and replay</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Exact side-specific support shared by fitting, calibration, and replay</text>
 <line x1="100" y1="575.0" x2="1150" y2="575.0" stroke="#334155" stroke-width="1"/>
 <text x="86" y="580.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.00</text>
 <line x1="100" y1="487.0" x2="1150" y2="487.0" stroke="#334155" stroke-width="1"/>
