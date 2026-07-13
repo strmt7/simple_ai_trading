@@ -1,0 +1,147 @@
+{
+  "schema_version": "round-054-sequential-distributional-action-value-prototype-design-v1",
+  "round": 54,
+  "design_sha256": "05cce735bd895b9ebedf584b8e12d2c4e1c7867d0847caf08d132a11f8c960c2",
+  "created_at_utc": "2026-07-13T23:19:27.320963Z",
+  "status": "frozen_development_only",
+  "objective": "Test whether a causal distributional state-action value model can convert the existing multi-year BTCUSDT, ETHUSDT, and SOLUSDT feature panel into a stateful long-flat-short policy after explicit transition costs without tuning on the consumed evaluation role.",
+  "claims_prohibited": [
+    "profitability",
+    "AI uplift",
+    "testnet readiness",
+    "live trading readiness",
+    "leverage readiness",
+    "promotion authority"
+  ],
+  "source_contract": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "feature_count": 71,
+    "frequency": "1h decision grid derived causally from verified 1m Binance observations",
+    "roles": {
+      "training": "2022-01-01 through 2024-03-31",
+      "early_stop": "2024-04-01 through 2024-06-30",
+      "calibration": "2024-07-01 through 2024-09-30",
+      "evaluation": "2024-10-01 through 2025-06-30; already consumed development evidence"
+    },
+    "evaluation_access_rule": "Do not generate an evaluation policy or replay unless one frozen policy candidate passes every calibration gate."
+  },
+  "research_basis": [
+    {
+      "source": "Optimal Trading with Linear Costs",
+      "url": "https://arxiv.org/abs/1203.5957",
+      "use": "Bellman recursion with linear transaction costs implies position-dependent switching thresholds and a non-trading region."
+    },
+    {
+      "source": "Risk-averse policies for natural gas futures trading using distributional reinforcement learning",
+      "url": "https://arxiv.org/abs/2501.04421",
+      "use": "Distributional action values and lower-tail objectives provide an explicit risk-sensitive policy mechanism."
+    },
+    {
+      "source": "Deep Hedging",
+      "url": "https://arxiv.org/abs/1802.03042",
+      "use": "Market frictions, risk limits, and constrained actions belong inside the sequential objective rather than as a post-hoc return adjustment."
+    },
+    {
+      "source": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6795938",
+      "use": "The 2026 working paper reports that sign-based hourly policies fail under ten-basis-point costs and that execution conversion is as important as forecast fit; its profitability results are not treated as replicated evidence."
+    }
+  ],
+  "model": {
+    "family": "dueling causal temporal convolutional distributional action-value network",
+    "state": "71 causal market features plus the explicit prior position index",
+    "actions": [
+      -1,
+      0,
+      1
+    ],
+    "quantile_levels": [
+      0.1,
+      0.3,
+      0.5,
+      0.7,
+      0.9
+    ],
+    "hidden_channels": 64,
+    "dilations": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "kernel_size": 3,
+    "window_hours": 256,
+    "window_stride_hours": 24,
+    "batch_size": 32,
+    "discount_factor": 0.95,
+    "base_one_way_cost_bps": 6.0,
+    "stress_one_way_cost_bps": 8.0,
+    "maximum_epochs": 30,
+    "early_stopping_patience": 6,
+    "learning_rate": 0.0005,
+    "weight_decay": 0.0001,
+    "target_polyak_rate": 0.01,
+    "seeds": [
+      5401,
+      5402,
+      5403
+    ],
+    "loss": "full-information double-Q quantile Huber Bellman loss over every prior-position/action pair",
+    "reward": "next-hour signed return minus one-way cost times absolute position change; linear reward scaling is fitted on training only"
+  },
+  "model_quality_gate": {
+    "minimum_early_stop_td_skill_for_every_seed": 0.0,
+    "maximum_exact_reload_q_error": 0.000001,
+    "cpu_fallback_warnings_allowed_with_directml": 0,
+    "quantile_crossings_allowed": 0
+  },
+  "policy_candidates": [
+    {
+      "id": "median_q_all_seed_consensus",
+      "score": "conditional median state-action value",
+      "transition_rule": "change position only when every seed selects the same action and every seed assigns it positive advantage over retaining the current position"
+    },
+    {
+      "id": "lower_tail_q_all_seed_consensus",
+      "score": "mean of the 0.10 and 0.30 state-action value quantiles",
+      "transition_rule": "change position only when every seed selects the same action and every seed assigns it positive lower-tail advantage over retaining the current position"
+    }
+  ],
+  "calibration_gate": {
+    "minimum_pairwise_seed_score_spearman": 0.5,
+    "minimum_closed_trades": 30,
+    "minimum_active_days": 30,
+    "minimum_stress_profit_factor": 1.05,
+    "maximum_stress_drawdown_fraction": 0.1,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.6,
+    "minimum_stress_block_bootstrap_lower_mean_hourly_bps": 0.0,
+    "required_symbol_activity": 3,
+    "selection_order": "fewest calibration gate failures, then lowest stress drawdown, then highest stress block-bootstrap lower mean; selection is permitted only with zero failures"
+  },
+  "evaluation_gate": {
+    "same_actions_for_base_and_stress": true,
+    "minimum_closed_trades": 180,
+    "minimum_active_days": 90,
+    "minimum_positive_months": 6,
+    "minimum_stress_profit_factor": 1.05,
+    "maximum_stress_drawdown_fraction": 0.1,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.5,
+    "minimum_familywise_168h_block_bootstrap_lower_mean_hourly_bps": 0.0
+  },
+  "execution_boundary": {
+    "leverage": 1.0,
+    "live_orders": false,
+    "testnet_orders": false,
+    "language_model_inference": false,
+    "position_sleeves": "fixed one-third notional per symbol",
+    "terminal_behavior": "force-close every model position and charge the matching one-way cost"
+  },
+  "next_stage_rule": "A calibration failure rejects this mechanism without evaluation replay. A calibration pass allows one consumed evaluation replay but still cannot establish profitability. Only a subsequent hash-bound untouched chronological confirmation can support further consideration."
+}
