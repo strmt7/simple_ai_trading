@@ -46,7 +46,7 @@ from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
 
 ROUND = 39
-DESIGN_SCHEMA = "causal-refit-utility-ai-ablation-design-v2"
+DESIGN_SCHEMA = "causal-refit-utility-ai-ablation-design-v3"
 BINDING_SCHEMA = "round-039-causal-refit-utility-ai-execution-binding-v1"
 REPORT_SCHEMA = "causal-refit-utility-ai-ablation-report-v1"
 SOURCE_CERTIFICATE_CANONICAL_SHA256 = (
@@ -486,6 +486,30 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         "round38_static_comparison": _round38_static_comparison(
             arguments.round38_failure.resolve()
         ),
+        "superseded_execution_attempts": [
+            {
+                "evidence_root": "external://round39-causal-refit-utility-ai-20260712-v1",
+                "last_status_file_sha256": "b9cfd3acc6db8a0ef8941d5ea5c2060ee2dfbf60db06ff5348c3bd4bc4dde0e5",
+                "ml_artifacts_completed": 60,
+                "ai_batches_attempted": 2,
+                "ai_batch_latency_seconds": [91.7, 85.679],
+                "ai_batch_schema_valid": [True, False],
+                "decision_content_or_outcomes_inspected": False,
+                "report_created": False,
+                "reason_stopped": "unbounded AI runtime and verbose-schema failure",
+            },
+            {
+                "evidence_root": "external://round39-causal-refit-utility-ai-20260712-v2",
+                "last_status_file_sha256": "cdd723a44bb9dedfb5785c7d1aa5c79492ef955769655dd2238a0c8eda286e11",
+                "ml_artifacts_completed": 60,
+                "ai_batches_attempted": 2,
+                "ai_batch_latency_seconds": [51.679, 42.926],
+                "ai_batch_schema_valid": [False, False],
+                "decision_content_or_outcomes_inspected": False,
+                "report_created": False,
+                "reason_stopped": "JSON Schema did not constrain array cardinality or case-ID enum",
+            },
+        ],
         "ai_entry_support_candidates": support_ids,
         "aggregate_ml_gate_passed_candidates": passed_ids,
         "ai_case_set": {

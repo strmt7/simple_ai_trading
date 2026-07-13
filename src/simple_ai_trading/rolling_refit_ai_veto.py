@@ -406,7 +406,10 @@ REASON_CODE_MAP = {
 }
 
 
-def _decision_schema() -> dict[str, object]:
+def _decision_schema(expected_case_ids: Sequence[str]) -> dict[str, object]:
+    if not expected_case_ids or len(set(expected_case_ids)) != len(expected_case_ids):
+        raise ValueError("AI schema requires unique expected case identities")
+    expected_indices = list(range(len(expected_case_ids)))
     return {
         "type": "object",
         "properties": {
@@ -415,7 +418,10 @@ def _decision_schema() -> dict[str, object]:
                 "items": {
                     "type": "object",
                     "properties": {
-                        "case_id": {"type": "string"},
+                        "case_index": {
+                            "type": "integer",
+                            "enum": expected_indices,
+                        },
                         "action": {
                             "type": "string",
                             "enum": ["approve", "veto", "cooldown"],
@@ -441,7 +447,7 @@ def _decision_schema() -> dict[str, object]:
                         },
                     },
                     "required": [
-                        "case_id",
+                        "case_index",
                         "action",
                         "risk_percent",
                         "confidence_percent",
@@ -449,6 +455,8 @@ def _decision_schema() -> dict[str, object]:
                     ],
                     "additionalProperties": False,
                 },
+                "minItems": len(expected_case_ids),
+                "maxItems": len(expected_case_ids),
             }
         },
         "required": ["decisions"],
@@ -519,8 +527,11 @@ def _parse_batch_response(
     for value in values:
         if not isinstance(value, Mapping):
             raise ValueError("AI response contains a non-object decision")
-        case_id = str(value.get("case_id") or "")
-        if case_id not in expected_case_ids or case_id in parsed:
+        raw_index = value.get("case_index")
+        if not isinstance(raw_index, int) or not 0 <= raw_index < len(expected_case_ids):
+            raise ValueError("AI response case identity is missing or duplicated")
+        case_id = expected_case_ids[raw_index]
+        if case_id in parsed:
             raise ValueError("AI response case identity is missing or duplicated")
         parsed[case_id] = _parse_single_decision(value)
     if set(parsed) != set(expected_case_ids):
@@ -530,8 +541,8 @@ def _parse_batch_response(
 
 def _batch_prompt(cases: Sequence[RollingAITradeCase]) -> str:
     payload = [
-        {"case_id": case.case_id, "evidence": dict(case.prompt_payload)}
-        for case in cases
+        {"case_index": index, "evidence": dict(case.prompt_payload)}
+        for index, case in enumerate(cases)
     ]
     serialized = json.dumps(
         payload,
@@ -547,7 +558,7 @@ def _batch_prompt(cases: Sequence[RollingAITradeCase]) -> str:
         "exact prices, retrieve news, or assume missing information is favorable. Premium and settled "
         "funding fields are contract-risk context, not guaranteed alpha. Approve only coherent calibrated "
         "evidence; veto weak or contradictory evidence; use cooldown for unstable regimes or loss control. "
-        "Return one decision for every case_id and no additional cases.\n"
+        "Return one decision for every case_index and no additional cases.\n"
         f"CASES={serialized}"
     )
 
@@ -617,11 +628,12 @@ def benchmark_rolling_ai_model(
         timeout_seconds=timeout_seconds,
     )
     frozen_case_sha = rolling_case_set_sha256(cases)
-    schema = _decision_schema()
     results: list[RollingAICaseResult] = []
     batch_latencies: list[float] = []
     batches = [cases[index : index + BATCH_SIZE] for index in range(0, len(cases), BATCH_SIZE)]
     for batch_index, batch in enumerate(batches, start=1):
+        expected_case_ids = [case.case_id for case in batch]
+        schema = _decision_schema(expected_case_ids)
         prompt = _batch_prompt(batch)
         request = {
             "model": model,
@@ -652,7 +664,7 @@ def benchmark_rolling_ai_model(
                 request,
                 timeout_seconds=timeout_seconds,
             )
-            decisions = _parse_batch_response(raw, [case.case_id for case in batch])
+            decisions = _parse_batch_response(raw, expected_case_ids)
         except Exception as exc:
             failure = f"{type(exc).__name__}: {exc}"
             decisions = {
