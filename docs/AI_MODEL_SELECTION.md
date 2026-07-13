@@ -94,7 +94,7 @@ provider/risk-review evidence only, not AI trading uplift.
 Current local priority order favors `qwen3:8b` as the installed structured
 risk-review baseline, `deepseek-r1:8b` as a reasoning second opinion, and
 smaller models only when they pass the same benchmark. The candidate registry
-also includes local aliases `fin-r1:7b` and `fin-o1:8b` for finance-reasoning
+also includes local aliases `fin-r1:8b` and `fin-o1:8b` for finance-reasoning
 experiments, plus finance-specialized DragonLLM, FinGPT, and FinMA candidates
 for future local serving tests. They still must pass the same benchmark and
 uplift gates before they can affect autonomous trading.

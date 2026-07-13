@@ -12,7 +12,11 @@ from simple_ai_trading.ai_model_benchmark import (
     finance_ai_candidates,
     rescore_finance_ai_benchmark_payload,
 )
-from simple_ai_trading.ai_runtime import AIRuntimeConfig, detect_ai_capabilities, estimate_model_parameters_b
+from simple_ai_trading.ai_runtime import (
+    AIRuntimeConfig,
+    detect_ai_capabilities,
+    estimate_model_parameters_b,
+)
 from simple_ai_trading.command_contract import command_names, command_specs
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading import windows_app
@@ -20,13 +24,19 @@ from simple_ai_trading.windows_app import WINDOWS_APP_COMMANDS
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
-def test_ai_runtime_blocks_when_required_gpu_backend_resolves_to_cpu(monkeypatch) -> None:
+def test_ai_runtime_blocks_when_required_gpu_backend_resolves_to_cpu(
+    monkeypatch,
+) -> None:
     monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
-    monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: None)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: None
+    )
     monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
     monkeypatch.setattr(
         "simple_ai_trading.ai_runtime.resolve_backend",
-        lambda _requested: BackendInfo("directml", "cpu", "cpu", "Python stdlib", "DirectML unavailable"),
+        lambda _requested: BackendInfo(
+            "directml", "cpu", "cpu", "Python stdlib", "DirectML unavailable"
+        ),
     )
 
     report = detect_ai_capabilities(AIRuntimeConfig(enabled=True, require_gpu=True))
@@ -37,7 +47,9 @@ def test_ai_runtime_blocks_when_required_gpu_backend_resolves_to_cpu(monkeypatch
 
 def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
-    monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0
+    )
     monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
     monkeypatch.setattr(
         "simple_ai_trading.ai_runtime.resolve_backend",
@@ -60,7 +72,9 @@ def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
 
 def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
-    monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0
+    )
     monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
     monkeypatch.setattr(
         "simple_ai_trading.ai_runtime.resolve_backend",
@@ -81,7 +95,9 @@ def test_ai_runtime_blocks_sub_multibillion_model(monkeypatch) -> None:
 
 def test_ai_runtime_blocks_missing_or_cloud_only_ollama_models(monkeypatch) -> None:
     monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
-    monkeypatch.setattr("simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: 10.0
+    )
     monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
     monkeypatch.setattr(
         "simple_ai_trading.ai_runtime.resolve_backend",
@@ -109,7 +125,9 @@ def test_ai_runtime_parses_e_size_model_names() -> None:
     assert estimate_model_parameters_b("tiny-560m") == 0.56
 
 
-def _benchmark_response(action: str, risk: float, rationale: str = "risk reviewed") -> dict[str, object]:
+def _benchmark_response(
+    action: str, risk: float, rationale: str = "risk reviewed"
+) -> dict[str, object]:
     return {
         "message": {
             "content": (
@@ -166,9 +184,9 @@ def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() 
     candidates = {candidate.model: candidate for candidate in finance_ai_candidates()}
 
     assert candidates["qwen3:8b"].reasoning_or_risk_review is True
-    assert candidates["fin-r1:7b"].finance_specialized is True
-    assert candidates["fin-r1:7b"].reasoning_or_risk_review is True
-    assert candidates["fin-r1:7b"].model_parameters_b == 7.0
+    assert candidates["fin-r1:8b"].finance_specialized is True
+    assert candidates["fin-r1:8b"].reasoning_or_risk_review is True
+    assert candidates["fin-r1:8b"].model_parameters_b == 8.0
     assert candidates["fin-o1:8b"].finance_specialized is True
     assert candidates["fin-o1:8b"].reasoning_or_risk_review is True
     assert candidates["fin-o1:8b"].model_parameters_b == 8.0
@@ -264,19 +282,25 @@ def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> No
         def asdict(self):
             return {"passed": True, "selected_model": self.selected_model}
 
-    monkeypatch.setattr("simple_ai_trading.ai_model_benchmark.benchmark_finance_ai_models", lambda **_kwargs: _Report())
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_model_benchmark.benchmark_finance_ai_models",
+        lambda **_kwargs: _Report(),
+    )
 
     output = tmp_path / "ai_benchmark.json"
-    assert cli.command_ai_benchmark(
-        argparse.Namespace(
-            models="qwen3:8b",
-            url="http://127.0.0.1:11434",
-            timeout=1.0,
-            minimum_score=0.78,
-            output=str(output),
-            json=False,
+    assert (
+        cli.command_ai_benchmark(
+            argparse.Namespace(
+                models="qwen3:8b",
+                url="http://127.0.0.1:11434",
+                timeout=1.0,
+                minimum_score=0.78,
+                output=str(output),
+                json=False,
+            )
         )
-    ) == 0
+        == 0
+    )
     assert output.exists()
     assert "selected=qwen3:8b" in capsys.readouterr().out
 
@@ -288,7 +312,9 @@ def test_windows_app_commands_match_cli_contract() -> None:
     assert "model-lab" in WINDOWS_APP_COMMANDS
 
 
-def test_windows_launcher_reports_missing_native_executable(monkeypatch, capsys) -> None:
+def test_windows_launcher_reports_missing_native_executable(
+    monkeypatch, capsys
+) -> None:
     monkeypatch.setattr(windows_app, "native_executable_candidates", lambda: ())
     monkeypatch.setattr(windows_app, "find_native_executable", lambda: None)
     assert windows_app.main() == 2
@@ -300,6 +326,7 @@ def test_windows_launcher_runs_native_executable(monkeypatch, tmp_path) -> None:
     exe.write_text("", encoding="utf-8")
     calls = {}
     monkeypatch.setattr(windows_app, "find_native_executable", lambda: exe)
+
     def fake_call(args, env):
         calls["args"] = args
         calls["env"] = env
@@ -310,7 +337,9 @@ def test_windows_launcher_runs_native_executable(monkeypatch, tmp_path) -> None:
     assert calls["args"] == [str(exe)]
     assert calls["env"]["SIMPLE_AI_TRADING_PYTHON"] == sys.executable
     assert calls["env"]["SIMPLE_AI_TRADING_REPO_ROOT"] == str(windows_app._repo_root())
-    assert str(windows_app._repo_root() / "src") in calls["env"]["PYTHONPATH"].split(windows_app.os.pathsep)
+    assert str(windows_app._repo_root() / "src") in calls["env"]["PYTHONPATH"].split(
+        windows_app.os.pathsep
+    )
 
 
 def test_windows_launcher_help_exits_cleanly(monkeypatch, capsys) -> None:
@@ -320,15 +349,27 @@ def test_windows_launcher_help_exits_cleanly(monkeypatch, capsys) -> None:
 
 
 def test_generated_native_contract_matches_cli() -> None:
-    header = windows_app._repo_root() / "native" / "windows" / "generated" / "command_contract.hpp"
+    header = (
+        windows_app._repo_root()
+        / "native"
+        / "windows"
+        / "generated"
+        / "command_contract.hpp"
+    )
     text = header.read_text(encoding="utf-8")
     for spec in command_specs():
         option_count = len(spec.options) + len(spec.positionals)
-        array_name = "".join(ch if ch.isalnum() else "_" for ch in spec.name).strip("_") or "command"
+        array_name = (
+            "".join(ch if ch.isalnum() else "_" for ch in spec.name).strip("_")
+            or "command"
+        )
         options_ptr = f"kOptions_{array_name}" if option_count else "nullptr"
         if option_count:
             assert f"inline constexpr CommandOptionSpec kOptions_{array_name}[]" in text
-        assert f'{_wide(spec.name)}, {_wide(spec.help)}, {options_ptr}, {option_count}' in text
+        assert (
+            f"{_wide(spec.name)}, {_wide(spec.help)}, {options_ptr}, {option_count}"
+            in text
+        )
         for option in (*spec.options, *spec.positionals):
             flags = ", ".join(option.flags) or option.dest
             assert _wide(flags) in text
@@ -336,7 +377,9 @@ def test_generated_native_contract_matches_cli() -> None:
             if option.choices:
                 assert _wide(", ".join(option.choices)) in text
 
-    selection = next(spec for spec in command_specs() if spec.name == "tape-depth-select")
+    selection = next(
+        spec for spec in command_specs() if spec.name == "tape-depth-select"
+    )
     reports = next(option for option in selection.options if option.dest == "report")
     design = next(option for option in selection.options if option.dest == "design")
     assert reports.repeatable is True
@@ -358,7 +401,9 @@ def test_generated_native_contract_matches_cli() -> None:
 
 
 def test_native_window_initializes_hwnd_during_create() -> None:
-    source = (windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp").read_text(encoding="utf-8")
+    source = (
+        windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp"
+    ).read_text(encoding="utf-8")
     assert "self->hwnd_ = hwnd;" in source
     assert 'create_control(L"LISTBOX"' in source
     assert 'L"COMBOBOX"' in source
@@ -391,8 +436,12 @@ def test_native_window_initializes_hwnd_during_create() -> None:
 def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     root = windows_app._repo_root()
     smoke = (root / "tools" / "smoke_native_windows_ui.ps1").read_text(encoding="utf-8")
-    capture = (root / "tools" / "capture_native_windows_app.ps1").read_text(encoding="utf-8")
-    layout = (root / "tools" / "validate_native_windows_layout.ps1").read_text(encoding="utf-8")
+    capture = (root / "tools" / "capture_native_windows_app.ps1").read_text(
+        encoding="utf-8"
+    )
+    layout = (root / "tools" / "validate_native_windows_layout.ps1").read_text(
+        encoding="utf-8"
+    )
 
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
     assert "Stop + Close" in smoke
