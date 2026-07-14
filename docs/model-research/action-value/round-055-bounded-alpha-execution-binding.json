@@ -1,0 +1,119 @@
+{
+  "schema_version": "round-055-bounded-alpha-execution-binding-v1",
+  "round": 55,
+  "design_sha256": "e6746db669ffc2633f197cf61dd73b369c2889381900f4e73a375192922f2827",
+  "implementation_commit": "d7a587eaacf47a8f890aab197f12ae447ea62e9c",
+  "blobs": [
+    {
+      "path": "docs/model-research/action-value/round-055-bounded-alpha-lightgbm-ai-design.json",
+      "git_blob_oid": "d5c70dabb77f406fbc4c2c00b7fd95c86f75ed55"
+    },
+    {
+      "path": "src/simple_ai_trading/ai_factor_programs.py",
+      "git_blob_oid": "d3db3fb3d008608694a07e65430301d7326b6a56"
+    },
+    {
+      "path": "src/simple_ai_trading/bounded_alpha_lightgbm.py",
+      "git_blob_oid": "239840c2dd77ed938c8c449c85bbd115d536b6d7"
+    },
+    {
+      "path": "src/simple_ai_trading/compute.py",
+      "git_blob_oid": "bde295ca773e31f3c40d237a9da9f792b2328945"
+    },
+    {
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py",
+      "git_blob_oid": "331a13f86d390a15d79adeb475be8637c6844073"
+    },
+    {
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py",
+      "git_blob_oid": "07f7fcab270588600d68a32e3bc0476271bd2a9a"
+    },
+    {
+      "path": "src/simple_ai_trading/lightgbm_backend.py",
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c"
+    },
+    {
+      "path": "src/simple_ai_trading/stop_time_payoff_data.py",
+      "git_blob_oid": "21d4ef9f3e68cdd19d8dc3848fc6057e6b81b2f7"
+    },
+    {
+      "path": "src/simple_ai_trading/storage.py",
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f"
+    },
+    {
+      "path": "tests/test_ai_factor_programs.py",
+      "git_blob_oid": "f22335c5cf229339a029a671fe5d2e44d187c03c"
+    },
+    {
+      "path": "tests/test_bounded_alpha_lightgbm.py",
+      "git_blob_oid": "1fc28d14ef918c7cbeab7b0ac11854c2fd05af0f"
+    },
+    {
+      "path": "tests/test_stop_time_payoff_data.py",
+      "git_blob_oid": "8db44857c0c59cc2f0b2e0a556d28dd1a614c884"
+    },
+    {
+      "path": "tools/create_round55_bounded_alpha_binding.py",
+      "git_blob_oid": "3a344bdd9e6b233f939c74d8904ed21c940a74ab"
+    },
+    {
+      "path": "tools/run_round55_ai_factor_research.py",
+      "git_blob_oid": "e6c4b93ab9c45bdc79dc8a0d052a505bd5451b8d"
+    },
+    {
+      "path": "tools/run_round55_bounded_alpha.py",
+      "git_blob_oid": "609b6223222f96e4b52bc774875703d700b7bcd4"
+    }
+  ],
+  "derived_cache": [
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\features.npy",
+      "bytes": 26111372,
+      "sha256": "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14",
+      "name": "features.npy"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\forward_return_bps.npy",
+      "bytes": 1471184,
+      "sha256": "864d02e1f1ef5bae8f3b51e16ae90e1077ba8852cb67ea0a766a06ec956b9ce7",
+      "name": "forward_return_bps.npy"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\hourly_return_bps.npy",
+      "bytes": 367892,
+      "sha256": "277cb6022dddefe1ba52c83a8827ec45e41f45fb877f7db59599561373b10dbf",
+      "name": "hourly_return_bps.npy"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\metadata.json",
+      "bytes": 3159,
+      "sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135",
+      "name": "metadata.json"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\timestamps_ms.npy",
+      "bytes": 245304,
+      "sha256": "b85c541d78c29f34a12b75f42656cf09ae4c6a47dcef5334c4d60d2e90e6591f",
+      "name": "timestamps_ms.npy"
+    }
+  ],
+  "external_evidence": {
+    "source_certificate": {
+      "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json",
+      "bytes": 4575,
+      "sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7"
+    },
+    "ai_report": {
+      "path": "E:\\SimpleAITradingData\\round55-ai-factor-research-20260714-v4\\report.json",
+      "bytes": 6340,
+      "sha256": "46e5739d0061549e4f6ff6ff908f05f794be78a2b66121486e13e277a58f0665"
+    },
+    "ai_ledger": {
+      "path": "E:\\SimpleAITradingData\\round55-ai-factor-research-20260714-v4\\factor-program-ledger.json",
+      "bytes": 9185,
+      "sha256": "164b789cf02849c0bf1f4ce63df32b6230e93236cbecda00ff14193938943624"
+    }
+  },
+  "command": ".venv311\\Scripts\\python.exe tools\\run_round55_bounded_alpha.py --binding docs\\model-research\\action-value\\round-055-bounded-alpha-execution-binding.json --source-certificate <external-certificate.json> --derived-cache <round45-derived-cache> --ai-report <round55-ai-report.json> --ai-ledger <round55-factor-program-ledger.json> --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "binding_sha256": "bbfd5c39edb9d07bdd0f08d264d2682b5ac698257e495710d8a0c6ed592e1d12"
+}
