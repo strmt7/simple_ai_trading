@@ -104,6 +104,8 @@ def _finish_replay_store(
     run_id: str,
     *,
     wrong_best: bool = False,
+    trade_resync: bool = False,
+    trade_resync_lag_ms: int = 1,
 ) -> None:
     store.start_run(run_id, EPOCH * 1_000)
     for asset in ("BTC", "ETH", "SOL"):
@@ -272,6 +274,55 @@ def _finish_replay_store(
             monotonic_ns=301_000_000_000,
         ),
     ]
+    if trade_resync:
+        clob_messages.insert(
+            4,
+            _message(
+                "clob_market",
+                {
+                    "event_type": "book",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "timestamp": str(
+                        EPOCH * 1_000 + 1_011 - trade_resync_lag_ms
+                    ),
+                    "hash": "atomic-replacement",
+                    "bids": [],
+                    "asks": [
+                        {"price": "0.50", "size": "8"},
+                        {"price": "0.52", "size": "7"},
+                    ],
+                },
+                sequence=40,
+                wall_offset_ms=1_012,
+                monotonic_ns=1_011_500_000,
+            ),
+        )
+        clob_messages.insert(
+            4,
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(EPOCH * 1_000 + 1_011),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.53",
+                            "size": "6",
+                            "side": "SELL",
+                            "hash": "post-trade-delta",
+                            "best_bid": "0",
+                            "best_ask": "0.50",
+                        }
+                    ],
+                },
+                sequence=41,
+                wall_offset_ms=1_012,
+                monotonic_ns=1_011_200_000,
+            ),
+        )
     auxiliary = [
         _message(
             "polymarket_rtds",
@@ -336,6 +387,43 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     assert replay.first_book_after_latency(close_book, latency_ms=1) is None
     assert replay.book_for_event(changed.event_id, changed.token_id) == changed
     assert replay.resolutions[0].winning_outcome == "Up"
+
+
+def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "trade-resync.duckdb") as store:
+        _finish_replay_store(store, "trade-resync", trade_resync=True)
+        replay = PolymarketEvidenceReplay.load(store, run_id="trade-resync")
+
+    resynchronized = replay.books[1].snapshot
+    post_resync = replay.books[2].snapshot
+    assert resynchronized.bids == ()
+    assert resynchronized.asks[0].price == Decimal("0.50")
+    assert resynchronized.asks[0].quantity == Decimal("8")
+    assert resynchronized.asks[1].price == Decimal("0.52")
+    assert resynchronized.asks[1].quantity == Decimal("7")
+    assert post_resync.asks[2].price == Decimal("0.53")
+    assert post_resync.asks[2].quantity == Decimal("6")
+    assert post_resync.received_monotonic_ns > resynchronized.received_monotonic_ns
+    assert replay.diagnostics.late_event_count >= 1
+    assert replay.diagnostics.maximum_source_regression_ms == 1
+    assert replay.diagnostics.deferred_event_count >= 1
+    assert replay.diagnostics.maximum_availability_delay_ns > 0
+
+
+def test_replay_rejects_events_outside_bounded_causal_reorder_window(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "stale-book.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "stale-book",
+            trade_resync=True,
+            trade_resync_lag_ms=1_002,
+        )
+        with pytest.raises(ValueError, match="bounded causal reorder window"):
+            PolymarketEvidenceReplay.load(store, run_id="stale-book")
 
 
 def test_replay_rejects_semantically_inconsistent_published_best_price(
@@ -642,6 +730,12 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     status_payload = json.loads(capsys.readouterr().out)
     assert status_code == 0
     assert status_payload["reconciliation"]["can_open"] is True
+    assert (
+        status_payload["replay_diagnostics"]["schema_version"]
+        == "polymarket-replay-diagnostics-v1"
+    )
+    assert status_payload["feed_coverage"]["shadow_ready"] is False
+    assert status_payload["feed_coverage"]["training_ready"] is False
 
     missing_latency_code = cli.main(
         [

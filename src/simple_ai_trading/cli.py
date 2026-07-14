@@ -106,6 +106,7 @@ from .positions import (
     new_position_id,
 )
 from .polymarket_paper import PolymarketPaperBroker
+from .polymarket_coverage import inspect_polymarket_feed_coverage
 from .polymarket_recorder import PolymarketPublicRecorder
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
@@ -5865,6 +5866,11 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                 "run_id": broker.replay.run_id,
                 "operation": operation,
                 "reconciliation": reconciliation.asdict(),
+                "replay_diagnostics": broker.replay.diagnostics.asdict(),
+                "feed_coverage": inspect_polymarket_feed_coverage(
+                    broker.store,
+                    run_id=broker.replay.run_id,
+                ).asdict(),
                 "positions": positions,
             }
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.

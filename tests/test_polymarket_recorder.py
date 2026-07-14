@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from decimal import Decimal
 import hashlib
 import json
@@ -9,9 +10,11 @@ import pytest
 from simple_ai_trading import cli
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
+from simple_ai_trading.polymarket_coverage import inspect_polymarket_feed_coverage
 from simple_ai_trading.polymarket_recorder import (
     MarketEvidence,
     PolymarketEvidenceStore,
+    PolymarketPublicRecorder,
     RawStreamMessage,
     RecorderReport,
     StreamGap,
@@ -176,6 +179,181 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
         ("clob_market", "book", ""),
         ("polymarket_rtds", "crypto_prices:update", "BTC"),
     ]
+
+
+def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
+    tmp_path,
+) -> None:
+    database = tmp_path / "feed-coverage.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        run_id = "feed-coverage"
+        store.start_run(run_id, EPOCH * 1_000)
+        markets = {}
+        for asset in ("BTC", "ETH", "SOL"):
+            evidence = _evidence(asset)
+            markets[asset] = evidence.market
+            store.record_market_evidence(run_id, evidence)
+
+        clob_events = []
+        for asset, market in markets.items():
+            for token in market.token_ids:
+                clob_events.append(
+                    {
+                        "event_type": "book",
+                        "market": market.condition_id,
+                        "asset_id": token,
+                        "timestamp": str(EPOCH * 1_000 + 1_000),
+                        "hash": f"{asset}-{token[-4:]}",
+                        "bids": [{"price": "0.49", "size": "10"}],
+                        "asks": [{"price": "0.51", "size": "10"}],
+                    }
+                )
+            clob_events.append(
+                {
+                    "event_type": "market_resolved",
+                    "market": market.condition_id,
+                    "winning_asset_id": market.up_token_id,
+                    "winning_outcome": "Up",
+                    "timestamp": str(market.end_ms + 1_000),
+                }
+            )
+        messages = [_message("clob_market", clob_events)]
+        for index, asset in enumerate(("BTC", "ETH", "SOL"), start=1):
+            lower = asset.lower()
+            messages.extend(
+                [
+                    _message(
+                        "polymarket_rtds",
+                        {
+                            "topic": "crypto_prices",
+                            "type": "subscribe",
+                            "timestamp": EPOCH * 1_000 + index,
+                            "payload": {
+                                "symbol": f"{lower}/usd",
+                                "data": [
+                                    {
+                                        "timestamp": EPOCH * 1_000 - 1_000,
+                                        "value": "100",
+                                    },
+                                    {
+                                        "timestamp": EPOCH * 1_000,
+                                        "value": "101",
+                                    },
+                                ],
+                            },
+                        },
+                        sequence=index,
+                    ),
+                    _message(
+                        "polymarket_rtds",
+                        {
+                            "topic": "crypto_prices_chainlink",
+                            "type": "update",
+                            "timestamp": EPOCH * 1_000 + index,
+                            "payload": {
+                                "symbol": f"{lower}/usd",
+                                "timestamp": EPOCH * 1_000,
+                                "value": "100.5",
+                            },
+                        },
+                        sequence=index + 3,
+                    ),
+                    _message(
+                        "binance_spot",
+                        {
+                            "stream": f"{lower}usdt@bookTicker",
+                            "data": {
+                                "u": index,
+                                "b": "100",
+                                "B": "10",
+                                "a": "101",
+                                "A": "11",
+                            },
+                        },
+                        sequence=index,
+                    ),
+                    _message(
+                        "binance_spot",
+                        {
+                            "stream": f"{lower}usdt@trade",
+                            "data": {
+                                "e": "trade",
+                                "E": EPOCH * 1_000 + index,
+                                "T": EPOCH * 1_000,
+                                "p": "100.5",
+                                "q": "2",
+                                "m": False,
+                            },
+                        },
+                        sequence=index + 3,
+                    ),
+                ]
+            )
+        store.append_messages(run_id, messages)
+        report = store.finish_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(),
+        )
+        coverage = inspect_polymarket_feed_coverage(
+            store,
+            run_id=run_id,
+            minimum_resolved_markets_per_asset=1,
+        )
+
+    assert report.status == "complete"
+    assert coverage.shadow_ready is True
+    assert coverage.training_ready is True
+    assert coverage.shadow_errors == ()
+    assert coverage.training_errors == ()
+    for asset in ("BTC", "ETH", "SOL"):
+        assert coverage.counts[asset] == {
+            "market_snapshots": 1,
+            "clob_token_baselines": 2,
+            "direct_binance_book_tickers": 1,
+            "direct_binance_trades": 1,
+            "rtds_binance_samples": 2,
+            "rtds_chainlink_samples": 1,
+            "official_resolutions": 1,
+        }
+
+
+def test_rtds_uses_independent_subscriptions_for_each_chainlink_asset(
+    tmp_path, monkeypatch
+) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "subscriptions.duckdb")
+    captured: list[dict[str, object]] = []
+
+    async def _capture_simple_stream(**options: object) -> None:
+        captured.append(options)
+
+    monkeypatch.setattr(recorder, "_simple_stream", _capture_simple_stream)
+    asyncio.run(recorder._rtds_stream(asyncio.Queue(), asyncio.Event()))
+
+    assert len(captured) == 4
+    assert {call["url"] for call in captured} == {
+        "wss://ws-live-data.polymarket.com"
+    }
+    assert {call["stream"] for call in captured} == {"polymarket_rtds"}
+    subscription_messages = [call["subscription"] for call in captured]
+    assert all(isinstance(message, str) for message in subscription_messages)
+    messages = [json.loads(message) for message in subscription_messages]
+    assert all(message["action"] == "subscribe" for message in messages)
+    assert all(len(message["subscriptions"]) == 1 for message in messages)
+    assert messages[0]["subscriptions"] == [
+        {
+            "filters": "btcusdt,ethusdt,solusdt",
+            "topic": "crypto_prices",
+            "type": "update",
+        }
+    ]
+    chainlink_filters = {
+        json.loads(message["subscriptions"][0]["filters"])["symbol"]
+        for message in messages[1:]
+    }
+    assert chainlink_filters == {"btc/usd", "eth/usd", "sol/usd"}
 
 
 def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
