@@ -4,10 +4,12 @@ import asyncio
 from decimal import Decimal
 import hashlib
 import json
+import threading
 
 import pytest
 
 from simple_ai_trading import cli
+from simple_ai_trading import polymarket_recorder as recorder_module
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_coverage import inspect_polymarket_feed_coverage
@@ -354,6 +356,65 @@ def test_rtds_uses_independent_subscriptions_for_each_chainlink_asset(
         for message in messages[1:]
     }
     assert chainlink_filters == {"btc/usd", "eth/usd", "sol/usd"}
+
+
+def test_periodic_heartbeat_runs_independently_of_busy_message_processing() -> None:
+    class _Sender:
+        def __init__(self) -> None:
+            self.messages: list[str] = []
+
+        async def send(self, message: str) -> None:
+            self.messages.append(message)
+            await asyncio.sleep(0)
+
+    async def _exercise() -> list[str]:
+        sender = _Sender()
+        stop = asyncio.Event()
+        heartbeat = asyncio.create_task(
+            recorder_module._periodic_text_heartbeat(sender, stop, "PING", 0.01)
+        )
+        deadline = asyncio.get_running_loop().time() + 0.045
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0)
+        stop.set()
+        await heartbeat
+        return sender.messages
+
+    assert len(asyncio.run(_exercise())) >= 3
+
+
+def test_writer_persistence_does_not_block_the_network_event_loop(tmp_path) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "writer-offload.duckdb")
+    main_thread = threading.get_ident()
+    writer_threads: list[int] = []
+    started = threading.Event()
+    release = threading.Event()
+
+    class _SlowStore:
+        def append_messages(self, run_id: str, messages: object) -> None:
+            assert run_id == "writer-offload"
+            assert messages
+            writer_threads.append(threading.get_ident())
+            started.set()
+            assert release.wait(timeout=1.0)
+
+    async def _exercise() -> bool:
+        output: asyncio.Queue[object] = asyncio.Queue()
+        await output.put(_message("clob_market", {"event_type": "book"}))
+        await output.put(None)
+        writer = asyncio.create_task(
+            recorder._writer("writer-offload", _SlowStore(), output)  # type: ignore[arg-type]
+        )
+        deadline = asyncio.get_running_loop().time() + 0.5
+        while not started.is_set() and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.001)
+        loop_remained_responsive = started.is_set()
+        release.set()
+        await asyncio.wait_for(writer, timeout=1.0)
+        return loop_remained_responsive
+
+    assert asyncio.run(_exercise()) is True
+    assert writer_threads and writer_threads[0] != main_thread
 
 
 def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
