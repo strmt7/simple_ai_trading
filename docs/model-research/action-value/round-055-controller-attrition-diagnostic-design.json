@@ -1,0 +1,89 @@
+{
+  "schema_version": "round-055-controller-attrition-diagnostic-design-v1",
+  "round": 55,
+  "frozen_at_utc": "2026-07-14T17:42:55.6073141Z",
+  "purpose": "Locate the source of Round 55 controller sparsity using only already-consumed development evidence and predeclared consensus diagnostics.",
+  "source_contract": {
+    "report_schema_version": "round-055-bounded-alpha-report-v1",
+    "report_file_sha256": "b556ff0302d230ef620a7bfb11ad49ad35f5d083ebc390d5174657a4f466fda2",
+    "report_canonical_sha256": "47dc22e987fff9cb508ff09fed2222e80391d18797496d4f2f9e476aee887919",
+    "execution_binding_sha256": "731c0216b53226376bb465c3fce0d3d32cb6bcecf063d98e3cd2ac9e9c9315ed",
+    "source_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "payoff_dataset_sha256": "bdae1a7ebd7140fa63e74a66e43159f884fd39635656fba45f2a3ff11884c519",
+    "baseline_prediction_file_sha256": "a058733becdbc23d5e12b1063192def2b03349ec9bc8e2751d343f2369a1839b",
+    "ai_prediction_file_sha256": "2f5f6b88527cb46dbc56492c7ece0ba80d8a63916871bf73c63906a5586588e1"
+  },
+  "data_boundary": {
+    "allowed_intervals": {
+      "policy_development": "2024-07-01T00:00:00Z through 2024-09-01T00:00:00Z, excluding decisions whose 61-minute realization crosses the end",
+      "development_holdout": "2024-09-01T00:00:00Z through 2024-10-01T00:00:00Z, excluding decisions whose 61-minute realization crosses the end"
+    },
+    "selection_contaminated": true,
+    "selection_confirmation_or_terminal_rows_read": false,
+    "later_existing_timestamps_forbidden": 6551,
+    "model_refits": 0,
+    "threshold_trials": 0,
+    "parameter_optimization": false
+  },
+  "treatments": [
+    "baseline_71",
+    "ai_program_augmented"
+  ],
+  "controllers": [
+    {
+      "id": "all_view_consensus",
+      "role": "exact_round_55_control",
+      "rule": "A side is eligible only when every view's median-of-three prediction is positive, every view prefers that side to the opposite side, and at least two seeds in every view predict positive payoff."
+    },
+    {
+      "id": "majority_view_consensus",
+      "role": "predeclared_consumed_data_diagnostic",
+      "rule": "Each view casts one side vote only when its median-of-three prediction is positive, it prefers that side, and at least two seeds predict positive payoff. Select a side when at least two views vote for it and fewer than two vote for the opposite side. The score is the median of the voting-view medians."
+    },
+    {
+      "id": "pooled_nine_consensus",
+      "role": "predeclared_consumed_data_diagnostic",
+      "rule": "Pool the three views and three seeds. Select the side whose nine-model median is positive and exceeds the opposite-side median when at least six of nine predictions for that side are positive. The score is the selected nine-model median."
+    }
+  ],
+  "market_state_gates": {
+    "same_minute_of_week_liquidity_ratio_minimum": 0.5,
+    "quote_volume_vs_1440m_mean_minimum": 0.25,
+    "realized_volatility_60m_to_1440m_maximum": 2.5
+  },
+  "replay_contract": {
+    "path_resolution_seconds": 60,
+    "maximum_holding_minutes": 60,
+    "round_trip_execution_charge_bps": 16.0,
+    "per_position_stop_risk_fraction": 0.001,
+    "aggregate_stop_risk_fraction": 0.0015,
+    "maximum_symbol_notional_fraction": 0.3333333333333333,
+    "maximum_gross_fraction": 0.5,
+    "maximum_net_directional_fraction": 0.3333333333333333,
+    "daily_loss_limit_fraction": 0.005,
+    "consecutive_losing_trades_before_cooldown": 3,
+    "cooldown_hours": 6,
+    "fixed_initial_capital": true,
+    "reinvestment": false,
+    "leverage": 1.0
+  },
+  "frozen_measurements": [
+    "sequential eligibility attrition by treatment, interval, controller, symbol, and side",
+    "per-view vote patterns and seed-positive support",
+    "liquidity and volatility gate overlap",
+    "signals before risk cooldowns, closed trades, active days, stop frequency, and realized stress payoff",
+    "score quintile calibration using only selected rows",
+    "symbol PnL concentration and trade concentration",
+    "descriptive controller overlap and disagreement"
+  ],
+  "interpretation_contract": {
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "ai_uplift_claim": false,
+    "untouched_data_authority": false,
+    "testnet_authority": false,
+    "live_authority": false,
+    "permitted_use": "Mechanism diagnosis and the prior for a separately frozen future round only."
+  },
+  "design_sha256": "7f875029049b987338666b7ab41c3204650e7c3df36cf20f885be8eb8d953f42"
+}
