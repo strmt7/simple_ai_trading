@@ -44,6 +44,11 @@ _STREAMS = frozenset(
 )
 _MAX_RAW_MESSAGE_BYTES = 8 * 1024 * 1024
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
+_WRITER_BATCH_SIZE = 256
+_WRITER_MIN_DRAIN_SECONDS = 60.0
+_WRITER_MAX_DRAIN_SECONDS = 600.0
+_WRITER_STALL_SECONDS = 30.0
+_WRITER_ASSUMED_MINIMUM_MESSAGES_PER_SECOND = 100.0
 
 
 class _TextSender(Protocol):
@@ -484,18 +489,56 @@ class PolymarketEvidenceStore:
     ) -> None:
         if not messages:
             return
+        for start in range(0, len(messages), _WRITER_BATCH_SIZE):
+            self._append_message_batch(
+                run_id,
+                messages[start : start + _WRITER_BATCH_SIZE],
+            )
+
+    def _append_message_batch(
+        self,
+        run_id: str,
+        messages: Sequence[RawStreamMessage],
+    ) -> None:
+        raw_rows: list[tuple[object, ...]] = []
+        event_rows: list[tuple[object, ...]] = []
+        for message in messages:
+            raw_row, normalized_rows = self._message_rows(
+                run_id,
+                message.validated(),
+            )
+            raw_rows.append(raw_row)
+            event_rows.extend(normalized_rows)
         connection = self.connect()
         connection.execute("BEGIN TRANSACTION")
         try:
-            for message in messages:
-                self._append_message(run_id, message.validated())
+            connection.executemany(
+                """
+                INSERT INTO polymarket_raw_message VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                """,
+                raw_rows,
+            )
+            if event_rows:
+                connection.executemany(
+                    """
+                    INSERT INTO polymarket_public_event VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    )
+                    """,
+                    event_rows,
+                )
             connection.execute("COMMIT")
         except Exception:
             connection.execute("ROLLBACK")
             raise
 
-    def _append_message(self, run_id: str, message: RawStreamMessage) -> None:
-        connection = self.connect()
+    @staticmethod
+    def _message_rows(
+        run_id: str,
+        message: RawStreamMessage,
+    ) -> tuple[tuple[object, ...], tuple[tuple[object, ...], ...]]:
         raw_bytes = message.raw_text.encode("utf-8")
         raw_sha = hashlib.sha256(raw_bytes).hexdigest()
         message_id = _canonical_sha256(
@@ -525,23 +568,21 @@ class PolymarketEvidenceStore:
             parse_error = (
                 "" if parse_status == "control" else f"{exc.__class__.__name__}:{exc}"
             )
-        connection.execute(
-            "INSERT INTO polymarket_raw_message VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                message_id,
-                run_id,
-                POLYMARKET_EVIDENCE_SCHEMA_VERSION,
-                message.stream,
-                message.connection_id,
-                message.sequence_number,
-                message.received_wall_ms,
-                message.received_monotonic_ns,
-                raw_sha,
-                message.raw_text,
-                parse_status,
-                parse_error,
-            ],
+        raw_row = (
+            message_id,
+            run_id,
+            POLYMARKET_EVIDENCE_SCHEMA_VERSION,
+            message.stream,
+            message.connection_id,
+            message.sequence_number,
+            message.received_wall_ms,
+            message.received_monotonic_ns,
+            raw_sha,
+            message.raw_text,
+            parse_status,
+            parse_error,
         )
+        event_rows: list[tuple[object, ...]] = []
         for sub_index, event in enumerate(events):
             event_json = _canonical_json(dict(event))
             event_sha = hashlib.sha256(event_json.encode("ascii")).hexdigest()
@@ -553,13 +594,8 @@ class PolymarketEvidenceStore:
                 }
             )
             normalized = _event_index(message.stream, event)
-            connection.execute(
-                """
-                INSERT INTO polymarket_public_event VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                )
-                """,
-                [
+            event_rows.append(
+                (
                     event_id,
                     run_id,
                     message_id,
@@ -573,8 +609,9 @@ class PolymarketEvidenceStore:
                     normalized["publisher_time_ms"],
                     event_json,
                     event_sha,
-                ],
+                )
             )
+        return raw_row, tuple(event_rows)
 
     def record_gap(self, run_id: str, gap: StreamGap) -> str:
         gap = gap.validated()
@@ -1192,7 +1229,7 @@ class PolymarketPublicRecorder:
                 if not writer.done():
                     try:
                         await asyncio.wait_for(output.put(None), timeout=5.0)
-                        await asyncio.wait_for(writer, timeout=30.0)
+                        await _wait_for_writer_drain(writer, output)
                     except Exception as exc:
                         self.errors.append(
                             f"writer_shutdown:{exc.__class__.__name__}:{exc}"
@@ -1377,7 +1414,10 @@ class PolymarketPublicRecorder:
                     return
                 if isinstance(item, RawStreamMessage):
                     pending_messages.append(item)
-                    if len(pending_messages) < 256 and not output.empty():
+                    if (
+                        len(pending_messages) < _WRITER_BATCH_SIZE
+                        and not output.empty()
+                    ):
                         continue
                 if pending_messages:
                     await invoke(
@@ -1707,6 +1747,42 @@ async def _periodic_text_heartbeat(
             return
         except TimeoutError:
             await websocket.send(message)
+
+
+async def _wait_for_writer_drain(
+    writer: asyncio.Task[None],
+    output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+) -> None:
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    last_progress = started
+    remaining = output.qsize()
+    budget = min(
+        _WRITER_MAX_DRAIN_SECONDS,
+        max(
+            _WRITER_MIN_DRAIN_SECONDS,
+            (remaining / _WRITER_ASSUMED_MINIMUM_MESSAGES_PER_SECOND) + 30.0,
+        ),
+    )
+    while not writer.done():
+        done, _ = await asyncio.wait({writer}, timeout=1.0)
+        if done:
+            break
+        now = loop.time()
+        current = output.qsize()
+        if current < remaining:
+            remaining = current
+            last_progress = now
+        if now - last_progress > _WRITER_STALL_SECONDS:
+            raise TimeoutError(
+                f"writer drain stalled with {current} queued evidence items"
+            )
+        if now - started > budget:
+            raise TimeoutError(
+                f"writer drain exceeded {budget:.1f}s with "
+                f"{current} queued evidence items"
+            )
+    writer.result()
 
 
 async def _bounded_backoff(stop: asyncio.Event, seconds: float) -> None:
