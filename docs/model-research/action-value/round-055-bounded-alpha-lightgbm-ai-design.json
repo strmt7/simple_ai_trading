@@ -1,0 +1,277 @@
+{
+  "schema_version": "round-055-bounded-alpha-lightgbm-ai-design-v1",
+  "round": 55,
+  "design_sha256": "e6746db669ffc2633f197cf61dd73b369c2889381900f4e73a375192922f2827",
+  "created_at_utc": "2026-07-14T00:04:22.9355410Z",
+  "status": "frozen_development_only",
+  "objective": "Test whether freshly refitted side-specific models of exact one-hour stop-bounded after-cost payoff can produce a stable BTCUSDT, ETHUSDT, and SOLUSDT day-trading signal, and whether governed local 8B language-model factor programs add matched incremental value without receiving order authority.",
+  "claims_prohibited": [
+    "profitability",
+    "AI uplift before a paired gate passes",
+    "untouched confirmation",
+    "testnet readiness",
+    "live trading readiness",
+    "leverage readiness",
+    "promotion authority"
+  ],
+  "evidence_boundary": {
+    "selection_contaminated": true,
+    "reason": "July through September 2024 model ranks and exploratory controller variants were inspected before this design was frozen. They are development evidence only.",
+    "development_interval": "2024-07-01 through 2024-09-30",
+    "previously_consumed_interval_excluded": "2024-10-01 through 2025-06-30",
+    "future_untouched_candidate": "2025-07-01 through 2026-06-30; not present in the frozen Round 45 feature cache and forbidden in Round 55",
+    "next_stage_rule": "Round 55 can reject or retain a mechanism for a separately frozen Round 56. It cannot establish profitability or authorize trading."
+  },
+  "source_contract": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "market": "Binance USD-M futures",
+    "decision_frequency": "one hour",
+    "execution_path_frequency": "one minute",
+    "feature_dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
+    "feature_count": 71,
+    "feature_cache_schema": "round-045-derived-dataset-cache-v1",
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "synthetic_rows_allowed": 0,
+    "missing_bar_imputation_allowed": false,
+    "future_rows_allowed": false,
+    "minimum_source_checks": [
+      "hash and byte verification of every frozen feature-cache file",
+      "read-only SQLite access",
+      "complete one-minute timestamp grid and OHLC integrity validation",
+      "checksum-verified Binance archive metadata",
+      "funding event ordering, interval, and finite-value validation",
+      "exact decision timestamp agreement between feature cache and minute source"
+    ]
+  },
+  "chronology": {
+    "iteration_training": "2022-01-01 through 2023-12-31",
+    "iteration_selection": "2024-01-01 through 2024-03-31; selects boosting iterations only",
+    "final_refit": "2022-01-01 through 2024-06-30 with the frozen iteration count",
+    "policy_development": "2024-07-01 through 2024-08-31",
+    "development_holdout": "2024-09-01 through 2024-09-30; already inspected and therefore not confirmation",
+    "forbidden_existing_rows": "2024-10-01 through 2025-06-30",
+    "label_embargo": "Every role ends at least 61 minutes before the next role starts",
+    "refit_after_policy_development": false
+  },
+  "payoff_contract": {
+    "horizon_minutes": 60,
+    "entry": "next one-minute bar open after the decision timestamp",
+    "timeout": "open exactly 60 minutes after entry",
+    "stop_width_bps": "clip(1.5 * target_realized_volatility_60m_bps * sqrt(60), 40, 250)",
+    "stop_volatility_multiple": 1.5,
+    "minimum_stop_bps": 40.0,
+    "maximum_stop_bps": 250.0,
+    "take_profit": false,
+    "long_stop_fill": "minimum of stop price and the stop bar open",
+    "short_stop_fill": "maximum of stop price and the stop bar open",
+    "funding": "exact settled funding events in the interval (entry, exit] with the correct long/short sign",
+    "training_round_trip_execution_charge_bps": 16.0,
+    "base_round_trip_execution_charge_bps": 12.0,
+    "stress_round_trip_execution_charge_bps": 16.0,
+    "execution_charge_limitation": "The frozen source has no historical order-book spread or queue stream. The stress charge is an explicit conservative scenario, not a claim of pair-specific observed spread or market impact.",
+    "same_actions_for_base_and_stress": true
+  },
+  "model_contract": {
+    "family": "side-specific multi-view LightGBM conditional payoff regression",
+    "sides": [
+      "long",
+      "short"
+    ],
+    "views": [
+      {
+        "id": "raw_uniform",
+        "target": "exact stress net payoff in basis points",
+        "sample_weight": "uniform"
+      },
+      {
+        "id": "risk_normalized_uniform",
+        "target": "exact stress net payoff divided by the causal stop width",
+        "sample_weight": "uniform"
+      },
+      {
+        "id": "risk_normalized_recency_180d",
+        "target": "exact stress net payoff divided by the causal stop width",
+        "sample_weight": "exponential half-life of 180 days measured from the end of each fit role"
+      }
+    ],
+    "seeds": [
+      5501,
+      5502,
+      5503
+    ],
+    "objective": "regression_l1",
+    "metric": "l1",
+    "learning_rate": 0.03,
+    "num_leaves": 31,
+    "max_depth": 6,
+    "min_data_in_leaf": 256,
+    "feature_fraction": 0.85,
+    "bagging_fraction": 0.85,
+    "bagging_frequency": 1,
+    "lambda_l1": 1.0,
+    "lambda_l2": 1.0,
+    "max_bin": 63,
+    "maximum_boosting_rounds": 1200,
+    "early_stopping_rounds": 100,
+    "backend": "LightGBM OpenCL on a discrete AMD, NVIDIA, or Intel GPU when requested; explicit CPU fallback only",
+    "gpu_fp64_accumulation_required": true,
+    "final_refit_rule": "For each view, side, and seed, freeze the best iteration on iteration_selection, then refit on final_refit for exactly that many rounds.",
+    "prediction_rule": "Convert normalized predictions back to basis points with the contemporaneous causal stop width. Use each view's median seed prediction and retain per-seed values for stability gates."
+  },
+  "ai_factor_contract": {
+    "models": [
+      "fin-r1:8b",
+      "fino1:8b",
+      "qwen3:8b"
+    ],
+    "minimum_parameter_scale_billions": 8.0,
+    "factors_requested_per_model": 4,
+    "market_values_or_outcomes_visible_to_language_model": false,
+    "inputs_visible_to_language_model": "frozen feature names, concise feature semantics, allowed operators, output schema, and financial constraints only",
+    "temperature": 0.0,
+    "seed": 5500,
+    "output": "strict JSON factor programs with name, expression, mechanism, failure_mode, and expected_horizon fields",
+    "program_safety": [
+      "Python AST parse in expression mode",
+      "feature-name and operator allowlist",
+      "no attribute access, indexing, comprehensions, imports, assignments, or dynamic evaluation",
+      "no raw eval or exec",
+      "finite output required",
+      "training-only 0.5 and 99.5 percentile clipping applied unchanged to later roles",
+      "canonical expression deduplication",
+      "all valid nonduplicate programs included without return-based selection"
+    ],
+    "allowed_functions": [
+      "abs",
+      "clip",
+      "maximum",
+      "minimum",
+      "safe_divide",
+      "sign",
+      "tanh"
+    ],
+    "order_authority": false,
+    "position_sizing_authority": false,
+    "risk_gate_override": false,
+    "error_behavior": "fail closed; malformed programs are preserved as evidence and cannot be repaired using outcome data",
+    "matched_ablation": "Run the identical model, chronology, controller, costs, and seeds once with 71 baseline features and once with all accepted factor programs appended."
+  },
+  "action_policy": {
+    "side_selection": "A side is eligible only when every view's median prediction is positive, every view prefers that side over the opposite side, and at least two of three seeds in every view predict positive payoff. Choose no action otherwise.",
+    "score_threshold_bps": 0.0,
+    "threshold_optimization": false,
+    "liquidity_gate": "target_same_minute_of_week_liquidity_ratio >= 0.5 and target_quote_volume_vs_1440m_mean >= 0.25",
+    "volatility_shock_gate": "target_realized_volatility_60m_bps <= 2.5 * target_realized_volatility_1440m_bps",
+    "one_position_per_symbol": true,
+    "overlapping_positions_per_symbol": false,
+    "forced_trade_count": false,
+    "language_model_action": false
+  },
+  "risk_controller": {
+    "profile": "conservative research controller",
+    "leverage": 1.0,
+    "profit_reinvestment": false,
+    "capital_basis": "fixed initial equity",
+    "per_position_stop_risk_budget_fraction": 0.001,
+    "aggregate_open_stop_risk_budget_fraction": 0.0015,
+    "maximum_symbol_notional_fraction": 0.3333333333333333,
+    "maximum_portfolio_gross_fraction": 0.5,
+    "maximum_portfolio_net_directional_fraction": 0.3333333333333333,
+    "allocation": "Scale eligible positions by inverse stop width, then proportionally reduce them to satisfy aggregate stop-risk, gross, and net-directional limits.",
+    "daily_realized_loss_limit_fraction": 0.005,
+    "daily_loss_behavior": "No new entries until the next UTC day; existing one-hour positions retain their exchange-resident stop and timeout.",
+    "consecutive_losing_trades_before_cooldown": 3,
+    "cooldown_hours": 6,
+    "terminal_behavior": "No position can survive its one-hour timeout; every replayed trade has an observed stop or timeout exit.",
+    "manual_or_foreign_positions": "outside this research replay and never touched"
+  },
+  "development_gates": {
+    "purpose": "mechanism retention only; these gates do not establish out-of-sample profitability",
+    "minimum_development_closed_trades": 30,
+    "minimum_development_active_days": 20,
+    "minimum_development_stress_profit_factor": 1.05,
+    "maximum_development_stress_drawdown_fraction": 0.02,
+    "minimum_development_stress_return_fraction": 0.0,
+    "minimum_holdout_closed_trades": 12,
+    "minimum_holdout_active_days": 8,
+    "minimum_holdout_stress_profit_factor": 1.05,
+    "maximum_holdout_stress_drawdown_fraction": 0.01,
+    "minimum_holdout_stress_return_fraction": 0.0,
+    "required_symbol_activity": 3,
+    "maximum_single_symbol_fraction_of_absolute_net_pnl": 0.6,
+    "minimum_view_median_pairwise_spearman": 0.25,
+    "minimum_seed_sign_agreement_fraction": 0.6,
+    "minimum_168h_block_bootstrap_lower_mean_hourly_bps": 0.0,
+    "maximum_reload_prediction_error_bps": 0.000001,
+    "selection_rule": "No candidate selection: baseline and AI treatments are both reported against the frozen gates."
+  },
+  "ai_uplift_gate": {
+    "baseline_gate_must_pass": true,
+    "ai_gate_must_pass": true,
+    "minimum_paired_holdout_stress_return_delta_fraction": 0.0,
+    "minimum_familywise_168h_block_bootstrap_lower_paired_delta_bps": 0.0,
+    "maximum_ai_to_baseline_drawdown_ratio": 1.1,
+    "minimum_ai_to_baseline_closed_trade_ratio": 0.5,
+    "interpretation": "Failure means no demonstrated AI edge. It cannot be repaired by narrative review or by changing the controller after results are read."
+  },
+  "trial_accounting": {
+    "pre_design_exploratory_families": 4,
+    "pre_design_controller_combinations_inspected": 12,
+    "round_55_treatments": 2,
+    "round_55_view_families_per_treatment": 3,
+    "round_55_seeds_per_view": 3,
+    "policy_threshold_trials": 1,
+    "familywise_inference_required": true,
+    "deflated_sharpe_and_probability_of_backtest_overfitting_required_before_any_later_profitability_claim": true
+  },
+  "research_basis": [
+    {
+      "source": "AlphaForgeBench: Benchmarking End-to-End Trading Strategy Design with Large Language Models",
+      "url": "https://arxiv.org/abs/2602.18481",
+      "use": "Treat language models as auditable factor researchers instead of unstable sequential execution agents."
+    },
+    {
+      "source": "FactorEngine: A Program-level Knowledge-Infused Factor Mining Framework for Quantitative Investment",
+      "url": "https://arxiv.org/abs/2603.16365",
+      "use": "Separate language-model logic generation from local numerical evaluation and parameter fitting."
+    },
+    {
+      "source": "Optimal Trading with Linear Costs",
+      "url": "https://arxiv.org/abs/1203.5957",
+      "use": "Require an explicit after-cost advantage and permit abstention rather than forcing turnover."
+    },
+    {
+      "source": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "use": "Record the experiment family and prohibit treating a selected historical backtest as independent evidence."
+    },
+    {
+      "source": "The Deflated Sharpe Ratio",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551",
+      "use": "Require selection-bias and non-normality corrections before any future Sharpe-based claim."
+    },
+    {
+      "source": "LightGBM GPU Targets and Tuning Guides",
+      "url": "https://lightgbm.readthedocs.io/en/latest/GPU-Targets.html",
+      "use": "Use the vendor-agnostic OpenCL backend, explicit device discovery, compact bins, and FP64 accumulation on AMD and other supported GPUs."
+    }
+  ],
+  "required_artifacts": [
+    "frozen execution binding",
+    "raw local-language-model requests and responses",
+    "accepted and rejected factor-program ledger",
+    "path-target dataset manifest and stream hashes",
+    "model artifacts with exact reload checks",
+    "per-view and per-seed predictive diagnostics",
+    "trade ledger with stop or timeout event for every trade",
+    "hourly portfolio ledger",
+    "development and holdout economics by symbol and month",
+    "paired baseline-versus-AI bootstrap evidence",
+    "machine-readable CSV and JSON behind every chart",
+    "single latest-round chart set plus cumulative round-progress data"
+  ]
+}
