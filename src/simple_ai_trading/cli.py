@@ -105,6 +105,7 @@ from .positions import (
     bot_ownership_rejection_reason,
     new_position_id,
 )
+from .polymarket_paper import PolymarketPaperBroker
 from .polymarket_recorder import PolymarketPublicRecorder
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
@@ -429,6 +430,34 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_record.add_argument("--json", action="store_true")
     parser_polymarket_record.set_defaults(func=command_polymarket_record)
+
+    parser_polymarket_paper = subparsers.add_parser(
+        "polymarket-paper",
+        help="inspect or execute BTC/ETH/SOL 5-minute paper orders on recorded evidence",
+        description=(
+            "Use the same durable ownership and reconciliation lifecycle as Binance "
+            "paper trading against a complete prospective Polymarket recorder run. "
+            "This command has no authenticated or live-money order path."
+        ),
+    )
+    parser_polymarket_paper.add_argument("--database", default="data/polymarket-paper.duckdb")
+    parser_polymarket_paper.add_argument("--run-id", default=None)
+    parser_polymarket_paper.add_argument(
+        "--action",
+        choices=["status", "open", "close", "settle"],
+        default="status",
+    )
+    parser_polymarket_paper.add_argument("--event-id", default=None)
+    parser_polymarket_paper.add_argument("--position-id", default=None)
+    parser_polymarket_paper.add_argument("--opening-intent-id", default=None)
+    parser_polymarket_paper.add_argument("--outcome", choices=["Up", "Down"], default=None)
+    parser_polymarket_paper.add_argument("--quantity", default=None)
+    parser_polymarket_paper.add_argument("--limit-price", default=None)
+    parser_polymarket_paper.add_argument("--latency-ms", type=int, default=None)
+    parser_polymarket_paper.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_paper.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_paper.add_argument("--json", action="store_true")
+    parser_polymarket_paper.set_defaults(func=command_polymarket_paper)
 
     parser_archive_sync = subparsers.add_parser(
         "archive-sync",
@@ -5739,6 +5768,123 @@ def command_polymarket_record(args: argparse.Namespace) -> int:
         for error in (*report.errors, *report.integrity_errors):
             print(f"error: {error}", file=sys.stderr)
     return 0 if report.status == "complete" else 2
+
+
+def command_polymarket_paper(args: argparse.Namespace) -> int:
+    """Inspect or execute evidence-bound Polymarket paper lifecycle actions."""
+
+    action = str(getattr(args, "action", "status") or "status")
+
+    def required(name: str) -> str:
+        value = str(getattr(args, name, None) or "").strip()
+        if not value:
+            raise ValueError(f"--{name.replace('_', '-')} is required for {action}")
+        return value
+
+    try:
+        with PolymarketPaperBroker(
+            Path(args.database),
+            run_id=getattr(args, "run_id", None),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as broker:
+            operation: dict[str, object] = {"action": action}
+            if action == "open":
+                event_id = required("event_id")
+                outcome = required("outcome")
+                matches = [
+                    book
+                    for book in broker.replay.books
+                    if book.event_id == event_id and book.outcome == outcome
+                ]
+                if len(matches) != 1:
+                    raise ValueError("--event-id and --outcome must select one replay book")
+                position, result = broker.open_position(
+                    position_id=required("position_id"),
+                    decision=matches[0],
+                    outcome=outcome,
+                    quantity=required("quantity"),
+                    maximum_price=required("limit_price"),
+                    submission_latency_ms=int(required("latency_ms")),
+                )
+                operation["position"] = None if position is None else asdict(position)
+                operation["execution"] = asdict(result)
+            elif action == "close":
+                opening_id = required("opening_intent_id")
+                position = next(
+                    (
+                        item
+                        for item in broker.positions()
+                        if item.opening_intent_id == opening_id
+                    ),
+                    None,
+                )
+                if position is None:
+                    raise ValueError("--opening-intent-id has no open paper inventory")
+                event_id = required("event_id")
+                matches = [
+                    book
+                    for book in broker.replay.books
+                    if book.event_id == event_id and book.token_id == position.token_id
+                ]
+                if len(matches) != 1:
+                    raise ValueError("--event-id must select one replay book for the inventory")
+                closed, result = broker.close_position(
+                    opening_intent_id=opening_id,
+                    decision=matches[0],
+                    quantity=getattr(args, "quantity", None),
+                    minimum_price=required("limit_price"),
+                    submission_latency_ms=int(required("latency_ms")),
+                )
+                operation["close"] = None if closed is None else asdict(closed)
+                operation["execution"] = asdict(result)
+            elif action == "settle":
+                opening_id = required("opening_intent_id")
+                event_id = required("event_id")
+                resolutions = [
+                    item for item in broker.replay.resolutions if item.event_id == event_id
+                ]
+                if len(resolutions) != 1:
+                    raise ValueError("--event-id must select one official resolution")
+                operation["settlement"] = asdict(
+                    broker.settle_position(
+                        opening_intent_id=opening_id,
+                        resolution=resolutions[0],
+                    )
+                )
+            elif action != "status":
+                raise ValueError(f"unsupported Polymarket paper action: {action}")
+
+            reconciliation = broker.reconcile()
+            positions = (
+                [asdict(position) for position in broker.positions()]
+                if reconciliation.ok
+                else []
+            )
+            payload = {
+                "run_id": broker.replay.run_id,
+                "operation": operation,
+                "reconciliation": reconciliation.asdict(),
+                "positions": positions,
+            }
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-paper failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True, default=str))
+    else:
+        report = payload["reconciliation"]
+        print(
+            "polymarket-paper: "
+            f"action={action} run={payload['run_id']} "
+            f"can_open={report['can_open']} can_close={report['can_close']} "
+            f"positions={len(payload['positions'])}"
+        )
+    return 0 if reconciliation.can_open and reconciliation.can_close else 2
 
 
 def command_archive_sync(args: argparse.Namespace) -> int:

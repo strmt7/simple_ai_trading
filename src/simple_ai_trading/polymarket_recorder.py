@@ -722,21 +722,24 @@ class PolymarketEvidenceStore:
         errors: list[str] = []
         run_row = connection.execute(
             """
-            SELECT schema_version, status, report_json, report_sha256
+            SELECT schema_version, status, started_at_ms, ended_at_ms,
+                   report_json, report_sha256
             FROM polymarket_recorder_run WHERE run_id = ?
             """,
             [run_id],
         ).fetchone()
         if run_row is None:
             return (f"missing_recorder_run:{run_id}",)
-        run_schema, run_status, report_json, report_sha = run_row
+        run_schema, run_status, run_started, run_ended, report_json, report_sha = run_row
+        parsed_report: Mapping[str, object] | None = None
         if str(run_schema) != POLYMARKET_RECORDER_SCHEMA_VERSION:
             errors.append(f"recorder_schema_mismatch:{run_id}")
         if str(run_status) != "running":
             try:
-                parsed_report = _strict_json_loads(str(report_json))
-                if not isinstance(parsed_report, Mapping):
+                parsed = _strict_json_loads(str(report_json))
+                if not isinstance(parsed, Mapping):
                     raise ValueError("recorder report is not an object")
+                parsed_report = parsed
                 canonical_report = _canonical_json(parsed_report)
                 if canonical_report != str(report_json):
                     errors.append(f"recorder_report_not_canonical:{run_id}")
@@ -861,6 +864,64 @@ class PolymarketEvidenceStore:
             )
             if not hmac.compare_digest(str(gap_id), expected_id):
                 errors.append(f"stream_gap_id_mismatch:{gap_id}")
+        if parsed_report is not None:
+            actual_stream_counts = {
+                str(stream): int(count)
+                for stream, count in connection.execute(
+                    """
+                    SELECT stream, count(*) FROM polymarket_raw_message
+                    WHERE run_id = ? GROUP BY stream ORDER BY stream
+                    """,
+                    [run_id],
+                ).fetchall()
+            }
+            actual_assets = sorted({str(row[4]) for row in snapshots})
+            actual_conditions = sorted({str(row[6]) for row in snapshots})
+            expected_values: tuple[tuple[str, object, object], ...] = (
+                ("started_at_ms", int(run_started), parsed_report.get("started_at_ms")),
+                ("ended_at_ms", int(run_ended or 0), parsed_report.get("ended_at_ms")),
+                ("market_snapshot_count", len(snapshots), parsed_report.get("market_snapshot_count")),
+                ("raw_message_count", len(messages), parsed_report.get("raw_message_count")),
+                ("normalized_event_count", len(events), parsed_report.get("normalized_event_count")),
+                ("stream_gap_count", len(gaps), parsed_report.get("stream_gap_count")),
+                ("stream_counts", actual_stream_counts, parsed_report.get("stream_counts")),
+                ("assets", actual_assets, parsed_report.get("assets")),
+                ("conditions", actual_conditions, parsed_report.get("conditions")),
+            )
+            for field, actual, reported in expected_values:
+                if actual != reported:
+                    errors.append(f"recorder_report_evidence_mismatch:{run_id}:{field}")
+            if run_ended is None:
+                errors.append(f"recorder_run_missing_end:{run_id}")
+            else:
+                out_of_window_messages = int(
+                    connection.execute(
+                        """
+                        SELECT count(*) FROM polymarket_raw_message
+                        WHERE run_id = ?
+                          AND (received_wall_ms < ? OR received_wall_ms > ?)
+                        """,
+                        [run_id, int(run_started), int(run_ended)],
+                    ).fetchone()[0]
+                )
+                out_of_window_snapshots = int(
+                    connection.execute(
+                        """
+                        SELECT count(*) FROM polymarket_market_snapshot
+                        WHERE run_id = ?
+                          AND (observed_wall_ms < ? OR observed_wall_ms > ?)
+                        """,
+                        [run_id, int(run_started), int(run_ended)],
+                    ).fetchone()[0]
+                )
+                if out_of_window_messages:
+                    errors.append(
+                        f"recorder_message_outside_run:{run_id}:{out_of_window_messages}"
+                    )
+                if out_of_window_snapshots:
+                    errors.append(
+                        f"recorder_snapshot_outside_run:{run_id}:{out_of_window_snapshots}"
+                    )
         if self.paper_journal is not None:
             errors.extend(self.paper_journal.integrity_errors())
         return tuple(errors)

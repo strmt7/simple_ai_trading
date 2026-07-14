@@ -376,6 +376,22 @@ inline constexpr CommandOptionSpec kOptions_model_lab[] = {
     {L"--learning-feedback", L"learning_feedback", L"", L"", L"optional learning_feedback.json artifact; default uses data/autonomous/learning_feedback.json when present", L"1", false, true, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_paper[] = {
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
+    {L"--action", L"action", L"status, open, close, settle", L"status", L"", L"1", false, true, false},
+    {L"--event-id", L"event_id", L"", L"", L"", L"1", false, true, false},
+    {L"--position-id", L"position_id", L"", L"", L"", L"1", false, true, false},
+    {L"--opening-intent-id", L"opening_intent_id", L"", L"", L"", L"1", false, true, false},
+    {L"--outcome", L"outcome", L"Up, Down", L"", L"", L"1", false, true, false},
+    {L"--quantity", L"quantity", L"", L"", L"", L"1", false, true, false},
+    {L"--limit-price", L"limit_price", L"", L"", L"", L"1", false, true, false},
+    {L"--latency-ms", L"latency_ms", L"", L"", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_polymarket_record[] = {
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"300", L"", L"1", false, true, false},
@@ -808,6 +824,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"model-blueprint", L"usage: simple-ai-trading model-blueprint [-h]                                          [--risk-level {conservative,regular,aggressive,default,balanced,risky}]                                          [--implemented-only] [--json]", kOptions_model_blueprint, 3},
     {L"model-lab", L"usage: simple-ai-trading model-lab [-h] [--output-dir OUTPUT_DIR]                                    [--starting-cash STARTING_CASH]                                    [--objective OBJECTIVE]                                    [--max-symbols MAX_SYMBOLS]                                    [--max-scan MAX_SCAN] [--limit LIMIT]                                    [--quote-asset QUOTE_ASSET]                                    [--interval INTERVAL] [--full-history]                                    [--market-db MARKET_DB] [--require-db-data]                                    [--market {spot,futures}]                                    [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                    [--batch-size BATCH_SIZE]                                    [--score-batch-size SCORE_BATCH_SIZE]                                    [--max-candidates MAX_CANDIDATES]                                    [--learning-feedback LEARNING_FEEDBACK]", kOptions_model_lab, 17},
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
+    {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a complete prospective Polymarket recorder run. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 13},
     {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 7},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
