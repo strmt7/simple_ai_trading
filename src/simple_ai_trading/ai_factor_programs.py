@@ -30,6 +30,7 @@ _PROGRAM_FIELDS = {
     "failure_mode",
     "expected_horizon",
 }
+_ACTION_PROGRAM_FIELDS = _PROGRAM_FIELDS | {"action_symmetry"}
 _FUNCTION_ARITY = {
     "abs": 1,
     "clip": 3,
@@ -59,6 +60,37 @@ class FactorProgram:
 
     def asdict(self) -> dict[str, str]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class ActionConditionedFactorProgram:
+    """A strict factor program with an auditable long/short symmetry statement."""
+
+    model: str
+    name: str
+    expression: str
+    canonical_expression: str
+    mechanism: str
+    failure_mode: str
+    expected_horizon: str
+    action_symmetry: str
+    base_program_sha256: str
+    program_sha256: str
+
+    def asdict(self) -> dict[str, str]:
+        return asdict(self)
+
+    def as_factor_program(self) -> FactorProgram:
+        return FactorProgram(
+            model=self.model,
+            name=self.name,
+            expression=self.expression,
+            canonical_expression=self.canonical_expression,
+            mechanism=self.mechanism,
+            failure_mode=self.failure_mode,
+            expected_horizon=self.expected_horizon,
+            program_sha256=self.base_program_sha256,
+        )
 
 
 @dataclass(frozen=True)
@@ -318,6 +350,49 @@ def validate_factor_program(
     )
 
 
+def validate_action_conditioned_factor_program(
+    value: Mapping[str, object],
+    *,
+    model: str,
+    feature_names: Sequence[str],
+) -> ActionConditionedFactorProgram:
+    """Validate an action-aligned program without relaxing the base AST contract."""
+
+    if set(value) != _ACTION_PROGRAM_FIELDS:
+        raise ValueError("action-conditioned factor fields differ from the strict schema")
+    base = validate_factor_program(
+        {field: value[field] for field in _PROGRAM_FIELDS},
+        model=model,
+        feature_names=feature_names,
+    )
+    action_symmetry = _validate_text(
+        value["action_symmetry"],
+        "action_symmetry",
+        maximum=800,
+        minimum=20,
+    )
+    normalized = action_symmetry.lower()
+    if "long" not in normalized or "short" not in normalized:
+        raise ValueError("factor action_symmetry must explain both long and short rows")
+    identity = {
+        **base.asdict(),
+        "action_symmetry": action_symmetry,
+    }
+    identity.pop("program_sha256")
+    return ActionConditionedFactorProgram(
+        model=base.model,
+        name=base.name,
+        expression=base.expression,
+        canonical_expression=base.canonical_expression,
+        mechanism=base.mechanism,
+        failure_mode=base.failure_mode,
+        expected_horizon=base.expected_horizon,
+        action_symmetry=action_symmetry,
+        base_program_sha256=base.program_sha256,
+        program_sha256=_sha256(identity),
+    )
+
+
 def parse_factor_response(
     response_text: str,
     *,
@@ -369,6 +444,60 @@ def parse_factor_response_ledger(
         try:
             programs.append(
                 validate_factor_program(
+                    row,
+                    model=model,
+                    feature_names=feature_names,
+                )
+            )
+        except ValueError as exc:
+            rejections.append(
+                {
+                    "index": index,
+                    "name": str(row.get("name", "")) or None,
+                    "reason": str(exc),
+                }
+            )
+    return tuple(programs), tuple(rejections)
+
+
+def parse_action_conditioned_factor_response_ledger(
+    response_text: str,
+    *,
+    model: str,
+    feature_names: Sequence[str],
+    maximum_factors: int,
+) -> tuple[
+    tuple[ActionConditionedFactorProgram, ...],
+    tuple[dict[str, object], ...],
+]:
+    """Parse strict action-conditioned JSON and retain every rejection reason."""
+
+    if not 1 <= int(maximum_factors) <= 32:
+        raise ValueError("maximum factor count is invalid")
+    try:
+        payload = json.loads(response_text)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("factor response is not strict JSON") from exc
+    if not isinstance(payload, dict) or set(payload) != {"factors"}:
+        raise ValueError("factor response root differs from the strict schema")
+    rows = payload["factors"]
+    if not isinstance(rows, list) or not 1 <= len(rows) <= maximum_factors:
+        raise ValueError("factor response count is invalid")
+    programs: list[ActionConditionedFactorProgram] = []
+    rejections: list[dict[str, object]] = []
+    for index, row in enumerate(rows):
+        if not isinstance(row, Mapping):
+            rejections.append(
+                {
+                    "index": index,
+                    "name": None,
+                    "reason": "factor response item is not an object",
+                }
+            )
+            continue
+        try:
+            programs.append(
+                validate_action_conditioned_factor_program(
                     row,
                     model=model,
                     feature_names=feature_names,
@@ -602,12 +731,15 @@ def apply_factor_transform(
 __all__ = [
     "ALLOWED_FUNCTIONS",
     "FACTOR_PROGRAM_SCHEMA_VERSION",
+    "ActionConditionedFactorProgram",
     "FactorProgram",
     "FactorTransform",
     "apply_factor_transform",
     "evaluate_factor_program",
     "fit_factor_transform",
+    "parse_action_conditioned_factor_response_ledger",
     "parse_factor_response",
     "parse_factor_response_ledger",
+    "validate_action_conditioned_factor_program",
     "validate_factor_program",
 ]
