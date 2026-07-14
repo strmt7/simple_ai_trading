@@ -248,6 +248,8 @@ def _prompt(feature_names: tuple[str, ...], factors: int) -> tuple[str, str]:
         "to describe the current symbol. Do not name BTCUSDT, ETHUSDT, or SOLUSDT in a "
         "factor name or mechanism unless the expression references a feature with that "
         "exact symbol prefix. "
+        "Addition, subtraction, maximum, and minimum may combine only like units: do "
+        "not add or subtract basis-point features and dimensionless ratios. "
         "Returns, realized volatility, ranges, and residual returns ending in _bps are in "
         "basis points; flow, path-efficiency, relative-volume, liquidity, and ratio fields "
         "are dimensionless; calendar sine/cosine and symbol flags are dimensionless. "

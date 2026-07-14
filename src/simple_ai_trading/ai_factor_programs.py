@@ -197,6 +197,58 @@ def _validate_node(
     raise ValueError(f"factor syntax is forbidden: {type(node).__name__}")
 
 
+def _feature_unit(name: str) -> str:
+    return "bps" if name.endswith("_bps") else "dimensionless"
+
+
+def _compatible_additive_unit(left: str, right: str) -> str:
+    if left == right:
+        return left
+    if left == "scalar":
+        return right
+    if right == "scalar":
+        return left
+    raise ValueError(f"factor combines incompatible additive units: {left} and {right}")
+
+
+def _infer_unit(node: ast.AST) -> str:
+    if isinstance(node, ast.Expression):
+        return _infer_unit(node.body)
+    if isinstance(node, ast.Name):
+        return _feature_unit(node.id)
+    if isinstance(node, ast.Constant):
+        return "scalar"
+    if isinstance(node, ast.UnaryOp):
+        return _infer_unit(node.operand)
+    if isinstance(node, ast.BinOp):
+        left = _infer_unit(node.left)
+        right = _infer_unit(node.right)
+        if isinstance(node.op, (ast.Add, ast.Sub)):
+            return _compatible_additive_unit(left, right)
+        if left in {"scalar", "dimensionless"}:
+            return right
+        if right in {"scalar", "dimensionless"}:
+            return left
+        return f"product({left},{right})"
+    if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
+        raise RuntimeError("validated factor AST changed during unit inference")
+    function = node.func.id
+    units = [_infer_unit(argument) for argument in node.args]
+    if function in {"abs", "clip"}:
+        return units[0]
+    if function in {"maximum", "minimum"}:
+        return _compatible_additive_unit(units[0], units[1])
+    if function == "safe_divide":
+        if units[0] == units[1]:
+            return "dimensionless"
+        if units[1] in {"scalar", "dimensionless"}:
+            return units[0]
+        return f"ratio({units[0]},{units[1]})"
+    if function in {"sign", "tanh"}:
+        return "dimensionless"
+    raise RuntimeError("validated factor function changed during unit inference")
+
+
 def validate_factor_program(
     value: Mapping[str, object],
     *,
@@ -233,6 +285,7 @@ def validate_factor_program(
         depth=0,
         count=[0],
     )
+    _infer_unit(tree)
     referenced_features = {
         node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
     }
