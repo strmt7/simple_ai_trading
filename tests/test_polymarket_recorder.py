@@ -383,7 +383,10 @@ def test_periodic_heartbeat_runs_independently_of_busy_message_processing() -> N
     assert len(asyncio.run(_exercise())) >= 3
 
 
-def test_writer_persistence_does_not_block_the_network_event_loop(tmp_path) -> None:
+def test_writer_persistence_does_not_block_the_network_event_loop(
+    tmp_path,
+    monkeypatch,
+) -> None:
     recorder = PolymarketPublicRecorder(tmp_path / "writer-offload.duckdb")
     main_thread = threading.get_ident()
     writer_threads: list[int] = []
@@ -391,6 +394,15 @@ def test_writer_persistence_does_not_block_the_network_event_loop(tmp_path) -> N
     release = threading.Event()
 
     class _SlowStore:
+        def __init__(self, path, *, memory_limit: str, threads: int) -> None:
+            self.path = path
+            self.memory_limit = memory_limit
+            self.threads = threads
+
+        def connect(self) -> object:
+            writer_threads.append(threading.get_ident())
+            return self
+
         def append_messages(self, run_id: str, messages: object) -> None:
             assert run_id == "writer-offload"
             assert messages
@@ -398,12 +410,24 @@ def test_writer_persistence_does_not_block_the_network_event_loop(tmp_path) -> N
             started.set()
             assert release.wait(timeout=1.0)
 
+        def close(self) -> None:
+            writer_threads.append(threading.get_ident())
+
+    source_store = PolymarketEvidenceStore(
+        tmp_path / "writer-offload.duckdb",
+        memory_limit="1GB",
+        threads=1,
+    )
+    monkeypatch.setattr(recorder_module, "PolymarketEvidenceStore", _SlowStore)
+
     async def _exercise() -> bool:
-        output: asyncio.Queue[object] = asyncio.Queue()
+        output: asyncio.Queue[
+            RawStreamMessage | StreamGap | MarketEvidence | None
+        ] = asyncio.Queue()
         await output.put(_message("clob_market", {"event_type": "book"}))
         await output.put(None)
         writer = asyncio.create_task(
-            recorder._writer("writer-offload", _SlowStore(), output)  # type: ignore[arg-type]
+            recorder._writer("writer-offload", source_store, output)
         )
         deadline = asyncio.get_running_loop().time() + 0.5
         while not started.is_set() and asyncio.get_running_loop().time() < deadline:
@@ -414,7 +438,38 @@ def test_writer_persistence_does_not_block_the_network_event_loop(tmp_path) -> N
         return loop_remained_responsive
 
     assert asyncio.run(_exercise()) is True
-    assert writer_threads and writer_threads[0] != main_thread
+    assert writer_threads and set(writer_threads).isdisjoint({main_thread})
+    assert len(set(writer_threads)) == 1
+
+
+def test_writer_owned_connection_preserves_final_report_cursor(tmp_path) -> None:
+    database = tmp_path / "writer-report.duckdb"
+    recorder = PolymarketPublicRecorder(database)
+
+    async def _exercise(store: PolymarketEvidenceStore) -> None:
+        output: asyncio.Queue[
+            RawStreamMessage | StreamGap | MarketEvidence | None
+        ] = asyncio.Queue()
+        await output.put(_message("polymarket_rtds", "PING"))
+        await output.put(None)
+        await recorder._writer("writer-report", store, output)
+
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("writer-report", EPOCH * 1_000)
+        asyncio.run(_exercise(store))
+        report = store.finish_run(
+            "writer-report",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 1_000,
+            database=str(database),
+            errors=(),
+        )
+
+    assert report.status == "failed"
+    assert report.integrity_errors == ()
+    assert "missing_streams:binance_spot,clob_market" in report.errors
+    assert report.stream_counts == {"polymarket_rtds": 1}
+    assert report.raw_message_count == 1
 
 
 def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
