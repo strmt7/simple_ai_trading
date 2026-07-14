@@ -539,6 +539,14 @@ by `3.4135` initial-capital bps, so its matched uplift gate failed. The round
 was rejected without reading the untouched future interval and makes no
 profitability, leverage, testnet, live-trading, or execution claim.
 
+A frozen post-hoc diagnostic then reproduced the control exactly and localized
+the sparse activity to cross-view model consensus, not the liquidity or
+volatility gates; those gates removed only `4` of the `31` unanimous baseline
+votes in July-August. Relaxed baseline consensus lost money in both consumed
+periods. A pooled-nine AI diagnostic remained positive, but only over `26` and
+`8` trades, and its score quintiles were not temporally monotonic. It is useful
+mechanism evidence for the next frozen design, not a validated edge.
+
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
 used three untouched, checksummed Binance dates and exact 100 ms BBO replay. It

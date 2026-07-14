@@ -48,6 +48,17 @@ REPORT_FILE_SHA256 = (
 DESIGN_SHA256 = "e6746db669ffc2633f197cf61dd73b369c2889381900f4e73a375192922f2827"
 BINDING_SHA256 = "731c0216b53226376bb465c3fce0d3d32cb6bcecf063d98e3cd2ac9e9c9315ed"
 IMPLEMENTATION_COMMIT = "e1bb011385a326602ac73c9c86b017c48178b20d"
+DIAGNOSTIC_SCHEMA = "round-055-controller-attrition-diagnostic-report-v1"
+DIAGNOSTIC_CANONICAL_SHA256 = (
+    "f9e422d1c67e90145b2a6cc465f3eaa6661a5f24686dd5adf5709c4f14a9b630"
+)
+DIAGNOSTIC_FILE_SHA256 = (
+    "e476c085737c5f7fc7395a30040e23d077758b6e2dd0522402042dd15bef4299"
+)
+DIAGNOSTIC_DESIGN_SHA256 = (
+    "7f875029049b987338666b7ab41c3204650e7c3df36cf20f885be8eb8d953f42"
+)
+DIAGNOSTIC_IMPLEMENTATION_COMMIT = "60d65330a845128ad454b00de45a3eec4f9cd426"
 TREATMENTS = ("baseline_71", "ai_program_augmented")
 INTERVALS = ("policy_development", "development_holdout")
 DISPLAY = {
@@ -55,6 +66,11 @@ DISPLAY = {
     "ai_program_augmented": "8B AI factors",
     "policy_development": "Jul-Aug 2024",
     "development_holdout": "Sep 2024",
+}
+CONTROLLER_DISPLAY = {
+    "all_view_consensus": "All 3 views",
+    "majority_view_consensus": "2 of 3 views",
+    "pooled_nine_consensus": "Pooled 9 models",
 }
 
 
@@ -177,6 +193,54 @@ def _validate_sources(
     for row in external.values():
         _verify_artifact(row)
     return report, design, binding
+
+
+def _validate_diagnostic(path: Path) -> dict[str, object]:
+    if _file_sha256(path) != DIAGNOSTIC_FILE_SHA256:
+        raise ValueError("Round 55 controller diagnostic file hash drifted")
+    report = _read_object(path, "Round 55 controller diagnostic")
+    claims = report.get("claims")
+    source = report.get("source")
+    if (
+        report.get("schema_version") != DIAGNOSTIC_SCHEMA
+        or report.get("round") != ROUND
+        or _canonical_value(report, "report_sha256")
+        != DIAGNOSTIC_CANONICAL_SHA256
+        or report.get("diagnostic_design_sha256") != DIAGNOSTIC_DESIGN_SHA256
+        or report.get("implementation", {}).get("commit")
+        != DIAGNOSTIC_IMPLEMENTATION_COMMIT
+        or report.get("control_reproduced_exactly") is not True
+        or not isinstance(claims, Mapping)
+        or claims.get("status") != "diagnostic_only"
+        or any(
+            claims.get(name) is not False
+            for name in (
+                "profitability_claim",
+                "promotion_authority",
+                "ai_uplift_claim",
+                "untouched_data_authority",
+                "testnet_authority",
+                "live_authority",
+                "leverage_applied",
+            )
+        )
+        or not isinstance(source, Mapping)
+        or source.get("report_canonical_sha256") != REPORT_CANONICAL_SHA256
+        or source.get("payoff_dataset_sha256")
+        != "bdae1a7ebd7140fa63e74a66e43159f884fd39635656fba45f2a3ff11884c519"
+        or source.get("selection_confirmation_or_terminal_rows_read") is not False
+        or source.get("forbidden_existing_rows_loaded") is not False
+        or source.get("synthetic_rows") != 0
+    ):
+        raise ValueError("Round 55 controller diagnostic contract drifted")
+    _validate_finite(report)
+    root = path.parent
+    for row in report["artifacts"]:
+        artifact = root / str(row["path"])
+        _verify_artifact(
+            {"path": artifact, "bytes": row["bytes"], "sha256": row["sha256"]}
+        )
+    return report
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -510,6 +574,141 @@ def _activity_svg(rows: Sequence[Mapping[str, object]]) -> str:
     )
 
 
+def _controller_attrition_svg(rows: Sequence[Mapping[str, str]]) -> str:
+    selected = [
+        row
+        for row in rows
+        if row["symbol"] == "ALL"
+        and row["controller"] == "all_view_consensus"
+    ]
+
+    def count(treatment: str, interval: str, stage: str) -> float:
+        return float(
+            next(
+                row["eligible_rows"]
+                for row in selected
+                if row["treatment"] == treatment
+                and row["interval"] == interval
+                and row["stage"] == stage
+            )
+        )
+
+    groups = []
+    for treatment in TREATMENTS:
+        for interval in INTERVALS:
+            groups.append(
+                (
+                    f"{DISPLAY[treatment]} {DISPLAY[interval]}",
+                    (
+                        (
+                            "At least 1 view",
+                            count(treatment, interval, "any_view_vote"),
+                            COLORS["blue"],
+                        ),
+                        (
+                            "At least 2 views",
+                            count(treatment, interval, "two_view_side_agreement"),
+                            COLORS["teal"],
+                        ),
+                        (
+                            "All 3 views",
+                            count(treatment, interval, "all_view_seed_supported"),
+                            COLORS["amber"],
+                        ),
+                    ),
+                )
+            )
+    return _bar_svg(
+        title="Cross-view consensus, not market-state gates, caused sparsity",
+        subtitle="Consumed July-September evidence; counts are pre-risk model votes across BTC, ETH, and SOL",
+        groups=tuple(groups),
+        y_min=0.0,
+        y_max=220.0,
+        y_label="Eligible symbol-hours",
+        tick_decimals=0,
+        value_decimals=0,
+    )
+
+
+def _controller_economics_svg(rows: Sequence[Mapping[str, str]]) -> str:
+    groups = []
+    colors = (COLORS["blue"], COLORS["teal"], COLORS["amber"])
+    for treatment in TREATMENTS:
+        for interval in INTERVALS:
+            values = []
+            for controller, color in zip(CONTROLLER_DISPLAY, colors, strict=True):
+                row = next(
+                    row
+                    for row in rows
+                    if row["treatment"] == treatment
+                    and row["interval"] == interval
+                    and row["controller"] == controller
+                )
+                values.append(
+                    (
+                        CONTROLLER_DISPLAY[controller],
+                        100.0 * float(row["total_return_fraction"]),
+                        color,
+                    )
+                )
+            groups.append(
+                (f"{DISPLAY[treatment]} {DISPLAY[interval]}", tuple(values))
+            )
+    return _bar_svg(
+        title="Relaxing consensus added trades but did not establish an edge",
+        subtitle="Post-hoc consumed-data diagnostics at 16 bps round trip; none is promotable evidence",
+        groups=tuple(groups),
+        y_min=-0.30,
+        y_max=0.45,
+        y_label="Fixed initial-capital return (%)",
+    )
+
+
+def _score_calibration_svg(rows: Sequence[Mapping[str, str]]) -> str:
+    colors = (
+        COLORS["blue"],
+        COLORS["teal"],
+        COLORS["amber"],
+        COLORS["red"],
+        COLORS["cyan"],
+    )
+    groups = []
+    for interval in INTERVALS:
+        selected = sorted(
+            (
+                row
+                for row in rows
+                if row["treatment"] == "ai_program_augmented"
+                and row["interval"] == interval
+                and row["controller"] == "pooled_nine_consensus"
+            ),
+            key=lambda row: int(row["score_quintile"]),
+        )
+        groups.append(
+            (
+                DISPLAY[interval],
+                tuple(
+                    (
+                        f"Score Q{row['score_quintile']}",
+                        float(row["mean_realized_stress_payoff_bps"]),
+                        colors[index],
+                    )
+                    for index, row in enumerate(selected)
+                ),
+            )
+        )
+    return _bar_svg(
+        title="Pooled AI score magnitude was not reliably calibrated",
+        subtitle="Consumed-data mean realized payoff by equal-count predicted-score quintile",
+        groups=tuple(groups),
+        y_min=-240.0,
+        y_max=160.0,
+        y_label="Mean realized stress payoff (bps)",
+        tick_decimals=0,
+        value_decimals=1,
+    )
+
+
 def _ai_uplift_svg(report: Mapping[str, object]) -> str:
     groups = []
     for interval in INTERVALS:
@@ -607,7 +806,11 @@ def _clean_output(output_dir: Path) -> None:
     resolved.mkdir(parents=True, exist_ok=True)
 
 
-def _readme(report: Mapping[str, object]) -> str:
+def _readme(
+    report: Mapping[str, object],
+    diagnostic: Mapping[str, object],
+    attrition_rows: Sequence[Mapping[str, str]],
+) -> str:
     baseline_dev = report["treatments"][TREATMENTS[0]]["intervals"][INTERVALS[0]][
         "stress"
     ]
@@ -617,6 +820,37 @@ def _readme(report: Mapping[str, object]) -> str:
     ]
     ai_hold = report["treatments"][TREATMENTS[1]]["intervals"][INTERVALS[1]]["stress"]
     paired = report["ai_uplift_gate"]
+    diagnostic_summary = diagnostic["summary"]
+    baseline_pooled_dev = diagnostic_summary["baseline_71"]["policy_development"][
+        "pooled_nine_consensus"
+    ]
+    baseline_pooled_hold = diagnostic_summary["baseline_71"]["development_holdout"][
+        "pooled_nine_consensus"
+    ]
+    ai_pooled_dev = diagnostic_summary["ai_program_augmented"]["policy_development"][
+        "pooled_nine_consensus"
+    ]
+    ai_pooled_hold = diagnostic_summary["ai_program_augmented"]["development_holdout"][
+        "pooled_nine_consensus"
+    ]
+
+    def baseline_development_count(stage: str) -> int:
+        row = next(
+            row
+            for row in attrition_rows
+            if row["treatment"] == "baseline_71"
+            and row["interval"] == "policy_development"
+            and row["controller"] == "all_view_consensus"
+            and row["symbol"] == "ALL"
+            and row["stage"] == stage
+        )
+        return int(row["eligible_rows"])
+
+    any_view_count = baseline_development_count("any_view_vote")
+    two_view_count = baseline_development_count("two_view_side_agreement")
+    all_view_count = baseline_development_count("all_view_seed_supported")
+    final_count = baseline_development_count("market_eligible")
+    market_gate_removals = all_view_count - final_count
     return f"""# Round 55: Stop-Bounded Payoff Models
 
 > **Rejected development evidence.** No profitability, untouched-confirmation, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
@@ -634,6 +868,10 @@ Both treatments failed six frozen gates: development and September trade/day cou
 
 The run read `24,096` hourly timestamps and `72,288` symbol paths through September 2024. It generated no synthetic rows and did not load the `6,551` excluded October 2024-June 2025 timestamps. A future interval remains untouched, but Round 55 authorized no access to it.
 
+## Frozen Attrition Diagnostic
+
+The separately frozen diagnostic exactly reproduced the control without refitting a model or trying a threshold. The baseline had `{any_view_count}` July-August symbol-hours where at least one view voted, `{two_view_count}` where two views agreed, and only `{all_view_count}` where all three agreed; market-state gates then removed just `{market_gate_removals}`. Relaxed baseline controllers lost money in both consumed periods. The pooled-nine AI diagnostic returned {100 * float(ai_pooled_dev['stress_return_fraction']):+.4f}% over {ai_pooled_dev['closed_trades']} July-August trades and {100 * float(ai_pooled_hold['stress_return_fraction']):+.4f}% over {ai_pooled_hold['closed_trades']} September trades, while its matched baselines returned {100 * float(baseline_pooled_dev['stress_return_fraction']):+.4f}% and {100 * float(baseline_pooled_hold['stress_return_fraction']):+.4f}%. Those are post-hoc, sparse, non-monotonic score diagnostics on consumed data, not AI-uplift or profitability evidence.
+
 ## Evidence
 
 | View | Graph | Source |
@@ -643,9 +881,12 @@ The run read `24,096` hourly timestamps and `72,288` symbol paths through Septem
 | Trading activity | [SVG](charts/activity.svg) | [CSV](treatments.csv) |
 | Matched AI effect | [SVG](charts/ai-uplift.svg) | [CSV](treatments.csv) |
 | September equity | [SVG](charts/september-equity.svg) | [CSV](equity.csv) |
+| Controller attrition | [SVG](charts/controller-attrition.svg) | [CSV](controller-attrition.csv) |
+| Diagnostic economics | [SVG](charts/controller-economics.svg) | [CSV](controller-economics.csv) |
+| Score calibration | [SVG](charts/controller-score-calibration.svg) | [CSV](controller-score-calibration.csv) |
 | Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`trades.csv`, `hourly-ledger.csv`, `monthly-economics.csv`, `predictive-rank.csv`, `ai-factors.csv`, `gates.csv`, and `screen.json` preserve the underlying evidence. Every chart is regenerated from tracked tabular data.
+`trades.csv`, `hourly-ledger.csv`, `monthly-economics.csv`, `predictive-rank.csv`, `ai-factors.csv`, `gates.csv`, `controller-symbol-economics.csv`, `controller-overlap.csv`, `controller-vote-patterns.csv`, `controller-trades.csv`, `screen.json`, and `controller-diagnostic-report.json` preserve the underlying evidence. Every chart is regenerated from tracked tabular data.
 """
 
 
@@ -654,12 +895,14 @@ def publish(
     report_path: Path,
     design_path: Path,
     binding_path: Path,
+    diagnostic_path: Path,
     previous_progress_path: Path,
     output_dir: Path,
 ) -> dict[str, object]:
     report, _design, binding = _validate_sources(
         report_path, design_path, binding_path
     )
+    diagnostic = _validate_diagnostic(diagnostic_path)
     treatment_rows = _treatment_rows(report)
     model_rows = _model_rows(report)
     rank_rows = _rank_rows(report)
@@ -670,6 +913,26 @@ def publish(
     hourly_rows = _read_csv(Path(source_artifacts["hourly_ledger_csv"]["path"]))
     monthly_rows = _read_csv(Path(source_artifacts["monthly_economics_csv"]["path"]))
     equity_rows = _equity_rows(hourly_rows)
+    diagnostic_root = diagnostic_path.parent
+    diagnostic_tables = {
+        "controller-attrition.csv": _read_csv(diagnostic_root / "attrition.csv"),
+        "controller-economics.csv": _read_csv(
+            diagnostic_root / "controller-economics.csv"
+        ),
+        "controller-overlap.csv": _read_csv(
+            diagnostic_root / "controller-overlap.csv"
+        ),
+        "controller-score-calibration.csv": _read_csv(
+            diagnostic_root / "score-calibration.csv"
+        ),
+        "controller-symbol-economics.csv": _read_csv(
+            diagnostic_root / "symbol-economics.csv"
+        ),
+        "controller-trades.csv": _read_csv(diagnostic_root / "trades.csv"),
+        "controller-vote-patterns.csv": _read_csv(
+            diagnostic_root / "vote-patterns.csv"
+        ),
+    }
     progress_rows, progress_fields = _progress_rows(previous_progress_path, report)
     _clean_output(output_dir)
     charts = output_dir / "charts"
@@ -682,6 +945,8 @@ def publish(
     _write_csv(output_dir / "hourly-ledger.csv", hourly_rows)
     _write_csv(output_dir / "monthly-economics.csv", monthly_rows)
     _write_csv(output_dir / "equity.csv", equity_rows)
+    for name, rows in diagnostic_tables.items():
+        _write_csv(output_dir / name, rows)
     _write_csv(
         output_dir / "progress.csv",
         [
@@ -694,9 +959,36 @@ def publish(
     _write_text(charts / "activity.svg", _activity_svg(treatment_rows))
     _write_text(charts / "ai-uplift.svg", _ai_uplift_svg(report))
     _write_text(charts / "september-equity.svg", _equity_svg(equity_rows))
+    _write_text(
+        charts / "controller-attrition.svg",
+        _controller_attrition_svg(diagnostic_tables["controller-attrition.csv"]),
+    )
+    _write_text(
+        charts / "controller-economics.svg",
+        _controller_economics_svg(diagnostic_tables["controller-economics.csv"]),
+    )
+    _write_text(
+        charts / "controller-score-calibration.svg",
+        _score_calibration_svg(
+            diagnostic_tables["controller-score-calibration.csv"]
+        ),
+    )
     _write_text(charts / "research-progress.svg", _progress_svg(progress_rows))
-    _write_text(output_dir / "README.md", _readme(report))
+    _write_text(
+        output_dir / "README.md",
+        _readme(
+            report,
+            diagnostic,
+            diagnostic_tables["controller-attrition.csv"],
+        ),
+    )
     write_json_atomic(output_dir / "screen.json", report, indent=2, sort_keys=True)
+    write_json_atomic(
+        output_dir / "controller-diagnostic-report.json",
+        diagnostic,
+        indent=2,
+        sort_keys=True,
+    )
     artifact_paths = sorted(
         path
         for path in output_dir.rglob("*")
@@ -719,6 +1011,12 @@ def publish(
             "dataset_sha256": report["data"]["dataset_sha256"],
             "payoff_dataset_sha256": report["data"]["payoff"]["dataset_sha256"],
             "ai_ledger_sha256": report["ai_factor_research"]["ledger_sha256"],
+            "controller_diagnostic_file_sha256": DIAGNOSTIC_FILE_SHA256,
+            "controller_diagnostic_canonical_sha256": DIAGNOSTIC_CANONICAL_SHA256,
+            "controller_diagnostic_design_sha256": DIAGNOSTIC_DESIGN_SHA256,
+            "controller_diagnostic_implementation_commit": (
+                DIAGNOSTIC_IMPLEMENTATION_COMMIT
+            ),
         },
         "claims": {
             "status": "rejected",
@@ -741,6 +1039,10 @@ def publish(
             ],
             "passed_treatments": 0,
             "ai_uplift_gate_passed": False,
+            "diagnostic_controller_rules": diagnostic["trial_accounting"][
+                "controller_rules"
+            ],
+            "diagnostic_control_reproduced_exactly": True,
             "forbidden_existing_rows_loaded": False,
         },
         "artifacts": [_artifact(path, output_dir) for path in artifact_paths],
@@ -771,6 +1073,13 @@ def _parser() -> argparse.ArgumentParser:
         default=research / "round-055-bounded-alpha-execution-binding.json",
     )
     parser.add_argument(
+        "--diagnostic-report",
+        type=Path,
+        default=Path(
+            r"E:\SimpleAITradingData\round55-controller-attrition-20260714-v1\report.json"
+        ),
+    )
+    parser.add_argument(
         "--progress",
         type=Path,
         default=research / "latest" / "progress.csv",
@@ -789,6 +1098,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         report_path=arguments.report.resolve(),
         design_path=arguments.design.resolve(),
         binding_path=arguments.binding.resolve(),
+        diagnostic_path=arguments.diagnostic_report.resolve(),
         previous_progress_path=arguments.progress.resolve(),
         output_dir=arguments.output.resolve(),
     )

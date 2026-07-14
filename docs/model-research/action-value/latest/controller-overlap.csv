@@ -1,0 +1,9 @@
+round,treatment,interval,control,diagnostic_controller,control_signals,diagnostic_signals,overlap_signals,same_side_overlap,opposite_side_overlap,diagnostic_only_signals,control_only_signals,jaccard
+55,baseline_71,policy_development,all_view_consensus,majority_view_consensus,27,65,27,27,0,38,0,0.4153846153846154
+55,baseline_71,policy_development,all_view_consensus,pooled_nine_consensus,27,46,27,27,0,19,0,0.5869565217391305
+55,baseline_71,development_holdout,all_view_consensus,majority_view_consensus,7,21,7,7,0,14,0,0.3333333333333333
+55,baseline_71,development_holdout,all_view_consensus,pooled_nine_consensus,7,18,7,7,0,11,0,0.3888888888888889
+55,ai_program_augmented,policy_development,all_view_consensus,majority_view_consensus,14,39,14,14,0,25,0,0.358974358974359
+55,ai_program_augmented,policy_development,all_view_consensus,pooled_nine_consensus,14,28,14,14,0,14,0,0.5
+55,ai_program_augmented,development_holdout,all_view_consensus,majority_view_consensus,5,13,5,5,0,8,0,0.38461538461538464
+55,ai_program_augmented,development_holdout,all_view_consensus,pooled_nine_consensus,5,8,5,5,0,3,0,0.625

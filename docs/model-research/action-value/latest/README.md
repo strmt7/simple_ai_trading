@@ -15,6 +15,10 @@ Both treatments failed six frozen gates: development and September trade/day cou
 
 The run read `24,096` hourly timestamps and `72,288` symbol paths through September 2024. It generated no synthetic rows and did not load the `6,551` excluded October 2024-June 2025 timestamps. A future interval remains untouched, but Round 55 authorized no access to it.
 
+## Frozen Attrition Diagnostic
+
+The separately frozen diagnostic exactly reproduced the control without refitting a model or trying a threshold. The baseline had `201` July-August symbol-hours where at least one view voted, `70` where two views agreed, and only `31` where all three agreed; market-state gates then removed just `4`. Relaxed baseline controllers lost money in both consumed periods. The pooled-nine AI diagnostic returned +0.2056% over 26 July-August trades and +0.1100% over 8 September trades, while its matched baselines returned -0.2094% and -0.1134%. Those are post-hoc, sparse, non-monotonic score diagnostics on consumed data, not AI-uplift or profitability evidence.
+
 ## Evidence
 
 | View | Graph | Source |
@@ -24,6 +28,9 @@ The run read `24,096` hourly timestamps and `72,288` symbol paths through Septem
 | Trading activity | [SVG](charts/activity.svg) | [CSV](treatments.csv) |
 | Matched AI effect | [SVG](charts/ai-uplift.svg) | [CSV](treatments.csv) |
 | September equity | [SVG](charts/september-equity.svg) | [CSV](equity.csv) |
+| Controller attrition | [SVG](charts/controller-attrition.svg) | [CSV](controller-attrition.csv) |
+| Diagnostic economics | [SVG](charts/controller-economics.svg) | [CSV](controller-economics.csv) |
+| Score calibration | [SVG](charts/controller-score-calibration.svg) | [CSV](controller-score-calibration.csv) |
 | Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`trades.csv`, `hourly-ledger.csv`, `monthly-economics.csv`, `predictive-rank.csv`, `ai-factors.csv`, `gates.csv`, and `screen.json` preserve the underlying evidence. Every chart is regenerated from tracked tabular data.
+`trades.csv`, `hourly-ledger.csv`, `monthly-economics.csv`, `predictive-rank.csv`, `ai-factors.csv`, `gates.csv`, `controller-symbol-economics.csv`, `controller-overlap.csv`, `controller-vote-patterns.csv`, `controller-trades.csv`, `screen.json`, and `controller-diagnostic-report.json` preserve the underlying evidence. Every chart is regenerated from tracked tabular data.
